@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.7 2004/10/02 17:00:38 dkf Exp $
+'\" RCS: @(#) $Id: dict.n,v 1.8 2004/10/04 13:06:34 dkf Exp $
 '\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
@@ -19,7 +19,8 @@ dict \- Manipulate dictionaries
 .SH DESCRIPTION
 .PP
 Performs one of several operations on dictionary values or variables
-containing dictionary values, depending on \fIoption\fR.  The legal
+containing dictionary values (see the \fBDICTIONARY VALUES\fR section
+below for a description), depending on \fIoption\fR.  The legal
 \fIoption\fRs (which may be abbreviated) are:
 .TP
 \fBdict append \fIdictionaryVariable key \fR?\fIstring ...\fR?
@@ -59,7 +60,7 @@ argument after the rule selection word is a two-element list.  If the
 \fIscript\fR returns with a condition of \fBTCL_BREAK\fR, no further
 key/value pairs are considered for inclusion in the resulting
 dictionary, and a condition of \fBTCL_CONTINUE\fR is equivalent to a false
-result.
+result. The order in which the key/value pairs are tested is undefined.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fIglobPattern\fR
 The value rule only matches those key/value pairs whose values match
@@ -182,32 +183,66 @@ pattern is supplied the i'th key returned by \fBdict keys\fR will be
 the key for the i'th value returned by \fBdict values\fR applied to
 the same dictionary value.
 .SH "DICTIONARY VALUES"
-Dictionaries are values that contain an efficient mapping from
-arbitrary keys to arbitrary values.  They have a textual format that
-is exactly that of any list with an even number of elements, with each
-mapping in the dictionary being represented as two items in the list.
-When a command takes a dictionary and produces a new dictionary based
-on it (either returning it or writing it back into the variable that
-the starting dictionary was read from) there is no guarantee that the
-new dictionary will have the same ordering of keys.
-.SH EXAMPLE
+Dictionaries are values that contain an efficient (but \fInot\fR
+order-preserving) mapping from arbitrary keys to arbitrary values.
+They have a textual format that is exactly that of any list with an
+even number of elements, with each mapping in the dictionary being
+represented as two items in the list.  When a command takes a
+dictionary and produces a new dictionary based on it (either returning
+it or writing it back into the variable that the starting dictionary
+was read from) there is \fIno\fR guarantee that the new dictionary
+will have the same ordering of keys.
+.SH EXAMPLES
+Constructing and using nested dictionaries:
+.CS
+# Data for one employee
+\fBdict set\fR employeeInfo 12345-A forenames "Joe"
+\fBdict set\fR employeeInfo 12345-A surname   "Schmoe"
+\fBdict set\fR employeeInfo 12345-A street "147 Short Street"
+\fBdict set\fR employeeInfo 12345-A city   "Springfield"
+\fBdict set\fR employeeInfo 12345-A phone  "555-1234"
+# Data for another employee
+\fBdict set\fR employeeInfo 98372-J forenames "Anne"
+\fBdict set\fR employeeInfo 98372-J surname   "Other"
+\fBdict set\fR employeeInfo 98372-J street "32995 Oakdale Way"
+\fBdict set\fR employeeInfo 98372-J city   "Springfield"
+\fBdict set\fR employeeInfo 98372-J phone  "555-8765"
+# The above data probably ought to come from a database...
+
+# Print out some employee info
+set i 0
+puts "There are [\fBdict size\fR $employeeInfo] employees"
+\fBdict for\fR {id info} $employeeInfo {
+   puts "Employee #[incr i]: $id"
+   puts "   Name: [\fBdict get\fR $info forenames]\\
+         [\fBdict get\fR $info surname]"
+   puts "   Address: [\fBdict get\fR $info street],\\
+         [\fBdict get\fR $info city]"
+   puts "   Telephone: [\fBdict get\fR $info phone]"
+}
+# Another way to iterate and pick out names...
+foreach id [\fBdict keys\fR $employeeInfo] {
+   puts "Hello, [\fBdict get\fR $employeeInfo $id forenames]!"
+}
+.CE
+
 A localizable version of \fBstring toupper\fR:
 .CS
 # Set up the basic C locale
-set capital [dict create C [dict create]]
+set capital [\fBdict create\fR C [\fBdict create\fR]]
 foreach c {abcdefghijklmnopqrstuvwxyz} {
-    dict set capital C $c [string toupper $c]
+   \fBdict set\fR capital C $c [string toupper $c]
 }
 
 # English locales can luckily share the "C" locale
-dict set capital en [dict get $capital C]
-dict set capital en_US [dict get $capital C]
-dict set capital en_GB [dict get $capital C]
+\fBdict set\fR capital en [\fBdict get\fR $capital C]
+\fBdict set\fR capital en_US [\fRdict get\fR $capital C]
+\fBdict set\fR capital en_GB [\fRdict get\fR $capital C]
 
 # ... and so on for other supported languages ...
 
 # Now get the mapping for the current locale and use it.
-set upperCaseMap [dict get $capital $env(LANG)]
+set upperCaseMap [\fBdict get\fR $capital $env(LANG)]
 set upperCase [string map $upperCaseMap $string]
 .CE
 
