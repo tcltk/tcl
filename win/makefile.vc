@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.113 2003/11/10 22:55:48 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.114 2003/12/23 02:38:23 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -159,7 +159,18 @@ PROJECT	= tcl
 !include "rules.vc"
 
 STUBPREFIX = $(PROJECT)stub
-DOTVERSION = 8.5
+
+!if [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 85
+DOTVERSION	= 8.5
+!elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 86
+DOTVERSION	= 8.6
+!elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 90
+DOTVERSION	= 9.0
+!elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 0
+MSG =^
+Can't get version string from ../generic/tcl.h
+!error $(MSG)
+!endif
 VERSION = $(DOTVERSION:.=)
 
 DDEDOTVERSION = 1.3
