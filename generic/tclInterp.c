@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22 2003/05/12 22:44:24 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.23 2003/09/29 21:38:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -144,6 +144,13 @@ typedef struct InterpInfo {
     Slave slave;		/* Information necessary for this interp to
 				 * function as a slave. */
 } InterpInfo;
+
+/*
+ * Default granularities for various limits.
+ */
+
+#define DEFAULT_CMDCOUNT_GRANULARITY	100
+#define DEFAULT_TIME_GRANULARITY	1000
 
 /*
  * Prototypes for local static procedures:
@@ -358,17 +365,17 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
     static CONST char *options[] = {
         "alias",	"aliases",	"create",	"delete", 
 	"eval",		"exists",	"expose",	"hide", 
-	"hidden",	"issafe",	"invokehidden",	"marktrusted", 
-	"recursionlimit",		"slaves",	"share",
-	"target",	"transfer",
+	"hidden",	"issafe",	"invokehidden",	"limit",
+	"marktrusted",	"recursionlimit",		"slaves",
+	"share",	"target",	"transfer",
         NULL
     };
     enum option {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_CREATE,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_MARKTRUSTED,
-	OPT_RECLIMIT,			OPT_SLAVES,	OPT_SHARE,
-	OPT_TARGET,	OPT_TRANSFER
+	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_LIMIT,
+	OPT_MARKTRUSTED,		OPT_RECLIMIT,	OPT_SLAVES,
+	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
 
 
@@ -771,6 +778,47 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    return TCL_OK;
+	}
+	case OPT_LIMIT: {
+	    static CONST char *limits[] = {
+		"command", "time", NULL
+	    };
+	    enum LimitTypes {
+		LIMIT_CMD, LIMIT_TIME
+	    };
+	    Tcl_Interp *limitedInterp;
+
+	    if (objc < 4 || (objc & 1 && objc > 5)) {
+		Tcl_WrongNumArgs(interp, 2, objv, "path type ?opt? ?val? ...");
+		return TCL_ERROR;
+	    }
+	    limitedInterp = GetInterp(interp, objv[2]);
+	    if (limitedInterp == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[3], limits, "limit-type", 0,
+		    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum LimitTypes) index) {
+	    case LIMIT_CMD:
+		if (objc == 4) {
+		    return ReadLimitCmdCount(interp, limitedInterp, NULL);
+		} else if (objc == 5) {
+		    return ReadLimitCmdCount(interp, limitedInterp, objv[4]);
+		} else {
+		    return SetLimitCmdCount(interp, limitedInterp,
+			    objc-4, objv+4);
+		}
+	    case LIMIT_TIME:
+		if (objc == 4) {
+		    return ReadLimitTime(interp, limitedInterp, NULL);
+		} else if (objc == 5) {
+		    return ReadLimitTime(interp, limitedInterp, objv[4]);
+		} else {
+		    return SetLimitTime(interp, limitedInterp, objc-4, objv+4);
+		}
+	    }
 	}
     }
     return TCL_OK;
@@ -1809,6 +1857,18 @@ SlaveCreate(interp, pathPtr, safe)
     }
 
     slaveInterp = Tcl_CreateInterp();
+    if (((Interp *) masterInterp)->limits & LIMIT_COMMAND_COUNT) {
+	Interp *sPtr = (Interp *) slaveInterp;
+	sPtr->limits |= LIMIT_COMMAND_COUNT;
+	sPtr->cmdcountGranularity = DEFAULT_CMDCOUNT_GRANULARITY;
+	sPtr->cmdcountLimit = 0;
+    }
+    if (((Interp *) masterInterp)->limits & LIMIT_WALL_TIME) {
+	Interp *sPtr = (Interp *) slaveInterp;
+	sPtr->limits |= LIMIT_WALL_TIME;
+	sPtr->timeGranularity = DEFAULT_TIME_GRANULARITY;
+	sPtr->timeLimit = ((Interp *) masterInterp)->timeLimit;
+    }
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
     slavePtr->masterInterp = masterInterp;
     slavePtr->slaveEntryPtr = hPtr;
@@ -2006,6 +2066,42 @@ SlaveObjCmd(clientData, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    return SlaveRecursionLimit(interp, slaveInterp, objc - 2, objv + 2);
+	}
+	case OPT_LIMIT: {
+	    static CONST char *limits[] = {
+		"command", "time", NULL
+	    };
+	    enum LimitTypes {
+		LIMIT_CMD, LIMIT_TIME
+	    };
+
+	    if (objc < 3 || (objc > 4 && !(objc & 1))) {
+		Tcl_WrongNumArgs(interp, 2, objv, "type ?opt? ?val? ...");
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[2], limits, "limit-type", 0,
+		    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum LimitTypes) index) {
+	    case LIMIT_CMD:
+		if (objc == 4) {
+		    return ReadLimitCmdCount(interp, slaveInterp, NULL);
+		} else if (objc == 5) {
+		    return ReadLimitCmdCount(interp, slaveInterp, objv[3]);
+		} else {
+		    return SetLimitCmdCount(interp, slaveInterp,
+			    objc-3, objv+3);
+		}
+	    case LIMIT_TIME:
+		if (objc == 4) {
+		    return ReadLimitTime(interp, slaveInterp, NULL);
+		} else if (objc == 5) {
+		    return ReadLimitTime(interp, slaveInterp, objv[3]);
+		} else {
+		    return SetLimitTime(interp, slaveInterp, objc-3, objv+3);
+		}
+	    }
 	}
     }
 
@@ -2483,6 +2579,398 @@ Tcl_MakeSafe(interp)
     chan = Tcl_GetStdChannel(TCL_STDERR);
     if (chan != (Tcl_Channel) NULL) {
         Tcl_UnregisterChannel(interp, chan);
+    }
+
+    return TCL_OK;
+}
+
+static CONST char *limitOpts[] = {
+    "-command", "-granularity", "-value", NULL
+};
+enum LimitOpts {
+    LIM_CMD, LIM_GRAN, LIM_VAL
+};
+
+static int
+ReadLimitCmdCount(interp, targetInterp, propertyName)
+    Tcl_Interp *interp, *targetInterp;
+    Tcl_Obj *propertyName;
+{
+    Interp *tPtr = (Interp *) targetInterp;
+
+    if (propertyName == NULL) {
+	Tcl_Obj *resultObj, *emptyObj;
+	int limited = tPtr->limits & LIMIT_COMMAND_COUNT;
+
+	/*
+	 * We do not know how many times we will need the emptyObj;
+	 * could be zero to three times.
+	 */
+
+	TclNewObj(resultObj);
+	TclNewObj(emptyObj);
+	Tcl_IncrRefCount(emptyObj);
+
+	if (limited) {
+	    LimitHandler *lh = tPtr->cmdcountLimitHandlers;
+	    for (; lh!=NULL ; lh=lh->next) {
+		if (lh->interp == interp) {
+		    break;
+		}
+	    }
+	    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[0], -1),
+		    lh ? lh->handlerObj : emptyObj);
+	} else {
+	    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[0], -1),
+		    emptyObj);
+	}
+	Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[1], -1),
+		limited? Tcl_NewLongObj(tPtr->cmdcountGranularity) : emptyObj);
+	Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[2], -1),
+		limited? Tcl_NewIntObj(tPtr->cmdcountLimit) : emptyObj);
+
+	Tcl_DecrRefCount(emptyObj);
+	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
+    } else {
+	int index;
+
+	if (Tcl_GetIndexFromObj(interp, propertyName, limitOpts, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (!(tPtr->limits & LIMIT_COMMAND_COUNT)) {
+	    return TCL_OK;
+	}
+
+	switch ((enum LimitOpts) index) {
+	case LIM_CMD: {
+	    LimitHandler *lh = tPtr->cmdcountLimitHandlers;
+	    for (; lh!=NULL ; lh=lh->next) {
+		if (lh->interp == interp) {
+		    Tcl_SetObjResult(interp, lh->handlerObj);
+		    break;
+		}
+	    }
+	    break;
+	}
+	case LIM_GRAN:
+	    Tcl_SetObjResult(Tcl_NewLongObj(tPtr->cmdcountGranularity));
+	    break;
+	case LIM_VAL:
+	    Tcl_SetObjResult(Tcl_NewIntObj(tPtr->cmdcountLimit));
+	    break;
+	}
+	return TCL_OK;
+    }
+}
+
+static int
+SetLimitCmdCount(interp, targetInterp, objc, objv)
+    Tcl_Interp *interp, *targetInterp;
+    int objc;
+    Tcl_Obj *CONST objv[];
+{
+    Interp *tPtr = (Interp *) targetInterp;
+    int i, index, value, setFlag;
+    long gran;
+    Tcl_Obj *newCmd, *newGran, *newVal;
+    LimitHandler *lh, *lh2;
+
+    /*
+     * Parse the options to set.
+     */
+
+    newCmd = newGran = newVal = NULL;
+    setFlag = 1;
+    for (i=0 ; i<objc ; i+=2) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], limitOpts, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum LimitOpts) index) {
+	case LIM_CMD:
+	    newCmd = objv[i+1];
+	    break;
+	case LIM_GRAN:
+	    if (Tcl_GetLongFromObj(interp, objv[i+1], &gran) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (gran < 1) {
+		Tcl_AppendResult(interp,"granularities must be positive",NULL);
+		return TCL_ERROR;
+	    }
+	    newGran = objv[i+1];
+	    break;
+	case LIM_VAL:
+	    /*
+	     * If we have these numeric types, we know that we will
+	     * not have an empty string rep.
+	     */
+	    if (objv[i+1]->typePtr != &tclIntType &&
+		    objv[i+1]->typePtr != &tclDoubleType &&
+		    objv[i+1]->typePtr != &tclWideIntType) {
+		Tcl_GetString(objv[i+1]);
+		setFlag = (objv[i+1]->length > 0);
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i+1], &value) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    newVal = objv[i+1];
+	    break;
+	}
+    }
+
+    if (!setFlag) {
+	/*
+	 * Remove limit on interpreter.
+	 */
+	tPtr->limits &= ~LIMIT_COMMAND_COUNTS;
+	for (lh=tPtr->cmdcountLimitHandlers ; lh!=NULL ; lh=lh2) {
+	    lh2 = lh->next;
+	    Tcl_DecrRefCount(lh->handlerObj);
+	    Tcl_EventuallyFree(lh, TCL_DYNAMIC);
+	}
+	tPtr->cmdcountLimitHandlers = NULL;
+    } else if (tPtr->limits & LIMIT_COMMAND_COUNTS) {
+	/*
+	 * Modify limit on interpreter.
+	 */
+
+	if (newGran != NULL) {
+	    tPtr->cmdcountGranularity = gran;
+	}
+	if (newVal != NULL) {
+	    tPtr->cmdcountLimit = value;
+	}
+	if (newCmd != NULL) {
+	    for (lh=tPtr->cmdcountLimitHandlers ; lh!=NULL ; lh=lh->next) {
+		if (lh->interp == interp) {
+		    break;
+		}
+	    }
+	    if (lh == NULL) {
+		lh = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+		lh->interp = interp;
+		lh->next = tPtr->cmdcountLimitHandlers;
+		tPtr->cmdcountLimitHandlers = lh;
+	    } else {
+		Tcl_DecrRefCount(lh->handlerObj);
+	    }
+	    lh->handlerObj = newCmd;
+	    Tcl_IncrRefCount(newCmd);
+	}
+    } else {
+	/*
+	 * Install limit on interpreter; value must have been set.
+	 */
+
+	if (newGran == NULL) {
+	    gran = DEFAULT_CMDCOUNT_GRANULARITY;
+	}
+	tPtr->limits |= LIMIT_COMMAND_COUNTS;
+	tPtr->cmdcountGranularity = gran;
+	tPtr->cmdcountValue = value;
+	if (newCmd != NULL) {
+	    lh = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+	    lh->interp = interp;
+	    lh->handlerObj = newCmd;
+	    Tcl_IncrRefCount(newCmd);
+	    lh->next = NULL;
+	    tPtr->cmdcountLimitHandlers = lh;
+	}
+    }
+
+    return TCL_OK;
+}
+
+static int
+ReadLimitTime(interp, targetInterp, propertyName)
+    Tcl_Interp *interp, *targetInterp;
+    Tcl_Obj *propertyName;
+{
+    Interp *tPtr = (Interp *) targetInterp;
+
+    if (propertyName == NULL) {
+	Tcl_Obj *resultObj, *emptyObj;
+	int limited = tPtr->limits & LIMIT_COMMAND_COUNT;
+
+	/*
+	 * We do not know how many times we will need the emptyObj;
+	 * could be zero to three times.
+	 */
+
+	TclNewObj(resultObj);
+	TclNewObj(emptyObj);
+	Tcl_IncrRefCount(emptyObj);
+
+	if (limited) {
+	    LimitHandler *lh = tPtr->timeLimitHandlers;
+	    for (; lh!=NULL ; lh=lh->next) {
+		if (lh->interp == interp) {
+		    break;
+		}
+	    }
+	    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[0], -1),
+		    lh ? lh->handlerObj : emptyObj);
+	} else {
+	    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[0], -1),
+		    emptyObj);
+	}
+	Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[1], -1),
+		limited ? Tcl_NewLongObj(tPtr->timeGranularity) : emptyObj);
+	Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj(limitOpts[2], -1),
+		limited ? Tcl_NewIntObj(tPtr->timeLimit) : emptyObj);
+
+	Tcl_DecrRefCount(emptyObj);
+	Tcl_SetObjResult(interp, resultObj);
+	return TCL_OK;
+    } else {
+	int index;
+
+	if (Tcl_GetIndexFromObj(interp, propertyName, limitOpts, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (!(tPtr->limits & LIMIT_COMMAND_COUNT)) {
+	    return TCL_OK;
+	}
+	switch ((enum LimitOpts) index) {
+	case LIM_CMD: {
+	    LimitHandler *lh = tPtr->timeLimitHandlers;
+	    for (; lh!=NULL ; lh=lh->next) {
+		if (lh->interp == interp) {
+		    Tcl_SetObjResult(interp, lh->handlerObj);
+		    break;
+		}
+	    }
+	    break;
+	}
+	case LIM_GRAN:
+	    Tcl_SetObjResult(Tcl_NewLongObj(tPtr->timeGranularity));
+	    break;
+	case LIM_VAL:
+	    Tcl_SetObjResult(Tcl_NewIntObj(tPtr->timeLimit));
+	    break;
+	}
+	return TCL_OK;
+    }
+}
+
+static int
+SetLimitTime(interp, targetInterp, objc, objv)
+    Tcl_Interp *interp, *targetInterp;
+    int objc;
+    Tcl_Obj *CONST objv[];
+{
+    Interp *tPtr = (Interp *) targetInterp;
+    int i, index, value, setFlag;
+    long gran;
+    Tcl_Obj *newCmd, *newGran, *newVal;
+    LimitHandler *lh, *lh2;
+
+    /*
+     * Parse the options to set.
+     */
+
+    newCmd = newGran = newVal = NULL;
+    setFlag = 1;
+    for (i=0 ; i<objc ; i+=2) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], limitOpts, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum LimitOpts) index) {
+	case LIM_CMD:
+	    newCmd = objv[i+1];
+	    break;
+	case LIM_GRAN:
+	    if (Tcl_GetLongFromObj(interp, objv[i+1], &gran) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (gran < 1) {
+		Tcl_AppendResult(interp,"granularities must be positive",NULL);
+		return TCL_ERROR;
+	    }
+	    newGran = objv[i+1];
+	    break;
+	case LIM_VAL:
+	    /*
+	     * If we have these numeric types, we know that we will
+	     * not have an empty string rep.
+	     */
+	    if (objv[i+1]->typePtr != &tclIntType &&
+		    objv[i+1]->typePtr != &tclDoubleType &&
+		    objv[i+1]->typePtr != &tclWideIntType) {
+		Tcl_GetString(objv[i+1]);
+		setFlag = (objv[i+1]->length > 0);
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i+1], &value) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    newVal = objv[i+1];
+	    break;
+	}
+    }
+
+    if (!setFlag) {
+	/*
+	 * Remove limit on interpreter.
+	 */
+	tPtr->limits &= ~LIMIT_COMMAND_COUNTS;
+	for (lh=tPtr->timeLimitHandlers ; lh!=NULL ; lh=lh2) {
+	    lh2 = lh->next;
+	    Tcl_DecrRefCount(lh->handlerObj);
+	    Tcl_EventuallyFree(lh, TCL_DYNAMIC);
+	}
+	tPtr->timeLimitHandlers = NULL;
+    } else if (tPtr->limits & LIMIT_COMMAND_COUNTS) {
+	/*
+	 * Modify limit on interpreter.
+	 */
+
+	if (newGran != NULL) {
+	    tPtr->timeGranularity = gran;
+	}
+	if (newVal != NULL) {
+	    tPtr->timeLimit = value;
+	}
+	if (newCmd != NULL) {
+	    for (lh=tPtr->timeLimitHandlers ; lh!=NULL ; lh=lh->next) {
+		if (lh->interp == interp) {
+		    break;
+		}
+	    }
+	    if (lh == NULL) {
+		lh = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+		lh->interp = interp;
+		lh->next = tPtr->timeLimitHandlers;
+		tPtr->timeLimitHandlers = lh;
+	    } else {
+		Tcl_DecrRefCount(lh->handlerObj);
+	    }
+	    lh->handlerObj = newCmd;
+	    Tcl_IncrRefCount(newCmd);
+	}
+    } else {
+	/*
+	 * Install limit on interpreter; value must have been set.
+	 */
+
+	if (newGran == NULL) {
+	    gran = DEFAULT_TIME_GRANULARITY;
+	}
+	tPtr->limits |= LIMIT_COMMAND_COUNTS;
+	tPtr->timeGranularity = gran;
+	tPtr->timeValue = value;
+	if (newCmd != NULL) {
+	    lh = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+	    lh->interp = interp;
+	    lh->handlerObj = newCmd;
+	    Tcl_IncrRefCount(newCmd);
+	    lh->next = NULL;
+	    tPtr->timeLimitHandlers = lh;
+	}
     }
 
     return TCL_OK;
