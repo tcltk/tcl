@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.24 2002/07/05 10:38:42 dkf Exp $
+# RCS: @(#) $Id: fileName.test,v 1.25 2002/07/08 08:50:23 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1175,7 +1175,17 @@ test filename-11.17.1 {Tcl_GlobCmd} {pcOnly macOnly} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
-test filename-11.17.2 {Tcl_GlobCmd} {notRoot} {
+if {[string equal $tcl_platform(platform) "windows"]} {
+    if {[string index $tcl_platform(osVersion) 0] >= 5 \
+      && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
+	tcltest::testConstraint linkDirectory 1
+    } else {
+	tcltest::testConstraint linkDirectory 0
+    }
+} else {
+    tcltest::testConstraint linkDirectory 1
+}
+test filename-11.17.2 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
     set ret "error in test"
     if {[catch {
@@ -1193,7 +1203,7 @@ test filename-11.17.2 {Tcl_GlobCmd} {notRoot} {
 } [list 0 [lsort [list [file join $globname a1 b1] \
   [file join $globname link b1]]]]
 # Simpler version of the above test to illustrate a given bug.
-test filename-11.17.3 {Tcl_GlobCmd} {notRoot} {
+test filename-11.17.3 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
     set ret "error in test"
     if {[catch {
@@ -1214,7 +1224,7 @@ test filename-11.17.3 {Tcl_GlobCmd} {notRoot} {
   [file join $globname link]]]]
 # Make sure the bugfix isn't too simple.  We don't want
 # to break 'glob -type l'.
-test filename-11.17.4 {Tcl_GlobCmd} {notRoot} {
+test filename-11.17.4 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
     set ret "error in test"
     if {[catch {
