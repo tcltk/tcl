@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.4 2003/11/20 19:19:03 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.5 2004/05/22 17:01:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -555,14 +555,14 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     /*
      * TEMPORARYLY DISABLED tclNsVarNameType
      *
-     * This is a stop-gap fix for [Bug 735335]; it may not address the 
-     * real issue (which I haven't pinned down yet), but it avoids the 
-     * segfault in the test case.
      * This optimisation will hopefully be turned back on soon.
-     *      Miguel Sofer, 2003-05-12
+     *      Miguel Sofer, 2004-05-22
      */
 
     } else if (index > -3) {
+	/*
+	 * A cacheable namespace or global variable.
+	 */
 	Namespace *nsPtr;
     
 	nsPtr = ((index == -1)? iPtr->globalNsPtr : varFramePtr->nsPtr);
@@ -2036,6 +2036,15 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     varPtr->searchPtr = NULL;
 
     /*
+     * Keep the variable alive until we're done with it. We used to
+     * increase/decrease the refCount for each operation, making it
+     * hard to find [Bug 735335] - caused by unsetting the variable
+     * whose value was the variable's name.
+     */
+    
+    varPtr->refCount++;
+
+    /*
      * Call trace procedures for the variable being deleted. Then delete
      * its traces. Be sure to abort any other traces for the variable
      * that are still pending. Special tricks:
@@ -2047,7 +2056,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 
     if ((dummyVar.tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	varPtr->refCount++;
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	CallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
@@ -2063,7 +2071,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 		activePtr->nextTracePtr = NULL;
 	    }
 	}
-	varPtr->refCount--;
     }
 
     /*
@@ -2087,12 +2094,10 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	 * array are being deleted when the array still exists, but since the
 	 * array is about to be removed anyway, that shouldn't really matter.
 	 */
-	varPtr->refCount++;
 	DeleteArray(iPtr, part1, dummyVarPtr,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) 
 		| TCL_TRACE_UNSETS);
 	/* Decr ref count */
-	varPtr->refCount--;
     }
     if (TclIsVarScalar(dummyVarPtr)
 	    && (dummyVarPtr->value.objPtr != NULL)) {
@@ -2122,11 +2127,23 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     }
 
     /*
+     * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType 
+     * keeping a reference. This removes some additional exteriorisations of
+     * [Bug 736729], but may be a good thing independently of the bug.
+     */
+
+    if (part1Ptr->typePtr == &tclNsVarNameType) {
+	part1Ptr->typePtr->freeIntRepProc(part1Ptr);
+	part1Ptr->typePtr = NULL;
+    }
+
+    /*
      * Finally, if the variable is truly not in use then free up its Var
      * structure and remove it from its hash table, if any. The ref count of
      * its value object, if any, was decremented above.
      */
 
+    varPtr->refCount--;
     CleanupVar(varPtr, arrayPtr);
     return result;
 }
