@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.9 2000/03/19 22:32:25 sandeep Exp $
+'\" RCS: @(#) $Id: http.n,v 1.10 2000/04/09 23:55:54 welch Exp $
 '\" 
 .so man.macros
 .TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
@@ -116,7 +116,7 @@ The \fB\-query\fR option causes a POST operation and
 the \fB\-validate\fR option causes a HEAD operation;
 otherwise, a GET operation is performed.  The \fB::http::geturl\fR command
 returns a \fItoken\fR value that can be used to get
-information about the transaction.  See the STATE ARRAY section for
+information about the transaction.  See the STATE ARRAY and ERRORS section for
 details.  The \fB::http::geturl\fR command blocks until the operation
 completes, unless the \fB\-command\fR option specifies a callback
 that is invoked when the HTTP transaction completes.
@@ -305,6 +305,54 @@ set token [http::geturl https://my.secure.site/]
 This procedure unregisters a protocol handler that was previously
 registered via \fBhttp::register\fR.
 
+.SH "ERRORS"
+The \fBhttp::geturl\fP procedure will raise errors in the following cases:
+invalid command line options,
+an invalid URL,
+or a URL on a non-existent host,
+These errors mean that it
+cannot even start the network transaction.
+It will also raise an error if it gets an I/O error while
+writing out the HTTP request header.
+.PP
+The \fBhttp::wait\fP procedure will raise errors if an I/O error
+occurs while reading the HTTP reply headers or data.  If the
+\fB-command\fP flag is not passed to \fBhttp::geturl\fP,
+then it will call \fBhttp::wait\fP and so these errors will
+occur in \fBhttp::geturl\fP.
+If you get an error from \fBhttp::wait\fP, you must still call
+\fBhttp::cleanup\fP to delete the state array.
+.PP
+There are other possible results of the HTTP transaction
+determined by examining the status from \fBhttp::status\fP.
+These are described below.
+.TP
+ok
+If the HTTP transaction completes entirely, then status will be \fBok\fP.
+However, you should still check the \fBhttp::code\fP value to get
+the HTTP status.  The \fBhttp::ncode\fP procedure provides just
+the numeric error (e.g., 200, 404 or 500) while the \fBhttp::code\fP
+procedure returns a value like "HTTP 404 File not found".
+.TP
+eof
+If the server closes the socket without replying, then no error
+is rasied, but the status of the transaction will be \fBeof\fP.
+.TP
+error
+In this case \fBhttp::wait\fP should have raised an error.
+The error message will also be stored in the \fBerror\fP status
+array element.
+.PP
+Another error possibility is that \fBhttp::geturl\fP is unable to
+write all the post query data to the server before the server
+responds and closes the socket.
+The error message is saved in the \fBposterror\fP status array
+element and then  \fBhttp::geturl\fP attempts to complete the
+transaction.
+If it can read the server's response
+it will end up with an \fBok\fP status, otherwise it will have
+an \fBeof\fP status.
+
 .SH "STATE ARRAY"
 The \fB::http::geturl\fR procedure returns a \fItoken\fR that can be used to
 get to the state of the HTTP transaction in the form of a Tcl array.
@@ -336,7 +384,7 @@ The HTTP status reply from the server.  This value
 is returned by the \fB::http::code\fP command.  The format of this value is:
 .RS
 .CS
-\fIcode string\fP
+\fIHTTP/1.0 code string\fP
 .CE
 The \fIcode\fR is a three-digit number defined in the HTTP standard.
 A code of 200 is OK.  Codes beginning with 4 or 5 indicate errors.
@@ -369,6 +417,10 @@ The advertised size of the contents.  The actual size obtained by
 \fBLocation\fR
 An alternate URL that contains the requested data.
 .RE
+.TP
+\fBposterror\fR
+The error, if any, that occurred while writing
+the post query data to the server.
 .TP
 \fBstatus\fR
 Either \fBok\fR, for successful completion, \fBreset\fR for
