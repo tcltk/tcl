@@ -1,3 +1,11 @@
+2001-11-21  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken,CallCommandTraces):
+	* generic/tclCmdMZ>c (Tcl_UntraceCommand):  Added Tcl_Preserve and
+	Tcl_Release calls to prevent deletion of CommandTrace structures
+	until all callers are done using them, preventing memory corruption.
+	[Bug 453805]
+
 2001-11-20  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* doc/GetTime.3 (Tcl_GetTime):
