@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.16 2001/12/10 20:30:13 msofer Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.17 2002/01/07 23:09:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -938,7 +938,8 @@ Tcl_FinalizeThread()
 int
 TclInExit()
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
+	    TclThreadDataKeyGet(&dataKey);
     if (tsdPtr == NULL) {
 	return inFinalize;
     } else {

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.12 2001/12/28 23:36:31 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13 2002/01/07 23:09:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -927,7 +927,7 @@ TclLsetList( interp, listPtr, indexArgPtr, valuePtr )
 	if ( result != TCL_OK ) {
 	    break;
 	}
-	listPtr->internalRep.twoPtrValue.ptr2 = chainPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
 
 	/*
 	 * Reconstitute the index array
@@ -1014,12 +1014,12 @@ TclLsetList( interp, listPtr, indexArgPtr, valuePtr )
 
     if ( result == TCL_OK ) {
 
-	listPtr->internalRep.twoPtrValue.ptr2 = chainPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
 
 	/* Spoil all the string reps */
 	
 	while ( listPtr != NULL ) {
-	    subListPtr = listPtr->internalRep.twoPtrValue.ptr2;
+	    subListPtr = (Tcl_Obj *) listPtr->internalRep.twoPtrValue.ptr2;
 	    Tcl_InvalidateStringRep( listPtr );
 	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	    listPtr = subListPtr;
@@ -1164,7 +1164,7 @@ TclLsetFlat( interp, listPtr, indexCount, indexArray, valuePtr )
 	if ( result != TCL_OK ) {
 	    break;
 	}
-	listPtr->internalRep.twoPtrValue.ptr2 = chainPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
 
 	/*
 	 * Determine the index of the requested element.
@@ -1235,12 +1235,12 @@ TclLsetFlat( interp, listPtr, indexCount, indexArray, valuePtr )
 
     if ( result == TCL_OK ) {
 
-	listPtr->internalRep.twoPtrValue.ptr2 = chainPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
 
 	/* Spoil all the string reps */
 	
 	while ( listPtr != NULL ) {
-	    subListPtr = listPtr->internalRep.twoPtrValue.ptr2;
+	    subListPtr = (Tcl_Obj *) listPtr->internalRep.twoPtrValue.ptr2;
 	    Tcl_InvalidateStringRep( listPtr );
 	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	    listPtr = subListPtr;
