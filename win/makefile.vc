@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.88 2002/03/29 22:09:35 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.89 2002/03/29 22:29:26 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -344,15 +344,10 @@ crt = -MD$(DBGX)
 crt = -MT$(DBGX)
 !endif
 
+TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
 BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
-TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
-
-!if $(STATIC_BUILD)
-TCL_CFLAGS	= $(BASE_CLFAGS) -DSTATIC_BUILD
-!else
-TCL_CFLAGS	= $(BASE_CLFAGS)
-!endif
+TCL_CFLAGS	= $(BASE_CLFAGS) $(OPTDEFINES)
 
 
 #---------------------------------------------------------------------
