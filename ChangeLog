@@ -1,3 +1,9 @@
+2004-03-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclMain.c (Tcl_Main, StdinProc): Append newline only to
+	incomplete scripts as part of multi-line script construction.  Do
+	not add an extra trailing newline to the complete script.  [Bug 833150]
+
 2004-03-28  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileScript): corrected possible
