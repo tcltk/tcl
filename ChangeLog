@@ -1,3 +1,10 @@
+2002-05-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/tclUnixChan.c (SETBREAK): Solaris thinks ioctl() takes a
+	signed second argument, and Linux thinks ioctl() takes an unsigned
+	second argument.  So need a longer definition of this macro to get
+	neither to spew warnings...
+
 2002-05-13  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclEvent.c: 
