@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAppInit.c,v 1.7 2001/06/14 00:48:51 dgp Exp $
+ * RCS: @(#) $Id: tclMacAppInit.c,v 1.8 2001/06/17 03:48:19 dgp Exp $
  */
 
 #include "tcl.h"
@@ -204,8 +204,6 @@ MacintoshInit()
     InitCursor();
 		
 #endif
-
-    TclMacSetPanic();
 
     Tcl_MacSetEventProc((Tcl_MacConvertEventPtr) SIOUXHandleOneEvent);
     
