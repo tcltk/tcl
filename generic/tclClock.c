@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.10 2000/05/18 21:36:34 hobbs Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.11 2000/08/18 18:02:16 ericm Exp $
  */
 
 #include "tcl.h"
@@ -361,8 +361,7 @@ FormatClock(interp, clockVal, useGMT, format)
     }
 
     /*
-     * Convert the time to external encoding, in case we asked for
-     * a localized return value.  [Bug: 3345]
+     * Convert the time to UTF from external encoding [Bug: 3345]
      */
     Tcl_DStringInit(&uniBuffer);
     Tcl_ExternalToUtfDString(NULL, buffer.string, -1, &uniBuffer);
