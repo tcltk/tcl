@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.38 2001/11/20 16:36:06 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.39 2001/11/20 16:52:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -726,7 +726,9 @@ TclExecuteByteCode(interp, codePtr)
 				 /* Reference to memory block containing
 				  * objv array (must be kept live throughout
 				  * trace and command invokations.) */
-
+#ifdef TCL_COMPILE_DEBUG
+		char cmdNameBuf[21];
+#endif
 		objv = &(stackPtr[stackTop - (objc-1)]);
 
 #ifdef TCL_COMPILE_DEBUG
