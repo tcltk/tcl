@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.13 2002/06/21 21:17:39 jenglish Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.14 2002/07/22 10:04:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1628,7 +1628,8 @@ GetLexeme(infoPtr)
                 return TCL_OK;
 	    }
 	} else if (startsWithDigit || (c == '.')
-	        || (c == 'n') || (c == 'N')) {
+		|| (c == 'i') || (c == 'I')		/* Could be 'Inf' */
+	        || (c == 'n') || (c == 'N')) {		/* Could be 'NaN' */
 	    errno = 0;
 	    doubleValue = strtod(src, &termPtr);
 	    if (termPtr != src) {
