@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.15 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.16 2002/12/11 20:30:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1918,7 +1918,9 @@ TclParseInteger(string, numBytes)
 	if (scanned) {
 	    return scanned + 2;
 	}
-	return 0;
+
+	/* Recognize the 0 as valid integer, but x is left behind */
+	return 1;
     }
     while (numBytes && isdigit(UCHAR(*p))) {	/* INTL: digit */
 	numBytes--; p++;
