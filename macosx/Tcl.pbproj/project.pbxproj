@@ -29,7 +29,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# fixup Framework structure\ncd \"${INSTALL_ROOT}${LIBDIR}\"\nln -fs Versions/Current/Headers ../..\nmv -f tclConfig.sh Resources\nln -fs \"Resources/tclConfig.sh\" ../..\nln -fs `ls libtclstub* | sed -e 's|.*|Versions/Current/&|'` ../..\nif [ \"${BUILD_STYLE}\" = \"Development\" ]; then\n\t# keep copy of debug library around, so that\n\t# Deployment build can be installed on top\n\t# of Development build without overwriting\n\t# the debug library\n\tcp -fp \"${PRODUCT_NAME}\" \"${PRODUCT_NAME}_debug\"\n\tln -fs \"Versions/Current/${PRODUCT_NAME}_debug\" ../..\nfi";
+			shellScript = "# fixup Framework structure\ncd \"${INSTALL_ROOT}${LIBDIR}\"\nln -fs Versions/Current/Headers ../..\nln -fs \"Versions/Current/tclConfig.sh\" ../..\nln -fs `ls libtclstub* | sed -e \"s|.*|Versions/${FRAMEWORK_VERSION}/&|\"` ../..\nif [ \"${BUILD_STYLE}\" = \"Development\" ]; then\n\t# keep copy of debug library around, so that\n\t# Deployment build can be installed on top\n\t# of Development build without overwriting\n\t# the debug library\n\tcp -fp \"${PRODUCT_NAME}\" \"${PRODUCT_NAME}_debug\"\n\tln -fs \"Versions/Current/${PRODUCT_NAME}_debug\" ../..\nfi";
 		};
 		00E2F845016E82EB0ACA28DC = {
 			buildStyles = (
