@@ -2,6 +2,16 @@
 
 	* tests/reg.test:  Added tests for [Bugs 230589, 504785, 505048, 840258]
 	recently fixed by 2003-11-15 commit to regcomp.c by Pavel Goran.
+	His notes on the fix: This bug results from an error in code that
+	splits states into "progress" and "no-progress" ones. This error
+	causes an interesting situation with the pre-collected single-linked
+	list of states to be splitted: many items were added to the list, but 
+	only several of them are accessible from the list beginning, 
+	since the "tmp" member of struct state (which is used here to
+	hold a pointer to the next list item) gets overwritten, which 
+	results in a "looped" chain. As a result, not all of states are
+	splitted, and one state is splitted two times, causing incorrect
+	"no-progress" flag values.
 
 2003-11-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
