@@ -1,3 +1,18 @@
+2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): consolidated variable
+	handling opcodes, replaced redundant code with some 'goto'. All
+	store/append/lappend opcodes on the same data type now share the
+	main code; same with incr opcodes.
+	* generic/tclVar.c: added the bit TCL_TRACE_READS to the possible
+	flags to Tcl_SetVar2Ex - it causes read traces to be fired prior
+	to setting the variable. This is used in the core for [lappend].
+
+	***NOTE*** the usage of TCL_TRACE_READS in Tcl_(Obj)?GetVar.* is
+	not documented; there, it causes the call to create the variable
+	if it does not exist. The new usage in Tcl_(Obj)?SetVar.* remains
+	undocumented too ...
+	
 2002-06-13  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/fCmd.test:
