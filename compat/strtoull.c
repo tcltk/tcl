@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoull.c,v 1.4 2002/02/22 09:04:48 dkf Exp $
+ * RCS: @(#) $Id: strtoull.c,v 1.5 2002/02/24 02:53:25 dgp Exp $
  */
 
 #include "tcl.h"
@@ -54,7 +54,11 @@ static char cvtIn[] = {
  *----------------------------------------------------------------------
  */
 
+#if TCL_WIDE_INT_IS_LONG
+unsigned long long
+#else
 Tcl_WideUInt
+#endif
 strtoull(string, endPtr, base)
     CONST char *string;		/* String of ASCII digits, possibly
 				 * preceded by white space.  For bases

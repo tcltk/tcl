@@ -1,3 +1,11 @@
+2002-02-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* compat/strtoull.c (strtoull):
+	* compat/strtoll.c (strtoll):
+	* compat/strtoul.c (strtoul): Fixed failure to handle leading
+	sign symbols '+' and '-' and '0X' and raise overflow errors.
+	[Bug 440916]  Also corrects prototype and errno problems.
+
 2002-02-23  Mo DeJong  <supermo@bayarea.net>
 
 	* configure: Regen.
