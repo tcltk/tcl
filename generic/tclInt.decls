@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.74 2004/06/05 17:31:08 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.75 2004/06/24 01:29:02 mistachkin Exp $
 
 library tcl
 
@@ -743,6 +743,48 @@ declare 182 generic {
 }
 declare 183 generic {
      struct tm *TclpGmtime(CONST time_t *clock)
+}
+
+# For the new "Thread Storage" subsystem.
+
+declare 184 generic {
+     void TclThreadStorageLockInit(void)     
+}
+declare 185 generic {
+     void TclThreadStorageLock(void)     
+}
+declare 186 generic {
+     void TclThreadStorageUnlock(void)     
+}
+declare 187 generic {
+     void TclThreadStoragePrint(FILE *outFile, int flags)     
+}
+declare 188 generic {
+     Tcl_HashTable *TclThreadStorageGetHashTable(Tcl_ThreadId id)     
+}
+declare 189 generic {
+     Tcl_HashTable *TclThreadStorageInit(Tcl_ThreadId id, void *reserved)     
+}
+declare 190 generic {
+     void TclThreadStorageDataKeyInit(Tcl_ThreadDataKey *keyPtr)     
+}
+declare 191 generic {
+     void *TclThreadStorageDataKeyGet(Tcl_ThreadDataKey *keyPtr)     
+}
+declare 192 generic {
+     void TclThreadStorageDataKeySet(Tcl_ThreadDataKey *keyPtr, void *data)     
+}
+declare 193 generic {
+     void TclFinalizeThreadStorageThread(Tcl_ThreadId id)     
+}
+declare 194 generic {
+     void TclFinalizeThreadStorage(void)     
+}
+declare 195 generic {
+     void TclFinalizeThreadStorageData(Tcl_ThreadDataKey *keyPtr)     
+}
+declare 196 generic {
+     void TclFinalizeThreadStorageDataKey(Tcl_ThreadDataKey *keyPtr)
 }
 
 ##############################################################################
