@@ -920,6 +920,57 @@ test filesystem-9.6 {path objects and file tail and object rep} {winOnly} {
     file isdirectory $p
     lappend res [file join $p toto]
 } {C:/toto/toto C:/toto/toto}
+test filesystem-9.7 {path objects and glob and file tail and tilde} {
+    set res {}
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir tilde
+    close [open tilde/~testNotExist w]
+    cd tilde
+    set file [lindex [glob *test*] 0]
+    lappend res [file exists $file] [catch {file tail $file} r] $r
+    lappend res $file
+    lappend res [file exists $file] [catch {file tail $file} r] $r
+    lappend res [catch {file tail $file} r] $r
+    cd ..
+    file delete -force tilde
+    cd $origdir
+    set res
+} {0 1 {user "testNotExist" doesn't exist} ~testNotExist 0 1 {user "testNotExist" doesn't exist} 1 {user "testNotExist" doesn't exist}}
+test filesystem-9.8 {path objects and glob and file tail and tilde} {
+    set res {}
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir tilde
+    close [open tilde/~testNotExist w]
+    cd tilde
+    set file1 [lindex [glob *test*] 0]
+    set file2 "~testNotExist"
+    lappend res $file1 $file2
+    lappend res [catch {file tail $file1} r] $r
+    lappend res [catch {file tail $file2} r] $r
+    cd ..
+    file delete -force tilde
+    cd $origdir
+    set res
+} {~testNotExist ~testNotExist 1 {user "testNotExist" doesn't exist} 1 {user "testNotExist" doesn't exist}}
+test filesystem-9.9 {path objects and glob and file tail and tilde} {
+    set res {}
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir tilde
+    close [open tilde/~testNotExist w]
+    cd tilde
+    set file1 [lindex [glob *test*] 0]
+    set file2 "~testNotExist"
+    lappend res [catch {file exists $file1} r] $r
+    lappend res [catch {file exists $file2} r] $r
+    lappend res [string equal $file1 $file2]
+    cd ..
+    file delete -force tilde
+    cd $origdir
+    set res
+} {0 0 0 0 1}
 
 cleanupTests
 unset -nocomplain drive
