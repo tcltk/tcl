@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.76 2000/08/15 00:08:36 ericm Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.77 2000/08/25 02:04:27 ericm Exp $
  */
 
 #ifndef _TCL
@@ -603,6 +603,8 @@ typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, char *part1, char *part2, int flags));
+typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
+	Tcl_Interp *interp, char *oldName, char *newName, int flags));
 typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
 	Tcl_FileProc *proc, ClientData clientData));
 typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
@@ -926,6 +928,17 @@ typedef struct Tcl_DString {
 #define TCL_INTERP_DESTROYED	 0x100
 #define TCL_LEAVE_ERR_MSG	 0x200
 #define TCL_TRACE_ARRAY		 0x800
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+/* Required to support old variable/vdelete/vinfo traces */
+#define TCL_TRACE_OLD_STYLE	 0x1000
+#endif
+
+/*
+ * Flag values passed to command-related procedures.
+ */
+
+#define TCL_TRACE_RENAME 0x2000
+#define TCL_TRACE_DELETE 0x4000
 
 /*
  * The TCL_PARSE_PART1 flag is deprecated and has no effect. 

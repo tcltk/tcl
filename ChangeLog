@@ -1,3 +1,34 @@
+2000-08-24  Eric Melski  <ericm@ajubasolutions.com>
+
+	Overall change:  Added support for command rename/delete traces
+	and new trace syntax, from patch from Vince Darley.  Added support
+	for array traces for variables.
+
+	* doc/trace.n: Updated documentation for new syntax; flagged old
+	syntax as deprecated; added documentation for command
+	rename/delete traces and variable array traces.
+
+	* tests/trace.test: Updated tests for new trace syntax; new tests
+	for command rename/delete traces; new tests for array traces.
+
+	* generic/tclVar.c: Support for new trace syntax; support for
+	TCL_TRACE_ARRAY.
+
+	* generic/tclStubInit.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls: Stub functions for command rename/delete traces.
+
+	* generic/tcl.h: 
+	* generic/tclInt.h:
+	* generic/tclBasic.c: Support for command traces.
+
+	* generic/tclCmdMZ.c (TclTraceVariableObjCmd): Patched to support
+	new [trace] syntax:  
+	trace {add|remove|list} {variable|command} name ops command
+	Added support for command traces (rename, delete operations).
+	Added support for TCL_TRACE_ARRAY at Tcl level (array operation
+	for variable traces).
+	
 2000-08-20  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclVar.c: Added check for non-arrays for [array statistics]

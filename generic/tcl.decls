@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.38 2000/07/22 01:53:23 ericm Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.39 2000/08/25 02:04:27 ericm Exp $
 
 library tcl
 
@@ -1405,6 +1405,18 @@ declare 405 generic {
 
 declare 406 generic {
     void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
+}
+declare 407 generic {
+    ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, char *varName, \
+	    int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData)
+}
+declare 408 generic {
+    int Tcl_TraceCommand(Tcl_Interp *interp, char *varName, int flags, \
+		Tcl_CommandTraceProc *proc, ClientData clientData)
+}
+declare 409 generic {
+    void Tcl_UntraceCommand(Tcl_Interp *interp, char *varName, int flags, \
+		Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 
 ##############################################################################
