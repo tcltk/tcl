@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.7 1999/08/31 21:43:48 jenn Exp $
+RCS: @(#) $Id: README,v 1.8 1999/08/31 21:49:27 jenn Exp $
 
 Contents:
 ---------
@@ -89,9 +89,9 @@ You can run the tests in three ways:
 	For example, some of the tcltest variables are:
 		  ::tcltest::match
 		  ::tcltest::skip
-		  ::tcltest::testConfig(nonPortable)
-		  ::tcltest::testConfig(knownBug)
-		  ::tcltest::testConfig(userInteractive)
+		  ::tcltest::testConstraints(nonPortable)
+		  ::tcltest::testConstraints(knownBug)
+		  ::tcltest::testConstraints(userInteractive)
 
 Please see the tcltest man page for more information regarding how to
 write and run tests.
@@ -124,10 +124,9 @@ the constraints mechanism to skip those tests.
    --------   --------
    VERBOSE    ::tcltest::verbose
    TESTS      ::tcltest::match
-   testConfig ::tcltest::testConfig
+   testConfig ::tcltest::testConstraints
 
-2) VERBOSE values are no longer numeric.  Please see the section above
-   on "Test output" for the new usage of the ::tcltest::verbose variable.
+2) VERBOSE values are no longer numeric.  
 
 3) When you run "make test", the working dir for the test suite is now
    the one from which you called "make test", rather than the "tests"
@@ -136,7 +135,7 @@ the constraints mechanism to skip those tests.
    other or with existing files.  All tests must now run independently
    of their working directory.
 
-4) The "all" and "visual" files are now called "all.tcl" ane
+4) The "all" and "visual" files are now called "all.tcl" and
    "visual_bb.test".
 
 5) The "defs" file no longer exists.
@@ -144,5 +143,5 @@ the constraints mechanism to skip those tests.
 6) Instead of creating a doAllTests file in the tests directory, to
    run all nonPortable tests, just use the "-constraints nonPortable"
    command line flag.  If you are running interactively, you can set
-   the ::tcltest::testConfig(nonPortable) variable to 1 (after
-   sourcing the defs.tcl file).
+   the ::tcltest::testConstraints(nonPortable) variable to 1 (after
+   loading the tcltest package).
