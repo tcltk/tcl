@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.13 2001/11/21 17:37:49 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.14 2001/11/21 19:53:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -497,6 +497,7 @@ test trace-8.8 {error returns from traces} {
     for {set y 0} {$y<100} {incr y} {
 	catch {set x junk}
     }
+    unset x
 } {}
 
 # Check to see that variables are expunged before trace
