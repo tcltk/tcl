@@ -4,6 +4,9 @@
 	unchanged, so that the tcltest package can test code that depends
 	on auto-loading.  If a testing application needs $::auto_path pruned,
 	it should do that itself.  [Bug 495726]
+	Improve the processing of the -constraints option to [test] so that
+	constraint lists can have arbitrary whitespace, and non-lists don't
+	blow things up.  [Bug 495977]
 
 2002-03-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
