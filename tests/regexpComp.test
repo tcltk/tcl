@@ -751,9 +751,29 @@ test regexp-21.4 {regexp command compiling tests} {
 } 1
 test regexp-21.5 {regexp command compiling tests} {
     evalInProc {
-	regexp foo dogfod
+	regexp -nocase FOO dogfod
     }
 } 0
+test regexp-21.6 {regexp command compiling tests} {
+    evalInProc {
+	regexp -n foo dogfoOd
+    }
+} 1
+test regexp-21.7 {regexp command compiling tests} {
+    evalInProc {
+	regexp -no -- FoO dogfood
+    }
+} 1
+test regexp-21.8 {regexp command compiling tests} {
+    evalInProc {
+	regexp -- foo dogfod
+    }
+} 0
+test regexp-21.9 {regexp command compiling tests} {
+    evalInProc {
+	list [catch {regexp -- -nocase foo dogfod} msg] $msg
+    }
+} {0 0}
 
 # cleanup
 ::tcltest::cleanupTests
