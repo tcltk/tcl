@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105.2.1 2004/12/09 22:59:26 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105.2.2 2004/12/10 21:17:41 kennykb Exp $
 
 library tcl
 
@@ -1976,6 +1976,15 @@ declare 554 generic {
 }
 declare 555 generic {
     int Tcl_CompareBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
+}
+declare 556 generic {
+    Tcl_BigInt Tcl_CopyBigInt( Tcl_BigInt bigVal )
+}
+declare 557 generic {
+    Tcl_BigInt Tcl_AddBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
+}
+declare 558 generic {
+    Tcl_BigInt Tcl_SubtractBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
 }
 
 ##############################################################################
