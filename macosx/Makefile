@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.13 2004/04/06 22:25:56 dgp Exp $
+# RCS: @(#) $Id: Makefile,v 1.14 2004/04/24 05:59:18 das Exp $
 #
 ########################################################################################################
 
@@ -94,7 +94,7 @@ PRODUCT_LONGVERSION	:= $(shell eval $$(grep '^TCL_PATCH_LEVEL=' ${UNIX_DIR}/conf
 				echo "${PRODUCT_VERSION}$${TCL_PATCH_LEVEL}")
 YEAR                    := $(shell date +%Y)
 
-PRIVATE_HEADERS		:= tclInt.h tclIntDecls.h tclIntPlatDecls.h
+PRIVATE_HEADERS		:= tclInt.h tclIntDecls.h tclIntPlatDecls.h tclPort.h ../unix/tclUnixPort.h
 TARGETS			:= tclsh tcltest
 TCLSH			:= tclsh${PRODUCT_VERSION}
 TCL_EXE			?= ${SYMROOT}/${TCLSH}
