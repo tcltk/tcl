@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.61 2002/07/26 21:41:48 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.62 2002/07/27 01:44:24 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -461,8 +461,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 		}			
 
 		/*
-		 * part1Ptr points to an array element: convert it to 
-		 * tclParsedVarNameType.
+		 * part1Ptr points to an array element; first copy 
+		 * the element name to a new string part2.
 		 */
 
 		part2 = part1 + i + 1;
@@ -474,18 +474,31 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 
-		objPtr = part1Ptr;	    
-		objPtr->typePtr = &tclParsedVarNameType;
-		
-		part1Ptr = Tcl_NewStringObj(part1, len1);
-		Tcl_IncrRefCount(part1Ptr);
-		typePtr = part1Ptr->typePtr;
+		/*
+		 * Free the internal rep of the original part1Ptr, now
+		 * renamed objPtr, and set it to tclParsedVarNameType.
+		 */
+
+		objPtr = part1Ptr;
 		if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
 		    typePtr->freeIntRepProc(objPtr);
 		}
+		objPtr->typePtr = &tclParsedVarNameType;
+
+		/*
+		 * Define a new string object to hold the new part1Ptr, i.e., 
+		 * the array name. Set the internal rep of objPtr, reset
+		 * typePtr and part1 to contain the references to the
+		 * array name.
+		 */
+
+		part1Ptr = Tcl_NewStringObj(part1, len1);
+		Tcl_IncrRefCount(part1Ptr);
 
 		objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) part1Ptr;
 		objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) part2;		
+
+		typePtr = part1Ptr->typePtr;
 		part1 = TclGetString(part1Ptr);
 		break;
 	    }
@@ -543,7 +556,6 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	part1Ptr->internalRep.twoPtrValue.ptr1 = NULL;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = NULL;
     }
-
     
     donePart1:
 #if 0
@@ -559,23 +571,18 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     while (TclIsVarLink(varPtr)) {
 	varPtr = varPtr->value.linkPtr;
     }
-    if (part2 == NULL) {
-	/*
-	 * Scalar variable or array found, return.
-	 */
 
-	return varPtr;
-    } else {
+    if (part2 != NULL) {
 	/*
 	 * Array element sought: look it up.
 	 */
 
 	part1 = TclGetString(part1Ptr);
 	*arrayPtrPtr = varPtr;
-
-	return TclLookupArrayElement(interp, part1, part2, flags, 
-                msg, createPart1, createPart2, varPtr);
+	varPtr = TclLookupArrayElement(interp, part1, part2, 
+                flags, msg, createPart1, createPart2, varPtr);
     }
+    return varPtr;
 }
 
 /*
