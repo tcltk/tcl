@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.19 2001/11/19 17:45:13 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.20 2002/01/17 03:03:12 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -499,7 +499,8 @@ TclpGetUserHome(name, bufferPtr)
 	    Tcl_DString ds;
 	    int nameLen, badDomain;
 	    char *domain;
-	    WCHAR *wName, *wHomeDir, *wDomain;
+	    CONST WCHAR *wName;
+	    WCHAR *wHomeDir, *wDomain;
 	    WCHAR buf[MAX_PATH];
 
 	    badDomain = 0;

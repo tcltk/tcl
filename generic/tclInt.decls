@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.41 2002/01/15 21:19:07 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.42 2002/01/17 03:03:12 dgp Exp $
 
 library tcl
 
@@ -604,7 +604,7 @@ declare 153 generic {
 #}
 
 declare 156 generic {
-    void TclRegError (Tcl_Interp *interp, char *msg, \
+    void TclRegError (Tcl_Interp *interp, CONST char *msg, \
 	    int status)
 }
 declare 157 generic {
