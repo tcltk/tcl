@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.55 2004/06/17 21:43:56 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.56 2004/06/17 22:13:00 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -153,6 +153,7 @@ static void
 SetDefaultLibraryDir(directory)
     Tcl_Obj *directory;
 {
+    int numBytes = 0;
     CONST char *bytes;
     Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
 	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
@@ -170,15 +171,20 @@ SetDefaultLibraryDir(directory)
 
     /* No Mutex protection, as the only caller is already in TclpInitLock */
 
+    bytes = Tcl_GetStringFromObj(directory, &numBytes);
     if (NULL == defaultLibraryDir) {
 	/* First call from any thread; set up exit handler */
 	Tcl_CreateExitHandler(FreeDefaultLibraryDir, NULL);
     } else {
-	Tcl_Panic("Double initialization of DefaultLibraryDir?!");
+	if ((defaultLibraryDirLength != numBytes) 
+		|| (0 != strcmp(defaultLibraryDir, bytes, numBytes))) {
+	    Tcl_Panic("Attempt to overwrite defaultLibraryDir");
+	}
+	return;
     }
-    bytes = Tcl_GetStringFromObj(directory, &defaultLibraryDirLength);
-    defaultLibraryDir = ckalloc((unsigned int) defaultLibraryDirLength+1);
-    memcpy(defaultLibraryDir, bytes, (unsigned int) defaultLibraryDirLength+1);
+    defaultLibraryDirLength = numBytes;
+    defaultLibraryDir = ckalloc((unsigned int) numBytes + 1);
+    memcpy(defaultLibraryDir, bytes, (unsigned int) numBytes + 1);
 }
 
 /*
@@ -212,7 +218,10 @@ GetDefaultLibraryDir()
     if (NULL == defaultLibraryDir) {
 	/*
 	 * Careful here.  This may be bogus, calling TclpInitLibraryPath
-	 * when not in TclpInitLock.  OTOH, this branch shouldn't happen.
+	 * when not in TclpInitLock.  
+	 *
+	 * This path is taken by wish because it calls Tcl_CreateInterp
+	 * before it calls Tcl_FindExecutable.
 	 */
 	TclpInitLibraryPath(NULL);
 	if (NULL != *savedDirectoryPtr) {
