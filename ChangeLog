@@ -1,3 +1,11 @@
+2001-09-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tcl.decls (479 generic): 
+	* generic/tclIO.c (Tcl_Seek,Tcl_Tell,Tcl_OutputBuffered): Added
+	public function to return the size of the output buffer and
+	reworked other channel functions to use this shared functionality
+	and that of Tcl_InputBuffered() too. [TIP#49, Rolf Schroedter]
+
 2001-09-05  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclPlatDecls.h:  Another small trim finalizing Borland
