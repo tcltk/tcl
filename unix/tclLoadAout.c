@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.6 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.7 2001/09/28 01:21:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -84,7 +84,7 @@ static char * SymbolTableFile = NULL;
  * Type of the dictionary function that begins each load module.
  */
 
-typedef Tcl_PackageInitProc * (* DictFn) _ANSI_ARGS_ ((char * symbol));
+typedef Tcl_PackageInitProc * (* DictFn) _ANSI_ARGS_ ((CONST char * symbol));
 
 /*
  * Prototypes for procedures referenced only in this file:
@@ -141,7 +141,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    char *sym1, *sym2;		/* Names of two procedures to look up in
+    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
 				 * the file's symbol table. */
     Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
 				/* Where to return the addresses corresponding

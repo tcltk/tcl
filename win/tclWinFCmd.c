@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.12 2001/09/04 18:06:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.13 2001/09/28 01:21:53 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -832,13 +832,13 @@ DoRemoveJustDirectory(
 	     */
 
 	    if (TclWinGetPlatformId() != VER_PLATFORM_WIN32_NT) {
-		char *path, *find;
+		CONST char *path, *find;
 		HANDLE handle;
 		WIN32_FIND_DATAA data;
 		Tcl_DString buffer;
 		int len;
 
-		path = (char *) nativePath;
+		path = (CONST char *) nativePath;
 
 		Tcl_DStringInit(&buffer);
 		len = strlen(path);

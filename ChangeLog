@@ -1,5 +1,20 @@
 2001-09-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/FileSystem.3 (Tcl_FSLoadFile):
+	* generic/tcl.decls (Tcl_FSLoadFile):
+	* generic/tcl{Int}.h (Tcl_FSLoadFileProc,TclpLoadFile):
+	* generic/tclIOUtil.c (Tcl_FSLoadFile):
+	* generic/tclLoadNone.c (TclpLoadFile):
+	* generic/tclTest.c (TestReportLoadFile):
+	* library/ldAout.tcl:
+	* mac/tclMacLoad.c (TclpLoadFile):
+	* unix/tclLoad*.c (TclpLoadFile):
+	* win/tclWinLoad.c (TclpLoadFile):
+	* win/tclWinFCmd.c (DoRemoveJustDirectory):  More CONST poisoning
+	fixes from the 2001-09-24 TIP 27 changes.  CONST-ified
+	Tcl_FSLoadFile and TclpLoadFile.  Report and patch from Kevin
+	Kenny. [Bug 465833]
+
 	* generic/tclIO.c (ChannelTimerProc):  Added Tcl_Preserve()
 	and Tcl_Release() to fix segfault introduced by the 2001-09-26
 	changes.  [Bug 465494]
