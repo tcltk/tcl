@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.29 2003/11/14 20:44:45 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.30 2003/11/15 03:19:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,7 @@ parseWord:
 	     */
 
 	    expPtr = &parsePtr->tokenPtr[expIdx];
-	    if ( (expPfxLen == expPtr->size)
+	    if ( (expPfxLen == (size_t) expPtr->size)
 					/* Same length as prefix */
 		    && (0 == expandWord)
 		    			/* Haven't seen prefix already */
