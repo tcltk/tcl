@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.177 2005/04/02 02:08:32 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.178 2005/04/04 10:12:51 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2418,8 +2418,8 @@ TclExecuteByteCode(interp, codePtr)
 		     
 		     i += objPtr->internalRep.longValue;
 		     if (Tcl_IsShared(objPtr)) {
+			 objPtr->refCount--; /* we know it is shared */
 			 TclNewLongObj(objResultPtr, i);
-			 TclDecrRefCount(objPtr);
 			 Tcl_IncrRefCount(objResultPtr);
 			 varPtr->value.objPtr = objResultPtr;
 		     } else {
@@ -2435,8 +2435,8 @@ TclExecuteByteCode(interp, codePtr)
 			
 		     w += objPtr->internalRep.wideValue;
 		     if (Tcl_IsShared(objPtr)) {
+			 objPtr->refCount--; /* we know it is shared */
 			 TclNewWideIntObj(objResultPtr, w);
-			 TclDecrRefCount(objPtr);
 			 Tcl_IncrRefCount(objResultPtr);
 			 varPtr->value.objPtr = objResultPtr;
 		     } else {
@@ -3316,13 +3316,8 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
-	if (Tcl_IsShared(value2Ptr)) {
-	    objResultPtr = eePtr->constants[match];
-	    NEXT_INST_F(2, 2, 1);
-	} else {	/* reuse the valuePtr object */
-	    TclSetIntObj(value2Ptr, match);
-	    NEXT_INST_F(2, 1, 0);
-	}
+	objResultPtr = eePtr->constants[match];
+	NEXT_INST_F(2, 2, 1);
     }
 
     case INST_EQ:
@@ -4321,68 +4316,58 @@ TclExecuteByteCode(interp, codePtr)
 	    tPtr = valuePtr->typePtr;
 	}
 
-	if (Tcl_IsShared(valuePtr)) {
-	    /*
-	     * Create a new object.
-	     */
+	if (*pc == INST_UMINUS) {
+	    if (Tcl_IsShared(valuePtr)) {
+		/*
+		 * Create a new object.
+		 */
+		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
+		    i = valuePtr->internalRep.longValue;
+		    TclNewLongObj(objResultPtr, -i)
+			TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
+		} else if (tPtr == &tclWideIntType) {
+		    TclGetWide(w,valuePtr);
+		    TclNewWideIntObj(objResultPtr, -w);		
+		    TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
+		} else {
+		    d = valuePtr->internalRep.doubleValue;
+		    TclNewDoubleObj(objResultPtr, -d);
+		    TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
+		}
+		NEXT_INST_F(1, 1, 1);
+	    } else {
+		/*
+		 * valuePtr is unshared. Modify it directly.
+		 */
+		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
+		    i = valuePtr->internalRep.longValue;
+		    TclSetLongObj(valuePtr, -i);
+		    TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
+		} else if (tPtr == &tclWideIntType) {
+		    TclGetWide(w,valuePtr);
+		    TclSetWideIntObj(valuePtr, -w);
+		    TRACE_WITH_OBJ((LLD" => ", w), valuePtr);
+		} else {
+		    d = valuePtr->internalRep.doubleValue;
+		    TclSetDoubleObj(valuePtr, -d);
+		    TRACE_WITH_OBJ(("%.6g => ", d), valuePtr);
+		}
+		NEXT_INST_F(1, 0, 0);
+	    }
+	} else { /* *pc == INST_UMINUS */
 	    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
-		i = valuePtr->internalRep.longValue;
-		TclNewLongObj(objResultPtr, 
-		    (*pc == INST_UMINUS)? -i : !i);
+		i = !valuePtr->internalRep.longValue;
 		TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 	    } else if (tPtr == &tclWideIntType) {
 		TclGetWide(w,valuePtr);
-		if (*pc == INST_UMINUS) {
-		    TclNewWideIntObj(objResultPtr, -w);
-		} else {
-		    TclNewLongObj(objResultPtr, (w == W0));
-		}
+		i = (w == W0);
 		TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 	    } else {
-		d = valuePtr->internalRep.doubleValue;
-		if (*pc == INST_UMINUS) {
-		    TclNewDoubleObj(objResultPtr, -d);
-		} else {
-		    /*
-		     * Should be able to use "!d", but apparently
-		     * some compilers can't handle it.
-		     */
-		    TclNewLongObj(objResultPtr, ((d==0.0)? 1 : 0));
-		}
+		i = (valuePtr->internalRep.doubleValue == 0.0)
 		TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
 	    }
+	    objResultPtr = eePtr->constants[i];
 	    NEXT_INST_F(1, 1, 1);
-	} else {
-	    /*
-	     * valuePtr is unshared. Modify it directly.
-	     */
-	    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
-		i = valuePtr->internalRep.longValue;
-		TclSetLongObj(valuePtr,
-	                (*pc == INST_UMINUS)? -i : !i);
-		TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
-	    } else if (tPtr == &tclWideIntType) {
-		TclGetWide(w,valuePtr);
-		if (*pc == INST_UMINUS) {
-		    TclSetWideIntObj(valuePtr, -w);
-		} else {
-		    TclSetLongObj(valuePtr, w == W0);
-		}
-		TRACE_WITH_OBJ((LLD" => ", w), valuePtr);
-	    } else {
-		d = valuePtr->internalRep.doubleValue;
-		if (*pc == INST_UMINUS) {
-		    TclSetDoubleObj(valuePtr, -d);
-		} else {
-		    /*
-		     * Should be able to use "!d", but apparently
-		     * some compilers can't handle it.
-		     */
-		    TclSetLongObj(valuePtr, (d==0.0)? 1 : 0);
-		}
-		TRACE_WITH_OBJ(("%.6g => ", d), valuePtr);
-	    }
-	    NEXT_INST_F(1, 0, 0);
 	}
     }
 
