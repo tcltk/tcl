@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.8 1998/07/20 16:44:02 welch Exp $ 
+ * SCCS: %Z% $Id: tclProc.c,v 1.9 1998/07/21 15:58:44 surles Exp $ 
  */
 
 #include "tclInt.h"
@@ -44,14 +44,12 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 {
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
-    char *fullName, *procName, *args, *bytes, *p;
+    char *fullName, *procName;
     char **argArray = NULL;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
-    Tcl_Obj *defPtr, *bodyPtr;
     Tcl_Command cmd;
     Tcl_DString ds;
-    int numArgs, length, result, i;
-    register CompiledLocal *localPtr;
+    int result;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
@@ -167,7 +165,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
     int i, length, result, numArgs;
     char *args, *bytes, *p;
     register CompiledLocal *localPtr;
-    Tcl_Obj *defPtr, *resultPtr;
+    Tcl_Obj *defPtr;
 
     /*
      * If the procedure's body object is shared because its string value is
