@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.9 1999/07/22 02:15:45 redman Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.10 1999/07/23 23:40:29 redman Exp $
  */
 
 #include "tclInt.h"
@@ -607,8 +607,7 @@ ParseTokens(src, mask, parsePtr)
 		if (nested.tokenPtr != nested.staticTokens) {
 		    ckfree((char *) nested.tokenPtr);
 		}
-		if ((*nested.term != 0) && (src[-1] == ']')
-			&& !nested.incomplete) {
+		if ((src[-1] == ']') && !nested.incomplete) {
 		    break;
 		}
 		if (src == parsePtr->end) {

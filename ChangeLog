@@ -1,3 +1,10 @@
+1999-07-23    <redman@scriptics.com>
+
+	* tests/info.test:
+	* generic/tclParse.c:  Removed patch for info command, breaks test
+	cases on Unix.  Patch was bad and needs to be redone
+	properly. [Bug: 2382]
+
 1999-07-22    <redman@scriptics.com>
 
 	* Changed version to 8.2b2.
