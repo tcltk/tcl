@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.164 2004/06/18 15:12:39 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.165 2004/06/18 20:38:01 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1641,6 +1641,7 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 
 extern char *			tclExecutableName;
 extern char *			tclNativeExecutableName;
+extern int			tclFindExecutableSearchDone;
 extern char *			tclDefaultEncodingDir;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.39 2004/04/06 22:25:57 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.40 2004/06/18 20:38:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -54,9 +54,10 @@ TclpFindExecutable(argv0)
     if (argv0 == NULL) {
 	return NULL;
     }
-    if (tclNativeExecutableName != NULL) {
+    if (tclFindExecutableSearchDone) {
 	return tclNativeExecutableName;
     }
+    tclFindExecutableSearchDone = 1;
 
     Tcl_DStringInit(&buffer);
 
