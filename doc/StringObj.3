@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.9 2001/08/31 17:59:32 hobbs Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.10 2002/01/15 18:34:04 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -32,6 +32,9 @@ char *
 .sp
 char *
 \fBTcl_GetString\fR(\fIobjPtr\fR)
+.sp
+Tcl_UniChar *
+\fBTcl_GetUnicodeFromObj\fR(\fIobjPtr, lengthPtr\fR)
 .sp
 Tcl_UniChar *
 \fBTcl_GetUnicode\fR(\fIobjPtr\fR)
@@ -156,7 +159,15 @@ caller.  The procedure \fBTcl_GetString\fR is used in the common case
 where the caller does not need the length of the string
 representation.
 .PP
-\fBTcl_GetUnicode\fR returns an object's value as a Unicode string.
+\fBTcl_GetUnicodeFromObj\fR and \fBTcl_GetUnicode\fR return an object's
+value as a Unicode string.  This is given by the returned pointer and
+(for \fBTcl_GetUnicodeFromObj\fR) length, which is stored in
+\fIlengthPtr\fR if it is non-NULL.  The storage referenced by the returned
+byte pointer is owned by the object manager and should not be modified by
+the caller.  The procedure \fBTcl_GetUnicode\fR is used in the common case
+where the caller does not need the length of the unicode string
+representation.
+.PP
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
 object's Unicode representation.
 .PP
