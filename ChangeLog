@@ -1,3 +1,8 @@
+2004-05-11  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/glob.n: documented behaviour of symbolic links with 
+	'glob -types d' (Bug 951489)
+
 2004-05-11  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/scan.n: Updated the examples to be clearer about their
