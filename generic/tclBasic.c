@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.8 2003/10/08 23:18:17 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.9 2004/07/28 16:28:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4027,12 +4027,14 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 
 		/*
 		 * If an error was created here, record information about 
-		 * what was being executed when the error occurred.
+		 * what was being executed when the error occurred. Remove
+		 * the extra \n added by tclMain.c in the command sent to
+		 * Tcl_LogCommandInfo [Bug 833150].
 		 */
 
 		if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
 		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+		    Tcl_LogCommandInfo(interp, script, script, --numSrcBytes);
 		    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 		}
 	    }
