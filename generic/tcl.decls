@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.100 2003/09/05 21:52:11 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.101 2003/09/29 21:38:49 dkf Exp $
 
 library tcl
 
@@ -1854,6 +1854,12 @@ declare 518 generic {
     int Tcl_FSEvalFileEx(Tcl_Interp *interp, Tcl_Obj *fileName,
             CONST char *encodingName)
 }
+
+# New export due to TIP#121
+declare 519 generic {
+    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
