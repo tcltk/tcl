@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.172 2005/03/14 23:14:08 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.173 2005/03/31 19:10:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2463,92 +2463,80 @@ TclExecuteByteCode(interp, codePtr)
        }
 
     {
-	int trueJmp, falseJmp;
-	
-	
+	int jmpOffset[2];
+	int b;
+	Tcl_Obj *valuePtr;
+		
 	case INST_JUMP_FALSE4:
-	    trueJmp = 5;              
-	    falseJmp = TclGetInt4AtPtr(pc+1);
-	    goto doJumpTrue;
+	    jmpOffset[0] = TclGetInt4AtPtr(pc+1); /* FALSE offset */
+	    jmpOffset[1] = 5;                     /* TRUE  offset*/
+	    goto doCondJump;
 	    
 	case INST_JUMP_TRUE4:
-	    trueJmp = TclGetInt4AtPtr(pc+1);
-	    falseJmp = 5;
-	    goto doJumpTrue;
+	    jmpOffset[0] = 5; 
+	    jmpOffset[1] = TclGetInt4AtPtr(pc+1);
+	    goto doCondJump;
 	    
 	case INST_JUMP_FALSE1:
-	    trueJmp = 2;
-	    falseJmp = TclGetInt1AtPtr(pc+1);
-	    goto doJumpTrue;
+	    jmpOffset[0] = TclGetInt1AtPtr(pc+1);
+	    jmpOffset[1] = 2;
+	    goto doCondJump;
 
 	case INST_JUMP_TRUE1:
-	    trueJmp = TclGetInt1AtPtr(pc+1);
-	    falseJmp = 2;
+	    jmpOffset[0] = 2; 
+	    jmpOffset[1] = TclGetInt1AtPtr(pc+1);
 	    
-	doJumpTrue:
-	    {
-		int b;
-		Tcl_Obj *valuePtr;
+	doCondJump:		
+	    valuePtr = *tosPtr;
+	    
+	    if ((valuePtr->typePtr == &tclIntType)
+		    || (valuePtr->typePtr == &tclBooleanType)) {
+		b = (valuePtr->internalRep.longValue != 0);
+	    } else if (valuePtr->typePtr == &tclDoubleType) {
+		b = (valuePtr->internalRep.doubleValue != 0.0);
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		Tcl_WideInt w;
 		
-		valuePtr = *tosPtr;
-
+		TclGetWide(w,valuePtr);
+		b = (w != W0);
+	    } else {
 		/*
-		 * The following will be partially resolved at compile 
-		 * time and optimised away.
-		 */
-		if (((sizeof(long) == sizeof(int)) &&
-			    (valuePtr->typePtr == &tclIntType))
-			|| (valuePtr->typePtr == &tclBooleanType)) {
-		    b = (int) valuePtr->internalRep.longValue;
-		} else if ((sizeof(long) != sizeof(int)) &&
-		        (valuePtr->typePtr == &tclIntType)) {
-		    b = (valuePtr->internalRep.longValue != 0);
-		} else if (valuePtr->typePtr == &tclDoubleType) {
-		    b = (valuePtr->internalRep.doubleValue != 0.0);
-		} else if (valuePtr->typePtr == &tclWideIntType) {
-		    Tcl_WideInt w;
-
-		    TclGetWide(w,valuePtr);
-		    b = (w != W0);
-		} else {
-		     /*
-		      * Taking b's address impedes it being a register
-		      * variable (in gcc at least), so we avoid doing it.
-		    
-		      */
-		    int b1;
-		    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b1);
-		    if (result != TCL_OK) {
-			if ((*pc == INST_JUMP_FALSE1) || (*pc == INST_JUMP_FALSE4)) {
-			    trueJmp = falseJmp;
-			}
-			TRACE_WITH_OBJ(("%d => ERROR: ", trueJmp), Tcl_GetObjResult(interp));
-			goto checkForCatch;
+		 * Taking b's address impedes it being a register
+		 * variable (in gcc at least), so we avoid doing it.
+		 
+		*/
+		int b1;
+		result = Tcl_GetBooleanFromObj(interp, valuePtr, &b1);
+		if (result != TCL_OK) {
+		    if ((*pc == INST_JUMP_FALSE1) || (*pc == INST_JUMP_FALSE4)) {
+			jmpOffset[1] = jmpOffset[0];
 		    }
-		    b = b1;
+		    TRACE_WITH_OBJ(("%d => ERROR: ", jmpOffset[1]), Tcl_GetObjResult(interp));
+		    goto checkForCatch;
 		}
-#ifndef TCL_COMPILE_DEBUG
-		NEXT_INST_F((b? trueJmp : falseJmp), 1, 0);
-#else
-		if (b) {
-		    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
-			TRACE(("%d => %.20s true, new pc %u\n", trueJmp, O2S(valuePtr),
-				      (unsigned int)(pc+trueJmp - codePtr->codeStart)));
-		    } else {
-			TRACE(("%d => %.20s true\n", falseJmp, O2S(valuePtr)));
-		    }
-		    NEXT_INST_F(trueJmp, 1, 0);
-		} else {
-		    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
-			TRACE(("%d => %.20s false\n", falseJmp, O2S(valuePtr)));
-		    } else {
-			TRACE(("%d => %.20s false, new pc %u\n", falseJmp, O2S(valuePtr),
-				      (unsigned int)(pc + falseJmp - codePtr->codeStart)));
-		    }
-		    NEXT_INST_F(falseJmp, 1, 0);
-		}
-#endif
+		b = b1;
 	    }
+#ifndef TCL_COMPILE_DEBUG
+	    NEXT_INST_F(jmpOffset[b], 1, 0);
+#else
+	    if (b) {
+		if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
+		    TRACE(("%d => %.20s true, new pc %u\n", jmpOffset[1], O2S(valuePtr),
+				  (unsigned int)(pc+jmpOffset[1] - codePtr->codeStart)));
+		} else {
+		    TRACE(("%d => %.20s true\n", jmpOffset[0], O2S(valuePtr)));
+		}
+		NEXT_INST_F(jmpOffset[1], 1, 0);
+	    } else {
+		if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
+		    TRACE(("%d => %.20s false\n", jmpOffset[0], O2S(valuePtr)));
+		} else {
+		    TRACE(("%d => %.20s false, new pc %u\n", jmpOffset[0], O2S(valuePtr),
+				  (unsigned int)(pc + jmpOffset[1] - codePtr->codeStart)));
+		}
+		NEXT_INST_F(jmpOffset[0], 1, 0);
+	    }
+#endif
     }
 	    	    
     /*
