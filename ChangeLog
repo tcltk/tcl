@@ -1,3 +1,9 @@
+2003-06-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclTrace.c: New file, factoring out of virtually all the
+	various trace-related things from tclBasic.c and tclCmdMZ.c with
+	the goal of making this a separate maintenance area.
+
 2003-06-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
