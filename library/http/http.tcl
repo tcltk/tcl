@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.48 2004/05/25 22:56:33 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.48.2.1 2005/01/20 14:53:40 kennykb Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -22,10 +22,10 @@
 # 2.4	Added -binary option to http::geturl and charset element
 #	to the state array.
 
-package require Tcl 8.2
+package require Tcl 8.4
 # keep this in sync with pkgIndex.tcl
 # and with the install directories in Makefiles
-package provide http 2.5.0
+package provide http 2.5.1
 
 namespace eval http {
     variable http
@@ -39,16 +39,17 @@ namespace eval http {
     set http(-useragent) "Tcl http client package [package provide http]"
 
     proc init {} {
-	variable formMap
-	variable alphanumeric a-zA-Z0-9
-	for {set i 0} {$i <= 256} {incr i} {
+	# Set up the map for quoting chars
+	# The spec says: "non-alphanumeric characters are replaced by '%HH'"
+	for {set i 0} {$i < 256} {incr i} {
 	    set c [format %c $i]
-	    if {![string match \[$alphanumeric\] $c]} {
-		set formMap($c) %[format %.2x $i]
+	    if {![string match {[a-zA-Z0-9]} $c]} {
+		set map($c) %[format %.2x $i]
 	    }
 	}
 	# These are handled specially
-	array set formMap { " " + \n %0d%0a }
+	array set map { " " + \n %0d%0a }
+	variable formMap [array get map]
     }
     init
 
@@ -368,7 +369,7 @@ proc http::geturl { url args } {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
 
-	if {[string equal $state(status) "error"]} {
+	if {$state(status) eq "error"} {
 	    # something went wrong while trying to establish the connection
 	    # Clean up after events and such, but DON'T call the command
 	    # callback (if available) because we're going to throw an 
@@ -376,7 +377,7 @@ proc http::geturl { url args } {
 	    set err [lindex $state(error) 0]
 	    cleanup $token
 	    return -code error $err
-	} elseif {![string equal $state(status) "connect"]} {
+	} elseif {$state(status) ne "connect"} {
 	    # Likely to be connection timeout
 	    return $token
 	}
@@ -426,7 +427,7 @@ proc http::geturl { url args } {
 	foreach {key value} $state(-headers) {
 	    set value [string map [list \n "" \r ""] $value]
 	    set key [string trim $key]
-	    if {[string equal $key "Content-Length"]} {
+	    if {$key eq "Content-Length"} {
 		set contDone 1
 		set state(querylength) $value
 	    }
@@ -482,7 +483,7 @@ proc http::geturl { url args } {
 	    # calls it synchronously, we just do a wait here.
 
 	    wait $token
-	    if {[string equal $state(status) "error"]} {
+	    if {$state(status) eq "error"} {
 		# Something went wrong, so throw the exception, and the
 		# enclosing catch will do cleanup.
 		return -code error [lindex $state(error) 0]
@@ -498,7 +499,7 @@ proc http::geturl { url args } {
 
 	# if state(status) is error, it means someone's already called Finish
 	# to do the above-described clean up.
-	if {[string equal $state(status) "error"]} {
+	if {$state(status) eq "error"} {
 	    Finish $token $err 1
 	}
 	cleanup $token
@@ -678,7 +679,7 @@ proc http::Event {token} {
 	Eof $token
 	return
     }
-    if {[string equal $state(state) "header"]} {
+    if {$state(state) eq "header"} {
 	if {[catch {gets $s line} n]} {
 	    Finish $token $n
 	} elseif {$n == 0} {
@@ -816,7 +817,7 @@ proc http::CopyDone {token count {error {}}} {
 proc http::Eof {token} {
     variable $token
     upvar 0 $token state
-    if {[string equal $state(state) "header"]} {
+    if {$state(state) eq "header"} {
 	# Premature eof
 	set state(status) eof
     } else {
@@ -866,7 +867,7 @@ proc http::formatQuery {args} {
     set sep ""
     foreach i $args {
 	append result $sep [mapReply $i]
-	if {[string equal $sep "="]} {
+	if {$sep eq "="} {
 	    set sep &
 	} else {
 	    set sep =
@@ -888,20 +889,23 @@ proc http::formatQuery {args} {
 proc http::mapReply {string} {
     variable http
     variable formMap
-    variable alphanumeric
 
     # The spec says: "non-alphanumeric characters are replaced by '%HH'"
-    # 1 leave alphanumerics characters alone
-    # 2 Convert every other character to an array lookup
-    # 3 Escape constructs that are "special" to the tcl parser
-    # 4 "subst" the result, doing all the array substitutions
+    # Use a pre-computed map and [string map] to do the conversion
+    # (much faster than [regsub]/[subst]). [Bug 1020491]
 
     if {$http(-urlencoding) ne ""} {
 	set string [encoding convertto $http(-urlencoding) $string]
+	return [string map $formMap $string]
     }
-    regsub -all \[^$alphanumeric\] $string {$formMap(&)} string
-    regsub -all {[][{})\\]\)} $string {\\&} string
-    return [subst -nocommand $string]
+    set converted [string map $formMap $string]
+    if {[string match "*\[\u0100-\uffff\]*" $converted]} {
+	regexp {[\u0100-\uffff]} $converted badChar
+	# Return this error message for maximum compatability... :^/
+	return -code error \
+	    "can't read \"formMap($badChar)\": no such element in array"
+    }
+    return $converted
 }
 
 # http::ProxyRequired --

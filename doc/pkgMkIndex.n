@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.14 2003/02/25 23:58:09 dgp Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.14.6.1 2005/01/20 14:53:39 kennykb Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 8.3 Tcl "Tcl Built-In Commands"
@@ -109,7 +109,8 @@ upon \fBpackage require\fR.  This is the default.
 \fB\-lazy\fR
 The generated index will manage to delay loading the package until the
 use of one of the commands provided by the package, instead of loading
-it immediately upon \fBpackage require\fR.
+it immediately upon \fBpackage require\fR.  This is not compatible with
+the use of \fIauto_reset\fR, and therefore its use is discouraged.
 .TP 15
 \fB\-load \fIpkgPat\fR
 The index process will pre-load any packages that exist in the

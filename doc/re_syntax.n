@@ -1,4 +1,3 @@
-'\" -*- nroff -*-
 '\"
 '\" Copyright (c) 1998 Sun Microsystems, Inc.
 '\" Copyright (c) 1999 Scriptics Corporation
@@ -6,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.5 2004/10/31 16:01:54 dkf Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.5.2.1 2005/01/20 14:53:39 kennykb Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -654,3 +653,7 @@ RegExp(3), regexp(n), regsub(n), lsearch(n), switch(n), text(n)
 
 .SH KEYWORDS
 match, regular expression, string
+
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.44 2004/11/11 01:14:29 das Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.44.2.1 2005/01/20 14:53:40 kennykb Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1635,7 +1635,7 @@ test fCmd-18.9 {TclFileRenameCmd: rename dir on top of a non-empty dir w/o -forc
     set result
 } {1}
 test fCmd-18.10 {TclFileRenameCmd: rename dir on top of a non-empty dir w/ -force} \
-	{notRoot} {
+	{notRoot notNetworkFilesystem} {
     catch {file delete -force -- tfa tfad}
     file mkdir tfa tfad/tfa/file
     set r1 [catch {file rename -force tfa tfad}]

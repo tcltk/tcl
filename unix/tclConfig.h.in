@@ -63,9 +63,6 @@
 /* Does putenv() copy strings or incorporate them by reference? */
 #undef HAVE_PUTENV_THAT_COPIES
 
-/* Define to 1 if you have the `readdir_r' function. */
-#undef HAVE_READDIR_R
-
 /* Are characters signed? */
 #undef HAVE_SIGNED_CHAR
 
