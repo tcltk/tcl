@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.13 2003/10/21 00:23:34 kennykb Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.14 2003/10/21 05:10:17 dgp Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {
@@ -373,13 +373,14 @@ namespace eval ::msgcat::test {
     # Tests msgcat-5.*: [mcload]
 
     variable locales {{} foo foo_BAR foo_BAR_baz}
-    makeDirectory msgdir
+    set msgdir [makeDirectory msgdir]
     foreach loc $locales {
 	if { $loc eq {} } {
-	    set loc ROOT
-        }
-	makeFile "::msgcat::mcset $loc abc abc-$loc" \
-		[string tolower [file join msgdir $loc.msg]]
+	    set msg ROOT
+        } else {
+	    set msg [string tolower $loc]
+	}
+	makeFile [list ::msgcat::mcset $loc abc abc-$loc] $msg.msg msgdir
     }
     variable count 1
     foreach loc {foo foo_BAR foo_BAR_baz} {
@@ -389,7 +390,7 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    mcload [file join [temporaryDirectory] msgdir]
+	    mcload $msgdir
 	} -result [expr { $count+1 }]
 	incr count
     }
@@ -402,7 +403,7 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    mcload [file join [temporaryDirectory] msgdir]
+	    mcload $msgdir
 	} -result 3
 
 	test msgcat-5.5 {mcload} -setup {
@@ -411,12 +412,13 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    mcload [file join [temporaryDirectory] msgdir]
+	    mcload $msgdir
 	} -result 1
 
 	test msgcat-5.6 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	} -body {
@@ -426,6 +428,7 @@ namespace eval ::msgcat::test {
 	test msgcat-5.7 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo_BAR
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	} -body {
@@ -435,6 +438,7 @@ namespace eval ::msgcat::test {
 	test msgcat-5.8 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo_BAR_baz
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	} -body {
@@ -442,23 +446,38 @@ namespace eval ::msgcat::test {
 	} -result abc-foo_BAR_baz
 
 	test msgcat-5.9 {mcload} -setup {
+	    variable locale [mclocale]
+	    mclocale no_FI_notexist
+	    mcload $msgdir
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    mc abc
+	} -result abc-
+
+	test msgcat-5.10 {mcload} -setup {
 	    rename ::msgcat::mcunknown SavedMcunknown
 	    proc ::msgcat::mcunknown {dom s} {
 		return unknown:$dom:$s
 	    }
 	    variable locale [mclocale]
 	    mclocale no_FI_notexist
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	    rename ::msgcat::mcunknown {}
 	    rename SavedMcunknown ::msgcat::mcunknown
 	} -body {
-	    mc abc
-	} -result unknown:no_fi_notexist:abc
-
+	    mc def
+	} -result unknown:no_fi_notexist:def
 
     foreach loc $locales {
-	removeFile [string tolower [file join msgdir $loc.msg]]
+	if { $loc eq {} } {
+	    set msg ROOT
+        } else {
+	    set msg [string tolower $loc]
+	}
+	removeFile $msg.msg msgdir
     }
     removeDirectory msgdir
 
