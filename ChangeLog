@@ -1,3 +1,14 @@
+2004-11-26  Andreas Kupries <andreask@activestate.com>
+
+	* win/tclWinDde.c (ExecuteRemoteObject): Removed bogus semicolon
+	  found at the end of the header for the function definition,
+	  terminating it early and preventing a compile. This is likely a
+	  fix for '2004-11-25 Donal'. I have to conclude that it is also
+	  unknown if the other changes to this file actually pass the
+	  testsuite. Running testsuite ... They don't. winDde-6.1
+	  fails. This is only a message discrepance, i.e. not too
+	  bad. Leaving resolution of that to Pat and Donal.
+
 2004-11-26  Don Porter  <dgp@users.sourceforge.net>
 
         * library/auto.tcl (tcl_findLibrary):   Made sure the uniquifying
