@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.40 2004/01/13 23:15:03 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.41 2004/01/18 16:19:04 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -522,15 +522,29 @@ typedef struct ByteCode {
 #define INST_LSET_LIST			96
 #define INST_LSET_FLAT                  97
 
+/* TIP#90 - 'return' command. */
+
 #define INST_RETURN			98
 
-#define INST_EXPON			99 /* TIP#123 - exponentiation */
+/* TIP#123 - exponentiation operator. */
+
+#define INST_EXPON			99
+
+/* TIP #157 - {expand}... language syntax support. */
 
 #define INST_LIST_VERIFY		100
 #define INST_INVOKE_EXP			101
 
+/*
+ * TIP #57 - 'lassign' command.  Code generation requires immediate
+ *	     LINDEX and LRANGE operators.
+ */
+
+#define INST_LIST_INDEX_IMM		102
+#define INST_LIST_RANGE_IMM		103
+
 /* The last opcode */
-#define LAST_INST_OPCODE        	101
+#define LAST_INST_OPCODE        	103
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
@@ -549,7 +563,9 @@ typedef enum InstOperandType {
     OPERAND_INT4,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
     OPERAND_UINT4,		/* Four byte unsigned integer. */
-    OPERAND_ULIST1		/* List of one byte unsigned integers. */
+    OPERAND_ULIST1,		/* List of one byte unsigned integers. */
+    OPERAND_IDX4		/* Four byte signed index (actually an
+				 * integer, but displayed differently.) */
 } InstOperandType;
 
 typedef struct InstructionDesc {

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.53 2004/01/13 23:15:02 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.54 2004/01/18 16:19:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1738,6 +1738,126 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 
     done:
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLassignCmd --
+ *
+ *	Procedure called to compile the "lassign" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if the
+ *	compilation was successful.  If the command cannot be byte-compiled,
+ *	TCL_OUT_LINE_COMPILE is returned.  If an error occurs then the
+ *	interpreter's result contains an error message, and TCL_ERROR is
+ *	returned.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lassign" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLassignCmd(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int simpleVarName, isScalar, localIndex, numWords, code, idx;
+
+    numWords = parsePtr->numWords;
+    /*
+     * Check for command syntax error, but we'll punt that to runtime
+     */
+    if (numWords < 3) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * Generate code to push list being taken apart by [lassign].
+     */
+    tokenPtr = parsePtr->tokenPtr + (parsePtr->tokenPtr->numComponents + 1);
+    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, 
+		tokenPtr[1].start, tokenPtr[1].size), envPtr);
+    } else {
+	code = TclCompileTokens(interp, tokenPtr+1,
+		tokenPtr->numComponents, envPtr);
+	if (code != TCL_OK) {
+	    return code;
+	}
+    }
+
+    /*
+     * Generate code to assign values from the list to variables
+     */
+    for (idx=0 ; idx<numWords-2 ; idx++) {
+	tokenPtr += tokenPtr->numComponents + 1;
+
+	/*
+	 * Generate the next variable name
+	 */
+	code = TclPushVarName(interp, tokenPtr, envPtr, TCL_CREATE_VAR,
+		&localIndex, &simpleVarName, &isScalar);
+	if (code != TCL_OK) {
+	    return code;
+	}
+
+	/*
+	 * Emit instructions to get the idx'th item out of the list
+	 * value on the stack and assign it to the variable.
+	 */
+	if (simpleVarName) {
+	    if (isScalar) {
+		if (localIndex >= 0) {
+		    TclEmitOpcode(INST_DUP, envPtr);
+		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+		    if (localIndex <= 255) {
+			TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
+		    } else {
+			TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+		    }
+		} else {
+		    TclEmitInstInt4(INST_OVER, 1, envPtr);
+		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+		    TclEmitOpcode(INST_STORE_SCALAR_STK, envPtr);
+		}
+	    } else {
+		if (localIndex >= 0) {
+		    TclEmitInstInt4(INST_OVER, 1, envPtr);
+		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+		    if (localIndex <= 255) {
+			TclEmitInstInt1(INST_STORE_ARRAY1, localIndex, envPtr);
+		    } else {
+			TclEmitInstInt4(INST_STORE_ARRAY4, localIndex, envPtr);
+		    }
+		} else {
+		    TclEmitInstInt4(INST_OVER, 2, envPtr);
+		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+		    TclEmitOpcode(INST_STORE_ARRAY_STK, envPtr);
+		}
+	    }
+	} else {
+	    TclEmitInstInt4(INST_OVER, 1, envPtr);
+	    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+	    TclEmitOpcode(INST_STORE_STK, envPtr);
+	}
+	TclEmitOpcode(INST_POP, envPtr);
+    }
+
+    /*
+     * Generate code to leave the rest of the list on the stack.
+     */
+    TclEmitInstInt4(INST_LIST_RANGE_IMM, idx, envPtr);
+    TclEmitInt4(-2, envPtr); /* -2 == "end" */
+
+    return TCL_OK;
 }
 
 /*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.120 2004/01/13 23:15:03 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.121 2004/01/18 16:19:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2492,6 +2492,49 @@ TclExecuteByteCode(interp, codePtr)
 	        O2S(valuePtr), O2S(value2Ptr), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, -1); /* already has the correct refCount */
 
+    case INST_LIST_INDEX_IMM:
+    {
+	/*** lindex with objc==3 and index in bytecode stream ***/
+
+	int listc, idx;
+	Tcl_Obj **listv;
+
+	/*
+	 * Pop the list and get the index
+	 */
+	valuePtr = *tosPtr;
+	opnd = TclGetInt4AtPtr(pc+1);
+
+	/*
+	 * Get the contents of the list, making sure that it
+	 * really is a list in the process.
+	 */
+	result = Tcl_ListObjGetElements(interp, valuePtr, &listc, &listv);
+	if (result != TCL_OK) {
+	    TRACE_WITH_OBJ(("\"%.30s\" %d => ERROR: ", O2S(valuePtr), opnd),
+		    Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+
+	/*
+	 * Select the list item based on the index.  Negative
+	 * operand == end-based indexing.
+	 */
+	if (opnd < -1) {
+	    idx = opnd+1 + listc;
+	} else {
+	    idx = opnd;
+	}
+	if (idx >= 0 && idx < listc) {
+	    objResultPtr = listv[idx];
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+
+	TRACE_WITH_OBJ(("\"%.30s\" %d => ", O2S(valuePtr), opnd), objResultPtr);
+	NEXT_INST_F(5, 1, 1);
+    }
+
     case INST_LIST_INDEX_MULTI:
     {
 	/*
@@ -2611,6 +2654,82 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 	TRACE(("=> %s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, -1);
+
+    case INST_LIST_RANGE_IMM:
+    {
+	/*** lrange with objc==4 and both indices in bytecode stream ***/
+
+	int listc, fromIdx, toIdx;
+	Tcl_Obj **listv;
+
+	/*
+	 * Pop the list and get the indices
+	 */
+	valuePtr = *tosPtr;
+	fromIdx = TclGetInt4AtPtr(pc+1);
+	toIdx = TclGetInt4AtPtr(pc+5);
+
+	/*
+	 * Get the contents of the list, making sure that it
+	 * really is a list in the process.
+	 */
+	result = Tcl_ListObjGetElements(interp, valuePtr, &listc, &listv);
+	if (result != TCL_OK) {
+	    TRACE_WITH_OBJ(("\"%.30s\" %d %d => ERROR: ", O2S(valuePtr),
+		    fromIdx, toIdx), Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+
+	/*
+	 * Skip a lot of work if we're about to throw the result away
+	 * (common with uses of [lassign].)
+	 */
+#ifndef TCL_COMPILE_DEBUG
+	if (*(pc+9) == INST_POP) {
+	    NEXT_INST_F(10, 1, 0);
+	}
+#endif
+
+	/*
+	 * Adjust the indices for end-based handling.
+	 */
+	if (fromIdx < -1) {
+	    fromIdx += 1+listc;
+	    if (fromIdx < -1) {
+		fromIdx = -1;
+	    }
+	} else if (fromIdx > listc) {
+	    fromIdx = listc;
+	}
+	if (toIdx < -1) {
+	    toIdx += 1+listc;
+	    if (toIdx < -1) {
+		toIdx = -1;
+	    }
+	} else if (toIdx > listc) {
+	    toIdx = listc;
+	}
+
+	/*
+	 * Check if we are referring to a valid, non-empty list range,
+	 * and if so, build the list of elements in that range.
+	 */
+	if (fromIdx<=toIdx && fromIdx<listc && toIdx>=0) {
+	    if (fromIdx<0) {
+		fromIdx = 0;
+	    }
+	    if (toIdx >= listc) {
+		toIdx = listc-1;
+	    }
+	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, listv+fromIdx);
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+
+	TRACE_WITH_OBJ(("\"%.30s\" %d %d => ", O2S(valuePtr),
+		TclGetInt4AtPtr(pc+1), TclGetInt4AtPtr(pc+5)), objResultPtr);
+	NEXT_INST_F(9, 1, 1);
+    }
 
     /*
      *     End of INST_LIST and related instructions.
