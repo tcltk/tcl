@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.185 2004/10/27 23:20:59 davygrvy Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.186 2004/11/01 09:24:49 dkf Exp $
  */
 
 #ifndef _TCL
@@ -994,14 +994,24 @@ typedef struct Tcl_DString {
 #define TCL_EXACT	1
 
 /*
- * Flag values passed to Tcl_RecordAndEval and/or Tcl_EvalObj.
+ * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
  * WARNING: these bit choices must not conflict with the bit choices
  * for evalFlag bits in tclInt.h!!
+ *
+ * Meanings:
+ *	TCL_NO_EVAL:		Just record this command
+ *	TCL_EVAL_GLOBAL:	Execute script in global namespace
+ *	TCL_EVAL_DIRECT:	Do not compile this script
+ *	TCL_EVAL_INVOKE:	Magical Tcl_EvalObjv mode for aliases/ensembles
+ *				o Run in global namespace
+ *				o Cut out of error traces
+ *				o Don't reset the flags controlling ensemble
+ *				  error message rewriting.
  */
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
 #define TCL_EVAL_DIRECT		0x40000
-#define TCL_EVAL_INVOKE	        0x80000
+#define TCL_EVAL_INVOKE		0x80000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see
