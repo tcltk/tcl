@@ -1,3 +1,8 @@
+2000-07-18  Eric Melski  <ericm@scriptics.com>
+
+	* compat/string.h: Fixed function prototypes for strpbrk and
+	strtok [Bug: 6020].
+
 2000-07-17  David Gravereaux  <davygrvy@ajubasolutions.com>
 
 	* win/tclWinChan.c: Win2K OS bug with
