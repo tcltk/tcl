@@ -1,5 +1,11 @@
 1999-04-05    <stanton@scriptics.com>
 
+	* tests/platform.test: 
+	* tests/fileName.test: Fixed broken tests.
+	
+	* generic/tclFileName.c: Moved global regexps into thread local
+	storage.
+
 	* tests/socket.test: Changed so tests don't reuse sockets,
 	since Windows is slow to release sockets.
 
