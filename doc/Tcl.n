@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.10 2003/11/14 20:44:43 dgp Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.11 2003/11/14 21:13:04 dkf Exp $
 '\"
 .so man.macros
-.TH Tcl n "8.1" Tcl "Tcl Built-In Commands"
+.TH Tcl n "8.5" Tcl "Tcl Built-In Commands"
 .BS
 .SH NAME
 Tcl \- Tool Command Language
@@ -49,6 +49,7 @@ as ordinary characters and included in the word.
 Command substitution, variable substitution, and backslash substitution
 are performed on the characters between the quotes as described below.
 The double-quotes are not retained as part of the word.
+.VS 8.5 br
 .IP "[5] \fBArgument expansion.\fR"
 If a word starts with the string ``{expand}'' followed by a 
 non-whitespace character, then the leading ``{expand}'' is removed
@@ -57,6 +58,7 @@ word. After substitution, the word is parsed again without
 substitutions, and its words are added to the command being
 substituted. For instance, ``cmd a {expand}{b c} d {expand}{e f}'' is
 equivalent to ``cmd a b c d e f''. 
+.VE 8.5
 .IP "[6] \fBBraces.\fR"
 If the first character of a word is an open brace (``{'') and
 rule [5] does not apply, then
@@ -156,7 +158,6 @@ in braces or quotes.
 .TP 7
 \e\e
 Backslash (``\e'').
-.VS 8.1 br
 .TP 7
 \e\fIooo\fR 
 .
@@ -177,7 +178,6 @@ be 0.
 The hexadecimal digits \fIhhhh\fR (one, two, three, or four of them) give a
 sixteen-bit hexadecimal value for the Unicode character that will be
 inserted.
-.VE
 .LP
 Backslash substitution is not performed on words enclosed in braces,
 except for backslash-newline as described above.
