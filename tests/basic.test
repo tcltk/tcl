@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.25.2.2 2004/02/25 23:38:15 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.25.2.3 2004/03/01 17:33:22 dgp Exp $
 #
 
 package require tcltest 2
@@ -535,6 +535,15 @@ test basic-39.9 {Tcl_CreateObjTrace, status return unknown} {testcmdtrace} {
     set x 1;
     list [catch {testcmdtrace resulttest {OtherStatus $x}} result] [set result]
 } {6 {}}
+
+test basic-39.10 {Tcl_CreateTrace, correct level interpretation} {testcmdtrace} {
+    proc foo {} {uplevel 1 bar}
+    proc bar {} {uplevel 1 grok}
+    proc grok {} {uplevel 1 spock}
+    proc spock {} {uplevel 1 fascinating}
+    proc fascinating {} {}
+    testcmdtrace leveltest {foo}
+} {foo {foo} {uplevel 1 bar} {uplevel 1 bar} bar {bar} {uplevel 1 grok} {uplevel 1 grok}}
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
     # the above tests have tested Tcl_DeleteTrace
