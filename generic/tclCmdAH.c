@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.55 2004/10/18 21:15:35 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.56 2004/10/21 15:19:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -269,36 +269,9 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	}
     }
     if (objc == 4) {
-	Interp  *iPtr = (Interp *) interp;
-	Tcl_Obj *options = Tcl_DuplicateObj(iPtr->returnOpts);
-
-	if (result == TCL_RETURN) {
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnCodeKey, Tcl_NewIntObj(iPtr->returnCode));
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnLevelKey, Tcl_NewIntObj(iPtr->returnLevel));
-	} else {
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnCodeKey, Tcl_NewIntObj(result));
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnLevelKey, Tcl_NewIntObj(0));
-	}
-
-	if (result == TCL_ERROR) {
-	    /*
-	     * When result was an error, fill in any missing values
-	     * for -errorinfo, -errorcode, and -errorline
-	     */
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnErrorinfoKey, iPtr->errorInfo);
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnErrorcodeKey, iPtr->errorCode);
-	    Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
-			Tcl_NewIntObj(iPtr->errorLine));
-	}
-
-	if (NULL ==
-		Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL, options, 0)) {
+	Tcl_Obj *options = TclGetReturnOptions(interp, result);
+	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
+		options, 0)) {
 	    Tcl_DecrRefCount(options);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp,
@@ -582,31 +555,29 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
-    char *info;
-    int infoLen;
+    Tcl_Obj *options;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "message ?errorInfo? ?errorCode?");
 	return TCL_ERROR;
     }
 
+    options = Tcl_NewStringObj("-code error -level 0", -1);
+
     if (objc >= 3) {		/* process the optional info argument */
-	info = Tcl_GetStringFromObj(objv[2], &infoLen);
-	if (infoLen > 0) {
-	    Tcl_AddObjErrorInfo(interp, info, infoLen);
-	    iPtr->flags |= ERR_ALREADY_LOGGED;
-	}
+	Tcl_ListObjAppendElement(NULL, options,
+		Tcl_NewStringObj("-errorinfo", -1));
+	Tcl_ListObjAppendElement(NULL, options, objv[2]);
     }
 
-    if (objc == 4) {
-	Tcl_SetObjErrorCode(interp, objv[3]);
-    } else {
-	Tcl_SetErrorCode(interp, "NONE", NULL);
+    if (objc == 4) {		/* process the optional code argument */
+	Tcl_ListObjAppendElement(NULL, options,
+		Tcl_NewStringObj("-errorcode", -1));
+	Tcl_ListObjAppendElement(NULL, options, objv[3]);
     }
 
     Tcl_SetObjResult(interp, objv[1]);
-    return TCL_ERROR;
+    return TclSetReturnOptions(interp, options);
 }
 
 /*

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.130 2004/10/21 03:53:04 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.131 2004/10/21 15:19:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -233,8 +233,7 @@ Tcl_CreateInterp()
     Tcl_IncrRefCount(iPtr->returnLevelKey);
     iPtr->returnOptionsKey = Tcl_NewStringObj("-options",-1);
     Tcl_IncrRefCount(iPtr->returnOptionsKey);
-    iPtr->returnOpts = Tcl_NewObj();
-    Tcl_IncrRefCount(iPtr->returnOpts);
+    iPtr->returnOpts = NULL;
     iPtr->errorInfo = NULL;
     iPtr->eiVar = Tcl_NewStringObj("errorInfo", -1);
     Tcl_IncrRefCount(iPtr->eiVar);
@@ -992,7 +991,9 @@ DeleteInterpProc(interp)
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
-    Tcl_DecrRefCount(iPtr->returnOpts);
+    if (iPtr->returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+    }
     Tcl_DecrRefCount(iPtr->returnCodeKey);
     Tcl_DecrRefCount(iPtr->returnErrorcodeKey);
     Tcl_DecrRefCount(iPtr->returnErrorinfoKey);
