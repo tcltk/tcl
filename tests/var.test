@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.20 2002/10/17 17:41:45 dgp Exp $
+# RCS: @(#) $Id: var.test,v 1.21 2003/03/24 00:49:00 msofer Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -262,6 +262,16 @@ test var-3.9 {MakeUpvar, my var has invalid ns name} {
     set aaaaa 789789
     list [catch {upvar #0 aaaaa test_ns_fred::lnk} msg] $msg
 } {1 {can't create "test_ns_fred::lnk": parent namespace doesn't exist}}
+test var-3.10 {MakeUpvar, } {
+    namespace eval {} {
+	set bar 0
+	namespace eval foo upvar bar bar
+	set foo::bar 1
+	catch {list $bar $foo::bar} msg
+	unset ::aaaaa
+	set msg
+    }
+} {1 1}
 
 if {[info commands testgetvarfullname] != {}} {
     test var-4.1 {Tcl_GetVariableName, global variable} {
