@@ -1,3 +1,10 @@
+2004-03-05  Kevin B. Kenny <kennykb@acm.org>
+
+	* tests/registry.test: Applied fix from Patch #910174 to
+	make the test for an English-language system include any
+	country code, rather than just English-United States.1252.
+	Thanks to Pat Thoyts for the changes.
+	
 2004-03-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/registry.test: Applied fixed from #766159 to skip two
