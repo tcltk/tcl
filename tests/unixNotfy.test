@@ -47,3 +47,4 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} {
 } {1 {can't wait for variable "x":  would wait forever}}
 
 file delete foo
+file delete foo2

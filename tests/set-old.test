@@ -474,6 +474,29 @@ test set-old-8.37 {array command, set option} {
     array set aVaRnAmE {}
     list [info exists aVaRnAmE] [catch {set aVaRnAmE} msg] $msg
 } {1 1 {can't read "aVaRnAmE": variable is array}}
+test set-old-8.37.1 {array command, set scalar} {
+    catch {unset aVaRnAmE}
+    set aVaRnAmE 1
+    list [catch {array set aVaRnAmE {}} msg] $msg
+} {1 {can't array set "aVaRnAmE": variable isn't array}}
+test set-old-8.37.2 {array command, set alias} {
+    catch {unset aVaRnAmE}
+    upvar 0 aVaRnAmE anAliAs
+    array set anAliAs {}
+    list [array exists aVaRnAmE] [catch {set anAliAs} msg] $msg
+} {1 1 {can't read "anAliAs": variable is array}}
+test set-old-8.37.3 {array command, set element alias} {
+    catch {unset aVaRnAmE}
+    list [catch {upvar 0 aVaRnAmE(elem) elemAliAs}] \
+	    [catch {array set elemAliAs {}} msg] $msg
+} {0 1 {can't array set "elemAliAs": variable isn't array}}
+test set-old-8.37.4 {array command, empty set with populated array} {
+    catch {unset aVaRnAmE}
+    array set aVaRnAmE [list e1 v1 e2 v2]
+    array set aVaRnAmE {}
+    array set aVaRnAmE [list e3 v3]
+    list [lsort [array names aVaRnAmE]] [catch {set aVaRnAmE(e2)} msg] $msg
+} {{e1 e2 e3} 0 v2}
 test set-old-8.38 {array command, size option} {
     catch {unset a}
     array size a

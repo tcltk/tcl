@@ -251,3 +251,41 @@ test cmdIL-4.22 {DictionaryCompare procedure, case} {
 test cmdIL-4.23 {DictionaryCompare procedure, case} {
     lsort -dictionary {ABcd AbCd}
 } {ABcd AbCd}
+test cmdIL-4.24 {DefaultCompare procedure, signed characters} {
+    set l [lsort [list "abc\200" "abc"]]
+    set viewlist {}
+    foreach s $l {
+	set viewelem ""
+	set len [string length $s]
+	for {set i 0} {$i < $len} {incr i} {
+	    set c [string index $s $i]
+	    scan $c %c d
+	    if {$d > 0 && $d < 128} {
+		append viewelem $c
+	    } else {
+		append viewelem "\\[format %03o $d]"
+	    }
+	}
+	lappend viewlist $viewelem
+    }
+    set viewlist
+} [list "abc" "abc\\200"]
+test cmdIL-4.25 {DictionaryCompare procedure, signed characters} {
+    set l [lsort -dictionary [list "abc\200" "abc"]]
+    set viewlist {}
+    foreach s $l {
+	set viewelem ""
+	set len [string length $s]
+	for {set i 0} {$i < $len} {incr i} {
+	    set c [string index $s $i]
+	    scan $c %c d
+	    if {$d > 0 && $d < 128} {
+		append viewelem $c
+	    } else {
+		append viewelem "\\[format %03o $d]"
+	    }
+	}
+	lappend viewlist $viewelem
+    }
+    set viewlist
+} [list "abc" "abc\\200"]

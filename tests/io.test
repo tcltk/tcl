@@ -5122,6 +5122,7 @@ test io-33.1 {ChannelTimerProc} {
     testchannelevent $f set 0 none
     after idle {set y done}
     vwait y
+    close $f
     lappend result $y
 } {2 done}
 

@@ -327,6 +327,11 @@ test upvar-8.9 {upvar won't create namespace variable that refers to procedure v
     }
     list [catch {MakeLink 1} msg] $msg
 } {1 {bad variable name "a": upvar won't create namespace variable that refers to procedure variable}}
+test upvar-8.10 {upvar will create element alias for new array element} {
+    catch {unset upvarArray}
+    array set upvarArray {}
+    catch {upvar 0 upvarArray(elem) upvarArrayElemAlias}
+} {0}
 
 if {[info commands testupvar] != {}} {
     test upvar-9.1 {Tcl_UpVar2 procedure} {
