@@ -14,8 +14,11 @@
 
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
+        * tests/subst.test (subst-12.3,4):      More tests for Bug 1036649.
+
         * unix/Makefile.in (install-libraries): Updated the installation
-        of the http, msgcat, and tcltest packages to install as Tcl Modules.
+        of the http, msgcat, and tcltest packages to install as Tcl Modules
+	on Unix systems.  Other platform Makefiles still need updating.
         [Patch 1054370]
 
 	* tests/basic.test:	Added missing constraints.
