@@ -1,3 +1,11 @@
+2004-02-20  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinSock.c (SocketThreadExitHandler): Don't call
+	TerminateThread when WaitForSingleObject returns a timeout.
+	Tcl_Finalize called from DllMain will pause all threads.  Trust
+	that the thread will get the close notice at a later time if it
+	does ever wake up before being cleaned up by the system anyway.
+
 2004-02-17  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:
