@@ -1,3 +1,8 @@
+2004-07-11  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclDictObj.c (Tcl_DictObjRemoveKeyList): Oops, forgot to
+	delete value object when removing the hash entry. [Bug 989093 in part]
+
 2004-07-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TEBC): fixed leak of expandNestList objs 
