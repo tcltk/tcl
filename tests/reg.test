@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.11 1999/10/13 02:22:28 hobbs Exp $
+# RCS: @(#) $Id: reg.test,v 1.12 2000/04/10 00:26:52 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -21,6 +21,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 set ::tcltest::testConstraints(testregexp) \
 	[expr {[info commands testregexp] != {}}]
+set ::tcltest::testConstraints(localeRegexp) 0
 
 # This file uses some custom procedures, defined below, for regexp regression
 # testing.  The name of the procedure indicates the general nature of the
@@ -33,9 +34,7 @@ set ::tcltest::testConstraints(testregexp) \
 #	p	unsuccessful match with -indices (!!) (used in checking
 #		partial-match reporting)
 # There is also "doing" which sets up title and major test number for each
-# block of tests, and "xx" which ignores its arguments and arranges for the
-# next "doing" to announce that some tests were bypassed (which is better
-# than just commenting them out).
+# block of tests.
 
 # The first 3 arguments are constant:  a minor number (which often gets
 # a letter or two suffixed to it internally), some flags, and the RE itself.
@@ -195,8 +194,9 @@ proc e {testid flags re err} {
 
 	# Tcl locale stuff doesn't do the ch/xy test fakery yet
 	if {[string first "+" $flags] >= 0} {
-		xx
-		return
+	    # This will register as a skipped test
+	    test $prefix.[tno $testid] [desc $testid] localeRegexp {} {}
+	    return
 	}
 
 	# if &, test as both ARE and BRE
@@ -211,7 +211,8 @@ proc e {testid flags re err} {
 
 	set cmd [concat [list testregexp -$ask] [flags $flags] [list $re]]
 	set run "list \[catch \{$cmd\}\] \[lindex \$errorCode 1\]"
-	test $prefix.[tno $testid] [desc $testid] {testregexp} $run [list 1 REG_$err]
+	test $prefix.[tno $testid] [desc $testid] \
+		{testregexp} $run [list 1 REG_$err]
 }
 
 # match failure expected
@@ -220,8 +221,9 @@ proc f {testid flags re target args} {
 
 	# Tcl locale stuff doesn't do the ch/xy test fakery yet
 	if {[string first "+" $flags] >= 0} {
-		xx
-		return
+	    # This will register as a skipped test
+	    test $prefix.[tno $testid] [desc $testid] localeRegexp {} {}
+	    return
 	}
 
 	# if &, test as both ARE and BRE
@@ -261,12 +263,19 @@ proc f {testid flags re target args} {
 # The ! flag is used to indicate expected match failure (for REG_EXPECT,
 #  which wants argument testing even in the event of failure).
 proc matchexpected {opts testid flags re target args} {
-	global prefix description ask
+	global prefix description ask regBug
+
+    if {[info exists regBug] && $regBug} {
+	# This will register as a skipped test
+	test $prefix.[tno $testid] [desc $testid] knownBug {} {}
+	return
+    }
 
 	# Tcl locale stuff doesn't do the ch/xy test fakery yet
 	if {[string first "+" $flags] >= 0} {
-		xx
-		return
+	    # This will register as a skipped test
+	    test $prefix.[tno $testid] [desc $testid] localeRegexp {} {}
+	    return
 	}
 
 	# if &, test as both BRE and ARE
@@ -341,11 +350,11 @@ proc p {args} {
 	eval matchexpected [linsert $args 0 [list "-indices"]]
 }
 
-# test temporarily unimplemented
-proc xx {args} {
-	global testbypassed
-
-	incr testbypassed
+# test is a knownBug
+proc knownBug {args} {
+    set ::regBug 1
+    uplevel #0 $args
+    set ::regBug 0
 }
 
 
@@ -949,7 +958,7 @@ i  5	t	abc		abc	{0 2}	{0 2}
 i  6	t	abc		xyabc	{2 4}	{2 4}
 p  7	t	abc+		xyab	{2 3}	""
 i  8	t	abc+		xyabc	{2 4}	{2 4}
-xx i  9	t	abc+		xyabcd	{2 4}	{6 5}
+knownBug i  9	t	abc+		xyabcd	{2 4}	{6 5}
 i  10	t	abc+		xyabcdd	{2 4}	{7 6}
 p  11	tPT	abc+?		xyab	{2 3}	""
 # the retain numbers in these two may look wrong, but they aren't
