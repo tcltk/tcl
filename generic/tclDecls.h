@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.79 2002/01/25 21:36:09 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.80 2002/01/31 04:39:43 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -137,7 +137,7 @@ EXTERN int		Tcl_GetDoubleFromObj _ANSI_ARGS_((
 				double * doublePtr));
 /* 36 */
 EXTERN int		Tcl_GetIndexFromObj _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * objPtr, CONST char ** tablePtr, 
+				Tcl_Obj * objPtr, CONST84 char ** tablePtr, 
 				CONST char * msg, int flags, int * indexPtr));
 /* 37 */
 EXTERN int		Tcl_GetInt _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -274,7 +274,7 @@ EXTERN int		Tcl_Close _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN int		Tcl_CommandComplete _ANSI_ARGS_((char * cmd));
 /* 83 */
 EXTERN char *		Tcl_Concat _ANSI_ARGS_((int argc, 
-				CONST char * CONST * argv));
+				CONST84 char * CONST * argv));
 /* 84 */
 EXTERN int		Tcl_ConvertElement _ANSI_ARGS_((CONST char * src, 
 				char * dst, int flags));
@@ -492,13 +492,13 @@ EXTERN void		Tcl_FreeResult _ANSI_ARGS_((Tcl_Interp * interp));
 EXTERN int		Tcl_GetAlias _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * slaveCmd, 
 				Tcl_Interp ** targetInterpPtr, 
-				CONST char ** targetCmdPtr, int * argcPtr, 
+				CONST84 char ** targetCmdPtr, int * argcPtr, 
 				char *** argvPtr));
 /* 149 */
 EXTERN int		Tcl_GetAliasObj _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * slaveCmd, 
 				Tcl_Interp ** targetInterpPtr, 
-				CONST char ** targetCmdPtr, int * objcPtr, 
+				CONST84 char ** targetCmdPtr, int * objcPtr, 
 				Tcl_Obj *** objv));
 /* 150 */
 EXTERN ClientData	Tcl_GetAssocData _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -600,7 +600,7 @@ EXTERN int		Tcl_InterpDeleted _ANSI_ARGS_((Tcl_Interp * interp));
 EXTERN int		Tcl_IsSafe _ANSI_ARGS_((Tcl_Interp * interp));
 /* 186 */
 EXTERN CONST char *	Tcl_JoinPath _ANSI_ARGS_((int argc, 
-				CONST char * CONST * argv, 
+				CONST84 char * CONST * argv, 
 				Tcl_DString * resultPtr));
 /* 187 */
 EXTERN int		Tcl_LinkVar _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -616,7 +616,7 @@ EXTERN Tcl_Channel	Tcl_MakeTcpClientChannel _ANSI_ARGS_((
 				ClientData tcpSocket));
 /* 192 */
 EXTERN char *		Tcl_Merge _ANSI_ARGS_((int argc, 
-				CONST char * CONST * argv));
+				CONST84 char * CONST * argv));
 /* 193 */
 EXTERN Tcl_HashEntry *	Tcl_NextHashEntry _ANSI_ARGS_((
 				Tcl_HashSearch * searchPtr));
@@ -635,13 +635,13 @@ EXTERN Tcl_Obj *	Tcl_ObjSetVar2 _ANSI_ARGS_((Tcl_Interp * interp,
 /* 197 */
 EXTERN Tcl_Channel	Tcl_OpenCommandChannel _ANSI_ARGS_((
 				Tcl_Interp * interp, int argc, 
-				CONST char ** argv, int flags));
+				CONST84 char ** argv, int flags));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 197 */
 EXTERN Tcl_Channel	Tcl_OpenCommandChannel _ANSI_ARGS_((
 				Tcl_Interp * interp, int argc, 
-				CONST char ** argv, int flags));
+				CONST84 char ** argv, int flags));
 #endif /* __WIN32__ */
 /* 198 */
 EXTERN Tcl_Channel	Tcl_OpenFileChannel _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -782,10 +782,10 @@ EXTERN void		Tcl_SourceRCFile _ANSI_ARGS_((Tcl_Interp * interp));
 /* 242 */
 EXTERN int		Tcl_SplitList _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * listStr, int * argcPtr, 
-				CONST char *** argvPtr));
+				CONST84 char *** argvPtr));
 /* 243 */
 EXTERN void		Tcl_SplitPath _ANSI_ARGS_((CONST char * path, 
-				int * argcPtr, CONST char *** argvPtr));
+				int * argcPtr, CONST84 char *** argvPtr));
 /* 244 */
 EXTERN void		Tcl_StaticPackage _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * pkgName, 
@@ -1582,7 +1582,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_GetByteArrayFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 33 */
     int (*tcl_GetDouble) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, double * doublePtr)); /* 34 */
     int (*tcl_GetDoubleFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, double * doublePtr)); /* 35 */
-    int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST char ** tablePtr, CONST char * msg, int flags, int * indexPtr)); /* 36 */
+    int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST84 char ** tablePtr, CONST char * msg, int flags, int * indexPtr)); /* 36 */
     int (*tcl_GetInt) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * intPtr)); /* 37 */
     int (*tcl_GetIntFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int * intPtr)); /* 38 */
     int (*tcl_GetLongFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, long * longPtr)); /* 39 */
@@ -1629,7 +1629,7 @@ typedef struct TclStubs {
     void (*tcl_CancelIdleCall) _ANSI_ARGS_((Tcl_IdleProc * idleProc, ClientData clientData)); /* 80 */
     int (*tcl_Close) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 81 */
     int (*tcl_CommandComplete) _ANSI_ARGS_((char * cmd)); /* 82 */
-    char * (*tcl_Concat) _ANSI_ARGS_((int argc, CONST char * CONST * argv)); /* 83 */
+    char * (*tcl_Concat) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv)); /* 83 */
     int (*tcl_ConvertElement) _ANSI_ARGS_((CONST char * src, char * dst, int flags)); /* 84 */
     int (*tcl_ConvertCountedElement) _ANSI_ARGS_((CONST char * src, int length, char * dst, int flags)); /* 85 */
     int (*tcl_CreateAlias) _ANSI_ARGS_((Tcl_Interp * slave, CONST char * slaveCmd, Tcl_Interp * target, CONST char * targetCmd, int argc, char * CONST * argv)); /* 86 */
@@ -1702,8 +1702,8 @@ typedef struct TclStubs {
     Tcl_HashEntry * (*tcl_FirstHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, Tcl_HashSearch * searchPtr)); /* 145 */
     int (*tcl_Flush) _ANSI_ARGS_((Tcl_Channel chan)); /* 146 */
     void (*tcl_FreeResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 147 */
-    int (*tcl_GetAlias) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * slaveCmd, Tcl_Interp ** targetInterpPtr, CONST char ** targetCmdPtr, int * argcPtr, char *** argvPtr)); /* 148 */
-    int (*tcl_GetAliasObj) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * slaveCmd, Tcl_Interp ** targetInterpPtr, CONST char ** targetCmdPtr, int * objcPtr, Tcl_Obj *** objv)); /* 149 */
+    int (*tcl_GetAlias) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * slaveCmd, Tcl_Interp ** targetInterpPtr, CONST84 char ** targetCmdPtr, int * argcPtr, char *** argvPtr)); /* 148 */
+    int (*tcl_GetAliasObj) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * slaveCmd, Tcl_Interp ** targetInterpPtr, CONST84 char ** targetCmdPtr, int * objcPtr, Tcl_Obj *** objv)); /* 149 */
     ClientData (*tcl_GetAssocData) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_InterpDeleteProc ** procPtr)); /* 150 */
     Tcl_Channel (*tcl_GetChannel) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * chanName, int * modePtr)); /* 151 */
     int (*tcl_GetChannelBufferSize) _ANSI_ARGS_((Tcl_Channel chan)); /* 152 */
@@ -1748,22 +1748,22 @@ typedef struct TclStubs {
     int (*tcl_InputBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 183 */
     int (*tcl_InterpDeleted) _ANSI_ARGS_((Tcl_Interp * interp)); /* 184 */
     int (*tcl_IsSafe) _ANSI_ARGS_((Tcl_Interp * interp)); /* 185 */
-    CONST char * (*tcl_JoinPath) _ANSI_ARGS_((int argc, CONST char * CONST * argv, Tcl_DString * resultPtr)); /* 186 */
+    CONST char * (*tcl_JoinPath) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv, Tcl_DString * resultPtr)); /* 186 */
     int (*tcl_LinkVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, char * addr, int type)); /* 187 */
     void *reserved188;
     Tcl_Channel (*tcl_MakeFileChannel) _ANSI_ARGS_((ClientData handle, int mode)); /* 189 */
     int (*tcl_MakeSafe) _ANSI_ARGS_((Tcl_Interp * interp)); /* 190 */
     Tcl_Channel (*tcl_MakeTcpClientChannel) _ANSI_ARGS_((ClientData tcpSocket)); /* 191 */
-    char * (*tcl_Merge) _ANSI_ARGS_((int argc, CONST char * CONST * argv)); /* 192 */
+    char * (*tcl_Merge) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv)); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) _ANSI_ARGS_((Tcl_HashSearch * searchPtr)); /* 193 */
     void (*tcl_NotifyChannel) _ANSI_ARGS_((Tcl_Channel channel, int mask)); /* 194 */
     Tcl_Obj * (*tcl_ObjGetVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, int flags)); /* 195 */
     Tcl_Obj * (*tcl_ObjSetVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, Tcl_Obj * newValuePtr, int flags)); /* 196 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    Tcl_Channel (*tcl_OpenCommandChannel) _ANSI_ARGS_((Tcl_Interp * interp, int argc, CONST char ** argv, int flags)); /* 197 */
+    Tcl_Channel (*tcl_OpenCommandChannel) _ANSI_ARGS_((Tcl_Interp * interp, int argc, CONST84 char ** argv, int flags)); /* 197 */
 #endif /* UNIX */
 #ifdef __WIN32__
-    Tcl_Channel (*tcl_OpenCommandChannel) _ANSI_ARGS_((Tcl_Interp * interp, int argc, CONST char ** argv, int flags)); /* 197 */
+    Tcl_Channel (*tcl_OpenCommandChannel) _ANSI_ARGS_((Tcl_Interp * interp, int argc, CONST84 char ** argv, int flags)); /* 197 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     void *reserved197;
@@ -1820,8 +1820,8 @@ typedef struct TclStubs {
     CONST char * (*tcl_SignalId) _ANSI_ARGS_((int sig)); /* 239 */
     CONST char * (*tcl_SignalMsg) _ANSI_ARGS_((int sig)); /* 240 */
     void (*tcl_SourceRCFile) _ANSI_ARGS_((Tcl_Interp * interp)); /* 241 */
-    int (*tcl_SplitList) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * listStr, int * argcPtr, CONST char *** argvPtr)); /* 242 */
-    void (*tcl_SplitPath) _ANSI_ARGS_((CONST char * path, int * argcPtr, CONST char *** argvPtr)); /* 243 */
+    int (*tcl_SplitList) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * listStr, int * argcPtr, CONST84 char *** argvPtr)); /* 242 */
+    void (*tcl_SplitPath) _ANSI_ARGS_((CONST char * path, int * argcPtr, CONST84 char *** argvPtr)); /* 243 */
     void (*tcl_StaticPackage) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * pkgName, Tcl_PackageInitProc * initProc, Tcl_PackageInitProc * safeInitProc)); /* 244 */
     int (*tcl_StringMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern)); /* 245 */
     int (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
