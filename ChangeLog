@@ -1,3 +1,8 @@
+2004-10-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclDictObj.c (DictUpdateCmd,DictWithCmd): Core of
+	implementation of TIP#212; docs and tests still to do...
+
 2004-10-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclTest.c (TestsetobjerrorcodeCmd):  Simplified.
