@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.9 1999/05/06 22:50:04 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.9.2.1 1999/05/20 00:03:38 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -129,32 +129,47 @@ test string-3.8 {string equal with length, unequal strings} {
     string equal -length 2 abc abde
 } 1
 
-test string-4.1 {string first} {
+test string-4.1 {string first, too few args} {
     list [catch {string first a} msg] $msg
-} {1 {wrong # args: should be "string first string1 string2"}}
-test string-4.2 {string first} {
+} {1 {wrong # args: should be "string first string1 string2 ?startIndex?"}}
+test string-4.2 {string first, bad args} {
     list [catch {string first a b c} msg] $msg
-} {1 {wrong # args: should be "string first string1 string2"}}
-test string-4.3 {string first} {
+} {1 {bad index "c": must be integer or end?-integer?}}
+test string-4.3 {string first, too many args} {
+    list [catch {string first a b 5 d} msg] $msg
+} {1 {wrong # args: should be "string first string1 string2 ?startIndex?"}}
+test string-4.4 {string first} {
     string first bq abcdefgbcefgbqrs
 } 12
-test string-4.4 {string first} {
+test string-4.5 {string first} {
     string fir bcd abcdefgbcefgbqrs
 } 1
-test string-4.5 {string first} {
+test string-4.6 {string first} {
     string f b abcdefgbcefgbqrs
 } 1
-test string-4.6 {string first} {
+test string-4.7 {string first} {
     string first xxx x123xx345xxx789xxx012
 } 9
-test string-4.7 {string first} {
+test string-4.8 {string first} {
     string first "" x123xx345xxx789xxx012
 } -1
-test string-4.8 {string first, unicode} {
+test string-4.9 {string first, unicode} {
     string first x abc\u7266x
 } 4
-test string-4.9 {string first, unicode} {
+test string-4.10 {string first, unicode} {
     string first \u7266 abc\u7266x
+} 3
+test string-4.11 {string first, start index} {
+    string first \u7266 abc\u7266x 3
+} 3
+test string-4.12 {string first, start index} {
+    string first \u7266 abc\u7266x 4
+} -1
+test string-4.13 {string first, start index} {
+    string first \u7266 abc\u7266x end-2
+} 3
+test string-4.14 {string first, start index} {
+    string first a abcabc end-4
 } 3
 
 test string-5.1 {string index} {
@@ -190,6 +205,9 @@ test string-5.10 {string index, unicode} {
 test string-5.11 {string index, unicode} {
     string index abc\u7266d 3
 } \u7266
+test string-5.12 {string index, unicode over char length, under byte length} {
+    string index \334\374\334\374 6
+} {}
 
 test string-6.1 {string is, too few args} {
     list [catch {string is} msg] $msg
@@ -205,10 +223,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, boolean, digit, double, false, integer, lower, space, true, upper, or wordchar}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, lower, print, punct, space, true, upper, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, boolean, digit, double, false, integer, lower, space, true, upper, or wordchar}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, lower, print, punct, space, true, upper, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -446,39 +464,91 @@ test string-6.82 {string is wordchar, false} {
 test string-6.83 {string is wordchar, unicode false} {
     list [string is wordchar -fail var abc\u0080def] $var
 } {0 3}
+test string-6.84 {string is control} {
+    ## Control chars are in the ranges
+    ## 00..1F && 7F..9F
+    list [string is control -fail var \x00\x01\x10\x1F\x7F\x80\x9F\x60] $var
+} {0 7}
+test string-6.85 {string is control} {
+    string is control \u0100
+} 0
+test string-6.86 {string is graph} {
+    ## graph is any print char, except space
+    list [string is gra -fail var "0123abc!@#\$\u0100 "] $var
+} {0 12}
+test string-6.87 {string is print} {
+    ## basically any printable char
+    list [string is print -fail var "0123abc!@#\$\u0100 \u0010"] $var
+} {0 13}
+test string-6.88 {string is punct} {
+    ## any graph char that isn't alnum
+    list [string is punct -fail var "_=!@#\$\u00beq0"] $var
+} {0 7}
+test string-6.89 {string is xdigit} {
+    list [string is xdigit -fail var 0123456789\u0061bcdefABCDEFg] $var
+} {0 22}
 
-test string-7.1 {string last} {
+test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last string1 string2"}}
-test string-7.2 {string last} {
+} {1 {wrong # args: should be "string last string1 string2 ?startIndex?"}}
+test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
-} {1 {wrong # args: should be "string last string1 string2"}}
-test string-7.3 {string last} {
+} {1 {bad index "c": must be integer or end?-integer?}}
+test string-7.3 {string last, too many args} {
+    list [catch {string last a b c d} msg] $msg
+} {1 {wrong # args: should be "string last string1 string2 ?startIndex?"}}
+test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1
-test string-7.4 {string last} {
+test string-7.5 {string last} {
     string last xx xxxx123xx345x678
 } 7
-test string-7.5 {string last} {
+test string-7.6 {string last} {
     string las x xxxx123xx345x678
 } 12
-test string-7.6 {string last, unicode} {
+test string-7.7 {string last, unicode} {
     string las x xxxx12\u7266xx345x678
 } 12
-test string-7.7 {string last, unicode} {
+test string-7.8 {string last, unicode} {
     string las \u7266 xxxx12\u7266xx345x678
 } 6
+test string-7.9 {string last, stop index} {
+    string las \u7266 xxxx12\u7266xx345x678
+} 6
+test string-7.10 {string last, unicode} {
+    string las \u7266 xxxx12\u7266xx345x678
+} 6
+test string-7.11 {string last, start index} {
+    string last \u7266 abc\u7266x 3
+} 3
+test string-7.12 {string last, start index} {
+    string last \u7266 abc\u7266x 2
+} -1
+test string-7.13 {string last, start index} {
+    ## Constrain to last 'a' should work
+    string last ba badbad end-1
+} 3
+test string-7.14 {string last, start index} {
+    ## Constrain to last 'b' should skip last 'ba'
+    string last ba badbad end-2
+} 0
+test string-7.15 {string last, start index} {
+    string last \334a \334ad\334ad 0
+} -1
+test string-7.16 {string last, start index} {
+    string last \334a \334ad\334ad end-1
+} 3
 
-test cmdMZ-8.1 {Tcl_StringObjCmd: string bytelength} {
+test string-8.1 {string bytelength} {
     list [catch {string bytelength} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test cmdMZ-8.2 {Tcl_StringObjCmd: string bytelength} {
+test string-8.2 {string bytelength} {
     list [catch {string bytelength a b} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test cmdMZ-8.3 {Tcl_StringObjCmd: string bytelength} {
+test string-8.3 {string bytelength} {
     string bytelength "\u00c7"
 } 2
-test cmdMZ-8.4 {Tcl_StringObjCmd: string bytelength} {
+test string-8.4 {string bytelength} {
     string b ""
 } 0
 
@@ -538,12 +608,12 @@ test string-10.13 {string map, -nocase unicode} {
     string map -nocase [list \374 ue UE \334] "a\374ueUE\000EU"
 } aue\334\334\0EU
 
-test string-11.1 {string match} {
+test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg
-} {1 {wrong # args: should be "string match pattern string"}}
-test string-11.2 {string match} {
-    list [catch {string match a b c} msg] $msg
-} {1 {wrong # args: should be "string match pattern string"}}
+} {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
+test string-11.2 {string match, too many args} {
+    list [catch {string match a b c d} msg] $msg
+} {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
 test string-11.3 {string match} {
     string match abc abc
 } 1
@@ -624,6 +694,36 @@ test string-11.28 {string match} {
 } 1
 test string-11.29 {string match} {
     string match \[a a
+} 1
+test string-11.30 {string match, bad args} {
+    list [catch {string match - b c} msg] $msg
+} {1 {bad option "-": must be -nocase}}
+test string-11.31 {string match case} {
+    string match a A
+} 0
+test string-11.32 {string match nocase} {
+    string match -n a A
+} 1
+test string-11.33 {string match nocase} {
+    string match -nocase a\334 A\374
+} 1
+test string-11.34 {string match nocase} {
+    string match -nocase a*f ABCDEf
+} 1
+test string-11.35 {string match case, false hope} {
+    # This is true because '_' lies between the A-Z and a-z ranges
+    string match {[A-z]} _
+} 1
+test string-11.36 {string match nocase range} {
+    # This is false because although '_' lies between the A-Z and a-z ranges,
+    # we lower case the end points before checking the ranges.
+    string match -nocase {[A-z]} _
+} 0
+test string-11.37 {string match nocase} {
+    string match -nocase {[A-fh-Z]} g
+} 0
+test string-11.38 {string match case, reverse range} {
+    string match {[A-fh-Z]} g
 } 1
 
 test string-12.1 {string range} {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.11 1999/05/06 19:21:11 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.11.2.1 1999/05/20 00:03:38 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1228,6 +1228,167 @@ Tcl_StringMatch(string, pattern)
 	}
 	pattern++;
 	string++;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_StringCaseMatch --
+ *
+ *	See if a particular string matches a particular pattern.
+ *	Allows case insensitivity.
+ *
+ * Results:
+ *	The return value is 1 if string matches pattern, and
+ *	0 otherwise.  The matching operation permits the following
+ *	special characters in the pattern: *?\[] (see the manual
+ *	entry for details on what these mean).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_StringCaseMatch(string, pattern, nocase)
+    CONST char *string;		/* String. */
+    CONST char *pattern;	/* Pattern, which may contain special
+				 * characters. */
+    int nocase;			/* 0 for case sensitive, 1 for insensitive */
+{
+    int p, s;
+    CONST char *pstart = pattern;
+    Tcl_UniChar ch1, ch2;
+    
+    while (1) {
+	p = *pattern;
+	s = *string;
+	
+	/*
+	 * See if we're at the end of both the pattern and the string.  If
+	 * so, we succeeded.  If we're at the end of the pattern but not at
+	 * the end of the string, we failed.
+	 */
+	
+	if (p == '\0') {
+	    return (s == '\0');
+	}
+	if ((s == '\0') && (p != '*')) {
+	    return 0;
+	}
+
+	/* Check for a "*" as the next pattern character.  It matches
+	 * any substring.  We handle this by calling ourselves
+	 * recursively for each postfix of string, until either we
+	 * match or we reach the end of the string.
+	 */
+	
+	if (p == '*') {
+	    pattern++;
+	    if (*pattern == '\0') {
+		return 1;
+	    }
+	    while (1) {
+		if (Tcl_StringCaseMatch(string, pattern, nocase)) {
+		    return 1;
+		}
+		if (*string == '\0') {
+		    return 0;
+		}
+		string++;
+	    }
+	}
+
+	/* Check for a "?" as the next pattern character.  It matches
+	 * any single character.
+	 */
+
+	if (p == '?') {
+	    pattern++;
+	    string += Tcl_UtfToUniChar(string, &ch1);
+	    continue;
+	}
+
+	/* Check for a "[" as the next pattern character.  It is followed
+	 * by a list of characters that are acceptable, or by a range
+	 * (two characters separated by "-").
+	 */
+	
+	if (p == '[') {
+	    Tcl_UniChar startChar, endChar;
+
+	    pattern++;
+	    string += Tcl_UtfToUniChar(string, &ch1);
+	    if (nocase) {
+		ch1 = Tcl_UniCharToLower(ch1);
+	    }
+	    while (1) {
+		if ((*pattern == ']') || (*pattern == '\0')) {
+		    return 0;
+		}
+		pattern += Tcl_UtfToUniChar(pattern, &startChar);
+		if (nocase) {
+		    startChar = Tcl_UniCharToLower(startChar);
+		}
+		if (*pattern == '-') {
+		    pattern++;
+		    if (*pattern == '\0') {
+			return 0;
+		    }
+		    pattern += Tcl_UtfToUniChar(pattern, &endChar);
+		    if (nocase) {
+			endChar = Tcl_UniCharToLower(endChar);
+		    }
+		    if (((startChar <= ch1) && (ch1 <= endChar))
+			    || ((endChar <= ch1) && (ch1 <= startChar))) {
+			/*
+			 * Matches ranges of form [a-z] or [z-a].
+			 */
+
+			break;
+		    }
+		} else if (startChar == ch1) {
+		    break;
+		}
+	    }
+	    while (*pattern != ']') {
+		if (*pattern == '\0') {
+		    pattern = Tcl_UtfPrev(pattern, pstart);
+		    break;
+		}
+		pattern++;
+	    }
+	    pattern++;
+	    continue;
+	}
+    
+	/* If the next pattern character is '\', just strip off the '\'
+	 * so we do exact matching on the character that follows.
+	 */
+	
+	if (p == '\\') {
+	    pattern++;
+	    p = *pattern;
+	    if (p == '\0') {
+		return 0;
+	    }
+	}
+
+	/* There's no special character.  Just make sure that the next
+	 * bytes of each string match.
+	 */
+	
+	string  += Tcl_UtfToUniChar(string, &ch1);
+	pattern += Tcl_UtfToUniChar(pattern, &ch2);
+	if (nocase) {
+	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
+		return 0;
+	    }
+	} else if (ch1 != ch2) {
+	    return 0;
+	}
     }
 }
 
