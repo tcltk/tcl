@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.9 2000/08/25 20:39:32 ericm Exp $
+# RCS: @(#) $Id: trace.test,v 1.10 2001/08/10 13:10:13 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -336,6 +336,11 @@ test trace-5.7 {array traces fire for undefined variables} {
     array set x {a 1}
     set ::info
 } {x {} array}
+test trace-5.8 {array traces fire for undefined variables} {
+    catch {unset x}
+    trace add variable x array {set x(foo) 1 ;#}
+    set res "names: [array names x]"
+} {names: foo}
     
 # Trace multiple trace types at once.
 
