@@ -1,3 +1,10 @@
+2004-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/tcl.wse.in, unix/tcl.spec, win/README.binary, README: 
+	* win/configure.in, unix/configure.in, generic/tcl.h: 
+	Bumped version number to 8.5a3 to distinguish HEAD of CVS
+	development from the recent 8.5a2 release.
+
 2004-12-10  Miguel Sofer <msofer@users.sf.net>
 	* generic/tclCompile.c (TclInitCompiledLocals):
 	* generic/tclCompile.h:
