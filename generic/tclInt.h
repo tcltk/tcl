@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.48 2000/07/22 01:53:24 ericm Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.49 2000/08/10 18:25:15 davidg Exp $
  */
 
 #ifndef _TCLINT
@@ -2121,6 +2121,7 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 #else /* not TCL_MEM_DEBUG */
 
 #ifdef TCL_THREADS
+/* declared in tclObj.c */
 extern Tcl_Mutex tclObjMutex;
 #endif
 
