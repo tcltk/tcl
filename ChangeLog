@@ -1,3 +1,9 @@
+2003-05-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclObjLookupVar): [Bug 735335] temporary fix,
+	disabling usage of tclNsVarNameType.
+	* tests/var.test (var-15.1): test for [Bug 735335]
+
 2003-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSerial.c (SerialCloseProc): correct mem leak on
