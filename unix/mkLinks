@@ -61,11 +61,21 @@ if test -r Alloc.3; then
     rm -f Tcl_Realloc.3
     rm -f Tcl_AttemptAlloc.3
     rm -f Tcl_AttemptRealloc.3
+    rm -f ckalloc.3
+    rm -f ckfree.3
+    rm -f ckrealloc.3
+    rm -f attemptckalloc.3
+    rm -f attemptckrealloc.3
     ln Alloc.3 Tcl_Alloc.3
     ln Alloc.3 Tcl_Free.3
     ln Alloc.3 Tcl_Realloc.3
     ln Alloc.3 Tcl_AttemptAlloc.3
     ln Alloc.3 Tcl_AttemptRealloc.3
+    ln Alloc.3 ckalloc.3
+    ln Alloc.3 ckfree.3
+    ln Alloc.3 ckrealloc.3
+    ln Alloc.3 attemptckalloc.3
+    ln Alloc.3 attemptckrealloc.3
 fi
 if test -r AllowExc.3; then
     rm -f Tcl_AllowExceptions.3
