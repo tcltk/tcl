@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.1.2.2 1998/09/24 23:58:54 stanton Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.3 1998/10/06 00:37:17 stanton Exp $
  */
 
 #include <stdio.h>
@@ -488,6 +488,12 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    for (i = 2; i < objc; i++) {
 		slaveInterp = GetInterp(interp, objv[i]);
 		if (slaveInterp == NULL) {
+		    return TCL_ERROR;
+		} else if (slaveInterp == interp) {
+		    Tcl_ResetResult(interp);
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			    "cannot delete the current interpreter",
+			    (char *) NULL);
 		    return TCL_ERROR;
 		}
 		iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
