@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.25 2002/07/02 13:28:51 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.26 2002/07/02 19:10:57 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -151,8 +151,10 @@ to be tested to the interpreter running the test suite.
 Create a file named \fIname\fR relative to
 directory \fIdirectory\fR and write \fIcontents\fR
 to that file using the encoding [\fBencoding system\fR].
-Because the system encoding is used, this command
-is only suitable for making text files.
+If \fIcontents\fR does not end with a newline, a newline
+will be appended so that the file named \fIname\fR
+does end in a newline.  Because the system encoding is used,
+this command is only suitable for making text files.
 The file will will be removed by the next evaluation
 of [\fBcleanupTests\fR], unless it is removed by
 [\fBremoveFile\fR] first.  The default value of
@@ -187,14 +189,16 @@ Returns an empty string.  Use this command to delete any directories
 created by [\fBmakeDirectory\fR].  
 .TP
 \fBviewFile\fR \fIfile ?directory?\fR
-Returns the contents of \fIfile\fR.  This file name
-should be relative to \fIdirectory\fR.   The default value of
-\fIdirectory\fR is the directory specified by
+Returns the contents of \fIfile\fR, except for any
+final newline, just as [\fBread -nonewline\fR] would return.
+This file name should be relative to \fIdirectory\fR.   
+The default value of \fIdirectory\fR is the directory specified by
 the \fB-tmpdir\fR option to [\fBconfigure\fR].  Use this command
 as a convenient way to turn the contents of a file generated
 by a test into the result of that test for matching against
 an expected result.  The contents of the file are read using
-the binary encoding, so the exact byte for byte contents are returned.
+the binary encoding, so the exact byte for byte contents are
+returned, with the execption of the final newline, if any.
 .TP
 \fBcleanupTests\fR
 Intended to clean up and summarize after several tests have been

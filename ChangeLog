@@ -1,5 +1,12 @@
 2002-07-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n:		Reverted [makeFile] and [viewFile] to
+	* library/tcltest/tcltest.tcl:	their former behavior, and documented
+	* tests/cmdAH.test:		it.  Corrected misspelling of hook
+	* tests/event.test:		procedure.  Restored tests.
+	* tests/http.test:
+	* tests/io.test:
+
 	* library/tcltest/tcltest.tcl: Simplified logic of [GetMatchingFiles]
 	and [GetMatchingDirectories], removing special case processing.
 
