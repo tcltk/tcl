@@ -1,5 +1,8 @@
 2004-11-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclExecute.c (TclExecuteByteCode): NaN-equality fix from
+	Miguel Sofer. [Bug 761471]
+
 	* doc/CrtChannel.3 (Tcl_GetChannelMode): Add synopsis. [Bug 1058446]
 
 2004-10-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
