@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr-old.test,v 1.3 1999/06/26 03:54:11 jenn Exp $
+# RCS: @(#) $Id: compExpr-old.test,v 1.4 1999/06/30 00:17:07 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -671,7 +671,9 @@ test expr-19.1 {expr and interpreter result object resetting} {
 } 3
 
 # cleanup
-unset a
+if {[info exists a]} {
+    unset a
+}
 ::tcltest::cleanupTests
 return
 

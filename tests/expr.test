@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.4 1999/06/26 03:54:13 jenn Exp $
+# RCS: @(#) $Id: expr.test,v 1.5 1999/06/30 00:17:06 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -705,6 +705,8 @@ test expr-20.3 {broken substitution of integer digits} {
 } {4096 1000}
 
 # cleanup
-unset a
+if {[info exists a]} {
+    unset a
+}
 ::tcltest::cleanupTests
 return
