@@ -1,3 +1,10 @@
+2002-04-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c:
+	* tests/expr-old.test: fix for [Bug #542588] (Phil Ehrens), where
+	"too large integers" were reported as "floating-point value" in
+	[expr] error messages.
+
 2002-04-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:  Removed [saveState] and [restoreState] from
