@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.1 2003/04/16 23:31:43 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.2 2003/04/18 20:06:05 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -5498,7 +5498,7 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
 	    TclGetWide(w,valuePtr);
 	    if (mathFuncPtr->argTypes[k] == TCL_DOUBLE) {
 		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = (Tcl_WideInt) Tcl_WideAsDouble(w);
+		args[k].doubleValue = Tcl_WideAsDouble(w);
 	    } else if (mathFuncPtr->argTypes[k] == TCL_INT) {
 		args[k].type = TCL_INT;
 		args[k].intValue = Tcl_WideAsLong(w);
