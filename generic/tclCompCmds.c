@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.30 2002/06/11 15:42:20 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.31 2002/07/03 17:33:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -244,7 +244,6 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     char *name;
     int localIndex, nameChars, range, startOffset, jumpDist;
     int code;
-    char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
 
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
@@ -321,11 +320,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     envPtr->exceptArrayPtr[range].codeOffset = startOffset;
 
     if (code != TCL_OK) {
-	if (code == TCL_ERROR) {
-	    sprintf(buffer, "\n    (\"catch\" body line %d)",
-		    interp->errorLine);
-            Tcl_AddObjErrorInfo(interp, buffer, -1);
-        }
+	code = TCL_OUT_LINE_COMPILE;
 	goto done;
     }
     envPtr->exceptArrayPtr[range].numCodeBytes =
