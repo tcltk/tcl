@@ -1,3 +1,9 @@
+2004-04-24  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWin32Dll.c (DllMain): Added DisableThreadLibraryCalls()
+	for the DLL_PROCESS_ATTACH case.  We're not interested in knowing
+	about DLL_THREAD_ATTACH, so disable the notices.
+
 2004-04-24  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclPort.h:
