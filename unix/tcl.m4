@@ -663,7 +663,7 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 
 	AC_MSG_CHECKING([whether to use symlinks for manpages])
 	AC_ARG_ENABLE(man-symlinks,
-		AS_HELP_STRING([--enable-man-symlinks],
+		AC_HELP_STRING([--enable-man-symlinks],
 			[use symlinks for the manpages]),
 		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
 		enableval="no")
@@ -671,7 +671,7 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 
 	AC_MSG_CHECKING([whether to compress the manpages])
 	AC_ARG_ENABLE(man-compression,
-		AS_HELP_STRING([--enable-man-compression=PROG],
+		AC_HELP_STRING([--enable-man-compression=PROG],
 			[compress the manpages with PROG]),
 		test "$enableval" = "yes" && AC_MSG_ERROR([missing argument to --enable-man-compression])
 		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --compress $enableval",
@@ -689,7 +689,7 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 
 	AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
 	AC_ARG_ENABLE(man-suffix,
-		AS_HELP_STRING([--enable-man-suffix=STRING],
+		AC_HELP_STRING([--enable-man-suffix=STRING],
 			  [use STRING as a suffix to manpage file names (default: AC_PACKAGE_NAME)]),
 		test "$enableval" = "yes" && enableval="AC_PACKAGE_NAME"
 		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --suffix $enableval",

@@ -7,6 +7,9 @@
 	* unix/installManPage:              added
 	* unix/mkLinks.tcl:                 removed
 	* unix/mkLinks:                     removed
+	* unix/configure:                   generated
+
+	* unix/Makefile.in:                 Don't install tclConfig.h .
 
 2004-11-17  Don Porter  <dgp@users.sourceforge.net>
 
