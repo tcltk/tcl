@@ -3,7 +3,7 @@ E
 name		iso2022-jp
 init		{}
 final		{}
-iso8859-1	\x1b(B
+ascii		\x1b(B
 jis0201		\x1b(J
 jis0208		\x1b$B
 jis0208		\x1b$@
