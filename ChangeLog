@@ -1,3 +1,7 @@
+2004-07-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/io.test: Make io-61.1 create file as binary to pass on Win32
+
 2004-07-23  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c: simplify tclLocalVarNameType, removing the
