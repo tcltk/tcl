@@ -1,3 +1,22 @@
+2002-12-03  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclAppInit.c (sigHandler):  Protect from trying to close a
+	NULL handle.
+
+	* win/tclWinPipe.c (PipeClose2Proc, TclpCreateProcess):  Send a
+	real Win32 signal (CTRL_C_EVENT) when the read channel is brought
+	down to alert the child to close on its side.  Start the process
+	with CREATE_NEW_PROCESS_GROUP to allow the ability to send these
+	signals.  The following test case now brings down the child
+	without the use of an external [kill] command.
+
+	% set p [open "|[info name]" w+]
+	file8d5380
+	% pid $p
+	2876
+	% close $p     <- now doesn't block in Tcl_WaitPid()
+	%
+
 2002-11-27  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/tclWinPort.h:  Don't turn off winsock prototypes!
