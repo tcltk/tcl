@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetVar.3,v 1.5 2002/03/20 22:47:36 dgp Exp $
+'\" RCS: @(#) $Id: SetVar.3,v 1.6 2002/03/29 02:39:27 davygrvy Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetVar 3 8.1 Tcl "Tcl Library Procedures"
@@ -59,7 +59,7 @@ or (if \fIname2\fR is NULL) either the name of a scalar variable
 or a complete name including both variable name and index.
 May include \fB::\fR namespace qualifiers
 to specify a variable in a particular namespace.
-.AP CONST char *name2 in
+.AP "CONST char" *name2 in
 If non-NULL, gives name of element within array; in this
 case \fIname1\fR must refer to an array variable.
 .AP Tcl_Obj *newValuePtr in
