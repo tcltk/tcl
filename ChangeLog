@@ -1,5 +1,10 @@
 2004-04-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/Hash.3: Added note to Tcl_{First,Next}HashEntry docs that
+	deleting the element they return is supported (and is in fact the
+	only safe update you can do to the structure of a hashtable while
+	an iteration is going over it.)
+
 	* doc/bgerror.n: Added example from David Welton. [Patch 939473]
 
 	* doc/after.n: Added examples from David Welton. [Patch 938820]

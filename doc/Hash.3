@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.12 2003/11/14 23:21:02 dkf Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.13 2004/04/21 21:33:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -210,8 +210,9 @@ A call to \fBTcl_FirstHashEntry\fR followed by calls to
 \fBTcl_NextHashEntry\fR will return each of the entries in
 the table exactly once, in an arbitrary order.
 It is unadvisable to modify the structure of the table, e.g.
-by creating or deleting entries, while the search is in
-progress.
+by creating or deleting entries, while the search is in progress,
+with the exception of deleting the entry returned by
+\fBTcl_FirstHashEntry\fR or \fBTcl_NextHashEntry\fR.
 .PP
 \fBTcl_HashStats\fR returns a dynamically-allocated string with
 overall information about a hash table, such as the number of
