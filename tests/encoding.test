@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.6 1999/08/23 17:54:59 jenn Exp $
+# RCS: @(#) $Id: encoding.test,v 1.7 1999/10/13 00:32:29 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -61,24 +61,24 @@ test encoding-2.1 {Tcl_FreeEncoding: refcount == 0} {
 test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
-    encoding system jis0208		;# incr ref count
+    encoding system shiftjis		;# incr ref count
     testencoding path [list [pwd]]
-    set x [encoding convertto jis0208 \u4e4e]	;# old one found   
+    set x [encoding convertto shiftjis \u4e4e]	;# old one found   
     encoding system identity
-    lappend x [catch {encoding convertto jis0208 \u4e4e} msg] $msg
+    lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
     encoding system identity
     testencoding path $path
     encoding system $system
     set x
-} {8C 1 {unknown encoding "jis0208"}}
+} "\u008c\u00c1 1 {unknown encoding \"shiftjis\"}"
 
 test encoding-3.1 {Tcl_GetEncodingName, NULL} {
     set old [encoding system]
-    encoding system jis0208
+    encoding system shiftjis
     set x [encoding system]
     encoding system $old
     set x
-} {jis0208}
+} {shiftjis}
 test encoding-3.2 {Tcl_GetEncodingName, non-null} {
     set old [fconfigure stdout -encoding]
     fconfigure stdout -encoding jis0208
