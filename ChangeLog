@@ -1,3 +1,8 @@
+2001-03-26  Don Porter  <dgp@users.sourceforge.net>
+	* generic/tclDecls.h (Tcl_InitCustomHashTable):  Correction to
+	patch from 2001-01-18;  tclDecls.h was not generated using
+	'make genstubs'.
+
 2001-03-26  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* win/tclWinInt.h (tclWinTCharEncoding): Removed as now a static
