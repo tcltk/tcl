@@ -1,3 +1,9 @@
+2003-11-24  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclParse.c:	Corrected faulty check for trailing white
+	space in {expand} parsing.  Thanks Andreas Leitgeb.  [Bug 848262].
+	* tests/parse.test: 	New tests for the bug.
+
 2003-11-24  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to [Bug 845778] - Infinite recursion 
