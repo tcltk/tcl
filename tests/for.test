@@ -9,9 +9,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.2 1998/09/14 18:40:09 stanton Exp $
+# RCS: @(#) $Id: for.test,v 1.3 1999/04/16 00:47:27 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # Basic "for" operation.
 
@@ -582,11 +584,169 @@ test for-4.1 {break must reset the interp result} {
     set j
 } {}
 
-# Check "for" and computed command names.
-
-test for-5.1 {for and computed command names} {
-    set j 0
+# Basic "for" operation with computed command names.
+test for-5.1 {for cmd with computed command names: missing initial command} {
     set z for
-    $z {set i 0} {$i<10} {incr i} {set j $i}
-    set j
-} 9
+    list [catch {$z} msg] $msg
+} {1 {wrong # args: should be "for start test next command"}}
+test for-5.2 {for cmd with computed command names: error in initial command} {
+    set z for
+    list [catch {$z {set}} msg] $msg $errorInfo
+} {1 {wrong # args: should be "for start test next command"} {wrong # args: should be "for start test next command"
+    while executing
+"$z {set}"}}
+test for-5.3 {for cmd with computed command names: missing test expression} {
+    set z for
+    catch {$z {set i 0}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-5.4 {for cmd with computed command names: error in test expression} {
+    set z for
+    catch {$z {set i 0} {$i<}} msg
+    set errorInfo
+} {wrong # args: should be "for start test next command"
+    while executing
+"$z {set i 0} {$i<}"}
+test for-5.5 {for cmd with computed command names: test expression is enclosed in quotes} {
+    set z for
+    set i 0
+    $z {} "$i > 5" {incr i} {}
+} {}
+test for-5.6 {for cmd with computed command names: missing "next" command} {
+    set z for
+    catch {$z {set i 0} {$i < 5}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-5.7 {for cmd with computed command names: missing command body} {
+    set z for
+    catch {$z {set i 0} {$i < 5} {incr i}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-5.8 {for cmd with computed command names: error executing command body} {
+    set z for
+    catch {$z {set i 0} {$i < 5} {incr i} {set}} msg
+    set errorInfo
+} {wrong # args: should be "set varName ?newValue?"
+    while compiling
+"set"
+    ("for" body line 1)
+    invoked from within
+"$z {set i 0} {$i < 5} {incr i} {set}"}
+test for-5.9 {for cmd with computed command names: simple command body} {
+    set z for
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-5.10 {for cmd with computed command names: command body in quotes} {
+    set z for
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} "append a x"
+    set a
+} {xxxxx}
+test for-5.11 {for cmd with computed command names: computed command body} {
+    set z for
+    catch {unset x1}
+    catch {unset bb}
+    catch {unset x2}
+    set x1 {append a x1; }
+    set bb {break}
+    set x2 {; append a x2}
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} $x1$bb$x2
+    set a
+} {x1}
+test for-5.12 {for cmd with computed command names: error in "next" command} {
+    set z for
+    catch {$z {set i 0} {$i < 5} {set} {set j 4}} msg
+    set errorInfo
+} {wrong # args: should be "set varName ?newValue?"
+    while compiling
+"set"
+    ("for" loop-end command)
+    invoked from within
+"$z {set i 0} {$i < 5} {set} {set j 4}"}
+test for-5.13 {for cmd with computed command names: long command body} {
+    set z for
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	if $i>5 continue
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-5.14 {for cmd with computed command names: for command result} {
+    set z for
+    set a [$z {set i 0} {$i < 5} {incr i} {}]
+    set a
+} {}
+test for-5.15 {for cmd with computed command names: for command result} {
+    set z for
+    set a [$z {set i 0} {$i < 5} {incr i} {if $i==3 break}]
+    set a
+} {}
+
+# Test for incorrect "double evaluation" semantics
+
+test for-6.1 {possible delayed substitution of increment command} {knownBug} {
+    # Increment should be 5, and lappend should always append 5
+    catch {unset a}
+    catch {unset i}
+    set a 5
+    set i {}
+    for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
+    set i
+} {1 6 11}
+
+test for-6.2 {possible delayed substitution of body command} {knownBug} {
+    # Increment should be 5, and lappend should always append 5
+    set a 5
+    set i {}
+    for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
+    set i
+} {5 5 5 5}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

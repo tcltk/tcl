@@ -6,19 +6,23 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: history.test,v 1.2 1998/09/14 18:40:09 stanton Exp $
+# RCS: @(#) $Id: history.test,v 1.3 1999/04/16 00:47:28 stanton Exp $
   
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
 if {[catch {history}]} {
     puts stdout "This version of Tcl was built without the history command;\n"
     puts stdout "history tests will be skipped.\n"
+    ::tcltest::cleanupTests
     return
 }
-
-if {[string compare test [info procs test]] == 1} then {source defs}
 
 set num [history nextid]
 history keep 3
@@ -208,4 +212,19 @@ test history-9.2 {miscellaneous} {
     catch {history gorp} msg
     set msg
 } {bad option "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
 

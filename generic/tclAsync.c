@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.3 1999/03/11 00:19:23 stanton Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.4 1999/04/16 00:46:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -42,6 +42,8 @@ typedef struct AsyncHandler {
 static AsyncHandler *firstHandler;	/* First handler defined for process,
 					 * or NULL if none. */
 static AsyncHandler *lastHandler;	/* Last handler or NULL. */
+
+TCL_DECLARE_MUTEX(asyncMutex)           /* Process-wide async handler lock */
 
 /*
  * The variable below is set to 1 whenever a handler becomes ready and
@@ -92,12 +94,14 @@ Tcl_AsyncCreate(proc, clientData)
     asyncPtr->nextPtr = NULL;
     asyncPtr->proc = proc;
     asyncPtr->clientData = clientData;
+    Tcl_MutexLock(&asyncMutex);
     if (firstHandler == NULL) {
 	firstHandler = asyncPtr;
     } else {
 	lastHandler->nextPtr = asyncPtr;
     }
     lastHandler = asyncPtr;
+    Tcl_MutexUnlock(&asyncMutex);
     return (Tcl_AsyncHandler) asyncPtr;
 }
 
@@ -124,11 +128,13 @@ void
 Tcl_AsyncMark(async)
     Tcl_AsyncHandler async;		/* Token for handler. */
 {
+    Tcl_MutexLock(&asyncMutex);
     ((AsyncHandler *) async)->ready = 1;
     if (!asyncActive) {
-	TclpAsyncMark(async);
 	asyncReady = 1;
+	TclpAsyncMark(async);
     }
+    Tcl_MutexUnlock(&asyncMutex);
 }
 
 /*
@@ -161,8 +167,10 @@ Tcl_AsyncInvoke(interp, code)
 					 * just completed. */
 {
     AsyncHandler *asyncPtr;
+    Tcl_MutexLock(&asyncMutex);
 
     if (asyncReady == 0) {
+	Tcl_MutexUnlock(&asyncMutex);
 	return code;
     }
     asyncReady = 0;
@@ -193,9 +201,12 @@ Tcl_AsyncInvoke(interp, code)
 	    break;
 	}
 	asyncPtr->ready = 0;
+	Tcl_MutexUnlock(&asyncMutex);
 	code = (*asyncPtr->proc)(asyncPtr->clientData, interp, code);
+	Tcl_MutexLock(&asyncMutex);
     }
     asyncActive = 0;
+    Tcl_MutexUnlock(&asyncMutex);
     return code;
 }
 
@@ -223,6 +234,7 @@ Tcl_AsyncDelete(async)
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
     AsyncHandler *prevPtr;
 
+    Tcl_MutexLock(&asyncMutex);
     if (firstHandler == asyncPtr) {
 	firstHandler = asyncPtr->nextPtr;
 	if (firstHandler == NULL) {
@@ -238,6 +250,7 @@ Tcl_AsyncDelete(async)
 	    lastHandler = prevPtr;
 	}
     }
+    Tcl_MutexUnlock(&asyncMutex);
     ckfree((char *) asyncPtr);
 }
 

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.3 1999/02/02 22:25:21 stanton Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.4 1999/04/16 00:46:35 stanton Exp $
 '\" 
 .so man.macros
 .TH registry n 8.0 Tcl "Tcl Built-In Commands"
@@ -112,7 +112,6 @@ registry command:
 .
 The registry value contains arbitrary binary data.  The data is represented
 exactly in Tcl, including any embedded nulls.
-Tcl 
 .TP
 \fBnone\fR
 .

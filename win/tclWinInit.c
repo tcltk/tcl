@@ -3,16 +3,16 @@
  *
  *	Contains the Windows-specific interpreter initialization functions.
  *
- * Copyright (c) 1994-1996 Sun Microsystems, Inc.
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.13 1999/03/11 00:19:24 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.14 1999/04/16 00:48:08 stanton Exp $
  */
 
-#include "tclInt.h"
-#include "tclPort.h"
+#include "tclWinInt.h"
 #include <winreg.h>
 #include <winnt.h>
 #include <winbase.h>
@@ -75,159 +75,440 @@ static char* processors[NUMPROCESSORS] = {
 };
 
 /*
- * The Init script, tclPreInitScript variable, and the routine
- * TclSetPreInitScript (common to Windows and Unix platforms) are defined
- * in generic/tclInitScript.h
+ * Thread id used for asynchronous notification from signal handlers.
+ */
+
+static DWORD mainThreadId;
+
+/*
+ * The Init script (common to Windows and Unix platforms) is
+ * defined in tkInitScript.h
  */
 
 #include "tclInitScript.h"
 
-/*
- * Thread id used for asynchronous notification from signal handlers.
- */
-
-static DWORD threadId;
-
+static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
+static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
+			    CONST char *lib);
+static void		AppendRegistry(Tcl_Obj *listPtr, CONST char *lib);
+static int		ToUtf(CONST WCHAR *wSrc, char *dst);
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
- * TclPlatformInit --
+ * TclpInitPlatform --
  *
- *	Performs Windows-specific interpreter initialization related to the
- *	tcl_library variable.  Also sets up the HOME environment variable
- *	if it is not already set.
+ *	Initialize all the platform-dependant things like signals and
+ *	floating-point error handling.
+ *
+ *	Called at process initialization time.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Sets "tcl_library" and "env(HOME)" Tcl variables
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+TclpInitPlatform()
+{
+    tclPlatform = TCL_PLATFORM_WINDOWS;
+
+    /*
+     * The following code stops Windows 3.X and Windows NT 3.51 from 
+     * automatically putting up Sharing Violation dialogs, e.g, when 
+     * someone tries to access a file that is locked or a drive with no 
+     * disk in it.  Tcl already returns the appropriate error to the 
+     * caller, and they can decide to put up their own dialog in response 
+     * to that failure.  
+     *
+     * Under 95 and NT 4.0, this is a NOOP because the system doesn't 
+     * automatically put up dialogs when the above operations fail.
+     */
+
+    SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
+
+    /*
+     * Save the id of the first thread to intialize the Tcl library.  This
+     * thread will be used to handle notifications from async event
+     * procedures.  This is not strictly correct.  A better solution involves
+     * using a designated "main" notifier that is kept up to date as threads
+     * come and go.
+     */
+
+    mainThreadId = GetCurrentThreadId();
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpInitLibraryPath --
+ *
+ *	Initialize the library path at startup.  
+ *
+ *	This call sets the library path to strings in UTF-8. Any 
+ *	pre-existing library path information is assumed to have been 
+ *	in the native multibyte encoding.
+ *
+ *	Called at process initialization time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+TclpInitLibraryPath(path)
+    CONST char *path;		/* Potentially dirty UTF string that is */
+				/* the path to the executable name.     */
+{
+#define LIBRARY_SIZE	    32
+    Tcl_Obj *pathPtr, *objPtr;
+    char *str;
+    Tcl_DString ds;
+    int pathc;
+    char **pathv;
+    char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
+
+    Tcl_DStringInit(&ds);
+    pathPtr = Tcl_NewObj();
+
+    /*
+     * Initialize the substrings used when locating an executable.  The
+     * installLib variable computes the path as though the executable
+     * is installed.  The developLib computes the path as though the
+     * executable is run from a develpment directory.
+     */
+
+    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+    sprintf(developLib, "../tcl%s/library",
+	    ((TCL_RELEASE_LEVEL < 2) ? TCL_PATCH_LEVEL : TCL_VERSION));
+
+    /*
+     * Look for the library relative to default encoding dir.
+     */
+
+    str = Tcl_GetDefaultEncodingDir();
+    if ((str != NULL) && (str[0] != '\0')) {
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
+
+    /*
+     * Look for the library relative to the TCL_LIBRARY env variable.
+     * If the last dirname in the TCL_LIBRARY path does not match the
+     * last dirname in the installLib variable, use the last dir name
+     * of installLib in addition to the orginal TCL_LIBRARY path.
+     */
+
+    AppendEnvironment(pathPtr, installLib);
+
+    /*
+     * Look for the library relative to the DLL.  Only use the installLib
+     * because in practice, the DLL is always installed.
+     */
+
+    AppendDllPath(pathPtr, TclWinGetTclInstance(), installLib);
+    
+    /*
+     * Look for the library relative to the executable.  Use both the
+     * installLib and developLib because we cannot determine if this
+     * is installed or not.
+     */
+
+    if (path != NULL) {
+	Tcl_SplitPath(path, &pathc, &pathv);
+	if (pathc > 1) {
+	    pathv[pathc - 2] = installLib;
+	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	if (pathc > 2) {
+	    pathv[pathc - 3] = developLib;
+	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	ckfree((char *) pathv);
+    }
+
+    TclSetLibraryPath(pathPtr);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * AppendEnvironment --
+ *
+ *	Append the value of the TCL_LIBRARY environment variable onto the
+ *	path pointer.  If the env variable points to another version of
+ *	tcl (e.g. "tcl7.6") also append the path to this version (e.g.,
+ *	"tcl7.6/../tcl8.1")
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static void
+AppendEnvironment(
+    Tcl_Obj *pathPtr,
+    CONST char *lib)
+{
+    int pathc;
+    WCHAR wBuf[MAX_PATH];
+    char buf[MAX_PATH * TCL_UTF_MAX];
+    Tcl_Obj *objPtr;
+    char *str;
+    Tcl_DString ds;
+    char **pathv;
+
+    /*
+     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
+     * that this is a unicode string.
+     */
+    
+    if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
+        buf[0] = '\0';
+	GetEnvironmentVariableA("TCL_LIBRARY", buf, MAX_PATH);
+    } else {
+	ToUtf(wBuf, buf);
+    }
+
+    if (buf[0] != '\0') {
+	objPtr = Tcl_NewStringObj(buf, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+
+	TclWinNoBackslash(buf);
+	Tcl_SplitPath(buf, &pathc, &pathv);
+
+	/* 
+	 * The lstrcmpi() will work even if pathv[pathc - 1] is random
+	 * UTF-8 chars because I know lib is ascii.
+	 */
+
+	if ((pathc > 0) && (lstrcmpiA(lib + 4, pathv[pathc - 1]) != 0)) {
+	    /*
+	     * TCL_LIBRARY is set but refers to a different tcl
+	     * installation than the current version.  Try fiddling with the
+	     * specified directory to make it refer to this installation by
+	     * removing the old "tclX.Y" and substituting the current
+	     * version string.
+	     */
+	    
+	    pathv[pathc - 1] = (char *) (lib + 4);
+	    Tcl_DStringInit(&ds);
+	    str = Tcl_JoinPath(pathc, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
+	    Tcl_DStringFree(&ds);
+	} else {
+	    objPtr = Tcl_NewStringObj(buf, -1);
+	}
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	ckfree((char *) pathv);
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * AppendDllPath --
+ *
+ *	Append a path onto the path pointer that tries to locate the Tcl
+ *	library relative to the location of the Tcl DLL.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static void 
+AppendDllPath(
+    Tcl_Obj *pathPtr, 
+    HMODULE hModule,
+    CONST char *lib)
+{
+    WCHAR wName[MAX_PATH + LIBRARY_SIZE];
+    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+
+    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
+	GetModuleFileNameA(hModule, name, MAX_PATH);
+    } else {
+	ToUtf(wName, name);
+    }
+    if (lib != NULL) {
+	char *end, *p;
+
+	end = strrchr(name, '\\');
+	*end = '\0';
+	p = strrchr(name, '\\');
+	if (p != NULL) {
+	    end = p;
+	}
+	*end = '\\';
+	strcpy(end + 1, lib);
+    }
+    TclWinNoBackslash(name);
+    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(name, -1));
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ToUtf --
+ *
+ *	Convert a char string to a UTF string.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+ToUtf(
+    CONST WCHAR *wSrc,
+    char *dst)
+{
+    char *start;
+
+    start = dst;
+    while (*wSrc != '\0') {
+	dst += Tcl_UniCharToUtf(*wSrc, dst);
+	wSrc++;
+    }
+    *dst = '\0';
+    return dst - start;
+}
+
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpSetInitialEncodings --
+ *
+ *	Based on the locale, determine the encoding of the operating
+ *	system and the default encoding for newly opened files.
+ *
+ *	Called at process initialization time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The Tcl library path is converted from native encoding to UTF-8.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+TclpSetInitialEncodings()
+{
+    CONST char *encoding;
+    char buf[4 + TCL_INTEGER_SPACE];
+    int platformId;
+    Tcl_Obj *pathPtr;
+
+    platformId = TclWinGetPlatformId();
+
+    TclWinSetInterfaces(platformId == VER_PLATFORM_WIN32_NT);
+
+    wsprintfA(buf, "cp%d", GetACP());
+    Tcl_SetSystemEncoding(NULL, buf);
+
+    if (platformId != VER_PLATFORM_WIN32_NT) {
+	pathPtr = TclGetLibraryPath();
+	if (pathPtr != NULL) {
+	    int i, objc;
+	    Tcl_Obj **objv;
+	    
+	    objc = 0;
+	    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
+	    for (i = 0; i < objc; i++) {
+		int length;
+		char *string;
+		Tcl_DString ds;
+
+		string = Tcl_GetStringFromObj(objv[i], &length);
+		Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+		Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
+			Tcl_DStringLength(&ds));
+		Tcl_DStringFree(&ds);
+	    }
+	}
+    }
+
+    /*
+     * Keep this encoding preloaded.  The IO package uses it for gets on a
+     * binary channel.  
+     */
+
+    encoding = "iso8859-1";
+    Tcl_GetEncoding(NULL, encoding);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpSetVariables --
+ *
+ *	Performs platform-specific interpreter initialization related to
+ *	the tcl_library and tcl_platform variables, and other platform-
+ *	specific things.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets "tcl_library", "tcl_platform", and "env(HOME)" Tcl variables.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclPlatformInit(interp)
-    Tcl_Interp *interp;
-{
-    char *p;
-    char buffer[13];
-    Tcl_DString ds;
-    OSVERSIONINFO osInfo;
+TclpSetVariables(interp)
+    Tcl_Interp *interp;		/* Interp to initialize. */	
+{	    
+    char *ptr;
+    char buffer[TCL_INTEGER_SPACE * 2];
     SYSTEM_INFO sysInfo;
-    int isWin32s;		/* True if we are running under Win32s. */
     OemId *oemId;
-    HKEY key;
-    DWORD size, result, type;
+    OSVERSIONINFOA osInfo;
+    Tcl_DString ds;
 
-    tclPlatform = TCL_PLATFORM_WINDOWS;
-
-    Tcl_DStringInit(&ds);
-
-    /*
-     * Find out what kind of system we are running on.
-     */
-
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&osInfo);
-
-    isWin32s = (osInfo.dwPlatformId == VER_PLATFORM_WIN32s);
-
-    /*
-     * Since Win32s doesn't support GetSystemInfo, we use a default value.
-     */
+    osInfo.dwOSVersionInfoSize = sizeof(osInfo);
+    GetVersionExA(&osInfo);
 
     oemId = (OemId *) &sysInfo;
-    if (!isWin32s) {
-	GetSystemInfo(&sysInfo);
-    } else {
+    if (osInfo.dwPlatformId == VER_PLATFORM_WIN32s) {
+	/*
+	 * Since Win32s doesn't support GetSystemInfo, we use a default value.
+	 */
+
 	oemId->wProcessorArchitecture = PROCESSOR_ARCHITECTURE_INTEL;
-    }
-
-    /*
-     * Initialize the tcl_library variable from the registry.
-     */
-
-    Tcl_SetVar(interp, "tclDefaultLibrary", "", TCL_GLOBAL_ONLY);
-    if (!isWin32s) {
-	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TCL_REGISTRY_KEY, 0,
-		KEY_READ, &key);
     } else {
-	result = RegOpenKeyEx(HKEY_CLASSES_ROOT, TCL_REGISTRY_KEY, 0,
-		KEY_READ, &key);
-    }
-    if (result == ERROR_SUCCESS) {
-	if (RegQueryValueEx(key, "", NULL, NULL, NULL, &size)
-		== ERROR_SUCCESS) {
-	    char *argv[3];
-	    Tcl_DStringSetLength(&ds, size);
-	    RegQueryValueEx(key, "", NULL, NULL,
-		    (LPBYTE) Tcl_DStringValue(&ds), &size);
-	    Tcl_SetVar(interp, "tclDefaultLibrary", Tcl_DStringValue(&ds),
-		    TCL_GLOBAL_ONLY);
-	    argv[0] = Tcl_GetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
-	    argv[1] = "lib/tcl" TCL_VERSION;
-	    argv[2] = NULL;
-	    Tcl_DStringSetLength(&ds, 0);
-	    Tcl_SetVar(interp, "tclDefaultLibrary",
-		    Tcl_JoinPath(2, argv, &ds), TCL_GLOBAL_ONLY);
-	}
-	if ((RegQueryValueEx(key, "PkgPath", NULL, &type, NULL, &size)
-		== ERROR_SUCCESS) && (type == REG_MULTI_SZ)) {
-	    char **argv;
-	    int argc;
-
-	    /*
-	     * PkgPath is stored as an array of null terminated strings
-	     * terminated by two null characters.  First count the number
-	     * of strings, then allocate an argv array so we can construct
-	     * a valid list.
-	     */
-
-	    Tcl_DStringSetLength(&ds, size);
-	    RegQueryValueEx(key, "PkgPath", NULL, NULL,
-		    (LPBYTE)Tcl_DStringValue(&ds), &size);
-	    argc = 0;
-	    p = Tcl_DStringValue(&ds);
-	    do {
-		if (*p) {
-		    argc++;
-		}
-		p += strlen(p) + 1;
-	    } while (*p);
-
-	    argv = (char **) ckalloc((sizeof(char *) * argc) + 1);
-	    argc = 0;
-	    p = Tcl_DStringValue(&ds);
-	    do {
-		if (*p) {
-		    argv[argc++] = p;
-		    while (*p) {
-			if (*p == '\\') {
-			    *p = '/';
-			}
-			p++;
-		    }
-		}
-		p++;
-	    } while (*p);
-
-	    p = Tcl_Merge(argc, argv);
-	    Tcl_SetVar(interp, "tcl_pkgPath", p, TCL_GLOBAL_ONLY);
-	    ckfree(p);
-	    ckfree((char*) argv);
-	} else {
-	    char *argv[3];
-	    argv[0] = Tcl_GetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
-	    argv[1] = "..";
-	    argv[2] = NULL;
-	    Tcl_DStringSetLength(&ds, 0);
-	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_JoinPath(2, argv, &ds),
-		    TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT);
-	}
-    } else {
-	Tcl_SetVar(interp, "tcl_pkgPath", "", TCL_GLOBAL_ONLY);
+	GetSystemInfo(&sysInfo);
     }
 
     /*
@@ -240,7 +521,7 @@ TclPlatformInit(interp)
 	Tcl_SetVar2(interp, "tcl_platform", "os",
 		platforms[osInfo.dwPlatformId], TCL_GLOBAL_ONLY);
     }
-    sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
+    wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (oemId->wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
@@ -265,16 +546,16 @@ TclPlatformInit(interp)
      * environment variables, if necessary.
      */
 
-    p = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
-    if (p == NULL) {
-	Tcl_DStringSetLength(&ds, 0);
-	p = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
-	if (p != NULL) {
-	    Tcl_DStringAppend(&ds, p, -1);
+    Tcl_DStringInit(&ds);
+    ptr = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
+    if (ptr == NULL) {
+	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
+	if (ptr != NULL) {
+	    Tcl_DStringAppend(&ds, ptr, -1);
 	}
-	p = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
-	if (p != NULL) {
-	    Tcl_DStringAppend(&ds, p, -1);
+	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
+	if (ptr != NULL) {
+	    Tcl_DStringAppend(&ds, ptr, -1);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
@@ -284,14 +565,98 @@ TclPlatformInit(interp)
 	}
     }
 
+    Tcl_DStringSetLength(&ds, 100);
+    if (GetUserName(Tcl_DStringValue(&ds), &Tcl_DStringLength(&ds)) != 0) {
+	Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
+		TCL_GLOBAL_ONLY);
+    } else {
+	Tcl_SetVar2(interp, "tcl_platform", "user", "", TCL_GLOBAL_ONLY);
+    }
     Tcl_DStringFree(&ds);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindVariable --
+ *
+ *	Locate the entry in environ for a given name.  On Unix this 
+ *	routine is case sensetive, on Windows this matches mioxed case.
+ *
+ * Results:
+ *	The return value is the index in environ of an entry with the
+ *	name "name", or -1 if there is no such entry.   The integer at
+ *	*lengthPtr is filled in with the length of name (if a matching
+ *	entry is found) or the length of the environ array (if no matching
+ *	entry is found).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpFindVariable(name, lengthPtr)
+    CONST char *name;		/* Name of desired environment variable
+				 * (UTF-8). */
+    int *lengthPtr;		/* Used to return length of name (for
+				 * successful searches) or number of non-NULL
+				 * entries in environ (for unsuccessful
+				 * searches). */
+{
+    int i, length, result = -1;
+    register CONST char *env, *p1, *p2;
+    char *envUpper, *nameUpper;
+    Tcl_DString envString;
 
     /*
-     * Save the current thread id so an async signal handler can poke
-     * the right thread using TclpAyncMark.
+     * Convert the name to all upper case for the case insensitive
+     * comparison.
      */
 
-    threadId = GetCurrentThreadId();
+    length = strlen(name);
+    nameUpper = (char *) ckalloc((unsigned) length+1);
+    memcpy((VOID *) nameUpper, (VOID *) name, (size_t) length+1);
+    Tcl_UtfToUpper(nameUpper);
+    
+    Tcl_DStringInit(&envString);
+    for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
+	/*
+	 * Chop the env string off after the equal sign, then Convert
+	 * the name to all upper case, so we do not have to convert
+	 * all the characters after the equal sign.
+	 */
+	
+	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p1 = strchr(envUpper, '=');
+	if (p1 == NULL) {
+	    continue;
+	}
+	length = p1 - envUpper;
+	Tcl_DStringSetLength(&envString, length+1);
+	Tcl_UtfToUpper(envUpper);
+
+	p1 = envUpper;
+	p2 = nameUpper;
+	for (; *p2 == *p1; p1++, p2++) {
+	    /* NULL loop body. */
+	}
+	if ((*p1 == '=') && (*p2 == '\0')) {
+	    *lengthPtr = length;
+	    result = i;
+	    goto done;
+	}
+	
+	Tcl_DStringFree(&envString);
+    }
+    
+    *lengthPtr = i;
+
+    done:
+    Tcl_DStringFree(&envString);
+    ckfree(nameUpper);
+    return result;
 }
 
 /*
@@ -304,8 +669,8 @@ TclPlatformInit(interp)
  *	such as sourcing the "init.tcl" script.
  *
  * Results:
- *	Returns a standard Tcl completion code and sets interp->result
- *	if there is an error.
+ *	Returns a standard Tcl completion code and sets the interp's
+ *	result if there is an error.
  *
  * Side effects:
  *	Depends on what's in the init.tcl script.
@@ -317,35 +682,20 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;		/* Interpreter to initialize. */
 {
+    Tcl_Obj *pathPtr;
+
     if (tclPreInitScript != NULL) {
 	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
 	    return (TCL_ERROR);
 	};
     }
-    return(Tcl_Eval(interp, initScript));
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinGetPlatform --
- *
- *	This is a kludge that allows the test library to get access
- *	the internal tclPlatform variable.
- *
- * Results:
- *	Returns a pointer to the tclPlatform variable.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
 
-TclPlatformType *
-TclWinGetPlatform()
-{
-    return &tclPlatform;
+    pathPtr = TclGetLibraryPath();
+    if (pathPtr == NULL) {
+	pathPtr = Tcl_NewObj();
+    }
+    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    return Tcl_Eval(interp, initScript);
 }
 
 /*
@@ -400,8 +750,8 @@ Tcl_SourceRCFile(interp)
 		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 		    if (errChannel) {
-			Tcl_Write(errChannel, interp->result, -1);
-			Tcl_Write(errChannel, "\n", 1);
+			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+			Tcl_WriteChars(errChannel, "\n", 1);
 		    }
 		}
 	    }
@@ -435,5 +785,5 @@ TclpAsyncMark(async)
      * asynchronous events.
      */
 
-    PostThreadMessage(threadId, WM_USER, 0, 0);
+    PostThreadMessage(mainThreadId, WM_USER, 0, 0);
 }

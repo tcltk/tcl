@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.3 1999/04/15 22:38:46 stanton Exp $
+'\" RCS: @(#) $Id: open.n,v 1.4 1999/04/16 00:46:35 stanton Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -217,9 +217,7 @@ no interactions between command pipelines and the console.
 .TP
 \fBMacintosh\fR
 .
-Access to the serial port is not accomplished through magic cookies passed
-to the \fIopen\fR command on the Macintosh.  Instead, you can use Sean Wood's 
-(yoda@drexel.edu) \fIDevice\fR extension for the same purpose.
+Opening a serial port is not currently implemented under Macintosh.
 .sp
 Opening a command pipeline is not supported under Macintosh, since 
 applications do not support the concept of standard input or output.

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacBOAAppInit.c,v 1.2 1998/09/14 18:40:04 stanton Exp $
+ * RCS: @(#) $Id: tclMacBOAAppInit.c,v 1.3 1999/04/16 00:47:19 stanton Exp $
  */
 
 #include "tcl.h"
@@ -97,7 +97,7 @@ main(
  *
  * Results:
  *	Returns a standard Tcl completion code, and leaves an error
- *	message in interp->result if an error occurs.
+ *	message in the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.

@@ -5,12 +5,12 @@
  *	in systems that don't support dynamic loading; it just returns
  *	an error.
  *
- * Copyright (c) 1995-1996 Sun Microsystems, Inc.
+ * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.2 1998/09/14 18:40:00 stanton Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.3 1999/04/16 00:46:50 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,7 @@
  *
  * Results:
  *	The result is TCL_ERROR, and an error message is left in
- *	interp->result.
+ *	the interp's result.
  *
  * Side effects:
  *	None.

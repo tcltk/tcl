@@ -8,12 +8,12 @@
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
  * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1996 Sun Microsystems, Inc.
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.5 1998/09/14 18:40:00 stanton Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.6 1999/04/16 00:46:47 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,9 @@ typedef struct OpenFileChannelProc {
  * these statically declared list entry cannot be inadvertently removed.
  *
  * This method avoids the need to call any sort of "initialization"
- * function
+ * function.
+ *
+ * All three lists are protected by a global hookMutex.
  */
 
 static StatProc defaultStatProc = {
@@ -72,9 +74,11 @@ static OpenFileChannelProc defaultOpenFileChannelProc = {
 };
 static OpenFileChannelProc *openFileChannelProcList =
 	&defaultOpenFileChannelProc;
+
+TCL_DECLARE_MUTEX(hookMutex)
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
  * TclGetOpenMode --
  *
@@ -85,8 +89,8 @@ static OpenFileChannelProc *openFileChannelProcList =
  *
  * Results:
  *	On success, returns mode to pass to "open". If an error occurs, the
- *	returns -1 and if interp is not NULL, sets interp->result to an
- *	error message.
+ *	return value is -1 and if interp is not NULL, sets interp's result
+ *	object to an error message.
  *
  * Side effects:
  *	Sets the integer referenced by seekFlagPtr to 1 to tell the caller
@@ -96,7 +100,7 @@ static OpenFileChannelProc *openFileChannelProcList =
  *	This code is based on a prototype implementation contributed
  *	by Mark Diekhans.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
 int
@@ -121,7 +125,14 @@ TclGetOpenMode(interp, string, seekFlagPtr)
 
     *seekFlagPtr = 0;
     mode = 0;
-    if (islower(UCHAR(string[0]))) {
+
+    /*
+     * Guard against international characters before using byte oriented
+     * routines.
+     */
+
+    if (!(string[0] & 0x80)
+	    && islower(UCHAR(string[0]))) { /* INTL: ISO only. */
 	switch (string[0]) {
 	    case 'r':
 		mode = O_RDONLY;
@@ -265,82 +276,57 @@ Tcl_EvalFile(interp, fileName)
     char *fileName;		/* Name of file to process.  Tilde-substitution
 				 * will be performed on this name. */
 {
-    int result;
+    int result, length;
     struct stat statBuf;
-    char *cmdBuffer = (char *) NULL;
     char *oldScriptFile;
-    Interp *iPtr = (Interp *) interp;
-    Tcl_DString buffer;
-    char *nativeName;
+    Interp *iPtr;
+    Tcl_DString nameString;
+    char *name, *string;
     Tcl_Channel chan;
-    Tcl_Obj *cmdObjPtr;
+    Tcl_Obj *objPtr;
 
-    Tcl_ResetResult(interp);
-    oldScriptFile = iPtr->scriptFile;
-    iPtr->scriptFile = fileName;
-    Tcl_DStringInit(&buffer);
-    nativeName = Tcl_TranslateFileName(interp, fileName, &buffer);
-    if (nativeName == NULL) {
-	goto error;
+    name = Tcl_TranslateFileName(interp, fileName, &nameString);
+    if (name == NULL) {
+	return TCL_ERROR;
     }
 
-    /*
-     * If Tcl_TranslateFileName didn't already copy the file name, do it
-     * here.  This way we don't depend on fileName staying constant
-     * throughout the execution of the script (e.g., what if it happens
-     * to point to a Tcl variable that the script could change?).
-     */
+    result = TCL_ERROR;
+    objPtr = Tcl_NewObj();
 
-    if (nativeName != Tcl_DStringValue(&buffer)) {
-	Tcl_DStringSetLength(&buffer, 0);
-	Tcl_DStringAppend(&buffer, nativeName, -1);
-	nativeName = Tcl_DStringValue(&buffer);
-    }
-    if (TclStat(nativeName, &statBuf) == -1) {
+    if (TclStat(name, &statBuf) == -1) {
         Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
+	goto end;
     }
-    chan = Tcl_OpenFileChannel(interp, nativeName, "r", 0644);
+    chan = Tcl_OpenFileChannel(interp, name, "r", 0644);
     if (chan == (Tcl_Channel) NULL) {
         Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
+	goto end;
     }
-    cmdBuffer = (char *) ckalloc((unsigned) statBuf.st_size+1);
-    result = Tcl_Read(chan, cmdBuffer, statBuf.st_size);
-    if (result < 0) {
+    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
         Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
+	goto end;
     }
-    cmdBuffer[result] = 0;
     if (Tcl_Close(interp, chan) != TCL_OK) {
-        goto error;
+        goto end;
     }
 
-    /*
-     * Transfer the buffer memory allocated above to the object system.
-     * Tcl_EvalObj will own this new string object if needed,
-     * so past the Tcl_EvalObj point, we must not ckfree(cmdBuffer)
-     * but rather use the reference counting mechanism.
-     * (Nb: and we must not thus not use goto error after this point)
-     */
-    cmdObjPtr = Tcl_NewObj();
-    cmdObjPtr->bytes = cmdBuffer;
-    cmdObjPtr->length = result;
-    
-    Tcl_IncrRefCount(cmdObjPtr);
-    result = Tcl_EvalObj(interp, cmdObjPtr);
-    Tcl_DecrRefCount(cmdObjPtr);
+    iPtr = (Interp *) interp;
+    oldScriptFile = iPtr->scriptFile;
+    iPtr->scriptFile = fileName;
+    string = Tcl_GetStringFromObj(objPtr, &length);
+    result = Tcl_EvalEx(interp, string, length, 0);
+    iPtr->scriptFile = oldScriptFile;
 
     if (result == TCL_RETURN) {
 	result = TclUpdateReturnInfo(iPtr);
     } else if (result == TCL_ERROR) {
-	char msg[200];
+	char msg[200 + TCL_INTEGER_SPACE];
 
 	/*
 	 * Record information telling where the error occurred.
@@ -350,17 +336,11 @@ Tcl_EvalFile(interp, fileName)
 		interp->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     }
-    iPtr->scriptFile = oldScriptFile;
-    Tcl_DStringFree(&buffer);
-    return result;
 
-error:
-    if (cmdBuffer != (char *) NULL) {
-        ckfree(cmdBuffer);
-    }
-    iPtr->scriptFile = oldScriptFile;
-    Tcl_DStringFree(&buffer);
-    return TCL_ERROR;
+    end:
+    Tcl_DecrRefCount(objPtr);
+    Tcl_DStringFree(&nameString);
+    return result;
 }
 
 /*
@@ -468,7 +448,7 @@ TclStat(path, buf)
     CONST char *path;		/* Path of file to stat (in current CP). */
     TclStat_ *buf;		/* Filled with results of stat call. */
 {
-    StatProc *statProcPtr = statProcList;
+    StatProc *statProcPtr;
     int retVal = -1;
 
     /*
@@ -476,10 +456,13 @@ TclStat(path, buf)
      * value of -1 indicates the particular function has succeeded.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    statProcPtr = statProcList;
     while ((retVal == -1) && (statProcPtr != NULL)) {
 	retVal = (*statProcPtr->proc)(path, buf);
 	statProcPtr = statProcPtr->nextPtr;
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -508,7 +491,7 @@ TclAccess(path, mode)
     CONST char *path;		/* Path of file to access (in current CP). */
     int mode;                   /* Permission setting. */
 {
-    AccessProc *accessProcPtr = accessProcList;
+    AccessProc *accessProcPtr;
     int retVal = -1;
 
     /*
@@ -516,10 +499,13 @@ TclAccess(path, mode)
      * value of -1 indicates the particular function has succeeded.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    accessProcPtr = accessProcList;
     while ((retVal == -1) && (accessProcPtr != NULL)) {
 	retVal = (*accessProcPtr->proc)(path, mode);
 	accessProcPtr = accessProcPtr->nextPtr;
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -555,7 +541,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    OpenFileChannelProc *openFileChannelProcPtr = openFileChannelProcList;
+    OpenFileChannelProc *openFileChannelProcPtr;
     Tcl_Channel retVal = NULL;
 
     /*
@@ -564,11 +550,14 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
      * succeeded.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    openFileChannelProcPtr = openFileChannelProcList;
     while ((retVal == NULL) && (openFileChannelProcPtr != NULL)) {
 	retVal = (*openFileChannelProcPtr->proc)(interp, fileName,
 		modeString, permissions);
 	openFileChannelProcPtr = openFileChannelProcPtr->nextPtr;
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -608,8 +597,10 @@ TclStatInsertProc (proc)
 
 	if (newStatProcPtr != NULL) {
 	    newStatProcPtr->proc = proc;
+	    Tcl_MutexLock(&hookMutex);
 	    newStatProcPtr->nextPtr = statProcList;
 	    statProcList = newStatProcPtr;
+	    Tcl_MutexUnlock(&hookMutex);
 
 	    retVal = TCL_OK;
 	}
@@ -642,9 +633,11 @@ TclStatDeleteProc (proc)
     TclStatProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    StatProc *tmpStatProcPtr = statProcList;
+    StatProc *tmpStatProcPtr;
     StatProc *prevStatProcPtr = NULL;
 
+    Tcl_MutexLock(&hookMutex);
+    tmpStatProcPtr = statProcList;
     /*
      * Traverse the 'statProcList' looking for the particular node
      * whose 'proc' member matches 'proc' and remove that one from
@@ -668,6 +661,7 @@ TclStatDeleteProc (proc)
 	}
     }
 
+    Tcl_MutexUnlock(&hookMutex);
     return (retVal);
 }
 
@@ -706,8 +700,10 @@ TclAccessInsertProc(proc)
 
 	if (newAccessProcPtr != NULL) {
 	    newAccessProcPtr->proc = proc;
+	    Tcl_MutexLock(&hookMutex);
 	    newAccessProcPtr->nextPtr = accessProcList;
 	    accessProcList = newAccessProcPtr;
+	    Tcl_MutexUnlock(&hookMutex);
 
 	    retVal = TCL_OK;
 	}
@@ -740,7 +736,7 @@ TclAccessDeleteProc(proc)
     TclAccessProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    AccessProc *tmpAccessProcPtr = accessProcList;
+    AccessProc *tmpAccessProcPtr;
     AccessProc *prevAccessProcPtr = NULL;
 
     /*
@@ -749,6 +745,8 @@ TclAccessDeleteProc(proc)
      * the list.  Ensure that the "default" node cannot be removed.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    tmpAccessProcPtr = accessProcList;
     while ((retVal == TCL_ERROR) && (tmpAccessProcPtr != &defaultAccessProc)) {
 	if (tmpAccessProcPtr->proc == proc) {
 	    if (prevAccessProcPtr == NULL) {
@@ -765,6 +763,7 @@ TclAccessDeleteProc(proc)
 	    tmpAccessProcPtr = tmpAccessProcPtr->nextPtr;
 	}
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -806,8 +805,10 @@ TclOpenFileChannelInsertProc(proc)
 
 	if (newOpenFileChannelProcPtr != NULL) {
 	    newOpenFileChannelProcPtr->proc = proc;
+	    Tcl_MutexLock(&hookMutex);
 	    newOpenFileChannelProcPtr->nextPtr = openFileChannelProcList;
 	    openFileChannelProcList = newOpenFileChannelProcPtr;
+	    Tcl_MutexUnlock(&hookMutex);
 
 	    retVal = TCL_OK;
 	}
@@ -849,6 +850,8 @@ TclOpenFileChannelDeleteProc(proc)
      * the list.  Ensure that the "default" node cannot be removed.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    tmpOpenFileChannelProcPtr = openFileChannelProcList;
     while ((retVal == TCL_ERROR) &&
 	    (tmpOpenFileChannelProcPtr != &defaultOpenFileChannelProc)) {
 	if (tmpOpenFileChannelProcPtr->proc == proc) {
@@ -867,6 +870,7 @@ TclOpenFileChannelDeleteProc(proc)
 	    tmpOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr->nextPtr;
 	}
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }

@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.2 1998/09/14 18:40:14 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.3 1999/04/16 00:47:34 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test string-1.1 {string compare} {
     string compare abcde abdef
@@ -289,7 +292,7 @@ test string-10.4 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-10.5 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {bad option "trimg": must be compare, first, index, last, length, match, range, tolower, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "trimg": must be compare, first, index, last, length, match, range, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 
 test string-11.1 {string tolower} {
     string tolower ABCDeF
@@ -350,7 +353,7 @@ test string-13.8 {string wordend} {
 
 test string-14.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {ambiguous option "word": must be compare, first, index, last, length, match, range, tolower, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {ambiguous option "word": must be compare, first, index, last, length, match, range, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 test string-14.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -378,7 +381,23 @@ test string-14.9 {string wordend} {
 
 test string-15.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {bad option "gorp": must be compare, first, index, last, length, match, range, tolower, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "gorp": must be compare, first, index, last, length, match, range, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 test string-15.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string option arg ?arg ...?"}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.4 1999/03/10 05:52:46 stanton Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.5 1999/04/16 00:46:42 stanton Exp $
  */
 
 #include <math.h>
@@ -36,17 +36,35 @@ static int		FormatNumber _ANSI_ARGS_((Tcl_Interp *interp, int type,
 static void		FreeByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		GetFormatSpec _ANSI_ARGS_((char **formatPtr,
 			    char *cmdPtr, int *countPtr));
-static Tcl_Obj *	ScanNumber _ANSI_ARGS_((unsigned char *buffer,
-			    int type));
+static Tcl_Obj *	ScanNumber _ANSI_ARGS_((unsigned char *buffer, int type));
 static int		SetByteArrayFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static void		UpdateStringOfByteArray _ANSI_ARGS_((Tcl_Obj *listPtr));
 
+
 /*
- * The following object type represents an array of bytes. This type should
- * be used to represent arbitrary binary data instead of a string object
- * because although they are equivalent at the moment they will not be in
- * future versions which support unicode.
+ * The following object type represents an array of bytes.  An array of
+ * bytes is not equivalent to an internationalized string.  Conceptually, a
+ * string is an array of 16-bit quantities organized as a sequence of properly
+ * formed UTF-8 characters, while a ByteArray is an array of 8-bit quantities.
+ * Accessor functions are provided to convert a ByteArray to a String or a
+ * String to a ByteArray.  Two or more consecutive bytes in an array of bytes
+ * may look like a single UTF-8 character if the array is casually treated as
+ * a string.  But obtaining the String from a ByteArray is guaranteed to
+ * produced properly formed UTF-8 sequences so that there is a one-to-one
+ * map between bytes and characters.
+ *
+ * Converting a ByteArray to a String proceeds by casting each byte in the
+ * array to a 16-bit quantity, treating that number as a Unicode character,
+ * and storing the UTF-8 version of that Unicode character in the String.
+ * For ByteArrays consisting entirely of values 1..127, the corresponding
+ * String representation is the same as the ByteArray representation.
+ *
+ * Converting a String to a ByteArray proceeds by getting the Unicode
+ * representation of each character in the String, casting it to a
+ * byte by truncating the upper 8 bits, and then storing the byte in the
+ * ByteArray.  Converting from ByteArray to String and back to ByteArray
+ * is not lossy, but converting an arbitrary String to a ByteArray may be.
  */
 
 Tcl_ObjType tclByteArrayType = {
@@ -87,12 +105,8 @@ typedef struct ByteArray {
  *
  * Tcl_NewByteArrayObj --
  *
- *	This procedure is normally called when not debugging: i.e., when
- *	TCL_MEM_DEBUG is not defined. It creates a new ByteArray object and
- *	initializes it from the given array of bytes.
- *
- *	When TCL_MEM_DEBUG is defined, this procedure just returns the
- *	result of calling the debugging version Tcl_DbNewByteArrayObj.
+ *	This procedure is creates a new ByteArray object and initializes
+ *	it from the given array of bytes.
  *
  * Results:
  *	The newly create object is returned.  This object will have no
@@ -107,6 +121,7 @@ typedef struct ByteArray {
 
 #ifdef TCL_MEM_DEBUG
 #undef Tcl_NewByteArrayObj
+
 
 Tcl_Obj *
 Tcl_NewByteArrayObj(bytes, length)
@@ -197,7 +212,7 @@ Tcl_DbNewByteArrayObj(bytes, length, file, line)
     return Tcl_NewByteArrayObj(bytes, length);
 }
 #endif /* TCL_MEM_DEBUG */
-
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -355,17 +370,23 @@ SetByteArrayFromAny(interp, objPtr)
 {
     Tcl_ObjType *typePtr;
     int length;
-    char *src;
+    char *src, *srcEnd;
+    unsigned char *dst;
     ByteArray *byteArrayPtr;
+    Tcl_UniChar ch;
     
     typePtr = objPtr->typePtr;
     if (typePtr != &tclByteArrayType) {
 	src = Tcl_GetStringFromObj(objPtr, &length);
+	srcEnd = src + length;
 
 	byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
-	memcpy((VOID *) byteArrayPtr->bytes, (VOID *) src, (size_t) length);
+	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
+	    src += Tcl_UtfToUniChar(src, &ch);
+	    *dst++ = (unsigned char) ch;
+	}
 
-	byteArrayPtr->used = length;
+	byteArrayPtr->used = dst - byteArrayPtr->bytes;
 	byteArrayPtr->allocated = length;
 
 	if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
@@ -465,7 +486,7 @@ UpdateStringOfByteArray(objPtr)
     Tcl_Obj *objPtr;		/* ByteArray object whose string rep to
 				 * update. */
 {
-    int length;
+    int i, length, size;
     unsigned char *src;
     char *dst;
     ByteArray *byteArrayPtr;
@@ -475,15 +496,29 @@ UpdateStringOfByteArray(objPtr)
     length = byteArrayPtr->used;
 
     /*
-     * The byte array is the string representation.
+     * How much space will string rep need?
      */
-    
-    dst = (char *) ckalloc((unsigned) (length + 1));
-    objPtr->bytes = dst;
-    objPtr->length = length;
+     
+    size = length;
+    for (i = 0; i < length; i++) {
+	if ((src[i] == 0) || (src[i] > 127)) {
+	    size++;
+	}
+    }
 
-    memcpy((VOID *) dst, (VOID *) src, (size_t) length);
-    dst[length] = '\0';
+    dst = (char *) ckalloc((unsigned) (size + 1));
+    objPtr->bytes = dst;
+    objPtr->length = size;
+
+    if (size == length) {
+	memcpy((VOID *) dst, (VOID *) src, (size_t) size);
+	dst[size] = '\0';
+    } else {
+	for (i = 0; i < length; i++) {
+	    dst += Tcl_UniCharToUtf(src[i], dst);
+	}
+	*dst = '\0';
+    }
 }
 
 /*
@@ -523,37 +558,43 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
     unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
     char *errorString, *errorValue, *str;
-    int offset, size, length;
-    
-    static char *subCmds[] = { "format", "scan", (char *) NULL };
-    enum { BinaryFormat, BinaryScan } index;
+    int offset, size, length, index;
+    static char *options[] = { 
+	"format",	"scan",		NULL 
+    };
+    enum options { 
+	BINARY_FORMAT,	BINARY_SCAN
+    };
 
     if (objc < 2) {
     	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], subCmds, "option", 0,
-	    (int *) &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
+	    &index) != TCL_OK) {
     	return TCL_ERROR;
     }
 
-    switch (index) {
-	case BinaryFormat:
+    switch ((enum options) index) {
+	case BINARY_FORMAT: {
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "formatString ?arg arg ...?");
 		return TCL_ERROR;
 	    }
+
 	    /*
 	     * To avoid copying the data, we format the string in two passes.
 	     * The first pass computes the size of the output buffer.  The
 	     * second pass places the formatted data into the buffer.
 	     */
 
-	    format = Tcl_GetStringFromObj(objv[2], NULL);
+	    format = Tcl_GetString(objv[2]);
 	    arg = 3;
-	    offset = length = 0;
-	    while (*format != 0) {
+	    offset = 0;
+	    length = 0;
+	    while (*format != '\0') {
+		str = format;
 		if (!GetFormatSpec(&format, &cmd, &count)) {
 		    break;
 		}
@@ -563,10 +604,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    case 'b':
 		    case 'B':
 		    case 'h':
-		    case 'H':
+		    case 'H': {
 			/*
 			 * For string-type specifiers, the count corresponds
-			 * to the number of characters in a single argument.
+			 * to the number of bytes in a single argument.
 			 */
 
 			if (arg >= objc) {
@@ -586,24 +627,29 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset += (count + 1) / 2;
 			}
 			break;
-
-		    case 'c':
+		    }
+		    case 'c': {
 			size = 1;
 			goto doNumbers;
+		    }
 		    case 's':
-		    case 'S':
+		    case 'S': {
 			size = 2;
 			goto doNumbers;
+		    }
 		    case 'i':
-		    case 'I':
+		    case 'I': {
 			size = 4;
 			goto doNumbers;
-		    case 'f':
+		    }
+		    case 'f': {
 			size = sizeof(float);
 			goto doNumbers;
-		    case 'd':
+		    }
+		    case 'd': {
 			size = sizeof(double);
-		    doNumbers:
+			
+			doNumbers:
 			if (arg >= objc) {
 			    goto badIndex;
 			}
@@ -628,23 +674,28 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    if (count == BINARY_ALL) {
 				count = listc;
 			    } else if (count > listc) {
-				errorString = "number of elements in list does not match count";
-				goto error;
+			        Tcl_AppendResult(interp, 
+					"number of elements in list does not match count",
+					(char *) NULL);
+				return TCL_ERROR;
 			    }
 			}
 			offset += count*size;
 			break;
-			
-		    case 'x':
+		    }
+		    case 'x': {
 			if (count == BINARY_ALL) {
-			    errorString = "cannot use \"*\" in format string with \"x\"";
-			    goto error;
+			    Tcl_AppendResult(interp, 
+				    "cannot use \"*\" in format string with \"x\"",
+				    (char *) NULL);
+			    return TCL_ERROR;
 			} else if (count == BINARY_NOCOUNT) {
 			    count = 1;
 			}
 			offset += count;
 			break;
-		    case 'X':
+		    }
+		    case 'X': {
 			if (count == BINARY_NOCOUNT) {
 			    count = 1;
 			}
@@ -656,7 +707,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			}
 			offset -= count;
 			break;
-		    case '@':
+		    }
+		    case '@': {
 			if (offset > length) {
 			    length = offset;
 			}
@@ -668,15 +720,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset = count;
 			}
 			break;
+		    }
 		    default: {
-			char buf[2];
-			
-			Tcl_ResetResult(interp);
-			buf[0] = cmd;
-			buf[1] = '\0';
-			Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				"bad field specifier \"", buf, "\"", NULL);
-			return TCL_ERROR;
+			errorString = str;
+			goto badfield;
 		    }
 		}
 	    }
@@ -694,7 +741,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 
 	    resultPtr = Tcl_GetObjResult(interp);
 	    buffer = Tcl_SetByteArrayLength(resultPtr, length);
-	    memset(buffer, 0, (size_t) length);
+	    memset((VOID *) buffer, 0, (size_t) length);
 
 	    /*
 	     * Pack the data into the result object.  Note that we can skip
@@ -703,7 +750,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    arg = 3;
-	    format = Tcl_GetStringFromObj(objv[2], NULL);
+	    format = Tcl_GetString(objv[2]);
 	    cursor = buffer;
 	    maxPos = cursor;
 	    while (*format != 0) {
@@ -733,7 +780,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			} else {
 			    memcpy((VOID *) cursor, (VOID *) bytes,
 				    (size_t) length);
-			    memset(cursor+length, pad,
+			    memset((VOID *) (cursor + length), pad,
 			            (size_t) (count - length));
 			}
 			cursor += count;
@@ -765,7 +812,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				    goto badValue;
 				}
 				if (((offset + 1) % 8) == 0) {
-				    *cursor++ = (char)(value & 0xff);
+				    *cursor++ = (unsigned char) value;
 				    value = 0;
 				}
 			    }
@@ -779,7 +826,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				    goto badValue;
 				}
 				if (!((offset + 1) % 8)) {
-				    *cursor++ = (char)(value & 0xff);
+				    *cursor++ = (unsigned char) value;
 				    value = 0;
 				}
 			    }
@@ -790,7 +837,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    } else {
 				value >>= 8 - (offset % 8);
 			    }
-			    *cursor++ = (char)(value & 0xff);
+			    *cursor++ = (unsigned char) value;
 			}
 			while (cursor < last) {
 			    *cursor++ = '\0';
@@ -817,15 +864,18 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			if (cmd == 'H') {
 			    for (offset = 0; offset < count; offset++) {
 				value <<= 4;
-				c = tolower(((unsigned char *) str)[offset]);
-				if ((c >= 'a') && (c <= 'f')) {
-				    value |= ((c - 'a' + 10) & 0xf);
-				} else if ((c >= '0') && (c <= '9')) {
-				    value |= (c - '0') & 0xf;
-				} else {
+				if (!isxdigit(UCHAR(str[offset]))) { /* INTL: digit */
 				    errorValue = str;
 				    goto badValue;
 				}
+				c = str[offset] - '0';
+				if (c > 9) {
+				    c += ('0' - 'A') + 10;
+				}
+				if (c > 16) {
+				    c += ('A' - 'a');
+				}
+				value |= (c & 0xf);
 				if (offset % 2) {
 				    *cursor++ = (char) value;
 				    value = 0;
@@ -834,17 +884,21 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			} else {
 			    for (offset = 0; offset < count; offset++) {
 				value >>= 4;
-				c = tolower(((unsigned char *) str)[offset]);
-				if ((c >= 'a') && (c <= 'f')) {
-				    value |= ((c - 'a' + 10) << 4) & 0xf0;
-				} else if ((c >= '0') && (c <= '9')) {
-				    value |= ((c - '0') << 4) & 0xf0;
-				} else {
+
+				if (!isxdigit(UCHAR(str[offset]))) { /* INTL: digit */
 				    errorValue = str;
 				    goto badValue;
 				}
+				c = str[offset] - '0';
+				if (c > 9) {
+				    c += ('0' - 'A') + 10;
+				}
+				if (c > 16) {
+				    c += ('A' - 'a');
+				}
+				value |= ((c << 4) & 0xf0);
 				if (offset % 2) {
-				    *cursor++ = (char)(value & 0xff);
+				    *cursor++ = (unsigned char)(value & 0xff);
 				    value = 0;
 				}
 			    }
@@ -855,7 +909,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    } else {
 				value >>= 4;
 			    }
-			    *cursor++ = (char) value;
+			    *cursor++ = (unsigned char) value;
 			}
 
 			while (cursor < last) {
@@ -899,14 +953,15 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			}
 			break;
 		    }
-		    case 'x':
+		    case 'x': {
 			if (count == BINARY_NOCOUNT) {
 			    count = 1;
 			}
 			memset(cursor, 0, (size_t) count);
 			cursor += count;
 			break;
-		    case 'X':
+		    }
+		    case 'X': {
 			if (cursor > maxPos) {
 			    maxPos = cursor;
 			}
@@ -920,7 +975,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    cursor -= count;
 			}
 			break;
-		    case '@':
+		    }
+		    case '@': {
 			if (cursor > maxPos) {
 			    maxPos = cursor;
 			}
@@ -930,11 +986,12 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    cursor = buffer + count;
 			}
 			break;
+		    }
 		}
 	    }
 	    break;
-	
-	case BinaryScan: {
+	}
+	case BINARY_SCAN: {
 	    int i;
 	    Tcl_Obj *valuePtr, *elementPtr;
 
@@ -944,11 +1001,12 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    buffer = Tcl_GetByteArrayFromObj(objv[2], &length);
-	    format = Tcl_GetStringFromObj(objv[3], NULL);
+	    format = Tcl_GetString(objv[3]);
 	    cursor = buffer;
 	    arg = 4;
 	    offset = 0;
-	    while (*format != 0) {
+	    while (*format != '\0') {
+		str = format;
 		if (!GetFormatSpec(&format, &cmd, &count)) {
 		    goto done;
 		}
@@ -956,7 +1014,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    case 'a':
 		    case 'A': {
 			unsigned char *src;
-			
+
 			if (arg >= objc) {
 			    goto badIndex;
 			}
@@ -987,9 +1045,9 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			valuePtr = Tcl_NewByteArrayObj(src, size);
-			resultPtr = Tcl_ObjSetVar2(interp, objv[arg++], NULL,
-				valuePtr,
-				TCL_LEAVE_ERR_MSG | TCL_PARSE_PART1);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
@@ -1006,19 +1064,19 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    goto badIndex;
 			}
 			if (count == BINARY_ALL) {
-			    count = (length - offset)*8;
+			    count = (length - offset) * 8;
 			} else {
 			    if (count == BINARY_NOCOUNT) {
 				count = 1;
 			    }
-			    if (count > (length - offset)*8) {
+			    if (count > (length - offset) * 8) {
 				goto done;
 			    }
 			}
 			src = buffer + offset;
 			valuePtr = Tcl_NewObj();
 			Tcl_SetObjLength(valuePtr, count);
-			dest = Tcl_GetStringFromObj(valuePtr, NULL);
+			dest = Tcl_GetString(valuePtr);
 
 			if (cmd == 'b') {
 			    for (i = 0; i < count; i++) {
@@ -1040,9 +1098,9 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			
-			resultPtr = Tcl_ObjSetVar2(interp, objv[arg++], NULL,
-				valuePtr,
-				TCL_LEAVE_ERR_MSG | TCL_PARSE_PART1);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
@@ -1052,8 +1110,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    }
 		    case 'h':
 		    case 'H': {
-			unsigned char *src;
 			char *dest;
+			unsigned char *src;
 			int i;
 			static char hexdigit[] = "0123456789abcdef";
 
@@ -1073,7 +1131,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			src = buffer + offset;
 			valuePtr = Tcl_NewObj();
 			Tcl_SetObjLength(valuePtr, count);
-			dest = Tcl_GetStringFromObj(valuePtr, NULL);
+			dest = Tcl_GetString(valuePtr);
 
 			if (cmd == 'h') {
 			    for (i = 0; i < count; i++) {
@@ -1095,9 +1153,9 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			
-			resultPtr = Tcl_ObjSetVar2(interp, objv[arg++], NULL,
-				valuePtr,
-				TCL_LEAVE_ERR_MSG | TCL_PARSE_PART1);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
@@ -1105,27 +1163,31 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			offset += (count + 1) / 2;
 			break;
 		    }
-		    case 'c':
+		    case 'c': {
 			size = 1;
 			goto scanNumber;
+		    }
 		    case 's':
-		    case 'S':
+		    case 'S': {
 			size = 2;
 			goto scanNumber;
+		    }
 		    case 'i':
-		    case 'I':
+		    case 'I': {
 			size = 4;
 			goto scanNumber;
-		    case 'f':
+		    }
+		    case 'f': {
 			size = sizeof(float);
 			goto scanNumber;
+		    }
 		    case 'd': {
 			unsigned char *src;
-			
+
 			size = sizeof(double);
 			/* fall through */
 			
-		        scanNumber:
+			scanNumber:
 			if (arg >= objc) {
 			    goto badIndex;
 			}
@@ -1153,16 +1215,16 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset += count*size;
 			}
 
-			resultPtr = Tcl_ObjSetVar2(interp, objv[arg++], NULL,
-				valuePtr,
-				TCL_LEAVE_ERR_MSG | TCL_PARSE_PART1);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
 			}
 			break;
 		    }
-		    case 'x':
+		    case 'x': {
 			if (count == BINARY_NOCOUNT) {
 			    count = 1;
 			}
@@ -1173,7 +1235,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset += count;
 			}
 			break;
-		    case 'X':
+		    }
+		    case 'X': {
 			if (count == BINARY_NOCOUNT) {
 			    count = 1;
 			}
@@ -1183,7 +1246,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset -= count;
 			}
 			break;
-		    case '@':
+		    }
+		    case '@': {
 			if (count == BINARY_NOCOUNT) {
 			    goto badCount;
 			}
@@ -1193,15 +1257,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset = count;
 			}
 			break;
+		    }
 		    default: {
-			char buf[2];
-			
-			Tcl_ResetResult(interp);
-			buf[0] = cmd;
-			buf[1] = '\0';
-			Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				"bad field specifier \"", buf, "\"", NULL);
-			return TCL_ERROR;
+			errorString = str;
+			goto badfield;
 		    }
 		}
 	    }
@@ -1232,9 +1291,18 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
     errorString = "not enough arguments for all format specifiers";
     goto error;
 
+    badfield: {
+	Tcl_UniChar ch;
+	char buf[TCL_UTF_MAX + 1];
+
+	Tcl_UtfToUniChar(errorString, &ch);
+	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	Tcl_AppendResult(interp, "bad field specifier \"", buf, "\"", NULL);
+	return TCL_ERROR;
+    }
+
     error:
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp), errorString, -1);
+    Tcl_AppendResult(interp, errorString, NULL);
     return TCL_ERROR;
 }
 
@@ -1290,7 +1358,7 @@ GetFormatSpec(formatPtr, cmdPtr, countPtr)
     if (**formatPtr == '*') {
 	(*formatPtr)++;
 	(*countPtr) = BINARY_ALL;
-    } else if (isdigit(UCHAR(**formatPtr))) {
+    } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
 	(*countPtr) = strtoul(*formatPtr, formatPtr, 10);
     } else {
 	(*countPtr) = BINARY_NOCOUNT;
@@ -1325,9 +1393,8 @@ FormatNumber(interp, type, src, cursorPtr)
 {
     int value;
     double dvalue;
-    char cmd = (char)type;
 
-    if (cmd == 'd' || cmd == 'f') {
+    if ((type == 'd') || (type == 'f')) {
 	/*
 	 * For floating point types, we need to copy the data using
 	 * memcpy to avoid alignment issues.
@@ -1336,9 +1403,9 @@ FormatNumber(interp, type, src, cursorPtr)
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (cmd == 'd') {
-	    memcpy((*cursorPtr), &dvalue, sizeof(double));
-	    (*cursorPtr) += sizeof(double);
+	if (type == 'd') {
+	    memcpy((VOID *) *cursorPtr, (VOID *) &dvalue, sizeof(double));
+	    *cursorPtr += sizeof(double);
 	} else {
 	    float fvalue;
 
@@ -1353,31 +1420,31 @@ FormatNumber(interp, type, src, cursorPtr)
 	    } else {
 		fvalue = (float) dvalue;
 	    }
-	    memcpy((*cursorPtr), &fvalue, sizeof(float));
-	    (*cursorPtr) += sizeof(float);
+	    memcpy((VOID *) *cursorPtr, (VOID *) &fvalue, sizeof(float));
+	    *cursorPtr += sizeof(float);
 	}
     } else {
 	if (Tcl_GetIntFromObj(interp, src, &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (cmd == 'c') {
-	    *(*cursorPtr)++ = (char)(value & 0xff);
-	} else if (cmd == 's') {
-	    *(*cursorPtr)++ = (char)(value & 0xff);
-	    *(*cursorPtr)++ = (char)((value >> 8) & 0xff);
-	} else if (cmd == 'S') {
-	    *(*cursorPtr)++ = (char)((value >> 8) & 0xff);
-	    *(*cursorPtr)++ = (char)(value & 0xff);
-	} else if (cmd == 'i') {
-	    *(*cursorPtr)++ = (char)(value & 0xff);
-	    *(*cursorPtr)++ = (char)((value >> 8) & 0xff);
-	    *(*cursorPtr)++ = (char)((value >> 16) & 0xff);
-	    *(*cursorPtr)++ = (char)((value >> 24) & 0xff);
-	} else if (cmd == 'I') {
-	    *(*cursorPtr)++ = (char)((value >> 24) & 0xff);
-	    *(*cursorPtr)++ = (char)((value >> 16) & 0xff);
-	    *(*cursorPtr)++ = (char)((value >> 8) & 0xff);
-	    *(*cursorPtr)++ = (char)(value & 0xff);
+	if (type == 'c') {
+	    *(*cursorPtr)++ = (unsigned char) value;
+	} else if (type == 's') {
+	    *(*cursorPtr)++ = (unsigned char) value;
+	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
+	} else if (type == 'S') {
+	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
+	    *(*cursorPtr)++ = (unsigned char) value;
+	} else if (type == 'i') {
+	    *(*cursorPtr)++ = (unsigned char) value;
+	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
+	    *(*cursorPtr)++ = (unsigned char) (value >> 16);
+	    *(*cursorPtr)++ = (unsigned char) (value >> 24);
+	} else if (type == 'I') {
+	    *(*cursorPtr)++ = (unsigned char) (value >> 24);
+	    *(*cursorPtr)++ = (unsigned char) (value >> 16);
+	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
+	    *(*cursorPtr)++ = (unsigned char) value;
 	}
     }
     return TCL_OK;
@@ -1406,7 +1473,7 @@ ScanNumber(buffer, type)
     unsigned char *buffer;	/* Buffer to scan number from. */
     int type;			/* Format character from "binary scan" */
 {
-    int value;
+    long value;
 
     /*
      * We cannot rely on the compiler to properly sign extend integer values
@@ -1416,37 +1483,45 @@ ScanNumber(buffer, type)
      * needed.
      */
 
-    switch ((char) type) {
-	case 'c':
-	    value = buffer[0];
+    switch (type) {
+	case 'c': {
+	    /*
+	     * Characters need special handling.  We want to produce a
+	     * signed result, but on some platforms (such as AIX) chars
+	     * are unsigned.  To deal with this, check for a value that
+	     * should be negative but isn't.
+	     */
 
+	    value = buffer[0];
 	    if (value & 0x80) {
 		value |= -0x100;
 	    }
 	    return Tcl_NewLongObj((long)value);
-	case 's':
-	    value = (((unsigned char)buffer[0])
-		    + ((unsigned char)buffer[1] << 8));
+	}
+	case 's': {
+	    value = (long) (buffer[0] + (buffer[1] << 8));
 	    goto shortValue;
-	case 'S':
-	    value = (((unsigned char)buffer[1])
-		    + ((unsigned char)buffer[0] << 8));
+	}
+	case 'S': {
+	    value = (long) (buffer[1] + (buffer[0] << 8));
 	    shortValue:
 	    if (value & 0x8000) {
 		value |= -0x10000;
 	    }
-	    return Tcl_NewLongObj((long)value);
-	case 'i':
-	    value =  (((unsigned char)buffer[0])
-		    + ((unsigned char)buffer[1] << 8)
-		    + ((unsigned char)buffer[2] << 16)
-		    + ((unsigned char)buffer[3] << 24));
+	    return Tcl_NewLongObj(value);
+	}
+	case 'i': {
+	    value = (long) (buffer[0] 
+		    + (buffer[1] << 8)
+		    + (buffer[2] << 16)
+		    + (buffer[3] << 24));
 	    goto intValue;
-	case 'I':
-	    value = (((unsigned char)buffer[3])
-		    + ((unsigned char)buffer[2] << 8)
-		    + ((unsigned char)buffer[1] << 16)
-		    + ((unsigned char)buffer[0] << 24));
+	}
+	case 'I': {
+	    value = (long) (buffer[3]
+		    + (buffer[2] << 8)
+		    + (buffer[1] << 16)
+		    + (buffer[0] << 24));
 	    intValue:
 	    /*
 	     * Check to see if the value was sign extended properly on
@@ -1457,16 +1532,16 @@ ScanNumber(buffer, type)
 		value -= (((unsigned int)1)<<31);
 		value -= (((unsigned int)1)<<31);
 	    }
-		
-	    return Tcl_NewLongObj((long)value);
+	    return Tcl_NewLongObj(value);
+	}
 	case 'f': {
 	    float fvalue;
-	    memcpy(&fvalue, buffer, sizeof(float));
+	    memcpy((VOID *) &fvalue, (VOID *) buffer, sizeof(float));
 	    return Tcl_NewDoubleObj(fvalue);
 	}
 	case 'd': {
 	    double dvalue;
-	    memcpy(&dvalue, buffer, sizeof(double));
+	    memcpy((VOID *) &dvalue, (VOID *) buffer, sizeof(double));
 	    return Tcl_NewDoubleObj(dvalue);
 	}
     }

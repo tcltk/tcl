@@ -3,16 +3,17 @@
  *
  *	Contains the Unix-specific interpreter initialization functions.
  *
- * Copyright (c) 1995-1996 Sun Microsystems, Inc.
+ * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.12 1999/03/10 05:52:52 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.13 1999/04/16 00:48:05 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include <locale.h>
 #if defined(__FreeBSD__)
 #   include <floatingpoint.h>
 #endif
@@ -22,6 +23,13 @@
 #	include <dlfcn.h>
 #   endif
 #endif
+
+/*
+ * The Init script (common to Windows and Unix platforms) is
+ * defined in tkInitScript.h
+ */
+#include "tclInitScript.h"
+
 
 /*
  * Default directory in which to look for Tcl library scripts.  The
@@ -38,57 +46,363 @@ static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
 
 static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
-/*
- * Is this module initialized?
- */
+typedef struct LocaleTable {
+    CONST char *lang;
+    CONST char *encoding;
+} LocaleTable;
 
-static int initialized = 0;
+static CONST LocaleTable localeTable[] = {
+    {"ja_JP.SJIS",	"shiftjis"},
+    {"ja_JP.EUC",	"euc-jp"},
+    {"ja_JP.JIS",	"iso2022-jp"},
+    {"ja_JP.mscode",	"shiftjis"},
+    {"ja_JP.ujis",	"euc-jp"},
+    {"ja_JP",		"euc-jp"},
+    {"Ja_JP",		"shiftjis"},
+    {"Jp_JP",		"shiftjis"},
+    {"japan",		"euc-jp"},
+#ifdef hpux
+    {"japanese",	"shiftjis"},	
+    {"ja",		"shiftjis"},	
+#else
+    {"japanese",	"euc-jp"},
+    {"ja",		"euc-jp"},
+#endif
+    {"japanese.sjis",	"shiftjis"},
+    {"japanese.euc",	"euc-jp"},
+    {"japanese-sjis",	"shiftjis"},
+    {"japanese-ujis",	"euc-jp"},
 
-/*
- * The Init script, tclPreInitScript variable, and the routine
- * TclSetPreInitScript (common to Windows and Unix platforms) are defined
- * in generic/tclInitScript.h.
- */
+    {"ko",              "euc-kr"},
+    {"ko_KR",           "euc-kr"},
+    {"ko_KR.EUC",       "euc-kr"},
+    {"ko_KR.euc",       "euc-kr"},
+    {"ko_KR.eucKR",     "euc-kr"},
+    {"korean",          "euc-kr"},
 
-#include "tclInitScript.h"
+    {"zh",		"cp936"},
 
-/*
- * Static routines in this file:
- */
-
-static void	PlatformInitExitHandler _ANSI_ARGS_((ClientData clientData));
+    {NULL, NULL}
+};
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
- * PlatformInitExitHandler --
+ * TclpInitPlatform --
  *
- *	Uninitializes all values on unload, so that this module can
- *	be later reinitialized.
+ *	Initialize all the platform-dependant things like signals and
+ *	floating-point error handling.
+ *
+ *	Called at process initialization time.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Returns the module to uninitialized state.
+ *	None.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
-static void
-PlatformInitExitHandler(clientData)
-    ClientData clientData;		/* Unused. */
+void
+TclpInitPlatform()
 {
-    initialized = 0;
+    tclPlatform = TCL_PLATFORM_UNIX;
+
+    /*
+     * The code below causes SIGPIPE (broken pipe) errors to
+     * be ignored.  This is needed so that Tcl processes don't
+     * die if they create child processes (e.g. using "exec" or
+     * "open") that terminate prematurely.  The signal handler
+     * is only set up when the first interpreter is created;
+     * after this the application can override the handler with
+     * a different one of its own, if it wants.
+     */
+
+#ifdef SIGPIPE
+    (void) signal(SIGPIPE, SIG_IGN);
+#endif /* SIGPIPE */
+
+#ifdef __FreeBSD__
+    fpsetround(FP_RN);
+    fpsetmask(0L);
+#endif
+
+#if defined(__bsdi__) && (_BSDI_VERSION > 199501)
+    /*
+     * Find local symbols. Don't report an error if we fail.
+     */
+    (void) dlopen (NULL, RTLD_NOW);			/* INTL: Native. */
+#endif
 }
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
- * TclPlatformInit --
+ * TclpInitLibraryPath --
  *
- *	Performs Unix-specific interpreter initialization related to the
- *      tcl_library and tcl_platform variables, and other platform-
+ *	Initialize the library path at startup.  We have a minor
+ *	metacircular problem that we don't know the encoding of the
+ *	operating system but we may need to talk to operating system
+ *	to find the library directories so that we know how to talk to
+ *	the operating system.
+ *
+ *	We do not know the encoding of the operating system.
+ *	We do know that the encoding is some multibyte encoding.
+ *	In that multibyte encoding, the characters 0..127 are equivalent
+ *	    to ascii.
+ *
+ *	So although we don't know the encoding, it's safe:
+ *	    to look for the last slash character in a path in the encoding.
+ *	    to append an ascii string to a path.
+ *	    to pass those strings back to the operating system.
+ *
+ *	But any strings that we remembered before we knew the encoding of
+ *	the operating system must be translated to UTF-8 once we know the
+ *	encoding so that the rest of Tcl can use those strings.
+ *
+ *	This call sets the library path to strings in the unknown native
+ *	encoding.  TclpSetInitialEncodings() will translate the library
+ *	path from the native encoding to UTF-8 as soon as it determines
+ *	what the native encoding actually is.
+ *
+ *	Called at process initialization time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+TclpInitLibraryPath(path)
+CONST char *path;		/* Path to the executable in native 
+				 * multi-byte encoding. */
+{
+#define LIBRARY_SIZE	    32
+    Tcl_Obj *pathPtr, *objPtr;
+    char *str;
+    Tcl_DString buffer, ds;
+    int pathc;
+    char **pathv;
+    char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
+
+    Tcl_DStringInit(&ds);
+    pathPtr = Tcl_NewObj();
+
+    /*
+     * Initialize the substrings used when locating an executable.  The
+     * installLib variable computes the path as though the executable
+     * is installed.  The developLib computes the path as though the
+     * executable is run from a develpment directory.
+     */
+     
+    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+    sprintf(developLib, "tcl%s/library",
+	    ((TCL_RELEASE_LEVEL < 2) ? TCL_PATCH_LEVEL : TCL_VERSION));
+
+    /*
+     * Look for the library relative to default encoding dir.
+     */
+
+    str = Tcl_GetDefaultEncodingDir();
+    if ((str != NULL) && (str[0] != '\0')) {
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
+
+    /*
+     * Look for the library relative to the TCL_LIBRARY env variable.
+     * If the last dirname in the TCL_LIBRARY path does not match the
+     * last dirname in the installLib variable, use the last dir name
+     * of installLib in addition to the orginal TCL_LIBRARY path.
+     */
+
+    str = getenv("TCL_LIBRARY");			/* INTL: Native. */
+    Tcl_ExternalToUtfDString(NULL, str, -1, &buffer);
+    str = Tcl_DStringValue(&buffer);
+
+    if ((str != NULL) && (str[0] != '\0')) {
+	/*
+	 * If TCL_LIBRARY is set, search there.
+	 */
+	 
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+
+	Tcl_SplitPath(str, &pathc, &pathv);
+	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
+	    /*
+	     * If TCL_LIBRARY is set but refers to a different tcl
+	     * installation than the current version, try fiddling with the
+	     * specified directory to make it refer to this installation by
+	     * removing the old "tclX.Y" and substituting the current
+	     * version string.
+	     */
+	    
+	    pathv[pathc - 1] = installLib + 4;
+	    str = Tcl_JoinPath(pathc, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	ckfree((char *) pathv);
+    }
+
+    /*
+     * Look for the library relative to the executable.  Use both the
+     * installLib and developLib because we cannot determine if this
+     * is installed or not.
+     */
+     
+    if (path != NULL) {
+	Tcl_SplitPath(path, &pathc, &pathv);
+	if (pathc > 1) {
+	    pathv[pathc - 2] = installLib;
+	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	if (pathc > 2) {
+	    pathv[pathc - 3] = developLib;
+	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	ckfree((char *) pathv);
+    }
+
+    /*
+     * Finally, look for the library relative to the compiled-in path.
+     * This is needed when users install Tcl with an exec-prefix that
+     * is different from the prtefix.
+     */
+			      
+    str = defaultLibraryDir;
+    if (str[0] != '\0') {
+        objPtr = Tcl_NewStringObj(str, -1);
+        Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
+
+    TclSetLibraryPath(pathPtr);    
+    Tcl_DStringFree(&buffer);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpSetInitialEncodings --
+ *
+ *	Based on the locale, determine the encoding of the operating
+ *	system and the default encoding for newly opened files.
+ *
+ *	Called at process initialization time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The Tcl library path is converted from native encoding to UTF-8.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+TclpSetInitialEncodings()
+{
+    CONST char *encoding;
+    int i;
+    Tcl_Obj *pathPtr;
+    char *langEnv;
+
+    /*
+     * Determine the current encoding from the LC_TYPE or LANG environment
+     * variables.  We previously used setlocale() to determine the locale,
+     * but this does not work on some systems (e.g. Linux/i386 RH 5.0).
+     */
+
+    langEnv = getenv("LC_CTYPE");
+
+    if (langEnv == NULL || langEnv[0] == '\0') {
+	langEnv = getenv("LANG");
+    }
+    if (langEnv == NULL || langEnv[0] == '\0') {
+	langEnv = NULL;
+    }
+
+    encoding = "iso8859-1";
+    if (langEnv != NULL) {
+	for (i = 0; localeTable[i].lang != NULL; i++) {
+	    if (strcmp(localeTable[i].lang, langEnv) == 0) {
+		encoding = localeTable[i].encoding;
+	    }
+	}
+    }
+
+    Tcl_SetSystemEncoding(NULL, encoding);
+
+    /*
+     * Until the system encoding was actually set, the library path was
+     * actually in the native multi-byte encoding, and not really UTF-8
+     * as advertised.  We cheated as follows:
+     *
+     * 1. It was safe to allow the Tcl_SetSystemEncoding() call to 
+     * append the ASCII chars that make up the encoding's filename to 
+     * the names (in the native encoding) of directories in the library 
+     * path, since all Unix multi-byte encodings have ASCII in the
+     * beginning.
+     *
+     * 2. To open the encoding file, the native bytes in the file name
+     * were passed to the OS, without translating from UTF-8 to native,
+     * because the name was already in the native encoding.
+     *
+     * Now that the system encoding was actually successfully set,
+     * translate all the names in the library path to UTF-8.  That way,
+     * next time we search the library path, we'll translate the names 
+     * from UTF-8 to the system encoding which will be the native 
+     * encoding.
+     */
+
+    pathPtr = TclGetLibraryPath();
+    if (pathPtr != NULL) {
+	int objc;
+	Tcl_Obj **objv;
+	
+	objc = 0;
+	Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
+	for (i = 0; i < objc; i++) {
+	    int length;
+	    char *string;
+	    Tcl_DString ds;
+
+	    string = Tcl_GetStringFromObj(objv[i], &length);
+	    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+	    Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
+		    Tcl_DStringLength(&ds));
+	    Tcl_DStringFree(&ds);
+	}
+    }
+
+    /*
+     * Keep the iso8859-1 encoding preloaded.  The IO package uses it for
+     * gets on a binary channel.
+     */
+
+    Tcl_GetEncoding(NULL, "iso8859-1");
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpSetVariables --
+ *
+ *	Performs platform-specific interpreter initialization related to
+ *	the tcl_library and tcl_platform variables, and other platform-
  *	specific things.
  *
  * Results:
@@ -101,25 +415,30 @@ PlatformInitExitHandler(clientData)
  */
 
 void
-TclPlatformInit(interp)
+TclpSetVariables(interp)
     Tcl_Interp *interp;
 {
 #ifndef NO_UNAME
     struct utsname name;
 #endif
     int unameOK;
+    char *user;
+    Tcl_DString ds;
 
-    tclPlatform = TCL_PLATFORM_UNIX;
-    Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir,
-	    TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tcl_library", defaultLibraryDir, TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
     unameOK = 0;
 #ifndef NO_UNAME
     if (uname(&name) >= 0) {
+	char *native;
+	
 	unameOK = 1;
-	Tcl_SetVar2(interp, "tcl_platform", "os", name.sysname,
-		TCL_GLOBAL_ONLY);
+
+	native = Tcl_ExternalToUtfDString(NULL, name.sysname, -1, &ds);
+	Tcl_SetVar2(interp, "tcl_platform", "os", native, TCL_GLOBAL_ONLY);
+	Tcl_DStringFree(&ds);
+	
 	/*
 	 * The following code is a special hack to handle differences in
 	 * the way version information is returned by uname.  On most
@@ -129,7 +448,7 @@ TclPlatformInit(interp)
 	 */
 
 	if ((strchr(name.release, '.') != NULL)
-		|| !isdigit(UCHAR(name.version[0]))) {
+		|| !isdigit(UCHAR(name.version[0]))) {	/* INTL: digit */
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
 		    TCL_GLOBAL_ONLY);
 	} else {
@@ -150,42 +469,79 @@ TclPlatformInit(interp)
 	Tcl_SetVar2(interp, "tcl_platform", "machine", "", TCL_GLOBAL_ONLY);
     }
 
-    if (!initialized) {
+    /*
+     * Copy USER or LOGNAME environment variable into tcl_platform(user)
+     */
 
-        /*
-         * Create an exit handler so that uninitialization will be done
-         * on unload.
-         */
-        
-        Tcl_CreateExitHandler(PlatformInitExitHandler, NULL);
-        
-	/*
-	 * The code below causes SIGPIPE (broken pipe) errors to
-	 * be ignored.  This is needed so that Tcl processes don't
-	 * die if they create child processes (e.g. using "exec" or
-	 * "open") that terminate prematurely.  The signal handler
-	 * is only set up when the first interpreter is created;
-	 * after this the application can override the handler with
-	 * a different one of its own, if it wants.
-	 */
-    
-#ifdef SIGPIPE
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif /* SIGPIPE */
-
-#ifdef __FreeBSD__
-	fpsetround(FP_RN);
-	fpsetmask(0L);
-#endif
-
-#if defined(__bsdi__) && (_BSDI_VERSION > 199501)
-	/*
-	 * Find local symbols. Don't report an error if we fail.
-	 */
-	(void) dlopen (NULL, RTLD_NOW);
-#endif
-	initialized = 1;
+    Tcl_DStringInit(&ds);
+    user = TclGetEnv("USER", &ds);
+    if (user == NULL) {
+	user = TclGetEnv("LOGNAME", &ds);
+	if (user == NULL) {
+	    user = "";
+	}
     }
+    Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
+    Tcl_DStringFree(&ds);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindVariable --
+ *
+ *	Locate the entry in environ for a given name.  On Unix this 
+ *	routine is case sensetive, on Windows this matches mioxed case.
+ *
+ * Results:
+ *	The return value is the index in environ of an entry with the
+ *	name "name", or -1 if there is no such entry.   The integer at
+ *	*lengthPtr is filled in with the length of name (if a matching
+ *	entry is found) or the length of the environ array (if no matching
+ *	entry is found).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpFindVariable(name, lengthPtr)
+    CONST char *name;		/* Name of desired environment variable
+				 * (native). */
+    int *lengthPtr;		/* Used to return length of name (for
+				 * successful searches) or number of non-NULL
+				 * entries in environ (for unsuccessful
+				 * searches). */
+{
+    int i, result = -1;
+    register CONST char *env, *p1, *p2;
+    Tcl_DString envString;
+
+    Tcl_DStringInit(&envString);
+    for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
+	p1 = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p2 = name;
+
+	for (; *p2 == *p1; p1++, p2++) {
+	    /* NULL loop body. */
+	}
+	if ((*p1 == '=') && (*p2 == '\0')) {
+	    *lengthPtr = p2 - name;
+	    result = i;
+	    goto done;
+	}
+	
+	Tcl_DStringFree(&envString);
+    }
+    
+    *lengthPtr = i;
+
+    done:
+    Tcl_DStringFree(&envString);
+    return result;
 }
 
 /*
@@ -194,12 +550,12 @@ TclPlatformInit(interp)
  * Tcl_Init --
  *
  *	This procedure is typically invoked by Tcl_AppInit procedures
- *	to perform additional initialization for a Tcl interpreter,
- *	such as sourcing the "init.tcl" script.
+ *	to find and source the "init.tcl" script, which should exist
+ *	somewhere on the Tcl library path.
  *
  * Results:
- *	Returns a standard Tcl completion code and sets interp->result
- *	if there is an error.
+ *	Returns a standard Tcl completion code and sets the interp's
+ *	result if there is an error.
  *
  * Side effects:
  *	Depends on what's in the init.tcl script.
@@ -211,12 +567,20 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;		/* Interpreter to initialize. */
 {
+    Tcl_Obj *pathPtr;
+
     if (tclPreInitScript != NULL) {
 	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
 	    return (TCL_ERROR);
 	};
     }
-    return(Tcl_Eval(interp, initScript));
+    
+    pathPtr = TclGetLibraryPath();
+    if (pathPtr == NULL) {
+	pathPtr = Tcl_NewObj();
+    }
+    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    return Tcl_Eval(interp, initScript);
 }
 
 /*
@@ -271,8 +635,8 @@ Tcl_SourceRCFile(interp)
 		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 		    if (errChannel) {
-			Tcl_Write(errChannel, interp->result, -1);
-			Tcl_Write(errChannel, "\n", 1);
+			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+			Tcl_WriteChars(errChannel, "\n", 1);
 		    }
 		}
 	    }

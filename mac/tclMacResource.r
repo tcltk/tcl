@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.r,v 1.2 1998/09/14 18:40:06 stanton Exp $
+ * RCS: @(#) $Id: tclMacResource.r,v 1.3 1999/04/16 00:47:21 stanton Exp $
  */
 
 #include <Types.r>
@@ -67,9 +67,7 @@ resource 'vers' (2) {
  * will load the TEXT resource named "Init".
  */
 
-read 'TEXT' (0, "Init", purgeable, preload) "::library:init.tcl";
-read 'TEXT' (1, "History", purgeable,preload) "::library:history.tcl";
-read 'TEXT' (2, "Word", purgeable,preload) "::library:word.tcl";
+#include "tclMacTclCode.r"
 
 /*
  * The following resource is used when creating the 'env' variable in

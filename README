@@ -3,14 +3,14 @@ README:  Tcl
 	Tcl is maintained, enhanced, and distributed freely as a
 	service to the Tcl community by Scriptics Corporation.
 
-RCS: @(#) $Id: README,v 1.15 1999/02/26 22:25:04 hershey Exp $
+RCS: @(#) $Id: README,v 1.16 1999/04/16 00:46:29 stanton Exp $
 
 Contents
 --------
     1. Introduction
     2. Documentation
     3. Compiling and installing Tcl
-    4. Summary of changes in Tcl 8.0
+    4. Summary of changes in Tcl 8.1
     5. Development tools
     6. Tcl newsgroup
     7. Tcl contributed archive
@@ -31,23 +31,23 @@ variety of web-related tasks and for creating powerful command
 languages for applications.
 
 This directory contains the sources and documentation for Tcl.  The
-information here corresponds to release 8.0.5, which is the fifth
-patch update for Tcl 8.0. This patch provides bug fixes and
-incorporates user-contributed patches.  Please check the changes file
-for details.
+information here corresponds to release 8.1b3, which is the third
+beta release for Tcl 8.1.  This release is mostly feature complete but
+may have bugs and be missing some minor features.  This release is for
+early adopters who are willing to help us find and fix problems.
+Please let us know about any problems you uncover.
 
-Tcl 8.0 is a major release that replaces the core of the interpreter
-with an on-the-fly bytecode compiler to improve execution speed.  It
-also includes several other new features such as namespaces and binary
-I/O, plus many bug fixes.  The compiler introduces a few
-incompatibilities that may affect existing Tcl scripts; the
-incompatibilities are relatively obscure but may require modifications
-to some old scripts before they can run with this version. The
-compiler introduces many new C-level APIs, but the old APIs are still
-supported.  See below for more details.
+Tcl 8.1 includes four major new features: Unicode support (all internal
+strings are now stored in UTF-8 form), a new regular expression matcher
+with most of the Perl features, support for multithreading, and a new
+message catalog package.  For details on features, incompatibilities, and
+potential problems with this release, see the Tcl/Tk 8.1 Web page at
+http://www.scriptics.com/software/8.1.html or refer to the "changes" file
+in this directory, which contains a historical record of all changes to
+Tcl.
 
 Tcl is a freely available open source package.  You can do virtually
-anything you like with it, such as modifying it, redistributing it ,
+anything you like with it, such as modifying it, redistributing it,
 and selling it either in whole or in part.  See the file
 "license.terms" for complete information.
 
@@ -143,138 +143,87 @@ compiling under UNIX, "win" if you're compiling under Windows, or
 in the README file in that directory for compiling Tcl, installing it,
 and running the test suite.
 
-4. Summary of changes in Tcl 8.0
+4. Summary of changes in Tcl 8.1
 --------------------------------
 
-Here are the most significant changes in Tcl 8.0.  In addition to these
+Here are the most significant changes in Tcl 8.1.  In addition to these
 changes, there are several smaller changes and bug fixes.  See the file
 "changes" for a complete list of all changes.
 
-    1. Bytecode compiler.  The core of the Tcl interpreter has been
-    replaced with an on-the-fly compiler that translates Tcl scripts to
-    byte codes; a new interpreter then executes the byte codes. In
-    earlier versions of Tcl, strings were used as a universal
-    representation;  in Tcl 8.0 strings are replaced with Tcl_Obj
-    structures ("objects") that can hold both a string value and an
-    internal form such as a binary integer or compiled bytecodes.  The
-    new objects make it possible to store information in efficient
-    internal forms and avoid the constant translations to and from
-    strings that occurred with the old interpreter.  We have not yet
-    converted all of Tcl to take full advantage of the compiler and
-    objects and have not converted any of Tk yet, but even so you
-    should see speedups of 2-3x on many programs and you may see
-    speedups as much as 10-20x in some cases (such as code that
-    manipulates long lists).  Future releases should achieve even
-    greater speedups.  The compiler introduces only a few minor changes
-    at the level of Tcl scripts, but it introduces many new C APIs for
-    managing objects.  See, for example, the manual entries doc/*Obj*.3.
+    1. Internationalization. Tcl has undergone a major revision to
+    support international character sets:
 
-    2. Namespaces.  There is a new namespace mechanism based on the
-    namespace implementation by Michael McLennan of Cadence.
-    This includes new "namespace" and "variable" commands.  There are
-    many new C APIs associated with namespaces, but they will not be
-    exported until Tcl 8.1.  Note: the syntax of the namespace command
-    has been changed slightly since the b1 release.  See the changes
-    file for details.
+    All strings in Tcl are now represented in UTF-8 instead of ASCII,
+    so that Tcl now supports the full Unicode character set.  The
+    representation of ASCII characters is unchanged (in UTF-8 anything
+    that looks like an ASCII character is an ASCII character), but
+    characters with the high-order bit set, such as those in ISO-8859,
+    are represented with multi-byte sequences, as are all Unicode
+    characters with values greater than 127.  This change does not
+    affect Tcl scripts but it does affect C code that parses strings.
+    Tcl automatically translates between UTF-8 and the normal encoding
+    for the platform during interactions with the system.
 
-    3. Binary I/O.  The new object system in Tcl 8.0 supports binary
-    strings (internally, strings are counted in addition to being null
-    terminated).  There is a new "binary" command for inserting and
-    extracting data to/from binary strings.  Commands such as "puts",
-    "gets", and "read" commands now operate correctly on binary data. 
-    There is a new variable tcl_platform(byteOrder) to identify the
-    native byte order for the current host.
+    In Tcl scripts the backslash sequence \u can be used to enter
+    16-bit Unicode characters.  \o and \x generate only 8-bit
+    characters as before.
 
-    4. Random numbers.  The "expr" command now contains a random number
-    generator, which can be accessed via the "rand()" and "srand()" math
-    functions.
+    There is a new "encoding" command that allows scripts to determine
+    what encodings are available as well as to convert strings between
+    different encodings.  The fconfigure command now supports a
+    -encoding option for specifying the encoding of an open file or
+    socket.  Tcl will automatically translate between the specified
+    encoding and UTF-8 during I/O.
 
-    5. Safe-Tcl enhancements.  There is a new "hidden command"
-    mechanism, implemented with the Tcl commands "interp hide", "interp
-    expose", "interp invokehidden", and "interp hidden" and the C APIs
-    Tcl_HideCommand and Tcl_ExposeCommand.  There is now support for
-    safe packages and extension loading, including new library
-    procedures such as safe::interpCreate (see the manual entry safe.n
-    for details).
+    There are several new C APIs that support UTF-8 and various
+    encodings.  See the manual entry Utf.3 for procedures that
+    translate between Unicode and UTF-8 and manipulate UTF-8 strings.
+    See Encoding.3 for procedures that create new encodings and
+    translate between encodings.  See ToUpper.3 for procedures that
+    perform case conversions on UTF-8 strings.
 
-    6. There is a new package "registry" available under Windows for
-    accessing the Windows registry.
+    2. Binary data.  Binary data is handled differently in Tcl 8.1
+    than in Tcl 8.0.  Tcl 8.1 uses the UTF-8 facilities to represent
+    binary data: the character value zero is represented with a
+    multi-byte sequence, so that (once again) strings in Tcl 8.1 never
+    contain null bytes.  This means that binary data is now accepted
+    everywhere in Tcl and Tk (in Tcl 8.0 the support for binary data
+    was incomplete).  If you have C code that needs to manipulate the
+    bytes of binary data (as opposed to just passing the data through)
+    you should use a new object type called "byte array".  See the
+    manual entry ByteArrObj.3 for information about procedures such as
+    Tcl_GetByteArrayFromObj.
 
-    7. There is a new command "file attributes" for getting and setting
-    things like permissions and owner.  There is also a new command
-    "file nativename" for getting back the platform-specific name for a
-    particular file.
+    3. Regular expressions.  Tcl 8.1 contains a brand new
+    implementation of regular expressions from Henry Spencer.  The
+    regular expression syntax has been greatly expanded to include
+    most of the features in Perl.  In addition, the regexp engine
+    supports Unicode and binary data.  See the doc/regexp.n manual
+    entry for more details.
 
-    8. There is a new "fcopy" command to copy data between channels. 
-    This replaces and improves upon the not-so-secret unsupported old
-    command "unsupported0".
+    4. Threads.  If configured with the --enable-threads flag, Tcl can
+    now be compiled for use in a multi-threaded application.
+    Individual threads are allowed to use one or more interpreters as
+    long as each interpreter (and any slave interpreters) is only
+    accessed by one thread.  Each thread runs its own event loop, and
+    you can post events to other threads. There are new C APIs for
+    mutexes, condition variables, and thread local storage.  See the
+    doc/Thread.3 manual entry for more details.  Tk 8.1 is not yet
+    multi-thread safe.  There is not yet support for tcl level use of
+    threading except for a test command. (Compile tcltest and try
+    testthread.)
 
-    9. There is a new package "http" for doing GET, POST, and HEAD
-    requests via the HTTP/1.0 protocol.  See the manual entry http.n
-    for details.
+    5. Message catalog. There is a new message catalog package which makes
+    it easy to localize the strings in a script.  See the doc/msgcat.n
+    manual entry for more details.
 
-    10. There are new library procedures for finding word breaks in
-    strings.  See the manual entry library.n for details.
-
-    11. There are new C APIs Tcl_Finalize (for cleaning up before
-    unloading the Tcl DLL) and Tcl_Ungets for pushing bytes back into a
-    channel's input buffer.
-
-    12. Tcl now supports serial I/O devices on Windows and Unix, with a
-    new fconfigure -mode option.  The Windows driver does not yet
-    support event-driven I/O.
-
-    13. The lsort command has new options -dictionary and -index.  The
-    -index option allows for very rapid sorting based on an element
-    of a list.
-
-    14. The event notifier has been completely rewritten (again).  It
-    should now allow Tcl to use an external event loop (like Motif's)
-    when it is embedded in other applications.  No script-level
-    interfaces have changed, but many of the C APIs have.
-
-Tcl 8.0 introduces the following incompatibilities that may affect Tcl
-scripts that worked under Tcl 7.6 and earlier releases:
-
-    1. Variable and command names may not include the character sequence
-    "::" anymore: this sequence is now used as a namespace separator.
-
-    2. The semantics of some Tcl commands have been changed slightly to
-    maximize performance under the compiler.  These incompatibilities
-    are documented on the Web so that we can keep the list up-to-date.
-    See the following URL:
-
-	http://www.scriptics.com/doc/compiler.html
-
-    3. 2-digit years are now parsed differently by the "clock" command
-    to handle year 2000 issues better (years 00-38 are treated as
-    2000-2038 instead of 1900-1938).
-
-    4. The old Macintosh commands "cp", "mkdir", "mv", "rm", and "rmdir"
-    are no longer supported; all of these features are now available on
-    all platforms via the "file" command.
-
-    5. The variable tcl_precision is now shared between interpreters
-    and defaults to 12 digits instead of 6; safe interpreters cannot
-    modify tcl_precision.  The new object system in Tcl 8.0 causes
-    floating-to-string conversions (and the associated rounding) to
-    occur much less often than in Tcl 7.6, which can sometimes cause
-    behavioral changes.
-
-    6. The C APIs associated with the notifier have changed substantially.
-
-    7. The procedures Tcl_CreateModalTimeout and Tcl_DeleteModalTimeout
-    have been removed.
-
-    8. Tcl_CreateFileHandler and Tcl_DeleteFileHandler now take Unix
-    fd's and are only supported on the Unix platform
-
-    9. The C APIs for creating channel drivers have changed as part of
-    the new notifier implementation.  The Tcl_File interfaces have been
-    removed.  Tcl_GetChannelFile has been replaced with
-    Tcl_GetChannelHandle.  Tcl_MakeFileChannel now takes a platform-
-    specific file handle.  Tcl_DriverGetOptionProc procedures now take
-    an additional interp argument.
+    6. Stubbs library for building extensions.  There is now a new
+    way to build extensions for Tcl.  Instead of linking with the
+    tcl shared library you can now link to a stubs library that gets
+    built in this release.  By linking with the stubs library it
+    is possible to use dynamically loaded extensions in staticlly
+    built applications.  It will also be possible for some extensions
+    to work for both Tcl 8.0 & 8.1 with out having to recompile.
 
 5. Development tools
 --------------------

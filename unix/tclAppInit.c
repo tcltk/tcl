@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.4 1999/02/03 02:58:26 stanton Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.5 1999/04/16 00:48:03 stanton Exp $
  */
 
 #ifdef TCL_XT_TEST
@@ -29,11 +30,19 @@ int *tclDummyMathPtr = (int *) matherr;
 
 
 #ifdef TCL_TEST
+
+#include "tclInt.h"
+
 extern int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 extern int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
 extern int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 extern int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+#ifdef TCL_THREADS
+extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
+#endif
+
 #endif /* TCL_TEST */
+
 #ifdef TCL_XT_TEST
 extern int		Tclxttest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif
@@ -60,9 +69,20 @@ main(argc, argv)
     int argc;			/* Number of command-line arguments. */
     char **argv;		/* Values of command-line arguments. */
 {
+#ifdef TCL_TEST
+    /*
+     * Pass the build time location of the tcl library (to find init.tcl)
+     */
+    Tcl_Obj *path;
+    path = Tcl_NewStringObj(TCL_BUILDTIME_LIBRARY, -1);
+    TclSetLibraryPath(Tcl_NewListObj(1,&path));
+
+#endif
+
 #ifdef TCL_XT_TEST
     XtToolkitInitialize();
 #endif
+
     Tcl_Main(argc, argv, Tcl_AppInit);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -78,7 +98,7 @@ main(argc, argv)
  *
  * Results:
  *	Returns a standard Tcl completion code, and leaves an error
- *	message in interp->result if an error occurs.
+ *	message in the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.
@@ -108,6 +128,11 @@ Tcl_AppInit(interp)
     if (TclObjTest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+#ifdef TCL_THREADS
+    if (TclThread_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+#endif
     if (Procbodytest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }

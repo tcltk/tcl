@@ -4,15 +4,39 @@
 # the autoloading index.
 #
 # Copyright (c) 1998  Lucent Technologies, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: autoMkindex.test,v 1.4 1999/03/31 18:58:50 welch Exp $
+# RCS: @(#) $Id: autoMkindex.test,v 1.5 1999/04/16 00:47:23 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
-set saveCommands $auto_mkindex_parser::initCommands
+# temporarily copy the autoMkindex.tcl file from testsDir to tmpDir
+set origMkindexFile [file join $::tcltest::testsDir autoMkindex.tcl]
+set newMkindexFile [file join $::tcltest::workingDir autoMkindex.tcl]
+if {![catch {file copy $origMkindexFile $newMkindexFile}]} {
+    set removeAutoMkindex 1
+}
+
+# Save initial state of auto_mkindex_parser
+
+auto_load auto_mkindex
+if {[info exist auto_mkindex_parser::initCommands]} {
+    set saveCommands $auto_mkindex_parser::initCommands
+}
+proc AutoMkindexTestReset {} {
+    global saveCommands
+    if {[info exist saveCommands]} {
+	set auto_mkindex_parser::initCommands $saveCommands
+    } elseif {[info exist auto_mkindex_parser::initCommands]} {
+	unset auto_mkindex_parser::initCommands
+    }
+}
+
 set result ""
 
 test autoMkindex-1.1 {remove any existing tclIndex file} {
@@ -28,6 +52,8 @@ test autoMkindex-1.2 {build tclIndex based on a test file} {
 set element "{source [file join . autoMkindex.tcl]}"
 
 test autoMkindex-1.3 {examine tclIndex} {
+    file delete tclIndex
+    auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
         set dir "."
         variable auto_index
@@ -43,6 +69,8 @@ test autoMkindex-1.3 {examine tclIndex} {
 
 
 test autoMkindex-2.1 {commands on the autoload path can be imported} {
+    file delete tclIndex
+    auto_mkindex . autoMkindex.tcl
     set interp [interp create]
     set final [$interp eval {
         namespace eval blt {}
@@ -69,11 +97,12 @@ test autoMkindex-3.1 {slaveHook} {
 	}
     }
     auto_mkindex_parser::slavehook { _%@namespace import -force ::blt::* }
+    file delete tclIndex
     auto_mkindex . autoMkindex.tcl
      
     # Reset initCommands to avoid trashing other tests
 
-    set auto_mkindex_parser::initCommands $saveCommands
+    AutoMkindexTestReset
     file exists tclIndex
 } 1 
 
@@ -87,6 +116,7 @@ test autoMkindex-3.2 {auto_mkindex_parser::command} {
 	append index [list set auto_index([fullname $name])] \
 		" \[list source \[file join \$dir [list $scriptFile]\]\]\n"
     }
+    file delete tclIndex
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
         set dir "."
@@ -101,7 +131,7 @@ test autoMkindex-3.2 {auto_mkindex_parser::command} {
 
     # Reset initCommands to avoid trashing other tests
 
-    set auto_mkindex_parser::initCommands $saveCommands
+    AutoMkindexTestReset
     set ::result
 } "{::buried::explicit $element} {::buried::inside $element} {{::buried::my proc} $element} {::buried::mycmd1 $element} {::buried::mycmd2 $element} {::buried::mycmd4 $element} {::buried::myproc $element} {::buried::pub_one $element} {::buried::pub_two $element} {::buried::relative $element} {::buried::under::neath $element} {::buried::within $element} {indented $element} {mycmd3 $element} {normal $element} {top $element}"
 
@@ -114,6 +144,7 @@ test autoMkindex-3.3 {auto_mkindex_parser::command} {knownBug} {
 	append index [list set auto_index([fullname $name])] \
 		" \[list source \[file join \$dir [list $scriptFile]\]\]\n"
     }
+    file delete tclIndex
     auto_mkindex . autoMkindex.tcl
     namespace eval tcl_autoMkindex_tmp {
         set dir "."
@@ -128,7 +159,7 @@ test autoMkindex-3.3 {auto_mkindex_parser::command} {knownBug} {
 
     # Reset initCommands to avoid trashing other tests
 
-    set auto_mkindex_parser::initCommands $saveCommands
+    AutoMkindexTestReset
     proc lvalue {list pattern} {
 	set ix [lsearch $list $pattern]
 	if {$ix >= 0} {
@@ -140,12 +171,19 @@ test autoMkindex-3.3 {auto_mkindex_parser::command} {knownBug} {
     list [lvalue $::result *mycmd4*] [lvalue $::result *mycmd5*] [lvalue $::result *mycmd6*]
 } "{::buried::mycmd4 $element} {::buried::mycmd5 $element} {mycmd6 $element}"
 
-
-#
 # Clean up.
-#
 
-set auto_mkindex_parser::initCommands $saveCommands
 unset result
-unset saveCommands
-catch {file delete tclIndex}
+AutoMkindexTestReset
+if {[info exist saveCommands]} {
+    unset saveCommands
+}
+rename AutoMkindexTestReset ""
+
+if {[info exists removeAutoMkindex]} {
+    catch {file delete $newMkindexFile}
+}
+if {[file exists tclIndex]} {
+    file delete -force tclIndex
+}
+::tcltest::cleanupTests

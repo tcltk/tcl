@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacBOAMain.c,v 1.2 1998/09/14 18:40:04 stanton Exp $
+ * RCS: @(#) $Id: tclMacBOAMain.c,v 1.3 1999/04/16 00:47:19 stanton Exp $
  */
 
 #include "tcl.h"
@@ -147,14 +147,16 @@ Tcl_Main(argc, argv, appInitProc)
      */
 
     if ((*appInitProc)(interp) != TCL_OK) {
-	    Tcl_DString errStr;
-	    Tcl_DStringInit(&errStr);
-	    Tcl_DStringAppend(&errStr,
-		    "application-specific initialization failed: \n", -1);
-	    Tcl_DStringAppend(&errStr, interp->result, -1);
-	    Tcl_DStringAppend(&errStr, "\n", 1);
-	    TclMacDoNotification(Tcl_DStringValue(&errStr));
-	    goto done;
+	Tcl_DString errStr;
+
+	Tcl_DStringInit(&errStr);
+	Tcl_DStringAppend(&errStr,
+		"application-specific initialization failed: \n", -1);
+	Tcl_DStringAppend(&errStr, Tcl_GetStringResult(interp), -1);
+	Tcl_DStringAppend(&errStr, "\n", 1);
+	TclMacDoNotification(Tcl_DStringValue(&errStr));
+	Tcl_DStringFree(&errStr);
+	goto done;
     }
 
     /*
@@ -192,10 +194,9 @@ Tcl_Main(argc, argv, appInitProc)
             Tcl_DStringAppend(&errStr, " Error sourcing resource or file: ", -1);
             Tcl_DStringAppend(&errStr, fileName, -1);
             Tcl_DStringAppend(&errStr, "\n\nError was: ", -1);
-            Tcl_DStringAppend(&errStr, interp->result, -1);
-                        
+            Tcl_DStringAppend(&errStr, Tcl_GetStringResult(interp), -1);
             TclMacDoNotification(Tcl_DStringValue(&errStr));
-                        
+	    Tcl_DStringFree(&errStr);
         }
 	goto done;
     }
@@ -312,7 +313,7 @@ Tcl_MacBGNotifyObjCmd(clientData, interp, objc, objv)
         return TCL_ERROR;
     }
     
-    TclMacDoNotification(Tcl_GetStringFromObj(objv[1], (int *) NULL));
+    TclMacDoNotification(Tcl_GetString(objv[1]));
     return TCL_OK;
            
 }

@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: tclLoadAix.c,v 1.2 1998/09/14 18:40:16 stanton Exp $
+ * RCS: @(#) $Id: tclLoadAix.c,v 1.3 1999/04/16 00:48:04 stanton Exp $
  *
  * Note:  this file has been altered from the original in a few
  * ways in order to work properly with Tcl.
@@ -213,7 +213,7 @@ static void caterr(char *s)
 
 	while (*p >= '0' && *p <= '9')
 		p++;
-	switch(atoi(s)) {
+	switch(atoi(s)) {		/* INTL: "C", UTF safe. */
 	case L_ERROR_TOOMANY:
 		strcat(errbuf, "to many errors");
 		break;
@@ -234,7 +234,7 @@ static void caterr(char *s)
 		strcat(errbuf, p);
 		break;
 	case L_ERROR_ERRNO:
-		strcat(errbuf, strerror(atoi(++p)));
+		strcat(errbuf, strerror(atoi(++p)));	/* INTL: "C", UTF safe. */
 		break;
 	default:
 		strcat(errbuf, s);

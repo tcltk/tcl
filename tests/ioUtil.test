@@ -1,16 +1,18 @@
-# This file (iOUtil.test) tests the hookable TclStat(), TclAccess(),
+# This file (ioUtil.test) tests the hookable TclStat(), TclAccess(),
 # and Tcl_OpenFileChannel, routines in the file generic/tclIOUtils.c.
 # Sourcing this file into Tcl runs the tests and generates output for
 # errors. No output means no errors were found. 
 # 
-# Copyright (c) 1998 by Scriptics Corporation. 
+# Copyright (c) 1998-1999 by Scriptics Corporation. 
 # 
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# RCS: @(#) $Id: ioUtil.test,v 1.5 1998/09/14 18:40:10 stanton Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.6 1999/04/16 00:47:29 stanton Exp $
  
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 set unsetScript {
     catch {unset testStat1(size)}
@@ -18,7 +20,7 @@ set unsetScript {
     catch {unset testStat3(size)}
 }
 
-test stat-1.1 {TclStat: Check that none of the test procs are there.} {
+test ioUtil-1.1 {TclStat: Check that none of the test procs are there.} {knownBug} {
     catch {file stat testStat1%.fil testStat1} err1
     catch {file stat testStat2%.fil testStat2} err2
     catch {file stat testStat3%.fil testStat3} err3
@@ -29,7 +31,7 @@ if {[info commands teststatproc] == {}} {
     puts "This application hasn't been compiled with the \"teststatproc\""
     puts "command, so I can't test Tcl_Stat_* etc."
 } else {
-test stat-1.2 {TclStatInsertProc: Insert the 3 test TclStat_ procedures.} {
+test ioUtil-1.2 {TclStatInsertProc: Insert the 3 test TclStat_ procedures.} {
     catch {teststatproc insert TclpStat} err1
     teststatproc insert TestStatProc1
     teststatproc insert TestStatProc2
@@ -37,7 +39,7 @@ test stat-1.2 {TclStatInsertProc: Insert the 3 test TclStat_ procedures.} {
     set err1
 } {bad arg "insert": must be TestStatProc1, TestStatProc2, or TestStatProc3}
 
-test stat-1.3 {TclStat: Use "file stat ?" to invoke each procedure.} {
+test ioUtil-1.3 {TclStat: Use "file stat ?" to invoke each procedure.} {knownBug} {
     file stat testStat2%.fil testStat2
     file stat testStat1%.fil testStat1
     file stat testStat3%.fil testStat3
@@ -47,12 +49,12 @@ test stat-1.3 {TclStat: Use "file stat ?" to invoke each procedure.} {
 
 eval $unsetScript
 
-test stat-1.4 {TclStatDeleteProc: "TclpStat" function should not be deletedable.} {
+test ioUtil-1.4 {TclStatDeleteProc: "TclpStat" function should not be deletedable.} {
     catch {teststatproc delete TclpStat} err2
     set err2
 } {"TclpStat": could not be deleteed}
 
-test stat-1.5 {TclStatDeleteProc: Delete the 2nd TclStat procedure.} {
+test ioUtil-1.5 {TclStatDeleteProc: Delete the 2nd TclStat procedure.} {knownBug} {
     # Delete the 2nd procedure and test that it longer exists but that
     #   the others do actually return a result.
 
@@ -66,7 +68,7 @@ test stat-1.5 {TclStatDeleteProc: Delete the 2nd TclStat procedure.} {
 
 eval $unsetScript
 
-test stat-1.6 {TclStatDeleteProc: Delete the 1st TclStat procedure.} {
+test ioUtil-1.6 {TclStatDeleteProc: Delete the 1st TclStat procedure.} {knownBug} {
     # Next delete the 1st procedure and test that only the 3rd procedure
     #   is the only one that exists.
 
@@ -80,7 +82,7 @@ test stat-1.6 {TclStatDeleteProc: Delete the 1st TclStat procedure.} {
 
 eval $unsetScript
 
-test stat-1.7 {TclStatDeleteProc: Delete the 3rd procedure & verify all are gone.} {
+test ioUtil-1.7 {TclStatDeleteProc: Delete the 3rd procedure & verify all are gone.} {knownBug} {
     # Finally delete the 3rd procedure and check that none of the
     #   procedures exist.
 
@@ -94,7 +96,7 @@ test stat-1.7 {TclStatDeleteProc: Delete the 3rd procedure & verify all are gone
 
 eval $unsetScript
 
-test stat-1.8 {TclStatDeleteProc: Verify that all procs have been deleted.} {
+test ioUtil-1.8 {TclStatDeleteProc: Verify that all procs have been deleted.} {knownBug} {
     # Attempt to delete all the Stat procs. again to ensure they no longer
     #   exist and an error is returned.
 
@@ -120,7 +122,7 @@ if {[info commands testaccessproc] == {}} {
     puts "This application hasn't been compiled with the \"testaccessproc\""
     puts "command, so I can't test Tcl_Access_* etc."
 } else {
-test access-1.2 {TclAccessInsertProc: Insert the 3 test TclAccess_ procedures.} {
+test ioUtil-1.2 {TclAccessInsertProc: Insert the 3 test TclAccess_ procedures.} {
     catch {testaccessproc insert TclpAccess} err1
     testaccessproc insert TestAccessProc1
     testaccessproc insert TestAccessProc2
@@ -128,14 +130,14 @@ test access-1.2 {TclAccessInsertProc: Insert the 3 test TclAccess_ procedures.} 
     set err1
 } {bad arg "insert": must be TestAccessProc1, TestAccessProc2, or TestAccessProc3}
 
-test access-1.3 {TclAccess: Use "file access ?" to invoke each procedure.} {
+test ioUtil-2.3 {TclAccess: Use "file access ?" to invoke each procedure.} {
     list \
     	[file exists testAccess2%.fil] \
    		[file exists testAccess1%.fil] \
 		[file exists testAccess3%.fil]
 } {1 1 1}
 
-test access-1.4 {TclAccessDeleteProc: "TclpAccess" function should not be deletedable.} {
+test ioUtil-2.4 {TclAccessDeleteProc: "TclpAccess" function should not be deletedable.} {
     catch {testaccessproc delete TclpAccess} err2
     set err2
 } {"TclpAccess": could not be deleteed}
@@ -152,7 +154,7 @@ test accesst-1.5 {TclAccessDeleteProc: Delete the 2nd TclAccess procedure.} {
     list $res1 $err3 $res2
 } {1 0 1}
 
-test access-1.6 {TclAccessDeleteProc: Delete the 1st TclAccess procedure.} {
+test ioUtil-2.6 {TclAccessDeleteProc: Delete the 1st TclAccess procedure.} {
     # Next delete the 1st procedure and test that only the 3rd procedure
     #   is the only one that exists.
 
@@ -164,7 +166,7 @@ test access-1.6 {TclAccessDeleteProc: Delete the 1st TclAccess procedure.} {
     list $err4 $err5 $res3
 } {0 0 1}
 
-test access-1.7 {TclAccessDeleteProc: Delete the 3rd procedure & verify all are gone.} {
+test ioUtil-2.7 {TclAccessDeleteProc: Delete the 3rd procedure & verify all are gone.} {
     # Finally delete the 3rd procedure and check that none of the
     #   procedures exist.
 
@@ -176,7 +178,7 @@ test access-1.7 {TclAccessDeleteProc: Delete the 3rd procedure & verify all are 
     list $err6 $err7 $err8
 } {0 0 0}
 
-test access-1.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} {
+test ioUtil-2.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} {
     # Attempt to delete all the Access procs. again to ensure they no longer
     #   exist and an error is returned.
 
@@ -188,7 +190,7 @@ test access-1.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} 
 } {{"TestAccessProc1": could not be deleteed} {"TestAccessProc2": could not be deleteed} {"TestAccessProc3": could not be deleteed}}
 }
 
-test openfilechannel-1.1 {TclOpenFileChannel: Check that none of the test procs are there.} {
+test ioUtil-3.1 {TclOpenFileChannel: Check that none of the test procs are there.} {
     catch {file exists __testOpenFileChannel1%__.fil} err1
     catch {file exists __testOpenFileChannel2%__.fil} err2
     catch {file exists __testOpenFileChannel3%__.fil} err3
@@ -202,7 +204,7 @@ if {[info commands testopenfilechannelproc] == {}} {
     puts "This application hasn't been compiled with the \"testopenfilechannelproc\""
     puts "command, so I can't test Tcl_OpenFileChannelInsert"
 } else {
-test openfilechannel-1.2 {TclOpenFileChannelInsertProc: Insert the 3 test TclOpenFileChannel_ procedures.} {
+test ioUtil-3.2 {TclOpenFileChannelInsertProc: Insert the 3 test TclOpenFileChannel_ procedures.} {
     catch {testopenfilechannelproc insert TclpOpenFileChannel} err1
     testopenfilechannelproc insert TestOpenFileChannelProc1
     testopenfilechannelproc insert TestOpenFileChannelProc2
@@ -210,7 +212,7 @@ test openfilechannel-1.2 {TclOpenFileChannelInsertProc: Insert the 3 test TclOpe
     set err1
 } {bad arg "insert": must be TestOpenFileChannelProc1, TestOpenFileChannelProc2, or TestOpenFileChannelProc3}
 
-test openfilechannel-1.3 {TclOpenFileChannel: Use "file openfilechannel ?" to invoke each procedure.} {
+test ioUtil-3.3 {TclOpenFileChannel: Use "file openfilechannel ?" to invoke each procedure.} {
 	close [open __testOpenFileChannel1%__.fil w]
 	close [open __testOpenFileChannel2%__.fil w]
 	close [open __testOpenFileChannel3%__.fil w]
@@ -228,7 +230,7 @@ test openfilechannel-1.3 {TclOpenFileChannel: Use "file openfilechannel ?" to in
 	set err
 } {}
 
-test openfilechannel-1.4 {TclOpenFileChannelDeleteProc: "TclpOpenFileChannel" function should not be deletedable.} {
+test ioUtil-3.4 {TclOpenFileChannelDeleteProc: "TclpOpenFileChannel" function should not be deletedable.} {
     catch {testopenfilechannelproc delete TclpOpenFileChannel} err2
     set err2
 } {"TclpOpenFileChannel": could not be deleteed}
@@ -254,7 +256,7 @@ test openfilechannelt-1.5 {TclOpenFileChannelDeleteProc: Delete the 2nd TclOpenF
     set err3
 } {}
 
-test openfilechannel-1.6 {TclOpenFileChannelDeleteProc: Delete the 1st TclOpenFileChannel procedure.} {
+test ioUtil-3.6 {TclOpenFileChannelDeleteProc: Delete the 1st TclOpenFileChannel procedure.} {
     # Next delete the 1st procedure and test that only the 3rd procedure
     #   is the only one that exists.
 
@@ -273,7 +275,7 @@ test openfilechannel-1.6 {TclOpenFileChannelDeleteProc: Delete the 1st TclOpenFi
     set err4
 } {}
 
-test openfilechannel-1.7 {TclOpenFileChannelDeleteProc: Delete the 3rd procedure & verify all are gone.} {
+test ioUtil-3.7 {TclOpenFileChannelDeleteProc: Delete the 3rd procedure & verify all are gone.} {
     # Finally delete the 3rd procedure and check that none of the
     #   procedures exist.
 
@@ -287,7 +289,7 @@ test openfilechannel-1.7 {TclOpenFileChannelDeleteProc: Delete the 3rd procedure
     set err5
 } {1}
 
-test openfilechannel-1.8 {TclOpenFileChannelDeleteProc: Verify that all procs have been deleted.} {
+test ioUtil-3.8 {TclOpenFileChannelDeleteProc: Verify that all procs have been deleted.} {
     # Attempt to delete all the OpenFileChannel procs. again to ensure they no longer
     #   exist and an error is returned.
 
@@ -298,3 +300,19 @@ test openfilechannel-1.8 {TclOpenFileChannelDeleteProc: Verify that all procs ha
     list $err9 $err10 $err11
 } {{"TestOpenFileChannelProc1": could not be deleteed} {"TestOpenFileChannelProc2": could not be deleteed} {"TestOpenFileChannelProc3": could not be deleteed}}
 }
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

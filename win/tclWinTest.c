@@ -8,11 +8,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.2 1998/09/14 18:40:20 stanton Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.3 1999/04/16 00:48:10 stanton Exp $
  */
 
-#include "tclInt.h"
-#include "tclPort.h"
+#include "tclWinInt.h"
 
 /*
  * Forward declarations of procedures defined later in this file:

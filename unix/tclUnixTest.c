@@ -3,13 +3,13 @@
  *
  *	Contains platform specific test commands for the Unix platform.
  *
- * Copyright (c) 1996 Sun Microsystems, Inc.
+ * Copyright (c) 1996-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.9 1998/10/14 00:32:55 rjohnson Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.10 1999/04/16 00:48:05 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -73,6 +73,10 @@ static int		TestfindexecutableCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestgetopenfileCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestgetdefencdirCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestsetdefencdirCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 int			TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
 static int		TestalarmCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
@@ -108,6 +112,10 @@ TclplatformtestInit(interp)
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -193,7 +201,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
 	}
 	pipePtr->readCount = pipePtr->writeCount = 0;
     } else if (strcmp(argv[1], "counts") == 0) {
-	char buf[30];
+	char buf[TCL_INTEGER_SPACE * 2];
 	
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -275,7 +283,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
             /* Empty loop body. */
         }
     } else if (strcmp(argv[1], "fillpartial") == 0) {
-	char buf[30];
+	char buf[TCL_INTEGER_SPACE];
 	
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -284,7 +292,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
 	}
 
 	memset((VOID *) buffer, 'b', 10);
-	sprintf(buf, "%d", write(GetFd(pipePtr->writeFile), buffer, 10));
+	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);
@@ -438,20 +446,29 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
     char **argv;			/* Argument strings. */
 {
     char *oldName;
+    char *oldNativeName;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
 		" argv0\"", (char *) NULL);
 	return TCL_ERROR;
     }
-    oldName = tclExecutableName;
-    tclExecutableName = NULL;
+
+    oldName       = tclExecutableName;
+    oldNativeName = tclNativeExecutableName;
+
+    tclExecutableName       = NULL;
+    tclNativeExecutableName = NULL;
+
     Tcl_FindExecutable(argv[1]);
     if (tclExecutableName != NULL) {
 	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
 	ckfree(tclExecutableName);
     }
-    tclExecutableName = oldName;
+
+    tclExecutableName       = oldName;
+    tclNativeExecutableName = oldNativeName;
+
     return TCL_OK;
 }
 
@@ -496,6 +513,87 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp,
                 "Tcl_GetOpenFile succeeded but FILE * NULL!", (char *) NULL);
         return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsetdefencdirCmd --
+ *
+ *	This procedure implements the "testsetdefenc" command. It is
+ *	used to set the value of tclDefaultEncodingDir.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetdefencdirCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    if (argc != 2) {
+        Tcl_AppendResult(interp,
+                "wrong # args: should be \"", argv[0],
+                " defaultDir\"",
+                (char *) NULL);
+        return TCL_ERROR;
+    }
+
+    if (tclDefaultEncodingDir != NULL) {
+	ckfree(tclDefaultEncodingDir);
+	tclDefaultEncodingDir = NULL;
+    }
+    if (*argv[1] != '\0') {
+	tclDefaultEncodingDir = (char *)
+	    ckalloc((unsigned) strlen(argv[1]) + 1);
+	strcpy(tclDefaultEncodingDir, argv[1]);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestgetdefencdirCmd --
+ *
+ *	This procedure implements the "testgetdefenc" command. It is
+ *	used to get the value of tclDefaultEncodingDir.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestgetdefencdirCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    if (argc != 1) {
+        Tcl_AppendResult(interp,
+                "wrong # args: should be \"", argv[0],
+                (char *) NULL);
+        return TCL_ERROR;
+    }
+
+    if (tclDefaultEncodingDir != NULL) {
+        Tcl_AppendResult(interp, tclDefaultEncodingDir, (char *) NULL);
     }
     return TCL_OK;
 }

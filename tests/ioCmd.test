@@ -7,13 +7,16 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.2 1998/09/14 18:40:11 stanton Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.3 1999/04/16 00:47:29 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 removeFile test1
 removeFile pipe
@@ -158,7 +161,7 @@ test iocmd-5.3 {seek command} {
 } {1 {expected integer but got "gugu"}}
 test iocmd-5.4 {seek command} {
     list [catch {seek stdin 100 gugu} msg] $msg
-} {1 {bad origin "gugu": should be start, current, or end}}
+} {1 {bad origin "gugu": must be start, current, or end}}
 
 test iocmd-6.1 {tell command} {
     list [catch {tell} msg] $msg
@@ -205,31 +208,31 @@ test iocmd-8.6 {fconfigure command} {
 test iocmd-8.7 {fconfigure command} {
     removeFile test1
     set f1 [open test1 w]
-    fconfigure $f1 -translation lf -eofchar {}
+    fconfigure $f1 -translation lf -eofchar {} -encoding unicode
     set x [fconfigure $f1]
     close $f1
     set x
-} {-blocking 1 -buffering full -buffersize 4096 -eofchar {} -translation lf}
+} {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
 test iocmd-8.8 {fconfigure command} {
     removeFile test1
     set f1 [open test1 w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {}
+		-eofchar {} -encoding unicode
     set x ""
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
     close $f1
     set x
-} {line {-blocking 1 -buffering line -buffersize 3030 -eofchar {} -translation lf}}
+} {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
 test iocmd-8.9 {fconfigure command} {
     removeFile test1
     set f1 [open test1 w]
     fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
-		-eofchar {}
+		-eofchar {} -encoding binary
     set x [fconfigure $f1]
     close $f1
     set x
-} {-blocking 1 -buffering none -buffersize 4040 -eofchar {} -translation lf}
+} {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -translation lf}
 test iocmd-8.10 {fconfigure command} {
     list [catch {fconfigure a b} msg] $msg
 } {1 {can not find channel named "a"}}
@@ -250,7 +253,7 @@ proc iocmdSSETUP {} {
 	set srv [socket -server iocmdSRV 0];
 	set port [lindex [fconfigure $srv -sockname] 2];
 	proc iocmdSRV {sock ip port} {close $sock}
-	set cli [socket localhost $port];
+	set cli [socket 127.0.0.1 $port];
   }
 }
 proc iocmdSSHTDWN {} {
@@ -293,9 +296,8 @@ test iocmd-8.18 {fconfigure command / unix tty channel} {nonPortable unixOnly} {
 	close $tty;
 	set r;
 } {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -eofchar, -translation, or -mode}}
-test iocmd-8.19 {fconfigure command / win tty channel} {pcOnly && !win32s} {
-	# None of the com port functions are implemented on Win32s.
-	# Also, might fail if com1 is unavailable
+test iocmd-8.19 {fconfigure command / win tty channel} {nonPortable pcOnly} {
+	# might fail if com1 is unavailable
 	set tty [open com1]
 	set r [list [catch {fconfigure $tty -blah blih} msg] $msg];
 	close $tty;
@@ -312,6 +314,8 @@ test iocmd-9.3 {eof command} {
     catch {close file100}
     list [catch {eof file100} msg] $msg $errorCode
 } {1 {can not find channel named "file100"} NONE}
+
+# The tests for Tcl_ExecObjCmd are in exec.test
 
 test iocmd-10.1 {fblocked command} {
     list [catch {fblocked} msg] $msg
@@ -488,7 +492,7 @@ test iocmd-15.9 {Tcl_FcopyObjCmd} {
 } "1 {channel \"$rfile\" wasn't opened for writing}"
 test iocmd-15.10 {Tcl_FcopyObjCmd} {
     list [catch {fcopy $rfile $wfile foo bar} msg] $msg
-} {1 {bad switch "foo": must be -size, or -command}}
+} {1 {bad switch "foo": must be -size or -command}}
 test iocmd-15.11 {Tcl_FcopyObjCmd} {
     list [catch {fcopy $rfile $wfile -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
@@ -499,14 +503,26 @@ test iocmd-15.12 {Tcl_FcopyObjCmd} {
 close $rfile
 close $wfile
 
-removeFile test1
-removeFile test2
-removeFile test3
-removeFile test4
+# cleanup
+foreach file [list test1 test2 test3 test4] {
+    ::tcltest::removeFile $file
+}
 # delay long enough for background processes to finish
 after 500
-removeFile test5
-removeFile pipe
-removeFile output
-set x ""
-set x
+foreach file [list test5 pipe output] {
+    ::tcltest::removeFile $file
+}
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

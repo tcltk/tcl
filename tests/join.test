@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: join.test,v 1.2 1998/09/14 18:40:11 stanton Exp $
+# RCS: @(#) $Id: join.test,v 1.3 1999/04/16 00:47:29 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test join-1.1 {basic join commands} {
     join {a b c} xyz
@@ -44,5 +47,19 @@ test join-3.1 {joinString is binary ok} {
 test join-3.2 {join is binary ok} {
   string length [join "a\0b a\0b a\0b"]
 } 11
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
 
 

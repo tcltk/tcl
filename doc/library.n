@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.5 1998/10/30 23:02:02 welch Exp $
+'\" RCS: @(#) $Id: library.n,v 1.6 1999/04/16 00:46:35 stanton Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -60,16 +60,18 @@ the auto-load mechanism defined below.
 The following procedures are provided in the Tcl library:
 .TP
 \fBauto_execok \fIcmd\fR
-Determines whether there is an executable file by the name \fIcmd\fR.
-This command examines the directories in the current search path
-(given by the PATH environment variable) to see if there is an
-executable file named \fIcmd\fR in any of those directories.
-If so, it returns 1;  if not it returns 0.  \fBAuto_exec\fR
-remembers information about previous searches in an array
-named \fBauto_execs\fR;  this avoids the path search in
-future calls for the same \fIcmd\fR.  The command \fBauto_reset\fR
-may be used to force \fBauto_execok\fR to forget its cached
-information.
+Determines whether there is an executable file or shell builtin
+by the name \fIcmd\fR.  If so, it returns a list of arguments to be
+passed to \fBexec\fR to execute the executable file or shell builtin
+named by \fIcmd\fR.  If not, it returns an empty string.  This command
+examines the directories in the current search path (given by the PATH
+environment variable) in its search for an executable file named
+\fIcmd\fR.  On Windows platforms, the search is expanded with the same
+directories and file extensions as used by \fBexec\fR. \fBAuto_exec\fR
+remembers information about previous searches in an array named
+\fBauto_execs\fR;  this avoids the path search in future calls for the
+same \fIcmd\fR.  The command \fBauto_reset\fR may be used to force
+\fBauto_execok\fR to forget its cached information.
 .TP
 \fBauto_load \fIcmd\fR
 This command attempts to load the definition for a Tcl command named

@@ -6,6 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: pkgIndex.tcl,v 1.2 1998/09/14 18:40:19 stanton Exp $
+# RCS: @(#) $Id: pkgIndex.tcl,v 1.3 1999/04/16 00:48:07 stanton Exp $
 
-package ifneeded registry 1.0 [list tclPkgSetup $dir registry 1.0 {{tclreg80.dll load registry}}]
+package ifneeded registry 1.0 [list tclPkgSetup $dir registry 1.0 {{tclreg81.dll load registry}}]
+package ifneeded dde 1.0 [list tclPkgSetup $dir dde 1.0 {{tcldde81.dll load dde}}]

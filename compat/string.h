@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: string.h,v 1.2 1998/09/14 18:39:45 stanton Exp $
+ * RCS: @(#) $Id: string.h,v 1.3 1999/04/16 00:46:30 stanton Exp $
  */
 
 #ifndef _STRING
@@ -32,8 +32,12 @@ extern char *		memchr _ANSI_ARGS_((CONST VOID *s, int c, size_t n));
 extern int		memcmp _ANSI_ARGS_((CONST VOID *s1, CONST VOID *s2,
 			    size_t n));
 extern char *		memcpy _ANSI_ARGS_((VOID *t, CONST VOID *f, size_t n));
+#ifdef NO_MEMMOVE
+#define memmove(d, s, n) bcopy ((s), (d), (n))
+#else
 extern char *		memmove _ANSI_ARGS_((VOID *t, CONST VOID *f,
 			    size_t n));
+#endif
 extern char *		memset _ANSI_ARGS_((VOID *s, int c, size_t n));
 
 extern int		strcasecmp _ANSI_ARGS_((CONST char *s1,

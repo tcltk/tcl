@@ -5,14 +5,14 @@
  *	of the Tcl interpreter.
  *
  * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1993-1996 Lucent Technologies.
- * Copyright (c) 1998-1999 Scriptics Corporation.
+ * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.38 1999/03/12 23:03:51 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.39 1999/04/16 00:46:42 stanton Exp $
  */
 
 #ifndef _TCL
@@ -30,24 +30,25 @@
  * When version numbers change here, must also go into the following files
  * and update the version numbers:
  *
- * README
  * library/init.tcl	(only if major.minor changes, not patchlevel)
  * unix/configure.in
  * win/makefile.bc	(only if major.minor changes, not patchlevel)
  * win/makefile.vc	(only if major.minor changes, not patchlevel)
- * win/README
- * win/README.binary
+ * win/pkgIndex.tcl	(for tclregNN.dll, not patchlevel)
+ * README
  * mac/README
- *
+ * win/README.binary
+ * win/README		(only if major.minor changes, not patchlevel)
+ * unix/README		(only if major.minor changes, not patchlevel)
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   0
-#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  5
+#define TCL_MINOR_VERSION   1
+#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#define TCL_RELEASE_SERIAL  3
 
-#define TCL_VERSION	    "8.0"
-#define TCL_PATCH_LEVEL	    "8.0.5"
+#define TCL_VERSION	    "8.1"
+#define TCL_PATCH_LEVEL	    "8.1b3"
 
 /*
  * The following definitions set up the proper options for Windows
@@ -99,6 +100,7 @@
 #   ifndef NO_STRERROR
 #	define NO_STRERROR 1
 #   endif
+#   define INLINE 
 #endif
 
 /*
@@ -128,6 +130,29 @@
 #  endif
 # endif
 #endif
+
+/*
+ * Special macro to define mutexes, that doesn't do anything
+ * if we are not using threads.
+ */
+
+#ifdef TCL_THREADS
+#define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
+#else
+#define TCL_DECLARE_MUTEX(name)
+#endif
+
+/*
+ * Macros that eliminate the overhead of the thread synchronization
+ * functions when compiling without thread support.
+ */
+
+#ifndef TCL_THREADS
+#define Tcl_MutexLock(mutexPtr)
+#define Tcl_MutexUnlock(mutexPtr)
+#define Tcl_ConditionNotify(condPtr)
+#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#endif /* TCL_THREADS */
 
 /* 
  * A special definition used to allow this header file to be included 
@@ -222,10 +247,14 @@
 
 /*
  * Definitions that allow this header file to be used either with or
- * without ANSI C features like function prototypes.  */
+ * without ANSI C features like function prototypes.
+ */
 
 #undef _ANSI_ARGS_
 #undef CONST
+#ifndef INLINE
+#   define INLINE
+#endif
 
 #if ((defined(__STDC__) || defined(SABER)) && !defined(NO_PROTOTYPE)) || defined(__cplusplus) || defined(USE_PROTOTYPE)
 #   define _USING_PROTOTYPES_ 1
@@ -322,9 +351,15 @@ typedef struct Tcl_Interp {
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_Command_ *Tcl_Command;
+typedef struct Tcl_Condition_ *Tcl_Condition;
+typedef struct Tcl_EncodingState_ *Tcl_EncodingState;
+typedef struct Tcl_Encoding_ *Tcl_Encoding;
 typedef struct Tcl_Event Tcl_Event;
+typedef struct Tcl_Mutex_ *Tcl_Mutex;
 typedef struct Tcl_Pid_ *Tcl_Pid;
 typedef struct Tcl_RegExp_ *Tcl_RegExp;
+typedef struct Tcl_ThreadDataKey_ *Tcl_ThreadDataKey;
+typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
@@ -395,6 +430,11 @@ typedef void (Tcl_CmdTraceProc) _ANSI_ARGS_((ClientData clientData,
 	ClientData cmdClientData, int argc, char *argv[]));
 typedef void (Tcl_DupInternalRepProc) _ANSI_ARGS_((struct Tcl_Obj *srcPtr, 
         struct Tcl_Obj *dupPtr));
+typedef int (Tcl_EncodingConvertProc)_ANSI_ARGS_((ClientData clientData,
+	CONST char *src, int srcLen, int flags, Tcl_EncodingState *statePtr,
+	char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr,
+	int *dstCharsPtr));
+typedef void (Tcl_EncodingFreeProc)_ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_EventProc) _ANSI_ARGS_((Tcl_Event *evPtr, int flags));
 typedef void (Tcl_EventCheckProc) _ANSI_ARGS_((ClientData clientData,
 	int flags));
@@ -414,7 +454,7 @@ typedef int (Tcl_MathProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, Tcl_Value *args, Tcl_Value *resultPtr));
 typedef void (Tcl_NamespaceDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_ObjCmdProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST objv[]));
+	Tcl_Interp *interp, int objc, struct Tcl_Obj *CONST objv[]));
 typedef int (Tcl_PackageInitProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef void (Tcl_PanicProc) _ANSI_ARGS_(TCL_VARARGS(char *, format));
 typedef void (Tcl_TcpAcceptProc) _ANSI_ARGS_((ClientData callbackData,
@@ -468,8 +508,8 @@ typedef struct Tcl_Obj {
 				 * means the string rep is invalid and must
 				 * be regenerated from the internal rep.
 				 * Clients should use Tcl_GetStringFromObj
-				 * to get a pointer to the byte array as a
-				 * readonly value. */
+				 * or Tcl_GetString to get a pointer to the
+				 * byte array as a readonly value. */
     int length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
@@ -520,7 +560,7 @@ EXTERN int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 /*
  * Macros and definitions that help to debug the use of Tcl objects.
- * When TCL_MEM_DEBUG is defined, the Tcl_New* declarations are 
+ * When TCL_MEM_DEBUG is defined, the Tcl_New declarations are 
  * overridden to call debugging versions of the object creation procedures.
  */
 
@@ -542,6 +582,23 @@ EXTERN int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 #  define Tcl_NewStringObj(bytes, len) \
      Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
 #endif /* TCL_MEM_DEBUG */
+
+/*
+ * The following structure contains the state needed by
+ * Tcl_SaveResult.  No-one outside of Tcl should access any of these
+ * fields.  This structure is typically allocated on the stack.
+ */
+
+typedef struct Tcl_SavedResult {
+    char *result;
+    Tcl_FreeProc *freeProc;
+    Tcl_Obj *objResultPtr;
+    char *appendResult;
+    int appendAvl;
+    int appendUsed;
+    char resultSpace[TCL_RESULT_SIZE+1];
+} Tcl_SavedResult;
+
 
 /*
  * The following definitions support Tcl's namespace facility.
@@ -665,11 +722,19 @@ typedef struct Tcl_DString {
 /*
  * Definitions for the maximum number of digits of precision that may
  * be specified in the "tcl_precision" variable, and the number of
- * characters of buffer space required by Tcl_PrintDouble.
+ * bytes of buffer space required by Tcl_PrintDouble.
  */
  
 #define TCL_MAX_PREC 17
 #define TCL_DOUBLE_SPACE (TCL_MAX_PREC+10)
+
+/*
+ * Definition for a number of bytes of buffer space sufficient to hold the
+ * string representation of an integer in base 10 (assuming the existence
+ * of 64-bit integers).
+ */
+
+#define TCL_INTEGER_SPACE	24
 
 /*
  * Flag that may be passed to Tcl_ConvertElement to force it not to
@@ -687,13 +752,14 @@ typedef struct Tcl_DString {
 #define TCL_EXACT	1
 
 /*
- * Flag values passed to Tcl_RecordAndEval.
+ * Flag values passed to Tcl_RecordAndEval and/or Tcl_EvalObj.
  * WARNING: these bit choices must not conflict with the bit choices
  * for evalFlag bits in tclInt.h!!
  */
 
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
+#define TCL_EVAL_DIRECT		0x40000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see
@@ -718,7 +784,19 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DESTROYED	 0x80
 #define TCL_INTERP_DESTROYED	 0x100
 #define TCL_LEAVE_ERR_MSG	 0x200
-#define TCL_PARSE_PART1		 0x400
+#define TCL_TRACE_ARRAY		 0x800
+
+/*
+ * The TCL_PARSE_PART1 flag is deprecated and has no effect. 
+ * The part1 is now always parsed whenever the part2 is NULL.
+ * (This is to avoid a common error when converting code to
+ *  use the new object based APIs and forgetting to give the
+ *  flag)
+ */
+#ifndef TCL_NO_DEPRECATED
+#define TCL_PARSE_PART1          0x400
+#endif
+
 
 /*
  * Types for linked variables:
@@ -729,45 +807,6 @@ typedef struct Tcl_DString {
 #define TCL_LINK_BOOLEAN	3
 #define TCL_LINK_STRING		4
 #define TCL_LINK_READ_ONLY	0x80
-
-/*
- * The following declarations either map ckalloc and ckfree to
- * malloc and free, or they map them to procedures with all sorts
- * of debugging hooks defined in tclCkalloc.c.
- */
-
-#ifdef TCL_MEM_DEBUG
-
-#  define Tcl_Alloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
-#  define Tcl_Free(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
-#  define Tcl_Realloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-#  define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
-#  define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
-#  define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-
-#else
-
-/*
- * If USE_TCLALLOC is true, then we need to call Tcl_Alloc instead of
- * the native malloc/free.  The only time USE_TCLALLOC should not be
- * true is when compiling the Tcl/Tk libraries on Unix systems.  In this
- * case we can safely call the native malloc/free directly as a performance
- * optimization.
- */
-
-#  if USE_TCLALLOC
-#     define ckalloc(x) Tcl_Alloc(x)
-#     define ckfree(x) Tcl_Free(x)
-#     define ckrealloc(x,y) Tcl_Realloc(x,y)
-#  else
-#     define ckalloc(x) malloc(x)
-#     define ckfree(x)  free(x)
-#     define ckrealloc(x,y) realloc(x,y)
-#  endif
-#  define Tcl_DumpActiveMemory(x)
-#  define Tcl_ValidateAllMemory(x,y)
-
-#endif /* !TCL_MEM_DEBUG */
 
 /*
  * Forward declaration of Tcl_HashTable.  Needed by some C++ compilers
@@ -960,6 +999,21 @@ typedef struct Tcl_Time {
 #define TCL_ENFORCE_MODE	(1<<4)
 
 /*
+ * Bits passed to Tcl_DriverClose2Proc to indicate which side of a channel
+ * should be closed.
+ */
+
+#define TCL_CLOSE_READ		(1<<1)
+#define TCL_CLOSE_WRITE	(1<<2)
+
+/*
+ * Value to use as the closeProc for a channel that supports the
+ * close2Proc interface.
+ */
+
+#define TCL_CLOSE2PROC	((Tcl_DriverCloseProc *)1)
+
+/*
  * Typedefs for the various operations in a channel type:
  */
 
@@ -967,6 +1021,8 @@ typedef int	(Tcl_DriverBlockModeProc) _ANSI_ARGS_((
 		    ClientData instanceData, int mode));
 typedef int	(Tcl_DriverCloseProc) _ANSI_ARGS_((ClientData instanceData,
 		    Tcl_Interp *interp));
+typedef int	(Tcl_DriverClose2Proc) _ANSI_ARGS_((ClientData instanceData,
+		    Tcl_Interp *interp, int flags));
 typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, int toRead, int *errorCodePtr));
 typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
@@ -984,6 +1040,43 @@ typedef void	(Tcl_DriverWatchProc) _ANSI_ARGS_((
 typedef int	(Tcl_DriverGetHandleProc) _ANSI_ARGS_((
 		    ClientData instanceData, int direction,
 		    ClientData *handlePtr));
+
+/*
+ * The following declarations either map ckalloc and ckfree to
+ * malloc and free, or they map them to procedures with all sorts
+ * of debugging hooks defined in tclCkalloc.c.
+ */
+
+#ifdef TCL_MEM_DEBUG
+
+#   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
+#   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
+#   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
+
+#else /* !TCL_MEM_DEBUG */
+
+/*
+ * If USE_TCLALLOC is true, then we need to call Tcl_Alloc instead of
+ * the native malloc/free.  The only time USE_TCLALLOC should not be
+ * true is when compiling the Tcl/Tk libraries on Unix systems.  In this
+ * case we can safely call the native malloc/free directly as a performance
+ * optimization.
+ */
+
+#   if USE_TCLALLOC
+#	define ckalloc(x) Tcl_Alloc(x)
+#	define ckfree(x) Tcl_Free(x)
+#	define ckrealloc(x,y) Tcl_Realloc(x,y)
+#   else
+#	define ckalloc(x) malloc(x)
+#	define ckfree(x)  free(x)
+#	define ckrealloc(x,y) realloc(x,y)
+#   endif
+#   define Tcl_InitMemory(x)
+#   define Tcl_DumpActiveMemory(x)
+#   define Tcl_ValidateAllMemory(x,y)
+
+#endif /* !TCL_MEM_DEBUG */
 
 /*
  * Enum for different end of line translation and recognition modes.
@@ -1011,8 +1104,10 @@ typedef struct Tcl_ChannelType {
     Tcl_DriverBlockModeProc *blockModeProc;
     					/* Set blocking mode for the
                                          * raw channel. May be NULL. */
-    Tcl_DriverCloseProc *closeProc;	/* Procedure to call to close
-                                         * the channel. */
+    Tcl_DriverCloseProc *closeProc;	/* Procedure to call to close the
+                                         * channel, or TCL_CLOSE2PROC if the
+                                         * close2Proc should be used
+                                         * instead. */
     Tcl_DriverInputProc *inputProc;	/* Procedure to call for input
                                          * on channel. */
     Tcl_DriverOutputProc *outputProc;	/* Procedure to call for output
@@ -1028,7 +1123,10 @@ typedef struct Tcl_ChannelType {
     Tcl_DriverGetHandleProc *getHandleProc;
 					/* Get an OS handle from the channel
                                          * or NULL if not supported. */
-    VOID *reserved;			/* reserved for future expansion */
+    Tcl_DriverClose2Proc *close2Proc;   /* Procedure to call to close the
+					 * channel if the device supports
+					 * closing the read & write sides
+					 * independently. */
 } Tcl_ChannelType;
 
 /*
@@ -1052,6 +1150,298 @@ typedef enum Tcl_PathType {
 } Tcl_PathType;
 
 /*
+ * The following structure represents a user-defined encoding.  It collects
+ * together all the functions that are used by the specific encoding.
+ */
+
+typedef struct Tcl_EncodingType {
+    CONST char *encodingName;	/* The name of the encoding, e.g.  "euc-jp".
+				 * This name is the unique key for this
+				 * encoding type. */
+    Tcl_EncodingConvertProc *toUtfProc;
+				/* Procedure to convert from external
+				 * encoding into UTF-8. */
+    Tcl_EncodingConvertProc *fromUtfProc;
+				/* Procedure to convert from UTF-8 into
+				 * external encoding. */
+    Tcl_EncodingFreeProc *freeProc;
+				/* If non-NULL, procedure to call when this
+				 * encoding is deleted. */
+    ClientData clientData;	/* Arbitrary value associated with encoding
+				 * type.  Passed to conversion procedures. */
+    int nullSize;		/* Number of zero bytes that signify
+				 * end-of-string in this encoding.  This
+				 * number is used to determine the source
+				 * string length when the srcLen argument is
+				 * negative.  Must be 1 or 2. */
+} Tcl_EncodingType;    
+
+/*
+ * The following definitions are used as values for the conversion control
+ * flags argument when converting text from one character set to another:
+ *
+ * TCL_ENCODING_START:	     	Signifies that the source buffer is the first
+ *				block in a (potentially multi-block) input
+ *				stream.  Tells the conversion procedure to
+ *				reset to an initial state and perform any
+ *				initialization that needs to occur before the
+ *				first byte is converted.  If the source
+ *				buffer contains the entire input stream to be
+ *				converted, this flag should be set.
+ *
+ * TCL_ENCODING_END:		Signifies that the source buffer is the last
+ *				block in a (potentially multi-block) input
+ *				stream.  Tells the conversion routine to
+ *				perform any finalization that needs to occur
+ *				after the last byte is converted and then to
+ *				reset to an initial state.  If the source
+ *				buffer contains the entire input stream to be
+ *				converted, this flag should be set.
+ *				
+ * TCL_ENCODING_STOPONERROR:	If set, then the converter will return
+ *				immediately upon encountering an invalid
+ *				byte sequence or a source character that has
+ *				no mapping in the target encoding.  If clear,
+ *				then the converter will skip the problem,
+ *				substituting one or more "close" characters
+ *				in the destination buffer and then continue
+ *				to sonvert the source.
+ */
+
+#define TCL_ENCODING_START		0x01
+#define TCL_ENCODING_END		0x02
+#define TCL_ENCODING_STOPONERROR	0x04
+
+/*
+ *----------------------------------------------------------------
+ * The following data structures and declarations are for the new
+ * Tcl parser.	This stuff should all move to tcl.h eventually.
+ *----------------------------------------------------------------
+ */
+
+/*
+ * For each word of a command, and for each piece of a word such as a
+ * variable reference, one of the following structures is created to
+ * describe the token.
+ */
+
+typedef struct Tcl_Token {
+    int type;			/* Type of token, such as TCL_TOKEN_WORD;
+				 * see below for valid types. */
+    char *start;		/* First character in token. */
+    int size;			/* Number of bytes in token. */
+    int numComponents;		/* If this token is composed of other
+				 * tokens, this field tells how many of
+				 * them there are (including components of
+				 * components, etc.).  The component tokens
+				 * immediately follow this one. */
+} Tcl_Token;
+
+/*
+ * Type values defined for Tcl_Token structures.  These values are
+ * defined as mask bits so that it's easy to check for collections of
+ * types.
+ *
+ * TCL_TOKEN_WORD -		The token describes one word of a command,
+ *				from the first non-blank character of
+ *				the word (which may be " or {) up to but
+ *				not including the space, semicolon, or
+ *				bracket that terminates the word. 
+ *				NumComponents counts the total number of
+ *				sub-tokens that make up the word.  This
+ *				includes, for example, sub-tokens of
+ *				TCL_TOKEN_VARIABLE tokens.
+ * TCL_TOKEN_SIMPLE_WORD -	This token is just like TCL_TOKEN_WORD
+ *				except that the word is guaranteed to
+ *				consist of a single TCL_TOKEN_TEXT
+ *				sub-token.
+ * TCL_TOKEN_TEXT -		The token describes a range of literal
+ *				text that is part of a word. 
+ *				NumComponents is always 0.
+ * TCL_TOKEN_BS -		The token describes a backslash sequence
+ *				that must be collapsed.	 NumComponents
+ *				is always 0.
+ * TCL_TOKEN_COMMAND -		The token describes a command whose result
+ *				must be substituted into the word.  The
+ *				token includes the enclosing brackets. 
+ *				NumComponents is always 0.
+ * TCL_TOKEN_VARIABLE -		The token describes a variable
+ *				substitution, including the dollar sign,
+ *				variable name, and array index (if there
+ *				is one) up through the right
+ *				parentheses.  NumComponents tells how
+ *				many additional tokens follow to
+ *				represent the variable name.  The first
+ *				token will be a TCL_TOKEN_TEXT token
+ *				that describes the variable name.  If
+ *				the variable is an array reference then
+ *				there will be one or more additional
+ *				tokens, of type TCL_TOKEN_TEXT,
+ *				TCL_TOKEN_BS, TCL_TOKEN_COMMAND, and
+ *				TCL_TOKEN_VARIABLE, that describe the
+ *				array index; numComponents counts the
+ *				total number of nested tokens that make
+ *				up the variable reference, including
+ *				sub-tokens of TCL_TOKEN_VARIABLE tokens.
+ * TCL_TOKEN_SUB_EXPR -		The token describes one subexpression of a
+ *				expression, from the first non-blank
+ *				character of the subexpression up to but not
+ *				including the space, brace, or bracket
+ *				that terminates the subexpression. 
+ *				NumComponents counts the total number of
+ *				following subtokens that make up the
+ *				subexpression; this includes all subtokens
+ *				for any nested TCL_TOKEN_SUB_EXPR tokens.
+ *				For example, a numeric value used as a
+ *				primitive operand is described by a
+ *				TCL_TOKEN_SUB_EXPR token followed by a
+ *				TCL_TOKEN_TEXT token. A binary subexpression
+ *				is described by a TCL_TOKEN_SUB_EXPR token
+ *				followed by the	TCL_TOKEN_OPERATOR token
+ *				for the operator, then TCL_TOKEN_SUB_EXPR
+ *				tokens for the left then the right operands.
+ * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
+ *				An operator might be the name of a math
+ *				function such as "abs". A TCL_TOKEN_OPERATOR
+ *				token is always preceeded by one
+ *				TCL_TOKEN_SUB_EXPR token for the operator's
+ *				subexpression, and is followed by zero or
+ *				more TCL_TOKEN_SUB_EXPR tokens for the
+ *				operator's operands. NumComponents is
+ *				always 0.
+ */
+
+#define TCL_TOKEN_WORD		1
+#define TCL_TOKEN_SIMPLE_WORD	2
+#define TCL_TOKEN_TEXT		4
+#define TCL_TOKEN_BS		8
+#define TCL_TOKEN_COMMAND	16
+#define TCL_TOKEN_VARIABLE	32
+#define TCL_TOKEN_SUB_EXPR	64
+#define TCL_TOKEN_OPERATOR	128
+
+/*
+ * A structure of the following type is filled in by Tcl_ParseCommand.
+ * It describes a single command parsed from an input string.
+ */
+
+#define NUM_STATIC_TOKENS 20
+
+typedef struct Tcl_Parse {
+    char *commentStart;		/* Pointer to # that begins the first of
+				 * one or more comments preceding the
+				 * command. */
+    int commentSize;		/* Number of bytes in comments (up through
+				 * newline character that terminates the
+				 * last comment).  If there were no
+				 * comments, this field is 0. */
+    char *commandStart;		/* First character in first word of command. */
+    int commandSize;		/* Number of bytes in command, including
+				 * first character of first word, up
+				 * through the terminating newline,
+				 * close bracket, or semicolon. */
+    int numWords;		/* Total number of words in command.  May
+				 * be 0. */
+    Tcl_Token *tokenPtr;	/* Pointer to first token representing
+				 * the words of the command.  Initially
+				 * points to staticTokens, but may change
+				 * to point to malloc-ed space if command
+				 * exceeds space in staticTokens. */
+    int numTokens;		/* Total number of tokens in command. */
+    int tokensAvailable;	/* Total number of tokens available at
+				 * *tokenPtr. */
+
+    /*
+     * The fields below are intended only for the private use of the
+     * parser.	They should not be used by procedures that invoke
+     * Tcl_ParseCommand.
+     */
+
+    char *string;		/* The original command string passed to
+				 * Tcl_ParseCommand. */
+    char *end;			/* Points to the character just after the
+				 * last one in the command string. */
+    Tcl_Interp *interp;		/* Interpreter to use for error reporting,
+				 * or NULL. */
+    char *term;			/* Points to character in string that
+				 * terminated most recent token.  Filled in
+				 * by ParseTokens.  If an error occurs,
+				 * points to beginning of region where the
+				 * error occurred (e.g. the open brace if
+				 * the close brace is missing). */
+    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
+				 * if the command appears to be incomplete.
+				 * This information is used by
+				 * Tcl_CommandComplete. */
+    Tcl_Token staticTokens[NUM_STATIC_TOKENS];
+				/* Initial space for tokens for command.
+				 * This space should be large enough to
+				 * accommodate most commands; dynamic
+				 * space is allocated for very large
+				 * commands that don't fit here. */
+} Tcl_Parse;
+
+/*
+ * The following definitions are the error codes returned by the conversion
+ * routines:
+ *
+ * TCL_OK:			All characters were converted.
+ *
+ * TCL_CONVERT_NOSPACE:		The output buffer would not have been large
+ *				enough for all of the converted data; as many
+ *				characters as could fit were converted though.
+ *
+ * TCL_CONVERT_MULTIBYTE:	The last few bytes in the source string were
+ *				the beginning of a multibyte sequence, but
+ *				more bytes were needed to complete this
+ *				sequence.  A subsequent call to the conversion
+ *				routine should pass the beginning of this
+ *				unconverted sequence plus additional bytes
+ *				from the source stream to properly convert
+ *				the formerly split-up multibyte sequence.
+ *
+ * TCL_CONVERT_SYNTAX:		The source stream contained an invalid
+ *				character sequence.  This may occur if the
+ *				input stream has been damaged or if the input
+ *				encoding method was misidentified.  This error
+ *				is reported only if TCL_ENCODING_STOPONERROR
+ *				was specified.
+ * 
+ * TCL_CONVERT_UNKNOWN:		The source string contained a character
+ *				that could not be represented in the target
+ *				encoding.  This error is reported only if
+ *				TCL_ENCODING_STOPONERROR was specified.
+ */
+
+#define TCL_CONVERT_MULTIBYTE		-1
+#define TCL_CONVERT_SYNTAX		-2
+#define TCL_CONVERT_UNKNOWN		-3
+#define TCL_CONVERT_NOSPACE		-4
+
+/*
+ * The maximum number of bytes that are necessary to represent a single
+ * Unicode character in UTF-8.
+ */
+
+#define TCL_UTF_MAX		3
+
+/*
+ * This represents a Unicode character.  
+ */
+
+typedef unsigned short Tcl_UniChar;
+
+/*
+ * Deprecated Tcl procedures:
+ */
+
+#ifndef TCL_NO_DEPRECATED
+#define Tcl_EvalObj(interp,objPtr) Tcl_EvalObjEx((interp),(objPtr),0)
+#define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif
+
+/*
  * These function have been renamed. The old names are deprecated, but we
  * define these macros for backwards compatibilty.
  */
@@ -1061,18 +1451,15 @@ typedef enum Tcl_PathType {
 #define Tcl_Ckrealloc Tcl_Realloc
 #define Tcl_Return Tcl_SetResult
 #define Tcl_TildeSubst Tcl_TranslateFileName
-
-/*
- * In later releases, Tcl_Panic will be the correct name to use.  For now
- * we leave it as panic to avoid breaking existing binaries.
- */
-
-#define Tcl_Panic panic
-#define Tcl_PanicVA panicVA
+#define panic Tcl_Panic
+#define panicVA Tcl_PanicVA
 
 /*
  * The following constant is used to test for older versions of Tcl
  * in the stubs tables.
+ *
+ * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
+ * value since the stubs tables don't match.
  */
 
 #define TCL_STUB_MAGIC 0xFCA3BACF
@@ -1088,6 +1475,18 @@ typedef enum Tcl_PathType {
 EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *version, int exact));
 
+#ifndef USE_TCL_STUBS
+
+/*
+ * When not using stubs, make it a macro.
+ */
+
+#define Tcl_InitStubs(interp, version, exact) \
+    Tcl_PkgRequire(interp, "Tcl", version, exact)
+
+#endif
+
+
 /*
  * Include the public function declarations that are accessible via
  * the stubs table.
@@ -1099,7 +1498,6 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  * Public functions that are not accessible via the stubs table.
  */
 
-EXTERN void Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 	Tcl_AppInitProc *appInitProc));
 

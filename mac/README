@@ -1,4 +1,4 @@
-Tcl 8.0.5 for Macintosh
+Tcl 8.1b2 for Macintosh
 
 by Ray Johnson
 Scriptics Corporation
@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.5 1999/04/15 22:38:46 stanton Exp $
+RCS: @(#) $Id: README,v 1.6 1999/04/16 00:47:19 stanton Exp $
 
 1. Introduction
 ---------------
@@ -21,34 +21,14 @@ please read the README file in the main Tcl directory.
 2. What's new?
 --------------
 
-The main new feature is the Tcl compilier.  You should certainly
-notice the speed improvements.  Any problems are probably
-generic rather than Mac specific.  If you have questions or
-comments about the compilier feel free to forward them to the
-author of the compilier: Brian Lewis <btlewis@eng.sun.com>.
-Several things were fixed/changed since the a1 release so be
-sure to check this out.
+Internationalization!  This is the first Tcl release that features
+can handle international characters.
 
-The largest incompatible change on the Mac is the removal of the
-following commands: "rm", "rmdir", "mkdir", "mv" and "cp".  These
-commands were never really supported and their functionality is
-superceded by the file command.
+On the Macintosh, the System Encoding is taken from the script of the
+Finder Font as set in the Views control panel, or in the Finder
+Preferences in OS8.0.
 
-I've also added in a new "AppleScript" command.  This was contributed
-by Jim Ingham who is a new member of the Tcl group.  It's very cool.
-The command isn't actually in the core - you need to do a "package
-require Tclapplescript" to get access to it.  This code is officially
-unsupported and will change in the next release.  However, the core
-functionality is there and is stable enough to use.  Documentation 
-can be found in "AppleScript.html" in the mac subdirectory.
-
-The resource command has also been rewacked.  You can now read and
-write any Mac resource.  Tcl now has the new (and VERY COOL) binary
-command that will allow you to pack and unpack the resources into
-useful Tcl code. We will eventually provide Tcl libraries for
-accessing the most common resources.
-
-See the main Tcl README for other features new to Tcl 8.0.
+See the main Tcl README for other features new to Tcl 8.
 
 3. Mac specific features
 ------------------------
@@ -67,8 +47,8 @@ pointers to where you can find more information about the feature.
 * The only command NOT available on the Mac is the exec command.
   However, we include a Mac only package called Tclapplescript that
   provides access to Mac's AppleScript system.  This command is still
-  under design & construction.  Documentatin can be found in the mac
-  subdirectory in a file called "AppleScript.html".
+  under design & construction.  Documentatin can be found in the "HTML
+  Docs:tcl8.1" folder in a file called "AppleScript.html".
 
 * The env variable on the Macintosh works rather differently than on
   Windows or UNIX platforms.  Check out the tclvars man page for
@@ -89,6 +69,7 @@ If you are writing cross platform code but would still like to use
 some of these Mac specific commands, please remember to use the
 tcl_platform variable to special case your code.
 
+
 4. The Distribution
 -------------------
 
@@ -96,7 +77,7 @@ Macintosh Tcl is distributed in three different forms.  This
 should make it easier to only download what you need.  The 
 packages are as follows:
 
-mactk8.0.5.sea.hqx
+mactk8.1b2.sea.hqx
 
     This distribution is a "binary" only release.  It contains an
     installer program that will install a 68k, PowerPC, or Fat
@@ -104,15 +85,15 @@ mactk8.0.5.sea.hqx
     it installs the Tcl & Tk libraries in the Extensions folder inside
     your System Folder.
 
-mactcltk-full-8.0.5.sea.hqx
+mactcltk-full-8.1b2.sea.hqx
 
     This release contains the full release of Tcl and Tk for the
     Macintosh plus the More Files packages which Macintosh Tcl and Tk
     rely on.
 
-mactcl-source-8.0.5.sea.hqx
+mactcl-source-8.1b2.sea.hqx
 
-    This release contains the complete source for Tcl 8.0.  In
+    This release contains the complete source for Tcl 8.1.  In
     addition, Metrowerks CodeWarrior libraries and project files
     are included.  However, you must already have the More Files
     package to compile this code.
@@ -123,7 +104,7 @@ mactcl-source-8.0.5.sea.hqx
 The "html" subdirectory contains reference documentation in
 in the HTML format.  You may also find these pages at:
 
-	http://www.scriptics.com/man/tcl8.0/contents.html
+	http://www.scriptics.com/man/tcl8.1/contents.html
 
 Other documentation and sample Tcl scripts can be found at
 the Tcl archive site: 
@@ -144,14 +125,14 @@ available (see below).
 In order to compile Macintosh Tcl you must have the 
 following items:
 
-	CodeWarrior Pro 2 through 4
-	Mac Tcl 8.0 (source)
-	More Files 1.4.3, or 1.4.9
+	CodeWarrior Pro 2 or 3
+	Mac Tcl 8.1 (source)
+	More Files 1.4.3
 
 There are two sets of project files included with the package. The ones
 we use for the release are for CodeWarrior Pro 3, and are not compatible
 with CodeWarrior Gold release 11 and earlier. We have included the files
-for earlier versions of CodeWarrior in the folder tcl8.0:mac:CW11 Projects,
+for earlier versions of CodeWarrior in the folder tcl8.1:mac:CW11 Projects,
 but they are unsupported, and a little out of date.
 
 As of Tcl8.0p2, the code will also build under CW Pro 2.  The only
@@ -181,7 +162,7 @@ Special notes:
 
 * There is a small bug in More Files 1.4.3.  Also you should not use
   MoreFiles 1.4.4 - 1.4.6.  Look in the file named morefiles.doc for
-  more details.  Tcl 8.0.5 is compiled with MoreFiles 1.4.9.
+  more details.
 
 * You may not have the libmoto library which will cause a compile 
   error.  You don't REALLY need it - it can be removed.  Look at the

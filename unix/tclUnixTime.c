@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.3 1999/03/10 05:52:53 stanton Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.4 1999/04/16 00:48:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -165,12 +165,17 @@ TclpGetTimeZone (currentTime)
 #if defined(HAVE_TIMEZONE_VAR) && !defined (TCL_GOT_TIMEZONE)
 #   define TCL_GOT_TIMEZONE
     static int setTZ = 0;
+#ifdef TCL_THREADS
+    static Tcl_Mutex tzMutex;
+#endif
     int        timeZone;
 
+    Tcl_MutexLock(&tzMutex);
     if (!setTZ) {
         tzset();
         setTZ = 1;
     }
+    Tcl_MutexUnlock(&tzMutex);
 
     /*
      * Note: this is not a typo in "timezone" below!  See tzset
@@ -258,7 +263,7 @@ TclpGetDate(time, useGMT)
     TclpTime_t time;
     int useGMT;
 {
-    const time_t *tp = (const time_t *)time;
+    CONST time_t *tp = (CONST time_t *)time;
 
     if (useGMT) {
 	return gmtime(tp);
@@ -270,7 +275,7 @@ TclpGetDate(time, useGMT)
 /*
  *----------------------------------------------------------------------
  *
- * TclStrftime --
+ * TclpStrftime --
  *
  *	On Unix, we can safely call the native strftime implementation.
  *
@@ -284,11 +289,11 @@ TclpGetDate(time, useGMT)
  */
 
 size_t
-TclStrftime(s, maxsize, format, t)
+TclpStrftime(s, maxsize, format, t)
     char *s;
     size_t maxsize;
-    const char *format;
-    const struct tm *t;
+    CONST char *format;
+    CONST struct tm *t;
 {
     return strftime(s, maxsize, format, t);
 }

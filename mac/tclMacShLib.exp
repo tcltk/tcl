@@ -251,7 +251,6 @@ TclEmitForwardJump
 TclExecuteByteCode
 TclExpandCodeArray
 TclExpandJumpFixupArray
-TclExpandParseValue
 TclExprFloatError
 TclFileAttrsCmd
 TclFileCopyCmd
@@ -322,9 +321,6 @@ TclObjIndexForString
 TclObjInterpProc
 TclObjInvoke
 TclObjInvokeGlobal
-TclParseBraces
-TclParseNestedCmd
-TclParseQuotes
 TclPlatformExit
 TclPlatformInit
 TclPreventAliasLoop
@@ -530,7 +526,6 @@ Tcl_GlobalEvalObj
 Tcl_GlobalObjCmd
 Tcl_HashStats
 Tcl_HideCommand
-Tcl_HistoryCmd
 Tcl_IfCmd
 Tcl_Import
 Tcl_IncrCmd

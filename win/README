@@ -1,10 +1,10 @@
-Tcl 8.0.5 for Windows
+Tcl 8.1 for Windows
 
 by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.9 1999/02/09 03:31:55 stanton Exp $
+RCS: @(#) $Id: README,v 1.10 1999/04/16 00:48:06 stanton Exp $
 
 1. Introduction
 ---------------
@@ -17,31 +17,28 @@ contains information specific to the Windows version of Tcl.
 2. Distribution notes
 ---------------------
 
-Tcl 8.0 for Windows is distributed in binary form in addition to the
+Tcl 8.1 for Windows is distributed in binary form in addition to the
 common source release.  The binary distribution is a self-extracting
 archive with a built-in installation script.
 
 Look for the binary release in the same location as the source release
-(http://www.scriptics.com/software/8.0.html or any of the mirror
-sites).  For most users, the binary release will be much easier to
-install and use.  You only need the source release if you plan to
-modify the core of Tcl, or if you need to compile with a different
-compiler.  With the addition of the dynamic loading interface, it is
-no longer necessary to have the source distribution in order to build
-and use extensions.
+(ftp.scriptics.com:/pub/tcl or any of the mirror sites).  For most users,
+the binary release will be much easier to install and use.  You only
+need the source release if you plan to modify the core of Tcl, or if
+you need to compile with a different compiler.  With the addition of
+the dynamic loading interface, it is no longer necessary to have the
+source distribution in order to build and use extensions.
 
 3. Compiling Tcl
 ----------------
 
 In order to compile Tcl for Windows, you need the following items:
 
-	Tcl 8.0 Source Distribution (plus any patches)
+	Tcl 8.1 Source Distribution (plus any patches)
 
-	Borland C++ 4.52 (both 16-bit and 32-bit compilers)
-	  or
 	Visual C++ 2.x/4.x/5.x
 
-In practice, the 8.0.5 release is built with Visual C++ 5.0
+In practice, the 8.1.a2 release is built with Visual C++ 5.0
 
 In the "win" subdirectory of the source release, you will find two
 files called "makefile.bc" and "makefile.vc".  These are the makefiles
@@ -57,25 +54,26 @@ find them.  Tcl looks in one of three places for the library files:
 
 	1) The path specified in the environment variable "TCL_LIBRARY".
 
-	2) In the lib\tcl8.0 directory under the installation directory
+	2) In the lib\tcl8.1 directory under the installation directory
 	   as specified in the registry:
 
-		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.0
+		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.1
 
 	3) Relative to the directory containing the current .exe.
-	    Tcl will look for a directory "..\lib\tcl8.0" relative to the
+	    Tcl will look for a directory "..\lib\tcl8.1" relative to the
 	    directory containing the currently running .exe.
 
-Note that in order to run tclsh80.exe, you must ensure that tcl80.dll
-and tclpip80.dll are on your path, in the system directory, or in the
-directory containing tclsh80.exe.
+Note that in order to run tclsh81.exe, you must ensure that tcl81.dll
+and tclpip81.dll are on your path, in the system directory, or in the 
+directory containing tclsh81.exe.
+
+Note: Tcl no longer provides support for Win32s.
 
 4. Building Extensions
 ----------------------
 
 With the Windows compilers you have to worry about how you export symbols
 from DLLs.  tcl.h defines a few macros to help solve this problem:
-
 EXTERN - all Tcl_ function prototypes use this macro, which implies
 	they are exported.  You'll see this used in tcl.h and tk.h.
 	You should use this in your exported procedures.
@@ -102,9 +100,7 @@ EXPORT(type, func)
 	EXPORT because they had a different order.  Your declaration will
 	look like
 	EXTERN EXPORT(int, Foo_Init)(Tcl_Interp *interp);
-
 We have not defined EXPORT anywhere.  You can paste this into your C file:
-
 #ifndef STATIC_BUILD
 #if defined(_MSC_VER)
 #   define EXPORT(a,b) __declspec(dllexport) a b
@@ -174,16 +170,19 @@ appropriate makefile for your compiler.
 Here is the current list of known bugs/missing features for the
 Windows version of Tcl:
 
-- Blocking "after" commands (e.g. "after 3000") don't work on Win32s.
 - Clock command fails to handle daylight savings time boundaries for
   things like "last week".
 - Background processes aren't properly detached on NT.
-- File events only work on sockets.
-- Pipes/files/console/serial ports don't support nonblocking I/O.
+- File events only work on sockets and pipes.
+- Files/console/serial ports don't support nonblocking I/O.
+- Environment variables containing international characters aren't
+  imported correctly.
 
 If you have comments or bug reports for the Windows version of Tcl,
-please direct them to:
+please use the form at:
 
-<bugs@scriptics.com>
+http://www.scriptics.com/support/bugForm.html
 
-or post them to the comp.lang.tcl newsgroup.
+If you have comments or bug reports for the Windows version of Tk,
+please direct them to the comp.lang.tcl newsgroup or the
+wintcl@tclconsortium.org mailing list.

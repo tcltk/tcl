@@ -8,13 +8,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.3 1998/09/14 18:40:13 stanton Exp $
+# RCS: @(#) $Id: set-old.test,v 1.4 1999/04/16 00:47:34 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 proc ignore args {}
 
@@ -786,9 +789,23 @@ test set-old-12.2 {cleanup on procedure return} {
 
 # Must delete variables when done, since these arrays get used as
 # scalars by other tests.
-
 catch {unset a}
 catch {unset b}
 catch {unset c}
 catch {unset aVaRnAmE}
-return ""
+
+# cleanup
+::tcltest::cleanupTests
+return 
+
+
+
+
+
+
+
+
+
+
+
+

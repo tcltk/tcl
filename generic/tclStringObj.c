@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.3 1999/03/10 05:52:49 stanton Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.4 1999/04/16 00:46:53 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -74,9 +74,9 @@ Tcl_ObjType tclStringType = {
 
 Tcl_Obj *
 Tcl_NewStringObj(bytes, length)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length;	/* The number of bytes to copy from "bytes"
+    int length;			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
@@ -88,9 +88,9 @@ Tcl_NewStringObj(bytes, length)
 
 Tcl_Obj *
 Tcl_NewStringObj(bytes, length)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length;	/* The number of bytes to copy from "bytes"
+    int length;			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
@@ -140,9 +140,9 @@ Tcl_NewStringObj(bytes, length)
 
 Tcl_Obj *
 Tcl_DbNewStringObj(bytes, length, file, line)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length;	/* The number of bytes to copy from "bytes"
+    int length;			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
@@ -165,7 +165,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
 
 Tcl_Obj *
 Tcl_DbNewStringObj(bytes, length, file, line)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
     register int length;	/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
@@ -224,7 +224,7 @@ Tcl_SetStringObj(objPtr, bytes, length)
 
     Tcl_InvalidateStringRep(objPtr);
     if (length < 0) {
-	length = strlen(bytes);
+	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
         
@@ -335,7 +335,7 @@ Tcl_AppendToObj(objPtr, bytes, length)
 	ConvertToStringType(objPtr);
     }
     if (length < 0) {
-	length = strlen(bytes);
+	length = (bytes? strlen(bytes) : 0);
     }
     if (length == 0) {
 	return;
@@ -363,6 +363,35 @@ Tcl_AppendToObj(objPtr, bytes, length)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_AppendObjToObj --
+ *
+ *	This procedure appends the string rep of one object to another.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The string rep of appendObjPtr is appended to the string 
+ *	representation of objPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AppendObjToObj(objPtr, appendObjPtr)
+    Tcl_Obj *objPtr;		/* Points to the object to append to. */
+    Tcl_Obj *appendObjPtr;	/* Object to append. */
+{
+    int length;
+    char *stringRep;
+
+    stringRep = Tcl_GetStringFromObj(appendObjPtr, &length);
+    Tcl_AppendToObj(objPtr, stringRep, length);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_AppendStringsToObjVA --
  *
  *	This procedure appends one or more null-terminated strings
@@ -380,7 +409,7 @@ Tcl_AppendToObj(objPtr, bytes, length)
 
 void
 Tcl_AppendStringsToObjVA (objPtr, argList)
-    register Tcl_Obj *objPtr;	/* Points to the object to append to. */
+    Tcl_Obj *objPtr;		/* Points to the object to append to. */
     va_list argList;		/* Variable argument list. */
 {
     va_list tmpArgList;

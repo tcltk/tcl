@@ -3,12 +3,12 @@
  *
  *	Declarations of Macintosh specific shared variables and procedures.
  *
- * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInt.h,v 1.3 1999/03/10 05:52:51 stanton Exp $
+ * RCS: @(#) $Id: tclMacInt.h,v 1.4 1999/04/16 00:47:20 stanton Exp $
  */
 
 #ifndef _TCLMACINT
@@ -46,8 +46,15 @@
  */
 typedef pascal void (*ExitToShellProcPtr)(void);
 
-#include "tclIntPlatDecls.h"
+/*
+ * Prototypes of Mac only internal functions.
+ */
 
+EXTERN char *	TclMacGetFontEncoding _ANSI_ARGS_((int fontId));
+EXTERN int	TclMacHaveThreads(void);
+
+#include "tclIntPlatDecls.h"
+    
 #pragma export reset
 
 #endif /* _TCLMACINT */

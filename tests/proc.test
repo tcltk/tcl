@@ -8,13 +8,16 @@
 # errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.3 1998/10/05 22:32:11 escoffon Exp $
+# RCS: @(#) $Id: proc.test,v 1.4 1999/04/16 00:47:32 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 catch {eval namespace delete [namespace children :: test_ns_*]}
 catch {rename p ""}
@@ -165,6 +168,7 @@ catch {unset msg}
 if {[catch {package require procbodytest}]} {
     puts "This application couldn't load the \"procbodytest\" package, so I"
     puts "can't test creation of procs whose bodies have type \"procbody\"."
+    ::tcltest::cleanupTests
     return
 }
 
@@ -289,5 +293,20 @@ test proc-4.7 {TclCreateProc, procbody obj, inconsitent arg default value} {
     set result
 } {procedure "t": formal parameter "z" has default value inconsistent with precompiled body}
 
+# cleanup
 catch {rename p ""}
 catch {rename t ""}
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.2 1998/09/14 18:39:55 stanton Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.3 1999/04/16 00:46:36 stanton Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -259,16 +259,27 @@ is the value returned by \fBuname -m\fR.
 .TP
 \fBos\fR 
 The name of the operating system running on this machine,
-such as \fBWin32s\fR, \fBWindows NT\fR, \fBMacOS\fR, or \fBSunOS\fR.
+such as \fBWindows 95\fR, \fBWindows NT\fR, \fBMacOS\fR, or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
+On Windows 95 and Windows 98, the value returned will be \fBWindows
+95\fR to provide better backwards compatibility to Windows 95; to
+distinguish between the two, check the \fBosVersion\fR.
 .TP
 \fBosVersion\fR
 The version number for the operating system running on this machine.
-On UNIX machines, this is the value returned by \fBuname -r\fR.
+On UNIX machines, this is the value returned by \fBuname -r\fR.  On
+Windows 95, the version will be 4.0; on Windows 98, the version will
+be 4.10.
 .TP
 \fBplatform\fR
 Either \fBwindows\fR, \fBmacintosh\fR, or \fBunix\fR.  This identifies the
 general operating environment of the machine.
+.TP
+\fBuser\fR
+Either \fBwindows\fR, \fBmacintosh\fR, or \fBunix\fR.  This identifies the
+current user based on the login information available on the platform.
+This comes from the USER or LOGNAME environment variable on Unix,
+and the value from GetUserName on Windows and Macintosh.
 .RE
 .TP
 \fBtcl_precision\fR

@@ -4,63 +4,74 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1998 by Scriptics Corporation.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFile.test,v 1.2 1998/09/14 18:40:14 stanton Exp $
+# RCS: @(#) $Id: unixFile.test,v 1.3 1999/04/16 00:47:35 stanton Exp $
 
- 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 if {[info commands testobj] == {}} {
     puts "This application hasn't been compiled with the \"testfindexecutable\""
     puts "command, so I can't test the Tcl_FindExecutable function"
+    ::tcltest::cleanupTests
     return
 }
 
-if {$tcl_platform(platform) != "unix"} {
-    return
+catch {
+    set oldPath $env(PATH)
+    close [open junk w]
+    file attributes junk -perm 0777
 }
-
-
-set oldPath $env(PATH)
-close [open junk w]
-file attributes junk -perm 0777
-
 set absPath [file join [pwd] junk]
-test unixFile-1.1 {Tcl_FindExecutable} {
+
+test unixFile-1.1 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) ""
     testfindexecutable junk
 } $absPath
-test unixFile-1.2 {Tcl_FindExecutable} {
+test unixFile-1.2 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) "/dummy"
     testfindexecutable junk
 } {}
-test unixFile-1.3 {Tcl_FindExecutable} {
+test unixFile-1.3 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) "/dummy:[pwd]"
     testfindexecutable junk
 } $absPath
-test unixFile-1.4 {Tcl_FindExecutable} {
+test unixFile-1.4 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) "/dummy:"
     testfindexecutable junk
 } $absPath
-test unixFile-1.5 {Tcl_FindExecutable} {
+test unixFile-1.5 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) "/dummy:/dummy"
     testfindexecutable junk
 } {}
-test unixFile-1.6 {Tcl_FindExecutable} {
+test unixFile-1.6 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) "/dummy::/dummy"
     testfindexecutable junk
 } $absPath
-test unixFile-1.7 {Tcl_FindExecutable} {
+test unixFile-1.7 {Tcl_FindExecutable} {unixOnly} {
     set env(PATH) ":/dummy"
     testfindexecutable junk
 } $absPath
 
-
-
-
-set env(PATH) $oldPath
+# cleanup
+catch {set env(PATH) $oldPath}
 file delete junk
+::tcltest::cleanupTests
+return
+
+
+
+
+
+
+
+
+
+
+
+
