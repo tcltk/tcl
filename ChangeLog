@@ -6,6 +6,10 @@
 	* win/tclAppInit.c: Removed our custom setargv() in favor of
 	the one provided by the c-runtime. [Bug 672938]
 
+	* win/nmakehlp.c: defensive techniques to avoid static buffer
+	overflows and a couple envars upsetting invokations of cl.exe
+	and link.exe.  [Bug 885537]
+
 2004-01-30  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Use the -GZ compiler switch when building for
