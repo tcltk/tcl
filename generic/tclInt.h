@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.66 2001/09/25 16:23:56 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.67 2001/09/27 20:32:35 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1672,8 +1672,6 @@ EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
 EXTERN void		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
-EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp *iPtr,
-			    char *procName));
 EXTERN int		TclFormatInt _ANSI_ARGS_((char *buffer, long n));
 EXTERN void		TclFreePackageInfo _ANSI_ARGS_((Interp *iPtr));
 EXTERN int		TclGetDate _ANSI_ARGS_((char *p,
@@ -1683,8 +1681,6 @@ EXTERN Tcl_Obj *	TclGetElementOfIndexedArray _ANSI_ARGS_((
 			    Tcl_Interp *interp, int localIndex,
 			    Tcl_Obj *elemPtr, int flags));
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char *name));
-EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, CallFrame **framePtrPtr));
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
@@ -1746,10 +1742,6 @@ EXTERN int		TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command *cmdPtr));
 EXTERN int              TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int* result));
-EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *part1, char *part2, int flags, char *msg,
-			    int createPart1, int createPart2,
-			    Var **arrayPtrPtr));
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
@@ -1855,9 +1847,6 @@ EXTERN void		TclpSysFree _ANSI_ARGS_((VOID *ptr));
 EXTERN VOID *		TclpSysRealloc _ANSI_ARGS_((VOID *cp,
 			    unsigned int size));
 EXTERN void		TclpUnloadFile _ANSI_ARGS_((ClientData clientData));
-EXTERN char *		TclPrecTraceProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, char *name2,
-			    int flags));
 EXTERN int		TclPreventAliasLoop _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *cmdInterp, Tcl_Command cmd));
 EXTERN void		TclProcCleanupProc _ANSI_ARGS_((Proc *procPtr));
@@ -1865,8 +1854,6 @@ EXTERN int		TclProcCompileProc _ANSI_ARGS_((Tcl_Interp *interp,
 			    Proc *procPtr, Tcl_Obj *bodyPtr, Namespace *nsPtr,
 			    CONST char *description, CONST char *procName));
 EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
-EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, char **argv));
 EXTERN VOID *		TclpThreadDataKeyGet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN void		TclpThreadDataKeyInit _ANSI_ARGS_((

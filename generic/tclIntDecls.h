@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.28 2001/09/25 16:23:56 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.29 2001/09/27 20:32:35 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -108,7 +108,7 @@ EXTERN int		TclFindElement _ANSI_ARGS_((Tcl_Interp * interp,
 				int * bracePtr));
 /* 23 */
 EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp * iPtr, 
-				char * procName));
+				CONST char * procName));
 /* 24 */
 EXTERN int		TclFormatInt _ANSI_ARGS_((char * buffer, long n));
 /* 25 */
@@ -128,7 +128,7 @@ EXTERN Tcl_Obj *	TclGetElementOfIndexedArray _ANSI_ARGS_((
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char * name));
 /* 32 */
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, CallFrame ** framePtrPtr));
+				CONST char * str, CallFrame ** framePtrPtr));
 /* 33 */
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 /* 34 */
@@ -533,7 +533,7 @@ typedef struct TclIntStubs {
     void *reserved20;
     void *reserved21;
     int (*tclFindElement) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * listStr, int listLength, CONST char ** elementPtr, CONST char ** nextPtr, int * sizePtr, int * bracePtr)); /* 22 */
-    Proc * (*tclFindProc) _ANSI_ARGS_((Interp * iPtr, char * procName)); /* 23 */
+    Proc * (*tclFindProc) _ANSI_ARGS_((Interp * iPtr, CONST char * procName)); /* 23 */
     int (*tclFormatInt) _ANSI_ARGS_((char * buffer, long n)); /* 24 */
     void (*tclFreePackageInfo) _ANSI_ARGS_((Interp * iPtr)); /* 25 */
     void *reserved26;
@@ -542,7 +542,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclGetElementOfIndexedArray) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, Tcl_Obj * elemPtr, int flags)); /* 29 */
     void *reserved30;
     char * (*tclGetExtension) _ANSI_ARGS_((char * name)); /* 31 */
-    int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, char * str, CallFrame ** framePtrPtr)); /* 32 */
+    int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CallFrame ** framePtrPtr)); /* 32 */
     TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
     Tcl_Obj * (*tclGetIndexedScalar) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, int flags)); /* 35 */

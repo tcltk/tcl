@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.28 2001/09/17 11:51:59 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.29 2001/09/27 20:32:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -545,7 +545,7 @@ procError:
 int
 TclGetFrame(interp, string, framePtrPtr)
     Tcl_Interp *interp;		/* Interpreter in which to find frame. */
-    char *string;		/* String describing frame. */
+    CONST char *string;		/* String describing frame. */
     CallFrame **framePtrPtr;	/* Store pointer to frame here (or NULL
 				 * if global frame indicated). */
 {
@@ -717,7 +717,7 @@ Tcl_UplevelObjCmd(dummy, interp, objc, objv)
 Proc *
 TclFindProc(iPtr, procName)
     Interp *iPtr;		/* Interpreter in which to look. */
-    char *procName;		/* Name of desired procedure. */
+    CONST char *procName;		/* Name of desired procedure. */
 {
     Tcl_Command cmd;
     Tcl_Command origCmd;

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.33 2001/09/25 16:23:56 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.34 2001/09/27 20:32:35 dgp Exp $
 
 library tcl
 
@@ -109,7 +109,7 @@ declare 22 generic {
 	    int *sizePtr, int *bracePtr)
 }
 declare 23 generic {
-    Proc * TclFindProc(Interp *iPtr, char *procName)
+    Proc * TclFindProc(Interp *iPtr, CONST char *procName)
 }
 declare 24 generic {
     int TclFormatInt(char *buffer, long n)
@@ -140,7 +140,8 @@ declare 31 generic {
     char * TclGetExtension(char *name)
 }
 declare 32 generic {
-    int TclGetFrame(Tcl_Interp *interp, char *str, CallFrame **framePtrPtr)
+    int TclGetFrame(Tcl_Interp *interp, CONST char *str, \
+	    CallFrame **framePtrPtr)
 }
 declare 33 generic {
     TclCmdProcType TclGetInterpProc(void)
