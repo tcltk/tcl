@@ -1,3 +1,11 @@
+2004-03-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Updated internals to make use of
+	* library/msgcat/pkgIndex.tcl:	[dict]s to store message catalog
+	data and to use [source -encoding utf-8] to access catalog files.
+	Thanks to Michael Sclenker.  Also corrects bug to allow
+	translation to an empty string.  Bump to msgcat 1.4.1.  [Patch 875055]
+
 2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclHash.c (HashStringKey): Cleaned up. This function is
