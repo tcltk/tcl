@@ -1,3 +1,9 @@
+2002-02-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* doc/open.n: Fixed [Bug 511540], added cross-reference to 'pid'
+	  as the command to use to retrieve the pid of a command pipeline
+	  created via 'open'.
+
 2002-02-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): handle quirky about case
