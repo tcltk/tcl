@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.56 2000/04/26 00:24:19 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.56.2.1 2000/08/08 19:03:32 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4873,3 +4873,42 @@ tclLoadDyld.c dl type. (sanchez)
 exec process was running (dejong)
 
 --- Released 8.3.1, April 26, 2000 --- See ChangeLog for details ---
+
+2000-05-29 (bug fix) corrected resource cleanup in http error cases.
+Improved handling of error cases in http. (tamhankar)
+
+2000-07 (feature rewrite) complete rewrite of the Tcl IO channel subsystem
+to correct problems (hangs, core dumps) with the initial stacked channel
+implementation.  The new system has many more tests for robustness and
+scalability.  There are new C APIs (see Tcl_CreateChannel), but only
+stacked channel drivers are affected (ie: TLS, Trf, iogt).  The iogt
+extension has been added to the core test code to test the system.
+(hobbs, kupries)
+	**** POTENTIAL INCOMPATABILITY ****
+
+2000-07 (build improvements) cleanup of the makefiles and configure scripts
+to correct support for building under gcc for Windows. (dejong)
+
+2000-08-07 (bug fix) corrected sizeof error in Tcl_GetIndexFromObjStruct.
+(perkins)
+
+2000-08-07 (bug fix) correct off-by-one error in HistIndex, which was
+causing [history redo] to start its search at the wrong event index. (melski)
+
+2000-08-07 (bug fix) corrected setlocale calls for XIM support and locale
+issues in startup. (takahashi)
+
+2000-08-07 (bug fix) correct code to handle locale specific return values
+from strftime, if any. (wagner)
+
+2000-08-07 (bug fix) tweaked grammar to properly handle the "ago" keyword
+when it follows multiple relative unit specifiers, as in
+"2 days 2 hours ago". (melski)
+
+2000-08-07 (doc fixes) numerous doc fixes to correct SEE ALSO and NAME
+sections. (english)
+
+2000-08-07 (bug fix) new man pages memory.n, TCL_MEM_DEBUG.3, Init.3 and
+DumpActiveMemory.3. (melski)
+
+--- Released 8.3.2, August 9, 2000 --- See ChangeLog for details ---

@@ -1,9 +1,13 @@
-2000-08-08  Jeff Hobbs  <hobbs@scriptics.com>
+2000-08-08  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	8.3.2 RELEASE finalized
+
+	* changes: updated for release notes version of ChangeLog
 
 	* library/msgcat1.0/pkgIndex.tcl: 
 	* library/msgcat1.0/msgcat.tcl: bumped msgcat version to 1.1.
 
-2000-08-07  Jeff Hobbs  <hobbs@scriptics.com>
+2000-08-07  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* doc/ChnlStack.3:
 	* doc/CrtChannel.3: updated the docs to be aware of the
