@@ -1,11 +1,11 @@
 Tcl/Tk 8.4 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.20 2000/05/03 00:15:10 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.21 2000/09/06 18:50:17 hobbs Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.4a1 for
+This directory contains the binary distribution of Tcl/Tk 8.4a2 for
 Windows.  It was compiled with Microsoft Visual C++ 5.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
@@ -29,7 +29,7 @@ The home page for the Tcl/Tk 8.4 release is
 	http://dev.scriptics.com/software/tcltk/8.4.html
 
 Detailed release notes can be found at
-	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.4a1.txt
+	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.4a2.txt
 
 Information about Tcl itself can be found at
 	http://dev.scriptics.com/scripting/
