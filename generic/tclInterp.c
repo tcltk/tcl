@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.6 2004/09/08 23:02:46 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.7 2004/09/21 23:10:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -125,7 +125,10 @@ TCL_DECLARE_MUTEX(cntMutex)
  */
 
 typedef struct Alias {
-    Tcl_Obj *namePtr;		/* Name of alias command in slave interp. */
+    Tcl_Obj *token;		/* Token for the alias command in the slave
+				 * interp. This used to be the command name
+				 * in the slave when the alias was first
+				 * created. */
     Tcl_Interp *targetInterp;	/* Interp in which target command will be
 				 * invoked. */
     Tcl_Command slaveCmd;	/* Source command in slave interpreter,
@@ -1325,7 +1328,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
 
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "cannot define or rename alias \"",
-		    Tcl_GetString(aliasPtr->namePtr),
+		    Tcl_GetCommandName(cmdInterp, cmd),
 		    "\": interpreter deleted", (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -1341,7 +1344,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
         if (aliasCmdPtr == cmdPtr) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "cannot define or rename alias \"",
-		    Tcl_GetString(aliasPtr->namePtr),
+		    Tcl_GetCommandName(cmdInterp, cmd),
 		    "\": would create a loop", (char *) NULL);
             return TCL_ERROR;
         }
@@ -1401,8 +1404,8 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 
     aliasPtr = (Alias *) ckalloc((unsigned) (sizeof(Alias) 
             + objc * sizeof(Tcl_Obj *)));
-    aliasPtr->namePtr		= namePtr;
-    Tcl_IncrRefCount(aliasPtr->namePtr);
+    aliasPtr->token		= namePtr;
+    Tcl_IncrRefCount(aliasPtr->token);
     aliasPtr->targetInterp	= masterInterp;
 
     aliasPtr->objc = objc + 1;
@@ -1433,7 +1436,7 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 
 	Command *cmdPtr;
 	
-	Tcl_DecrRefCount(aliasPtr->namePtr);
+	Tcl_DecrRefCount(aliasPtr->token);
 	Tcl_DecrRefCount(targetNamePtr);
 	for (i = 0; i < objc; i++) {
 	    Tcl_DecrRefCount(objv[i]);
@@ -1457,23 +1460,38 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
     }
 
     /*
-     * Make an entry in the alias table. If it already exists delete
-     * the alias command. Then retry.
+     * Make an entry in the alias table. If it already exists, retry.
      */
 
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
     while (1) {
-	Alias *oldAliasPtr;
+	Tcl_Obj *newToken;
 	char *string;
 	
-	string = Tcl_GetString(namePtr);
+	string = Tcl_GetString(aliasPtr->token);
 	hPtr = Tcl_CreateHashEntry(&slavePtr->aliasTable, string, &new);
 	if (new != 0) {
 	    break;
 	}
 
-	oldAliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
-	Tcl_DeleteCommandFromToken(slaveInterp, oldAliasPtr->slaveCmd);
+	/*
+	 * The alias name cannot be used as unique token, it is already
+	 * taken. We can produce a unique token by prepending "::"
+	 * repeatedly. This algorithm is a stop-gap to try to maintain
+	 * the command name as token for most use cases, fearful of
+	 * possible backwards compat problems. A better algorithm would
+	 * produce unique tokens that need not be related to the command
+	 * name.
+	 *
+	 * ATTENTION: the tests in interp.test and possibly safe.test
+	 * depend on the precise definition of these tokens.
+	 */
+	
+	newToken = Tcl_NewStringObj("::",-1);
+	Tcl_AppendObjToObj(newToken, aliasPtr->token);
+	Tcl_DecrRefCount(aliasPtr->token);
+	aliasPtr->token = newToken;
+	Tcl_IncrRefCount(aliasPtr->token);
     }
 
     aliasPtr->aliasEntryPtr = hPtr;
@@ -1504,7 +1522,7 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
     Tcl_SetHashValue(hPtr, (ClientData) targetPtr);
     aliasPtr->targetEntryPtr = hPtr;
 
-    Tcl_SetObjResult(interp, namePtr);
+    Tcl_SetObjResult(interp, aliasPtr->token);
 
     Tcl_Release(slaveInterp);
     Tcl_Release(masterInterp);
@@ -1635,7 +1653,7 @@ AliasList(interp, slaveInterp)
     entryPtr = Tcl_FirstHashEntry(&slavePtr->aliasTable, &hashSearch);
     for ( ; entryPtr != NULL; entryPtr = Tcl_NextHashEntry(&hashSearch)) {
         aliasPtr = (Alias *) Tcl_GetHashValue(entryPtr);
-        Tcl_ListObjAppendElement(NULL, resultPtr, aliasPtr->namePtr);
+        Tcl_ListObjAppendElement(NULL, resultPtr, aliasPtr->token);
     }
     return TCL_OK;
 }
@@ -1751,7 +1769,7 @@ AliasObjCmdDeleteProc(clientData)
 
     aliasPtr = (Alias *) clientData;
     
-    Tcl_DecrRefCount(aliasPtr->namePtr);
+    Tcl_DecrRefCount(aliasPtr->token);
     objv = &aliasPtr->objPtr;
     for (i = 0; i < aliasPtr->objc; i++) {
 	Tcl_DecrRefCount(objv[i]);

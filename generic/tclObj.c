@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.11 2004/09/08 23:02:47 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.12 2004/09/21 23:10:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -94,11 +94,14 @@ static int		SetDoubleFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static int		SetIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
+static int		SetIntOrWideFromAny _ANSI_ARGS_((Tcl_Interp* interp,
+							 Tcl_Obj *objPtr));
 static void		UpdateStringOfBoolean _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
+
 #ifndef TCL_WIDE_INT_IS_LONG
 static void		UpdateStringOfWideInt _ANSI_ARGS_((Tcl_Obj *objPtr));
 #endif
@@ -1909,20 +1912,62 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a int. */
     register int *intPtr;	/* Place to store resulting int. */
 {
-    register long l;
+    register long l = 0;
     int result;
 
-    if (objPtr->typePtr != &tclIntType) {
-	result = SetIntFromAny(interp, objPtr);
-	if (result != TCL_OK) {
+    /* If the object isn't already an integer of any width, try to
+     * convert it to one.
+     */
+
+    if ( objPtr->typePtr != &tclIntType
+	 && objPtr->typePtr != &tclWideIntType ) {
+	result = SetIntOrWideFromAny( interp, objPtr );
+	if ( result != TCL_OK ) {
 	    return result;
 	}
     }
-    l = objPtr->internalRep.longValue;
+
+    /* Object should now be either int or wide. Get its value. */
+
+    if ( objPtr->typePtr == &tclIntType ) {
+	l = objPtr->internalRep.longValue;
+    } else if ( objPtr->typePtr == &tclWideIntType ) {
+
+#ifndef TCL_WIDE_INT_IS_LONG
+
+	/*
+	 * If the object is already a wide integer, don't convert it.
+	 * This code allows for any integer in the range -ULONG_MAX to
+	 * ULONG_MAX to be converted to a long, ignoring overflow.
+	 * The rule preserves existing semantics for conversion of
+	 * integers on input, but avoids inadvertent demotion of
+	 * wide integers to 32-bit ones in the internal rep.
+	 */
+	Tcl_WideInt w = objPtr->internalRep.wideValue;
+	if ( w >= -(Tcl_WideInt)(ULONG_MAX)
+	     && w <= (Tcl_WideInt)(ULONG_MAX) ) {
+	    l = Tcl_WideAsLong( w );
+	} else {
+	    goto tooBig;
+	}
+
+#else
+
+	l = objPtr->internalRep.longValue;
+
+#endif
+
+    } else {
+	Tcl_Panic( "string->integer conversion failed to convert the obj." );
+    }
+
     if (((long)((int)l)) == l) {
-	*intPtr = (int)objPtr->internalRep.longValue;
+	*intPtr = (int)l;
 	return TCL_OK;
     }
+#ifndef TCL_WIDE_INT_IS_LONG
+  tooBig:
+#endif
     if (interp != NULL) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -1935,6 +1980,45 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
  *----------------------------------------------------------------------
  *
  * SetIntFromAny --
+ *
+ *	Attempts to force the internal representation for a Tcl object
+ *	to tclIntType, specifically.
+ *
+ * Results:
+ *	The return value is a standard object Tcl result.  If an
+ *	error occurs during conversion, an error message is left in
+ *	the interpreter's result unless "interp" is NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetIntFromAny(interp, objPtr)
+    Tcl_Interp* interp;		/* Tcl interpreter */
+    Tcl_Obj* objPtr;		/* Pointer to the object to convert */
+{
+    int result;
+
+    result = SetIntOrWideFromAny(interp, objPtr);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (objPtr->typePtr != &tclIntType) {
+	if (interp != NULL) {
+	    char *s = "integer value too large to represent";
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
+	}
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetIntOrWideFromAny --
  *
  *	Attempt to generate an integer internal form for the Tcl object
  *	"objPtr".
@@ -1952,7 +2036,7 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
  */
 
 static int
-SetIntFromAny(interp, objPtr)
+SetIntOrWideFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
@@ -1960,7 +2044,9 @@ SetIntFromAny(interp, objPtr)
     char *string, *end;
     int length;
     register char *p;
-    long newLong;
+    unsigned long newLong;
+    int isNegative = 0;
+    int isWide = 0;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
@@ -1977,22 +2063,17 @@ SetIntFromAny(interp, objPtr)
      */
 
     errno = 0;
-#ifdef TCL_STRTOUL_SIGN_CHECK
     for (; isspace(UCHAR(*p)) ; p++) {	/* INTL: ISO space. */
 	/* Empty loop body. */
     }
     if (*p == '-') {
+	isNegative = 1;
 	p++;
-	newLong = -((long)strtoul(p, &end, 0));
     } else if (*p == '+') {
 	p++;
-	newLong = strtoul(p, &end, 0);
-    } else
-#else
-	newLong = strtoul(p, &end, 0);
-#endif
-    if (end == p) {
-	badInteger:
+    }
+    if (!isdigit(UCHAR(*p))) {
+      badInteger:
 	if (interp != NULL) {
 	    Tcl_Obj *msg =
 		    Tcl_NewStringObj("expected integer but got \"", -1);
@@ -2002,6 +2083,10 @@ SetIntFromAny(interp, objPtr)
 	    TclCheckBadOctal(interp, string);
 	}
 	return TCL_ERROR;
+    }
+    newLong = strtoul(p, &end, 0);
+    if (end == p) {
+	goto badInteger;
     }
     if (errno == ERANGE) {
 	if (interp != NULL) {
@@ -2026,6 +2111,18 @@ SetIntFromAny(interp, objPtr)
     }
 
     /*
+     * If the resulting integer will exceed the range of a long,
+     * put it into a wide instead.  (Tcl Bug #868489)
+     */
+
+#ifndef TCL_WIDE_INT_IS_LONG
+    if ((isNegative && newLong > (unsigned long) (LONG_MAX) + 1)
+	    || (!isNegative && newLong > LONG_MAX)) {
+	isWide = 1;
+    }
+#endif
+
+    /*
      * The conversion to int succeeded. Free the old internalRep before
      * setting the new one. We do this as late as possible to allow the
      * conversion code, in particular Tcl_GetStringFromObj, to use that old
@@ -2036,8 +2133,15 @@ SetIntFromAny(interp, objPtr)
 	oldTypePtr->freeIntRepProc(objPtr);
     }
 
-    objPtr->internalRep.longValue = newLong;
-    objPtr->typePtr = &tclIntType;
+    if (isWide) {
+	objPtr->internalRep.wideValue =
+		(isNegative ? -(Tcl_WideInt)newLong : (Tcl_WideInt)newLong);
+	objPtr->typePtr = &tclWideIntType;
+    } else {
+	objPtr->internalRep.longValue =
+		(isNegative ? -(long)newLong : (long)newLong);
+	objPtr->typePtr = &tclIntType;
+    }
     return TCL_OK;
 }
 
@@ -2270,15 +2374,44 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 {
     register int result;
 
-    if (objPtr->typePtr == &tclIntType) {
-	*longPtr = objPtr->internalRep.longValue;
-	return TCL_OK;
+    if ( objPtr->typePtr != &tclIntType
+	 && objPtr->typePtr != &tclWideIntType ) {
+	result = SetIntOrWideFromAny( interp, objPtr );
+	if ( result != TCL_OK ) {
+	    return result;
+	}
     }
-    result = SetIntFromAny(interp, objPtr);
-    if (result == TCL_OK) {
-	*longPtr = objPtr->internalRep.longValue;
+
+#ifndef TCL_WIDE_INT_IS_LONG
+    
+    if ( objPtr->typePtr == &tclWideIntType ) {
+	/*
+	 * If the object is already a wide integer, don't convert it.
+	 * This code allows for any integer in the range -ULONG_MAX to
+	 * ULONG_MAX to be converted to a long, ignoring overflow.
+	 * The rule preserves existing semantics for conversion of
+	 * integers on input, but avoids inadvertent demotion of
+	 * wide integers to 32-bit ones in the internal rep.
+	 */
+	Tcl_WideInt w = objPtr->internalRep.wideValue;
+	if ( w >= -(Tcl_WideInt)(ULONG_MAX)
+	     && w <= (Tcl_WideInt)(ULONG_MAX) ) {
+	    *longPtr = Tcl_WideAsLong( w );
+	    return TCL_OK;
+	} else {
+	    if (interp != NULL) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+				"integer value too large to represent", -1);
+	    }
+	    return TCL_ERROR;
+	}
     }
-    return result;
+
+#endif
+
+    *longPtr = objPtr->internalRep.longValue;
+    return TCL_OK;
 }
 
 /*

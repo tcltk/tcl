@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetInt.3,v 1.4 2001/09/25 16:23:55 dgp Exp $
+'\" RCS: @(#) $Id: GetInt.3,v 1.4.8.1 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetInt 3 "" Tcl "Tcl Library Procedures"
@@ -47,8 +47,8 @@ integers).  Each of the procedures takes a \fIstring\fR argument,
 converts it to an internal form of a particular type, and stores
 the converted value at the location indicated by the procedure's
 third argument.  If all goes well, each of the procedures returns
-TCL_OK.  If \fIstring\fR doesn't have the proper syntax for the
-desired type then TCL_ERROR is returned, an error message is left
+\fBTCL_OK\fR.  If \fIstring\fR doesn't have the proper syntax for the
+desired type then \fBTCL_ERROR\fR is returned, an error message is left
 in the interpreter's result, and nothing is stored at *\fIintPtr\fR
 or *\fIdoublePtr\fR or *\fIboolPtr\fR.
 .PP

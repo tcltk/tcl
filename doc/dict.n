@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.2.2.2 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: dict.n,v 1.2.2.3 2004/09/21 23:10:26 dgp Exp $
 '\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
@@ -56,9 +56,9 @@ the given script which should return a boolean value (with the
 key/value pair only being included in the result of the \fBdict
 filter\fR when a true value is returned.)  Note that the first
 argument after the rule selection word is a two-element list.  If the
-\fIscript\fR returns with a condition of TCL_BREAK, no further
+\fIscript\fR returns with a condition of \fBTCL_BREAK\fR, no further
 key/value pairs are considered for inclusion in the resulting
-dictionary, and a condition of TCL_CONTINUE is equivalent to a false
+dictionary, and a condition of \fBTCL_CONTINUE\fR is equivalent to a false
 result.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fIglobPattern\fR
@@ -73,11 +73,11 @@ the dictionary), the second the dictionary value to iterate across,
 and the third a script to be evaluated for each mapping with the key
 and value variables set appropriately (in the manner of \fBforeach\fR.)
 The result of the command is an empty string. If any evaluation of the
-body generates a TCL_BREAK result, no further pairs from the
+body generates a \fBTCL_BREAK\fR result, no further pairs from the
 dictionary will be iterated over and the \fBdict for\fR command will
 terminate successfully immediately. If any evaluation of the body
-generates a TCL_CONTINUE result, this shall be treated exactly like a
-normal TCL_OK result.  The order of iteration is undefined.
+generates a \fBTCL_CONTINUE\fR result, this shall be treated exactly like a
+normal \fBTCL_OK\fR result.  The order of iteration is undefined.
 .TP
 \fBdict get \fIdictionaryValue \fR?\fIkey ...\fR?
 Given a dictionary value (first argument) and a key (second argument),

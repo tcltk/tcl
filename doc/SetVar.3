@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetVar.3,v 1.7.4.2 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: SetVar.3,v 1.7.4.3 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetVar 3 8.1 Tcl "Tcl Library Procedures"
@@ -139,9 +139,9 @@ a variable, so that future attempts to read the variable will return
 an error.
 The arguments to these procedures are treated in the same way
 as the arguments to the procedures above.
-If the variable is successfully removed then TCL_OK is returned.
+If the variable is successfully removed then \fBTCL_OK\fR is returned.
 If the variable cannot be removed because it doesn't exist then
-TCL_ERROR is returned and an error message is left
+\fBTCL_ERROR\fR is returned and an error message is left
 in \fIinterp\fR's result if the \fBTCL_LEAVE_ERR_MSG\fR \fIflag\fR
 bit is set.
 If an array element is specified, the given element is removed
@@ -233,8 +233,8 @@ Under normal circumstances, the return value is a pointer
 to the variable's value (which is stored in Tcl's variable
 structure and will not change before the next call to \fBTcl_SetVar\fR
 or \fBTcl_SetVar2\fR).
-\fBTcl_GetVar\fR and \fBTcl_GetVar2\fR use the flag bits TCL_GLOBAL_ONLY
-and TCL_LEAVE_ERR_MSG, both of
+\fBTcl_GetVar\fR and \fBTcl_GetVar2\fR use the flag bits \fBTCL_GLOBAL_ONLY\fR
+and \fBTCL_LEAVE_ERR_MSG\fR, both of
 which have
 the same meaning as for \fBTcl_SetVar\fR.
 If an error occurs in reading the variable (e.g. the variable
@@ -246,9 +246,9 @@ a variable, so that future calls to \fBTcl_GetVar\fR or \fBTcl_GetVar2\fR
 for the variable will return an error.
 The arguments to these procedures are treated in the same way
 as the arguments to \fBTcl_GetVar\fR and \fBTcl_GetVar2\fR.
-If the variable is successfully removed then TCL_OK is returned.
+If the variable is successfully removed then \fBTCL_OK\fR is returned.
 If the variable cannot be removed because it doesn't exist then
-TCL_ERROR is returned.
+\fBTCL_ERROR\fR is returned.
 If an array element is specified, the given element is removed
 but the array remains.
 If an array name is specified without an index, then the entire

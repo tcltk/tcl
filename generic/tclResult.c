@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.2 2003/09/05 23:08:07 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.3 2004/09/21 23:10:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -876,26 +876,21 @@ Tcl_SetErrorCodeVA (interp, argList)
 				 * variable. */
     va_list argList;		/* Variable argument list. */
 {
-    char *string;
-    int flags;
-    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *errorObj = Tcl_NewObj();
 
     /*
      * Scan through the arguments one at a time, appending them to
      * $errorCode as list elements.
      */
 
-    flags = TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT;
     while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
+	char *elem = va_arg(argList, char *);
+	if (elem == NULL) {
 	    break;
 	}
-	(void) Tcl_SetVar2((Tcl_Interp *) iPtr, "errorCode",
-		(char *) NULL, string, flags);
-	flags |= TCL_APPEND_VALUE;
+	Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(elem, -1));
     }
-    iPtr->flags |= ERROR_CODE_SET;
+    Tcl_SetObjErrorCode(interp, errorObj);
 }
 
 /*
@@ -961,10 +956,10 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
     Tcl_Interp *interp;
     Tcl_Obj *errorObjPtr;
 {
-    Interp *iPtr;
+    Interp *iPtr = (Interp *) interp;
     
-    iPtr = (Interp *) interp;
-    Tcl_SetVar2Ex(interp, "errorCode", NULL, errorObjPtr, TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL,
+	    errorObjPtr, TCL_GLOBAL_ONLY);
     iPtr->flags |= ERROR_CODE_SET;
 }
 
@@ -1037,13 +1032,11 @@ TclTransferResult(sourceInterp, result, targetInterp)
 		TCL_GLOBAL_ONLY);
 	Tcl_SetVar2Ex(targetInterp, "errorInfo", NULL, objPtr,
 		TCL_GLOBAL_ONLY);
+	((Interp *) targetInterp)->flags |= ERR_IN_PROGRESS;
 
 	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorCode", NULL,
 		TCL_GLOBAL_ONLY);
-	Tcl_SetVar2Ex(targetInterp, "errorCode", NULL, objPtr,
-		TCL_GLOBAL_ONLY);
-
-	((Interp *) targetInterp)->flags |= (ERR_IN_PROGRESS | ERROR_CODE_SET);
+	Tcl_SetObjErrorCode(targetInterp, objPtr);
     }
 
     /* This may need examination for safety */

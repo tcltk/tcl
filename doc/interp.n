@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.9.4.3 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.9.4.4 2004/09/21 23:10:26 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -52,15 +52,15 @@ scripts without fear of them damaging other interpreters or the
 application's environment. For example, all IO channel creation
 commands and subprocess creation commands are made inaccessible to safe
 interpreters.
-See SAFE INTERPRETERS below for more information on
+See \fBSAFE INTERPRETERS\fR below for more information on
 what features are present in a safe interpreter.
 The dangerous functionality is not removed from the safe interpreter;
 instead, it is \fIhidden\fR, so that only trusted interpreters can obtain
 access to it. For a detailed explanation of hidden commands, see
-HIDDEN COMMANDS, below.
+\fBHIDDEN COMMANDS\fR, below.
 The alias mechanism can be used for protected communication (analogous to a
 kernel call) between a slave interpreter and its master. 
-See ALIAS INVOCATION, below, for more details 
+See \fBALIAS INVOCATION\fR, below, for more details 
 on how the alias mechanism works.
 .PP
 A qualified interpreter name is a proper Tcl lists containing a subset of its
@@ -85,17 +85,17 @@ slave interpreters, and to share or transfer
 channels between interpreters.  It can have any of several forms, depending
 on the \fIoption\fR argument:
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcCmd\fR
+\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcToken\fR
 Returns a Tcl list whose elements are the \fItargetCmd\fR and
-\fIarg\fRs associated with the alias named \fIsrcCmd\fR
-(all of these are the values specified when the alias was
-created; it is possible that the actual source command in the
-slave is different from \fIsrcCmd\fR if it was renamed).
+\fIarg\fRs associated with the alias represented by \fIsrcToken\fR
+(this is the value returned when the alias was
+created; it is possible that the name of the source command in the
+slave is different from \fIsrcToken\fR).
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcCmd\fR \fB{}\fR
-Deletes the alias for \fIsrcCmd\fR in the slave interpreter identified by
+\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcToken\fR \fB{}\fR
+Deletes the alias for \fIsrcToken\fR in the slave interpreter identified by
 \fIsrcPath\fR.
-\fIsrcCmd\fR refers to the name under which the alias
+\fIsrcToken\fR refers to the value returned when the alias
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
@@ -120,12 +120,18 @@ in the invocation of \fIsrcCmd\fR.
 already exist; it is not created by this command.
 The alias arranges for the given target command to be invoked
 in the target interpreter whenever the given source command is
-invoked in the source interpreter.  See ALIAS INVOCATION below for
-more details.
+invoked in the source interpreter.  See \fBALIAS INVOCATION\fR below for
+more details. 
+The command returns a token that uniquely identifies the command created
+\fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
+does not have to be equal to \fIsrcCmd\fR.
 .TP
 \fBinterp\fR \fBaliases \fR?\fIpath\fR?
-This command returns a Tcl list of the names of all the source commands for
-aliases defined in the interpreter identified by \fIpath\fR.
+This command returns a Tcl list of the tokens of all the source commands for
+aliases defined in the interpreter identified by \fIpath\fR. The tokens
+correspond to the values returned when 
+the aliases were created (which may not be the same 
+as the current names of the commands).
 .TP
 \fBinterp\fR \fBcreate \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
 Creates a slave interpreter identified by \fIpath\fR and a new command,
@@ -165,6 +171,11 @@ a Tcl script in the slave interpreter identified by \fIpath\fR. The result
 of this evaluation (including error information such as the \fBerrorInfo\fR
 and \fBerrorCode\fR variables, if an error occurs) is returned to the
 invoking interpreter.
+Note that the script will be executed in the current context stack frame of the
+\fIpath\fR interpreter; this is so that the implementations (in a master
+interpreter) of aliases in a slave interpreter can execute scripts in
+the slave that find out information about the slave's current state
+and stack frame.
 .TP
 \fBinterp exists \fIpath\fR
 Returns  \fB1\fR if a slave interpreter by the specified \fIpath\fR
@@ -179,7 +190,7 @@ in the interpreter
 denoted by \fIpath\fR.
 If an exposed command with the targeted name already exists, this command
 fails.
-Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
+Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fBinterp\fR \fBhide\fR \fIpath\fR \fIexposedCmdName\fR ?\fIhiddenCmdName\fR?
 Makes the exposed command \fIexposedCmdName\fR hidden, renaming
@@ -194,7 +205,7 @@ Commands to be hidden by \fBinterp hide\fR are looked up in the global
 namespace even if the current namespace is not the global one. This
 prevents slaves from fooling a master interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
-Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
+Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fBinterp\fR \fBhidden\fR \fIpath\fR
 Returns a list of the names of all hidden commands in the interpreter
@@ -212,7 +223,9 @@ current call frame and can access local variables in that and outer call
 frames.
 If both the \fB-namespace\fR and \fB-global\fR flags are present, the 
 \fB-namespace\fR flag is ignored.
-Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
+Note that the hidden command will be executed (by default) in the
+current context stack frame of the \fIpath\fR interpreter.
+Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fBinterp\fR \fBlimit\fR \fIpath\fR \fIlimitType\fR ?\fIoption\fR? ?\fIvalue\fR \fI...\fR?
 .VS 8.5
@@ -221,7 +234,7 @@ limit \fIlimitType\fR for the interpreter denoted by \fIpath\fR.  If
 no \fIoption\fR is specified, return the current configuration of the
 limit.  If \fIoption\fR is the sole argument, return the value of that
 option.  Otherwise, a list of \fIoption\fR/\fIvalue\fR argument pairs
-must supplied. See RESOURCE LIMITS below for a more detailed
+must supplied. See \fBRESOURCE LIMITS\fR below for a more detailed
 explanation of what limits and options are supported.
 .VE 8.5
 .TP
@@ -296,22 +309,21 @@ and the \fIarg\fRs determine the exact behavior of the command.
 The valid forms of this command are:
 .TP
 \fIslave \fBaliases\fR
-Returns a Tcl list whose elements are the names of all the
-aliases in \fIslave\fR.  The names returned are the \fIsrcCmd\fR
-values used when the aliases were created (which may not be the same
-as the current names of the commands, if they have been
-renamed).
+Returns a Tcl list whose elements are the tokens of all the
+aliases in \fIslave\fR.  The tokens correspond to the values returned when
+the aliases were created (which may not be the same 
+as the current names of the commands).
 .TP
-\fIslave \fBalias \fIsrcCmd\fR
+\fIslave \fBalias \fIsrcToken\fR
 Returns a Tcl list whose elements are the \fItargetCmd\fR and
-\fIarg\fRs associated with the alias named \fIsrcCmd\fR
-(all of these are the values specified when the alias was
+\fIarg\fRs associated with the alias represented by \fIsrcToken\fR
+(this is the value returned when the alias was
 created; it is possible that the actual source command in the
-slave is different from \fIsrcCmd\fR if it was renamed).
+slave is different from \fIsrcToken\fR).
 .TP
-\fIslave \fBalias \fIsrcCmd \fB{}\fR
-Deletes the alias for \fIsrcCmd\fR in the slave interpreter.
-\fIsrcCmd\fR refers to the name under which the alias
+\fIslave \fBalias \fIsrcToken \fB{}\fR
+Deletes the alias for \fIsrcToken\fR in the slave interpreter.
+\fIsrcToken\fR refers to the value returned when the alias
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
@@ -321,7 +333,10 @@ in \fIslave\fR, \fItargetCmd\fR is invoked in the master.
 The \fIarg\fR arguments will be passed to \fItargetCmd\fR as additional
 arguments, prepended before any arguments passed in the invocation of
 \fIsrcCmd\fR.
-See ALIAS INVOCATION below for details.
+See \fBALIAS INVOCATION\fR below for details.
+The command returns a token that uniquely identifies the command created
+\fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
+does not have to be equal to \fIsrcCmd\fR.
 .TP
 \fIslave \fBeval \fIarg \fR?\fIarg ..\fR?
 This command concatenates all of the \fIarg\fR arguments in
@@ -330,6 +345,11 @@ the resulting string as a Tcl script in \fIslave\fR.
 The result of this evaluation (including error information
 such as the \fBerrorInfo\fR and \fBerrorCode\fR variables, if an
 error occurs) is returned to the invoking interpreter.
+Note that the script will be executed in the current context stack frame
+of \fIslave\fR; this is so that the implementations (in a master
+interpreter) of aliases in a slave interpreter can execute scripts in
+the slave that find out information about the slave's current state
+and stack frame.
 .TP
 \fIslave \fBexpose \fIhiddenName \fR?\fIexposedCmdName\fR?
 This command exposes the hidden command \fIhiddenName\fR, eventually bringing
@@ -338,7 +358,7 @@ accepted only if it is a valid global name space name without any ::),
 in \fIslave\fR.
 If an exposed command with the targeted name already exists, this command
 fails.
-For more details on hidden commands, see HIDDEN COMMANDS, below.
+For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fIslave \fBhide \fIexposedCmdName\fR ?\fIhiddenCmdName\fR?
 This command hides the exposed command \fIexposedCmdName\fR, renaming it to 
@@ -352,7 +372,7 @@ Commands to be hidden are looked up in the global
 namespace even if the current namespace is not the global one. This
 prevents slaves from fooling a master interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
-For more details on hidden commands, see HIDDEN COMMANDS, below.
+For more details on hidden commands, see \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fIslave \fBhidden\fR
 Returns a list of the names of all hidden commands in \fIslave\fR.
@@ -368,8 +388,10 @@ level in the slave; otherwise it is invoked at the current call frame and
 can access local variables in that or outer call frames.
 If both the \fB-namespace\fR and \fB-global\fR flags are given, the 
 \fB-namespace\fR flag is ignored.
+Note that the hidden command will be executed (by default) in the
+current context stack frame of \fIslave\fR.
 For more details on hidden commands, 
-see HIDDEN COMMANDS, below.
+see \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fIslave \fBissafe\fR
 Returns  \fB1\fR if the slave interpreter is safe, \fB0\fR otherwise.
@@ -381,7 +403,7 @@ limit \fIlimitType\fR for the slave interpreter.  If no \fIoption\fR
 is specified, return the current configuration of the limit.  If
 \fIoption\fR is the sole argument, return the value of that option.
 Otherwise, a list of \fIoption\fR/\fIvalue\fR argument pairs must
-supplied. See RESOURCE LIMITS below for a more detailed explanation of
+supplied. See \fBRESOURCE LIMITS\fR below for a more detailed explanation of
 what limits and options are supported.
 .VE 8.5
 .TP
@@ -588,7 +610,7 @@ handling an alias invocation, great care must be taken to avoid evaluating
 any arguments passed in through the alias invocation.
 Otherwise, malicious slave interpreters could cause a trusted master
 interpreter to execute dangerous commands on their behalf. See the section
-on ALIAS INVOCATION for a more complete discussion of this topic.
+on \fBALIAS INVOCATION\fR for a more complete discussion of this topic.
 To help avoid this problem, no substitutions or evaluations are
 applied to arguments of \fBinterp invokehidden\fR.
 .PP
@@ -729,6 +751,5 @@ $i eval {
 
 .SH "SEE ALSO"
 load(n), safe(n), Tcl_CreateSlave(3)
-
 .SH KEYWORDS
 alias, master interpreter, safe interpreter, slave interpreter

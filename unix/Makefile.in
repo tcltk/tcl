@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.9 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.10 2004/09/21 23:10:29 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -571,16 +571,20 @@ topDirName:
 # so that make doesn't try to automatically regenerate the .c file.
 
 gendate:
-	yacc -l $(GENERIC_DIR)/tclGetDate.y
-	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) ?' \
-	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
-	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
-	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
-            -e '/#define YYNEW/s/malloc/TclDateAlloc/g' \
-	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
-	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
-	rm y.tab.c
+	bison --output-file=$(GENERIC_DIR)/tclDate.c \
+	--name-prefix=TclDate \
+	$(GENERIC_DIR)/tclGetDate.y
+
+#	yacc -l $(GENERIC_DIR)/tclGetDate.y
+#	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
+#	    -e 's?SCCSID?RCS: @(#) ?' \
+#	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
+#	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
+#	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
+#           -e '/#define YYNEW/s/malloc/TclDateAlloc/g' \
+#	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
+#	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
+#	rm y.tab.c
 
 # The following target generates the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.10 2004/09/08 23:02:35 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.11 2004/09/21 23:10:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -919,9 +919,7 @@ TclProcessReturn(interp, code, level, returnOpts)
 	    Tcl_DictObjGet(NULL, iPtr->returnOpts,
 		    iPtr->returnErrorcodeKey, &valuePtr);
 	    if (valuePtr != NULL) {
-		Tcl_SetVar2Ex(interp, "errorCode", NULL,
-			valuePtr, TCL_GLOBAL_ONLY);
-		iPtr->flags |= ERROR_CODE_SET;
+		Tcl_SetObjErrorCode(interp, valuePtr);
 	    }
 	}
     } else {

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetOpnFl.3,v 1.4.6.1 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: GetOpnFl.3,v 1.4.6.2 2004/09/21 23:10:25 dgp Exp $
 .so man.macros
 .TH Tcl_GetOpenFile 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -45,10 +45,10 @@ be used for reading or writing.
 In some cases, such as a channel that connects to a pipeline of
 subprocesses, different FILE pointers will be returned for reading
 and writing.
-\fBTcl_GetOpenFile\fR normally returns TCL_OK.
+\fBTcl_GetOpenFile\fR normally returns \fBTCL_OK\fR.
 If an error occurs in \fBTcl_GetOpenFile\fR (e.g. \fIstring\fR didn't
 make any sense or \fIcheckUsage\fR was set and the file wasn't opened
-for the access specified by \fIwrite\fR) then TCL_ERROR is returned
+for the access specified by \fIwrite\fR) then \fBTCL_ERROR\fR is returned
 and the interpreter's result will contain an error message.
 In the current implementation \fIcheckUsage\fR is ignored and consistency
 checks are always performed.

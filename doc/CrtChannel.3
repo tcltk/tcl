@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.1 2004/09/08 23:02:32 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.2 2004/09/21 23:10:24 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -174,7 +174,7 @@ driver provides a \fBTcl_ChannelType\fR structure containing pointers to
 functions implementing the various operations used by the generic layer to
 communicate with the channel driver. The \fBTcl_ChannelType\fR structure
 and the functions referenced by it are described in the section
-TCL_CHANNELTYPE, below.
+\fBTCL_CHANNELTYPE\fR, below.
 .PP
 Second, channel drivers usually provide a Tcl command to create
 instances of that type of channel. For example, the Tcl \fBopen\fR
@@ -201,7 +201,7 @@ structure to perform operations on the channel.
 \fItypePtr\fR and \fIinstanceData\fR with it. The channel is opened in the
 mode indicated by \fImask\fR.
 For a discussion of channel drivers, their operations and the
-\fBTcl_ChannelType\fR structure, see the section TCL_CHANNELTYPE, below.
+\fBTcl_ChannelType\fR structure, see the section \fBTCL_CHANNELTYPE\fR, below.
 .PP
 \fBTcl_CreateChannel\fR interacts with the code managing the standard
 channels. Once a standard channel was initialized either through a

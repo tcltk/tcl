@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.20.4.5 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.20.4.6 2004/09/21 23:10:25 dgp Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -227,7 +227,7 @@ platform-independent mechanism for performing buffered input
 and output operations on a variety of file, socket, and device
 types.
 The channel mechanism is extensible to new channel types, by
-providing a low level channel driver for the new type; the channel driver
+providing a low-level channel driver for the new type; the channel driver
 interface is described in the manual entry for \fBTcl_CreateChannel\fR. The
 channel mechanism provides a buffering scheme modeled after
 Unix's standard I/O, and it also allows for nonblocking I/O on
@@ -348,7 +348,7 @@ reference to a channel that is also registered in a Tcl interpreter.
 .PP
 This procedure interacts with the code managing the standard
 channels. If no standard channels were initialized before the first
-call to \fBTcl_RegisterChannel\fR they will get initialized by that
+call to \fBTcl_RegisterChannel\fR, they will get initialized by that
 call. See \fBTcl_StandardChannels\fR for a general treatise about
 standard channels and the behaviour of the Tcl library with regard to
 them.
@@ -375,7 +375,7 @@ accessible in \fIinterp\fR. After this call, Tcl programs will no longer be
 able to use the channel's name to refer to the channel in that interpreter.
 Beyond that, this command has no further effect.  It cannot be used on
 the standard channels (stdout, stderr, stdin), and will return
-TCL_ERROR if passed one of those channels.
+\fBTCL_ERROR\fR if passed one of those channels.
 .PP
 Code not associated with a Tcl interpreter can call
 \fBTcl_DetachChannel\fR with \fIinterp\fR as NULL, to indicate to Tcl

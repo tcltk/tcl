@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.10 2003/05/05 20:54:52 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.10.2.1 2004/09/21 23:10:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -174,6 +174,15 @@ test error-5.2 {errors in error command} {
 
 test error-6.1 {catch must reset error state} {
     catch {error outer [catch {error inner inner.errorInfo inner.errorCode}]}
+    list $errorCode $errorInfo
+} {NONE 1}
+test error-6.2 {catch must reset error state} {
+    catch {error outer [catch {return -level 0 -code error -errorcode BUG}]}
+    list $errorCode $errorInfo
+} {NONE 1}
+test error-6.3 {catch must reset error state} {
+    set errorCode BUG
+    catch {error outer [catch set]}
     list $errorCode $errorInfo
 } {NONE 1}
 

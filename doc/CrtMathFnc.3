@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.7.2.1 2004/09/08 23:02:32 dgp Exp $
+'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.7.2.2 2004/09/21 23:10:24 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateMathFunc 3 8.4 Tcl "Tcl Library Procedures"
@@ -75,8 +75,8 @@ is created.  If it does exist, then the existing function is replaced.
 \fINumArgs\fR and \fIargTypes\fR describe the arguments to the function.
 Each entry in the \fIargTypes\fR array must be
 .VS 8.4
-one of TCL_INT, TCL_DOUBLE, TCL_WIDE_INT,
-or TCL_EITHER to indicate whether the corresponding argument must be an
+one of \fBTCL_INT\fR, \fBTCL_DOUBLE\fR, \fBTCL_WIDE_INT\fR,
+or \fBTCL_EITHER\fR to indicate whether the corresponding argument must be an
 integer, a double-precision floating value, a wide (64-bit) integer,
 or any, respectively.
 .VE 8.4
@@ -107,10 +107,10 @@ typedef struct Tcl_Value {
 .CE
 .PP
 The \fItype\fR field indicates the type of the argument and is
-one of TCL_INT, TCL_DOUBLE or TCL_WIDE_INT.
+one of \fBTCL_INT\fR, \fBTCL_DOUBLE\fR or \fBTCL_WIDE_INT\fR.
 .VE 8.4
 It will match the \fIargTypes\fR value specified for the function unless
-the \fIargTypes\fR value was TCL_EITHER. Tcl converts
+the \fIargTypes\fR value was \fBTCL_EITHER\fR. Tcl converts
 the argument supplied in the expression to the type requested in
 \fIargTypes\fR, if that is necessary.
 Depending on the value of the \fItype\fR field, the \fIintValue\fR,
@@ -124,12 +124,12 @@ in \fIresultPtr->intValue\fR or as a floating value in
 \fIresultPtr->doubleValue\fR.
 It should set also \fIresultPtr->type\fR to one of
 .VS 8.4
-TCL_INT, TCL_DOUBLE or TCL_WIDE_INT
+\fBTCL_INT\fR, \fBTCL_DOUBLE\fR or \fBTCL_WIDE_INT\fR
 .VE 8.4
 to indicate which value was set.
-Under normal circumstances \fIproc\fR should return TCL_OK.
+Under normal circumstances \fIproc\fR should return \fBTCL_OK\fR.
 If an error occurs while executing the function, \fIproc\fR should
-return TCL_ERROR and leave an error message in the interpreter's result.
+return \fBTCL_ERROR\fR and leave an error message in the interpreter's result.
 .PP
 .VS 8.4
 \fBTcl_GetMathFuncInfo\fR retrieves the values associated with

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.11 2004/09/08 23:02:40 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.12 2004/09/21 23:10:27 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -908,13 +908,8 @@ TclCompEvalObj(interp, objPtr, flags)
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
-    int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
-					 * at all were executed. */
-    char *script;
-    int numSrcBytes;
     int result;
     Namespace *namespacePtr;
-
 
     /*
      * Check that the interpreter is ready to execute scripts
@@ -996,70 +991,22 @@ PrintByteCodeInfo(codePtr);
     }
 
     /*
-     * Execute the commands. If the code was compiled from an empty string,
-     * don't bother executing the code.
+     * Increment the code's ref count while it is being executed. If
+     * afterwards no references to it remain, free the code.
      */
 
-    numSrcBytes = codePtr->numSrcBytes;
-    if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
-	/*
-	 * Increment the code's ref count while it is being executed. If
-	 * afterwards no references to it remain, free the code.
-	 */
-	
-	codePtr->refCount++;
-	if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
-	    Tcl_DecrRefCount(iPtr->returnOpts);
-	    iPtr->returnOpts = iPtr->defaultReturnOpts;
-	    Tcl_IncrRefCount(iPtr->returnOpts);
-	}
-	result = TclExecuteByteCode(interp, codePtr);
-	codePtr->refCount--;
-	if (codePtr->refCount <= 0) {
-	    TclCleanupByteCode(codePtr);
-	}
-    } else {
-	result = TCL_OK;
+    codePtr->refCount++;
+    if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = iPtr->defaultReturnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+    result = TclExecuteByteCode(interp, codePtr);
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
     }
     iPtr->numLevels--;
-
-    /*
-     * If no commands at all were executed, check for asynchronous
-     * handlers and resource limits so that they at least get one
-     * change to execute.  This is needed to handle event loops
-     * written in Tcl with empty bodies.
-     */
-
-    if (oldCount == iPtr->cmdCount) {
-	if (Tcl_AsyncReady()) {
-	    result = Tcl_AsyncInvoke(interp, result);
-
-	    /*
-	     * If an error occurred, record information about what was
-	     * being executed when the error occurred.
-	     */
-
-	    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
-	    }
-	}
-	if (result==TCL_OK && Tcl_LimitReady(interp)) {
-	    result = Tcl_LimitCheck(interp);
-
-	    /*
-	     * If an error occurred, record information about what was
-	     * being executed when the error occurred.
-	     */
-
-	    if (result==TCL_ERROR && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
-	    }
-	}
-    }
-
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
     return result;
 }
 
@@ -1422,47 +1369,79 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_CONCAT1:
 	{
-	    int opnd, length, totalLen = 0;
-	    char * bytes;		
+	    int opnd, length, appendLen = 0;
+	    char *bytes, *p;		
 	    Tcl_Obj **currPtr;
 	    
 	    opnd = TclGetUInt1AtPtr(pc+1);
 
 	    /*
-	     * Concatenate strings (with no separators) from the top
-	     * opnd items on the stack starting with the deepest item.
-	     * First, determine how many characters are needed.
+	     * Compute the length to be appended.
 	     */
-
-	    for (currPtr = tosPtr - (opnd-1); currPtr <= tosPtr; 
+	    
+	    for (currPtr = tosPtr - (opnd-2); currPtr <= tosPtr; 
 		     currPtr++) {
 		bytes = Tcl_GetStringFromObj(*currPtr, &length);
 		if (bytes != NULL) {
-		    totalLen += length;
+		    appendLen += length;
 		}
 	    }
 
 	    /*
-	     * Initialize the new append string object by appending the
-	     * strings of the opnd stack objects. Also pop the objects. 
+	     * If nothing is to be appended, just return the first
+	     * object by dropping all the others from the stack; this
+	     * saves both the computation and copy of the string rep
+	     * of the first object, enabling the fast '$x[set x {}]'
+	     * idiom for 'K $x [set x{}]'.
 	     */
 
-	    TclNewObj(objResultPtr);
-	    if (totalLen > 0) {
-		char *p = (char *) ckalloc((unsigned) (totalLen + 1));
-		objResultPtr->bytes = p;
-		objResultPtr->length = totalLen;
-		for (currPtr = tosPtr - (opnd-1); currPtr <= tosPtr; 
-		        currPtr++) {
-		    bytes = Tcl_GetStringFromObj(*currPtr, &length);
-		    if (bytes != NULL) {
-			memcpy((VOID *) p, (VOID *) bytes,
-			       (size_t) length);
-			p += length;
-		    }
-		}
-		*p = '\0';
+	    if (appendLen == 0) {
+		TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+		NEXT_INST_V(2, (opnd-1), 0);
 	    }
+
+	    /*
+	     * If the first object is shared, we need a new obj for
+	     * the result; otherwise, we can reuse the first object.
+	     * In any case, make sure it has enough room to accomodate
+	     * all the concatenated bytes. Note that if it is unshared
+	     * its bytes are already copied by Tcl_SetObjectLength, so
+	     * that we set the loop parameters to avoid copying them
+	     * again: p points to the end of the already copied bytes,
+	     * currPtr to the second object.
+	     */
+	    
+	    objResultPtr = *(tosPtr-(opnd-1));
+	    bytes = Tcl_GetStringFromObj(objResultPtr, &length);
+#if !TCL_COMPILE_DEBUG
+	    if (!Tcl_IsShared(objResultPtr)) {
+		Tcl_SetObjLength(objResultPtr, (length + appendLen));
+		p = TclGetString(objResultPtr) + length;
+		currPtr = tosPtr - (opnd - 2);
+	    } else {
+#endif
+		p = (char *) ckalloc((unsigned) (length + appendLen + 1));
+		TclNewObj(objResultPtr);
+		objResultPtr->bytes = p;
+		objResultPtr->length = length + appendLen;
+		currPtr = tosPtr - (opnd - 1);
+#if !TCL_COMPILE_DEBUG
+	    } 
+#endif
+
+	    /*
+	     * Append the remaining characters.
+	     */
+
+	    for (; currPtr <= tosPtr; currPtr++) {
+		bytes = Tcl_GetStringFromObj(*currPtr, &length);
+		if (bytes != NULL) {
+		    memcpy((VOID *) p, (VOID *) bytes,
+			    (size_t) length);
+		    p += length;
+		}
+	    }
+	    *p = '\0';
 		
 	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	    NEXT_INST_V(2, opnd, 1);
@@ -3573,11 +3552,42 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_DEBUG
 		w2 = Tcl_LongAsWide(i2);
 #endif /* TCL_COMPILE_DEBUG */
-		wResult = w << i2;
+		wResult = w;
+		/*
+		 * Shift in steps when the shift gets large to prevent
+		 * annoying compiler/processor bugs. [Bug 868467]
+		 */
+		if (i2 >= 64) {
+		    wResult = Tcl_LongAsWide(0);
+		} else if (i2 > 60) {
+		    wResult = w << 30;
+		    wResult <<= 30;
+		    wResult <<= i2-60;
+		} else if (i2 > 30) {
+		    wResult = w << 30;
+		    wResult <<= i2-30;
+		} else {
+		    wResult = w << i2;
+		}
 		doWide = 1;
 		break;
 	    }
-	    iResult = i << i2;
+	    /*
+	     * Shift in steps when the shift gets large to prevent
+	     * annoying compiler/processor bugs. [Bug 868467]
+	     */
+	    if (i2 >= 64) {
+		iResult = 0;
+	    } else if (i2 > 60) {
+		iResult = i << 30;
+		iResult <<= 30;
+		iResult <<= i2-60;
+	    } else if (i2 > 30) {
+		iResult = i << 30;
+		iResult <<= i2-30;
+	    } else {
+		iResult = i << i2;
+	    }
 	    break;
 	case INST_RSHIFT:
 	    /*
@@ -3594,17 +3604,55 @@ TclExecuteByteCode(interp, codePtr)
 		w2 = Tcl_LongAsWide(i2);
 #endif /* TCL_COMPILE_DEBUG */
 		if (w < 0) {
-		    wResult = ~((~w) >> i2);
+		    wResult = ~w;
 		} else {
-		    wResult = w >> i2;
+		    wResult = w;
+		}
+		/*
+		 * Shift in steps when the shift gets large to prevent
+		 * annoying compiler/processor bugs. [Bug 868467]
+		 */
+		if (i2 >= 64) {
+		    wResult = Tcl_LongAsWide(0);
+		} else if (i2 > 60) {
+		    wResult >>= 30;
+		    wResult >>= 30;
+		    wResult >>= i2-60;
+		} else if (i2 > 30) {
+		    wResult >>= 30;
+		    wResult >>= i2-30;
+		} else {
+		    wResult >>= i2;
+		}
+		if (w < 0) {
+		    wResult = ~wResult;
 		}
 		doWide = 1;
 		break;
 	    }
 	    if (i < 0) {
-		iResult = ~((~i) >> i2);
+		iResult = ~i;
 	    } else {
-		iResult = i >> i2;
+		iResult = i;
+	    }
+	    /*
+	     * Shift in steps when the shift gets large to prevent
+	     * annoying compiler/processor bugs. [Bug 868467]
+	     */
+	    if (i2 >= 64) {
+		iResult = 0;
+	    } else if (i2 > 60) {
+		iResult >>= 30;
+		iResult >>= 30;
+		iResult >>= i2-60;
+	    } else if (i2 > 30) {
+		iResult >>= 30;
+		iResult >>= i2-30;
+	    } else {
+		iResult >>= i2;
+	    }
+	    if (i < 0) {
+		iResult = ~iResult;
 	    }
 	    break;
 	case INST_BITOR:
@@ -4783,7 +4831,6 @@ TclExecuteByteCode(interp, codePtr)
 		DECACHE_STACK_INFO();
 		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
 		CACHE_STACK_INFO();
-		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
 	}
 

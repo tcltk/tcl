@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.14 2004/09/08 23:02:35 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.15 2004/09/21 23:10:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3380,7 +3380,9 @@ Tcl_LogCommandInfo(interp, script, command, length)
     Tcl_AppendToObj(message, "\"", -1);
     TclAppendObjToErrorInfo(interp, message);
     Tcl_DecrRefCount(message);
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    if (!(iPtr->flags & ERROR_CODE_SET)) {
+	Tcl_SetErrorCode(interp, "NONE", NULL);
+    }
 }
 
 /*
@@ -3908,20 +3910,11 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    }
 	    if ((result != TCL_OK) && (result != TCL_ERROR) 
 		    && !allowExceptions) {
+		int numSrcBytes;
+		char *script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 		ProcessUnexpectedResult(interp, result);
 		result = TCL_ERROR;
-
-		/*
-		 * If an error was created here, record information about 
-		 * what was being executed when the error occurred.
-		 */
-
-		if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		    int numSrcBytes;
-		    char *script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
-		    iPtr->flags &= ~ERR_ALREADY_LOGGED;
-		}
+		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	    }
 	}
 	Tcl_DecrRefCount(objPtr);
@@ -4836,11 +4829,15 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	/*
 	 * If the errorCode variable wasn't set by the code that generated
 	 * the error, set it to "NONE".
+	 *
+	 * NOTE: The main check for setting the default value of
+	 * errorCode to NONE is in Tcl_LogCommandInfo.  This one
+	 * should go away, but currently it's taking care of setting
+	 * up errorCode after compile errors.
 	 */
 
 	if (!(iPtr->flags & ERROR_CODE_SET)) {
-	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL, 
-	            Tcl_NewStringObj("NONE", -1), TCL_GLOBAL_ONLY);
+	    Tcl_SetErrorCode(interp, "NONE", NULL);
 	}
     }
 

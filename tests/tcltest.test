@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.4.5 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.4.6 2004/09/21 23:10:29 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -822,6 +822,7 @@ test tcltest-12.2 {-loadfile load.tcl} {unixOrPc} {
 test tcltest-12.3 {loadScript} {
     -setup {
 	set old $::tcltest::loadScript
+	set ::tcltest::loadScript {}
     }
     -body {
 	set f1 [loadScript]
@@ -838,6 +839,7 @@ test tcltest-12.3 {loadScript} {
 test tcltest-12.4 {loadFile} {
     -setup {
 	set olds $::tcltest::loadScript
+	set ::tcltest::loadScript {}
 	set oldf $::tcltest::loadFile
 	set ::tcltest::loadFile {}
     }

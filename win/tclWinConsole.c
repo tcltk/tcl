@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11 2002/11/26 22:41:58 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.1 2004/09/21 23:10:30 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -737,7 +737,7 @@ ConsoleOutputProc(
 {
     ConsoleInfo *infoPtr = (ConsoleInfo *) instanceData;
     DWORD bytesWritten, timeout;
-    
+
     *errorCode = 0;
     timeout = (infoPtr->flags & CONSOLE_ASYNC) ? 0 : INFINITE;
     if (WaitForSingleObject(infoPtr->writable, timeout) == WAIT_TIMEOUT) {
@@ -749,7 +749,7 @@ ConsoleOutputProc(
 	errno = EAGAIN;
 	goto error;
     }
-    
+
     /*
      * Check for a background error on the last write.
      */
@@ -775,9 +775,9 @@ ConsoleOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc((unsigned int) toWrite);
+	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
 	SetEvent(infoPtr->startWriter);
@@ -788,18 +788,17 @@ ConsoleOutputProc(
 	 * This avoids an unnecessary copy.
 	 */
 
-	if (WriteFile(infoPtr->handle, (LPVOID) buf, (DWORD) toWrite,
-		&bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
+	if (WriteConsole(infoPtr->handle, buf, toWrite, &bytesWritten,
+		NULL) == FALSE) {
 	    TclWinConvertError(GetLastError());
 	    goto error;
 	}
     }
     return bytesWritten;
 
-    error:
+error:
     *errorCode = errno;
     return -1;
-
 }
 
 /*
@@ -1233,7 +1232,7 @@ ConsoleWriterThread(LPVOID arg)
 	 */
 
 	while (toWrite > 0) {
-	    if (WriteConsoleA(handle, buf, toWrite, &count, NULL) == FALSE) {
+	    if (WriteConsole(handle, buf, toWrite, &count, NULL) == FALSE) {
 		infoPtr->writeError = GetLastError();
 		break;
 	    } else {

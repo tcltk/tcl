@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.5 2004/09/08 23:03:20 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.6 2004/09/21 23:10:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -244,6 +244,50 @@ test namespace-9.7 {Tcl_Import, links are preserved if cmd is redefined} {
          [test_ns_export::cmd1 j k l]
 } {{cmd1: a b c} {cmd1: d e f} {} ::test_ns_export::cmd1 ::test_ns_export::cmd1 {new1: g h i} {new1: j k l}}
 
+test namespace-9.8 {Tcl_Import: Bug 1017299} -setup {
+    namespace eval one {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval two {
+	namespace export cmd
+	proc other args {}
+    }
+    namespace eval two \
+	    [list namespace import [namespace current]::one::cmd]
+    namespace eval three \
+	    [list namespace import [namespace current]::two::cmd]
+    namespace eval three {
+	rename cmd other
+	namespace export other
+    }
+} -body {
+    namespace eval two [list namespace import -force \
+	    [namespace current]::three::other]
+    namespace origin two::other
+} -cleanup {
+    namespace delete one two three
+} -match glob -result *::one::cmd
+
+test namespace-9.9 {Tcl_Import: Bug 1017299} -setup {
+    namespace eval one {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval two namespace export cmd
+    namespace eval two \
+	    [list namespace import [namespace current]::one::cmd]
+    namespace eval three namespace export cmd
+    namespace eval three \
+	    [list namespace import [namespace current]::two::cmd]
+} -body {
+    namespace eval two [list namespace import -force \
+	    [namespace current]::three::cmd]
+    namespace origin two::cmd
+} -cleanup {
+    namespace delete one two three
+} -returnCodes error -match glob -result {import pattern * would create a loop*}
+
 test namespace-10.1 {Tcl_ForgetImport, check for valid namespaces} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace forget xyzzy::*} msg] $msg
@@ -269,6 +313,120 @@ test namespace-10.3 {Tcl_ForgetImport, deletes matching imported cmds} {
         lappend l [catch {cmd1 777} msg] $msg
     }
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1}] ::test_ns_import::p 1 {invalid command name "cmd1"}]
+
+test namespace-10.4 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval unrelated {
+	proc cmd {} {}
+    }
+    namespace eval my \
+	    [list namespace import [namespace current]::origin::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::unrelated::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin unrelated my
+}
+
+test namespace-10.5 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval my \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval my rename cmd newname
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::origin::cmd]
+    my::newname
+} -cleanup {
+    namespace delete origin my
+} -returnCodes error -match glob -result *
+
+test namespace-10.6 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval my \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval your {}
+    namespace eval my \
+	    [list rename cmd [namespace current]::your::newname]
+} -body {
+    namespace eval your namespace forget newname
+    your::newname
+} -cleanup {
+    namespace delete origin my your
+} -returnCodes error -match glob -result *
+
+test namespace-10.7 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval link namespace export cmd
+    namespace eval link \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval link2 namespace export cmd
+    namespace eval link2 \
+	    [list namespace import [namespace current]::link::cmd]
+    namespace eval my \
+	    [list namespace import [namespace current]::link2::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::origin::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin link link2 my
+} -returnCodes error -match glob -result *
+
+test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval link namespace export cmd
+    namespace eval link \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval link2 namespace export cmd
+    namespace eval link2 \
+	    [list namespace import [namespace current]::link::cmd]
+    namespace eval my \
+	    [list namespace import [namespace current]::link2::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::link::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin link link2 my
+}
+
+test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval link namespace export cmd
+    namespace eval link \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval link2 namespace export cmd
+    namespace eval link2 \
+	    [list namespace import [namespace current]::link::cmd]
+    namespace eval my \
+	    [list namespace import [namespace current]::link2::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::link2::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin link link2 my
+} -returnCodes error -match glob -result *
 
 test namespace-11.1 {TclGetOriginalCommand, check if not imported cmd} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}
@@ -1720,6 +1878,17 @@ test namespace-48.3 {ensembles and namespace import: config} {
     namespace delete foo
     set result
 } {::foo 1 {"boo" is not an ensemble command} 1 {unknown command "spong"}}
+
+test namespace-49.1 {ensemble subcommand caching} -body {
+    namespace ens cre -command a -map {b {lappend result 1}}
+    namespace ens cre -command c -map {b {lappend result 2}}
+    proc x {} {a b; c b; a b; c b}
+    x
+} -result {1 2 1 2} -cleanup {
+    rename a {}
+    rename c {}
+    rename x {}
+}
 
 # cleanup
 catch {rename cmd1 {}}

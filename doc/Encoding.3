@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.11.4.4 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.11.4.5 2004/09/21 23:10:24 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -85,15 +85,15 @@ Pointer to an uninitialized or free \fBTcl_DString\fR in which the converted
 result will be stored.
 .AP int flags in
 Various flag bits OR-ed together.  
-TCL_ENCODING_START signifies that the
+\fBTCL_ENCODING_START\fR signifies that the
 source buffer is the first block in a (potentially multi-block) input
 stream, telling the conversion routine to reset to an initial state and
 perform any initialization that needs to occur before the first byte is
-converted.  TCL_ENCODING_END signifies that the source buffer is the last
+converted. \fBTCL_ENCODING_END\fR signifies that the source buffer is the last
 block in a (potentially multi-block) input stream, telling the conversion
 routine to perform any finalization that needs to occur after the last
 byte is converted and then to reset to an initial state.
-TCL_ENCODING_STOPONERROR signifies that the conversion routine should
+\fBTCL_ENCODING_STOPONERROR\fR signifies that the conversion routine should
 return immediately upon reading a source character that doesn't exist in
 the target encoding; otherwise a default fallback character will
 automatically be substituted.  
@@ -206,7 +206,7 @@ if the input stream has been damaged or if the input encoding method was
 misidentified.
 .IP \fBTCL_CONVERT_UNKNOWN\fR 29
 The source buffer contained a character that could not be represented in
-the target encoding and TCL_ENCODING_STOPONERROR was specified.  
+the target encoding and \fBTCL_ENCODING_STOPONERROR\fR was specified.  
 .RE
 .LP
 \fBTcl_UtfToExternalDString\fR converts a source buffer \fIsrc\fR from UTF-8 
@@ -271,11 +271,11 @@ was used to create the encoding.  The string returned by
 whenever the user passes a NULL value for the \fIencoding\fR argument to
 any of the other encoding functions.  If \fIname\fR is NULL, the system
 encoding is reset to the default system encoding, \fBbinary\fR.  If the
-name did not refer to any known or loadable encoding, TCL_ERROR is
+name did not refer to any known or loadable encoding, \fBTCL_ERROR\fR is
 returned and an error message is left in \fIinterp\fR.  Otherwise, this
 procedure increments the reference count of the new system encoding,
 decrements the reference count of the old system encoding, and returns
-TCL_OK.
+\fBTCL_OK\fR.
 .PP
 \fBTcl_GetEncodingNames\fR sets the \fIinterp\fR result to a list
 consisting of the names of all the encodings that are currently defined

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.7.4.1 2004/04/09 20:58:14 dgp Exp $
+ * CVS: $Id: tclIOGT.c,v 1.7.4.2 2004/09/21 23:10:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -130,7 +130,7 @@ static void		ResultAdd    _ANSI_ARGS_ ((ResultBuffer* r,
 
 static Tcl_ChannelType transformChannelType = {
     "transform",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,
+    TCL_CHANNEL_VERSION_3,
     TransformCloseProc,			/* Close proc. */
     TransformInputProc,			/* Input proc. */
     TransformOutputProc,		/* Output proc. */

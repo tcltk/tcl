@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Namespace.3,v 1.1.2.3 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: Namespace.3,v 1.1.2.4 2004/09/21 23:10:25 dgp Exp $
 '\" 
 '\" Note that some of these functions do not seem to belong, but they
 '\" were all introduced with the same TIP (#139)
@@ -81,11 +81,11 @@ term is not rooted at the global namespace.  NULL indicates the
 current namespace.
 .AP int flags in
 OR-ed combination of bits controlling how the search is to be
-performed.  The following flags are supported: TCL_GLOBAL_ONLY
+performed.  The following flags are supported: \fBTCL_GLOBAL_ONLY\fR
 (indicates that the search is always to be conducted relative to the
-global namespace), TCL_NAMESPACE_ONLY (just for \fBTcl_FindCommand\fR;
+global namespace), \fBTCL_NAMESPACE_ONLY\fR (just for \fBTcl_FindCommand\fR;
 indicates that the search is always to be conducted relative to the
-context namespace), and TCL_LEAVE_ERR_MSG (indicates that an error
+context namespace), and \fBTCL_LEAVE_ERR_MSG\fR (indicates that an error
 message should be left in the interpreter if the search fails.)
 .BE
 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.10.4.4 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.10.4.5 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -56,8 +56,8 @@ Address of hash table structure (for all procedures but
 previous call to \fBTcl_InitHashTable\fR).
 .AP int keyType in
 Kind of keys to use for new hash table.  Must be either
-TCL_STRING_KEYS, TCL_ONE_WORD_KEYS, TCL_CUSTOM_TYPE_KEYS,
-TCL_CUSTOM_PTR_KEYS, or an integer value greater than 1.
+\fBTCL_STRING_KEYS\fR, \fBTCL_ONE_WORD_KEYS\fR, \fBTCL_CUSTOM_TYPE_KEYS\fR,
+\fBTCL_CUSTOM_PTR_KEYS\fR, or an integer value greater than 1.
 .AP Tcl_HashKeyType *typePtr in
 Address of structure which defines the behaviour of the hash table.
 .AP "CONST char" *key in

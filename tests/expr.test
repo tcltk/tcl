@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.4 2004/09/08 23:03:18 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.5 2004/09/21 23:10:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -857,6 +857,17 @@ test epxr-23.30 {INST_EXPON: special cases} {expr {wide(-1)**wide(2)}} 1
 test epxr-23.31 {INST_EXPON: special cases} {expr {wide(-1)**wide(-1)}} -1
 test epxr-23.32 {INST_EXPON: special cases} {expr {wide(1)**wide(1234567)}} 1
 test epxr-23.33 {INST_EXPON: special cases} {expr {wide(2)**wide(-2)}} 0
+
+# Some compilers get this wrong; ensure that we work around it correctly
+test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
+test expr-24.2 {expr edge cases; shifting} {expr int(5)>>63} 0
+test expr-24.3 {expr edge cases; shifting} {expr wide(5)>>32} 0
+test expr-24.4 {expr edge cases; shifting} {expr wide(5)>>63} 0
+test expr-24.5 {expr edge cases; shifting} nonPortable {expr int(5)<<32} 0
+test expr-24.6 {expr edge cases; shifting} nonPortable {expr int(5)<<63} 0
+test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<32} 21474836480
+test expr-24.8 {expr edge cases; shifting} {expr wide(10)<<63} 0
+test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
 
 # cleanup
 if {[info exists a]} {

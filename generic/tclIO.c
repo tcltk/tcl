@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.6 2004/09/08 23:02:42 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.7 2004/09/21 23:10:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5565,15 +5565,15 @@ Tcl_Seek(chan, offset, mode)
 		    offset, mode, &result);
 	} else if (offset < Tcl_LongAsWide(LONG_MIN) ||
 		offset > Tcl_LongAsWide(LONG_MAX)) {
-	    Tcl_SetErrno(EOVERFLOW);
+	    result = EOVERFLOW;
 	    curPos = Tcl_LongAsWide(-1);
 	} else {
 	    curPos = Tcl_LongAsWide((chanPtr->typePtr->seekProc) (
 		    chanPtr->instanceData, Tcl_WideAsLong(offset), mode,
 		    &result));
-	    if (curPos == Tcl_LongAsWide(-1)) {
-		Tcl_SetErrno(result);
-	    }
+	}
+	if (curPos == Tcl_LongAsWide(-1)) {
+	    Tcl_SetErrno(result);
 	}
     }
     

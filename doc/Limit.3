@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Limit.3,v 1.2.2.1 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: Limit.3,v 1.2.2.2 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_LimitCheck 3 8.5 Tcl "Tcl Library Procedures"
@@ -66,7 +66,7 @@ Interpreter that the limit being managed applies to or that will have
 its limits checked.
 .AP int type in
 The type of limit that the operation refers to.  Must be either
-TCL_LIMIT_COMMANDS or TCL_LIMIT_TIME.
+\fBTCL_LIMIT_COMMANDS\fR or \fBTCL_LIMIT_TIME\fR.
 .AP int commandLimit in
 The maximum number of commands (as reported by \fBinfo cmdcount\fR)
 that may be executed in the interpreter.
@@ -123,8 +123,8 @@ interpreter (typically a master interpreter) to handle the error.
 .SH "LIMIT CHECKING API"
 .PP
 To check the resource limits for an interpreter, call
-\fBTcl_LimitCheck\fR, which returns TCL_OK if the limit was not
-exceeded (after processing callbacks) and TCL_ERROR if the limit was
+\fBTcl_LimitCheck\fR, which returns \fBTCL_OK\fR if the limit was not
+exceeded (after processing callbacks) and \fBTCL_ERROR\fR if the limit was
 exceeded (in which case an error message is also placed in the
 interpreter result).  That function should only be called when
 \fBTcl_LimitReady\fR returns non-zero so that granularity policy is
@@ -175,8 +175,8 @@ and the \fIinterp\fR is the interpreter that had its limit exceeded.
 .PP
 The \fIdeleteProc\fR argument to \fBTcl_LimitAddHandler\fR is a
 function to call to delete the \fIclientData\fR value.  It may be
-TCL_STATIC or NULL if no deletion action is necessary, or TCL_DYNAMIC
-if all that is necessary is to free the structure with
+\fBTCL_STATIC\fR or NULL if no deletion action is necessary, or
+\fBTCL_DYNAMIC\fR if all that is necessary is to free the structure with
 \fBTcl_Free\fR.  Otherwise, it should refer to a function with the
 following prototype:
 .PP
@@ -190,7 +190,7 @@ handler removed will be the first one found (out of the handlers added
 with \fBTcl_LimitAddHandler\fR) with exactly matching \fItype\fR,
 \fIhandlerProc\fR and \fIclientData\fR arguments.  This function
 always invokes the \fIdeleteProc\fR on the \fIclientData\fR (unless
-the \fIdeleteProc\fR was NULL or TCL_STATIC).
+the \fIdeleteProc\fR was NULL or \fBTCL_STATIC\fR).
 
 .SH KEYWORDS
 interpreter, resource, limit, commands, time, callback

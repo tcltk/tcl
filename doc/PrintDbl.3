@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: PrintDbl.3,v 1.2.42.1 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: PrintDbl.3,v 1.2.42.2 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_PrintDouble 3 8.0 Tcl "Tcl Library Procedures"
@@ -30,7 +30,7 @@ that is now shared by all interpreters.
 Floating-point value to be converted.
 .AP char *dst out
 Where to store the string representing \fIvalue\fR.  Must have at
-least TCL_DOUBLE_SPACE characters of storage.
+least \fBTCL_DOUBLE_SPACE\fR characters of storage.
 .BE
 
 .SH DESCRIPTION

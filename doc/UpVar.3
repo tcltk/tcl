@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: UpVar.3,v 1.7 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: UpVar.3,v 1.7.4.1 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_UpVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -39,7 +39,7 @@ variable so that references to \fIdestName\fR
 refer to the other variable.  Must not currently exist except as
 an upvar-ed variable.
 .AP int flags in
-Either TCL_GLOBAL_ONLY or 0;  if non-zero, then \fIdestName\fR is
+Either \fBTCL_GLOBAL_ONLY\fR or 0;  if non-zero, then \fIdestName\fR is
 a global variable;  otherwise it is a local to the current procedure
 (or global if no procedure is active).
 .AP "CONST char" *name1 in
@@ -63,7 +63,7 @@ element name (by calling \fBTcl_UpVar2\fR).
 The destination variable name is specified in a single string;  it
 may not be an array element.
 .PP
-Both procedures return either TCL_OK or TCL_ERROR, and they
+Both procedures return either \fBTCL_OK\fR or \fBTCL_ERROR\fR, and they
 leave an error message in the interpreter's result if an error occurs.
 .PP
 As with the \fBupvar\fR command, the source variable need not exist;

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.8 2004/09/08 23:03:18 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.9 2004/09/21 23:10:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -662,14 +662,21 @@ test interp-17.4 {alias loop prevention} {
     interp create x
     interp alias x b x a
     list [catch {x eval rename b a} msg] $msg
-} {1 {cannot define or rename alias "b": would create a loop}}
+} {1 {cannot define or rename alias "a": would create a loop}}
 test interp-17.5 {alias loop prevention} {
     catch {interp delete x}
     interp create x
     x alias z l1
     interp alias {} l2 x z
     list [catch {rename l2 l1} msg] $msg
-} {1 {cannot define or rename alias "l2": would create a loop}}
+} {1 {cannot define or rename alias "l1": would create a loop}}
+test interp-17.6 {alias loop prevention} {
+    catch {interp delete x}
+    interp create x
+    interp alias x a x b
+    x eval rename a c
+    list [catch {x eval rename c b} msg] $msg
+} {1 {cannot define or rename alias "b": would create a loop}}
 
 #
 # Test robustness of Tcl_DeleteInterp when applied to a slave interpreter.
@@ -788,7 +795,7 @@ test interp-19.3 {alias deletion} {
     catch {interp eval a foo} msg
     interp delete a
     set msg
-} {invalid command name "zop"}
+} {invalid command name "bar"}
 test interp-19.4 {alias deletion} {
     catch {interp delete a}
     interp create a
@@ -817,7 +824,7 @@ test interp-19.6 {alias deletion} {
     set s [interp aliases a]
     interp delete a
     set s
-} foo
+} {::foo foo}
 test interp-19.7 {alias deletion, renaming} {
     catch {interp delete a}
     interp create a

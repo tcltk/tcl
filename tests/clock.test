@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.5 2004/09/08 23:03:16 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.6 2004/09/21 23:10:28 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35261,6 +35261,46 @@ test clock-41.1 {regression test - format group %k when hour is 0 } {
     clock format 0 -format %k -gmt true
 } { 0}
 
+test clock-42.1 {regression test - %z in :localtime when west of Greenwich } \
+    -setup {
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	}
+	set env(TZ) EST5
+    } \
+    -body {
+	clock format 0 -format %z -timezone :localtime
+    } \
+    -cleanup {
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
+	    unset oldTZ
+	} else {
+	    unset env(TZ)
+	}
+    } \
+    -result {-0500}
+
+test clock-43.1 {regression test - mktime returning -1} \
+    -setup {
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	}
+	set env(TZ) UTC0
+    } \
+    -body {
+	clock scan 1969-12-31T23:59:59 -format %Y-%m-%dT%T -timezone :localtime
+    } \
+    -cleanup {
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
+	    unset oldTZ
+	} else {
+	    unset env(TZ)
+	}
+    } \
+    -result {-1}
+    
 # cleanup
 
 namespace delete ::testClock

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AllowExc.3,v 1.3 2002/03/29 21:01:11 dgp Exp $
+'\" RCS: @(#) $Id: AllowExc.3,v 1.3.4.1 2004/09/21 23:10:24 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AllowExceptions 3 7.4 Tcl "Tcl Library Procedures"
@@ -27,8 +27,8 @@ Interpreter in which script will be evaluated.
 .PP
 If a script is evaluated at top-level (i.e. no other scripts are
 pending evaluation when the script is invoked), and if the script
-terminates with a completion code other than TCL_OK, TCL_ERROR
-or TCL_RETURN, then Tcl normally converts this into a TCL_ERROR
+terminates with a completion code other than \fBTCL_OK\fR, \fBTCL_ERROR\fR
+or \fBTCL_RETURN\fR, then Tcl normally converts this into a \fBTCL_ERROR\fR
 return with an appropriate message.  The particular script
 evaluation procedures of Tcl that act in the manner are
 \fBTcl_EvalObjEx\fR, \fBTcl_EvalObjv\fR, \fBTcl_Eval\fR, \fBTcl_EvalEx\fR,
@@ -40,7 +40,7 @@ calling one of those a procedures, then arbitrary completion
 codes are permitted from the script, and they are returned without
 modification.
 This is useful in cases where the caller can deal with exceptions
-such as TCL_BREAK or TCL_CONTINUE in a meaningful way.
+such as \fBTCL_BREAK\fR or \fBTCL_CONTINUE\fR in a meaningful way.
 
 .SH KEYWORDS
 continue, break, exception, interpreter

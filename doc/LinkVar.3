@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: LinkVar.3,v 1.6.4.1 2003/08/07 21:35:58 dgp Exp $
+'\" RCS: @(#) $Id: LinkVar.3,v 1.6.4.2 2004/09/21 23:10:25 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_LinkVar 3 7.5 Tcl "Tcl Library Procedures"
@@ -32,12 +32,12 @@ Name of global variable.
 .AP char *addr in
 Address of C variable that is to be linked to \fIvarName\fR.
 .AP int type in
-Type of C variable.  Must be one of TCL_LINK_INT, TCL_LINK_DOUBLE,
+Type of C variable.  Must be one of \fBTCL_LINK_INT\fR, \fBTCL_LINK_DOUBLE\fR,
 .VS 8.4
-TCL_LINK_WIDE_INT,
+\fBTCL_LINK_WIDE_INT\fR,
 .VE 8.4
-TCL_LINK_BOOLEAN, or TCL_LINK_STRING, optionally OR'ed with
-TCL_LINK_READ_ONLY to make Tcl variable read-only.
+\fBTCL_LINK_BOOLEAN\fR, or \fBTCL_LINK_STRING\fR, optionally OR'ed with
+\fBTCL_LINK_READ_ONLY\fR to make Tcl variable read-only.
 .BE
 
 .SH DESCRIPTION
@@ -48,14 +48,14 @@ given by \fIaddr\fR.
 Whenever the Tcl variable is read the value of the C variable will
 be returned, and whenever the Tcl variable is written the C
 variable will be updated to have the same value.
-\fBTcl_LinkVar\fR normally returns TCL_OK;  if an error occurs
+\fBTcl_LinkVar\fR normally returns \fBTCL_OK\fR;  if an error occurs
 while setting up the link (e.g. because \fIvarName\fR is the
-name of array) then TCL_ERROR is returned and the interpreter's result
+name of array) then \fBTCL_ERROR\fR is returned and the interpreter's result
 contains an error message.
 .PP
 The \fItype\fR argument specifies the type of the C variable,
 and must have one of the following values, optionally OR'ed with
-TCL_LINK_READ_ONLY:
+\fBTCL_LINK_READ_ONLY\fR:
 .TP
 \fBTCL_LINK_INT\fR
 The C variable is of type \fBint\fR.
@@ -104,7 +104,7 @@ new value.
 If the C variable contains a NULL pointer then the Tcl variable
 will read as ``NULL''.
 .PP
-If the TCL_LINK_READ_ONLY flag is present in \fItype\fR then the
+If the \fBTCL_LINK_READ_ONLY\fR flag is present in \fItype\fR then the
 variable will be read-only from Tcl, so that its value can only be
 changed by modifying the C variable.
 Attempts to write the variable from Tcl will be rejected with errors.

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unload.n,v 1.2.2.3 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: unload.n,v 1.2.2.4 2004/09/21 23:10:26 dgp Exp $
 '\" 
 .so man.macros
 .TH unload n 8.5 Tcl "Tcl Built-In Commands"
@@ -80,7 +80,7 @@ instead of \fIpkg\fB_Unload\fR.
 If \fBunload\fR determines that a library is not unloadable (or unload
 functionality has been disabled during compilation), an error will be returned.
 If the library is unloadable, then \fBunload\fR will call the unload
-procedure. If the unload procedure returns TCL_OK, \fBunload\fR will proceed
+procedure. If the unload procedure returns \fBTCL_OK\fR, \fBunload\fR will proceed
 and decrease the proper reference count (depending on the target interpreter
 type). When both reference counts have reached 0, the library will be
 detached from the process.

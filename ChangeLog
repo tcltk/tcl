@@ -1,3 +1,162 @@
+2004-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Reworked management of the interp
+	* generic/tclCompile.c:	flag ERR_ALREADY_LOGGED, to reduce
+	* generic/tclExecute.c: its exposure.  Still left several
+	* generic/tclNamesp.c:	references that are just too nice
+	on performace to do away with.  These changes also resolve
+	an inconsistency in the ::errorInfo values produced by
+	[namespace eval x error foo bar] and
+	[namespace eval x {error foo bar}].
+
+	* generic/tclExecute.c (TclCompEvalObj):	Simplified
+	the TclCompEvalObj routine.  Much housekeeping now reliably
+	happens elsewhere.  [Patch 1031949]
+
+2004-09-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/interp.n: Tighten up wording on how [interp eval] and
+	[interp invokehidden] operate w.r.t. stack frames. [Bug 926590]
+
+2004-09-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/error.test (error-6.2,3):	Added more tests to verify
+	::errorCode setting by/after a [catch].
+
+2004-09-19  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c: removed outdated comment [Bug 1029518].
+	
+2004-09-18  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclAppInit.c: Dde package can load into a safe interp.
+	Claim this fact for the Tcl_StaticPackage() call when the shell
+	is built with the TCL_USE_STATIC_PACKAGES option.
+
+2004-09-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TEBC-INST_LSHIFT,INST_RSHIFT): Ensure that
+	large shifts end up shifting correctly. [Bug 868467]
+
+	* doc/FileSystem.3, doc/OpenFileChnl.3: More documentation fixes
+	from Mikhail Kolesnitchenko. [Patch 1022527]
+	* doc/*: Standardize highlighting of symbols defined in tcl.h
+
+2004-09-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_AddObjErrorInfo, Tcl_LogCommandInfo):
+	* generic/tclCmdAH.c ([catch], [error]):
+	* generic/tclCmdMZ.c ([return]):
+	* generic/tclProc.c (TclUpdateReturnInfo):
+	* generic/tclResult.c (Tcl_SetErrorCodeVA, Tcl_SetObjErrorCode)
+	(TclTransferResult): 	Refactored so that all errorCode setting
+	flows through Tcl_SetObjErrorCode().  This greatly reduces the
+	number of different places in the code that need to know details
+	about an internal bitflag field of the Interp struct.  Also
+	places errorCode setting in one place for easier future mods.
+
+2004-09-17  Kevin B.Kenny  <kennykb@acm.org>
+
+	* generic/tclDate.c:    Revised tclGetDate.y to use bison instead
+	* generic/tclGetDate.y: of yacc to build the parser, eliminating
+	* generic/tclInt.h:     all the complicated hackery involving
+	* unix/Makefile.in:     'sed' postprocessing.  Rebuilt the parser.
+	
+2004-09-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (ClockOldscanObjCmd): Silenced a compiler
+	warning (long passed as a param where unsigend long was
+	expected).  'Unsigned long' is wrong, but the fix is really
+	to change the signature of TclGetDate to return a structure of
+	its 'yy' variables and then do the remaining work inside
+	clock.tcl. But, as I said on 2004-09-08, that's a job for
+	another day.  [Bug 1027993]
+	
+2004-09-10  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/interp.n:
+	* generic/tclInterp.c (TclPreventAliasLoop, AliasCreate):
+	* tests/interp.test (17.4-6, 19.3-4): fixing problems with
+	renaming of aliases [Bugs 707104 1026493]. Fix designed by dgp. 
+
+2004-09-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (NsEnsembleImplementationCmd): Add token
+	field to internal rep of EnsembleCmdRep structure so that we can
+	check it to see if the subcommand object is really being used with
+	the same ensemble. [Bug 1026903]
+
+2004-09-11  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (TclMktimeObjCmd): Corrected a bad check
+	for error return from 'mktime'.
+	* generic/tclObj.c (Tcl_GetIntFromObj): Corrected a problem where
+	demoting a wide to an int failed on a big-endian machine.
+	[Bug 1026125].
+	* tests/clock.test (clock-43.1): Added regression test for
+	error return from 'mktime'.
+
+2004-09-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_CONCAT1): fix for [Bug 1025834];
+	avoid unnecessary string copies.
+
+2004-09-10  David Gravereaux <davyrgvy@pobox.com>
+
+	* tests/tcltest.test: tcltest-12.3-4 needed to have
+	::tcltest::loadScript set to empty in their -setup
+
+2004-09-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclObj.c (SetIntOrWideFromAny): Rewritten integral value
+	parsing code so that values do not flip so easily between numeric
+	representations. Thanks to KBK for this! [Bug 868489]
+
+	* generic/tclIO.c (Tcl_Seek): Make sure wide seeks do not fail to
+	set ::errorCode on error. [Bug 1025359]
+
+2004-09-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tcl.h: Micro formatting fixes.
+	* generic/tclIOGT.c: Channel version fixed, must be 3, to have
+	  wideseekProc. Thanks to David Graveraux <davygrvy@pobox.com>.
+
+2004-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamespace.c (TclGetNamespaceForQualName):	Resolved
+	longstanding inconsistency in the treatment of the TCL_NAMESPACE_ONLY
+	flag revealed by testing the 2004-09-09 commits against Itcl.
+	TCL_NAMESPACE_ONLY now acts as specified in the pre-function
+	comment, forcing resolution in the passed in context namespace.
+	It has been incorrectly forcing resolution in the interp's current
+	namespace.
+
+2004-09-10  Kevin Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Fixed a bug where %z always put a plus
+	sign on the time zone in :localtime.
+	* tests/clock.test: Added test case for the above bug.
+	
+2004-09-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_CONCAT1): added a peephole
+	optimisation for concatting an empty string. This enables
+	replacing the idiom 'K $x [set x {}]' by '$x[set x {}]' for
+	fastest execution.
+
+2004-09-09  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinConsole.c: Calls to WriteFile and WriteConsoleA
+	changed to WriteConsole for simplicity.
+
+2004-09-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c (Tcl_ForgetImport):	Corrected faulty
+	* tests/namespace.test:	logic that relied exclusively on string
+	matching and failed in the presence of [rename]s.  [Bug 560297]
+	Also corrected faulty prevention of [namespace import] cycles.
+	[Bug 1017299]
+
 2004-09-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_CreateInterp):	Removed obsolete
