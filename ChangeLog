@@ -3,6 +3,7 @@
 	* generic/tclNamesp.c (FindEnsemble): Factor out the code to
 	convert a command name into an ensemble configuration and add
 	support for ignoring [namespace import] link chains. [Bug 1017022]
+	(NamespaceWhichCmd): Rework to use newer option parsing API.
 
 2004-08-27  Daniel Steffen  <das@users.sourceforge.net>
 
