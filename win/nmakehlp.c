@@ -9,7 +9,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.2 2003/12/23 02:19:13 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.3 2003/12/23 03:48:01 davygrvy Exp $
  * ----------------------------------------------------------------------------
  */
 #include <windows.h>
@@ -318,7 +318,7 @@ int
 GrepForDefine (const char *file, const char *string)
 {
     FILE *f;
-    char s1[50], s2[50], s3[50];
+    char s1[250], s2[50], s3[50];
     int r = 0;
     double d1;
 
