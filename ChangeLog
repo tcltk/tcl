@@ -1,5 +1,9 @@
 2003-03-12  Don Porter  <dgp@users.sourceforge.net>
 
+        * generic/tcl.h:        Removed TCL_PREFIX_IDENT and TCL_DEBUG_IDENT
+        * win/tclWinPipe.c:     from tcl.h -- they are not part of Tcl's
+        public interface.  Put them in win/tclWinPipe.c where they are used.
+
         * generic/tclInterp.c (Tcl_InterpObjCmd):       Corrected and added
         * tests/interp.test (interp-2.13):              test for option
         parsing beyond objc for [interp create --].  Thanks to Marco Maggi.
