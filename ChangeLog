@@ -1,3 +1,12 @@
+2000-07-21  Mo DeJong  <mdejong@redhat.com>
+
+	* win/configure.in: Define ${prefix} and
+	${exec_prefix} like unix/configure.in.
+	Fix or add TCL_SRC_DIR, TCL_STUB_LIB_FILE,
+	TCL_STUB_LIB_FLAG, TCL_BUILD_STUB_LIB_SPEC,
+	TCL_STUB_LIB_SPEC, TCL_BUILD_STUB_LIB_PATH,
+	TCL_STUB_LIB_PATH.
+
 2000-07-20  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclStubInit.c: 
