@@ -7,11 +7,12 @@
  *
  * Copyright (c) 1990-1994 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2004 by Zoran Vasiljevic.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.38 2004/06/22 13:08:57 vasiljevic Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.39 2004/06/22 19:41:25 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1262,6 +1263,8 @@ NewThreadProc(ClientData clientData)
     TclInitNotifier();
 
     (*threadProc)(threadClientData);
+
+    TCL_THREAD_CREATE_RETURN;
 }
 #endif
 /*
