@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.10 2002/04/01 20:44:36 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.11 2002/10/09 23:57:25 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -65,6 +65,10 @@ typedef struct TimeInfo {
 				 * trigger the requesting thread
 				 * when the clock calibration procedure
 				 * is initialized for the first time */
+    HANDLE exitEvent; 		/* Event to signal out of an exit handler
+				 * to tell the calibration loop to
+				 * terminate */
+
 
     /*
      * The following values are used for calculating virtual time.
@@ -95,7 +99,18 @@ typedef struct TimeInfo {
 } TimeInfo;
 
 static TimeInfo timeInfo = {
-    NULL, 0, 0, NULL, NULL, 0, 0, 0, 0, 0
+    { NULL }, 
+    0, 
+    0, 
+    (HANDLE) NULL, 
+    (HANDLE) NULL, 
+    (HANDLE) NULL, 
+    0, 
+    0, 
+    0, 
+    0, 
+    0,
+    0
 };
 
 CONST static FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
@@ -105,9 +120,8 @@ CONST static FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
  */
 
 static struct tm *	ComputeGMT _ANSI_ARGS_((const time_t *tp));
-
+static void		StopCalibration _ANSI_ARGS_(( ClientData ));
 static DWORD WINAPI     CalibrationThread _ANSI_ARGS_(( LPVOID arg ));
-
 static void 		UpdateTimeEachSecond _ANSI_ARGS_(( void ));
 
 /*
@@ -288,6 +302,7 @@ Tcl_GetTime(timePtr)
 		DWORD id;
 		InitializeCriticalSection( &timeInfo.cs );
 		timeInfo.readyEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
+		timeInfo.exitEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
 		timeInfo.calibrationThread = CreateThread( NULL,
 							   8192,
 							   CalibrationThread,
@@ -296,8 +311,16 @@ Tcl_GetTime(timePtr)
 							   &id );
 		SetThreadPriority( timeInfo.calibrationThread,
 				   THREAD_PRIORITY_HIGHEST );
+
+		/*
+		 * Wait for the thread just launched to start running,
+		 * and create an exit handler that kills it so that it
+		 * doesn't outlive unloading tclXX.dll
+		 */
+
 		WaitForSingleObject( timeInfo.readyEvent, INFINITE );
 		CloseHandle( timeInfo.readyEvent );
+		Tcl_CreateExitHandler( StopCalibration, (ClientData) NULL );
 	    }
 	    timeInfo.initialized = TRUE;
 	}
@@ -351,6 +374,34 @@ Tcl_GetTime(timePtr)
 	timePtr->sec = t.time;
 	timePtr->usec = t.millitm * 1000;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StopCalibration --
+ *
+ *	Turns off the calibration thread in preparation for exiting the
+ *	process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the 'exitEvent' event in the 'timeInfo' structure to ask
+ *	the thread in question to exit, and waits for it to do so.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StopCalibration( ClientData unused )
+				/* Client data is unused */
+{
+    SetEvent( timeInfo.exitEvent );
+    WaitForSingleObject( timeInfo.calibrationThread, INFINITE );
+    CloseHandle( timeInfo.exitEvent );
+    CloseHandle( timeInfo.calibrationThread );
 }
 
 /*
@@ -675,6 +726,7 @@ static DWORD WINAPI
 CalibrationThread( LPVOID arg )
 {
     FILETIME curFileTime;
+    DWORD waitResult;
 
     /* Get initial system time and performance counter */
 
@@ -699,7 +751,13 @@ CalibrationThread( LPVOID arg )
     /* Run the calibration once a second */
 
     for ( ; ; ) {
-	Sleep( 1000 );
+
+	/* If the exitEvent is set, break out of the loop. */
+
+	waitResult = WaitForSingleObjectEx(timeInfo.exitEvent, 1000, FALSE);
+	if ( waitResult == WAIT_OBJECT_0 ) {
+	    break;
+	}
 	UpdateTimeEachSecond();
     }
 
