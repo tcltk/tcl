@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.62 2003/06/26 08:43:15 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.63 2003/09/05 21:52:12 dgp Exp $
 
 library tcl
 
@@ -719,6 +719,12 @@ declare 177 generic {
 	    CONST char *operation, CONST char *reason)
 }
 
+declare 178 generic {
+    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, CONST char* encodingName)
+}
+declare 179 generic {
+    Tcl_Obj *Tcl_GetStartupScript(CONST char **encodingNamePtr)
+}
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are
