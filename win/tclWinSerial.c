@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.7 1999/08/12 17:38:49 redman Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.8 1999/10/05 22:47:05 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1008,7 +1008,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
 	return Tcl_BadChannelOption(interp, optionName,
 		"mode pollinterval");
     }
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 /*
