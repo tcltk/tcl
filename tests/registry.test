@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.8 1999/07/01 17:36:19 jenn Exp $
+# RCS: @(#) $Id: registry.test,v 1.9 1999/07/08 03:30:12 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -528,16 +528,16 @@ test registry-9.2 {ParseKeyName: bad keys} {pcOnly} {
 } {1 {bad key "\foobar": must start with a valid root}}
 test registry-9.3 {ParseKeyName: bad keys} {pcOnly} {
     list [catch {registry values \\\\} msg] $msg
-} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
+} {1 {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.4 {ParseKeyName: bad keys} {pcOnly} {
     list [catch {registry values \\\\\\} msg] $msg
-} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
+} {1 {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.5 {ParseKeyName: bad keys} {pcOnly english} {
     list [catch {registry values \\\\\\HKEY_CLASSES_ROOT} msg] $msg
 } {1 {unable to open key: The network address is invalid.}}
 test registry-9.6 {ParseKeyName: bad keys} {pcOnly} {
     list [catch {registry values \\\\gaspode} msg] $msg
-} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
+} {1 {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.7 {ParseKeyName: bad keys} {pcOnly} {
     list [catch {registry values foobar} msg] $msg
 } {1 {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
