@@ -1,3 +1,11 @@
+2004-11-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c (TclFSEpochOk):	There were two code paths
+	via which the thread copy of filesystemEpoch could be synched with
+	the master copy, but only one kept the filesystem list cache up
+	to date.  Fix routes everything through  a single code path.
+	[Bug 1035775].
+
 2004-11-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Stop architecture flags to 'ld'
