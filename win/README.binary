@@ -1,6 +1,6 @@
-Tcl/Tk 8.2b2 for Windows, Binary Distribution
+Tcl/Tk 8.2 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.10 1999/08/10 23:16:27 redman Exp $ 
+RCS: @(#) $Id: README.binary,v 1.11 1999/08/21 19:41:30 hobbs Exp $ 
 
 1. Introduction
 --------------- 
@@ -127,7 +127,7 @@ resource center using the forms labeled "Add a Resource".
 10. Mailing lists
 ----------------
 
-A couple of  Mailing List have been set up to discuss Macintosh or
+A couple of mailing lists have been set up to discuss Macintosh or
 Windows related Tcl issues.  In order to use these Mailing Lists you
 must have access to the internet.  To subscribe send a message to:
 	
@@ -139,7 +139,7 @@ In the body of the message (the subject will be ignored) put:
 	subscribe mactcl Joe Blow
 	
 Replacing Joe Blow with your real name, of course.  (Use wintcl
-instead of mactcl if your interested in the Windows list.)  If you
+instead of mactcl if you're interested in the Windows list.)  If you
 would just like to receive more information about the list without
 subscribing put the line:
 
