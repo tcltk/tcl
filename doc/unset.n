@@ -1,20 +1,21 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Ajuba Solutions.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unset.n,v 1.2 1998/09/14 18:39:56 stanton Exp $
+'\" RCS: @(#) $Id: unset.n,v 1.3 2000/06/01 00:33:27 hobbs Exp $
 '\" 
 .so man.macros
-.TH unset n "" Tcl "Tcl Built-In Commands"
+.TH unset n 8.4 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 unset \- Delete variables
 .SH SYNOPSIS
-\fBunset \fIname \fR?\fIname name ...\fR?
+\fBunset \fR?\fI\-\-\fR? ?\fI\-nocomplain\fR? ?\fIname name name ...\fR?
 .BE
 
 .SH DESCRIPTION
@@ -27,8 +28,17 @@ element is removed without affecting the rest of the array.
 If a \fIname\fR consists of an array name with no parenthesized
 index, then the entire array is deleted.
 The \fBunset\fR command returns an empty string as result.
-An error occurs if any of the variables doesn't exist, and any variables
-after the non-existent one are not deleted.
+.VS 8.4
+If \fI\-nocomplain\fR is specified as the first argument, any possible
+errors are suppressed.  The option may not be abbreviated, in order to
+disambiguate it from possible variable names.  \fI\-\-\fR may be specified
+prior to \fI\-nocomplain\fR to prevent it from being interpreted as an
+option.
+.VE 8.4
+If an error occurs, any variables after the named one causing the error not
+deleted.  An error can occur when the named variable doesn't exist, or the
+name refers to an array element but the variable is a scalar, or the name
+refers to a variable in a non-existent namespace.
 
 .SH KEYWORDS
 remove, variable

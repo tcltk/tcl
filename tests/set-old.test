@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.10 2000/05/31 15:03:35 ericm Exp $
+# RCS: @(#) $Id: set-old.test,v 1.11 2000/06/01 00:33:27 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -204,7 +204,7 @@ test set-old-7.1 {unset command} {
 } {0 0 0 1}
 test set-old-7.2 {unset command} {
     list [catch {unset} msg] $msg
-} {1 {wrong # args: should be "unset varName ?varName ...?"}}
+} {1 {wrong # args: should be "unset ?--? ?-nocomplain? ?varName varName ...?"}}
 test set-old-7.3 {unset command} {
     catch {unset a}
     list [catch {unset a} msg] $msg
@@ -266,6 +266,45 @@ test set-old-7.11 {unset command} {
     unset a
     list [catch {set a(14)} msg] $msg [catch {array names a} msg2] $msg2
 } {1 {can't read "a(14)": no such variable} 0 {}}
+test set-old-7.12 {unset command, -nocomplain} {
+    catch {unset a}
+    list [info exists a] [catch {unset -nocomplain a}] [info exists a]
+} {0 0 0}
+test set-old-7.13 {unset command, -nocomplain} {
+    set -nocomplain abc
+    list [info exists -nocomplain] [catch {unset -nocomplain}] \
+	    [info exists -nocomplain] [catch {unset -- -nocomplain}] \
+	    [info exists -nocomplain]
+} {1 0 1 0 0}
+test set-old-7.14 {unset command, --} {
+    set -- abc
+    list [info exists --] [catch {unset --}] \
+	    [info exists --] [catch {unset -- --}] \
+	    [info exists --]
+} {1 0 1 0 0}
+test set-old-7.15 {unset command, -nocomplain} {
+    set -nocomplain abc
+    set -- abc
+    list [info exists -nocomplain] [catch {unset -- -nocomplain}] \
+	    [info exists -nocomplain] [info exists --] \
+	    [catch {unset -- -nocomplain}] [info exists --] \
+	    [catch {unset -- --}] [info exists --]
+} {1 0 0 1 1 1 0 0}
+test set-old-7.16 {unset command, -nocomplain} {
+    set -nocomplain abc
+    set var abc
+    list [info exists bogus] [catch {unset -nocomplain bogus var bogus}] \
+	    [info exists -nocomplain] [info exists var] \
+	    [catch {unset -nocomplain -nocomplain}] [info exists -nocomplain]
+} {0 0 1 0 0 0}
+test set-old-7.17 {unset command, -nocomplain (no abbreviation)} {
+    set -nocomp abc
+    list [info exists -nocomp] [catch {unset -nocomp}] [info exists -nocomp]
+} {1 0 0}
+test set-old-7.18 {unset command, -nocomplain (no abbreviation)} {
+    catch {unset -nocomp}
+    list [info exists -nocomp] [catch {unset -nocomp}]
+} {0 1}
 
 # Array command.
 

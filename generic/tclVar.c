@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.18 2000/05/31 15:03:34 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.19 2000/06/01 00:33:27 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2589,18 +2589,34 @@ Tcl_UnsetObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    register int i;
+    register int i, flags = TCL_LEAVE_ERR_MSG;
     register char *name;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName ?varName ...?");
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"?--? ?-nocomplain? ?varName varName ...?");
 	return TCL_ERROR;
     }
-    
-    for (i = 1;  i < objc;  i++) {
+
+    /*
+     * Very simple, restrictive argument parsing.  The only options are
+     * -- and -nocomplain (which must come first to be an option).
+     */
+    i = 1;
+    name = TclGetString(objv[i]);
+    if ((name[0] == '-') && (strcmp("-nocomplain", name) == 0)) {
+	flags = 0;
+	i++;
 	name = TclGetString(objv[i]);
-	if (Tcl_UnsetVar2(interp, name, (char *) NULL,
-		TCL_LEAVE_ERR_MSG) != TCL_OK) {
+    }
+    if ((name[0] == '-') && (strcmp("--", name) == 0)) {
+	i++;
+    }
+
+    for (; i < objc;  i++) {
+	name = TclGetString(objv[i]);
+	if ((Tcl_UnsetVar2(interp, name, (char *) NULL, flags) != TCL_OK)
+		&& (flags == TCL_LEAVE_ERR_MSG)) {
 	    return TCL_ERROR;
 	}
     }
