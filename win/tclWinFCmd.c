@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.16 2001/11/19 17:45:12 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.17 2001/11/28 03:19:08 drh Exp $
  */
 
 #include "tclWinInt.h"
@@ -1852,7 +1852,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		    Tcl_DStringFree(&ds);
 		    return nextCheckpoint;
 		}
-		cur = *(--lastValidPathEnd);
+		cur = *(lastValidPathEnd);
 		if (cur == '/' || cur == '\\') {
 		    /* Reached directory separator */
 		    break;
@@ -1988,4 +1988,3 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     }
     return nextCheckpoint;
 }
-
