@@ -1,5 +1,9 @@
 2003-05-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclObj.c (tclCmdNameType):  Corrected variable use of the
+	otherValuePtr or the twoPtrValue.ptr1 fields to store a
+	(ResolvedCmdName *) as the internal rep.  [Bug 726018].
+
 	* doc/Eval.3:  Corrected prototype for Tcl_GlobalEvalObj [Bug 727622].
 
 2003-05-12  Miguel Sofer <msofer@users.sf.net>
