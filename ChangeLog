@@ -1,3 +1,8 @@
+2004-11-25  Reinhard Max  <max@suse.de>
+
+	* tests/tcltest.test: The order in which [glob] returns the file
+	names is undefined, so tests should not depend on it.
+	
 2004-11-25  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* doc/Thread.3:
