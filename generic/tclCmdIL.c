@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.68 2004/10/31 16:28:21 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.69 2004/11/24 19:28:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1998,11 +1998,13 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
 		entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable,
 			simplePattern);
-		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		if (!TclIsVarUndefined(varPtr)
-			|| TclIsVarNamespaceVar(varPtr)) {
-		    Tcl_ListObjAppendElement(interp, listPtr,
-			    Tcl_NewStringObj(simplePattern, -1));
+		if (entryPtr != NULL) {
+		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+		    if (!TclIsVarUndefined(varPtr)
+			    || TclIsVarNamespaceVar(varPtr)) {
+			Tcl_ListObjAppendElement(interp, listPtr,
+				Tcl_NewStringObj(simplePattern, -1));
+		    }
 		}
 	    }
 	} else {
