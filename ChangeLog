@@ -1,3 +1,9 @@
+2003-02-11  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* tests/http.test: Corrected a problem where http-4.14 would fail
+	when run in an environment with a proxy server.  Replaced references
+	to scriptics.com by tcl.tk.
+	
 2003-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/stringObj.test:
@@ -158,6 +164,17 @@
 	* tests/fileSystem.test:
 	* generic/tclTest.c: added regression test for the modification
 	date setting of cross-platform file copies.
+	
+2003-02-03  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* generic/tclBasic.c: Changed [trace add command] so that 'rename'
+	callbacks get fully qualified names of the command. [Bug
+	651271]. ***POTENTIAL INCOMPATIBILITY***
+	* tests/trace.test: Modified the test cases for [trace add
+	command] to expect fully qualified names on the 'rename'
+	callbacks. Added a case for renaming a proc within a namespace.
+	* doc/trace.n: Added language about use of fully qualified names
+	in trace callbacks.
 	
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
