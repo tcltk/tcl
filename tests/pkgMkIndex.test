@@ -8,7 +8,7 @@
 # Copyright (c) 1998 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4 1998/11/12 05:54:21 welch Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.5 1999/03/31 22:37:17 welch Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -330,6 +330,13 @@ if {[file exists $x]} {
 } else {
     puts "Skipping pkgMkIndex-10.1 (index of DLL and script)"
 }
+
+# Tolerate "namespace import" at the global scope
+
+test pkgMkIndex-11.1 {conflicting namespace imports} {
+    pkgtest::runIndex pkg import.tcl
+} {0 {{fubar:1.0 {tclPkgSetup {import.tcl source ::fubar::foo}}}}}
+
 
 #
 # cleanup
