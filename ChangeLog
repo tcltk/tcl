@@ -1,3 +1,9 @@
+2004-07-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXBundle.c: dynamically acquire address for
+	CFBundleOpenBundleResourceMap symbol, since it is only present in
+	full CoreFoundation on Mac OS X and not in CFLite on pure Darwin.
+
 2004-07-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in, unix/tcl.m4:     move (C|LD)FLAGS after their
