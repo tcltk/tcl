@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.24 2002/07/01 22:33:20 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.25 2002/07/02 13:28:51 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -510,16 +510,19 @@ easily capture output with the [\fBconfigure -outfile\fR] and
 [\fBconfigure -errfile\fR] options, and so that the \fB-output\fR
 and \fB-errorOutput\fR attributes work properly.
 .SH "TEST CONSTRAINTS"
+.PP
 Constraints are used to determine whether or not a test should be skipped.
 Each constraint has a name, which may be any string, and a boolean
 value.  Each [\fBtest\fR] has a \fB-constraints\fR value which is a
-list of constraint names.  The test will run only if all constraints
-in the list are true-valued.  Thus, the \fB-constraints\fR option
-of [\fBtest\fR] is a convenient, symbolic way to define any conditions
-required for the test to be possible or meaningful.  For example,
-a [\fBtest\fR] with \fB-constraints unix\fR will only be run
-if the constraint \fBunix\fR is true, which indicates the test suite
-is being run on a Unix platform.
+list of constraint names.  There are two modes of constraint control.
+Most frequently, the default mode is used, indicated by a setting
+of [\fBconfigure -limitconstraints\fR] to false.  The test will run
+only if all constraints in the list are true-valued.  Thus,
+the \fB-constraints\fR option of [\fBtest\fR] is a convenient, symbolic
+way to define any conditions required for the test to be possible or
+meaningful.  For example, a [\fBtest\fR] with \fB-constraints unix\fR
+will only be run if the constraint \fBunix\fR is true, which indicates
+the test suite is being run on a Unix platform.
 .PP
 Each [\fBtest\fR] should include whatever \fB-constraints\fR are
 required to constrain it to run only where appropriate.  Several
@@ -639,35 +642,102 @@ to the "e" format of floating-point numbers.
 \fIstdio\fR
 test can only be run if the current app can be spawned via a pipe
 .PP
-
-Add description of -constraints and -limitconstraints here.
-
+The alternative constraint mode is enabled  by setting the
+value of [\fBconfigure -limitconstraints\fR] to true.  When
+that configuration is set, all existing constraints other than
+those in the constraint list returned by [\fBconfigure -constraints\fR]
+are set to false.  When the value of [\fBconfigure -constraints\fR]
+is set, all those constraints are set to true.  The effect is that
+when both configuration options \fB-constraints\fR and
+\fB-limitconstraints\fR are in use, only those tests including
+only constraints from the [\fBconfigure -constraints\fR] list
+are run; all others are skipped.  For example, one might set
+up a configuration with
+.CS
+configure -constraints knownBug -limitconstraints true -verbose pass
+.CE
+to run exactly those tests that exercise known bugs, and discover
+whether any of them pass, indicating the bug had been fixed.  
 .SH "RUNNING ALL TESTS"
-
+.PP
+The single command [\fBrunAllTests\fR] is evaluated to run an entire
+test suite, spanning many files and directories.  The configuration
+options of \fBtcltest\fR control the precise operations.  The
+[\fBrunAllTests\fR] command begins by printing a summary of its
+configuration to [\fBoutputChannel\fR].
+.PP
+Test files to be evaluated are sought in the directory
+[\fBconfigure -testdir\fR].  The list of files in that directory
+that match any of the patterns in [\fBconfigure -file\fR] and
+match none of the patterns in [\fBconfigure -notfile] is generated
+and sorted.  Then each file will be evaluated in turn.  If
+[\fBconfigure -singleproc\fR] is true, then each file will
+be [\fBsource\fR]d in the caller's context.  If if is false,
+then a copy of [\fBinterpreter\fR] will be [\fBexec\fR]d to
+evaluate each file.  The multi-process operation is useful
+when testing can cause errors so severe that a process 
+terminates.  Although such an error may terminate a child
+process evaluating one file, the master process can continue
+with the rest of the test suite.  In multi-process operation,
+the configuration of \fBtcltest\fR in the master process is
+passed to the child processes as command line arguments,
+with the exception of [\fBconfigure -outfile\fR].  The
+master process collects all output from the child process
+and collates their results into one master report.  Any
+reports of individual test failures, or messages requested
+by a [\fBconfigure -verbose\fR] setting are passed directly
+on to [\fBoutputChannel\fR] by the master process.
+.PP
+After evaluating all selected test files, a summary of the
+results is printed to [\fBoutputChannel\fR].  The summary
+includes the total number of [\fBtest\fR]s evaluated, broken
+down into those skipped, those passed, and those failed.
+Is also notes the number of files evaluated, and the names
+of any files with failing tests, or errors.  A list of
+the constraints that caused tests to be skipped, and the
+number of tests skipped for each is also printed.  Also,
+messages are printed if it appears that evaluation of
+a test file has caused any temporary files to be left
+behind in [\fBconfigure -tmpdir\fR].
+.PP
+Having completed and summarized all selected test files,
+[\fBrunAllTests\fR] then recursively acts on subdirectories
+of [\fBconfigure -testdir\fR].  All subdirectories that
+match any of the patterns in [\fBconfigure -relateddir\fR]
+and do not match any of the patterns in
+[\fBconfigure -asidefromdir\fR] are examined.  If
+a file named \fBall.tcl\fR is found in such a directory,
+it will be [\fBsource\fR]d in the caller's context.
+Whether or not an examined directory contains an
+\fBall.tcl\fR file, its subdirectories are also scanned
+against the [\fBconfigure -relateddir\fR] and
+[\fBconfigure -asidefromdir\fR] patterns.  In this way,
+many directories in a directory tree can have all their
+test files evaluated by a single [\fBrunAllTests\fR]
+command.
 .SH "CONFIGURABLE OPTIONS"
-
+The [\fBconfigure\fR] command is used to set and query the configurable
+options of \fBtcltest\fR.  The valid options are:
 .TP
-\fBsingleProcess\fR \fI?value?\fR
-Sets or returns a boolean indicating whether test files should be sourced
-into the current interpreter by runAllTests or run in their own
-processes. If \fIvalue\fR is true (1), tests are sourced into the
-current interpreter.  If \fIvalue\fR is false (0), tests are run in
-the interpreter specified in tcltest::interpreter.  The default value
-for tcltest::singleProcess is false.
-
+\fB-singleproc \fIboolean\fR
+Controls whether or not [\fBrunAllTests\fR] spawns a child process for
+each test file.  No spawning when \fIboolean\fR is true.  Default
+value is false.
 .TP
-\fBdebug\fR \fI?level?\fR
-Sets or returns the current debug level. The debug level determines
-how much tcltest package debugging information is printed to stdout.
-The default debug level is 0. Levels are defined as:
+\fB-debug \fIlevel\fR
+Sets the debug level to \fIlevel\fR, an integer value indicating how
+much debugging information should be printed to stdout.  Note that
+debug messages always go to stdout, independent of the value of
+[\fBconfigure -outfile\fR].  Default value is 0.  Levels are defined as:
 .RS
 .IP 0
 Do not display any debug information.
 .IP 1
 Display information regarding whether a test is skipped because it
-doesn't match any of the tests that were specified using -match or
-tcltest::match (userSpecifiedNonMatch) or matches any of the tests
-specified by -skip or tcltest::skip (userSpecifiedSkip).  
+doesn't match any of the tests that were specified using by
+[\fBconfigure -match\fR] (userSpecifiedNonMatch) or matches any of
+the tests specified by [\fBconfigure -skip\fR] (userSpecifiedSkip).  Also
+print warnings about possible lack of cleanup or balance in test files.
 .IP 2
 Display the flag array parsed by the command line processor, the
 contents of the ::env array, and all user-defined variables that exist
@@ -676,318 +746,114 @@ in the current namespace as they are used.
 Display information regarding what individual procs in the test
 harness are doing.
 .RE
-
 .TP
-\fBverbose\fR \fI?levelList?\fR
-Sets or returns the current verbosity level.  The default verbosity
-level is "body".   See the "Test output" section for a more detailed
-explanation of this option. Levels are defined as: 
+\fB-verbose \fIlevel\fR
+Sets the type of output verbosity desired to \fIlevel\fR,
+a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
+\fBskip\fR, \fBstart\fR, and \fBerror\fR.  Default value is \fBbody\fR.
+Levels are defined as: 
 .RS
-.IP body
+.IP body (b)
 Display the body of failed tests
-.IP pass
+.IP pass (p)
 Print output when a test passes
-.IP skip
+.IP skip (s)
 Print output when a test is skipped
-.IP start
+.IP start (t)
 Print output whenever a test starts
-.IP error
+.IP error (e)
 Print errorInfo and errorCode, if they exist, when a test return code
 does not match its expected return code
 .RE
-
+The single letter abbreviations noted above are also recognized
+so that [\fBconfigure -verbose pt\fR] is the same as
+[\fBconfigure -verbose  {pass start}\fR].
 .TP
-\fBtcltest::preserveCore\fR \fI?level?\fR
-Sets or returns the current core preservation level.  This level
-determines how stringent checks for core files are.  The default core
-preservation level is 0.  Levels are defined as:
+\fB-preservecore \fIlevel\fR
+Sets the core preservation level to \fIlevel\fR.  This level
+determines how stringent checks for core files are.  Default
+value is 0.  Levels are defined as:
 .RS
 .IP 0
 No checking - do not check for core files at the end of each test
-command, but do check for them whenever tcltest::cleanupTests is
-called from tcltest::runAllTests. 
+command, but do check for them in [\fBrunAllTests\fR] after all
+test files have been evaluated.
 .IP 1
-Check for core files at the end of each test command and whenever
-tcltest::cleanupTests is called from tcltest::runAllTests.
+Also check for core files at the end of each [\fBtest\fR] command.
 .IP 2
-Check for core files at the end of all test commands and whenever
-tcltest::cleanupTests is called from all.tcl.  Save any core files
-produced in tcltest::temporaryDirectory.
+Check for core files at all times described above, and save a 
+copy of each core file produced in [\fBconfigure -tmpdir\fR].
 .RE
-
 .TP
-\fBtcltest::limitConstraints \fI?value?\fR
-Sets or returns a boolean indicating whether testing is being limited
-to the list of constraints specified by the \fB-constraints\fR
-command line option.  If \fIvalue\fR is true, only those tests
-with constraints present in the list specified in the \fB-constraints\fR
-command line option.
-
+\fB-limitconstraints \fIboolean\fR
+Sets the mode by which [\fBtest\fR] honors constraints as described
+in TESTS above.  Default value is false.
 .TP
-\fBtcltest::temporaryDirectory\fR \fI?directoryName?\fR
-Sets or returns the output directory for temporary files created by
-tcltest::makeFile and tcltest::makeDirectory. This defaults to the
-directory returned by \fItcltest::workingDirectory\fR.
-
+\fB-constraints \fIlist\fR
+Sets all the constraints in \fIlist\fR to true.  Also used in
+combination with \fB-limitconstraints true\fR to control an
+alternative constraint mode as described in TESTS above.  Default
+value is an empty list.
 .TP
-\fBtcltest::testsDirectory\fR \fI?directoryName?\fR
-Sets or returns the directory where the tests reside.  This defaults
-to the directory returned by \fItcltest::workingDirectory\fR
-if the script cannot determine where the \fItests\fR directory is
-located. This variable should be explicitly set if tests are being run
-from an all.tcl file. 
-
+\fB-tmpdir \fIdirectory\fR
+Sets the temporary directory to be used by [\fBmakeFile\fR],
+[\fBmakeDirectory\fR], [\fBviewFile\fR], [\fBremoveFile\fR], 
+and [\fBremoveDirectory\fR] as the default directory where
+temporary files and directories created by test files should
+be created.  Default value is [\fBworkingDirectory\fR].
 .TP
-\fBtcltest::match\fR \fI?globPatternList?\fR
-Sets or returns the glob pattern list that determines which tests
-should be run.  Only tests which match one of the glob patterns in
-\fIglobPatternList\fR are run by the test harness.  The default value
-for \fIglobPatternList\fR is '*'.
-
+\fB-testdir \fIdirectory\fR
+Sets the directory searched by [\fBrunAllTests\fR] for test files
+and subdirectories.  Default value is [\fBworkingDirectory\fR].
 .TP
-\fBtcltest::matchFiles\fR \fI?globPatternList?\fR
-Sets or returns the glob pattern list that determines which test files
-should be run.  Only test files which match one of the glob patterns in
-\fIglobPatternList\fR are run by the test harness.  The default value
-for \fIglobPatternList\fR is '*.test'.
-
+\fB-file \fIpatternList\fR
+Sets the list of patterns used by [\fBrunAllTests\fR] to determine
+what test files to evaluate.  Default value is \fB*.test\fR.
 .TP
-\fBtcltest::matchDirectories\fR \fI?globPatternList?\fR
-Sets or returns the glob pattern list that determines which test
-subdirectories of the current test directory should be run.  Only test
-subdirectories which match one of the glob patterns in 
-\fIglobPatternList\fR are run by the test harness.  The default value
-for \fIglobPatternList\fR is '*'.
-
+\fB-notfile \fBpatternList\fR
+Sets the list of patterns used by [\fBrunAllTests\fR] to determine
+what test files to skip.  Default value is \fBl.*.test\fR, so
+that any SCCS lock files are skipped.
 .TP
-\fBtcltest::skip\fR \fI?globPatternList?\fR
-Sets or returns the glob pattern list that determines which tests (of
-those matched by tcltest::match) should be skipped.  The default value
-for \fIglobPatternList\fR is {}.
-
+\fB-relateddir \fBpatternList\fR
+Sets the list of patterns used by [\fBrunAllTests\fR] to determine
+what subdirectories to search for an \fBall.tcl\fR file.  Default
+value is \fB*\fR.
 .TP
-\fBtcltest::skipFiles\fR \fI?globPatternList?\fR
-Sets or returns the glob pattern list that determines which test files
-(of those matched by tcltest::matchFiles) should be skipped.  The
-default value for \fIglobPatternList\fR is {}.
-
+\fB-asidefromdir \fBpatternList\fR
+Sets the list of patterns used by [\fBrunAllTests\fR] to determine
+what subdirectories to skip when searching for an \fBall.tcl\fR file.
+Default value is an empty list.
 .TP
-\fBtcltest::skipDirectories\fR \fI?globPatternList?\fR
-Sets or returns the glob pattern list that determines which test
-subdirectories (of those matched by tcltest::matchDirectories) should
-be skipped.  The default value for \fIglobPatternList\fR is {}.
-
+\fB-match \fIpatternList\fR
+Set the list of patterns used by [\fBtest\fR] to determine whether
+a test should be run.  Default value is \fB*\fR.
 .TP
-\fBtcltest::loadScript\fR \fI?script?\fR
-Sets or returns the script executed by \fBloadTestedCommands\fR.   
-
+\fB-skip \fIpatternList\fR
+Set the list of patterns used by [\fBtest\fR] to determine whether
+a test should be skipped.  Default value is an empty list.
 .TP
-\fBtcltest::loadFile\fR \fI?filename?\fR
-Sets ore returns the file name associated with the script executed
-\fBloadTestedCommands\fR.  If setting \fIfilename\fR, this proc will
-open the file and call \fItcltest::loadScript\fR with the content.
-
+\fB-load \fIscript\fR
+Sets a script to be evaluated by [\fBloadTestedCommands\fR].
+Default value is an empty script.
 .TP
-\fBtcltest::outputFile\fR \fI?filename?\fR
-Sets or returns the file name corresponding to the output file.  This
-defaults to stdout. This proc calls 
-outputChannel to set the output file channel.
-Any test that prints test related output should send
-that output to \fItcltest::outputChannel\fR rather than letting
-that output default to stdout.
-
+\fB-loadfile \fIfilename\fR
+Sets the filename from which to read a script to be evaluated
+by [\fBloadTestedCommands\fR].  This is an alternative to
+\fB-load\fR.  They cannot be used together.
 .TP
-\fBtcltest::errorFile\fR \fI?filename?\fR
-Sets or returns the file name corresponding to the error file.  This
-defaults to stderr. This proc calls
-errorChannel to set the error file channel.
-Any test that prints test related error output should send
-that output to \fItcltest::errorChannel\fR or
-\fItcltest::outputChannel\fR rather than letting
-that output default to stdout.
+\fB-outfile \fIfilename\fR 
+Sets the file to which all output produced by tcltest should be
+written.  A file named \fIfilename\fR will be [\fBopen\fR]ed for writing,
+and the resulting channel will be set as the value of [\fBoutputChannel\fR].
+.TP
+\fB-errfile \fIfilename\fR
+Sets the file to which all error output produced by tcltest
+should be written.  A file named \fIfilename\fR will be [\fBopen\fR]ed
+for writing, and the resulting channel will be set as the value
+of [\fBerrorChannel\fR].
 
 .SH "CREATING TEST SUITES WITH TCLTEST"
-
-
-.SH "RUNNING TEST FILES"
-Use the following command to run a test file that uses package
-tcltest:
-.CS
-<shell> <testFile> ?<option> ?<value>?? ...
-.CE
-Command line options include (tcltest accessor procs that
-correspond to each flag are listed at the end of each flag description
-in parenthesis): 
-.RS
-.TP
-\fB-help\fR
-display usage information.
-.TP
-\fB-singleproc <bool>\fR
-if <bool> is 0, run test files in separate interpreters.  if 1, source test
-files into the current interpreter. (tcltest::singleProcess)
-.TP
-\fB-verbose <levelList>\fR
-set the level of verbosity to a list containing 0 or more of "body",
-"pass", "skip", "start", and "error".  See the "Test output" section
-for an explanation of this option.  (tcltest::verbose)  
-.TP
-\fB-match <matchList>\fR
-only run tests that match one or more of the glob patterns in
-<matchList>.  (tcltest::match)
-.TP
-\fB-skip <skipList>\fR
-do not run tests that match one or more of the glob patterns in
-<skipList>.  (tcltest::skip)
-.TP
-\fB-file <globPatternList>\fR
-only source test files that match any of the items in
-<globPatternList> relative to tcltest::testsDirectory.  
-This option
-only makes sense if you are running tests using "all.tcl" as the
-<testFile> instead of running single test files directly.
-(tcltest::matchFiles) 
-.TP
-\fB-notfile <globPatternList>\fR
-source files except for those that match any of the items in
-<globPatternList> relative to tcltest::testsDirectory.
-This option
-only makes sense if you are running tests using "all.tcl" as the
-<testFile> instead of running single test files directly.
-(tcltest::skipFiles) 
-.TP
-\fB-relateddir <globPatternList>\fR
-only run tests in directories that match any of the items in
-<globPatternList> relative to tcltest::testsDirectory.  
-This option
-only makes sense if you are running tests using "all.tcl" as the
-<testFile> instead of running single test files directly.
-(tcltest::matchDirectories) 
-.TP
-\fB-asidefromdir <globPatternList>\fR
-run tests in directories except for those that match any of the items in
-<globPatternList> relative to tcltest::testsDirectory.
-This option
-only makes sense if you are running tests using "all.tcl" as the
-<testFile> instead of running single test files directly.
-(tcltest::skipDirectories) 
-.TP
-\fB-constraints <list>\fR
-tests with any constraints in <list> will not be skipped.  Note that
-elements of <list> must exactly match the existing constraints.  This
-is useful if you want to make sure that tests with a particular
-constraint are run (for example, if the tester wants to run all tests
-with the knownBug constraint).
-(tcltest::testConstraint)
-.TP
-\fB-limitconstraints <bool>\fR
-If the argument to this flag is 1, the test harness limits test runs
-to those tests that match the constraints listed by the -constraints
-flag. Use of this flag requires use of the -constraints flag.  The
-default value for this flag is 0 (false).  This is useful if you want
-to run \fBonly\fR those tests that match the constraints listed using
-the -constraints option.  A tester might want to do this if (for
-example) he were
-interested in running only those tests that are constrained to be
-unixOnly and no other tests.
-(tcltest::limitConstraints)
-.TP
-\fB-load <script>\fR
-will use the specified script to load the commands under test
-(tcltest::loadTestedCommands). The default is the empty
-script. See -loadfile below too. (tcltest::loadScript)
-.TP
-\fB-loadfile <scriptfile>\fR
-will use the contents of the named file to load the commands under
-test (tcltest::loadTestedCommands). See -load above too. The default
-is the empty script. (tcltest::loadFile)
-.TP
-\fB-tmpdir <directoryName>\fR
-put any temporary files (created with tcltest::makeFile and
-tcltest::makeDirectory) into the named directory.  The default
-location is tcltest::workingDirectory.  (tcltest::temporaryDirectory)
-.TP
-\fB-testdir <directoryName>\fR
-search the test suite to execute in the named directory.  The default
-location is tcltest::workingDirectory.  (tcltest::testsDirectory)
-.TP
-\fB-preservecore <level>\fR
-check for core files.  This flag is used to determine how much
-checking should be done for core files.  (tcltest::preserveCore)
-.TP
-\fB-debug <debugLevel>\fR
-print debug information to stdout.  This is used to debug code in the
-tcltest package.  (tcltest::debug)
-.TP
-\fB-outfile <filename>\fR 
-print output generated by the tcltest package to the named file.  This
-defaults to stdout.  Note that debug output always goes to stdout,
-regardless of this flag's setting.  (tcltest::outputFile)
-.TP
-\fB-errfile <filename>\fR
-print errors generated by the tcltest package to the named file.  This
-defaults to stderr.  (tcltest::errorFile)
-.RE
-.PP
-You can specify any of the above options on the command line or by
-defining an environment variable named TCLTEST_OPTIONS containing a
-list of options (e.g. "-debug 3 -verbose 'pass skip'").  This 
-environment variable is evaluated before the command line arguments.
-Options specified on the command line override those specified in 
-TCLTEST_OPTIONS. 
-.PP
-A second way to run tests is to start up a shell, load the
-\fBtcltest\fR package, and then source an appropriate test file or use
-the test command.  To use the options in interactive mode, set
-their corresponding tcltest namespace variables after loading the
-package.
-.PP
-See \fI"Test Constraints"\fR for a list of all built-in constraint names.
-.PP
-A final way to run tests would be to specify which test files to run
-within an \fIall.tcl\fR (or otherwise named) file.  This is the
-approach used by the Tcl test suite.  This file loads the tcltest
-package, sets the location of
-the test directory (tcltest::testsDirectory), and then calls the
-\fItcltest::runAllTests\fR proc, which determines which test
-files to run, how to run them, and calls tcltest::cleanupTests to
-determine the summary status of the test suite.  
-.PP
-A more elaborate \fIall.tcl\fR file might do some pre- and
-post-processing before sourcing 
-each .test file, use separate interpreters for each file, or handle
-complex directory structures.  
-For an example of an all.tcl file,
-please see the "Examples" section of this document.
-
-.SH "TEST OUTPUT"
-After all specified test files are run, the number of tests
-passed, skipped, and failed is printed to
-\fBtcltest::outputChannel\fR.  Aside from this 
-statistical information, output can be controlled on a per-test basis
-by the \fBtcltest::verbose\fR variable.
-.PP
-\fBtcltest::verbose\fR can be set to any combination of "body", 
-"skip", "pass", "start", or "error".  The default value of
-\fBtcltest::verbose\fR is "body".  If "body"  is present, then the
-entire body of the test is printed for each failed test, otherwise
-only the test's name, desired output, and 
-actual output, are printed for each failed test.  If "pass" is present,
-then a line is printed for each passed test, otherwise no line is
-printed for passed tests.  If "skip" is present, then a line (containing
-the constraints that cause the test to be skipped) is printed for each
-skipped test, otherwise no line is printed for skipped tests.  If "start"
-is present, then a line is printed each time a new test starts.
-If "error" is present, then the content of errorInfo and errorCode (if
-they are defined) is printed for each test whose return code doesn't
-match its expected return code.
-.PP
-You can set \fBtcltest::verbose\fR either interactively (after the
-\fBtcltest\fR package has been loaded) or by using the command line
-argument \fB-verbose\fR, for example:
-.CS
-tclsh socket.test -verbose 'body pass skip'
-.CE
 
 .SH "CONTENTS OF A TEST FILE"
 Test files should begin by loading the \fBtcltest\fR package:
@@ -1011,89 +877,6 @@ When naming test files, file names should end with a .test extension.
 The names of test files that contain regression (or glass-box) tests
 should correspond to the Tcl or C code file that they are testing.
 For example, the test file for the C file "tclCmdAH.c" is "cmdAH.test".  
-
-.SH "SELECTING TESTS FOR EXECUTION"
-.PP
-Normally, all the tests in a file are run whenever the file is
-sourced.  An individual test will be skipped if one of the following
-conditions is met:
-.IP [1]
-the \fIname\fR of the tests does not match (using glob style matching)
-one or more elements in the \fBtcltest::match\fR variable
-.IP [2]
-the \fIname\fR of the tests matches (using glob style matching) one or
-more elements in the \fBtcltest::skip\fR variable 
-.IP [3]
-the \fIconstraints\fR argument to the \fBtcltest::test\fR call, if
-given, contains one or more false elements. 
-.PP
-You can set \fBtcltest::match\fR and/or \fBtcltest::skip\fR
-either interactively (after the \fBtcltest\fR package has been
-sourced), or by using the command line arguments \fB-match\fR and
-\fB-skip\fR, for example: 
-.PP
-.CS
-tclsh info.test -match '*-5.* *-7.*' -skip '*-7.1*'
-.CE
-.PP
-Be sure to use the proper quoting convention so that your shell does
-not perform the glob substitution on the match or skip patterns you
-specify.
-.PP
-Predefined constraints (e.g. \fIknownBug\fR and \fInonPortable\fR) can be
-overridden either interactively (after the \fBtcltest\fR package has been
-sourced) by setting the proper constraint
-or by using the \fB-constraints\fR command line option with the name of the
-constraint in the argument.  The following example shows how to run
-tests that are constrained by the \fIknownBug\fR and \fInonPortable\fR
-restrictions:
-.PP
-.CS
-tclsh all.tcl -constraints "knownBug nonPortable"
-.CE
-.PP
-See the \fI"Constraints"\fR section for information about using
-built-in constraints and adding new ones.
-.PP
-When tests are run from within an \fBall.tcl\fR file, all files with a
-``\fI.test\fR'' extension are normally run.  An individual test file will
-be skipped if one of the following conditions is met:
-.IP [1]
-the \fIname\fR of the test files does not match (using glob style matching)
-one or more elements in the \fBtcltest::matchFiles\fR variable
-.IP [2]
-the \fIname\fR of the test file matches (using glob style matching) one or
-more elements in the \fBtcltest::skipFiles\fR variable 
-.PP
-You can set \fBtcltest::matchFiles\fR and/or \fBtcltest::skipFiles\fR
-either interactively (after the \fBtcltest\fR package has been
-sourced), or by using the command line arguments \fB-file\fR and
-\fB-notfile\fR, for example: 
-.PP
-.CS
-tclsh info.test -file 'unix*.test' -notfile 'unixNotfy.test'
-.CE
-.PP
-Additionally, if tests are run from within an 'all.tcl' containing a
-call to \fBtcltest::runAllTests\fR, any subdirectory of
-\fItcltest::testsDirectory\fR containing an 'all.tcl' file will also
-be run.  Individual test subdirectories will be skipped if one of the
-following conditions is met:
-.IP [1]
-the \fIname\fR of the directory does not match (using glob style matching)
-one or more elements in the \fBtcltest::matchDirectories\fR variable
-.IP [2]
-the \fIname\fR of the directory matches (using glob style matching) one or
-more elements in the \fBtcltest::skipDirectories\fR variable 
-.PP
-You can set \fBtcltest::matchDirectories\fR and/or \fBtcltest::skipDirectories\fR
-either interactively (after the \fBtcltest\fR package has been
-sourced), or by using the command line arguments \fB-relateddir\fR and
-\fB-asidefromdir\fR, for example: 
-.PP
-.CS
-tclsh info.test -relateddir 'subdir*' -asidefromdir 'subdir2'
-.CE
 
 .SH "HOW TO CUSTOMIZE THE TEST HARNESS"
 To create your own custom test harness, create a .tcl file that contains your
@@ -1171,7 +954,6 @@ test testOnUnixWithoutThreads-1.1 {
 .CE
 
 .SH COMPATIBILITY
-
 
 .SH "KNOWN ISSUES"
 There are two known issues related to nested evaluations of [\fBtest\fR].  
