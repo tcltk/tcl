@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.39.2.2 2001/04/03 22:54:38 hobbs Exp $
+# RCS: @(#) $Id: init.tcl,v 1.39.2.3 2001/08/24 16:19:09 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -467,9 +467,10 @@ proc auto_import {pattern} {
     auto_load_index
 
     foreach pattern $patternList {
-        foreach name [array names auto_index] {
-            if {[string match $pattern $name] && \
-		    [string equal "" [info commands $name]]} {
+        foreach name [array names auto_index $pattern] {
+            if {[string equal "" [info commands $name]]
+		    && [string equal [namespace qualifiers $pattern] \
+				     [namespace qualifiers $name]]} {
                 uplevel #0 $auto_index($name)
             }
         }

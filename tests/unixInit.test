@@ -10,13 +10,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.13.2.1 2001/04/03 22:54:38 hobbs Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.13.2.2 2001/08/24 16:19:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
+set ::tcltest::testConstraints(notInstalledInTmp) \
+	[string match /tmp/lib/* [info library]]
 if {[info exists env(TCL_LIBRARY)]} {
     set oldlibrary $env(TCL_LIBRARY)
     unset env(TCL_LIBRARY)
@@ -27,10 +29,10 @@ set env(LANG) C
 # Some tests will fail if they are run on a machine that doesn't have
 # this Tcl version installed (as opposed to built) on it.
 if {[catch {
-    set f [open "|[list $::tcltest::tcltest exit]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     exec kill -PIPE [pid $f]
     close $f
-}]} {
+} msg]} {
     set ::tcltest::testConstraints(installedTcl) 0
 } else {
     set ::tcltest::testConstraints(installedTcl) 1
@@ -150,24 +152,75 @@ test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
     # would need test command to get defaultLibDir and compare it to
     # [lindex $auto_path end]
 } {}
-test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly} {
+test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly notInstalledInTmp} {
+    # Checking for Bug 219416
+    # When a program that embeds the Tcl library, like tcltest, is
+    # installed near the "root" of the file system, there was a problem
+    # constructing directories relative to the executable.  When a 
+    # relative ".." went past the root, relative path names were created
+    # rather than absolute pathnames.  In some cases, accessing past the
+    # root caused memory access violations too.
+    #
+    # The bug is now fixed, but here we check for it by making sure that
+    # the directories constructed relative to the executable are all
+    # absolute pathnames, even when the executable is installed near
+    # the root of the filesystem.
+    #
+    # The only directory near the root we are likely to have write access
+    # to is /tmp.
     file delete -force /tmp/sparkly
-    file delete -force /tmp/lib
+    file delete -force /tmp/lib/tcl[info tclversion]
     file mkdir /tmp/sparkly
     file copy $::tcltest::tcltest /tmp/sparkly/tcltest
 
+    # Keep any existing /tmp/lib directory
+    set deletelib 1
+    if {[file exists /tmp/lib]} {
+	if {[file isdirectory /tmp/lib]} {
+	    set deletelib 0
+	} else {
+	    file delete -force /tmp/lib
+	}
+    }
+
+    # For a successful Tcl_Init, we need a [source]-able init.tcl in
+    # ../lib/tcl$version relative to the executable.
     file mkdir /tmp/lib/tcl[info tclversion]
     close [open /tmp/lib/tcl[info tclversion]/init.tcl w]
 
+    # Check that all directories in the library path are absolute pathnames
     set allAbsolute 1
     foreach dir [getlibpath /tmp/sparkly/tcltest] {
 	set allAbsolute [expr {$allAbsolute \
 		&& [string equal absolute [file pathtype $dir]]}]
     }
+
+    # Clean up temporary installation
     file delete -force /tmp/sparkly
-    file delete -force /tmp/lib
+    file delete -force /tmp/lib/tcl[info tclversion]
+    if {$deletelib} {file delete -force /tmp/lib}
     set allAbsolute
 } 1
+test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {
+	unixOnly} {
+    # Checking for Bug 438014
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/library
+    file mkdir /tmp/sparkly
+    file copy $::tcltest::tcltest /tmp/sparkly/tcltest
+
+    file mkdir /tmp/library/
+    close [open /tmp/library/init.tcl w]
+
+    set x [lrange [getlibpath /tmp/sparkly/tcltest] 0 4]
+
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/library
+    set x
+} [list /tmp/lib/tcl[info tclversion] /lib/tcl[info tclversion] \
+	/tmp/library /library [format /tcl%s/library \
+	[expr {[regexp {[ab]} [info patchlevel]] ? 
+	[info patchleve] : [info tclversion]}]]]
 test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     set env(LANG) C
 
@@ -215,7 +268,7 @@ test unixInit-5.1 {Tcl_Init} {emptyTest unixOnly} {
 
 test unixInit-6.1 {Tcl_SourceRCFile} {emptyTest unixOnly} {
 } {}
-    
+
 # cleanup
 if {[info exists oldlibrary]} {
     set env(TCL_LIBRARY) $oldlibrary

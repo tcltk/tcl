@@ -8,7 +8,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.7 1999/06/10 04:29:01 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.7.10.1 2001/08/24 16:19:10 dgp Exp $
+
+package require Tcl 8
 
 namespace eval genStubs {
     # libraryName --

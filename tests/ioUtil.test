@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# RCS: @(#) $Id: ioUtil.test,v 1.8 2000/04/10 17:19:01 ericm Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.8.2.1 2001/08/24 16:19:10 dgp Exp $
  
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -192,9 +192,9 @@ test ioUtil-2.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} 
 }
 
 test ioUtil-3.1 {TclOpenFileChannel: Check that none of the test procs are there.} {
-    catch {file exists __testOpenFileChannel1%__.fil} err1
-    catch {file exists __testOpenFileChannel2%__.fil} err2
-    catch {file exists __testOpenFileChannel3%__.fil} err3
+    catch {file exists testOpenFileChannel1%.fil} err1
+    catch {file exists testOpenFileChannel2%.fil} err2
+    catch {file exists testOpenFileChannel3%.fil} err3
     catch {file exists __testOpenFileChannel1%__.fil} err4
     catch {file exists __testOpenFileChannel2%__.fil} err5
     catch {file exists __testOpenFileChannel3%__.fil} err6
@@ -247,15 +247,15 @@ test openfilechannelt-1.5 {TclOpenFileChannelDeleteProc: Delete the 2nd TclOpenF
 
 	catch {
 		close [open testOpenFileChannel1%.fil r]
-		catch {close [open testOpenFileChannel2%.fil r]}
+		catch {close [open testOpenFileChannel2%.fil r]} msg1
 		close [open testOpenFileChannel3%.fil r]
 	} err3
 
 	file delete __testOpenFileChannel1%__.fil
 	file delete __testOpenFileChannel3%__.fil
 
-    set err3
-} {}
+    list $err3 $msg1
+} [list {} {couldn't open "testOpenFileChannel2%.fil": no such file or directory}]
 
 test ioUtil-3.6 {TclOpenFileChannelDeleteProc: Delete the 1st TclOpenFileChannel procedure.} {
     # Next delete the 1st procedure and test that only the 3rd procedure
@@ -266,15 +266,16 @@ test ioUtil-3.6 {TclOpenFileChannelDeleteProc: Delete the 1st TclOpenFileChannel
 	close [open __testOpenFileChannel3%__.fil w]
 
 	catch {
-		catch {close [open testOpenFileChannel1%.fil r]}
-		catch {close [open testOpenFileChannel2%.fil r]}
+		catch {close [open testOpenFileChannel1%.fil r]} msg2
+		catch {close [open testOpenFileChannel2%.fil r]} msg3
 		close [open testOpenFileChannel3%.fil r]
 	} err4
 
 	file delete __testOpenFileChannel3%__.fil
 
-    set err4
-} {}
+    list $err4 $msg2 $msg3
+} [list {} {couldn't open "testOpenFileChannel1%.fil": no such file or directory} \
+	{couldn't open "testOpenFileChannel2%.fil": no such file or directory}]
 
 test ioUtil-3.7 {TclOpenFileChannelDeleteProc: Delete the 3rd procedure & verify all are gone.} {
     # Finally delete the 3rd procedure and check that none of the
@@ -282,13 +283,15 @@ test ioUtil-3.7 {TclOpenFileChannelDeleteProc: Delete the 3rd procedure & verify
 
     testopenfilechannelproc delete TestOpenFileChannelProc3
 	catch {
-		catch [open testOpenFileChannel1%.fil r]
-		catch [open testOpenFileChannel2%.fil r]
-		catch [open testOpenFileChannel3%.fil r]
+		catch {close [open testOpenFileChannel1%.fil r]} msg4
+		catch {close [open testOpenFileChannel2%.fil r]} msg5
+		catch {close [open testOpenFileChannel3%.fil r]} msg6
 	} err5
 
-    set err5
-} {1}
+    list $err5 $msg4 $msg5 $msg6
+} [list 1 {couldn't open "testOpenFileChannel1%.fil": no such file or directory} \
+	{couldn't open "testOpenFileChannel2%.fil": no such file or directory} \
+	{couldn't open "testOpenFileChannel3%.fil": no such file or directory}]
 
 test ioUtil-3.8 {TclOpenFileChannelDeleteProc: Verify that all procs have been deleted.} {
     # Attempt to delete all the OpenFileChannel procs. again to ensure they no longer

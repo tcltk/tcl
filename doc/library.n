@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.11.2.2 2001/04/03 22:06:43 hobbs Exp $
+'\" RCS: @(#) $Id: library.n,v 1.11.2.3 2001/08/24 16:19:09 dgp Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -81,7 +81,8 @@ the imported commands specified by \fIpattern\fR reside in an
 autoloaded library.  If so, the commands are loaded so that they will
 be available to the interpreter for creating the import links.  If the
 commands do not reside in an autoloaded library, \fBauto_import\fR
-does nothing.
+does nothing.  The pattern matching is performed according to the
+matching rules of \fBnamespace import\fR.
 .TP
 \fBauto_load \fIcmd\fR
 This command attempts to load the definition for a Tcl command named

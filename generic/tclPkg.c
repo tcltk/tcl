@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.5 1999/09/21 04:20:40 hobbs Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.5.2.1 2001/08/24 16:19:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -503,7 +503,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 		keyString = Tcl_GetString(objv[i]);
 		hPtr = Tcl_FindHashEntry(&iPtr->packageTable, keyString);
 		if (hPtr == NULL) {
-		    return TCL_OK;
+		    continue;	
 		}
 		pkgPtr = (Package *) Tcl_GetHashValue(hPtr);
 		Tcl_DeleteHashEntry(hPtr);

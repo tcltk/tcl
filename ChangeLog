@@ -1,3 +1,51 @@
+2001-08-24  Don Porter <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (unixInit-2.9): Corrected expected result
+        to match Tcl's quirky construction of its init library path.
+
+        * tests/ioUtil.test (ioUtil-3.*): Corrected errors in tests
+        revealed by fix of overagressive compiler.  [Bug 451200]
+
+        * doc/tclsh.1:  Added note that the tclsh program is frequently
+        installed with the Tcl version numer as part of the name.
+        [Patch 402725]
+
+        * generic/tclPkg.c:
+        * tests/pkg.test:  [package forget] now forgets all of the
+        package arguments it receives, not stopping when a package is
+        not found.  [Bug 415273]
+
+        * doc/pkgMkindex.n:
+        * library/package.tcl:  Corrected documentation and usage
+        message of [pkg_mkIndex].
+
+        * tests/unixInit.test (unixInit-2.8): Added extra constraint,
+        notInstalledInTmp, to stop this test from damaging installations
+        in /tmp; not much fun to have to reinstall the Tcl library every
+        time you run the test suite!
+
+        * tests/unixInit.test (unixInit-2.9):
+        * unix/tclUnixInit.c (TclpInitLibraryPath):
+        * win/tclWinInit.c (TclpInitLibraryPath):  Corrected buggy
+        construction of search path entries relative to executable.
+        Added test for bad construction.  [Bug 438014]
+
+        * tests/cmdMZ.test (cmdMZ-1.4): added notLinux constraint to test
+        to prevent failure message on Linux due to OS caching bug.
+
+        * doc/library.n:  
+        * library/init.tcl:
+        * tests/autoMkindex.t*: Modified [auto_import] to apply
+        pattern matching in the [namespace import] style.  [Bug 420186]
+        ***POTENTIAL INCOMPATIBILITY*** for any callers of [auto_import]
+        from outside Tcl that expect the pattern matching to be like that
+        of [string match].
+
+        * tools/genStubs.tcl: Add a package require of Tcl 8
+        at the beginning of the script so that the script
+        will print a descriptive error message when run
+        in an old Tcl 7 shell.
+
 2001-08-23  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* win/tclWinPipe.c (BuildCommandLine): Fixed tcl Bug
