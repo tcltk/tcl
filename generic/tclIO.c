@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.57 2002/07/30 18:36:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.58 2003/01/24 11:59:29 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -4388,6 +4388,12 @@ DoReadChars(chanPtr, objPtr, toRead, appendFlag)
 	    Tcl_SetByteArrayLength(objPtr, 0);
 	} else {
 	    Tcl_SetObjLength(objPtr, 0);
+	    /* 
+	     * We're going to access objPtr->bytes directly, so
+	     * we must ensure that this is actually a string
+	     * object (otherwise it might have been pure Unicode).
+	     */
+	    Tcl_GetString(objPtr);
 	}
 	offset = 0;
     } else {
