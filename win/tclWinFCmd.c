@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.3 1999/04/16 00:48:08 stanton Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.4 1999/04/21 20:09:17 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -1354,6 +1354,15 @@ ConvertFileNameFormat(
     Tcl_SplitPath(fileName, &pathc, &pathv);
     newv = (char **) ckalloc(pathc * sizeof(char *));
 
+    if (pathc == 0) {
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
+		"could not read \"", fileName,
+		"\": no such file or directory", 
+		(char *) NULL);
+	result = TCL_ERROR;
+	goto cleanup;
+    }
+    
     for (i = 0; i < pathc; i++) {
 	if ((pathv[i][0] == '/')
 		|| ((strlen(pathv[i]) == 3) && (pathv[i][1] == ':'))

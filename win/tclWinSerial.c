@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.2 1999/04/16 00:48:09 stanton Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.3 1999/04/21 20:08:17 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -46,7 +46,10 @@ TCL_DECLARE_MUTEX(serialMutex)
  */
 
 #define SERIAL_EOF	 (1<<2)  /* Serial has reached EOF. */
-#define SERIAL_EXTRABYTE (1<<3)  /* Extra byte consumed while waiting for data */
+#define SERIAL_EXTRABYTE (1<<3)  /* Extra byte consumed while waiting for data
+				  */
+#define SERIAL_ERROR     (1<<4)
+    
 /*
  * This structure describes per-instance data for a serial based channel.
  */
@@ -950,9 +953,8 @@ WaitForRead(
     int blocking)		/* Indicates whether call should be
 				 * blocking or not. */
 {
-    DWORD timeout, errors;
+    DWORD timeout;
     HANDLE *handle = infoPtr->handle;
-    COMSTAT stat;
     
     while (1) {
 	/*
@@ -984,25 +986,6 @@ WaitForRead(
 	    return 1;
 	}
 	
-	if (ClearCommError(infoPtr->handle, &errors, &stat)) {
-	    /*
-	     * If there are errors, then signal an I/O error.
-	     */
-
-	    if (errors != 0) {
-		errno = EIO;
-		return -1;
-	    }
-	}
-	
-	/*
-	 * If data is in the queue return 1
-	 */
-	
-	if (stat.cbInQue != 0) {
-	    return 1;
-	}
-
 	/*
 	 * if there is an extra byte that was consumed while
 	 * waiting, but no data in the queue, return 0
@@ -1010,8 +993,10 @@ WaitForRead(
 	
 	if (infoPtr->readFlags & SERIAL_EXTRABYTE) {
 	    return 0;
+	} else if ((infoPtr->readFlags & SERIAL_ERROR) == EIO) {
+	    return -1;
 	}
-	    
+
 	ResetEvent(infoPtr->readable);
 	SetEvent(infoPtr->startReader);
     }
@@ -1041,9 +1026,8 @@ SerialReaderThread(LPVOID arg)
 {
     SerialInfo *infoPtr = (SerialInfo *)arg;
     HANDLE *handle = infoPtr->handle;
-    DWORD mask = EV_RXCHAR;
     DWORD count;
-    
+
     for (;;) {
 	/*
 	 * Wait for the main thread to signal before attempting to wait.
@@ -1073,12 +1057,6 @@ SerialReaderThread(LPVOID arg)
 		infoPtr->readFlags |= SERIAL_EXTRABYTE;
 	    }
 
-	} else {
-            /*
-	     * There is an error, signal an EOF.
-	     */
-	    
-	    infoPtr->readFlags |= SERIAL_EOF;
 	}
 
 	/*
