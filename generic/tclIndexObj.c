@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.5 2000/06/06 19:34:34 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.6 2000/08/07 22:42:31 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -334,12 +334,18 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 	    Tcl_AppendStringsToObj(objPtr, Tcl_GetString(objv[i]),
 		    (char *) NULL);
 	}
-	if (i < (objc - 1)) {
+
+	/*
+	 * Append a space character (" ") if there is more text to follow
+	 * (either another element from objv, or the message string).
+	 */
+	if ((i < (objc - 1)) || message) {
 	    Tcl_AppendStringsToObj(objPtr, " ", (char *) NULL);
 	}
     }
+
     if (message) {
-      Tcl_AppendStringsToObj(objPtr, " ", message, (char *) NULL);
+	Tcl_AppendStringsToObj(objPtr, message, (char *) NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", (char *) NULL);
 }

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.19 2000/07/26 01:28:49 davidg Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.20 2000/08/07 22:42:31 ericm Exp $
  */
 
 #define TCL_TEST
@@ -290,6 +290,10 @@ static int		TesttranslatefilenameCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestupvarCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 
+static int              TestWrongNumArgsObjCmd _ANSI_ARGS_((
+			    ClientData clientData,
+                            Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
 static int		TestChannelCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestChannelEventCmd _ANSI_ARGS_((ClientData clientData,
@@ -343,6 +347,8 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testaccessproc", TestaccessprocCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, (ClientData) 0,
@@ -4848,4 +4854,60 @@ TestChannelEventCmd(dummy, interp, argc, argv)
     Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of ",
             "add, delete, list, set, or removeall", (char *) NULL);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestWrongNumArgsObjCmd --
+ *
+ *	Test the Tcl_WrongNumArgs function.
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestWrongNumArgsObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    int i, length;
+    char *msg;
+
+    if (objc < 3) {
+	/*
+	 * Don't use Tcl_WrongNumArgs here, as that is the function
+	 * we want to test!
+	 */
+	Tcl_SetResult(interp, "insufficient arguments", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    
+    if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    msg = Tcl_GetStringFromObj(objv[2], &length);
+    if (length == 0) {
+	msg = NULL;
+    }
+    
+    if (i > objc - 3) {
+	/*
+	 * Asked for more arguments than were given.
+	 */
+	Tcl_SetResult(interp, "insufficient arguments", TCL_STATIC);
+	return TCL_ERROR;
+    }
+
+    Tcl_WrongNumArgs(interp, i, &(objv[3]), msg);
+    return TCL_OK;
 }
