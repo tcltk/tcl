@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.10 2003/02/11 18:27:37 hobbs Exp $
+# RCS: @(#) $Id: parse.test,v 1.11 2003/02/16 01:36:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -209,6 +209,10 @@ test parse-6.16 {ParseTokens procedure, backslash substitution} {
 test parse-6.17 {ParseTokens procedure, null characters} {
     testparser [bytestring "foo\0zz"] 0
 } "- [bytestring foo\0zz] 1 word [bytestring foo\0zz] 3 text foo 0 text [bytestring \0] 0 text zz 0 {}"
+test parse-6.18 {ParseTokens procedure, seek past numBytes for close-bracket} {
+    # Test for Bug 681841
+    list [catch {testparser {[a]} 2} msg] $msg
+} {1 {missing close-bracket}}
 
 test parse-7.1 {Tcl_FreeParse and ExpandTokenArray procedures} {
     testparser {$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) } 0

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.16 2002/12/11 20:30:16 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17 2003/02/16 01:36:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1287,10 +1287,23 @@ ParsePrimaryExpr(infoPtr)
 		return TCL_ERROR;
 	    }
 	    src = (nested.commandStart + nested.commandSize);
+
+	    /*
+	     * This is equivalent to Tcl_FreeParse(&nested), but
+	     * presumably inlined here for sake of runtime optimization
+	     */
+
 	    if (nested.tokenPtr != nested.staticTokens) {
 		ckfree((char *) nested.tokenPtr);
 	    }
-	    if ((src[-1] == ']') && !nested.incomplete) {
+
+	    /*
+	     * Check for the closing ']' that ends the command substitution.
+	     * It must have been the last character of the parsed command.
+	     */
+
+	    if ((nested.term < parsePtr->end) && (*nested.term == ']') 
+		    && !nested.incomplete) {
 		break;
 	    }
 	    if (src == parsePtr->end) {

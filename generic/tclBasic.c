@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.72 2003/02/03 20:16:52 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.73 2003/02/16 01:36:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3579,13 +3579,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 				    * in case TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     
-    /* For nested scripts, this variable will be set to point to the first 
-     * char after the end of the script - needed only to compare pointers,
-     * nothing will be read nor written there. 
-     */
-
-    CONST char *onePast = NULL;
-
     /*
      * The variables below keep track of how much state has been
      * allocated while evaluating the script, so that it can be freed
@@ -3614,7 +3607,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     bytesLeft = numBytes;
     if (iPtr->evalFlags & TCL_BRACKET_TERM) {
 	nested = 1;
-	onePast = script + numBytes;
     } else {
 	nested = 0;
     }
@@ -3627,14 +3619,13 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	}
 	gotParse = 1; 
 
-	/*
-	 * A nested script can only terminate in ']'. If the script is not 
-	 * nested, onePast is NULL and the second test is not performed.
-	 */
+	if (nested && parse.term == (script + numBytes)) {
+	    /*
+	     * A nested script can only terminate in ']'. If
+	     * the parsing got terminated at the end of the script,
+	     * there was no closing ']'.  Report the syntax error.
+	     */
 
-	next = parse.commandStart + parse.commandSize;
-	if ((next == onePast) && (onePast[-1] != ']')) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("missing close-bracket", -1));
 	    code = TCL_ERROR;
 	    goto error;
 	}
@@ -3702,15 +3693,17 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	 * Advance to the next command in the script.
 	 */
 
+	next = parse.commandStart + parse.commandSize;
 	bytesLeft -= next - p;
 	p = next;
 	Tcl_FreeParse(&parse);
 	gotParse = 0;
-	if ((nested != 0) && (p > script) && (p[-1] == ']')) {
+	if (nested && (*parse.term == ']')) {
 	    /*
 	     * We get here in the special case where the TCL_BRACKET_TERM
-	     * flag was set in the interpreter and we reached a close
-	     * bracket in the script.  Return immediately.
+	     * flag was set in the interpreter and the latest parsed command
+	     * was terminated by the matching close-bracket we seek.
+	     * Return immediately.
 	     */
 
 	    iPtr->termOffset = (p - 1) - script;
@@ -3732,12 +3725,12 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) { 
 	commandLength = parse.commandSize;
-	if ((parse.commandStart + commandLength) != (script + numBytes)) {
+	if (parse.term == parse.commandStart + commandLength - 1) {
 	    /*
-	     * The command where the error occurred didn't end at the end
-	     * of the script (i.e. it ended at a terminator character such
-	     * as ";".  Reduce the length by one so that the error message
-	     * doesn't include the terminator character.
+	     * The terminator character (such as ; or ]) of the command where
+	     * the error occurred is the last character in the parsed command.
+	     * Reduce the length by one so that the error message doesn't
+	     * include the terminator character.
 	     */
 	    
 	    commandLength -= 1;
@@ -3749,60 +3742,91 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	Tcl_DecrRefCount(objv[i]);
     }
     if (gotParse) {
-	next = parse.commandStart + parse.commandSize;
-	bytesLeft -= next - p;
-	p = next;
 	Tcl_FreeParse(&parse);
-
-	if ((nested != 0) && (p > script)) {
-	    CONST char *nextCmd = NULL;	/* pointer to start of next command */
-
-	    /*
-	     * We get here in the special case where the TCL_BRACKET_TERM
-	     * flag was set in the interpreter.
-	     *
-	     * At this point, we want to find the end of the script
-	     * (either end of script or the closing ']').
-	     */
-
-	    while ((p[-1] != ']') && bytesLeft) {
-		if (Tcl_ParseCommand(NULL, p, bytesLeft, nested, &parse)
-			!= TCL_OK) {
-		    /*
-		     * We were looking for the ']' to close the script.
-		     * But if we find a syntax error, it is ok to quit
-		     * early since in that case we no longer need to know
-		     * where the ']' is (if there was one).  We reset the
-		     * pointer to the start of the command that after the
-		     * one causing the return.  -- hobbs
-		     */
-
-		    p = (nextCmd == NULL) ? parse.commandStart : nextCmd;
-		    break;
-		}
-
-		if (nextCmd == NULL) {
-		    nextCmd = parse.commandStart;
-		}
-
-		/*
-		 * Advance to the next command in the script.
-		 */
-
-		next = parse.commandStart + parse.commandSize;
-		bytesLeft -= next - p;
-		p = next;
-		Tcl_FreeParse(&parse);
-	    }
-	    iPtr->termOffset = (p - 1) - script;
-	} else {
-	    iPtr->termOffset = p - script;
-	}    
     }
     if (objv != staticObjArray) {
 	ckfree((char *) objv);
     }
     iPtr->varFramePtr = savedVarFramePtr;
+
+    /*
+     * All that's left to do before returning is to set iPtr->termOffset
+     * to point past the end of the script we just evaluated.
+     */
+
+    next = parse.commandStart + parse.commandSize;
+    bytesLeft -= next - p;
+    p = next;
+
+    if (!nested) {
+	iPtr->termOffset = p - script;
+	return code;
+    }
+
+    /*
+     * When we are nested (the TCL_BRACKET_TERM flag was set in the
+     * interpreter), we must find the matching close-bracket to
+     * end the script we are evaluating.
+     *
+     * When our return code is TCL_CONTINUE or TCL_RETURN, we want
+     * to correctly set iPtr->termOffset to point to that matching
+     * close-bracket so our caller can move to the part of the
+     * string beyond the script we were asked to evaluate.
+     * So we try to parse past the rest of the commands.
+     */
+
+    next = NULL;
+    while (bytesLeft && (*parse.term != ']')) {
+	if (TCL_OK != Tcl_ParseCommand(NULL, p, bytesLeft, 1, &parse)) {
+	    /*
+	     * Syntax error.  Set the termOffset to the beginning of
+	     * the last command parsed.
+	     */
+
+	    if (next == NULL) {
+	        iPtr->termOffset = (parse.commandStart - 1) - script;
+	    } else {
+	        iPtr->termOffset = (next - 1) - script;
+	    }
+	    return code;
+	}
+	next = parse.commandStart + parse.commandSize;
+	bytesLeft -= next - p;
+	p = next;
+	next = parse.commandStart;
+	Tcl_FreeParse(&parse);
+    }
+
+    if (bytesLeft) {
+	/* 
+	 * parse.term points to the close-bracket.
+	 */
+
+	iPtr->termOffset = parse.term - script;
+    } else if (parse.term == script + numBytes) {
+	/*
+	 * There was no close-bracket.  Syntax error.
+	 */
+
+	iPtr->termOffset = parse.term - script;
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("missing close-bracket", -1));
+	return TCL_ERROR;
+    } else if (*parse.term != ']') {
+	/*
+	 * There was no close-bracket.  Syntax error.
+	 */
+
+	iPtr->termOffset = (parse.term + 1) - script;
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("missing close-bracket", -1));
+	return TCL_ERROR;
+    } else {
+	/* 
+	 * parse.term points to the close-bracket.
+	 */
+	iPtr->termOffset = parse.term - script;
+    }
     return code;
 }
 
