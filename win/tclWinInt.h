@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.12 2001/10/29 15:02:44 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.13 2002/03/22 23:37:39 hobbs Exp $
  */
 
 #ifndef _TCLWININT
@@ -103,9 +103,9 @@ EXTERN TclWinProcs *tclWinProcs;
 
 EXTERN void		TclWinInit(HINSTANCE hInst);
 
+#include "tclIntPlatDecls.h"
+
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT
-
-#include "tclIntPlatDecls.h"
 
 #endif	/* _TCLWININT */
