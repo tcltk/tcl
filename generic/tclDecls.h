@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.58 2001/09/13 11:56:19 msofer Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.59 2001/09/24 21:10:32 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -273,7 +273,8 @@ EXTERN int		Tcl_Close _ANSI_ARGS_((Tcl_Interp * interp,
 /* 82 */
 EXTERN int		Tcl_CommandComplete _ANSI_ARGS_((char * cmd));
 /* 83 */
-EXTERN char *		Tcl_Concat _ANSI_ARGS_((int argc, char ** argv));
+EXTERN char *		Tcl_Concat _ANSI_ARGS_((int argc, 
+				char * CONST * argv));
 /* 84 */
 EXTERN int		Tcl_ConvertElement _ANSI_ARGS_((CONST char * src, 
 				char * dst, int flags));
@@ -400,10 +401,10 @@ EXTERN int		Tcl_DoOneEvent _ANSI_ARGS_((int flags));
 EXTERN void		Tcl_DoWhenIdle _ANSI_ARGS_((Tcl_IdleProc * proc, 
 				ClientData clientData));
 /* 117 */
-EXTERN char *		Tcl_DStringAppend _ANSI_ARGS_((Tcl_DString * dsPtr, 
+EXTERN CONST char *	Tcl_DStringAppend _ANSI_ARGS_((Tcl_DString * dsPtr, 
 				CONST char * str, int length));
 /* 118 */
-EXTERN char *		Tcl_DStringAppendElement _ANSI_ARGS_((
+EXTERN CONST char *	Tcl_DStringAppendElement _ANSI_ARGS_((
 				Tcl_DString * dsPtr, CONST char * string));
 /* 119 */
 EXTERN void		Tcl_DStringEndSublist _ANSI_ARGS_((
@@ -611,7 +612,7 @@ EXTERN int		Tcl_MakeSafe _ANSI_ARGS_((Tcl_Interp * interp));
 EXTERN Tcl_Channel	Tcl_MakeTcpClientChannel _ANSI_ARGS_((
 				ClientData tcpSocket));
 /* 192 */
-EXTERN char *		Tcl_Merge _ANSI_ARGS_((int argc, char ** argv));
+EXTERN char *		Tcl_Merge _ANSI_ARGS_((int argc, char * CONST * argv));
 /* 193 */
 EXTERN Tcl_HashEntry *	Tcl_NextHashEntry _ANSI_ARGS_((
 				Tcl_HashSearch * searchPtr));
@@ -1614,7 +1615,7 @@ typedef struct TclStubs {
     void (*tcl_CancelIdleCall) _ANSI_ARGS_((Tcl_IdleProc * idleProc, ClientData clientData)); /* 80 */
     int (*tcl_Close) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 81 */
     int (*tcl_CommandComplete) _ANSI_ARGS_((char * cmd)); /* 82 */
-    char * (*tcl_Concat) _ANSI_ARGS_((int argc, char ** argv)); /* 83 */
+    char * (*tcl_Concat) _ANSI_ARGS_((int argc, char * CONST * argv)); /* 83 */
     int (*tcl_ConvertElement) _ANSI_ARGS_((CONST char * src, char * dst, int flags)); /* 84 */
     int (*tcl_ConvertCountedElement) _ANSI_ARGS_((CONST char * src, int length, char * dst, int flags)); /* 85 */
     int (*tcl_CreateAlias) _ANSI_ARGS_((Tcl_Interp * slave, char * slaveCmd, Tcl_Interp * target, char * targetCmd, int argc, char ** argv)); /* 86 */
@@ -1656,8 +1657,8 @@ typedef struct TclStubs {
     void (*tcl_DontCallWhenDeleted) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 114 */
     int (*tcl_DoOneEvent) _ANSI_ARGS_((int flags)); /* 115 */
     void (*tcl_DoWhenIdle) _ANSI_ARGS_((Tcl_IdleProc * proc, ClientData clientData)); /* 116 */
-    char * (*tcl_DStringAppend) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * str, int length)); /* 117 */
-    char * (*tcl_DStringAppendElement) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * string)); /* 118 */
+    CONST char * (*tcl_DStringAppend) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * str, int length)); /* 117 */
+    CONST char * (*tcl_DStringAppendElement) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * string)); /* 118 */
     void (*tcl_DStringEndSublist) _ANSI_ARGS_((Tcl_DString * dsPtr)); /* 119 */
     void (*tcl_DStringFree) _ANSI_ARGS_((Tcl_DString * dsPtr)); /* 120 */
     void (*tcl_DStringGetResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * dsPtr)); /* 121 */
@@ -1739,7 +1740,7 @@ typedef struct TclStubs {
     Tcl_Channel (*tcl_MakeFileChannel) _ANSI_ARGS_((ClientData handle, int mode)); /* 189 */
     int (*tcl_MakeSafe) _ANSI_ARGS_((Tcl_Interp * interp)); /* 190 */
     Tcl_Channel (*tcl_MakeTcpClientChannel) _ANSI_ARGS_((ClientData tcpSocket)); /* 191 */
-    char * (*tcl_Merge) _ANSI_ARGS_((int argc, char ** argv)); /* 192 */
+    char * (*tcl_Merge) _ANSI_ARGS_((int argc, char * CONST * argv)); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) _ANSI_ARGS_((Tcl_HashSearch * searchPtr)); /* 193 */
     void (*tcl_NotifyChannel) _ANSI_ARGS_((Tcl_Channel channel, int mask)); /* 194 */
     Tcl_Obj * (*tcl_ObjGetVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, int flags)); /* 195 */
