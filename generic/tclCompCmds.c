@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.48 2003/05/01 19:57:47 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49 2003/05/05 20:54:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -246,11 +246,12 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     int code;
     int savedStackDepth = envPtr->currStackDepth;
 
+    /*
+     * If syntax does not match what we expect for [catch], do not
+     * compile.  Let runtime checks determine if syntax has changed.
+     */
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "wrong # args: should be \"catch command ?varName?\"", -1);
-	return TCL_ERROR;
+	return TCL_OUT_LINE_COMPILE;
     }
 
     /*

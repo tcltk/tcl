@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc-old.test,v 1.10 2003/03/27 21:44:05 msofer Exp $
+# RCS: @(#) $Id: proc-old.test,v 1.11 2003/05/05 20:54:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -483,7 +483,7 @@ test proc-old-7.14 {return with special completion code} {
 "tproc2"} none}
 test proc-old-7.15 {return with special completion code} {
     list [catch {return -badOption foo message} msg] $msg
-} {1 {bad option "-badOption": must be -code, -errorcode, or -errorinfo}}
+} {2 message}
 
 test proc-old-8.1 {unset and undefined local arrays} {
     proc t1 {} {

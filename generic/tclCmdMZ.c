@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.86 2003/04/11 20:50:47 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.87 2003/05/05 20:54:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -934,74 +934,150 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int optionLen, argLen, code, result;
+    int code, level;
+    Tcl_Obj *valuePtr;
 
-    if (iPtr->errorInfo != NULL) {
-	ckfree(iPtr->errorInfo);
-	iPtr->errorInfo = NULL;
+    /* Start with the default options */
+    if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = iPtr->defaultReturnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
     }
-    if (iPtr->errorCode != NULL) {
-	ckfree(iPtr->errorCode);
-	iPtr->errorCode = NULL;
+
+    objv++, objc--;
+    if (objc) {
+	/* We're going to add our options, so manage Tcl_Obj sharing */
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = Tcl_DuplicateObj(iPtr->returnOpts);
+	Tcl_IncrRefCount(iPtr->returnOpts);
     }
-    code = TCL_OK;
     
-    for (objv++, objc--;  objc > 1;  objv += 2, objc -= 2) {
-	char *option = Tcl_GetStringFromObj(objv[0], &optionLen);
-	char *arg = Tcl_GetStringFromObj(objv[1], &argLen);
-    	
-	if (strcmp(option, "-code") == 0) {
-	    register int c = arg[0];
-	    if ((c == 'o') && (strcmp(arg, "ok") == 0)) {
-		code = TCL_OK;
-	    } else if ((c == 'e') && (strcmp(arg, "error") == 0)) {
-		code = TCL_ERROR;
-	    } else if ((c == 'r') && (strcmp(arg, "return") == 0)) {
-		code = TCL_RETURN;
-	    } else if ((c == 'b') && (strcmp(arg, "break") == 0)) {
-		code = TCL_BREAK;
-	    } else if ((c == 'c') && (strcmp(arg, "continue") == 0)) {
-		code = TCL_CONTINUE;
-	    } else {
-		result = Tcl_GetIntFromObj((Tcl_Interp *) NULL, objv[1],
-		        &code);
-		if (result != TCL_OK) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "bad completion code \"",
-			    Tcl_GetString(objv[1]),
-			    "\": must be ok, error, return, break, ",
-			    "continue, or an integer", (char *) NULL);
-		    return result;
-		}
+    for (;  objc > 1;  objv += 2, objc -= 2) {
+	int optLen;
+	CONST char *opt = Tcl_GetStringFromObj(objv[0], &optLen);
+	if ((optLen == 8) && (*opt == '-') && (strcmp(opt, "-options") == 0)) {
+	    Tcl_DictSearch search;
+	    int done = 0;
+	    Tcl_Obj *keyPtr;
+	    Tcl_Obj *dict = objv[1];
+
+	    nestedOptions:
+	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict,
+		    &search, &keyPtr, &valuePtr, &done)) {
+		/* Value is not a legal dictionary */
+		Tcl_DecrRefCount(iPtr->returnOpts);
+		iPtr->returnOpts = iPtr->defaultReturnOpts;
+		Tcl_IncrRefCount(iPtr->returnOpts);
+		Tcl_ResetResult(interp);
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			"bad -options value: expected dictionary but got \"",
+			Tcl_GetString(objv[1]), "\"", (char *) NULL);
+		return TCL_ERROR;
 	    }
-	} else if (strcmp(option, "-errorinfo") == 0) {
-	    iPtr->errorInfo =
-		(char *) ckalloc((unsigned) (strlen(arg) + 1));
-	    strcpy(iPtr->errorInfo, arg);
-	} else if (strcmp(option, "-errorcode") == 0) {
-	    iPtr->errorCode =
-		(char *) ckalloc((unsigned) (strlen(arg) + 1));
-	    strcpy(iPtr->errorCode, arg);
+
+	    while (!done) {
+		Tcl_DictObjPut(NULL, iPtr->returnOpts, keyPtr, valuePtr);
+		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
+	    }
+
+	    valuePtr = NULL;
+	    Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		    iPtr->returnOptionsKey, &valuePtr);
+	    if (valuePtr != NULL) {
+		dict = valuePtr;
+		Tcl_DictObjRemove(NULL, iPtr->returnOpts,
+			iPtr->returnOptionsKey);
+		goto nestedOptions;
+	    }
+
 	} else {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "bad option \"", option,
-		    "\": must be -code, -errorcode, or -errorinfo",
-		    (char *) NULL);
-	    return TCL_ERROR;
+	    Tcl_DictObjPut(NULL, iPtr->returnOpts, objv[0], objv[1]);
 	}
     }
-    
-    if (objc == 1) {
-	/*
-	 * Set the interpreter's object result. An inline version of
-	 * Tcl_SetObjResult.
-	 */
 
+    /* Check for bogus -code value */
+    Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnCodeKey, &valuePtr);
+    if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code)) {
+	static CONST char *returnCodes[] = {
+	    "ok", "error", "return", "break", "continue"
+	};
+
+	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
+		NULL, TCL_EXACT, &code)) {
+	    /* Value is not a legal return code */
+	    Tcl_DecrRefCount(iPtr->returnOpts);
+	    iPtr->returnOpts = iPtr->defaultReturnOpts;
+	    Tcl_IncrRefCount(iPtr->returnOpts);
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "bad completion code \"",
+		    Tcl_GetString(valuePtr),
+		    "\": must be ok, error, return, break, ",
+		    "continue, or an integer", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	/* Have a legal string value for a return code; convert to integer */
+	Tcl_DictObjPut(NULL, iPtr->returnOpts,
+		iPtr->returnCodeKey, Tcl_NewIntObj(code));
+    }
+
+    /* Check for bogus -level value */
+    Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnLevelKey, &valuePtr);
+    if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level) || (level < 0)) {
+	/* Value is not a legal level */
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = iPtr->defaultReturnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
+	Tcl_ResetResult(interp);
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"bad -level value: expected non-negative integer but got \"",
+		Tcl_GetString(valuePtr), "\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    /* 
+     * Convert [return -code return -level X] to
+     * [return -code ok -level X+1]
+     */
+    if (code == TCL_RETURN) {
+	level++;
+	Tcl_DictObjPut(NULL, iPtr->returnOpts,
+		iPtr->returnLevelKey, Tcl_NewIntObj(level));
+	Tcl_DictObjPut(NULL, iPtr->returnOpts,
+		iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
+    }
+
+    if (level == 0) {
+	if (code == TCL_ERROR) {
+	    valuePtr = NULL;
+	    Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		    iPtr->returnErrorinfoKey, &valuePtr);
+	    if (valuePtr != NULL) {
+		int infoLen;
+		CONST char *info = Tcl_GetStringFromObj(valuePtr,&infoLen);
+		if (infoLen) {
+		    Tcl_AddObjErrorInfo(interp, info, infoLen);
+		    iPtr->flags |= ERR_ALREADY_LOGGED;
+		}
+	    }
+	    valuePtr = NULL;
+	    Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		    iPtr->returnErrorcodeKey, &valuePtr);
+	    if (valuePtr != NULL) {
+		Tcl_SetVar2Ex(interp, "errorCode", NULL,
+			valuePtr, TCL_GLOBAL_ONLY);
+		iPtr->flags |= ERROR_CODE_SET;
+	    }
+	}
+    } else {
+	code = TCL_RETURN;
+    }
+
+    if (objc == 1) {
 	Tcl_SetObjResult(interp, objv[0]);
     }
-    iPtr->returnCode = code;
-    return TCL_RETURN;
+    return code;
+
 }
 
 /*
@@ -3851,7 +3927,7 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 				 * information. */
 {
     Interp *iPtr = (Interp *) interp;
-    int stateCode;
+    Tcl_Obj *stateReturnOpts;
     Tcl_SavedResult state;
     TraceCommandInfo *tcmdPtr = (TraceCommandInfo *) clientData;
     int code;
@@ -3877,7 +3953,7 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 
 	/*
 	 * Execute the command.  Save the interp's result used for the
-	 * command, including the value of iPtr->returnCode which may be
+	 * command, including the value of iPtr->returnOpts which may be
 	 * modified when Tcl_Eval is invoked. We discard any object
 	 * result the command returns.
 	 *
@@ -3887,7 +3963,8 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	 */
 
 	Tcl_SaveResult(interp, &state);
-	stateCode = iPtr->returnCode;
+	stateReturnOpts = iPtr->returnOpts;
+	Tcl_IncrRefCount(stateReturnOpts);
 	if (flags & TCL_TRACE_DESTROYED) {
 	    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
 	}
@@ -3899,7 +3976,12 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	}
 
 	Tcl_RestoreResult(interp, &state);
-	iPtr->returnCode = stateCode;
+	if (iPtr->returnOpts != stateReturnOpts) {
+	    Tcl_DecrRefCount(iPtr->returnOpts);
+	    iPtr->returnOpts = stateReturnOpts;
+	    Tcl_IncrRefCount(iPtr->returnOpts);
+	}
+	Tcl_DecrRefCount(stateReturnOpts);
 	
 	Tcl_DStringFree(&cmd);
     }
@@ -4302,7 +4384,7 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	 */
 	if (call) {
 	    Tcl_SavedResult state;
-	    int stateCode;
+	    Tcl_Obj *stateReturnOpts;
 	    Tcl_DString cmd;
 	    Tcl_DString sub;
 	    int i;
@@ -4351,13 +4433,14 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	    
 	    /*
 	     * Execute the command.  Save the interp's result used for
-	     * the command, including the value of iPtr->returnCode which
+	     * the command, including the value of iPtr->returnOpts which
 	     * may be modified when Tcl_Eval is invoked.  We discard any
 	     * object result the command returns.
 	     */
 
 	    Tcl_SaveResult(interp, &state);
-	    stateCode = iPtr->returnCode;
+	    stateReturnOpts = iPtr->returnOpts;
+	    Tcl_IncrRefCount(stateReturnOpts);
 
 	    tcmdPtr->flags |= TCL_TRACE_EXEC_IN_PROGRESS;
 	    iPtr->flags    |= INTERP_TRACE_IN_PROGRESS;
@@ -4377,10 +4460,15 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
             if (traceCode == TCL_OK) {
 		/* Restore result if trace execution was successful */
 		Tcl_RestoreResult(interp, &state);
-		iPtr->returnCode = stateCode;
+		if (iPtr->returnOpts != stateReturnOpts) {
+		    Tcl_DecrRefCount(iPtr->returnOpts);
+		    iPtr->returnOpts = stateReturnOpts;
+		    Tcl_IncrRefCount(iPtr->returnOpts);
+		}
             } else {
 		Tcl_DiscardResult(&state);
 	    }
+	    Tcl_DecrRefCount(stateReturnOpts);
 
 	    Tcl_DStringFree(&cmd);
 	}

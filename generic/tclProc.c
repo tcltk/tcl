@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44 2002/12/11 21:29:52 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.45 2003/05/05 20:54:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1077,7 +1077,6 @@ TclObjInterpProc(clientData, interp, objc, objv)
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
-    iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
     result = TclCompEvalObj(interp, procPtr->bodyPtr);
     procPtr->refCount--;
@@ -1409,8 +1408,8 @@ TclProcCleanupProc(procPtr)
  * TclUpdateReturnInfo --
  *
  *	This procedure is called when procedures return, and at other
- *	points where the TCL_RETURN code is used.  It examines fields
- *	such as iPtr->returnCode and iPtr->errorCode and modifies
+ *	points where the TCL_RETURN code is used.  It examines values
+ *	stored in the iPtr->returnOpts dictionary and modifies
  *	the real return status accordingly.
  *
  * Results:
@@ -1428,21 +1427,46 @@ TclUpdateReturnInfo(iPtr)
     Interp *iPtr;		/* Interpreter for which TCL_RETURN
 				 * exception is being processed. */
 {
-    int code;
+    int level, code = TCL_RETURN;
     char *errorCode;
+    Tcl_Obj *valuePtr;
 
-    code = iPtr->returnCode;
-    iPtr->returnCode = TCL_OK;
+    Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnLevelKey, &valuePtr);
+    Tcl_GetIntFromObj(NULL, valuePtr, &level);
+    level--;
+    if (level < 0) {
+	Tcl_Panic("TclUpdateReturnInfo: negative return level");
+    }
+    if (Tcl_IsShared(iPtr->returnOpts)) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = Tcl_DuplicateObj(iPtr->returnOpts);
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+    Tcl_DictObjPut(NULL, iPtr->returnOpts,
+	    iPtr->returnLevelKey, Tcl_NewIntObj(level));
+
+    if (level == 0) {
+	/* Now we've reached the level to return the requested -code */
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnCodeKey, &valuePtr);
+	Tcl_GetIntFromObj(NULL, valuePtr, &code);
+    }
     if (code == TCL_ERROR) {
-	errorCode = ((iPtr->errorCode != NULL) ? iPtr->errorCode : "NONE");
-	Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
-	        NULL, Tcl_NewStringObj(errorCode, -1),
-		TCL_GLOBAL_ONLY);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		iPtr->returnErrorcodeKey, &valuePtr);
+	if (valuePtr == NULL) {
+	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
+	            NULL, Tcl_NewStringObj("NONE", -1), TCL_GLOBAL_ONLY);
+	} else {
+	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
+	            NULL, valuePtr, TCL_GLOBAL_ONLY);
+	}
 	iPtr->flags |= ERROR_CODE_SET;
-	if (iPtr->errorInfo != NULL) {
+
+	Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		iPtr->returnErrorinfoKey, &valuePtr);
+	if (valuePtr != NULL) {
 	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorInfo,
-	            NULL, Tcl_NewStringObj(iPtr->errorInfo, -1),
-		    TCL_GLOBAL_ONLY);
+	            NULL, valuePtr, TCL_GLOBAL_ONLY);
 	    iPtr->flags |= ERR_IN_PROGRESS;
 	}
     }

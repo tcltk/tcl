@@ -1,3 +1,20 @@
+2003-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:		Implementation of TIP 90, which
+	* generic/tclCmdAH.c:		extends the [catch] and [return]
+	* generic/tclCompCmds.c:	commands to enable creation of a
+	* generic/tclExecute.c:		proc that is a replacement for
+	* generic/tclInt.h:		[return]. [Patch 531640]
+	* generic/tclProc.c:
+	* generic/tclResult.c:
+	* tests/cmdAH.test:
+	* tests/cmdMZ.test:
+	* tests/error.test:
+	* tests/proc-old.test:
+
+        * library/tcltest/tcltest.tcl: The -returnCodes option to [test]
+        failed to recognize the symbolic name "ok" for return code 0.
+
 2003-05-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclBasic.c (Tcl_HideCommand): Fixed error message for

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.9 2002/01/29 03:03:02 hobbs Exp $
+# RCS: @(#) $Id: error.test,v 1.10 2003/05/05 20:54:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -60,13 +60,13 @@ test error-1.5 {simple errors from commands} {
 } glorp
 
 test error-1.6 {simple errors from commands} {
-    catch {catch a b c} b
+    catch {catch a b c d} b
 } 1
 
 test error-1.7 {simple errors from commands} {
-    catch {catch a b c} b
+    catch {catch a b c d} b
     set b
-} {wrong # args: should be "catch command ?varName?"}
+} {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
 
 test error-1.8 {simple errors from commands} {nonPortable} {
     # This test is non-portable: it generates a memory fault on
@@ -124,10 +124,10 @@ test error-2.6 {errors in nested procedures} {
 
 test error-3.1 {errors in catch command} {
     list [catch {catch} msg] $msg
-} {1 {wrong # args: should be "catch command ?varName?"}}
+} {1 {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}}
 test error-3.2 {errors in catch command} {
     list [catch {catch a b c} msg] $msg
-} {1 {wrong # args: should be "catch command ?varName?"}}
+} {0 1}
 test error-3.3 {errors in catch command} {
     catch {unset a}
     set a(0) 22

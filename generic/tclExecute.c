@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.100 2003/04/28 12:34:25 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101 2003/05/05 20:54:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -975,6 +975,11 @@ TclCompEvalObj(interp, objPtr)
 	 */
 	
 	codePtr->refCount++;
+	if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
+	    Tcl_DecrRefCount(iPtr->returnOpts);
+	    iPtr->returnOpts = iPtr->defaultReturnOpts;
+	    Tcl_IncrRefCount(iPtr->returnOpts);
+	}
 	iPtr->numLevels++;
 	result = TclExecuteByteCode(interp, codePtr);
 	iPtr->numLevels--;
@@ -1196,7 +1201,11 @@ TclExecuteByteCode(interp, codePtr)
 #endif
     switch (*pc) {
     case INST_RETURN:
-	iPtr->returnCode = TCL_OK;
+	if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
+	    Tcl_DecrRefCount(iPtr->returnOpts);
+	    iPtr->returnOpts = iPtr->defaultReturnOpts;
+	    Tcl_IncrRefCount(iPtr->returnOpts);
+	}
 	result = TCL_RETURN;
     case INST_DONE:
 	if (stackTop <= initStackTop) {

@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.81 2003/04/21 20:42:23 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82 2003/05/05 20:54:40 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1919,7 +1919,7 @@ proc tcltest::test {name description args} {
 	}
 
 	# Replace symbolic valies supplied for -returnCodes
-	foreach {strcode numcode} {normal 0 error 1 return 2 break 3 continue 4} {
+	foreach {strcode numcode} {ok 0 normal 0 error 1 return 2 break 3 continue 4} {
 	    set returnCodes [string map -nocase [list $strcode $numcode] $returnCodes]
 	}
     } else {
