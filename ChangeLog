@@ -3,6 +3,14 @@
 	* win/makefile.vc: default environment variable for VC++ is
 	%MSDevDir% not %MSVCDir%, although vcvars32.bat sets both.
 
+	* win/tclWinNotify.c (Tcl_WaitForEvent) : Allows an idling
+	notifier to service "Asynchronous Procedure Calls" from its wait
+	state.  Only useful for extension authors who decide they might
+	want to try "completion routines" with WriteFileEx(), as an
+	example.  From experience, I recommend that "completion	ports"
+	should be used instead as the execution of the callbacks are more
+	managable.
+
 2004-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:           update patchlevel to 8.5a1
