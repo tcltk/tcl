@@ -1743,7 +1743,12 @@ dnl        esac
     fi
 
     # Define TCL_LIBS now that we know what DL_LIBS is.
-    TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
+    # The trick here is that we don't want to change
+    # the value of TCL_LIBS if it is already set when
+    # tclConfig.sh had been loaded by Tk.
+    if test "x${TCL_LIBS}" = "x"; then
+        TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
+    fi
     AC_SUBST(TCL_LIBS)
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
