@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.17 2005/03/20 13:28:12 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.18 2005/03/21 19:22:12 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -239,7 +239,7 @@ typedef struct TclVMWord {
 #define HPINT_MIN  (-HPINT_MAX-1)
 
 #define HP_STASH(full, n, u) \
-    (full) = ((((TclPSizedInt) (n)) << HP_SHIFT) | (u))
+    (full) = ((TclPSizedInt) (n) << HP_SHIFT) | ((TclPSizedInt) (u) & HP_MASK)
 
 #define HP_EXTRACT(full, n, u)\
     (n) = ((full) >> HP_SHIFT);\
@@ -313,7 +313,7 @@ FIXME
     (full) = ((((TclPSizedInt) (n)) << P_SHIFT) | (u))
 
 #define HP_STASH(full, n, u) \
-    (full) = ((((TclPSizedInt) (n)) << HP_SHIFT) | (u))
+    (full) = ((TclPSizedInt) (n) << HP_SHIFT) | ((TclPSizedInt) (u) & HP_MASK)
 
 #define HP_EXTRACT(full, n, u)\
     (n) = (((TclPSizedInt)(full)) >> HP_SHIFT);\

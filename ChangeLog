@@ -1,3 +1,11 @@
+2005-03-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.h (HP_STASH):	Corrections for LP64
+	systems to avoid errors due to sign-extension of the lower
+	value being stashed.
+	* generic/tclCompCmds.c (TclCompileLassignCmd,TclCompileLsetCmd):	
+	Additional sign-extension corrections for LP64 systems.
+
 2005-03-19 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:
