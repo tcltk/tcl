@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.58 2000/02/10 08:55:25 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.59 2000/02/14 22:40:56 ericm Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.58 2000/02/10 08:55:25 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.59 2000/02/14 22:40:56 ericm Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -1033,6 +1033,21 @@ checkuchar:
 
 checkexports: $(TCL_LIB_FILE)
 	-nm -p $(TCL_LIB_FILE) | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | grep -v '^[Tt]cl'
+
+#
+# Target to create a Tcl RPM for Linux.  Requires that you be on a Linux
+# system.
+#
+
+rpm: all /bin/rpm
+	rm -f THIS.TCL.SPEC
+	echo "%define _builddir `pwd`" > THIS.TCL.SPEC
+	echo "%define _rpmdir `pwd`/RPMS" >> THIS.TCL.SPEC
+	cat tcl.spec >> THIS.TCL.SPEC
+	mkdir -p RPMS/i386
+	rpm -bb THIS.TCL.SPEC
+	mv RPMS/i386/*.rpm .
+	rm -rf RPMS THIS.TCL.SPEC
 
 #
 # Target to create a proper Tcl distribution from information in the
