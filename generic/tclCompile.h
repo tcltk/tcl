@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.16.2.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.16.2.2 2001/10/08 14:31:37 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -592,8 +592,9 @@ extern InstructionDesc instructionTable[];
 #define BUILTIN_FUNC_RAND		22
 #define BUILTIN_FUNC_ROUND		23
 #define BUILTIN_FUNC_SRAND		24
+#define BUILTIN_FUNC_WIDE		25
 
-#define LAST_BUILTIN_FUNC        	24
+#define LAST_BUILTIN_FUNC        	25
 
 /*
  * Table describing the built-in math functions. Entries in this table are
