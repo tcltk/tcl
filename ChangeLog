@@ -1,3 +1,9 @@
+2003-11-10  Don Porter	<dgp@users.sourceforge.net>
+
+        * unix/tclUnixInit.c (TclpInitLibraryPath):     
+        * win/tclWinInit.c (TclpInitLibraryPath):       Fix for [Bug 832657]
+        that should not run afoul of startup constraints.
+
 2003-11-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/cmdIL.test: Stopped cmdIL-5.5 from stomping over the test
