@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: while.test,v 1.6 2000/04/10 17:19:06 ericm Exp $
+# RCS: @(#) $Id: while.test,v 1.7 2001/09/19 18:17:54 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -609,13 +609,20 @@ test while-6.5 {continue tests, long command body with computed command names} {
 
 # Test for incorrect "double evaluation" semantics
 
-test while-7.1 {delayed substitution of body} {knownBug} {
+test while-7.1 {delayed substitution of body} {
     set i 0
     while {[incr i] < 10} "
        set result $i
     "
-    set result
-} {0}
+    proc p {} {
+	set i 0
+	while {[incr i] < 10} "
+	    set result $i
+	"
+	set result
+    }
+    append result [p]
+} {00}
 
 # cleanup
 ::tcltest::cleanupTests
