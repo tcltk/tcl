@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.11 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.12 2002/01/27 11:10:03 das Exp $
  */
 
 #include <Errors.h>
@@ -496,7 +496,7 @@ resourceRef? resourceType");
 	    return TCL_OK;
 	case RESOURCE_OPEN: {
 	    Tcl_DString ds, buffer;
-	    char *str, *native;
+	    CONST char *str, *native;
 	    int length;
 	    			
 	    if (!((objc == 3) || (objc == 4))) {
@@ -1293,9 +1293,12 @@ Tcl_MacEvalResource(
      * Load the resource by name or ID
      */
     if (resourceName != NULL) {
-	strcpy((char *) rezName + 1, resourceName);
-	rezName[0] = strlen(resourceName);
+	Tcl_DString ds;
+	Tcl_UtfToExternalDString(NULL, resourceName, -1, &ds);
+	strcpy((char *) rezName + 1, Tcl_DStringValue(&ds));
+	rezName[0] = (unsigned) Tcl_DStringLength(&ds);
 	sourceText = GetNamedResource('TEXT', rezName);
+	Tcl_DStringFree(&ds);
     } else {
 	sourceText = GetResource('TEXT', (short) resourceNumber);
     }
@@ -1462,15 +1465,17 @@ Tcl_MacFindResource(
 	    resource = GetResource(resourceType, resourceNumber);
 	}
     } else {
+    	Str255 rezName;
 	Tcl_DString ds;
-	char *native = Tcl_UtfToExternalDString(NULL, resourceName, -1, &ds);
-	c2pstr(native);
+	Tcl_UtfToExternalDString(NULL, resourceName, -1, &ds);
+	strcpy((char *) rezName + 1, Tcl_DStringValue(&ds));
+	rezName[0] = (unsigned) Tcl_DStringLength(&ds);
 	if (limitSearch) {
 	    resource = Get1NamedResource(resourceType,
-		    (StringPtr) native);
+		    rezName);
 	} else {
 	    resource = GetNamedResource(resourceType,
-		    (StringPtr) resourceName);
+		    rezName);
 	}
 	Tcl_DStringFree(&ds);
     }

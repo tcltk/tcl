@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.11 2002/01/23 20:46:01 dgp Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.12 2002/01/27 11:10:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -2449,7 +2449,7 @@ GetHostFromString(
     }
     dnrState.done = 0;
     GetCurrentProcess(&(dnrState.psn));
-    err = StrToAddr(name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
+    err = StrToAddr((char*)name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
     if (err == cacheFault) {
 	while (!dnrState.done) {
 	    WaitNextEvent(0, &dummy, 1, NULL);
@@ -2464,7 +2464,7 @@ GetHostFromString(
 
     if (dnrState.hostInfo.rtnCode == cacheFault) {
 	dnrState.done = 0;
-	err = StrToAddr(name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
+	err = StrToAddr((char*)name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
 	if (err == cacheFault) {
 	    while (!dnrState.done) {
 		WaitNextEvent(0, &dummy, 1, NULL);

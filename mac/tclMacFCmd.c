@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.15 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.16 2002/01/27 11:09:44 das Exp $
  */
 
 #include "tclInt.h"
@@ -1024,7 +1024,7 @@ GetFileSpecs(
     Boolean *pathIsDirectoryPtr)/* Set to true if path is itself a directory,
     				 * otherwise false. */
 {
-    char *dirName;
+    CONST char *dirName;
     OSErr err;
     int argc;
     CONST char **argv;

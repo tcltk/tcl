@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.44 2002/01/25 22:01:31 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.45 2002/01/27 11:09:30 das Exp $
 
 library tcl
 
@@ -780,7 +780,7 @@ declare 24 mac {
     char * TclpGetTZName(int isdst)
 }
 declare 25 mac {
-    int TclMacChmod(char *path, int mode)
+    int TclMacChmod(CONST char *path, int mode)
 }
 
 ############################

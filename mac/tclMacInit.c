@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.7 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.8 2002/01/27 11:09:54 das Exp $
  */
 
 #include <AppleEvents.h>
@@ -537,7 +537,7 @@ TclpSetVariables(interp)
     int minor, major, objc;
     Tcl_Obj **objv;
     char versStr[2 * TCL_INTEGER_SPACE];
-    char *str;
+    CONST char *str;
     Tcl_Obj *pathPtr;
     Tcl_DString ds;
 
@@ -781,9 +781,13 @@ Tcl_SourceRCFile(
     fileName = Tcl_GetVar(interp, "tcl_rcRsrcName", TCL_GLOBAL_ONLY);
 
     if (fileName != NULL) {
-	c2pstr(fileName);
-	h = GetNamedResource('TEXT', (StringPtr) fileName);
-	p2cstr((StringPtr) fileName);
+	Str255 rezName;
+	Tcl_DString ds;
+	Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	strcpy((char *) rezName + 1, Tcl_DStringValue(&ds));
+	rezName[0] = (unsigned) Tcl_DStringLength(&ds);
+	h = GetNamedResource('TEXT', rezName);
+	Tcl_DStringFree(&ds);
 	if (h != NULL) {
 	    if (Tcl_MacEvalResource(interp, fileName, 0, NULL) != TCL_OK) {
 		errChannel = Tcl_GetStdChannel(TCL_STDERR);

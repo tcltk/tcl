@@ -1,3 +1,19 @@
+2001-01-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.decls:
+	* generic/tclIntPlatDecls.h:
+	* mac/tclMacChan.c:
+	* mac/tclMacFCmd.c:
+	* mac/tclMacFile.c:
+	* mac/tclMacInit.c:
+	* mac/tclMacLoad.c:
+	* mac/tclMacResource.c:
+	* mac/tclMacSock.c: TIP 27 CONSTification induced changes
+
+	* tests/event.test:
+	* tests/main.test: added catches/constraints to test that
+	use features that don't exist on the mac.
+
 2002-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Make -eofchar and -translation options read only for
