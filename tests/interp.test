@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.19 2003/02/05 20:05:47 mdejong Exp $
+# RCS: @(#) $Id: interp.test,v 1.19.2.1 2003/03/12 17:51:33 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
@@ -118,6 +118,9 @@ test interp-2.12 {anonymous interps vs existing procs} {
     regexp "interp(\[0-9]+)" $x dummy anothernum
     expr $anothernum - $thenum
 } 1    
+test interp-2.13 {correct default when no $path arg is given} -body {
+    interp create --
+} -match regexp -result {interp[0-9]+}
     
 foreach i [interp slaves] {
     interp delete $i
