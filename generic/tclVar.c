@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.32 2001/05/17 02:13:03 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.33 2001/05/26 01:25:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -53,10 +53,29 @@ static int		MakeUpvar _ANSI_ARGS_((
 			    char *myName, int myFlags));
 static Var *		NewVar _ANSI_ARGS_((void));
 static ArraySearch *	ParseSearchId _ANSI_ARGS_((Tcl_Interp *interp,
-			    Var *varPtr, char *varName, char *string));
+			    Var *varPtr, char *varName, Tcl_Obj *handleObj));
 static void		VarErrMsg _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *part1, char *part2, char *operation,
 			    char *reason));
+static int		SetArraySearchObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
+
+/*
+ * Type of Tcl_Objs used to speed up array searches.
+ *
+ * INTERNALREP DEFINITION:
+ *   twoPtrValue.ptr1 = searchIdNumber as offset from (char*)NULL
+ *   twoPtrValue.ptr2 = variableNameStartInString as offset from (char*)NULL
+ *
+ * Note that the value stored in ptr2 is the offset into the string of
+ * the start of the variable name and not the address of the variable
+ * name itself, as this can be safely copied.
+ */
+Tcl_ObjType tclArraySearchType = {
+    "array search",
+    NULL, NULL, NULL, SetArraySearchObj
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -3034,7 +3053,6 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     switch (index) {
         case ARRAY_ANYMORE: {
 	    ArraySearch *searchPtr;
-	    char *searchId;
 	    
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, 
@@ -3044,8 +3062,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    if (notArray) {
 	        goto error;
 	    }
-	    searchId = Tcl_GetString(objv[3]);
-	    searchPtr = ParseSearchId(interp, varPtr, varName, searchId);
+	    searchPtr = ParseSearchId(interp, varPtr, varName, objv[3]);
 	    if (searchPtr == NULL) {
 	        return TCL_ERROR;
 	    }
@@ -3069,7 +3086,6 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	}
         case ARRAY_DONESEARCH: {
 	    ArraySearch *searchPtr, *prevPtr;
-	    char *searchId;
 
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, 
@@ -3079,8 +3095,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    if (notArray) {
 	        goto error;
 	    }
-	    searchId = Tcl_GetString(objv[3]);
-	    searchPtr = ParseSearchId(interp, varPtr, varName, searchId);
+	    searchPtr = ParseSearchId(interp, varPtr, varName, objv[3]);
 	    if (searchPtr == NULL) {
 	        return TCL_ERROR;
 	    }
@@ -3227,7 +3242,6 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	}
         case ARRAY_NEXTELEMENT: {
 	    ArraySearch *searchPtr;
-	    char *searchId;
 	    Tcl_HashEntry *hPtr;
 	    
 	    if (objc != 4) {
@@ -3238,8 +3252,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    if (notArray) {
   	        goto error;
 	    }
-	    searchId = Tcl_GetString(objv[3]);
-	    searchPtr = ParseSearchId(interp, varPtr, varName, searchId);
+	    searchPtr = ParseSearchId(interp, varPtr, varName, objv[3]);
 	    if (searchPtr == NULL) {
 	        return TCL_ERROR;
 	    }
@@ -4400,9 +4413,75 @@ NewVar()
 /*
  *----------------------------------------------------------------------
  *
+ * SetArraySearchObj --
+ *
+ *	This function converts the given tcl object into one that
+ *	has the "array search" internal type.
+ *
+ * Results:
+ *	TCL_OK if the conversion succeeded, and TCL_ERROR if it failed
+ *	(when an error message will be placed in the interpreter's
+ *	result.)
+ *
+ * Side effects:
+ *	Updates the internal type and representation of the object to
+ *	make this an array-search object.  See the tclArraySearchType
+ *	declaration above for details of the internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetArraySearchObj(interp, objPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+{
+    char *string;
+    char *end;
+    int id;
+    size_t offset;
+
+    /*
+     * Get the string representation. Make it up-to-date if necessary.
+     */
+
+    string = Tcl_GetString(objPtr);
+
+    /*
+     * Parse the id into the three parts separated by dashes.
+     */
+    if ((string[0] != 's') || (string[1] != '-')) {
+	syntax:
+	Tcl_AppendResult(interp, "illegal search identifier \"", string,
+		"\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+    id = strtoul(string+2, &end, 10);
+    if ((end == (string+2)) || (*end != '-')) {
+	goto syntax;
+    }
+    /*
+     * Can't perform value check in this context, so place reference
+     * to place in string to use for the check in the object instead.
+     */
+    end++;
+    offset = end - string;
+
+    if (objPtr->typePtr != NULL && objPtr->typePtr->freeIntRepProc != NULL) {
+	objPtr->typePtr->freeIntRepProc(objPtr);
+    }
+    objPtr->typePtr = &tclArraySearchType;
+    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *)(((char *)NULL)+id);
+    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *)(((char *)NULL)+offset);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ParseSearchId --
  *
- *	This procedure translates from a string to a pointer to an
+ *	This procedure translates from a tcl object to a pointer to an
  *	active array search (if there is one that matches the string).
  *
  * Results:
@@ -4411,41 +4490,47 @@ NewVar()
  *	the interp's result contains an error message.
  *
  * Side effects:
- *	None.
+ *	The tcl object might have its internal type and representation
+ *	modified.
  *
  *----------------------------------------------------------------------
  */
 
 static ArraySearch *
-ParseSearchId(interp, varPtr, varName, string)
+ParseSearchId(interp, varPtr, varName, handleObj)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
     Var *varPtr;		/* Array variable search is for. */
     char *varName;		/* Name of array variable that search is
 				 * supposed to be for. */
-    char *string;		/* String containing id of search. Must have
+    Tcl_Obj *handleObj;		/* Object containing id of search. Must have
 				 * form "search-num-var" where "num" is a
 				 * decimal number and "var" is a variable
 				 * name. */
 {
-    char *end;
+    register char *string;
+    register size_t offset;
     int id;
     ArraySearch *searchPtr;
 
     /*
-     * Parse the id into the three parts separated by dashes.
+     * Parse the id.
      */
-
-    if ((string[0] != 's') || (string[1] != '-')) {
-	syntax:
-	Tcl_AppendResult(interp, "illegal search identifier \"", string,
-		"\"", (char *) NULL);
+    if (Tcl_ConvertToType(interp, handleObj, &tclArraySearchType) != TCL_OK) {
 	return NULL;
     }
-    id = strtoul(string+2, &end, 10);
-    if ((end == (string+2)) || (*end != '-')) {
-	goto syntax;
-    }
-    if (strcmp(end+1, varName) != 0) {
+    /*
+     * Cast is safe, since always came from an int in the first place.
+     */
+    id = (int)(((char*)handleObj->internalRep.twoPtrValue.ptr1) -
+	       ((char*)NULL));
+    string = Tcl_GetString(handleObj);
+    offset = (((char*)handleObj->internalRep.twoPtrValue.ptr2) -
+	      ((char*)NULL));
+    /*
+     * This test cannot be placed inside the Tcl_Obj machinery, since
+     * it is dependent on the variable context.
+     */
+    if (strcmp(string+offset, varName) != 0) {
 	Tcl_AppendResult(interp, "search identifier \"", string,
 		"\" isn't for variable \"", varName, "\"", (char *) NULL);
 	return NULL;
@@ -4454,6 +4539,10 @@ ParseSearchId(interp, varPtr, varName, string)
     /*
      * Search through the list of active searches on the interpreter
      * to see if the desired one exists.
+     *
+     * Note that we cannot store the searchPtr directly in the Tcl_Obj
+     * as that would run into trouble when DeleteSearches() was called
+     * so we must scan this list every time.
      */
 
     for (searchPtr = varPtr->searchPtr; searchPtr != NULL;

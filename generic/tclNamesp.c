@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.23 2001/05/15 14:19:13 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.24 2001/05/26 01:25:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -166,7 +166,7 @@ Tcl_ObjType tclNsNameType = {
  *	None.
  *
  * Side effects:
- *	The namespace object type is registered with the Tcl compiler.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -174,7 +174,9 @@ Tcl_ObjType tclNsNameType = {
 void
 TclInitNamespaceSubsystem()
 {
-    Tcl_RegisterObjType(&tclNsNameType);
+    /*
+     * Does nothing for now.
+     */
 }
 
 /*
