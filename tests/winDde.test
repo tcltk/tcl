@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.15 2003/05/16 17:29:49 patthoyts Exp $
+# RCS: @(#) $Id: winDde.test,v 1.16 2003/05/16 22:00:47 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -70,6 +70,7 @@ proc createChildProcess { ddeServerName } {
     puts $f [list dde servername $ddeServerName]
     puts $f {
         # run the server and handle final cleanup.
+        after 200;# give dde a chance to get going.
 	puts ready
         flush stdout
 	vwait done
@@ -208,86 +209,135 @@ test winDde-5.4 {DDE eval bad arguments} {pcOnly} {
 
 # -------------------------------------------------------------------------
 
-test winDde-6.1 {DDE servername bad arguments} {pcOnly} {
-    list [catch {dde servername -z -z -z} msg] $msg
-} {1 {wrong # args: should be "dde servername ?-exact? ?--? ?serverName?"}}
-    
-test winDde-6.2 {DDE servername set name} {pcOnly} {
-    list [catch {dde servername -- winDde-6.2} msg] $msg
-} {0 winDde-6.2}
+test winDde-6.1 {DDE servername bad arguments} \
+    -constraints pcOnly \
+    -body {list [catch {dde servername -z -z -z} msg] $msg} \
+    -result {1 {wrong # args: should be "dde servername ?-exact? ?--? ?serverName?"}}
 
-test winDde-6.3 {DDE servername set exact name} {pcOnly} {
-    list [catch {dde servername -exact winDde-6.3} msg] $msg
-} {0 winDde-6.3}
+test winDde-6.2 {DDE servername set name} \
+    -constraints pcOnly \
+    -body {dde servername -- winDde-6.2} \
+    -result {winDde-6.2}
 
-test winDde-6.4 {DDE servername set exact name} {pcOnly} {
-    list [catch {dde servername -exact -- winDde-6.4} msg] $msg
-} {0 winDde-6.4}
+test winDde-6.3 {DDE servername set exact name} \
+    -constraints pcOnly \
+    -body {dde servername -exact winDde-6.3} \
+    -result {winDde-6.3}
 
-test winDde-6.5 {DDE remote servername collision} {stdio pcOnly} {
-    set a ""
-    set name child-6.5
-    set child [createChildProcess $name]
-    list [catch {
-        set a [dde servername -- $name]
+test winDde-6.4 {DDE servername set exact name} \
+    -constraints pcOnly \
+    -body {dde servername -exact -- winDde-6.4} \
+    -result {winDde-6.4}
+
+test winDde-6.5 {DDE remote servername collision} \
+    -constraints {stdio pcOnly} \
+    -setup {
+        set name child-6.5
+        set child [createChildProcess $name]
+    } \
+    -body {
+        dde servername -- $name
+    } \
+    -cleanup {
         dde execute TclEval $name {set done 1}
         update
-        set a
-    } r] $r
-} {0 {child-6.5 #2}}
+    } \
+    -result "child-6.5 #2"
 
-test winDde-6.6 {DDE remote servername collision force} {stdio pcOnly} {
-    set a ""
-    set name child-6.6
-    set child [createChildProcess $name]
-    list [catch {
-        set a [dde servername -exact -- $name]
+test winDde-6.6 {DDE remote servername collision force} \
+    -constraints {stdio pcOnly} \
+    -setup {
+        set name child-6.6
+        set child [createChildProcess $name]
+    } \
+    -body {
+        dde servername -exact -- $name
+    } \
+    -cleanup {
         dde execute TclEval $name {set done 1}
         update
-        set a
-    } r] $r
-} {0 child-6.6}
+    } \
+    -result {child-6.6}
 
 # -------------------------------------------------------------------------
 
-test winDde-7.1 {DDE in slave interpreter} {pcOnly} {
-    global slave
-    set name slave-7.1
-    list [catch {
-        set slave [interp create $name]
-        $slave eval [list load $lib dde]
-        $slave eval [list dde servername $name]
-    } msg] $msg
-} {0 slave-7.1}
+test winDde-7.1 {Load DDE in slave interpreter } \
+    -constraints pcOnly \
+    -setup {
+	interp create slave
+    } \
+    -body {
+        slave eval [list load $lib dde]
+        slave eval [list dde servername -- dde-interp-7.1]
+    } \
+    -cleanup {
+	interp delete slave
+    } \
+    -result {dde-interp-7.1}
 
-test winDde-7.2 {DDE present in slave interp} {pcOnly} {
-    global slave
-    list [catch {
-        dde services TclEval $slave
-    } msg] $msg
-} [list 0 [list [list TclEval $slave]]]
-
-test winDde-7.3 {DDE slave servername collision force} {pcOnly} {
-    global slave
-    list [catch {dde servername -exact -- $slave} msg] $msg
-} [list 0 $slave]
-
-test winDde-7.4 {DDE slave servername collision} {pcOnly} {
-    global slave
-    list [catch {dde servername -- $slave} msg] $msg
-} [list 0 [list $slave "#2"]]
-
-test winDde-7.5 {DDE slave cleanup} {pcOnly} {
-    global slave
-    list [catch {
-        interp delete $slave
+test winDde-7.2 {DDE slave cleanup} \
+    -constraints pcOnly \
+    -setup {
+	interp create slave
+	slave eval [list load $lib dde]
+	slave eval [list dde servername -- dde-interp-7.5]
+	interp delete slave
+    } \
+    -body {
+        dde services TclEval {}
         set s [dde services TclEval {}]
-        set m [list [list TclEval $slave]]
+        set m [list [list TclEval dde-interp-7.5]]
         if {[lsearch -exact $s $m] != -1} {
             set s
         }
-    } msg] $msg
-} {0 {}}
+    } \
+    -result {}
+
+test winDde-7.3 {DDE present in slave interp} \
+    -constraints pcOnly \
+    -setup {
+	interp create slave
+	slave eval [list load $lib dde]
+	slave eval [list dde servername -- dde-interp-7.3]
+    } \
+    -body {
+        dde services TclEval dde-interp-7.3
+    } \
+    -cleanup {
+	interp delete slave
+    } \
+    -result {{TclEval dde-interp-7.3}}
+
+test winDde-7.4 {interp name collision with -exact} \
+    -constraints pcOnly \
+    -setup {
+	interp create slave
+	slave eval [list load $lib dde]
+	slave eval [list dde servername -- dde-interp-7.4]
+    } \
+    -body {
+        dde servername -exact -- dde-interp-7.4
+    } \
+    -cleanup {
+	interp delete slave
+    } \
+    -result {dde-interp-7.4}
+
+test winDde-7.5 {interp name collision without -exact} \
+    -constraints pcOnly \
+    -setup {
+	interp create slave
+	slave eval [list load $lib dde]
+	slave eval [list dde servername -- dde-interp-7.5]
+    } \
+    -body {
+        dde servername -- dde-interp-7.5
+    } \
+    -cleanup {
+	interp delete slave
+    } \
+    -result "dde-interp-7.5 #2"
+
 
 # -------------------------------------------------------------------------
 
