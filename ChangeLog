@@ -5,6 +5,7 @@
 	TclRestoreInterpState, and TclDiscardInterpState are superior
 	replacements for Tcl_(Save|Restore|Discard)Result.  Intent is that
 	these routines will be converted to public routines after TIP approval.
+	Interfaces for these routines were shamelessly stolen from Itcl.
 
 	* generic/tclBasic.c (TclEvalObjvInternal):
 	* generic/tclDictObj.c (DictUpdateCmd, DictWithCmd):
