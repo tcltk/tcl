@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17.2.1 2003/08/06 23:02:41 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.17.2.2 2004/03/31 01:55:21 dgp Exp $
 
 package require Tcl 8.2
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.3.1
+package provide msgcat 1.3.2
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -295,8 +295,8 @@ proc msgcat::mcload {langdir} {
 
 proc msgcat::mcset {locale src {dest ""}} {
     variable Msgs
-    if {[string equal $dest ""]} {
-	set dest $src
+    if {[llength [info level 0]] == 3} { ;# dest not specified
+        set dest $src
     }
 
     set ns [uplevel 1 [list ::namespace current]]
