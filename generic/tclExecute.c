@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.25 2001/05/31 12:58:09 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.26 2001/07/03 23:39:10 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1094,7 +1094,6 @@ TclExecuteByteCode(interp, codePtr)
 	    ADJUST_PC(1);
 
 	case INST_LOAD_SCALAR1:
-#ifdef TCL_COMPILE_DEBUG
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    DECACHE_STACK_INFO();
 	    valuePtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
@@ -1107,17 +1106,6 @@ TclExecuteByteCode(interp, codePtr)
             }
 	    PUSH_OBJECT(valuePtr);
 	    TRACE_WITH_OBJ(("%u => ", opnd), valuePtr);
-#else /* TCL_COMPILE_DEBUG */
-	    DECACHE_STACK_INFO();
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    valuePtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (valuePtr == NULL) {
-		result = TCL_ERROR;
-		goto checkForCatch;
-            }
-	    PUSH_OBJECT(valuePtr);
-#endif /* TCL_COMPILE_DEBUG */
 	    ADJUST_PC(2);
 
 	case INST_LOAD_SCALAR4:
@@ -1478,8 +1466,14 @@ TclExecuteByteCode(interp, codePtr)
 	    objPtr = POP_OBJECT(); /* scalar name */
 
 	    DECACHE_STACK_INFO();
-	    /* Currently value of the list */
-	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr, 0);
+	    /*
+	     * Currently value of the list.
+	     * Use the TCL_TRACE_READS flag to ensure that if we have an
+	     * array with no elements set yet, but with a read trace on it,
+	     * we will create the variable and get read traces triggered.
+	     */
+	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr,
+		    TCL_TRACE_READS);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		valuePtr = Tcl_NewObj();
