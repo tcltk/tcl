@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.25 2001/06/28 12:43:33 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.26 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2464,7 +2464,7 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
     register int objc;			/* Number of arguments. */
     register Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    static char *subCmds[] = {
+    static CONST char *subCmds[] = {
 	"children", "code", "current", "delete",
 	"eval", "exists", "export", "forget", "import",
 	"inscope", "origin", "parent", "qualifiers",

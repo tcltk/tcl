@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.54 2002/01/17 03:03:11 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.55 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -58,7 +58,7 @@ Tcl_TraceTypeObjCmd TclTraceCommandObjCmd;
  * In the future we may provide an API to add to the list of
  * supported trace types.
  */
-static char *traceTypeOptions[] = {
+static CONST char *traceTypeOptions[] = {
     "command", "variable", (char*) NULL
 };
 static Tcl_TraceTypeObjCmd* traceSubCmds[] = {
@@ -145,7 +145,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *resultPtr;
     Tcl_RegExpInfo info;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
 	"-expanded",	"-line",	"-linestop",	"-lineanchor",
 	"-nocase",	"-start",	"--",		(char *) NULL
@@ -471,7 +471,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *resultPtr, *subPtr, *objPtr;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-all",		"-nocase",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",	"-start",
 	"--",		NULL
@@ -1027,7 +1027,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *resultPtr;
     char *string1, *string2;
     int length1, length2;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"bytelength",	"compare",	"equal",	"first",
 	"index",	"is",		"last",		"length",
 	"map",		"match",	"range",	"repeat",
@@ -1361,7 +1361,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int i, failat = 0, result = 1, strict = 0;
 	    Tcl_Obj *objPtr, *failVarObj = NULL;
 
-	    static char *isOptions[] = {
+	    static CONST char *isOptions[] = {
 		"alnum",	"alpha",	"ascii",	"control",
 		"boolean",	"digit",	"double",	"false",
 		"graph",	"integer",	"lower",	"print",
@@ -2262,7 +2262,7 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];       	/* Argument objects. */
 {
-    static char *substOptions[] = {
+    static CONST char *substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", (char *) NULL
     };
     enum substOptions {
@@ -2486,7 +2486,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     char *string, *pattern;
     Tcl_Obj *stringObj;
     Tcl_Obj *CONST *savedObjv = objv;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-exact",	"-glob",	"-regexp",	"--", 
 	NULL
     };
@@ -2752,7 +2752,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     char *name, *flagOps, *command, *p;
     size_t length;
     /* Main sub commands to 'trace' */
-    static char *traceOptions[] = {
+    static CONST char *traceOptions[] = {
 	"add", "list", "remove", 
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	"variable", "vdelete", "vinfo", 
@@ -2992,7 +2992,7 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
-    static char *opStrings[] = { "delete", "rename", (char *) NULL };
+    static CONST char *opStrings[] = { "delete", "rename", (char *) NULL };
     enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME };
     
     switch ((enum traceOptions) optionIndex) {
@@ -3158,7 +3158,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
-    static char *opStrings[] = { "array", "read", "unset", "write",
+    static CONST char *opStrings[] = { "array", "read", "unset", "write",
 				     (char *) NULL };
     enum operations { TRACE_VAR_ARRAY, TRACE_VAR_READ, TRACE_VAR_UNSET,
 			  TRACE_VAR_WRITE };

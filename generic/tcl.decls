@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.74 2002/01/17 03:03:11 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.75 2002/01/17 04:37:32 dgp Exp $
 
 library tcl
 
@@ -154,7 +154,7 @@ declare 35 generic {
 }
 declare 36 generic {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, \
-	    char * CONST *tablePtr, CONST char *msg, int flags, int *indexPtr)
+	    CONST char **tablePtr, CONST char *msg, int flags, int *indexPtr)
 }
 declare 37 generic {
     int Tcl_GetInt(Tcl_Interp *interp, CONST char *str, int *intPtr)
@@ -1085,7 +1085,7 @@ declare 303 generic {
 }
 declare 304 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr, \
-	    char * CONST *tablePtr, int offset, CONST char *msg, int flags, \
+	    CONST char **tablePtr, int offset, CONST char *msg, int flags, \
 	    int *indexPtr)
 }
 declare 305 generic {
@@ -1291,7 +1291,7 @@ declare 364 generic {
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
 # Tcl_FSAccess and Tcl_FSStat
 declare 365 generic {
-    char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    CONST char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 366 generic {
    int Tcl_Chdir(CONST char *dirName)
@@ -1601,7 +1601,7 @@ declare 452 generic {
 			    Tcl_Obj *objPtr)
 }
 declare 453 generic {
-    char** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+    CONST char ** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
 }
 declare 454 generic {
     int Tcl_FSStat(Tcl_Obj *pathPtr, struct stat *buf)
@@ -1650,7 +1650,7 @@ declare 468 generic {
     Tcl_Obj* Tcl_FSNewNativePath(Tcl_Obj* fromFilesystem, ClientData clientData)
 }
 declare 469 generic {
-    char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
+    CONST char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
 }
 declare 470 generic {
     Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathObjPtr)
@@ -1671,7 +1671,8 @@ declare 475 generic {
     ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
 }
 declare 476 generic {
-    char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+    CONST char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, \
+	    Tcl_Obj* pathPtr)
 }
 declare 477 generic {
     Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathObjPtr)

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.9 2002/01/16 06:02:34 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.10 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include <stdio.h>
@@ -347,7 +347,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     int index;
-    static char *options[] = {
+    static CONST char *options[] = {
         "alias",	"aliases",	"create",	"delete", 
 	"eval",		"exists",	"expose",	"hide", 
 	"hidden",	"issafe",	"invokehidden",	"marktrusted", 
@@ -419,7 +419,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    int i, last, safe;
 	    Tcl_Obj *slavePtr;
 	    char buf[16 + TCL_INTEGER_SPACE];
-	    static char *options[] = {
+	    static CONST char *options[] = {
 		"-safe",	"--",		NULL
 	    };
 	    enum option {
@@ -582,7 +582,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	case OPT_INVOKEHID: {
 	    int i, index, global;
 	    Tcl_Interp *slaveInterp;
-	    static char *hiddenOptions[] = {
+	    static CONST char *hiddenOptions[] = {
 		"-global",	"--",		NULL
 	    };
 	    enum hiddenOption {
@@ -1829,7 +1829,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
 {
     Tcl_Interp *slaveInterp;
     int index;
-    static char *options[] = {
+    static CONST char *options[] = {
         "alias",	"aliases",	"eval",		"expose",
         "hide",		"hidden",	"issafe",	"invokehidden",
         "marktrusted",	NULL
@@ -1918,7 +1918,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
 	}
         case OPT_INVOKEHIDDEN: {
 	    int global, i, index;
-	    static char *hiddenOptions[] = {
+	    static CONST char *hiddenOptions[] = {
 		"-global",	"--",		NULL
 	    };
 	    enum hiddenOption {

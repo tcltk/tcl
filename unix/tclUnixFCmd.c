@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13 2001/09/28 11:10:56 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.14 2002/01/17 04:37:33 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -110,7 +110,7 @@ enum {
     UNIX_PERMISSIONS_ATTRIBUTE
 };
 
-char *tclpFileAttrStrings[] = {
+CONST char *tclpFileAttrStrings[] = {
     "-group",
     "-owner",
     "-permissions",

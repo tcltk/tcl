@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.10 2001/09/19 00:50:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.11 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -429,7 +429,9 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     int result;				/* Of calling Tcl_Seek. */
     char *chanName;
     int optionIndex;
-    static char *originOptions[] = {"start", "current", "end", (char *) NULL};
+    static CONST char *originOptions[] = {
+	"start", "current", "end", (char *) NULL
+    };
     static int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
 
     if ((objc != 3) && (objc != 4)) {
@@ -736,7 +738,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     Tcl_Channel chan;
     char *argStorage[NUM_ARGS];
     int argc, background, i, index, keepNewline, result, skip, length;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-keepnewline",	"--",		NULL
     };
     enum options {
@@ -1305,7 +1307,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    static char *socketOptions[] = {
+    static CONST char *socketOptions[] = {
 	"-async", "-myaddr", "-myport","-server", (char *) NULL
     };
     enum socketOptions {
@@ -1500,7 +1502,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     int mode, i;
     int toRead, index;
     Tcl_Obj *cmdPtr;
-    static char* switches[] = { "-size", "-command", NULL };
+    static CONST char* switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
 
     if ((objc < 3) || (objc > 7) || (objc == 4) || (objc == 6)) {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.10 2001/12/28 23:36:31 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.11 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include <math.h>
@@ -582,7 +582,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				 * cursor has visited.*/
     char *errorString, *errorValue, *str;
     int offset, size, length, index;
-    static char *options[] = { 
+    static CONST char *options[] = { 
 	"format",	"scan",		NULL 
     };
     enum options { 
