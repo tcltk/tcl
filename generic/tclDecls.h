@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.107.2.2 2004/12/13 21:23:10 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.107.2.3 2005/01/20 19:12:51 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3355,117 +3355,109 @@ EXTERN int		Tcl_SetReturnOptions _ANSI_ARGS_((
 EXTERN Tcl_Obj *	Tcl_GetReturnOptions _ANSI_ARGS_((
 				Tcl_Interp * interp, int result));
 #endif
-#ifndef Tcl_BigIntFromInt_TCL_DECLARED
-#define Tcl_BigIntFromInt_TCL_DECLARED
+#ifndef Tcl_IsEnsemble_TCL_DECLARED
+#define Tcl_IsEnsemble_TCL_DECLARED
 /* 540 */
-EXTERN Tcl_BigInt	Tcl_BigIntFromInt _ANSI_ARGS_((int intVal));
+EXTERN int		Tcl_IsEnsemble _ANSI_ARGS_((Tcl_Command token));
 #endif
-#ifndef Tcl_BigIntFromWideInt_TCL_DECLARED
-#define Tcl_BigIntFromWideInt_TCL_DECLARED
+#ifndef Tcl_CreateEnsemble_TCL_DECLARED
+#define Tcl_CreateEnsemble_TCL_DECLARED
 /* 541 */
-EXTERN Tcl_BigInt	Tcl_BigIntFromWideInt _ANSI_ARGS_((
-				Tcl_WideInt wideVal));
+EXTERN Tcl_Command	Tcl_CreateEnsemble _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, 
+				Tcl_Namespace * namespacePtr, int flags));
 #endif
-#ifndef Tcl_FreeBigInt_TCL_DECLARED
-#define Tcl_FreeBigInt_TCL_DECLARED
+#ifndef Tcl_FindEnsemble_TCL_DECLARED
+#define Tcl_FindEnsemble_TCL_DECLARED
 /* 542 */
-EXTERN void		Tcl_FreeBigInt _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN Tcl_Command	Tcl_FindEnsemble _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * cmdNameObj, int flags));
 #endif
-#ifndef Tcl_BigIntIsEven_TCL_DECLARED
-#define Tcl_BigIntIsEven_TCL_DECLARED
+#ifndef Tcl_SetEnsembleSubcommandList_TCL_DECLARED
+#define Tcl_SetEnsembleSubcommandList_TCL_DECLARED
 /* 543 */
-EXTERN int		Tcl_BigIntIsEven _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_SetEnsembleSubcommandList _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj * subcmdList));
 #endif
-#ifndef Tcl_BigIntIsOdd_TCL_DECLARED
-#define Tcl_BigIntIsOdd_TCL_DECLARED
+#ifndef Tcl_SetEnsembleMappingDict_TCL_DECLARED
+#define Tcl_SetEnsembleMappingDict_TCL_DECLARED
 /* 544 */
-EXTERN int		Tcl_BigIntIsOdd _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_SetEnsembleMappingDict _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj * mapDict));
 #endif
-#ifndef Tcl_BigIntIsZero_TCL_DECLARED
-#define Tcl_BigIntIsZero_TCL_DECLARED
+#ifndef Tcl_SetEnsembleUnknownHandler_TCL_DECLARED
+#define Tcl_SetEnsembleUnknownHandler_TCL_DECLARED
 /* 545 */
-EXTERN int		Tcl_BigIntIsZero _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_SetEnsembleUnknownHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj * unknownList));
 #endif
-#ifndef Tcl_BigIntIsPositive_TCL_DECLARED
-#define Tcl_BigIntIsPositive_TCL_DECLARED
+#ifndef Tcl_SetEnsembleFlags_TCL_DECLARED
+#define Tcl_SetEnsembleFlags_TCL_DECLARED
 /* 546 */
-EXTERN int		Tcl_BigIntIsPositive _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_SetEnsembleFlags _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				int flags));
 #endif
-#ifndef Tcl_BigIntIsNegative_TCL_DECLARED
-#define Tcl_BigIntIsNegative_TCL_DECLARED
+#ifndef Tcl_GetEnsembleSubcommandList_TCL_DECLARED
+#define Tcl_GetEnsembleSubcommandList_TCL_DECLARED
 /* 547 */
-EXTERN int		Tcl_BigIntIsNegative _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_GetEnsembleSubcommandList _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj ** subcmdListPtr));
 #endif
-#ifndef Tcl_BigIntIsUnit_TCL_DECLARED
-#define Tcl_BigIntIsUnit_TCL_DECLARED
+#ifndef Tcl_GetEnsembleMappingDict_TCL_DECLARED
+#define Tcl_GetEnsembleMappingDict_TCL_DECLARED
 /* 548 */
-EXTERN int		Tcl_BigIntIsUnit _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_GetEnsembleMappingDict _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj ** mapDictPtr));
 #endif
-#ifndef Tcl_BigIntIsOne_TCL_DECLARED
-#define Tcl_BigIntIsOne_TCL_DECLARED
+#ifndef Tcl_GetEnsembleUnknownHandler_TCL_DECLARED
+#define Tcl_GetEnsembleUnknownHandler_TCL_DECLARED
 /* 549 */
-EXTERN int		Tcl_BigIntIsOne _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_GetEnsembleUnknownHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj ** unknownListPtr));
 #endif
-#ifndef Tcl_BigIntIsMinusOne_TCL_DECLARED
-#define Tcl_BigIntIsMinusOne_TCL_DECLARED
+#ifndef Tcl_GetEnsembleFlags_TCL_DECLARED
+#define Tcl_GetEnsembleFlags_TCL_DECLARED
 /* 550 */
-EXTERN int		Tcl_BigIntIsMinusOne _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_GetEnsembleFlags _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				int * flagsPtr));
 #endif
-#ifndef Tcl_BigIntIsInt_TCL_DECLARED
-#define Tcl_BigIntIsInt_TCL_DECLARED
+#ifndef Tcl_GetEnsembleNamespace_TCL_DECLARED
+#define Tcl_GetEnsembleNamespace_TCL_DECLARED
 /* 551 */
-EXTERN int		Tcl_BigIntIsInt _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN int		Tcl_GetEnsembleNamespace _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Namespace ** namespacePtrPtr));
 #endif
-#ifndef Tcl_BigIntIsWideInt_TCL_DECLARED
-#define Tcl_BigIntIsWideInt_TCL_DECLARED
+#ifndef Tcl_NewBignumObj_TCL_DECLARED
+#define Tcl_NewBignumObj_TCL_DECLARED
 /* 552 */
-EXTERN int		Tcl_BigIntIsWideInt _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN Tcl_Obj*		Tcl_NewBignumObj _ANSI_ARGS_((mp_int* value));
 #endif
-#ifndef Tcl_GetIntFromBigInt_TCL_DECLARED
-#define Tcl_GetIntFromBigInt_TCL_DECLARED
+#ifndef Tcl_DbNewBignumObj_TCL_DECLARED
+#define Tcl_DbNewBignumObj_TCL_DECLARED
 /* 553 */
-EXTERN int		Tcl_GetIntFromBigInt _ANSI_ARGS_((Tcl_BigInt bigVal));
+EXTERN Tcl_Obj*		Tcl_DbNewBignumObj _ANSI_ARGS_((mp_int* value, 
+				CONST char* file, int line));
 #endif
-#ifndef Tcl_GetWideIntFromBigInt_TCL_DECLARED
-#define Tcl_GetWideIntFromBigInt_TCL_DECLARED
+#ifndef Tcl_SetBignumObj_TCL_DECLARED
+#define Tcl_SetBignumObj_TCL_DECLARED
 /* 554 */
-EXTERN Tcl_WideInt	Tcl_GetWideIntFromBigInt _ANSI_ARGS_((
-				Tcl_BigInt bigVal));
+EXTERN void		Tcl_SetBignumObj _ANSI_ARGS_((Tcl_Obj* obj, 
+				mp_int* value));
 #endif
-#ifndef Tcl_CompareBigInt_TCL_DECLARED
-#define Tcl_CompareBigInt_TCL_DECLARED
+#ifndef Tcl_GetBignumFromObj_TCL_DECLARED
+#define Tcl_GetBignumFromObj_TCL_DECLARED
 /* 555 */
-EXTERN int		Tcl_CompareBigInt _ANSI_ARGS_((Tcl_BigInt bigVal1, 
-				Tcl_BigInt bigVal2));
-#endif
-#ifndef Tcl_CopyBigInt_TCL_DECLARED
-#define Tcl_CopyBigInt_TCL_DECLARED
-/* 556 */
-EXTERN Tcl_BigInt	Tcl_CopyBigInt _ANSI_ARGS_((Tcl_BigInt bigVal));
-#endif
-#ifndef Tcl_AddBigInt_TCL_DECLARED
-#define Tcl_AddBigInt_TCL_DECLARED
-/* 557 */
-EXTERN Tcl_BigInt	Tcl_AddBigInt _ANSI_ARGS_((Tcl_BigInt bigVal1, 
-				Tcl_BigInt bigVal2));
-#endif
-#ifndef Tcl_SubtractBigInt_TCL_DECLARED
-#define Tcl_SubtractBigInt_TCL_DECLARED
-/* 558 */
-EXTERN Tcl_BigInt	Tcl_SubtractBigInt _ANSI_ARGS_((Tcl_BigInt bigVal1, 
-				Tcl_BigInt bigVal2));
-#endif
-#ifndef Tcl_MultiplyBigIntByNarrowInt_TCL_DECLARED
-#define Tcl_MultiplyBigIntByNarrowInt_TCL_DECLARED
-/* 559 */
-EXTERN Tcl_BigInt	Tcl_MultiplyBigIntByNarrowInt _ANSI_ARGS_((
-				Tcl_BigInt bigVal, Tcl_NarrowInt narrowVal));
-#endif
-#ifndef Tcl_ShiftBigInt_TCL_DECLARED
-#define Tcl_ShiftBigInt_TCL_DECLARED
-/* 560 */
-EXTERN Tcl_BigInt	Tcl_ShiftBigInt _ANSI_ARGS_((Tcl_BigInt bigVal, 
-				int intVal));
+EXTERN int		Tcl_GetBignumFromObj _ANSI_ARGS_((Tcl_Interp* interp, 
+				Tcl_Obj* obj, mp_int* value));
 #endif
 
 typedef struct TclStubHooks {
@@ -4048,27 +4040,22 @@ typedef struct TclStubs {
     void (*tcl_DiscardInterpState) _ANSI_ARGS_((Tcl_InterpState state)); /* 537 */
     int (*tcl_SetReturnOptions) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * options)); /* 538 */
     Tcl_Obj * (*tcl_GetReturnOptions) _ANSI_ARGS_((Tcl_Interp * interp, int result)); /* 539 */
-    Tcl_BigInt (*tcl_BigIntFromInt) _ANSI_ARGS_((int intVal)); /* 540 */
-    Tcl_BigInt (*tcl_BigIntFromWideInt) _ANSI_ARGS_((Tcl_WideInt wideVal)); /* 541 */
-    void (*tcl_FreeBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 542 */
-    int (*tcl_BigIntIsEven) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 543 */
-    int (*tcl_BigIntIsOdd) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 544 */
-    int (*tcl_BigIntIsZero) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 545 */
-    int (*tcl_BigIntIsPositive) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 546 */
-    int (*tcl_BigIntIsNegative) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 547 */
-    int (*tcl_BigIntIsUnit) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 548 */
-    int (*tcl_BigIntIsOne) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 549 */
-    int (*tcl_BigIntIsMinusOne) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 550 */
-    int (*tcl_BigIntIsInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 551 */
-    int (*tcl_BigIntIsWideInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 552 */
-    int (*tcl_GetIntFromBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 553 */
-    Tcl_WideInt (*tcl_GetWideIntFromBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 554 */
-    int (*tcl_CompareBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal1, Tcl_BigInt bigVal2)); /* 555 */
-    Tcl_BigInt (*tcl_CopyBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 556 */
-    Tcl_BigInt (*tcl_AddBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal1, Tcl_BigInt bigVal2)); /* 557 */
-    Tcl_BigInt (*tcl_SubtractBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal1, Tcl_BigInt bigVal2)); /* 558 */
-    Tcl_BigInt (*tcl_MultiplyBigIntByNarrowInt) _ANSI_ARGS_((Tcl_BigInt bigVal, Tcl_NarrowInt narrowVal)); /* 559 */
-    Tcl_BigInt (*tcl_ShiftBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal, int intVal)); /* 560 */
+    int (*tcl_IsEnsemble) _ANSI_ARGS_((Tcl_Command token)); /* 540 */
+    Tcl_Command (*tcl_CreateEnsemble) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_Namespace * namespacePtr, int flags)); /* 541 */
+    Tcl_Command (*tcl_FindEnsemble) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * cmdNameObj, int flags)); /* 542 */
+    int (*tcl_SetEnsembleSubcommandList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * subcmdList)); /* 543 */
+    int (*tcl_SetEnsembleMappingDict) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * mapDict)); /* 544 */
+    int (*tcl_SetEnsembleUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * unknownList)); /* 545 */
+    int (*tcl_SetEnsembleFlags) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, int flags)); /* 546 */
+    int (*tcl_GetEnsembleSubcommandList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** subcmdListPtr)); /* 547 */
+    int (*tcl_GetEnsembleMappingDict) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** mapDictPtr)); /* 548 */
+    int (*tcl_GetEnsembleUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** unknownListPtr)); /* 549 */
+    int (*tcl_GetEnsembleFlags) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, int * flagsPtr)); /* 550 */
+    int (*tcl_GetEnsembleNamespace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Namespace ** namespacePtrPtr)); /* 551 */
+    Tcl_Obj* (*tcl_NewBignumObj) _ANSI_ARGS_((mp_int* value)); /* 552 */
+    Tcl_Obj* (*tcl_DbNewBignumObj) _ANSI_ARGS_((mp_int* value, CONST char* file, int line)); /* 553 */
+    void (*tcl_SetBignumObj) _ANSI_ARGS_((Tcl_Obj* obj, mp_int* value)); /* 554 */
+    int (*tcl_GetBignumFromObj) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)); /* 555 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6269,89 +6256,69 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_GetReturnOptions \
 	(tclStubsPtr->tcl_GetReturnOptions) /* 539 */
 #endif
-#ifndef Tcl_BigIntFromInt
-#define Tcl_BigIntFromInt \
-	(tclStubsPtr->tcl_BigIntFromInt) /* 540 */
+#ifndef Tcl_IsEnsemble
+#define Tcl_IsEnsemble \
+	(tclStubsPtr->tcl_IsEnsemble) /* 540 */
 #endif
-#ifndef Tcl_BigIntFromWideInt
-#define Tcl_BigIntFromWideInt \
-	(tclStubsPtr->tcl_BigIntFromWideInt) /* 541 */
+#ifndef Tcl_CreateEnsemble
+#define Tcl_CreateEnsemble \
+	(tclStubsPtr->tcl_CreateEnsemble) /* 541 */
 #endif
-#ifndef Tcl_FreeBigInt
-#define Tcl_FreeBigInt \
-	(tclStubsPtr->tcl_FreeBigInt) /* 542 */
+#ifndef Tcl_FindEnsemble
+#define Tcl_FindEnsemble \
+	(tclStubsPtr->tcl_FindEnsemble) /* 542 */
 #endif
-#ifndef Tcl_BigIntIsEven
-#define Tcl_BigIntIsEven \
-	(tclStubsPtr->tcl_BigIntIsEven) /* 543 */
+#ifndef Tcl_SetEnsembleSubcommandList
+#define Tcl_SetEnsembleSubcommandList \
+	(tclStubsPtr->tcl_SetEnsembleSubcommandList) /* 543 */
 #endif
-#ifndef Tcl_BigIntIsOdd
-#define Tcl_BigIntIsOdd \
-	(tclStubsPtr->tcl_BigIntIsOdd) /* 544 */
+#ifndef Tcl_SetEnsembleMappingDict
+#define Tcl_SetEnsembleMappingDict \
+	(tclStubsPtr->tcl_SetEnsembleMappingDict) /* 544 */
 #endif
-#ifndef Tcl_BigIntIsZero
-#define Tcl_BigIntIsZero \
-	(tclStubsPtr->tcl_BigIntIsZero) /* 545 */
+#ifndef Tcl_SetEnsembleUnknownHandler
+#define Tcl_SetEnsembleUnknownHandler \
+	(tclStubsPtr->tcl_SetEnsembleUnknownHandler) /* 545 */
 #endif
-#ifndef Tcl_BigIntIsPositive
-#define Tcl_BigIntIsPositive \
-	(tclStubsPtr->tcl_BigIntIsPositive) /* 546 */
+#ifndef Tcl_SetEnsembleFlags
+#define Tcl_SetEnsembleFlags \
+	(tclStubsPtr->tcl_SetEnsembleFlags) /* 546 */
 #endif
-#ifndef Tcl_BigIntIsNegative
-#define Tcl_BigIntIsNegative \
-	(tclStubsPtr->tcl_BigIntIsNegative) /* 547 */
+#ifndef Tcl_GetEnsembleSubcommandList
+#define Tcl_GetEnsembleSubcommandList \
+	(tclStubsPtr->tcl_GetEnsembleSubcommandList) /* 547 */
 #endif
-#ifndef Tcl_BigIntIsUnit
-#define Tcl_BigIntIsUnit \
-	(tclStubsPtr->tcl_BigIntIsUnit) /* 548 */
+#ifndef Tcl_GetEnsembleMappingDict
+#define Tcl_GetEnsembleMappingDict \
+	(tclStubsPtr->tcl_GetEnsembleMappingDict) /* 548 */
 #endif
-#ifndef Tcl_BigIntIsOne
-#define Tcl_BigIntIsOne \
-	(tclStubsPtr->tcl_BigIntIsOne) /* 549 */
+#ifndef Tcl_GetEnsembleUnknownHandler
+#define Tcl_GetEnsembleUnknownHandler \
+	(tclStubsPtr->tcl_GetEnsembleUnknownHandler) /* 549 */
 #endif
-#ifndef Tcl_BigIntIsMinusOne
-#define Tcl_BigIntIsMinusOne \
-	(tclStubsPtr->tcl_BigIntIsMinusOne) /* 550 */
+#ifndef Tcl_GetEnsembleFlags
+#define Tcl_GetEnsembleFlags \
+	(tclStubsPtr->tcl_GetEnsembleFlags) /* 550 */
 #endif
-#ifndef Tcl_BigIntIsInt
-#define Tcl_BigIntIsInt \
-	(tclStubsPtr->tcl_BigIntIsInt) /* 551 */
+#ifndef Tcl_GetEnsembleNamespace
+#define Tcl_GetEnsembleNamespace \
+	(tclStubsPtr->tcl_GetEnsembleNamespace) /* 551 */
 #endif
-#ifndef Tcl_BigIntIsWideInt
-#define Tcl_BigIntIsWideInt \
-	(tclStubsPtr->tcl_BigIntIsWideInt) /* 552 */
+#ifndef Tcl_NewBignumObj
+#define Tcl_NewBignumObj \
+	(tclStubsPtr->tcl_NewBignumObj) /* 552 */
 #endif
-#ifndef Tcl_GetIntFromBigInt
-#define Tcl_GetIntFromBigInt \
-	(tclStubsPtr->tcl_GetIntFromBigInt) /* 553 */
+#ifndef Tcl_DbNewBignumObj
+#define Tcl_DbNewBignumObj \
+	(tclStubsPtr->tcl_DbNewBignumObj) /* 553 */
 #endif
-#ifndef Tcl_GetWideIntFromBigInt
-#define Tcl_GetWideIntFromBigInt \
-	(tclStubsPtr->tcl_GetWideIntFromBigInt) /* 554 */
+#ifndef Tcl_SetBignumObj
+#define Tcl_SetBignumObj \
+	(tclStubsPtr->tcl_SetBignumObj) /* 554 */
 #endif
-#ifndef Tcl_CompareBigInt
-#define Tcl_CompareBigInt \
-	(tclStubsPtr->tcl_CompareBigInt) /* 555 */
-#endif
-#ifndef Tcl_CopyBigInt
-#define Tcl_CopyBigInt \
-	(tclStubsPtr->tcl_CopyBigInt) /* 556 */
-#endif
-#ifndef Tcl_AddBigInt
-#define Tcl_AddBigInt \
-	(tclStubsPtr->tcl_AddBigInt) /* 557 */
-#endif
-#ifndef Tcl_SubtractBigInt
-#define Tcl_SubtractBigInt \
-	(tclStubsPtr->tcl_SubtractBigInt) /* 558 */
-#endif
-#ifndef Tcl_MultiplyBigIntByNarrowInt
-#define Tcl_MultiplyBigIntByNarrowInt \
-	(tclStubsPtr->tcl_MultiplyBigIntByNarrowInt) /* 559 */
-#endif
-#ifndef Tcl_ShiftBigInt
-#define Tcl_ShiftBigInt \
-	(tclStubsPtr->tcl_ShiftBigInt) /* 560 */
+#ifndef Tcl_GetBignumFromObj
+#define Tcl_GetBignumFromObj \
+	(tclStubsPtr->tcl_GetBignumFromObj) /* 555 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

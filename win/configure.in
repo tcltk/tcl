@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.81.2.2 2004/12/13 22:03:28 kennykb Exp $
+# RCS: @(#) $Id: configure.in,v 1.81.2.3 2005/01/20 19:15:02 kennykb Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -91,8 +91,6 @@ AC_PROG_MAKE_SET
 #--------------------------------------------------------------------
 # Perform additinal compiler tests.
 #--------------------------------------------------------------------
-
-SC_TCL_64BIT_FLAGS
 
 dnl Currently AC_CYGWIN is disabled since it invokes AC_CANONICAL_HOST
 dnl under autoconf 2.5X.

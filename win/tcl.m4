@@ -439,7 +439,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS=""
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -lole32 -loleaut32 -luuid"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -519,7 +519,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	EXTRA_CFLAGS="${extra_cflags}"
 
 	CFLAGS_DEBUG=-g
-	CFLAGS_OPTIMIZE=-O
+	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
 	CFLAGS_WARNING="-Wall -Wconversion"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
@@ -595,22 +595,25 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	-I${MSSDK}/Include"
 	    RC="${MSSDK}/bin/rc.exe"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
-	    CFLAGS_OPTIMIZE="-nologo -O2 -Gs ${runtime}"
+	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
 	    lflags="-MACHINE:IA64 -LIBPATH:${MSSDK}/Lib/IA64 \
 	-LIBPATH:${MSSDK}/Lib/Prerelease/IA64"
 	    STLIB_LD="${MSSDK}/bin/win64/lib.exe -nologo ${lflags}"
 	    LINKBIN="${MSSDK}/bin/win64/link.exe ${lflags}"
 	else
 	    RC="rc"
+	    # -Od - no optimization
+	    # -WX - warnings as errors
 	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
-	    CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
-	    STLIB_LD="lib -nologo"
-	    LINKBIN="link -link50compat"
+	    # -O2 - create fast code (/Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy)
+	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
+	    STLIB_LD="link -lib -nologo"
+	    LINKBIN="link"
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
 	LIBS="user32.lib advapi32.lib"
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib"
 	RC_OUT=-fo
 	RC_TYPE=-r
 	RC_INCLUDE=-i
@@ -621,7 +624,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	MAKE_EXE="\${CC} -Fe\[$]@"
 	LIBPREFIX=""
 
-	EXTRA_CFLAGS="-YX"
+	EXTRA_CFLAGS=""
 	CFLAGS_WARNING="-W3"
 	LDFLAGS_DEBUG="-debug:full -debugtype:both"
 	LDFLAGS_OPTIMIZE="-release"
@@ -735,87 +738,6 @@ AC_DEFUN(SC_PROG_TCLSH, [
 	AC_MSG_ERROR(No tclsh found in PATH:  $search_path)
     fi
     AC_SUBST(TCLSH_PROG)
-])
-
-#--------------------------------------------------------------------
-# SC_TCL_64BIT_FLAGS
-#
-#	Check for what is defined in the way of 64-bit features.
-#
-# Arguments:
-#	None
-#	
-# Results:
-#
-#	Might define the following vars:
-#		HAVE_STRUCT_DIRENT64
-#		HAVE_STRUCT_STAT64
-#		HAVE_STRUCT__STATI64
-#		HAVE_TYPE_OFF64_T
-#		SIZEOF_LONG_LONG
-#		SIZEOF_LONG
-#		SIZEOF___INT64
-#		SIZEOF_INT
-#		SIZEOF_SHORT
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_TCL_64BIT_FLAGS, [
-    AC_CHECK_SIZEOF(long long)
-    AC_CHECK_SIZEOF(__int64)
-    AC_CHECK_SIZEOF(long)
-    AC_CHECK_SIZEOF(int)
-    AC_CHECK_SIZEOF(short)
-
-
-    # Now check for auxiliary declarations
-    AC_MSG_CHECKING([for struct dirent64])
-    AC_CACHE_VAL(tcl_cv_struct_dirent64,[
-	AC_TRY_COMPILE([#include <sys/types.h>
-#include <sys/dirent.h>],[struct dirent64 p;],
-	    tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
-    if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
-	AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
-    fi
-    AC_MSG_RESULT(${tcl_cv_struct_dirent64})
-
-    AC_MSG_CHECKING([for struct stat64])
-    AC_CACHE_VAL(tcl_cv_struct_stat64,[
-	AC_TRY_COMPILE([#include <sys/stat.h>],[struct stat64 p;
-],
-	    tcl_cv_struct_stat64=yes,tcl_cv_struct_stat64=no)])
-    if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-	AC_DEFINE(HAVE_STRUCT_STAT64, 1, [Is 'struct stat64' in <sys/stat.h>?])
-    fi
-    AC_MSG_RESULT(${tcl_cv_struct_stat64})
-
-    AC_MSG_CHECKING([for struct _stati64])
-    AC_CACHE_VAL(tcl_cv_struct__stati64,[
-	AC_TRY_COMPILE([#include <sys/stat.h>],[struct _stati64 p;
-],
-	    tcl_cv_struct__stati64=yes,tcl_cv_struct__stati64=no)
-    ])
-    if test "x${tcl_cv_struct__stati64}" = "xyes" ; then
-	AC_DEFINE(HAVE_STRUCT__STATI64, 1, [Is 'struct _stati64' in <sys/stat.h>?])
-    fi
-    AC_MSG_RESULT(${tcl_cv_struct__stati64})
-
-    AC_CHECK_FUNCS(open64 lseek64)
-    AC_MSG_CHECKING([for off64_t])
-    AC_CACHE_VAL(tcl_cv_type_off64_t,[
-	AC_TRY_COMPILE([#include <sys/types.h>],[off64_t offset;
-],
-	    tcl_cv_type_off64_t=yes,tcl_cv_type_off64_t=no)])
-    dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
-    dnl functions lseek64 and open64 are defined.
-    if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-       test "x${ac_cv_func_lseek64}" = "xyes" && \
-       test "x${ac_cv_func_open64}" = "xyes" ; then
-	AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
-	AC_MSG_RESULT(yes)
-    else
-	AC_MSG_RESULT(no)
-    fi
 ])
 
 #--------------------------------------------------------------------

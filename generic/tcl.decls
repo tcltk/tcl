@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105.2.3 2004/12/13 21:23:10 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105.2.4 2005/01/20 19:12:29 kennykb Exp $
 
 library tcl
 
@@ -1926,71 +1926,67 @@ declare 538 generic {
 declare 539 generic {
     Tcl_Obj *Tcl_GetReturnOptions(Tcl_Interp *interp, int result)
 }
-
-# Big Integers
-
+# TIP#235
 declare 540 generic {
-    Tcl_BigInt Tcl_BigIntFromInt( int intVal )
+    int Tcl_IsEnsemble(Tcl_Command token)
 }
 declare 541 generic {
-    Tcl_BigInt Tcl_BigIntFromWideInt( Tcl_WideInt wideVal )
+    Tcl_Command Tcl_CreateEnsemble(Tcl_Interp *interp, CONST char *name,
+	    Tcl_Namespace *namespacePtr, int flags)
 }
 declare 542 generic {
-    void Tcl_FreeBigInt( Tcl_BigInt bigVal )
+    Tcl_Command Tcl_FindEnsemble(Tcl_Interp *interp, Tcl_Obj *cmdNameObj,
+	    int flags)
 }
 declare 543 generic {
-    int Tcl_BigIntIsEven( Tcl_BigInt bigVal )
+    int Tcl_SetEnsembleSubcommandList(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *subcmdList)
 }
 declare 544 generic {
-    int Tcl_BigIntIsOdd( Tcl_BigInt bigVal )
+    int Tcl_SetEnsembleMappingDict(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *mapDict)
 }
 declare 545 generic {
-    int Tcl_BigIntIsZero( Tcl_BigInt bigVal )
+    int Tcl_SetEnsembleUnknownHandler(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *unknownList)
 }
 declare 546 generic {
-    int Tcl_BigIntIsPositive( Tcl_BigInt bigVal )
+    int Tcl_SetEnsembleFlags(Tcl_Interp *interp, Tcl_Command token, int flags)
 }
 declare 547 generic {
-    int Tcl_BigIntIsNegative( Tcl_BigInt bigVal )
+    int Tcl_GetEnsembleSubcommandList(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **subcmdListPtr)
 }
 declare 548 generic {
-    int Tcl_BigIntIsUnit( Tcl_BigInt bigVal )
+    int Tcl_GetEnsembleMappingDict(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **mapDictPtr)
 }
 declare 549 generic {
-    int Tcl_BigIntIsOne( Tcl_BigInt bigVal )
+    int Tcl_GetEnsembleUnknownHandler(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **unknownListPtr)
 }
 declare 550 generic {
-    int Tcl_BigIntIsMinusOne( Tcl_BigInt bigVal )
+    int Tcl_GetEnsembleFlags(Tcl_Interp *interp, Tcl_Command token,
+	    int *flagsPtr)
 }
 declare 551 generic {
-    int Tcl_BigIntIsInt( Tcl_BigInt bigVal )
+    int Tcl_GetEnsembleNamespace(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Namespace **namespacePtrPtr)
 }
+
+# TIP #237:
+
 declare 552 generic {
-    int Tcl_BigIntIsWideInt( Tcl_BigInt bigVal )
+    Tcl_Obj* Tcl_NewBignumObj( mp_int* value )
 }
 declare 553 generic {
-    int Tcl_GetIntFromBigInt( Tcl_BigInt bigVal )
+    Tcl_Obj* Tcl_DbNewBignumObj( mp_int* value, CONST char* file, int line )
 }
 declare 554 generic {
-    Tcl_WideInt Tcl_GetWideIntFromBigInt( Tcl_BigInt bigVal )
+    void Tcl_SetBignumObj( Tcl_Obj* obj, mp_int* value )
 }
 declare 555 generic {
-    int Tcl_CompareBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
-}
-declare 556 generic {
-    Tcl_BigInt Tcl_CopyBigInt( Tcl_BigInt bigVal )
-}
-declare 557 generic {
-    Tcl_BigInt Tcl_AddBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
-}
-declare 558 generic {
-    Tcl_BigInt Tcl_SubtractBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
-}
-declare 559 generic {
-    Tcl_BigInt Tcl_MultiplyBigIntByNarrowInt( Tcl_BigInt bigVal, Tcl_NarrowInt narrowVal )
-}
-declare 560 generic {
-    Tcl_BigInt Tcl_ShiftBigInt( Tcl_BigInt bigVal, int intVal )
+    int Tcl_GetBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
 
 ##############################################################################

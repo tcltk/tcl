@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.3 2004/12/29 22:47:09 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.4 2005/01/20 19:13:57 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -80,9 +80,6 @@ TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
 
 # Tcl Module default path roots (TIP189).
 TCL_MODULE_PATH		=
-
-# Libraries built with optimization switches have this additional extension
-TCL_DBGX		= @TCL_DBGX@
 
 # warning flags
 CFLAGS_WARNING		= @CFLAGS_WARNING@
@@ -298,7 +295,7 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o	tclUnixTest.o tclXtNotify.o tclXtTest.o 
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
-	tclAsync.o tclBasic.o tclBigInt.o tclBinary.o tclCkalloc.o tclClock.o \
+	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
 	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclEncoding.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
@@ -341,7 +338,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclAlloc.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
-	$(GENERIC_DIR)/tclBigInt.c \
 	$(GENERIC_DIR)/tclBinary.c \
 	$(GENERIC_DIR)/tclCkalloc.c \
 	$(GENERIC_DIR)/tclClock.c \
@@ -666,8 +662,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http1.0; \
 	    done;
-	@echo "Installing package http 2.5.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.0.tm;
+	@echo "Installing package http 2.5.1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.1.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
@@ -834,9 +830,6 @@ tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 
 tclBasic.o: $(GENERIC_DIR)/tclBasic.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
-
-tclBigInt.o: $(GENERIC_DIR)/tclBigInt.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBigInt.c
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c

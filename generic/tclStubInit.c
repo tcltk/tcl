@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.3 2004/12/29 22:47:02 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.4 2005/01/20 19:13:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -303,6 +303,11 @@ TclIntStubs tclIntStubs = {
     TclStackFree, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
+    TclBN_mp_div_d, /* 219 */
+    TclBN_mp_mul_d, /* 220 */
+    TclBN_mp_clear, /* 221 */
+    TclBN_mp_init, /* 222 */
+    TclBN_mp_read_radix, /* 223 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -956,27 +961,22 @@ TclStubs tclStubs = {
     Tcl_DiscardInterpState, /* 537 */
     Tcl_SetReturnOptions, /* 538 */
     Tcl_GetReturnOptions, /* 539 */
-    Tcl_BigIntFromInt, /* 540 */
-    Tcl_BigIntFromWideInt, /* 541 */
-    Tcl_FreeBigInt, /* 542 */
-    Tcl_BigIntIsEven, /* 543 */
-    Tcl_BigIntIsOdd, /* 544 */
-    Tcl_BigIntIsZero, /* 545 */
-    Tcl_BigIntIsPositive, /* 546 */
-    Tcl_BigIntIsNegative, /* 547 */
-    Tcl_BigIntIsUnit, /* 548 */
-    Tcl_BigIntIsOne, /* 549 */
-    Tcl_BigIntIsMinusOne, /* 550 */
-    Tcl_BigIntIsInt, /* 551 */
-    Tcl_BigIntIsWideInt, /* 552 */
-    Tcl_GetIntFromBigInt, /* 553 */
-    Tcl_GetWideIntFromBigInt, /* 554 */
-    Tcl_CompareBigInt, /* 555 */
-    Tcl_CopyBigInt, /* 556 */
-    Tcl_AddBigInt, /* 557 */
-    Tcl_SubtractBigInt, /* 558 */
-    Tcl_MultiplyBigIntByNarrowInt, /* 559 */
-    Tcl_ShiftBigInt, /* 560 */
+    Tcl_IsEnsemble, /* 540 */
+    Tcl_CreateEnsemble, /* 541 */
+    Tcl_FindEnsemble, /* 542 */
+    Tcl_SetEnsembleSubcommandList, /* 543 */
+    Tcl_SetEnsembleMappingDict, /* 544 */
+    Tcl_SetEnsembleUnknownHandler, /* 545 */
+    Tcl_SetEnsembleFlags, /* 546 */
+    Tcl_GetEnsembleSubcommandList, /* 547 */
+    Tcl_GetEnsembleMappingDict, /* 548 */
+    Tcl_GetEnsembleUnknownHandler, /* 549 */
+    Tcl_GetEnsembleFlags, /* 550 */
+    Tcl_GetEnsembleNamespace, /* 551 */
+    Tcl_NewBignumObj, /* 552 */
+    Tcl_DbNewBignumObj, /* 553 */
+    Tcl_SetBignumObj, /* 554 */
+    Tcl_GetBignumFromObj, /* 555 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.123.2.2 2004/12/29 22:47:12 kennykb Exp $
+# RCS: @(#) $Id: configure.in,v 1.123.2.3 2005/01/20 19:14:39 kennykb Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.57)
@@ -107,8 +107,6 @@ SC_ENABLE_SHARED
 SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS
-
-TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
 #	Detect what compiler flags to set for 64-bit support.
@@ -443,10 +441,6 @@ SC_ENABLE_FRAMEWORK
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # so that the backslashes quoting the DBX braces are dropped.
 
-# Trick to replace DBGX with TCL_DBGX
-DBGX='${TCL_DBGX}'
-eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
-
 # Note:  in the following variable, it's important to use the absolute
 # path name of the Tcl directory rather than "..":  this is because
 # AIX remembers this path and will attempt to use it at run-time to look
@@ -459,9 +453,9 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     AC_DEFINE(TCL_FRAMEWORK, 1, [Is Tcl built as a framework?])
 elif test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
+        TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
     else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
+        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
     fi
     TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
@@ -469,9 +463,6 @@ else
     TCL_BUILD_EXP_FILE="lib.exp"
     eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
 
-    # Replace DBGX with TCL_DBGX
-    eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
-    
     if test "$GCC" = "yes" ; then
 	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
 	TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L`pwd`"
@@ -508,13 +499,11 @@ fi
 
 # Replace ${VERSION} with contents of ${TCL_VERSION}
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
-# Replace DBGX with TCL_DBGX
-eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}\${TCL_DBGX}"
+    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
 else
-    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
+    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
 fi
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
@@ -557,9 +546,6 @@ AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
 AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 
 AC_SUBST(TCL_SRC_DIR)
-AC_SUBST(TCL_DBGX)
-AC_DEFINE_UNQUOTED(TCL_DBGX,${TCL_DBGX},
-    [What extra letters do we insert for debugging binary code?])
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)

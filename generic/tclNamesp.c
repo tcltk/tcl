@@ -11,7 +11,7 @@
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2002-2004 Donal K. Fellows.
+ * Copyright (c) 2002-2005 Donal K. Fellows.
  *
  * Originally implemented by
  *   Michael J. McLennan
@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.2 2004/12/29 22:47:01 kennykb Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.3 2005/01/20 19:13:32 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -119,7 +119,8 @@ typedef struct EnsembleConfig {
 				 * all lists, and cannot be found by scanning
 				 * the list from the namespace's ensemble
 				 * field. */
-    int flags;			/* ORed combo of ENS_DEAD and ENS_PREFIX. */
+    int flags;			/* ORed combo of ENS_DEAD and
+				 * TCL_ENSEMBLE_PREFIX. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
 
@@ -137,23 +138,21 @@ typedef struct EnsembleConfig {
 				 * list of currently exported commands. */
     Tcl_Obj *unknownHandler;	/* Script prefix used to handle the case when
 				 * no match is found (according to the rule
-				 * defined by flag bit ENS_PREFIX) or NULL to
-				 * use the default error-generating behaviour.
-				 * The script execution gets all the arguments
-				 * to the ensemble command (including objv[0])
-				 * and will have the results passed directly
-				 * back to the caller (including the error
-				 * code) unless the code is TCL_CONTINUE in
-				 * which case the subcommand will be reparsed
-				 * by the ensemble core, presumably because
-				 * the ensemble itself has been updated. */
+				 * defined by flag bit TCL_ENSEMBLE_PREFIX) or
+				 * NULL to use the default error-generating
+				 * behaviour. The script execution gets all
+				 * the arguments to the ensemble command
+				 * (including objv[0]) and will have the
+				 * results passed directly back to the caller
+				 * (including the error code) unless the code
+				 * is TCL_CONTINUE in which case the subcommand
+				 * will be reparsed by the ensemble core,
+				 * presumably because the ensemble itself has
+				 * been updated. */
 } EnsembleConfig;
 
 #define ENS_DEAD	0x1	/* Flag value to say that the ensemble is dead
 				 * and on its way out. */
-#define ENS_PREFIX	0x2	/* Flag value to say whether to allow
-				 * unambiguous prefixes of commands or to
-				 * require exact matches for command names. */
 
 /*
  * The data cached in a subcommand's Tcl_Obj rep.  This structure is
@@ -4514,11 +4513,11 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	 * any deletions have occurred.)
 	 */
 
-	token = TclMakeEnsembleCmd(interp, name, NULL,
-		(permitPrefix ? ENS_PREFIX : 0));
-	TclSetEnsembleSubcommandList(interp, token, subcmdObj);
-	TclSetEnsembleMappingDict(interp, token, mapObj);
-	TclSetEnsembleUnknownHandler(interp, token, unknownObj);
+	token = Tcl_CreateEnsemble(interp, name, NULL,
+		(permitPrefix ? TCL_ENSEMBLE_PREFIX : 0));
+	Tcl_SetEnsembleSubcommandList(interp, token, subcmdObj);
+	Tcl_SetEnsembleMappingDict(interp, token, mapObj);
+	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
 
 	/*
 	 * Tricky! Rely on the object result not being shared!
@@ -4533,7 +4532,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		TclFindEnsemble(interp, objv[3], 0) != NULL));
+		Tcl_FindEnsemble(interp, objv[3], 0) != NULL));
 	return TCL_OK;
 
     case ENS_CONFIG:
@@ -4541,7 +4540,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?opt? ?value? ...");
 	    return TCL_ERROR;
 	}
-	token = TclFindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
+	token = Tcl_FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
 	if (token == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4555,13 +4554,13 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    }
 	    switch ((enum EnsConfigOpts) index) {
 	    case CONF_SUBCMDS:
-		TclGetEnsembleSubcommandList(NULL, token, &resultObj);
+		Tcl_GetEnsembleSubcommandList(NULL, token, &resultObj);
 		if (resultObj != NULL) {
 		    Tcl_SetObjResult(interp, resultObj);
 		}
 		break;
 	    case CONF_MAP:
-		TclGetEnsembleMappingDict(NULL, token, &resultObj);
+		Tcl_GetEnsembleMappingDict(NULL, token, &resultObj);
 		if (resultObj != NULL) {
 		    Tcl_SetObjResult(interp, resultObj);
 		}
@@ -4569,7 +4568,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    case CONF_NAMESPACE: {
 		Tcl_Namespace *namespacePtr;
 
-		TclGetEnsembleNamespace(NULL, token, &namespacePtr);
+		Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 		Tcl_SetResult(interp, ((Namespace *)namespacePtr)->fullName,
 			TCL_VOLATILE);
 		break;
@@ -4577,13 +4576,13 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    case CONF_PREFIX: {
 		int flags;
 
-		TclGetEnsembleFlags(NULL, token, &flags);
+		Tcl_GetEnsembleFlags(NULL, token, &flags);
 		Tcl_SetObjResult(interp,
-			Tcl_NewBooleanObj(flags & ENS_PREFIX));
+			Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 		break;
 	    }
 	    case CONF_UNKNOWN:
-		TclGetEnsembleUnknownHandler(NULL, token, &resultObj);
+		Tcl_GetEnsembleUnknownHandler(NULL, token, &resultObj);
 		if (resultObj != NULL) {
 		    Tcl_SetObjResult(interp, resultObj);
 		}
@@ -4604,7 +4603,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    /* -map option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_MAP], -1));
-	    TclGetEnsembleMappingDict(NULL, token, &tmpObj);
+	    Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
 	    if (tmpObj != NULL) {
 		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
 	    } else {
@@ -4613,20 +4612,20 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    /* -namespace option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_NAMESPACE], -1));
-	    TclGetEnsembleNamespace(NULL, token, &namespacePtr);
+	    Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(((Namespace *)namespacePtr)->fullName,
 		    -1));
 	    /* -prefix option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_PREFIX], -1));
-	    TclGetEnsembleFlags(NULL, token, &flags);
+	    Tcl_GetEnsembleFlags(NULL, token, &flags);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewBooleanObj(flags & ENS_PREFIX));
+		    Tcl_NewBooleanObj(flags & TCL_ENSEMBLE_PREFIX));
 	    /* -subcommands option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_SUBCMDS], -1));
-	    TclGetEnsembleSubcommandList(NULL, token, &tmpObj);
+	    Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
 	    if (tmpObj != NULL) {
 		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
 	    } else {
@@ -4635,7 +4634,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    /* -unknown option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_UNKNOWN], -1));
-	    TclGetEnsembleUnknownHandler(NULL, token, &tmpObj);
+	    Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
 	    if (tmpObj != NULL) {
 		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
 	    } else {
@@ -4654,11 +4653,11 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    Tcl_Obj *subcmdObj, *mapObj, *unknownObj;
 	    int permitPrefix, flags;
 
-	    TclGetEnsembleSubcommandList(NULL, token, &subcmdObj);
-	    TclGetEnsembleMappingDict(NULL, token, &mapObj);
-	    TclGetEnsembleUnknownHandler(NULL, token, &unknownObj);
-	    TclGetEnsembleFlags(NULL, token, &flags);
-	    permitPrefix = (flags & ENS_PREFIX) != 0;
+	    Tcl_GetEnsembleSubcommandList(NULL, token, &subcmdObj);
+	    Tcl_GetEnsembleMappingDict(NULL, token, &mapObj);
+	    Tcl_GetEnsembleUnknownHandler(NULL, token, &unknownObj);
+	    Tcl_GetEnsembleFlags(NULL, token, &flags);
+	    permitPrefix = (flags & TCL_ENSEMBLE_PREFIX) != 0;
 
 	    objv += 4;
 	    objc -= 4;
@@ -4792,11 +4791,12 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	     * parsing stage.
 	     */
 
-	    flags = (permitPrefix ? flags|ENS_PREFIX : flags&~ENS_PREFIX);
-	    TclSetEnsembleSubcommandList(NULL, token, subcmdObj);
-	    TclSetEnsembleMappingDict(NULL, token, mapObj);
-	    TclSetEnsembleUnknownHandler(NULL, token, unknownObj);
-	    TclSetEnsembleFlags(NULL, token, flags);
+	    flags = (permitPrefix ? flags|TCL_ENSEMBLE_PREFIX
+		    : flags&~TCL_ENSEMBLE_PREFIX);
+	    Tcl_SetEnsembleSubcommandList(NULL, token, subcmdObj);
+	    Tcl_SetEnsembleMappingDict(NULL, token, mapObj);
+	    Tcl_SetEnsembleUnknownHandler(NULL, token, unknownObj);
+	    Tcl_SetEnsembleFlags(NULL, token, flags);
 	    return TCL_OK;
 	}
 
@@ -4809,7 +4809,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * TclMakeEnsembleCmd --
+ * Tcl_CreateEnsemble --
  *
  *	Create a simple ensemble attached to the given namespace.
  *
@@ -4823,7 +4823,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
  */
 
 Tcl_Command
-TclMakeEnsembleCmd(interp, name, namespacePtr, flags)
+Tcl_CreateEnsemble(interp, name, namespacePtr, flags)
     Tcl_Interp *interp;
     CONST char *name;
     Tcl_Namespace *namespacePtr;
@@ -4884,7 +4884,7 @@ TclMakeEnsembleCmd(interp, name, namespacePtr, flags)
 /*
  *----------------------------------------------------------------------
  *
- * TclSetEnsembleSubcommandList --
+ * Tcl_SetEnsembleSubcommandList --
  *
  *	Set the subcommand list for a particular ensemble.
  *
@@ -4899,7 +4899,7 @@ TclMakeEnsembleCmd(interp, name, namespacePtr, flags)
  */
 
 int
-TclSetEnsembleSubcommandList(interp, token, subcmdList)
+Tcl_SetEnsembleSubcommandList(interp, token, subcmdList)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Obj *subcmdList;
@@ -4948,7 +4948,7 @@ TclSetEnsembleSubcommandList(interp, token, subcmdList)
 /*
  *----------------------------------------------------------------------
  *
- * TclSetEnsembleMappingDict --
+ * Tcl_SetEnsembleMappingDict --
  *
  *	Set the mapping dictionary for a particular ensemble.
  *
@@ -4963,7 +4963,7 @@ TclSetEnsembleSubcommandList(interp, token, subcmdList)
  */
 
 int
-TclSetEnsembleMappingDict(interp, token, mapDict)
+Tcl_SetEnsembleMappingDict(interp, token, mapDict)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Obj *mapDict;
@@ -5012,7 +5012,7 @@ TclSetEnsembleMappingDict(interp, token, mapDict)
 /*
  *----------------------------------------------------------------------
  *
- * TclSetEnsembleUnknownHandler --
+ * Tcl_SetEnsembleUnknownHandler --
  *
  *	Set the unknown handler for a particular ensemble.
  *
@@ -5027,7 +5027,7 @@ TclSetEnsembleMappingDict(interp, token, mapDict)
  */
 
 int
-TclSetEnsembleUnknownHandler(interp, token, unknownList)
+Tcl_SetEnsembleUnknownHandler(interp, token, unknownList)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Obj *unknownList;
@@ -5077,7 +5077,7 @@ TclSetEnsembleUnknownHandler(interp, token, unknownList)
 /*
  *----------------------------------------------------------------------
  *
- * TclSetEnsembleFlags --
+ * Tcl_SetEnsembleFlags --
  *
  *	Set the flags for a particular ensemble.
  *
@@ -5092,7 +5092,7 @@ TclSetEnsembleUnknownHandler(interp, token, unknownList)
  */
 
 int
-TclSetEnsembleFlags(interp, token, flags)
+Tcl_SetEnsembleFlags(interp, token, flags)
     Tcl_Interp *interp;
     Tcl_Command token;
     int flags;
@@ -5128,7 +5128,7 @@ TclSetEnsembleFlags(interp, token, flags)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEnsembleSubcommandList --
+ * Tcl_GetEnsembleSubcommandList --
  *
  *	Get the list of subcommands associated with a particular ensemble.
  *
@@ -5146,7 +5146,7 @@ TclSetEnsembleFlags(interp, token, flags)
  */
 
 int
-TclGetEnsembleSubcommandList(interp, token, subcmdListPtr)
+Tcl_GetEnsembleSubcommandList(interp, token, subcmdListPtr)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Obj **subcmdListPtr;
@@ -5169,7 +5169,7 @@ TclGetEnsembleSubcommandList(interp, token, subcmdListPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEnsembleMappingDict --
+ * Tcl_GetEnsembleMappingDict --
  *
  *	Get the command mapping dictionary associated with a
  *	particular ensemble.
@@ -5187,7 +5187,7 @@ TclGetEnsembleSubcommandList(interp, token, subcmdListPtr)
  */
 
 int
-TclGetEnsembleMappingDict(interp, token, mapDictPtr)
+Tcl_GetEnsembleMappingDict(interp, token, mapDictPtr)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Obj **mapDictPtr;
@@ -5210,7 +5210,7 @@ TclGetEnsembleMappingDict(interp, token, mapDictPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEnsembleUnknownHandler --
+ * Tcl_GetEnsembleUnknownHandler --
  *
  *	Get the unknown handler associated with a particular ensemble.
  *
@@ -5227,7 +5227,7 @@ TclGetEnsembleMappingDict(interp, token, mapDictPtr)
  */
 
 int
-TclGetEnsembleUnknownHandler(interp, token, unknownListPtr)
+Tcl_GetEnsembleUnknownHandler(interp, token, unknownListPtr)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Obj **unknownListPtr;
@@ -5250,7 +5250,7 @@ TclGetEnsembleUnknownHandler(interp, token, unknownListPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEnsembleFlags --
+ * Tcl_GetEnsembleFlags --
  *
  *	Get the flags for a particular ensemble.
  *
@@ -5266,7 +5266,7 @@ TclGetEnsembleUnknownHandler(interp, token, unknownListPtr)
  */
 
 int
-TclGetEnsembleFlags(interp, token, flagsPtr)
+Tcl_GetEnsembleFlags(interp, token, flagsPtr)
     Tcl_Interp *interp;
     Tcl_Command token;
     int *flagsPtr;
@@ -5289,7 +5289,7 @@ TclGetEnsembleFlags(interp, token, flagsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEnsembleNamespace --
+ * Tcl_GetEnsembleNamespace --
  *
  *	Get the namespace associated with a particular ensemble.
  *
@@ -5305,7 +5305,7 @@ TclGetEnsembleFlags(interp, token, flagsPtr)
  */
 
 int
-TclGetEnsembleNamespace(interp, token, namespacePtrPtr)
+Tcl_GetEnsembleNamespace(interp, token, namespacePtrPtr)
     Tcl_Interp *interp;
     Tcl_Command token;
     Tcl_Namespace **namespacePtrPtr;
@@ -5328,7 +5328,7 @@ TclGetEnsembleNamespace(interp, token, namespacePtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclFindEnsemble --
+ * Tcl_FindEnsemble --
  *
  *	Given a command name, get the ensemble token for it, allowing
  *	for [namespace import]s. [Bug 1017022]
@@ -5346,7 +5346,7 @@ TclGetEnsembleNamespace(interp, token, namespacePtrPtr)
  */
 
 Tcl_Command
-TclFindEnsemble(interp, cmdNameObj, flags)
+Tcl_FindEnsemble(interp, cmdNameObj, flags)
     Tcl_Interp *interp;			/* Where to do the lookup, and where
 					 * to write the errors if
 					 * TCL_LEAVE_ERR_MSG is set in the
@@ -5383,7 +5383,7 @@ TclFindEnsemble(interp, cmdNameObj, flags)
 /*
  *----------------------------------------------------------------------
  *
- * TclIsEnsemble --
+ * Tcl_IsEnsemble --
  *
  *	Simple test for ensemble-hood that takes into account imported
  *	ensemble commands as well.
@@ -5398,9 +5398,10 @@ TclFindEnsemble(interp, cmdNameObj, flags)
  */
 
 int
-TclIsEnsemble(cmdPtr)
-    Command *cmdPtr;
+Tcl_IsEnsemble(token)
+    Tcl_Command token;
 {
+    Command *cmdPtr = (Command *) token;
     if (cmdPtr->objProc == NsEnsembleImplementationCmd) {
 	return 1;
     }
@@ -5517,7 +5518,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	 */
 
 	MakeCachedEnsembleCommand(objv[1], ensemblePtr, fullName, prefixObj);
-    } else if (!(ensemblePtr->flags & ENS_PREFIX)) {
+    } else if (!(ensemblePtr->flags & TCL_ENSEMBLE_PREFIX)) {
 	/*
 	 * Can't find and we are prohibited from using unambiguous prefixes.
 	 */
@@ -5739,7 +5740,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "unknown ",
-	    (ensemblePtr->flags & ENS_PREFIX ? "or ambiguous " : ""),
+	    (ensemblePtr->flags & TCL_ENSEMBLE_PREFIX ? "or ambiguous " : ""),
 	    "subcommand \"", TclGetString(objv[1]), "\": must be ", NULL);
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendResult(interp, ensemblePtr->subcommandArrayPtr[0], NULL);

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.1 2004/12/29 22:47:00 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.2 2005/01/20 19:13:20 kennykb Exp $
 
 library tcl
 
@@ -873,6 +873,23 @@ declare 218 generic {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
 
+# Entries in tommath needed only by tcltest
+
+declare 219 generic {
+    int TclBN_mp_div_d(mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
+}
+declare 220 generic {
+    int TclBN_mp_mul_d(mp_int *a, mp_digit b, mp_int *c)
+}
+declare 221 generic {
+    void TclBN_mp_clear(mp_int *a)
+}
+declare 222 generic {
+    int TclBN_mp_init(mp_int *a)
+}
+declare 223 generic {
+    int TclBN_mp_read_radix(mp_int *a, const char *str, int radix)
+}
 
 ##############################################################################
 

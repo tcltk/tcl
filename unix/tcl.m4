@@ -33,6 +33,13 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 
 	    # First check to see if --with-tcl was specified.
 	    if test x"${with_tclconfig}" != x ; then
+		case ${with_tclconfig} in
+		    */tclConfig.sh )
+			if test -f ${with_tclconfig}; then
+			    AC_MSG_WARN([--with-tcl argument should refer to directory containing tclConfig.sh, not to tclConfig.sh itself])
+			    with_tclconfig=`echo ${with_tclconfig} | sed 's!/tclConfig\.sh$!!'`
+			fi ;;
+		esac
 		if test -f "${with_tclconfig}/tclConfig.sh" ; then
 		    ac_cv_c_tclconfig=`(cd ${with_tclconfig}; pwd)`
 		else
@@ -137,6 +144,13 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 
 	    # First check to see if --with-tkconfig was specified.
 	    if test x"${with_tkconfig}" != x ; then
+		case ${with_tkconfig} in
+		    */tkConfig.sh )
+			if test -f ${with_tkconfig}; then
+			    AC_MSG_WARN([--with-tk argument should refer to directory containing tkConfig.sh, not to tkConfig.sh itself])
+			    with_tkconfig=`echo ${with_tkconfig} | sed 's!/tkConfig\.sh$!!'`
+			fi ;;
+		esac
 		if test -f "${with_tkconfig}/tkConfig.sh" ; then
 		    ac_cv_c_tkconfig=`(cd ${with_tkconfig}; pwd)`
 		else
@@ -251,6 +265,7 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 
     #
     # eval is required to do the TCL_DBGX substitution
+    # (@@@ Is this still the case?)
     #
 
     eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
@@ -514,43 +529,6 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	    fi
 	fi
 	LIBS=$ac_saved_libs
-	AC_CHECK_FUNCS(readdir_r)
-	if test "x$ac_cv_func_readdir_r" = "xyes"; then
-            AC_MSG_CHECKING([how many args readdir_r takes])
-	    # IRIX 5.3 has a 2 arg version of readdir_r
-	    # while other systems have a 3 arg version.
-	    AC_CACHE_VAL(tcl_cv_two_arg_readdir_r,
-	        AC_TRY_COMPILE([#include <stdlib.h>
-#include <sys/types.h>
-#ifdef NO_DIRENT_H
-# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
-# define dirent direct  *                                */
-#else
-# include <dirent.h>
-#endif
-], [readdir_r(NULL, NULL);],
-	        tcl_cv_two_arg_readdir_r=yes, tcl_cv_two_arg_readdir_r=no))
-	    AC_CACHE_VAL(tcl_cv_three_arg_readdir_r,
-	        AC_TRY_COMPILE([#include <stdlib.h>
-#include <sys/types.h>
-#ifdef NO_DIRENT_H
-# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
-# define dirent direct  *                                */
-#else
-# include <dirent.h>
-#endif
-], [readdir_r(NULL, NULL, NULL);],
-	        tcl_cv_three_arg_readdir_r=yes, tcl_cv_three_arg_readdir_r=no))
-	    if test "x$tcl_cv_two_arg_readdir_r" = "xyes" ; then
-                AC_MSG_RESULT([2])
-	        AC_DEFINE(HAVE_TWO_ARG_READDIR_R)
-	    elif test "x$tcl_cv_three_arg_readdir_r" = "xyes" ; then
-                AC_MSG_RESULT([3])
-	        AC_DEFINE(HAVE_THREE_ARG_READDIR_R)
-	    else
-	        AC_MSG_ERROR([unknown number of args for readdir_r])
-	    fi
-	fi
     else
 	TCL_THREADS=0
 	AC_MSG_RESULT([no (default)])
@@ -584,7 +562,8 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 #				Sets to $(CFLAGS_OPTIMIZE) if false
 #		LDFLAGS_DEFAULT	Sets to $(LDFLAGS_DEBUG) if true
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
-#		DBGX		Debug library extension
+#		DBGX		Formerly used as debug library extension;
+#				always blank now.
 #
 #------------------------------------------------------------------------
 
@@ -592,16 +571,15 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     AC_MSG_CHECKING([for build with symbols])
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
+    DBGX=""
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 	AC_MSG_RESULT([no])
 	AC_DEFINE(TCL_CFG_OPTIMIZED, 1, [Is this an optimized build?])
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
 	if test "$tcl_ok" = "yes"; then
 	    AC_MSG_RESULT([yes (standard debugging)])
 	fi
@@ -985,7 +963,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		TCL_NEEDS_EXP_FILE=1
-		TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
+		TCL_EXPORT_FILE_SUFFIX='${VERSION}.exp'
 	    fi
 	    ;;
 	AIX-*)
@@ -1006,7 +984,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    LD_LIBRARY_PATH_VAR="LIBPATH"
 	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
+	    TCL_EXPORT_FILE_SUFFIX='${VERSION}.exp'
 
 	    # AIX v<=4.1 has some different flags than 4.2+
 	    if test "$system" = "AIX-4.1" -o "`uname -v`" -lt "4" ; then
@@ -1171,7 +1149,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LDFLAGS="$LDFLAGS -Wl,-D,08000000"
 	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
+	    SHARED_LIB_SUFFIX='${VERSION}.a'
 	    ;;
 	IRIX-5.*)
 	    SHLIB_CFLAGS=""
@@ -1340,9 +1318,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 #endif
 		],
 		    AC_MSG_RESULT(yes)
-		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so',
+		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so',
 		    AC_MSG_RESULT(no)
-		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
+		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
 		)
 	    ], [
 		SHLIB_CFLAGS=""
@@ -1353,12 +1331,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 		DL_LIBS=""
 		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    ])
 
 	    # FreeBSD doesn't handle version numbers with dots.
 
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
+	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	OpenBSD-*)
@@ -1376,13 +1354,13 @@ dnl AC_CHECK_TOOL(AR, ar)
 #endif
 	    ],
 		[AC_MSG_RESULT(yes)
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'],
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'],
 		[AC_MSG_RESULT(no)
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0']
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0']
 	    )
 
 	    # OpenBSD doesn't do version numbers with dots.
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
+	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	FreeBSD-*)
@@ -1405,8 +1383,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    case $system in
 	    FreeBSD-3.*)
 	    	# FreeBSD-3 doesn't handle version numbers with dots.
-	    	UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
-	    	SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so'
+	    	UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+	    	SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
 	    	TCL_LIB_VERSIONS_OK=nodots
 		;;
 	    esac
@@ -1576,8 +1554,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	SunOS-5.[[0-6]]*)
@@ -1835,10 +1813,10 @@ dnl AC_CHECK_TOOL(AR, ar)
     fi
 
     if test "$SHARED_LIB_SUFFIX" = "" ; then
-	SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}${SHLIB_SUFFIX}'
+	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'
     fi
     if test "$UNSHARED_LIB_SUFFIX" = "" ; then
-	UNSHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
+	UNSHARED_LIB_SUFFIX='${VERSION}.a'
     fi
 
     if test "${SHARED_BUILD}" = "1" && test "${SHLIB_SUFFIX}" != "" ; then
@@ -2546,75 +2524,73 @@ AC_DEFUN(SC_TCL_EARLY_FLAGS,[
 # Results:
 #
 #	Might define the following vars:
+#		TCL_WIDE_INT_IS_LONG
+#		TCL_WIDE_INT_TYPE
 #		HAVE_STRUCT_DIRENT64
 #		HAVE_STRUCT_STAT64
-#		HAVE_STRUCT__STATI64
 #		HAVE_TYPE_OFF64_T
-#		SIZEOF_LONG_LONG
-#		SIZEOF_LONG
-#		SIZEOF___INT64
-#		SIZEOF_INT
-#		SIZEOF_SHORT
 #
 #--------------------------------------------------------------------
 
 AC_DEFUN(SC_TCL_64BIT_FLAGS, [
-    AC_CHECK_SIZEOF(long long)
-    AC_CHECK_SIZEOF(__int64)
-    AC_CHECK_SIZEOF(long)
-    AC_CHECK_SIZEOF(int)
-    AC_CHECK_SIZEOF(short)
-
-
-    # Now check for auxiliary declarations
-    AC_MSG_CHECKING([for struct dirent64])
-    AC_CACHE_VAL(tcl_cv_struct_dirent64,[
-	AC_TRY_COMPILE([#include <sys/types.h>
-#include <sys/dirent.h>],[struct dirent64 p;],
-	    tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
-    if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
-	AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
-    fi
-    AC_MSG_RESULT(${tcl_cv_struct_dirent64})
-
-    AC_MSG_CHECKING([for struct stat64])
-    AC_CACHE_VAL(tcl_cv_struct_stat64,[
-	AC_TRY_COMPILE([#include <sys/stat.h>],[struct stat64 p;
-],
-	    tcl_cv_struct_stat64=yes,tcl_cv_struct_stat64=no)])
-    if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-	AC_DEFINE(HAVE_STRUCT_STAT64, 1, [Is 'struct stat64' in <sys/stat.h>?])
-    fi
-    AC_MSG_RESULT(${tcl_cv_struct_stat64})
-
-    AC_MSG_CHECKING([for struct _stati64])
-    AC_CACHE_VAL(tcl_cv_struct__stati64,[
-	AC_TRY_COMPILE([#include <sys/stat.h>],[struct _stati64 p;
-],
-	    tcl_cv_struct__stati64=yes,tcl_cv_struct__stati64=no)
-    ])
-    if test "x${tcl_cv_struct__stati64}" = "xyes" ; then
-	AC_DEFINE(HAVE_STRUCT__STATI64, 1, [Is 'struct _stati64' in <sys/stat.h>?])
-    fi
-    AC_MSG_RESULT(${tcl_cv_struct__stati64})
-
-    AC_CHECK_FUNCS(open64 lseek64)
-    AC_MSG_CHECKING([for off64_t])
-    AC_CACHE_VAL(tcl_cv_type_off64_t,[
-	AC_TRY_COMPILE([#include <sys/types.h>],[off64_t offset;
-],
-	    tcl_cv_type_off64_t=yes,tcl_cv_type_off64_t=no)])
-    dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
-    dnl functions lseek64 and open64 are defined.
-    if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-       test "x${ac_cv_func_lseek64}" = "xyes" && \
-       test "x${ac_cv_func_open64}" = "xyes" ; then
-	AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
-	AC_MSG_RESULT(yes)
+    AC_MSG_CHECKING([for 64-bit integer type])
+    AC_CACHE_VAL(tcl_cv_type_64bit,[
+	tcl_cv_type_64bit=none
+	# See if the compiler knows natively about __int64
+	AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
+	    tcl_type_64bit=__int64, tcl_type_64bit="long long")
+	# See if we should use long anyway  Note that we substitute in the
+	# type that is our current guess for a 64-bit type inside this check
+	# program, so it should be modified only carefully...
+        AC_TRY_COMPILE(,[switch (0) { 
+            case 1: case (sizeof(]${tcl_type_64bit}[)==sizeof(long)): ; 
+        }],tcl_cv_type_64bit=${tcl_type_64bit})])
+    if test "${tcl_cv_type_64bit}" = none ; then
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Are wide integers to be implemented with C 'long's?])
+	AC_MSG_RESULT(using long)
     else
-	AC_MSG_RESULT(no)
-    fi
-])
+	AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit},
+	    [What type should be used to define wide integers?])
+	AC_MSG_RESULT(${tcl_cv_type_64bit})
+
+	# Now check for auxiliary declarations
+	AC_MSG_CHECKING([for struct dirent64])
+	AC_CACHE_VAL(tcl_cv_struct_dirent64,[
+	    AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/dirent.h>],[struct dirent64 p;],
+		tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
+	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
+	fi
+	AC_MSG_RESULT(${tcl_cv_struct_dirent64})
+
+	AC_MSG_CHECKING([for struct stat64])
+	AC_CACHE_VAL(tcl_cv_struct_stat64,[
+	    AC_TRY_COMPILE([#include <sys/stat.h>],[struct stat64 p;
+],
+		tcl_cv_struct_stat64=yes,tcl_cv_struct_stat64=no)])
+	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_STRUCT_STAT64, 1, [Is 'struct stat64' in <sys/stat.h>?])
+	fi
+	AC_MSG_RESULT(${tcl_cv_struct_stat64})
+
+	AC_CHECK_FUNCS(open64 lseek64)
+	AC_MSG_CHECKING([for off64_t])
+	AC_CACHE_VAL(tcl_cv_type_off64_t,[
+	    AC_TRY_COMPILE([#include <sys/types.h>],[off64_t offset;
+],
+		tcl_cv_type_off64_t=yes,tcl_cv_type_off64_t=no)])
+	dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
+	dnl functions lseek64 and open64 are defined.
+	if test "x${tcl_cv_type_off64_t}" = "xyes" && \
+	        test "x${ac_cv_func_lseek64}" = "xyes" && \
+	        test "x${ac_cv_func_open64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
+	    AC_MSG_RESULT(yes)
+	else
+	    AC_MSG_RESULT(no)
+	fi
+    fi])
 
 #--------------------------------------------------------------------
 # SC_TCL_CFG_ENCODING	TIP #59

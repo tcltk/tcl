@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.191.2.4 2004/12/29 22:46:36 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.191.2.5 2005/01/20 19:12:32 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -340,105 +340,83 @@ typedef long LONG;
  * complex formats sometimes needed (e.g. in the format(n) command.)
  */
 
-#if ( SIZEOF_LONG_LONG >= 8 ) && ( SIZEOF_LONG_LONG > SIZEOF_LONG )
-#  define TCL_WIDE_INT_TYPE long long
-#  define TCL_SIZEOF_WIDE_INT SIZEOF_LONG_LONG
-#elif ( SIZEOF___INT64 >= 8 ) && ( SIZEOF___INT64 > SIZEOF_LONG )
-#  define TCL_WIDE_INT_TYPE __int64
-#  define TCL_SIZEOF_WIDE_INT SIZEOF___INT64
-#elif ( SIZEOF_LONG >= 8 )
-#  define TCL_WIDE_INT_IS_LONG 1
-#  define TCL_WIDE_INT_TYPE long
-#  define TCL_SIZEOF_WIDE_INT SIZEOF_LONG
-#else
-/* Can't find a 64-bit integer */
-#  define TCL_WIDE_INT_IS_LONG 1
-#  define TCL_WIDE_INT_IS_4_BYTES 1
-#  define TCL_WIDE_INT_TYPE long
-#  define TCL_SIZEOF_WIDE_INT SIZEOF_LONG
-#endif
+#if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
+#   if defined(__GNUC__)
+#      define TCL_WIDE_INT_TYPE long long
+#      if defined(__WIN32__) && !defined(__CYGWIN__)
+#         define TCL_LL_MODIFIER        "I64"
+#         define TCL_LL_MODIFIER_SIZE   3
+#      else
+#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER_SIZE	1
+#      endif
+typedef struct stat	Tcl_StatBuf;
+#   elif defined(__WIN32__)
+#      define TCL_WIDE_INT_TYPE __int64
+#      ifdef __BORLANDC__
+typedef struct stati64 Tcl_StatBuf;
+#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER_SIZE	1
+#      else /* __BORLANDC__ */
+typedef struct _stati64	Tcl_StatBuf;
+#         define TCL_LL_MODIFIER	"I64"
+#         define TCL_LL_MODIFIER_SIZE	3
+#      endif /* __BORLANDC__ */
+#   else /* __WIN32__ */
+/*
+ * Don't know what platform it is and configure hasn't discovered what
+ * is going on for us.  Try to guess...
+ */
+#      ifdef NO_LIMITS_H
+#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
+#      else /* !NO_LIMITS_H */
+#	  include <limits.h>
+#	  if (INT_MAX < LONG_MAX)
+#	     define TCL_WIDE_INT_IS_LONG	1
+#	  else
+#	     define TCL_WIDE_INT_TYPE long long
+#         endif
+#      endif /* NO_LIMITS_H */
+#   endif /* __WIN32__ */
+#endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
+#ifdef TCL_WIDE_INT_IS_LONG
+#   undef TCL_WIDE_INT_TYPE
+#   define TCL_WIDE_INT_TYPE	long
+#endif /* TCL_WIDE_INT_IS_LONG */
 
-typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
-typedef unsigned TCL_WIDE_INT_TYPE Tcl_WideUInt;
+typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
+typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
-#define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
-#define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
-#define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
-#define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
-
-#if defined(__WIN32__)
-#  if defined(__GNUC__) 
-#    if defined(__CYGWIN__)
-       /* cygwin */
+#ifdef TCL_WIDE_INT_IS_LONG
+typedef struct stat	Tcl_StatBuf;
+#   define Tcl_WideAsLong(val)		((long)(val))
+#   define Tcl_LongAsWide(val)		((long)(val))
+#   define Tcl_WideAsDouble(val)	((double)((long)(val)))
+#   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
+#   ifndef TCL_LL_MODIFIER
+#      define TCL_LL_MODIFIER		"l"
+#      define TCL_LL_MODIFIER_SIZE	1
+#   endif /* !TCL_LL_MODIFIER */
+#else /* TCL_WIDE_INT_IS_LONG */
+/*
+ * The next short section of defines are only done when not running on
+ * Windows or some other strange platform.
+ */
+#   ifndef TCL_LL_MODIFIER
+#      ifdef HAVE_STRUCT_STAT64
+typedef struct stat64	Tcl_StatBuf;
+#      else
+typedef struct stat	Tcl_StatBuf;
+#      endif /* HAVE_STRUCT_STAT64 */
 #      define TCL_LL_MODIFIER		"ll"
 #      define TCL_LL_MODIFIER_SIZE	2
-#    else
-       /* mingw */
-#      define TCL_LL_MODIFIER		"I64"
-#      define TCL_LL_MODIFIER_SIZE      3
-#    endif
-#  elif defined(__BORLANDC__)
-     /* borland */
-#    define TCL_LL_MODIFIER		"L"
-#    define TCL_LL_MODIFIER_SIZE        1
-#  elif defined(_MSC_VER)
-     /* MSVC */
-#    define TCL_LL_MODIFIER		"I64"
-#    define TCL_LL_MODIFIER_SIZE        3
-#  else
-     /* some other compiler and library - icc ? */
-#    define TCL_LL_MODIFIER		"I64"
-#    define TCL_LL_MODIFIER_SIZE        3
-#  endif
-#else
-   /* not windows */
-#  ifdef TCL_WIDE_INT_IS_LONG
-#    define TCL_LL_MODIFIER             "l"
-#    define TCL_LL_MODIFIER_SIZE        1
-#  else
-#    define TCL_LL_MODIFIER		"ll"
-#    define TCL_LL_MODIFIER_SIZE        2
-#  endif
-#endif
+#   endif /* !TCL_LL_MODIFIER */
+#   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
+#   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
+#   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
+#   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
+#endif /* TCL_WIDE_INT_IS_LONG */
 
-/*
- * Define a Tcl_StatBuf that's 'struct stat64' if it's available, and
- * 'struct stat' otherwise.
- */
-
-#if HAVE_STRUCT__STATI64
-typedef struct _stati64 Tcl_StatBuf;
-#elif HAVE_STRUCT_STAT64
-typedef struct stat64 Tcl_StatBuf;
-#else
-typedef struct stat Tcl_StatBuf;
-#endif
-
-/*
- * Define Tcl_NarrowInt and Tcl_NarrowUInt to be integer types that are
- * at most half the width of a Tcl_WideInt.  These definitions are needed for
- * the arbitrary-precision integer routines.
- */
-
-#if ( SIZEOF_LONG > 0 ) && ( 2 * SIZEOF_LONG <= TCL_SIZEOF_WIDE_INT )
-typedef long Tcl_NarrowInt;
-typedef unsigned long Tcl_NarrowUInt;
-#define TCL_SIZEOF_NARROW_INT SIZEOF_LONG
-#elif ( SIZEOF_INT > 0 ) && ( 2 * SIZEOF_INT <= TCL_SIZEOF_WIDE_INT )
-typedef int Tcl_NarrowInt;
-typedef unsigned int Tcl_NarrowUInt;
-#define TCL_SIZEOF_NARROW_INT SIZEOF_INT
-#elif ( SIZEOF_SHORT > 0 ) && ( 2 * SIZEOF_SHORT <= TCL_SIZEOF_WIDE_INT )
-typedef short Tcl_NarrowInt;
-typedef unsigned short Tcl_NarrowUInt;
-#define TCL_SIZEOF_NARROW_INT SIZEOF_SHORT
-#elif ( TCL_SIZEOF_WIDE_INT > 1 )
-typedef char Tcl_NarrowInt;
-typedef unsigned char Tcl_NarrowUInt;
-#define TCL_SIZEOF_NARROW_INT 1
-#else
-#error "Cannot find an integer type that is at most 32 bits."
-#endif
 
 /*
  * This flag controls whether binary compatability is maintained with
@@ -448,6 +426,7 @@ typedef unsigned char Tcl_NarrowUInt;
 #ifndef TCL_PRESERVE_BINARY_COMPATABILITY
 #   define TCL_PRESERVE_BINARY_COMPATABILITY 1
 #endif
+
 
 /*
  * Data structures defined opaquely in this module. The definitions below
@@ -485,7 +464,6 @@ typedef struct Tcl_Interp {
 } Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
-typedef struct Tcl_BigInt_ * Tcl_BigInt;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
 typedef struct Tcl_Command_ *Tcl_Command;
@@ -790,6 +768,12 @@ typedef struct Tcl_Obj {
 	    VOID *ptr1;
 	    VOID *ptr2;
 	} twoPtrValue;
+	struct {		/*   - internal rep as a wide int,
+				 *     tightly packed fields */
+	    VOID *digits;	/* Pointer to digits */
+	    unsigned long misc;	/* Alloc, used, and signum packed
+				 * into a single word */
+	} bignumValue;
     } internalRep;
 } Tcl_Obj;
 
@@ -831,6 +815,8 @@ int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
  */
 
 #ifdef TCL_MEM_DEBUG
+#  define Tcl_NewBignumObj(val) \
+     Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  define Tcl_NewBooleanObj(val) \
      Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
 #  define Tcl_NewByteArrayObj(bytes, len) \
@@ -1073,6 +1059,13 @@ typedef struct Tcl_DString {
 /* Indicate the semantics of the result of a trace */
 #define TCL_TRACE_RESULT_DYNAMIC 0x8000
 #define TCL_TRACE_RESULT_OBJECT  0x10000
+
+/*
+ * Flag values for ensemble commands.
+ */
+#define TCL_ENSEMBLE_PREFIX 0x02/* Flag value to say whether to allow
+				 * unambiguous prefixes of commands or to
+				 * require exact matches for command names. */
 
 /*
  * Flag values passed to command-related procedures.
@@ -2288,6 +2281,15 @@ typedef void (Tcl_LimitHandlerProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp));
 typedef void (Tcl_LimitHandlerDeleteProc) _ANSI_ARGS_((ClientData clientData));
 
+
+#ifndef MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#define MP_INT_DECLARED
+#endif
+#ifndef MP_DIGIT_DECLARED
+typedef unsigned long mp_digit;
+#define MP_DIGIT_DECLARED
+#endif
 
 #ifndef TCL_NO_DEPRECATED
 

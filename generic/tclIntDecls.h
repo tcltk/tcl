@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.1 2004/12/29 22:47:00 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.2 2005/01/20 19:13:26 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1142,6 +1142,34 @@ EXTERN int		TclPushStackFrame _ANSI_ARGS_((Tcl_Interp * interp,
 /* 218 */
 EXTERN void		TclPopStackFrame _ANSI_ARGS_((Tcl_Interp * interp));
 #endif
+#ifndef TclBN_mp_div_d_TCL_DECLARED
+#define TclBN_mp_div_d_TCL_DECLARED
+/* 219 */
+EXTERN int		TclBN_mp_div_d _ANSI_ARGS_((mp_int * a, mp_digit b, 
+				mp_int * c, mp_digit * d));
+#endif
+#ifndef TclBN_mp_mul_d_TCL_DECLARED
+#define TclBN_mp_mul_d_TCL_DECLARED
+/* 220 */
+EXTERN int		TclBN_mp_mul_d _ANSI_ARGS_((mp_int * a, mp_digit b, 
+				mp_int * c));
+#endif
+#ifndef TclBN_mp_clear_TCL_DECLARED
+#define TclBN_mp_clear_TCL_DECLARED
+/* 221 */
+EXTERN void		TclBN_mp_clear _ANSI_ARGS_((mp_int * a));
+#endif
+#ifndef TclBN_mp_init_TCL_DECLARED
+#define TclBN_mp_init_TCL_DECLARED
+/* 222 */
+EXTERN int		TclBN_mp_init _ANSI_ARGS_((mp_int * a));
+#endif
+#ifndef TclBN_mp_read_radix_TCL_DECLARED
+#define TclBN_mp_read_radix_TCL_DECLARED
+/* 223 */
+EXTERN int		TclBN_mp_read_radix _ANSI_ARGS_((mp_int * a, 
+				const char * str, int radix));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1381,6 +1409,11 @@ typedef struct TclIntStubs {
     void (*tclStackFree) _ANSI_ARGS_((Tcl_Interp * interp)); /* 216 */
     int (*tclPushStackFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_CallFrame ** framePtrPtr, Tcl_Namespace * namespacePtr, int isProcCallFrame)); /* 217 */
     void (*tclPopStackFrame) _ANSI_ARGS_((Tcl_Interp * interp)); /* 218 */
+    int (*tclBN_mp_div_d) _ANSI_ARGS_((mp_int * a, mp_digit b, mp_int * c, mp_digit * d)); /* 219 */
+    int (*tclBN_mp_mul_d) _ANSI_ARGS_((mp_int * a, mp_digit b, mp_int * c)); /* 220 */
+    void (*tclBN_mp_clear) _ANSI_ARGS_((mp_int * a)); /* 221 */
+    int (*tclBN_mp_init) _ANSI_ARGS_((mp_int * a)); /* 222 */
+    int (*tclBN_mp_read_radix) _ANSI_ARGS_((mp_int * a, const char * str, int radix)); /* 223 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2143,6 +2176,26 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclPopStackFrame
 #define TclPopStackFrame \
 	(tclIntStubsPtr->tclPopStackFrame) /* 218 */
+#endif
+#ifndef TclBN_mp_div_d
+#define TclBN_mp_div_d \
+	(tclIntStubsPtr->tclBN_mp_div_d) /* 219 */
+#endif
+#ifndef TclBN_mp_mul_d
+#define TclBN_mp_mul_d \
+	(tclIntStubsPtr->tclBN_mp_mul_d) /* 220 */
+#endif
+#ifndef TclBN_mp_clear
+#define TclBN_mp_clear \
+	(tclIntStubsPtr->tclBN_mp_clear) /* 221 */
+#endif
+#ifndef TclBN_mp_init
+#define TclBN_mp_init \
+	(tclIntStubsPtr->tclBN_mp_init) /* 222 */
+#endif
+#ifndef TclBN_mp_read_radix
+#define TclBN_mp_read_radix \
+	(tclIntStubsPtr->tclBN_mp_read_radix) /* 223 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
