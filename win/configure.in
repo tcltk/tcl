@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.5 1999/06/11 01:53:04 surles Exp $
+# RCS: @(#) $Id: configure.in,v 1.6 1999/06/16 20:12:01 surles Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -10,6 +10,7 @@ TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=1
 TCL_PATCH_LEVEL=.2
+VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 #--------------------------------------------------------------------
 # Check whether --enable-gcc or --disable-gcc was given.  Do this 
@@ -58,12 +59,12 @@ SC_ENABLE_SHARED
 # after SC_ENABLE_SHARED checks the configure switches.
 #--------------------------------------------------------------------
 
-SC_TCL_CONFIG_CFLAGS
+SC_CONFIG_CFLAGS
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols 
 # option.  This macro depends on C flags, and should be called
-# after SC_TCL_CONFIG_CFLAGS macro is called.
+# after SC_CONFIG_CFLAGS macro is called.
 #--------------------------------------------------------------------
 
 SC_ENABLE_SYMBOLS
@@ -76,20 +77,27 @@ TCL_DBGX=${DBGX}
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
 
-eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
-eval "LD_FLAGS=${LD_FLAGS}"
+eval "TCL_SRC_DIR=`cd $srcdir; pwd`"
+eval "TCL_STUB_LIB_FILE=tclstub$VER${LIBSUFFIX}"
+eval "TCL_DLL_FILE=tcl$VER${DLLSUFFIX}"
+eval "TCL_LIB_FILE=tcl$VER${LIBSUFFIX}"
+
+AC_SUBST(TCL_VERSION)
+AC_SUBST(TCL_MAJOR_VERSION)
+AC_SUBST(TCL_MINOR_VERSION)
+AC_SUBST(TCL_PATCH_LEVEL)
+AC_SUBST(TCL_LIB_FILE)
+AC_SUBST(TCL_DLL_FILE)
+AC_SUBST(TCL_STUB_LIB_FILE)
+AC_SUBST(TCL_SRC_DIR)
+AC_SUBST(TCL_BIN_DIR)
+AC_SUBST(TCL_DBGX)
 
 AC_SUBST(PATHTYPE)
 AC_SUBST(CFLAGS_DEBUG)
 AC_SUBST(CFLAGS_OPTIMIZE)
 AC_SUBST(CFLAGS_WARNING)
 AC_SUBST(EXTRA_CFLAGS)
-AC_SUBST(TCL_DBGX)
-AC_SUBST(TCL_LIB_FILE)
-AC_SUBST(TCL_MAJOR_VERSION)
-AC_SUBST(TCL_MINOR_VERSION)
-AC_SUBST(TCL_PATCH_LEVEL)
-AC_SUBST(TCL_VERSION)
 AC_SUBST(SHLIB_LD)
 AC_SUBST(SHLIB_LD_LIBS)
 AC_SUBST(SHLIB_CFLAGS)
@@ -104,4 +112,4 @@ AC_SUBST(LIBRARIES)
 AC_SUBST(MAKE_LIB)
 AC_SUBST(MAKE_DLL)
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile tclConfig.sh)

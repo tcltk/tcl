@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.7 1999/06/15 01:16:29 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.8 1999/06/16 20:12:01 surles Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -102,9 +102,9 @@ DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
 EXESUFFIX		= @EXESUFFIX@
 
-TCL_STUB_LIB_FILE	= tclstub$(VER)${LIBSUFFIX}
-TCL_DLL_FILE		= tcl$(VER)${DLLSUFFIX}
-TCL_LIB_FILE		= tcl$(VER)${LIBSUFFIX}
+TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
+TCL_DLL_FILE		= @TCL_DLL_FILE@
+TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(VER)${DLLSUFFIX}
 REG_DLL_FILE		= tclreg$(VER)${DLLSUFFIX}
 PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
@@ -437,7 +437,7 @@ runtest: tcltest
 depend:
 
 Makefile: Makefile.in
-	config.status
+	./config.status
 
 clean:
 	$(RM) *.lib *.exp *.dll *.${OBJEXT} *~ \#* TAGS a.out
