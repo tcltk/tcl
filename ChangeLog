@@ -12,6 +12,10 @@
 	back to CRLF before committing to CVS was giving me a headache.
 	[Bug: 451333]
 
+	* win/makefile.vc: replaced $(WINDIR) with $(include32) for the
+	.rc.res inference rule.  winver.h wasn't getting included.
+	[Bug: 445630]
+
 2001-08-14  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c: make the intial maxNestingDepth of an
