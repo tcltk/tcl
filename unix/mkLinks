@@ -567,6 +567,14 @@ if test -r SetErrno.3; then
     rm -f Tcl_GetErrno.3
     ln SetErrno.3 Tcl_GetErrno.3
 fi
+if test -r SetErrno.3; then
+    rm -f Tcl_ErrnoId.3
+    ln SetErrno.3 Tcl_ErrnoId.3
+fi
+if test -r SetErrno.3; then
+    rm -f Tcl_ErrnoMsg.3
+    ln SetErrno.3 Tcl_ErrnoMsg.3
+fi
 if test -r Hash.3; then
     rm -f Tcl_GetHashKey.3
     ln Hash.3 Tcl_GetHashKey.3

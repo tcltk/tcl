@@ -1,3 +1,17 @@
+2000-01-26  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclNamesp.c: Undid fix for #956, which broke backwards
+	compatibility.
+
+	* doc/variable.n: 
+	* doc/trace.n: 
+	* doc/namespace.n: 
+	* doc/info.n: Added further information about differences between
+	"namespace which" and "info exists".
+
+	* doc/SetErrno.3: Added descriptions of ErrnoId() and ErrnoMsg()
+	functions.
+
 2000-01-25  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tcl.m4: modified EXTRA_CFLAGS to add -DHAVE_TZSET for
@@ -40,6 +54,9 @@
 	Tcl_AppendUnicodeToObj [Bug: 4038]
 
 2000-01-21  Eric Melski  <ericm@scriptics.com>
+
+	* unix/mkLinks: 
+	* doc/GetHostName.3: Man page for Tcl_GetHostName (bug #1817).
 
 	* doc/lreplace.n: Corrected man page with respect to treatment of
 	empty lists, and "prettied up" the page. (bug #1705).

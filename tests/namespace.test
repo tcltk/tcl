@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.8 2000/01/21 03:58:17 ericm Exp $
+# RCS: @(#) $Id: namespace.test,v 1.9 2000/01/26 21:36:36 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1041,13 +1041,6 @@ test namespace-34.7 {NamespaceWhichCmd, variable lookup} {
              [catch {namespace which -variable ::test_ns_2::noSuchVar} msg] $msg
     }
 } {::env ::test_ns_3::v3 ::test_ns_2::v2 0 {}}
-test namespace-34.8 {NamespaceWhichCmd, lookup of undefined but traced var} {
-    catch {unset foo}
-    trace variable foo w bar
-    set res [namespace which -variable foo]
-    trace vdelete foo w bar
-    set res
-} {}
 
 test namespace-35.1 {FreeNsNameInternalRep, resulting ref count > 0} {
     catch {eval namespace delete [namespace children :: test_ns_*]}

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.3 1999/04/16 00:46:35 stanton Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.4 2000/01/26 21:36:35 ericm Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.0 Tcl "Tcl Built-In Commands"
@@ -228,7 +228,10 @@ For example, if \fIname\fR does not exist in the current namespace
 but does exist in the global namespace,
 this command returns a fully-qualified name in the global namespace.
 If the command or variable does not exist,
-this command returns an empty string.
+this command returns an empty string.  If the variable has been
+created but not defined, such as with the \fBvariable\fR command
+or through a \fBtrace\fR on the variable, this command will return the 
+fully-qualified name of the variable.
 If no flag is given, \fIname\fR is treated as a command name.
 See the section \fBNAME RESOLUTION\fR below for an explanation of
 the rules regarding name resolution.
