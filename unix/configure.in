@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# SCCS: @(#) configure.in 1.10 98/07/24 15:04:12
+# SCCS: %Z% $Id: configure.in,v 1.17 1998/08/12 16:37:31 welch Exp $ 
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -662,6 +662,8 @@ AC_CHECK_LIB(dl, dlopen, have_dl=yes, have_dl=no)
 fullSrcDir=`cd $srcdir; pwd`
 TCL_SHARED_LIB_SUFFIX=""
 TCL_UNSHARED_LIB_SUFFIX=""
+TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
+ECHO_VERSION='`echo ${VERSION}`'
 TCL_LIB_VERSIONS_OK=ok
 CFLAGS_DEBUG=-g
 CFLAGS_OPTIMIZE=-O
@@ -803,7 +805,7 @@ case $system in
 	    DL_LIBS=""
 	    LD_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    TCL_SHARED_LIB_SUFFIX='`echo ${VERSION} | tr -d .`\$\{DBGX\}.so.1.0'
+	    TCL_SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
 	], [
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
@@ -813,12 +815,12 @@ case $system in
 	    DL_LIBS=""
 	    LD_FLAGS=""
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    TCL_SHARED_LIB_SUFFIX='`echo ${VERSION} | tr -d .`\$\{DBGX\}.a'
+	    TCL_SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	])
 
 	# FreeBSD doesn't handle version numbers with dots.
 
-	TCL_UNSHARED_LIB_SUFFIX='`echo ${VERSION} | tr -d .`\$\{DBGX\}.a'
+	TCL_UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	TCL_LIB_VERSIONS_OK=nodots
 	;;
     NEXTSTEP-*)
@@ -913,8 +915,8 @@ case $system in
 	# requires an extra version number at the end of .so file names.
 	# So, the library has to have a name like libtcl75.so.1.0
 
-	TCL_SHARED_LIB_SUFFIX='`echo ${VERSION} | tr -d .`\$\{DBGX\}.so.1.0'
-	TCL_UNSHARED_LIB_SUFFIX='`echo ${VERSION} | tr -d .`\$\{DBGX\}.a'
+	TCL_SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
+	TCL_UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	TCL_LIB_VERSIONS_OK=nodots
 	;;
     SunOS-5*)
@@ -1199,17 +1201,6 @@ else
     MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
 fi
 
-# tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
-# so that the backslashes quoting the DBX braces are dropped.
-
-VERSION='${VERSION}'
-eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
-eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
-# Trick to replace DBGX with TCL_DBGX
-DBGX='${TCL_DBGX}'
-eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
-
-
 # Note:  in the following variable, it's important to use the absolute
 # path name of the Tcl directory rather than "..":  this is because
 # AIX remembers this path and will attempt to use it at run-time to look
@@ -1222,6 +1213,17 @@ else
 fi
 TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
 TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
+
+# tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
+# so that the backslashes quoting the DBX braces are dropped.
+
+# Trick to replace DBGX with TCL_DBGX
+DBGX='${TCL_DBGX}'
+eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
+
+VERSION='${VERSION}'
+eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
+eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
