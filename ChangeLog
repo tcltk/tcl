@@ -1,3 +1,28 @@
+2003-01-16  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclStringObj.c: Tcl_SetObjLength fix for when
+	the object has a unicode string rep. Fixes [Bug 635200]
+	* tests/stringObj.test: removed 'knownBug' constraint from
+	test 14.1 now that this bug is fixed.
+	
+        * generic/tclInt.h:
+	* generic/tclBasic.c:
+	* generic/tclCmdMZ.z:
+	* tests/trace.test: execution and command tracing bug fixes and
+	cleanup.  In particular fixed [Bug 655645], [Bug 615043], 
+	[Bug 571385]
+	  - fixed some subtle cleanup problems with tracing. This 
+	    required replacing Tcl_Preserve/Tcl_Release with a more 
+	    robust refCount approach. Solves at least one known crash
+	    caused by memory corruption.
+	  - fixed some confusion in the code between new style traces
+	  (Tcl 8.4) and the very limited 'Tcl_CreateTrace' which existed
+	  before.
+	  - made behaviour consistent with documentation (several
+	    tests even contradicted the documentation before).
+	  - fixed some minor error message details
+	  - added a number of new tests
+
 2003-01-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSerial.c (SerialOutputProc): add casts for
