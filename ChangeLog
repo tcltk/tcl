@@ -1,5 +1,9 @@
 2001-05-30  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Added two casts to
+	INST_STR_CMP implementation to get rid of a couple warnings from
+	the SUNWspro C compiler.
+
 	* generic/tclBasic.c (Tcl_GetMathFuncInfo,Tcl_ListMathFuncs): 
 	* generic/tclCmdIL.c (Tcl_InfoObjCmd,InfoFunctionsCmd): 
 	* generic/tcl.decls (generic table, positions 435+436): 
