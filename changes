@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.56.2.4 2001/10/17 15:49:36 dgp Exp $
+RCS: @(#) $Id: changes,v 1.56.2.5 2001/10/18 20:17:01 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4977,8 +4977,8 @@ side (mem leak) Correct mem leak in channels when statePtr was released
 2001-07-02 (bug fix) corrected [concat] treatment of UTF-8 strings (hobbs,
 barras)
 
-2001-07-16 (bug fix) corrected thread-enabled pipe closing on Windows (hobbs,
-jsmith)
+2001-07-16 (bug fix) corrected thread-enabled pipe closing on Windows
+(hobbs, jsmith)
 
 2001-07-18 (bug fix) corrected memory overwrite error when buffer size
 of a channel is changed after channel use has already begun (kupries, porter)
@@ -4987,8 +4987,8 @@ of a channel is changed after channel use has already begun (kupries, porter)
 
 2001-08-06 (new feature) added GNU (HURD) configuration target. (brinkmann)
 
-2001-08-07 (bug fix) corrected bytecode stack management during [break] (see
-test foreach-5.5) (sofer, tallneil, jstrot)
+2001-08-07 (bug fix) corrected bytecode stack management during [break]
+(see test foreach-5.5) (sofer, tallneil, jstrot)
 
 2001-08-08 (new features) updated packages msgcat 1.1.1, opt 0.4.3,
 tcltest 1.0.1, dependencies checked (porter)
@@ -5011,7 +5011,8 @@ relative to executable (porter)
 [namespace import], not like [string match] (porter)
 	**** POTENTIAL INCOMPATABILITY ****
 
-2001-08-27 (new feature) added Tcl_SetMainLoop() (hobbs)
+2001-08-27 (new feature) added Tcl_SetMainLoop() to enable loading Tk as a
+true package (hobbs)
 
 2001-08-30 (bug fix) build support for Crays (andreasen)
 
@@ -5042,10 +5043,11 @@ middle of a UTF-8 byte is passed in (hobbs)
 
 2001-09-19 (new feature) --enable-64-bit support for HP-11. (hobbs)
 
-2001-09-19 (new feature) native memory allocator now defaul on Windows (hobbs)
+2001-09-19 (new feature) native memory allocator now default on Windows
+(hobbs)
 
-2001-09-20 (new feature) WIN64 support and extra processor definitions (hobbs,
-mstacy)
+2001-09-20 (new feature) WIN64 support and extra processor definitions
+(hobbs, mstacy)
 
 2001-09-26 (bug fix) corrected potential deadlock in channels that do not
 provide a BlockModeProc (kupries, kogorman)
@@ -5059,12 +5061,15 @@ www.unicode.org (hobbs)
 
 2001-10-11 (bug fix) corrected cleanup of self-referential bytecodes at
 interpreter deletion (sofer, rbrunner)
-	
+
 2001-10-16 (new feature) config support for MacOSX / Darwin (steffen)
 
 2001-10-16 (new feature, Mac) change in binary extension format from MachO
 bundles to standard .dylib dynamic libraries like on other unices.
 	**POTENTIAL INCOMPATIBILITY*** 
 
---- Released 8.3.4, October 1X, 2001 --- See ChangeLog for details ---
+2001-10-18 (bug fix) corrected off-by-one-day error in clock scan with
+relative months and years during swing hours. (lavana)
+
+--- Released 8.3.4, October 19, 2001 --- See ChangeLog for details ---
 
