@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.19 2001/03/02 15:31:15 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.20 2001/03/13 09:31:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -438,7 +438,7 @@ void
 TclDeleteExecEnv(eePtr)
     ExecEnv *eePtr;		/* Execution environment to free. */
 {
-    Tcl_EventuallyFree(eePtr->stackPtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree((ClientData)eePtr->stackPtr, TCL_DYNAMIC);
     ckfree((char *) eePtr);
 }
 
@@ -508,7 +508,7 @@ GrowEvaluationStack(eePtr)
  
     memcpy((VOID *) newStackPtr, (VOID *) eePtr->stackPtr,
 	   (size_t) currBytes);
-    Tcl_EventuallyFree(eePtr->stackPtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree((ClientData)eePtr->stackPtr, TCL_DYNAMIC);
     eePtr->stackPtr = newStackPtr;
     eePtr->stackEnd = (newElems - 1); /* i.e. index of last usable item */
 }
@@ -810,7 +810,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * trace procedures.
 		 */
 
-		Tcl_Preserve(stackPtr);
+		Tcl_Preserve((ClientData)stackPtr);
 		preservedStack = stackPtr;
 
 		/*
@@ -884,7 +884,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * going to be used from now on.
 		 */
 
-		Tcl_Release(preservedStack);
+		Tcl_Release((ClientData)preservedStack);
 
 		/*
 		 * If the interpreter has a non-empty string result, the
