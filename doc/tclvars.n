@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.1.2.2 1999/03/11 06:16:46 welch Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.1.2.3 1999/03/25 22:03:45 redman Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -259,12 +259,17 @@ is the value returned by \fBuname -m\fR.
 .TP
 \fBos\fR 
 The name of the operating system running on this machine,
-such as \fBWin32s\fR, \fBWindows NT\fR, \fBMacOS\fR, or \fBSunOS\fR.
+such as \fBWindows 95\fR, \fBWindows NT\fR, \fBMacOS\fR, or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
+On Windows 95 and Windows 98, the value returned will be \fBWindows
+95\fR to provide better backwards compatibility to Windows 95; to
+distinguish between the two, check the \fBosVersion\fR.
 .TP
 \fBosVersion\fR
 The version number for the operating system running on this machine.
-On UNIX machines, this is the value returned by \fBuname -r\fR.
+On UNIX machines, this is the value returned by \fBuname -r\fR.  On
+Windows 95, the version will be 4.0; on Windows 98, the version will
+be 4.10.
 .TP
 \fBplatform\fR
 Either \fBwindows\fR, \fBmacintosh\fR, or \fBunix\fR.  This identifies the
