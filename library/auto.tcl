@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.11 2002/10/22 16:41:27 das Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.12 2002/10/28 16:34:25 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -28,7 +28,8 @@ proc auto_reset {} {
 	if {[info exists auto_index($p)] && ![string match auto_* $p]
 		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup
 			tcl_findLibrary pkg_compareExtension
-			tclMacPkgSearch tclPkgUnknown} $p] < 0)} {
+			tclPkgUnknown tcl::MacOSXPkgUnknown
+			tcl::MacPkgUnknown} $p] < 0)} {
 	    rename $p {}
 	}
     }
