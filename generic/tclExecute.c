@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.14 2000/06/06 19:34:52 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.15 2000/09/06 16:59:27 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -113,6 +113,17 @@ static char *resultStrings[] = {
     "TCL_OK", "TCL_ERROR", "TCL_RETURN", "TCL_BREAK", "TCL_CONTINUE"
 };
 #endif
+
+/*
+ * These are used by evalstats to monitor object usage in Tcl.
+ */
+
+#ifdef TCL_COMPILE_STATS
+long		tclObjsAlloced = 0;
+long		tclObjsFreed   = 0;
+#define TCL_MAX_SHARED_OBJ_STATS 5
+long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
+#endif /* TCL_COMPILE_STATS */
 
 /*
  * Macros for testing floating-point values for certain special cases. Test
@@ -1769,21 +1780,29 @@ TclExecuteByteCode(interp, codePtr)
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
 
-		s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
-		if (s1len == s2len) {
+		if (valuePtr == value2Ptr) {
 		    /*
-		     * We only need to check (in)equality when we have equal
-		     * length strings.
+		     * On the off-chance that the objects are the same,
+		     * we don't really have to think hard about equality.
 		     */
-		    if (*pc == INST_STR_NEQ) {
-			iResult = (strcmp(s1, s2) != 0);
-		    } else {
-			/* INST_STR_EQ */
-			iResult = (strcmp(s1, s2) == 0);
-		    }
+		    iResult = (*pc == INST_STR_EQ);
 		} else {
-		    iResult = (*pc == INST_STR_NEQ);
+		    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+		    if (s1len == s2len) {
+			/*
+			 * We only need to check (in)equality when
+			 * we have equal length strings.
+			 */
+			if (*pc == INST_STR_NEQ) {
+			    iResult = (strcmp(s1, s2) != 0);
+			} else {
+			    /* INST_STR_EQ */
+			    iResult = (strcmp(s1, s2) == 0);
+			}
+		    } else {
+			iResult = (*pc == INST_STR_NEQ);
+		    }
 		}
 
 		PUSH_OBJECT(Tcl_NewIntObj(iResult));
@@ -1864,7 +1883,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		if (valuePtr->typePtr == &tclByteArrayType) {
-		    bytes = Tcl_GetByteArrayFromObj(valuePtr, &length);
+		    bytes = (char *)Tcl_GetByteArrayFromObj(valuePtr, &length);
 		} else {
 		    /*
 		     * Get Unicode char length to calulate what 'end' means.
