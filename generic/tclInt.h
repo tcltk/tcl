@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.33 1999/06/15 01:16:23 hershey Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.34 1999/06/26 19:35:58 redman Exp $
  */
 
 #ifndef _TCLINT
@@ -701,10 +701,10 @@ typedef struct CallFrame {
 
 typedef VOID **TclHandle;
 
-TclHandle		TclHandleCreate _ANSI_ARGS_((VOID *ptr));
-void			TclHandleFree _ANSI_ARGS_((TclHandle handle));
-TclHandle		TclHandlePreserve _ANSI_ARGS_((TclHandle handle));
-void			TclHandleRelease _ANSI_ARGS_((TclHandle handle)); 
+EXTERN TclHandle	TclHandleCreate _ANSI_ARGS_((VOID *ptr));
+EXTERN void		TclHandleFree _ANSI_ARGS_((TclHandle handle));
+EXTERN TclHandle	TclHandlePreserve _ANSI_ARGS_((TclHandle handle));
+EXTERN void		TclHandleRelease _ANSI_ARGS_((TclHandle handle)); 
 
 /*
  *----------------------------------------------------------------
