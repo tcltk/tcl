@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.1.2.1 1999/04/02 23:48:34 redman Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.1.2.2 1999/04/03 00:44:38 redman Exp $
  */
 
 #include "tclPort.h"
@@ -64,6 +64,7 @@ static Tcl_ThreadDataKey dataKey;
  * The following variables cannot be placed in thread-local storage.
  * The Mutex ddeMutex guards access to the ddeInstance.
  */
+static HSZ ddeService = 0;
 static DWORD ddeInstance;       /* The application instance handle given
 				 * to us by DdeInitialize. */
 static int ddeIsServer = 0;
@@ -140,7 +141,6 @@ static void
 Initialize()
 {
     int nameFound = 0;
-    HSZ ddeService = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     
     /*
@@ -154,16 +154,6 @@ Initialize()
     }
 
     /*
-     * First, if Dde has been initialized as a client, uninitialize it.
-     */
-    if ((ddeInstance != 0) && (ddeIsServer == 0) && (nameFound != 0)) {
-	Tcl_MutexLock(&ddeMutex);
-	DdeUninitialize(ddeInstance);
-	ddeInstance = 0;
-    }
-
-	
-    /*
      * Make sure that the DDE server is there. This is done only once,
      * add an exit handler tear it down.
      */
@@ -171,34 +161,26 @@ Initialize()
     if (ddeInstance == 0) {
 	Tcl_MutexLock(&ddeMutex);
 	if (ddeInstance == 0) {
-	    if (nameFound != 0) {
-		if (DdeInitialize(&ddeInstance, DdeServerProc,
-			CBF_SKIP_REGISTRATIONS
-			| CBF_SKIP_UNREGISTRATIONS
-			| CBF_FAIL_POKES, 0) 
-			!= DMLERR_NO_ERROR) {
-		    DdeUninitialize(ddeInstance);
-		    ddeInstance = 0;
-		} else {
-		    ddeIsServer = 1;
-		    Tcl_CreateExitHandler(DdeExitProc, NULL);
-		    ddeService = DdeCreateStringHandle(ddeInstance, "TclEval", 0);
-		    DdeNameService(ddeInstance, ddeService, 0L, DNS_REGISTER);
-		}
-	    } else {
-		if (DdeInitialize(&ddeInstance, NULL,
-			CBF_SKIP_REGISTRATIONS
-			| CBF_SKIP_UNREGISTRATIONS
-			| CBF_FAIL_POKES
-			| APPCMD_CLIENTONLY
-			| APPCMD_FILTERINITS, 0) 
-			!= DMLERR_NO_ERROR) {
-		    DdeUninitialize(ddeInstance);
-		    ddeInstance = 0;
-		} else {
-		    ddeIsServer = 0;
-		}
+	    if (DdeInitialize(&ddeInstance, DdeServerProc,
+		    CBF_SKIP_REGISTRATIONS
+		    | CBF_SKIP_UNREGISTRATIONS
+		    | CBF_FAIL_POKES, 0) 
+		    != DMLERR_NO_ERROR) {
+		DdeUninitialize(ddeInstance);
+		ddeInstance = 0;
 	    }
+	}
+	Tcl_MutexUnlock(&ddeMutex);
+    }
+    if ((ddeService == 0) && (nameFound != 0)) {
+	Tcl_MutexLock(&ddeMutex);
+	if ((ddeService == 0) && (nameFound != 0)) {
+	    ddeIsServer = 1;
+	    Tcl_CreateExitHandler(DdeExitProc, NULL);
+	    ddeService = DdeCreateStringHandle(ddeInstance, "TclEval", 0);
+	    DdeNameService(ddeInstance, ddeService, 0L, DNS_REGISTER);
+	} else {
+	    ddeIsServer = 0;
 	}
 	Tcl_MutexUnlock(&ddeMutex);
     }
