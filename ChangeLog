@@ -1,3 +1,11 @@
+2004-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct, Tcl_WrongNumArgs):
+	Create fresh objects instead of using the one currently in the
+	interpreter, which isn't guaranteed to be fresh and unshared. The
+	cost for the core will be minimal because of the object cache, and
+	this fixes [Bug 875395].
+
 2004-01-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to infinite loop in 
