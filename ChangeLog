@@ -1,3 +1,10 @@
+2003-09-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/opt/optparse.tcl:	Latest revisions caused [OptGuessType]
+	to guess "int" instead of "string" for empty strings.  Missed the
+	required "-strict" option to [string is].  Thanks to Revar Desmera.
+	[Bug 803968]
+
 2003-09-08  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinLoad.c (TclpDlopen): Changed the error message for
