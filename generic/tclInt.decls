@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.65 2003/11/01 01:23:30 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.66 2003/11/01 01:28:04 dkf Exp $
 
 library tcl
 
@@ -728,10 +728,10 @@ declare 179 generic {
 
 # Allocate lists without copying arrays
 declare 180 generic {
-    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj *CONST objv[])
+    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj **objv)
 }
 declare 181 generic {
-    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj *CONST objv[],
+    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
 	    CONST char *file, int line)
 }
 ##############################################################################
