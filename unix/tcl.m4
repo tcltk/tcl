@@ -1368,7 +1368,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		;;
 	    esac
 	    ;;
-	Rhapsody-*|Darwin-*)
+	Darwin-*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
 	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -install_name \${DYLIB_INSTALL_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr 0xa000000"
@@ -1378,7 +1378,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    DL_OBJS="tclLoadDyld.o"
 	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind"
+	    LDFLAGS="$LDFLAGS -prebind -Wl,-search_paths_first"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-Os"
@@ -1764,7 +1764,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    ;;
 		NetBSD-*|FreeBSD-*|OpenBSD-*)
 		    ;;
-		Rhapsody-*|Darwin-*)
+		Darwin-*)
 		    ;;
 		RISCos-*)
 		    ;;
