@@ -1,5 +1,8 @@
 2003-10-06  Don Porter  <dgp@users.sourceforge.net>
 
+        * unix/tcl.m4 (SC_PATH_TCLCONFIG):      Corrected search path so
+        that alpha and beta releases of Tcl are not favored. [Bug 608698]
+
 	* tests/reg.test:	Corrected duplicate test names.
 	* tests/resource.test:	[Bugs 710370, 710358]
 	* tests/dict.test:
