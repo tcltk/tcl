@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.2.1 2004/10/27 14:43:14 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -247,7 +247,6 @@ be defined, but they may have empty strings as values if Tcl couldn't
 retrieve any relevant information.  In addition, extensions
 and applications may add additional values to the array.  The
 predefined elements are:
-
 .RS
 .VS
 .TP
@@ -257,10 +256,11 @@ The native byte order of this machine: either \fBlittleEndian\fR or
 .VE
 .TP
 \fBdebug\fR
-If this variable exists, then the interpreter
-was compiled with debugging symbols enabled.  This variable will only
-exist on Windows so extension writers can specify which package to load
-depending on the C run-time library that is loaded.
+If this variable exists, then the interpreter was compiled with and linked
+to a debug-enabled C run-time.  This variable will only exist on Windows,
+so extension writers can specify which package to load depending on the
+C run-time library that is in use.  This is not an indication that this core
+contains symbols.
 .TP
 \fBmachine\fR
 The instruction set executed by this machine, such as
@@ -343,24 +343,24 @@ The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode compilation.
 By default, tcl_traceCompile is zero and no information is displayed.
-Setting tcl_traceCompile to 1 generates a one line summary in stdout
-whenever a procedure or top level command is compiled.
+Setting tcl_traceCompile to 1 generates a one-line summary in stdout
+whenever a procedure or top-level command is compiled.
 Setting it to 2 generates a detailed listing in stdout of the
 bytecode instructions emitted during every compilation.
 This variable is useful in
 tracking down suspected problems with the Tcl compiler.
 It is also occasionally useful when converting
 existing code to use Tcl8.0.
-
+.PP
 This variable and functionality only exist if
-TCL_COMPILE_DEBUG was defined during Tcl's compilation.
+\fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .TP
 \fBtcl_traceExec\fR
 The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode execution.
 By default, tcl_traceExec is zero and no information is displayed.
-Setting tcl_traceExec to 1 generates a one line trace in stdout
+Setting tcl_traceExec to 1 generates a one-line trace in stdout
 on each call to a Tcl procedure.
 Setting it to 2 generates a line of output
 whenever any Tcl command is invoked
@@ -368,7 +368,7 @@ that contains the name of the command and its arguments.
 Setting it to 3 produces a detailed trace showing the result of
 executing each bytecode instruction.
 Note that when tcl_traceExec is 2 or 3,
-commands such as set and incr
+commands such as \fBset\fR and \fBincr\fR
 that have been entirely replaced by a sequence
 of bytecode instructions are not shown.
 Setting this variable is useful in
@@ -376,9 +376,9 @@ tracking down suspected problems with the bytecode compiler
 and interpreter.
 It is also occasionally useful when converting
 code to use Tcl8.0.
-
+.PP
 This variable and functionality only exist if
-TCL_COMPILE_DEBUG was defined during Tcl's compilation.
+\fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .TP
 \fBtcl_wordchars\fR
 The value of this variable is a regular expression that can be set to
