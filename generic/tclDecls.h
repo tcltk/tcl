@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.19 1999/07/02 19:51:29 welch Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.20 1999/07/02 21:09:11 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -909,10 +909,10 @@ EXTERN Tcl_Channel	Tcl_StackChannel _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData instanceData, int mask, 
 				Tcl_Channel prevChan));
 /* 282 */
-EXTERN void		Tcl_UnstackChannel _ANSI_ARGS_((
-				Tcl_Interp * interp, Tcl_Channel chan));
+EXTERN void		Tcl_UnstackChannel _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Channel chan));
 /* 283 */
-EXTERN Tcl_Channel	Tcl_GetStackedChannel _ANSI_ARGS_((Tcl_Channel chan));
+EXTERN void		Tcl_GetStackedChannel _ANSI_ARGS_((Tcl_Channel chan));
 /* Slot 284 is reserved */
 /* Slot 285 is reserved */
 /* 286 */
@@ -1553,9 +1553,9 @@ typedef struct TclStubs {
 #endif /* MAC_TCL */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
     void (*tcl_InitMemory) _ANSI_ARGS_((Tcl_Interp * interp)); /* 280 */
-    Tcl_Channel (*tcl_ReplaceChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan)); /* 281 */
-    void (*tcl_UndoReplaceChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 282 */
-    void *reserved283;
+    Tcl_Channel (*tcl_StackChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan)); /* 281 */
+    void (*tcl_UnstackChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 282 */
+    void (*tcl_GetStackedChannel) _ANSI_ARGS_((Tcl_Channel chan)); /* 283 */
     void *reserved284;
     void *reserved285;
     void (*tcl_AppendObjToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr)); /* 286 */
@@ -2833,15 +2833,18 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_InitMemory \
 	(tclStubsPtr->tcl_InitMemory) /* 280 */
 #endif
-#ifndef Tcl_ReplaceChannel
-#define Tcl_ReplaceChannel \
-	(tclStubsPtr->tcl_ReplaceChannel) /* 281 */
+#ifndef Tcl_StackChannel
+#define Tcl_StackChannel \
+	(tclStubsPtr->tcl_StackChannel) /* 281 */
 #endif
-#ifndef Tcl_UndoReplaceChannel
-#define Tcl_UndoReplaceChannel \
-	(tclStubsPtr->tcl_UndoReplaceChannel) /* 282 */
+#ifndef Tcl_UnstackChannel
+#define Tcl_UnstackChannel \
+	(tclStubsPtr->tcl_UnstackChannel) /* 282 */
 #endif
-/* Slot 283 is reserved */
+#ifndef Tcl_GetStackedChannel
+#define Tcl_GetStackedChannel \
+	(tclStubsPtr->tcl_GetStackedChannel) /* 283 */
+#endif
 /* Slot 284 is reserved */
 /* Slot 285 is reserved */
 #ifndef Tcl_AppendObjToObj
