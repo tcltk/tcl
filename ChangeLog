@@ -10,8 +10,8 @@
 	* generic/tclCmdAH.c ([catch], [error]):
 	* generic/tclCmdMZ.c ([return]):
 	* generic/tclProc.c (TclUpdateReturnInfo):
-	* generic/tclResult.c (Tcl_SetErrorCodeVA, Tcl_SetObjErrorCode
-	  TclTransferResult): 	Refactored so that all errorCode setting
+	* generic/tclResult.c (Tcl_SetErrorCodeVA, Tcl_SetObjErrorCode)
+	(TclTransferResult): 	Refactored so that all errorCode setting
 	flows through Tcl_SetObjErrorCode().  This greatly reduces the
 	number of different places in the code that need to know details
 	about an internal bitflag field of the Interp struct.  Also
