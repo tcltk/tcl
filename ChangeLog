@@ -10,6 +10,10 @@
 	internally refactors common code for dealing with paths into
 	separate procedures. [Bug: 2838, 2842]
 
+	Merged code from core-8-2-1 branch that changes the checks for the
+	value of tcl_interactive to also incorporate a check for the
+	existence of the variable.
+
 	* tests/autoMkindex.test:
 	* tests/pkgMkIndex.test: Explicitly cd to
 	::tcltest::testsDirectory at the beginning of the test run
