@@ -13,10 +13,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.15 2002/07/26 18:51:02 msofer Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.16 2002/08/05 03:24:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
@@ -899,9 +899,9 @@ if $gotT1 {
     } {1 {too many arguments for math function}}
 }
 
-test expr-old-36.1 {ExprLooksLikeInt procedure} {
-    list [catch {expr 0289} msg] $msg
-} {1 {"0289" is an invalid octal number}}
+test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
+    expr 0289
+} -returnCodes error -match glob -result {*invalid octal number*}
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
     set x 0289
     list [catch {expr {$x+1}} msg] $msg

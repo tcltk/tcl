@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.11 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.12 2002/08/05 03:24:39 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -66,10 +66,8 @@ value of a single word in the command to execute.
 The number of bytes in \fIscript\fR, not including any
 null terminating character.  If \-1, then all characters up to the
 first null byte are used.
-.AP char *script in
+.AP "CONST char" *script in
 Points to first byte of script to execute (NULL terminated and UTF-8).
-This script must be in writable memory: temporary modifications are made
-to it during parsing.
 .AP char *string in
 String forming part of a Tcl script.
 .AP va_list argList in
