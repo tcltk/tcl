@@ -1,3 +1,8 @@
+2001-08-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c (TclPushVarName): noted 'static' defn.
+	[Bug #453872]
+
 2001-08-26  Don Porter <dgp@users.sourceforge.net>
 
 	* library/auto.tcl (tcl_findLibrary):
