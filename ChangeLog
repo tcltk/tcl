@@ -1,5 +1,11 @@
 2002-12-04  David Gravereaux  <davygrvy@pobox.com>
 
+	* win/tclWinPipe.c: reverted back to -r1.27 due to numerous test
+	failures that need to be resolved first.  The idea was good,
+	but the details aren't.
+	
+2002-12-04  David Gravereaux  <davygrvy@pobox.com>
+
 	* win/tclWinPipe.c (Tcl_WaitPid):  When a process exits with an
 	exception, pass this notice on to the caller with a SIG* code
 	rather than truncating the exit code and missing the meaning.
