@@ -1,3 +1,7 @@
+2000-09-06  André Pönitz <poenitz@htwm.de>
+
+	* doc/*.n: added or changed "SEE ALSO:" section
+
 2000-09-06  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* win/tclWinLoad.c (TclpLoadFile): added special message for
