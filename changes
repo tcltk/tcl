@@ -3517,15 +3517,6 @@ There are new Tcl_*Resolver* APIs to add, query and remove the hooks.
 With this changes it should be possible to dynamically load [incr Tcl]
 as an extension. (MM)
 
-6/29/98 (compatibility patch) Changed the signature of Tcl_EvalObj
-to match that in Tcl 8.1, but added a macro for compatibility with
-the 2-argument version of the call.  This works with gcc but we
-don't know how other compilers will handle it, so
-*** POTENTIAL INCOMPATIBILITY ***
-The goal of this patch is that simple extensions compiled against
-Tcl 8.0.3 will also work with Tcl 8.1.
-Contributed by Jan Nijtmans (JN)
-
 7/1/97 (bug fix) The commands "info args, body, default, procs" did
 not correctly handle imported procedures. (RJ)
 
