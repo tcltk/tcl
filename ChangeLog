@@ -1,3 +1,41 @@
+2002-02-07  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/DString.3:
+	* doc/Encoding.3:
+	* doc/GetCwd.3:
+	* doc/SplitPath.3:
+	* doc/Translate.3:
+	* doc/Utf.3:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclEncoding.c:
+	* generic/tclEnv.c:
+	* generic/tclFileName.c:
+	* generic/tclIOUtil.c:
+	* generic/tclUtf.c:
+	* generic/tclUtil.c:
+	* mac/tclMacInit.c:
+	* unix/tclUnixFile.c:
+	* unix/tclUnixInit.c:
+	* unix/tclUnixPipe.c:
+	* win/tclWin32Dll.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinFile.c:
+	* win/tclWinInit.c: Partial TIP 27 rollback.  Following routines
+	restored to return (char *): Tcl_DStringAppend,
+	Tcl_DStringAppendElement, Tcl_JoinPath, Tcl_TranslateFileName,
+        Tcl_ExternalToUtfDString, Tcl_UtfToExternalDString,
+	Tcl_UniCharToUtfDString, Tcl_GetCwd, Tcl_WinTCharToUtf.  Also
+	restored Tcl_WinUtfToTChar to return (TCHAR *) and 
+	Tcl_UtfToUniCharDString to return (Tcl_UniChar *).  Modified
+	some callers.  This change recognizes that Tcl_DStrings are
+	de-facto white-box objects.
+
+	* generic/tclDecls.h:
+	* generic/tclPlatDecls.h: make genstubs
+
+	* generic/tclCmdMZ.c: corrected use of C++-style comment.
+
 2002-02-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/scan.test:
