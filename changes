@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.5 1998/10/06 21:24:23 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.6 1998/10/16 01:28:25 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3917,3 +3917,11 @@ improve portability of C code. (stanton)
 to match against the literal string "if", resulting in a stack
 overflow when "::if" was compiled.  It also would incorrectly accept
 "if" instead of "elsif" in later clauses.  (stanton)
+
+10/15/98 (new feature) Added a "totitle" subcommand to the "string"
+command to convert strings to capitalize the first character of a string
+and lowercase all of the other characters. (stanton)
+
+10/15/98 (bug fix) Changed regexp and string commands to properly
+handle case folding according to the Unicode character
+tables. (stanton)
