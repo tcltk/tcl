@@ -688,7 +688,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    numVars = varcList[loopIndex];
 	    for (j = 0;  j < numVars;  j++) {
 		char *varName = varvList[loopIndex][j];
-		if (!TclIsLocalScalar(varName, strlen(varName))) {
+		if (!TclIsLocalScalar(varName, (int) strlen(varName))) {
 		    code = TCL_OUT_LINE_COMPILE;
 		    goto done;
 		}
