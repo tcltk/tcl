@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.16 2004/06/22 13:09:00 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.17 2004/07/16 17:38:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1030,5 +1030,7 @@ NotifierThreadProc(clientData)
     triggerPipe = -1;
     Tcl_ConditionNotify(&notifierCV);
     Tcl_MutexUnlock(&notifierMutex);
+
+    TclpThreadExit (0);
 }
 #endif
