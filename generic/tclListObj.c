@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.4 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.5 1999/04/28 17:06:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -236,11 +236,11 @@ Tcl_SetListObj(objPtr, objc, objv)
      * Free any old string rep and any internal rep for the old type.
      */
 
-    Tcl_InvalidateStringRep(objPtr);
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     objPtr->typePtr = NULL;
+    Tcl_InvalidateStringRep(objPtr);
         
     /*
      * Set the object's type to "list" and initialize the internal rep.

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.4 1999/04/16 00:46:53 stanton Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.5 1999/04/28 17:06:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -222,12 +222,6 @@ Tcl_SetStringObj(objPtr, bytes, length)
 	panic("Tcl_SetStringObj called with shared object");
     }
 
-    Tcl_InvalidateStringRep(objPtr);
-    if (length < 0) {
-	length = (bytes? strlen(bytes) : 0);
-    }
-    TclInitStringRep(objPtr, bytes, length);
-        
     /*
      * Set the type to NULL and free any internal rep for the old type.
      */
@@ -236,6 +230,12 @@ Tcl_SetStringObj(objPtr, bytes, length)
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     objPtr->typePtr = NULL;
+
+    Tcl_InvalidateStringRep(objPtr);
+    if (length < 0) {
+	length = (bytes? strlen(bytes) : 0);
+    }
+    TclInitStringRep(objPtr, bytes, length);
 }
 
 /*

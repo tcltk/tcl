@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.5 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.6 1999/04/28 17:06:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -926,13 +926,13 @@ Tcl_SetBooleanObj(objPtr, boolValue)
 	panic("Tcl_SetBooleanObj called with shared object");
     }
     
-    Tcl_InvalidateStringRep(objPtr);
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     
     objPtr->internalRep.longValue = (boolValue? 1 : 0);
     objPtr->typePtr = &tclBooleanType;
+    Tcl_InvalidateStringRep(objPtr);
 }
 
 /*
@@ -1284,13 +1284,13 @@ Tcl_SetDoubleObj(objPtr, dblValue)
 	panic("Tcl_SetDoubleObj called with shared object");
     }
 
-    Tcl_InvalidateStringRep(objPtr);
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     
     objPtr->internalRep.doubleValue = dblValue;
     objPtr->typePtr = &tclDoubleType;
+    Tcl_InvalidateStringRep(objPtr);
 }
 
 /*
@@ -1552,13 +1552,13 @@ Tcl_SetIntObj(objPtr, intValue)
 	panic("Tcl_SetIntObj called with shared object");
     }
     
-    Tcl_InvalidateStringRep(objPtr);
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     
     objPtr->internalRep.longValue = (long) intValue;
     objPtr->typePtr = &tclIntType;
+    Tcl_InvalidateStringRep(objPtr);
 }
 
 /*
@@ -1917,13 +1917,13 @@ Tcl_SetLongObj(objPtr, longValue)
 	panic("Tcl_SetLongObj called with shared object");
     }
 
-    Tcl_InvalidateStringRep(objPtr);
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     
     objPtr->internalRep.longValue = longValue;
     objPtr->typePtr = &tclIntType;
+    Tcl_InvalidateStringRep(objPtr);
 }
 
 /*

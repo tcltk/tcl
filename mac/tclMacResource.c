@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.5 1999/04/16 00:47:21 stanton Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.6 1999/04/28 17:06:07 stanton Exp $
  */
 
 #include <Errors.h>
@@ -1589,13 +1589,14 @@ Tcl_SetOSTypeObj(
 	Tcl_RegisterObjType(&osType);
     }
 
-    Tcl_InvalidateStringRep(objPtr);
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
     
     objPtr->internalRep.longValue = newOSType;
     objPtr->typePtr = &osType;
+
+    Tcl_InvalidateStringRep(objPtr);
 }
 
 /*
