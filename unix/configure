@@ -13240,7 +13240,7 @@ VERSION=${TCL_VERSION}
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     TCL_PACKAGE_PATH="${libdir}/Resources/Scripts"
-elif test "$prefix" != "$exec_prefix"; then
+elif test "$prefix/lib" != "$libdir"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"

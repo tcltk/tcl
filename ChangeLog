@@ -1,3 +1,16 @@
+2004-06-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Updated TCL_PACKAGE_PATH value to
+	* win/configure.in:	handle --libdir configuration.
+
+	* unix/configure.in:	autoconf-2.57
+	* win/configure.in:
+
+	* generic/tclBasic.c (Tcl_CreateInterp): Moved call to
+	TclInitEmbeddedConfigurationInformation() earlier in
+	Tcl_CreateInterp() so that other parts of interp creation
+	and initialization may access and use the config values.
+
 2004-06-11  Kevin Kenny  <kennykb@acm.org>
 
 	* win/tclAppInit.c: Restored the 'setargv' procedure when
