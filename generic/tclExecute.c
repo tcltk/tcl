@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.67 2002/06/14 20:11:11 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.68 2002/06/14 21:08:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1296,9 +1296,12 @@ TclExecuteByteCode(interp, codePtr)
 		     * with the next instruction.
 		     */
 
-		    PUSH_OBJECT(Tcl_GetObjResult(interp));
 		    TRACE_WITH_OBJ(("%u => ...after \"%.20s\", result=",
 		            objc, cmdNameBuf), Tcl_GetObjResult(interp));
+		    if (*(pc+pcAdjustment) == INST_POP) {
+			ADJUST_PC(pcAdjustment+1);
+		    }
+		    PUSH_OBJECT(Tcl_GetObjResult(interp));
 		    ADJUST_PC(pcAdjustment);
 		} else {
 		    goto processExceptionReturn;
@@ -1492,10 +1495,13 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(value2Ptr);
 	    TRACE_WITH_OBJ(("%u <- \"%.30s\" => ",
 		    opnd, O2S(valuePtr)), value2Ptr);
 	    TclDecrRefCount(valuePtr);
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		ADJUST_PC(pcAdjustment+1);
+	    }
+	    PUSH_OBJECT(value2Ptr);
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_LAPPEND_STK:
@@ -1556,7 +1562,6 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(value2Ptr);
 	    if (elemPtr != NULL) {
 		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
 		        O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
@@ -1568,6 +1573,10 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    TclDecrRefCount(objPtr);
 	    TclDecrRefCount(valuePtr);
+	    if (*(pc+1) == INST_POP) {
+		ADJUST_PC(2);
+	    }
+	    PUSH_OBJECT(value2Ptr);
 	    ADJUST_PC(1);
 
 	case INST_LAPPEND_ARRAY4:
@@ -1621,11 +1630,14 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(value2Ptr);
 	    TRACE_WITH_OBJ(("%u \"%.30s\" <- \"%.30s\" => ",
 		    opnd, O2S(elemPtr), O2S(valuePtr)), value2Ptr);
 	    TclDecrRefCount(elemPtr);
 	    TclDecrRefCount(valuePtr);
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		ADJUST_PC(pcAdjustment+1);
+	    }
+	    PUSH_OBJECT(value2Ptr);
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_LIST:
@@ -1682,8 +1694,11 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(value2Ptr);
 	    TRACE_WITH_OBJ(("%u %ld => ", opnd, i), value2Ptr);
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		ADJUST_PC(pcAdjustment+1);
+	    }
+	    PUSH_OBJECT(value2Ptr);
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_INCR_ARRAY_STK:
@@ -1758,7 +1773,6 @@ TclExecuteByteCode(interp, codePtr)
 		TclDecrRefCount(objPtr);
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(value2Ptr);
 	    if (elemPtr != NULL) {
 		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ",
 		        O2S(objPtr), O2S(elemPtr), i), value2Ptr);
@@ -1768,6 +1782,10 @@ TclExecuteByteCode(interp, codePtr)
 		        value2Ptr);
 	    }
 	    TclDecrRefCount(objPtr);
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		ADJUST_PC(pcAdjustment+1);
+	    }
+	    PUSH_OBJECT(value2Ptr);
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_INCR_ARRAY1:
@@ -1815,10 +1833,13 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(value2Ptr);
 	    TRACE_WITH_OBJ(("%u \"%.30s\" (by %ld) => ",
 		    opnd, O2S(elemPtr), i), value2Ptr);
 	    TclDecrRefCount(elemPtr);
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		ADJUST_PC(pcAdjustment+1);
+	    }
+	    PUSH_OBJECT(value2Ptr);
 	    ADJUST_PC(pcAdjustment);
 	    	    
 	    /*
@@ -2123,8 +2144,8 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * Set result
 		 */
-		PUSH_OBJECT(objPtr);
 		TRACE(("%d => %s\n", opnd, O2S(objPtr)));
+		PUSH_OBJECT(objPtr);
 		TclDecrRefCount(objPtr);
 	    }
 	    ADJUST_PC(5);
@@ -2185,8 +2206,8 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * Set result
 		 */
-		PUSH_OBJECT(objPtr);
 		TRACE(("%d => %s\n", opnd, O2S(objPtr)));
+		PUSH_OBJECT(objPtr);
 		TclDecrRefCount(objPtr);
 	    }
 	    ADJUST_PC(5);
@@ -4148,8 +4169,22 @@ TclExecuteByteCode(interp, codePtr)
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
         }
+	if (catchTop == -1) {
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
+		        StringForResultCode(result));
+	    }
+#endif
+	    goto abnormalReturn;
+	}
 	rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 1, codePtr);
 	if (rangePtr == NULL) {
+	    /*
+	     * This is only possible when compiling a [catch] that sends its
+	     * script to INST_EVAL. Cannot correct the compiler without 
+	     * breakingcompat with previous .tbc compiled scripts.
+	     */
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
