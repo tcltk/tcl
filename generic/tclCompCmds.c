@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.11 2001/08/25 00:08:46 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.12 2001/08/28 22:05:01 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2581,7 +2581,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	maxDepthPtr, simpleVarNamePtr, isScalarPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
