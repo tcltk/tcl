@@ -9,7 +9,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.4 2003/12/23 03:58:58 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.5 2004/01/28 00:56:26 davygrvy Exp $
  * ----------------------------------------------------------------------------
  */
 #include <windows.h>
@@ -42,6 +42,9 @@ main (int argc, char *argv[])
     char msg[300];
     DWORD dwWritten;
     int chars;
+
+    /* make sure children (cl.exe and link.exe) are kept quiet. */
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
 
     if (argc > 1 && *argv[1] == '-') {
 	switch (*(argv[1]+1)) {
@@ -137,7 +140,7 @@ CheckForCompilerFeature (const char *option)
     /* append our option for testing */
     strcat(cmdline, option);
     /* filename to compile, which exists, but is nothing and empty. */
-    strcat(cmdline, " nul");
+    strcat(cmdline, " .\nul");
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -232,7 +235,7 @@ CheckForLinkerFeature (const char *option)
     /* append our option for testing */
     strcat(cmdline, option);
     /* filename to compile, which exists, but is nothing and empty. */
-//    strcat(cmdline, " nul");
+//    strcat(cmdline, " .\nul");
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
