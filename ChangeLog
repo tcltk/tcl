@@ -1,3 +1,18 @@
+2004-10-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_LogCommandInfo,Tcl_AddObjErrorInfo):
+	Shift the initialization of errorCode to NONE to more central
+	location.
+
+	* generic/tclEvent.c (BgError,Tcl_BackgroundError,HandleBgErrors):
+	Rewrite to build on the new TclGet/SetReturnOptions routines.
+
+	* generic/tclResult.c (TclGetReturnOptions): Add call to
+	Tcl_AddObjErrorInfo to be sure error fields are initialized.
+
+	* generic/tclResult.c (TclTransferResult):
+	Rewrite to build on the new TclGet/SetReturnOptions routines.
+
 2004-10-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/tm.n: Tightened up the documentation.
