@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.9 2001/11/23 01:25:54 das Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.10 2002/07/01 07:52:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -85,22 +85,26 @@ test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} {unixOrPc} {
 test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} {unixOrPc} {
     list [catch {source a b} msg] $msg
 } {1 {wrong # args: should be "source fileName"}}
-test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} {
-    makeFile {
+test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -body {
+    set file [makeFile {
 	set x 146
 	error "error in sourced file"
 	set y $x
-    } source.file
-    list [catch {source source.file} msg] $msg $errorInfo
-} {1 {error in sourced file} {error in sourced file
+    } source.file]
+    set result [list [catch {source $file} msg] $msg $errorInfo]
+    removeFile source.file
+    set result
+} -match glob -result {1 {error in sourced file} {error in sourced file
     while executing
 "error "error in sourced file""
-    (file "source.file" line 3)
+    (file "*" line 3)
     invoked from within
-"source source.file"}}
+"source $file"}}
 test cmdMZ-3.6 {Tcl_SourceObjCmd: simple script} {
-    makeFile {list result} source.file
-    source source.file
+    set file [makeFile {list result} source.file]
+    set result [source $file]
+    removeFile source.file
+    set result
 } result
 
 # Tcl_SplitObjCmd
