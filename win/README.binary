@@ -1,6 +1,6 @@
 Tcl/Tk 8.1b3 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.2.2.6 1999/03/17 21:29:58 stanton Exp $ 
+RCS: @(#) $Id: README.binary,v 1.2.2.7 1999/03/25 01:34:21 rjohnson Exp $ 
 
 1. Introduction
 --------------- 
@@ -45,11 +45,9 @@ installation directory.  It will create the installation heirarchy
 under the specified directory, and install a wish application icon
 under the program manager group of your choice.
 
-We are no longer supporting use of
-Tcl with 16-bit versions of Windows.  Microsoft has completely dropped
-support of the Win32s subsystem.  If you still need 16-bit support,
-you can get win32s and the 16-bit thunking dll (tcl1680.dll) from the
-Scriptics web site at ftp://ftp.scriptics.com/pub/tcl/misc.
+We are no longer supporting use of Tcl with 16-bit versions of
+Windows.  Microsoft has completely dropped support of the Win32s
+subsystem.
 
 4. Summary of changes in Tcl 8.1
 --------------------------------
@@ -231,7 +229,6 @@ or missing features that we know of:
 6. Known Bugs/Missing Features
 ------------------------------
 
-- Blocking "after" commands (e.g. "after 3000") don't work on Win32s.
 - Clock command fails to handle daylight savings time boundaries for
   things like "last week".
 - Background processes aren't properly detached on NT.
