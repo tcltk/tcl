@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.8 1998/07/09 13:41:38 suresh Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.9 1998/07/13 13:43:24 welch Exp $ 
  */
 
 #ifndef _TCLINT
@@ -129,6 +129,31 @@ typedef struct Namespace {
 				  * namespace has already cached a Command *
 				  * pointer; this causes all its cached
 				  * Command* pointers to be invalidated. */
+    int resolverEpoch;		 /* Incremented whenever the name resolution
+				  * rules change for this namespace; this
+				  * invalidates all byte codes compiled in
+				  * the namespace, causing the code to be
+				  * recompiled under the new rules. */
+    Tcl_ResolveCmdProc *cmdResProc;
+				 /* If non-null, this procedure overrides
+				  * the usual command resolution mechanism
+				  * in Tcl.  This procedure is invoked
+				  * within Tcl_FindCommand to resolve all
+				  * command references within the namespace. */
+    Tcl_ResolveVarProc *varResProc;
+				 /* If non-null, this procedure overrides
+				  * the usual variable resolution mechanism
+				  * in Tcl.  This procedure is invoked
+				  * within Tcl_FindNamespaceVar to resolve all
+				  * variable references within the namespace
+				  * at runtime. */
+    Tcl_ResolveCompiledVarProc *compiledVarResProc;
+				 /* If non-null, this procedure overrides
+				  * the usual variable resolution mechanism
+				  * in Tcl.  This procedure is invoked
+				  * within LookupCompiledLocal to resolve
+				  * variable references within the namespace
+				  * at compile time. */
 } Namespace;
 
 /*
@@ -455,6 +480,13 @@ typedef struct CompiledLocal {
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
+    Tcl_ResolvedVarInfo resolveInfo;
+				/* Customized variable resolution info
+				 * supplied by the Tcl_ResolveCompiledVarProc
+				 * associated with a namespace. Each variable
+				 * is marked by a unique ClientData tag
+				 * during compilation, and that same tag
+				 * is used to find the variable at runtime. */
     char name[4];		/* Name of the local variable starts here.
 				 * If the name is NULL, this will just be
 				 * '\0'. The actual size of this field will
@@ -791,6 +823,38 @@ typedef struct Command {
 
 /*
  *----------------------------------------------------------------
+ * Data structures related to name resolution procedures.
+ *----------------------------------------------------------------
+ */
+
+/*
+ * The interpreter keeps a linked list of name resolution schemes.
+ * The scheme for a namespace is consulted first, followed by the
+ * list of schemes in an interpreter, followed by the default
+ * name resolution in Tcl.  Schemes are added/removed from the
+ * interpreter's list by calling Tcl_AddInterpResolver and
+ * Tcl_RemoveInterpResolver.
+ */
+
+typedef struct ResolverScheme {
+    char *name;			/* Name identifying this scheme. */
+    Tcl_ResolveCmdProc *cmdResProc;
+				/* Procedure handling command name
+				 * resolution. */
+    Tcl_ResolveVarProc *varResProc;
+				/* Procedure handling variable name
+				 * resolution for variables that
+				 * can only be handled at runtime. */
+    Tcl_ResolveCompiledVarProc *compiledVarResProc;
+				/* Procedure handling variable name
+				 * resolution at compile time. */
+
+    struct ResolverScheme *nextPtr;
+				/* Pointer to next record in linked list. */
+} ResolverScheme;
+
+/*
+ *----------------------------------------------------------------
  * This structure defines an interpreter, which is a collection of
  * commands plus other state information related to interpreting
  * commands, such as variable storage. Primary responsibility for
@@ -935,6 +999,12 @@ typedef struct Interp {
 				 * this is NULL. Set by ObjInterpProc in
 				 * tclProc.c and used by tclCompile.c to
 				 * process local variables appropriately. */
+    ResolverScheme *resolverPtr;
+				/* Linked list of name resolution schemes
+				 * added to this interpreter.  Schemes
+				 * are added/removed by calling
+				 * Tcl_AddInterpResolver and
+				 * Tcl_RemoveInterpResolver. */
     char *scriptFile;		/* NULL means there is no nested source
 				 * command active;  otherwise this points to
 				 * the name of the file being sourced (it's

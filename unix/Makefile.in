@@ -229,7 +229,8 @@ GENERIC_OBJS = panic.o regexp.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
 	tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o tclIOSock.o \
 	tclIOUtil.o tclLink.o tclListObj.o tclLoad.o tclMain.o tclNamesp.o \
 	tclNotify.o tclObj.o tclParse.o tclPipe.o tclPkg.o tclPosixStr.o \
-	tclPreserve.o tclProc.o tclStringObj.o tclTimer.o tclUtil.o tclVar.o
+	tclPreserve.o tclProc.o tclStringObj.o tclTimer.o tclUtil.o tclVar.o \
+	tclResolve.o
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
 
@@ -280,6 +281,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclPosixStr.c \
 	$(GENERIC_DIR)/tclPreserve.c \
 	$(GENERIC_DIR)/tclProc.c \
+	$(GENERIC_DIR)/tclResolve.c \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
@@ -525,7 +527,7 @@ clean:
 
 distclean: clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
-		SUNWtcl.* prototype
+		$(PACKAGE).* prototype
 	if test -f dltest/Makefile; then cd dltest; $(MAKE) distclean; fi
 
 depend:
@@ -716,6 +718,9 @@ tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
 tclProc.o: $(GENERIC_DIR)/tclProc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
 
+tclResolve.o: $(GENERIC_DIR)/tclResolve.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResolve.c
+
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
@@ -822,9 +827,10 @@ checkexports: $(TCL_LIB_FILE)
 # to put the distribution.
 #
 
+DISTROOT = /tmp/dist
 DISTNAME =	tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
 ZIPNAME =	tcl@TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@@TCL_PATCH_LEVEL@.zip
-DISTDIR =	/proj/tcl/dist/$(DISTNAME)
+DISTDIR =	$(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
 	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
 dist: $(UNIX_DIR)/configure
@@ -850,7 +856,7 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(GENERIC_DIR)/*.c $(GENERIC_DIR)/*.h $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
-	cp -p $(TOP_DIR)/changes $(TOP_DIR)/README $(TOP_DIR)/license.terms \
+	cp -p $(TOP_DIR)/changes $(TOP_DIR)/README* $(TOP_DIR)/license.terms \
 		$(DISTDIR)
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
@@ -904,10 +910,10 @@ dist: $(UNIX_DIR)/configure
 #
 
 alldist: dist
-	rm -f /proj/tcl/dist/$(DISTNAME).tar.Z \
-		/proj/tcl/dist/$(DISTNAME).tar.gz \
-		/proj/tcl/dist/$(ZIPNAME)
-	cd /proj/tcl/dist; tar cf $(DISTNAME).tar $(DISTNAME); \
+	rm -f $(DISTROOT)/$(DISTNAME).tar.Z \
+		$(DISTROOT)/$(DISTNAME).tar.gz \
+		$(DISTROOT)/$(ZIPNAME)
+	cd $(DISTROOT); tar cf $(DISTNAME).tar $(DISTNAME); \
 		gzip -9 -c $(DISTNAME).tar > $(DISTNAME).tar.gz; \
 		compress $(DISTNAME).tar; zip -r8 $(ZIPNAME) $(DISTNAME)
 
@@ -920,16 +926,16 @@ alldist: dist
 #
 
 allpatch: dist
-	rm -f /proj/tcl/dist/$(DISTNAME).tar.Z \
-		/proj/tcl/dist/$(DISTNAME).tar.gz \
-		/proj/tcl/dist/$(ZIPNAME)
-	mv /proj/tcl/dist/tcl${VERSION} /proj/tcl/dist/old
-	mv /proj/tcl/dist/$(DISTNAME) /proj/tcl/dist/tcl${VERSION}
-	cd /proj/tcl/dist; tar cf $(DISTNAME).tar tcl${VERSION}; \
+	rm -f $(DISTROOT)/$(DISTNAME).tar.Z \
+		$(DISTROOT)/$(DISTNAME).tar.gz \
+		$(DISTROOT)/$(ZIPNAME)
+	mv $(DISTROOT)/tcl${VERSION} $(DISTROOT)/old
+	mv $(DISTROOT)/$(DISTNAME) $(DISTROOT)/tcl${VERSION}
+	cd $(DISTROOT); tar cf $(DISTNAME).tar tcl${VERSION}; \
 		gzip -9 -c $(DISTNAME).tar > $(DISTNAME).tar.gz; \
 		compress $(DISTNAME).tar; zip -r8 $(ZIPNAME) tcl${VERSION}
-	mv /proj/tcl/dist/tcl${VERSION} /proj/tcl/dist/$(DISTNAME)
-	mv /proj/tcl/dist/old /proj/tcl/dist/tcl${VERSION}
+	mv $(DISTROOT)/tcl${VERSION} $(DISTROOT)/$(DISTNAME)
+	mv $(DISTROOT)/old $(DISTROOT)/tcl${VERSION}
 
 #
 # Target to create a Macintosh version of the distribution.  This will
@@ -960,12 +966,14 @@ macdist: dist
 #     make DISTDIR=<distdir> package-quick
 #
 # <distdir> is the absolute path to a directory where the build should
-# take place.  These steps will generate the SUNWtcl.sun4 and
-# SUNWtcl.i86pc stream packages.  It is important that the packages be
+# take place.  These steps will generate the $(PACKAGE).sun4 and
+# $(PACKAGE).i86pc stream packages.  It is important that the packages be
 # built in this fashion in order to ensure that the architecture
 # independent files are exactly the same, including timestamps, in
 # both packages.
 #
+
+PACKAGE=SCRPtcl
 
 package: dist package-config package-common package-binaries package-generate
 package-quick: package-config package-binaries package-generate
@@ -976,11 +984,11 @@ package-quick: package-config package-binaries package-generate
 package-config:
 	mkdir -p $(DISTDIR)/unix/`arch`
 	cd $(DISTDIR)/unix/`arch`; \
-        ../configure --prefix=/opt/SUNWtcl/$(VERSION) \
-		--exec_prefix=/opt/SUNWtcl/$(VERSION)/`arch` \
+        ../configure --prefix=/opt/$(PACKAGE)/$(VERSION) \
+		--exec_prefix=/opt/$(PACKAGE)/$(VERSION)/`arch` \
 		--enable-shared
-	mkdir -p $(DISTDIR)/SUNWtcl/$(VERSION)
-	mkdir -p $(DISTDIR)/SUNWtcl/$(VERSION)/`arch`
+	mkdir -p $(DISTDIR)/$(PACKAGE)/$(VERSION)
+	mkdir -p $(DISTDIR)/$(PACKAGE)/$(VERSION)/`arch`
 
 #
 # Build and install the architecture independent files in the dist directory.
@@ -989,13 +997,13 @@ package-config:
 package-common:
 	cd $(DISTDIR)/unix/`arch`;\
 	$(MAKE); \
-	$(MAKE) prefix=$(DISTDIR)/SUNWtcl/$(VERSION) \
-		exec_prefix=$(DISTDIR)/SUNWtcl/$(VERSION)/`arch` \
+	$(MAKE) prefix=$(DISTDIR)/$(PACKAGE)/$(VERSION) \
+		exec_prefix=$(DISTDIR)/$(PACKAGE)/$(VERSION)/`arch` \
 		install-libraries install-man
-	mkdir -p $(DISTDIR)/SUNWtcl/$(VERSION)/bin
+	mkdir -p $(DISTDIR)/$(PACKAGE)/$(VERSION)/bin
 	sed -e "s/TCLVERSION/$(VERSION)/g" < $(UNIX_DIR)/tclsh.sh \
-		> $(DISTDIR)/SUNWtcl/$(VERSION)/bin/tclsh$(VERSION)
-	chmod 755 $(DISTDIR)/SUNWtcl/$(VERSION)/bin/tclsh$(VERSION)
+		> $(DISTDIR)/$(PACKAGE)/$(VERSION)/bin/tclsh$(VERSION)
+	chmod 755 $(DISTDIR)/$(PACKAGE)/$(VERSION)/bin/tclsh$(VERSION)
 
 #
 # Build and install the architecture specific files in the dist directory.
@@ -1004,8 +1012,8 @@ package-common:
 package-binaries: 
 	cd $(DISTDIR)/unix/`arch`; \
 	$(MAKE); \
-	$(MAKE) install-binaries prefix=$(DISTDIR)/SUNWtcl/$(VERSION) \
-		exec_prefix=$(DISTDIR)/SUNWtcl/$(VERSION)/`arch`
+	$(MAKE) install-binaries prefix=$(DISTDIR)/$(PACKAGE)/$(VERSION) \
+		exec_prefix=$(DISTDIR)/$(PACKAGE)/$(VERSION)/`arch`
 
 #
 # Generate a package from the installed files in the dist directory for the
@@ -1013,15 +1021,15 @@ package-binaries:
 #
 
 package-generate:
-	pkgproto $(DISTDIR)/SUNWtcl/$(VERSION)/bin=bin \
-		 $(DISTDIR)/SUNWtcl/$(VERSION)/include=include \
-		 $(DISTDIR)/SUNWtcl/$(VERSION)/lib=lib \
-		 $(DISTDIR)/SUNWtcl/$(VERSION)/man=man \
-		 $(DISTDIR)/SUNWtcl/$(VERSION)/`arch`=`arch` \
+	pkgproto $(DISTDIR)/$(PACKAGE)/$(VERSION)/bin=bin \
+		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/include=include \
+		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/lib=lib \
+		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/man=man \
+		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/`arch`=`arch` \
 	| tclsh $(UNIX_DIR)/mkProto.tcl \
 		$(VERSION) $(UNIX_DIR) > prototype
 	pkgmk -o -d . -f prototype -a `arch`
-	pkgtrans -s . SUNWtcl.`arch` SUNWtcl
-	rm -rf SUNWtcl
+	pkgtrans -s . $(PACKAGE).`arch` $(PACKAGE)
+	rm -rf $(PACKAGE)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
