@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.5 1999/04/21 21:50:30 rjohnson Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.6 1999/06/19 00:57:57 jenn Exp $
 
 # Initialize wish shell
 
@@ -19,9 +19,7 @@ if {[info exists tk_version]} {
     tk appname tktest
     wm title . tktest
 } else {
-
     # Ensure that we have a minimal auto_path so we don't pick up extra junk.
-
     set auto_path [list [info library]]
 }
 
@@ -980,22 +978,20 @@ if {[info exists tk_version]} {
 	    cleanupbg
 	}
 	
-	# The following code segment cannot be run on Windows in Tk8.1b2
-	# This bug is logged as a pipe bug (bugID 1495).
+	# The following code segment cannot be run on Windows prior
+	# to Tk 8.1b3 due to a channel I/O bug (bugID 1495).
 
 	global tcl_platform
-	if {$tcl_platform(platform) != "windows"} {
-	    set ::tcltest::fd [open "|[list $::tcltest::tktest -geometry +0+0 -name tktest] $args" r+]
-	    puts $::tcltest::fd "puts foo; flush stdout"
-	    flush $::tcltest::fd
-	    if {[gets $::tcltest::fd data] < 0} {
-		error "unexpected EOF from \"$::tcltest::tktest\""
-	    }
-	    if {[string compare $data foo]} {
-		error "unexpected output from background process \"$data\""
-	    }
-	    fileevent $::tcltest::fd readable bgReady
+	set ::tcltest::fd [open "|[list $::tcltest::tktest -geometry +0+0 -name tktest] $args" r+]
+	puts $::tcltest::fd "puts foo; flush stdout"
+	flush $::tcltest::fd
+	if {[gets $::tcltest::fd data] < 0} {
+	    error "unexpected EOF from \"$::tcltest::tktest\""
 	}
+	if {[string compare $data foo]} {
+	    error "unexpected output from background process \"$data\""
+	}
+	fileevent $::tcltest::fd readable bgReady
     }
     
     # Send a command to the background process, catching errors and
