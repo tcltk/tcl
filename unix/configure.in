@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.83 2002/03/06 15:20:23 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.84 2002/05/21 18:17:55 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -377,6 +377,8 @@ SC_TCL_LINK_LIBS
 
 LIBS="$LIBS$THREADS_LIBS"
 
+SC_ENABLE_SHARED
+
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -405,8 +407,6 @@ SC_BLOCKING_STYLE
 
 TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-
-SC_ENABLE_SHARED
 
 TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
 if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then

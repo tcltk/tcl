@@ -1,3 +1,13 @@
+2002-05-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/configure.in: Invoke SC_ENABLE_SHARED before
+	calling SC_CONFIG_CFLAGS so that the SHARED_BUILD
+	variable can be checked inside SC_CONFIG_CFLAGS.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Pass -non_shared
+	instead of -shared to ld when configured with
+	--disable-shared under OSF. [Tcl bug 540390]
+
 2002-05-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.h: added prototype for TclpFilesystemPathType().
