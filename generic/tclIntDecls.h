@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.6 1999/03/30 01:55:52 redman Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.7 1999/04/06 03:13:17 redman Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -440,6 +440,9 @@ EXTERN int		TclpLoadFile _ANSI_ARGS_((Tcl_Interp * interp,
 /* 140 */
 EXTERN int		TclLooksLikeInt _ANSI_ARGS_((char * bytes, 
 				int length));
+/* 141 */
+EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_DString * cwdPtr));
 
 typedef struct TclIntStubs {
     int magic;
@@ -586,6 +589,7 @@ typedef struct TclIntStubs {
     char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
     int (*tclpLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr)); /* 139 */
     int (*tclLooksLikeInt) _ANSI_ARGS_((char * bytes, int length)); /* 140 */
+    char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
 } TclIntStubs;
 
 extern TclIntStubs *tclIntStubsPtr;
@@ -1117,6 +1121,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclLooksLikeInt
 #define TclLooksLikeInt \
 	(tclIntStubsPtr->tclLooksLikeInt) /* 140 */
+#endif
+#ifndef TclpGetCwd
+#define TclpGetCwd \
+	(tclIntStubsPtr->tclpGetCwd) /* 141 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

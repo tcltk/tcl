@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.3.2.5 1999/04/01 21:58:17 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.3.2.6 1999/04/06 03:13:16 redman Exp $
 
 library tcl
 
@@ -513,7 +513,7 @@ declare 135 generic {
 # Added in 8.1:
 
 declare 137 generic {
-    int TclpChdir(CONST char *dirName)
+   int TclpChdir(CONST char *dirName)
 }
 declare 138 generic {
     char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
@@ -527,6 +527,9 @@ declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
 
+declare 141 generic {
+    char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+}
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are

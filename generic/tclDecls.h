@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.15 1999/04/05 22:20:28 rjohnson Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.16 1999/04/06 03:13:13 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1083,6 +1083,41 @@ EXTERN Tcl_UniChar *	Tcl_UtfToUniCharDString _ANSI_ARGS_((
 EXTERN Tcl_RegExp	Tcl_GetRegExpFromObj _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * patObj, 
 				int flags));
+/* 357 */
+EXTERN Tcl_Obj *	Tcl_EvalTokens _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Token * tokenPtr, int count));
+/* 358 */
+EXTERN void		Tcl_FreeParse _ANSI_ARGS_((Tcl_Parse * parsePtr));
+/* 359 */
+EXTERN void		Tcl_LogCommandInfo _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * script, char * command, int length));
+/* 360 */
+EXTERN int		Tcl_ParseBraces _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * string, int numBytes, 
+				Tcl_Parse * parsePtr, int append, 
+				char ** termPtr));
+/* 361 */
+EXTERN int		Tcl_ParseCommand _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * string, int numBytes, int nested, 
+				Tcl_Parse * parsePtr));
+/* 362 */
+EXTERN int		Tcl_ParseExpr _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * string, int numBytes, 
+				Tcl_Parse * parsePtr));
+/* 363 */
+EXTERN int		Tcl_ParseQuotedString _ANSI_ARGS_((
+				Tcl_Interp * interp, char * string, 
+				int numBytes, Tcl_Parse * parsePtr, 
+				int append, char ** termPtr));
+/* 364 */
+EXTERN int		Tcl_ParseVarName _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * string, int numBytes, 
+				Tcl_Parse * parsePtr, int append));
+/* 365 */
+EXTERN char *		Tcl_GetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_DString * cwdPtr));
+/* 366 */
+EXTERN int		Tcl_Chdir _ANSI_ARGS_((CONST char * dirName));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1475,6 +1510,16 @@ typedef struct TclStubs {
     char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
     Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * patObj, int flags)); /* 356 */
+    Tcl_Obj * (*tcl_EvalTokens) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Token * tokenPtr, int count)); /* 357 */
+    void (*tcl_FreeParse) _ANSI_ARGS_((Tcl_Parse * parsePtr)); /* 358 */
+    void (*tcl_LogCommandInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * script, char * command, int length)); /* 359 */
+    int (*tcl_ParseBraces) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append, char ** termPtr)); /* 360 */
+    int (*tcl_ParseCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, int nested, Tcl_Parse * parsePtr)); /* 361 */
+    int (*tcl_ParseExpr) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr)); /* 362 */
+    int (*tcl_ParseQuotedString) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append, char ** termPtr)); /* 363 */
+    int (*tcl_ParseVarName) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append)); /* 364 */
+    char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
+    int (*tcl_Chdir) _ANSI_ARGS_((CONST char * dirName)); /* 366 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2900,6 +2945,46 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetRegExpFromObj
 #define Tcl_GetRegExpFromObj \
 	(tclStubsPtr->tcl_GetRegExpFromObj) /* 356 */
+#endif
+#ifndef Tcl_EvalTokens
+#define Tcl_EvalTokens \
+	(tclStubsPtr->tcl_EvalTokens) /* 357 */
+#endif
+#ifndef Tcl_FreeParse
+#define Tcl_FreeParse \
+	(tclStubsPtr->tcl_FreeParse) /* 358 */
+#endif
+#ifndef Tcl_LogCommandInfo
+#define Tcl_LogCommandInfo \
+	(tclStubsPtr->tcl_LogCommandInfo) /* 359 */
+#endif
+#ifndef Tcl_ParseBraces
+#define Tcl_ParseBraces \
+	(tclStubsPtr->tcl_ParseBraces) /* 360 */
+#endif
+#ifndef Tcl_ParseCommand
+#define Tcl_ParseCommand \
+	(tclStubsPtr->tcl_ParseCommand) /* 361 */
+#endif
+#ifndef Tcl_ParseExpr
+#define Tcl_ParseExpr \
+	(tclStubsPtr->tcl_ParseExpr) /* 362 */
+#endif
+#ifndef Tcl_ParseQuotedString
+#define Tcl_ParseQuotedString \
+	(tclStubsPtr->tcl_ParseQuotedString) /* 363 */
+#endif
+#ifndef Tcl_ParseVarName
+#define Tcl_ParseVarName \
+	(tclStubsPtr->tcl_ParseVarName) /* 364 */
+#endif
+#ifndef Tcl_GetCwd
+#define Tcl_GetCwd \
+	(tclStubsPtr->tcl_GetCwd) /* 365 */
+#endif
+#ifndef Tcl_Chdir
+#define Tcl_Chdir \
+	(tclStubsPtr->tcl_Chdir) /* 366 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

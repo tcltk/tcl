@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.8 1999/03/12 23:29:19 surles Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.9 1999/04/06 03:13:19 redman Exp $
  */
 
 #include "tclInt.h"
@@ -2105,3 +2105,59 @@ Tcl_GetNameOfExecutable()
 {
     return (tclExecutableName);
 }
+
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetCwd --
+ *
+ *	This function replaces the library version of getcwd().
+ *
+ * Results:
+ *	The result is a pointer to a string specifying the current
+ *	directory, or NULL if the current directory could not be
+ *	determined.  If NULL is returned, an error message is left in the
+ *	interp's result.  Storage for the result string is allocated in
+ *	bufferPtr; the caller must call Tcl_DStringFree() when the result
+ *	is no longer needed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *Tcl_GetCwd(interp, cwdPtr)
+    Tcl_Interp *interp;
+    Tcl_DString *cwdPtr;
+{
+    return TclpGetCwd(interp, cwdPtr);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Chdir --
+ *
+ *	This function replaces the library version of chdir().
+ *
+ * Results:
+ *	See chdir() documentation.
+ *
+ * Side effects:
+ *	See chdir() documentation.  
+ *
+ *----------------------------------------------------------------------
+ */
+int Tcl_Chdir(dirName)
+    CONST char *dirName;
+{
+    return TclpChdir(dirName);
+}
+

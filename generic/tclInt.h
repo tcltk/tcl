@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.18 1999/04/02 23:44:56 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.19 1999/04/06 03:13:16 redman Exp $
  */
 
 #ifndef _TCLINT
@@ -1367,196 +1367,6 @@ typedef struct ParseValue {
 				 * expandProc. */
 } ParseValue;
 
-/*
- *----------------------------------------------------------------
- * The following data structures and declarations are for the new
- * Tcl parser.	This stuff should all move to tcl.h eventually.
- *----------------------------------------------------------------
- */
-
-/*
- * For each word of a command, and for each piece of a word such as a
- * variable reference, one of the following structures is created to
- * describe the token.
- */
-
-typedef struct Tcl_Token {
-    int type;			/* Type of token, such as TCL_TOKEN_WORD;
-				 * see below for valid types. */
-    char *start;		/* First character in token. */
-    int size;			/* Number of bytes in token. */
-    int numComponents;		/* If this token is composed of other
-				 * tokens, this field tells how many of
-				 * them there are (including components of
-				 * components, etc.).  The component tokens
-				 * immediately follow this one. */
-} Tcl_Token;
-
-/*
- * Type values defined for Tcl_Token structures.  These values are
- * defined as mask bits so that it's easy to check for collections of
- * types.
- *
- * TCL_TOKEN_WORD -		The token describes one word of a command,
- *				from the first non-blank character of
- *				the word (which may be " or {) up to but
- *				not including the space, semicolon, or
- *				bracket that terminates the word. 
- *				NumComponents counts the total number of
- *				sub-tokens that make up the word.  This
- *				includes, for example, sub-tokens of
- *				TCL_TOKEN_VARIABLE tokens.
- * TCL_TOKEN_SIMPLE_WORD -	This token is just like TCL_TOKEN_WORD
- *				except that the word is guaranteed to
- *				consist of a single TCL_TOKEN_TEXT
- *				sub-token.
- * TCL_TOKEN_TEXT -		The token describes a range of literal
- *				text that is part of a word. 
- *				NumComponents is always 0.
- * TCL_TOKEN_BS -		The token describes a backslash sequence
- *				that must be collapsed.	 NumComponents
- *				is always 0.
- * TCL_TOKEN_COMMAND -		The token describes a command whose result
- *				must be substituted into the word.  The
- *				token includes the enclosing brackets. 
- *				NumComponents is always 0.
- * TCL_TOKEN_VARIABLE -		The token describes a variable
- *				substitution, including the dollar sign,
- *				variable name, and array index (if there
- *				is one) up through the right
- *				parentheses.  NumComponents tells how
- *				many additional tokens follow to
- *				represent the variable name.  The first
- *				token will be a TCL_TOKEN_TEXT token
- *				that describes the variable name.  If
- *				the variable is an array reference then
- *				there will be one or more additional
- *				tokens, of type TCL_TOKEN_TEXT,
- *				TCL_TOKEN_BS, TCL_TOKEN_COMMAND, and
- *				TCL_TOKEN_VARIABLE, that describe the
- *				array index; numComponents counts the
- *				total number of nested tokens that make
- *				up the variable reference, including
- *				sub-tokens of TCL_TOKEN_VARIABLE tokens.
- * TCL_TOKEN_SUB_EXPR -		The token describes one subexpression of a
- *				expression, from the first non-blank
- *				character of the subexpression up to but not
- *				including the space, brace, or bracket
- *				that terminates the subexpression. 
- *				NumComponents counts the total number of
- *				following subtokens that make up the
- *				subexpression; this includes all subtokens
- *				for any nested TCL_TOKEN_SUB_EXPR tokens.
- *				For example, a numeric value used as a
- *				primitive operand is described by a
- *				TCL_TOKEN_SUB_EXPR token followed by a
- *				TCL_TOKEN_TEXT token. A binary subexpression
- *				is described by a TCL_TOKEN_SUB_EXPR token
- *				followed by the	TCL_TOKEN_OPERATOR token
- *				for the operator, then TCL_TOKEN_SUB_EXPR
- *				tokens for the left then the right operands.
- * TCL_TOKEN_OPERATOR -		The token describes one expression operator.
- *				An operator might be the name of a math
- *				function such as "abs". A TCL_TOKEN_OPERATOR
- *				token is always preceeded by one
- *				TCL_TOKEN_SUB_EXPR token for the operator's
- *				subexpression, and is followed by zero or
- *				more TCL_TOKEN_SUB_EXPR tokens for the
- *				operator's operands. NumComponents is
- *				always 0.
- */
-
-#define TCL_TOKEN_WORD		1
-#define TCL_TOKEN_SIMPLE_WORD	2
-#define TCL_TOKEN_TEXT		4
-#define TCL_TOKEN_BS		8
-#define TCL_TOKEN_COMMAND	16
-#define TCL_TOKEN_VARIABLE	32
-#define TCL_TOKEN_SUB_EXPR	64
-#define TCL_TOKEN_OPERATOR	128
-
-/*
- * A structure of the following type is filled in by Tcl_ParseCommand.
- * It describes a single command parsed from an input string.
- */
-
-#define NUM_STATIC_TOKENS 20
-
-typedef struct Tcl_Parse {
-    char *commentStart;		/* Pointer to # that begins the first of
-				 * one or more comments preceding the
-				 * command. */
-    int commentSize;		/* Number of bytes in comments (up through
-				 * newline character that terminates the
-				 * last comment).  If there were no
-				 * comments, this field is 0. */
-    char *commandStart;		/* First character in first word of command. */
-    int commandSize;		/* Number of bytes in command, including
-				 * first character of first word, up
-				 * through the terminating newline,
-				 * close bracket, or semicolon. */
-    int numWords;		/* Total number of words in command.  May
-				 * be 0. */
-    Tcl_Token *tokenPtr;	/* Pointer to first token representing
-				 * the words of the command.  Initially
-				 * points to staticTokens, but may change
-				 * to point to malloc-ed space if command
-				 * exceeds space in staticTokens. */
-    int numTokens;		/* Total number of tokens in command. */
-    int tokensAvailable;	/* Total number of tokens available at
-				 * *tokenPtr. */
-
-    /*
-     * The fields below are intended only for the private use of the
-     * parser.	They should not be used by procedures that invoke
-     * Tcl_ParseCommand.
-     */
-
-    char *string;		/* The original command string passed to
-				 * Tcl_ParseCommand. */
-    char *end;			/* Points to the character just after the
-				 * last one in the command string. */
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting,
-				 * or NULL. */
-    char *term;			/* Points to character in string that
-				 * terminated most recent token.  Filled in
-				 * by ParseTokens.  If an error occurs,
-				 * points to beginning of region where the
-				 * error occurred (e.g. the open brace if
-				 * the close brace is missing). */
-    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
-				 * if the command appears to be incomplete.
-				 * This information is used by
-				 * Tcl_CommandComplete. */
-    Tcl_Token staticTokens[NUM_STATIC_TOKENS];
-				/* Initial space for tokens for command.
-				 * This space should be large enough to
-				 * accommodate most commands; dynamic
-				 * space is allocated for very large
-				 * commands that don't fit here. */
-} Tcl_Parse;
-
-EXTERN Tcl_Obj *	Tcl_EvalTokens _ANSI_ARGS_ ((Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count));
-EXTERN void		Tcl_FreeParse _ANSI_ARGS_((Tcl_Parse *parsePtr));
-EXTERN void		Tcl_LogCommandInfo _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *script, char *command, int length));
-EXTERN int		Tcl_ParseBraces _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int numBytes, Tcl_Parse *parsePtr,
-			    int append, char **termPtr));
-EXTERN int		Tcl_ParseCommand _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int numBytes, int nested,
-			    Tcl_Parse *parsePtr));
-EXTERN int		Tcl_ParseExpr _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int numBytes,
-			    Tcl_Parse *parsePtr));
-EXTERN int		Tcl_ParseQuotedString _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *string, int numBytes,
-			    Tcl_Parse *parsePtr, int append,
-			    char **termPtr));
-EXTERN int		Tcl_ParseVarName _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int numBytes, Tcl_Parse *parsePtr,
-			    int append));
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
@@ -1917,8 +1727,6 @@ EXTERN char *		TclpFindExecutable _ANSI_ARGS_((
 			    CONST char *argv0));
 EXTERN void		TclpFree _ANSI_ARGS_((char *ptr));
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
-EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_DString *cwdPtr));
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
 EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
 EXTERN void		TclpGetTime _ANSI_ARGS_((Tcl_Time *time));

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.14 1999/04/05 22:20:27 rjohnson Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.15 1999/04/06 03:13:12 redman Exp $
 
 library tcl
 
@@ -1211,6 +1211,44 @@ declare 355 generic {
 }
 declare 356 generic {
     Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj, int flags)
+}
+
+declare 357 generic {
+    Tcl_Obj *Tcl_EvalTokens (Tcl_Interp *interp, Tcl_Token *tokenPtr, \
+	    int count)
+}
+declare 358 generic {
+    void Tcl_FreeParse (Tcl_Parse *parsePtr)
+}
+declare 359 generic {
+    void Tcl_LogCommandInfo (Tcl_Interp *interp, char *script, \
+	    char *command, int length)
+}
+declare 360 generic {
+    int Tcl_ParseBraces (Tcl_Interp *interp, char *string, \
+	    int numBytes, Tcl_Parse *parsePtr,int append, char **termPtr)
+}
+declare 361 generic {
+    int Tcl_ParseCommand (Tcl_Interp *interp, char *string, int numBytes, \
+	    int nested, Tcl_Parse *parsePtr)
+}
+declare 362 generic {
+    int Tcl_ParseExpr(Tcl_Interp *interp, char *string, int numBytes, \
+	    Tcl_Parse *parsePtr)	 
+}
+declare 363 generic {
+    int Tcl_ParseQuotedString(Tcl_Interp *interp, char *string, int numBytes, \
+	    Tcl_Parse *parsePtr, int append, char **termPtr)
+}
+declare 364 generic {
+    int Tcl_ParseVarName (Tcl_Interp *interp, char *string, \
+	    int numBytes, Tcl_Parse *parsePtr, int append)
+}
+declare 365 generic {
+    char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+}
+declare 366 generic {
+   int Tcl_Chdir(CONST char *dirName)
 }
 
 ##############################################################################

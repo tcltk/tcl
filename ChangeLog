@@ -13,7 +13,18 @@
 	shared libraries properly. [Bug: 1730]
 	
 1999-04-05    <redman@scriptics.com>
-
+         
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclDecls.h:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclUtil.c: Added more functions to the Tcl stubs table,
+	including all Tcl_ functions not already in it (except Cmd
+	functions) and Tcl_GetCwd() and Tcl_Chdir() (new functions).
+	
 	* tests/safe.test:
 	* doc/safe.n:
 	* generic/tclBasic.c:
