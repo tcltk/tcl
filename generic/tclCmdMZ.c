@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.99 2004/01/13 23:15:02 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.100 2004/01/13 23:37:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2656,7 +2656,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     char *string, *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
-    Tcl_RegExp regExpr;
+    Tcl_RegExp regExpr = NULL;
     static CONST char *options[] = {
 	"-exact", "-glob", "-indexvar", "-matchvar", "-regexp", "--", 
 	NULL
@@ -2881,7 +2881,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 
 	if (numMatchesSaved) {
 	    Tcl_RegExpInfo info;
-	    Tcl_Obj *matchesObj, *indicesObj;
+	    Tcl_Obj *matchesObj, *indicesObj = NULL;
 
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    if (matchVarObj != NULL) {
