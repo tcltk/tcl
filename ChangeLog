@@ -1,4 +1,5 @@
 2002-07-23  Joe English  <jenglish@users.sourceforge.net>
+
 	* doc/OpenFileChnl.3: (Updates from Larry Virden)
 	* doc/open.n:
 	* doc/tclsh.1: Fix section numbers in Unix man page references.
