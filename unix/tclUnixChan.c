@@ -2604,7 +2604,7 @@ TclOpen(path, oflag, mode)
 {
     int result;
     while (1) {
-	result = open(path, oflag, mode);
+	result = open(path, oflag, (mode_t)mode);
 	if ((result != -1) || (errno != EINTR)) {
 	    return result;
 	}
