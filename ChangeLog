@@ -1,3 +1,8 @@
+2001-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure:
+	* unix/tcl.m4: added -lc to AIX libs, fixed path to ldAix
+
 2001-11-09  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/var.test:
