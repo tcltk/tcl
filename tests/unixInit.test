@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.30.2.1 2003/11/05 20:52:39 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.30.2.2 2003/11/06 21:47:33 hobbs Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -268,7 +268,7 @@ test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {unix noSp
         /tmp/library /library /tcl[info patchlevel]/library]
 
 test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
-	unixOnly stdio
+	unixOnly stdio knownBug
 } -setup {
     set tmpDir [makeDirectory tmp]
     set sparklyDir [makeDirectory sparkly $tmpDir]
@@ -281,6 +281,7 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
     cd $libDir
 } -body {
     # Checking for Bug 832657
+    # The proposed patch in TclFindEncodings was not correct x-platform.
     lrange [getlibpath [file join .. bin tcltest]] 2 3
 } -cleanup {
     cd $saveDir
@@ -337,7 +338,7 @@ test unixInit-3.2 {TclpSetInitialEncodings} {unixOnly stdio} {
     }
     expr {[lsearch -exact $validEncodings $enc] < 0}
 } 0
-    
+
 test unixInit-4.1 {TclpSetVariables} {unixOnly} {
     # just make sure they exist
 
@@ -361,4 +362,3 @@ catch {unset env(LANG)}
 catch {set env(LANG) $oldlang}
 ::tcltest::cleanupTests
 return
-
