@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.2 2003/08/07 21:35:58 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.3 2003/09/05 23:08:05 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -28,10 +28,10 @@ void
 \fBTcl_FSMountsChanged\fR(\fIfsPtr\fR)
 .sp
 Tcl_Filesystem*
-\fBTcl_FSGetFileSystemForPath\fR(\fIpathObjPtr\fR)
+\fBTcl_FSGetFileSystemForPath\fR(\fIpathPtr\fR)
 .sp
 Tcl_PathType
-\fBTcl_FSGetPathType\fR(\fIpathObjPtr\fR)
+\fBTcl_FSGetPathType\fR(\fIpathPtr\fR)
 .sp
 int
 \fBTcl_FSCopyFile\fR(\fIsrcPathPtr, destPathPtr\fR)
@@ -53,6 +53,11 @@ int
 .sp
 Tcl_Obj*
 \fBTcl_FSListVolumes\fR(\fIvoid\fR)
+.sp
+.VS 8.5
+int
+\fBTcl_FSEvalFileEx\fR(\fIinterp, pathPtr, encodingName\fR)
+.VE 8.5
 .sp
 int
 \fBTcl_FSEvalFile\fR(\fIinterp, pathPtr\fR)
@@ -138,7 +143,7 @@ Tcl_Obj*
 Tcl_StatBuf*
 \fBTcl_AllocStatBuf\fR()
 .SH ARGUMENTS
-.AS Tcl_Filesystem *fsPtr in
+.AS "CONST char" *encodingName in
 .AP Tcl_Filesystem *fsPtr in
 Points to a structure containing the addresses of procedures that
 can be called to perform the various filesystem operations.
@@ -152,6 +157,9 @@ rename operation.
 .AP Tcl_Obj *destPathPtr in
 As for \fBpathPtr\fR, but used for the destination filename for a copy or
 rename operation.
+.AP "CONST char" *encodingName in
+The encoding of the data stored in the
+file identified by \fBpathPtr\fR and to be evaluted.
 .AP "CONST char" *pattern in
 Only files or directories matching this pattern will be returned by
 \fBTcl_FSMatchInDirectory\fR.
@@ -314,15 +322,23 @@ volumes' function and asks them to return their list of root volumes.  It
 accumulates the return values in a list which is returned to the
 caller (with a refCount of 0).
 .PP
-\fBTcl_FSEvalFile\fR reads the file given by \fIpathPtr\fR and evaluates
+.VS 8.5
+\fBTcl_FSEvalFileEx\fR reads the file given by \fIpathPtr\fR using
+the encoding identified by \fBencodingName\fR and evaluates
 its contents as a Tcl script.  It returns the same information as
 \fBTcl_EvalObjEx\fR.
+If \fBencodingName\fR is NULL, the system encoding is used for
+reading the file contents.
 If the file couldn't be read then a Tcl error is returned to describe
 why the file couldn't be read.
 The eofchar for files is '\\32' (^Z) for all platforms.
 If you require a ``^Z'' in code for string comparison, you can use
 ``\\032'' or ``\\u001a'', which will be safely substituted by the Tcl
 interpreter into ``^Z''.
+\fBTcl_FSEvalFile\fR is a simpler version of
+\fBTcl_FSEvalFileEx\fR that always uses the system encoding
+when reading the file.
+.VE 8.5
 .PP
 \fBTcl_FSLoadFile\fR dynamically loads a binary code file into memory and
 returns the addresses of two procedures within that file, if they are

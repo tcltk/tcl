@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20 2002/05/29 22:59:33 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.1 2003/09/05 23:08:07 dgp Exp $
  */
 
 #include "tcl.h"
@@ -32,6 +32,7 @@ extern int		isatty _ANSI_ARGS_((int fd));
 #endif
 
 static Tcl_Obj *tclStartupScriptPath = NULL;
+static Tcl_Obj *tclStartupScriptEncoding = NULL;
 
 static Tcl_MainLoopProc *mainLoopProc = NULL;
 
@@ -73,6 +74,83 @@ static void		StdinProc _ANSI_ARGS_((ClientData clientData,
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SetStartupScript --
+ *
+ *	Sets the path and encoding of the startup script to be evaluated
+ *	by Tcl_Main, used to override the command line processing.
+ *
+ * Results:
+ *	None. 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void Tcl_SetStartupScript(path, encoding)
+    Tcl_Obj *path;		/* Filesystem path of startup script file */
+    CONST char *encoding;	/* Encoding of the data in that file */
+{
+    Tcl_Obj *newEncoding = NULL;
+    if (encoding != NULL) {
+	newEncoding = Tcl_NewStringObj(encoding, -1);
+    }
+
+    if (tclStartupScriptPath != NULL) {
+	Tcl_DecrRefCount(tclStartupScriptPath);
+    }
+    tclStartupScriptPath = path;
+    if (tclStartupScriptPath != NULL) {
+	Tcl_IncrRefCount(tclStartupScriptPath);
+    }
+
+    if (tclStartupScriptEncoding != NULL) {
+	Tcl_DecrRefCount(tclStartupScriptEncoding);
+    }
+    tclStartupScriptEncoding = newEncoding;
+    if (tclStartupScriptEncoding != NULL) {
+	Tcl_IncrRefCount(tclStartupScriptEncoding);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetStartupScript --
+ *
+ *	Gets the path and encoding of the startup script to be evaluated
+ *	by Tcl_Main.
+ *
+ * Results:
+ *	The path of the startup script; NULL if none has been set.
+ *
+ * Side effects:
+ * 	If encodingPtr is not NULL, stores a (CONST char *) in it
+ * 	pointing to the encoding name registered for the startup
+ * 	script.  Tcl retains ownership of the string, and may free
+ * 	it.  Caller should make a copy for long-term use.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *Tcl_GetStartupScript(encodingPtr)
+    CONST char** encodingPtr;	/* When not NULL, points to storage for
+				 * the (CONST char *) that points to the
+				 * registered encoding name for the startup
+				 * script */
+{
+    if (encodingPtr != NULL) {
+	if (tclStartupScriptEncoding == NULL) {
+	    *encodingPtr = NULL;
+	} else {
+	    *encodingPtr = Tcl_GetString(tclStartupScriptEncoding);
+	}
+    }
+    return tclStartupScriptPath;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclSetStartupScriptPath --
  *
  *	Primes the startup script VFS path, used to override the
@@ -87,18 +165,11 @@ static void		StdinProc _ANSI_ARGS_((ClientData clientData,
  *
  *----------------------------------------------------------------------
  */
-void TclSetStartupScriptPath(pathPtr)
-    Tcl_Obj *pathPtr;
+void TclSetStartupScriptPath(path)
+    Tcl_Obj *path;
 {
-    if (tclStartupScriptPath != NULL) {
-	Tcl_DecrRefCount(tclStartupScriptPath);
-    }
-    tclStartupScriptPath = pathPtr;
-    if (tclStartupScriptPath != NULL) {
-	Tcl_IncrRefCount(tclStartupScriptPath);
-    }
+    Tcl_SetStartupScript(path, NULL);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -118,9 +189,8 @@ void TclSetStartupScriptPath(pathPtr)
  */
 Tcl_Obj *TclGetStartupScriptPath()
 {
-    return tclStartupScriptPath;
+    return Tcl_GetStartupScript(NULL);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -142,8 +212,8 @@ Tcl_Obj *TclGetStartupScriptPath()
 void TclSetStartupScriptFileName(fileName)
     CONST char *fileName;
 {
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
-    TclSetStartupScriptPath(pathPtr);
+    Tcl_Obj *path = Tcl_NewStringObj(fileName,-1);
+    Tcl_SetStartupScript(path, NULL);
 }
 
 
@@ -165,14 +235,13 @@ void TclSetStartupScriptFileName(fileName)
  */
 CONST char *TclGetStartupScriptFileName()
 {
-    Tcl_Obj *pathPtr = TclGetStartupScriptPath();
+    Tcl_Obj *path = Tcl_GetStartupScript(NULL);
 
-    if (pathPtr == NULL) {
+    if (path == NULL) {
 	return NULL;
     }
-    return Tcl_GetString(pathPtr);
+    return Tcl_GetString(path);
 }
-
 
 
 /*
@@ -204,8 +273,10 @@ Tcl_Main(argc, argv, appInitProc)
 				 * initialization but before starting to
 				 * execute commands. */
 {
+    Tcl_Obj *path;
     Tcl_Obj *resultPtr;
     Tcl_Obj *commandPtr = NULL;
+    CONST char *encodingName = NULL;
     char buffer[TCL_INTEGER_SPACE + 5], *args;
     PromptType prompt = PROMPT_START;
     int code, length, tty;
@@ -220,14 +291,27 @@ Tcl_Main(argc, argv, appInitProc)
     Tcl_InitMemory(interp);
 
     /*
-     * Make command-line arguments available in the Tcl variables "argc"
-     * and "argv".  If the first argument doesn't start with a "-" then
-     * strip it off and use it as the name of a script file to process.
+     * If the application has not already set a startup script, parse
+     * the first few command line arguments to determine the script
+     * path and encoding.
      */
 
-    if (TclGetStartupScriptPath() == NULL) {
-	if ((argc > 1) && (argv[1][0] != '-')) {
-	    TclSetStartupScriptFileName(argv[1]);
+    if (NULL == Tcl_GetStartupScript(NULL)) {
+
+	/* 
+	 * Check whether first 3 args (argv[1] - argv[3]) look like
+	 * 	-encoding ENCODING FILENAME
+	 * or like
+	 * 	FILENAME
+	 */
+
+	if ((argc > 3) && (0 == strcmp("-encoding", argv[1]))
+		&& ('-' != argv[3][0])) {
+	    Tcl_SetStartupScript(Tcl_NewStringObj(argv[3], -1), argv[2]);
+	    argc -= 3;
+	    argv += 3;
+	} else if ((argc > 1) && ('-' != argv[1][0])) {
+	    Tcl_SetStartupScript(Tcl_NewStringObj(argv[1], -1), NULL);
 	    argc--;
 	    argv++;
 	}
@@ -245,11 +329,14 @@ Tcl_Main(argc, argv, appInitProc)
     Tcl_DStringFree(&argString);
     ckfree(args);
 
-    if (TclGetStartupScriptPath() == NULL) {
+    path = Tcl_GetStartupScript(&encodingName);
+    if (path == NULL) {
 	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &argString);
     } else {
-	TclSetStartupScriptFileName(Tcl_ExternalToUtfDString(NULL,
-		TclGetStartupScriptFileName(), -1, &argString));
+	CONST char *pathName = Tcl_GetStringFromObj(path, &length);
+	Tcl_ExternalToUtfDString(NULL, pathName, length, &argString);
+	path = Tcl_NewStringObj(Tcl_DStringValue(&argString), -1);
+	Tcl_SetStartupScript(path, encodingName);
     }
 
     TclFormatInt(buffer, (long) argc-1);
@@ -261,8 +348,7 @@ Tcl_Main(argc, argv, appInitProc)
      */
 
     tty = isatty(0);
-    Tcl_SetVar(interp, "tcl_interactive",
-	    ((TclGetStartupScriptPath() == NULL) && tty) ? "1" : "0",
+    Tcl_SetVar(interp, "tcl_interactive", ((path == NULL) && tty) ? "1" : "0",
 	    TCL_GLOBAL_ONLY);
     
     /*
@@ -285,11 +371,13 @@ Tcl_Main(argc, argv, appInitProc)
 
     /*
      * If a script file was specified then just source that file
-     * and quit.
+     * and quit.  Must fetch it again, as the appInitProc might
+     * have reset it.
      */
 
-    if (TclGetStartupScriptPath() != NULL) {
-	code = Tcl_FSEvalFile(interp, TclGetStartupScriptPath());
+    path = Tcl_GetStartupScript(&encodingName);
+    if (path != NULL) {
+	code = Tcl_FSEvalFileEx(interp, path, encodingName);
 	if (code != TCL_OK) {
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {
@@ -510,7 +598,7 @@ Tcl_Main(argc, argv, appInitProc)
             Tcl_DeleteInterp(interp);
         }
     }
-    TclSetStartupScriptPath(NULL);
+    Tcl_SetStartupScript(NULL, NULL);
 
     /*
      * If we get here, the master interp has been deleted.  Allow

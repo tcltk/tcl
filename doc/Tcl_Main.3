@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.9 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.9.4.1 2003/09/05 23:08:05 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -76,9 +76,12 @@ channels to their default values. See \fBTcl_StandardChannels\fR for
 more information.
 .PP
 \fBTcl_Main\fR supports two modes of operation, depending on the
-values of \fIargc\fR and \fIargv\fR.  If \fIargv[1]\fR exists and
-does not begin with the character \fI-\fR, it is taken to be the
-name of a file containing a \fIstartup script\fR, which \fBTcl_Main\fR
+values of \fIargc\fR and \fIargv\fR.  If the first few arguments
+in \fIargv\fR match ?\fB-encoding \fIname\fR? ?\fIfileName\fR?,
+where \fIfileName\fR does not begin with the character \fI-\fR,
+then \fIfileName\fR is taken to be the name of a file containing
+a \fIstartup script\fR, and \fIname\fR is taken to be the name
+of the encoding of the contents of that file, which \fBTcl_Main\fR
 will attempt to evaluate.  Otherwise, \fBTcl_Main\fR will enter an
 interactive mode.
 .PP
@@ -116,7 +119,6 @@ The prompts and command evaluation results are written to the standard
 output channel only if the Tcl variable \fItcl_interactive\fR in the
 master interpreter holds a non-zero integer value.
 .PP
-.VS 8.4
 \fBTcl_SetMainLoop\fR allows setting an event loop procedure to be run.
 This allows, for example, Tk to be dynamically loaded and set its event
 loop.  The event loop will run following the startup script.  If you
@@ -129,7 +131,6 @@ The main loop procedure must have an interface that matches the type
 .CS
 typedef void Tcl_MainLoopProc(void);
 .CE
-.VE 8.4
 .PP
 \fBTcl_Main\fR does not return.  Normally a program based on
 \fBTcl_Main\fR will terminate when the \fBexit\fR command is

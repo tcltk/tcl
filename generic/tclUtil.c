@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.2 2003/08/27 21:07:21 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.3 2003/09/05 23:08:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -29,9 +29,9 @@ char *tclNativeExecutableName = NULL;
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement
- * and used by Tcl_ConvertElement.  The value TCL_DONT_USE_BRACES is also
- * defined in tcl.h;  make sure its value doesn't overlap with any of the
- * values below.
+ * and used by Tcl_ConvertElement.  The values TCL_DONT_USE_BRACES and
+ * TCL_DONT_QUOTE_HASH are defined in tcl.h; make sure neither value
+ * overlaps with any of the values below.  
  *
  * TCL_DONT_USE_BRACES -	1 means the string mustn't be enclosed in
  *				braces (e.g. it contains unmatched braces,
@@ -43,6 +43,12 @@ char *tclNativeExecutableName = NULL;
  *				enclosing the entire argument in braces.
  * BRACES_UNMATCHED -		1 means that braces aren't properly matched
  *				in the argument.
+ * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading
+ * 				hash character ('#') should *not* be quoted.
+ * 				This is appropriate when the caller can
+ * 				guarantee the element is not the first element
+ * 				of a list, so [eval] cannot mis-parse the
+ * 				element as a comment.
  */
 
 #define USE_BRACES		2
@@ -733,6 +739,9 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 	return 2;
     }
     lastChar = src + length;
+    if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
+	flags |= USE_BRACES;
+    }
     if ((flags & USE_BRACES) && !(flags & TCL_DONT_USE_BRACES)) {
 	*p = '{';
 	p++;
@@ -755,6 +764,17 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 	    p += 2;
 	    src++;
 	    flags |= BRACES_UNMATCHED;
+	} else if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
+	    /*
+	     * Leading '#' could be seen by [eval] as the start of
+	     * a comment, if on the first element of a list, so
+	     * quote it.
+	     */
+
+	    p[0] = '\\';
+	    p[1] = '#';
+	    p += 2;
+	    src++;
 	}
 	for (; src != lastChar; src++) {
 	    switch (*src) {
@@ -877,7 +897,8 @@ Tcl_Merge(argc, argv)
     result = (char *) ckalloc((unsigned) numChars);
     dst = result;
     for (i = 0; i < argc; i++) {
-	numChars = Tcl_ConvertElement(argv[i], dst, flagPtr[i]);
+	numChars = Tcl_ConvertElement(argv[i], dst, 
+		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH) );
 	dst += numChars;
 	*dst = ' ';
 	dst++;
@@ -1556,6 +1577,12 @@ Tcl_DStringAppendElement(dsPtr, string)
 	*dst = ' ';
 	dst++;
 	dsPtr->length++;
+	/*
+	 * If we need a space to separate this element from preceding
+	 * stuff, then this element will not lead a list, and need not
+	 * have it's leading '#' quoted.
+	 */
+	flags |= TCL_DONT_QUOTE_HASH;
     }
     dsPtr->length += Tcl_ConvertCountedElement(string, strSize, dst, flags);
     return dsPtr->string;
@@ -2038,13 +2065,24 @@ TclNeedSpace(start, end)
      *     backslash.
      */
 
+    if (*end > 0x20) {
+	/*
+	 * Performance tweak.  All ASCII spaces are <= 0x20. So get
+	 * a quick answer for most characters before comparing against
+	 * all spaces in the switch below.
+	 *
+	 * NOTE: Remove this if other Unicode spaces ever get accepted
+	 * as list-element separators.
+	 */
+	return 1;
+    }
     switch (*end) {
 	case ' ':
-        case '\f':
+        case '\t':
         case '\n':
         case '\r':
-        case '\t':
         case '\v':
+        case '\f':
 	    if ((end == start) || (end[-1] != '\\')) {
 		return 0;
 	    }

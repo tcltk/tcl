@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.5 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: source.n,v 1.5.20.1 2003/09/05 23:08:05 dgp Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -16,6 +16,10 @@
 source \- Evaluate a file or resource as a Tcl script
 .SH SYNOPSIS
 \fBsource \fIfileName\fR
+.sp
+.VS 8.5
+\fBsource\fR \fB\-encoding \fIencodingName fileName\fR
+.VE 8.5
 .sp
 \fBsource\fR \fB\-rsrc \fIresourceName \fR?\fIfileName\fR?
 .sp
@@ -33,7 +37,6 @@ If a \fBreturn\fR command is invoked from within the script then the
 remainder of the file will be skipped and the \fBsource\fR command
 will return normally with the result from the \fBreturn\fR command.
 .PP
-.VS 8.4
 The end-of-file character for files is '\\32' (^Z) for all platforms.
 The source command will read files up to this character.  This
 restriction does not exist for the \fBread\fR or \fBgets\fR commands,
@@ -41,7 +44,12 @@ allowing for files containing code and data segments (scripted documents).
 If you require a ``^Z'' in code for string comparison, you can use
 ``\\032'' or ``\\u001a'', which will be safely substituted by the Tcl
 interpreter into ``^Z''.
-.VE 8.4
+.PP
+.VS 8.5
+The \fB-encoding\fR option is used to specify the encoding of
+the data stored in \fIfileName\fR.  When the \fB-encoding\fR option
+is omitted, the system encoding is assumed.
+.VE 8.5
 .PP
 The \fI\-rsrc\fR and \fI\-rsrcid\fR forms of this command are only
 available on Macintosh computers.  These versions of the command
@@ -52,7 +60,7 @@ application and any loaded C extensions.  Alternatively, you may
 specify the \fIfileName\fR where the \fBTEXT\fR resource can be found.
 
 .SH "SEE ALSO"
-file(n), cd(n)
+file(n), cd(n), encoding(n)
 
 .SH KEYWORDS
 file, script

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.1 2003/08/27 21:07:22 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.2 2003/09/05 23:08:07 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -398,6 +398,9 @@
      * LPFN_* typedefs.
      */
 #   define HAVE_NO_LPFN_DECLS
+#   if !defined(__CHAR_SIGNED__)
+#	error "You must use the -j switch to ensure char is signed."
+#   endif
 #endif
 
 /*

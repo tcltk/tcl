@@ -1,3 +1,69 @@
+2003-09-04  Don Porter  <dgp@users.sourceforge.net>
+	
+	* doc/Tcl_Main.3:
+	* doc/FileSystem.3:				Implementation of
+	* doc/source.n:					TIPs 137/151.  Adds
+	* doc/tclsh.1:					a -encoding option to
+	* generic/tcl.decls:				the [source] command
+	* generic/tclCmdMZ.c (Tcl_SourceObjCmd):	and a new C routine,
+	* generic/tclIOUtil.c (Tcl_FSEvalFileEx):	Tcl_FSEvalFileEx(),
+	* generic/tclMain.c (Tcl_Main):			that provides C access
+	* mac/tclMacResource.c (Tcl_MacSourceObjCmd):	to the same function.
+	* tests/cmdMZ.test:				Also adds command line
+	* tests/main.test:	option handling in Tcl_Main() so that tclsh
+	* tests/source.test:	and other apps built on Tcl_Main() respect
+	a -encoding command line option before a script filename.  Docs and
+	tests updated as well.  [Patch 742683]
+	This is a ***POTENTIAL INCOMPATIBILITY*** only for those C programs
+	that embed Tcl, build on Tcl_Main(), and make use of Tcl_Main's former
+	ability to pass a leading "-encoding" option to interactive shell
+	operations.
+
+	* generic/tclInt.decls:				Added internal stub
+	* generic/tclMain.c (Tcl*StartupScript*):	table entries for
+	two new functions Tcl_SetStartupScript() and Tcl_GetStartupScript()
+	that set/get the path and encoding for the startup script to be
+	evaluated by either Tcl_Main() or Tk_Main().  Given public names in
+	anticipation of their exposure by a followup TIP.
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
+2003-09-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/SplitList.3:	Implementation of TIP 148.  Fixes [Bug 489537].
+	* generic/tcl.h:	Updated Tcl_ConvertCountedElement() to quote
+	* generic/tclUtil.c:	the leading "#" character of all list elements
+	unless the TCL_DONT_QUOTE_HASH flag is passed in.
+
+	* generic/tclDictObj.c:	Updated Tcl_ConvertCountedElement() callers
+	* generic/tclListObj.c:	to pass in the TCL_DONT_QUOTE_HASH flags
+	* generic/tclResult.c:	when appropriate.
+
+2003-08-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/return.n:	Updated [return] docs to cover new TIP 90 features.
+
+	* doc/break.n:		Added SEE ALSO references to return.n
+	* doc/continue.n:
+
+2003-09-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/Namespace.3: Basic documentation for the TIP#139 functions.
+	This will need improving, but the basic bits are there at least.
+
+2003-08-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/catch.n:	Updated [catch] docs to cover new TIP 90 features.
+	
+2003-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:	Corrected bug in TIP 90 implementation 
+	* tests/cmdMZ.test:	where the default -errorcode NONE value
+	was not copied into the return options dictionary.  This correction
+	modified one test result.
+
 2003-08-27  David Gravereaux <davygrvy@pobox.com>
 
 	* compat/strftime.c (_fmt): Removed syst array intializer that
@@ -13,8 +79,9 @@
 	in tclInt.decls.
 
 	* win/tclWinPort.h:  Added a block for OpenWatcom adjustments
-	that fixes the same issue Mo did for MinGW lack of missing LPFN_*
-	typedefs in their WINE derived <winsock2.h>
+	that fixes 1) the same issue Mo did for MinGW lack of missing LPFN_*
+	typedefs in their WINE derived <winsock2.h> and 2) The need to be
+	strict about how the char type needs to be signed by default.
 
 	* win/tclWinSock.c:  Added OpenWatcom to the commentary about the
 	#ifdef HAVE_NO_LPFN_DECLS block.
@@ -28,10 +95,10 @@
 
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclUtil.c:    Corrected [Bug 411825] and other bugs in
-        TclNeedSpace() where non-breaking space (\u00A0) and backslash-escaped
-        spaces were handled incorrectly.  
-        * tests/util.test:      Added new tests util-8.[2-6].
+	* generic/tclUtil.c:	Corrected [Bug 411825] and other bugs in
+	TclNeedSpace() where non-breaking space (\u00A0) and backslash-escaped
+	spaces were handled incorrectly.  
+	* tests/util.test:	Added new tests util-8.[2-6].
 
 2003-08-26  David Gravereaux <davygrvy@pobox.com>
 
