@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.24 2002/06/06 18:44:44 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.25 2002/06/06 19:23:43 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -1408,6 +1408,8 @@ test tcltest-24.9 {
 		[namespace code errorDuringMatch]
 } -body {
 	test tcltest-24.9.0 {} -match [namespace current]::errorDuringMatch
+} -cleanup {
+	set ::tcltest::currentFailure false
 } -match glob -result {} -output {*FAILED*match returned error*}
 
 test tcltest-24.10 {
@@ -1417,6 +1419,8 @@ test tcltest-24.10 {
 	customMatch nonBooleanReturn [namespace code nonBooleanReturn]
 } -body {
 	test tcltest-24.10.0 {} -match nonBooleanReturn
+} -cleanup {
+	set ::tcltest::currentFailure false
 } -match glob -result {} -output {*FAILED*expected boolean value*}
 
 test tcltest-24.11 {
@@ -1452,6 +1456,7 @@ test tcltest-24.13 {
 } -body {
 	test tcltest-24.13.0 {} -body {format 1} -result 0
 } -cleanup {
+	set ::tcltest::currentFailure false
 	verbose $v
 	customMatch exact $saveExactMatchScript
 	unset saveExactMatchScript
@@ -1474,6 +1479,7 @@ test tcltest-24.15 {
 	test tcltest-24.15.0 {} -match glob -body {format {A B C}} \
 		-result {A B* }
 } -cleanup {
+	set ::tcltest::currentFailure false
 	verbose $v
 } -match glob -result {} -output {*FAILED*Result was:
 *(glob matching):
@@ -1494,6 +1500,7 @@ test tcltest-24.17 {
 	test tcltest-24.17.0 {} -match regexp -body {format {A B C}} \
 		-result {A B.* X}
 } -cleanup {
+	set ::tcltest::currentFailure false
 	verbose $v
 } -match glob -result {} -output {*FAILED*Result was:
 *(regexp matching):
@@ -1509,6 +1516,7 @@ test tcltest-24.18 {
 	test tcltest-24.18.0 {} -match negative -body {format {A B C}} \
 		-result {A B X}
 } -cleanup {
+	set ::tcltest::currentFailure false
 	verbose $v
 } -match glob -result {} -output {*FAILED*Error testing result:*}
 
@@ -1528,6 +1536,7 @@ test tcltest-24.19 {
 test tcltest-24.20 {
 	test: -match custom	failure
 } -setup {
+	set ::tcltest::currentFailure false
 	set v [verbose]
 	verbose {}
 	customMatch negative [namespace code matchNegative]
