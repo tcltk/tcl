@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.13 2002/01/18 03:22:40 das Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.14 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1027,7 +1027,7 @@ GetFileSpecs(
     char *dirName;
     OSErr err;
     int argc;
-    char **argv;
+    CONST char **argv;
     long d;
     Tcl_DString buffer;
         

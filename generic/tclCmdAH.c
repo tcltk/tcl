@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.18 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.19 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -131,7 +131,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 
     for (i = 0;  i < caseObjc;  i += 2) {
 	int patObjc, j;
-	char **patObjv;
+	CONST char **patObjv;
 	char *pat;
 	unsigned char *p;
 
@@ -512,7 +512,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    if (objc == 2) {
-	        Tcl_SetResult(interp, Tcl_GetEncodingName(NULL), TCL_STATIC);
+		Tcl_SetStringObj(Tcl_GetObjResult(interp),
+			Tcl_GetEncodingName(NULL), -1);
 	    } else {
 	        return Tcl_SetSystemEncoding(interp,
 			Tcl_GetStringFromObj(objv[2], NULL));
@@ -1014,7 +1015,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileMakeDirsCmd(interp, objc, objv);
 	}
 	case FILE_NATIVENAME: {
-	    char *fileName;
+	    CONST char *fileName;
 	    Tcl_DString ds;
 
 	    if (objc != 3) {

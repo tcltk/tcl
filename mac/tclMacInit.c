@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.6 2001/12/27 22:46:19 das Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.7 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include <AppleEvents.h>
@@ -354,7 +354,7 @@ TclpInitLibraryPath(argv0)
 				 * by querying the module handle. */
 {
     Tcl_Obj *objPtr, *pathPtr;
-    char *str;
+    CONST char *str;
     Tcl_DString ds;
     
     TclMacCreateEnv();
@@ -395,7 +395,7 @@ TclpInitLibraryPath(argv0)
     str = TclGetEnv("EXT_FOLDER", &ds);
     if ((str != NULL) && (str[0] != '\0')) {
 	    Tcl_DString libPath, path;
-	    char *argv[3];
+	    CONST char *argv[3];
 	    
 	    argv[0] = str;
 	    argv[1] = "Tool Command Language";	    
@@ -739,7 +739,7 @@ Tcl_SourceRCFile(
     Tcl_Interp *interp)		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
-    char *fileName;
+    CONST char *fileName;
     Tcl_Channel errChannel;
     Handle h;
 
@@ -747,7 +747,7 @@ Tcl_SourceRCFile(
 
     if (fileName != NULL) {
         Tcl_Channel c;
-	char *fullName;
+	CONST char *fullName;
 
         Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);

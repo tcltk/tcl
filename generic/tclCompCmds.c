@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.20 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.21 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -754,9 +754,9 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
 #define STATIC_VAR_LIST_SIZE 5
     int varcListStaticSpace[STATIC_VAR_LIST_SIZE];
-    char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
+    CONST char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
     int *varcList = varcListStaticSpace;
-    char ***varvList = varvListStaticSpace;
+    CONST char ***varvList = varvListStaticSpace;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -795,11 +795,11 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     numLists = (numWords - 2)/2;
     if (numLists > STATIC_VAR_LIST_SIZE) {
         varcList = (int *) ckalloc(numLists * sizeof(int));
-        varvList = (char ***) ckalloc(numLists * sizeof(char **));
+        varvList = (CONST char ***) ckalloc(numLists * sizeof(char **));
     }
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
         varcList[loopIndex] = 0;
-        varvList[loopIndex] = (char **) NULL;
+        varvList[loopIndex] = NULL;
     }
     
     /*
@@ -845,7 +845,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
 	    numVars = varcList[loopIndex];
 	    for (j = 0;  j < numVars;  j++) {
-		char *varName = varvList[loopIndex][j];
+		CONST char *varName = varvList[loopIndex][j];
 		if (!TclIsLocalScalar(varName, (int) strlen(varName))) {
 		    code = TCL_OUT_LINE_COMPILE;
 		    goto done;
@@ -893,7 +893,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	        sizeof(ForeachVarList) + (numVars * sizeof(int)));
 	varListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
-	    char *varName = varvList[loopIndex][j];
+	    CONST char *varName = varvList[loopIndex][j];
 	    int nameChars = strlen(varName);
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
 		    nameChars, /*create*/ 1, /*flags*/ VAR_SCALAR, procPtr);
@@ -1029,7 +1029,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
     done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-        if (varvList[loopIndex] != (char **) NULL) {
+        if (varvList[loopIndex] != NULL) {
             ckfree((char *) varvList[loopIndex]);
         }
     }

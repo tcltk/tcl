@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.18 2002/01/15 17:55:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.19 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -136,7 +136,7 @@ TclpOpenFile(fname, mode)
     int mode;			/* In what mode to open the file? */
 {
     int fd;
-    char *native;
+    CONST char *native;
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
@@ -186,7 +186,8 @@ TclFile
 TclpCreateTempFile(contents)
     CONST char *contents;	/* String to write into temp file, or NULL. */
 {
-    char fileName[L_tmpnam + 9], *native;
+    char fileName[L_tmpnam + 9];
+    CONST char *native;
     Tcl_DString dstring;
     int fd;
 
@@ -367,7 +368,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
     int argc;			/* Number of arguments in following array. */
-    char **argv;		/* Array of argument strings in UTF-8.
+    CONST char **argv;		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
 				 * call).  Additional arguments have not been
@@ -420,7 +421,8 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
     newArgv = (char **) ckalloc((argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	newArgv[i] = Tcl_DStringValue(&dsArray[i]);
     }
 
     joinThisError = errorFile && (errorFile == outputFile);

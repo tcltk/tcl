@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.13 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.14 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tcl.h"
@@ -297,7 +297,7 @@ FormatClock(interp, clockVal, useGMT, format)
      */
 
     if (useGMT) {
-        char *varValue;
+        CONST char *varValue;
 
         varValue = Tcl_GetVar2(interp, "env", "TZ", TCL_GLOBAL_ONLY);
         if (varValue != NULL) {

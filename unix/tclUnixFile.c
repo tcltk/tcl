@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.14 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.15 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -196,12 +196,12 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive errors. */
     Tcl_Obj *resultPtr;		/* List object to lappend results. */
     Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
-    char *native, *fname, *dirName;
+    CONST char *native, *fname, *dirName;
     DIR *d;
     Tcl_DString ds;
     struct stat statBuf;
@@ -294,7 +294,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
     while (1) {
         Tcl_DString utfDs;
-	char *utf;
+	CONST char *utf;
 	struct dirent *entryPtr;
 	
 	entryPtr = readdir(d);				/* INTL: Native. */
@@ -460,7 +460,7 @@ TclpGetUserHome(name, bufferPtr)
 {
     struct passwd *pwPtr;
     Tcl_DString ds;
-    char *native;
+    CONST char *native;
 
     native = Tcl_UtfToExternalDString(NULL, name, -1, &ds);
     pwPtr = getpwnam(native);				/* INTL: Native. */
@@ -598,7 +598,7 @@ TclpObjGetCwd(interp)
 }
 
 /* Older string based version */
-char *
+CONST char *
 TclpGetCwd(interp, bufferPtr)
     Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
     Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
@@ -649,7 +649,7 @@ TclpReadlink(path, linkPtr)
 {
     char link[MAXPATHLEN];
     int length;
-    char *native;
+    CONST char *native;
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);

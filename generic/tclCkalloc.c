@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.14 2001/12/28 23:36:31 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.15 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -783,7 +783,7 @@ MemoryCmd (clientData, interp, argc, argv)
     int         argc;
     char      **argv;
 {
-    char *fileName;
+    CONST char *fileName;
     Tcl_DString buffer;
     int result;
 

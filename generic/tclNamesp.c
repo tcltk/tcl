@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.26 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.27 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -720,7 +720,8 @@ TclTeardownNamespace(nsPtr)
 	 * variables, in case they had any traces on them.
 	 */
     
-        char *str, *errorInfoStr, *errorCodeStr;
+        CONST char *str;
+        char *errorInfoStr, *errorCodeStr;
 
         str = Tcl_GetVar((Tcl_Interp *) iPtr, "errorInfo", TCL_GLOBAL_ONLY);
         if (str != NULL) {

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.16 2002/01/17 04:37:32 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.17 2002/01/25 20:40:55 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -140,7 +140,7 @@ rename operation.
 .AP Tcl_Obj *destPathPtr in
 As for \fBpathPtr\fR, but used for the destination filename for a copy or
 rename operation.
-.AP char *pattern in
+.AP "CONST char" *pattern in
 Only files or directories matching this pattern will be returned by
 \fBTcl_FSMatchInDirectory\fR.
 .AP GlobTypeData *types in
@@ -863,7 +863,7 @@ typedef int Tcl_FSMatchInDirectoryProc(
 	Tcl_Interp* \fIinterp\fR, 
 	Tcl_Obj *\fIresult\fR,
 	Tcl_Obj *\fIpathPtr\fR, 
-	char *\fIpattern\fR, 
+	CONST char *\fIpattern\fR, 
 	Tcl_GlobTypeData * \fItypes\fR);
 .CE
 .PP

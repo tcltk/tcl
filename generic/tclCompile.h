@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.23 2001/12/10 15:44:34 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.24 2002/01/25 20:40:55 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -786,7 +786,7 @@ EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
 EXTERN void		TclExpandJumpFixupArray _ANSI_ARGS_((
                             JumpFixupArray *fixupArrayPtr));
 EXTERN void		TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
-EXTERN int		TclFindCompiledLocal _ANSI_ARGS_((char *name, 
+EXTERN int		TclFindCompiledLocal _ANSI_ARGS_((CONST char *name, 
         		    int nameChars, int create, int flags,
 			    Proc *procPtr));
 EXTERN LiteralEntry *	TclLookupLiteralEntry _ANSI_ARGS_((
