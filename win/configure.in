@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.58 2002/10/22 18:56:28 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.59 2002/11/06 10:44:15 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -57,14 +57,24 @@ AC_PROG_CC
 # autoconf 2.50. You can also just set
 # the CC, AR, RANLIB, and RC environment
 # variables if you want to cross compile.
-dnl AC_CHECK_TOOL(AR, ar, :)
-dnl AC_CHECK_TOOL(RANLIB, ranlib, :)
-dnl AC_CHECK_TOOL(RC, windres, :)
+dnl AC_CHECK_TOOL(AR, ar)
+dnl AC_CHECK_TOOL(RANLIB, ranlib)
+dnl AC_CHECK_TOOL(RC, windres)
 
 if test "${GCC}" = "yes" ; then
     AC_CHECK_PROG(AR, ar, ar)
     AC_CHECK_PROG(RANLIB, ranlib, ranlib)
     AC_CHECK_PROG(RC, windres, windres)
+
+    if test "${AR}" = "" ; then
+	AC_MSG_ERROR([Required archive tool 'ar' not found on PATH.])
+    fi
+    if test "${RANLIB}" = "" ; then
+	AC_MSG_ERROR([Required archive index tool 'ranlib' not found on PATH.])
+    fi
+    if test "${RC}" = "" ; then
+	AC_MSG_ERROR([Required resource tool 'windres' not found on PATH.])
+    fi
 fi
 
 #--------------------------------------------------------------------
