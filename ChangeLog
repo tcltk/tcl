@@ -1,10 +1,33 @@
+2002-01-08  Don Porter <dgp@users.sourceforge.net>, Kevin Kenny <kennykb@users.sourceforge.net>
+
+	* doc/StaticPkg.3 (Tcl_StaticPackage):
+	* generic/tcl.decls (Tcl_StaticPackage):
+	* generic/tclDecls.h (Tcl_StaticPackage):
+	* generic/tclInt.decls (TclGuessPackageName):
+	* generic/tclInt.h (TclGuessPackageName):
+	* generic/tclLoad.c (Tcl_StaticPackage):
+	* generic/tclLoadNone.c (TclGuessPackageName):
+	* mac/tclMacLoad.c (TclGuessPackageName):
+	* unix/tclLoadAout.c (TclGuessPackageName):
+	* unix/tclLoadDl.c (TclGuessPackageName):
+	* unix/tclLoadDld.c (TclGuessPackageName):
+	* unix/tclLoadDyld.c (TclGuessPackageName):
+	* unix/tclLoadNext.c (TclGuessPackageName):
+	* unix/tclLoadOSF.c (TclGuessPackageName):
+	* unix/tclLoadShl.c (TclGuessPackageName):
+	* win/tclWinLoad.c (TclGuessPackageName):  Updated APIs in 
+	the files */tcl*Load*.c according to the guidelines of TIP 27.
+
 2002-01-09  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tclTest.c (MainLoop):
 	* tests/main.test (Tcl_Main-1.{3,4,5,6}):  Corrected some non-portable
 	tests from the new Tcl_Main changes.  Thanks to Kevin Kenny.
 
+	* generic/tclIntDecls.h: make genstubs
+
 2002-01-07  Don Porter <dgp@users.sourceforge.net>
+
 	* generic/tclEvent.c (TclInExit):
 	* generic/tclIOUtil.c (SetFsPathFromAbsoluteNormalized,
 	  SetFsPathFromAny,Tcl_FSNewNativePath,DupFsPathInternalRep):

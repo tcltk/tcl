@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.72 2002/01/08 20:44:39 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.73 2002/01/09 19:09:28 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1699,8 +1699,6 @@ EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    int globFlags, Tcl_GlobTypeData* types));
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp *interp,
 			    int argc, char **argv, int flags));
-EXTERN int		TclGuessPackageName _ANSI_ARGS_((char *fileName,
-			    Tcl_DString *bufPtr));
 EXTERN int		TclHideUnsafeCommands _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 EXTERN int		TclInExit _ANSI_ARGS_((void));
