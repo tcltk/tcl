@@ -13,6 +13,9 @@
 
 2004-08-18  Kevin Kenny  <kennykb@acm.org>
 
+	* tests/httpd (httpdRespond): Corrected an abuse of the [clock]
+	command that caused test failures for some values of [clock clicks].
+	
 	* doc/clock.n
 	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_HideUnsafeCommands):
 	* generic/tclClock.c (all):
@@ -57,7 +60,7 @@
 	Scheffers, Peter da Silva and Richard Suchenwirth-Bauersachs.
 
 	*** POTENTIAL INCOMPATIBILITY ***
-	
+
 2004-08-16  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/SetVar.3:
