@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.61 2004/01/29 10:28:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.62 2004/04/07 22:04:30 hobbs Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -666,12 +666,11 @@ NativeWriteReparse(LinkDirectory, buffer)
  *	application, given its argv[0] value.
  *
  * Results:
- *	A dirty UTF string that is the path to the executable.  At this
- *	point we may not know the system encoding.  Convert the native
- *	string value to UTF using the default encoding.  The assumption
- *	is that we will still be able to parse the path given the path
- *	name contains ASCII string and '/' chars do not conflict with
- *	other UTF chars.
+ *	A clean UTF string that is the path to the executable.  At this
+ *	point we may not know the system encoding, but we convert the
+ *	string value to UTF-8 using core Windows functions.  The path name
+ *	contains ASCII string and '/' chars do not conflict with other UTF
+ *	chars.
  *
  * Side effects:
  *	The variable tclNativeExecutableName gets filled in with the file
@@ -686,8 +685,8 @@ TclpFindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
 {
-    Tcl_DString ds;
     WCHAR wName[MAX_PATH];
+    char name[MAX_PATH * TCL_UTF_MAX];
 
     if (argv0 == NULL) {
 	return NULL;
@@ -701,12 +700,15 @@ TclpFindExecutable(argv0)
      * create this process.
      */
 
-    (*tclWinProcs->getModuleFileNameProc)(NULL, wName, MAX_PATH);
-    Tcl_WinTCharToUtf((CONST TCHAR *) wName, -1, &ds);
+    if (GetModuleFileNameW(NULL, wName, MAX_PATH) == 0) {
+	GetModuleFileNameA(NULL, name, sizeof(name));
+    } else {
+	WideCharToMultiByte(CP_UTF8, 0, wName, -1, 
+		name, sizeof(name), NULL, NULL);
+    }
 
-    tclNativeExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
-    strcpy(tclNativeExecutableName, Tcl_DStringValue(&ds));
-    Tcl_DStringFree(&ds);
+    tclNativeExecutableName = ckalloc((unsigned) (strlen(name) + 1));
+    strcpy(tclNativeExecutableName, name);
 
     TclWinNoBackslash(tclNativeExecutableName);
     return tclNativeExecutableName;
