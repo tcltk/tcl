@@ -1,3 +1,34 @@
+1999-10-28  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/aclocal.m4: made it just include tcl.m4
+
+	* library/tcltest1.0/tcltest.tcl: updated makeFile to return
+	full pathname of file created
+
+	* generic/tclStringObj.c: fixed Tcl_AppendResultVA so it only
+	iterates once over the va_list (avoiding a memcpy of it,
+	which is not portable).
+
+	* generic/tclEnv.c: fixed possible ABR error in environ array
+
+	* tests/scan.test:
+	* generic/tclScan.c: added support for use of inline scan,
+	XPG3 currently not included
+
+	* tests/incr.test:
+	* tests/set.test:
+	* generic/tclCompCmds.c: fixed improper bytecode handling of
+	'eval {set array($unknownvar) 5}' (also for incr)
+
+	* win/tclWinTest.c: added testvolumetype command, as atime is
+	completely ignored for Windows FAT file systems
+	* win/tclWinPort.h: added sys/utime.h to includes
+	* unix/tclUnixPort.h: added utime.h to includes
+	* doc/file.n:
+	* tests/cmdAH.test:
+	* generic/tclCmdAH.c: added time arguments to atime and mtime
+	file command methods (support 'touch' functionality)
+
 1999-10-20  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tclUnixNotfy.c: fixed event/io threading problems by

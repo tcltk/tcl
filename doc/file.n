@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.3 1999/08/19 02:58:34 hobbs Exp $
+'\" RCS: @(#) $Id: file.n,v 1.4 1999/10/29 03:03:40 hobbs Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -26,13 +26,14 @@ substitution is done before executing the command (see the manual entry for
 file name.  Any unique abbreviation for \fIoption\fR is acceptable.  The
 valid options are:
 .TP
-\fBfile atime \fIname\fR
+\fBfile atime \fIname\fR ?\fBtime\fR?
 .
-Returns a decimal string giving the time at which file \fIname\fR
-was last accessed.  The time is measured in the standard POSIX
-fashion as seconds from a fixed starting time (often January 1, 1970).
-If the file doesn't exist or its access time cannot be queried then an
-error is generated.
+Returns a decimal string giving the time at which file \fIname\fR was last
+accessed.  If \fItime\fR is specified, it is an access time to set
+for the file.  The time is measured in the standard POSIX fashion as
+seconds from a fixed starting time (often January 1, 1970).  If the file
+doesn't exist or its access time cannot be queried or set then an error is
+generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
 .br
@@ -195,13 +196,14 @@ no action is taken and no error is returned.  Trying to overwrite an existing
 file with a directory will result in an error.  Arguments are processed in
 the order specified, halting at the first error, if any.
 .TP
-\fBfile mtime \fIname\fR
+\fBfile mtime \fIname\fR ?\fItime\fR?
 .
-Returns a decimal string giving the time at which file \fIname\fR was
-last modified.  The time is measured in the standard POSIX fashion as
-seconds from a fixed starting time (often January 1, 1970).  If the file
-doesn't exist or its modified time cannot be queried then an error is
-generated.
+Returns a decimal string giving the time at which file \fIname\fR was last
+modified.  If \fItime\fR is specified, it is a modification time to set for
+the file (equivalent to Unix \fBtouch\fR).  The time is measured in the
+standard POSIX fashion as seconds from a fixed starting time (often January
+1, 1970).  If the file doesn't exist or its modified time cannot be queried
+or set then an error is generated.
 .TP
 \fBfile nativename \fIname\fR
 .
@@ -310,13 +312,14 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 .TP
 \fBfile volume\fR
 . 
-Returns the absolute paths to the volumes mounted on the system, as a proper 
-Tcl list.  On the Macintosh, this will be a list of the mounted drives, 
-both local and network.  N.B. if two drives have the same name, they will 
-both appear on the volume list, but there is currently no way, from Tcl, to 
-access any but the first of these drives.  On UNIX, the command will always return 
-"/", since all filesystems are locally mounted.  On Windows, it will return 
-a list of the available local drives (e.g. {a:/ c:/}).
+Returns the absolute paths to the volumes mounted on the system, as a
+proper Tcl list.  On the Macintosh, this will be a list of the mounted
+drives, both local and network.  N.B. if two drives have the same name,
+they will both appear on the volume list, but there is currently no way,
+from Tcl, to access any but the first of these drives.  On UNIX, the
+command will always return "/", since all filesystems are locally mounted.
+On Windows, it will return a list of the available local drives
+(e.g. {a:/ c:/}).
 .TP
 \fBfile writable \fIname\fR
 .
