@@ -1,3 +1,15 @@
+2002-03-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclMain.c: reduced oversized static buffer allocation.
+
+	* unix/Makefile.in: added shell and gdb targets
+
+	* unix/configure: 
+	* unix/configure.in: backported improved AIX build support from 8.4.
+	* unix/tcl.m4: backported 8.4 changes to HP-UX, IRIX64-6.*, SunOS,
+	FreeBSD, AIX and Darwin targets.  Updated SC_LOADTCLCONFIG to
+	detect when we build against a Tcl build dir.
+
 2002-03-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl: Be sure the tcltest variable is updated.
