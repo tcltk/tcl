@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.6 1999/06/16 20:12:01 surles Exp $
+# RCS: @(#) $Id: configure.in,v 1.7 1999/06/16 22:36:24 surles Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -30,7 +30,6 @@ AC_PROG_MAKE_SET
 # These two macros perform additinal compiler test.
 #--------------------------------------------------------------------
 
-AC_PROG_CC
 AC_CYGWIN
 
 #--------------------------------------------------------------------
@@ -70,7 +69,7 @@ SC_CONFIG_CFLAGS
 SC_ENABLE_SYMBOLS
 
 CFLAGS=${CFLAGS_DEFAULT}
-LD_FLAGS=${LDFLAGS_DEFAULT}
+LDFLAGS=${LDFLAGS_DEFAULT}
 TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
@@ -80,7 +79,6 @@ TCL_DBGX=${DBGX}
 eval "TCL_SRC_DIR=`cd $srcdir; pwd`"
 eval "TCL_STUB_LIB_FILE=tclstub$VER${LIBSUFFIX}"
 eval "TCL_DLL_FILE=tcl$VER${DLLSUFFIX}"
-eval "TCL_LIB_FILE=tcl$VER${LIBSUFFIX}"
 
 AC_SUBST(TCL_VERSION)
 AC_SUBST(TCL_MAJOR_VERSION)

@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.10 1999/03/11 21:47:39 stanton Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.11 1999/06/16 22:36:24 surles Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -80,7 +80,7 @@ TCL_DL_LIBS='@DL_LIBS@'
 
 # Flags to pass to the compiler when linking object files into
 # an executable tclsh or tcltest binary.
-TCL_LD_FLAGS='@LD_FLAGS@'
+TCL_LD_FLAGS='@LDFLAGS@'
 
 # Flags to pass to ld, such as "-R /usr/local/tcl/lib", that tell the
 # run-time dynamic linker where to look for shared libraries such as

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.8 1999/06/16 20:12:01 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.9 1999/06/16 22:36:24 surles Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -260,13 +260,13 @@ TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
 TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} ${COMPAT_OBJS}
 
-all: binaries libraries man
+all: binaries libraries doc
 
 binaries: @LIBRARIES@ $(STATIC_LIBRARIES) $(TCLSH)
 
 libraries:
 
-man:
+doc:
 
 $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
@@ -346,9 +346,9 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 .c.${OBJEXT}:
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl ${DEPARG} $(CC_OBJNAME)
 
-install: install-binaries install-libraries
+install: all install-binaries install-libraries install-doc
 
-install-binaries: binaries
+install-binaries:
 	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
 	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
 	@for i in dde1.0 reg1.0; \
@@ -384,7 +384,7 @@ install-binaries: binaries
 	    $(COPY) $(ROOT_DIR)/library/reg1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 
-install-libraries: libraries
+install-libraries:
 	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
@@ -424,6 +424,8 @@ install-libraries: libraries
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
+
+install-doc:
 
 test: binaries $(TCLTEST)
 	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
