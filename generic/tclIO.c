@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.7 2001/07/17 20:43:52 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.8 2001/07/18 17:17:19 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1640,6 +1640,17 @@ RecycleBuffer(statePtr, bufPtr, mustDiscard)
      */
 
     if (mustDiscard) {
+        ckfree((char *) bufPtr);
+        return;
+    }
+
+    /*
+     * Only save buffers which are at least as big as the requested
+     * buffersize for the channel. This is to honor dynamic changes
+     * of the buffersize made by the user.
+     */
+
+    if ((bufPtr->bufLength - BUFFER_PADDING) < statePtr->bufSize) {
         ckfree((char *) bufPtr);
         return;
     }
@@ -4711,6 +4722,19 @@ GetInput(chanPtr)
     } else {
 	bufPtr = statePtr->saveInBufPtr;
 	statePtr->saveInBufPtr = NULL;
+
+	/*
+	 * Check the actual buffersize against the requested
+	 * buffersize. Buffers which are smaller than requested aare
+	 * squashed. This is done to honor dynamic changes of the
+	 * buffersize made by the user.
+	 */
+
+	if ((bufPtr != NULL) && ((bufPtr->bufLength - BUFFER_PADDING) < statePtr->bufSize)) {
+	  ckfree((char *) bufPtr);
+	  bufPtr = NULL;
+	}
+
 	if (bufPtr == NULL) {
 	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
 	}
