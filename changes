@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.21 1999/03/14 21:52:39 surles Exp $
+RCS: @(#) $Id: changes,v 1.1.2.22 1999/03/15 16:20:30 hershey Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4175,3 +4175,23 @@ the location of the encoding files and libraries.  This fix included:
     - Modifying the TclpInitLibrary routines to append the default
       encoding dir.
 (surles)
+
+3/14/99 (feature change) Test suite now uses "test" namespace to
+define the test procedure and other auxiliary procedures as well as
+global variables.
+    - Global array testConfige is now called ::test::testConfig.
+    - Global variable VERBOSE is now called ::test::verbose, and
+      ::test::verbose no longer works with numerical values.  We've
+      switched to a bitwise character string.  You can set
+      ::test::verbose by using the -verbose option on the Tcl command
+      line.
+    - Global variable TESTS is now called ::test::matchingTests, and
+      can be set on the Tcl command line via the -match option.
+    - There is now a ::test::skipTests variable (works similarly to
+      ::test::matchTests) that can be set on the Tcl command line via
+      the -match option.
+    - The test suite can now be run in any working directory.  When
+      you run "make test", the working directory is nolonger switched
+      to ../tests.
+(hirschl)
+*** POTENTIAL INCOMPATIBILITY ***
