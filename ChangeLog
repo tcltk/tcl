@@ -1,3 +1,9 @@
+2004-05-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFile.c:
+	* tests/cmdAH.test: fix to (Bug 954263) where 'file executable'
+	was case-sensitive.
+
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/OpenFileChnl.3: Documented type of 'offset' argument to
