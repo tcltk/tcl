@@ -1,3 +1,8 @@
+2004-06-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinDde.c: Backported the fix from 8.5 to avoid hanging in
+	the presence of applications that dont process Window messages.
+
 2004-06-10  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclDecls.h:        Regenerated on a unix box.
