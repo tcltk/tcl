@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.16 1999/06/17 19:31:50 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.17 1999/07/02 19:59:38 welch Exp $
  */
 
 #include "tclInt.h"
@@ -1057,7 +1057,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objv[2]->typePtr == &tclByteArrayType) {
 
-		string1 = Tcl_GetByteArrayFromObj(objv[2], &length1);
+		string1 = (char *)Tcl_GetByteArrayFromObj(objv[2], &length1);
 
 		if (TclGetIntForIndex(interp, objv[3], length1 - 1,
 			&index) != TCL_OK) {
@@ -1605,7 +1605,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objv[2]->typePtr == &tclByteArrayType) {
 
-		string1 = Tcl_GetByteArrayFromObj(objv[2], &length1);
+		string1 = (char *)Tcl_GetByteArrayFromObj(objv[2], &length1);
 
 		if (TclGetIntForIndex(interp, objv[3], length1 - 1,
 			&first) != TCL_OK) {
@@ -1623,7 +1623,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		}
 		if (last >= first) {
 		    int numBytes = last - first + 1;
-		    resultPtr = Tcl_NewByteArrayObj(&string1[first], numBytes);
+		    resultPtr = Tcl_NewByteArrayObj(
+				(unsigned char *) &string1[first], numBytes);
 		    Tcl_SetObjResult(interp, resultPtr);
 		}
 	    } else {
