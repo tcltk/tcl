@@ -1,3 +1,8 @@
+2004-11-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixInit.c: moved check for HAVE_CFBUNDLE define after
+	#include "tclInt.h" to ensure tclConfig.h has been included.
+
 2004-11-12  Reinhard Max  <max@suse.de>
 
 	* unix/config.h.in:
