@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetIndex.3,v 1.4 1999/06/28 23:49:31 redman Exp $
+'\" RCS: @(#) $Id: GetIndex.3,v 1.5 1999/08/13 19:01:04 welch Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -82,7 +82,7 @@ the matching index immediately without having to redo the lookup
 operation.  Note: \fBTcl_GetIndexFromObj\fR assumes that the entries
 in \fItablePtr\fR are static: they must not change between
 invocations.  If the value of \fIobjPtr\fR is the empty string,
-\fTcl_GetIndexFromObj\fR will treat it as a non-matching value
+\fBTcl_GetIndexFromObj\fR will treat it as a non-matching value
 and return TCL_ERROR.
 .VS
 .PP

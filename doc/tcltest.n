@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.4 1999/07/26 22:50:53 jenn Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.5 1999/08/13 19:01:05 welch Exp $
 '\" 
 .so man.macros
 .TH "Tcltest" n 8.2 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,7 @@ Tcltest \- Test harness support code and utilities
 .sp
 \fB::tcltest::cleanupTests \fI?runningMultipleTests?\fR
 .sp
-\fB::tcltest::getMatchingTestFiles
+\fB::tcltest::getMatchingTestFiles\fR
 .sp
 \fB::tcltest::makeFile \fIcontents name\fR
 .sp
@@ -37,11 +37,11 @@ Tcltest \- Test harness support code and utilities
 .sp
 \fB::tcltest::bytestring \fIstring\fR
 .sp
-\fB::tcltest::saveState
+\fB::tcltest::saveState\fR
 .sp
-\fB::tcltest::restoreState
+\fB::tcltest::restoreState\fR
 .sp
-\fB::tcltest::threadReap
+\fB::tcltest::threadReap\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -617,7 +617,7 @@ print additional usage information specific to your situation.
 \fB::tcltest::processCmdLineArgsFlagHook\fP
 tell the test harness about additional flags that you want it to understand.
 .TP
-\fB::tcltest::processCmdLineArgsHook\fR flags\fP
+\fB::tcltest::processCmdLineArgsHook\fR \fIflags\fP
 process the additional flags that you told the harness about in
 ::tcltest::processCmdLineArgsFlagHook.
 .TP
