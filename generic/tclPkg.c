@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.5 1999/09/21 04:20:40 hobbs Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.6 2001/04/04 16:07:21 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -51,11 +51,12 @@ typedef struct Package {
  */
 
 static int		CheckVersion _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string));
-static int		ComparePkgVersions _ANSI_ARGS_((char *v1, char *v2,
+			    CONST char *string));
+static int		ComparePkgVersions _ANSI_ARGS_((CONST char *v1, 
+                            CONST char *v2,
 			    int *satPtr));
 static Package *	FindPackage _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name));
+			    CONST char *name));
 
 /*
  *----------------------------------------------------------------------
@@ -84,8 +85,8 @@ int
 Tcl_PkgProvide(interp, name, version)
     Tcl_Interp *interp;		/* Interpreter in which package is now
 				 * available. */
-    char *name;			/* Name of package. */
-    char *version;		/* Version string for package. */
+    CONST char *name;		/* Name of package. */
+    CONST char *version;	/* Version string for package. */
 {
     return Tcl_PkgProvideEx(interp, name, version, (ClientData) NULL);
 }
@@ -94,8 +95,8 @@ int
 Tcl_PkgProvideEx(interp, name, version, clientData)
     Tcl_Interp *interp;		/* Interpreter in which package is now
 				 * available. */
-    char *name;			/* Name of package. */
-    char *version;		/* Version string for package. */
+    CONST char *name;		/* Name of package. */
+    CONST char *version;	/* Version string for package. */
     ClientData clientData;      /* clientdata for this package (normally
                                  * used for C callback function table) */
 {
@@ -148,12 +149,12 @@ Tcl_PkgProvideEx(interp, name, version, clientData)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_PkgRequire(interp, name, version, exact)
     Tcl_Interp *interp;		/* Interpreter in which package is now
 				 * available. */
-    char *name;			/* Name of desired package. */
-    char *version;		/* Version string for desired version;
+    CONST char *name;		/* Name of desired package. */
+    CONST char *version;	/* Version string for desired version;
 				 * NULL means use the latest version
 				 * available. */
     int exact;			/* Non-zero means that only the particular
@@ -163,12 +164,12 @@ Tcl_PkgRequire(interp, name, version, exact)
     return Tcl_PkgRequireEx(interp, name, version, exact, (ClientData *) NULL);
 }
 
-char *
+CONST char *
 Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
     Tcl_Interp *interp;		/* Interpreter in which package is now
 				 * available. */
-    char *name;			/* Name of desired package. */
-    char *version;		/* Version string for desired version;
+    CONST char *name;		/* Name of desired package. */
+    CONST char *version;	/* Version string for desired version;
 				 * NULL means use the latest version
 				 * available. */
     int exact;			/* Non-zero means that only the particular
@@ -350,12 +351,12 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_PkgPresent(interp, name, version, exact)
     Tcl_Interp *interp;		/* Interpreter in which package is now
 				 * available. */
-    char *name;			/* Name of desired package. */
-    char *version;		/* Version string for desired version;
+    CONST char *name;		/* Name of desired package. */
+    CONST char *version;	/* Version string for desired version;
 				 * NULL means use the latest version
 				 * available. */
     int exact;			/* Non-zero means that only the particular
@@ -365,12 +366,12 @@ Tcl_PkgPresent(interp, name, version, exact)
     return Tcl_PkgPresentEx(interp, name, version, exact, (ClientData *) NULL);
 }
 
-char *
+CONST char *
 Tcl_PkgPresentEx(interp, name, version, exact, clientDataPtr)
     Tcl_Interp *interp;		/* Interpreter in which package is now
 				 * available. */
-    char *name;			/* Name of desired package. */
-    char *version;		/* Version string for desired version;
+    CONST char *name;		/* Name of desired package. */
+    CONST char *version;	/* Version string for desired version;
 				 * NULL means use the latest version
 				 * available. */
     int exact;			/* Non-zero means that only the particular
@@ -485,7 +486,8 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_HashTable *tablePtr;
-    char *version, *argv2, *argv3, *argv4;
+    CONST char *version;
+    char *argv2, *argv3, *argv4;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
@@ -619,7 +621,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	    if (version == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetResult(interp, version, TCL_VOLATILE);
+	    Tcl_SetObjResult( interp, Tcl_NewStringObj( version, -1 ) );
 	    break;
 	}
 	case PKG_PROVIDE: {
@@ -674,7 +676,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	    if (version == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetResult(interp, version, TCL_VOLATILE);
+	    Tcl_SetObjResult( interp, Tcl_NewStringObj( version, -1 ) );
 	    break;
 	}
 	case PKG_UNKNOWN: {
@@ -776,7 +778,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 static Package *
 FindPackage(interp, name)
     Tcl_Interp *interp;		/* Interpreter to use for package lookup. */
-    char *name;			/* Name of package to fine. */
+    CONST char *name;		/* Name of package to fine. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
@@ -866,11 +868,11 @@ TclFreePackageInfo(iPtr)
 static int
 CheckVersion(interp, string)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *string;		/* Supposedly a version number, which is
+    CONST char *string;		/* Supposedly a version number, which is
 				 * groups of decimal digits separated
 				 * by dots. */
 {
-    char *p = string;
+    CONST char *p = string;
     char prevChar;
     
     if (!isdigit(UCHAR(*p))) {	/* INTL: digit */
@@ -915,7 +917,8 @@ CheckVersion(interp, string)
 
 static int
 ComparePkgVersions(v1, v2, satPtr)
-    char *v1, *v2;		/* Versions strings, of form 2.1.3 (any
+    CONST char *v1;
+    CONST char *v2;		/* Versions strings, of form 2.1.3 (any
 				 * number of version numbers). */
     int *satPtr;		/* If non-null, the word pointed to is
 				 * filled in with a 0/1 value.  1 means

@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.11 2001/03/31 07:57:31 hobbs Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.12 2001/04/04 16:07:20 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,7 @@ struct mem_header {
     struct mem_header *blink;
     MemTag *tagPtr;		/* Tag from "memory tag" command;  may be
 				 * NULL. */
-    char *file;
+    CONST char *file;
     long length;
     int line;
     unsigned char low_guard[LOW_GUARD_SIZE];
@@ -131,7 +131,7 @@ static int		CheckmemCmd _ANSI_ARGS_((ClientData clientData,
 static int		MemoryCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
 static void		ValidateMemory _ANSI_ARGS_((
-			    struct mem_header *memHeaderP, char *file,
+			    struct mem_header *memHeaderP, CONST char *file,
 			    int line, int nukeGuards));
 
 /*
@@ -200,7 +200,7 @@ TclDumpMemoryInfo(outFile)
 static void
 ValidateMemory(memHeaderP, file, line, nukeGuards)
     struct mem_header *memHeaderP;	/* Memory chunk to validate */
-    char              *file;		/* File containing the call to
+    CONST char        *file;		/* File containing the call to
 					 * Tcl_ValidateAllMemory */
     int                line;		/* Line number of call to
 					 * Tcl_ValidateAllMemory */
@@ -280,8 +280,8 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
  */
 void
 Tcl_ValidateAllMemory (file, line)
-    char  *file;	/* File from which Tcl_ValidateAllMemory was called */
-    int    line;	/* Line number of call to Tcl_ValidateAllMemory */
+    CONST char  *file;	/* File from which Tcl_ValidateAllMemory was called */
+    int          line;	/* Line number of call to Tcl_ValidateAllMemory */
 {
     struct mem_header *memScanP;
 
@@ -310,7 +310,7 @@ Tcl_ValidateAllMemory (file, line)
  */
 int
 Tcl_DumpActiveMemory (fileName)
-    char *fileName;		/* Name of the file to write info to */
+    CONST char *fileName;		/* Name of the file to write info to */
 {
     FILE              *fileP;
     struct mem_header *memScanP;
@@ -364,7 +364,7 @@ Tcl_DumpActiveMemory (fileName)
 char *
 Tcl_DbCkalloc(size, file, line)
     unsigned int size;
-    char        *file;
+    CONST char  *file;
     int          line;
 {
     struct mem_header *result;
@@ -553,9 +553,9 @@ Tcl_AttemptDbCkalloc(size, file, line)
 
 int
 Tcl_DbCkfree(ptr, file, line)
-    char *ptr;
-    char *file;
-    int   line;
+    char       *ptr;
+    CONST char *file;
+    int         line;
 {
     struct mem_header *memp;
 
@@ -630,7 +630,7 @@ char *
 Tcl_DbCkrealloc(ptr, size, file, line)
     char *ptr;
     unsigned int size;
-    char *file;
+    CONST char *file;
     int line;
 {
     char *new;
@@ -999,7 +999,7 @@ Tcl_Alloc (size)
 char *
 Tcl_DbCkalloc(size, file, line)
     unsigned int size;
-    char        *file;
+    CONST char  *file;
     int          line;
 {
     char *result;
@@ -1073,10 +1073,10 @@ Tcl_Realloc(ptr, size)
 
 char *
 Tcl_DbCkrealloc(ptr, size, file, line)
-    char *ptr;
+    char        *ptr;
     unsigned int size;
-    char *file;
-    int line;
+    CONST char  *file;
+    int          line;
 {
     char *result;
 
@@ -1143,9 +1143,9 @@ Tcl_Free (ptr)
 
 int
 Tcl_DbCkfree(ptr, file, line)
-    char *ptr;
-    char *file;
-    int   line;
+    char       *ptr;
+    CONST char *file;
+    int         line;
 {
     TclpFree(ptr);
     return 0;
@@ -1169,15 +1169,15 @@ Tcl_InitMemory(interp)
 
 int
 Tcl_DumpActiveMemory(fileName)
-    char *fileName;
+    CONST char *fileName;
 {
     return TCL_OK;
 }
 
 void
 Tcl_ValidateAllMemory(file, line)
-    char  *file;
-    int    line;
+    CONST char *file;
+    int         line;
 {
 }
 
