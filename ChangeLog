@@ -1,3 +1,9 @@
+2003-07-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3:
+	* doc/Translate.3: better documentation of Tcl_TranslateFileName
+	and related functions [Bug 775220]
+
 2003-07-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tcl.h: Revert change made on 2003-07-21
