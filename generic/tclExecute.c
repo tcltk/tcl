@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.92 2003/02/06 22:44:57 mdejong Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.93 2003/02/18 02:25:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2650,10 +2650,16 @@ TclExecuteByteCode(interp, codePtr)
 	 * Check that at least one of the objects is Unicode before
 	 * promoting both.
 	 */
+
 	if ((valuePtr->typePtr == &tclStringType)
 	        || (value2Ptr->typePtr == &tclStringType)) {
-	    match = Tcl_UniCharCaseMatch(Tcl_GetUnicode(valuePtr),
-	            Tcl_GetUnicode(value2Ptr), nocase);
+	    Tcl_UniChar *ustring1, *ustring2;
+	    int length1, length2;
+
+	    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length1);
+	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
+	    match = TclUniCharMatch(ustring1, length1, ustring2, length2,
+		    nocase);
 	} else {
 	    match = Tcl_StringCaseMatch(TclGetString(valuePtr),
 		    TclGetString(value2Ptr), nocase);
