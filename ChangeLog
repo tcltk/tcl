@@ -1,3 +1,9 @@
+2003-12-15  David Gravereaux <davygrvy@pobox.com>
+
+	* wintclsh.rc: Slight modification to the STRINGIFY macro to
+	support Borland's rc tool.  From Helmut Giese
+	<hgiese@ratiosoft.com>.
+
 2003-12-14  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclInt.decls: commented-out entry for
