@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.4 1999/07/02 06:05:39 welch Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.5 1999/07/02 22:08:28 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -47,6 +47,7 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
+extern TclStubs tclStubs;
 /*
  * The following static indicates the number of threads that have
  * initialized notifiers.  It controls the lifetime of the TclNotifier
