@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.3 2001/12/05 18:22:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.4 2002/03/18 22:30:49 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1207,10 +1207,14 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		    code = TclCompileTokens(interp, tokenPtr+2,
 			    tokenPtr->numComponents-1, envPtr);
 		    if (code != TCL_OK) {
-			sprintf(buffer,
+			STRING (150, errorBuffer);
+
+			NEWSTR (150, errorBuffer);
+			sprintf(errorBuffer,
 			        "\n    (parsing index for array \"%.*s\")",
 				((nameBytes > 100)? 100 : nameBytes), name);
-			Tcl_AddObjErrorInfo(interp, buffer, -1);
+			Tcl_AddObjErrorInfo(interp, errorBuffer, -1);
+			RELTEMP (errorBuffer);
 			goto error;
 		    }
 		    depthForVar += envPtr->maxStackDepth;

@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: TCL_MEM_DEBUG.3,v 1.2.14.1 2001/09/28 02:26:35 dgp Exp $
+'\" RCS: @(#) $Id: TCL_MEM_DEBUG.3,v 1.2.14.1.2.1 2002/03/18 22:30:49 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH TCL_MEM_DEBUG 3 8.1 Tcl "Tcl Library Procedures"
@@ -18,7 +18,7 @@ includes C and Tcl functions which can aid with debugging
 memory leaks, memory allocation overruns, and other memory related
 errors.
 
-.SH ENABLING MEMORY DEBUGGING
+.SH "ENABLING MEMORY DEBUGGING"
 .PP
 To enable memory debugging, Tcl should be recompiled from scratch with
 \fBTCL_MEM_DEBUG\fR defined.  This will also compile in a non-stub
@@ -34,7 +34,7 @@ functions \fBTcl_ValidateAllMemory\fR, and \fBTcl_DumpActiveMemory\fR,
 and the Tcl \fBmemory\fR command can be used to validate and examine
 memory usage.
 
-.SH GUARD ZONES
+.SH "GUARD ZONES"
 .PP
 When memory debugging is enabled, whenever a call to \fBckalloc\fR is
 made, slightly more memory than requested is allocated so the memory debugging
@@ -55,7 +55,7 @@ This allows you to detect the common sorts of one-off problems, where
 not enough space was allocated to contain the data written, for
 example.
 
-.SH DEBUGGING DIFFICULT MEMORY CORRUPTION PROBLEMS
+.SH "DEBUGGING DIFFICULT MEMORY CORRUPTION PROBLEMS"
 .PP
 Normally, Tcl compiled with memory debugging enabled will make it easy
 to isolate a corruption problem.  Turning on memory validation with

@@ -530,7 +530,6 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #			Flags used when running the compiler in debug mode
 #	CFLAGS_OPTIMIZE -
 #			Flags used when running the compiler in optimize mode
-#
 #	EXTRA_CFLAGS
 #
 #	Subst's the following vars:
@@ -968,7 +967,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
 	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr a000000"
-	    SHLIB_LD_LIBS="${LIBS}"
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""

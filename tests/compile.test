@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.8 2000/04/10 17:18:58 ericm Exp $
+# RCS: @(#) $Id: compile.test,v 1.8.6.1 2002/03/18 22:30:51 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -190,6 +190,14 @@ test compile-10.1 {BLACKBOX: exception stack overflow} {
     }
 } {}
 
+# Test to catch buffer overrun in TclCompileTokens from bug 530320
+# Backported from Tcl8.4 - hence the non-sequential numbering.
+test compile-12.3 {check for a buffer overrun} {
+    proc crash {} {
+	puts $array([expr {a+2}])
+    }
+    list [catch crash msg] $msg
+} {1 {syntax error in expression "a+2"}}
 
 
 # cleanup

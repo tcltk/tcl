@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.12.2.2 2001/12/04 21:52:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.12.2.3 2002/03/18 22:30:49 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2785,6 +2785,24 @@ WriteChars(chanPtr, src, srcLen)
 	    Tcl_UtfToExternal(NULL, encoding, stage, stageLen, flags,
 		    &statePtr->outputEncodingState, dst,
 		    dstLen + BUFFER_PADDING, &stageRead, &dstWrote, NULL);
+
+	    /* Fix for SF #506297, reported by Martin Forssen <ruric@users.sourceforge.net>.
+	     *
+	     * The encoding chosen in the script exposing the bug
+	     * writes out three intro characters when
+	     * TCL_ENCODING_START is set, but does not consume any
+	     * input as TCL_ENCODING_END is cleared. As some output
+	     * was generated the enclosing loop calls UtfToExternal
+	     * again, again with START set. Three more characters in
+	     * the out and still no use of input ... To break this
+	     * infinite loop we remove TCL_ENCODING_START from the set
+	     * of flags after the first call (no condition is
+	     * required, the later calls remove an unset flag, which
+	     * is a no-op). This causes the subsequent calls to
+	     * UtfToExternal to consume and convert the actual input.
+	     */
+
+	    flags &= ~TCL_ENCODING_START;
 	    if (stageRead + dstWrote == 0) {
 		/*
 		 * We have an incomplete UTF-8 character at the end of the
@@ -3416,7 +3434,7 @@ FilterInputBytes(chanPtr, gsPtr)
     char *dst;
     int offset, toRead, dstNeeded, spaceLeft, result, rawLen, length;
     Tcl_Obj *objPtr;
-#define ENCODING_LINESIZE   30	/* Lower bound on how many bytes to convert
+#define ENCODING_LINESIZE   50	/* Lower bound on how many bytes to convert
 				 * at a time.  Since we don't know a priori
 				 * how many bytes of storage this many source
 				 * bytes will use, we actually need at least
@@ -3499,6 +3517,13 @@ FilterInputBytes(chanPtr, gsPtr)
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 	    dst, spaceLeft, &gsPtr->rawRead, &gsPtr->bytesWrote,
 	    &gsPtr->charsWrote); 
+
+    /*
+     * Make sure that if we go through 'gets', that we reset the
+     * TCL_ENCODING_START flag still.  [Bug #523988]
+     */
+    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
+
     if (result == TCL_CONVERT_MULTIBYTE) {
 	/*
 	 * The last few bytes in this channel buffer were the start of a
@@ -5689,6 +5714,10 @@ Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
                 Tcl_DStringAppendElement(dsPtr, buf);
             }
         }
+        if ( !(flags & (TCL_READABLE|TCL_WRITABLE))) {
+            /* Not readable or writable (server socket) */
+            Tcl_DStringAppendElement(dsPtr, "");
+        }
         if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
                 (TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
             Tcl_DStringEndSublist(dsPtr);
@@ -5728,6 +5757,10 @@ Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
             } else {
                 Tcl_DStringAppendElement(dsPtr, "lf");
             }
+        }
+        if ( !(flags & (TCL_READABLE|TCL_WRITABLE))) {
+            /* Not readable or writable (server socket) */
+            Tcl_DStringAppendElement(dsPtr, "auto");
         }
         if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
                 (TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
@@ -5899,8 +5932,8 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
         } else if (argc != 2) {
             if (interp) {
                 Tcl_AppendResult(interp,
-                        "bad value for -eofchar: should be a list of one or",
-                        " two elements", (char *) NULL);
+                        "bad value for -eofchar: should be a list of zero,",
+                        " one, or two elements", (char *) NULL);
             }
             ckfree((char *) argv);
             return TCL_ERROR;

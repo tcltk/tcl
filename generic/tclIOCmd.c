@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.7.2.1.2.1 2001/11/28 17:58:36 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.7.2.1.2.2 2002/03/18 22:30:50 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -232,16 +232,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    if (objc == 3) {
-	/*
-	 * Variable gets line, interp get bytecount.
-	 */
-
 	linePtr = Tcl_NewObj();
-    }
-    else {
-	linePtr = Tcl_GetObjResult(interp);
-    }
 
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
@@ -265,6 +256,8 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
 	resultPtr = Tcl_GetObjResult(interp);
 	Tcl_SetIntObj(resultPtr, lineLen);
         return TCL_OK;
+    } else {
+	Tcl_SetObjResult(interp, linePtr);
     }
     return TCL_OK;
 }

@@ -41,6 +41,9 @@ if test "$y" != "xyzzyTestingaverylongfilename.foo"; then
 fi
 }
 
+set case_insensitive_test { if test "${CASEINSENSITIVEFS:-}" != "1"; then} 
+set case_insensitive_test_fi {; fi} 
+
 foreach file $argv {
     set in [open $file]
     set tail [file tail $file]
@@ -61,22 +64,22 @@ foreach file $argv {
 		foreach name [split $line ,] {
 		    regsub -all {(\\)? } $name "" name
 		    if {![string match $name*$ext $tail]} {
-			lappend namelist $name$ext
-			append rmOutput "    rm -f $name$ext\n"
-			append lnOutput "    ln $tail $name$ext\n"
+		    	if {[string match -nocase $name*$ext $tail]} {
+			   set tst $case_insensitive_test 
+			   set tstfi $case_insensitive_test_fi 
+		    	} else {
+			   set tst ""
+			   set tstfi ""
 		    }
+			lappend namelist $name$ext
+			append rmOutput "   $tst rm -f $name$ext$tstfi\n"
+			append lnOutput "   $tst ln $tail $name$ext$tstfi\n"
 		}
-		if { [llength $namelist] == 1 && [string compare -nocase $tail [lindex $namelist 0]] ==0} {
-		    puts {if test "${CASEINSENSITIVEFS:-}" != "1"; then}
-		    set state fi
 		}
 		if { [llength $namelist] } {
 		    puts "if test -r $tail; then"
 		    puts -nonewline $rmOutput
 		    puts -nonewline $lnOutput
-		    puts "fi"
-		}
-		if { $state == "fi" } {
 		    puts "fi"
 		}
 		set state end

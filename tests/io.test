@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.14.2.1 2001/10/09 12:20:17 dkf Exp $
+# RCS: @(#) $Id: io.test,v 1.14.2.1.2.1 2002/03/18 22:30:51 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -89,6 +89,19 @@ test io-1.7 {Tcl_WriteChars: WriteChars} {
     close $f
     contents test1
 } "a\x93\xe1\x00"
+test io-1.8 {Tcl_WriteChars: WriteChars} {
+    # This test written for SF bug #506297.
+    #
+    # Executing this test without the fix for the referenced bug
+    # applied to tcl will cause tcl, more specifically WriteChars, to
+    # go into an infinite loop.
+
+    set f [open test2 w] 
+    fconfigure      $f -encoding iso2022-jp 
+    puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
+    close           $f 
+    contents test2
+} "\x1b(B    \x1b\$B\$O"
 
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
@@ -5002,6 +5015,51 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     close $s2
     set modes
 } {auto crlf}
+
+test io-39.22 {Tcl_SetChannelOption, invariance} {unixOnly} {
+    removeFile test1
+    set f1 [open test1 w+]
+    set l ""
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar {ON GO}
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar D
+    lappend l [fconfigure $f1 -eofchar]
+    close $f1
+    set l
+} {{{} {}} {O G} {D D}}
+
+test io-39.22a {Tcl_SetChannelOption, invariance} {
+    removeFile test1
+    set f1 [open test1 w+]
+    set l [list]
+    fconfigure $f1 -eofchar {ON GO}
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar D
+    lappend l [fconfigure $f1 -eofchar]
+    lappend l [list [catch {fconfigure $f1 -eofchar {1 2 3}} msg] $msg]
+    close $f1
+    set l
+} {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+
+
+test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
+        writeable, it should still have valid -eofchar and -translation options } {
+    set l [list]
+    set sock [socket -server accept 0]
+    lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
+    close $sock
+    set l
+} {{{}} auto}
+test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
+        writable so we can't change -eofchar or -translation } {
+    set l [list]
+    set sock [socket -server accept 0]
+    fconfigure $sock -eofchar D -translation lf
+    lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
+    close $sock
+    set l
+} {{{}} auto}
 
 test io-40.1 {POSIX open access modes: RDWR} {
     removeFile test3

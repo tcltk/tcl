@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.10.2.1 2001/04/03 22:54:38 hobbs Exp $
+# RCS: @(#) $Id: scan.test,v 1.10.2.1.2.1 2002/03/18 22:30:51 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -231,9 +231,20 @@ test scan-4.39 {Tcl_ScanObjCmd, base-16 integer scanning} {
     list [scan {+1238 -123a 0123} {%x%x%x} x y z] $x $y $z
 } {3 4664 -4666 291}
 test scan-4.40 {Tcl_ScanObjCmd, base-16 integer scanning} {
+    # The behavior changed in 8.4a4/8.3.4cvs (6 Feb) to correctly
+    # return '1' for 0x1 scanned via %x, to comply with 8.0 and C scanf.
+    # Bug #495213
     set x {}
     list [scan {aBcDeF AbCdEf 0x1} {%x%x%x} x y z] $x $y $z
-} {3 11259375 11259375 0}
+} {3 11259375 11259375 1}
+test scan-4.40.1 {Tcl_ScanObjCmd, base-16 integer scanning} {
+    set x {}
+    list [scan {0xF 0x00A0B 0X0XF} {%x %x %x} x y z] $x $y $z
+} {3 15 2571 0}
+test scan-4.40.2 {Tcl_ScanObjCmd, base-16 integer scanning} {
+    catch {unset x}
+    list [scan {xF} {%x} x] [info exists x]
+} {0 0}
 test scan-4.41 {Tcl_ScanObjCmd, base-unknown integer scanning} {
     set x {}
     list [scan {10 010 0x10} {%i%i%i} x y z] $x $y $z

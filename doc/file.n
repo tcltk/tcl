@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.5 2000/01/12 11:10:35 hobbs Exp $
+'\" RCS: @(#) $Id: file.n,v 1.5.6.1 2002/03/18 22:30:49 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -242,9 +242,9 @@ Returns the value of the symbolic link given by \fIname\fR (i.e. the name
 of the file it points to).  If \fIname\fR isn't a symbolic link or its
 value cannot be read, then an error is returned.  On systems that don't
 support symbolic links this option is undefined.
-.PP
+.TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
-.br
+.TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .RS
 The first form takes the file or directory specified by pathname

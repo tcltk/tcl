@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.9 2000/04/25 00:54:53 ericm Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.9.12.1 2002/03/18 22:30:49 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -445,7 +445,7 @@ procedure may be invoked to determine if the channel is blocked because
 of input unavailability.
 .PP
 \fBTcl_Gets\fR is the same as \fBTcl_GetsObj\fR except the resulting
-characters are appended to the appended to the dynamic string given by
+characters are appended to the dynamic string given by
 \fIdsPtr\fR rather than a Tcl object.
 
 .SH "TCL_UNGETS"

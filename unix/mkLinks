@@ -284,6 +284,7 @@ if test -r DString.3; then
     rm -f Tcl_DStringLength.3
     rm -f Tcl_DStringValue.3
     rm -f Tcl_DStringSetLength.3
+    rm -f Tcl_DStringTrunc.3
     rm -f Tcl_DStringFree.3
     rm -f Tcl_DStringResult.3
     rm -f Tcl_DStringGetResult.3
@@ -295,6 +296,7 @@ if test -r DString.3; then
     ln DString.3 Tcl_DStringLength.3
     ln DString.3 Tcl_DStringValue.3
     ln DString.3 Tcl_DStringSetLength.3
+    ln DString.3 Tcl_DStringTrunc.3
     ln DString.3 Tcl_DStringFree.3
     ln DString.3 Tcl_DStringResult.3
     ln DString.3 Tcl_DStringGetResult.3
@@ -969,11 +971,9 @@ if test -r WrongNumArgs.3; then
     rm -f Tcl_WrongNumArgs.3
     ln WrongNumArgs.3 Tcl_WrongNumArgs.3
 fi
-if test "${CASEINSENSITIVEFS:-}" != "1"; then
 if test -r http.n; then
-    rm -f Http.n
-    ln http.n Http.n
-fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f Http.n; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln http.n Http.n; fi
 fi
 if test -r library.n; then
     rm -f auto_execok.n
@@ -1017,10 +1017,8 @@ if test -r safe.n; then
     rm -f SafeBase.n
     ln safe.n SafeBase.n
 fi
-if test "${CASEINSENSITIVEFS:-}" != "1"; then
 if test -r tcltest.n; then
-    rm -f Tcltest.n
-    ln tcltest.n Tcltest.n
-fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f Tcltest.n; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln tcltest.n Tcltest.n; fi
 fi
 exit 0

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.32.2.5 2001/09/07 02:43:39 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.32.2.5.2.1 2002/03/18 22:30:50 andreas_kupries Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -24,7 +24,7 @@
 
 package require Tcl 8.2
 # keep this in sync with pkgIndex.tcl
-package provide http 2.4
+package provide http 2.4.2
 
 namespace eval http {
     variable http
@@ -198,7 +198,7 @@ proc http::reset { token {why reset} } {
     if {[info exists state(error)]} {
 	set errorlist $state(error)
 	unset state
-	eval error $errorlist
+	eval ::error $errorlist
     }
 }
 
@@ -404,7 +404,13 @@ proc http::geturl { url args } {
     if {[catch {
 	puts $s "$how $srvurl HTTP/1.0"
 	puts $s "Accept: $http(-accept)"
+	if {$port == $defport} {
+	    # Don't add port in this case, to handle broken servers.
+	    # [Bug #504508]
+	    puts $s "Host: $host"
+	} else {
 	puts $s "Host: $host:$port"
+	}
 	puts $s "User-Agent: $http(-useragent)"
 	foreach {key value} $state(-headers) {
 	    regsub -all \[\n\r\]  $value {} value

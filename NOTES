@@ -15,7 +15,7 @@ the associated feature of the core.
 	TCL_NO_SOCKETS         /* Disable "tcp"  channel driver */
 	TCL_NO_TTY             /* Disable "tty"  channel driver */
 	TCL_NO_PIPES           /* Disable "pipe" channel driver */
-	TCL_NO_PIDCMD          /* Disable "pid" command */
+	TCL_NO_PIDCMD          /* Disable [pid] command */
 	TCL_NO_NONSTDCHAN      /* Disable creation of channels beyond std* */
 	TCL_NO_CHANNELCOPY     /* Disable channel copying, C/Tcl [fcopy] */
 	TCL_NO_CHANNEL_READ    /* Disable Tcl_ReadChars, [read] */

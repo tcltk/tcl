@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.1 2001/12/04 21:52:09 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.2 2002/03/18 22:30:50 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -184,10 +184,12 @@ typedef struct Namespace {
 				  * namespace has already cached a Command *
 				  * pointer; this causes all its cached
 				  * Command* pointers to be invalidated. */
-    int resolverEpoch;		 /* Incremented whenever the name resolution
-				  * rules change for this namespace; this
-				  * invalidates all byte codes compiled in
-				  * the namespace, causing the code to be
+    int resolverEpoch;		 /* Incremented whenever (a) the name resolution
+				  * rules change for this namespace or (b) a 
+				  * newly added command shadows a command that
+				  * is compiled to bytecodes.
+				  * This invalidates all byte codes compiled
+				  * in the namespace, causing the code to be
 				  * recompiled under the new rules. */
     Tcl_ResolveCmdProc *cmdResProc;
 				 /* If non-null, this procedure overrides

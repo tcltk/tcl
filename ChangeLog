@@ -1,3 +1,179 @@
+2002-03-18  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclCompile.c (TclCompileTokens): Modified imported bugfix
+	  to use a heap variable for the message buffer instead of placing
+	  it on the stack.
+
+	* Updated "mod-8-3-1-branch" to head of "core-8-3-1-branch" to get
+	  the newest fixes for tcl 8.3.4 into this branch.
+
+2002-03-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclScan.c (Tcl_ScanObjCmd): prevented ckfree being
+	called on a pointer to NULL.
+
+2002-03-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	Backport of Donal Fellows patch:
+	* tests/compile.test (compile-12.3): Test to detect bug 530320.
+	* generic/tclCompile.c (TclCompileTokens): Fixed buffer overrun
+	reported in bug 530320.
+
+2002-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test:
+	* tests/encoding.test: updated to reflect iso2022 escape change
+	* library/encoding/iso2022-jp.enc: 
+	* library/encoding/iso2022.enc: 
+	* tools/encoding/iso2022-jp.esc:
+	* tools/encoding/iso2022.esc: gave <ESC>$B precedence over <ESC>$@,
+	based on comments (point 1) in [Bug #219283] (rfc 1468)
+
+	* tests/encoding.test: added encoding-23.* tests
+	* generic/tclIO.c (FilterInputBytes): reset the TCL_ENCODING_START
+	flags in the ChannelState when using 'gets'. [Bug #523988]
+	Also reduced the value of ENCODING_LINESIZE from 30 to 20 as this
+	seems to improve the performance of 'gets' according to tclbench.
+
+2002-02-27  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/tclUnixChan.c (TclpOpenFileChannel): Added code to regonize
+	  "/dev/tty" (by name) and to not handle it as tty / serial
+	  line. This is the controlling terminal and is special. Setting
+	  it into raw mode as is done for other tty's is a bad idea. This
+	  is a hackish fix for expect SGF Bug #520624.
+
+2002-02-25  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* mac/tclMacSock.c (TcpGetOptionProc): Changed to recognize the
+	  option "-error". Essentially ignores the option, always
+	  returning an empty string.
+
+2002-02-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinNotify.c (Tcl_FinalizeNotifier): backported fix for
+	  [Bug #217982] which also affected Tkinter [Python Bug #216289]
+
+2002-02-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclLoadDyld.c: updated to use Mac OS X 10.1 dyld APIs that     
+	  have more libdl-like semantics. (bug #514392)
+
+2002-02-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes: reversed the order of 8.3.3 changes.
+
+2002-02-15  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes: First draft of Tcl changes for 8.3.5 release.
+
+2002-02-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/scan.test:
+	* generic/tclScan.c (Tcl_ScanObjCmd): corrected scan 0x... %x
+	  handling that didn't accept the 0x as a prelude to a base 16
+	  number.	 [Bug #495213]
+
+2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/tclUnixChan.c (FileOutputProc): Fixed [bug 465765] reported
+	  by Dale Talcott <daletalcott@users.sourceforge.net>. Avoid
+	  writing nothing into a file as STREAM based implementations will
+	  consider this a EOF (if the file is a pipe). Not done in the
+	  generic layer as this type of writing is actually useful to
+	  check the state of a socket.
+
+2002-02-05  Don Porter <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:
+	* library/http/pkgIndex.tcl:  Corrected use of http::error when
+	::error was intended.  Bump to http 2.4.2.
+
+2002-02-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* tests/io.test: io-39.22 split into two tests, one platform
+	  dependent, the other not. -eofchar is not empty on the windows
+	  platform.
+
+2002-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Make -eofchar and -translation options read only for
+	server sockets. [Bug 496733]
+
+	* generic/tclIO.c (Tcl_GetChannelOption, Tcl_SetChannelOption):
+	Instead of returning nothing for the -translation option
+	on a server socket, always return "auto". Return the empty
+	string enclosed in quotes for the -eofchar option on
+	a server socket. Fixup -eofchar usage message so that
+	it matches the implementation.
+	* tests/io.test: Add -eofchar tests and -translation tests
+	to ensure options are read only on server sockets.
+	* tests/socket.test: Update tests to account for -eofchar
+	and -translation option changes.
+
+2002-01-24  Jeff Hobbs	<jeffh@ActiveState.com>
+
+	* library/http/pkgIndex.tcl:
+	* library/http/http.tcl: don't add port in default case to handle
+	broken servers.	 http bumped to 2.4.1  [Bug #504508]
+
+2002-01-21  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIO.c (WriteChars): Fix for SF #506297, reported by
+	  Martin Forssen <ruric@users.sourceforge.net>. The encoding
+	  chosen in the script exposing the bug writes out three intro
+	  characters when TCL_ENCODING_START is set, but does not consume
+	  any input as TCL_ENCODING_END is cleared. As some output was
+	  generated the enclosing loop calls UtfToExternal again, again
+	  with START set. Three more characters in the out and still no
+	  use of input ... To break this infinite loop we remove
+	  TCL_ENCODING_START from the set of flags after the first call
+	  (no condition is required, the later calls remove an unset flag,
+	  which is a no-op). This causes the subsequent calls to
+	  UtfToExternal to consume and convert the actual input.
+
+2002-01-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Fixed bug #504642 as
+	  reported by Brian Griffin <bgriffin@users.sourceforge.net>,
+	  using his patch. Before the patch the generic I/O layer held an
+	  unannounced reference to the interp result to store the read
+	  line into. This unfortunately has disastrous results if the
+	  channel driver executes a tcl script to perform its operation,
+	  this freeing the interp result. In that case we are
+	  dereferencing essentially a dangling reference. It is not truly
+	  dangling because the object is in the free list, but this only
+	  causes us to smash the free list and have the error occur later
+	  somewhere else. The patch simply creates a new object for the
+	  line and later sets it into the interp result when we are done
+	  with reading.
+
+2001-12-28  Jeff Hobbs	<jeffh@ActiveState.com>
+
+	* library/init.tcl (auto_execok): make sure env(COMSPEC) on
+	Windows is executed with the right case, as it may otherwise fail
+	inexplicably.
+
+2001-12-21  Daniel Steffen <das@users.sourceforge.net>
+
+	* unix/tcl.m4: fixed incorrect SHLIB_LD_LIBS
+	  setting for MacOSX / Darwin.
+	* unix/configure: Regen.
+	* unix/mkLinks.tcl: improved case-insensitive
+	  filesystem support.
+	* unix/mkLinks: Regen.
+
+2001-12-10  Don Porter <dgp@users.sourceforge.net>
+  
+	* doc/Access.3:
+	* doc/DString.3:
+	* doc/ExprLong.3:
+	* doc/TCL_MEM_DEBUG.3:
+	* doc/Utf.3:
+	* doc/file.n: Several typo and formatting corrections discovered
+	  during conversion to TMML.  Thanks to Joe English.  [Patch
+	  490514]
+
 2001-12-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* stack.base.html:
@@ -66,6 +242,12 @@
 	* tclUtil.c: NRE1 patch by Miguel Sofer. Several new controlling
 	  macros for information on the stack. Parser information on the
 	  stack can now be switched to allocation on the heap.
+
+2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/namespace.test: backporting patch for [Bug 231259]
 
 2001-11-28  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
