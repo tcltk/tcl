@@ -1,3 +1,9 @@
+2004-04-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:		Replaced Kevin Kenny's temporary
+	* generic/tclThreadAlloc.c:	fix for Bug 945447 with a cleaner,
+	more permanent replacement.  
+
 2004-04-30  Kevin B. Kenny   <kennykb@acm.org>
 
 	* generic/tclThreadAlloc.c: Added a temporary (or so I hope!)

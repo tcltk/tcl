@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.154 2004/04/25 20:16:31 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.155 2004/04/30 20:06:43 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2175,6 +2175,9 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 EXTERN Tcl_Obj *TclThreadAllocObj _ANSI_ARGS_((void));
 EXTERN void TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
+EXTERN Tcl_Mutex *TclpNewAllocMutex _ANSI_ARGS_((void));
+EXTERN void *TclpGetAllocCache _ANSI_ARGS_((void));
+EXTERN void TclpSetAllocCache _ANSI_ARGS_((void *));
 
 #  define TclAllocObjStorage(objPtr) \
        (objPtr) = TclThreadAllocObj()
