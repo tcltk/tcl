@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.80 2002/07/19 12:31:09 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.81 2002/07/22 10:04:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3160,7 +3160,7 @@ TclExecuteByteCode(interp, codePtr)
 	if ((t1Ptr == &tclDoubleType) || (t2Ptr == &tclDoubleType)) {
 	    /*
 	     * Do double arithmetic.
-		     */
+	     */
 	    doDouble = 1;
 	    if (t1Ptr == &tclIntType) {
 		d1 = i;       /* promote value 1 to double */
@@ -4457,6 +4457,22 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	int length;
 
 	s = Tcl_GetStringFromObj(opndPtr, &length);
+	/*
+	 * strtod() isn't particularly consistent about detecting Inf
+	 * and NaN between platforms.
+	 */
+	if (length == 3) {
+	    if ((s[0]=='n' || s[0]=='N') && (s[1]=='a' || s[1]=='A') &&
+		    (s[2]=='n' || s[2]=='N')) {
+		msg = "non-numeric floating-point value";
+		goto makeErrorMessage;
+	    }
+	    if ((s[0]=='i' || s[0]=='I') && (s[1]=='n' || s[1]=='N') &&
+		    (s[2]=='f' || s[2]=='F')) {
+		msg = "infinite floating-point value";
+		goto makeErrorMessage;
+	    }
+	}
 	if (TclLooksLikeInt(s, length)) {
 	    /*
 	     * If something that looks like an integer appears here, then 
@@ -4482,6 +4498,7 @@ IllegalExprOperandType(interp, pc, opndPtr)
 		msg = "floating-point value";
 	    }
 	}
+      makeErrorMessage:
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't use ",
 		msg, " as operand of \"", operatorStrings[opCode - INST_LOR],
 		"\"", (char *) NULL);

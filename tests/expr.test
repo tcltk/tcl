@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.15 2002/07/10 08:25:59 dkf Exp $
+# RCS: @(#) $Id: expr.test,v 1.16 2002/07/22 10:04:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -774,6 +774,34 @@ test expr-21.9 	{non-numeric boolean literals} {expr !off  } 1
 test expr-21.10 {non-numeric boolean literals} {expr !on   } 0
 test expr-21.11 {non-numeric boolean literals} {expr !no   } 1
 test expr-21.12 {non-numeric boolean literals} {expr !yes  } 0
+
+# Test for non-numeric float handling
+test expr-22.1 {non-numeric floats} {
+    list [catch {expr {NaN + 1}} msg] $msg
+} {1 {domain error: argument not in valid range}}
+test expr-22.2 {non-numeric floats} {
+    list [catch {expr {Inf + 1}} msg] $msg
+} {1 {can't use infinite floating-point value as operand of "+"}}
+test expr-22.3 {non-numeric floats} {
+    set nan NaN
+    list [catch {expr {$nan + 1}} msg] $msg
+} {1 {domain error: argument not in valid range}}
+test expr-22.4 {non-numeric floats} {
+    set inf Inf
+    list [catch {expr {$inf + 1}} msg] $msg
+} {1 {can't use infinite floating-point value as operand of "+"}}
+test expr-22.5 {non-numeric floats} {
+    list [catch {expr NaN} msg] $msg
+} {1 {domain error: argument not in valid range}}
+test expr-22.6 {non-numeric floats} {
+    list [catch {expr Inf} msg] $msg
+} {1 {floating-point value too large to represent}}
+test expr-22.7 {non-numeric floats} {
+    list [catch {expr {1 / NaN}} msg] $msg
+} {1 {domain error: argument not in valid range}}
+test expr-22.8 {non-numeric floats} knownBug {
+    list [catch {expr {1 / Inf}} msg] $msg
+} {1 {can't use infinite floating-point value as operand of "/"}}
 
 # cleanup
 if {[info exists a]} {
