@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.2 1998/09/14 18:39:48 stanton Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.2.4.1 1999/03/03 00:38:36 stanton Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 7.0 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_Eval, Tcl_VarEval, Tcl_EvalFile, Tcl_GlobalEval \- execute Tcl commands
+Tcl_Eval, Tcl_VarEval, Tcl_VarEvalVA, Tcl_EvalFile, Tcl_GlobalEval \- execute Tcl commands
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -21,6 +21,9 @@ int
 .sp
 int
 \fBTcl_VarEval\fR(\fIinterp, string, string, ... \fB(char *) NULL\fR)
+.sp
+int
+\fBTcl_VarEvalVA\fR(\fIinterp, argList\fR)
 .sp
 int
 \fBTcl_EvalFile\fR(\fIinterp, fileName\fR)
@@ -37,6 +40,9 @@ Command (or sequence of commands) to execute.  Must be in writable
 memory (\fBTcl_Eval\fR makes temporary modifications to the command).
 .AP char *string in
 String forming part of Tcl command.
+.AP va_list argList in
+An argument list which must have been initialised using
+\fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
 .AP char *fileName in
 Name of file containing Tcl command string.
 .BE
@@ -75,6 +81,9 @@ It returns the result of the command and also modifies
 \fIinterp->result\fR in the usual fashion for Tcl commands.
 The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
 of arguments.
+.PP
+\fBTcl_VarEvalVA\fR is the same as \fBTcl_VarEval\fR except that
+instead of taking a variable number of arguments it takes an argument list.
 .PP
 \fBTcl_EvalFile\fR reads the file given by \fIfileName\fR and evaluates
 its contents as a Tcl command by calling \fBTcl_Eval\fR.  It returns

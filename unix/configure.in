@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.28 1999/02/03 18:37:42 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.28.4.1 1999/03/03 00:38:45 stanton Exp $
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -641,6 +641,17 @@ AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, main, [LIBS="$LIBS -lnsl"]))
 #			a .a extension whereas shared objects for loadable
 #			extensions have a .so extension.  Defaults to
 #			${VERSION}${SHLIB_SUFFIX}.
+#	TCL_NEEDS_EXP_FILE -
+#			1 means that an export file is needed to link to a
+#			shared library.
+#
+#	TCL_EXP_FILE -  The name of the installed export / import file which 
+#			should be used to link to the Tcl shared library.
+#			Empty if Tcl is unshared.
+#	TCL_BUILD_EXP_FILE -
+#			The name of the built export / import file which
+#			should be used to link to the Tcl shared library.
+#			Empty if Tcl is unshared.
 #--------------------------------------------------------------------
 
 # Step 1: set the variable "system" to hold the name and version number
@@ -678,12 +689,16 @@ AC_CHECK_LIB(dl, dlopen, have_dl=yes, have_dl=no)
 
 fullSrcDir=`cd $srcdir; pwd`
 EXTRA_CFLAGS=""
+TCL_EXPORT_FILE_SUFFIX=""
 TCL_UNSHARED_LIB_SUFFIX=""
 TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
 ECHO_VERSION='`echo ${VERSION}`'
 TCL_LIB_VERSIONS_OK=ok
 CFLAGS_DEBUG=-g
 CFLAGS_OPTIMIZE=-O
+TCL_NEEDS_EXP_FILE=0
+TCL_BUILD_EXP_FILE=""
+TCL_EXP_FILE=""
 case $system in
     AIX-4.[[2-9]])
 	SHLIB_CFLAGS=""
@@ -694,8 +709,8 @@ case $system in
 	DL_LIBS="-ldl"
 	LD_FLAGS=""
 	LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	AIX=yes
-	TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
+	TCL_NEEDS_EXP_FILE=1
+	TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
 	;;
     AIX-*)
 	SHLIB_CFLAGS=""
@@ -706,7 +721,8 @@ case $system in
 	DL_LIBS="-lld"
 	LD_FLAGS=""
 	LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
+	TCL_NEEDS_EXP_FILE=1
+	TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
 	;;
     BSD/OS-2.1*|BSD/OS-3*|BSD/OS-4*)
 	SHLIB_CFLAGS=""
@@ -1232,19 +1248,6 @@ else
     MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
 fi
 
-# Note:  in the following variable, it's important to use the absolute
-# path name of the Tcl directory rather than "..":  this is because
-# AIX remembers this path and will attempt to use it at run-time to look
-# up the Tcl library.
-
-if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
-else
-    TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
-fi
-TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
-TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
-
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # so that the backslashes quoting the DBX braces are dropped.
 
@@ -1252,9 +1255,35 @@ TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
 DBGX='${TCL_DBGX}'
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
+# Note:  in the following variable, it's important to use the absolute
+# path name of the Tcl directory rather than "..":  this is because
+# AIX remembers this path and will attempt to use it at run-time to look
+# up the Tcl library.
+
+if test $TCL_SHARED_BUILD = 0 -o $TCL_NEEDS_EXP_FILE = 0; then
+    if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
+        TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
+    else
+        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
+    fi
+    TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
+    TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
+else
+    TCL_BUILD_EXP_FILE="lib.exp"
+    eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
+
+    # Replace DBGX with TCL_DBGX
+    eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
+    
+    TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
+    TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
+fi
+
 VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
 eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
+eval "CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}"
+VERSION=${TCL_VERSION}
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
@@ -1269,6 +1298,40 @@ else
     TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
+#--------------------------------------------------------------------
+#       The statements below define various symbols relating to Tcl
+#       stub support.
+#--------------------------------------------------------------------
+# Replace ${VERSION} with contents of ${TCL_VERSION}
+eval "STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
+# Replace DBGX with TCL_DBGX
+eval "STUB_LIB_FILE=\"${STUB_LIB_FILE}\""
+
+MAKE_STUB_LIB="ar cr \${STUB_LIB_FILE} \${STUB_LIB_OBJS}"
+
+TCL_STUB_LIB_FILE=${STUB_LIB_FILE}
+
+if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
+    TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}\${TCL_DBGX}"
+else
+    TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
+fi
+
+TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
+TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
+TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
+TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
+
+AC_SUBST(STUB_LIB_FILE)
+
+AC_SUBST(TCL_STUB_LIB_FILE)
+AC_SUBST(TCL_STUB_LIB_FLAG)
+AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
+AC_SUBST(TCL_STUB_LIB_SPEC)
+AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
+AC_SUBST(TCL_STUB_LIB_PATH)
+AC_SUBST(MAKE_STUB_LIB)
+
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(CFLAGS_DEBUG)
 AC_SUBST(CFLAGS_DEFAULT)
@@ -1276,6 +1339,7 @@ AC_SUBST(CFLAGS_OPTIMIZE)
 AC_SUBST(CFLAGS_WARNING)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
+AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(DL_LIBS)
 AC_SUBST(DL_OBJS)
@@ -1291,6 +1355,9 @@ AC_SUBST(TCL_BUILD_LIB_SPEC)
 AC_SUBST(TCL_LD_SEARCH_FLAGS)
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
+AC_SUBST(TCL_NEEDS_EXP_FILE)
+AC_SUBST(TCL_BUILD_EXP_FILE)
+AC_SUBST(TCL_EXP_FILE)
 AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_LIB_VERSIONS_OK)
 AC_SUBST(TCL_MAJOR_VERSION)

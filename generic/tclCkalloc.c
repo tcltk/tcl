@@ -12,7 +12,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.2 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.2.4.1 1999/03/03 00:38:39 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -661,7 +661,7 @@ Tcl_InitMemory(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
 }
 
-#else
+#else /* TCL_MEM_DEBUG */
 
 
 /*
@@ -778,8 +778,8 @@ Tcl_DbCkfree(ptr, file, line)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitMemory --
- *     Dummy initialization for memory command, which is only available 
+ * Tcl_InitMemory, et al. --
+ *     Dummy implementations of memory routines, which is only available 
  *     if TCL_MEM_DEBUG is on.
  *
  *----------------------------------------------------------------------
@@ -793,10 +793,6 @@ Tcl_InitMemory(interp)
 
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-
-extern int		Tcl_DumpActiveMemory _ANSI_ARGS_((char *fileName));
-extern void		Tcl_ValidateAllMemory _ANSI_ARGS_((char *file,
-			    int line));
 
 int
 Tcl_DumpActiveMemory(fileName)
@@ -812,4 +808,10 @@ Tcl_ValidateAllMemory(file, line)
 {
 }
 
-#endif
+void
+TclDumpMemoryInfo(outFile) 
+    FILE *outFile;
+{
+}
+
+#endif /* TCL_MEM_DEBUG */

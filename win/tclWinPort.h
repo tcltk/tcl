@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.6 1998/09/30 23:57:18 stanton Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.6.4.1 1999/03/03 00:38:47 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -206,12 +206,6 @@
 #endif
 
 /*
- * Provide a stub definition for TclGetUserHome().
- */
-
-#define TclGetUserHome(name,bufferPtr) (NULL)
-
-/*
  * Visual C++ has some odd names for common functions, so we need to
  * define a few macros to handle them.  Also, it defines EDEADLOCK and
  * EDEADLK as the same value, which confuses Tcl_ErrnoId().
@@ -357,6 +351,8 @@
 #define TclPlatformExit(status) exit(status)
 
 
+#include "tclPlatDecls.h"
+
 /*
  * The following declarations belong in tclInt.h, but depend on platform
  * specific types (e.g. struct tm).
@@ -383,23 +379,7 @@ EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *path,
 
 #define TclpReleaseFile(file)	ckfree((char *) file)
 
-/*
- * Declarations for Windows specific functions.
- */
-
-EXTERN void		TclWinConvertError _ANSI_ARGS_((DWORD errCode));
-EXTERN void		TclWinConvertWSAError _ANSI_ARGS_((DWORD errCode));
-EXTERN struct servent * PASCAL FAR
-			TclWinGetServByName _ANSI_ARGS_((const char FAR *nm,
-		            const char FAR *proto));
-EXTERN int PASCAL FAR	TclWinGetSockOpt _ANSI_ARGS_((SOCKET s, int level,
-		            int optname, char FAR * optval, int FAR *optlen));
-EXTERN HINSTANCE	TclWinGetTclInstance _ANSI_ARGS_((void));
-EXTERN HINSTANCE	TclWinLoadLibrary _ANSI_ARGS_((char *name));
-EXTERN u_short PASCAL FAR
-			TclWinNToHS _ANSI_ARGS_((u_short ns));
-EXTERN int PASCAL FAR	TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
-		            int optname, const char FAR * optval, int optlen));
+#include "tclIntPlatDecls.h"
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.24 1999/02/03 02:59:17 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.24.4.1 1999/03/03 00:38:46 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from
@@ -67,6 +67,7 @@ NODEBUG = 1
 ######################################################################
 
 NAMEPREFIX = tcl
+STUBPREFIX = $(NAMEPREFIX)stub
 DOTVERSION = 8.0
 VERSION = 80
 
@@ -85,6 +86,10 @@ OUTDIR		= $(TMPDIR)
 TCLLIB		= $(OUTDIR)\$(NAMEPREFIX)$(VERSION)$(DBGX).lib
 TCLDLLNAME	= $(NAMEPREFIX)$(VERSION)$(DBGX).dll
 TCLDLL		= $(OUTDIR)\$(TCLDLLNAME)
+
+TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION)$(DBGX).lib
+TCLSTUBLIB	= $(OUTDIR)\$(TCLSTUBLIBNAME)
+
 TCLPLUGINLIB	= $(OUTDIR)\$(NAMEPREFIX)$(VERSION)p$(DBGX).lib
 TCLPLUGINDLLNAME= $(NAMEPREFIX)$(VERSION)p$(DBGX).dll
 TCLPLUGINDLL	= $(OUTDIR)\$(TCLPLUGINDLLNAME)
@@ -116,7 +121,6 @@ TCLTESTOBJS = \
 	$(TMPDIR)\testMain.obj
 
 TCLOBJS = \
-	$(TMPDIR)\panic.obj \
 	$(TMPDIR)\regexp.obj \
 	$(TMPDIR)\strftime.obj \
 	$(TMPDIR)\tclAlloc.obj \
@@ -152,6 +156,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclNamesp.obj \
 	$(TMPDIR)\tclNotify.obj \
 	$(TMPDIR)\tclObj.obj \
+	$(TMPDIR)\tclPanic.obj \
 	$(TMPDIR)\tclParse.obj \
 	$(TMPDIR)\tclPipe.obj \
 	$(TMPDIR)\tclPkg.obj \
@@ -160,6 +165,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclResolve.obj \
 	$(TMPDIR)\tclProc.obj \
 	$(TMPDIR)\tclStringObj.obj \
+	$(TMPDIR)\tclStubInit.obj \
 	$(TMPDIR)\tclTimer.obj \
 	$(TMPDIR)\tclUtil.obj \
 	$(TMPDIR)\tclVar.obj \
@@ -176,10 +182,18 @@ TCLOBJS = \
 	$(TMPDIR)\tclWinSock.obj \
 	$(TMPDIR)\tclWinTime.obj
 
+TCLSTUBOBJS = \
+	$(TMPDIR)\tclStubLib.obj \
+	$(TMPDIR)\tclStubs.obj \
+	$(TMPDIR)\tclPlatStubs.obj \
+	$(TMPDIR)\tclIntStubs.obj \
+	$(TMPDIR)\tclIntPlatStubs.obj
+
 cc32		= "$(TOOLS32)\bin\cl.exe"
 link32		= "$(TOOLS32)\bin\link.exe"
 rc32		= "$(TOOLS32_rc)\bin\rc.exe"
 include32	= -I"$(TOOLS32)\include"
+lib32		= "$(TOOLS32)\bin\lib.exe"
 
 cc16		= "$(TOOLS16)\bin\cl.exe"
 link16		= "$(TOOLS16)\bin\link.exe"
@@ -317,6 +331,9 @@ $(TCLDLL): $(TCLOBJS) $(TMPDIR)\tcl.def $(TMPDIR)\tcl.res
 $(TCLOBJS)
 <<
 
+$(TCLSTUBLIB): $(TCLSTUBOBJS)
+	$(lib32) /out:$@ $(TCLSTUBOBJS)
+
 $(TCLPLUGINLIB): $(TCLPLUGINDLL)
 
 $(TCLPLUGINDLL): $(TCLOBJS) $(TMPDIR)\plugin.def $(TMPDIR)\tcl.res
@@ -369,10 +386,10 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMPDIR)\stub16.obj $(guilibs)
 
-$(TCLREGDLL): $(TMPDIR)\tclWinReg.obj
+$(TCLREGDLL): $(TMPDIR)\tclWinReg.obj $(TCLSTUBLIB)
 	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $(TMPDIR)\tclWinReg.obj \
-		$(conlibsdll) $(TCLLIB)
+		$(conlibsdll) $(TCLSTUBLIB)
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
@@ -407,6 +424,8 @@ install-binaries: $(TCLSH)
 	@copy $(TCLPIPEDLL) $(BIN_INSTALL_DIR)
 	@echo installing $(TCLREGDLLNAME)
 	@copy $(TCLREGDLL) $(LIB_INSTALL_DIR)
+	echo installing $(TCLSTUBLIBNAME)
+	copy $(TCLSTUBLIB) $(LIB_INSTALL_DIR)
 
 install-libraries:
 	-@mkd $(LIB_INSTALL_DIR)
@@ -434,12 +453,19 @@ package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]]
 	-@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
 
 #
+# Regenerate the stubs files.
+#
+
+stubs:
+	tclsh$(VERSION) $(ROOT)\tools\genStubs.tcl $(GENERICDIR) \
+		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
+
+#
 # Special case object file targets
 #
 
 $(TMPDIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
-	$(cc32) -DDLL_BUILD -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) \
-		-Fo$(TMPDIR)\ $?
+	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) -Fo$(TMPDIR)\ $?
 
 $(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$(TMPDIR)\testMain.obj $?
@@ -456,18 +482,35 @@ $(TMPDIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
+# The following objects should be built using the stub interfaces
+
+$(TMPDIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
+	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -Fo$@ $?
+
+# The following objects are part of the stub library and should not
+# be built as DLL objects but none of the symbols should be exported
+
+$(TMPDIR)\tclStubs.obj : $(GENERICDIR)\tclStubs.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
+$(TMPDIR)\tclPlatStubs.obj : $(GENERICDIR)\tclPlatStubs.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
+$(TMPDIR)\tclIntStubs.obj : $(GENERICDIR)\tclIntStubs.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
+$(TMPDIR)\tclPlatIntStubs.obj : $(GENERICDIR)\tclPlatIntStubs.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
+
 #
 # Implicit rules
 #
 
 {$(WINDIR)}.c{$(TMPDIR)}.obj:
-    $(cc32) -DDLL_BUILD -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
+    $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
 
 {$(GENERICDIR)}.c{$(TMPDIR)}.obj:
-    $(cc32) -DDLL_BUILD -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
+    $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
 
 {$(ROOT)\compat}.c{$(TMPDIR)}.obj:
-    $(cc32) -DDLL_BUILD -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
+    $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
 
 {$(WINDIR)}.rc{$(TMPDIR)}.res:
 	$(rc32) -fo $@ -r -i $(GENERICDIR) -i $(WINDIR) -D__WIN32__ \

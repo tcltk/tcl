@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.15 1999/02/03 00:55:04 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.15.4.1 1999/03/03 00:38:38 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -237,6 +237,35 @@ static CmdInfo builtInCmds[] = {
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_InitStubs --
+ *
+ *	Ensures that the correct version of Tcl is loaded.  This is
+ *	a trivial implementation of the stubs library initializer
+ *	that will get called if a stubs aware extension is directly
+ *	linked with the Tcl library.
+ *
+ * Results:
+ *	The actual version of Tcl that satisfies the request, or
+ *	NULL to indicate that an error occurred.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_InitStubs (interp, version, exact)
+    Tcl_Interp *interp;
+    char *version;
+    int exact;
+{
+    return Tcl_PkgRequire(interp, "Tcl", version, exact);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_CreateInterp --
  *
  *	Create a new TCL command interpreter.
@@ -339,6 +368,12 @@ Tcl_CreateInterp()
     
     iPtr->execEnvPtr = TclCreateExecEnv((Tcl_Interp *) iPtr);
 
+    /*
+     * Initialise the stub table pointer.
+     */
+
+    iPtr->stubTable = tclStubsPtr;
+    
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for
@@ -455,7 +490,8 @@ Tcl_CreateInterp()
      * Register Tcl's version number.
      */
 
-    Tcl_PkgProvide((Tcl_Interp *) iPtr, "Tcl", TCL_VERSION);
+    Tcl_PkgProvideEx((Tcl_Interp *) iPtr, "Tcl", TCL_VERSION,
+	    (ClientData) tclStubsPtr);
     
     return (Tcl_Interp *) iPtr;
 }
@@ -3897,6 +3933,54 @@ Tcl_AddObjErrorInfo(interp, message, length)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_VarEvalVA --
+ *
+ *	Given a variable number of string arguments, concatenate them
+ *	all together and execute the result as a Tcl command.
+ *
+ * Results:
+ *	A standard Tcl return result.  An error message or other
+ *	result may be left in interp->result.
+ *
+ * Side effects:
+ *	Depends on what was done by the command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_VarEvalVA (interp, argList)
+    Tcl_Interp *interp;		/* Interpreter in which to evaluate command. */
+    va_list argList;		/* Variable argument list. */
+{
+    Tcl_DString buf;
+    char *string;
+    int result;
+
+    /*
+     * Copy the strings one after the other into a single larger
+     * string.  Use stack-allocated space for small commands, but if
+     * the command gets too large than call ckalloc to create the
+     * space.
+     */
+
+    Tcl_DStringInit(&buf);
+    while (1) {
+	string = va_arg(argList, char *);
+	if (string == NULL) {
+	    break;
+	}
+	Tcl_DStringAppend(&buf, string, -1);
+    }
+
+    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
+    Tcl_DStringFree(&buf);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_VarEval --
  *
  *	Given a variable number of string arguments, concatenate them
@@ -3915,32 +3999,14 @@ Tcl_AddObjErrorInfo(interp, message, length)
 int
 Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 {
-    va_list argList;
-    Tcl_DString buf;
-    char *string;
     Tcl_Interp *interp;
+    va_list argList;
     int result;
 
-    /*
-     * Copy the strings one after the other into a single larger
-     * string.  Use stack-allocated space for small commands, but if
-     * the command gets too large than call ckalloc to create the
-     * space.
-     */
-
     interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    Tcl_DStringInit(&buf);
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	Tcl_DStringAppend(&buf, string, -1);
-    }
+    result = Tcl_VarEvalVA(interp, argList);
     va_end(argList);
 
-    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
-    Tcl_DStringFree(&buf);
     return result;
 }
 

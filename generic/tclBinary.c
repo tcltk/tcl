@@ -2,14 +2,15 @@
  * tclBinary.c --
  *
  *	This file contains the implementation of the "binary" Tcl built-in
- *	command .
+ *	command and the Tcl binary data object.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.3 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.3.4.1 1999/03/03 00:38:39 stanton Exp $
  */
 
 #include <math.h>
@@ -28,11 +29,462 @@
  * Prototypes for local procedures defined in this file:
  */
 
+static void		DupByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr));
+static int		FormatNumber _ANSI_ARGS_((Tcl_Interp *interp, int type,
+			    Tcl_Obj *src, unsigned char **cursorPtr));
+static void		FreeByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		GetFormatSpec _ANSI_ARGS_((char **formatPtr,
 			    char *cmdPtr, int *countPtr));
-static int		FormatNumber _ANSI_ARGS_((Tcl_Interp *interp, int type,
-			    Tcl_Obj *src, char **cursorPtr));
-static Tcl_Obj *	ScanNumber _ANSI_ARGS_((char *buffer, int type));
+static Tcl_Obj *	ScanNumber _ANSI_ARGS_((unsigned char *buffer,
+			    int type));
+static int		SetByteArrayFromAny _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
+static void		UpdateStringOfByteArray _ANSI_ARGS_((Tcl_Obj *listPtr));
+
+/*
+ * The following object type represents an array of bytes. This type should
+ * be used to represent arbitrary binary data instead of a string object
+ * because although they are equivalent at the moment they will not be in
+ * future versions which support unicode.
+ */
+
+Tcl_ObjType tclByteArrayType = {
+    "bytearray",
+    FreeByteArrayInternalRep,
+    DupByteArrayInternalRep,
+    UpdateStringOfByteArray,
+    SetByteArrayFromAny
+};
+
+/*
+ * The following structure is the internal rep for a ByteArray object.
+ * Keeps track of how much memory has been used and how much has been
+ * allocated for the byte array to enable growing and shrinking of the
+ * ByteArray object with fewer mallocs.  
+ */
+
+typedef struct ByteArray {
+    int used;			/* The number of bytes used in the byte
+				 * array. */
+    int allocated;		/* The amount of space actually allocated
+				 * minus 1 byte. */
+    unsigned char bytes[4];	/* The array of bytes.  The actual size of
+				 * this field depends on the 'allocated' field
+				 * above. */
+} ByteArray;
+
+#define BYTEARRAY_SIZE(len)	\
+		((unsigned) (sizeof(ByteArray) - 4 + (len)))
+#define GET_BYTEARRAY(objPtr) \
+		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
+#define SET_BYTEARRAY(objPtr, baPtr) \
+		(objPtr)->internalRep.otherValuePtr = (VOID *) (baPtr)
+
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_NewByteArrayObj --
+ *
+ *	This procedure is normally called when not debugging: i.e., when
+ *	TCL_MEM_DEBUG is not defined. It creates a new ByteArray object and
+ *	initializes it from the given array of bytes.
+ *
+ *	When TCL_MEM_DEBUG is defined, this procedure just returns the
+ *	result of calling the debugging version Tcl_DbNewByteArrayObj.
+ *
+ * Results:
+ *	The newly create object is returned.  This object will have no
+ *	initial string representation.  The returned object has a ref count
+ *	of 0.
+ *
+ * Side effects:
+ *	Memory allocated for new object and copy of byte array argument.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+#undef Tcl_NewByteArrayObj
+
+Tcl_Obj *
+Tcl_NewByteArrayObj(bytes, length)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+{
+    return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_NewByteArrayObj(bytes, length)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+{
+    Tcl_Obj *objPtr;
+
+    TclNewObj(objPtr);
+    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    return objPtr;
+}
+#endif /* TCL_MEM_DEBUG */
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_DbNewByteArrayObj --
+ *
+ *	This procedure is normally called when debugging: i.e., when
+ *	TCL_MEM_DEBUG is defined. It is the same as the Tcl_NewByteArrayObj
+ *	above except that it calls Tcl_DbCkalloc directly with the file name
+ *	and line number from its caller. This simplifies debugging since then
+ *	the checkmem command will report the correct file name and line number
+ *	when reporting objects that haven't been freed.
+ *
+ *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
+ *	result of calling Tcl_NewByteArrayObj.
+ *
+ * Results:
+ *	The newly create object is returned.  This object will have no
+ *	initial string representation.  The returned object has a ref count
+ *	of 0.
+ *
+ * Side effects:
+ *	Memory allocated for new object and copy of byte array argument.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+
+Tcl_Obj *
+Tcl_DbNewByteArrayObj(bytes, length, file, line)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+    char *file;			/* The name of the source file calling this
+				 * procedure; used for debugging. */
+    int line;			/* Line number in the source file; used
+				 * for debugging. */
+{
+    Tcl_Obj *objPtr;
+
+    TclDbNewObj(objPtr, file, line);
+    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    return objPtr;
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_DbNewByteArrayObj(bytes, length, file, line)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+    char *file;			/* The name of the source file calling this
+				 * procedure; used for debugging. */
+    int line;			/* Line number in the source file; used
+				 * for debugging. */
+{
+    return Tcl_NewByteArrayObj(bytes, length);
+}
+#endif /* TCL_MEM_DEBUG */
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_SetByteArrayObj --
+ *
+ *	Modify an object to be a ByteArray object and to have the specified
+ *	array of bytes as its value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's old string rep and internal rep is freed.
+ *	Memory allocated for copy of byte array argument.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetByteArrayObj(objPtr, bytes, length)
+    Tcl_Obj *objPtr;		/* Object to initialize as a ByteArray. */
+    unsigned char *bytes;	/* The array of bytes to use as the new
+				 * value. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+{
+    Tcl_ObjType *typePtr;
+    ByteArray *byteArrayPtr;
+
+    if (Tcl_IsShared(objPtr)) {
+	panic("Tcl_SetByteArrayObj called with shared object");
+    }
+    typePtr = objPtr->typePtr;
+    if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
+	(*typePtr->freeIntRepProc)(objPtr);
+    }
+    Tcl_InvalidateStringRep(objPtr);
+
+    byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr->used = length;
+    byteArrayPtr->allocated = length;
+    memcpy((VOID *) byteArrayPtr->bytes, (VOID *) bytes, (size_t) length);
+
+    objPtr->typePtr = &tclByteArrayType;
+    SET_BYTEARRAY(objPtr, byteArrayPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetByteArrayFromObj --
+ *
+ *	Attempt to get the array of bytes from the Tcl object.  If the
+ *	object is not already a ByteArray object, an attempt will be
+ *	made to convert it to one.
+ *
+ * Results:
+ *	Pointer to array of bytes representing the ByteArray object.
+ *
+ * Side effects:
+ *	Frees old internal rep.  Allocates memory for new internal rep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned char *
+Tcl_GetByteArrayFromObj(objPtr, lengthPtr)
+    Tcl_Obj *objPtr;		/* The ByteArray object. */
+    int *lengthPtr;		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    ByteArray *baPtr;
+    
+    SetByteArrayFromAny(NULL, objPtr);
+    baPtr = GET_BYTEARRAY(objPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = baPtr->used;
+    }
+    return (unsigned char *) baPtr->bytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetByteArrayLength --
+ *
+ *	This procedure changes the length of the byte array for this
+ *	object.  Once the caller has set the length of the array, it
+ *	is acceptable to directly modify the bytes in the array up until
+ *	Tcl_GetStringFromObj() has been called on this object.
+ *
+ * Results:
+ *	The new byte array of the specified length.
+ *
+ * Side effects:
+ *	Allocates enough memory for an array of bytes of the requested
+ *	size.  When growing the array, the old array is copied to the
+ *	new array; new bytes are undefined.  When shrinking, the
+ *	old array is truncated to the specified length.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+unsigned char *
+Tcl_SetByteArrayLength(objPtr, length)
+    Tcl_Obj *objPtr;		/* The ByteArray object. */
+    int length;			/* New length for internal byte array. */
+{
+    ByteArray *byteArrayPtr, *newByteArrayPtr;
+    
+    if (Tcl_IsShared(objPtr)) {
+	panic("Tcl_SetObjLength called with shared object");
+    }
+    if (objPtr->typePtr != &tclByteArrayType) {
+	SetByteArrayFromAny(NULL, objPtr);
+    }
+
+    byteArrayPtr = GET_BYTEARRAY(objPtr);
+    if (length > byteArrayPtr->allocated) {
+	newByteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+	newByteArrayPtr->used = length;
+	newByteArrayPtr->allocated = length;
+	memcpy((VOID *) newByteArrayPtr->bytes,
+		(VOID *) byteArrayPtr->bytes, (size_t) byteArrayPtr->used);
+	ckfree((char *) byteArrayPtr);
+	byteArrayPtr = newByteArrayPtr;
+	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    }
+    Tcl_InvalidateStringRep(objPtr);
+    byteArrayPtr->used = length;
+    return byteArrayPtr->bytes;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * SetByteArrayFromAny --
+ *
+ *	Generate the ByteArray internal rep from the string rep.
+ *
+ * Results:
+ *	The return value is always TCL_OK.
+ *
+ * Side effects:
+ *	A ByteArray object is stored as the internal rep of objPtr.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+SetByteArrayFromAny(interp, objPtr)
+    Tcl_Interp *interp;		/* Not used. */
+    Tcl_Obj *objPtr;		/* The object to convert to type ByteArray. */
+{
+    Tcl_ObjType *typePtr;
+    int length;
+    char *src;
+    ByteArray *byteArrayPtr;
+    
+    typePtr = objPtr->typePtr;
+    if (typePtr != &tclByteArrayType) {
+	src = Tcl_GetStringFromObj(objPtr, &length);
+
+	byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+	memcpy((VOID *) byteArrayPtr->bytes, (VOID *) src, (size_t) length);
+
+	byteArrayPtr->used = length;
+	byteArrayPtr->allocated = length;
+
+	if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
+	    (*typePtr->freeIntRepProc)(objPtr);
+	}
+	objPtr->typePtr = &tclByteArrayType;
+	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeByteArrayInternalRep --
+ *
+ *	Deallocate the storage associated with a ByteArray data object's
+ *	internal representation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees memory. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeByteArrayInternalRep(objPtr)
+    Tcl_Obj *objPtr;		/* Object with internal rep to free. */
+{
+    ckfree((char *) GET_BYTEARRAY(objPtr));
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * DupByteArrayInternalRep --
+ *
+ *	Initialize the internal representation of a ByteArray Tcl_Obj
+ *	to a copy of the internal representation of an existing ByteArray
+ *	object. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates memory.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static void
+DupByteArrayInternalRep(srcPtr, copyPtr)
+    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
+{
+    int length;
+    ByteArray *srcArrayPtr, *copyArrayPtr;    
+
+    srcArrayPtr = GET_BYTEARRAY(srcPtr);
+    length = srcArrayPtr->used;
+
+    copyArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->used = length;
+    copyArrayPtr->allocated = length;
+    memcpy((VOID *) copyArrayPtr->bytes, (VOID *) srcArrayPtr->bytes,
+	    (size_t) length);
+    SET_BYTEARRAY(copyPtr, copyArrayPtr);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * UpdateStringOfByteArray --
+ *
+ *	Update the string representation for a ByteArray data object.
+ *	Note: This procedure does not invalidate an existing old string rep
+ *	so storage will be lost if this has not already been done. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string is set to a valid string that results from
+ *	the ByteArray-to-string conversion.
+ *
+ *	The object becomes a string object -- the internal rep is
+ *	discarded and the typePtr becomes NULL.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfByteArray(objPtr)
+    Tcl_Obj *objPtr;		/* ByteArray object whose string rep to
+				 * update. */
+{
+    int length;
+    unsigned char *src;
+    char *dst;
+    ByteArray *byteArrayPtr;
+
+    byteArrayPtr = GET_BYTEARRAY(objPtr);
+    src = byteArrayPtr->bytes;
+    length = byteArrayPtr->used;
+
+    /*
+     * The byte array is the string representation.
+     */
+    
+    dst = (char *) ckalloc((unsigned) (length + 1));
+    objPtr->bytes = dst;
+    objPtr->length = length;
+
+    memcpy((VOID *) dst, (VOID *) src, (size_t) length);
+    dst[length] = '\0';
+}
 
 /*
  *----------------------------------------------------------------------
@@ -65,13 +517,13 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				 * character. */
     char *format;		/* Pointer to current position in format
 				 * string. */
-    char *cursor;		/* Current position within result buffer. */
-    char *maxPos;		/* Greatest position within result buffer that
+    Tcl_Obj *resultPtr;		/* Object holding result buffer. */
+    unsigned char *buffer;	/* Start of result buffer. */
+    unsigned char *cursor;	/* Current position within result buffer. */
+    unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
-    char *buffer;		/* Start of data buffer. */
     char *errorString, *errorValue, *str;
     int offset, size, length;
-    Tcl_Obj *resultPtr;
     
     static char *subCmds[] = { "format", "scan", (char *) NULL };
     enum { BinaryFormat, BinaryScan } index;
@@ -121,7 +573,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    goto badIndex;
 			}
 			if (count == BINARY_ALL) {
-			    (void)Tcl_GetStringFromObj(objv[arg], &count);
+			    Tcl_GetByteArrayFromObj(objv[arg], &count);
 			} else if (count == BINARY_NOCOUNT) {
 			    count = 1;
 			}
@@ -241,8 +693,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    resultPtr = Tcl_GetObjResult(interp);
-	    Tcl_SetObjLength(resultPtr, length);
-	    buffer = Tcl_GetStringFromObj(resultPtr, NULL);
+	    buffer = Tcl_SetByteArrayLength(resultPtr, length);
 	    memset(buffer, 0, (size_t) length);
 
 	    /*
@@ -267,8 +718,9 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    case 'a':
 		    case 'A': {
 			char pad = (char) (cmd == 'a' ? '\0' : ' ');
+			unsigned char *bytes;
 
-			str = Tcl_GetStringFromObj(objv[arg++], &length);
+			bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
 
 			if (count == BINARY_ALL) {
 			    count = length;
@@ -276,10 +728,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    count = 1;
 			}
 			if (length >= count) {
-			    memcpy((VOID *) cursor, (VOID *) str,
+			    memcpy((VOID *) cursor, (VOID *) bytes,
 				    (size_t) count);
 			} else {
-			    memcpy((VOID *) cursor, (VOID *) str,
+			    memcpy((VOID *) cursor, (VOID *) bytes,
 				    (size_t) length);
 			    memset(cursor+length, pad,
 			            (size_t) (count - length));
@@ -289,7 +741,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    }
 		    case 'b':
 		    case 'B': {
-			char *last;
+			unsigned char *last;
 			
 			str = Tcl_GetStringFromObj(objv[arg++], &length);
 			if (count == BINARY_ALL) {
@@ -347,7 +799,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    }
 		    case 'h':
 		    case 'H': {
-			char *last;
+			unsigned char *last;
 			int c;
 			
 			str = Tcl_GetStringFromObj(objv[arg++], &length);
@@ -491,7 +943,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			"value formatString ?varName varName ...?");
 		return TCL_ERROR;
 	    }
-	    buffer = Tcl_GetStringFromObj(objv[2], &length);
+	    buffer = Tcl_GetByteArrayFromObj(objv[2], &length);
 	    format = Tcl_GetStringFromObj(objv[3], NULL);
 	    cursor = buffer;
 	    arg = 4;
@@ -502,7 +954,9 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		}
 		switch (cmd) {
 		    case 'a':
-		    case 'A':
+		    case 'A': {
+			unsigned char *src;
+			
 			if (arg >= objc) {
 			    goto badIndex;
 			}
@@ -517,7 +971,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 
-			str = buffer + offset;
+			src = buffer + offset;
 			size = count;
 
 			/*
@@ -526,13 +980,13 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 
 			if (cmd == 'A') {
 			    while (size > 0) {
-				if (str[size-1] != '\0' && str[size-1] != ' ') {
+				if (src[size-1] != '\0' && src[size-1] != ' ') {
 				    break;
 				}
 				size--;
 			    }
 			}
-			valuePtr = Tcl_NewStringObj(str, size);
+			valuePtr = Tcl_NewByteArrayObj(src, size);
 			resultPtr = Tcl_ObjSetVar2(interp, objv[arg++], NULL,
 				valuePtr,
 				TCL_LEAVE_ERR_MSG | TCL_PARSE_PART1);
@@ -542,8 +996,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			}
 			offset += count;
 			break;
+		    }
 		    case 'b':
 		    case 'B': {
+			unsigned char *src;
 			char *dest;
 
 			if (arg >= objc) {
@@ -559,7 +1015,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				goto done;
 			    }
 			}
-			str = buffer + offset;
+			src = buffer + offset;
 			valuePtr = Tcl_NewObj();
 			Tcl_SetObjLength(valuePtr, count);
 			dest = Tcl_GetStringFromObj(valuePtr, NULL);
@@ -569,7 +1025,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				if (i % 8) {
 				    value >>= 1;
 				} else {
-				    value = *str++;
+				    value = *src++;
 				}
 				*dest++ = (char) ((value & 1) ? '1' : '0');
 			    }
@@ -578,7 +1034,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				if (i % 8) {
 				    value <<= 1;
 				} else {
-				    value = *str++;
+				    value = *src++;
 				}
 				*dest++ = (char) ((value & 0x80) ? '1' : '0');
 			    }
@@ -596,6 +1052,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    }
 		    case 'h':
 		    case 'H': {
+			unsigned char *src;
 			char *dest;
 			int i;
 			static char hexdigit[] = "0123456789abcdef";
@@ -613,7 +1070,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				goto done;
 			    }
 			}
-			str = buffer + offset;
+			src = buffer + offset;
 			valuePtr = Tcl_NewObj();
 			Tcl_SetObjLength(valuePtr, count);
 			dest = Tcl_GetStringFromObj(valuePtr, NULL);
@@ -623,7 +1080,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				if (i % 2) {
 				    value >>= 4;
 				} else {
-				    value = *str++;
+				    value = *src++;
 				}
 				*dest++ = hexdigit[value & 0xf];
 			    }
@@ -632,7 +1089,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				if (i % 2) {
 				    value <<= 4;
 				} else {
-				    value = *str++;
+				    value = *src++;
 				}
 				*dest++ = hexdigit[(value >> 4) & 0xf];
 			    }
@@ -662,10 +1119,13 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    case 'f':
 			size = sizeof(float);
 			goto scanNumber;
-		    case 'd':
+		    case 'd': {
+			unsigned char *src;
+			
 			size = sizeof(double);
 			/* fall through */
-		    scanNumber:
+			
+		        scanNumber:
 			if (arg >= objc) {
 			    goto badIndex;
 			}
@@ -683,10 +1143,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				goto done;
 			    }
 			    valuePtr = Tcl_NewObj();
-			    str = buffer+offset;
+			    src = buffer+offset;
 			    for (i = 0; i < count; i++) {
-				elementPtr = ScanNumber(str, cmd);
-				str += size;
+				elementPtr = ScanNumber(src, cmd);
+				src += size;
 				Tcl_ListObjAppendElement(NULL, valuePtr,
 					elementPtr);
 			    }
@@ -701,6 +1161,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    return TCL_ERROR;
 			}
 			break;
+		    }
 		    case 'x':
 			if (count == BINARY_NOCOUNT) {
 			    count = 1;
@@ -860,7 +1321,7 @@ FormatNumber(interp, type, src, cursorPtr)
 				 * errors. */
     int type;			/* Type of number to format. */
     Tcl_Obj *src;		/* Number to format. */
-    char **cursorPtr;		/* Pointer to index into destination buffer. */
+    unsigned char **cursorPtr;	/* Pointer to index into destination buffer. */
 {
     int value;
     double dvalue;
@@ -942,7 +1403,7 @@ FormatNumber(interp, type, src, cursorPtr)
 
 static Tcl_Obj *
 ScanNumber(buffer, type)
-    char *buffer;		/* Buffer to scan number from. */
+    unsigned char *buffer;	/* Buffer to scan number from. */
     int type;			/* Format character from "binary scan" */
 {
     int value;

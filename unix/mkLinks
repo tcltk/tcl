@@ -728,6 +728,10 @@ if test -r PkgRequire.3; then
     ln PkgRequire.3 Tcl_PkgRequire.3
 fi
 if test -r AddErrInfo.3; then
+    rm -f Tcl_SetErrorCodeVA.3
+    ln AddErrInfo.3 Tcl_SetErrorCodeVA.3
+fi
+if test -r AddErrInfo.3; then
     rm -f Tcl_PosixError.3
     ln AddErrInfo.3 Tcl_PosixError.3
 fi

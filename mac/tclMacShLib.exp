@@ -283,7 +283,7 @@ TclGetOpenMode
 TclGetOriginalCommand
 TclGetRegError
 TclGetSrcInfoForPc
-TclGetUserHome
+TclpGetUserHome
 TclGlobalInvoke
 TclGuessPackageName
 TclHasSockets

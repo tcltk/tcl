@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.4 1998/09/14 18:40:05 stanton Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.4.4.1 1999/03/03 00:38:44 stanton Exp $
  */
 
 /*
@@ -249,7 +249,7 @@ Tcl_FindExecutable(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetUserHome --
+ * TclpGetUserHome --
  *
  *	This function takes the passed in user name and finds the
  *	corresponding home directory specified in the password file.
@@ -264,7 +264,7 @@ Tcl_FindExecutable(
  */
 
 char *
-TclGetUserHome(
+TclpGetUserHome(
     char *name,			/* User name to use to find home directory. */
     Tcl_DString *bufferPtr)	/* May be used to hold result.  Must not hold
 				 * anything at the time of the call, and need

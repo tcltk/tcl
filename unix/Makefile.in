@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.17 1999/02/02 23:00:07 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.17.4.1 1999/03/03 00:38:45 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -131,6 +131,15 @@ NOTIFY_OBJS = tclUnixNotfy.o
 MEM_DEBUG_FLAGS =
 #MEM_DEBUG_FLAGS = -DTCL_MEM_DEBUG
 
+# To enable support for stubs in Tcl.
+STUB_LIB_FILE = @STUB_LIB_FILE@
+
+TCL_STUB_LIB_FILE = @TCL_STUB_LIB_FILE@
+#TCL_STUB_LIB_FILE = libtclstub.a
+
+TCL_STUB_LIB_FLAG = @TCL_STUB_LIB_FLAG@
+#TCL_STUB_LIB_FLAG = -ltclstub
+
 # To enable compilation debugging reverse the comment characters on
 # one of the following lines.
 COMPILE_DEBUG_FLAGS =
@@ -184,6 +193,9 @@ TCL_LIB_FILE = @TCL_LIB_FILE@
 TCL_LIB_FLAG = @TCL_LIB_FLAG@
 #TCL_LIB_FLAG = -ltcl
 
+TCL_EXP_FILE = @TCL_EXP_FILE@
+TCL_BUILD_EXP_FILE = @TCL_BUILD_EXP_FILE@
+
 #----------------------------------------------------------------
 # The information below is modified by the configure script when
 # Makefile is generated from Makefile.in.  You shouldn't normally
@@ -213,14 +225,17 @@ CC =			@CC@
 CC_SWITCHES =	${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
 -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
+${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\" \
+$(STUB_FLAGS)
+
 
 LIBS =		@DL_LIBS@ @LIBS@ $(MATH_LIBS) -lc
 
 DEPEND_SWITCHES = ${CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} \
 ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
--DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
+-DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\" \
+$(STUB_FLAGS)
 
 TCLSH_OBJS = tclAppInit.o
 
@@ -230,17 +245,21 @@ TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 XTTEST_OBJS = tclTest.o tclTestObj.o tclUnixTest.o tclXtNotify.o \
 	tclXtTest.o xtTestInit.o
 
-GENERIC_OBJS = panic.o regexp.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
+GENERIC_OBJS = regexp.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
 	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompExpr.o \
 	tclCompile.o tclDate.o tclEnv.o tclEvent.o tclExecute.o \
 	tclFCmd.o tclFileName.o tclGet.o tclHash.o tclHistory.o \
 	tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o tclIOSock.o \
 	tclIOUtil.o tclLink.o tclListObj.o tclLoad.o tclMain.o tclNamesp.o \
-	tclNotify.o tclObj.o tclParse.o tclPipe.o tclPkg.o tclPosixStr.o \
-	tclPreserve.o tclProc.o tclStringObj.o tclTimer.o tclUtil.o tclVar.o \
-	tclResolve.o
+	tclNotify.o tclObj.o tclPanic.o tclParse.o tclPipe.o tclPkg.o \
+	tclPosixStr.o tclPreserve.o tclProc.o  tclResolve.o tclStringObj.o \
+	tclStubInit.o tclTimer.o tclUtil.o tclVar.o
 
-OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
+STUB_LIB_OBJS = tclIntPlatStubs.o tclIntStubs.o tclPlatStubs.o tclStubLib.o \
+	tclStubs.o
+
+OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
+	@DL_OBJS@
 
 GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclRegexp.h \
@@ -290,6 +309,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclPreserve.c \
 	$(GENERIC_DIR)/tclProc.c \
 	$(GENERIC_DIR)/tclResolve.c \
+	$(GENERIC_DIR)/tclStubInit.c \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
@@ -297,6 +317,13 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c
+
+STUB_SRCS = \
+	$(GENERIC_DIR)/tclIntPlatStubs.c \
+	$(GENERIC_DIR)/tclIntStubs.c \
+	$(GENERIC_DIR)/tclPlatStubs.c \
+	$(GENERIC_DIR)/tclStubLib.c \
+	$(GENERIC_DIR)/tclStubs.c
 
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
@@ -329,9 +356,9 @@ DL_SRCS = \
 # compile on the current machine, and they will cause problems for
 # things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(UNIX_SRCS)
+SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
-all: ${TCL_LIB_FILE} tclsh
+all: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) tclsh
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
@@ -339,6 +366,11 @@ ${TCL_LIB_FILE}: ${OBJS}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
 	$(RANLIB) ${TCL_LIB_FILE}
+
+${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
+	rm -f ${STUB_LIB_FILE}
+	@MAKE_STUB_LIB@
+	$(RANLIB) ${STUB_LIB_FILE}
 
 # Make target which outputs the list of the .o contained in the Tcl lib
 # usefull to build a single big shared library containing Tcl and other
@@ -403,7 +435,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.17 1999/02/02 23:00:07 stanton Exp $'
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.17.4.1 1999/03/03 00:38:45 stanton Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -433,7 +465,8 @@ install: install-binaries install-libraries install-man
 # some ranlibs write to current directory, and this might not always be
 # possible (e.g. if installing as root).
 
-install-binaries: $(TCL_LIB_FILE) tclsh
+install-binaries: $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) \
+		  tclsh
 	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) ; \
 	    do \
 	    if [ ! -d $$i ] ; then \
@@ -447,10 +480,20 @@ install-binaries: $(TCL_LIB_FILE) tclsh
 	@$(INSTALL_DATA) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
 	@(cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE))
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
+	@if test "$(TCL_BUILD_EXP_FILE)" != ""; then \
+	    echo "Installing $(TCL_EXP_FILE)"; \
+	    $(INSTALL_DATA) $(TCL_BUILD_EXP_FILE) \
+			$(LIB_INSTALL_DIR)/$(TCL_EXP_FILE); \
+	    fi
 	@echo "Installing tclsh"
 	@$(INSTALL_PROGRAM) tclsh $(BIN_INSTALL_DIR)/tclsh$(VERSION)
 	@echo "Installing tclConfig.sh"
 	@$(INSTALL_DATA) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
+	@if test "$(TCL_STUB_LIB_FILE)" != "" ; then \
+	    echo "Installing $(TCL_STUB_LIB_FILE)"; \
+	    $(INSTALL_DATA) $(STUB_LIB_FILE) \
+			 $(LIB_INSTALL_DIR)/$(TCL_STUB_LIB_FILE); \
+	    fi
 
 install-libraries:
 	@for i in $(INSTALL_ROOT)$(prefix)/lib $(INCLUDE_INSTALL_DIR) \
@@ -474,6 +517,23 @@ install-libraries:
 	    done;
 	@echo "Installing tcl.h"
 	@$(INSTALL_DATA) $(GENERIC_DIR)/tcl.h $(INCLUDE_INSTALL_DIR)/tcl.h
+	@if test "$(STUB_LIB_OBJ)" != "" ; then \
+	    echo "Installing tclStub.h"; \
+	    $(INSTALL_DATA) $(GENERIC_DIR)/tclStub.h \
+			 $(INCLUDE_INSTALL_DIR)/tclStub.h; \
+	    echo "Installing tclStubInls.h"; \
+	    $(INSTALL_DATA) $(GENERIC_DIR)/tclStubInls.h \
+			 $(INCLUDE_INSTALL_DIR)/tclStubInls.h; \
+	    echo "Installing tclStubLib.c"; \
+	    $(INSTALL_DATA) $(GENERIC_DIR)/tclStubLib.c \
+			 $(INCLUDE_INSTALL_DIR)/tclStubLib.c; \
+	    echo "Installing tclStubFns.c"; \
+	    $(INSTALL_DATA) $(GENERIC_DIR)/tclStubFns.c \
+			 $(INCLUDE_INSTALL_DIR)/tclStubFns.c; \
+	    echo "Installing tclpStubFns.c"; \
+	    $(INSTALL_DATA) $(GENERIC_DIR)/tclpStubFns.c \
+			 $(INCLUDE_INSTALL_DIR)/tclpStubFns.c; \
+	    fi
 	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex $(UNIX_DIR)/tclAppInit.c $(UNIX_DIR)/ldAix; \
 	    do \
 	    echo "Installing $$i"; \
@@ -577,9 +637,6 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c
 
 # Object files used on all Unix systems:
 
-panic.o: $(GENERIC_DIR)/panic.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/panic.c
-
 regexp.o: $(GENERIC_DIR)/regexp.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regexp.c
 
@@ -649,6 +706,12 @@ tclIndexObj.o: $(GENERIC_DIR)/tclIndexObj.c
 tclInterp.o: $(GENERIC_DIR)/tclInterp.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclInterp.c
 
+tclIntPlatStubs.o: $(GENERIC_DIR)/tclIntPlatStubs.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIntPlatStubs.c
+
+tclIntStubs.o: $(GENERIC_DIR)/tclIntStubs.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIntStubs.c
+
 tclIO.o: $(GENERIC_DIR)/tclIO.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIO.c
 
@@ -712,11 +775,17 @@ tclNotify.o: $(GENERIC_DIR)/tclNotify.c
 tclParse.o: $(GENERIC_DIR)/tclParse.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParse.c
 
+tclPanic.o: $(GENERIC_DIR)/tclPanic.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPanic.c
+
 tclPipe.o: $(GENERIC_DIR)/tclPipe.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPipe.c
 
 tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPkg.c
+
+tclPlatStubs.o: $(GENERIC_DIR)/tclPlatStubs.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPlatStubs.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPosixStr.c
@@ -732,6 +801,12 @@ tclResolve.o: $(GENERIC_DIR)/tclResolve.c
 
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
+
+tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
+
+tclStubs.o: $(GENERIC_DIR)/tclStubs.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubs.c
 
 tclUtil.o: $(GENERIC_DIR)/tclUtil.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c

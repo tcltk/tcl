@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.2 1998/09/14 18:40:02 stanton Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.2.4.1 1999/03/03 00:38:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -363,7 +363,7 @@ Tcl_AppendToObj(objPtr, bytes, length)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AppendStringsToObj --
+ * Tcl_AppendStringsToObjVA --
  *
  *	This procedure appends one or more null-terminated strings
  *	to an object.
@@ -379,14 +379,14 @@ Tcl_AppendToObj(objPtr, bytes, length)
  */
 
 void
-Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
+Tcl_AppendStringsToObjVA (objPtr, argList)
+    register Tcl_Obj *objPtr;	/* Points to the object to append to. */
+    va_list argList;		/* Variable argument list. */
 {
-    va_list argList;
-    register Tcl_Obj *objPtr;
+    va_list tmpArgList;
     int newLength, oldLength;
     register char *string, *dst;
 
-    objPtr = (Tcl_Obj *) TCL_VARARGS_START(Tcl_Obj *,arg1,argList);
     if (Tcl_IsShared(objPtr)) {
 	panic("Tcl_AppendStringsToObj called with shared object");
     }
@@ -400,9 +400,10 @@ Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
      * bytes would be appended, just return.
      */
 
+    tmpArgList = argList;
     newLength = oldLength = objPtr->length;
     while (1) {
-	string = va_arg(argList, char *);
+	string = va_arg(tmpArgList, char *);
 	if (string == NULL) {
 	    break;
 	}
@@ -430,7 +431,6 @@ Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
      * strings to the object.
      */
 
-    TCL_VARARGS_START(Tcl_Obj *,arg1,argList);
     dst = objPtr->bytes + oldLength;
     while (1) {
 	string = va_arg(argList, char *);
@@ -455,6 +455,34 @@ Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
 	*dst = 0;
     }
     objPtr->length = newLength;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AppendStringsToObj --
+ *
+ *	This procedure appends one or more null-terminated strings
+ *	to an object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The contents of all the string arguments are appended to the
+ *	string representation of objPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
+{
+    register Tcl_Obj *objPtr;
+    va_list argList;
+
+    objPtr = TCL_VARARGS_START(Tcl_Obj *,arg1,argList);
+    Tcl_AppendStringsToObjVA(objPtr, argList);
     va_end(argList);
 }
 

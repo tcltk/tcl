@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.5 1999/02/03 00:51:20 stanton Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.5.4.1 1999/03/03 00:38:47 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2081,7 +2081,7 @@ Tcl_GetHostName()
  *----------------------------------------------------------------------
  */
 
-int PASCAL FAR
+int
 TclWinGetSockOpt(SOCKET s, int level, int optname, char FAR * optval,
 	int FAR *optlen)
 {
@@ -2099,7 +2099,7 @@ TclWinGetSockOpt(SOCKET s, int level, int optname, char FAR * optval,
     return (*winSock.getsockopt)(s, level, optname, optval, optlen);
 }
 
-int PASCAL FAR
+int
 TclWinSetSockOpt(SOCKET s, int level, int optname, const char FAR * optval,
 	int optlen)
 {
@@ -2117,7 +2117,7 @@ TclWinSetSockOpt(SOCKET s, int level, int optname, const char FAR * optval,
     return (*winSock.setsockopt)(s, level, optname, optval, optlen);
 }
 
-u_short PASCAL FAR
+u_short
 TclWinNToHS(u_short netshort)
 {
     /*
@@ -2134,8 +2134,8 @@ TclWinNToHS(u_short netshort)
     return (*winSock.ntohs)(netshort);
 }
 
-struct servent FAR * PASCAL FAR
-TclWinGetServByName(const char FAR * name, const char FAR * proto)
+struct servent *
+TclWinGetServByName(const char * name, const char * proto)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to
@@ -2145,7 +2145,7 @@ TclWinGetServByName(const char FAR * name, const char FAR * proto)
      */
 
     if (winSock.hInstance == NULL) {
-        return (struct servent FAR *) NULL;
+        return (struct servent *) NULL;
     }
 
     return (*winSock.getservbyname)(name, proto);
