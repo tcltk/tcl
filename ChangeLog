@@ -1,3 +1,38 @@
+2004-11-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/fCmd.test:
+	* unix/tclUnixFCmd.c (TraverseUnixTree): added option to rewind()
+	the readdir() loop whenever the source hierarchy has been modified
+	by traverseProc (e.g. by deleting files); this is required to ensure
+	complete traversal of the source hierarchy on certain filesystems
+	like HFS+. Added test for failing recursive delete on Mac OS X that
+	was due to this. [Bug 1034337]
+
+	* generic/tclListObj.c (Tcl_ListObjReplace): use memmove() instead
+	of manual copy loop to shift list elements. Decreases time spent in
+	Tcl_ListObjReplace() from 5.2% to 1.7% of overall runtime of
+	tclbench on a ppc 7455 (i.e. 200% speed increase). [Patch 1064243]
+
+	* generic/tclHash.c: hoisted some constant pointer dereferences out
+	of loops to eliminate redundant loads that the gcc optimizer didn't
+	deal with. Decreases time spend in Tcl_FindHashEntry() by 10% over a
+	full run of the tcl testuite on a ppc 7455. [Patch 1064243]
+
+	* tests/fileName.test:
+	* tests/fileSystem.test:
+	* tests/io.test:
+	* tests/msgcat.test:
+	* tests/tcltest.test:
+	* tests/unixInit.test: fixed bugs causing failures when running
+	tests with -tmpdir arg not set to working dir.
+
+	* macosx/Makefile: corrected path to html help inside framework.
+	Prevent parallel make from building several targets at the same
+	time.
+
+	* macosx/tclMacOSXFCmd.c (struct fileinfobuf): force struct to be
+	packed to prevent failures when builing with -malign=natural.
+
 2004-11-10  Andreas Kupries <andreask@activestate.com>
 
 	* unix/tclUnixChan.c: [Bug 727786]. Exterminated the code marked
