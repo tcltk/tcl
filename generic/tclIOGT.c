@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.2 2000/09/28 06:38:21 hobbs Exp $
+ * CVS: $Id: tclIOGT.c,v 1.3 2000/09/29 21:42:19 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -171,7 +171,7 @@ struct ResultBuffer {
  * out information waiting in buffers (fileevent support).
  */
 
-#define DELAY (5)
+#define FLUSH_DELAY (5)
 
 /*
  * Convenience macro to make some casts easier to use.
@@ -1046,7 +1046,7 @@ TransformWatchProc (instanceData, mask)
 	 * to flush that.
 	 */
 
-	dataPtr->timer = Tcl_CreateTimerHandler (DELAY,
+	dataPtr->timer = Tcl_CreateTimerHandler (FLUSH_DELAY,
 		TransformChannelHandlerTimer, (ClientData) dataPtr);
     }
 }
