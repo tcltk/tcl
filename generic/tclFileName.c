@@ -10,20 +10,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.13 2000/04/19 23:24:52 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.13.2.1 2001/10/09 19:03:16 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclRegexp.h"
-
-/*
- * The following regular expression matches the root portion of a Windows
- * absolute or volume relative path.  It will match both UNC and drive relative
- * paths.
- */
-
-#define WIN_ROOT_PATTERN "^(([a-zA-Z]:)|[/\\\\][/\\\\]+([^/\\\\]+)[/\\\\]+([^/\\\\]+)|([/\\\\]))([/\\\\])*"
 
 /*
  * The following regular expression matches the root portion of a Macintosh
@@ -161,9 +153,6 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 				 * stored. */
     Tcl_PathType *typePtr;	/* Where to store pathType result */
 {
-    FileNameInit();
-
-
     if (path[0] == '/' || path[0] == '\\') {
 	/* Might be a UNC or Vol-Relative path */
 	char *host, *share, *tail;
@@ -173,10 +162,10 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    Tcl_DStringAppend(resultPtr, "/", 1);
 	    return &path[1];
-    }
+	}
 	host = (char *)&path[2];
 
-	/* Skip seperators */
+	/* Skip separators */
 	while (host[0] == '/' || host[0] == '\\') host++;
 
 	for (hlen = 0; host[hlen];hlen++) {
@@ -184,6 +173,18 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 		break;
 	}
 	if (host[hlen] == 0 || host[hlen+1] == 0) {
+	    /* 
+	     * The path given is simply of the form 
+	     * '/foo', '//foo', '/////foo' or the same
+	     * with backslashes.  If there is exactly
+	     * one leading '/' the path is volume relative
+	     * (see filename man page).  If there are more
+	     * than one, we are simply assuming they
+	     * are superfluous and we trim them away.
+	     * (An alternative interpretation would
+	     * be that it is a host name, but we have
+	     * been documented that that is not the case).
+	     */
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    Tcl_DStringAppend(resultPtr, "/", 1);
 	    return &path[2];
@@ -191,7 +192,7 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	Tcl_DStringSetLength(resultPtr, offset);
 	share = &host[hlen];
 
-	/* Skip seperators */
+	/* Skip separators */
 	while (share[0] == '/' || share[0] == '\\') share++;
 
 	for (slen = 0; share[slen];slen++) {
@@ -205,12 +206,12 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 
 	tail = &share[slen];
 
-	/* Skip seperators */
+	/* Skip separators */
 	while (tail[0] == '/' || tail[0] == '\\') tail++;
 
 	*typePtr = TCL_PATH_ABSOLUTE;
 	return tail;
-    } else if (path[1] == ':') {
+    } else if (*path && path[1] == ':') {
 	/* Might be a drive sep */
 	Tcl_DStringSetLength(resultPtr, offset);
 
@@ -218,17 +219,17 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    Tcl_DStringAppend(resultPtr, path, 2);
 	    return &path[2];
-    } else {
+	} else {
 	    char *tail = (char*)&path[3];
 
-	    /* Skip seperators */
-	    while (tail[0] == '/' || tail[0] == '\\') tail++;
+	    /* Skip separators */
+	    while (*tail && tail[0] == '/' || tail[0] == '\\') tail++;
 
 	    *typePtr = TCL_PATH_ABSOLUTE;
 	    Tcl_DStringAppend(resultPtr, path, 2);
-	Tcl_DStringAppend(resultPtr, "/", 1);
+	    Tcl_DStringAppend(resultPtr, "/", 1);
 
-    return tail;
+	    return tail;
 	}
     } else {
 	*typePtr = TCL_PATH_RELATIVE;
