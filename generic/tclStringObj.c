@@ -1,29 +1,31 @@
 /* 
  * tclStringObj.c --
  *
- *	This file contains procedures that implement string operations
- *	on Tcl objects.  To do this efficiently (i.e. to allow many
- *	appends to be done to an object without constantly reallocating
- *	the space for the string representation) we overallocate the
- *	space for the string and use the internal representation to keep
- *	track of the extra space.  Objects with this internal
- *	representation are called "expandable string objects".
+ *	This file contains procedures that implement string operations on Tcl
+ *	objects.  Some string operations work with UTF strings and others
+ *	require Unicode format.  Functions that require knowledge of the width
+ *	of each character, such as indexing, operate on Unicode data.
  *
- * Since some string operations work with UTF strings and others require Unicode
- format, the string obeject type stores one or both formats.  If the object is
- created with a Unicode string, then UTF form is not stored until it is
- required by a string operation.  The string object always stores the number of
- characters, so if the object is created with a UTF string, we automatically
- convert it to unicode (as this costs little more than
-
-A Unicode string
- * is an internationalized string.  Conceptually, a Unicode string is an
- * array of 16-bit quantities organized as a sequence of properly formed
- * UTF-8 characters.  There is a one-to-one map between Unicode and UTF
- * characters.  The Unicode ojbect is opitmized for the case where each UTF
- * char in a string is only one byte.  In this case, we store the value of
- * numChars, but we don't copy the bytes to the unicodeObj->chars.  Before
- * accessing obj->chars, check if unicodeObj->numChars == obj->length.
+ *	A Unicode string is an internationalized string.  Conceptually, a
+ *	Unicode string is an array of 16-bit quantities organized as a sequence
+ *	of properly formed UTF-8 characters.  There is a one-to-one map between
+ *	Unicode and UTF characters.  Because Unicode characters have a fixed
+ *	width, operations such as indexing operate on Unicode data.  The String
+ *	ojbect is opitmized for the case where each UTF char in a string is
+ *	only one byte.  In this case, we store the value of numChars, but we
+ *	don't store the Unicode data (unless Tcl_GetUnicode is explicitly
+ *	called).
+ *
+ *	The String object type stores one or both formats.  The default
+ *	behavior is to store UTF.  Once Unicode is calculated by a function, it
+ *	is stored in the internal rep for future access (without an additional
+ *	O(n) cost).
+ *
+ *	To allow many appends to be done to an object without constantly
+ *	reallocating the space for the string or Unicode representation, we
+ *	allocate double the space for the string or Unicode and use the
+ *	internal representation to keep track of how much space is used
+ *	vs. allocated.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
@@ -31,8 +33,7 @@ A Unicode string
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.9 1999/06/15 03:14:44 hershey Exp $
- */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.10 1999/06/15 22:06:17 hershey Exp $ */
 
 #include "tclInt.h"
 
@@ -80,7 +81,7 @@ Tcl_ObjType tclStringType = {
  * shrinking of the UTF and Unicode reps of the String object with fewer
  * mallocs.  To optimize string length and indexing operations, this
  * structure also stores the number of characters (same of UTF and Unicode!)
- * once that value has been computede.
+ * once that value has been computed.
  */
 
 typedef struct String {
@@ -321,12 +322,6 @@ Tcl_GetCharLength(objPtr)
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-/*     if (objPtr->bytes == NULL) { */
-/* 	printf("called Tcl_GetCharLength with unicode str.\n"); */
-/*     } else { */
-/* 	printf("called Tcl_GetCharLength with str = %s\n", objPtr->bytes); */
-/*     } */
-    
     /*
      * If numChars is unknown, then calculate the number of characaters
      * while populating the Unicode string.
@@ -395,12 +390,6 @@ Tcl_GetUniChar(objPtr, index)
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-/*     if (objPtr->bytes == NULL) { */
-/* 	printf("called Tcl_GetUniChar with unicode str.\n"); */
-/*     } else { */
-/* 	printf("called Tcl_GetUniChar with str = %s\n", objPtr->bytes); */
-/*     } */
-    
     if (stringPtr->numChars == -1) {
 
 	/*
@@ -419,7 +408,6 @@ Tcl_GetUniChar(objPtr, index)
 	stringPtr = GET_STRING(objPtr);
     }
     if (stringPtr->uallocated == 0) {
-	char *bytes;
 
 	/*
 	 * All of the characters in the Utf string are 1 byte chars,
@@ -427,8 +415,7 @@ Tcl_GetUniChar(objPtr, index)
 	 * and convert the index'th byte to a Unicode character.
 	 */
 	
-	bytes = Tcl_GetString(objPtr);
-	Tcl_UtfToUniChar(&bytes[index], &unichar);	
+	Tcl_UtfToUniChar(&objPtr->bytes[index], &unichar);	
     } else {
 	unichar = stringPtr->unicode[index];
     }
@@ -462,12 +449,6 @@ Tcl_GetUnicode(objPtr)
     
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
-    
-/*     if (objPtr->bytes == NULL) { */
-/* 	printf("called Tcl_GetUnicode with unicode str.\n"); */
-/*     } else { */
-/* 	printf("called Tcl_GetUnicode with str = %s\n", objPtr->bytes); */
-/*     } */
     
     if ((stringPtr->numChars == -1) || (stringPtr->uallocated == 0)) {
 
@@ -557,8 +538,9 @@ Tcl_GetRange(objPtr, first, last)
 	 * can set it's numChars field.
 	 */
 	
-/* 	stringPtr = GET_STRING(newObjPtr); */
-/* 	stringPtr->numChars = last-first+1; */
+	SetStringFromAny(NULL, newObjPtr);
+	stringPtr = GET_STRING(newObjPtr);
+	stringPtr->numChars = last-first+1;
     } else {
 	newObjPtr = Tcl_NewUnicodeObj(stringPtr->unicode + first,
 		last-first+1);
@@ -622,7 +604,6 @@ Tcl_SetStringObj(objPtr, bytes, length)
 	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
-/*     printf("called Tcl_SetStringObj with str = %s\n", objPtr->bytes); */
 }
 
 /*
@@ -684,7 +665,6 @@ Tcl_SetObjLength(objPtr, length)
 	if (objPtr->bytes != NULL) {
 	    memcpy((VOID *) new, (VOID *) objPtr->bytes,
 		    (size_t) objPtr->length);
-/* 	    new[objPtr->length] = 0; */
 	    Tcl_InvalidateStringRep(objPtr);
 	}
 	objPtr->bytes = new;
@@ -891,7 +871,7 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
     Tcl_Obj *appendObjPtr;	/* Object to append. */
 {
     String *stringPtr;
-    int length;
+    int length, numChars, allOneByteChars;
     char *bytes;
 
     SetStringFromAny(NULL, objPtr);
@@ -931,11 +911,28 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
     }
 
     /*
-     * Append to objPtr's UTF string rep.
+     * Append to objPtr's UTF string rep.  If we know the number of
+     * characters in both objects before appending, then set the combined
+     * number of characters in the final (appended-to) object.
      */
 
+    allOneByteChars = 0;
+    numChars = stringPtr->numChars;
+    if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
+	stringPtr = GET_STRING(appendObjPtr);
+	if (stringPtr->numChars >= 0) {
+	    numChars += stringPtr->numChars;
+	    allOneByteChars = 1;
+	}
+    }
+    
     bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
     AppendUtfToUtfRep(objPtr, bytes, length);
+
+    if (allOneByteChars) {
+	stringPtr = GET_STRING(objPtr);
+	stringPtr->numChars = numChars;
+    }
 }
 
 /*
@@ -973,7 +970,10 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
     stringPtr = GET_STRING(objPtr);
     
     /*
-     * Make the buffer big enough for the result.
+     * If not enough space has been allocated for the unicode rep,
+     * reallocate the internal rep object with double the amount of
+     * space needed, so the unicode string can grow without being
+     * reallocated.
      */
 
     numChars = stringPtr->numChars + appendNumChars;
@@ -1124,14 +1124,12 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
 
 	/*
 	 * There isn't currently enough space in the string
-	 * representation so allocate additional space.  If the current
-	 * string representation isn't empty (i.e. it looks like we're
-	 * doing a series of appends) then overallocate the space so
-	 * that we won't have to do as much reallocation in the future.
+	 * representation so allocate additional space.  Overallocate the
+	 * space by doubling it so that we won't have to do as much
+	 * reallocation in the future.
 	 */
 
-	Tcl_SetObjLength(objPtr,
-		(oldLength == 0) ? newLength : 2*newLength);
+	Tcl_SetObjLength(objPtr, 2*newLength);
     } else {
 
 	/*
@@ -1313,13 +1311,21 @@ FillUnicodeRep(objPtr)
     if (uallocated > stringPtr->uallocated) {
     
 	/*
-	 * If not enought space has been allocated for the unicode rep,
-	 * reallocate the internal rep object with double the amount of
-	 * space needed, so the unicode string can grow without being
-	 * reallocated.
+	 * If not enough space has been allocated for the unicode rep,
+	 * reallocate the internal rep object.
 	 */
 
-	uallocated *= 2;
+	/*
+	 * There isn't currently enough space in the Unicode
+	 * representation so allocate additional space.  If the current
+	 * Unicode representation isn't empty (i.e. it looks like we've
+	 * done some appends) then overallocate the space so
+	 * that we won't have to do as much reallocation in the future.
+	 */
+
+	if (stringPtr->uallocated > 0) {
+	    uallocated *= 2;
+	}
 	stringPtr = (String *) ckrealloc((char*) stringPtr,
 		STRING_SIZE(uallocated));
 	stringPtr->uallocated = uallocated;
@@ -1359,8 +1365,7 @@ FillUnicodeRep(objPtr)
 static void
 DupStringInternalRep(srcPtr, copyPtr)
     register Tcl_Obj *srcPtr;	/* Object with internal rep to copy.  Must
-				 * have an internal representation of type
-				 * "expandable string". */
+				 * have an internal rep of type "String". */
     register Tcl_Obj *copyPtr;	/* Object with internal rep to set.  Must
 				 * not currently have an internal rep.*/
 {
@@ -1388,6 +1393,7 @@ DupStringInternalRep(srcPtr, copyPtr)
 	copyStringPtr->unicode[srcStringPtr->numChars] = 0;
     }
     copyStringPtr->numChars = srcStringPtr->numChars;
+    copyStringPtr->allocated = srcStringPtr->allocated;
 
     /*
      * Tricky point: the string value was copied by generic object
