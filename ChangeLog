@@ -1,3 +1,41 @@
+2002-07-01  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/Access.3:
+	* doc/AddErrInfo.3:
+	* doc/Alloc.3:
+	* doc/Backslash.3:
+	* doc/CrtChannel.3:
+	* doc/CrtSlave.3:
+	* doc/Encoding.3:
+	* doc/Eval.3:
+	* doc/FileSystem.3:
+	* doc/Notifier.3:
+	* doc/OpenFileChnl.3:
+	* doc/ParseCmd.3:
+	* doc/RegExp.3:
+	* doc/Tcl_Main.3:
+	* doc/Thread.3:
+	* doc/TraceCmd.3:
+	* doc/Utf.3:
+	* doc/WrongNumArgs.3:
+	* doc/binary.n:
+	* doc/clock.n:
+	* doc/expr.n:
+	* doc/fconfigure.n:
+	* doc/glob.n:
+	* doc/http.n:
+	* doc/interp.n:
+	* doc/lsearch.n:
+	* doc/lset.n:
+	* doc/msgcat.n:
+	* doc/packagens.n:
+	* doc/pkgMkIndex.n:
+	* doc/registry.n:
+	* doc/resource.n:
+	* doc/safe.n:
+	* doc/scan.n:
+	* doc/tclvars.n:  Spell-check, fixed typos (Updates from Larry Virden).
+
 2002-07-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Made Solaris use gcc for linking
