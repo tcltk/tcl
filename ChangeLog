@@ -1,5 +1,9 @@
 2004-10-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclPathObj.c: Made this file follow the style rules in
+	the Engineering Manual more closely, and also take advantage of
+	the internal object manipulation macros more.
+
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Reorganized to have fewer
 	magic flag variables and to separate the code that scans for a
 	match from the code that processes a match body.
