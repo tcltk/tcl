@@ -1,3 +1,11 @@
+2002-11-18  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclWinThrd.c (Tcl_CreateThread/TclpThreadExit): Fixed
+	improper compiler macros that missed the VC++ compiler.  This
+	resulted in VC++ builds using CreateThread()/ExitThread() in place
+	of the proper _beginthreadex()/_endthreadex().  This was a large
+	error and am surprised I missed seeing it earlier.
+
 2002-11-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/regexpComp.test: added tests 22.*
