@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.70 2002/01/15 17:55:29 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.71 2002/01/15 21:19:06 dgp Exp $
 
 library tcl
 
@@ -462,17 +462,17 @@ declare 126 generic {
     int Tcl_Eof(Tcl_Channel chan)
 }
 declare 127 generic {
-    char * Tcl_ErrnoId(void)
+    CONST char * Tcl_ErrnoId(void)
 }
 declare 128 generic {
-    char * Tcl_ErrnoMsg(int err)
+    CONST char * Tcl_ErrnoMsg(int err)
 }
 declare 129 generic {
     int Tcl_Eval(Tcl_Interp *interp, char *string)
 }
 # This is obsolete, use Tcl_FSEvalFile
 declare 130 generic {
-    int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
+    int Tcl_EvalFile(Tcl_Interp *interp, CONST char *fileName)
 }
 declare 131 generic {
     int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
@@ -704,8 +704,8 @@ declare 197 {unix win} {
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
 declare 198 generic {
-    Tcl_Channel Tcl_OpenFileChannel(Tcl_Interp *interp, char *fileName, \
-	    char *modeString, int permissions)
+    Tcl_Channel Tcl_OpenFileChannel(Tcl_Interp *interp, CONST char *fileName, \
+	    CONST char *modeString, int permissions)
 }
 declare 199 generic {
     Tcl_Channel Tcl_OpenTcpClient(Tcl_Interp *interp, int port, \
@@ -725,7 +725,7 @@ declare 203 generic {
     int Tcl_PutEnv(CONST char *string)
 }
 declare 204 generic {
-    char * Tcl_PosixError(Tcl_Interp *interp)
+    CONST char * Tcl_PosixError(Tcl_Interp *interp)
 }
 declare 205 generic {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
@@ -838,10 +838,10 @@ declare 238 generic {
 	    char *newValue, int flags)
 }
 declare 239 generic {
-    char * Tcl_SignalId(int sig)
+    CONST char * Tcl_SignalId(int sig)
 }
 declare 240 generic {
-    char * Tcl_SignalMsg(int sig)
+    CONST char * Tcl_SignalMsg(int sig)
 }
 declare 241 generic {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
@@ -1609,7 +1609,7 @@ declare 455 generic {
 }
 declare 456 generic {
     Tcl_Channel Tcl_FSOpenFileChannel(Tcl_Interp *interp, Tcl_Obj *pathPtr, \
-	    char *modeString, int permissions)
+	    CONST char *modeString, int permissions)
 }
 declare 457 generic {
     Tcl_Obj*  Tcl_FSGetCwd(Tcl_Interp *interp)

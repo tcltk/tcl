@@ -1,5 +1,36 @@
 2002-01-15  Don Porter <dgp@users.sourceforge.net>
 
+        * doc/AddErrInfo.3 (Tcl_PosixError):
+        * doc/Eval.3 (Tcl_EvalFile):
+        * doc/FileSystem.c (Tcl_FSOpenFileChannel,Tcl_FSOpenFileChannelProc):
+        * doc/OpenFileChnl.3 (Tcl_OpenFileChannel):
+        * doc/SetErrno.3 (Tcl_ErrnoId,Tcl_ErrnoMsg):
+        * doc/Signal.3 (Tcl_SignalId,Tcl_SignalMsg):
+        * generic/tcl.decls (Tcl_ErrnoId,TclErrnoMsg,Tcl_EvalFile,
+	  Tcl_OpenFileChannel,Tcl_PosixError,Tcl_SignalId,Tcl_SignalMsg,
+	  Tcl_FSOpenFileChannel):
+	* generic/tcl.h (Tcl_FSOpenFileChannelProc):
+	* generic/tclIO.c (FlushChannel):
+	* generic/tclIOUtil.c (Tcl_OpenFileChannel,Tcl_EvalFile,TclGetOpenMode,
+	  Tcl_PosixError,Tcl_FSOpenFileChannel):
+	* generic/tclInt.decls (TclGetOpenMode):
+	* generic/tclInt.h (TclOpenFileChannelProc_,TclGetOpenMode,
+	  TclpOpenFileChannel):
+	* generic/tclPipe.c (TclCleanupChildren):
+	* generic/tclPosixStr.c (Tcl_ErrnoId,Tcl_ErrnoMsg,Tcl_SignalId,
+	  Tcl_SignalMsg):
+	* generic.tclTest.c (PretendTclpOpenFileChannel,
+	  TestOpenFileChannelProc1,TestOpenFileChannelProc2,
+	  TestOpenFileChannelProc3,TestReportOpenFileChannel):
+	* mac/tclMacChan.c (TclpOpenFileChannel):
+	* unix/tclUnixChan.c (TclpOpenFileChannel):
+	* win/tclWinChan.c (TclpOpenFileChannel): Updated APIs in
+	  generic/tclIOUtil.c and generic/tclPosixStr.c according to the
+	  guidelines of TIP 27.  Updated callers.  [Patch 499196]
+
+	* generic/tclDecls.h:
+	* generic/tclIntDecls.h: make genstubs
+
 	* doc/CrtChannel.3:
 	* doc/OpenFileChnl.3:
 	* generic/tcl.decls:
