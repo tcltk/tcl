@@ -5,6 +5,7 @@
 
 	* tools/tcl.wse.in: added tcltest1.0 library to distribution list
 
+	* doc/http.n:
 	* library/http2.1/http.tcl:
 	* library/http2.1/pkgIndex.tcl: updated http package to 2.2
 
