@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.21 2002/07/29 00:25:50 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.22 2002/09/06 00:20:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1830,6 +1830,13 @@ test trace-26.2 {trace targetCmd when invoked through an alias} {
     set info
 } {{foo {foo 1 2} enter}}
 
+test trace-27.1 {memory leak in rename trace (604609)} {
+    catch {rename bar {}}
+    proc foo {} {error foo}
+    trace add command foo rename {rename foo "" ;#}
+    rename foo bar
+    info commands foo
+} {}
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
