@@ -1,4 +1,7 @@
 2002-07-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Removed declarations that duplicated entries
+	  in the (internal) stub table.
 	
 	* library/tcltest/tcltest.tcl:  Corrected errors in handling of
 	  configuration options -constraints and -limitconstraints.
