@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.15 2003/05/14 22:45:12 dkf Exp $
+# RCS: @(#) $Id: format.test,v 1.16 2003/05/14 23:04:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -522,7 +522,7 @@ test format-18.1 {do not demote existing numeric values} {
     format %08x $b
     lappend result [expr {$a == $b}]
 } {1 1 1 1}
-test format-18.2 {do not demote existing numeric values} {
+test format-18.2 {do not demote existing numeric values} {wideIntExpressions} {
     set a [expr {0xaaaaaaaaaa + 1}]
     set b 0xaaaaaaaaab
     list [catch {format %08x $a} msg] $msg [expr {$a == $b}]
