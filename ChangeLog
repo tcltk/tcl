@@ -1,5 +1,10 @@
 2003-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* doc/dde.n:                 Committed TIP #135 which changes the
+	* win/tclWinDde.c:           -exact option to -force. Also cleaned
+	* tests/winDde.test:         a bug in the tests.
+	* library/dde/pkgIndex.tcl:  Incremented version to 1.2.5	
+
 	* doc/dde.n:                 Committed TIP #120 which provides the
 	* win/tclWinDde.c:           dde package for safe interpreters.
 	* tests/winDde.test:         Incremented package version to 1.2.4
