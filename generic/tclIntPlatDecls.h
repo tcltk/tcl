@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.6 1999/04/30 22:45:02 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.7 1999/08/01 20:44:11 hobbs Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -126,6 +126,10 @@ EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 /* 24 */
 EXTERN char *		TclWinNoBackslash _ANSI_ARGS_((char * path));
+/* 25 */
+EXTERN TclPlatformType * TclWinGetPlatform _ANSI_ARGS_((void));
+/* 26 */
+EXTERN void		TclWinSetInterfaces _ANSI_ARGS_((int wide));
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
 /* 0 */
@@ -237,6 +241,8 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
     char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 23 */
     char * (*tclWinNoBackslash) _ANSI_ARGS_((char * path)); /* 24 */
+    TclPlatformType * (*tclWinGetPlatform) _ANSI_ARGS_((void)); /* 25 */
+    void (*tclWinSetInterfaces) _ANSI_ARGS_((int wide)); /* 26 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     VOID * (*tclpSysAlloc) _ANSI_ARGS_((long size, int isBin)); /* 0 */
@@ -412,6 +418,14 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclWinNoBackslash
 #define TclWinNoBackslash \
 	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
+#endif
+#ifndef TclWinGetPlatform
+#define TclWinGetPlatform \
+	(tclIntPlatStubsPtr->tclWinGetPlatform) /* 25 */
+#endif
+#ifndef TclWinSetInterfaces
+#define TclWinSetInterfaces \
+	(tclIntPlatStubsPtr->tclWinSetInterfaces) /* 26 */
 #endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL

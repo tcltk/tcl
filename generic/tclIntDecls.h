@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.14 1999/07/22 01:26:19 redman Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.15 1999/08/01 20:44:11 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -496,6 +496,23 @@ EXTERN void		TclHandleFree _ANSI_ARGS_((TclHandle handle));
 EXTERN TclHandle	TclHandlePreserve _ANSI_ARGS_((TclHandle handle));
 /* 149 */
 EXTERN void		TclHandleRelease _ANSI_ARGS_((TclHandle handle));
+/* 150 */
+EXTERN int		TclRegAbout _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_RegExp re));
+/* 151 */
+EXTERN void		TclRegExpRangeUniChar _ANSI_ARGS_((Tcl_RegExp re, 
+				int index, int * startPtr, int * endPtr));
+/* 152 */
+EXTERN void		TclSetLibraryPath _ANSI_ARGS_((Tcl_Obj * pathPtr));
+/* 153 */
+EXTERN Tcl_Obj *	TclGetLibraryPath _ANSI_ARGS_((void));
+/* 154 */
+EXTERN int		TclTestChannelCmd _ANSI_ARGS_((ClientData clientData, 
+				Tcl_Interp * interp, int argc, char ** argv));
+/* 155 */
+EXTERN int		TclTestChannelEventCmd _ANSI_ARGS_((
+				ClientData clientData, Tcl_Interp * interp, 
+				int argc, char ** argv));
 
 typedef struct TclIntStubs {
     int magic;
@@ -683,6 +700,12 @@ typedef struct TclIntStubs {
     void (*tclHandleFree) _ANSI_ARGS_((TclHandle handle)); /* 147 */
     TclHandle (*tclHandlePreserve) _ANSI_ARGS_((TclHandle handle)); /* 148 */
     void (*tclHandleRelease) _ANSI_ARGS_((TclHandle handle)); /* 149 */
+    int (*tclRegAbout) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_RegExp re)); /* 150 */
+    void (*tclRegExpRangeUniChar) _ANSI_ARGS_((Tcl_RegExp re, int index, int * startPtr, int * endPtr)); /* 151 */
+    void (*tclSetLibraryPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 152 */
+    Tcl_Obj * (*tclGetLibraryPath) _ANSI_ARGS_((void)); /* 153 */
+    int (*tclTestChannelCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, char ** argv)); /* 154 */
+    int (*tclTestChannelEventCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, char ** argv)); /* 155 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1291,6 +1314,30 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclHandleRelease
 #define TclHandleRelease \
 	(tclIntStubsPtr->tclHandleRelease) /* 149 */
+#endif
+#ifndef TclRegAbout
+#define TclRegAbout \
+	(tclIntStubsPtr->tclRegAbout) /* 150 */
+#endif
+#ifndef TclRegExpRangeUniChar
+#define TclRegExpRangeUniChar \
+	(tclIntStubsPtr->tclRegExpRangeUniChar) /* 151 */
+#endif
+#ifndef TclSetLibraryPath
+#define TclSetLibraryPath \
+	(tclIntStubsPtr->tclSetLibraryPath) /* 152 */
+#endif
+#ifndef TclGetLibraryPath
+#define TclGetLibraryPath \
+	(tclIntStubsPtr->tclGetLibraryPath) /* 153 */
+#endif
+#ifndef TclTestChannelCmd
+#define TclTestChannelCmd \
+	(tclIntStubsPtr->tclTestChannelCmd) /* 154 */
+#endif
+#ifndef TclTestChannelEventCmd
+#define TclTestChannelEventCmd \
+	(tclIntStubsPtr->tclTestChannelEventCmd) /* 155 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

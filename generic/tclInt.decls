@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.14 1999/07/22 01:26:18 redman Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.15 1999/08/01 20:44:10 hobbs Exp $
 
 library tcl
 
@@ -560,6 +560,30 @@ declare 149 generic {
     void TclHandleRelease(TclHandle handle)
 }
 
+declare 150 generic {
+    int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
+}
+declare 151 generic {
+    void TclRegExpRangeUniChar(Tcl_RegExp re, int index, int *startPtr, \
+	    int *endPtr)
+}
+
+declare 152 generic {
+    void TclSetLibraryPath(Tcl_Obj *pathPtr)
+}
+declare 153 generic {
+    Tcl_Obj *TclGetLibraryPath(void)
+}
+
+declare 154 generic {
+    int TclTestChannelCmd(ClientData clientData,
+    Tcl_Interp *interp, int argc, char **argv)
+}
+declare 155 generic {
+    int TclTestChannelEventCmd(ClientData clientData, \
+	    Tcl_Interp *interp, int argc, char **argv)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are
@@ -761,6 +785,12 @@ declare 23 win {
 }
 declare 24 win {
     char * TclWinNoBackslash(char *path)
+}
+declare 25 win {
+    TclPlatformType *TclWinGetPlatform(void)
+}
+declare 26 win {
+    void TclWinSetInterfaces(int wide)
 }
 
 #########################

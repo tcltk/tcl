@@ -1,3 +1,8 @@
+1999-07-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclInt.decls: added declaractions necessary for the
+	Tcl test code to work wth stubs [Bug: 2445]
+
 1999-07-30    <redman@scriptics.com>
 
 	* win/tclWinPipe.c:
