@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.11 2004/02/24 22:58:48 dkf Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.12 2004/02/25 16:17:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -376,7 +376,7 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 	if (code != TCL_OK) {
 	    goto done;
 	}
-	if (procPtrs[0] /* initProc */ == NULL) {
+	if (*procPtrs[0] /* initProc */ == NULL) {
 	    Tcl_AppendResult(interp, "couldn't find procedure ",
 		    Tcl_DStringValue(&initName), (char *) NULL);
 	    if (unLoadProcPtr != NULL) {
