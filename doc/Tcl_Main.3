@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.3 2000/11/03 20:20:55 hobbs Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.4 2001/09/10 21:49:37 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -76,6 +76,15 @@ The main loop procedure must have an interface that matches the type
 typedef void Tcl_MainLoopProc(void);
 .CE
 .VE 8.4
+
+.PP
+\fBTcl_Main\fR and therefore all applications based upon it, like
+\fBtclsh\fR, use \fBTcl_GetStdChannel\fR to initialize the standard
+channels to their default values. See \fBTcl_StandardChannel\fR for
+more information.
+
+.SH "SEE ALSO"
+Tcl_GetStdChannel(3)
 
 .SH KEYWORDS
 application-specific initialization, command-line arguments, main program
