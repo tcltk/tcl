@@ -1,3 +1,10 @@
+2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/encoding.test: Name temp files *.tcltestout
+	instead of *.out so that when they are removed later,
+	we don't accidently toast any files named *.out that
+	the user has created in the build directory.
+
 2003-03-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_FileObjCmd): Fix the setting of a file's
