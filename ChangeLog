@@ -1,3 +1,7 @@
+2003-02-17  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* tests/notify.test: Removed Windows line terminators. [Bug 687913].
+	
 2003-02-15  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_EvalEx):
