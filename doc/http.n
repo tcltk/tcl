@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.16 2002/06/27 22:29:08 dgp Exp $
+'\" RCS: @(#) $Id: http.n,v 1.17 2002/07/01 18:24:39 jenglish Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.4 http "Tcl Bundled Packages"
@@ -52,7 +52,7 @@ protocol.  The package implements the GET, POST, and HEAD operations
 of HTTP/1.0.  It allows configuration of a proxy host to get through
 firewalls.  The package is compatible with the \fBSafesock\fR security
 policy, so it can be used by untrusted applets to do URL fetching from
-a restricted set of hosts. This package can be extened to support
+a restricted set of hosts. This package can be extended to support
 additional HTTP transport protocols, such as HTTPS, by providing
 a custom \fBsocket\fR command, via \fBhttp::register\fR.
 .PP
@@ -352,7 +352,7 @@ HTTP reply headers or data, no exception is thrown.  This is because
 after writing the HTTP headers, \fB::http::geturl\fP returns, and the
 rest of the HTTP transaction occurs in the background.  The command
 callback can check if any error occurred during the read by calling
-\fB::http::status\fP to check the status and if it's \fIerror\fP,
+\fB::http::status\fP to check the status and if its \fIerror\fP,
 calling \fB::http::error\fP to get the error message.
 .PP
 Alternatively, if the main program flow reaches a point where it needs

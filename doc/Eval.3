@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.10 2002/01/15 21:19:06 dgp Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.11 2002/07/01 18:24:39 jenglish Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -119,7 +119,7 @@ a completion code and result just like \fBTcl_EvalObjEx\fR.
 be executed is supplied as a string instead of an object and no compilation
 occurs.  The string should be a proper UTF-8 string as converted by
 \fBTcl_ExternalToUtfDString\fR or \fBTcl_ExternalToUtf\fR when it is known
-to possibly contain upper ascii characters who's possible combinations
+to possibly contain upper ASCII characters who's possible combinations
 might be a UTF-8 special code.  The string is parsed and executed directly
 (using \fBTcl_EvalObjv\fR) instead of compiling it and executing the
 bytecodes.  In situations where it is known that the script will never be
