@@ -1,5 +1,13 @@
 2003-04-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/configure:
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Don't set
+	TCL_LIBS if it is already set to support
+	use of TCL_LIBS var from tclConfig.sh in
+	the Tk configure script.
+
+2003-04-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/Makefile.in: Don't subst MATH_LIBS,
 	LIBS, and DL_LIBS separately. Instead, just
 	subst TCL_LIBS since it includes the others.
