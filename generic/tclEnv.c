@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.14 2002/04/03 08:39:27 vincentdarley Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.15 2002/06/06 17:37:55 das Exp $
  */
 
 #include "tclInt.h"
@@ -200,6 +200,12 @@ TclSetEnv(name, value)
 	    }
 	    environ = newEnviron;
 	    environSize = length + 5;
+#if defined(__APPLE__) && defined(__DYNAMIC__)
+	    {
+	    char ***e = _NSGetEnviron();
+	    *e = environ;
+	    }
+#endif
 	}
 	index = length;
 	environ[index + 1] = NULL;

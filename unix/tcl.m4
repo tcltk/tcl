@@ -407,6 +407,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	# 'pthread_attr_setstacksize' ?
 
 	AC_CHECK_FUNCS(pthread_attr_setstacksize)
+	AC_CHECK_FUNCS(readdir_r)
     else
 	TCL_THREADS=0
 	AC_MSG_RESULT([no (default)])
@@ -1046,8 +1047,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS="-prebind"
 	    LD_SEARCH_FLAGS=""
-	    CFLAGS_OPTIMIZE="-O3"
-	    EXTRA_CFLAGS="-arch ppc -pipe"
+	    CFLAGS_OPTIMIZE="-O2"
+	    EXTRA_CFLAGS='-DTCL_DEFAULT_ENCODING=\"utf-8\"'
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
