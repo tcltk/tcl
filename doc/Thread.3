@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.2 1999/04/16 00:46:33 stanton Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.2.2.1 1999/04/21 01:45:45 rjohnson Exp $
 '\" 
 .so man.macros
 .TH Tcl_ConditionNotify 3 "8.1" Tcl "Tcl Library Procedures"
@@ -21,6 +21,9 @@ void
 void
 \fBTcl_ConditionWait\fR(\fIcondPtr, mutexPtr, timePtr\fR)
 .sp
+Tcl_ThreadId
+\fBTcl_GetCurrentThread\fR()
+.sp
 VOID *
 \fBTcl_GetThreadData\fR(\fIkeyPtr, size\fR)
 .sp
@@ -29,6 +32,10 @@ void
 .sp
 void
 \fBTcl_MutexUnlock\fR(\fImutexPtr\fR)
+.sp
+\fBTcl_ThreadAlert\fR(\fIthreadId\fR)
+.sp
+\fBTcl_ThreadQueueEvent\fR(\fIthreadId, evPtr, position\fR)
 .SH ARGUMENTS
 .AS Tcl_ThreadDataKey *keyPtr
 .AP Tcl_Condition *condPtr in
@@ -77,11 +84,18 @@ The caller of \fBTcl_ConditionWait\fR should be prepared for spurious
 notifications by calling \fBTcl_ConditionWait\fR within a while loop
 that tests some invariant.
 .PP
+The \fBTcl_GetCurrentThread\fR call returns the thread Id of the
+thread in which the call is made.  The thread Id can be used in calls
+to \fBTcl_ThreadQueueEvent\fR and \fBTcl_ThreadAlert\fR.  These
+procedures are essentially mutex-protected vesions of
+\fBTcl_AlertNotifier\fR and \fBTcl_QueueEvent\fR, respectively.  See
+the manual entry for \fBNotifier\fR for more details.
+.PP
 The \fBTcl_GetThreadData\fR call returns a pointer to a block of
 thread-private data.  Its argument is a key that is shared by all threads
 and a size for the block of storage.  The storage is automatically 
 allocated and initialized to all zeros the first time each thread asks for it.
-The storage is automatically deallocated by \fBTcl_FinalizeThread\fR
+The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
 .SH INITIALIZATION
 .PP
 .PP
