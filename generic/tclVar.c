@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.48 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.49 2002/02/27 06:38:39 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3414,18 +3414,18 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    varPtr->refCount++;
-	    tmpResPtr = Tcl_NewObj();
 
 	    /*
 	     * Get the array values corresponding to each element name 
 	     */
 
-	    result = Tcl_ListObjGetElements(interp, nameLstPtr, &count, &namePtrPtr);
+	    tmpResPtr = Tcl_NewObj();
+	    result = Tcl_ListObjGetElements(interp, nameLstPtr,
+		    &count, &namePtrPtr);
 	    if (result != TCL_OK) {
 		goto errorInArrayGet;
 	    }
 	    
-	    tmpResPtr = Tcl_NewObj();
 	    for (i = 0; i < count; i++) { 
 		namePtr = *namePtrPtr++;
 		valuePtr = Tcl_ObjGetVar2(interp, objv[2], namePtr,
@@ -3439,8 +3439,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
 		    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
 			/*
-			 * The array itself looks OK, the variable was undefined:
-			 * forget it.
+			 * The array itself looks OK, the variable was
+			 * undefined: forget it.
 			 */
 			
 			continue;
@@ -3449,13 +3449,11 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 			goto errorInArrayGet;
 		    }
 		}
-		result = Tcl_ListObjAppendElement(interp, tmpResPtr,
-			namePtr);
+		result = Tcl_ListObjAppendElement(interp, tmpResPtr, namePtr);
 		if (result != TCL_OK) {
 		    goto errorInArrayGet;
 		}
-		result = Tcl_ListObjAppendElement(interp, tmpResPtr,
-			valuePtr);
+		result = Tcl_ListObjAppendElement(interp, tmpResPtr, valuePtr);
 		if (result != TCL_OK) {
 		    goto errorInArrayGet;
 		}
