@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.13 2001/05/03 23:35:00 hobbs Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.14 2001/05/22 00:52:13 hobbs Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -259,13 +259,16 @@ test tcltest-5.4 {tcltest::constraintsSpecified} {
     }
 }
 
-test tcltest-5.5 {tcltest::constraintList} {
-    -constraints {!$tcltest::singleTestInterp}
-    -body {
-	lsort [tcltest::constraintList]
-    }
-    -result {unixOrPc socket nonBlockFiles asyncPipeClose nt knownBug macOnly pc unixExecs nonPortable pcCrash unix notRoot macOrPc eformat macOrUnix 95 tempNotMac 98 mac macCrash tempNotPc stdio tempNotUnix root singleTestInterp unixCrash pcOnly interactive unixOnly hasIsoLocale userInteraction emptyTest}
-}
+test tcltest-5.5 {tcltest::constraintList} \
+	-constraints {!$::tcltest::testConstraints(singleTestInterp)} \
+	-body { lsort [tcltest::constraintList] } \
+	-result [lsort {
+    95 98 asyncPipeClose eformat emptyTest hasIsoLocale interactive knownBug
+    mac macCrash macOnly macOrPc macOrUnix macOrWin nonBlockFiles nonPortable
+    notRoot nt pc pcCrash pcOnly root singleTestInterp socket stdio tempNotMac
+    tempNotPc tempNotUnix tempNotWin unix unixCrash unixExecs unixOnly unixOrPc
+    unixOrWin userInteraction win winCrash winOnly
+}]
 
 test tcltest-5.6 {tcltest::limitConstraints} {
     -setup {
@@ -985,7 +988,9 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} {
 	} else {
 	    set oldoptions none
 	}
-	set ::env(TCLTEST_OPTIONS) {}
+	# set this to { } instead of just {} to get around quirk in
+	# Windows env handling that removes empty elements from env array.
+	set ::env(TCLTEST_OPTIONS) { }
 	set olddebug [tcltest::debug]
 	tcltest::debug 2
     }
