@@ -7,7 +7,7 @@
 '\" SCCS: @(#) msgcat.n
 '\" 
 .so man.macros
-.TH "msgcat" n 1.3 msgcat "Tcl Bundled Packages"
+.TH "msgcat" n 1.4 msgcat "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -15,7 +15,7 @@ msgcat \- Tcl message catalog
 .SH SYNOPSIS
 \fBpackage require Tcl 8.2\fR
 .sp
-\fBpackage require msgcat 1.3\fR
+\fBpackage require msgcat 1.4\fR
 .sp
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .sp
@@ -94,7 +94,9 @@ preference.  The list is derived from the current
 locale set in msgcat by \fBmsgcat::mclocale\fR, and
 cannot be set independently.  For example, if the
 current locale is en_US_funky, then \fBmsgcat::mcpreferences\fR
-returns {en_US_funky en_US en}.
+.VS 1.4
+returns \fB{en_US_funky en_US en {}}\fR.
+.VE
 .TP
 \fB::msgcat::mcload \fIdirname\fR
 Searches the specified directory for files that match
@@ -167,10 +169,13 @@ locale of ``C''.
 .PP
 When a locale is specified by the user, a ``best match'' search is
 performed during string translation.  For example, if a user specifies
-en_GB_Funky, the locales ``en_GB_Funky'', ``en_GB'', and ``en'' are
-searched in order until a matching translation string is found.  If no
-translation string is available, then \fB::msgcat::unknown\fR is
-called.
+.VS 1.4
+en_GB_Funky, the locales ``en_GB_Funky'', ``en_GB'', ``en'' and ``''
+(the empty string)
+.VE
+are searched in order until a matching translation
+string is found.  If no translation string is available, then
+\fB::msgcat::unknown\fR is called.
 
 .SH "NAMESPACES AND MESSAGE CATALOGS"
 .PP
@@ -236,6 +241,12 @@ followed by ``.msg''.  For example:
 es.msg    -- spanish
 en_gb.msg -- United Kingdom English
 .CE
+.VS
+\fIException:\fR The message file for the root locale ``'' is
+called \fBROOT.msg\fR.  This exception is made so as not to
+cause peculiar behavior, such as marking the message file as
+``hidden'' on Unix file systems.
+.VE
 .IP [3]
 The file contains a series of calls to \fBmcset\fR and
 \fBmcmset\fR, setting the necessary translation strings
