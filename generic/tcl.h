@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.177 2004/04/25 20:15:57 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.178 2004/05/13 12:59:21 dkf Exp $
  */
 
 #ifndef _TCL
@@ -2218,6 +2218,24 @@ typedef struct Tcl_Config {
     CONST char* key;   /* Configuration key to register. ASCII encoded, thus UTF-8 */
     CONST char* value; /* The value associated with the key. System encoding */
 } Tcl_Config;
+
+
+/*
+ * Flags for TIP#143 limits, detailing which limits are active in an
+ * interpreter.  Used for Tcl_{Add,Remove}LimitHandler type argument.
+ */
+
+#define TCL_LIMIT_COMMANDS	0x01
+#define TCL_LIMIT_TIME		0x02
+
+/*
+ * Structure containing information about a limit handler to be called
+ * when a command- or time-limit is exceeded by an interpreter.
+ */
+
+typedef void (Tcl_LimitHandlerProc) _ANSI_ARGS_((ClientData clientData,
+	Tcl_Interp *interp));
+typedef void (Tcl_LimitHandlerDeleteProc) _ANSI_ARGS_((ClientData clientData));
 
 
 #ifndef TCL_NO_DEPRECATED

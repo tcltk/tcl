@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.99 2004/04/06 22:25:48 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.100 2004/05/13 12:59:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -411,7 +411,12 @@ Tcl_CreateInterp()
 
     iPtr->stubTable = &tclStubs;
 
-    
+    /*
+     * TIP#143: Initialise the resource limit support.
+     */
+
+    TclInitLimitSupport(interp);
+
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for
@@ -3121,7 +3126,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
      */
     cmdPtr->refCount++;
     iPtr->cmdCount++;
-    if ( code == TCL_OK && traceCode == TCL_OK) {
+    if (code == TCL_OK && traceCode == TCL_OK && !Tcl_LimitExceeded(interp)) {
 	savedVarFramePtr = iPtr->varFramePtr;
 	if (flags & TCL_EVAL_GLOBAL) {
 	    iPtr->varFramePtr = NULL;
@@ -3131,6 +3136,9 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     }
     if (Tcl_AsyncReady()) {
 	code = Tcl_AsyncInvoke(interp, code);
+    }
+    if (code == TCL_OK && Tcl_LimitReady(interp)) {
+	code = Tcl_LimitCheck(interp);
     }
 
     /*
@@ -3142,7 +3150,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	Tcl_Obj *saveOptions = iPtr->returnOpts;
 	Tcl_IncrRefCount(saveOptions);
         if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-            traceCode = TclCheckExecutionTraces (interp, command, length,
+            traceCode = TclCheckExecutionTraces(interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
         }
         if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
