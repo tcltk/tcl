@@ -1,3 +1,8 @@
+2000-06-19  Eric Melski  <ericm@scriptics.com>
+
+	* doc/RegExp.3: Replaced instances of "Tcl_GetRegExpInfo" with
+	"Tcl_RegExpGetInfo", the correct name of the function [Bug: 5901].
+
 2000-06-13  Eric Melski  <ericm@scriptics.com>
 
 	* win/tcl.m4:
