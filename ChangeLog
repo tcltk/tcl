@@ -1,3 +1,7 @@
+2004-09-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/basic.test (49.*):	New tests for TCL_EVAL_GLOBAL.
+
 2004-09-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclVar.c (TclObjLookupVar, TclObjLookupVar): 
