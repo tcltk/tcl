@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.15 2003/12/14 10:51:12 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.16 2003/12/14 17:38:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -30,9 +30,8 @@ static void	FreeFsPathInternalRep _ANSI_ARGS_((Tcl_Obj *listPtr));
 static void	UpdateStringOfFsPath  _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int	SetFsPathFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 					      Tcl_Obj *objPtr));
-static int	FindSplitPos _ANSI_ARGS_((CONST char *path, 
-					  CONST char separator));
-static int      IsSeparatorOrNull _ANSI_ARGS_((CONST char ch));
+static int	FindSplitPos _ANSI_ARGS_((CONST char *path, int separator));
+static int      IsSeparatorOrNull _ANSI_ARGS_((int ch));
 
 
 /*
@@ -685,7 +684,7 @@ Tcl_FSConvertToPathType(interp, objPtr)
  */
 static int
 IsSeparatorOrNull(ch)
-    CONST char ch;
+    int ch;
 {
     if (ch == 0) {
         return 1;
@@ -712,7 +711,7 @@ IsSeparatorOrNull(ch)
 static int
 FindSplitPos(path, separator)
     CONST char *path;
-    CONST char separator;
+    int separator;
 {
     int count = 0;
     switch (tclPlatform) {
