@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.19 2001/11/29 18:14:44 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.20 2001/11/29 19:38:48 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1155,6 +1155,20 @@ test namespace-41.1 {Shadowing byte-compiled commands, Bug: 231259} {
 
 test namespace-41.2 {Shadowing byte-compiled commands, Bug: 231259} {
     set res {}
+    namespace eval ns {}
+    proc ns::a {i} {
+	variable b
+	proc set args {return "New proc is called"}
+	return [set b $i]
+    }
+    ns::a 1
+    set res [ns::a 2]
+    namespace delete ns
+    set res
+} {New proc is called}
+
+test namespace-41.3 {Shadowing byte-compiled commands, Bug: 231259} {knownbug} {
+    set res {}
     namespace eval ns {
 	variable b 0
     }
@@ -1165,10 +1179,10 @@ test namespace-41.2 {Shadowing byte-compiled commands, Bug: 231259} {
 	return [set b $i]
     }
     
-    set res [list [ns::a 1] [ns::a 2] $ns::b]
+    set res [list [ns::a 1] $ns::b]
     namespace delete ns
     set res
-} {1 {New proc is called} 1}
+} {{New proc is called} 0}
 
 # cleanup
 catch {rename cmd1 {}}
