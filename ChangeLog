@@ -1,3 +1,9 @@
+2002-07-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileCatchCmd): return
+	TCL_OUT_LINE_COMPILE instead of TCL_ERROR: let the failure happen
+	at runtime so that it can be caught [Bug 577015].
+
 2002-07-02  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/tcltest.n: Markup fixes, spellcheck.
