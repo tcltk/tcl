@@ -1,3 +1,14 @@
+1999-06-03    <stanton@scriptics.com>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): 
+	* tests/string.test: Fixed bug where string equal/compare -nocase
+	reported wrong result on null strings. [Bug: 2138]
+
+1999-06-02    <stanton@scriptics.com>
+
+	* generic/tclUtf.c (Tcl_UtfNcasecmp): Fixed incorrect computation
+	of relative ordering. [Bug: 2135]
+
 1999-06-01    <stanton@scriptics.com>
 
 	* unix/configure.in: Fixed various small configure.in patches
