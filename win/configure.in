@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.80 2004/04/07 21:10:17 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.81 2004/06/11 20:25:25 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -429,7 +429,7 @@ fi
 #	another for platform-independent scripts.
 #--------------------------------------------------------------------
 
-if test "$prefix" != "$exec_prefix"; then
+if test "$prefix/lib" != "$libdir"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"

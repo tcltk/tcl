@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.104 2004/05/30 12:18:25 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.105 2004/06/11 20:25:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -528,6 +528,15 @@ Tcl_CreateInterp()
 #endif
 
     /*
+     * TIP #59: Make embedded configuration information
+     * available. This makes use of a public API call
+     * (Tcl_RegisterConfig) and thus requires that the global stub
+     * table is initialized.
+     */
+
+    TclInitEmbeddedConfigurationInformation (interp);
+
+    /*
      * Compute the byte order of this machine.
      */
 
@@ -574,14 +583,6 @@ Tcl_CreateInterp()
 #endif
     Tcl_InitStubs(interp, TCL_VERSION, 1);
 
-    /*
-     * TIP #59: Make embedded configuration information
-     * available. This makes use of a public API call
-     * (Tcl_RegisterConfig) and thus requires that the global stub
-     * table is initialized.
-     */
-
-    TclInitEmbeddedConfigurationInformation (interp);
     return interp;
 }
 
