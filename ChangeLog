@@ -1,3 +1,9 @@
+2005-01-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n, doc/re_syntax.n: Convert to other form of emacs
+	mode control comment to prevent problems with old versions of
+	man. [Bug 1085127]
+
 2005-01-05  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/winDde.test: Fixed broken test result.
