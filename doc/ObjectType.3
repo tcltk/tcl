@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.7 2002/08/16 13:45:36 dkf Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.8 2004/06/18 15:17:58 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -192,6 +192,9 @@ the reference count for each element object
 then deallocates the storage for the array of pointers.
 The \fIfreeIntRepProc\fR member can be set to NULL
 to indicate that the internal representation does not require freeing.
+The \fIfreeIntRepProc\fR implementation should not access the
+\fIbytes\fR member of the object, as this may potentially have already
+been deleted.
 
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount
