@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.2 1998/09/24 23:59:42 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.3 1998/10/06 02:59:06 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -235,8 +235,8 @@ ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 
 TCLSH_OBJS = tclAppInit.o
 
-TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclUnixTest.o \
-	tclThreadTest.o
+TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
+	tclThreadTest.o	tclUnixTest.o
 
 XTTEST_OBJS = tclTest.o tclTestObj.o tclUnixTest.o tclXtNotify.o \
 	tclXtTest.o xtTestInit.o
@@ -314,6 +314,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
+	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
@@ -796,6 +797,9 @@ tclTest.o: $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c
+
+tclTestProcBodyObj.o: $(GENERIC_DIR)/tclTestProcBodyObj.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c
 
 tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTimer.c

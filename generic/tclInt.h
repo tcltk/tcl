@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.3 1998/09/30 20:46:25 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.4 1998/10/06 02:59:04 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1756,6 +1756,7 @@ extern Tcl_ObjType	tclByteCodeType;
 extern Tcl_ObjType	tclDoubleType;
 extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
+extern Tcl_ObjType	tclProcBodyType;
 extern Tcl_ObjType	tclStringType;
 
 /*
@@ -1949,6 +1950,7 @@ EXTERN int		TclMakeFileTable _ANSI_ARGS_((Tcl_Interp *interp,
                             int noStdio));
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN int		TclNeedSpace _ANSI_ARGS_((char *start, char *end));
+EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
 EXTERN int		TclObjInterpProc _ANSI_ARGS_((ClientData clientData,
 		    	    Tcl_Interp *interp, int objc,

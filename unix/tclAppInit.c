@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.1.2.2 1998/09/24 23:59:43 stanton Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.1.2.3 1998/10/06 02:59:06 stanton Exp $
  */
 
 #ifdef TCL_XT_TEST
@@ -32,6 +32,8 @@ int *tclDummyMathPtr = (int *) matherr;
 
 #include "tclInt.h"
 
+EXTERN int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #ifdef TCL_THREADS
@@ -130,6 +132,11 @@ Tcl_AppInit(interp)
 	return TCL_ERROR;
     }
 #endif
+    if (Procbodytest_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "procbodytest", Procbodytest_Init,
+            Procbodytest_SafeInit);
 #endif /* TCL_TEST */
 
     /*

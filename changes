@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.3 1998/09/30 23:58:53 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.4 1998/10/06 02:59:03 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3611,6 +3611,19 @@ GlobalReAlloc API was not correctly re-allocating blocks that were
 32k+.  The fix was to use newer Win32 APIs (HeapAlloc, HeapFree, and
 HeapReAlloc.) (BS)
 
+10/5/98 (bug fix) Fixed bug in pkg_mkIndex that caused some files that do
+a "package require" of packages in the Tcl libraries to give a warning like
+	warning: "xx.tcl" provides more than one package ({xx 2.0} {yy 0.3})
+and generate a broken pkgIndex.tcl file. (EMS)
+
+10/5/98 (bug fix) Pkg_mkIndex was not doing a case-insensitive comparison
+of extensions to determine whether to load or source a file. Thus, under
+Windows, MYDLLNAME.DLL was sourced, and mydllname.dll loaded. (EMS)
+
+10/5/98 (new feature) Created a new Tcl_Obj type, "procbody". This object's
+internal representation holds a pointer to a Proc structure. Extended
+TclCreateProc to take both strings and "procbody" (EMS)
+
 ======== Changes for 8.0 go above this line ========
 ======== Changes for 8.1 go below this line ========
 
@@ -3899,4 +3912,3 @@ as starvation of the notifier thread. (BW)
 9/22/98 (bug fix) Changed the value of TCL_TRACE_ARRAY so it no longer
 conflicts with the deprecated TCL_PARSE_PART1 flag.  This should
 improve portability of C code. (stanton)
-
