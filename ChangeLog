@@ -1,5 +1,10 @@
 2002-06-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclExecute.c: Tidied up headers in relation to float.h
+	to cut the cruft and ensure DBL_MAX is defined since doubles seem
+	to be the same size everywhere; if the assumption isn't true, the
+	variant platforms had better have run configure...
+
 	* unix/tclUnixPort.h (EOVERFLOW): Added code to define it if it
 	wasn't previously defined.  Also some other general tidying and
 	adding of comments.  [Tcl bugs 563122, 564595]
