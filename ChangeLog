@@ -1,3 +1,8 @@
+2003-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl: The -returnCodes option to [test]
+	failed to recognize the symbolic name "ok" for return code 0.
+
 2003-05-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclBasic.c (Tcl_HideCommand): Fixed error message
