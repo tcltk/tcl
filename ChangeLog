@@ -13,7 +13,9 @@
 	  different channel options. Fixes [460993] reported by Don
 	  Porter.
 
-2001-09-12  Don Porter <msofer@users.sourceforge.net>
+2001-09-12  Don Porter <dgp@users.sourceforge.net>
+
+	Backport several bug fixes from HEAD to core-8-3-1-branch:
 
         * tests/rename.test:
         * tests/split.test:  Corrected tests to better isolate tests in
