@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.1.2.5 1998/12/02 23:46:49 stanton Exp $
+# RCS: @(#) $Id: io.test,v 1.1.2.6 1998/12/03 04:57:15 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -181,6 +181,15 @@ test io-2.3 {WriteBytes: flush on line} {
     close $f
     set x
 } "\r\n12"
+test io-2.4 {WriteBytes: reset sawLF after each buffer} {
+    set f [open test1 w]
+     fconfigure $f -encoding binary -buffering line -translation lf \
+	     -buffersize 16
+    puts -nonewline $f "abcdefg\nhijklmnopqrstuvwxyz"
+    set x [list [contents test1]]
+    close $f
+    lappend x [contents test1]
+} [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
 
 test io-3.1 {WriteChars: compatibility with WriteBytes} {
     # loop until all bytes are written
@@ -267,6 +276,15 @@ test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {
     close $f
     lappend x [contents test1]
 } [list "!)!)!)!)!)!)!)!)!" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
+test io-3.8 {WriteChars: reset sawLF after each buffer} {
+    set f [open test1 w]
+    fconfigure $f -encoding ascii -buffering line -translation lf \
+	     -buffersize 16
+    puts -nonewline $f "abcdefg\nhijklmnopqrstuvwxyz"
+    set x [list [contents test1]]
+    close $f
+    lappend x [contents test1]
+} [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
 
 test io-4.1 {TranslateOutputEOL: lf} {
     # search for \n
@@ -310,6 +328,15 @@ test io-4.4 {TranslateOutputEOL: crlf} {
     close $f
     lappend x [contents test1]
 } [list "1234567\r\n\r\n\r\n\r\n\r" "1234567\r\n\r\n\r\n\r\n\r\nA"]
+test io-4.5 {TranslateOutputEOL: crlf} {
+    # Check for overflow of the destination buffer
+
+    set f [open test1 w]
+    fconfigure $f -translation crlf -buffersize 12
+    puts -nonewline $f "12345678901\n456789012345678901234"
+    close $f
+    set x [contents test1]
+} "12345678901\r\n456789012345678901234"
 
 test io-5.1 {CheckFlush: not full} {
     set f [open test1 w]
@@ -1063,7 +1090,7 @@ test io-7.4 {FilterInputBytes: recover from split up character} {stdio} {
     vwait x
     fconfigure $f -encoding binary -blocking 1
     puts $f "\x51\x82\x52"
-    fconfigure $f -encoding shiftjis -blocking 0
+    fconfigure $f -encoding shiftjis
     vwait x
     close $f
     set x
@@ -1344,20 +1371,19 @@ test io-12.4 {ReadChars: split-up char} {stdio} {
     vwait x
     fconfigure $f -encoding binary -blocking 1
     puts -nonewline $f "\x7b"
+    after 500			;# Give the cat process time to catch up
     fconfigure $f -encoding shiftjis -blocking 0
     vwait x
     close $f
     set x
 } [list "123456789012345" 1 "\u672c" 0]
 test io-12.5 {ReadChars: fileevents on partial characters} {stdio} {
-    set f [open test1 w]
-    puts $f {
+    makeFile {
 	fconfigure stdout -encoding binary -buffering none
 	gets stdin; puts -nonewline "\xe7"
 	gets stdin; puts -nonewline "\x89"
 	gets stdin; puts -nonewline "\xa6"
-    }
-    close $f
+    } test1
     set f [open "|[list $tcltest test1]" r+]
     fileevent $f readable {
 	lappend x [read $f]
@@ -1459,10 +1485,12 @@ test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio} {
     set x {}
 
     puts -nonewline $f "abcdefghj\r"
-    vwait x
+    after 100 {set y ok}
+    vwait y
 
     puts -nonewline $f "\n01234"
-    vwait x
+    after 100 {set y ok}
+    vwait y
 
     close $f
     set x

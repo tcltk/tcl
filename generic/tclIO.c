@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.1.2.4 1998/12/02 03:13:30 stanton Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.1.2.5 1998/12/03 04:57:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2405,6 +2405,7 @@ WriteBytes(chanPtr, src, srcLen)
 	total += dstLen;
 	src += toWrite;
 	srcLen -= toWrite;
+	sawLF = 0;
     }
     return total;
 }
@@ -2561,6 +2562,7 @@ WriteChars(chanPtr, src, srcLen)
 	    total += dstWrote;
 	    stage += stageRead;
 	    stageLen -= stageRead;
+	    sawLF = 0;
 	}
     }
     return total;
@@ -2621,6 +2623,7 @@ TranslateOutputEOL(chanPtr, dst, src, dstLenPtr, srcLenPtr)
 				 * On exit, the number of bytes read from
 				 * the source buffer. */
 {
+    char *dstEnd;
     int srcLen, newlineFound;
     
     newlineFound = 0;
@@ -2628,28 +2631,23 @@ TranslateOutputEOL(chanPtr, dst, src, dstLenPtr, srcLenPtr)
 
     switch (chanPtr->outputTranslation) {
 	case TCL_TRANSLATE_LF: {
-	    memcpy((VOID *) dst, (VOID *) src, (size_t) srcLen);
-	    if (chanPtr->flags & CHANNEL_LINEBUFFERED) {
-		char *dstEnd;
-		
-		for (dstEnd = dst + srcLen; dst < dstEnd; dst++) {
-		    if (*dst == '\n') {
-			newlineFound = 1;
-			break;
-		    }
+	    for (dstEnd = dst + srcLen; dst < dstEnd; ) {
+		if (*src == '\n') {
+		    newlineFound = 1;
 		}
+		*dst++ = *src++;
 	    }
 	    *dstLenPtr = srcLen;
 	    break;
 	}
 	case TCL_TRANSLATE_CR: {
-	    char *dstEnd;
-	    
-	    memcpy((VOID *) dst, (VOID *) src, (size_t) srcLen);
-	    for (dstEnd = dst + srcLen; dst < dstEnd; dst++) {
-		if (*dst == '\n') {
-		    *dst = '\r';
+	    for (dstEnd = dst + srcLen; dst < dstEnd;) {
+		if (*src == '\n') {
+		    *dst++ = '\r';
 		    newlineFound = 1;
+		    src++;
+		} else {
+		    *dst++ = *src++;
 		}
 	    }
 	    *dstLenPtr = srcLen;
@@ -2664,7 +2662,7 @@ TranslateOutputEOL(chanPtr, dst, src, dstLenPtr, srcLenPtr)
 	     * output buffer.
 	     */
 
-	    char *dstStart, *dstMax, *dstEnd;
+	    char *dstStart, *dstMax;
 	    CONST char *srcStart;
 	    
 	    dstStart = dst;
@@ -2672,7 +2670,12 @@ TranslateOutputEOL(chanPtr, dst, src, dstLenPtr, srcLenPtr)
 
 	    srcStart = src;
 	    
-	    for (dstEnd = dst + srcLen; dst < dstEnd; ) {
+	    if (srcLen < *dstLenPtr) {
+		dstEnd = dst + srcLen;
+	    } else {
+		dstEnd = dst + *dstLenPtr;
+	    }
+	    while (dst < dstEnd) {
 		if (*src == '\n') {
 		    if (dstEnd < dstMax) {
 			dstEnd++;
@@ -7597,5 +7600,3 @@ SetBlockMode(interp, chanPtr, mode)
     }
     return TCL_OK;
 }
-
-
