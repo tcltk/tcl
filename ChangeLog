@@ -1,5 +1,10 @@
 2004-05-03  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.c (TclCompileScript): setting the compilation
+	namespace outside of the loop.
+
+2004-05-03  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c:
 	* generic/tclInt.h: reverted fix for [Bug 926445] of 2004-04-02,
 	restoring TCL_ALIGN to the header file. Todd Helfter reported that
