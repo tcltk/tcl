@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.10 1999/03/10 06:49:14 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.11 1999/04/06 04:27:01 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -325,7 +325,7 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    result = TclpChdir(Tcl_DStringValue(&ds));
+    result = Tcl_Chdir(Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
 
     if (result != 0) {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.10 1999/04/06 02:05:35 stanton Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.11 1999/04/06 04:27:02 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -566,7 +566,7 @@ Tcl_GetEncodingNames(interp)
 	objc = 0;
 	Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
 
-	TclpGetCwd(interp, &pwdString);
+	Tcl_GetCwd(interp, &pwdString);
 
 	for (i = 0; i < objc; i++) {
 	    char *string;
@@ -583,8 +583,8 @@ Tcl_GetEncodingNames(interp)
 	     */
 
 	    strcpy(globArgString, "*.enc");
-	    if ((TclpChdir(string) == 0)
-		    && (TclpChdir("encoding") == 0)
+	    if ((Tcl_Chdir(string) == 0)
+		    && (Tcl_Chdir("encoding") == 0)
 		    && (TclGlob(interp, globArgString, 0) == TCL_OK)) {
 		objc2 = 0;
 
@@ -601,7 +601,7 @@ Tcl_GetEncodingNames(interp)
 		    }
 		}
 	    }
-	    TclpChdir(Tcl_DStringValue(&pwdString));
+	    Tcl_Chdir(Tcl_DStringValue(&pwdString));
 	}
 	Tcl_DStringFree(&pwdString);
     }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.9 1999/04/06 03:13:19 redman Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.10 1999/04/06 04:27:02 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -2105,10 +2105,6 @@ Tcl_GetNameOfExecutable()
 {
     return (tclExecutableName);
 }
-
-
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -2131,14 +2127,13 @@ Tcl_GetNameOfExecutable()
  *----------------------------------------------------------------------
  */
 
-char *Tcl_GetCwd(interp, cwdPtr)
+char *
+Tcl_GetCwd(interp, cwdPtr)
     Tcl_Interp *interp;
     Tcl_DString *cwdPtr;
 {
     return TclpGetCwd(interp, cwdPtr);
 }
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -2155,7 +2150,9 @@ char *Tcl_GetCwd(interp, cwdPtr)
  *
  *----------------------------------------------------------------------
  */
-int Tcl_Chdir(dirName)
+
+int
+Tcl_Chdir(dirName)
     CONST char *dirName;
 {
     return TclpChdir(dirName);

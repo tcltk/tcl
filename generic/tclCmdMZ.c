@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.11 1999/04/05 22:20:27 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.12 1999/04/06 04:27:01 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -94,7 +94,7 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    if (TclpGetCwd(interp, &ds) == NULL) {
+    if (Tcl_GetCwd(interp, &ds) == NULL) {
 	return TCL_ERROR;
     }
     Tcl_DStringResult(interp, &ds);
