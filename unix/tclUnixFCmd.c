@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.21 2002/04/07 05:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.22 2002/06/10 10:41:29 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1675,7 +1675,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     while (1) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
-	    /* Reached directory separator, or end of string */
+	    /* Reached directory separator */
 	    Tcl_DString ds;
 	    CONST char *nativePath;
 	    int accessOk;
@@ -1691,6 +1691,8 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    /* Update the acceptable point */
 	    nextCheckpoint = currentPathEndPosition - path;
 	} else if (cur == 0) {
+	    /* Reached end of string */
+	    nextCheckpoint = pathLen;
 	    break;
 	}
 	currentPathEndPosition++;
