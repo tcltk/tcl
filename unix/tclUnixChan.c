@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42 2003/02/21 02:36:27 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.1 2003/10/23 17:49:06 andreas_kupries Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1889,8 +1889,8 @@ Tcl_MakeFileChannel(handle, mode)
 #ifdef DEPRECATED
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif /* DEPRECATED */
-    int socketType = 0;
-    socklen_t argLength = sizeof(int);
+    struct sockaddr sockaddr;
+    socklen_t sockaddrLen = sizeof(sockaddr);
 
     if (mode == 0) {
 	return NULL;
@@ -1911,6 +1911,8 @@ Tcl_MakeFileChannel(handle, mode)
     }
 #endif /* DEPRECATED */
 
+    sockaddr.sa_family = AF_UNSPEC;
+
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
 	fsPtr = TtyInit(fd, 0);
@@ -1918,13 +1920,14 @@ Tcl_MakeFileChannel(handle, mode)
 	sprintf(channelName, "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
-    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (VOID *)&socketType,
-		   &argLength) == 0  &&	 socketType == SOCK_STREAM) {
-	return MakeTcpClientChannelMode((ClientData) fd, mode);
+    if (getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0
+            && sockaddrLen > 0
+            && sockaddr.sa_family == AF_INET) {
+        return MakeTcpClientChannelMode((ClientData) fd, mode);
     } else {
-	channelTypePtr = &fileChannelType;
-	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
-	sprintf(channelName, "file%d", fd);
+        channelTypePtr = &fileChannelType;
+        fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
+        sprintf(channelName, "file%d", fd);
     }
 
 #ifdef DEPRECATED
