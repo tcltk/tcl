@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6 2002/12/10 00:34:15 hobbs Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.7 2004/04/23 07:21:36 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -30,9 +30,9 @@ typedef struct {
     char **list;	/* List of pointers */
 } SyncObjRecord;
 
-static SyncObjRecord keyRecord;
-static SyncObjRecord mutexRecord;
-static SyncObjRecord condRecord;
+static SyncObjRecord keyRecord = {0, 0, NULL};
+static SyncObjRecord mutexRecord = {0, 0, NULL};
+static SyncObjRecord condRecord = {0, 0, NULL};
 
 /*
  * Prototypes of functions used only in this file
