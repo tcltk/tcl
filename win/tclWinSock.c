@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.28 2002/11/27 00:58:01 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.29 2002/11/27 01:41:13 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -121,14 +121,9 @@ typedef struct SocketInfo {
 				    * FD_CONNECT that indicate which
 				    * events are currently being
 				    * selected. */
-    int acceptedSocketsCount;      /* Count of the current number of
-				    * accepted connections ready and
+    int acceptEventCount;          /* Count of the current number of
+				    * FD_ACCEPTs that have arrived and
 				    * not yet processed. */
-    SocketAcceptInfo **acceptedSockets; /* The array of accepted
-				    * connections on this listening
-				    * socket. */
-    int acceptedSocketsSize;	   /* The size of the acceptedSockets
-				    * array. */
     Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
     ClientData acceptProcData;	   /* The data for the accept proc. */
     int lastError;		   /* Error code from last message. */
@@ -210,8 +205,7 @@ static LRESULT CALLBACK	    SocketProc _ANSI_ARGS_((HWND hwnd,
 static Tcl_EventSetupProc   SocketSetupProc;
 static Tcl_ExitProc	    SocketThreadExitHandler;
 static int		    SocketsEnabled _ANSI_ARGS_((void));
-static void		    TcpAccept _ANSI_ARGS_((SocketInfo *infoPtr,
-				    SocketAcceptInfo *saiPtr));
+static void		    TcpAccept _ANSI_ARGS_((SocketInfo *infoPtr));
 static Tcl_DriverBlockModeProc	TcpBlockProc;
 static Tcl_DriverCloseProc	TcpCloseProc;
 static Tcl_DriverSetOptionProc	TcpSetOptionProc;
@@ -786,25 +780,7 @@ SocketEventProc(evPtr, flags)
      */
 
     if (infoPtr->readyEvents & FD_ACCEPT) {
-	int todo, count;
-	SocketAcceptInfo **saiPtr;
-
-	/*
-	 * First copy and reset the list, so we can remove the lock.
-	 */
-
-	count = infoPtr->acceptedSocketsCount;
-	infoPtr->acceptedSocketsCount = 0;
-	saiPtr = (SocketAcceptInfo **) ckalloc(sizeof(SocketAcceptInfo *) * count);
-	memcpy(saiPtr, infoPtr->acceptedSockets, sizeof(SocketAcceptInfo *) * count);
-	infoPtr->readyEvents &= ~(FD_ACCEPT);
-	SetEvent(tsdPtr->socketListLock);
-
-	for (todo = 0; count > todo; todo++) {
-	    TcpAccept(infoPtr, saiPtr[todo]);
-	    ckfree((char *) saiPtr[todo]);
-	}
-	ckfree((char *) saiPtr);
+	TcpAccept(infoPtr);
 	return 1;
     }
 
@@ -968,20 +944,7 @@ TcpCloseProc(instanceData, interp)
 	}
     }
     
-    /*
-     * In case any accepted sockets had been queued, close them.
-     */
-    if (infoPtr->acceptedSocketsCount) {
-	int ready;
-
-	for (ready = 0; infoPtr->acceptedSocketsCount > ready; ready++) {
-	    winSock.closesocket(infoPtr->acceptedSockets[ready]->newSock);
-	    ckfree((char *)infoPtr->acceptedSockets[ready]);
-	}
-    }
-
     SetEvent(tsdPtr->socketListLock);
-    ckfree((char *) infoPtr->acceptedSockets);
     ckfree((char *) infoPtr);
     return errorCode;
 }
@@ -1016,10 +979,7 @@ NewSocketInfo(socket)
     infoPtr->watchEvents = 0;
     infoPtr->readyEvents = 0;
     infoPtr->selectEvents = 0;
-    infoPtr->acceptedSocketsCount = 0;
-    infoPtr->acceptedSocketsSize = 1; /* start with 1. */
-    infoPtr->acceptedSockets = (SocketAcceptInfo **)
-	    ckalloc(sizeof(SocketAcceptInfo *) * infoPtr->acceptedSocketsSize);
+    infoPtr->acceptEventCount = 0;
     infoPtr->acceptProc = NULL;
     infoPtr->lastError = 0;
 
@@ -1550,8 +1510,9 @@ Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
  *----------------------------------------------------------------------
  *
  * TcpAccept --
- *	Turns the already accepted socket into a channel and calls
- *	the registered accept procedure.
+ *	Accept a TCP socket connection.  This is called by
+ *	SocketEventProc and it in turns calls the registered accept
+ *	procedure.
  *
  * Results:
  *	None.
@@ -1563,30 +1524,72 @@ Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
  */
 
 static void
-TcpAccept(infoPtr, saiPtr)
-    SocketInfo *infoPtr;	/* Listening socket accepted from. */
-    SocketAcceptInfo *saiPtr;	/* Accept info pointer. */
+TcpAccept(infoPtr)
+    SocketInfo *infoPtr;	/* Socket to accept. */
 {
+    SOCKET newSocket;
     SocketInfo *newInfoPtr;
+    SOCKADDR_IN addr;
+    int len;
     char channelName[16 + TCL_INTEGER_SPACE];
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
+     * Accept the incoming connection request.
+     */
+
+    len = sizeof(SOCKADDR_IN);
+  
+    newSocket = winSock.accept(infoPtr->socket, (SOCKADDR *)&addr,
+	    &len);
+
+    /*
+     * Clear the ready mask so we can detect the next connection request.
+     * Note that connection requests are level triggered, so if there is
+     * a request already pending, a new event will be generated.
+     */
+
+    if (newSocket == INVALID_SOCKET) {
+	infoPtr->acceptEventCount = 0;
+	infoPtr->readyEvents &= ~(FD_ACCEPT);
+	return;
+    }
+
+    /*
+     * It is possible that more than one FD_ACCEPT has been sent, so an extra
+     * count must be kept.  Decrement the count, and reset the readyEvent bit
+     * if the count is no longer > 0.
+     */
+
+    infoPtr->acceptEventCount--;
+
+    if (infoPtr->acceptEventCount <= 0) {
+	infoPtr->readyEvents &= ~(FD_ACCEPT);
+    }
+
+    /*
+     * Win-NT has a misfeature that sockets are inherited in child
+     * processes by default.  Turn off the inherit bit.
+     */
+
+    SetHandleInformation( (HANDLE) newSocket, HANDLE_FLAG_INHERIT, 0 );
+
+    /*
      * Add this socket to the global list of sockets.
      */
 
-    newInfoPtr = NewSocketInfo(saiPtr->newSock);
+    newInfoPtr = NewSocketInfo(newSocket);
 
     /*
-     * Select on read/write/close events and create the channel.
+     * Select on read/write events and create the channel.
      */
 
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) newInfoPtr);
 
-    wsprintf(channelName, "sock%d", newInfoPtr->socket);
+    wsprintfA(channelName, "sock%d", newInfoPtr->socket);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
@@ -1607,8 +1610,8 @@ TcpAccept(infoPtr, saiPtr)
     if (infoPtr->acceptProc != NULL) {
 	(infoPtr->acceptProc) (infoPtr->acceptProcData,
 		newInfoPtr->channel,
-		winSock.inet_ntoa(saiPtr->newAddr.sin_addr),
-		winSock.ntohs(saiPtr->newAddr.sin_port));
+		winSock.inet_ntoa(addr.sin_addr),
+		winSock.ntohs(addr.sin_port));
     }
 }
 
@@ -2371,60 +2374,10 @@ SocketProc(hwnd, message, wParam, lParam)
 		     */
 
 		    if (event & FD_CLOSE) {
+			infoPtr->acceptEventCount = 0;
 			infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
 		    } else if (event & FD_ACCEPT) {
-			SocketAcceptInfo *saiPtr;
-			int len = sizeof(SOCKADDR_IN);
-
-			/*
-			 * Accept the incoming connection request now,
-			 * instead of later.  This helps avoid time delays
-			 * and possible threading issues related to the
-			 * underlying TCP/IP stack by keeping the accept()
-			 * in the same thread context as the notification
-			 * for it.
-			 */
-
-			saiPtr = (SocketAcceptInfo *)
-				ckalloc(sizeof(SocketAcceptInfo));
-			saiPtr->newSock = winSock.accept(infoPtr->socket,
-				(LPSOCKADDR)&saiPtr->newAddr, &len);
-
-			/*
-			 * Clear the event notification mask, due to
-			 * inheritence from the parent listening socket.
-			 */
-
-			winSock.WSAAsyncSelect(saiPtr->newSock, hwnd, 0,
-				0);
-
-			/*
-			 * Win-NT has a misfeature that sockets are
-			 * inherited in child processes by default.
-			 * Turn off the inherit bit.
-			 */
-    
-			SetHandleInformation((HANDLE)saiPtr->newSock,
-				HANDLE_FLAG_INHERIT, 0);
-			/*
-			 * If the array isn't large enough, make it
-			 * bigger.
-			 */
-
-			if ((infoPtr->acceptedSocketsCount + 1) >
-				infoPtr->acceptedSocketsSize) {
-			    /* double the size. */
-			    infoPtr->acceptedSocketsSize *= 2;
-			    infoPtr->acceptedSockets =
-				    (SocketAcceptInfo **)
-				    ckrealloc((char *)
-					infoPtr->acceptedSockets,
-					sizeof(SocketAcceptInfo *) *
-					infoPtr->acceptedSocketsSize);
-			}
-			
-			infoPtr->acceptedSockets[
-				infoPtr->acceptedSocketsCount++] = saiPtr;
+			infoPtr->acceptEventCount++;
 		    }
 
 		    if (event & FD_CONNECT) {
