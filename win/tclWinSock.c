@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.35 2003/01/13 01:27:51 mdejong Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.36 2003/01/16 19:02:00 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -315,7 +315,7 @@ InitSockets()
 {
     DWORD id;
     WSADATA wsaData;
-    int err;
+    DWORD err;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -985,7 +985,7 @@ TcpCloseProc(instanceData, interp)
          */
     
         if (winSock.closesocket(infoPtr->socket) == SOCKET_ERROR) {
-            TclWinConvertWSAError(winSock.WSAGetLastError());
+            TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
             errorCode = Tcl_GetErrno();
         }
     }
@@ -1124,7 +1124,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
      * Set kernel space buffering
      */
 
-    TclSockMinimumBuffers(sock, TCP_BUFFER_SIZE);
+    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
 
     if (server) {
 	/*
@@ -1184,7 +1184,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 	 */
     
 	if (async) {
-	    if (winSock.ioctlsocket(sock, FIONBIO, &flag) == SOCKET_ERROR) {
+	    if (winSock.ioctlsocket(sock, (long) FIONBIO, &flag) == SOCKET_ERROR) {
 		goto error;
 	    }
 	}
@@ -1195,7 +1195,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 
 	if (winSock.connect(sock, (SOCKADDR *) &sockaddr,
 		sizeof(SOCKADDR_IN)) == SOCKET_ERROR) {
-            TclWinConvertWSAError(winSock.WSAGetLastError());
+            TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
 	    if (Tcl_GetErrno() != EWOULDBLOCK) {
 		goto error;
 	    }
@@ -1230,14 +1230,14 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
      * automatically places the socket into non-blocking mode.
      */
 
-    winSock.ioctlsocket(sock, FIONBIO, &flag);
+    winSock.ioctlsocket(sock, (long) FIONBIO, &flag);
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
     return infoPtr;
 
 error:
-    TclWinConvertWSAError(winSock.WSAGetLastError());
+    TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
     if (interp != NULL) {
 	Tcl_AppendResult(interp, "couldn't open socket: ",
 		Tcl_PosixError(interp), (char *) NULL);
@@ -1296,7 +1296,7 @@ CreateSocketAddress(sockaddrPtr, host, port)
         if (addr.s_addr == INADDR_NONE) {
             hostent = winSock.gethostbyname(host);
             if (hostent != NULL) {
-                memcpy(&addr, hostent->h_addr, hostent->h_length);
+                memcpy(&addr, hostent->h_addr, (size_t) hostent->h_length);
             } else {
 #ifdef	EHOSTUNREACH
                 Tcl_SetErrno(EHOSTUNREACH);
@@ -1485,7 +1485,7 @@ Tcl_MakeTcpClientChannel(sock)
      * Set kernel space buffering and non-blocking.
      */
 
-    TclSockMinimumBuffers((SOCKET) sock, TCP_BUFFER_SIZE);
+    TclSockMinimumBuffers((int) sock, TCP_BUFFER_SIZE);
 
     infoPtr = NewSocketInfo((SOCKET) sock);
 
@@ -1698,7 +1698,7 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     int bytesRead;
-    int error;
+    DWORD error;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
     
@@ -1825,7 +1825,7 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     int bytesWritten;
-    int error;
+    DWORD error;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -1935,8 +1935,9 @@ TcpSetOptionProc (
 {
     SocketInfo *infoPtr;
     SOCKET sock;
+/*
     BOOL val = FALSE;
-/*    int boolVar, rtn;
+    int boolVar, rtn;
 */
     /*
      * Check that WinSock is initialized; do not call it if not, to
@@ -2060,7 +2061,8 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
 	int optlen;
-	int err, ret;
+	DWORD err;
+	int ret;
     
 	optlen = sizeof(int);
 	ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
@@ -2115,7 +2117,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
              * no peer). {copied from unix/tclUnixChan.c}
              */
             if (len) {
-		TclWinConvertWSAError(winSock.WSAGetLastError());
+		TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
                 if (interp) {
                     Tcl_AppendResult(interp, "can't get peername: ",
                                      Tcl_PosixError(interp),
@@ -2159,7 +2161,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
             }
         } else {
 	    if (interp) {
-		TclWinConvertWSAError(winSock.WSAGetLastError());
+		TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
 		Tcl_AppendResult(interp, "can't get sockname: ",
 				 Tcl_PosixError(interp),
 				 (char *) NULL);
@@ -2451,7 +2453,7 @@ SocketProc(hwnd, message, wParam, lParam)
 			 */
 
 			if (error != ERROR_SUCCESS) {
-			    TclWinConvertWSAError(error);
+			    TclWinConvertWSAError((DWORD) error);
 			    infoPtr->lastError = Tcl_GetErrno();
 			}
 
@@ -2459,7 +2461,7 @@ SocketProc(hwnd, message, wParam, lParam)
 		    if(infoPtr->flags & SOCKET_ASYNC_CONNECT) {
 			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 			if (error != ERROR_SUCCESS) {
-			    TclWinConvertWSAError(error);
+			    TclWinConvertWSAError((DWORD) error);
 			    infoPtr->lastError = Tcl_GetErrno();
 			}
 			infoPtr->readyEvents |= FD_WRITE;

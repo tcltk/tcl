@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.19 2003/01/09 10:38:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.20 2003/01/16 19:01:59 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -613,3 +613,18 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
     return Tcl_ExternalToUtfDString(tclWinTCharEncoding, 
 	    (CONST char *) string, len, dsPtr);
 }
+
+#ifdef HAVE_NO_SEH
+/*
+ * This method exists only to stop the compiler from emitting
+ * warnings about variables and methods accessed only from asm.
+ */
+static void squelch_warnings()
+{
+    void *ptr;
+    ptr = _except_checkstackspace_handler;
+    ESP = 0;
+    EBP = 0;
+    squelch_warnings();
+}
+#endif /* HAVE_NO_SEH */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.19 2002/11/02 22:07:06 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.20 2003/01/16 19:02:00 mdejong Exp $
  */
 
 #include <tclPort.h>
@@ -1341,7 +1341,7 @@ BroadcastValue(
 
     if (objc > 3) {
 	str = Tcl_GetStringFromObj(objv[3], &len);
-	if ((len < 2) || (*str != '-') || strncmp(str, "-timeout", len)) {
+	if ((len < 2) || (*str != '-') || strncmp(str, "-timeout", (size_t) len)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "keyName ?-timeout millisecs?");
 	    return TCL_ERROR;
 	}
@@ -1351,7 +1351,7 @@ BroadcastValue(
     }
 
     str = Tcl_GetStringFromObj(objv[2], &len);
-    if (len = 0) {
+    if (len == 0) {
 	str = NULL;
     }
 
@@ -1362,8 +1362,8 @@ BroadcastValue(
 	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
 
     objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj(result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj(sendResult));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj((int) result));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj((int) sendResult));
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;
