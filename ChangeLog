@@ -1,3 +1,8 @@
+2004-11-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/dde.n: Resynchonized the documentation with itself and fixed
+	some formatting errors.
+
 2004-11-25  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* doc/Notify.3: 
@@ -10,10 +15,10 @@
 
 2004-11-24  Don Porter  <dgp@users.sourceforge.net>
 
-        * unix/tcl.m4 (SC_ENABLE_THREADS):      Corrected failure to determine
-        the number of arguments for readdir_r on SunOS systems.  [Bug 1071701]
+	* unix/tcl.m4 (SC_ENABLE_THREADS):      Corrected failure to determine
+	the number of arguments for readdir_r on SunOS systems.  [Bug 1071701]
 
-        * unix/configure:       autoconf-2.13
+	* unix/configure:       autoconf-2.13
 
 2004-11-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -213,9 +218,9 @@
 
 2004-10-29  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/tcltest/tcltest.tcl:  Correct reaction to errors in the
-        obsolete processCmdLineArgsHook.        [Bug 1055673]
-        * library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.7
+	* library/tcltest/tcltest.tcl:  Correct reaction to errors in the
+	obsolete processCmdLineArgsHook.        [Bug 1055673]
+	* library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.7
 
 2004-10-28  Andreas Kupries <andreask@activestate.com>
 
@@ -1149,7 +1154,7 @@
 
 	* library/tcltest/tcltest.tcl:	Corrected references to
 	non-existent $name variable in [cleanupTests]. [Bug 833637]
- 
+
 2004-02-03  Don Porter	<dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Corrected parsing of single

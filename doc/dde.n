@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: dde.n,v 1.8.2.2 2004/10/27 14:23:56 dkf Exp $
+'\" RCS: @(#) $Id: dde.n,v 1.8.2.3 2004/11/26 09:37:39 dkf Exp $
 '\" 
 .so man.macros
 .TH dde n 1.2 dde "Tcl Bundled Packages"
@@ -17,17 +17,17 @@ dde \- Execute a Dynamic Data Exchange command
 .sp
 \fBpackage require dde 1.2\fR
 .sp
-\fBdde \fIservername\fR ?\fItopic\fR?
+\fBdde eval\fR ?\fB\-async\fR? \fIservice cmd\fR ?\fIarg ...\fR?
 .sp
-\fBdde \fIexecute\fR ?\fI\-async\fR? \fIservice topic \fR?\fIdata\fR?
+\fBdde execute\fR ?\fB\-async\fR? \fIservice topic data\fR
 .sp
-\fBdde \fIpoke\fR \fIservice topic item data\fR
+\fBdde poke \fIservice topic item data\fR
 .sp
-\fBdde \fIrequest\fR ?\fI\-binary\fR? \fIservice topic \fR?\fIdata\fR?
+\fBdde request\fR ?\fB\-binary\fR? \fIservice topic data\fR
 .sp
-\fBdde \fIservices\fR \fIservice topic \fR?\fIdata\fR?
+\fBdde servername\fR ?\fItopic\fR?
 .sp
-\fBdde \fIeval\fR ?\fI\-async\fR? \fIservice topic \fR?\fIdata\fR?
+\fBdde services \fIservice topic\fR
 .BE
 
 .SH DESCRIPTION
@@ -39,12 +39,11 @@ transaction needs a \fIservice name\fR and a \fItopic\fR. Both the
 \fIservice name\fR and \fItopic\fR are application defined; Tcl uses
 the service name \fBTclEval\fR, while the topic name is the name of the
 interpreter given by \fBdde servername\fR. Other applications have their
-own \fIservice names\fR and \fItopics\fR. For instance, Microsoft Excel
+own \fIservice name\fRs and \fItopic\fRs. For instance, Microsoft Excel
 has the service name \fBExcel\fR.
 .PP
 The \fBeval\fR and \fBexecute\fR commands accept the option \fB\-async\fR:
 .TP
-
 .SH "DDE COMMANDS"
 .PP
 The following commands are a subset of the full Dynamic Data Exchange
@@ -56,13 +55,13 @@ the service name \fBTclEval\fR and the topic name specified by \fItopic\fR.
 If no \fItopic\fR is given, \fBdde servername\fR returns the name
 of the current topic or the empty string if it is not registered as a service.
 .TP
-\fBdde execute\fR ?\fI\-async\fR? \fIservice topic data\fR
+\fBdde execute\fR ?\fB\-async\fR? \fIservice topic data\fR
 \fBdde execute\fR takes the \fIdata\fR and sends it to the server indicated
 by \fIservice\fR with the topic indicated by \fItopic\fR. Typically,
 \fIservice\fR is the name of an application, and \fItopic\fR is a file to
 work on.  The \fIdata\fR field is given to the remote application.
 Typically, the application treats the \fIdata\fR field as a script, and the
-script is run in the application.  The \fI\-async\fR option requests
+script is run in the application.  The \fB\-async\fR option requests
 asynchronous invocation.  The command returns an error message if the
 script did not run, unless the \fB\-async\fR flag was used, in which case
 the command returns immediately with no error.
@@ -76,14 +75,14 @@ on.  The \fIitem\fR is also application specific and is often not used, but
 it must always be non-null.  The \fIdata\fR field is given to the remote
 application.
 .TP
-\fBdde request\fR ?\fI\-binary\fR? \fIservice topic item\fR
+\fBdde request\fR ?\fB\-binary\fR? \fIservice topic item\fR
 \fBdde request\fR is typically used to get the value of something; the
 value of a cell in Microsoft Excel or the text of a selection in
 Microsoft Word. \fIservice\fR is typically the name of an application,
 \fItopic\fR is typically the name of the file, and \fIitem\fR is
 application-specific. The command returns the value of \fIitem\fR as
 defined in the application.  Normally this is interpreted to be a
-string with terminating null.  If \fI\-binary\fR is specified, the
+string with terminating null.  If \fB\-binary\fR is specified, the
 result is returned as a byte array.
 .TP
 \fBdde services \fIservice topic\fR
@@ -97,14 +96,13 @@ for a given service are returned. If both are not null, if that
 service-topic pair currently exists, it is returned; otherwise, null
 is returned.
 .TP
-\fBdde eval\fR ?\fI\-async\fR? \fItopic cmd \fR?\fIarg arg ...\fR?
+\fBdde eval\fR ?\fB\-async\fR? \fItopic cmd \fR?\fIarg arg ...\fR?
 \fBdde eval\fR evaluates a command and its arguments using the interpreter
 specified by \fItopic\fR. The DDE service must be the \fBTclEval\fR
-service.  The \fI\-async\fR option requests asynchronous invocation.  The
+service.  The \fB\-async\fR option requests asynchronous invocation.  The
 command returns an error message if the script did not run, unless the
 \fB\-async\fR flag was used, in which case the command returns immediately
-with no error.  This command can be used to replace send on Windows.
-
+with no error.  This command can be used to replace \fBsend\fR on Windows.
 .SH "DDE AND TCL"
 A Tcl interpreter always has a service name of \fBTclEval\fR.  Each
 different interpreter of all running Tcl applications must be
