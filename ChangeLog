@@ -1,3 +1,9 @@
+2004-09-18  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclAppInit.c: Dde package can load into a safe interp.
+	Claim this fact for the Tcl_StaticPackage() call when the shell
+	is built with the TCL_USE_STATIC_PACKAGES option.
+
 2004-09-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TEBC-INST_LSHIFT,INST_RSHIFT): Ensure that
