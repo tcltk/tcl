@@ -1,3 +1,61 @@
+2001-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/configure:
+	* tools/configure.in: noted 8.4 as default Tcl version
+
+	* library/encoding/cp936.enc:
+	* library/encoding/cp949.enc:
+	* library/encoding/cp950.enc:
+	* library/encoding/iso8859-16.enc:
+	* library/encoding/macCroatian.enc:
+	* library/encoding/macCyrillic.enc:
+	* library/encoding/macGreek.enc:
+	* library/encoding/macIceland.enc:
+	* library/encoding/macRoman.enc:
+	* library/encoding/macTurkish.enc:
+	* tools/encoding/cp1250.txt:
+	* tools/encoding/cp1251.txt:
+	* tools/encoding/cp1252.txt:
+	* tools/encoding/cp1253.txt:
+	* tools/encoding/cp1254.txt:
+	* tools/encoding/cp1255.txt:
+	* tools/encoding/cp1256.txt:
+	* tools/encoding/cp1257.txt:
+	* tools/encoding/cp1258.txt:
+	* tools/encoding/cp874.txt:
+	* tools/encoding/cp932.txt:
+	* tools/encoding/cp936.txt:
+	* tools/encoding/cp949.txt:
+	* tools/encoding/cp950.txt:
+	* tools/encoding/iso8859-1.txt:
+	* tools/encoding/iso8859-10.txt:
+	* tools/encoding/iso8859-13.txt:
+	* tools/encoding/iso8859-14.txt:
+	* tools/encoding/iso8859-15.txt:
+	* tools/encoding/iso8859-16.txt:
+	* tools/encoding/iso8859-2.txt:
+	* tools/encoding/iso8859-3.txt:
+	* tools/encoding/iso8859-4.txt:
+	* tools/encoding/iso8859-5.txt:
+	* tools/encoding/iso8859-6.txt:
+	* tools/encoding/iso8859-7.txt:
+	* tools/encoding/iso8859-8.txt:
+	* tools/encoding/iso8859-9.txt:
+	* tools/encoding/koi8-r.txt:
+	* tools/encoding/macCentEuro.txt:
+	* tools/encoding/macCroatian.txt:
+	* tools/encoding/macCyrillic.txt:
+	* tools/encoding/macGreek.txt:
+	* tools/encoding/macIceland.txt:
+	* tools/encoding/macRoman.txt:
+	* tools/encoding/macTurkish.txt:
+	Updated encodings with latest mappings from www.unicode.org.  This
+	did not include some Mac encodings that have special multi-unichar
+	translations now (like symbols, dingbats and japanese).  Also does
+	not include big5, gb or euc* as those have different formats in
+	the latest Unicode version that need new conversion tools.  Not
+	all related .enc files changed as some had been updates separately.
+
 2001-10-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEvent.c (Tcl_FinalizeThread): moved freeing of
