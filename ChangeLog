@@ -1,3 +1,9 @@
+2002-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclStubLib.c (Tcl_InitStubs): prevent the cached check of
+	tclStubsPtr to allow for repeated load/unload of the Tcl dll by
+	hosting apps. [Bug 615304]
+
 2002-12-03  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/tclAppInit.c (sigHandler):  Protect from trying to close a
