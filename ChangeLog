@@ -1,3 +1,12 @@
+2001-11-10  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc:  Added a check to make sure one runs the makefile
+	from the /win directory only.
+
+	* win/mkd.bat:
+	* win/rmd.bat:  Changes from Llyod Lim for better stability.
+	[Patch #456759]
+
 2001-11-09  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc:
