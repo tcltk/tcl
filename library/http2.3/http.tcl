@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.27 2000/03/27 21:22:11 welch Exp $
+# RCS: @(#) $Id: http.tcl,v 1.28 2000/03/29 20:19:59 sandeep Exp $
 
 package provide http 2.3	;# This uses Tcl namespaces
 
@@ -177,7 +177,7 @@ proc http::reset { token {why reset} } {
     Finish $token
     if {[info exists state(error)]} {
 	set errorlist $state(error)
-	unset state(error)
+	unset state
 	eval error $errorlist
     }
 }
@@ -545,7 +545,6 @@ proc http::Write {token} {
 	    fileevent $s readable [list http::Event $token]
 	}
     } err]} {
-	fileevent $s writable {}
 	Finish $token $err
     }
 }
@@ -718,7 +717,7 @@ proc http::wait {token} {
     }
     if {[info exists state(error)]} {
 	set errorlist $state(error)
-	unset state(error)
+	unset state
 	eval error $errorlist
     }
     return $state(status)
