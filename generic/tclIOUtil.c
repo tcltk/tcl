@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.41 2002/05/02 20:15:20 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.42 2002/05/13 12:31:32 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2535,9 +2535,11 @@ FSUnloadTempFile(clientData)
 	 * tvdlPtr->divertedFilesystem->deleteFileProc(tmp);
 	 * Tcl_DecrRefCount(tmp);
 	 *                     
-	 * and then use that in this call.  This approach would
+	 * and then use that in this call.  This approach would potentially
+	 * work even if the encodings and everything else have been 
+	 * deconstructed.  For the moment, however, we simply assume
+	 * Tcl_FSDeleteFile has worked correctly.
 	 */
-	//tvdlPtr->divertedFilesystem->deleteFileProc(tvdlPtr->divertedFile);
     }
     
     /* 
