@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.1.2.4 1998/11/11 04:54:09 stanton Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.1.2.5 1998/12/09 01:14:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -487,7 +487,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	     * TODO: Note that the string is modified in place.  This is unsafe
 	     * and will break if any of the routines called while the string is
 	     * modified have side effects that depend on the original string
-	     * being unmodified (e.g. adding an etry to the literal table).
+	     * being unmodified (e.g. adding an entry to the literal table).
 	     */
 
 	    operator = tokenPtr->start;
