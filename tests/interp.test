@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.11 1999/04/06 04:27:03 rjohnson Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.12 1999/04/06 04:51:22 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -19,7 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # The set of hidden commands is platform dependent:
 
 if {"$tcl_platform(platform)" == "macintosh"} {
-    set hidden_cmds {beep cd echo exit fconfigure file glob load ls open pwd socket source}
+    set hidden_cmds {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source}
 } else {
     set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source}
 }
@@ -1682,7 +1682,7 @@ test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
     lappend l [lsort [interp hidden a]]
     interp delete a
     set l
-} {{cd encoding exec exit fconfigure file glob load open pwd socket source} bar {cd exec exit fconfigure file glob load open pwd socket source} bar {bar cd exec exit fconfigure file glob load open pwd socket source} {} {cd exec exit fconfigure file glob load open pwd socket source}} 
+} {{cd encoding exec exit fconfigure file glob load open pwd socket source} bar {cd encoding exec exit fconfigure file glob load open pwd socket source} bar {bar cd encoding exec exit fconfigure file glob load open pwd socket source} {} {cd encoding exec exit fconfigure file glob load open pwd socket source}} 
 
 test interp-23.3 {testing hiding vs aliases} {macOnly} {
     catch {interp delete a}
