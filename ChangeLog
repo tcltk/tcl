@@ -1,3 +1,9 @@
+2002-06-14  David Gravereaux <davygrvy@pobox.com>
+
+	* win/rules.vc: The test for compiler optimizations was in error.
+	Thanks goes to Roy Terry <royterry@earthlink.net> for his
+	assistance with this.
+
 2002-06-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/trace.n, tests/trace.test: 
