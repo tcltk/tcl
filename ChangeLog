@@ -5,6 +5,18 @@
 	another thread was ineffective if the original's stringrep had
 	been invalidated as what happens when it gets muted to a list.
 
+	* win/tclWinTime.c:  If the Tcl_ExitProc (StopCalibration) is
+	called from the stack frame of DllMain's PROCESS_DETACH, the
+	wait operation should timeout and continue.
+
+	* generic/tclInt.h:
+	* generic/tclThread.c:
+	* generic/tclEvent.c:
+	* unix/tclUnixThrd.c:
+	* win/tclWinThrd.c:  Provisions made so masterLock, initLock,
+	allocLock and joinLock mutexes can be recovered during
+	Tcl_Finalize.
+
 2004-04-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/switch.n: Reworked the examples to be more systematically
