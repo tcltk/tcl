@@ -3,6 +3,10 @@
 	* win/tclWinInit.c: Added an exit handler in tclWinInit() so
 	tclWinTCharEncoding could be freed during Tcl_Finalize().
 
+	* generic/tclEncoding.c: Added FreeEncoding(systemEncoding) in
+	TclFinalizeEncodingSubsystem because its ref count was incremented
+	in TclInitEncodingSubsystem.
+
 2004-04-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/read.n: Added example from David Welton. [Patch 938056]
