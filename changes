@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.72 2002/09/08 23:42:28 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.73 2002/09/10 09:31:52 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5600,4 +5600,4 @@ Considerable cleanup of the test suite.
 
 2002-09-02 (platfrom support) 64-bit compile on HP-11 (martin)
 
---- Released 8.4.0, September X, 2002 --- See ChangeLog for details ---
+--- Released 8.4.0, September 10, 2002 --- See ChangeLog for details ---
