@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.39 2001/11/20 19:45:19 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.40 2001/11/20 21:17:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2723,10 +2723,74 @@ Tcl_ListMathFuncs(interp, pattern)
 /*
  *----------------------------------------------------------------------
  *
+ * TclInterpReady --
+ *
+ *	Check if an interpreter is ready to eval commands or scripts, 
+ *      i.e., if it was not deleted and if the nesting level is not 
+ *      too high.
+ *
+ * Results:
+ *	The return value is TCL_OK if it the interpreter is ready, 
+ *      TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	The interpreters object and string results are cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int 
+TclInterpReady(interp)
+    Tcl_Interp *interp;
+{
+    register Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Reset both the interpreter's string and object results and clear 
+     * out any previous error information. 
+     */
+
+    Tcl_ResetResult(interp);
+
+    /*
+     * If the interpreter has been deleted, return an error.
+     */
+    
+    if (iPtr->flags & DELETED) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+	        "attempt to call eval in deleted interpreter", -1);
+	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
+	        "attempt to call eval in deleted interpreter",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Check depth of nested calls to Tcl_Eval:  if this gets too large,
+     * it's probably because of an infinite loop somewhere.
+     */
+
+    if (((iPtr->numLevels) >= iPtr->maxNestingDepth) 
+	    || (TclpCheckStackSpace() == 0)) {
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		"too many nested calls to Tcl_Eval (infinite loop?)", -1); 
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclEvalObjvInternal --
  *
  *	This procedure evaluates a Tcl command that has already been
- *	parsed into words, with one Tcl_Obj holding each word.
+ *	parsed into words, with one Tcl_Obj holding each word. The caller
+ *      is responsible for checking that the interpreter is ready to
+ *      evaluate (by calling TclInterpReady), and also to manage the
+ *      iPtr->numLevels.
  *
  * Results:
  *	The return value is a standard Tcl completion code such as
@@ -2773,45 +2837,10 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
 					 * in case TCL_EVAL_GLOBAL was set. */
 
-    Tcl_ResetResult(interp);
     if (objc == 0) {
 	return TCL_OK;
     }
 
-    /*
-     * If the interpreter was deleted, return an error.
-     */
-    
-    if (iPtr->flags & DELETED) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"attempt to call eval in deleted interpreter", -1);
-	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
-		"attempt to call eval in deleted interpreter",
-		(char *) NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Check depth of nested calls to Tcl_Eval:  if this gets too large,
-     * it's probably because of an infinite loop somewhere.
-     */
-
-    if (iPtr->numLevels > iPtr->maxNestingDepth) {
-	iPtr->result =  "too many nested calls to Tcl_Eval (infinite loop?)";
-	return TCL_ERROR;
-    }
-
-    /*
-     * On the Mac, we will never reach the default recursion limit before
-     * blowing the stack. So we need to do a check here.
-     */
-    
-    if (TclpCheckStackSpace() == 0) {
-	/*NOTREACHED*/
-	iPtr->result =  "too many nested calls to Tcl_Eval (infinite loop?)";
-	return TCL_ERROR;
-    }
-    
     /*
      * Find the procedure to execute this command. If there isn't one,
      * then see if there is a command "unknown".  If so, create a new
@@ -2834,6 +2863,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "invalid command name \"", Tcl_GetString(objv[0]), "\"",
 		    (char *) NULL);
+	    code = TCL_ERROR;
+	} else if (TclInterpReady(interp) == TCL_ERROR) {
 	    code = TCL_ERROR;
 	} else {
 	    iPtr->numLevels++;
@@ -2983,9 +3014,13 @@ Tcl_EvalObjv(interp, objc, objv, flags)
      */
     switch (code) {
 	case TCL_OK:
-	    iPtr->numLevels++;
-	    code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen, flags);
-	    iPtr->numLevels--;
+	    if (TclInterpReady(interp) == TCL_ERROR) {
+		code = TCL_ERROR;
+	    } else {
+		iPtr->numLevels++;
+		code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen, flags);
+		iPtr->numLevels--;
+	    }
 	    if (code == TCL_ERROR && cmdLen == 0)
 		goto cmdtraced;
 	    break;
@@ -3416,9 +3451,13 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	     * Execute the command and free the objects for its words.
 	     */
 
-	    iPtr->numLevels++;    
-	    code = TclEvalObjvInternal(interp, objectsUsed, objv, p, bytesLeft, 0);
-	    iPtr->numLevels--;
+	    if (TclInterpReady(interp) == TCL_ERROR) {
+		code = TCL_ERROR;
+	    } else {
+		iPtr->numLevels++;    
+		code = TclEvalObjvInternal(interp, objectsUsed, objv, p, bytesLeft, 0);
+		iPtr->numLevels--;
+	    }
 	    if (code != TCL_OK) {
 		goto error;
 	    }
@@ -3706,61 +3745,17 @@ Tcl_EvalObjEx(interp, objPtr, flags)
     }
 
     /*
-     * Prevent the object from being deleted as a side effect of evaling it.
+     * Check that the interpreter is ready to eval the bytecode.
      */
+
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	Tcl_DecrRefCount(objPtr);
+	return  TCL_ERROR;
+    } 
 
     savedVarFramePtr = iPtr->varFramePtr;
     if (flags & TCL_EVAL_GLOBAL) {
 	iPtr->varFramePtr = NULL;
-    }
-
-    /*
-     * Reset both the interpreter's string and object results and clear out
-     * any error information. This makes sure that we return an empty
-     * result if there are no commands in the command string.
-     */
-
-    Tcl_ResetResult(interp);
-
-    /*
-     * Check depth of nested calls to Tcl_Eval:  if this gets too large,
-     * it's probably because of an infinite loop somewhere.
-     */
-
-    iPtr->numLevels++;
-    if (iPtr->numLevels > iPtr->maxNestingDepth) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested calls to Tcl_Eval (infinite loop?)", -1); 
-	result = TCL_ERROR;
-	goto done;
-    }
-
-    /*
-     * On the Mac, we will never reach the default recursion limit before
-     * blowing the stack. So we need to do a check here.
-     */
-    
-    if (TclpCheckStackSpace() == 0) {
-	/*NOTREACHED*/
-    	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested calls to Tcl_Eval (infinite loop?)", -1);
-	result = TCL_ERROR;
-	goto done;
-    }
-
-    /*
-     * If the interpreter has been deleted, return an error.
-     */
-    
-    if (iPtr->flags & DELETED) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "attempt to call eval in deleted interpreter", -1);
-	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
-	        "attempt to call eval in deleted interpreter",
-		(char *) NULL);
-	result = TCL_ERROR;
-	goto done;
     }
 
     /*
@@ -3845,6 +3840,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
      */
 
     numSrcBytes = codePtr->numSrcBytes;
+    iPtr->numLevels++;
     if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	/*
 	 * Increment the code's ref count while it is being executed. If
@@ -3907,11 +3903,11 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 
     iPtr->termOffset = numSrcBytes;
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    iPtr->numLevels--;
 
     done:
     TclDecrRefCount(objPtr);
     iPtr->varFramePtr = savedVarFramePtr; 
-    iPtr->numLevels--;
     return result;
 }
 
