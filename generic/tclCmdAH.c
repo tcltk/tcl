@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.15 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16 2001/09/20 01:03:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1854,7 +1854,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
     int size;			/* Number of bytes needed for result of
 				 * conversion, based on type of conversion
 				 * ("e", "s", etc.), width, and precision. */
-    int intValue;		/* Used to hold value to pass to sprintf, if
+    long intValue;		/* Used to hold value to pass to sprintf, if
 				 * it's a one-word integer or char value */
     char *ptrValue = NULL;	/* Used to hold value to pass to sprintf, if
 				 * it's a one-word value. */
@@ -1870,7 +1870,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define DOUBLE_VALUE 3
 #   define STRING_VALUE 4
 #   define MAX_FLOAT_SIZE 320
-    
+
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
     char staticBuf[MAX_FLOAT_SIZE + 1];
                                 /* A static buffer to copy the format results 
@@ -2090,9 +2090,18 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    case 'u':
 	    case 'x':
 	    case 'X':
-		if (Tcl_GetIntFromObj(interp,	/* INTL: Tcl source. */
+		if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
 			objv[objIndex], &intValue) != TCL_OK) {
 		    goto fmtError;
+		}
+		if ((unsigned long) intValue > UINT_MAX) {
+		    /*
+		     * Add the 'l' for long format type.
+		     */
+		    newPtr++;
+		    *newPtr = 0;
+		    newPtr[-1] = newPtr[-2];
+		    newPtr[-2] = 'l';
 		}
 		whichValue = INT_VALUE;
 		size = 40 + precision;
@@ -2117,7 +2126,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		}
 		break;
 	    case 'c':
-		if (Tcl_GetIntFromObj(interp,	/* INTL: Tcl source. */
+		if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
 			objv[objIndex], &intValue) != TCL_OK) {
 		    goto fmtError;
 		}
