@@ -1,17 +1,13 @@
 Tcl
 
-SCCS: %Z% $Id: README,v 1.7 1998/07/29 22:24:29 welch Exp $ 
+SCCS: %Z% $Id: README,v 1.8 1998/08/04 23:22:52 welch Exp $ 
 
 0. Preface
 ----------
-This is a pre-release of 8.0.3, tcl_patchLevel "8.0.3-4"
-This is close, but not final.  There are two major bugs we
-plan to fix before 8.0.3 goes final:
-1. On UNIX, socket I/O is not properly retried after signals.
-2. On Windows, keyboard traversal events from Alt-key sequences
-are not properly handled.  In particular, if you select the
-system menu Close command from the keyboard, you do not get
-the WM_DELETE_WINDOW protocol event.
+This is the last pre-release of 8.0.3, tcl_patchLevel "8.0.3-5"
+This is very close, but not final.  We plan code freeze on
+Thursday, and so I'll be doing the 8.0.3 release then.  But, please
+try your compiles against this version to flush out any problems.
 
 This release is being made early to help
 with the Consortium CD project.  Please do not advertise or
@@ -34,6 +30,17 @@ on http://www.scriptics.com/resource/download/patches/tcl80p2/
 7. A new implementation of auto_mkindex to support [incr Tcl] classes.
 8. New IMPORT/EXPORT macros to facilitate building DLL's on windows.
 
+Bug fixes relative to previous pre-releases
+	Undid damage to the origninal EXPORT that appeared in 8.0.3-4
+	Resolved use of TCL_DBGX in configure scripts.
+	Fixed EINTR bug so system calls are retried after signals.
+	Fixed reverse vidio bitmaps
+	Several fixes to windows alt-keys and menus:
+	    fixed bug in menus where bgerrors were not generated during menu callbacks
+	    fixed memory leak in menu code
+	    fixed Alt-key handling
+	    fixed bug in menubar handling so menubar doesn't get destroyed when a
+		window is destroyed
  
 1. Introduction
 ---------------

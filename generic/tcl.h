@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.22 1998/08/04 11:54:40 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.23 1998/08/04 23:22:45 welch Exp $ 
  */
 
 #ifndef _TCL
@@ -41,7 +41,7 @@
 #define TCL_RELEASE_SERIAL  3
 
 #define TCL_VERSION	    "8.0"
-#define TCL_PATCH_LEVEL	    "8.0.3-4"
+#define TCL_PATCH_LEVEL	    "8.0.3-5"
 
 /*
  * The following definitions set up the proper options for Windows
@@ -193,23 +193,6 @@
 # define TCL_STORAGE_CLASS DLLEXPORT
 #else
 # define TCL_STORAGE_CLASS DLLIMPORT
-#endif
-
-/*
- * The EXPORT macro is used to declare procedures that are exported by DLL
- * extensions
- */
-    
-#ifndef STATIC_BUILD
-# ifdef _MSC_VER
-#  define EXPORT(a,b) __declspec(dllexport) a b
-#else
-#  ifdef __BORLANDC__
-#   define EXPORT(a,b) a _export b
-#  else
-#   define EXPORT(a,b) a b
-#  endif
-#endif
 #endif
 
 /*
