@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.26 2003/12/12 17:02:13 vincentdarley Exp $
+'\" RCS: @(#) $Id: file.n,v 1.27 2003/12/17 17:47:28 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -206,30 +206,34 @@ If only one argument is given, that argument is assumed to be
 seems to be the case with hard links, which look just like ordinary
 files), then an error is returned.
 .
-If 2 arguments are given, then these are assumed to be \fIlinkName\fR and
-\fItarget\fR. If \fIlinkName\fR already exists, or if \fItarget\fR
+If 2 arguments are given, then these are assumed to be \fIlinkName\fR
+and \fItarget\fR. If \fIlinkName\fR already exists, or if \fItarget\fR
 doesn't exist, an error will be returned.  Otherwise, Tcl creates a new
-link called \fIlinkName\fR which points to the existing filesystem object
-at \fItarget\fR, where the type of the link is platform-specific (on Unix
-a symbolic link will be the default).  This is useful for the case where
-the user wishes to create a link in a cross-platform way, and doesn't
-care what type of link is created.
+link called \fIlinkName\fR which points to the existing filesystem
+object at \fItarget\fR (which is also the returned value), where the
+type of the link is platform-specific (on Unix a symbolic link will be
+the default).  This is useful for the case where the user wishes to
+create a link in a cross-platform way, and doesn't care what type of
+link is created.
 .
 If the user wishes to make a link of a specific type only, (and signal an
 error if for some reason that is not possible), then the optional
 \fI-linktype\fR argument should be given.  Accepted values for
 \fI-linktype\fR are "-symbolic" and "-hard".
 .
-On Unix, symbolic links can be made to relative paths, but on all other
-platforms target paths will be converted to absolute, normalized form
-before the link is created (and "~user" paths are always expanded to
-absolute form).  When creating links on filesystems that
-either do not support any links, or do not support the specific type
-requested, an error message will be returned.  In particular Windows 95,
-98 and ME do not support any links at present, but most Unix platforms
-support both symbolic and hard links (the latter for files only), MacOS
-supports symbolic links and Windows NT/2000/XP (on NTFS drives) support
-symbolic directory links and hard file links.
+On Unix, symbolic links can be made to relative paths, and those paths
+must be relative to the actual \fIlinkName\fR's location (not to the
+cwd), but on all other platforms where relative links are not supported,
+target paths will always be converted to absolute, normalized form
+before the link is created (and therefore relative paths are interpreted
+as relative to the cwd).  Furthermore, "~user" paths are always expanded
+to absolute form.  When creating links on filesystems that either do not
+support any links, or do not support the specific type requested, an
+error message will be returned.  In particular Windows 95, 98 and ME do
+not support any links at present, but most Unix platforms support both
+symbolic and hard links (the latter for files only), MacOS supports
+symbolic links and Windows NT/2000/XP (on NTFS drives) support symbolic
+directory links and hard file links.
 .TP
 \fBfile lstat \fIname varName\fR
 .
