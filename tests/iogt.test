@@ -10,7 +10,7 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.7.4.1 2004/02/07 05:48:03 dgp Exp $
+# RCS: @(#) $Id: iogt.test,v 1.7.4.2 2004/09/08 23:03:20 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -489,7 +489,7 @@ test iogt-2.0 {basic I/O going through transform} testchannel {
 } {1 71 71}
 
 
-test iogt-2.1 {basic I/O, operation trail} {testchannel unixOnly} {
+test iogt-2.1 {basic I/O, operation trail} {testchannel unix} {
     set fin  [open $path(dummy)    r]
     set fout [open $path(dummyout) w]
 
@@ -539,7 +539,7 @@ write
 flush/write
 delete/write}
 
-test iogt-2.2 {basic I/O, data trail} {testchannel unixOnly} {
+test iogt-2.2 {basic I/O, data trail} {testchannel unix} {
     set fin  [open $path(dummy)    r]
     set fout [open $path(dummyout) w]
 
@@ -594,7 +594,7 @@ flush/write {} {}
 delete/write {} *ignored*}
 
 
-test iogt-2.3 {basic I/O, mixed trail} {testchannel unixOnly} {
+test iogt-2.3 {basic I/O, mixed trail} {testchannel unix} {
     set fin  [open $path(dummy)    r]
     set fout [open $path(dummyout) w]
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.7 2004/05/17 18:42:23 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.8 2004/09/08 23:02:45 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -199,11 +199,7 @@ EXTERN CONST char *	TclGetExtension _ANSI_ARGS_((CONST char * name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, CallFrame ** framePtrPtr));
 #endif
-#ifndef TclGetInterpProc_TCL_DECLARED
-#define TclGetInterpProc_TCL_DECLARED
-/* 33 */
-EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
-#endif
+/* Slot 33 is reserved */
 #ifndef TclGetIntForIndex_TCL_DECLARED
 #define TclGetIntForIndex_TCL_DECLARED
 /* 34 */
@@ -466,13 +462,7 @@ EXTERN int		TclProcCompileProc _ANSI_ARGS_((Tcl_Interp * interp,
 /* 93 */
 EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
 #endif
-#ifndef TclProcInterpProc_TCL_DECLARED
-#define TclProcInterpProc_TCL_DECLARED
-/* 94 */
-EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData, 
-				Tcl_Interp * interp, int argc, 
-				CONST84 char ** argv));
-#endif
+/* Slot 94 is reserved */
 /* Slot 95 is reserved */
 #ifndef TclRenameCommand_TCL_DECLARED
 #define TclRenameCommand_TCL_DECLARED
@@ -969,6 +959,80 @@ EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((CONST time_t * clock));
 /* 183 */
 EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((CONST time_t * clock));
 #endif
+#ifndef TclThreadStorageLockInit_TCL_DECLARED
+#define TclThreadStorageLockInit_TCL_DECLARED
+/* 184 */
+EXTERN void		TclThreadStorageLockInit _ANSI_ARGS_((void));
+#endif
+#ifndef TclThreadStorageLock_TCL_DECLARED
+#define TclThreadStorageLock_TCL_DECLARED
+/* 185 */
+EXTERN void		TclThreadStorageLock _ANSI_ARGS_((void));
+#endif
+#ifndef TclThreadStorageUnlock_TCL_DECLARED
+#define TclThreadStorageUnlock_TCL_DECLARED
+/* 186 */
+EXTERN void		TclThreadStorageUnlock _ANSI_ARGS_((void));
+#endif
+#ifndef TclThreadStoragePrint_TCL_DECLARED
+#define TclThreadStoragePrint_TCL_DECLARED
+/* 187 */
+EXTERN void		TclThreadStoragePrint _ANSI_ARGS_((FILE * outFile, 
+				int flags));
+#endif
+#ifndef TclThreadStorageGetHashTable_TCL_DECLARED
+#define TclThreadStorageGetHashTable_TCL_DECLARED
+/* 188 */
+EXTERN Tcl_HashTable *	TclThreadStorageGetHashTable _ANSI_ARGS_((
+				Tcl_ThreadId id));
+#endif
+#ifndef TclThreadStorageInit_TCL_DECLARED
+#define TclThreadStorageInit_TCL_DECLARED
+/* 189 */
+EXTERN Tcl_HashTable *	TclThreadStorageInit _ANSI_ARGS_((Tcl_ThreadId id, 
+				void * reserved));
+#endif
+#ifndef TclThreadStorageDataKeyInit_TCL_DECLARED
+#define TclThreadStorageDataKeyInit_TCL_DECLARED
+/* 190 */
+EXTERN void		TclThreadStorageDataKeyInit _ANSI_ARGS_((
+				Tcl_ThreadDataKey * keyPtr));
+#endif
+#ifndef TclThreadStorageDataKeyGet_TCL_DECLARED
+#define TclThreadStorageDataKeyGet_TCL_DECLARED
+/* 191 */
+EXTERN void *		TclThreadStorageDataKeyGet _ANSI_ARGS_((
+				Tcl_ThreadDataKey * keyPtr));
+#endif
+#ifndef TclThreadStorageDataKeySet_TCL_DECLARED
+#define TclThreadStorageDataKeySet_TCL_DECLARED
+/* 192 */
+EXTERN void		TclThreadStorageDataKeySet _ANSI_ARGS_((
+				Tcl_ThreadDataKey * keyPtr, void * data));
+#endif
+#ifndef TclFinalizeThreadStorageThread_TCL_DECLARED
+#define TclFinalizeThreadStorageThread_TCL_DECLARED
+/* 193 */
+EXTERN void		TclFinalizeThreadStorageThread _ANSI_ARGS_((
+				Tcl_ThreadId id));
+#endif
+#ifndef TclFinalizeThreadStorage_TCL_DECLARED
+#define TclFinalizeThreadStorage_TCL_DECLARED
+/* 194 */
+EXTERN void		TclFinalizeThreadStorage _ANSI_ARGS_((void));
+#endif
+#ifndef TclFinalizeThreadStorageData_TCL_DECLARED
+#define TclFinalizeThreadStorageData_TCL_DECLARED
+/* 195 */
+EXTERN void		TclFinalizeThreadStorageData _ANSI_ARGS_((
+				Tcl_ThreadDataKey * keyPtr));
+#endif
+#ifndef TclFinalizeThreadStorageDataKey_TCL_DECLARED
+#define TclFinalizeThreadStorageDataKey_TCL_DECLARED
+/* 196 */
+EXTERN void		TclFinalizeThreadStorageDataKey _ANSI_ARGS_((
+				Tcl_ThreadDataKey * keyPtr));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1017,7 +1081,7 @@ typedef struct TclIntStubs {
     void *reserved30;
     CONST char * (*tclGetExtension) _ANSI_ARGS_((CONST char * name)); /* 31 */
     int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CallFrame ** framePtrPtr)); /* 32 */
-    TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
+    void *reserved33;
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
     void *reserved35;
     int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, long * longPtr)); /* 36 */
@@ -1078,7 +1142,7 @@ typedef struct TclIntStubs {
     void (*tclProcCleanupProc) _ANSI_ARGS_((Proc * procPtr)); /* 91 */
     int (*tclProcCompileProc) _ANSI_ARGS_((Tcl_Interp * interp, Proc * procPtr, Tcl_Obj * bodyPtr, Namespace * nsPtr, CONST char * description, CONST char * procName)); /* 92 */
     void (*tclProcDeleteProc) _ANSI_ARGS_((ClientData clientData)); /* 93 */
-    int (*tclProcInterpProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, CONST84 char ** argv)); /* 94 */
+    void *reserved94;
     void *reserved95;
     int (*tclRenameCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * oldName, char * newName)); /* 96 */
     void (*tclResetShadowedCmdRefs) _ANSI_ARGS_((Tcl_Interp * interp, Command * newCmdPtr)); /* 97 */
@@ -1173,6 +1237,19 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclDbNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv, CONST char * file, int line)); /* 181 */
     struct tm * (*tclpLocaltime) _ANSI_ARGS_((CONST time_t * clock)); /* 182 */
     struct tm * (*tclpGmtime) _ANSI_ARGS_((CONST time_t * clock)); /* 183 */
+    void (*tclThreadStorageLockInit) _ANSI_ARGS_((void)); /* 184 */
+    void (*tclThreadStorageLock) _ANSI_ARGS_((void)); /* 185 */
+    void (*tclThreadStorageUnlock) _ANSI_ARGS_((void)); /* 186 */
+    void (*tclThreadStoragePrint) _ANSI_ARGS_((FILE * outFile, int flags)); /* 187 */
+    Tcl_HashTable * (*tclThreadStorageGetHashTable) _ANSI_ARGS_((Tcl_ThreadId id)); /* 188 */
+    Tcl_HashTable * (*tclThreadStorageInit) _ANSI_ARGS_((Tcl_ThreadId id, void * reserved)); /* 189 */
+    void (*tclThreadStorageDataKeyInit) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 190 */
+    void * (*tclThreadStorageDataKeyGet) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 191 */
+    void (*tclThreadStorageDataKeySet) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, void * data)); /* 192 */
+    void (*tclFinalizeThreadStorageThread) _ANSI_ARGS_((Tcl_ThreadId id)); /* 193 */
+    void (*tclFinalizeThreadStorage) _ANSI_ARGS_((void)); /* 194 */
+    void (*tclFinalizeThreadStorageData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 195 */
+    void (*tclFinalizeThreadStorageDataKey) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 196 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1301,10 +1378,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclGetFrame \
 	(tclIntStubsPtr->tclGetFrame) /* 32 */
 #endif
-#ifndef TclGetInterpProc
-#define TclGetInterpProc \
-	(tclIntStubsPtr->tclGetInterpProc) /* 33 */
-#endif
+/* Slot 33 is reserved */
 #ifndef TclGetIntForIndex
 #define TclGetIntForIndex \
 	(tclIntStubsPtr->tclGetIntForIndex) /* 34 */
@@ -1485,10 +1559,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclProcDeleteProc \
 	(tclIntStubsPtr->tclProcDeleteProc) /* 93 */
 #endif
-#ifndef TclProcInterpProc
-#define TclProcInterpProc \
-	(tclIntStubsPtr->tclProcInterpProc) /* 94 */
-#endif
+/* Slot 94 is reserved */
 /* Slot 95 is reserved */
 #ifndef TclRenameCommand
 #define TclRenameCommand \
@@ -1816,6 +1887,58 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpGmtime
 #define TclpGmtime \
 	(tclIntStubsPtr->tclpGmtime) /* 183 */
+#endif
+#ifndef TclThreadStorageLockInit
+#define TclThreadStorageLockInit \
+	(tclIntStubsPtr->tclThreadStorageLockInit) /* 184 */
+#endif
+#ifndef TclThreadStorageLock
+#define TclThreadStorageLock \
+	(tclIntStubsPtr->tclThreadStorageLock) /* 185 */
+#endif
+#ifndef TclThreadStorageUnlock
+#define TclThreadStorageUnlock \
+	(tclIntStubsPtr->tclThreadStorageUnlock) /* 186 */
+#endif
+#ifndef TclThreadStoragePrint
+#define TclThreadStoragePrint \
+	(tclIntStubsPtr->tclThreadStoragePrint) /* 187 */
+#endif
+#ifndef TclThreadStorageGetHashTable
+#define TclThreadStorageGetHashTable \
+	(tclIntStubsPtr->tclThreadStorageGetHashTable) /* 188 */
+#endif
+#ifndef TclThreadStorageInit
+#define TclThreadStorageInit \
+	(tclIntStubsPtr->tclThreadStorageInit) /* 189 */
+#endif
+#ifndef TclThreadStorageDataKeyInit
+#define TclThreadStorageDataKeyInit \
+	(tclIntStubsPtr->tclThreadStorageDataKeyInit) /* 190 */
+#endif
+#ifndef TclThreadStorageDataKeyGet
+#define TclThreadStorageDataKeyGet \
+	(tclIntStubsPtr->tclThreadStorageDataKeyGet) /* 191 */
+#endif
+#ifndef TclThreadStorageDataKeySet
+#define TclThreadStorageDataKeySet \
+	(tclIntStubsPtr->tclThreadStorageDataKeySet) /* 192 */
+#endif
+#ifndef TclFinalizeThreadStorageThread
+#define TclFinalizeThreadStorageThread \
+	(tclIntStubsPtr->tclFinalizeThreadStorageThread) /* 193 */
+#endif
+#ifndef TclFinalizeThreadStorage
+#define TclFinalizeThreadStorage \
+	(tclIntStubsPtr->tclFinalizeThreadStorage) /* 194 */
+#endif
+#ifndef TclFinalizeThreadStorageData
+#define TclFinalizeThreadStorageData \
+	(tclIntStubsPtr->tclFinalizeThreadStorageData) /* 195 */
+#endif
+#ifndef TclFinalizeThreadStorageDataKey
+#define TclFinalizeThreadStorageDataKey \
+	(tclIntStubsPtr->tclFinalizeThreadStorageDataKey) /* 196 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

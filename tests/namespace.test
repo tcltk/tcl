@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.4 2004/05/27 14:29:20 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.5 2004/09/08 23:03:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1019,11 +1019,11 @@ test namespace-34.1 {NamespaceWhichCmd, bad args} {
     list [catch {namespace which} msg] $msg
 } {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
 test namespace-34.2 {NamespaceWhichCmd, bad args} {
-    list [catch {namespace which -fred} msg] $msg
+    list [catch {namespace which -fred x} msg] $msg
 } {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
-test namespace-34.3 {NamespaceWhichCmd, bad args} {
-    list [catch {namespace which -command} msg] $msg
-} {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
+test namespace-34.3 {NamespaceWhichCmd, single arg is always command name} {
+    namespace which -command
+} {}
 test namespace-34.4 {NamespaceWhichCmd, bad args} {
     list [catch {namespace which a b} msg] $msg
 } {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
@@ -1650,6 +1650,77 @@ test namespace-47.6 {ensemble: unknown handler} {
     invoked from within
 "foo bar"}}
 
+test namespace-48.1 {ensembles and namespace import: unknown handler} {
+    namespace eval foo {
+	namespace export bar
+	namespace ensemble create -command bar -unknown ::foo::u -subcomm x
+	proc u {ens args} {
+	    global result
+	    lappend result $ens $args
+	    namespace ensemble config $ens -subcommand {x y}
+	}
+	proc u2 {ens args} {
+	    global result
+	    lappend result $ens $args
+	    namespace ensemble config ::bar -subcommand {x y z}
+	}
+	proc x args {
+	    global result
+	    lappend result XXX $args
+	}
+	proc y args {
+	    global result
+	    lappend result YYY $args
+	}
+	proc z args {
+	    global result
+	    lappend result ZZZ $args
+	}
+    }
+    namespace import -force foo::bar
+    set result [list [namespace ensemble config bar]]
+    bar x 123
+    bar y 456
+    namespace ensemble config bar -unknown ::foo::u2
+    bar z 789
+    namespace delete foo
+    set result
+} {{-map {} -namespace ::foo -prefixes 1 -subcommands x -unknown ::foo::u} XXX 123 ::foo::bar {y 456} YYY 456 ::foo::bar {z 789} ZZZ 789}
+test namespace-48.2 {ensembles and namespace import: exists} {
+    namespace eval foo {
+	namespace ensemble create -command ::foo::bar
+	namespace export bar
+    }
+    set result     [namespace ensemble exist foo::bar]
+    lappend result [namespace ensemble exist bar]
+    namespace import foo::bar
+    lappend result [namespace ensemble exist bar]
+    rename foo::bar foo::bar2
+    lappend result [namespace ensemble exist bar] \
+	    [namespace ensemble exist spong]
+    rename bar spong
+    lappend result [namespace ensemble exist bar] \
+	    [namespace ensemble exist spong]
+    rename foo::bar2 {}
+    lappend result [namespace ensemble exist spong]
+    namespace delete foo
+    set result
+} {1 0 1 1 0 0 1 0}
+test namespace-48.3 {ensembles and namespace import: config} {
+    catch {rename spong {}}
+    namespace eval foo {
+	namespace ensemble create -command ::foo::bar
+	namespace export bar boo
+	proc boo {} {}
+    }
+    namespace import foo::bar foo::boo
+    set result [namespace ensemble config bar -namespace]
+    lappend result [catch {namespace ensemble config boo} msg] $msg
+    lappend result [catch {namespace ensemble config spong} msg] $msg
+    namespace delete foo
+    set result
+} {::foo 1 {"boo" is not an ensemble command} 1 {unknown command "spong"}}
+
 # cleanup
 catch {rename cmd1 {}}
 catch {unset l}
@@ -1658,3 +1729,7 @@ catch {unset trigger}
 namespace delete {expand}[namespace children :: test_ns_*]
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

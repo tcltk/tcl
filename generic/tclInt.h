@@ -6,13 +6,13 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-19/99 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.13 2004/05/27 14:29:14 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.14 2004/09/08 23:02:43 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -247,15 +247,16 @@ typedef struct Namespace {
 #define NS_DEAD		0x02
 
 /*
- * Flag passed to TclGetNamespaceForQualName to have it create all namespace
- * components of a namespace-qualified name that cannot be found. The new
- * namespaces are created within their specified parent. Note that this
- * flag's value must not conflict with the values of the flags
- * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY, and FIND_ONLY_NS (defined in
- * tclNamesp.c).
+ * Flags passed to TclGetNamespaceForQualName:
+ *
+ * TCL_GLOBAL_ONLY		- (see tcl.h) Look only in the global ns. 
+ * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
+ * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
+ * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
  */
 
-#define CREATE_NS_IF_UNKNOWN 0x800
+#define TCL_CREATE_NS_IF_UNKNOWN	0x800
+#define TCL_FIND_ONLY_NS		0x1000
 
 /*
  *----------------------------------------------------------------
@@ -1681,6 +1682,7 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 
 extern char *			tclExecutableName;
 extern char *			tclNativeExecutableName;
+extern int			tclFindExecutableSearchDone;
 extern char *			tclDefaultEncodingDir;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;
@@ -1705,6 +1707,8 @@ extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
 extern Tcl_ObjType	tclEnsembleCmdType;
 extern Tcl_ObjType	tclWideIntType;
+extern Tcl_ObjType	tclLocalVarNameType;
+extern Tcl_ObjType	tclRegexpType;
 extern Tcl_ObjType	tclTokensType;
 
 /*
@@ -1795,10 +1799,10 @@ EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
+EXTERN void             TclCleanupLiteralTable _ANSI_ARGS_((
+                            Tcl_Interp* interp, LiteralTable* tablePtr ));
 EXTERN int		TclEvalScriptTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int length, int flags));
-EXTERN void		TclDecommissionLimitCallbacks _ANSI_ARGS_((
-			    Tcl_Interp *interp));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 EXTERN int		TclFileCopyCmd _ANSI_ARGS_((Tcl_Interp *interp, 
@@ -1877,6 +1881,9 @@ EXTERN int		TclMergeReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Obj **optionsPtrPtr, int *codePtr,
 			    int *levelPtr));
+EXTERN int		TclObjInvokeNamespace _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[],
+			    Tcl_Namespace *nsPtr, int flags));
 EXTERN int              TclParseBackslash _ANSI_ARGS_((CONST char *src,
                             int numBytes, int *readPtr, char *dst));
 EXTERN int              TclParseExpr _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1910,6 +1917,11 @@ EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
 EXTERN void		TclpFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutexPtr));
 EXTERN void		TclpFinalizeThreadData _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
+EXTERN int		TclpThreadCreate _ANSI_ARGS_((
+			    Tcl_ThreadId *idPtr,
+			    Tcl_ThreadCreateProc proc,
+			    ClientData clientData,
+			    int stackSize, int flags));
 EXTERN void		TclpFinalizeThreadDataKey _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN char *		TclpFindExecutable _ANSI_ARGS_((
@@ -1986,10 +1998,13 @@ EXTERN void		TclpThreadDataKeyInit _ANSI_ARGS_((
 EXTERN void		TclpThreadDataKeySet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr, VOID *data));
 EXTERN void		TclpThreadExit _ANSI_ARGS_((int status));
+EXTERN int		TclpThreadGetStackSize _ANSI_ARGS_((void));
 EXTERN void		TclRememberCondition _ANSI_ARGS_((Tcl_Condition *mutex));
 EXTERN void		TclRememberDataKey _ANSI_ARGS_((Tcl_ThreadDataKey *mutex));
 EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
 EXTERN void		TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
+EXTERN void		TclRemoveScriptLimitCallbacks _ANSI_ARGS_((
+			    Tcl_Interp *interp));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 EXTERN int		TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2032,7 +2047,19 @@ EXTERN int	Tcl_CatchObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_CdObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-EXTERN int	Tcl_ClockObjCmd _ANSI_ARGS_((ClientData clientData,
+EXTERN int	TclClockClicksObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockMicrosecondsObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockMillisecondsObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockSecondsObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockLocaltimeObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockMktimeObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockOldscanObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_CloseObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
@@ -2287,6 +2314,76 @@ EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 #  define TclIncrObjsFreed()
 #endif /* TCL_COMPILE_STATS */
 
+/*
+ * All context references used in the object freeing code are pointers
+ * to this structure; every thread will have its own structure
+ * instance.  The purpose of this structure is to allow deeply nested
+ * collections of Tcl_Objs to be freed without taking a vast depth of
+ * C stack (which could cause all sorts of breakage.)
+ */
+
+typedef struct PendingObjData {
+    int deletionCount;		/* Count of the number of invokations of
+				 * TclFreeObj() are on the stack (at least
+				 * conceptually; many are actually expanded
+				 * macros). */
+    Tcl_Obj *deletionStack;	/* Stack of objects that have had TclFreeObj()
+				 * invoked upon them but which can't be deleted
+				 * yet because they are in a nested invokation
+				 * of TclFreeObj(). By postponing this way, we
+				 * limit the maximum overall C stack depth when
+				 * deleting a complex object. The down-side is
+				 * that we alter the overall behaviour by
+				 * altering the order in which objects are
+				 * deleted, and we change the order in which
+				 * the string rep and the internal rep of an
+				 * object are deleted. Note that code which
+				 * assumes the previous behaviour in either of
+				 * these respects is unsafe anyway; it was
+				 * never documented as to exactly what would
+				 * happen in these cases, and the overall
+				 * contract of a user-level Tcl_DecrRefCount()
+				 * is still preserved (assuming that a
+				 * particular T_DRC would delete an object is
+				 * not very safe). */
+} PendingObjData;
+
+/*
+ * These are separated out so that some semantic content is attached
+ * to them.
+ */
+#define TclObjDeletionLock(contextPtr)   (contextPtr)->deletionCount++
+#define TclObjDeletionUnlock(contextPtr) (contextPtr)->deletionCount--
+#define TclObjDeletePending(contextPtr)  (contextPtr)->deletionCount > 0
+#define TclObjOnStack(contextPtr)        (contextPtr)->deletionStack != NULL
+#define TclPushObjToDelete(contextPtr,objPtr) \
+    /* Invalidate the string rep first so we can use the bytes value \
+     * for our pointer chain. */ \
+    if (((objPtr)->bytes != NULL) \
+            && ((objPtr)->bytes != tclEmptyStringRep)) { \
+        ckfree((char *) (objPtr)->bytes); \
+    } \
+    /* Now push onto the head of the stack. */ \
+    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack); \
+    (contextPtr)->deletionStack = (objPtr)
+#define TclPopObjToDelete(contextPtr,objPtrVar) \
+    (objPtrVar) = (contextPtr)->deletionStack; \
+    (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
+
+/*
+ * Macro to set up the local reference to the deletion context.
+ */
+#ifndef TCL_THREADS
+extern PendingObjData tclPendingObjData;
+#define TclObjInitDeletionContext(contextPtr) \
+    PendingObjData *CONST contextPtr = &tclPendingObjData
+#else
+extern Tcl_ThreadDataKey tclPendingObjDataKey;
+#define TclObjInitDeletionContext(contextPtr) \
+    PendingObjData *CONST contextPtr = (PendingObjData *) \
+	    Tcl_GetThreadData(&tclPendingObjDataKey, sizeof(PendingObjData))
+#endif
+
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
     TclIncrObjsAllocated(); \
@@ -2298,20 +2395,51 @@ EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-        TclFreeObjMacro(objPtr); \
-    } 
+        TclObjInitDeletionContext(contextPtr); \
+	if (TclObjDeletePending(contextPtr)) { \
+	    TclPushObjToDelete(contextPtr,objPtr); \
+	} else { \
+	    TclFreeObjMacro(contextPtr,objPtr); \
+	} \
+    }
 
-#define TclFreeObjMacro(objPtr) \
+/*
+ * Note that the contents of the while loop assume that the string rep
+ * has already been freed and we don't want to do anything fancy with
+ * adding to the queue inside ourselves. Must take care to unstack the
+ * object first since freeing the internal rep can add further objects
+ * to the stack. The code assumes that it is the first thing in a
+ * block; all current usages in the core satisfy this.
+ *
+ * Optimization opportunity: Allocate the context once in a large
+ * function (e.g. TclExecuteByteCode) and use it directly instead of
+ * looking it up each time.
+ */
+#define TclFreeObjMacro(contextPtr,objPtr) \
     if (((objPtr)->typePtr != NULL) \
 	    && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+	TclObjDeletionLock(contextPtr); \
 	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+	TclObjDeletionUnlock(contextPtr); \
     } \
     if (((objPtr)->bytes != NULL) \
             && ((objPtr)->bytes != tclEmptyStringRep)) { \
         ckfree((char *) (objPtr)->bytes); \
     } \
     TclFreeObjStorage(objPtr); \
-    TclIncrObjsFreed()
+    TclIncrObjsFreed(); \
+    TclObjDeletionLock(contextPtr); \
+    while (TclObjOnStack(contextPtr)) { \
+	Tcl_Obj *objToFree; \
+	TclPopObjToDelete(contextPtr,objToFree); \
+	if ((objToFree->typePtr != NULL) \
+		&& (objToFree->typePtr->freeIntRepProc != NULL)) { \
+	    objToFree->typePtr->freeIntRepProc(objToFree); \
+	} \
+	TclFreeObjStorage(objToFree); \
+	TclIncrObjsFreed(); \
+    } \
+    TclObjDeletionUnlock(contextPtr)
 
 #if defined(PURIFY)
 
@@ -2340,6 +2468,8 @@ EXTERN void TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
 EXTERN Tcl_Mutex *TclpNewAllocMutex _ANSI_ARGS_((void));
 EXTERN void *TclpGetAllocCache _ANSI_ARGS_((void));
 EXTERN void TclpSetAllocCache _ANSI_ARGS_((void *));
+EXTERN void TclFinalizeThreadAlloc _ANSI_ARGS_((void));
+EXTERN void TclpFreeAllocMutex _ANSI_ARGS_((Tcl_Mutex* mutex));
 
 #  define TclAllocObjStorage(objPtr) \
        (objPtr) = TclThreadAllocObj()

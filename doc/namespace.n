@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.4 2004/05/27 14:29:08 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.5 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -24,8 +24,8 @@ The \fBnamespace\fR command lets you create, access, and destroy
 separate contexts for commands and variables.
 See the section \fBWHAT IS A NAMESPACE?\fR below
 for a brief overview of namespaces.
-The legal \fIoption\fR's are listed below.
-Note that you can abbreviate the \fIoption\fR's.
+The legal values of \fIoption\fR are listed below.
+Note that you can abbreviate the \fIoption\fRs.
 .TP
 \fBnamespace children \fR?\fInamespace\fR? ?\fIpattern\fR?
 Returns a list of all child namespaces that belong to the
@@ -33,11 +33,11 @@ namespace \fInamespace\fR.
 If \fInamespace\fR is not specified,
 then the children are returned for the current namespace.
 This command returns fully-qualified names,
-which start with \fB::\fR.
+which start with a double colon (\fB::\fR).
 If the optional \fIpattern\fR is given,
 then this command returns only the names that match the glob-style pattern.
 The actual pattern used is determined as follows:
-a pattern that starts with \fB::\fR is used directly,
+a pattern that starts with double colon (\fB::\fR) is used directly,
 otherwise the namespace \fInamespace\fR
 (or the fully-qualified name of the current namespace)
 is prepended onto the pattern.
@@ -136,7 +136,7 @@ this command returns the namespace's current export list.
 Removes previously imported commands from a namespace.
 Each \fIpattern\fR is a simple or qualified name such as
 \fBx\fR, \fBfoo::x\fR or \fBa::b::p*\fR.
-Qualified names contain \fB::\fRs and qualify a name
+Qualified names contain double colons (\fB::\fR) and qualify a name
 with the name of one or more namespaces.
 Each \fIqualified pattern\fR is qualified with the name of an
 exporting namespace 
@@ -218,7 +218,7 @@ the fully-qualified name of the current namespace's parent is returned.
 .TP
 \fBnamespace qualifiers\fR \fIstring\fR
 Returns any leading namespace qualifiers for \fIstring\fR.
-Qualifiers are namespace names separated by \fB::\fRs.
+Qualifiers are namespace names separated by double colons (\fB::\fR).
 For the \fIstring\fR \fB::foo::bar::x\fR,
 this command returns \fB::foo::bar\fR,
 and for \fB::\fR it returns an empty string.
@@ -229,7 +229,7 @@ the names of currently defined namespaces.
 .TP
 \fBnamespace tail\fR \fIstring\fR
 Returns the simple name at the end of a qualified string.
-Qualifiers are namespace names separated by \fB::\fRs.
+Qualifiers are namespace names separated by double colons (\fB::\fR).
 For the \fIstring\fR \fB::foo::bar::x\fR,
 this command returns \fBx\fR,
 and for \fB::\fR it returns an empty string.
@@ -331,7 +331,7 @@ although \fB::\fR is a synonym.
 As an example, the name \fB::safe::interp::create\fR
 refers to the command \fBcreate\fR in the namespace \fBinterp\fR
 that is a child of namespace \fB::safe\fR,
-which in turn is a child of the global namespace \fB::\fR.
+which in turn is a child of the global namespace, \fB::\fR.
 .PP
 If you want to access commands and variables from another namespace,
 you must use some extra syntax.
@@ -371,8 +371,8 @@ that we should cover.
 Namespaces have nonempty names except for the global namespace.
 \fB::\fR is disallowed in simple command, variable, and namespace names
 except as a namespace separator.
-Extra \fB:\fRs in a qualified name are ignored;
-that is, two or more \fB:\fRs are treated as a namespace separator.
+Extra colons in any separator part of a qualified name are ignored;
+i.e. two or more colons are treated as a namespace separator.
 A trailing \fB::\fR in a qualified variable or command name
 refers to the variable or command named {}.
 However, a trailing \fB::\fR in a qualified namespace name is ignored.
@@ -443,7 +443,7 @@ Namespace names are always resolved in the current namespace.
 This means, for example,
 that a \fBnamespace eval\fR command that creates a new namespace
 always creates a child of the current namespace
-unless the new namespace name begins with a \fB::\fR.
+unless the new namespace name begins with \fB::\fR.
 .PP
 Tcl has no access control to limit what variables, commands,
 or namespaces you can reference.
@@ -513,7 +513,7 @@ that have appeared in a namespace.  In that case, you can use the
 \fBnamespace import \-force Blt::graph Blt::table\fR
 .CE
 If for some reason, you want to stop using the imported commands,
-you can remove them with an \fBnamespace forget\fR command, like this:
+you can remove them with a \fBnamespace forget\fR command, like this:
 .CS
 \fBnamespace forget Blt::*\fR
 .CE
@@ -669,7 +669,7 @@ is defined in the \fB\-map\fR option, or to the command with the same
 name in the namespace linked to the ensemble.  If this option is
 empty, the subcommands of the namespace will either be the keys of the
 dictionary listed in the \fB\-map\fR option or the exported commands
-of the linked namespace at the time of the invokation of the ensemble
+of the linked namespace at the time of the invocation of the ensemble
 command.
 .TP
 \fB\-unknown\fR
@@ -723,7 +723,7 @@ error if it is not). If the list is an empty list, the ensemble
 command attempts to look up the original subcommand again and, if it
 is not found this time, an error will be generated just as if the
 \fB\-unknown\fR handler was not there (i.e. for any particular
-invokation of an ensemble, its unknown handler will be called at most
+invocation of an ensemble, its unknown handler will be called at most
 once.) This makes it easy for the unknown handler to update the
 ensemble or its backing namespace so as to provide an implementation
 of the desired subcommand and reparse.

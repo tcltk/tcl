@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.1 2004/02/18 22:30:53 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.2 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -48,7 +48,7 @@ only those names matching \fIpattern\fR are returned.
 Matching is determined using the same rules as for \fBstring match\fR.
 \fIpattern\fR can be a qualified name like \fBFoo::print*\fR.
 That is, it may specify a particular namespace
-using a sequence of namespace names separated by \fB::\fRs,
+using a sequence of namespace names separated by double colons (\fB::\fR),
 and may have pattern matching special characters
 at the end to specify a set of commands in that namespace.
 If \fIpattern\fR is a qualified name,
@@ -57,7 +57,7 @@ of the specified namespace.
 .TP
 \fBinfo complete \fIcommand\fR
 Returns 1 if \fIcommand\fR is a complete Tcl command in the sense of
-having no unclosed quotes, braces, brackets or array element names,
+having no unclosed quotes, braces, brackets or array element names.
 If the command doesn't appear to be complete then 0 is returned.
 This command is typically used in line-oriented input environments
 to allow users to type in commands that span multiple lines;  if the
@@ -193,7 +193,7 @@ are returned.  Matching is determined using the same rules as for
 \fBstring match\fR.
 \fIpattern\fR can be a qualified name like \fBFoo::option*\fR.
 That is, it may specify a particular namespace
-using a sequence of namespace names separated by \fB::\fRs,
+using a sequence of namespace names separated by double colons (\fB::\fR),
 and may have pattern matching special characters
 at the end to specify a set of variables in that namespace.
 If \fIpattern\fR is a qualified name,
@@ -202,6 +202,25 @@ has each matching namespace variable qualified with the name
 of its namespace.
 Note that a currently-visible variable may not yet "exist" if it has not
 been set (e.g. a variable declared but not set by \fBvariable\fR).
+.SH EXAMPLE
+This command prints out a procedure suitable for saving in a Tcl
+script:
+.CS
+proc printProc {procName} {
+    set result [list proc $procName]
+    set formals {}
+    foreach var [info args $procName] {
+        if {[info default $procName $var def]} {
+            lappend formals [list $var $def]
+        } else {
+            # Still need the list-quoting because variable
+            # names may properly contain spaces.
+            lappend formals [list $var]
+        }
+    }
+    puts [lappend result $formals [info body $procName]]
+}
+.CE
 
 .SH "SEE ALSO"
 global(n), proc(n)

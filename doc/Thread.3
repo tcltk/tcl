@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.14.4.2 2004/05/04 17:44:15 dgp Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.14.4.3 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData, Tcl_MutexLock, Tcl_MutexUnlock, Tcl_MutexFinalize, Tcl_CreateThread, Tcl_JoinThread \- Tcl thread support.
+Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData, Tcl_MutexLock, Tcl_MutexUnlock, Tcl_MutexFinalize, Tcl_CreateThread, Tcl_JoinThread \- Tcl thread support
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -103,9 +103,9 @@ specialties. Using the second value marks the new thread as
 \fIjoinable\fR. This means that another thread can wait for the such
 marked thread to exit and join it.
 .PP
-Restrictions: On some unix systems the pthread-library does not
-contain the functionality to specify the stacksize of a thread. The
-specified value for the stacksize is ignored on these systems.
+Restrictions: On some UNIX systems the pthread-library does not
+contain the functionality to specify the stack size of a thread. The
+specified value for the stack size is ignored on these systems.
 Windows currently does not support joinable threads. This
 flag value is therefore ignored on this platform.
 .PP
@@ -133,7 +133,7 @@ allocated and initialized to all zeros the first time each thread asks for it.
 The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
 .SS "SYNCHRONIZATION AND COMMUNICATION"
 Tcl provides \fBTcl_ThreadQueueEvent\fR and \fBTcl_ThreadAlert\fR
-for handling event queueing in multithreaded applications.  See
+for handling event queuing in multithreaded applications.  See
 the \fBNotifier\fR manual page for more information on these procedures.
 .PP
 A mutex is a lock that is used to serialize all threads through a piece
@@ -170,7 +170,7 @@ The \fBTcl_ConditionNotify\fR, \fBTcl_ConditionWait\fR and
 not compiling with threads enabled.
 .SS INITIALIZATION
 .PP
-All of these synchronization objects are self initializing.
+All of these synchronization objects are self-initializing.
 They are implemented as opaque pointers that should be NULL
 upon first use.
 The mutexes and condition variables are

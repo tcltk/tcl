@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.4 2004/05/04 17:44:21 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.5 2004/09/08 23:03:29 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -45,6 +45,46 @@ static void *INITIAL_ESP,
             *RESTORED_EBP,
             *RESTORED_HANDLER;
 #endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
+
+#ifdef HAVE_NO_SEH
+
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_dllmain_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_checkstackspace_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+static
+__attribute__((cdecl))
+EXCEPTION_DISPOSITION
+_except_TclWinCPUID_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+#endif /* HAVE_NO_SEH */
+
+
+/*
+ * VC++ 5.x has no 'cpuid' assembler instruction, so we
+ * must emulate it
+ */
+#if defined(_MSC_VER) && ( _MSC_VER <= 1100 )
+#define cpuid __asm __emit 0fh __asm __emit 0a2h
+#endif
 
 /*
  * The following function tables are used to dispatch to either the
@@ -157,12 +197,28 @@ static TclWinProcs unicodeProcs = {
 TclWinProcs *tclWinProcs;
 static Tcl_Encoding tclWinTCharEncoding;
 
+
+#ifdef HAVE_NO_SEH
+
+/* Need to add noinline flag to DllMain declaration so that gcc -O3
+ * does not inline asm code into DllEntryPoint and cause a
+ * compile time error because of redefined local labels.
+ */
+
+BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason, 
+				LPVOID reserved)
+                        __attribute__ ((noinline));
+
+#else
+
 /*
  * The following declaration is for the VC++ DLL entry point.
  */
 
 BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason, 
 				LPVOID reserved);
+#endif /* HAVE_NO_SEH */
+
 
 /*
  * The following structure and linked list is to allow us to map between
@@ -268,10 +324,12 @@ DllMain(hInst, reason, reserved)
 # endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_dllmain_detach_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_dllmain_detach_handler) );
 #else
 	__try {
 #endif /* HAVE_NO_SEH */
@@ -317,7 +375,22 @@ DllMain(hInst, reason, reserved)
 
     return TRUE; 
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_dllmain_detach_handler --
+ *
+ *	SEH exception handler for DllMain.
+ *
+ * Results:
+ *	See DllMain.
+ *
+ * Side effects:
+ *	See DllMain.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -330,11 +403,10 @@ _except_dllmain_detach_handler(
 {
     __asm__ __volatile__ (
             "jmp dllmain_detach_reentry");
-    /* Nuke compiler warning about unused static function */
-    _except_dllmain_detach_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
+
 
 #endif /* !STATIC_BUILD */
 #endif /* __WIN32__ */
@@ -498,10 +570,12 @@ TclpCheckStackSpace()
 # endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_checkstackspace_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_checkstackspace_handler) );
 #else
     __try {
 #endif /* HAVE_NO_SEH */
@@ -557,6 +631,22 @@ TclpCheckStackSpace()
      */
     return retval;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_checkstackspace_handler --
+ *
+ *	SEH exception handler for TclpCheckStackSpace.
+ *
+ * Results:
+ *	See TclpCheckStackSpace.
+ *
+ * Side effects:
+ *	See TclpCheckStackSpace.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -569,8 +659,6 @@ _except_checkstackspace_handler(
 {
     __asm__ __volatile__ (
             "jmp checkstackspace_reentry");
-    /* Nuke compiler warning about unused static function */
-    _except_checkstackspace_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
@@ -995,3 +1083,169 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
     return Tcl_ExternalToUtfDString(tclWinTCharEncoding, 
 	    (CONST char *) string, len, dsPtr);
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclWinCPUID --
+ *
+ *	Get CPU ID information on an Intel box under Windows
+ *
+ * Results:
+ *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not
+ *	supported or fails.
+ *
+ * Side effects:
+ *	If successful, stores EAX, EBX, ECX and EDX registers after 
+ *      the CPUID instruction in the four integers designated by 'regsPtr'
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
+	     register unsigned int * regsPtr ) /* Registers after the CPUID */
+{
+
+    int status = TCL_ERROR;
+
+#if defined(__GNUC__)
+
+    /* Establish structured exception handling */
+
+# ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+	    "pushl %%ebp" "\n\t"
+	    "pushl %0" "\n\t"
+	    "pushl %%fs:0" "\n\t"
+	    "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_TclWinCPUID_detach_handler) );
+#  else
+    __try {
+#  endif
+
+	/* 
+	 * Execute the CPUID instruction with the given index, and
+	 * store results off 'regPtr'.
+	 */
+
+	__asm__ __volatile__ (
+	    "movl %4, %%eax" "\n\t"
+            "cpuid" "\n\t"
+	    "movl %%eax, %0" "\n\t"
+	    "movl %%ebx, %1" "\n\t"
+	    "movl %%ecx, %2" "\n\t"
+	    "movl %%edx, %3"
+	    : 
+	    "=m"(regsPtr[0]),
+	    "=m"(regsPtr[1]),
+	    "=m"(regsPtr[2]),
+	    "=m"(regsPtr[3])
+	    : "m"(index)
+	    : "%eax", "%ebx", "%ecx", "%edx" );
+	status = TCL_OK;
+
+	/* End the structured exception handler */
+
+#  ifndef HAVE_NO_SEH
+    } __except( EXCEPTION_EXECUTE_HANDLER ) {
+	/* do nothing */
+    }
+#  else
+    __asm __volatile__ (
+	    "jmp  TclWinCPUID_detach_pop" "\n"
+        "TclWinCPUID_detach_reentry:" "\n\t"
+	    "movl %%fs:0, %%eax" "\n\t"
+	    "movl 0x8(%%eax), %%esp" "\n\t"
+	    "movl 0x8(%%esp), %%ebp" "\n"
+	"TclWinCPUID_detach_pop:" "\n\t"
+	    "movl (%%esp), %%eax" "\n\t"
+	    "movl %%eax, %%fs:0" "\n\t"
+	    "add  $12, %%esp" "\n\t"
+	:
+	:
+	: "%eax");
+#  endif
+
+
+#elif defined(_MSC_VER) && !defined(_WIN64)
+
+    /* Define a structure in the stack frame to hold the registers */
+
+    struct {
+	DWORD dw0;
+	DWORD dw1;
+	DWORD dw2;
+	DWORD dw3;
+    } regs;
+    regs.dw0 = index;
+    
+    /* Execute the CPUID instruction and save regs in the stack frame */
+
+    _try {
+	_asm {
+	    push    ebx
+	    push    ecx
+	    push    edx
+	    mov     eax, regs.dw0
+	    cpuid
+	    mov     regs.dw0, eax
+	    mov     regs.dw1, ebx
+	    mov     regs.dw2, ecx
+	    mov     regs.dw3, edx
+            pop     edx
+            pop     ecx
+            pop     ebx
+	}
+	
+	/* Copy regs back out to the caller */
+
+	regsPtr[0]=regs.dw0;
+	regsPtr[1]=regs.dw1;
+	regsPtr[2]=regs.dw2;
+	regsPtr[3]=regs.dw3;
+
+	status = TCL_OK;
+    } __except( EXCEPTION_EXECUTE_HANDLER ) {
+    }
+
+#else
+				/* Don't know how to do assembly code for
+				 * this compiler and/or architecture */
+#endif
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_TclWinCPUID_detach_handler --
+ *
+ *	SEH exception handler for TclWinCPUID.
+ *
+ * Results:
+ *	See TclWinCPUID.
+ *
+ * Side effects:
+ *	See TclWinCPUID.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#if defined( HAVE_NO_SEH )
+static
+__attribute__((cdecl))
+EXCEPTION_DISPOSITION
+_except_TclWinCPUID_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+	"jmp TclWinCPUID_detach_reentry" );
+    return 0; /* Function does not return */
+}
+#endif
+

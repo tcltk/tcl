@@ -12,10 +12,10 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.8 2004/05/27 14:29:47 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.9 2004/09/08 23:03:27 dgp Exp $
 #------------------------------------------------------------------------------
 
-!if "$(MSDEVDIR)" == ""
+!if !defined(MSDEVDIR) && !defined(MSVCDIR)
 MSG = ^
 You'll need to run vcvars32.bat from Developer Studio, first, to setup^
 the environment.  Jump to this line to read the new instructions.
@@ -80,6 +80,7 @@ the environment.  Jump to this line to read the new instructions.
 #			   inside it.
 #		threads =  Turns on full multithreading support.
 #		thrdalloc = Use the thread allocator (shared global free pool).
+#		thrdstorage = Use the generic thread storage support.
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
 #		loimpact =  Adds a flag for how NT treats the heap to keep memory
@@ -179,7 +180,7 @@ DOTVERSION	= 8.6
 DOTVERSION	= 9.0
 !elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 0
 MSG =^
-Can't get version string from ../generic/tcl.h
+Cannot get version string from ../generic/tcl.h
 !error $(MSG)
 !endif
 VERSION = $(DOTVERSION:.=)
@@ -308,6 +309,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclThread.obj \
 	$(TMP_DIR)\tclThreadAlloc.obj \
 	$(TMP_DIR)\tclThreadJoin.obj \
+	$(TMP_DIR)\tclThreadStorage.obj \
 	$(TMP_DIR)\tclTimer.obj \
 	$(TMP_DIR)\tclTrace.obj \
 	$(TMP_DIR)\tclUtf.obj \
@@ -569,6 +571,7 @@ $(TCLOBJS)
 <<
 !endif
 
+#" for emacs font-locking.
 
 #---------------------------------------------------------------------
 # Build the windows help file.
@@ -643,6 +646,7 @@ tclConfig:
 	@echo Build tclsh first!
 !else
 	@echo Creating tclConfig.sh
+	set TCL_LIBRARY=$(ROOT)/library
 	@$(TCLSH) <<
 	set debug $(DEBUG)
 	set thread $(TCL_THREADS)
@@ -859,7 +863,7 @@ install-binaries:
 	@echo installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
-install-libraries: tclConfig
+install-libraries: tclConfig install-msgs install-tzdata
 	@echo installing tclConfig.sh
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh" "$(LIB_INSTALL_DIR)\"
 	@echo installing http1.0
@@ -902,6 +906,8 @@ install-libraries: tclConfig
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\clock.tcl"    "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\tm.tcl"       "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)\"
@@ -910,6 +916,17 @@ install-libraries: tclConfig
 	@$(CPY) "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 
+install-tzdata:
+	@echo "Installing time zone data"
+	set TCL_LIBRARY=$(ROOT)/library
+	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	    "$(ROOT)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+
+install-msgs:
+	@echo "Installing message catalogs"
+	set TCL_LIBRARY=$(ROOT)/library
+	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	    "$(ROOT)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 #---------------------------------------------------------------------
 # Clean up

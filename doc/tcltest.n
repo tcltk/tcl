@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.2 2004/02/18 22:30:53 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.3 2004/09/08 23:02:35 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.2 tcltest "Tcl Bundled Packages"
@@ -683,7 +683,7 @@ that match any of the patterns in [\fBconfigure -file\fR] and
 match none of the patterns in [\fBconfigure -notfile\fR] is generated
 and sorted.  Then each file will be evaluated in turn.  If
 [\fBconfigure -singleproc\fR] is true, then each file will
-be [\fBsource\fR]d in the caller's context.  If if is false,
+be [\fBsource\fR]d in the caller's context.  If it is false,
 then a copy of [\fBinterpreter\fR] will be [\fBexec\fR]d to
 evaluate each file.  The multi-process operation is useful
 when testing can cause errors so severe that a process 

@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Louisville)]} {
+    LoadTimeZoneFile America/Louisville
+}
+set TZData(:America/Kentucky/Louisville) $TZData(:America/Louisville)

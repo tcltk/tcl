@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.6 2004/05/04 17:44:20 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.7 2004/09/08 23:03:27 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1173,9 +1173,11 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     result = TclpObjStat(fileName, &statBuf);
     
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not read \"", 
+		    Tcl_GetString(fileName), "\": ",
+		    Tcl_PosixError(interp), (char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -1225,9 +1227,11 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     result = TclpObjStat(fileName, &statBuf);
     
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not read \"", 
+		    Tcl_GetString(fileName), "\": ",
+		    Tcl_PosixError(interp), (char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -1277,9 +1281,11 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     result = TclpObjStat(fileName, &statBuf);
     
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not read \"", 
+		    Tcl_GetString(fileName), "\": ",
+		    Tcl_PosixError(interp), (char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -1331,10 +1337,12 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 
 	if (groupPtr == NULL) {
 	    endgrent();
-	    Tcl_AppendResult(interp, "could not set group for file \"",
-		    Tcl_GetString(fileName), "\": group \"", 
-		    string, "\" does not exist",
-		    (char *) NULL);
+	    if (interp != NULL) {
+		Tcl_AppendResult(interp, "could not set group for file \"",
+			Tcl_GetString(fileName), "\": group \"", 
+			string, "\" does not exist",
+			(char *) NULL);
+	    }
 	    return TCL_ERROR;
 	}
 	gid = groupPtr->gr_gid;
@@ -1345,9 +1353,11 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 
     endgrent();
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not set group for file \"",
-	    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp), 
-	    (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not set group for file \"",
+		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp), 
+		    (char *) NULL);
+	}
 	return TCL_ERROR;
     }    
     return TCL_OK;
@@ -1393,10 +1403,11 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 	Tcl_DStringFree(&ds);
 
 	if (pwPtr == NULL) {
-	    Tcl_AppendResult(interp, "could not set owner for file \"",
-			     Tcl_GetString(fileName), "\": user \"", 
-			     string, "\" does not exist",
-		    (char *) NULL);
+	    if (interp != NULL) {
+		Tcl_AppendResult(interp, "could not set owner for file \"",
+			Tcl_GetString(fileName), "\": user \"", string,
+			"\" does not exist", (char *) NULL);
+	    }
 	    return TCL_ERROR;
 	}
 	uid = pwPtr->pw_uid;
@@ -1406,9 +1417,11 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
     result = chown(native, (uid_t) uid, (gid_t) -1);   /* INTL: Native. */
 
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not set owner for file \"", 
-			 Tcl_GetString(fileName), "\": ", 
-			 Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not set owner for file \"", 
+		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
+		    (char *) NULL);
+	}
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1459,17 +1472,21 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
 	 */
 	result = TclpObjStat(fileName, &buf);
 	if (result != 0) {
-	    Tcl_AppendResult(interp, "could not read \"", 
-		    Tcl_GetString(fileName), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+	    if (interp != NULL) {
+		Tcl_AppendResult(interp, "could not read \"", 
+			Tcl_GetString(fileName), "\": ",
+			Tcl_PosixError(interp), (char *) NULL);
+	    }
 	    return TCL_ERROR;
 	}
 	newMode = (mode_t) (buf.st_mode & 0x00007FFF);
 
 	if (GetModeFromPermString(NULL, modeStringPtr, &newMode) != TCL_OK) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "unknown permission string format \"",
-		    modeStringPtr, "\"", (char *) NULL);
+	    if (interp != NULL) {
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			"unknown permission string format \"",
+			modeStringPtr, "\"", (char *) NULL);
+	    }
 	    return TCL_ERROR;
 	}
     }
@@ -1477,10 +1494,12 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     native = Tcl_FSGetNativePath(fileName);
     result = chmod(native, newMode);		/* INTL: Native. */
     if (result != 0) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"could not set permissions for file \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "could not set permissions for file \"", 
+		    Tcl_GetString(fileName), "\": ",
+		    Tcl_PosixError(interp), (char *) NULL);
+	}
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1889,9 +1908,11 @@ GetReadOnlyAttribute(interp, objIndex, fileName, attributePtrPtr)
     result = TclpObjStat(fileName, &statBuf);
     
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not read \"", 
+		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
+		    (char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -1935,9 +1956,11 @@ SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
     result = TclpObjStat(fileName, &statBuf);
     
     if (result != 0) {
-	Tcl_AppendResult(interp, "could not read \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "could not read \"", 
+		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
+		    (char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -1950,10 +1973,12 @@ SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
     native = Tcl_FSGetNativePath(fileName);
     result = chflags(native, statBuf.st_flags);		/* INTL: Native. */
     if (result != 0) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"could not set flags for file \"", 
-		Tcl_GetString(fileName), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	if (interp != NULL) {
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "could not set flags for file \"", 
+		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
+		    (char *) NULL);
+	}
 	return TCL_ERROR;
     }
     return TCL_OK;

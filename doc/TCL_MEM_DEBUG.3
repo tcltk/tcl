@@ -3,18 +3,18 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: TCL_MEM_DEBUG.3,v 1.6 2002/11/15 15:34:17 dkf Exp $
+'\" RCS: @(#) $Id: TCL_MEM_DEBUG.3,v 1.6.4.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH TCL_MEM_DEBUG 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-TCL_MEM_DEBUG \- Compile-time flag to enable Tcl memory debugging.
+TCL_MEM_DEBUG \- Compile-time flag to enable Tcl memory debugging
 .BE
 
 .SH DESCRIPTION
 When Tcl is compiled with \fBTCL_MEM_DEBUG\fR defined, a powerful set
-of memory debugging aids are included in the compiled binary.  This
+of memory debugging aids is included in the compiled binary.  This
 includes C and Tcl functions which can aid with debugging
 memory leaks, memory allocation overruns, and other memory related
 errors.
@@ -22,12 +22,14 @@ errors.
 .SH "ENABLING MEMORY DEBUGGING"
 .PP
 To enable memory debugging, Tcl should be recompiled from scratch with
-\fBTCL_MEM_DEBUG\fR defined.  This will also compile in a non-stub
+\fBTCL_MEM_DEBUG\fR defined (e.g. by passing the
+\fI\-\-enable\-symbols=mem\fR flag to the \fIconfigure\fR script when
+building).  This will also compile in a non-stub
 version of \fBTcl_InitMemory\fR to add the \fBmemory\fR command to Tcl.
 .PP
 \fBTCL_MEM_DEBUG\fR must be either left defined for all modules or undefined
 for all modules that are going to be linked together.  If they are not, link
-errors will occur, with either \fBTclDbCkfree\fR and \fBTcl_DbCkalloc\fR or
+errors will occur, with either \fBTcl_DbCkfree\fR and \fBTcl_DbCkalloc\fR or
 \fBTcl_Ckalloc\fR and \fBTcl_Ckfree\fR being undefined.
 .PP
 Once memory debugging support has been compiled into Tcl, the C

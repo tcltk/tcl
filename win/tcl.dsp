@@ -1160,10 +1160,6 @@ SOURCE=..\generic\tclIndexObj.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclInitScript.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\generic\tclInt.decls
 # End Source File
 # Begin Source File

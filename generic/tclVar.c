@@ -15,8 +15,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.7 2004/05/27 15:02:59 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.8 2004/09/08 23:02:49 dgp Exp $
  */
+
+#ifdef STDC_HEADERS
+#include <stddef.h>
+#else
+typedef int ptrdiff_t;
+#endif
 
 #include "tclInt.h"
 
@@ -66,20 +72,20 @@ Var *		TclLookupSimpleVar _ANSI_ARGS_((Tcl_Interp *interp,
 int		TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Obj *part1Ptr, CONST char *part2, int flags));
 
-static Tcl_FreeInternalRepProc FreeLocalVarName;
 static Tcl_DupInternalRepProc DupLocalVarName;
-static Tcl_UpdateStringProc UpdateLocalVarName;
 static Tcl_FreeInternalRepProc FreeParsedVarName;
 static Tcl_DupInternalRepProc DupParsedVarName;
 static Tcl_UpdateStringProc UpdateParsedVarName;
+
+static Tcl_UpdateStringProc PanicOnUpdateVarName;
+static Tcl_SetFromAnyProc PanicOnSetVarName;
 
 /*
  * Types of Tcl_Objs used to cache variable lookups.
  *
  * 
  * localVarName - INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1 = pointer to the corresponding Proc 
- *   twoPtrValue.ptr2 = index into locals table
+ *   longValue = index into locals table
  *
  * nsVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1: pointer to the namespace containing the 
@@ -96,7 +102,7 @@ static Tcl_UpdateStringProc UpdateParsedVarName;
 
 Tcl_ObjType tclLocalVarNameType = {
     "localVarName",
-    FreeLocalVarName, DupLocalVarName, UpdateLocalVarName, NULL
+    NULL, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 
 /*
@@ -114,13 +120,13 @@ static Tcl_DupInternalRepProc DupNsVarName;
 
 Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
-    FreeNsVarName, DupNsVarName, NULL, NULL
+    FreeNsVarName, DupNsVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 #endif
 
 Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, NULL
+    FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
 };
 
 /*
@@ -401,17 +407,13 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     }
     
     if (typePtr == &tclLocalVarNameType) {
-	Proc *procPtr = (Proc *) part1Ptr->internalRep.twoPtrValue.ptr1;
-	int localIndex = (int) part1Ptr->internalRep.twoPtrValue.ptr2;
-	int useLocal;
+	int localIndex = (int) part1Ptr->internalRep.longValue;
 
-	useLocal = ((varFramePtr != NULL) && varFramePtr->isProcCallFrame
-	        && !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY)));
-	if (useLocal && (procPtr == varFramePtr->procPtr)) {
+	if ((varFramePtr != NULL) && varFramePtr->isProcCallFrame
+	        && !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
+		&& (localIndex < varFramePtr->numCompiledLocals)) {
 	    /*
-	     * part1Ptr points to an indexed local variable of the
-	     * correct procedure: use the cached value if the names
-	     * coincide.
+	     * use the cached index if the names coincide.
 	     */
 	    
 	    varPtr = &(varFramePtr->compiledLocals[localIndex]);
@@ -554,8 +556,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 
 	part1Ptr->typePtr = &tclLocalVarNameType;
 	procPtr->refCount++;
-	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
-	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
+	part1Ptr->internalRep.longValue = (long) index;
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
 	/*
@@ -1565,7 +1566,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     CONST char *part2;		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
     Tcl_Obj *newValuePtr;	/* New value for variable. */
-    CONST int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY,
+    CONST int flags;		/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * and TCL_LEAVE_ERR_MSG bits. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1624,8 +1625,11 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
      * "copy on write".
      */
 
+    if (flags & TCL_LIST_ELEMENT && !(flags & TCL_APPEND_VALUE)) {
+	TclSetVarUndefined(varPtr);
+    }
     oldValuePtr = varPtr->value.objPtr;
-    if (flags & TCL_APPEND_VALUE) {
+    if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
 	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
 	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
 	    varPtr->value.objPtr = NULL;
@@ -4574,67 +4578,43 @@ TclVarErrMsg(interp, part1, part2, operation, reason)
  *----------------------------------------------------------------------
  */
 
+/*
+ * Panic functions that should never be called in normal
+ * operation.
+ */
+
+static void
+PanicOnUpdateVarName(objPtr)
+    Tcl_Obj *objPtr;
+{
+    Tcl_Panic("ERROR: updateStringProc of type %s should not be called.",
+	    objPtr->typePtr->name);
+}
+
+static int
+PanicOnSetVarName(interp, objPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+{
+    Tcl_Panic("ERROR: setFromAnyProc of type %s should not be called.",
+	    objPtr->typePtr->name);
+    return TCL_ERROR;
+}
+
 /* 
  * localVarName -
  *
  * INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1 = pointer to the corresponding Proc 
- *   twoPtrValue.ptr2 = index into locals table
+ *   longValue = index into locals table
  */
-
-static void 
-FreeLocalVarName(objPtr)
-    Tcl_Obj *objPtr;
-{
-    register Proc *procPtr = (Proc *) objPtr->internalRep.twoPtrValue.ptr1;
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
-	TclProcCleanupProc(procPtr);
-    }
-}
 
 static void
 DupLocalVarName(srcPtr, dupPtr)
     Tcl_Obj *srcPtr;
     Tcl_Obj *dupPtr;
 {
-    register Proc *procPtr = (Proc *) srcPtr->internalRep.twoPtrValue.ptr1;
-
-    dupPtr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = srcPtr->internalRep.twoPtrValue.ptr2;
-    procPtr->refCount++;
+    dupPtr->internalRep.longValue = srcPtr->internalRep.longValue;
     dupPtr->typePtr = &tclLocalVarNameType;
-}
-
-static void
-UpdateLocalVarName(objPtr)
-    Tcl_Obj *objPtr;
-{
-    Proc *procPtr = (Proc *) objPtr->internalRep.twoPtrValue.ptr1;
-    unsigned int index = (unsigned int) objPtr->internalRep.twoPtrValue.ptr2;
-    CompiledLocal *localPtr = procPtr->firstLocalPtr;
-    unsigned int nameLen;
-
-    if (localPtr == NULL) {
-	goto emptyName;
-    }
-    while (index--) {
-	localPtr = localPtr->nextPtr;
-	if (localPtr == NULL) {
-	    goto emptyName;
-	}
-    }
-
-    nameLen = (unsigned int) localPtr->nameLength;
-    objPtr->bytes = ckalloc(nameLen + 1);
-    memcpy(objPtr->bytes, localPtr->name, nameLen + 1);
-    objPtr->length = nameLen;
-    return;
-
-    emptyName:
-    objPtr->bytes = ckalloc(1);
-    *(objPtr->bytes) = '\0';
-    objPtr->length = 0;
 }
 
 #if ENABLE_NS_VARNAME_CACHING

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.7.24.1 2004/05/27 14:29:22 dgp Exp $
+# RCS: @(#) $Id: timer.test,v 1.7.24.2 2004/09/08 23:03:21 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -28,8 +28,8 @@ test timer-1.1 {Tcl_CreateTimerHandler procedure} {
     foreach i {100 200 1000 50 150} {
 	after $i lappend x $i
     }
-    after 200
-    update
+    after 200 set done 1
+    vwait done
     set x
 } {50 100 150 200}
 
@@ -38,13 +38,13 @@ test timer-2.1 {Tcl_DeleteTimerHandler procedure} {
 	after cancel $i
     }
     set x ""
-    foreach i {100 200 300 50 150} {
+    foreach i {100 200 1000 50 150} {
 	after $i lappend x $i
     }
     after cancel lappend x 150
     after cancel lappend x 50
-    after 200
-    update
+    after 200 set done 1
+    vwait done
     set x
 } {100 200}
 
@@ -537,6 +537,18 @@ test timer-9.1 {AfterCleanupProc procedure} {
     update
     set x
 } {before after2 after4}
+
+test timer-10.1 {Bug 1016167: [after] overwrites imports} -setup {
+    interp create slave
+    slave eval namespace export after
+    slave eval namespace eval foo namespace import ::after
+} -body {
+    slave eval foo::after 1
+    slave eval namespace origin foo::after
+} -cleanup {
+    # Bug will cause crash here; would cause failure otherwise
+    interp delete slave
+} -result ::after
 
 # cleanup
 ::tcltest::cleanupTests

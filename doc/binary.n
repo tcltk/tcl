@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.3 2004/05/27 14:29:07 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.4 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -22,7 +22,7 @@ binary \- Insert and extract fields from binary strings
 .PP
 This command provides facilities for manipulating binary data.  The
 first form, \fBbinary format\fR, creates a binary string from normal
-Tcl values.  For example, given the values 16 and 22, on a 32 bit
+Tcl values.  For example, given the values 16 and 22, on a 32-bit
 architecture, it might produce an 8-byte binary string consisting of
 two 4-byte integers, one for each of the numbers.  The second form of
 the command, \fBbinary scan\fR, does the opposite: it extracts data
@@ -63,7 +63,7 @@ to just after the last byte stored.  The cursor is initially at
 position 0 at the beginning of the data.  The type may be any one of
 the following characters:
 .IP \fBa\fR 5
-Stores a character string of length \fIcount\fR in the output string.
+Stores a byte string of length \fIcount\fR in the output string.
 Every character is taken as modulo 256 (i.e. the low byte of every
 character is used, and the high byte discarded) so when storing
 character strings not wholly expressible using the characters \\u0000-\\u00ff,
@@ -80,7 +80,12 @@ formatted.  For example,
 .CS
 \fBbinary format a7a*a alpha bravo charlie\fR
 .CE
-will return a string equivalent to \fBalpha\\000\\000bravoc\fR.
+will return a string equivalent to \fBalpha\\000\\000bravoc\fR and
+.CS
+\fBbinary format a* [encoding convertto utf-8 \\u20ac]
+.CE
+will return a string equivalent to \fB\\342\\202\\254\fR (which is the
+UTF-8 byte sequence for a Euro-currency character).
 .RE
 .IP \fBA\fR 5
 This form is the same as \fBa\fR except that spaces are used for
@@ -434,11 +439,11 @@ reading bytes from the current position.  The cursor is initially
 at position 0 at the beginning of the data.  The type may be any one of
 the following characters:
 .IP \fBa\fR 5
-The data is a character string of length \fIcount\fR.  If \fIcount\fR
+The data is a byte string of length \fIcount\fR.  If \fIcount\fR
 is \fB*\fR, then all of the remaining bytes in \fIstring\fR will be
 scanned into the variable.  If \fIcount\fR is omitted, then one
-character will be scanned.
-All characters scanned will be interpreted as being in the
+byte will be scanned.
+All bytes scanned will be interpreted as being characters in the
 range \\u0000-\\u00ff so the \fBencoding convertfrom\fR command might be
 needed if the string is not an ISO 8859\-1 string.
 For example,
@@ -695,7 +700,7 @@ floating point representations.
 .IP \fBx\fR 5
 Moves the cursor forward \fIcount\fR bytes in \fIstring\fR.  If
 \fIcount\fR is \fB*\fR or is larger than the number of bytes after the
-current cursor cursor position, then the cursor is positioned after
+current cursor position, then the cursor is positioned after
 the last byte in \fIstring\fR.  If \fIcount\fR is omitted, then the
 cursor is moved forward one byte.  Note that this type does not
 consume an argument.  For example,

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.4 2004/04/09 20:58:19 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.5 2004/09/08 23:03:27 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -55,6 +55,9 @@ SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
+
+# Directory in which to (optionally) install the private tcl headers:
+PRIVATE_INCLUDE_INSTALL_DIR = $(INSTALL_ROOT)$(includedir)
 
 # Top-level directory in which to install manual entries:
 MAN_INSTALL_DIR		= $(INSTALL_ROOT)$(mandir)
@@ -265,6 +268,7 @@ GENERIC_OBJS = \
 	tclThread.$(OBJEXT) \
 	tclThreadAlloc.$(OBJEXT) \
 	tclThreadJoin.$(OBJEXT) \
+	tclThreadStorage.$(OBJEXT) \
 	tclTimer.$(OBJEXT) \
 	tclTrace.$(OBJEXT) \
 	tclUtf.$(OBJEXT) \
@@ -437,8 +441,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY)\" \
 		-DCFG_RUNTIME_INCDIR=\"$(includedir)\" \
 		-DCFG_RUNTIME_DOCDIR=\"$(mandir)\" \
-		\
-		-DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
+		-DBUILD_tcl \
+		@DEPARG@ $(CC_OBJNAME)
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported
@@ -510,7 +514,7 @@ install-binaries: binaries
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.1; \
 	    fi
 
-install-libraries: libraries
+install-libraries: libraries install-tzdata install-msgs
 	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
@@ -569,7 +573,37 @@ install-libraries: libraries
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
 
+install-tzdata:
+	@echo "Installing time zone data"
+	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
+	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+
+install-msgs:
+	@echo "Installing message catalogs"
+	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
+	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+
 install-doc: doc
+
+# Optional target to install private headers
+install-private-headers: libraries
+	@for i in $(PRIVATE_INCLUDE_INSTALL_DIR); \
+	    do \
+	    if [ ! -d $$i ] ; then \
+		echo "Making directory $$i"; \
+		$(MKDIR) $$i; \
+		else true; \
+		fi; \
+	    done;
+	@echo "Installing private header files";
+	@for i in "$(GENERIC_DIR)/tclInt.h" "$(GENERIC_DIR)/tclIntDecls.h" \
+		"$(GENERIC_DIR)/tclIntPlatDecls.h" "$(GENERIC_DIR)/tclPort.h" \
+		"$(WIN_DIR)/tclWinPort.h" ; \
+	    do \
+	    $(COPY) "$$i" "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
+	    done;
 
 # Specifying TESTFLAGS on the command line is the standard way to pass
 # args to tcltest, ie:

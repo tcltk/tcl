@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.6 2004/05/27 14:29:14 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.7 2004/09/08 23:02:49 dgp Exp $
  */
 
 #define TCL_TEST
@@ -318,6 +318,8 @@ static void		TestsaveresultFree _ANSI_ARGS_((char *blockPtr));
 static int		TestsetassocdataCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
 static int		TestsetCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, CONST char **argv));
+static int		TestseterrorcodeCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
 static int		TestsetobjerrorcodeCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
@@ -670,6 +672,8 @@ Tcltest_Init(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testseterr", TestsetCmd,
             (ClientData) TCL_LEAVE_ERR_MSG, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testseterrorcode", TestseterrorcodeCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode", 
 	    TestsetobjerrorcodeCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
@@ -3890,11 +3894,46 @@ TestupvarCmd(dummy, interp, argc, argv)
 /*
  *----------------------------------------------------------------------
  *
+ * TestseterrorcodeCmd --
+ *
+ *	This procedure implements the "testseterrorcodeCmd".
+ *	This tests up to five elements passed to the
+ *	Tcl_SetErrorCode command.
+ *
+ * Results:
+ *	A standard Tcl result. Always returns TCL_ERROR so that
+ *	the error code can be tested.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestseterrorcodeCmd(dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    CONST char **argv;			/* Argument strings. */
+{
+    if (argc > 6) {
+	Tcl_SetResult(interp, "too many args", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4],
+	    argv[5], NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestsetobjerrorcodeCmd --
  *
  *	This procedure implements the "testsetobjerrorcodeCmd".
- *	This tests up to five elements passed to the
- *	Tcl_SetObjErrorCode command.
+ *	This tests the Tcl_SetObjErrorCode function.
  *
  * Results:
  *	A standard Tcl result. Always returns TCL_ERROR so that

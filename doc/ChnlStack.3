@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlStack.3,v 1.4 2002/01/23 21:22:06 andreas_kupries Exp $
+'\" RCS: @(#) $Id: ChnlStack.3,v 1.4.6.1 2004/09/08 23:02:32 dgp Exp $
 .so man.macros
 .TH Tcl_StackChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_StackChannel, Tcl_UnstackChannel, Tcl_GetStackedChannel, Tcl_GetTopChannel \- stack an I/O channel on top of another, and undo it
+Tcl_StackChannel, Tcl_UnstackChannel, Tcl_GetStackedChannel, Tcl_GetTopChannel \- manipulate stacked I/O channels
 .SH SYNOPSIS
 .nf
 .nf
@@ -31,7 +31,7 @@ Tcl_Channel
 .SH ARGUMENTS
 .AS Tcl_ChannelType
 .AP Tcl_Interp *interp in
-Interpreter for error reporting - can be NULL.
+Interpreter for error reporting.
 .AP Tcl_ChannelType *typePtr in
 The new channel I/O procedures to use for \fIchannel\fP.
 .AP ClientData clientData in

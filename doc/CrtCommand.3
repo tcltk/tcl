@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtCommand.3,v 1.5.4.1 2004/03/26 22:28:24 dgp Exp $
+'\" RCS: @(#) $Id: CrtCommand.3,v 1.5.4.2 2004/09/08 23:02:32 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateCommand 3 "" Tcl "Tcl Library Procedures"
@@ -103,8 +103,14 @@ point to constant strings or may be shared with other parts of the
 interpreter.
 .VE
 .PP
-\fIProc\fR must return an integer code that is either \fBTCL_OK\fR, \fBTCL_ERROR\fR,
-\fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR.  See the Tcl overview man page
+.VS
+Note that the argument strings are encoded in normalized UTF-8 since
+version 8.1 of Tcl.
+.VE
+.PP
+\fIProc\fR must return an integer code that is expected to be one of
+\fBTCL_OK\fR, \fBTCL_ERROR\fR, \fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or
+\fBTCL_CONTINUE\fR.  See the Tcl overview man page
 for details on what these codes mean.  Most normal commands will only
 return \fBTCL_OK\fR or \fBTCL_ERROR\fR.  In addition, \fIproc\fR must set
 the interpreter result to point to a string value;

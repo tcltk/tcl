@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.8 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.8.4.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -346,7 +346,7 @@ trace procedures will always be invoked.
 .SH "RESTRICTIONS"
 .PP
 A trace procedure can be called at any time, even when there
-is a partially-formed result in the interpreter's result area.  If
+is a partially formed result in the interpreter's result area.  If
 the trace procedure does anything that could damage this result (such
 as calling \fBTcl_Eval\fR) then it must save the original values of
 the interpreter's \fBresult\fR and \fBfreeProc\fR fields and restore

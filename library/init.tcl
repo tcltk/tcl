@@ -3,11 +3,12 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.4 2004/05/04 17:44:19 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.5 2004/09/08 23:02:52 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -24,7 +25,7 @@ package require -exact Tcl 8.5
 # The environment variable TCLLIBPATH
 #
 # tcl_library, which is the directory containing this init.tcl script.
-# tclInitScript.h searches around for the directory containing this
+# [tclInit] (Tcl_Init()) searches around for the directory containing this
 # init.tcl and defines tcl_library to that location before sourcing it.
 #
 # The parent directory of tcl_library. Adding the parent
@@ -164,7 +165,8 @@ if {[llength [info commands tclLog]] == 0} {
 #		command, including the command name.
 
 proc unknown args {
-    global auto_noexec auto_noload env unknown_pending tcl_interactive
+    variable ::tcl::UnknownPending
+    global auto_noexec auto_noload env tcl_interactive
     global errorCode errorInfo
 
     # If the command word has the form "namespace inscope ns cmd"
@@ -192,18 +194,18 @@ proc unknown args {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
-	if {[info exists unknown_pending($name)]} {
+	if {[info exists UnknownPending($name)]} {
 	    return -code error "self-referential recursion in \"unknown\" for command \"$name\"";
 	}
-	set unknown_pending($name) pending;
+	set UnknownPending($name) pending;
 	set ret [catch {auto_load $name [uplevel 1 {::namespace current}]} msg]
-	unset unknown_pending($name);
+	unset UnknownPending($name);
 	if {$ret != 0} {
 	    append errorInfo "\n    (autoloading \"$name\")"
 	    return -code $ret -errorcode $errorCode -errorinfo $errorInfo $msg
 	}
-	if {![array size unknown_pending]} {
-	    unset unknown_pending
+	if {![array size UnknownPending]} {
+	    unset UnknownPending
 	}
 	if {$msg} {
 	    set errorCode $savedErrorCode
@@ -338,7 +340,7 @@ proc unknown args {
 #                       for instance. If not given, namespace current is used.
 
 proc auto_load {cmd {namespace {}}} {
-    global auto_index auto_oldpath auto_path
+    global auto_index auto_path
 
     if {[string length $namespace] == 0} {
 	set namespace [uplevel 1 [list ::namespace current]]
@@ -390,7 +392,8 @@ proc auto_load {cmd {namespace {}}} {
 # None.
 
 proc auto_load_index {} {
-    global auto_index auto_oldpath auto_path errorInfo errorCode
+    variable ::tcl::auto_oldpath
+    global auto_index auto_path errorInfo errorCode
 
     if {[info exists auto_oldpath] && \
 	    [string equal $auto_oldpath $auto_path]} {
@@ -740,4 +743,45 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     return
+}
+
+# Set up the 'clock' ensemble
+
+if { ![interp issafe] } {
+
+    namespace eval ::tcl::clock \
+	[list variable TclLibDir [file dirname [info script]]]
+
+    namespace eval ::tcl::clock {
+	namespace ensemble create -command ::clock \
+	    -subcommands {
+		add clicks format 
+		microseconds milliseconds 
+		scan seconds
+	    }
+	
+	# Auto-loading stub for 'clock.tcl'
+	
+	proc add args {
+	    variable TclLibDir
+	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
+	    return [uplevel 1 [info level 0]]
+	}
+	proc format args {
+	    variable TclLibDir
+	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
+	    return [uplevel 1 [info level 0]]
+	}
+	proc scan args {
+	    variable TclLibDir
+	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
+	    return [uplevel 1 [info level 0]]
+	}
+    }
+}
+
+# Set up search for Tcl Modules (TIP #189).
+
+if { ![interp issafe] } {
+    source [file join [file dirname [info script]] tm.tcl]
 }

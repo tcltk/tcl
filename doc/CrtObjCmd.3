@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.1 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.2 2004/09/08 23:02:33 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -290,7 +290,7 @@ owned by Tcl and is only guaranteed to retain its value as long as the
 command isn't deleted or renamed;  callers should copy the string if
 they need to keep it for a long time.
 .PP
-\fBTcl_GetCommandFullName\fR produces the fully-qualified name
+\fBTcl_GetCommandFullName\fR produces the fully qualified name
 of a command from a command token.  
 The name, including all namespace prefixes,
 is appended to the object specified by \fIobjPtr\fP.

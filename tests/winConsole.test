@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winConsole.test,v 1.5.26.1 2004/02/07 05:48:03 dgp Exp $
+# RCS: @(#) $Id: winConsole.test,v 1.5.26.2 2004/09/08 23:03:21 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -17,9 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 
-test winConsole-1.1 {Console file channel: non-blocking gets} \
-	{pcOnly interactive} {
-    
+test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} {
     set oldmode [fconfigure stdin]
 
     puts stdout "Enter abcdef<return> now: " nonewline

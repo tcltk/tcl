@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.5 2004/05/04 17:44:18 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.6 2004/09/08 23:02:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -133,8 +133,6 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     }
     Tcl_DStringAppend(&ds, procName, -1);
     
-    Tcl_CreateCommand(interp, Tcl_DStringValue(&ds), TclProcInterpProc,
-	    (ClientData) procPtr, TclProcDeleteProc);
     cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
 	    TclObjInterpProc, (ClientData) procPtr, TclProcDeleteProc);
 
@@ -221,7 +219,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
  *	Returns TCL_OK on success, along with a pointer to a Tcl
  *	procedure definition in procPtrPtr where the cmdPtr field is not
  *      initialised. This definition should be freed by calling
- *      TclCleanupProc() when it is no longer needed.  Returns TCL_ERROR if
+ *      TclProcCleanupProc() when it is no longer needed.  Returns TCL_ERROR if
  *      anything goes wrong. 
  *
  * Side effects:
@@ -731,10 +729,10 @@ TclFindProc(iPtr, procName)
     if (origCmd != NULL) {
 	cmdPtr = (Command *) origCmd;
     }
-    if (cmdPtr->proc != TclProcInterpProc) {
+    if (cmdPtr->objProc != TclObjInterpProc) {
 	return NULL;
     }
-    return (Proc *) cmdPtr->clientData;
+    return (Proc *) cmdPtr->objClientData;
 }
 
 /*
@@ -765,103 +763,10 @@ TclIsProc(cmdPtr)
     if (origCmd != NULL) {
 	cmdPtr = (Command *) origCmd;
     }
-    if (cmdPtr->proc == TclProcInterpProc) {
-	return (Proc *) cmdPtr->clientData;
+    if (cmdPtr->objProc == TclObjInterpProc) {
+	return (Proc *) cmdPtr->objClientData;
     }
     return (Proc *) 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclProcInterpProc --
- *
- *	When a Tcl procedure gets invoked with an argc/argv array of
- *	strings, this routine gets invoked to interpret the procedure.
- *
- * Results:
- *	A standard Tcl result value, usually TCL_OK.
- *
- * Side effects:
- *	Depends on the commands in the procedure.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclProcInterpProc(clientData, interp, argc, argv)
-    ClientData clientData;	/* Record describing procedure to be
-				 * interpreted. */
-    Tcl_Interp *interp;		/* Interpreter in which procedure was
-				 * invoked. */
-    int argc;			/* Count of number of arguments to this
-				 * procedure. */
-    register CONST char **argv;	/* Argument values. */
-{
-    register Tcl_Obj *objPtr;
-    register int i;
-    int result;
-
-    /*
-     * This procedure generates an objv array for object arguments that hold
-     * the argv strings. It starts out with stack-allocated space but uses
-     * dynamically-allocated storage if needed.
-     */
-
-#define NUM_ARGS 20
-    Tcl_Obj *(objStorage[NUM_ARGS]);
-    register Tcl_Obj **objv = objStorage;
-
-    /*
-     * Create the object argument array "objv". Make sure objv is large
-     * enough to hold the objc arguments plus 1 extra for the zero
-     * end-of-objv word.
-     */
-
-    if ((argc + 1) > NUM_ARGS) {
-	objv = (Tcl_Obj **)
-	    ckalloc((unsigned)(argc + 1) * sizeof(Tcl_Obj *));
-    }
-
-    for (i = 0;  i < argc;  i++) {
-	objv[i] = Tcl_NewStringObj(argv[i], -1);
-	Tcl_IncrRefCount(objv[i]);
-    }
-    objv[argc] = 0;
-
-    /*
-     * Use TclObjInterpProc to actually interpret the procedure.
-     */
-
-    result = TclObjInterpProc(clientData, interp, argc, objv);
-
-    /*
-     * Move the interpreter's object result to the string result, 
-     * then reset the object result.
-     */
-    
-    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	    TCL_VOLATILE);
-
-    /*
-     * Decrement the ref counts on the objv elements since we are done
-     * with them.
-     */
-
-    for (i = 0;  i < argc;  i++) {
-	objPtr = objv[i];
-	TclDecrRefCount(objPtr);
-    }
-    
-    /*
-     * Free the objv array if malloc'ed storage was used.
-     */
-
-    if (objv != objStorage) {
-	ckfree((char *) objv);
-    }
-    return result;
-#undef NUM_ARGS
 }
 
 /*
@@ -1473,31 +1378,6 @@ TclUpdateReturnInfo(iPtr)
 	}
     }
     return code;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetInterpProc --
- *
- *  Returns a pointer to the TclProcInterpProc procedure; this is different
- *  from the value obtained from the TclProcInterpProc reference on systems
- *  like Windows where import and export versions of a procedure exported
- *  by a DLL exist.
- *
- * Results:
- *  Returns the internal address of the TclProcInterpProc procedure.
- *
- * Side effects:
- *  None.
- *
- *----------------------------------------------------------------------
- */
-
-TclCmdProcType
-TclGetInterpProc()
-{
-    return (TclCmdProcType) TclProcInterpProc;
 }
 
 /*

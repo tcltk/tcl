@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.11.2.3 2004/05/27 14:29:07 dgp Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.11.2.4 2004/09/08 23:02:32 dgp Exp $
  */
 
 /*
@@ -47,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.11.2.3 2004/05/27 14:29:07 dgp Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.11.2.4 2004/09/08 23:02:32 dgp Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -457,8 +457,14 @@ _conv(n, digits, pad)
     static char buf[10];
     register char *p;
 
-    for (p = buf + sizeof(buf) - 2; n > 0 && p > buf; n /= 10, --digits)
-	*p-- = (char)(n % 10 + '0');
+    p = buf + sizeof( buf ) - 1;
+    *p-- = '\0';
+    if ( n == 0 ) {
+	*p-- = '0';
+    } else {
+	for (; n > 0 && p > buf; n /= 10, --digits)
+	    *p-- = (char)(n % 10 + '0');
+    }
     while (p > buf && digits-- > 0)
 	*p-- = (char) pad;
     return(_add(++p));

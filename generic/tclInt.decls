@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.5 2004/05/17 18:42:23 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.6 2004/09/08 23:02:43 dgp Exp $
 
 library tcl
 
@@ -147,9 +147,10 @@ declare 32 generic {
     int TclGetFrame(Tcl_Interp *interp, CONST char *str,
 	    CallFrame **framePtrPtr)
 }
-declare 33 generic {
-    TclCmdProcType TclGetInterpProc(void)
-}
+# Removed in Tcl 8.5
+#declare 33 generic {
+#    TclCmdProcType TclGetInterpProc(void)
+#}
 declare 34 generic {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
@@ -374,10 +375,11 @@ declare 92 generic {
 declare 93 generic {
     void TclProcDeleteProc(ClientData clientData)
 }
-declare 94 generic {
-    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    int argc, CONST84 char **argv)
-}
+# Removed in Tcl 8.5:
+#declare 94 generic {
+#    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
+#	    int argc, CONST84 char **argv)
+#}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 95 generic {
 #    int TclpStat(CONST char *path, Tcl_StatBuf *buf)
@@ -745,6 +747,48 @@ declare 183 generic {
      struct tm *TclpGmtime(CONST time_t *clock)
 }
 
+# For the new "Thread Storage" subsystem.
+
+declare 184 generic {
+     void TclThreadStorageLockInit(void)     
+}
+declare 185 generic {
+     void TclThreadStorageLock(void)     
+}
+declare 186 generic {
+     void TclThreadStorageUnlock(void)     
+}
+declare 187 generic {
+     void TclThreadStoragePrint(FILE *outFile, int flags)     
+}
+declare 188 generic {
+     Tcl_HashTable *TclThreadStorageGetHashTable(Tcl_ThreadId id)     
+}
+declare 189 generic {
+     Tcl_HashTable *TclThreadStorageInit(Tcl_ThreadId id, void *reserved)     
+}
+declare 190 generic {
+     void TclThreadStorageDataKeyInit(Tcl_ThreadDataKey *keyPtr)     
+}
+declare 191 generic {
+     void *TclThreadStorageDataKeyGet(Tcl_ThreadDataKey *keyPtr)     
+}
+declare 192 generic {
+     void TclThreadStorageDataKeySet(Tcl_ThreadDataKey *keyPtr, void *data)     
+}
+declare 193 generic {
+     void TclFinalizeThreadStorageThread(Tcl_ThreadId id)     
+}
+declare 194 generic {
+     void TclFinalizeThreadStorage(void)     
+}
+declare 195 generic {
+     void TclFinalizeThreadStorageData(Tcl_ThreadDataKey *keyPtr)     
+}
+declare 196 generic {
+     void TclFinalizeThreadStorageDataKey(Tcl_ThreadDataKey *keyPtr)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are
@@ -863,6 +907,10 @@ declare 27 win {
 
 declare 28 win {
     void TclWinResetInterfaces(void)
+}
+
+declare 29 win {
+    int TclWinCPUID( unsigned int index, unsigned int *regs )
 }
 
 #########################

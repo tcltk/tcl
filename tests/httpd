@@ -201,7 +201,8 @@ proc httpdRespond { sock } {
 	} else {
 	    puts $sock "HTTP/1.0 200 Data follows"
 	}
-	puts $sock "Date: [clock format [clock clicks]]"
+	puts $sock "Date: [clock format [clock seconds] \
+                              -format {%a, %d %b %Y %H:%M:%S %Z}]"
 	puts $sock "Content-Type: $type"
 	puts $sock "Content-Length: [string length $html]"
 	puts $sock ""

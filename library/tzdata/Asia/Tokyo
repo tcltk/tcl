@@ -1,0 +1,8 @@
+# created by ../tools/tclZIC.tcl - do not edit
+
+set TZData(:Asia/Tokyo) {
+    {-9223372036854775808 33539 0 LMT}
+    {-2587712400 32400 0 JST}
+    {-2335251600 32400 0 CJT}
+    {-1009875600 32400 0 JST}
+}

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.3 2004/03/26 22:28:27 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.4 2004/09/08 23:02:52 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -36,6 +36,10 @@ namespace eval ::safe {
     # Setup the arguments parsing
     #
     ####
+
+    # Make sure that our temporary variable is local to this
+    # namespace.  [Bug 981733]
+    variable temp
 
     # Share the descriptions
     set temp [::tcl::OptKeyRegister {
@@ -321,7 +325,7 @@ namespace eval ::safe {
 
 	# determine and store the access path if empty
 	if {[string equal "" $access_path]} {
-	    set access_path [uplevel #0 set auto_path]
+	    set access_path [uplevel \#0 set auto_path]
 	    # Make sure that tcl_library is in auto_path
 	    # and at the first position (needed by setAccessPath)
 	    set where [lsearch -exact $access_path [info library]]

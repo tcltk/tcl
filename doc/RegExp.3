@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.13 2002/11/13 22:11:40 vincentdarley Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.13.4.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -192,15 +192,15 @@ occurs while compiling the regular expression then
 \fBTcl_GetRegExpFromObj\fR returns NULL and leaves an error message in
 the interpreter result.  The regular expression token can be used as
 long as the internal representation of \fIpatObj\fR refers to the
-compiled form.  The \fIeflags\fR argument is a bitwise OR of
+compiled form.  The \fIeflags\fR argument is a bit-wise OR of
 zero or more of the following flags that control the compilation of
 \fIpatObj\fR:
 .RS 2
 .TP
 \fBTCL_REG_ADVANCED\fR
 Compile advanced regular expressions (`AREs').  This mode corresponds to
-the normal regular expression syntax accepted by the Tcl regexp and
-regsub commands.
+the normal regular expression syntax accepted by the Tcl \fBregexp\fR and
+\fBregsub\fR commands.
 .TP
 \fBTCL_REG_EXTENDED\fR
 Compile extended regular expressions (`EREs').  This mode corresponds
@@ -232,7 +232,7 @@ regular expressions or strings.  With this flag, `[^' bracket
 expressions and `.' never match newline, `^' matches an empty string
 after any newline in addition to its normal function, and `$' matches
 an empty string before any newline in addition to its normal function.
-\fBREG_NEWLINE\fR is the bitwise OR of \fBREG_NLSTOP\fR and
+\fBREG_NEWLINE\fR is the bit-wise OR of \fBREG_NLSTOP\fR and
 \fBREG_NLANCH\fR.
 .TP
 \fBTCL_REG_NLSTOP\fR
@@ -244,7 +244,7 @@ expressions and `.' never match newline.
 .TP
 \fBTCL_REG_NLANCH\fR
 Compile for inverse partial newline-sensitive matching,
-with the behavior of
+with the behavior
 of `^' and `$' (the ``anchors'') affected, but not the behavior of
 `[^' bracket expressions and `.'.  In this mode `^' matches an empty string
 after any newline in addition to its normal function, and `$' matches
@@ -281,7 +281,7 @@ of subexpressions will be remembered.  Matching begins at the
 specified Unicode character index given by \fIoffset\fR.  Unlike
 \fBTcl_RegExpExec\fR, the behavior of anchors is not affected by the
 offset value.  Instead the behavior of the anchors is explicitly
-controlled by the \fIeflags\fR argument, which is a bitwise OR of
+controlled by the \fIeflags\fR argument, which is a bit-wise OR of
 zero or more of the following flags:
 .RS 2
 .TP

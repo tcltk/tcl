@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.10 2004/05/17 18:42:23 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.11 2004/09/08 23:02:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2549,21 +2549,38 @@ Tcl_FSGetCwd(interp)
 			if (retCd != NULL) {
 			    (*fsPtr->freeInternalRepProc)(retCd);
 			}
-		    } else if (Tcl_FSEqualPaths(tsdPtr->cwdPathPtr, norm)) {
-			/* 
-			 * If the paths were equal, we can be more
-			 * efficient and retain the old path object
-			 * which will probably already be shared.  In
-			 * this case we can simply free the normalized
-			 * path we just calculated.
-			 */
-			Tcl_DecrRefCount(norm);
-			if (retCd != NULL) {
-			    (*fsPtr->freeInternalRepProc)(retCd);
-			}
+		    } else if (norm == tsdPtr->cwdPathPtr) {
+			goto cdEqual;
 		    } else {
-			FsUpdateCwd(norm, retCd);
-			Tcl_DecrRefCount(norm);
+			/* 
+			 * Note that both 'norm' and
+			 * 'tsdPtr->cwdPathPtr' are normalized paths.
+			 * Therefore we can be more efficient than
+			 * calling 'Tcl_FSEqualPaths', and in addition
+			 * avoid a nasty infinite loop bug when trying
+			 * to normalize tsdPtr->cwdPathPtr.
+			 */
+			int len1, len2;
+			char *str1, *str2;
+			str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+			str2 = Tcl_GetStringFromObj(norm, &len2);
+			if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
+			    /* 
+			     * If the paths were equal, we can be more
+			     * efficient and retain the old path object
+			     * which will probably already be shared.  In
+			     * this case we can simply free the normalized
+			     * path we just calculated.
+			     */
+			  cdEqual:
+			    Tcl_DecrRefCount(norm);
+			    if (retCd != NULL) {
+				(*fsPtr->freeInternalRepProc)(retCd);
+			    }
+			} else {
+			    FsUpdateCwd(norm, retCd);
+			    Tcl_DecrRefCount(norm);
+			}
 		    }
 		    Tcl_DecrRefCount(retVal);
 		} else {
@@ -2611,7 +2628,8 @@ Tcl_FSChdir(pathPtr)
     int retVal = -1;
     
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
-        return TCL_ERROR;
+	Tcl_SetErrno(ENOENT);
+	return (retVal);
     }
     
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2642,7 +2660,29 @@ Tcl_FSChdir(pathPtr)
 	 * calculated above, and we must therefore cache that
 	 * information.
 	 */
-	if (retVal == TCL_OK) {
+
+	/*
+	 * If the filesystem in question has a getCwdProc, then the
+	 * correct logic which performs the part below is already part
+	 * of the Tcl_FSGetCwd() call, so no need to replicate it again.
+	 * This will have a side effect though.  The private
+	 * authoritative representation of the current working directory
+	 * stored in cwdPathPtr in static memory will be out-of-sync
+	 * with the real OS-maintained value.  The first call to
+	 * Tcl_FSGetCwd will however recalculate the private copy to
+	 * match the OS-value so everything will work right.
+	 * 
+	 * However, if there is no getCwdProc, then we _must_ update
+	 * our private storage of the cwd, since this is the only
+	 * opportunity to do that!
+	 * 
+	 * Note: We currently call this block of code irrespective of
+	 * whether there was a getCwdProc or not, but the code should
+	 * all in principle work if we only call this block if 
+	 * fsPtr->getCwdProc == NULL.
+	 */
+
+	if (retVal == 0) {
 	    /* 
 	     * Note that this normalized path may be different to what
 	     * we found above (or at least a different object), if the
@@ -2654,7 +2694,9 @@ Tcl_FSChdir(pathPtr)
 	     */
 	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	    if (normDirName == NULL) {
-	        return TCL_ERROR;
+		/* Not really true, but what else to do? */
+		Tcl_SetErrno(ENOENT); 
+		return -1;
 	    }
 	    if (fsPtr == &tclNativeFilesystem) {
 		/* 
@@ -2834,173 +2876,179 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
     Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
 	Tcl_FSLoadFileProc *proc = fsPtr->loadFileProc;
+	Tcl_Filesystem *copyFsPtr;
+	Tcl_Obj *copyToPtr;
+	
 	if (proc != NULL) {
-	    int i;
 	    int retVal = (*proc)(interp, pathPtr, handlePtr, unloadProcPtr);
-	    if (retVal != TCL_OK) {
+	    if (retVal == TCL_OK) {
+		int i;
+		if (*handlePtr == NULL) {
+		    return TCL_ERROR;
+		}
+		for (i = 0;i < symc;i++) {
+		    if (symbols[i] != NULL) {
+			*procPtrs[i] = TclpFindSymbol(interp, *handlePtr, 
+						      symbols[i]);
+		    }
+		}
+		/* Copy this across, since both are equal for the native fs */
+		*clientDataPtr = (ClientData)*handlePtr;
 		return retVal;
 	    }
-	    if (*handlePtr == NULL) {
-		return TCL_ERROR;
+	    if (Tcl_GetErrno() != EXDEV) {
+	        return retVal;
 	    }
-	    for (i = 0;i < symc;i++) {
-	        if (symbols[i] != NULL) {
-	            *procPtrs[i] = TclpFindSymbol(interp, *handlePtr, 
-						  symbols[i]);
-	        }
-	    }
-	    /* Copy this across, since both are equal for the native fs */
-	    *clientDataPtr = (ClientData)*handlePtr;
-	    return retVal;
-	} else {
-	    Tcl_Filesystem *copyFsPtr;
-	    Tcl_Obj *copyToPtr;
-	    
-	    /* First check if it is readable -- and exists! */
-	    if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
-		Tcl_AppendResult(interp, "couldn't load library \"",
-				 Tcl_GetString(pathPtr), "\": ", 
-				 Tcl_PosixError(interp), (char *) NULL);
-		return TCL_ERROR;
-	    }
-	    
+	}
+	/* 
+	 * The filesystem doesn't support 'load', so we fall back on
+	 * the following technique:
+	 */
+	
+	/* First check if it is readable -- and exists! */
+	if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
+	    Tcl_AppendResult(interp, "couldn't load library \"",
+			     Tcl_GetString(pathPtr), "\": ", 
+			     Tcl_PosixError(interp), (char *) NULL);
+	    return TCL_ERROR;
+	}
+	
+	/* 
+	 * Get a temporary filename to use, first to
+	 * copy the file into, and then to load. 
+	 */
+	copyToPtr = TclpTempFileName();
+	if (copyToPtr == NULL) {
+	    return -1;
+	}
+	Tcl_IncrRefCount(copyToPtr);
+	
+	copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);
+	if ((copyFsPtr == NULL) || (copyFsPtr == fsPtr)) {
 	    /* 
-	     * Get a temporary filename to use, first to
-	     * copy the file into, and then to load. 
+	     * We already know we can't use Tcl_FSLoadFile from 
+	     * this filesystem, and we must avoid a possible
+	     * infinite loop.  Try to delete the file we
+	     * probably created, and then exit.
 	     */
-	    copyToPtr = TclpTempFileName();
-	    if (copyToPtr == NULL) {
-	        return -1;
-	    }
-	    Tcl_IncrRefCount(copyToPtr);
-	    
-	    copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);
-	    if ((copyFsPtr == NULL) || (copyFsPtr == fsPtr)) {
-		/* 
-		 * We already know we can't use Tcl_FSLoadFile from 
-		 * this filesystem, and we must avoid a possible
-		 * infinite loop.  Try to delete the file we
-		 * probably created, and then exit.
-		 */
-		Tcl_FSDeleteFile(copyToPtr);
-		Tcl_DecrRefCount(copyToPtr);
-		return -1;
-	    }
-	    
-	    if (TclCrossFilesystemCopy(interp, pathPtr, 
-				       copyToPtr) == TCL_OK) {
-		Tcl_LoadHandle newLoadHandle = NULL;
-		ClientData newClientData = NULL;
-		Tcl_FSUnloadFileProc *newUnloadProcPtr = NULL;
-		FsDivertLoad *tvdlPtr;
-		int retVal;
+	    Tcl_FSDeleteFile(copyToPtr);
+	    Tcl_DecrRefCount(copyToPtr);
+	    return -1;
+	}
+	
+	if (TclCrossFilesystemCopy(interp, pathPtr, 
+				   copyToPtr) == TCL_OK) {
+	    Tcl_LoadHandle newLoadHandle = NULL;
+	    ClientData newClientData = NULL;
+	    Tcl_FSUnloadFileProc *newUnloadProcPtr = NULL;
+	    FsDivertLoad *tvdlPtr;
+	    int retVal;
 
 #if !defined(__WIN32__)
-		/* 
-		 * Do we need to set appropriate permissions 
-		 * on the file?  This may be required on some
-		 * systems.  On Unix we could loop over
-		 * the file attributes, and set any that are
-		 * called "-permissions" to 0700.  However,
-		 * we just do this directly, like this:
-		 */
-		
-		Tcl_Obj* perm = Tcl_NewStringObj("0700",-1);
-		Tcl_IncrRefCount(perm);
-		Tcl_FSFileAttrsSet(NULL, 2, copyToPtr, perm);
-		Tcl_DecrRefCount(perm);
+	    /* 
+	     * Do we need to set appropriate permissions 
+	     * on the file?  This may be required on some
+	     * systems.  On Unix we could loop over
+	     * the file attributes, and set any that are
+	     * called "-permissions" to 0700.  However,
+	     * we just do this directly, like this:
+	     */
+	    
+	    Tcl_Obj* perm = Tcl_NewStringObj("0700",-1);
+	    Tcl_IncrRefCount(perm);
+	    Tcl_FSFileAttrsSet(NULL, 2, copyToPtr, perm);
+	    Tcl_DecrRefCount(perm);
 #endif
-		
-		/* 
-		 * We need to reset the result now, because the cross-
-		 * filesystem copy may have stored the number of bytes
-		 * in the result
-		 */
-		Tcl_ResetResult(interp);
-		
-		retVal = TclLoadFile(interp, copyToPtr, symc, symbols, 
-				     procPtrs, &newLoadHandle, 
-				     &newClientData,
-				     &newUnloadProcPtr);
-	        if (retVal != TCL_OK) {
-		    /* The file didn't load successfully */
-		    Tcl_FSDeleteFile(copyToPtr);
-		    Tcl_DecrRefCount(copyToPtr);
-		    return retVal;
-		}
-		/* 
-		 * Try to delete the file immediately -- this is
-		 * possible in some OSes, and avoids any worries
-		 * about leaving the copy laying around on exit. 
-		 */
-		if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
-		    Tcl_DecrRefCount(copyToPtr);
-		    /* 
-		     * We tell our caller about the real shared
-		     * library which was loaded.  Note that this
-		     * does mean that the package list maintained
-		     * by 'load' will store the original (vfs)
-		     * path alongside the temporary load handle
-		     * and unload proc ptr.
-		     */
-		    (*handlePtr) = newLoadHandle;
-		    (*clientDataPtr) = newClientData;
-		    (*unloadProcPtr) = newUnloadProcPtr;
-		    return TCL_OK;
-		}
-		/* 
-		 * When we unload this file, we need to divert the 
-		 * unloading so we can unload and cleanup the 
-		 * temporary file correctly.
-		 */
-		tvdlPtr = (FsDivertLoad*) ckalloc(sizeof(FsDivertLoad));
-
-		/* 
-		 * Remember three pieces of information.  This allows
-		 * us to cleanup the diverted load completely, on
-		 * platforms which allow proper unloading of code.
-		 */
-		tvdlPtr->loadHandle = newLoadHandle;
-		tvdlPtr->unloadProcPtr = newUnloadProcPtr;
-
-		if (copyFsPtr != &tclNativeFilesystem) {
-		    /* copyToPtr is already incremented for this reference */
-		    tvdlPtr->divertedFile = copyToPtr;
-
-		    /* 
-		     * This is the filesystem we loaded it into.  Since
-		     * we have a reference to 'copyToPtr', we already
-		     * have a refCount on this filesystem, so we don't
-		     * need to worry about it disappearing on us.
-		     */
-		    tvdlPtr->divertedFilesystem = copyFsPtr;
-		    tvdlPtr->divertedFileNativeRep = NULL;
-		} else {
-		    /* We need the native rep */
-		    tvdlPtr->divertedFileNativeRep = 
-		      TclNativeDupInternalRep(Tcl_FSGetInternalRep(copyToPtr, 
-								copyFsPtr));
-		    /* 
-		     * We don't need or want references to the copied
-		     * Tcl_Obj or the filesystem if it is the native
-		     * one.
-		     */
-		    tvdlPtr->divertedFile = NULL;
-		    tvdlPtr->divertedFilesystem = NULL;
-		    Tcl_DecrRefCount(copyToPtr);
-		}
-
-		copyToPtr = NULL;
-		(*handlePtr) = newLoadHandle;
-		(*clientDataPtr) = (ClientData)tvdlPtr;
-		(*unloadProcPtr) = &FSUnloadTempFile;
-		return retVal;
-	    } else {
-		/* Cross-platform copy failed */
+	    
+	    /* 
+	     * We need to reset the result now, because the cross-
+	     * filesystem copy may have stored the number of bytes
+	     * in the result
+	     */
+	    Tcl_ResetResult(interp);
+	    
+	    retVal = TclLoadFile(interp, copyToPtr, symc, symbols, 
+				 procPtrs, &newLoadHandle, 
+				 &newClientData,
+				 &newUnloadProcPtr);
+	    if (retVal != TCL_OK) {
+		/* The file didn't load successfully */
 		Tcl_FSDeleteFile(copyToPtr);
 		Tcl_DecrRefCount(copyToPtr);
-		return TCL_ERROR;
+		return retVal;
 	    }
+	    /* 
+	     * Try to delete the file immediately -- this is
+	     * possible in some OSes, and avoids any worries
+	     * about leaving the copy laying around on exit. 
+	     */
+	    if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
+		Tcl_DecrRefCount(copyToPtr);
+		/* 
+		 * We tell our caller about the real shared
+		 * library which was loaded.  Note that this
+		 * does mean that the package list maintained
+		 * by 'load' will store the original (vfs)
+		 * path alongside the temporary load handle
+		 * and unload proc ptr.
+		 */
+		(*handlePtr) = newLoadHandle;
+		(*clientDataPtr) = newClientData;
+		(*unloadProcPtr) = newUnloadProcPtr;
+		return TCL_OK;
+	    }
+	    /* 
+	     * When we unload this file, we need to divert the 
+	     * unloading so we can unload and cleanup the 
+	     * temporary file correctly.
+	     */
+	    tvdlPtr = (FsDivertLoad*) ckalloc(sizeof(FsDivertLoad));
+
+	    /* 
+	     * Remember three pieces of information.  This allows
+	     * us to cleanup the diverted load completely, on
+	     * platforms which allow proper unloading of code.
+	     */
+	    tvdlPtr->loadHandle = newLoadHandle;
+	    tvdlPtr->unloadProcPtr = newUnloadProcPtr;
+
+	    if (copyFsPtr != &tclNativeFilesystem) {
+		/* copyToPtr is already incremented for this reference */
+		tvdlPtr->divertedFile = copyToPtr;
+
+		/* 
+		 * This is the filesystem we loaded it into.  Since
+		 * we have a reference to 'copyToPtr', we already
+		 * have a refCount on this filesystem, so we don't
+		 * need to worry about it disappearing on us.
+		 */
+		tvdlPtr->divertedFilesystem = copyFsPtr;
+		tvdlPtr->divertedFileNativeRep = NULL;
+	    } else {
+		/* We need the native rep */
+		tvdlPtr->divertedFileNativeRep = 
+		  TclNativeDupInternalRep(Tcl_FSGetInternalRep(copyToPtr, 
+							    copyFsPtr));
+		/* 
+		 * We don't need or want references to the copied
+		 * Tcl_Obj or the filesystem if it is the native
+		 * one.
+		 */
+		tvdlPtr->divertedFile = NULL;
+		tvdlPtr->divertedFilesystem = NULL;
+		Tcl_DecrRefCount(copyToPtr);
+	    }
+
+	    copyToPtr = NULL;
+	    (*handlePtr) = newLoadHandle;
+	    (*clientDataPtr) = (ClientData)tvdlPtr;
+	    (*unloadProcPtr) = &FSUnloadTempFile;
+	    return retVal;
+	} else {
+	    /* Cross-platform copy failed */
+	    Tcl_FSDeleteFile(copyToPtr);
+	    Tcl_DecrRefCount(copyToPtr);
+	    return TCL_ERROR;
 	}
     }
     Tcl_SetErrno(ENOENT);
@@ -3991,7 +4039,13 @@ Tcl_FSGetFileSystemForPath(pathPtr)
     /* 
      * Check if the filesystem has changed in some way since
      * this object's internal representation was calculated.
+     * Before doing that, assure we have the most up-to-date
+     * copy of the master filesystem. This is accomplished
+     * by the FsGetFirstFilesystem() call.
      */
+
+    fsRecPtr = FsGetFirstFilesystem();
+
     if (TclFSEnsureEpochOk(pathPtr, &retVal) != TCL_OK) {
 	return NULL;
     }
@@ -4002,7 +4056,6 @@ Tcl_FSGetFileSystemForPath(pathPtr)
      * succeeded.
      */
 
-    fsRecPtr = FsGetFirstFilesystem();
     while ((retVal == NULL) && (fsRecPtr != NULL)) {
 	Tcl_FSPathInFilesystemProc *proc = fsRecPtr->fsPtr->pathInFilesystemProc;
 	if (proc != NULL) {

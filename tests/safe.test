@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.1 2004/05/27 14:29:22 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.2 2004/09/08 23:03:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -51,8 +51,9 @@ test safe-1.3 {safe::interpInit syntax} {
     slave name () name of the slave}}
 
 
-test safe-2.1 {creating interpreters, should have no aliases} {
-    interp aliases
+test safe-2.1 {creating interpreters, should have no aliases} emptyTest {
+    # Disabled this test.  It tests nothing sensible.  [Bug 999612]
+    # interp aliases
 } ""
 test safe-2.2 {creating interpreters, should have no aliases} {
     catch {safe::interpDelete a}
@@ -61,13 +62,13 @@ test safe-2.2 {creating interpreters, should have no aliases} {
     safe::interpDelete a
     set l
 } ""
-test safe-2.3 {creating safe interpreters, should have no aliases} {
+test safe-2.3 {creating safe interpreters, should have no unexpected aliases} {
     catch {safe::interpDelete a}
     interp create a -safe
     set l [a aliases]
     interp delete a
     set l
-} ""
+} {clock}
 
 test safe-3.1 {calling safe::interpInit is safe} {
     catch {safe::interpDelete a}
@@ -83,7 +84,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} {
     set l [lsort [a aliases]]
     safe::interpDelete a
     set l
-} {encoding exit file load source}
+} {clock encoding exit file load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} {
     catch {safe::interpDelete a}
     safe::interpCreate a

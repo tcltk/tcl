@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.3 2004/04/09 20:58:17 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.4 2004/09/08 23:02:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -731,17 +731,14 @@ TclServiceIdle()
 	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Points to the "tclAfter" assocData for
-				 * this interpreter, or NULL if the assocData
-				 * hasn't been created yet.*/
+    ClientData clientData;	/* Unused */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int ms;
     AfterInfo *afterPtr;
-    AfterAssocData *assocPtr = (AfterAssocData *) clientData;
-    Tcl_CmdInfo cmdInfo;
+    AfterAssocData *assocPtr;
     int length;
     char *argString;
     int index;
@@ -764,20 +761,13 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
      * future.
      */
 
+    assocPtr = Tcl_GetAssocData( interp, "tclAfter", NULL );
     if (assocPtr == NULL) {
 	assocPtr = (AfterAssocData *) ckalloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc,
 		(ClientData) assocPtr);
-	cmdInfo.proc = NULL;
-	cmdInfo.clientData = (ClientData) NULL;
-	cmdInfo.objProc = Tcl_AfterObjCmd;
-	cmdInfo.objClientData = (ClientData) assocPtr;
-	cmdInfo.deleteProc = NULL;
-	cmdInfo.deleteData = (ClientData) assocPtr;
-	Tcl_SetCommandInfo(interp, Tcl_GetStringFromObj(objv[0], &length),
-		&cmdInfo);
     }
 
     /*

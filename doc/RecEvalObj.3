@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RecEvalObj.3,v 1.3 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: RecEvalObj.3,v 1.3.20.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_RecordAndEvalObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -18,7 +18,7 @@ Tcl_RecordAndEvalObj \- save command on history list before evaluating
 int
 \fBTcl_RecordAndEvalObj\fR(\fIinterp, cmdPtr, flags\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *interp;
+.AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Tcl interpreter in which to evaluate command.
 .AP Tcl_Obj *cmdPtr in
@@ -44,7 +44,7 @@ If you don't want the command recorded on the history list then
 you should invoke \fBTcl_EvalObjEx\fR instead of \fBTcl_RecordAndEvalObj\fR.
 Normally \fBTcl_RecordAndEvalObj\fR is only called with top-level
 commands typed by the user, since the purpose of history is to
-allow the user to re-issue recently-invoked commands.
+allow the user to re-issue recently invoked commands.
 If the \fIflags\fR argument contains the TCL_NO_EVAL bit then
 the command is recorded without being evaluated.
 

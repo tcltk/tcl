@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17.4.3 2004/04/09 20:58:17 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.17.4.4 2004/09/08 23:02:52 dgp Exp $
 
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
@@ -229,7 +229,12 @@ proc msgcat::mclocale {args} {
     }
 
     if {$len == 1} {
-	set Locale [string tolower [lindex $args 0]]
+	set newLocale [lindex $args 0]
+	if {$newLocale ne [file tail $newLocale]} {
+	    return -code error "invalid newLocale value \"$newLocale\":\
+		    could be path to unsafe code."
+	}
+	set Locale [string tolower $newLocale]
 	set Loclist {}
 	set word ""
 	foreach part [split $Locale _] {

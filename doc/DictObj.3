@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DictObj.3,v 1.1.2.1 2004/05/04 17:44:15 dgp Exp $
+'\" RCS: @(#) $Id: DictObj.3,v 1.1.2.2 2004/09/08 23:02:33 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_DictObj 3 8.5 Tcl "Tcl Library Procedures"
@@ -77,7 +77,7 @@ contained within the dictionary placed within it.
 .AP Tcl_DictSearch *searchPtr in/out
 Pointer to record to use to keep track of progress in enumerating all
 key/value pairs in a dictionary.  The contents of the record will be
-initialised by the call to \fBTcl_DictObjFirst\fR.  If the enumerating
+initialized by the call to \fBTcl_DictObjFirst\fR.  If the enumerating
 is to be terminated before all values in the dictionary have been
 returned, the search record \fImust\fR be passed to
 \fBTcl_DictObjDone\fR to enable the internal locks to be released.
@@ -97,10 +97,11 @@ sub-dictionaries of the main dictionary object passed to them.
 
 .SH DESCRIPTION
 .PP
-Tcl dict objects have an internal representation that supports
-efficient mapping from keys to values.
+Tcl dictionary objects have an internal representation that supports
+efficient mapping from keys to values and which does not guarantee any
+particular ordering of keys within the dictionary.
 The procedures described in this man page are used to
-create, modify, index, and iterate over Tcl dict objects from C code.
+create, modify, index, and iterate over dictionary objects from C code.
 .PP
 \fBTcl_NewDictObj\fR creates a new, empty dictionary object.  The
 string representation of the object will be invalid, and the reference
@@ -130,7 +131,7 @@ procedure is TCL_OK, or TCL_ERROR if the \fIdictPtr\fR cannot be
 converted to a dictionary.
 .PP
 \fBTcl_DictObjSize\fR updates the given variable with the number of
-key/value pairs currently in the given dictionary.The result of this
+key/value pairs currently in the given dictionary. The result of this
 procedure is TCL_OK, or TCL_ERROR if the \fIdictPtr\fR cannot be
 converted to a dictionary.
 .PP
@@ -146,7 +147,7 @@ unless the dictionary is unshared, when this will trigger premature
 termination of the iteration instead (which Tcl scripts cannot trigger
 via the \fBdict\fR command.)  The \fIsearchPtr\fR argument points to a
 piece of context that is used to identify which particular iteration
-is being performed, and is initialised by the call to
+is being performed, and is initialized by the call to
 \fBTcl_DictObjFirst\fR.  The \fIdonePtr\fR argument points to a
 variable that is updated to be zero of there are further key/value
 pairs to be iterated over, or non-zero if the iteration is complete.
@@ -226,4 +227,4 @@ return TCL_OK;
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_InitObjHashTable
 .SH KEYWORDS
-dict, dict object, dictionary, hash table, iteration, object
+dict, dict object, dictionary, dictionary object, hash table, iteration, object

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DoubleObj.3,v 1.2 1998/09/14 18:39:48 stanton Exp $
+'\" RCS: @(#) $Id: DoubleObj.3,v 1.2.42.1 2004/09/08 23:02:33 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_DoubleObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -25,7 +25,7 @@ int
 .SH ARGUMENTS
 .AS Tcl_Interp doubleValue in/out
 .AP double doubleValue in
-A double-precision floating point value used to initialize or set a double object.
+A double-precision floating-point value used to initialize or set a double object.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetDoubleObj\fR, this points to the object to be converted
 to double type.
@@ -50,7 +50,7 @@ double Tcl objects from C code.
 will create a new object of double type
 or modify an existing object to have double type. 
 Both of these procedures set the object to have the
-double-precision floating point value given by \fIdoubleValue\fR;
+double-precision floating-point value given by \fIdoubleValue\fR;
 \fBTcl_NewDoubleObj\fR returns a pointer to a newly created object
 with reference count zero.
 Both procedures set the object's type to be double

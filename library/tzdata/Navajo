@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Shiprock)]} {
+    LoadTimeZoneFile America/Shiprock
+}
+set TZData(:Navajo) $TZData(:America/Shiprock)

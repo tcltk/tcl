@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.7 2003/04/16 22:29:20 dkf Exp $
+'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.7.2.1 2004/09/08 23:02:32 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateMathFunc 3 8.4 Tcl "Tcl Library Procedures"
@@ -53,7 +53,7 @@ will need to be freed up using \fITcl_Free\fR.
 .AP Tcl_MathProc **procPtr out
 Points to a variable that will be set to contain a pointer to the
 implementation code for the function (or NULL if the function is
-implemented directly in bytecode.)
+implemented directly in bytecode).
 .AP ClientData *clientDataPtr out
 Points to a variable that will be set to contain the clientData
 argument passed to \fITcl_CreateMathFunc\fR when the function was

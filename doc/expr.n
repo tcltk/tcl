@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.3 2004/05/27 14:29:08 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.4 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -19,7 +19,7 @@ expr \- Evaluate an expression
 
 .SH DESCRIPTION
 .PP
-Concatenates \fIarg\fR's (adding separator spaces between them),
+Concatenates \fIarg\fRs (adding separator spaces between them),
 evaluates the result as a Tcl expression, and returns the value.
 The operators permitted in Tcl expressions are a subset of
 the operators permitted in C expressions, and they have the
@@ -62,7 +62,7 @@ possible at all.)
 .PP
 Operands may be specified in any of the following ways:
 .IP [1]
-As an numeric value, either integer or floating-point.
+As a numeric value, either integer or floating-point.
 .IP [2]
 As a Tcl variable, using standard \fB$\fR notation.
 The variable's value will be used as the operand.
@@ -84,11 +84,10 @@ As a mathematical function whose arguments have any of the above
 forms for operands, such as \fBsin($x)\fR.  See below for a list of defined
 functions.
 .LP
-Where substitutions occur above (e.g. inside quoted strings), they
+Where the above substitutions occur (e.g. inside quoted strings), they
 are performed by the expression's instructions.
-However, an additional layer of substitution may already have
-been performed by the command parser before the expression
-processor was called.
+However, the command parser may already have performed one layer of
+substitution before the expression processor was called.
 As discussed below, it is usually best to enclose expressions
 in braces to prevent the command parser from performing substitutions
 on the contents.

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.2 2004/03/26 22:28:25 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.3 2004/09/08 23:02:35 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -277,8 +277,8 @@ The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode compilation.
 By default, tcl_traceCompile is zero and no information is displayed.
-Setting tcl_traceCompile to 1 generates a one line summary in stdout
-whenever a procedure or top level command is compiled.
+Setting tcl_traceCompile to 1 generates a one-line summary in stdout
+whenever a procedure or top-level command is compiled.
 Setting it to 2 generates a detailed listing in stdout of the
 bytecode instructions emitted during every compilation.
 This variable is useful in
@@ -294,7 +294,7 @@ The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode execution.
 By default, tcl_traceExec is zero and no information is displayed.
-Setting tcl_traceExec to 1 generates a one line trace in stdout
+Setting tcl_traceExec to 1 generates a one-line trace in stdout
 on each call to a Tcl procedure.
 Setting it to 2 generates a line of output
 whenever any Tcl command is invoked
@@ -302,7 +302,7 @@ that contains the name of the command and its arguments.
 Setting it to 3 produces a detailed trace showing the result of
 executing each bytecode instruction.
 Note that when tcl_traceExec is 2 or 3,
-commands such as set and incr
+commands such as \fBset\fR and \fBincr\fR
 that have been entirely replaced by a sequence
 of bytecode instructions are not shown.
 Setting this variable is useful in

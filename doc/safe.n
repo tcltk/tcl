@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: safe.n,v 1.4.4.1 2004/03/26 22:28:25 dgp Exp $
+'\" RCS: @(#) $Id: safe.n,v 1.4.4.2 2004/09/08 23:02:35 dgp Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Safe\ Base \- A mechanism for creating and manipulating safe interpreters.
+Safe\ Base \- A mechanism for creating and manipulating safe interpreters
 .SH SYNOPSIS
 \fB::safe::interpCreate\fR ?\fIslave\fR? ?\fIoptions...\fR?
 .sp
@@ -209,7 +209,7 @@ thus specifies the safe interpreter will be allowed
 to load packages into its own sub-interpreters.
 .TP 
 \fB\-deleteHook\fR \fIscript\fR
-When this option is given an non empty \fIscript\fR, it will be
+When this option is given a non-empty \fIscript\fR, it will be
 evaluated in the master with the name of
 the safe interpreter as an additional argument
 just before actually deleting the safe interpreter.
@@ -288,7 +288,7 @@ executing.
 The only valid file names arguments
 for the \fBsource\fR and \fBload\fR aliases provided to the slave
 are path in the form of 
-\fB[file join \fR\fItoken filename\fR\fB]\fR (ie, when using the
+\fB[file join \fR\fItoken filename\fR\fB]\fR (i.e. when using the
 native file path formats: \fItoken\fR\fB/\fR\fIfilename\fR
 on Unix and \fItoken\fR\fB\\\fIfilename\fR on Windows),
 where \fItoken\fR is representing one of the directories 
@@ -337,7 +337,7 @@ explicitly specifying your directory list with the \fB\-accessPath\fR flag
 instead of relying on this default mechanism.
 .PP
 When the \fIaccessPath\fR is changed after the first creation or
-initialization (ie through \fBinterpConfigure -accessPath \fR\fIlist\fR),
+initialization (i.e. through \fBinterpConfigure -accessPath \fR\fIlist\fR),
 an \fBauto_reset\fR is automatically evaluated in the safe interpreter
 to synchronize its \fBauto_index\fR with the new token list.
 

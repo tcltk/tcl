@@ -6,14 +6,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.18.4.2 2004/05/27 14:29:08 dgp Exp $
+'\" RCS: @(#) $Id: http.n,v 1.18.4.3 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.5 http "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-http \- Client-side implementation of the HTTP/1.0 protocol.
+http \- Client-side implementation of the HTTP/1.0 protocol
 .SH SYNOPSIS
 \fBpackage require http ?2.5?\fR
 .sp
@@ -55,7 +55,7 @@ firewalls.  The package is compatible with the \fBSafesock\fR security
 policy, so it can be used by untrusted applets to do URL fetching from
 a restricted set of hosts. This package can be extended to support
 additional HTTP transport protocols, such as HTTPS, by providing
-a custom \fBsocket\fR command, via \fBhttp::register\fR.
+a custom \fBsocket\fR command, via \fB::http::register\fR.
 .PP
 The \fB::http::geturl\fR procedure does a HTTP transaction.
 Its \fIoptions \fR determine whether a GET, POST, or HEAD transaction
@@ -88,7 +88,7 @@ flags and values that define the configuration:
 \fB\-accept\fP \fImimetypes\fP
 The Accept header of the request.  The default is */*, which means that
 all types of documents are accepted.  Otherwise you can supply a 
-comma separated list of mime type patterns that you are
+comma-separated list of mime type patterns that you are
 willing to receive.  For example, "image/gif, image/jpeg, text/*".
 .TP
 \fB\-proxyhost\fP \fIhostname\fP
@@ -103,7 +103,7 @@ The command is a callback that is made during
 \fB::http::geturl\fR
 to determine if a proxy is required for a given host.  One argument, a
 host name, is added to \fIcommand\fR when it is invoked.  If a proxy
-is required, the callback should return a two element list containing
+is required, the callback should return a two-element list containing
 the proxy server and proxy port.  Otherwise the filter should return
 an empty list.  The default filter returns the values of the
 \fB\-proxyhost\fR and \fB\-proxyport\fR settings if they are
@@ -137,13 +137,13 @@ that is invoked when the HTTP transaction completes.
 .RS
 .TP
 \fB\-binary\fP \fIboolean\fP
-Specifies whether to force interpreting the url data as binary.  Normally
+Specifies whether to force interpreting the URL data as binary.  Normally
 this is auto-detected (anything not beginning with a \fBtext\fR content
 type or whose content encoding is \fBgzip\fR or \fBcompress\fR is
 considered binary data).
 .TP
 \fB\-blocksize\fP \fIsize\fP
-The blocksize used when reading the URL.
+The block size used when reading the URL.
 At most \fIsize\fR bytes are read at once.  After each block, a call to the
 \fB\-progress\fR callback is made (if that option is specified).
 .TP
@@ -217,12 +217,12 @@ proc httpProgress {token total current} {
 .TP
 \fB\-query\fP \fIquery\fP
 This flag causes \fB::http::geturl\fR to do a POST request that passes the
-\fIquery\fR to the server. The \fIquery\fR must be a x-url-encoding
+\fIquery\fR to the server. The \fIquery\fR must be an x-url-encoding
 formatted query.  The \fB::http::formatQuery\fR procedure can be used to
 do the formatting.
 .TP
 \fB\-queryblocksize\fP \fIsize\fP
-The blocksize used when posting query data to the URL.
+The block size used when posting query data to the URL.
 At most 
 \fIsize\fR
 bytes are written at once.  After each block, a call to the
@@ -231,7 +231,8 @@ callback is made (if that option is specified).
 .TP
 \fB\-querychannel\fP \fIchannelID\fP
 This flag causes \fB::http::geturl\fR to do a POST request that passes the
-data contained in \fIchannelID\fR to the server. The data contained in \fIchannelID\fR must be a x-url-encoding
+data contained in \fIchannelID\fR to the server. The data contained in
+\fIchannelID\fR must be an x-url-encoding
 formatted query unless the \fB\-type\fP option below is used.
 If a Content-Length header is not specified via the \fB\-headers\fR options,
 \fB::http::geturl\fR attempts to determine the size of the post data
@@ -328,18 +329,18 @@ command to execute to create the Tcl \fBchannel\fR. E.g.:
 package require http
 package require tls
 
-http::register https 443 ::tls::socket
+::http::register https 443 ::tls::socket
 
-set token [http::geturl https://my.secure.site/]
+set token [::http::geturl https://my.secure.site/]
 .CE
 .RE
 .TP
 \fB::http::unregister\fP \fIproto\fP
 This procedure unregisters a protocol handler that was previously
-registered via \fBhttp::register\fR.
+registered via \fB::http::register\fR.
 
 .SH "ERRORS"
-The \fBhttp::geturl\fP procedure will raise errors in the following cases:
+The \fB::http::geturl\fP procedure will raise errors in the following cases:
 invalid command line options,
 an invalid URL,
 a URL on a non-existent host,
@@ -371,17 +372,17 @@ to know the result of the asynchronous HTTP request, it can call
 callback does.
 .PP
 In any case, you must still call
-\fBhttp::cleanup\fP to delete the state array when you're done.
+\fB::http::cleanup\fP to delete the state array when you're done.
 .PP
 There are other possible results of the HTTP transaction
-determined by examining the status from \fBhttp::status\fP.
+determined by examining the status from \fB::http::status\fP.
 These are described below.
 .TP
 ok
 If the HTTP transaction completes entirely, then status will be \fBok\fP.
-However, you should still check the \fBhttp::code\fP value to get
-the HTTP status.  The \fBhttp::ncode\fP procedure provides just
-the numeric error (e.g., 200, 404 or 500) while the \fBhttp::code\fP
+However, you should still check the \fB::http::code\fP value to get
+the HTTP status.  The \fB::http::ncode\fP procedure provides just
+the numeric error (e.g., 200, 404 or 500) while the \fB::http::code\fP
 procedure returns a value like "HTTP 404 File not found".
 .TP
 eof
@@ -392,11 +393,11 @@ error
 The error message will also be stored in the \fBerror\fP status
 array element, accessible via \fB::http::error\fP.
 .PP
-Another error possibility is that \fBhttp::geturl\fP is unable to
+Another error possibility is that \fB::http::geturl\fP is unable to
 write all the post query data to the server before the server
 responds and closes the socket.
 The error message is saved in the \fBposterror\fP status array
-element and then  \fBhttp::geturl\fP attempts to complete the
+element and then  \fB::http::geturl\fP attempts to complete the
 transaction.
 If it can read the server's response
 it will end up with an \fBok\fP status, otherwise it will have
@@ -409,9 +410,9 @@ Use this construct to create an easy-to-use array variable:
 .CS
 upvar #0 $token state
 .CE
-Once the data associated with the url is no longer needed, the state
+Once the data associated with the URL is no longer needed, the state
 array should be unset to free up storage.
-The \fBhttp::cleanup\fP procedure is provided for that purpose.
+The \fB::http::cleanup\fP procedure is provided for that purpose.
 The following elements of
 the array are supported:
 .RS
@@ -503,7 +504,7 @@ proc ::http::copy { url file {chunk 4096} } {
     set token [geturl $url -channel $out -progress ::http::Progress \\
 	-blocksize $chunk]
     close $out
-    # This ends the line started by http::Progress
+    # This ends the line started by ::http::Progress
     puts stderr ""
     upvar #0 $token state
     set max 0

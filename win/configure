@@ -2967,6 +2967,12 @@ _ACEOF
 #define USE_THREAD_ALLOC 1
 _ACEOF
 
+	# USE_THREAD_STORAGE tells us to use the new generic thread
+	# storage subsystem.
+	cat >>confdefs.h <<\_ACEOF
+#define USE_THREAD_STORAGE 1
+_ACEOF
+
     else
 	TCL_THREADS=0
 	echo "$as_me:$LINENO: result: no (default)" >&5
@@ -4133,7 +4139,7 @@ fi
 #	another for platform-independent scripts.
 #--------------------------------------------------------------------
 
-if test "$prefix" != "$exec_prefix"; then
+if test "$prefix/lib" != "$libdir"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"

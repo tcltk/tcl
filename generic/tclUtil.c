@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.4 2004/04/09 20:58:17 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.5 2004/09/08 23:02:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +25,7 @@
 
 char *tclExecutableName = NULL;
 char *tclNativeExecutableName = NULL;
+int tclFindExecutableSearchDone = 0;
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement

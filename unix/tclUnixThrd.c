@@ -65,7 +65,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateThread --
+ * TclpThreadCreaet --
  *
  *	This procedure creates a new thread.
  *
@@ -80,7 +80,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
  */
 
 int
-Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
+TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
@@ -90,6 +90,7 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 {
 #ifdef TCL_THREADS
     pthread_attr_t attr;
+    pthread_t theThread;
     int result;
 
     pthread_attr_init(&attr);
@@ -125,12 +126,13 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     }
 
 
-    if (pthread_create((pthread_t *)idPtr, &attr,
+    if (pthread_create(&theThread, &attr,
 	    (void * (*)(void *))proc, (void *)clientData) &&
-	    pthread_create((pthread_t *)idPtr, NULL,
+	    pthread_create(&theThread, NULL,
 		    (void * (*)(void *))proc, (void *)clientData)) {
 	result = TCL_ERROR;
     } else {
+	*idPtr = (Tcl_ThreadId)theThread;
 	result = TCL_OK;
     }
     pthread_attr_destroy(&attr);
@@ -196,6 +198,55 @@ TclpThreadExit(status)
     int status;
 {
     pthread_exit((VOID *)status);
+}
+#endif /* TCL_THREADS */
+
+#ifdef TCL_THREADS
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpThreadGetStackSize --
+ *
+ *	This procedure returns the size of the current thread's stack.
+ *
+ * Results:
+ *	Stack size (in bytes?) or -1 for error or 0 for undeterminable.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpThreadGetStackSize()
+{
+#if defined(HAVE_PTHREAD_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
+    pthread_attr_t threadAttr;	/* This will hold the thread attributes for
+				 * the current thread. */
+    size_t stackSize;
+
+    if (pthread_attr_init(&threadAttr) != 0) {
+	return -1;
+    }
+    if (TclpPthreadGetAttrs(pthread_self(), &threadAttr) != 0) {
+	pthread_attr_destroy(&threadAttr);
+	return -1;
+    }
+    if (pthread_attr_getstacksize(&threadAttr, &stackSize) != 0) {
+	pthread_attr_destroy(&threadAttr);
+	return -1;
+    }
+    pthread_attr_destroy(&threadAttr);
+    return (int) stackSize;
+#else
+    /*
+     * Cannot determine the real stack size of this thread.  The
+     * caller might want to try looking at the process accounting
+     * limits instead.
+     */
+    return 0;
+#endif
 }
 #endif /* TCL_THREADS */
 
@@ -493,6 +544,7 @@ TclpFinalizeMutex(mutexPtr)
 {
     pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
     if (pmutexPtr != NULL) {
+        pthread_mutex_destroy(pmutexPtr);
 	ckfree((char *)pmutexPtr);
 	*mutexPtr = NULL;
     }
@@ -884,19 +936,20 @@ TclpInetNtoa(struct in_addr addr)
  * Additions by AOL for specialized thread memory allocator.
  */
 #ifdef USE_THREAD_ALLOC
-static int initialized = 0;
+static volatile int initialized = 0;
 static pthread_key_t	key;
-static pthread_once_t	once = PTHREAD_ONCE_INIT;
+
+typedef struct allocMutex {
+    Tcl_Mutex       tlock;
+    pthread_mutex_t plock;
+} allocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    struct lock {
-        Tcl_Mutex       tlock;
-        pthread_mutex_t plock;
-    } *lockPtr;
+    struct allocMutex *lockPtr;
 
-    lockPtr = malloc(sizeof(struct lock));
+    lockPtr = malloc(sizeof(struct allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
@@ -905,20 +958,41 @@ TclpNewAllocMutex(void)
     return &lockPtr->tlock;
 }
 
-static void
-InitKey(void)
+void
+TclpFreeAllocMutex(mutex)
+    Tcl_Mutex *mutex; /* The alloc mutex to free. */
+{
+    allocMutex* lockPtr = (allocMutex*) mutex;
+    if (!lockPtr) return;
+    pthread_mutex_destroy(&lockPtr->plock);
+    free(lockPtr);
+}
+
+void TclpFreeAllocCache(ptr)
+    void *ptr;
 {
     extern void TclFreeAllocCache(void *);
 
-    pthread_key_create(&key, TclFreeAllocCache);
-    initialized = 1;
+    TclFreeAllocCache(ptr);
+    /*
+     * Perform proper cleanup of things done in TclpGetAllocCache.
+     */
+    if (initialized) {
+        pthread_key_delete(key);
+        initialized = 0;
+    }
 }
 
 void *
 TclpGetAllocCache(void)
 {
     if (!initialized) {
-	pthread_once(&once, InitKey);
+	pthread_mutex_lock(allocLockPtr);
+	if (!initialized) {
+	    pthread_key_create(&key, TclpFreeAllocCache);
+	    initialized = 1;
+	}
+	pthread_mutex_unlock(allocLockPtr);
     }
     return pthread_getspecific(key);
 }

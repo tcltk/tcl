@@ -52,6 +52,7 @@
  */
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <mach-o/dyld.h>
 #include "tcl.h"
 
 /*
@@ -167,8 +168,25 @@ Tcl_MacOSXOpenVersionedBundleResources(
 
     if (bundleRef) {	
 	if (hasResourceFile) {
-	    short refNum;
-	    refNum = CFBundleOpenBundleResourceMap(bundleRef);
+	    /* Dynamically acquire address for CFBundleOpenBundleResourceMap
+	     * symbol, since it is only present in full CoreFoundation
+	     * on Mac OS X and not in CFLite on pure Darwin. */
+	    static int initialized = FALSE;
+	    static short (*openresourcemap)(CFBundleRef) = NULL;
+	    if(!initialized) {
+		NSSymbol nsSymbol = NULL;
+		if(NSIsSymbolNameDefinedWithHint("_CFBundleOpenBundleResourceMap", "CoreFoundation")) {
+		    nsSymbol = NSLookupAndBindSymbolWithHint("_CFBundleOpenBundleResourceMap", "CoreFoundation");
+		    if(nsSymbol) {
+			openresourcemap = NSAddressOfSymbol(nsSymbol);
+		    }
+		}
+		initialized = TRUE;
+	    }
+	    if (openresourcemap) {
+		short refNum;
+		refNum = openresourcemap(bundleRef);
+	    }
 	}
 
 	libURL = CFBundleCopyResourceURL(bundleRef,

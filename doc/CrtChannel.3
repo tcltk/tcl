@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.1 2004/09/08 23:02:32 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -261,8 +261,9 @@ occurred on the channel.  Channel drivers are responsible for invoking
 this function whenever the channel handlers need to be called for the
 channel.  See \fBWATCHPROC\fR below for more details.
 .PP
-\fBTcl_BadChannelOption\fR is called from driver specific set or get option
-procs to generate a complete error message.
+\fBTcl_BadChannelOption\fR is called from driver specific
+\fIsetOptionProc\fR or \fIgetOptionProc\fR to generate a complete
+error message.
 .PP
 \fBTcl_ChannelBuffered\fR returns the number of bytes of input
 currently buffered in the internal buffer (push back area) of the
@@ -350,7 +351,7 @@ structure, the following functions should be used to obtain the values:
 .PP
 The change to the structures was made in such a way that standard channel
 types are binary compatible.  However, channel types that use stacked
-channels (ie: TLS, Trf) have new versions to correspond to the above change
+channels (i.e. TLS, Trf) have new versions to correspond to the above change
 since the previous code for stacked channels had problems.
 
 .SH TYPENAME
@@ -405,6 +406,13 @@ behavior must be emulated in the channel driver.
 .PP
 This value can be retrieved with \fBTcl_ChannelBlockModeProc\fR, which returns
 a pointer to the function.
+.PP
+A channel driver \fBnot\fR supplying a \fIblockModeProc\fR has to be
+very, very careful. It has to tell the generic layer exactly which
+blocking mode is acceptable to it, and should this also document for
+the user so that the blocking mode of the channel is not changed to an
+inacceptable value. Any confusion here may lead the interpreter into a
+(spurious and difficult to find) deadlock.
 
 .SH "CLOSEPROC AND CLOSE2PROC"
 .PP
@@ -456,9 +464,9 @@ return a nonzero POSIX error code. In addition, if an error occurs and
 \fIinterp\fR is not NULL, the procedure should store an error message
 in the interpreter's result.
 .PP
-These value can be retrieved with \fBTcl_ChannelCloseProc\fR or
-\fBTcl_ChannelClose2Proc\fR, which returns a pointer to the respective
-function.
+The \fIcloseProc\fR and \fIclose2Proc\fR values can be retrieved with
+\fBTcl_ChannelCloseProc\fR or \fBTcl_ChannelClose2Proc\fR, which
+return a pointer to the respective function.
 
 .SH INPUTPROC
 .PP
@@ -783,14 +791,14 @@ a pointer to the function.
 .PP
 This procedure generates a "bad option" error message in an
 (optional) interpreter.  It is used by channel drivers when 
-a invalid Set/Get option is requested. Its purpose is to concatenate
+an invalid Set/Get option is requested. Its purpose is to concatenate
 the generic options list to the specific ones and factorize
 the generic options error message string.
 .PP
 It always return \fBTCL_ERROR\fR
 .PP
 An error message is generated in \fIinterp\fR's result object to
-indicate that a command was invoked with the a bad option
+indicate that a command was invoked with a bad option.
 The message has the form
 .CS
     bad option "blah": should be one of 

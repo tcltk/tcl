@@ -65,26 +65,49 @@ test result-3.2 {Tcl_DiscardInterpResult} {testsaveresult} {
     testsaveresult free {set x 42} 1
 } {42}
 
-test result-4.1 {Tcl_SetObjErrorCode - one arg} {testsaveresult} {
+::tcltest::testConstraint testsetobjerrorcode \
+	[expr {[info commands testsetobjerrorcode] != {}}]
+
+test result-4.1 {Tcl_SetObjErrorCode - one arg} {testsetobjerrorcode} {
     catch {testsetobjerrorcode 1}
     list [set errorCode]
 } {1}
-test result-4.2 {Tcl_SetObjErrorCode - two args} {testsaveresult} {
+test result-4.2 {Tcl_SetObjErrorCode - two args} {testsetobjerrorcode} {
     catch {testsetobjerrorcode 1 2}
     list [set errorCode]
 } {{1 2}}
-test result-4.3 {Tcl_SetObjErrorCode - three args} {testsaveresult} {
+test result-4.3 {Tcl_SetObjErrorCode - three args} {testsetobjerrorcode} {
     catch {testsetobjerrorcode 1 2 3}
     list [set errorCode]
 } {{1 2 3}}
-test result-4.4 {Tcl_SetObjErrorCode - four args} {testsaveresult} {
+test result-4.4 {Tcl_SetObjErrorCode - four args} {testsetobjerrorcode} {
     catch {testsetobjerrorcode 1 2 3 4}
     list [set errorCode]
 } {{1 2 3 4}}
-test result-4.5 {Tcl_SetObjErrorCode - five args} {testsaveresult} {
+test result-4.5 {Tcl_SetObjErrorCode - five args} {testsetobjerrorcode} {
     catch {testsetobjerrorcode 1 2 3 4 5}
     list [set errorCode]
 } {{1 2 3 4 5}}
+
+::tcltest::testConstraint testseterrorcode \
+	[expr {[info commands testseterrorcode] != {}}]
+
+test result-5.1 {Tcl_SetErrorCode - one arg} testseterrorcode {
+    catch {testseterrorcode 1}
+    set errorCode
+} 1
+test result-5.2 {Tcl_SetErrorCode - one arg, list quoting} testseterrorcode {
+    catch {testseterrorcode {a b}}
+    set errorCode
+} {{a b}}
+test result-5.3 {Tcl_SetErrorCode - one arg, list quoting} testseterrorcode {
+    catch {testseterrorcode \{}
+    llength $errorCode
+} 1
+test result-5.4 {Tcl_SetErrorCode - two args, list quoting} testseterrorcode {
+    catch {testseterrorcode {a b} c}
+    set errorCode
+} {{a b} c}
 
 # cleanup
 ::tcltest::cleanupTests

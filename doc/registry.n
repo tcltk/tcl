@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.8.4.2 2004/05/27 14:29:08 dgp Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.8.4.3 2004/09/08 23:02:35 dgp Exp $
 '\" 
 .so man.macros
 .TH registry n 1.1 registry "Tcl Bundled Packages"
@@ -60,7 +60,7 @@ keys like Environment.  The timeout specifies the amount of time, in
 milliseconds, to wait for applications to respond to the broadcast message.
 It defaults to 3000.  The following example demonstrates how to add a path
 to the global Environment and notify applications of the change without
-reguiring a logoff/logon step (assumes admin privileges):
+requiring a logoff/logon step (assumes admin privileges):
 .CS
 set regPath {HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment}
 set curPath [registry get $regPath "Path"]

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.7 2002/01/25 20:40:55 dgp Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.7.4.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -49,7 +49,7 @@ Address of procedure to call to release storage at
 \fIstring\fR, or \fBTCL_STATIC\fR, \fBTCL_DYNAMIC\fR, or
 \fBTCL_VOLATILE\fR.
 .AP va_list argList in
-An argument list which must have been initialised using
+An argument list which must have been initialized using
 \fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
 .BE
 
@@ -84,7 +84,7 @@ references to it remain.
 The object's reference count is not incremented;
 if the caller needs to retain a long-term pointer to the object
 they should use \fBTcl_IncrRefCount\fR to increment its reference count
-in order to keep it from being freed too early or accidently changed.
+in order to keep it from being freed too early or accidentally changed.
 .PP
 \fBTcl_SetResult\fR
 arranges for \fIstring\fR to be the result for the current Tcl

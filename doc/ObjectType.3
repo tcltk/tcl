@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.7 2002/08/16 13:45:36 dkf Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.7.4.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -45,8 +45,7 @@ must have been the result of a previous call to \fBTcl_NewObj\fR.
 .SH DESCRIPTION
 .PP
 The procedures in this man page manage Tcl object types.
-The are used to register new object types,
-look up types,
+They are used to register new object types, look up types,
 and force conversions from one type to another.
 .PP
 \fBTcl_RegisterObjType\fR registers a new Tcl object type
@@ -126,7 +125,7 @@ the \fIsetFromAnyProc\fR must free any internal representation
 of \fIobjPtr\fR's old type;
 it does this by calling the old type's \fIfreeIntRepProc\fR
 if it is not NULL.
-As an example, the \fIsetFromAnyProc\fR for the builtin Tcl integer type
+As an example, the \fIsetFromAnyProc\fR for the built-in Tcl integer type
 gets an up-to-date string representation for \fIobjPtr\fR
 by calling \fBTcl_GetStringFromObj\fR.
 It parses the string to obtain an integer and,
@@ -152,7 +151,7 @@ to be treated as conventional null character-terminated C strings.
 Storage for the byte array must be allocated in the heap by \fBTcl_Alloc\fR
 or \fBckalloc\fR.  Note that \fIupdateStringProc\fRs must allocate
 enough storage for the string's bytes and the terminating null byte.
-The \fIupdateStringProc\fR for Tcl's builtin list type, for example,
+The \fIupdateStringProc\fR for Tcl's built-in list type, for example,
 builds an array of strings for each element object
 and then calls \fBTcl_Merge\fR
 to construct a string with proper Tcl list structure.
@@ -171,7 +170,7 @@ Before the call,
 copying its internal representation means.
 For example, the \fIdupIntRepProc\fR for the Tcl integer type
 simply copies an integer.
-The builtin list type's \fIdupIntRepProc\fR
+The built-in list type's \fIdupIntRepProc\fR
 allocates a new array that points at the original element objects;
 the elements are shared between the two lists
 (and their reference counts are incremented to reflect the new references).
@@ -192,6 +191,9 @@ the reference count for each element object
 then deallocates the storage for the array of pointers.
 The \fIfreeIntRepProc\fR member can be set to NULL
 to indicate that the internal representation does not require freeing.
+The \fIfreeIntRepProc\fR implementation should not access the
+\fIbytes\fR member of the object, as this may potentially have already
+been deleted.
 
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.9.2.1 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.9.2.2 2004/09/08 23:02:35 dgp Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -118,7 +118,7 @@ will be accepted.
 .PP
 If \fIport\fR is specified as zero, the operating system will allocate
 an unused port for use as a server socket.  The port number actually
-allocated my be retrieved from the created server socket using the
+allocated may be retrieved from the created server socket using the
 \fBfconfigure\fR command to retrieve the \fB\-sockname\fR option as
 described below.
 

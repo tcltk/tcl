@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ParseCmd.3,v 1.11.2.2 2004/03/26 22:28:24 dgp Exp $
+'\" RCS: @(#) $Id: ParseCmd.3,v 1.11.2.3 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ParseCommand 3 8.3 Tcl "Tcl Library Procedures"
@@ -356,7 +356,7 @@ this includes the sub-tokens for any nested \fBTCL_TOKEN_SUB_EXPR\fR tokens.
 \fBTCL_TOKEN_OPERATOR\fR
 The token describes one operator of an expression
 such as \fB&&\fR or \fBhypot\fR.
-An \fBTCL_TOKEN_OPERATOR\fR token is always preceded by a
+A \fBTCL_TOKEN_OPERATOR\fR token is always preceded by a
 \fBTCL_TOKEN_SUB_EXPR\fR token
 that describes the operator and its operands;
 the \fBTCL_TOKEN_SUB_EXPR\fR token's \fInumComponents\fR field

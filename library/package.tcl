@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.23.4.4 2004/03/26 22:28:27 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.23.4.5 2004/09/08 23:02:52 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -12,11 +12,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# Create the package namespace
-namespace eval ::pkg {
-}
+namespace eval tcl::Pkg {}
 
-# pkg_compareExtension --
+# ::tcl::Pkg::CompareExtension --
 #
 #  Used internally by pkg_mkIndex to compare the extension of a file to
 #  a given extension. On Windows, it uses a case-insensitive comparison
@@ -31,7 +29,7 @@ namespace eval ::pkg {
 # Results:
 #  Returns 1 if the extension matches, 0 otherwise
 
-proc pkg_compareExtension { fileName {ext {}} } {
+proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
     global tcl_platform
     if {![string length $ext]} {set ext [info sharedlibextension]}
     if {[string equal $tcl_platform(platform) "windows"]} {
@@ -49,7 +47,7 @@ proc pkg_compareExtension { fileName {ext {}} } {
 	    # The current extension does not match; if it is not a numeric
 	    # value, quit, as we are only looking to ignore version number
 	    # extensions.  Otherwise we might return 1 in this case:
-	    #		pkg_compareExtension foo.so.bar .so
+	    #		tcl::Pkg::CompareExtension foo.so.bar .so
 	    # which should not match.
 
 	    if { ![string is integer -strict [string range $currExt 1 end]] } {
@@ -86,7 +84,6 @@ proc pkg_compareExtension { fileName {ext {}} } {
 #			dir.
 
 proc pkg_mkIndex {args} {
-    global errorCode errorInfo
     set usage {"pkg_mkIndex ?-direct? ?-lazy? ?-load pattern? ?-verbose? ?--? dir ?pattern ...?"};
 
     set argCount [llength $args]
@@ -137,13 +134,10 @@ proc pkg_mkIndex {args} {
 	set patternList [list "*.tcl" "*[info sharedlibextension]"]
     }
 
-    set oldDir [pwd]
-    cd $dir
-
-    if {[catch {glob {expand}$patternList} fileList]} {
-	global errorCode errorInfo
-	cd $oldDir
-	return -code error -errorcode $errorCode -errorinfo $errorInfo $fileList
+    if {[catch {
+	    glob -directory $dir -tails -types {r f} {expand}$patternList
+    } fileList o]} {
+	return -options $o $fileList
     }
     foreach file $fileList {
 	# For each file, figure out what commands and packages it provides.
@@ -151,15 +145,10 @@ proc pkg_mkIndex {args} {
 	# interpreter, and get a list of the new commands and packages
 	# that are defined.
 
-	if {[string equal $file "pkgIndex.tcl"]} {
+	if {[string equal $file pkgIndex.tcl]} {
 	    continue
 	}
 
-	# Changed back to the original directory before initializing the
-	# slave in case TCL_LIBRARY is a relative path (e.g. in the test
-	# suite). 
-
-	cd $oldDir
 	set c [interp create]
 
 	# Load into the child any packages currently loaded in the parent
@@ -196,7 +185,6 @@ proc pkg_mkIndex {args} {
 		$c eval [list wm withdraw .]
 	    }
 	}
-	cd $dir
 
 	$c eval {
 	    # Stub out the package command so packages can
@@ -226,6 +214,7 @@ proc pkg_mkIndex {args} {
 	    # to generate a pkgIndex.tcl file for the ::tcl namespace.
 
 	    namespace eval ::tcl {
+		variable dir		;# Current directory being processed
 		variable file		;# Current file being processed
 		variable direct		;# -direct flag value
 		variable x		;# Loop variable
@@ -239,6 +228,7 @@ proc pkg_mkIndex {args} {
 	    }
 	}
 
+	$c eval [list set ::tcl::dir $dir]
 	$c eval [list set ::tcl::file $file]
 	$c eval [list set ::tcl::direct $direct]
 
@@ -246,7 +236,8 @@ proc pkg_mkIndex {args} {
 	# just deleted the unknown procedure.  This doesn't handle
 	# procedures with default arguments.
 
-	foreach p {pkg_compareExtension} {
+	foreach p {::tcl::Pkg::CompareExtension} {
+	    $c eval [list namespace eval [namespace qualifiers $p] {}]
 	    $c eval [list proc $p [info args $p] [info body $p]]
 	}
 
@@ -284,7 +275,7 @@ proc pkg_mkIndex {args} {
 		# on some systems (like SunOS) the loader will abort the
 		# whole application when it gets an error.
 
-		if {[pkg_compareExtension $::tcl::file [info sharedlibextension]]} {
+		if {[::tcl::Pkg::CompareExtension $::tcl::file [info sharedlibextension]]} {
 		    # The "file join ." command below is necessary.
 		    # Without it, if the file name has no \'s and we're
 		    # on UNIX, the load command will invoke the
@@ -292,11 +283,11 @@ proc pkg_mkIndex {args} {
 		    # the wrong file to be used.
 
 		    set ::tcl::debug loading
-		    load [file join . $::tcl::file]
+		    load [file join $::tcl::dir $::tcl::file]
 		    set ::tcl::type load
 		} else {
 		    set ::tcl::debug sourcing
-		    source $::tcl::file
+		    source [file join $::tcl::dir $::tcl::file]
 		    set ::tcl::type source
 		}
 
@@ -403,7 +394,7 @@ proc pkg_mkIndex {args} {
 	foreach {name version} $pkg {
 	    break
 	}
-	lappend cmd ::pkg::create -name $name -version $version
+	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec $files($pkg) {
 	    foreach {file type procs} $spec {
 		if { $direct } {
@@ -415,10 +406,9 @@ proc pkg_mkIndex {args} {
 	append index "\n[eval $cmd]"
     }
 
-    set f [open pkgIndex.tcl w]
+    set f [open [file join $dir pkgIndex.tcl] w]
     puts $f $index
     close $f
-    cd $oldDir
 }
 
 # tclPkgSetup --
@@ -635,13 +625,13 @@ proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
     }
 }
 
-# ::pkg::create --
+# ::tcl::Pkg::Create --
 #
 #	Given a package specification generate a "package ifneeded" statement
 #	for the package, suitable for inclusion in a pkgIndex.tcl file.
 #
 # Arguments:
-#	args		arguments used by the create function:
+#	args		arguments used by the Create function:
 #			-name		packageName
 #			-version	packageVersion
 #			-load		{filename ?{procs}?}
@@ -661,7 +651,7 @@ proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
 # Results:
 #	An appropriate "package ifneeded" statement for the package.
 
-proc ::pkg::create {args} {
+proc ::tcl::Pkg::Create {args} {
     append err(usage) "[lindex [info level 0] 0] "
     append err(usage) "-name packageName -version packageVersion"
     append err(usage) "?-load {filename ?{procs}?}? ... "
@@ -754,3 +744,4 @@ proc ::pkg::create {args} {
     return $cmdline
 }
 
+interp alias {} ::pkg::create {} ::tcl::Pkg::Create 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.11 2004/05/17 18:42:23 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.12 2004/09/08 23:02:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -112,7 +112,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 30 */
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
-    TclGetInterpProc, /* 33 */
+    NULL, /* 33 */
     TclGetIntForIndex, /* 34 */
     NULL, /* 35 */
     TclGetLong, /* 36 */
@@ -173,7 +173,7 @@ TclIntStubs tclIntStubs = {
     TclProcCleanupProc, /* 91 */
     TclProcCompileProc, /* 92 */
     TclProcDeleteProc, /* 93 */
-    TclProcInterpProc, /* 94 */
+    NULL, /* 94 */
     NULL, /* 95 */
     TclRenameCommand, /* 96 */
     TclResetShadowedCmdRefs, /* 97 */
@@ -268,6 +268,19 @@ TclIntStubs tclIntStubs = {
     TclDbNewListObjDirect, /* 181 */
     TclpLocaltime, /* 182 */
     TclpGmtime, /* 183 */
+    TclThreadStorageLockInit, /* 184 */
+    TclThreadStorageLock, /* 185 */
+    TclThreadStorageUnlock, /* 186 */
+    TclThreadStoragePrint, /* 187 */
+    TclThreadStorageGetHashTable, /* 188 */
+    TclThreadStorageInit, /* 189 */
+    TclThreadStorageDataKeyInit, /* 190 */
+    TclThreadStorageDataKeyGet, /* 191 */
+    TclThreadStorageDataKeySet, /* 192 */
+    TclFinalizeThreadStorageThread, /* 193 */
+    TclFinalizeThreadStorage, /* 194 */
+    TclFinalizeThreadStorageData, /* 195 */
+    TclFinalizeThreadStorageDataKey, /* 196 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -320,6 +333,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinSetInterfaces, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
+    TclWinCPUID, /* 29 */
 #endif /* __WIN32__ */
 #ifdef MAC_OSX_TCL
     TclMacOSXGetFileAttribute, /* 15 */

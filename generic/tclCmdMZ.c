@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.9 2004/05/27 15:02:59 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.10 2004/09/08 23:02:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -988,7 +988,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad ",
 			compare, " value: expected dictionary but got \"",
 			Tcl_GetString(objv[1]), "\"", (char *) NULL);
-		return TCL_ERROR;
+		goto error;
 	    }
 
 	    while (!done) {
@@ -1025,7 +1025,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		    Tcl_GetString(valuePtr),
 		    "\": must be ok, error, return, break, ",
 		    "continue, or an integer", (char *) NULL);
-	    return TCL_ERROR;
+	    goto error;
 	}
 	/* Have a legal string value for a return code; convert to integer */
 	Tcl_DictObjPut(NULL, returnOpts,
@@ -1040,7 +1040,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad -level value: expected non-negative integer but got \"",
 		Tcl_GetString(valuePtr), "\"", (char *) NULL);
-	return TCL_ERROR;
+	goto error;
     }
 
     /* 
@@ -1055,29 +1055,36 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
     }
 
-    /*
-     * Check if we just have the default options.  If so, use them.
-     * A dictionary equality test would be more robust, but seems
-     * tricky, to say the least.
-     */
-    Tcl_DictObjSize(NULL, returnOpts, &size);
-    if (size == 2 && code == TCL_OK && level == 1) {
-	Tcl_DecrRefCount(returnOpts);
-	returnOpts = iPtr->defaultReturnOpts;
-    }
     if (codePtr != NULL) {
 	*codePtr = code;
     }
     if (levelPtr != NULL) {
 	*levelPtr = level;
     }
-    if ((optionsPtrPtr == NULL) && (returnOpts != iPtr->defaultReturnOpts)) {
-	/* not passing back the options (?!), so clean them up */
+    if (optionsPtrPtr == NULL) {
+	/* Not passing back the options (?!), so clean them up */
 	Tcl_DecrRefCount(returnOpts);
+	return TCL_OK;
+    }
+
+    /*
+     * Check if we just have the default options.  If so, use them.
+     * A dictionary equality test would be more robust, but seems
+     * tricky, to say the least.
+     */
+
+    Tcl_DictObjSize(NULL, returnOpts, &size);
+    if (size == 2 && code == TCL_OK && level == 1) {
+	Tcl_DecrRefCount(returnOpts);
+	*optionsPtrPtr = iPtr->defaultReturnOpts;
     } else {
 	*optionsPtrPtr = returnOpts;
     }
     return TCL_OK;
+
+error:
+    Tcl_DecrRefCount(returnOpts);
+    return TCL_ERROR;
 }
 
 /*
@@ -1573,20 +1580,21 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int (*chcomp)_ANSI_ARGS_((int)) = NULL; 
 	    int i, failat = 0, result = 1, strict = 0;
 	    Tcl_Obj *objPtr, *failVarObj = NULL;
+	    Tcl_WideInt w;
 
 	    static CONST char *isOptions[] = {
 		"alnum",	"alpha",	"ascii",	"control",
 		"boolean",	"digit",	"double",	"false",
 		"graph",	"integer",	"lower",	"print",
 		"punct",	"space",	"true",		"upper",
-		"wordchar",	"xdigit",	(char *) NULL
+		"wideinteger",  "wordchar",	"xdigit",	(char *) NULL
 	    };
 	    enum isOptions {
 		STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 		STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_FALSE,
 		STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LOWER,	STR_IS_PRINT,
 		STR_IS_PUNCT,	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
-		STR_IS_WORD,	STR_IS_XDIGIT
+		STR_IS_WIDE,    STR_IS_WORD,	STR_IS_XDIGIT
 	    };
 
 	    if (objc < 4 || objc > 7) {
@@ -1758,23 +1766,26 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &i)) {
 			break;
 		    }
+
 		    /*
 		     * Like STR_IS_DOUBLE, but we use strtoul.
 		     * Since Tcl_GetIntFromObj already failed,
 		     * we set result to 0.
 		     */
+
 		    result = 0;
 		    errno = 0;
 		    l = strtol(string1, &stop, 0); /* INTL: Tcl source. */
 		    if ((errno == ERANGE) || (l > INT_MAX) || (l < INT_MIN)) {
 			/*
-			 * if (errno == ERANGE), then it was an over/underflow
-			 * problem, but in this method, we only want to know
-			 * yes or no, so bad flow returns 0 (false) and sets
-			 * the failVarObj to the string length.
+			 * if (errno == ERANGE) or the long value
+			 * won't fit in an int, then it was an
+			 * over/underflow problem, but in this method,
+			 * we only want to know yes or no, so bad flow
+			 * returns 0 (false) and sets the failVarObj
+			 * to the string length.
 			 */
 			failat = -1;
-
 		    } else if (stop == string1) {
 			/*
 			 * In this case, nothing like a number was found
@@ -1807,6 +1818,48 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		case STR_IS_UPPER:
 		    chcomp = Tcl_UniCharIsUpper;
 		    break;
+		case STR_IS_WIDE: {
+		    char *stop;
+
+		    if (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w)) {
+			break;
+		    }
+
+		    /*
+		     * Like STR_IS_DOUBLE, but we use strtoll.  Since
+		     * Tcl_GetWideIntFromObj already failed, we set
+		     * result to 0.
+		     */
+
+		    result = 0;
+		    errno = 0;
+		    w = strtoll(string1, &stop, 0);	/* INTL: Tcl source. */
+		    if (errno == ERANGE) {
+			/*
+			 * if (errno == ERANGE), then it was an
+			 * over/underflow problem, but in this method,
+			 * we only want to know yes or no, so bad flow
+			 * returns 0 (false) and sets the failVarObj
+			 * to the string length.
+			 */
+			failat = -1;
+		    } else if (stop == string1) {
+			/*
+			 * In this case, nothing like a number was found
+			 */
+			failat = 0;
+		    } else {
+			/*
+			 * Assume we sucked up one char per byte and
+			 * then we go onto SPACE, since we are allowed
+			 * trailing whitespace
+			 */
+			failat = stop - string1;
+			string1 = stop;
+			chcomp = Tcl_UniCharIsSpace;
+		    }
+		    break;
+		}
 		case STR_IS_WORD:
 		    chcomp = Tcl_UniCharIsWordChar;
 		    break;
@@ -1930,8 +1983,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case STR_MAP: {
-	    int mapElemc, nocase = 0, mapWithDict = 0;
-	    Tcl_Obj **mapElemv;
+	    int mapElemc, nocase = 0, mapWithDict = 0, copySource = 0;
+	    Tcl_Obj **mapElemv, *sourceObj;
 	    Tcl_UniChar *ustring1, *ustring2, *p, *end;
 	    int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar*,
 		    CONST Tcl_UniChar*, unsigned long));
@@ -1952,6 +2005,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
+
 
 	    /*
 	     * This test is tricky, but has to be that way or you get
@@ -2007,15 +2061,28 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    objc--;
 
-	    ustring1 = Tcl_GetUnicodeFromObj(objv[objc], &length1);
+	    /*
+	     * Take a copy of the source string object if it is the
+	     * same as the map string to cut out nasty sharing
+	     * crashes. [Bug 1018562]
+	     */
+	    if (objv[objc-2] == objv[objc-1]) {
+		sourceObj = Tcl_DuplicateObj(objv[objc-1]);
+		copySource = 1;
+	    } else {
+		sourceObj = objv[objc-1];
+	    }
+	    ustring1 = Tcl_GetUnicodeFromObj(sourceObj, &length1);
 	    if (length1 == 0) {
 		/*
 		 * Empty input string, just stop now
 		 */
 		if (mapWithDict) {
 		    ckfree((char *) mapElemv);
+		}
+		if (copySource) {
+		    Tcl_DecrRefCount(sourceObj);
 		}
 		break;
 	    }
@@ -2138,6 +2205,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    if (mapWithDict) {
 		ckfree((char *) mapElemv);
+	    }
+	    if (copySource) {
+		Tcl_DecrRefCount(sourceObj);
 	    }
 	    break;
 	}

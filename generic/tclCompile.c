@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.10 2004/05/27 15:13:21 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.11 2004/09/08 23:02:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -587,7 +587,7 @@ TclCleanupByteCode(codePtr)
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     int numLitObjects = codePtr->numLitObjects;
     int numAuxDataItems = codePtr->numAuxDataItems;
-    register Tcl_Obj **objArrayPtr;
+    register Tcl_Obj **objArrayPtr, *objPtr;
     register AuxData *auxDataPtr;
     int i;
 #ifdef TCL_COMPILE_STATS
@@ -639,10 +639,17 @@ TclCleanupByteCode(codePtr)
      * like those generated from tbcload) is special, as they doesn't
      * make use of the global literal table.  They instead maintain
      * private references to their literals which must be decremented.
+     *
+     * In order to insure a proper and efficient cleanup of the literal
+     * array when it contains non-shared literals [Bug 983660], we also
+     * distinguish the case of an interpreter being deleted (signaled by
+     * interp == NULL). Also, as the interp deletion will remove the global
+     * literal table anyway, we avoid the extra cost of updating it for each
+     * literal being released.
      */
 
-    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-	register Tcl_Obj *objPtr;
+    if ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
+	    || (interp == NULL)) {
  
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
@@ -653,13 +660,7 @@ TclCleanupByteCode(codePtr)
 	    objArrayPtr++;
 	}
 	codePtr->numLitObjects = 0;
-    } else if (interp != NULL) {
-	/*
-	 * If the interp has already been freed, then Tcl will have already 
-	 * forcefully released all the literals used by ByteCodes compiled
-	 * with respect to that interp.
-	 */
-	 
+    } else {
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
 	    /*
@@ -667,8 +668,9 @@ TclCleanupByteCode(codePtr)
 	     * indicate that it has already freed the literal.
 	     */
 	    
-	    if (*objArrayPtr != NULL) {
-		TclReleaseLiteral(interp, *objArrayPtr);
+	    objPtr = *objArrayPtr;
+	    if (objPtr != NULL) {
+		TclReleaseLiteral(interp, objPtr);
 	    }
 	    objArrayPtr++;
 	}
@@ -829,7 +831,7 @@ TclWordKnownAtCompileTime(tokenPtr, valuePtr)
 
     if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	if (valuePtr != NULL) {
-	    Tcl_AppendToObj(valuePtr, tokenPtr->start, tokenPtr->size);
+	    Tcl_AppendToObj(valuePtr, tokenPtr[1].start, tokenPtr[1].size);
 	}
 	return 1;
     }
@@ -847,7 +849,7 @@ TclWordKnownAtCompileTime(tokenPtr, valuePtr)
 		if (tempPtr != NULL) {
 		    Tcl_AppendToObj(tempPtr, tokenPtr->start, tokenPtr->size);
 		}
-		continue;
+		break;
 
 	    case TCL_TOKEN_BS:
 		if (tempPtr != NULL) {
@@ -856,7 +858,7 @@ TclWordKnownAtCompileTime(tokenPtr, valuePtr)
 			    Tcl_UtfBackslash(tokenPtr->start, NULL, utfBuf);
 		    Tcl_AppendToObj(tempPtr, utfBuf, length);
 		}
-		continue;
+		break;
 	    
 	    default:
 		if (tempPtr != NULL) {
@@ -864,6 +866,7 @@ TclWordKnownAtCompileTime(tokenPtr, valuePtr)
 		}
 		return 0;
 	}
+	tokenPtr++;
     }
     if (valuePtr != NULL) {
 	Tcl_AppendObjToObj(valuePtr, tempPtr);
@@ -1088,6 +1091,14 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		 */
 		envPtr->numCommands = savedNumCmds;
 		envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+		if (numWords == 1) {
+		    /*
+		     * Single word script: unshare the command name to
+		     * avoid shimmering between bytecode and cmdName
+		     * representations [Bug 458361]
+		     */
+		    TclHideLiteral(interp, envPtr, objIndex);
+		}
 		TclEmitPush(objIndex, envPtr);
 		wordIndex++;
 		tokenPtr += (tokenPtr->numComponents + 1);
@@ -1166,10 +1177,16 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
      * push an empty string as the command's result.
+     *
+     * WARNING: push an unshared object! If the script being compiled is a
+     * shared empty string, it will otherwise be self-referential and cause
+     * difficulties with literal management [Bugs 467523, 983660]. We used to
+     * have special code in TclReleaseLiteral to handle this particular
+     * self-reference, but now opt for avoiding its creation altogether.
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewObj(), NULL), envPtr);
     }
     return TCL_OK;
 }
@@ -1602,7 +1619,9 @@ TclInitByteCodeObj(objPtr, envPtr)
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
     size_t auxDataArrayBytes, structureSize;
     register unsigned char *p;
+#ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
+#endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
     int i;
@@ -1683,8 +1702,10 @@ TclInitByteCodeObj(objPtr, envPtr)
     }
 
     p += auxDataArrayBytes;
+#ifndef TCL_COMPILE_DEBUG
+    EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
+#else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
-#ifdef TCL_COMPILE_DEBUG
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {	
 	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
     }

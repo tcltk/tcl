@@ -11,8 +11,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.10 2004/05/27 14:29:11 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.11 2004/09/08 23:02:40 dgp Exp $
  */
+
+#ifdef STDC_HEADERS
+#include <stddef.h>
+#else
+typedef int ptrdiff_t;
+#endif
 
 #include "tclInt.h"
 #include "tclCompile.h"
@@ -1550,7 +1556,7 @@ TclExecuteByteCode(interp, codePtr)
 		objPtr = expandNestList;
 		expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
 		objc = tosPtr - eePtr->stackPtr 
-		        - (int) objPtr->internalRep.twoPtrValue.ptr1;
+		        - (ptrdiff_t) objPtr->internalRep.twoPtrValue.ptr1;
 		TclDecrRefCount(objPtr);
 	    }
 		
@@ -3988,7 +3994,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * from the string rep.
 	     */
 	    int length;
-	    long i;
+	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
 	    Tcl_WideInt w;
 	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
 
@@ -4780,6 +4786,20 @@ TclExecuteByteCode(interp, codePtr)
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
 	}
+
+	/*
+	 * Clear all expansions that may have started after the last
+	 * INST_BEGIN_CATCH. 
+	 */
+
+	while ((expandNestList != NULL) && ((catchTop == initCatchTop) ||
+		((ptrdiff_t) eePtr->stackPtr[catchTop] <=
+			(ptrdiff_t) expandNestList->internalRep.twoPtrValue.ptr1))) {
+	    Tcl_Obj *objPtr = expandNestList->internalRep.twoPtrValue.ptr2;
+	    TclDecrRefCount(expandNestList);
+	    expandNestList = objPtr;
+	}
+
 	/*
 	 * We must not catch an exceeded limit.  Instead, it blows
 	 * outwards until we either hit another interpreter (presumably
@@ -4829,7 +4849,7 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	processCatch:
-	while (tosPtr > (int) (eePtr->stackPtr[catchTop]) + eePtr->stackPtr) {
+	while (tosPtr > ((ptrdiff_t) (eePtr->stackPtr[catchTop])) + eePtr->stackPtr) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
@@ -5405,7 +5425,7 @@ VerifyExprObjType(interp, objPtr)
 	char *s = Tcl_GetStringFromObj(objPtr, &length);
 	
 	if (TclLooksLikeInt(s, length)) {
-	    long i;
+	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
 	    Tcl_WideInt w;
 	    GET_WIDE_OR_INT(result, objPtr, i, w);
 	} else {
@@ -5855,9 +5875,8 @@ ExprRoundFunc(interp, tosPtr, clientData)
     Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    Tcl_Obj *valuePtr;
-    long iResult;
-    double d, temp;
+    Tcl_Obj *valuePtr, *resPtr;
+    double d;
 
     /*
      * Pop the argument from the evaluation stack.
@@ -5869,53 +5888,50 @@ ExprRoundFunc(interp, tosPtr, clientData)
 	return TCL_ERROR;
     }
     
-    if (valuePtr->typePtr == &tclIntType) {
-	iResult = valuePtr->internalRep.longValue;
-    } else if (valuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt w;
-	TclGetWide(w,valuePtr);
-	PUSH_OBJECT(Tcl_NewWideIntObj(w));
-	goto done;
-    } else {
-	d = valuePtr->internalRep.doubleValue;
-	if (d < 0.0) {
-	    if (d <= (((double) (long) LONG_MIN) - 0.5)) {
-		tooLarge:
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent",
-			(char *) NULL);
-		return TCL_ERROR;
-	    }
-	    temp = (long) (d - 0.5);
+    if ((valuePtr->typePtr == &tclIntType) ||
+	    (valuePtr->typePtr == &tclWideIntType)) {
+	return TCL_OK;
+    }
+
+    d = valuePtr->internalRep.doubleValue;
+    if (d < 0.0) {
+	if (d <= Tcl_WideAsDouble(LLONG_MIN)-0.5) {
+	    goto tooLarge;
+	} else if (d <= (((double) (long) LONG_MIN) - 0.5)) {
+	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(d - 0.5));
 	} else {
-	    if (d >= (((double) LONG_MAX + 0.5))) {
-		goto tooLarge;
-	    }
-	    temp = (long) (d + 0.5);
+	    resPtr = Tcl_NewLongObj((long) (d - 0.5));
+	}			    
+    } else {
+	if (d >= Tcl_WideAsDouble(LLONG_MAX)+0.5) {
+	    goto tooLarge;
+	} else if (d >= (((double) LONG_MAX + 0.5))) {
+	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(d + 0.5));
+	} else {
+	    resPtr = Tcl_NewLongObj((long) (d + 0.5));
 	}
-	if (IS_NAN(temp) || IS_INF(temp)) {
-	    TclExprFloatError(interp, temp);
-	    return TCL_ERROR;
-	}
-	iResult = (long) temp;
     }
 
     /*
-     * Push a Tcl object with the result.
+     * Free the argument Tcl_Obj and push the result object.
      */
     
-    PUSH_OBJECT(Tcl_NewLongObj(iResult));
+    TclDecrRefCount(valuePtr);
+    PUSH_OBJECT(resPtr);
+    return TCL_OK;
 
     /*
-     * Reflect the change to stackTop back in eePtr.
+     * Error return: result cannot be represented as an integer.
      */
-
-    done:
-    TclDecrRefCount(valuePtr);
-    return TCL_OK;
+    
+    tooLarge:
+    Tcl_ResetResult(interp);
+    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+	    "integer value too large to represent", -1);
+    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+	    "integer value too large to represent",
+	    (char *) NULL);
+    return TCL_ERROR;
 }
 
 static int

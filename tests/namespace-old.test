@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace-old.test,v 1.6.20.2 2004/05/27 14:29:20 dgp Exp $
+# RCS: @(#) $Id: namespace-old.test,v 1.6.20.3 2004/09/08 23:03:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -527,11 +527,12 @@ test namespace-old-6.16 {public variables affect all parent namespaces} {
 } {{cache2 version} {cache2 version}}
 
 test namespace-old-6.17 {usage for "namespace which"} {
-    list [catch "namespace which -baz" msg] $msg
+    list [catch "namespace which -baz x" msg] $msg
 } {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
 test namespace-old-6.18 {usage for "namespace which"} {
-    list [catch "namespace which -command" msg] $msg
-} {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
+    # Presume no imported command called -command ;^)
+    namespace which -command
+} {}
 
 test namespace-old-6.19 {querying:  namespace which -command} {
     proc test_ns_cache1::test_ns_cache_cmd {} {

@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.13.4.1 2003/08/07 21:35:58 dgp Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.13.4.2 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_UniChar, Tcl_UniCharCaseMatch, Tcl_UniCharNcasecmp, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings.
+Tcl_UniChar, Tcl_UniCharCaseMatch, Tcl_UniCharNcasecmp, Tcl_UniCharToUtf, Tcl_UtfToUniChar, Tcl_UniCharToUtfDString, Tcl_UtfToUniCharDString, Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UtfCharComplete, Tcl_NumUtfChars, Tcl_UtfFindFirst, Tcl_UtfFindLast, Tcl_UtfNext, Tcl_UtfPrev, Tcl_UniCharAtIndex, Tcl_UtfAtIndex, Tcl_UtfBackslash \- routines for manipulating UTF-8 strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -103,7 +103,7 @@ negative, all bytes up to the first null byte are used.
 The length of the Unicode string in characters.  Must be greater than or
 equal to 0.
 .AP "Tcl_DString" *dstPtr in/out
-A pointer to a previously-initialized \fBTcl_DString\fR.
+A pointer to a previously initialized \fBTcl_DString\fR.
 .AP "unsigned long" num in
 The number of characters to compare.
 .AP "CONST char" *start in
@@ -140,7 +140,7 @@ in \fIbuf\fR.
 .PP
 \fBTcl_UtfToUniChar\fR reads one UTF-8 character starting at \fIsrc\fR
 and stores it as a Tcl_UniChar in \fI*chPtr\fR.  The return value is the
-number of bytes read from \fIsrc\fR..  The caller must ensure that the
+number of bytes read from \fIsrc\fR.  The caller must ensure that the
 source buffer is long enough such that this routine does not run off the
 end and dereference non-existent or random memory; if the source buffer
 is known to be null-terminated, this will not happen.  If the input is
@@ -149,15 +149,15 @@ byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x0000 and
 0x00ff and return 1.  
 .PP
 \fBTcl_UniCharToUtfDString\fR converts the given Unicode string
-to UTF-8, storing the result in a previously-initialized \fBTcl_DString\fR.
+to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
 You must specify the length of the given Unicode string.
 The return value is a pointer to the UTF-8 representation of the
 Unicode string.  Storage for the return value is appended to the
 end of the \fBTcl_DString\fR.
 .PP
 \fBTcl_UtfToUniCharDString\fR converts the given UTF-8 string to Unicode,
-storing the result in the previously-initialized \fBTcl_DString\fR.
-you may either specify the length of the given UTF-8 string or "-1",
+storing the result in the previously initialized \fBTcl_DString\fR.
+You may either specify the length of the given UTF-8 string or "-1",
 in which case \fBTcl_UtfToUniCharDString\fR uses \fBstrlen\fR to
 calculate the length.  The return value is a pointer to the Unicode
 representation of the UTF-8 string.  Storage for the return value
@@ -170,7 +170,7 @@ the number of Unicode characters (not bytes) in that string.
 .PP
 \fBTcl_UniCharNcmp\fR and \fBTcl_UniCharNcasecmp\fR correspond to
 \fBstrncmp\fR and \fBstrncasecmp\fR, respectively, for Unicode characters.
-They accepts two null-terminated Unicode strings and the number of characters
+They accept two null-terminated Unicode strings and the number of characters
 to compare.  Both strings are assumed to be at least \fIlen\fR characters
 long. \fBTcl_UniCharNcmp\fR  compares the two strings character-by-character
 according to the Unicode character ordering.  It returns an integer greater

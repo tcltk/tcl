@@ -11,7 +11,7 @@
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2002-2003 Donal K. Fellows.
+ * Copyright (c) 2002-2004 Donal K. Fellows.
  *
  * Originally implemented by
  *   Michael J. McLennan
@@ -21,19 +21,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.5 2004/05/27 14:29:14 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.6 2004/09/08 23:02:46 dgp Exp $
  */
 
 #include "tclInt.h"
-
-/*
- * Flag passed to TclGetNamespaceForQualName to indicate that it should
- * search for a namespace rather than a command or variable inside a
- * namespace. Note that this flag's value must not conflict with the values
- * of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY, or CREATE_NS_IF_UNKNOWN.
- */
-
-#define FIND_ONLY_NS	0x1000
 
 /*
  * Initial size of stack allocated space for tail list - used when resetting
@@ -238,6 +229,8 @@ static int		NamespaceWhichCmd _ANSI_ARGS_((
 static int		SetNsNameFromAny _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 static void		UpdateStringOfNsName _ANSI_ARGS_((Tcl_Obj *objPtr));
+static EnsembleConfig *	FindEnsemble _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *cmdNameObj, int flags));
 static int		NsEnsembleImplementationCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -364,7 +357,7 @@ Tcl_GetGlobalNamespace(interp)
 				  * should be returned. */
 {
     register Interp *iPtr = (Interp *) interp;
-    
+
     return (Tcl_Namespace *) iPtr->globalNsPtr;
 }
 
@@ -593,7 +586,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 * Treat this namespace as the global namespace, and avoid
 	 * looking for a parent.
 	 */
-	
+
         parentPtr = NULL;
         simpleName = "";
     } else if (*name == '\0') {
@@ -606,7 +599,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 */
 
 	TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
-		/*flags*/ (CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
+		/*flags*/ (TCL_CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
 		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
 	/*
@@ -640,33 +633,33 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 
 
     nsPtr = (Namespace *) ckalloc(sizeof(Namespace));
-    nsPtr->name            = (char *) ckalloc((unsigned) (strlen(simpleName)+1));
+    nsPtr->name = (char *) ckalloc((unsigned) (strlen(simpleName)+1));
     strcpy(nsPtr->name, simpleName);
-    nsPtr->fullName        = NULL;   /* set below */
-    nsPtr->clientData      = clientData;
-    nsPtr->deleteProc      = deleteProc;
-    nsPtr->parentPtr       = parentPtr;
+    nsPtr->fullName = NULL;			/* set below */
+    nsPtr->clientData = clientData;
+    nsPtr->deleteProc = deleteProc;
+    nsPtr->parentPtr = parentPtr;
     Tcl_InitHashTable(&nsPtr->childTable, TCL_STRING_KEYS);
     Tcl_MutexLock(&nsMutex);
     numNsCreated++;
-    nsPtr->nsId            = numNsCreated;
+    nsPtr->nsId = numNsCreated;
     Tcl_MutexUnlock(&nsMutex);
-    nsPtr->interp          = interp;
-    nsPtr->flags           = 0;
+    nsPtr->interp = interp;
+    nsPtr->flags = 0;
     nsPtr->activationCount = 0;
-    nsPtr->refCount        = 0;
+    nsPtr->refCount = 0;
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
     Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
-    nsPtr->exportArrayPtr  = NULL;
+    nsPtr->exportArrayPtr = NULL;
     nsPtr->numExportPatterns = 0;
     nsPtr->maxExportPatterns = 0;
-    nsPtr->cmdRefEpoch       = 0;
-    nsPtr->resolverEpoch     = 0;
-    nsPtr->cmdResProc        = NULL;
-    nsPtr->varResProc        = NULL;
+    nsPtr->cmdRefEpoch = 0;
+    nsPtr->resolverEpoch = 0;
+    nsPtr->cmdResProc = NULL;
+    nsPtr->varResProc = NULL;
     nsPtr->compiledVarResProc = NULL;
     nsPtr->exportLookupEpoch = 0;
-    nsPtr->ensembles	     = NULL;
+    nsPtr->ensembles = NULL;
 
     if (parentPtr != NULL) {
         entryPtr = Tcl_CreateHashEntry(&parentPtr->childTable, simpleName,
@@ -692,7 +685,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
         Tcl_DStringAppend(&buffer2, Tcl_DStringValue(&buffer1), -1);
         Tcl_DStringSetLength(&buffer1, 0);
     }
-    
+
     name = Tcl_DStringValue(&buffer2);
     nsPtr->fullName = (char *) ckalloc((unsigned) (strlen(name)+1));
     strcpy(nsPtr->fullName, name);
@@ -800,7 +793,7 @@ Tcl_DeleteNamespace(namespacePtr)
 	     */
 
             TclDeleteVars((Interp *) nsPtr->interp, &nsPtr->varTable);
-	    
+
             Tcl_DeleteHashTable(&nsPtr->childTable);
             Tcl_DeleteHashTable(&nsPtr->cmdTable);
 
@@ -871,7 +864,7 @@ TclTeardownNamespace(nsPtr)
 	 * to destroy and recreate the "errorInfo" and "errorCode"
 	 * variables, in case they had any traces on them.
 	 */
-    
+
         CONST char *str;
         char *errorInfoStr, *errorCodeStr;
 
@@ -909,7 +902,7 @@ TclTeardownNamespace(nsPtr)
 	 * Variable table should be cleared but not freed! TclDeleteVars
 	 * frees it, so we reinitialize it afterwards.
 	 */
-    
+
         TclDeleteVars(iPtr, &nsPtr->varTable);
         Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
     }
@@ -1158,7 +1151,7 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
     len = strlen(pattern);
     patternCpy = (char *) ckalloc((unsigned) (len + 1));
     strcpy(patternCpy, pattern);
-    
+
     nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
     nsPtr->numExportPatterns++;
 
@@ -1295,7 +1288,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     } else {
         nsPtr = (Namespace *) namespacePtr;
     }
- 
+
     /*
      * First, invoke the "auto_import" command with the pattern
      * being imported.  This command is part of the Tcl library.
@@ -1303,25 +1296,25 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
      * loads them in.  That way, they will be found when we try
      * to create links below.
      */
-    
+
     autoCmd = Tcl_FindCommand(interp, "auto_import",
  	    (Tcl_Namespace *) NULL, /*flags*/ TCL_GLOBAL_ONLY);
- 
+
     if (autoCmd != NULL) {
 	Tcl_Obj *objv[2];
- 
+
 	objv[0] = Tcl_NewStringObj("auto_import", -1);
 	Tcl_IncrRefCount(objv[0]);
 	objv[1] = Tcl_NewStringObj(pattern, -1);
 	Tcl_IncrRefCount(objv[1]);
- 
+
 	cmdPtr = (Command *) autoCmd;
 	result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
 		2, objv);
- 
+
 	Tcl_DecrRefCount(objv[0]);
 	Tcl_DecrRefCount(objv[1]);
- 
+
 	if (result != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1383,8 +1376,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 
 	    wasExported = 0;
 	    for (i = 0;  i < importNsPtr->numExportPatterns;  i++) {
-		if (Tcl_StringMatch(cmdName,
-			importNsPtr->exportArrayPtr[i])) {
+		if (Tcl_StringMatch(cmdName, importNsPtr->exportArrayPtr[i])) {
 		    wasExported = 1;
 		    break;
 		}
@@ -1397,7 +1389,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	     * Unless there is a name clash, create an imported command
 	     * in the current namespace that refers to cmdPtr.
 	     */
-	    
+
             if ((Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName) == NULL)
 		    || allowOverwrite) {
 		/*
@@ -1597,7 +1589,7 @@ TclGetOriginalCommand(command)
     if (cmdPtr->deleteProc != DeleteImportedCmd) {
 	return (Tcl_Command) NULL;
     }
-    
+
     while (cmdPtr->deleteProc == DeleteImportedCmd) {
 	dataPtr = (ImportedCmdData *) cmdPtr->objClientData;
 	cmdPtr = dataPtr->realCmdPtr;
@@ -1678,7 +1670,7 @@ DeleteImportedCmd(clientData)
 	     * Remove *refPtr from real command's list of imported commands
 	     * that refer to it.
 	     */
-	    
+
 	    if (prevPtr == NULL) { /* refPtr is first in list */
 		realCmdPtr->importRefPtr = refPtr->nextPtr;
 	    } else {
@@ -1690,7 +1682,7 @@ DeleteImportedCmd(clientData)
 	}
 	prevPtr = refPtr;
     }
-	
+
     Tcl_Panic("DeleteImportedCmd: did not find cmd in real cmd's list of import references");
 }
 
@@ -1727,18 +1719,18 @@ DeleteImportedCmd(clientData)
  *	TCL_NAMESPACE_ONLY are specified, TCL_GLOBAL_ONLY is ignored and
  *	the search starts from the namespace specified by cxtNsPtr.
  *
- *	If "flags" contains CREATE_NS_IF_UNKNOWN, all namespace
+ *	If "flags" contains TCL_CREATE_NS_IF_UNKNOWN, all namespace
  *	components of the qualified name that cannot be found are
  *	automatically created within their specified parent. This makes sure
  *	that functions like Tcl_CreateCommand always succeed. There is no
  *	alternate search path, so *altNsPtrPtr is set NULL.
  *
- *	If "flags" contains FIND_ONLY_NS, the qualified name is treated as a
+ *	If "flags" contains TCL_FIND_ONLY_NS, the qualified name is treated as a
  *	reference to a namespace, and the entire qualified name is
  *	followed. If the name is relative, the namespace is looked up only
  *	in the current namespace. A pointer to the namespace is stored in
  *	*nsPtrPtr and NULL is stored in *simpleNamePtr. Otherwise, if
- *	FIND_ONLY_NS is not specified, only the leading components are
+ *	TCL_FIND_ONLY_NS is not specified, only the leading components are
  *	treated as namespace names, and a pointer to the simple name of the
  *	final component is stored in *simpleNamePtr.
  *
@@ -1749,7 +1741,7 @@ DeleteImportedCmd(clientData)
  *	to NULL, then the search along that path failed.  The procedure also
  *	stores a pointer to the simple name of the final component in
  *	*simpleNamePtr. If the qualified name is "::" or was treated as a
- *	namespace reference (FIND_ONLY_NS), the procedure stores a pointer
+ *	namespace reference (TCL_FIND_ONLY_NS), the procedure stores a pointer
  *	to the namespace in *nsPtrPtr, NULL in *altNsPtrPtr, and sets
  *	*simpleNamePtr to point to an empty string.
  *
@@ -1766,7 +1758,7 @@ DeleteImportedCmd(clientData)
  *	this function always returns TCL_OK.
  *
  * Side effects:
- *	If "flags" contains CREATE_NS_IF_UNKNOWN, new namespaces may be
+ *	If "flags" contains TCL_CREATE_NS_IF_UNKNOWN, new namespaces may be
  *	created.
  *
  *----------------------------------------------------------------------
@@ -1787,8 +1779,8 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     int flags;			 /* Flags controlling the search: an OR'd
 				  * combination of TCL_GLOBAL_ONLY,
 				  * TCL_NAMESPACE_ONLY,
-				  * CREATE_NS_IF_UNKNOWN, and
-				  * FIND_ONLY_NS. */
+				  * TCL_CREATE_NS_IF_UNKNOWN, and
+				  * TCL_FIND_ONLY_NS. */
     Namespace **nsPtrPtr;	 /* Address where procedure stores a pointer
 				  * to containing namespace if qualName is
 				  * found starting from *cxtNsPtr or, if
@@ -1801,8 +1793,8 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 				  * namespace. NULL is stored if qualName
 				  * isn't found starting from :: or if the
 				  * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				  * CREATE_NS_IF_UNKNOWN, FIND_ONLY_NS flag
-				  * is set. */
+				  * TCL_CREATE_NS_IF_UNKNOWN, TCL_FIND_ONLY_NS
+				  * flag is set. */
     Namespace **actualCxtPtrPtr; /* Address where procedure stores a pointer
 				  * to the actual namespace from which the
 				  * search started. This is either cxtNsPtr,
@@ -1812,7 +1804,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     CONST char **simpleNamePtr;	 /* Address where procedure stores the
 				  * simple name at end of the qualName, or
 				  * NULL if qualName is "::" or the flag
-				  * FIND_ONLY_NS was specified. */
+				  * TCL_FIND_ONLY_NS was specified. */
 {
     Interp *iPtr = (Interp *) interp;
     Namespace *nsPtr = cxtNsPtr;
@@ -1826,7 +1818,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
     /*
      * Determine the context namespace nsPtr in which to start the primary
-     * search. If TCL_NAMESPACE_ONLY or FIND_ONLY_NS was specified, search
+     * search. If TCL_NAMESPACE_ONLY or TCL_FIND_ONLY_NS was specified, search
      * from the current namespace. If the qualName name starts with a "::"
      * or TCL_GLOBAL_ONLY was specified, search from the global
      * namespace. Otherwise, use the given namespace given in cxtNsPtr, or
@@ -1834,7 +1826,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * always treat two or more adjacent ":"s as a namespace separator.
      */
 
-    if (flags & (TCL_NAMESPACE_ONLY | FIND_ONLY_NS)) {
+    if (flags & (TCL_NAMESPACE_ONLY | TCL_FIND_ONLY_NS)) {
 	nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     } else if (flags & TCL_GLOBAL_ONLY) {
 	nsPtr = globalNsPtr;
@@ -1872,7 +1864,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
     altNsPtr = globalNsPtr;
     if ((nsPtr == globalNsPtr)
-	    || (flags & (TCL_NAMESPACE_ONLY | FIND_ONLY_NS))) {
+	    || (flags & (TCL_NAMESPACE_ONLY | TCL_FIND_ONLY_NS))) {
         altNsPtr = NULL;
     }
 
@@ -1902,19 +1894,18 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             len++;
 	}
 
-	if ((*end == '\0')
-	        && !((end-start >= 2) && (*(end-1) == ':') && (*(end-2) == ':'))) {
+	if (*end=='\0' && !(end-start>=2 && *(end-1)==':' && *(end-2)==':')) {
 	    /*
-	     * qualName ended with a simple name at start. If FIND_ONLY_NS
+	     * qualName ended with a simple name at start. If TCL_FIND_ONLY_NS
 	     * was specified, look this up as a namespace. Otherwise,
 	     * start is the name of a cmd or var and we are done.
 	     */
-	    
-	    if (flags & FIND_ONLY_NS) {
+
+	    if (flags & TCL_FIND_ONLY_NS) {
 		nsName = start;
 	    } else {
-		*nsPtrPtr      = nsPtr;
-		*altNsPtrPtr   = altNsPtr;
+		*nsPtrPtr = nsPtr;
+		*altNsPtrPtr = altNsPtr;
 		*simpleNamePtr = start;
 		Tcl_DStringFree(&buffer);
 		return TCL_OK;
@@ -1935,7 +1926,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
         /*
 	 * Look up the namespace qualifier nsName in the current namespace
-         * context. If it isn't found but CREATE_NS_IF_UNKNOWN is set,
+         * context. If it isn't found but TCL_CREATE_NS_IF_UNKNOWN is set,
          * create that qualifying namespace. This is needed for procedures
          * like Tcl_CreateCommand that cannot fail.
 	 */
@@ -1944,9 +1935,9 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             entryPtr = Tcl_FindHashEntry(&nsPtr->childTable, nsName);
             if (entryPtr != NULL) {
                 nsPtr = (Namespace *) Tcl_GetHashValue(entryPtr);
-            } else if (flags & CREATE_NS_IF_UNKNOWN) {
+            } else if (flags & TCL_CREATE_NS_IF_UNKNOWN) {
 		Tcl_CallFrame frame;
-		
+
 		(void) Tcl_PushCallFrame(interp, &frame,
 		        (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
 
@@ -1995,8 +1986,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * variable name, trailing "::"s refer to the cmd or var named {}.
      */
 
-    if ((flags & FIND_ONLY_NS)
-	    || ((end > start ) && (*(end-1) != ':'))) {
+    if ((flags & TCL_FIND_ONLY_NS) || (end>start && *(end-1)!=':')) {
 	*simpleNamePtr = NULL; /* found namespace name */
     } else {
 	*simpleNamePtr = end;  /* found cmd/var: points to empty string */
@@ -2009,7 +1999,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * namespaces can not have empty names except for the global namespace.
      */
 
-    if ((flags & FIND_ONLY_NS) && (*qualName == '\0')
+    if ((flags & TCL_FIND_ONLY_NS) && (*qualName == '\0')
 	    && (nsPtr != globalNsPtr)) {
 	nsPtr = NULL;
     }
@@ -2061,13 +2051,13 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 
     /*
      * Find the namespace(s) that contain the specified namespace name.
-     * Add the FIND_ONLY_NS flag to resolve the name all the way down
+     * Add the TCL_FIND_ONLY_NS flag to resolve the name all the way down
      * to its last component, a namespace.
      */
 
     TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
-	    (flags | FIND_ONLY_NS), &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
-    
+	    flags|TCL_FIND_ONLY_NS, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+
     if (nsPtr != NULL) {
        return (Tcl_Namespace *) nsPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
@@ -2140,11 +2130,9 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
      */
     if ((flags & TCL_GLOBAL_ONLY) != 0) {
         cxtNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    }
-    else if (contextNsPtr != NULL) {
+    } else if (contextNsPtr != NULL) {
         cxtNsPtr = (Namespace *) contextNsPtr;
-    }
-    else {
+    } else {
         cxtNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     }
 
@@ -2168,8 +2156,7 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 
         if (result == TCL_OK) {
             return cmd;
-        }
-        else if (result != TCL_CONTINUE) {
+        } else if (result != TCL_CONTINUE) {
             return (Tcl_Command) NULL;
         }
     }
@@ -2270,11 +2257,9 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
      */
     if ((flags & TCL_GLOBAL_ONLY) != 0) {
         cxtNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    }
-    else if (contextNsPtr != NULL) {
+    } else if (contextNsPtr != NULL) {
         cxtNsPtr = (Namespace *) contextNsPtr;
-    }
-    else {
+    } else {
         cxtNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     }
 
@@ -2298,8 +2283,7 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
 
         if (result == TCL_OK) {
             return var;
-        }
-        else if (result != TCL_CONTINUE) {
+        } else if (result != TCL_CONTINUE) {
             return (Tcl_Var) NULL;
         }
     }
@@ -2455,7 +2439,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
 		 * for a fresh compilation of every bytecode.
 		 */
 
-		if ((((Command *) Tcl_GetHashValue(hPtr))->compileProc) != NULL) {
+		if (((Command *)Tcl_GetHashValue(hPtr))->compileProc != NULL) {
 		    nsPtr->resolverEpoch++;
 		}
             }
@@ -2473,7 +2457,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
 	    size_t newBytes = newSize * sizeof(Namespace *);
 	    Namespace **newPtr =
 		    (Namespace **) ckalloc((unsigned) newBytes);
-	    
+
 	    memcpy((VOID *) newPtr, (VOID *) trailPtr, currBytes);
 	    if (trailPtr != trailStorage) {
 		ckfree((char *) trailPtr);
@@ -2487,7 +2471,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
     /*
      * Free any allocated storage.
      */
-    
+
     if (trailPtr != trailStorage) {
 	ckfree((char *) trailPtr);
     }
@@ -2540,13 +2524,13 @@ GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
      */
 
     savedFramePtr = iPtr->varFramePtr;
-    name = Tcl_GetString(objPtr);
+    name = TclGetString(objPtr);
     if ((*name++ == ':') && (*name == ':')) {
 	iPtr->varFramePtr = NULL;
     }
 
     currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    
+
     /*
      * Get the internal representation, converting to a namespace type if
      * needed. The internal representation is a ResolvedNsName that points
@@ -2674,7 +2658,7 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
     if (result != TCL_OK) {
 	return result;
     }
-    
+
     switch (index) {
         case NSChildrenIdx:
 	    result = NamespaceChildrenCmd(clientData, interp, objc, objv);
@@ -2777,7 +2761,7 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
         }
         if (namespacePtr == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", Tcl_GetString(objv[2]),
+                    "unknown namespace \"", TclGetString(objv[2]),
 		    "\" in namespace children command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -2793,8 +2777,8 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
 
     Tcl_DStringInit(&buffer);
     if (objc == 4) {
-        char *name = Tcl_GetString(objv[3]);
-	
+        char *name = TclGetString(objv[3]);
+
         if ((*name == ':') && (*(name+1) == ':')) {
             pattern = name;
         } else {
@@ -2879,17 +2863,15 @@ NamespaceCodeCmd(dummy, interp, objc, objv)
      */
 
     arg = Tcl_GetStringFromObj(objv[2], &length);
-    while (*arg == ':') { 
-	arg++; 
-	length--; 
-    } 
-    if ((*arg == 'n') && (length > 17)
-	    && (strncmp(arg, "namespace", 9) == 0)) {
-	for (p = (arg + 9);  (*p == ' ');  p++) {
-	    /* empty body: skip over spaces */
+    while (*arg == ':') {
+	arg++;
+	length--;
+    }
+    if (*arg=='n' && length>17 && strncmp(arg, "namespace", 9)==0) {
+	for (p=arg+9 ; isspace(UCHAR(*p)) ; p++) {
+	    /* empty body: skip over whitespace */
 	}
-	if ((*p == 'i') && ((p + 7) <= (arg + length))
-	        && (strncmp(p, "inscope", 7) == 0)) {
+	if (*p=='i' && (p+7 <= arg+length) && strncmp(p, "inscope", 7)==0) {
 	    Tcl_SetObjResult(interp, objv[2]);
 	    return TCL_OK;
 	}
@@ -2916,7 +2898,7 @@ NamespaceCodeCmd(dummy, interp, objc, objv)
 	objPtr = Tcl_NewStringObj(currNsPtr->fullName, -1);
     }
     Tcl_ListObjAppendElement(interp, listPtr, objPtr);
-    
+
     Tcl_ListObjAppendElement(interp, listPtr, objv[2]);
 
     Tcl_SetObjResult(interp, listPtr);
@@ -3031,12 +3013,12 @@ NamespaceDeleteCmd(dummy, interp, objc, objv)
      */
 
     for (i = 2;  i < objc;  i++) {
-        name = Tcl_GetString(objv[i]);
+        name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name,
 		(Tcl_Namespace *) NULL, /*flags*/ 0);
         if (namespacePtr == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", Tcl_GetString(objv[i]),
+                    "unknown namespace \"", TclGetString(objv[i]),
 		    "\" in namespace delete command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3047,7 +3029,7 @@ NamespaceDeleteCmd(dummy, interp, objc, objv)
      */
 
     for (i = 2;  i < objc;  i++) {
-        name = Tcl_GetString(objv[i]);
+        name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name,
 	    (Tcl_Namespace *) NULL, /* flags */ 0);
 	if (namespacePtr) {
@@ -3116,7 +3098,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     /*
      * If the namespace wasn't found, try to create it.
      */
-    
+
     if (namespacePtr == NULL) {
 	name = Tcl_GetStringFromObj(objv[2], &length);
 	namespacePtr = Tcl_CreateNamespace(interp, name, (ClientData) NULL, 
@@ -3169,7 +3151,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     /*
      * Restore the previous "current" namespace.
      */
-    
+
     Tcl_PopCallFrame(interp);
     return result;
 }
@@ -3281,7 +3263,7 @@ NamespaceExportCmd(dummy, interp, objc, objv)
 
     firstArg = 2;
     if (firstArg < objc) {
-	string = Tcl_GetString(objv[firstArg]);
+	string = TclGetString(objv[firstArg]);
 	if (strcmp(string, "-clear") == 0) {
 	    resetListFirst = 1;
 	    firstArg++;
@@ -3312,9 +3294,9 @@ NamespaceExportCmd(dummy, interp, objc, objv)
     /*
      * Add each pattern to the namespace's export pattern list.
      */
-    
+
     for (i = firstArg;  i < objc;  i++) {
-	pattern = Tcl_GetString(objv[i]);
+	pattern = TclGetString(objv[i]);
 	result = Tcl_Export(interp, (Tcl_Namespace *) currNsPtr, pattern,
 		((i == firstArg)? resetListFirst : 0));
         if (result != TCL_OK) {
@@ -3370,7 +3352,7 @@ NamespaceForgetCmd(dummy, interp, objc, objv)
     }
 
     for (i = 2;  i < objc;  i++) {
-        pattern = Tcl_GetString(objv[i]);
+        pattern = TclGetString(objv[i]);
 	result = Tcl_ForgetImport(interp, (Tcl_Namespace *) NULL, pattern);
         if (result != TCL_OK) {
             return result;
@@ -3440,7 +3422,7 @@ NamespaceImportCmd(dummy, interp, objc, objv)
 
     firstArg = 2;
     if (firstArg < objc) {
-	string = Tcl_GetString(objv[firstArg]);
+	string = TclGetString(objv[firstArg]);
 	if ((*string == '-') && (strcmp(string, "-force") == 0)) {
 	    allowOverwrite = 1;
 	    firstArg++;
@@ -3452,7 +3434,7 @@ NamespaceImportCmd(dummy, interp, objc, objv)
      */
 
     for (i = firstArg;  i < objc;  i++) {
-        pattern = Tcl_GetString(objv[i]);
+        pattern = TclGetString(objv[i]);
 	result = Tcl_Import(interp, (Tcl_Namespace *) NULL, pattern,
 	        allowOverwrite);
         if (result != TCL_OK) {
@@ -3526,7 +3508,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
     }
     if (namespacePtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-	        "unknown namespace \"", Tcl_GetString(objv[2]),
+	        "unknown namespace \"", TclGetString(objv[2]),
 		"\" in inscope namespace command", (char *) NULL);
         return TCL_ERROR;
     }
@@ -3553,7 +3535,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
     } else {
 	Tcl_Obj *concatObjv[2];
 	register Tcl_Obj *listPtr, *cmdObjPtr;
-	
+
         listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
         for (i = 4;  i < objc;  i++) {
 	    result = Tcl_ListObjAppendElement(interp, listPtr, objv[i]);
@@ -3571,7 +3553,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
     }
     if (result == TCL_ERROR) {
         char msg[256 + TCL_INTEGER_SPACE];
-	
+
         sprintf(msg,
 	    "\n    (in namespace inscope \"%.200s\" script line %d)",
             namespacePtr->fullName, interp->errorLine);
@@ -3632,7 +3614,7 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
     command = Tcl_GetCommandFromObj(interp, objv[2]);
     if (command == (Tcl_Command) NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"invalid command name \"", Tcl_GetString(objv[2]),
+		"invalid command name \"", TclGetString(objv[2]),
 		"\"", (char *) NULL);
 	return TCL_ERROR;
     }
@@ -3643,7 +3625,7 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
 	 * command's name qualified by the full name of the namespace it
 	 * was defined in.
 	 */
-	
+
 	Tcl_GetCommandFullName(interp, command, Tcl_GetObjResult(interp));
     } else {
 	Tcl_GetCommandFullName(interp, origCommand, Tcl_GetObjResult(interp));
@@ -3691,7 +3673,7 @@ NamespaceParentCmd(dummy, interp, objc, objv)
         }
         if (nsPtr == NULL) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", Tcl_GetString(objv[2]),
+                    "unknown namespace \"", TclGetString(objv[2]),
 		    "\" in namespace parent command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3757,7 +3739,7 @@ NamespaceQualifiersCmd(dummy, interp, objc, objv)
      * the start of the last "::" qualifier.
      */
 
-    name = Tcl_GetString(objv[2]);
+    name = TclGetString(objv[2]);
     for (p = name;  *p != '\0';  p++) {
 	/* empty body */
     }
@@ -3823,7 +3805,7 @@ NamespaceTailCmd(dummy, interp, objc, objv)
      * last "::" qualifier.
      */
 
-    name = Tcl_GetString(objv[2]);
+    name = TclGetString(objv[2]);
     for (p = name;  *p != '\0';  p++) {
 	/* empty body */
     }
@@ -3833,7 +3815,7 @@ NamespaceTailCmd(dummy, interp, objc, objv)
             break;
         }
     }
-    
+
     if (p >= name) {
         Tcl_AppendToObj(Tcl_GetObjResult(interp), p, -1);
     }
@@ -3869,56 +3851,47 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
     int objc;                           /* Number of arguments. */
     Tcl_Obj *CONST objv[];              /* Argument objects. */
 {
-    register char *arg;
-    Tcl_Command cmd;
-    Tcl_Var variable;
-    int argIndex, lookup;
+    static CONST char *opts[] = {
+	"-command", "-variable", NULL
+    };
+    int lookupType = 0;
 
-    if (objc < 3) {
-        badArgs:
-        Tcl_WrongNumArgs(interp, 2, objv,
-	        "?-command? ?-variable? name");
+    if (objc < 3 || objc > 4) {
+      badArgs:
+        Tcl_WrongNumArgs(interp, 2, objv, "?-command? ?-variable? name");
         return TCL_ERROR;
-    }
+    } else if (objc == 4) {
+	/*
+	 * Look for a flag controlling the lookup.
+	 */
 
-    /*
-     * Look for a flag controlling the lookup.
-     */
-
-    argIndex = 2;
-    lookup = 0;			/* assume command lookup by default */
-    arg = Tcl_GetString(objv[2]);
-    if (*arg == '-') {
-	if (strncmp(arg, "-command", 8) == 0) {
-	    lookup = 0;
-	} else if (strncmp(arg, "-variable", 9) == 0) {
-	    lookup = 1;
-	} else {
+	if (Tcl_GetIndexFromObj(interp, objv[2], opts, "option", 0,
+		&lookupType) != TCL_OK) {
+	    /*
+	     * Preserve old style of error message!
+	     */
+	    Tcl_ResetResult(interp);
 	    goto badArgs;
 	}
-	argIndex = 3;
-    }
-    if (objc != (argIndex + 1)) {
-	goto badArgs;
     }
 
-    switch (lookup) {
-    case 0:			/* -command */
-	cmd = Tcl_GetCommandFromObj(interp, objv[argIndex]);
+    switch (lookupType) {
+    case 0: {			/* -command */
+	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
         if (cmd == (Tcl_Command) NULL) {	
             return TCL_OK;	/* cmd not found, just return (no error) */
         }
 	Tcl_GetCommandFullName(interp, cmd, Tcl_GetObjResult(interp));
         break;
-
-    case 1:			/* -variable */
-        arg = Tcl_GetString(objv[argIndex]);
-	variable = Tcl_FindNamespaceVar(interp, arg, (Tcl_Namespace *) NULL,
-		/*flags*/ 0);
-        if (variable != (Tcl_Var) NULL) {
-            Tcl_GetVariableFullName(interp, variable, Tcl_GetObjResult(interp));
+    }
+    case 1: {			/* -variable */
+	Tcl_Var var = Tcl_FindNamespaceVar(interp,
+		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
+        if (var != (Tcl_Var) NULL) {
+            Tcl_GetVariableFullName(interp, var, Tcl_GetObjResult(interp));
         }
         break;
+    }
     }
     return TCL_OK;
 }
@@ -4052,7 +4025,7 @@ SetNsNameFromAny(interp, objPtr)
 
     name = objPtr->bytes;
     if (name == NULL) {
-	name = Tcl_GetString(objPtr);
+	name = TclGetString(objPtr);
     }
 
     /*
@@ -4063,7 +4036,7 @@ SetNsNameFromAny(interp, objPtr)
      */
 
     TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
-            FIND_ONLY_NS, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+            TCL_FIND_ONLY_NS, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     /*
      * If we found a namespace, then create a new ResolvedNsName structure
@@ -4073,7 +4046,7 @@ SetNsNameFromAny(interp, objPtr)
     if (nsPtr != NULL) {
 	Namespace *currNsPtr =
 	        (Namespace *) Tcl_GetCurrentNamespace(interp);
-	
+
         nsPtr->refCount++;
         resNamePtr = (ResolvedNsName *) ckalloc(sizeof(ResolvedNsName));
         resNamePtr->nsPtr = nsPtr;
@@ -4430,42 +4403,24 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	return TCL_OK;
     }
 
-    case ENS_EXISTS: {
-	Command *cmdPtr;
-	int flag;
-
+    case ENS_EXISTS:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname");
 	    return TCL_ERROR;
 	}
-	cmdPtr = (Command *)
-		Tcl_FindCommand(interp, TclGetString(objv[3]), 0, 0);
-	flag = (cmdPtr != NULL &&
-		cmdPtr->objProc == NsEnsembleImplementationCmd);
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), flag);
+	Tcl_SetBooleanObj(Tcl_GetObjResult(interp),
+		FindEnsemble(interp, objv[3], 0) != NULL);
 	return TCL_OK;
-    }
 
-    case ENS_CONFIG: {
-	char *cmdName;
-	Command *cmdPtr;
-
+    case ENS_CONFIG:
 	if (objc < 4 || (objc != 5 && objc & 1)) {
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?opt? ?value? ...");
 	    return TCL_ERROR;
 	}
-	cmdName = TclGetString(objv[3]);
-	cmdPtr = (Command *)
-		Tcl_FindCommand(interp, cmdName, 0, TCL_LEAVE_ERR_MSG);
-	if (cmdPtr == NULL) {
+	ensemblePtr = FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
+	if (ensemblePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
-            Tcl_AppendResult(interp, cmdName, " is not an ensemble command",
-		    NULL);
-            return TCL_ERROR;
-        }
-	ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
 
 	if (objc == 5) {
 	    if (Tcl_GetIndexFromObj(interp, objv[4], configOptions, "option",
@@ -4731,12 +4686,64 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    ensemblePtr->nsPtr->exportLookupEpoch++;
 	    return TCL_OK;
 	}
-    }
 
     default:
 	Tcl_Panic("unexpected ensemble command");
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindEnsemble --
+ *
+ *	Given a command name, get the ensemble configuration structure
+ *	for it, allowing for [namespace import]s. [Bug 1017022]
+ *
+ * Results:
+ *	A pointer to the config struct, or NULL if the command either
+ *	does not exist or is not an ensemble.
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static EnsembleConfig *
+FindEnsemble(interp, cmdNameObj, flags)
+    Tcl_Interp *interp;			/* Where to do the lookup, and where
+					 * to write the errors if
+					 * TCL_LEAVE_ERR_MSG is set in the
+					 * flags. */
+    Tcl_Obj *cmdNameObj;		/* Name of command to look up. */
+    int flags;				/* Either 0 or TCL_LEAVE_ERR_MSG; other
+					 * flags are probably not useful. */
+{
+    Command *cmdPtr;
+
+    cmdPtr = (Command *)
+	    Tcl_FindCommand(interp, TclGetString(cmdNameObj), NULL, flags);
+    if (cmdPtr == NULL) {
+	return NULL;
+    }
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	/*
+	 * Reuse existing infrastructure for following import link
+	 * chains rather than duplicating it.
+	 */
+	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
+
+	if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		Tcl_AppendResult(interp, "\"", TclGetString(cmdNameObj),
+			"\" is not an ensemble command", NULL);
+	    }
+	    return NULL;
+	}
+    }
+    return (EnsembleConfig *) cmdPtr->objClientData;
 }
 
 /*
@@ -4822,7 +4829,8 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
 		ensembleCmd->epoch == ensemblePtr->epoch) {
 		prefixObj = ensembleCmd->realPrefixObj;
-		goto runSubcommand;
+		Tcl_IncrRefCount(prefixObj);
+		goto runResultingSubcommand;
 	    }
 	}
     }
@@ -4909,7 +4917,6 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	MakeCachedEnsembleCommand(objv[1], ensemblePtr, fullName, prefixObj);
     }
 
- runSubcommand:
     /*
      * Do the real work of execution of the subcommand by building an
      * array of objects (note that this is potentially not the same
@@ -4932,7 +4939,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
     ckfree((char *)tempObjv);
     return result;
 
- unknownOrAmbiguousSubcommand:
+  unknownOrAmbiguousSubcommand:
     /*
      * Have not been able to match the subcommand asked for with a
      * real subcommand that we export.  See whether a handler has been
@@ -4942,22 +4949,12 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 
     if (ensemblePtr->unknownHandler != NULL && reparseCount++ < 1) {
 	int paramc, i;
-	Tcl_Obj **paramv, *unknownCmd;
-	char *ensName = TclGetString(objv[0]);
+	Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
 	unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
-	if (ensName[0] == ':') {
-	    Tcl_ListObjAppendElement(NULL, unknownCmd, objv[0]);
-	} else {
-	    Tcl_Obj *qualEnsembleObj =
-		Tcl_NewStringObj(Tcl_GetCurrentNamespace(interp)->fullName,-1);
-	    if (Tcl_GetCurrentNamespace(interp)->parentPtr) {
-		Tcl_AppendStringsToObj(qualEnsembleObj, "::", ensName, NULL);
-	    } else {
-		Tcl_AppendStringsToObj(qualEnsembleObj, ensName, NULL);
-	    }
-	    Tcl_ListObjAppendElement(NULL, unknownCmd, qualEnsembleObj);
-	}
+	TclNewObj(ensObj);
+	Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
+	Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
 	for (i=1 ; i<objc ; i++) {
 	    Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
 	}
@@ -4988,14 +4985,10 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	    if (Tcl_ListObjLength(interp, prefixObj, &prefixObjc) != TCL_OK) {
 		Tcl_DecrRefCount(prefixObj);
 		Tcl_AddErrorInfo(interp,
-		    "\n    while parsing result of ensemble unknown subcommand handler");
+			"\n    while parsing result of ensemble unknown subcommand handler");
 		return TCL_ERROR;
 	    }
 	    if (prefixObjc > 0) {
-		/*
-		 * Not 'runSubcommand' because we want to get the
-		 * object refcounting right.
-		 */
 		goto runResultingSubcommand;
 	    }
 
@@ -5003,6 +4996,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	     * Namespace alive & empty result => reparse.
 	     */
 
+	    Tcl_DecrRefCount(prefixObj);
 	    goto restartEnsembleParse;
 	}
 	if (!Tcl_InterpDeleted(interp)) {
@@ -5028,7 +5022,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		}
 		}
 		Tcl_AddErrorInfo(interp,
-		    "\n    result of ensemble unknown subcommand handler: ");
+			"\n    result of ensemble unknown subcommand handler: ");
 		Tcl_AddErrorInfo(interp, TclGetString(unknownCmd));
 	    } else {
 		Tcl_AddErrorInfo(interp,
@@ -5039,12 +5033,14 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	Tcl_Release(ensemblePtr);
 	return TCL_ERROR;
     }
+
     /*
      * Cannot determine what subcommand to hand off to, so generate a
      * (standard) failure message.  Note the one odd case compared
      * with standard ensemble-like command, which is where a namespace
      * has no exported commands at all...
      */
+
     Tcl_ResetResult(interp);
     if (ensemblePtr->subcommandTable.numEntries == 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -5127,6 +5123,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
      * Populate the internal rep.
      */
     ensembleCmd->nsPtr = ensemblePtr->nsPtr;
+    ensembleCmd->epoch = ensemblePtr->epoch;
     ensemblePtr->nsPtr->refCount++;
     ensembleCmd->realPrefixObj = prefixObjPtr;
     length = strlen(subcommandName)+1;
@@ -5262,7 +5259,15 @@ BuildEnsembleConfig(ensemblePtr)
 	/*
 	 * Remove pre-existing table.
 	 */
+	Tcl_HashSearch search;
+
 	ckfree((char *)ensemblePtr->subcommandArrayPtr);
+	hPtr = Tcl_FirstHashEntry(hash, &search);
+	while (hPtr != NULL) {
+	    Tcl_Obj *prefixObj = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	    Tcl_DecrRefCount(prefixObj);
+	    hPtr = Tcl_NextHashEntry(&search);
+	}
 	Tcl_DeleteHashTable(hash);
 	Tcl_InitHashTable(hash, TCL_STRING_KEYS);
     }

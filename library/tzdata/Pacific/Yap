@@ -1,0 +1,7 @@
+# created by ../tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Yap) {
+    {-9223372036854775808 33152 0 LMT}
+    {-2177485952 32400 0 YAPT}
+    {-7981200 36000 0 YAPT}
+}

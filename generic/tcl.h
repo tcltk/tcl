@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.12 2004/05/27 14:29:08 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.13 2004/09/08 23:02:35 dgp Exp $
  */
 
 #ifndef _TCL
@@ -44,9 +44,9 @@ extern "C" {
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.bc	(not patchlevel) 2 LOC
- * README		(sections 0 and 2)
+ * README		(sections 0 and 2, with and without separator)
  * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 2 LOC
- * win/README.binary	(sections 0-4)
+ * win/README.binary	(sections 0-4, with and without separator)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
  * tests/basic.test	(1 LOC M/M, not patchlevel)
@@ -136,6 +136,17 @@ extern "C" {
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
+
+/*
+ * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET,
+ * SEEK_CUR, and SEEK_END, all #define'd by stdio.h .
+ *
+ * Also, many extensions need stdio.h, and they've grown accustomed
+ * to tcl.h providing it for them rather than #include-ing it themselves
+ * as they should, so also for their sake, we keep the #include to be
+ * consistent with prior Tcl releases.
+ */
+#include <stdio.h>
 
 /*
  * Definitions that allow Tcl functions with variable numbers of
@@ -330,11 +341,16 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__CYGWIN__)
+#   if defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
-#      define TCL_LL_MODIFIER	"L"
+#      if defined(__WIN32__) && !defined(__CYGWIN__)
+#         define TCL_LL_MODIFIER        "I64"
+#         define TCL_LL_MODIFIER_SIZE   3
+#      else
+#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER_SIZE	1
+#      endif
 typedef struct stat	Tcl_StatBuf;
-#      define TCL_LL_MODIFIER_SIZE	1
 #   elif defined(__WIN32__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__

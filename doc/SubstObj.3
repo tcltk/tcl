@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SubstObj.3,v 1.1 2001/07/12 13:15:09 dkf Exp $
+'\" RCS: @(#) $Id: SubstObj.3,v 1.1.14.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SubstObj 3 8.4 Tcl "Tcl Library Procedures"
@@ -53,12 +53,12 @@ When the \fBTCL_SUBST_VARIABLES\fR bit is set in \fIflags\fR,
 sequences that look like variable substitutions for Tcl commands are
 replaced by the contents of the named variable.
 .PP
-When th \fBTCL_SUBST_COMMANDS\fR bit is set in \fIflags\fR, sequences
+When the \fBTCL_SUBST_COMMANDS\fR bit is set in \fIflags\fR, sequences
 that look like command substitutions for Tcl commands are replaced by
-the result of evaluating that script.  Where an uncaught continue
-exception occurs during the evaluation of a command substitution, an
-empty string is substituted for the command.  Where an uncaught break
-exception occurs during the evaluation of a command substitution, the
+the result of evaluating that script.  Where an uncaught `continue
+exception' occurs during the evaluation of a command substitution, an
+empty string is substituted for the command.  Where an uncaught `break
+exception' occurs during the evaluation of a command substitution, the
 result of the whole substitution on \fIobjPtr\fR will be truncated at
 the point immediately before the start of the command substitution,
 and no characters will be added to the result or substitutions

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.7 2004/05/27 14:29:07 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.8 2004/09/08 23:02:33 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -1244,10 +1244,11 @@ typedef int Tcl_FSRemoveDirectoryProc(
 The return value is a standard Tcl result indicating whether an error
 occurred in the process.  If successful, the directory specified by
 \fIpathPtr\fR should have been removed from the filesystem.  If the
-\fIrecursive\fR flag is given, then a non-empty directory should
-be deleted without error.  If an error does occur, the name of
-the file or directory which caused the error should be placed in
-\fIerrorPtr\fR.
+\fIrecursive\fR flag is given, then a non-empty directory should be
+deleted without error.  If this flag is not given, then and the
+directory is non-empty a posix EEXIST error should be signalled.  If an
+error does occur, the name of the file or directory which caused the
+error should be placed in \fIerrorPtr\fR.
 .SH DELETEFILEPROC	    
 .PP
 Function to process a \fBTcl_FSDeleteFile()\fR call.  Should be implemented
@@ -1305,7 +1306,10 @@ copied (i.e. the function is much simpler than the Tcl level 'file
 copy' subcommand).  Note that,
 if the filesystem supports symbolic links, Tcl will always call this
 function and not Tcl_FSCopyDirectoryProc when needed to copy them
-(even if they are symbolic links to directories).
+(even if they are symbolic links to directories).  Finally, if the
+filesystem determines it cannot support the file copy action, 
+calling \fBTcl_SetErrno(EXDEV)\fR and returning a non
+TCL_OK result will tell Tcl to use its standard fallback mechanisms.
 .SH RENAMEFILEPROC	    
 .PP
 Function to process a \fBTcl_FSRenameFile()\fR call.  If not implemented,
@@ -1320,7 +1324,10 @@ typedef int Tcl_FSRenameFileProc(
 .CE
 .PP
 The return value is a standard Tcl result indicating whether an error
-occurred in the renaming process.
+occurred in the renaming process.  If the
+filesystem determines it cannot support the file rename action, 
+calling \fBTcl_SetErrno(EXDEV)\fR and returning a non
+TCL_OK result will tell Tcl to use its standard fallback mechanisms.
 .SH COPYDIRECTORYPROC	    
 .PP
 Function to process a \fBTcl_FSCopyDirectory()\fR call.  If not
@@ -1342,7 +1349,10 @@ the file or directory which caused the error should be placed in
 directory-name which should become the mirror-image of
 \fIsrcPathPtr\fR. It is not the name of a directory into which
 \fIsrcPathPtr\fR should be copied (i.e. the function is much simpler
-than the Tcl level 'file copy' subcommand).
+than the Tcl level 'file copy' subcommand).  Finally, if the
+filesystem determines it cannot support the directory copy action, 
+calling \fBTcl_SetErrno(EXDEV)\fR and returning a non
+TCL_OK result will tell Tcl to use its standard fallback mechanisms.
 .SH LOADFILEPROC 
 .PP
 Function to process a \fBTcl_FSLoadFile()\fR call.  If not implemented, Tcl
@@ -1370,7 +1380,10 @@ only parameter when Tcl needs to unload the file.  For example, for the
 native filesystem, the \fBTcl_LoadHandle\fR returned is currently a token
 which can be used in the private \fBTclpFindSymbol\fR to access functions
 in the new code.  Each filesystem is free to define the
-\fBTcl_LoadHandle\fR as it requires.
+\fBTcl_LoadHandle\fR as it requires.  Finally, if the
+filesystem determines it cannot support the file load action, 
+calling \fBTcl_SetErrno(EXDEV)\fR and returning a non
+TCL_OK result will tell Tcl to use its standard fallback mechanisms.
 .SH UNLOADFILEPROC	    
 .PP
 Function to unload a previously successfully loaded file.  If load was

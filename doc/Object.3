@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.6 2002/10/22 12:16:53 dkf Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.6.4.1 2004/09/08 23:02:34 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Obj 3 8.1 Tcl "Tcl Library Procedures"
@@ -153,7 +153,7 @@ the internal representation is invalid.
 .PP
 The \fIinternalRep\fR union member holds
 an object's internal representation.
-This is either a (long) integer, a double-precision floating point number,
+This is either a (long) integer, a double-precision floating-point number,
 a pointer to a value containing additional information
 needed by the object's type to represent the object,
 or two arbitrary pointers.
@@ -264,7 +264,7 @@ no longer corresponds to the internal representation.
 .CE
 The string representation of \fIx\fR's object is needed
 and is recomputed.
-The string representation is now \fB124\fR.
+The string representation is now \fB124\fR
 and both representations are again valid.
 
 .SH "STORAGE MANAGEMENT OF OBJECTS"
@@ -283,7 +283,7 @@ if the object's reference count drops to zero, frees its storage.
 An object shared by different code or data structures has
 \fIrefCount\fR greater than 1.
 Incrementing an object's reference count ensures that
-it won't be freed too early or have its value change accidently.
+it won't be freed too early or have its value change accidentally.
 .PP
 As an example, the bytecode interpreter shares argument objects
 between calling and called Tcl procedures to avoid having to copy objects.
@@ -330,7 +330,7 @@ As another example, \fBincr\fR's command procedure
 must check whether the variable's object is shared before
 incrementing the integer in its internal representation.
 If it is shared, it needs to duplicate the object
-in order to avoid accidently changing values in other data structures.
+in order to avoid accidentally changing values in other data structures.
 
 .SH "SEE ALSO"
 Tcl_ConvertToType, Tcl_GetIntFromObj, Tcl_ListObjAppendElement, Tcl_ListObjIndex, Tcl_ListObjReplace, Tcl_RegisterObjType

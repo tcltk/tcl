@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetIndex.3,v 1.10.4.1 2003/08/07 21:35:58 dgp Exp $
+'\" RCS: @(#) $Id: GetIndex.3,v 1.10.4.2 2004/09/08 23:02:33 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -92,9 +92,12 @@ and return TCL_ERROR.
 .PP
 \fBTcl_GetIndexFromObjStruct\fR works just like
 \fBTcl_GetIndexFromObj\fR, except that instead of treating
-\fItablePtr\fR as an array of string pointers, it treats it as the
-first in a series of string ptrs that are spaced apart by \fIoffset\fR
-bytes. This is particularly useful when processing things like
+\fItablePtr\fR as an array of string pointers, it treats it as a
+pointer to the first string in a series of strings that have
+\fIoffset\fR bytes between them (i.e. that there is a pointer to the
+first array of characters at \fItablePtr\fR, a pointer to the second
+array of characters at \fItablePtr\fR+\fIoffset\fR bytes, etc.)
+This is particularly useful when processing things like
 \fBTk_ConfigurationSpec\fR, whose string keys are in the same place in
 each of several array elements.
 .VE

@@ -16,6 +16,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint testWinCPUID [llength [info commands testwincpuid]]
+
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
     i eval {catch {unset tcl_platform(debug)}}
@@ -36,6 +38,24 @@ test platform-2.1 {tcl_platform(wordSize) indicates size of native word} {
     list [expr {$result < 0}] [expr {$result ^ ($result - 1)}]
 } {1 -1}
 
+# On Windows, test that the CPU ID works
+
+test platform-3.1 {CPU ID on Windows } \
+    -constraints testWinCPUID \
+    -body {		
+	set cpudata [testwincpuid 0]
+	binary format iii \
+	    [lindex $cpudata 1] \
+	    [lindex $cpudata 3] \
+	    [lindex $cpudata 2] 
+    } \
+    -match regexp \
+    -result {^(?:AuthenticAMD|CentaurHauls|CyrixInstead|GenuineIntel)$}
+
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

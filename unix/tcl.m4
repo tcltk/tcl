@@ -421,13 +421,20 @@ AC_DEFUN(SC_ENABLE_THREADS, [
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
 	[tcl_ok=$enableval], [tcl_ok=no])
 
-    if test "$tcl_ok" = "yes"; then
-	AC_MSG_RESULT(yes)
+    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
+	if test "${TCL_THREADS}" = 1; then
+	    AC_MSG_RESULT([yes (threaded core)])
+	else
+	    AC_MSG_RESULT([yes])
+	fi
 	TCL_THREADS=1
 	AC_DEFINE(TCL_THREADS)
 	# USE_THREAD_ALLOC tells us to try the special thread-based
 	# allocator that significantly reduces lock contention
 	AC_DEFINE(USE_THREAD_ALLOC)
+	# USE_THREAD_STORAGE tells us to use the new generic thread 
+	# storage subsystem. 
+	AC_DEFINE(USE_THREAD_STORAGE)
 	AC_DEFINE(_REENTRANT)
 	AC_DEFINE(_THREAD_SAFE)
 	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
@@ -469,6 +476,16 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	ac_saved_libs=$LIBS
 	LIBS="$LIBS $THREADS_LIBS"
 	AC_CHECK_FUNCS(pthread_attr_setstacksize)
+	AC_CHECK_FUNCS(pthread_attr_get_np pthread_getattr_np)
+	AC_MSG_CHECKING([for pthread_getattr_np declaration])
+	AC_CACHE_VAL(tcl_cv_grep_pthread_getattr_np,
+	    AC_EGREP_HEADER(pthread_getattr_np, pthread.h,
+		tcl_cv_grep_pthread_getattr_np=present,
+		tcl_cv_grep_pthread_getattr_np=missing))
+	AC_MSG_RESULT($tcl_cv_grep_pthread_getattr_np)
+	if test $tcl_cv_grep_pthread_getattr_np = missing ; then
+	    AC_DEFINE(GETATTRNP_NOT_DECLARED)
+	fi
 	LIBS=$ac_saved_libs
 	AC_CHECK_FUNCS(readdir_r)
     else
@@ -809,7 +826,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = "yes" ; then
-	CFLAGS_WARNING="-Wall -Wconversion -Wno-implicit-int"
+	CFLAGS_WARNING="-Wall -Wno-implicit-int"
     else
 	CFLAGS_WARNING=""
     fi
@@ -1311,16 +1328,17 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-	    PLAT_OBJS="tclMacOSXBundle.o tclMacOSXFCmd.o"
+	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -prebind"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-Os"
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
-	    # for compatibility with autoconf vers 2.13 :
-	    HACK=""
-	    CFLAGS="$CFLAGS -DMA${HACK}C_OSX_TCL -DHAVE_CFBUNDLE -DUSE_VFORK -DTCL_DEFAULT_ENCODING=\\\"utf-8\\\""
+	    AC_DEFINE(MAC_OSX_TCL)
+	    AC_DEFINE(HAVE_CFBUNDLE)
+	    AC_DEFINE(USE_VFORK)
+	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8")
 	    LIBS="$LIBS -framework CoreFoundation"
 	    ;;
 	NEXTSTEP-*)
@@ -1946,12 +1964,11 @@ int main() {
 #		NO_DIRENT_H
 #		NO_ERRNO_H
 #		NO_VALUES_H
-#		NO_LIMITS_H
+#		HAVE_LIMITS_H or NO_LIMITS_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
-#		HAVE_UNISTD_H
 #		HAVE_SYS_PARAM_H
 #
 #		HAVE_STRING_H ?
@@ -1989,7 +2006,8 @@ closedir(d);
     AC_CHECK_HEADER(errno.h, , [AC_DEFINE(NO_ERRNO_H)])
     AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H)])
     AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H)])
-    AC_CHECK_HEADER(limits.h, , [AC_DEFINE(NO_LIMITS_H)])
+    AC_CHECK_HEADER(limits.h,
+	[AC_DEFINE(HAVE_LIMITS_H)], [AC_DEFINE(NO_LIMITS_H)])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
@@ -2012,9 +2030,7 @@ closedir(d);
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H)])
 
     # OS/390 lacks sys/param.h (and doesn't need it, by chance).
-
-    AC_HAVE_HEADERS(unistd.h sys/param.h)
-
+    AC_HAVE_HEADERS(sys/param.h)
 ])
 
 #--------------------------------------------------------------------
@@ -2193,7 +2209,7 @@ AC_DEFUN(SC_TIME_HANDLER, [
     AC_HEADER_TIME
     AC_STRUCT_TIMEZONE
 
-    AC_CHECK_FUNCS(gmtime_r localtime_r)
+    AC_CHECK_FUNCS(gmtime_r localtime_r mktime)
 
     AC_MSG_CHECKING([tm_tzadj in struct tm])
     AC_CACHE_VAL(tcl_cv_member_tm_tzadj,
