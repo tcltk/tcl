@@ -1,4 +1,18 @@
-========
+2005-03-10 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: First steps, all operands are now 4 bytes
+	wide. Removed unnecessary instructions from TEBC,but they are
+	still in the table. Simplified the compiler, especially in respect
+	to forward jumps.
+
+	*** Compat: scripts precompiled with other tcl versions WILL bomb!
+	*** 
+
+	========
 2005-03-08 Miguel Sofer <msofer@users.sf.net>
 
 	*** Branching off the HEAD ***

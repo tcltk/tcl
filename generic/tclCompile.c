@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81 2004/12/24 18:06:56 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.1 2005/03/10 22:32:00 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -56,92 +56,92 @@ InstructionDesc tclInstructionTable[] = {
    /* Name	      Bytes stackEffect #Opnds Operand types	Stack top, next	  */
     {"done",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
-    {"push1",		  2,   +1,         1,   {OPERAND_UINT1}},
+    {"push1//",		  2,   +1,         1,   {OPERAND_UINT1}},
 	/* Push object at ByteCode objArray[op1] */
-    {"push4",		  5,   +1,         1,   {OPERAND_UINT4}},
+    {"push",		  5,   +1,         1,   {OPERAND_UINT}},
 	/* Push object at ByteCode objArray[op4] */
     {"pop",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,   {OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
-    {"concat1",		  2,   INT_MIN,    1,   {OPERAND_UINT1}},
+    {"concat",		  5,   INT_MIN,    1,   {OPERAND_UINT}},
 	/* Concatenate the top op1 items and push result */
-    {"invokeStk1",	  2,   INT_MIN,    1,   {OPERAND_UINT1}},
+    {"invokeStk1//",	  2,   INT_MIN,    1,   {OPERAND_UINT1}},
 	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
-    {"invokeStk4",	  5,   INT_MIN,    1,   {OPERAND_UINT4}},
+    {"invokeStk",	  5,   INT_MIN,    1,   {OPERAND_UINT}},
 	/* Invoke command named objv[0]; <objc,objv> = <op4,top op4> */
     {"evalStk",		  1,   0,          0,   {OPERAND_NONE}},
 	/* Evaluate command in stktop using Tcl_EvalObj. */
     {"exprStk",		  1,   0,          0,   {OPERAND_NONE}},
 	/* Execute expression in stktop using Tcl_ExprStringObj. */
     
-    {"loadScalar1",	  2,   1,          1,   {OPERAND_UINT1}},
+    {"loadScalar1//",	  2,   1,          1,   {OPERAND_UINT1}},
 	/* Load scalar variable at index op1 <= 255 in call frame */
-    {"loadScalar4",	  5,   1,          1,   {OPERAND_UINT4}},
+    {"loadScalar",	  5,   1,          1,   {OPERAND_UINT}},
 	/* Load scalar variable at index op1 >= 256 in call frame */
     {"loadScalarStk",	  1,   0,          0,   {OPERAND_NONE}},
 	/* Load scalar variable; scalar's name is stktop */
-    {"loadArray1",	  2,   0,          1,   {OPERAND_UINT1}},
+    {"loadArray1//",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Load array element; array at slot op1<=255, element is stktop */
-    {"loadArray4",	  5,   0,          1,   {OPERAND_UINT4}},
+    {"loadArray",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Load array element; array at slot op1 > 255, element is stktop */
     {"loadArrayStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Load array element; element is stktop, array name is stknext */
     {"loadStk",		  1,   0,          0,   {OPERAND_NONE}},
 	/* Load general variable; unparsed variable name is stktop */
-    {"storeScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
+    {"storeScalar1//",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Store scalar variable at op1<=255 in frame; value is stktop */
-    {"storeScalar4",	  5,   0,          1,   {OPERAND_UINT4}},
+    {"storeScalar",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Store scalar variable at op1 > 255 in frame; value is stktop */
     {"storeScalarStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Store scalar; value is stktop, scalar name is stknext */
-    {"storeArray1",	  2,   -1,         1,   {OPERAND_UINT1}},
+    {"storeArray1//",	  2,   -1,         1,   {OPERAND_UINT1}},
 	/* Store array element; array at op1<=255, value is top then elem */
-    {"storeArray4",	  5,   -1,         1,   {OPERAND_UINT4}},
+    {"storeArray",	  5,   -1,         1,   {OPERAND_UINT}},
 	/* Store array element; array at op1>=256, value is top then elem */
     {"storeArrayStk",	  1,   -2,         0,   {OPERAND_NONE}},
 	/* Store array element; value is stktop, then elem, array names */
     {"storeStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Store general variable; value is stktop, then unparsed name */
     
-    {"incrScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
+    {"incrScalar",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
-    {"incrScalarStk",	  1,   -1,         0,   {OPERAND_NONE}},
+    {"incrScalarStk",	  4,   -1,         0,   {OPERAND_NONE}},
 	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
-    {"incrArray1",	  2,   -1,         1,   {OPERAND_UINT1}},
+    {"incrArray1",	  4,   -1,         1,   {OPERAND_UINT}},
 	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
-    {"incrArrayStk",	  1,   -2,         0,   {OPERAND_NONE}},
+    {"incrArrayStk",	  4,   -2,         0,   {OPERAND_NONE}},
 	/* Incr array element; amount is top then elem then array names */
     {"incrStk",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Incr general variable; amount is stktop then unparsed var name */
-    {"incrScalar1Imm",	  3,   +1,         2,   {OPERAND_UINT1, OPERAND_INT1}},
+    {"incrScalarImm",	  9,   +1,         2,   {OPERAND_UINT, OPERAND_INT}},
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
-    {"incrScalarStkImm",  2,   0,          1,   {OPERAND_INT1}},
+    {"incrScalarStkImm",  5,   0,          1,   {OPERAND_INT}},
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    {"incrArray1Imm",	  3,   0,          2,   {OPERAND_UINT1, OPERAND_INT1}},
+    {"incrArrayImm",	  9,   0,          2,   {OPERAND_UINT, OPERAND_INT}},
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
-    {"incrArrayStkImm",	  2,   -1,         1,   {OPERAND_INT1}},
+    {"incrArrayStkImm",	  5,   -1,         1,   {OPERAND_INT}},
 	/* Incr array element; elem is top then array name, amount is op1 */
-    {"incrStkImm",	  2,   0,	   1,   {OPERAND_INT1}},
+    {"incrStkImm",	  5,   0,	   1,   {OPERAND_INT}},
 	/* Incr general variable; unparsed name is top, amount is op1 */
     
-    {"jump1",		  2,   0,          1,   {OPERAND_INT1}},
+    {"jump1//",		  2,   0,          1,   {OPERAND_INT1}},
 	/* Jump relative to (pc + op1) */
-    {"jump4",		  5,   0,          1,   {OPERAND_INT4}},
+    {"jump",		  5,   0,          1,   {OPERAND_INT}},
 	/* Jump relative to (pc + op4) */
-    {"jumpTrue1",	  2,   -1,         1,   {OPERAND_INT1}},
+    {"jumpTrue1//",	  2,   -1,         1,   {OPERAND_INT1}},
 	/* Jump relative to (pc + op1) if stktop expr object is true */
-    {"jumpTrue4",	  5,   -1,         1,   {OPERAND_INT4}},
+    {"jumpTrue",	  5,   -1,         1,   {OPERAND_INT}},
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    {"jumpFalse1",	  2,   -1,         1,   {OPERAND_INT1}},
+    {"jumpFalse1//",	  2,   -1,         1,   {OPERAND_INT1}},
 	/* Jump relative to (pc + op1) if stktop expr object is false */
-    {"jumpFalse4",	  5,   -1,         1,   {OPERAND_INT4}},
+    {"jumpFalse",	  5,   -1,         1,   {OPERAND_INT}},
 	/* Jump relative to (pc + op4) if stktop expr object is false */
 
-    {"lor",		  1,   -1,         0,   {OPERAND_NONE}},
+    {"lor//",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Logical or:	push (stknext || stktop) */
-    {"land",		  1,   -1,         0,   {OPERAND_NONE}},
+    {"land//",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Logical and:	push (stknext && stktop) */
     {"bitor",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Bitwise or:	push (stknext | stktop) */
@@ -183,9 +183,9 @@ InstructionDesc tclInstructionTable[] = {
 	/* Bitwise not:	push ~stktop */
     {"not",		  1,   0,          0,   {OPERAND_NONE}},
 	/* Logical not:	push !stktop */
-    {"callBuiltinFunc1",  2,   1,          1,   {OPERAND_UINT1}},
+    {"callBuiltinFunc",  5,   1,          1,   {OPERAND_UINT}},
 	/* Call builtin math function with index op1; any args are on stk */
-    {"callFunc1",	  2,   INT_MIN,    1,   {OPERAND_UINT1}},
+    {"callFunc",	  5,   INT_MIN,    1,   {OPERAND_UINT}},
 	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1>  */
     {"tryCvtToNumeric",	  1,   0,          0,   {OPERAND_NONE}},
 	/* Try converting stktop to first int then double if possible. */
@@ -196,14 +196,14 @@ InstructionDesc tclInstructionTable[] = {
 	/* Skip to next iteration of closest enclosing loop; if none,
 	 * return TCL_CONTINUE code. */
 
-    {"foreach_start4",	  5,   0,          1,   {OPERAND_UINT4}},
+    {"foreach_start4",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Initialize execution of a foreach loop. Operand is aux data index
 	 * of the ForeachInfo structure for the foreach command. */
-    {"foreach_step4",	  5,   +1,         1,   {OPERAND_UINT4}},
+    {"foreach_step4",	  5,   +1,         1,   {OPERAND_UINT}},
 	/* "Step" or begin next iteration of foreach loop. Push 0 if to
 	 *  terminate loop, else push 1. */
 
-    {"beginCatch4",	  5,   0,          1,   {OPERAND_UINT4}},
+    {"beginCatch4",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Record start of catch with the operand's exception index.
 	 * Push the current stack depth onto a special catch stack. */
     {"endCatch",	  1,   0,          0,   {OPERAND_NONE}},
@@ -223,53 +223,53 @@ InstructionDesc tclInstructionTable[] = {
 	/* Str Length:	push (strlen stktop) */
     {"strindex",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Str Index:	push (strindex stknext stktop) */
-    {"strmatch",	  2,   -1,         1,   {OPERAND_INT1}},
+    {"strmatch",	  5,   -1,         1,   {OPERAND_INT}},
 	/* Str Match:	push (strmatch stknext stktop) opnd == nocase */
-    {"list",		  5,   INT_MIN,    1,   {OPERAND_UINT4}},
+    {"list",		  5,   INT_MIN,    1,   {OPERAND_UINT}},
 	/* List:	push (stk1 stk2 ... stktop) */
     {"listIndex",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* List Index:	push (listindex stknext stktop) */
     {"listLength",	  1,   0,          0,   {OPERAND_NONE}},
 	/* List Len:	push (listlength stktop) */
-    {"appendScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
+    {"appendScalar1//",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Append scalar variable at op1<=255 in frame; value is stktop */
-    {"appendScalar4",	  5,   0,          1,   {OPERAND_UINT4}},
+    {"appendScalar",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Append scalar variable at op1 > 255 in frame; value is stktop */
-    {"appendArray1",	  2,   -1,         1,   {OPERAND_UINT1}},
+    {"appendArray1//",	  2,   -1,         1,   {OPERAND_UINT1}},
 	/* Append array element; array at op1<=255, value is top then elem */
-    {"appendArray4",	  5,   -1,         1,   {OPERAND_UINT4}},
+    {"appendArray",	  5,   -1,         1,   {OPERAND_UINT}},
 	/* Append array element; array at op1>=256, value is top then elem */
     {"appendArrayStk",	  1,   -2,         0,   {OPERAND_NONE}},
 	/* Append array element; value is stktop, then elem, array names */
     {"appendStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Append general variable; value is stktop, then unparsed name */
-    {"lappendScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
+    {"lappendScalar1//",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Lappend scalar variable at op1<=255 in frame; value is stktop */
-    {"lappendScalar4",	  5,   0,          1,   {OPERAND_UINT4}},
+    {"lappendScalar",	  5,   0,          1,   {OPERAND_UINT}},
 	/* Lappend scalar variable at op1 > 255 in frame; value is stktop */
-    {"lappendArray1",	  2,   -1,         1,   {OPERAND_UINT1}},
+    {"lappendArray1//",	  2,   -1,         1,   {OPERAND_UINT1}},
 	/* Lappend array element; array at op1<=255, value is top then elem */
-    {"lappendArray4",	  5,   -1,         1,   {OPERAND_UINT4}},
+    {"lappendArray",	  5,   -1,         1,   {OPERAND_UINT}},
 	/* Lappend array element; array at op1>=256, value is top then elem */
     {"lappendArrayStk",	  1,   -2,         0,   {OPERAND_NONE}},
 	/* Lappend array element; value is stktop, then elem, array names */
     {"lappendStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Lappend general variable; value is stktop, then unparsed name */
-    {"lindexMulti",	  5,   INT_MIN,    1,   {OPERAND_UINT4}},
+    {"lindexMulti",	  5,   INT_MIN,    1,   {OPERAND_UINT}},
         /* Lindex with generalized args, operand is number of stacked objs 
 	 * used: (operand-1) entries from stktop are the indices; then list 
 	 * to process. */
-    {"over",		  5,   +1,         1,   {OPERAND_UINT4}},
+    {"over",		  5,   +1,         1,   {OPERAND_UINT}},
         /* Duplicate the arg-th element from top of stack (TOS=0) */
     {"lsetList",          1,   -2,         0,   {OPERAND_NONE}},
         /* Four-arg version of 'lset'. stktop is old value; next is
          * new element value, next is the index list; pushes new value */
-    {"lsetFlat",          5,   INT_MIN,    1,   {OPERAND_UINT4}},
+    {"lsetFlat",          5,   INT_MIN,    1,   {OPERAND_UINT}},
         /* Three- or >=5-arg version of 'lset', operand is number of 
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  9,   -2,         2,   {OPERAND_INT4, OPERAND_UINT4}},
+    {"return",		  9,   -2,         2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
     {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
@@ -284,16 +284,16 @@ InstructionDesc tclInstructionTable[] = {
       */
      {"expandStart",       1,    0,          0,   {OPERAND_NONE}},
          /* Start of command with {expand}ed arguments */
-     {"expandStkTop",      5,    0,          1,   {OPERAND_INT4}},
+     {"expandStkTop",      5,    0,          1,   {OPERAND_INT}},
          /* Expand the list at stacktop: push its elements on the stack */
      {"invokeExpanded",    1,    0,          0,   {OPERAND_NONE}},
          /* Invoke the command marked by the last 'expandStart' */
-    {"listIndexImm",	  5,	0,	   1,	{OPERAND_IDX4}},
+    {"listIndexImm",	  5,	0,	   1,	{OPERAND_IDX}},
 	/* List Index:	push (lindex stktop op4) */
-    {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
+    {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX, OPERAND_IDX}},
 	/* List Range:	push (lrange stktop op4 op4) */
 
-    {"startCommand",      5,    0,         1,   {OPERAND_UINT4}},
+    {"startCommand",      5,    0,         1,   {OPERAND_UINT}},
         /* Start of bytecoded command: op is the length of the cmd's code */ 
 
     {"listIn",		  1,	-1,	   0,	{OPERAND_NONE}},
@@ -1108,7 +1108,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			     */
 
 			    if (savedCodeNext != 0) {
-				TclEmitInstInt4(INST_START_CMD, 0, envPtr);				
+				TclEmitInstInt(INST_START_CMD, 0, envPtr);				
 			    }
 			    
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
@@ -1125,7 +1125,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 					    - envPtr->codeStart
 					    - savedCodeNext;
 				
-				    TclStoreInt4AtPtr(fixLen, fixPtr);
+				    TclStoreIntAtPtr(fixLen, fixPtr);
 				}				
 				goto finishCommand;
 			    } else if (code == TCL_OUT_LINE_COMPILE) {
@@ -1180,7 +1180,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			    tokenPtr->numComponents, envPtr);
 		}
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    TclEmitInstInt4(INST_EXPAND_STKTOP, 
+		    TclEmitInstInt(INST_EXPAND_STKTOP, 
 		            envPtr->currStackDepth, envPtr);
 		}
 	    }
@@ -1210,11 +1210,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
 		TclAdjustStackDepth((1-wordIdx), envPtr);
 	    } else if (wordIdx > 0) {
-		if (wordIdx <= 255) {
-		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_INVOKE_STK4, wordIdx, envPtr);
-		}
+		TclEmitInstInt(INST_INVOKE_STK, wordIdx, envPtr);
 	    } 
 
 	    /*
@@ -1397,11 +1393,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		if (tokenPtr->numComponents == 1) {
 		    if (localVar < 0) {
 			TclEmitOpcode(INST_LOAD_SCALAR_STK, envPtr);
-		    } else if (localVar <= 255) {
-			TclEmitInstInt1(INST_LOAD_SCALAR1, localVar,
-			        envPtr);
 		    } else {
-			TclEmitInstInt4(INST_LOAD_SCALAR4, localVar,
+			TclEmitInstInt(INST_LOAD_SCALAR, localVar,
 				envPtr);
 		    }
 		} else {
@@ -1409,11 +1402,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 			    tokenPtr->numComponents-1, envPtr);
 		    if (localVar < 0) {
 			TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
-		    } else if (localVar <= 255) {
-			TclEmitInstInt1(INST_LOAD_ARRAY1, localVar,
-			        envPtr);
 		    } else {
-			TclEmitInstInt4(INST_LOAD_ARRAY4, localVar,
+			TclEmitInstInt(INST_LOAD_ARRAY, localVar,
 			        envPtr);
 		    }
 		}
@@ -1444,12 +1434,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
      * If necessary, concatenate the parts of the word.
      */
 
-    while (numObjsToConcat > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
-	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
-    }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_CONCAT1, numObjsToConcat, envPtr);
+	TclEmitInstInt(INST_CONCAT, numObjsToConcat, envPtr);
     }
 
     /*
@@ -1581,11 +1567,11 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt(INST_CONCAT, 255, envPtr);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(INST_CONCAT1, concatItems, envPtr);
+	TclEmitInstInt(INST_CONCAT, concatItems, envPtr);
     }
     TclEmitOpcode(INST_EXPR_STK, envPtr);
 }
@@ -2225,10 +2211,10 @@ TclExpandJumpFixupArray(fixupArrayPtr)
      * fixupArrayPtr->fixupNext is equal to fixupArrayPtr->fixupEnd.
      */
 
-    size_t currBytes = fixupArrayPtr->next * sizeof(JumpFixup);
+    size_t currBytes = fixupArrayPtr->next * sizeof(int);
     int newElems = 2*(fixupArrayPtr->end + 1);
-    size_t newBytes = newElems * sizeof(JumpFixup);
-    JumpFixup *newPtr = (JumpFixup *) ckalloc((unsigned) newBytes);
+    size_t newBytes = newElems * sizeof(int);
+    int *newPtr = (int *) ckalloc((unsigned) newBytes);
 
     /*
      * Copy from the old array to new, free the old array if needed,
@@ -2239,7 +2225,7 @@ TclExpandJumpFixupArray(fixupArrayPtr)
     if (fixupArrayPtr->mallocedArray) {
 	ckfree((char *) fixupArrayPtr->fixup);
     }
-    fixupArrayPtr->fixup = (JumpFixup *) newPtr;
+    fixupArrayPtr->fixup = (int *) newPtr;
     fixupArrayPtr->end = newElems;
     fixupArrayPtr->mallocedArray = 1;
 }
@@ -2269,188 +2255,6 @@ TclFreeJumpFixupArray(fixupArrayPtr)
     if (fixupArrayPtr->mallocedArray) {
 	ckfree((char *) fixupArrayPtr->fixup);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclEmitForwardJump --
- *
- *	Procedure to emit a two-byte forward jump of kind "jumpType". Since
- *	the jump may later have to be grown to five bytes if the jump target
- *	is more than, say, 127 bytes away, this procedure also initializes a
- *	JumpFixup record with information about the jump. 
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The JumpFixup record pointed to by "jumpFixupPtr" is initialized
- *	with information needed later if the jump is to be grown. Also,
- *	a two byte jump of the designated type is emitted at the current
- *	point in the bytecode stream.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclEmitForwardJump(envPtr, jumpType, jumpFixupPtr)
-    CompileEnv *envPtr;		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    TclJumpType jumpType;	/* Indicates the kind of jump: if true or
-				 * false or unconditional. */
-    JumpFixup *jumpFixupPtr;	/* Points to the JumpFixup structure to
-				 * initialize with information about this
-				 * forward jump. */
-{
-    /*
-     * Initialize the JumpFixup structure:
-     *    - codeOffset is offset of first byte of jump below
-     *    - cmdIndex is index of the command after the current one
-     *    - exceptIndex is the index of the first ExceptionRange after
-     *      the current one.
-     */
-    
-    jumpFixupPtr->jumpType = jumpType;
-    jumpFixupPtr->codeOffset = (envPtr->codeNext - envPtr->codeStart);
-    jumpFixupPtr->cmdIndex = envPtr->numCommands;
-    jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
-    
-    switch (jumpType) {
-    case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt1(INST_JUMP1, 0, envPtr);
-	break;
-    case TCL_TRUE_JUMP:
-	TclEmitInstInt1(INST_JUMP_TRUE1, 0, envPtr);
-	break;
-    default:
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0, envPtr);
-	break;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFixupForwardJump --
- *
- *	Procedure that updates a previously-emitted forward jump to jump
- *	a specified number of bytes, "jumpDist". If necessary, the jump is
- *      grown from two to five bytes; this is done if the jump distance is
- *	greater than "distThreshold" (normally 127 bytes). The jump is
- *	described by a JumpFixup record previously initialized by
- *	TclEmitForwardJump.
- *
- * Results:
- *	1 if the jump was grown and subsequent instructions had to be moved;
- *	otherwise 0. This result is returned to allow callers to update
- *	any additional code offsets they may hold.
- *
- * Side effects:
- *	The jump may be grown and subsequent instructions moved. If this
- *	happens, the code offsets for any commands and any ExceptionRange
- *	records	between the jump and the current code address will be
- *	updated to reflect the moved code. Also, the bytecode instruction
- *	array in the CompileEnv structure may be grown and reallocated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
-    CompileEnv *envPtr;		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    JumpFixup *jumpFixupPtr;    /* Points to the JumpFixup structure that
-				 * describes the forward jump. */
-    int jumpDist;		/* Jump distance to set in jump
-				 * instruction. */
-    int distThreshold;		/* Maximum distance before the two byte
-				 * jump is grown to five bytes. */
-{
-    unsigned char *jumpPc, *p;
-    int firstCmd, lastCmd, firstRange, lastRange, k;
-    unsigned int numBytes;
-    
-    if (jumpDist <= distThreshold) {
-	jumpPc = (envPtr->codeStart + jumpFixupPtr->codeOffset);
-	switch (jumpFixupPtr->jumpType) {
-	case TCL_UNCONDITIONAL_JUMP:
-	    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDist, jumpPc);
-	    break;
-	case TCL_TRUE_JUMP:
-	    TclUpdateInstInt1AtPc(INST_JUMP_TRUE1, jumpDist, jumpPc);
-	    break;
-	default:
-	    TclUpdateInstInt1AtPc(INST_JUMP_FALSE1, jumpDist, jumpPc);
-	    break;
-	}
-	return 0;
-    }
-
-    /*
-     * We must grow the jump then move subsequent instructions down.
-     * Note that if we expand the space for generated instructions,
-     * code addresses might change; be careful about updating any of
-     * these addresses held in variables.
-     */
-    
-    if ((envPtr->codeNext + 3) > envPtr->codeEnd) {
-        TclExpandCodeArray(envPtr);
-    }
-    jumpPc = (envPtr->codeStart + jumpFixupPtr->codeOffset);
-    for (numBytes = envPtr->codeNext-jumpPc-2, p = jumpPc+2+numBytes-1;
-	    numBytes > 0;  numBytes--, p--) {
-	p[3] = p[0];
-    }
-    envPtr->codeNext += 3;
-    jumpDist += 3;
-    switch (jumpFixupPtr->jumpType) {
-    case TCL_UNCONDITIONAL_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP4, jumpDist, jumpPc);
-	break;
-    case TCL_TRUE_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDist, jumpPc);
-	break;
-    default:
-	TclUpdateInstInt4AtPc(INST_JUMP_FALSE4, jumpDist, jumpPc);
-	break;
-    }
-    
-    /*
-     * Adjust the code offsets for any commands and any ExceptionRange
-     * records between the jump and the current code address.
-     */
-    
-    firstCmd = jumpFixupPtr->cmdIndex;
-    lastCmd  = (envPtr->numCommands - 1);
-    if (firstCmd < lastCmd) {
-	for (k = firstCmd;  k <= lastCmd;  k++) {
-	    (envPtr->cmdMapPtr[k]).codeOffset += 3;
-	}
-    }
-    
-    firstRange = jumpFixupPtr->exceptIndex;
-    lastRange  = (envPtr->exceptArrayNext - 1);
-    for (k = firstRange;  k <= lastRange;  k++) {
-	ExceptionRange *rangePtr = &(envPtr->exceptArrayPtr[k]);
-	rangePtr->codeOffset += 3;
-	
-	switch (rangePtr->type) {
-	case LOOP_EXCEPTION_RANGE:
-	    rangePtr->breakOffset += 3;
-	    if (rangePtr->continueOffset != -1) {
-		rangePtr->continueOffset += 3;
-	    }
-	    break;
-	case CATCH_EXCEPTION_RANGE:
-	    rangePtr->catchOffset += 3;
-	    break;
-	default:
-	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d\n",
-	            rangePtr->type);
-	}
-    }
-    return 1;			/* the jump was grown */
 }
 
 /*
@@ -2764,7 +2568,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
 	} else {
 	    TclStoreInt1AtPtr(0xFF, p);
 	    p++;
-	    TclStoreInt4AtPtr(codeDelta, p);
+	    TclStoreIntAtPtr(codeDelta, p);
 	    p += 4;
 	}
 	prevOffset = mapPtr[i].codeOffset;
@@ -2785,7 +2589,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
 	} else {
 	    TclStoreInt1AtPtr(0xFF, p);
 	    p++;
-	    TclStoreInt4AtPtr(codeLen, p);
+	    TclStoreIntAtPtr(codeLen, p);
 	    p += 4;
 	}
     }
@@ -2804,7 +2608,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
 	} else {
 	    TclStoreInt1AtPtr(0xFF, p);
 	    p++;
-	    TclStoreInt4AtPtr(srcDelta, p);
+	    TclStoreIntAtPtr(srcDelta, p);
 	    p += 4;
 	}
 	prevOffset = mapPtr[i].srcOffset;
@@ -2825,7 +2629,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
 	} else {
 	    TclStoreInt1AtPtr(0xFF, p);
 	    p++;
-	    TclStoreInt4AtPtr(srcLen, p);
+	    TclStoreIntAtPtr(srcLen, p);
 	    p += 4;
 	}
     }
@@ -2995,7 +2799,7 @@ TclPrintByteCodeObj(interp, objPtr)
     for (i = 0;  i < numCmds;  i++) {
 	if ((unsigned int) (*codeDeltaNext) == (unsigned int) 0xFF) {
 	    codeDeltaNext++;
-	    delta = TclGetInt4AtPtr(codeDeltaNext);
+	    delta = TclGetIntAtPtr(codeDeltaNext);
 	    codeDeltaNext += 4;
 	} else {
 	    delta = TclGetInt1AtPtr(codeDeltaNext);
@@ -3005,7 +2809,7 @@ TclPrintByteCodeObj(interp, objPtr)
 
 	if ((unsigned int) (*codeLengthNext) == (unsigned int) 0xFF) {
 	    codeLengthNext++;
-	    codeLen = TclGetInt4AtPtr(codeLengthNext);
+	    codeLen = TclGetIntAtPtr(codeLengthNext);
 	    codeLengthNext += 4;
 	} else {
 	    codeLen = TclGetInt1AtPtr(codeLengthNext);
@@ -3014,7 +2818,7 @@ TclPrintByteCodeObj(interp, objPtr)
 	
 	if ((unsigned int) (*srcDeltaNext) == (unsigned int) 0xFF) {
 	    srcDeltaNext++;
-	    delta = TclGetInt4AtPtr(srcDeltaNext);
+	    delta = TclGetIntAtPtr(srcDeltaNext);
 	    srcDeltaNext += 4;
 	} else {
 	    delta = TclGetInt1AtPtr(srcDeltaNext);
@@ -3024,7 +2828,7 @@ TclPrintByteCodeObj(interp, objPtr)
 
 	if ((unsigned int) (*srcLengthNext) == (unsigned int) 0xFF) {
 	    srcLengthNext++;
-	    srcLen = TclGetInt4AtPtr(srcLengthNext);
+	    srcLen = TclGetIntAtPtr(srcLengthNext);
 	    srcLengthNext += 4;
 	} else {
 	    srcLen = TclGetInt1AtPtr(srcLengthNext);
@@ -3054,7 +2858,7 @@ TclPrintByteCodeObj(interp, objPtr)
     for (i = 0;  i < numCmds;  i++) {
 	if ((unsigned int) (*codeDeltaNext) == (unsigned int) 0xFF) {
 	    codeDeltaNext++;
-	    delta = TclGetInt4AtPtr(codeDeltaNext);
+	    delta = TclGetIntAtPtr(codeDeltaNext);
 	    codeDeltaNext += 4;
 	} else {
 	    delta = TclGetInt1AtPtr(codeDeltaNext);
@@ -3064,7 +2868,7 @@ TclPrintByteCodeObj(interp, objPtr)
 
 	if ((unsigned int) (*srcDeltaNext) == (unsigned int) 0xFF) {
 	    srcDeltaNext++;
-	    delta = TclGetInt4AtPtr(srcDeltaNext);
+	    delta = TclGetIntAtPtr(srcDeltaNext);
 	    srcDeltaNext += 4;
 	} else {
 	    delta = TclGetInt1AtPtr(srcDeltaNext);
@@ -3074,7 +2878,7 @@ TclPrintByteCodeObj(interp, objPtr)
 
 	if ((unsigned int) (*srcLengthNext) == (unsigned int) 0xFF) {
 	    srcLengthNext++;
-	    srcLen = TclGetInt4AtPtr(srcLengthNext);
+	    srcLen = TclGetIntAtPtr(srcLengthNext);
 	    srcLengthNext += 4;
 	} else {
 	    srcLen = TclGetInt1AtPtr(srcLengthNext);
@@ -3140,7 +2944,8 @@ TclPrintInstruction(codePtr, pc)
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	switch (instDesc->opTypes[i]) {
-	case OPERAND_INT1:
+#if 0
+case OPERAND_INT1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
 	    if ((i == 0) && ((opCode == INST_JUMP1)
 			     || (opCode == INST_JUMP_TRUE1)
@@ -3150,16 +2955,19 @@ TclPrintInstruction(codePtr, pc)
 		fprintf(stdout, "%d ", opnd);
 	    }
 	    break;
-	case OPERAND_INT4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if ((i == 0) && ((opCode == INST_JUMP4)
-			     || (opCode == INST_JUMP_TRUE4)
-		             || (opCode == INST_JUMP_FALSE4))) {
+#endif
+case OPERAND_INT:
+	    opnd = TclGetIntAtPtr(pc+numBytes); numBytes += 4;
+	    if ((i == 0) && ((opCode == INST_JUMP)
+			     || (opCode == INST_JUMP_TRUE)
+		             || (opCode == INST_JUMP_FALSE))) {
 		fprintf(stdout, "%d  	# pc %u", opnd, (pcOffset + opnd));
 	    } else {
 		fprintf(stdout, "%d ", opnd);
 	    }
 	    break;
+#if 0
+////
 	case OPERAND_UINT1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    if ((i == 0) && (opCode == INST_PUSH1)) {
@@ -3189,15 +2997,16 @@ TclPrintInstruction(codePtr, pc)
 		fprintf(stdout, "%u ", (unsigned int) opnd);
 	    }
 	    break;
-	case OPERAND_UINT4:
-	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_PUSH4) {
+#endif
+	case OPERAND_UINT:
+	    opnd = TclGetUIntAtPtr(pc+numBytes); numBytes += 4;
+	    if (opCode == INST_PUSH) {
 		fprintf(stdout, "%u  	# ", opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
-	    } else if ((i == 0) && ((opCode == INST_LOAD_SCALAR4)
-				    || (opCode == INST_LOAD_ARRAY4)
-				    || (opCode == INST_STORE_SCALAR4)
-				    || (opCode == INST_STORE_ARRAY4))) {
+	    } else if ((i == 0) && ((opCode == INST_LOAD_SCALAR)
+				    || (opCode == INST_LOAD_ARRAY)
+				    || (opCode == INST_STORE_SCALAR)
+				    || (opCode == INST_STORE_ARRAY))) {
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr = procPtr->firstLocalPtr;
 		if (opnd >= localCt) {
@@ -3219,8 +3028,8 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 
-	case OPERAND_IDX4:
-	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	case OPERAND_IDX:
+	    opnd = TclGetIntAtPtr(pc+numBytes); numBytes += 4;
 	    if (opnd >= -1) {
 		fprintf(stdout, "%d ", opnd);
 	    } else if (opnd == -2) {

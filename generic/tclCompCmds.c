@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59 2004/10/18 21:15:37 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.1 2005/03/10 22:31:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -43,6 +43,7 @@ AuxDataType tclForeachInfoType = {
     DupForeachInfo,				/* dupProc */
     FreeForeachInfo				/* freeProc */
 };
+
 
 /*
  *----------------------------------------------------------------------
@@ -125,21 +126,13 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
     if (simpleVarName) {
 	if (isScalar) {
 	    if (localIndex >= 0) {
-		if (localIndex <= 255) {
-		    TclEmitInstInt1(INST_APPEND_SCALAR1, localIndex, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_APPEND_SCALAR4, localIndex, envPtr);
-		}
+		TclEmitInstInt(INST_APPEND_SCALAR, localIndex, envPtr);
 	    } else {
 		TclEmitOpcode(INST_APPEND_STK, envPtr);
 	    }
 	} else {
 	    if (localIndex >= 0) {
-		if (localIndex <= 255) {
-		    TclEmitInstInt1(INST_APPEND_ARRAY1, localIndex, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_APPEND_ARRAY4, localIndex, envPtr);
-		}
+		TclEmitInstInt(INST_APPEND_ARRAY, localIndex, envPtr);
 	    } else {
 		TclEmitOpcode(INST_APPEND_ARRAY_STK, envPtr);
 	    }
@@ -213,7 +206,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    JumpFixup jumpFixup;
+    int fixOffset;
     Tcl_Token *cmdTokenPtr, *nameTokenPtr;
     CONST char *name;
     int localIndex, nameChars, range, startOffset;
@@ -270,7 +263,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     envPtr->maxExceptDepth =
 	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
+    TclEmitInstInt(INST_BEGIN_CATCH, range, envPtr);
 
     /*
      * If the body is a simple word, compile the instructions to
@@ -302,15 +295,11 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      */
 
     if (localIndex != -1) {
-	if (localIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
-	}
+	TclEmitInstInt(INST_STORE_SCALAR, localIndex, envPtr);
     }
     TclEmitOpcode(INST_POP, envPtr);
     TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    TclEmitForwardJump(envPtr, INST_JUMP, fixOffset);
 
     /*
      * The "error case" code: store the body's result into the variable (if
@@ -323,11 +312,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	    (envPtr->codeNext - envPtr->codeStart);
     if (localIndex != -1) {
 	TclEmitOpcode(INST_PUSH_RESULT, envPtr);
-	if (localIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
-	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
-	}
+	TclEmitInstInt(INST_STORE_SCALAR, localIndex, envPtr);
 	TclEmitOpcode(INST_POP, envPtr);
     }
     TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
@@ -338,10 +323,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * an endCatch instruction at the end of the catch command.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d\n",
-		(envPtr->codeNext - envPtr->codeStart) - jumpFixup.codeOffset);
-    }
+    TclSetJumpTarget(envPtr, fixOffset);
     TclEmitOpcode(INST_END_CATCH, envPtr);
 
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -452,8 +434,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpEvalCondFixup;
-    int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
+    int jumpEvalCondOffset;
+    int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
     int savedStackDepth = envPtr->currStackDepth;
 
@@ -518,7 +500,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      *       if (result) goto B
      */
 
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
+    TclEmitForwardJump(envPtr, INST_JUMP, jumpEvalCondOffset);
 
     /*
      * Compile the loop body.
@@ -555,25 +537,14 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * terminates the for.
      */
 
-    testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-
-    jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
-	bodyCodeOffset += 3;
-	nextCodeOffset += 3;
-	testCodeOffset += 3;
-    }
+    TclSetJumpTarget(envPtr, jumpEvalCondOffset);
 
     envPtr->currStackDepth = savedStackDepth;
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
 
     jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
-    if (jumpDist > 127) {
-	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
-    }
+    TclEmitInstInt(INST_JUMP_TRUE, -jumpDist, envPtr);
 
     /*
      * Set the loop's offsets and break target.
@@ -633,8 +604,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     int loopCtTemp;		/* Index of temp var holding the loop's
 				 * iteration count. */
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    unsigned char *jumpPc;
-    JumpFixup jumpFalseFixup;
+    int jumpFalseOffset;
     int jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
@@ -806,11 +776,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 		    tokenPtr->numComponents, envPtr);
 
 	    tempVar = (firstValueTemp + loopIndex);
-	    if (tempVar <= 255) {
-		TclEmitInstInt1(INST_STORE_SCALAR1, tempVar, envPtr);
-	    } else {
-		TclEmitInstInt4(INST_STORE_SCALAR4, tempVar, envPtr);
-	    }
+	    TclEmitInstInt(INST_STORE_SCALAR, tempVar, envPtr);
 	    TclEmitOpcode(INST_POP, envPtr);
 	    loopIndex++;
 	}
@@ -820,7 +786,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Initialize the temporary var that holds the count of loop iterations.
      */
 
-    TclEmitInstInt4(INST_FOREACH_START4, infoIndex, envPtr);
+    TclEmitInstInt(INST_FOREACH_START, infoIndex, envPtr);
 
     /*
      * Top of loop code: assign each loop variable and check whether
@@ -829,8 +795,8 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
     envPtr->exceptArrayPtr[range].continueOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
-    TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex, envPtr);
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
+    TclEmitInstInt(INST_FOREACH_STEP, infoIndex, envPtr);
+    TclEmitForwardJump(envPtr, INST_JUMP_FALSE, jumpFalseOffset);
 
     /*
      * Inline compile the loop body.
@@ -856,37 +822,13 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     jumpBackOffset = (envPtr->codeNext - envPtr->codeStart);
     jumpBackDist =
 	(jumpBackOffset - envPtr->exceptArrayPtr[range].continueOffset);
-    if (jumpBackDist > 120) {
-	TclEmitInstInt4(INST_JUMP4, -jumpBackDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP1, -jumpBackDist, envPtr);
-    }
+    TclEmitInstInt(INST_JUMP, -jumpBackDist, envPtr);
 
     /*
      * Fix the target of the jump after the foreach_step test.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFalseFixup, 127)) {
-	/*
-	 * Update the loop body's starting PC offset since it moved down.
-	 */
-
-	envPtr->exceptArrayPtr[range].codeOffset += 3;
-
-	/*
-	 * Update the jump back to the test at the top of the loop since it
-	 * also moved down 3 bytes.
-	 */
-
-	jumpBackOffset += 3;
-	jumpPc = (envPtr->codeStart + jumpBackOffset);
-	jumpBackDist += 3;
-	if (jumpBackDist > 120) {
-	    TclUpdateInstInt4AtPc(INST_JUMP4, -jumpBackDist, jumpPc);
-	} else {
-	    TclUpdateInstInt1AtPc(INST_JUMP1, -jumpBackDist, jumpPc);
-	}
-    }
+    TclSetJumpTarget(envPtr, jumpFalseOffset);
 
     /*
      * Set the loop's break target.
@@ -1037,7 +979,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 				 * body to the end of the "if" when that PC
 				 * is determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpFalseDist;
     int jumpIndex = 0;          /* avoid compiler warning. */
     int numWords, wordIdx, numBytes, j, code;
     CONST char *word;
@@ -1131,8 +1072,8 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 		}
 		jumpIndex = jumpFalseFixupArray.next;
 		jumpFalseFixupArray.next++;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			       &(jumpFalseFixupArray.fixup[jumpIndex]));	    
+		TclEmitForwardJump(envPtr, INST_JUMP_FALSE,
+			       (jumpFalseFixupArray.fixup[jumpIndex]));	    
 	    }
 	    code = TCL_OK;
 	}
@@ -1181,8 +1122,8 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 		TclExpandJumpFixupArray(&jumpEndFixupArray);
 	    }
 	    jumpEndFixupArray.next++;
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-	            &(jumpEndFixupArray.fixup[jumpIndex]));
+	    TclEmitForwardJump(envPtr, INST_JUMP,
+	            (jumpEndFixupArray.fixup[jumpIndex]));
 
 	    /*
 	     * Fix the target of the jumpFalse after the test. Generate a 4 byte
@@ -1192,15 +1133,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	     * 4 byte jump.
 	     */
 
-	    if (TclFixupForwardJumpToHere(envPtr,
-	            &(jumpFalseFixupArray.fixup[jumpIndex]), 120)) {
-		/*
-		 * Adjust the code offset for the proceeding jump to the end
-		 * of the "if" command.
-		 */
-
-		jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
-	    }
+	    TclSetJumpTarget(envPtr, (jumpFalseFixupArray.fixup[jumpIndex]));
 	} else if (boolVal) {
 	    /* 
 	     *We were processing an "if 1 {...}"; stop compiling
@@ -1285,28 +1218,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first */
-	if (TclFixupForwardJumpToHere(envPtr,
-	        &(jumpEndFixupArray.fixup[jumpIndex]), 127)) {
-	    /*
-	     * Adjust the immediately preceeding "ifFalse" jump. We moved
-	     * it's target (just after this jump) down three bytes.
-	     */
-
-	    unsigned char *ifFalsePc = envPtr->codeStart
-	            + jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
-	    unsigned char opCode = *ifFalsePc;
-	    if (opCode == INST_JUMP_FALSE1) {
-		jumpFalseDist = TclGetInt1AtPtr(ifFalsePc + 1);
-		jumpFalseDist += 3;
-		TclStoreInt1AtPtr(jumpFalseDist, (ifFalsePc + 1));
-	    } else if (opCode == INST_JUMP_FALSE4) {
-		jumpFalseDist = TclGetInt4AtPtr(ifFalsePc + 1);
-		jumpFalseDist += 3;
-		TclStoreInt4AtPtr(jumpFalseDist, (ifFalsePc + 1));
-	    } else {
-		Tcl_Panic("TclCompileIfCmd: unexpected opcode updating ifFalse jump");
-	    }
-	}
+	TclSetJumpTarget(envPtr, (jumpEndFixupArray.fixup[jumpIndex]));
     }
 
     /*
@@ -1413,14 +1325,14 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	if (isScalar) {
 	    if (localIndex >= 0) {
 		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
-		    TclEmitInt1(immValue, envPtr);
+		    TclEmitInstInt(INST_INCR_SCALAR_IMM, localIndex, envPtr);
+		    TclEmitInt(immValue, envPtr);
 		} else {
-		    TclEmitInstInt1(INST_INCR_SCALAR1, localIndex, envPtr);
+		    TclEmitInstInt(INST_INCR_SCALAR, localIndex, envPtr);
 		}
 	    } else {
 		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
+		    TclEmitInstInt(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
 		} else {
 		    TclEmitOpcode(INST_INCR_SCALAR_STK, envPtr);
 		}
@@ -1428,14 +1340,14 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	} else {
 	    if (localIndex >= 0) {
 		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_ARRAY1_IMM, localIndex, envPtr);
-		    TclEmitInt1(immValue, envPtr);
+		    TclEmitInstInt(INST_INCR_ARRAY_IMM, localIndex, envPtr);
+		    TclEmitInt(immValue, envPtr);
 		} else {
-		    TclEmitInstInt1(INST_INCR_ARRAY1, localIndex, envPtr);
+		    TclEmitInstInt(INST_INCR_ARRAY, localIndex, envPtr);
 		}
 	    } else {
 		if (haveImmValue) {
-		    TclEmitInstInt1(INST_INCR_ARRAY_STK_IMM, immValue, envPtr);
+		    TclEmitInstInt(INST_INCR_ARRAY_STK_IMM, immValue, envPtr);
 		} else {
 		    TclEmitOpcode(INST_INCR_ARRAY_STK, envPtr);
 		}
@@ -1443,7 +1355,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	}
     } else {			/* non-simple variable name */
 	if (haveImmValue) {
-	    TclEmitInstInt1(INST_INCR_STK_IMM, immValue, envPtr);
+	    TclEmitInstInt(INST_INCR_STK_IMM, immValue, envPtr);
 	} else {
 	    TclEmitOpcode(INST_INCR_STK, envPtr);
 	}
@@ -1539,21 +1451,13 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
     if (simpleVarName) {
 	if (isScalar) {
 	    if (localIndex >= 0) {
-		if (localIndex <= 255) {
-		    TclEmitInstInt1(INST_LAPPEND_SCALAR1, localIndex, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_LAPPEND_SCALAR4, localIndex, envPtr);
-		}
+		TclEmitInstInt(INST_LAPPEND_SCALAR, localIndex, envPtr);
 	    } else {
 		TclEmitOpcode(INST_LAPPEND_STK, envPtr);
 	    }
 	} else {
 	    if (localIndex >= 0) {
-		if (localIndex <= 255) {
-		    TclEmitInstInt1(INST_LAPPEND_ARRAY1, localIndex, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_LAPPEND_ARRAY4, localIndex, envPtr);
-		}
+		TclEmitInstInt(INST_LAPPEND_ARRAY, localIndex, envPtr);
 	    } else {
 		TclEmitOpcode(INST_LAPPEND_ARRAY_STK, envPtr);
 	    }
@@ -1632,35 +1536,27 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
 	    if (isScalar) {
 		if (localIndex >= 0) {
 		    TclEmitOpcode(INST_DUP, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-		    if (localIndex <= 255) {
-			TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
-		    } else {
-			TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
-		    }
+		    TclEmitInstInt(INST_LIST_INDEX_IMM, idx, envPtr);
+		    TclEmitInstInt(INST_STORE_SCALAR, localIndex, envPtr);
 		} else {
-		    TclEmitInstInt4(INST_OVER, 1, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+		    TclEmitInstInt(INST_OVER, 1, envPtr);
+		    TclEmitInstInt(INST_LIST_INDEX_IMM, idx, envPtr);
 		    TclEmitOpcode(INST_STORE_SCALAR_STK, envPtr);
 		}
 	    } else {
 		if (localIndex >= 0) {
-		    TclEmitInstInt4(INST_OVER, 1, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
-		    if (localIndex <= 255) {
-			TclEmitInstInt1(INST_STORE_ARRAY1, localIndex, envPtr);
-		    } else {
-			TclEmitInstInt4(INST_STORE_ARRAY4, localIndex, envPtr);
-		    }
+		    TclEmitInstInt(INST_OVER, 1, envPtr);
+		    TclEmitInstInt(INST_LIST_INDEX_IMM, idx, envPtr);
+		    TclEmitInstInt(INST_STORE_ARRAY, localIndex, envPtr);
 		} else {
-		    TclEmitInstInt4(INST_OVER, 2, envPtr);
-		    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+		    TclEmitInstInt(INST_OVER, 2, envPtr);
+		    TclEmitInstInt(INST_LIST_INDEX_IMM, idx, envPtr);
 		    TclEmitOpcode(INST_STORE_ARRAY_STK, envPtr);
 		}
 	    }
 	} else {
-	    TclEmitInstInt4(INST_OVER, 1, envPtr);
-	    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
+	    TclEmitInstInt(INST_OVER, 1, envPtr);
+	    TclEmitInstInt(INST_LIST_INDEX_IMM, idx, envPtr);
 	    TclEmitOpcode(INST_STORE_STK, envPtr);
 	}
 	TclEmitOpcode(INST_POP, envPtr);
@@ -1669,8 +1565,8 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
     /*
      * Generate code to leave the rest of the list on the stack.
      */
-    TclEmitInstInt4(INST_LIST_RANGE_IMM, idx, envPtr);
-    TclEmitInt4(-2, envPtr); /* -2 == "end" */
+    TclEmitInstInt(INST_LIST_RANGE_IMM, idx, envPtr);
+    TclEmitInt(-2, envPtr); /* -2 == "end" */
 
     return TCL_OK;
 }
@@ -1739,7 +1635,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
     if (numWords == 3) {
 	TclEmitOpcode(INST_LIST_INDEX, envPtr);
     } else {
- 	TclEmitInstInt4(INST_LIST_INDEX_MULTI, numWords-1, envPtr);
+ 	TclEmitInstInt(INST_LIST_INDEX_MULTI, numWords-1, envPtr);
     }
 
     return TCL_OK;
@@ -1804,7 +1700,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 	    }
 	    valueTokenPtr = valueTokenPtr + (valueTokenPtr->numComponents + 1);
 	}
-	TclEmitInstInt4(INST_LIST, numWords - 1, envPtr);
+	TclEmitInstInt(INST_LIST, numWords - 1, envPtr);
     }
 
     return TCL_OK;
@@ -1962,7 +1858,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
 	} else {
 	    tempDepth = parsePtr->numWords - 1;
 	}
-	TclEmitInstInt4(INST_OVER, tempDepth, envPtr);
+	TclEmitInstInt(INST_OVER, tempDepth, envPtr);
     }
 
     /*
@@ -1975,7 +1871,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
 	} else {
 	    tempDepth = parsePtr->numWords - 2;
 	}
-	TclEmitInstInt4(INST_OVER, tempDepth, envPtr);
+	TclEmitInstInt(INST_OVER, tempDepth, envPtr);
     }
 
     /*
@@ -1987,18 +1883,14 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
     } else if (isScalar) {
 	if (localIndex < 0) {
 	    TclEmitOpcode(INST_LOAD_SCALAR_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_LOAD_SCALAR1, localIndex, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_SCALAR4, localIndex, envPtr);
+	    TclEmitInstInt(INST_LOAD_SCALAR, localIndex, envPtr);
 	}
     } else {
 	if (localIndex < 0) {
 	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_LOAD_ARRAY1, localIndex, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_LOAD_ARRAY4, localIndex, envPtr);
+	    TclEmitInstInt(INST_LOAD_ARRAY, localIndex, envPtr);
 	}
     }
 
@@ -2009,7 +1901,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
     if (parsePtr->numWords == 4) {
 	TclEmitOpcode(INST_LSET_LIST, envPtr);
     } else {
-	TclEmitInstInt4(INST_LSET_FLAT, (parsePtr->numWords - 1), envPtr);
+	TclEmitInstInt(INST_LSET_FLAT, (parsePtr->numWords - 1), envPtr);
     }
 
     /*
@@ -2021,18 +1913,14 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
     } else if (isScalar) {
 	if (localIndex < 0) {
 	    TclEmitOpcode(INST_STORE_SCALAR_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    TclEmitInstInt(INST_STORE_SCALAR, localIndex, envPtr);
 	}
     } else {
 	if (localIndex < 0) {
 	    TclEmitOpcode(INST_STORE_ARRAY_STK, envPtr);
-	} else if (localIndex < 0x100) {
-	    TclEmitInstInt1(INST_STORE_ARRAY1, localIndex, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_STORE_ARRAY4, localIndex, envPtr);
+	    TclEmitInstInt(INST_STORE_ARRAY, localIndex, envPtr);
 	}
     }
 
@@ -2223,7 +2111,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     if (anchorLeft && anchorRight && !nocase) {
 	TclEmitOpcode(INST_STR_EQ, envPtr);
     } else {
-	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	TclEmitInstInt(INST_STR_MATCH, nocase, envPtr);
     }
 
     return TCL_OK;
@@ -2366,8 +2254,8 @@ cleanup:
      */
 
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
-    TclEmitInstInt4(INST_RETURN, code, envPtr);
-    TclEmitInt4(level, envPtr);
+    TclEmitInstInt(INST_RETURN, code, envPtr);
+    TclEmitInt(level, envPtr);
     return TCL_OK;
 }
 
@@ -2441,30 +2329,18 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     if (simpleVarName) {
 	if (isScalar) {
 	    if (localIndex >= 0) {
-		if (localIndex <= 255) {
-		    TclEmitInstInt1((isAssignment?
-		            INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
-			    localIndex, envPtr);
-		} else {
-		    TclEmitInstInt4((isAssignment?
-			    INST_STORE_SCALAR4 : INST_LOAD_SCALAR4),
-			    localIndex, envPtr);
-		}
+		TclEmitInstInt((isAssignment?
+			INST_STORE_SCALAR : INST_LOAD_SCALAR),
+			localIndex, envPtr);
 	    } else {
 		TclEmitOpcode((isAssignment?
 		        INST_STORE_SCALAR_STK : INST_LOAD_SCALAR_STK), envPtr);
 	    }
 	} else {
 	    if (localIndex >= 0) {
-		if (localIndex <= 255) {
-		    TclEmitInstInt1((isAssignment?
-		            INST_STORE_ARRAY1 : INST_LOAD_ARRAY1),
-			    localIndex, envPtr);
-		} else {
-		    TclEmitInstInt4((isAssignment?
-			    INST_STORE_ARRAY4 : INST_LOAD_ARRAY4),
-			    localIndex, envPtr);
-		}
+		TclEmitInstInt((isAssignment?
+			INST_STORE_ARRAY : INST_LOAD_ARRAY),
+			localIndex, envPtr);
 	    } else {
 		TclEmitOpcode((isAssignment?
 		        INST_STORE_ARRAY_STK : INST_LOAD_ARRAY_STK), envPtr);
@@ -2701,7 +2577,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    if (exactMatch) {
 		TclEmitOpcode(INST_STR_EQ, envPtr);
 	    } else {
-		TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+		TclEmitInstInt(INST_STR_MATCH, nocase, envPtr);
 	    }
 	    return TCL_OK;
 	}
@@ -2749,15 +2625,14 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     CONST char *tokenStartPtr;	/* Used as part of synthesizing tokens. */
     int isTokenBraced;
 
-    JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
-    int *fixupTargetArray;	/* Array of places for fixups to point at. */
-    int fixupCount;		/* Number of places to fix up. */
-    int contFixIndex;		/* Where the first of the jumps due to a
-				 * group of continuation bodies starts,
-				 * or -1 if there aren't any. */
-    int contFixCount = 0;	/* Number of continuation bodies pointing
-				 * to the current (or next) real body. */
-    int codeOffset;		/* Cache of current bytecode offset. */
+    int *fallThroughArray;	/* Array of forward-jump offsets for
+				 * fall-through. */ 
+    int *endOffsetArray;	/* Array of forward-jump offsets for jumps to
+				 * the end. */
+    int currentFallThroughs;    /* Counter for fall-throughs in process. */
+    int endJumpCounter;         /* Counter for jumots to the end. */
+    int lastFalseJump;          /* Offset of the last branch on match
+				 * failure. */
     int savedStackDepth = envPtr->currStackDepth;
 
     tokenPtr = parsePtr->tokenPtr;
@@ -2924,25 +2799,28 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	TclCompileTokens(interp, valueTokenPtr+1,
 		valueTokenPtr->numComponents, envPtr);
     }
-
+    
     /*
      * Generate a test for each arm.
      */
 
-    contFixIndex = -1;
-    fixupArray = (JumpFixup *) ckalloc(sizeof(JumpFixup) * argc);
-    fixupTargetArray = (int *) ckalloc(sizeof(int) * argc);
-    (VOID *) memset(fixupTargetArray, 0, argc * sizeof(int));
-    fixupCount = 0;
+    fallThroughArray = (int *) ckalloc(sizeof(int) * argc);
+    endOffsetArray = (int *) ckalloc(sizeof(int) * argc);
+    lastFalseJump = -1;
+    currentFallThroughs = -1;
+    endJumpCounter = -1;
     foundDefault = 0;
-    for (i=0 ; i<argc ; i+=2) {
-	int nextArmFixupIndex = -1;
 
+    for (i=0 ; i<argc ; i+=2) {
 	/*
 	 * Generate the test for the arm.
 	 */
 
 	envPtr->currStackDepth = savedStackDepth + 1;
+	if (lastFalseJump != -1) {
+	    TclSetJumpTarget(envPtr, lastFalseJump);
+	    lastFalseJump = -1;
+	}
 	if (argv[i][0]!='d' || strcmp(argv[i], "default") || i!=argc-2) {
 	    switch (mode) {
 	    case Switch_Exact:
@@ -2954,8 +2832,8 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	    case Switch_Glob:
 		TclEmitPush(TclRegisterNewLiteral(envPtr, argv[i],
 			(int) strlen(argv[i])), envPtr);
-		TclEmitInstInt4(INST_OVER, 1, envPtr);
-		TclEmitInstInt1(INST_STR_MATCH, /*nocase*/0, envPtr);
+		TclEmitInstInt(INST_OVER, 1, envPtr);
+		TclEmitInstInt(INST_STR_MATCH, /*nocase*/0, envPtr);
 		break;
 	    default:
 		Tcl_Panic("unknown switch mode: %d",mode);
@@ -2964,20 +2842,13 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	     * Process fall-through clauses here...
 	     */
 	    if (argv[i+1][0]=='-' && argv[i+1][1]=='\0') {
-		if (contFixIndex == -1) {
-		    contFixIndex = fixupCount;
-		    contFixCount = 0;
-		}
-		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			&fixupArray[contFixIndex+contFixCount]);
-		fixupCount++;
-		contFixCount++;
+		currentFallThroughs++;
+		TclEmitForwardJump(envPtr, INST_JUMP_TRUE,
+			fallThroughArray[currentFallThroughs]);
 		continue;
+	    } else {
+		TclEmitForwardJump(envPtr, INST_JUMP_FALSE, lastFalseJump);
 	    }
-	    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-		    &fixupArray[fixupCount]);
-	    nextArmFixupIndex = fixupCount;
-	    fixupCount++;
 	} else {
 	    /*
 	     * Got a default clause; set a flag.
@@ -2990,34 +2861,31 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	     */
 	}
 
-	/*
+        /*
 	 * Generate the body for the arm.  This is guaranteed not to
 	 * be a fall-through case, but it might have preceding
-	 * fall-through cases, so we must process those first.
+	 * fall-through cases, so we must process those first. We also pop the
+	 * the value we're matching against. 
 	 */
 
-	if (contFixIndex != -1) {
-	    codeOffset = envPtr->codeNext-envPtr->codeStart;
-	    for (j=0 ; j<contFixCount ; j++) {
-		fixupTargetArray[contFixIndex+j] = codeOffset;
-	    }
-	    contFixIndex = -1;
+	for (j=0 ; j<=currentFallThroughs; j++) {
+	    TclSetJumpTarget(envPtr, fallThroughArray[j]);
 	}
+	currentFallThroughs = -1;
+
+	TclEmitOpcode(INST_POP, envPtr);
+	envPtr->currStackDepth = savedStackDepth;
 
 	/*
 	 * Now do the actual compilation.
 	 */
 
-	TclEmitOpcode(INST_POP, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
 	TclCompileCmdWord(interp, bodyTokenArray+i+1, 1, envPtr);
 
 	if (!foundDefault) {
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		    &fixupArray[fixupCount]);
-	    fixupCount++;
-	    fixupTargetArray[nextArmFixupIndex] =
-		    envPtr->codeNext-envPtr->codeStart;
+	    endJumpCounter++;
+	    TclEmitForwardJump(envPtr, INST_JUMP,
+		    endOffsetArray[endJumpCounter]);
 	}
     }
     ckfree((char *)argv);
@@ -3029,43 +2897,27 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
      * the result of the command an empty string.
      */
 
+    if (lastFalseJump != -1) {
+	TclSetJumpTarget(envPtr, lastFalseJump);
+    }
+
+    envPtr->currStackDepth = savedStackDepth + 1;
     if (!foundDefault) {
 	TclEmitOpcode(INST_POP, envPtr);
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     }
 
     /*
-     * Do jump fixups for arms that were executed.  First, fill in the
-     * jumps of all jumps that don't point elsewhere to point to here.
+     * Fix the jumps to the end.
      */
-    codeOffset = envPtr->codeNext-envPtr->codeStart;
-    for (i=0 ; i<fixupCount ; i++) {
-	if (fixupTargetArray[i] == 0) {
-	    fixupTargetArray[i] = codeOffset;
-	}
+
+    for (i=0 ; i<=endJumpCounter ; i++) {
+	TclSetJumpTarget(envPtr, endOffsetArray[i]);
     }
 
-    /*
-     * Now scan backwards over all the jumps (all of which are forward
-     * jumps) doing each one.  When we do one and there is a size
-     * changes, we must scan back over all the previous ones and see
-     * if they need adjusting before proceeding with further jump
-     * fixups.
-     */
-    for (i=fixupCount-1 ; i>=0 ; i--) {
-	if (TclFixupForwardJump(envPtr, &fixupArray[i],
-		fixupTargetArray[i]-fixupArray[i].codeOffset, 127)) {
-	    for (j=i-1 ; j>=0 ; j--) {
-		if (fixupTargetArray[j] > fixupArray[i].codeOffset) {
-		    fixupTargetArray[j] += 3;
-		}
-	    }
-	}
-    }
-    ckfree((char *)fixupArray);
-    ckfree((char *)fixupTargetArray);
+    ckfree((char *)fallThroughArray);
+    ckfree((char *)endOffsetArray);
 
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -3149,7 +3001,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpEvalCondFixup;
+    int jumpEvalCondOffset = 0; /* lint */
     int testCodeOffset, bodyCodeOffset, jumpDist;
     int range, code;
     int savedStackDepth = envPtr->currStackDepth;
@@ -3229,7 +3081,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      */
 
     if (loopMayEnd) {
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
+	TclEmitForwardJump(envPtr, INST_JUMP, jumpEvalCondOffset);
 	testCodeOffset = 0; /* avoid compiler warning */
     } else {
 	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
@@ -3254,28 +3106,16 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
     if (loopMayEnd) {
 	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-	jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
-	if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
-	    bodyCodeOffset += 3;
-	    testCodeOffset += 3;
-	}
+	TclSetJumpTarget(envPtr, jumpEvalCondOffset);
 	envPtr->currStackDepth = savedStackDepth;
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 	envPtr->currStackDepth = savedStackDepth + 1;
 
 	jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
-	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
-	} else {
-	    TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
-	}
+	TclEmitInstInt(INST_JUMP_TRUE, -jumpDist, envPtr);
     } else {
 	jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
-	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP4, -jumpDist, envPtr);
-	} else {
-	    TclEmitInstInt1(INST_JUMP1, -jumpDist, envPtr);
-	}	
+	TclEmitInstInt(INST_JUMP, -jumpDist, envPtr);
     }
 
 

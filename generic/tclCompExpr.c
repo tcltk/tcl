@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.25 2004/10/08 15:39:52 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.25.4.1 2005/03/10 22:32:00 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -586,11 +586,11 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
 				  * just after the last token in the
 				  * subexpression is stored here. */
 {
-    JumpFixup shortCircuitFixup; /* Used to fix up the short circuit jump
+    int shortCircuitOffset; /* Used to fix up the short circuit jump
 				  * after the first subexpression. */
-    JumpFixup shortCircuitFixup2;/* Used to fix up the second jump to the
+    int shortCircuitOffset2;/* Used to fix up the second jump to the
 				  * short-circuit target. */
-    JumpFixup endFixup;          /* Used to fix up jump to the end. */
+    int endOffset;          /* Used to fix up jump to the end. */
     Tcl_Token *tokenPtr;
     int code;
     int savedStackDepth = envPtr->currStackDepth;
@@ -611,8 +611,8 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
      */
 
     TclEmitForwardJump(envPtr,
-	    ((opIndex==OP_LAND)? TCL_FALSE_JUMP : TCL_TRUE_JUMP),
-	    &shortCircuitFixup);
+	    ((opIndex==OP_LAND)? INST_JUMP_FALSE : INST_JUMP_TRUE),
+	    shortCircuitOffset);
 
     /*
      * Emit code for the second operand.
@@ -631,29 +631,23 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
      */
 
     TclEmitForwardJump(envPtr,
-	    ((opIndex==OP_LAND)? TCL_FALSE_JUMP : TCL_TRUE_JUMP),
-	    &shortCircuitFixup2);
+	    ((opIndex==OP_LAND)? INST_JUMP_FALSE : INST_JUMP_TRUE),
+	    shortCircuitOffset2);
 
     if (opIndex == OP_LAND) {
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
     } else {
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
     }
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
+    TclEmitForwardJump(envPtr, INST_JUMP, endOffset);
 
     /*
      * Fixup the short-circuit jumps and push the shortCircuit value.
      * Note that shortCircuitFixup2 is always a short jump.
      */
 
-    TclFixupForwardJumpToHere(envPtr, &shortCircuitFixup2, 127);
-    if (TclFixupForwardJumpToHere(envPtr, &shortCircuitFixup, 127)) {
-	/*
-	 * shortCircuit jump grown by 3 bytes: update endFixup.
-	 */
-	    
-	 endFixup.codeOffset += 3;
-    }
+    TclSetJumpTarget(envPtr, shortCircuitOffset2);
+    TclSetJumpTarget(envPtr, shortCircuitOffset);
 
     if (opIndex == OP_LAND) {
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
@@ -661,7 +655,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
     }
 
-    TclFixupForwardJumpToHere(envPtr, &endFixup, 127);
+    TclSetJumpTarget(envPtr, endOffset);
     *endPtrPtr = tokenPtr;
 
     done:
@@ -701,12 +695,12 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
 				 * just after the last token in the
 				 * subexpression is stored here. */
 {
-    JumpFixup jumpAroundThenFixup, jumpAroundElseFixup;
+    int jumpAroundThenOffset, jumpAroundElseOffset;
 				/* Used to update or replace one-byte jumps
 				 * around the then and else expressions when
 				 * their target PCs are determined. */
     Tcl_Token *tokenPtr;
-    int elseCodeOffset, dist, code;
+    int elseCodeOffset, code;
     int savedStackDepth = envPtr->currStackDepth;
 
     /*
@@ -724,7 +718,7 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
      * Emit the jump to the "else" expression if the test was false.
      */
     
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpAroundThenFixup);
+    TclEmitForwardJump(envPtr, INST_JUMP_FALSE, jumpAroundThenOffset);
 
     /*
      * Compile the "then" expression. Note that if a subexpression is only
@@ -747,8 +741,13 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
      * Emit an unconditional jump around the "else" condExpr.
      */
     
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-	    &jumpAroundElseFixup);
+    TclEmitForwardJump(envPtr, INST_JUMP,jumpAroundElseOffset);
+
+    /*
+     * Fix up the first jump to the "else" expression if the test was false.
+     */
+    
+    TclSetJumpTarget(envPtr, jumpAroundThenOffset);
 
     /*
      * Compile the "else" expression.
@@ -770,23 +769,7 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
      * Fix up the second jump around the "else" expression.
      */
 
-    dist = (envPtr->codeNext - envPtr->codeStart)
-	    - jumpAroundElseFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpAroundElseFixup, dist, 127)) {
-	/*
-	 * Update the else expression's starting code offset since it
-	 * moved down 3 bytes too.
-	 */
-	
-	elseCodeOffset += 3;
-    }
-	
-    /*
-     * Fix up the first jump to the "else" expression if the test was false.
-     */
-    
-    dist = (elseCodeOffset - jumpAroundThenFixup.codeOffset);
-    TclFixupForwardJump(envPtr, &jumpAroundThenFixup, dist, 127);
+    TclSetJumpTarget(envPtr, jumpAroundElseOffset);
     *endPtrPtr = tokenPtr;
 
     done:
@@ -900,18 +883,18 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
 	/*
 	 * Adjust the current stack depth by the number of arguments
 	 * of the builtin function. This cannot be handled by the 
-	 * TclEmitInstInt1 macro as the number of arguments is not
+	 * TclEmitInstInt macro as the number of arguments is not
 	 * passed as an operand.
 	 */
 
 	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
 	    envPtr->maxStackDepth = envPtr->currStackDepth;
 	}
-	TclEmitInstInt1(INST_CALL_BUILTIN_FUNC1,
+	TclEmitInstInt(INST_CALL_BUILTIN_FUNC,
 	        mathFuncPtr->builtinFuncIndex, envPtr);
 	envPtr->currStackDepth -= mathFuncPtr->numArgs;
     } else {
-	TclEmitInstInt1(INST_CALL_FUNC1, (mathFuncPtr->numArgs+1), envPtr);
+	TclEmitInstInt(INST_CALL_FUNC, (mathFuncPtr->numArgs+1), envPtr);
     }
     *endPtrPtr = afterSubexprPtr;
 

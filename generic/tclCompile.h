@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53 2004/12/24 18:06:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.1 2005/03/10 22:32:01 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -394,55 +394,45 @@ typedef struct ByteCode {
 
 /* Opcodes 0 to 9 */
 #define INST_DONE			0
-#define INST_PUSH1			1
-#define INST_PUSH4			2
+#define INST_PUSH			2
 #define INST_POP			3
 #define INST_DUP			4
-#define INST_CONCAT1			5
-#define INST_INVOKE_STK1		6
-#define INST_INVOKE_STK4		7
+#define INST_CONCAT			5
+#define INST_INVOKE_STK		7
 #define INST_EVAL_STK			8
 #define INST_EXPR_STK			9
 
 /* Opcodes 10 to 23 */
-#define INST_LOAD_SCALAR1		10
-#define INST_LOAD_SCALAR4		11
+#define INST_LOAD_SCALAR		11
 #define INST_LOAD_SCALAR_STK		12
-#define INST_LOAD_ARRAY1		13
-#define INST_LOAD_ARRAY4		14
+#define INST_LOAD_ARRAY		14
 #define INST_LOAD_ARRAY_STK		15
 #define INST_LOAD_STK			16
-#define INST_STORE_SCALAR1		17
-#define INST_STORE_SCALAR4		18
+#define INST_STORE_SCALAR		18
 #define INST_STORE_SCALAR_STK		19
-#define INST_STORE_ARRAY1		20
-#define INST_STORE_ARRAY4		21
+#define INST_STORE_ARRAY		21
 #define INST_STORE_ARRAY_STK		22
 #define INST_STORE_STK			23
 
 /* Opcodes 24 to 33 */
-#define INST_INCR_SCALAR1		24
+#define INST_INCR_SCALAR		24
 #define INST_INCR_SCALAR_STK		25
-#define INST_INCR_ARRAY1		26
+#define INST_INCR_ARRAY		26
 #define INST_INCR_ARRAY_STK		27
 #define INST_INCR_STK			28
-#define INST_INCR_SCALAR1_IMM		29
+#define INST_INCR_SCALAR_IMM		29
 #define INST_INCR_SCALAR_STK_IMM	30
-#define INST_INCR_ARRAY1_IMM		31
+#define INST_INCR_ARRAY_IMM		31
 #define INST_INCR_ARRAY_STK_IMM		32
 #define INST_INCR_STK_IMM		33
 
 /* Opcodes 34 to 39 */
-#define INST_JUMP1			34
-#define INST_JUMP4			35
-#define INST_JUMP_TRUE1			36
-#define INST_JUMP_TRUE4			37
-#define INST_JUMP_FALSE1		38
-#define INST_JUMP_FALSE4		39
+#define INST_JUMP			35
+#define INST_JUMP_TRUE			37
+#define INST_JUMP_FALSE		39
 
 /* Opcodes 40 to 64 */
-#define INST_LOR			40
-#define INST_LAND			41
+#define FIRST_OPERATOR_INST             40
 #define INST_BITOR			42
 #define INST_BITXOR			43
 #define INST_BITAND			44
@@ -463,8 +453,8 @@ typedef struct ByteCode {
 #define INST_UMINUS			59
 #define INST_BITNOT			60
 #define INST_LNOT			61
-#define INST_CALL_BUILTIN_FUNC1		62
-#define INST_CALL_FUNC1			63
+#define INST_CALL_BUILTIN_FUNC		62
+#define INST_CALL_FUNC			63
 #define INST_TRY_CVT_TO_NUMERIC		64
 
 /* Opcodes 65 to 66 */
@@ -472,11 +462,11 @@ typedef struct ByteCode {
 #define INST_CONTINUE			66
 
 /* Opcodes 67 to 68 */
-#define INST_FOREACH_START4		67
-#define INST_FOREACH_STEP4		68
+#define INST_FOREACH_START		67
+#define INST_FOREACH_STEP		68
 
 /* Opcodes 69 to 72 */
-#define INST_BEGIN_CATCH4		69
+#define INST_BEGIN_CATCH		69
 #define INST_END_CATCH			70
 #define INST_PUSH_RESULT		71
 #define INST_PUSH_RETURN_CODE		72
@@ -495,18 +485,14 @@ typedef struct ByteCode {
 #define INST_LIST_LENGTH		81
 
 /* Opcodes 82 to 87 */
-#define INST_APPEND_SCALAR1		82
-#define INST_APPEND_SCALAR4		83
-#define INST_APPEND_ARRAY1		84
-#define INST_APPEND_ARRAY4		85
+#define INST_APPEND_SCALAR		83
+#define INST_APPEND_ARRAY		85
 #define INST_APPEND_ARRAY_STK		86
 #define INST_APPEND_STK			87
 
 /* Opcodes 88 to 93 */
-#define INST_LAPPEND_SCALAR1		88
-#define INST_LAPPEND_SCALAR4		89
-#define INST_LAPPEND_ARRAY1		90
-#define INST_LAPPEND_ARRAY4		91
+#define INST_LAPPEND_SCALAR		89
+#define INST_LAPPEND_ARRAY		91
 #define INST_LAPPEND_ARRAY_STK		92
 #define INST_LAPPEND_STK		93
 
@@ -567,10 +553,10 @@ typedef struct ByteCode {
 typedef enum InstOperandType {
     OPERAND_NONE,
     OPERAND_INT1,		/* One byte signed integer. */
-    OPERAND_INT4,		/* Four byte signed integer. */
+    OPERAND_INT,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
-    OPERAND_UINT4,		/* Four byte unsigned integer. */
-    OPERAND_IDX4		/* Four byte signed index (actually an
+    OPERAND_UINT,		/* Four byte unsigned integer. */
+    OPERAND_IDX		        /* Four byte signed index (actually an
 				 * integer, but displayed differently.) */
 } InstOperandType;
 
@@ -652,47 +638,20 @@ MODULE_SCOPE BuiltinFunc tclBuiltinFuncTable[];
  * Compilation of some Tcl constructs such as if commands and the logical or
  * (||) and logical and (&&) operators in expressions requires the
  * generation of forward jumps. Since the PC target of these jumps isn't
- * known when the jumps are emitted, we record the offset of each jump in an
- * array of JumpFixup structures. There is one array for each sequence of
- * jumps to one target PC. When we learn the target PC, we update the jumps
- * with the correct distance. Also, if the distance is too great (> 127
- * bytes), we replace the single-byte jump with a four byte jump
- * instruction, move the instructions after the jump down, and update the
- * code offsets for any commands between the jump and the target.
+ * known when the jumps are emitted, we provide a pair of functions that
+ * emit the jump, and then fixup the target. The function to emit the
+ * forward jump needs to know what kind of jump it is.
  */
 
-typedef enum {
-    TCL_UNCONDITIONAL_JUMP,
-    TCL_TRUE_JUMP,
-    TCL_FALSE_JUMP
-} TclJumpType;
-
-typedef struct JumpFixup {
-    TclJumpType jumpType;	/* Indicates the kind of jump. */
-    int codeOffset;		/* Offset of the first byte of the one-byte
-				 * forward jump's code. */
-    int cmdIndex;		/* Index of the first command after the one
-				 * for which the jump was emitted. Used to
-				 * update the code offsets for subsequent
-				 * commands if the two-byte jump at jumpPc
-				 * must be replaced with a five-byte one. */
-    int exceptIndex;		/* Index of the first range entry in the
-				 * ExceptionRange array after the current
-				 * one. This field is used to adjust the
-				 * code offsets in subsequent ExceptionRange
-				 * records when a jump is grown from 2 bytes
-				 * to 5 bytes. */
-} JumpFixup;
-
-#define JUMPFIXUP_INIT_ENTRIES	10
+#define JUMPFIXUP_INIT_ENTRIES    10
 
 typedef struct JumpFixupArray {
-    JumpFixup *fixup;		/* Points to start of jump fixup array. */
+    int *fixup;		        /* Points to start of jump fixup array. */
     int next;			/* Index of next free array entry. */
     int end;			/* Index of last usable entry in array. */
     int mallocedArray;		/* 1 if array was expanded and fixups points
 				 * into the heap, else 0. */
-    JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
+    int staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
 				/* Initial storage for jump fixup array. */
 } JumpFixupArray;
 
@@ -795,24 +754,19 @@ MODULE_SCOPE ExecEnv *	TclCreateExecEnv _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE void	TclDeleteExecEnv _ANSI_ARGS_((ExecEnv *eePtr));
 MODULE_SCOPE void	TclDeleteLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp *interp, LiteralTable *tablePtr));
-MODULE_SCOPE void	TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
-			    TclJumpType jumpType, JumpFixup *jumpFixupPtr));
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc _ANSI_ARGS_((
 			    unsigned char *pc, int catchOnly,
 			    ByteCode* codePtr));
-MODULE_SCOPE void	TclExpandJumpFixupArray _ANSI_ARGS_((
-			    JumpFixupArray *fixupArrayPtr));
+EXTERN void		TclExpandJumpFixupArray _ANSI_ARGS_((
+                            JumpFixupArray *fixupArrayPtr));
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
 MODULE_SCOPE int	TclFindCompiledLocal _ANSI_ARGS_((CONST char *name, 
 			    int nameChars, int create, int flags,
 			    Proc *procPtr));
 MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
-MODULE_SCOPE int	TclFixupForwardJump _ANSI_ARGS_((
-			    CompileEnv *envPtr, JumpFixup *jumpFixupPtr,
-			    int jumpDist, int distThreshold));
 MODULE_SCOPE void	TclFreeCompileEnv _ANSI_ARGS_((CompileEnv *envPtr));
-MODULE_SCOPE void	TclFreeJumpFixupArray _ANSI_ARGS_((
+EXTERN void		TclFreeJumpFixupArray _ANSI_ARGS_((
   			    JumpFixupArray *fixupArrayPtr));
 MODULE_SCOPE void	TclInitAuxDataTypeTable _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitByteCodeObj _ANSI_ARGS_((Tcl_Obj *objPtr,
@@ -821,7 +775,7 @@ MODULE_SCOPE void	TclInitCompilation _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitCompileEnv _ANSI_ARGS_((Tcl_Interp *interp,
 			    CompileEnv *envPtr, char *string,
 			    int numBytes));
-MODULE_SCOPE void	TclInitJumpFixupArray _ANSI_ARGS_((
+EXTERN void		TclInitJumpFixupArray _ANSI_ARGS_((
 			    JumpFixupArray *fixupArrayPtr));
 MODULE_SCOPE void	TclInitLiteralTable _ANSI_ARGS_((
 			    LiteralTable *tablePtr));
@@ -906,7 +860,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 /*
  * Macro used to update the stack requirements.
  * It is called by the macros TclEmitOpCode, TclEmitInst1 and
- * TclEmitInst4.
+ * TclEmitInst.
  * Remark that the very last instruction of a bytecode always
  * reduces the stack level: INST_DONE or INST_POP, so that the 
  * maxStackdepth is always updated.
@@ -950,7 +904,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 	TclExpandCodeArray(envPtr); \
     *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i))
 
-#define TclEmitInt4(i, envPtr) \
+#define TclEmitInt(i, envPtr) \
     if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
     } \
@@ -962,29 +916,19 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 	(unsigned char) ((unsigned int) (i) >>  8); \
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i)      )
-
+    
 /*
  * Macros to emit an instruction with signed or unsigned integer operands.
  * Four byte integers are stored in "big-endian" order with the high order
  * byte stored at the lowest address.
  * The ANSI C "prototypes" for these macros are:
  *
- * MODULE_SCOPE void	TclEmitInstInt1 _ANSI_ARGS_((unsigned char op, int i, 
- *		    CompileEnv *envPtr));
- * MODULE_SCOPE void	TclEmitInstInt4 _ANSI_ARGS_((unsigned char op, int i, 
+ * MODULE_SCOPE void	TclEmitInstInt _ANSI_ARGS_((unsigned char op, int i, 
  *		    CompileEnv *envPtr));
  */
 
 
-#define TclEmitInstInt1(op, i, envPtr) \
-    if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) { \
-	TclExpandCodeArray(envPtr); \
-    } \
-    *(envPtr)->codeNext++ = (unsigned char) (op); \
-    *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));\
-    TclUpdateStackReqs(op, i, envPtr)
-
-#define TclEmitInstInt4(op, i, envPtr) \
+#define TclEmitInstInt(op, i, envPtr) \
     if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
     } \
@@ -998,7 +942,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i)      );\
     TclUpdateStackReqs(op, i, envPtr)
-
+    
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
  * object's one or four byte array index into the CompileEnv's code
@@ -1009,14 +953,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    {\
-	register int objIndexCopy = (objIndex);\
-	if (objIndexCopy <= 255) { \
-	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
-	} else { \
-	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
-	}\
-    }
+    TclEmitInstInt(INST_PUSH, (objIndex), (envPtr))
 
 /*
  * Macros to update a (signed or unsigned) integer starting at a pointer.
@@ -1030,12 +967,12 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 #define TclStoreInt1AtPtr(i, p) \
     *(p)   = (unsigned char) ((unsigned int) (i))
 
-#define TclStoreInt4AtPtr(i, p) \
+#define TclStoreIntAtPtr(i, p) \
     *(p)   = (unsigned char) ((unsigned int) (i) >> 24); \
     *(p+1) = (unsigned char) ((unsigned int) (i) >> 16); \
     *(p+2) = (unsigned char) ((unsigned int) (i) >>  8); \
     *(p+3) = (unsigned char) ((unsigned int) (i)      )
-
+    
 /*
  * Macros to update instructions at a particular pc with a new op code
  * and a (signed or unsigned) int operand. The ANSI C "prototypes" for
@@ -1047,27 +984,9 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  *		    unsigned char *pc));
  */
 
-#define TclUpdateInstInt1AtPc(op, i, pc) \
+#define TclUpdateInstIntAtPc(op, i, pc) \
     *(pc) = (unsigned char) (op); \
-    TclStoreInt1AtPtr((i), ((pc)+1))
-
-#define TclUpdateInstInt4AtPc(op, i, pc) \
-    *(pc) = (unsigned char) (op); \
-    TclStoreInt4AtPtr((i), ((pc)+1))
-
-/*
- * Macro to fix up a forward jump to point to the current
- * code-generation position in the bytecode being created (the most
- * common case). The ANSI C "prototypes" for this macro is:
- *
- * MODULE_SCOPE int	TclFixupForwardJumpToHere _ANSI_ARGS_((CompileEnv *envPtr,
- *		    JumpFixup *fixupPtr, int threshold));
- */
-
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
-    TclFixupForwardJump((envPtr), (fixupPtr), \
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
-	    (threshold))
+    TclStoreIntAtPtr((i), ((pc)+1))
 
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
@@ -1101,17 +1020,17 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 #    endif
 #endif
 
-#define TclGetInt4AtPtr(p) (((int) TclGetInt1AtPtr(p) << 24) | \
+#define TclGetIntAtPtr(p) (((int) TclGetInt1AtPtr(p) << 24) | \
 					    (*((p)+1) << 16) | \
 				  	    (*((p)+2) <<  8) | \
 				  	    (*((p)+3)))
-
+    
 #define TclGetUInt1AtPtr(p) ((unsigned int) *(p))
-#define TclGetUInt4AtPtr(p) ((unsigned int) (*(p)     << 24) | \
+#define TclGetUIntAtPtr(p) ((unsigned int) (*(p)     << 24) | \
 					    (*((p)+1) << 16) | \
 					    (*((p)+2) <<  8) | \
 					    (*((p)+3)))
-
+    
 /*
  * Macros used to compute the minimum and maximum of two integers.
  * The ANSI C "prototypes" for these macros are:
@@ -1122,5 +1041,26 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 #define TclMin(i, j)   ((((int) i) < ((int) j))? (i) : (j))
 #define TclMax(i, j)   ((((int) i) > ((int) j))? (i) : (j))
+
+/*
+ * Compilation of some Tcl constructs such as if commands and the logical or
+ * (||) and logical and (&&) operators in expressions requires the
+ * generation of forward jumps. Since the PC target of these jumps isn't
+ * known when the jumps are emitted, we record the offset of each jump with
+ * the macro TclEmitForwardJump. When we learn the target PC, we update the
+ * jumps with the correct distance using the macro TclSetJumpTarget.
+ */
+
+#define TclEmitForwardJump(envPtr, inst, fixOffset) \
+   (fixOffset) = (envPtr->codeNext - envPtr->codeStart);\
+   TclEmitInstInt((inst), 0, (envPtr))
+
+#define TclSetJumpTarget(envPtr, fixOffset) \
+{\
+    int jumpDist =\
+        (envPtr->codeNext - envPtr->codeStart) - (fixOffset);\
+    char *fixPc = envPtr->codeStart + fixOffset + 1;\
+    TclStoreIntAtPtr(jumpDist, fixPc);\
+}
 
 #endif /* _TCLCOMPILATION */
