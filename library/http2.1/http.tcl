@@ -9,9 +9,9 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.16 1999/11/19 06:34:44 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.17 1999/11/19 23:02:29 hobbs Exp $
 
-package provide http 2.1	;# This uses Tcl namespaces
+package provide http 2.2	;# This uses Tcl namespaces
 
 namespace eval http {
     variable http
