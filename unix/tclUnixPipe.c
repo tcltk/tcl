@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.2.1 2004/06/08 20:25:45 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.2.2 2004/06/08 20:43:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -665,7 +665,7 @@ SetupStdFile(file, type)
 	     * the close-on-exec flag.
 	     */
 
-	    result = fcntl(fd, F_SETFD, 0);
+	   fcntl(fd, F_SETFD, 0);
 	}
     } else {
 	close(targetFd);
