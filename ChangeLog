@@ -1,5 +1,15 @@
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
+	* generic/tclLoad.c: Changed the code so that if Tcl_StaticPackage
+	is called to report the same package as being loaded in two interps,
+	it shows up in [info loaded {}] in both of them (previously,
+	it didn't appear in the static package list in the second.
+
+	* tests/load.test Added regression test for the above bug.
+	[Bug 670042]
+	
+2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
+
 	* generic/tclClock.c: Fixed a bug that incorrectly allowed
 	[clock clicks {}] and [clock clicks -] to be accepted as if
 	they were [clock clicks -milliseconds].
