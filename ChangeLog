@@ -1,3 +1,12 @@
+1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclLoad.c: #def'd out the unloading of DLLs at finalize
+	time for Unix in TclFinalizeLoad. [Bug: 2560 3373]  Should be
+	parametrized to allow for user to specify unload or not.
+
+	* win/tclWinTime.c: fixed handling of %Z on NT for time zones
+	that don't have DST.
+
 1999-11-29  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* library/dde1.1/pkgIndex.tcl:
@@ -6,6 +15,7 @@
 
 	* unix/tclUnixPipe.c: fixed PipeBlockModeProc to properly set
 	isNonBlocking flag on pipe. [Bug: 1356 710]
+	removed spurious fcntl call from PipeBlockModeProc
 
 	* tests/scan.test:
 	* generic/tclScan.c: fixed scan where %[..] didn't match anything
