@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.34 2004/01/29 10:28:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.35 2004/03/05 14:06:55 vbwagner Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -116,6 +116,13 @@ typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
  * and possibly elsewhere in Tcl's core.
  */
 
+#ifdef DJGPP
+
+/*See contrib/djgpp/tclDjgppFCmd.c for definitio*/
+extern TclFileAttrProcs tclpFileAttrProcs[];
+extern char *tclpFileAttrStrings[];
+
+#else
 enum {
     UNIX_GROUP_ATTRIBUTE,
     UNIX_OWNER_ATTRIBUTE,
@@ -161,7 +168,7 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
     {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
 #endif
 };
-
+#endif
 /*
  * Declarations for local procedures defined in this file:
  */
@@ -1480,6 +1487,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     return TCL_OK;
 }
 
+#ifndef DJGPP
 /*
  *---------------------------------------------------------------------------
  *
@@ -1504,6 +1512,7 @@ TclpObjListVolumes(void)
     Tcl_IncrRefCount(resultPtr);
     return resultPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
