@@ -1,3 +1,13 @@
+2000-12-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:
+	* tests/expr-old.test:  Re-wrote Tcl's [expr rand()] and
+	[expr srand($seed)] implementations, fixing a range error
+	on some 64-bit platforms.  Added tests that detect the bug.
+	The rewrite changes the seed -> sequence map on 64-bit
+	platforms, only for seed >= 2^31, a slight incompatibility.
+	[Bug 121072, Patch 102781]
+
 2000-12-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.17 2000/12/10 03:26:04 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.18 2000/12/14 22:24:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4050,11 +4050,21 @@ ExprRandFunc(interp, eePtr, clientData)
     register int stackTop;	/* Cached top index of evaluation stack. */
     Interp *iPtr = (Interp *) interp;
     double dResult;
-    int tmp;
+    long tmp;			/* Algorithm assumes at least 32 bits.
+				 * Only long guarantees that.  See below. */
 
     if (!(iPtr->flags & RAND_SEED_INITIALIZED)) {
 	iPtr->flags |= RAND_SEED_INITIALIZED;
 	iPtr->randSeed = TclpGetClicks();
+
+	/*
+	 * Make sure 1 <= randSeed <= (2^31) - 2.  See below.
+	 */
+
+        iPtr->randSeed &= (unsigned long) 0x7fffffff;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	    iPtr->randSeed ^= 123459876;
+	}
     }
     
     /*
@@ -4067,11 +4077,20 @@ ExprRandFunc(interp, eePtr, clientData)
      * Generate the random number using the linear congruential
      * generator defined by the following recurrence:
      *		seed = ( IA * seed ) mod IM
-     * where IA is 16807 and IM is (2^31) - 1.  In order to avoid
-     * potential problems with integer overflow, the  code uses
-     * additional constants IQ and IR such that
+     * where IA is 16807 and IM is (2^31) - 1.  The recurrence maps
+     * a seed in the range [1, IM - 1] to a new seed in that same range.
+     * The recurrence maps IM to 0, and maps 0 back to 0, so those two
+     * values must not be allowed as initial values of seed.
+     *
+     * In order to avoid potential problems with integer overflow, the
+     * recurrence is implemented in terms of additional constants
+     * IQ and IR such that
      *		IM = IA*IQ + IR
-     * For details on how this algorithm works, refer to the following
+     * None of the operations in the implementation overflows a 32-bit
+     * signed integer, and the C type long is guaranteed to be at least
+     * 32 bits wide.
+     *
+     * For more details on how this algorithm works, refer to the following
      * papers: 
      *
      *	S.K. Park & K.W. Miller, "Random number generators: good ones
@@ -4087,14 +4106,6 @@ ExprRandFunc(interp, eePtr, clientData)
 #define RAND_IR		2836
 #define RAND_MASK	123459876
 
-    if (iPtr->randSeed == 0) {
-	/*
-	 * Don't allow a 0 seed, since it breaks the generator.  Shift
-	 * it to some other value.
-	 */
-
-	iPtr->randSeed = 123459876;
-    }
     tmp = iPtr->randSeed/RAND_IQ;
     iPtr->randSeed = RAND_IA*(iPtr->randSeed - tmp*RAND_IQ) - RAND_IR*tmp;
     if (iPtr->randSeed < 0) {
@@ -4102,14 +4113,10 @@ ExprRandFunc(interp, eePtr, clientData)
     }
 
     /*
-     * On 64-bit architectures we need to mask off the upper bits to
-     * ensure we only have a 32-bit range.  The constant has the
-     * bizarre form below in order to make sure that it doesn't
-     * get sign-extended (the rules for sign extension are very
-     * concat, particularly on 64-bit machines).
+     * Since the recurrence keeps seed values in the range [1, RAND_IM - 1],
+     * dividing by RAND_IM yields a double in the range (0, 1).
      */
 
-    iPtr->randSeed &= ((((unsigned long) 0xfffffff) << 4) | 0xf);
     dResult = iPtr->randSeed * (1.0/RAND_IM);
 
     /*
@@ -4256,11 +4263,16 @@ ExprSrandFunc(interp, eePtr, clientData)
     }
     
     /*
-     * Reset the seed.
+     * Reset the seed.  Make sure 1 <= randSeed <= 2^31 - 2.
+     * See comments in ExprRandFunc() for more details.
      */
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
     iPtr->randSeed = i;
+    iPtr->randSeed &= (unsigned long) 0x7fffffff;
+    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	iPtr->randSeed ^= 123459876;
+    }
 
     /*
      * To avoid duplicating the random number generation code we simply
