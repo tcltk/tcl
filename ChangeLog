@@ -2,6 +2,9 @@
 
 	* tagged 8.2.2 final
 	* changes: updated based on ChangeLog
+	* library/dde1.1/pkgIndex.tcl:
+	* library/reg1.0/pkgIndex.tcl: fixed packaging to use the debug
+	versions of the libraries when compiled with symbols [Bug: 3254]
 
 1999-10-30  Jeff Hobbs  <hobbs@scriptics.com>
 
