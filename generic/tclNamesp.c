@@ -33,6 +33,13 @@
 #define FIND_ONLY_NS	0x1000
 
 /*
+ * Initial sise of stack allocated space for tail list - used when resetting
+ * shadowed command references in the functin: TclResetShadowedCmdRefs.
+ */
+
+#define NUM_TRAIL_ELEMS 5
+
+/*
  * Count of the number of namespaces created. This value is used as a
  * unique id for each namespace.
  */
@@ -2206,7 +2213,6 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
      * storage if needed.
      */
 
-#define NUM_TRAIL_ELEMS 5
     Namespace *(trailStorage[NUM_TRAIL_ELEMS]);
     Namespace **trailPtr = trailStorage;
     int trailFront = -1;
@@ -2300,7 +2306,6 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
     if (trailPtr != trailStorage) {
 	ckfree((char *) trailPtr);
     }
-#undef NUM_TRAIL_ELEMS
 }
 
 /*
