@@ -1,3 +1,8 @@
+2005-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclIOUtil.c (TclFSFileAttrIndex): New helper function so
+	that we don't need to hard-code attribute indexes. [Bug 1100671]
+
 2005-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/string.n: Removed the term 'set' from the documentation of
