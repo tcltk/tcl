@@ -1,3 +1,21 @@
+1999-12-07  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/io.test: removed 'knownBug' tests that were for
+	unsupported0, which is now fcopy (that already has tests)
+
+	* mac/tclMacPort.h: added utime.h include
+
+	* generic/tclDate.c:
+	* unix/Makefile.in: fixed make gendate to swap const with CONST
+	so it uses the Tcl defined CONST type [Bug: 3521]
+
+	* generic/tclIO.c: removed panic that could occur in FlushChannel
+	when a "blocking" channel would receive EAGAIN, instead treating
+	it the same as non-blocking. [Bug: 3773]
+
+	* generic/tclUtil.c: fixed Tcl_ScanCountedElement to not step
+	beyond the end of the counted string [Bug: 3336]
+
 1999-12-03  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/load.n: added note about NT's buggy handling of './' with
@@ -21,7 +39,7 @@
 	* generic/tclExecute.c: added TclCheckBadOctal routine to enhance
 	error message checking for when users use invalid octal numbers
 	(like 08), as well as replumbed the Expr*Funcs with a new
-	VerifyExprObjType to simplify type handling.
+	VerifyExprObjType to simplify type handling. [Bug: 2467]
 
 	* tests/expr.test:
 	* generic/tclCompile.c: fixed 'bad code length' error for
