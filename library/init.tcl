@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.15 1998/09/14 18:40:03 stanton Exp $
+# RCS: @(#) $Id: init.tcl,v 1.16 1998/10/17 00:15:40 escoffon Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -1043,6 +1043,46 @@ tcl_nonsafe auto_mkindex_parser::command namespace {op args} {
 
 rename tcl_nonsafe ""
 
+# pkg_compareExtension --
+#
+#  Used internally by pkg_mkIndex to compare the extension of a file to
+#  a given extension. On Windows, it uses a case-insensitive comparison
+#  because the file system can be file insensitive.
+#
+# Arguments:
+#  fileName	name of a file whose extension is compared
+#  ext		(optional) The extension to compare against; you must
+#		provide the starting dot.
+#		Defaults to [info sharedlibextension]
+#
+# Results:
+#  Returns 1 if the extension matches, 0 otherwise
+
+if {$::tcl_platform(platform) == "windows"} {
+    proc pkg_compareExtension { fileName {ext {}} } {
+	if {[string compare $ext {}] == 0} {
+	    set ext [info sharedlibextension]
+	}
+	set cmp [string compare \
+		[string tolower [file extension $fileName]] \
+		[string tolower $ext]]
+	if {$cmp} {
+	    return 0
+	}
+	return 1
+    }
+} else {
+    proc pkg_compareExtension { fileName {ext {}} } {
+	if {[string compare $ext {}] == 0} {
+	    set ext [info sharedlibextension]
+	}
+	if {[string compare [file extension $fileName] $ext]} {
+	    return 0
+	}
+	return 1
+    }
+}
+
 # pkg_mkIndex --
 # This procedure creates a package index in a given directory.  The
 # package index consists of a "pkgIndex.tcl" file whose contents are
@@ -1144,8 +1184,15 @@ proc pkg_mkIndex {args} {
     # repeated passes on the files to index, until either all have been
     # indexed, or we can no longer make any headway.
 
-    foreach file [eval glob $patternList] {
-	set toProcess($file) 1
+    if {[catch {
+	foreach file [eval glob $patternList] {
+	    set toProcess($file) 1
+	}
+    } err]} {
+	set ei $::errorInfo
+	set ec $::errorCode
+	cd $oldDir
+	error $err $ei $ec
     }
 
     while {[array size toProcess] > 0} {
@@ -1177,11 +1224,13 @@ proc pkg_mkIndex {args} {
 	    # identified so far. This way, each pass will have loaded the
 	    # equivalent of the pkgIndex.tcl file that we are constructing,
 	    # and packages whose processing failed in previous passes may
-	    # be processed successfully now
+	    # be processed successfully now.
+	    # Note that the $dir value is hardwired to ".", because we are
+	    # in the directory with the .tcl files.
 
 	    foreach pkg [array names files] {
 		$c eval "package ifneeded $pkg\
-			\[list tclPkgSetup $dir \
+			\[list tclPkgSetup . \
 			[lrange $pkg 0 0] [lrange $pkg 1 1]\
 			[list $files($pkg)]\]"
 	    }
@@ -1223,7 +1272,7 @@ proc pkg_mkIndex {args} {
 				# packages that are spread over multiple
 				# files are indexed only by their first file
 				# loaded.
-				# Note that packages that this cannot catch
+				# Note that that this cannot detect
 				# packages that are implemented by a
 				# combination of TCL files and DLLs
 
@@ -1240,6 +1289,10 @@ proc pkg_mkIndex {args} {
 		    }
 		}
 	    }
+
+	    # make sure that the auto_path in the slave is consistent
+	    # with ours
+	    $c eval [list set auto_path $::auto_path]
 
 	    $c eval [list set __file $file]
 	    $c eval [list set __direct $direct]
@@ -1352,9 +1405,7 @@ proc pkg_mkIndex {args} {
 
 		    set __pkgs {}
 		    set __providedPkgs {}
-		    if {[string compare [file extension $__file] \
-			    [info sharedlibextension]] == 0} {
-
+		    if {[pkg_compareExtension $__file [info sharedlibextension]]} {
 			# The "file join ." command below is necessary.
 			# Without it, if the file name has no \'s and we're
 			# on UNIX, the load command will invoke the
@@ -1398,6 +1449,15 @@ proc pkg_mkIndex {args} {
 			if {[string compare $__i $__absolute] != 0} {
 			    set __cmds($__absolute) 1
 			    unset __cmds($__i)
+			}
+
+			# final check, to support packages spread over
+			# multiple files: if the new command is in the
+			# namespace of an ignored package, de-ignore it.
+
+			regsub {^::} [namespace qualifiers $__absolute] {} __qual
+			if {[info exists ::__ignorePkgs($__qual)]} {
+			    unset ::__ignorePkgs($__qual)
 			}
 		    }
 
