@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67 2003/04/16 23:33:44 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.68 2003/10/08 14:24:41 dkf Exp $
  */
 
 #define TCL_TEST
@@ -420,6 +420,9 @@ static Tcl_Obj*         SimpleListVolumes _ANSI_ARGS_ ((void));
 static int              SimplePathInFilesystem _ANSI_ARGS_ ((
 			    Tcl_Obj *pathPtr, ClientData *clientDataPtr));
 static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
+static int              TestNumUtfCharsCmd _ANSI_ARGS_((ClientData clientData,
+                            Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -653,6 +656,9 @@ Tcltest_Init(interp)
             (ClientData) TCL_LEAVE_ERR_MSG, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode", 
 	    TestsetobjerrorcodeCmd, (ClientData) 0,
+	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testnumutfchars",
+	    TestNumUtfCharsCmd, (ClientData) 0, 
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -6413,4 +6419,24 @@ SimpleListVolumes(void)
     Tcl_IncrRefCount(retVal);
     return retVal;
 }
-
+
+/*
+ * Used to check correct string-length determining in Tcl_NumUtfChars
+ */
+static int
+TestNumUtfCharsCmd(clientData, interp, objc, objv)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    int objc;
+    Tcl_Obj *CONST objv[];
+{
+    if (objc > 1) {
+	int len = -1;
+	if (objc > 2) {
+	    (void) Tcl_GetStringFromObj(objv[1], &len);
+	}
+	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+    }
+    return TCL_OK;
+}
