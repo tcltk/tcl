@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.41 2000/10/31 01:20:09 davidg Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.42 2000/11/03 21:23:28 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -452,7 +452,7 @@ install-binaries:
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo installing $(DDE_DLL_FILE); \
 	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde1.1; \
-	    $(COPY) $(ROOT_DIR)/library/dde1.1/pkgIndex.tcl $(LIB_INSTALL_DIR)/dde1.1; \
+	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl $(LIB_INSTALL_DIR)/dde1.1; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo installing $(DDE_LIB_FILE); \
@@ -461,7 +461,7 @@ install-binaries:
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo installing $(REG_DLL_FILE); \
 	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
-	    $(COPY) $(ROOT_DIR)/library/reg1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
+	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo installing $(REG_LIB_FILE); \
@@ -478,7 +478,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.3 opt0.4 encoding msgcat1.0 tcltest1.0; \
+	@for i in http1.0 http2.3 opt0.4 encoding msgcat1.2 tcltest2.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -497,13 +497,30 @@ install-libraries:
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@for i in http2.3 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
+	@echo "Installing library http1.0 directory"; \
+	@for j in $(ROOT_DIR)/library/http1.0/*.tcl; \
 	    do \
-	    echo "Installing library $$i directory"; \
-	    for j in $(ROOT_DIR)/library/$$i/*.tcl; \
-		do \
-		$(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/$$i"; \
-		done; \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
+	    done;
+	@echo "Installing library http2.3 directory"; \
+	@for j in $(ROOT_DIR)/library/http/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http2.3"; \
+	    done;
+	@echo "Installing library opt0.4 directory"; \
+	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
+	    done;
+	@echo "Installing library msgcat1.2 directory"; \
+	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.2"; \
+	    done;
+	@echo "Installing library tcltest2.0 directory"; \
+	@for j in $(ROOT_DIR)/library/tcltest/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.0"; \
 	    done;
 	@echo "Installing encodings"
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
