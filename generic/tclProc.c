@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.33 2001/11/20 16:36:07 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.34 2001/11/27 13:47:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 	
 	procBody = Tcl_GetString(objv[3]);
 	while(*procBody != '\0') {
-	    if (!isspace(*procBody)) {
+	    if (!isspace(UCHAR(*procBody))) {
 		goto done;
 	    }
 	    procBody++;
