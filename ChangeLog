@@ -1,3 +1,8 @@
+2000-06-26  Eric Melski  <ericm@scriptics.com>
+
+	* doc/package.n: Corrected information about [package forget]
+	arguments [Bug: 5418].
+
 2000-06-23  Eric Melski  <ericm@scriptics.com>
 
 	* doc/Hash.3: Added documentation patch for Tcl_Obj *'s as keys in

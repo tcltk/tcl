@@ -13,7 +13,7 @@
 .SH NAME
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
-\fB::msgcat::mc \fIsrc-string\fR
+\fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .sp
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
 .sp
