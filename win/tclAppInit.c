@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.18 2004/02/02 21:35:28 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.19 2004/06/11 19:41:23 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -28,6 +28,9 @@ extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif
 #endif /* TCL_TEST */
 
+#if defined(__GNUC__)
+static void		setargv _ANSI_ARGS_((int *argcPtr, char ***argvPtr));
+#endif /* __GNUC__ */
 static BOOL WINAPI	sigHandler (DWORD fdwCtrlType);
 static Tcl_AsyncProc	asyncExit;
 static void		AppInitExitHandler(ClientData clientData);
@@ -85,6 +88,9 @@ main (int argc, char *argv[])
      * is performed correctly.
      */
 
+#if defined(__GNUC__)
+    setargv( &argc, &argv );
+#endif
     setlocale(LC_ALL, "C");
 
     /*
@@ -240,6 +246,125 @@ AppInitExitHandler(
         exitToken = NULL;
     }
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * setargv --
+ *
+ *	Parse the Windows command line string into argc/argv.  Done here
+ *	because we don't trust the builtin argument parser in crt0.
+ *	Windows applications are responsible for breaking their command
+ *	line into arguments.
+ *
+ *	2N backslashes + quote -> N backslashes + begin quoted string
+ *	2N + 1 backslashes + quote -> literal
+ *	N backslashes + non-quote -> literal
+ *	quote + quote in a quoted string -> single quote
+ *	quote + quote not in quoted string -> empty string
+ *	quote -> begin quoted string
+ *
+ * Results:
+ *	Fills argcPtr with the number of arguments and argvPtr with the
+ *	array of arguments.
+ *
+ * Side effects:
+ *	Memory allocated.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+#if defined(__GNUC__)
+static void
+setargv(argcPtr, argvPtr)
+    int *argcPtr;		/* Filled with number of argument strings. */
+    char ***argvPtr;		/* Filled with argument strings (malloc'd). */
+{
+    char *cmdLine, *p, *arg, *argSpace;
+    char **argv;
+    int argc, size, inquote, copy, slashes;
+
+    cmdLine = GetCommandLine();	/* INTL: BUG */
+
+    /*
+     * Precompute an overly pessimistic guess at the number of arguments
+     * in the command line by counting non-space spans.
+     */
+
+    size = 2;
+    for (p = cmdLine; *p != '\0'; p++) {
+	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
+	    size++;
+	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
+		p++;
+	    }
+	    if (*p == '\0') {
+		break;
+	    }
+	}
+    }
+    argSpace = (char *) Tcl_Alloc(
+	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
+    argv = (char **) argSpace;
+    argSpace += size * sizeof(char *);
+    size--;
+
+    p = cmdLine;
+    for (argc = 0; argc < size; argc++) {
+	argv[argc] = arg = argSpace;
+	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
+	    p++;
+	}
+	if (*p == '\0') {
+	    break;
+	}
+
+	inquote = 0;
+	slashes = 0;
+	while (1) {
+	    copy = 1;
+	    while (*p == '\\') {
+		slashes++;
+		p++;
+	    }
+	    if (*p == '"') {
+		if ((slashes & 1) == 0) {
+		    copy = 0;
+		    if ((inquote) && (p[1] == '"')) {
+			p++;
+			copy = 1;
+		    } else {
+			inquote = !inquote;
+		    }
+                }
+                slashes >>= 1;
+            }
+
+            while (slashes) {
+		*arg = '\\';
+		arg++;
+		slashes--;
+	    }
+
+	    if ((*p == '\0')
+		    || (!inquote && ((*p == ' ') || (*p == '\t')))) { /* INTL: ISO space. */
+		break;
+	    }
+	    if (copy != 0) {
+		*arg = *p;
+		arg++;
+	    }
+	    p++;
+        }
+	*arg = '\0';
+	argSpace = arg + 1;
+    }
+    argv[argc] = NULL;
+
+    *argcPtr = argc;
+    *argvPtr = argv;
+}
+#endif /* __GNUC__ */
 
 /*
  *----------------------------------------------------------------------
