@@ -1,5 +1,7 @@
 2002-03-25  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/main.test: Removed workarounds for Bug 495977.
+
 	* library/tcltest/tcltest.tcl:  Keep the value of $::auto_path
 	unchanged, so that the tcltest package can test code that depends
 	on auto-loading.  If a testing application needs $::auto_path pruned,
