@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.101 2003/03/04 23:46:26 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.102 2003/03/11 21:59:52 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -176,7 +176,7 @@ TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 
 TCLSHNAME	= $(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
-TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION).dll
+TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION)$(SUFX:t=).dll
 TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
 
 TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
@@ -355,7 +355,7 @@ crt = -MTd
 !endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
-BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES)
+BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) -DTCL_DBGX=$(DBGX)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CLFAGS) $(OPTDEFINES)
 
