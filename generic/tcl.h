@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.93 2001/07/17 02:01:23 mdejong Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.94 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -1473,6 +1473,304 @@ typedef enum Tcl_PathType {
     TCL_PATH_RELATIVE,
     TCL_PATH_VOLUME_RELATIVE
 } Tcl_PathType;
+
+/* 
+ * The following structure is used to pass glob type data amongst
+ * the various glob routines and Tcl_FSMatchInDirectory.
+ */
+typedef struct Tcl_GlobTypeData {
+    /* Corresponds to bcdpfls as in 'find -t' */
+    int type;
+    /* Corresponds to file permissions */
+    int perm;
+    /* Acceptable mac type */
+    Tcl_Obj* macType;
+    /* Acceptable mac creator */
+    Tcl_Obj* macCreator;
+} Tcl_GlobTypeData;
+
+/*
+ * type and permission definitions for glob command
+ */
+#define TCL_GLOB_TYPE_BLOCK		(1<<0)
+#define TCL_GLOB_TYPE_CHAR		(1<<1)
+#define TCL_GLOB_TYPE_DIR		(1<<2)
+#define TCL_GLOB_TYPE_PIPE		(1<<3)
+#define TCL_GLOB_TYPE_FILE		(1<<4)
+#define TCL_GLOB_TYPE_LINK		(1<<5)
+#define TCL_GLOB_TYPE_SOCK		(1<<6)
+
+#define TCL_GLOB_PERM_RONLY		(1<<0)
+#define TCL_GLOB_PERM_HIDDEN		(1<<1)
+#define TCL_GLOB_PERM_R			(1<<2)
+#define TCL_GLOB_PERM_W			(1<<3)
+#define TCL_GLOB_PERM_X			(1<<4)
+
+/*
+ * Typedefs for the various filesystem operations:
+ */
+
+typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
+typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
+typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) 
+	_ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr, 
+	char *modeString, int permissions));
+typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp, 
+	Tcl_Obj *result, Tcl_Obj *pathPtr, char *pattern, 
+	Tcl_GlobTypeData * types));
+typedef Tcl_Obj* (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
+typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef int (Tcl_FSLstatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+					   struct stat *buf));
+typedef int (Tcl_FSCreateDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef int (Tcl_FSDeleteFileProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef int (Tcl_FSCopyDirectoryProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
+	   Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr));
+typedef int (Tcl_FSCopyFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
+			    Tcl_Obj *destPathPtr));
+typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
+			    int recursive, Tcl_Obj **errorPtr));
+typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
+			    Tcl_Obj *destPathPtr));
+typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((ClientData clientData));
+typedef int (Tcl_FSListVolumesProc) _ANSI_ARGS_((Tcl_Interp *interp));
+/* We have to declare the utime structure here. */
+struct utimbuf;
+typedef int (Tcl_FSUtimeProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+					   struct utimbuf *tval));
+typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp, 
+			 Tcl_Obj *pathPtr, int nextCheckpoint));
+typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
+			    int index, Tcl_Obj *pathPtr,
+			    Tcl_Obj **objPtrRef));
+typedef char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+			    Tcl_Obj** objPtrRef));
+typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
+			    int index, Tcl_Obj *pathPtr,
+			    Tcl_Obj *objPtr));
+typedef Tcl_Obj* (Tcl_FSReadlinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef int (Tcl_FSLoadFileProc) _ANSI_ARGS_((Tcl_Interp * interp, 
+			    Tcl_Obj *pathPtr, char * sym1, char * sym2, 
+			    Tcl_PackageInitProc ** proc1Ptr, 
+			    Tcl_PackageInitProc ** proc2Ptr, 
+			    ClientData * clientDataPtr));
+typedef int (Tcl_FSPathInFilesystemProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+			    ClientData *clientDataPtr));
+typedef Tcl_Obj* (Tcl_FSFilesystemPathTypeProc) 
+			    _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef Tcl_Obj* (Tcl_FSFilesystemSeparatorProc) 
+			    _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef void (Tcl_FSFreeInternalRepProc) _ANSI_ARGS_((ClientData clientData));
+typedef ClientData (Tcl_FSDupInternalRepProc) 
+			    _ANSI_ARGS_((ClientData clientData));
+typedef Tcl_Obj* (Tcl_FSInternalToNormalizedProc) 
+			    _ANSI_ARGS_((ClientData clientData));
+typedef ClientData (Tcl_FSCreateInternalRepProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
+
+typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
+
+/*
+ *----------------------------------------------------------------
+ * Data structures related to hooking into the filesystem
+ *----------------------------------------------------------------
+ */
+
+/*
+ * Filesystem version tag.  This was introduced in 8.4.
+ */
+
+#define TCL_FILESYSTEM_VERSION_1	((Tcl_FSVersion) 0x1)
+
+/*
+ * struct Tcl_Filesystem:
+ *
+ * One such structure exists for each type (kind) of filesystem.
+ * It collects together in one place all the functions that are
+ * part of the specific filesystem.  Tcl always accesses the
+ * filesystem through one of these structures.
+ * 
+ * Not all entries need be non-NULL; any which are NULL are simply
+ * ignored.  However, a complete filesystem should provide all of
+ * these functions.  The explanations in the structure show
+ * the importance of each function.
+ */
+
+typedef struct Tcl_Filesystem {
+    CONST char *typeName;   /* The name of the filesystem. */
+    int structureLength;    /* Length of this structure, so future
+			     * binary compatibility can be assured. */
+    Tcl_FSVersion version;  
+			    /* Version of the filesystem type. */
+    Tcl_FSPathInFilesystemProc *pathInFilesystemProc;
+			    /* Function to check whether a path is in 
+			     * this filesystem.  This is the most
+			     * important filesystem procedure. */
+    Tcl_FSDupInternalRepProc *dupInternalRepProc;
+			    /* Function to duplicate internal fs rep.  May
+			     * be NULL (but then fs is less efficient). */ 
+    Tcl_FSFreeInternalRepProc *freeInternalRepProc;
+			    /* Function to free internal fs rep.  Must
+			     * be implemented, if internal representations
+			     * need freeing, otherwise it can be NULL. */ 
+    Tcl_FSInternalToNormalizedProc *internalToNormalizedProc;
+			    /* Function to convert internal representation
+			     * to a normalized path.  Only required if
+			     * the fs creates pure path objects with no
+			     * string/path representation. */
+    Tcl_FSCreateInternalRepProc *createInternalRepProc;
+			    /* Function to create a filesystem-specific
+			     * internal representation.  May be NULL
+			     * if paths have no internal representation, 
+			     * or if the Tcl_FSPathInFilesystemProc
+			     * for this filesystem always immediately 
+			     * creates an internal representation for 
+			     * paths it accepts. */
+    Tcl_FSNormalizePathProc *normalizePathProc;       
+			    /* Function to normalize a path.  Should
+			     * be implemented for all filesystems
+			     * which can have multiple string 
+			     * representations for the same path 
+			     * object. */
+    Tcl_FSFilesystemPathTypeProc *filesystemPathTypeProc;
+			    /* Function to determine the type of a 
+			     * path in this filesystem.  May be NULL. */
+    Tcl_FSFilesystemSeparatorProc *filesystemSeparatorProc;
+			    /* Function to return the separator 
+			     * character(s) for this filesystem.  Must
+			     * be implemented. */
+    Tcl_FSStatProc *statProc; 
+			    /* 
+			     * Function to process a 'Tcl_FSStat()'
+			     * call.  Must be implemented for any
+			     * reasonable filesystem.
+			     */
+    Tcl_FSAccessProc *accessProc;	    
+			    /* 
+			     * Function to process a 'Tcl_FSAccess()'
+			     * call.  Must be implemented for any
+			     * reasonable filesystem.
+			     */
+    Tcl_FSOpenFileChannelProc *openFileChannelProc; 
+			    /* 
+			     * Function to process a
+			     * 'Tcl_FSOpenFileChannel()' call.  Must be
+			     * implemented for any reasonable
+			     * filesystem.
+			     */
+    Tcl_FSMatchInDirectoryProc *matchInDirectoryProc;  
+			    /* Function to process a 
+			     * 'Tcl_FSMatchInDirectory()'.  If not
+			     * implemented, then glob and recursive
+			     * copy functionality will be lacking in
+			     * the filesystem. */
+    Tcl_FSUtimeProc *utimeProc;       
+			    /* Function to process a 
+			     * 'Tcl_FSUtime()' call.  Required to
+			     * allow setting (not reading) of times 
+			     * with 'file mtime', 'file atime' and
+			     * the open-r/open-w/fcopy implementation
+			     * of 'file copy'. */
+    Tcl_FSReadlinkProc *readlinkProc; 
+			    /* Function to process a 
+			     * 'Tcl_FSReadlink()' call.  Should be
+			     * implemented only if the filesystem supports
+			     * links. */
+    Tcl_FSListVolumesProc *listVolumesProc;	    
+			    /* Function to list any filesystem volumes 
+			     * added by this filesystem.  Should be
+			     * implemented only if the filesystem adds
+			     * volumes at the head of the filesystem. */
+    Tcl_FSFileAttrStringsProc *fileAttrStringsProc;
+			    /* Function to list all attributes strings 
+			     * which are valid for this filesystem.  
+			     * If not implemented the filesystem will
+			     * not support the 'file attributes' command.
+			     * This allows arbitrary additional information
+			     * to be attached to files in the filesystem. */
+    Tcl_FSFileAttrsGetProc *fileAttrsGetProc;
+			    /* Function to process a 
+			     * 'Tcl_FSFileAttrsGet()' call, used by
+			     * 'file attributes'. */
+    Tcl_FSFileAttrsSetProc *fileAttrsSetProc;
+			    /* Function to process a 
+			     * 'Tcl_FSFileAttrsSet()' call, used by
+			     * 'file attributes'.  */
+    Tcl_FSCreateDirectoryProc *createDirectoryProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSCreateDirectory()' call. Should
+			     * be implemented unless the FS is
+			     * read-only. */
+    Tcl_FSRemoveDirectoryProc *removeDirectoryProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSRemoveDirectory()' call. Should
+			     * be implemented unless the FS is
+			     * read-only. */
+    Tcl_FSDeleteFileProc *deleteFileProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSDeleteFile()' call.  Should
+			     * be implemented unless the FS is
+			     * read-only. */
+    Tcl_FSLstatProc *lstatProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSLstat()' call.  If not implemented,
+			     * Tcl will attempt to use the 'statProc'
+			     * defined above instead. */
+    Tcl_FSCopyFileProc *copyFileProc; 
+			    /* Function to process a 
+			     * 'Tcl_FSCopyFile()' call.  If not
+			     * implemented Tcl will fall back
+			     * on open-r, open-w and fcopy as
+			     * a copying mechanism. */
+    Tcl_FSRenameFileProc *renameFileProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSRenameFile()' call.  If not
+			     * implemented, Tcl will fall back on
+			     * a copy and delete mechanism. */
+    Tcl_FSCopyDirectoryProc *copyDirectoryProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSCopyDirectory()' call.  If
+			     * not implemented, Tcl will fall back
+			     * on a recursive create-dir, file copy
+			     * mechanism. */
+    Tcl_FSLoadFileProc *loadFileProc; 
+			    /* Function to process a 
+			     * 'Tcl_FSLoadFile()' call.  If not
+			     * implemented, Tcl will fall back on
+			     * a copy to native-temp followed by a 
+			     * Tcl_FSLoadFile on that temporary copy. */
+    Tcl_FSUnloadFileProc *unloadFileProc;	    
+			    /* Function to unload a previously 
+			     * successfully loaded file.  If load was
+			     * implemented, then this should also be
+			     * implemented, if there is any cleanup
+			     * action required. */
+    Tcl_FSGetCwdProc *getCwdProc;     
+			    /* 
+			     * Function to process a 'Tcl_FSGetCwd()'
+			     * call.  Most filesystems need not
+			     * implement this.  It will usually only be
+			     * called once, if 'getcwd' is called
+			     * before 'chdir'.  May be NULL.
+			     */
+    Tcl_FSChdirProc *chdirProc;	    
+			    /* 
+			     * Function to process a 'Tcl_FSChdir()'
+			     * call.  If filesystems do not implement
+			     * this, it will be emulated by a series of
+			     * directory access checks.  Otherwise,
+			     * virtual filesystems which do implement
+			     * it need only respond with a positive
+			     * return result if the dirName is a valid
+			     * directory in their filesystem.  They
+			     * need not remember the result, since that
+			     * will be automatically remembered for use
+			     * by GetCwd.  Real filesystems should
+			     * carry out the correct action (i.e. call
+			     * the correct system 'chdir' api).  If not
+			     * implemented, then 'cd' and 'pwd' will
+			     * fail inside the filesystem.
+			     */
+} Tcl_Filesystem;
 
 /*
  * The following structure represents the Notifier functions that

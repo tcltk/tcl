@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.12 2001/05/15 21:23:31 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.13 2001/07/31 19:12:08 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -216,6 +216,34 @@ TclpCreateTempFile(contents)
 	lseek(fd, (off_t) 0, SEEK_SET);
     }
     return MakeFile(fd);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpTempFileName --
+ *
+ *	This function returns unique filename.
+ *
+ * Results:
+ *	Returns a valid Tcl_Obj* with refCount 0, or NULL on failure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj* 
+TclpTempFileName()
+{
+    char fileName[L_tmpnam];
+    
+    if (tmpnam(fileName) == NULL) {			/* INTL: Native. */
+	return NULL;
+    }
+
+    return TclpNativeToNormalized((ClientData) fileName);
 }
 
 /*

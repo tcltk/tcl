@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.7 1999/08/15 04:54:03 jingham Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.8 2001/07/31 19:12:07 vincentdarley Exp $
  */
 
 #include <Errors.h>
@@ -954,8 +954,7 @@ Tcl_MacSourceObjCmd(
     }
     
     if (objc == 2)  {
-	string = Tcl_GetStringFromObj(objv[1], &length);
-	return Tcl_EvalFile(interp, string);
+	return Tcl_FSEvalFile(interp, objv[1]);
     }
     
     /*

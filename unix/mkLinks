@@ -442,6 +442,74 @@ if test -r ExprLongObj.3; then
     ln ExprLongObj.3 Tcl_ExprBooleanObj.3
     ln ExprLongObj.3 Tcl_ExprObj.3
 fi
+if test -r FileSystem.3; then
+    rm -f Tcl_FSCopyFile.3
+    rm -f Tcl_FSCopyDirectory.3
+    rm -f Tcl_FSCreateDirectory.3
+    rm -f Tcl_FSDeleteFile.3
+    rm -f Tcl_FSRemoveDirectory.3
+    rm -f Tcl_FSRenameFile.3
+    rm -f Tcl_FSListVolumes.3
+    rm -f Tcl_FSEvalFile.3
+    rm -f Tcl_FSLoadFile.3
+    rm -f Tcl_FSMatchInDirectory.3
+    rm -f Tcl_FSReadlink.3
+    rm -f Tcl_FSLstat.3
+    rm -f Tcl_FSUtime.3
+    rm -f Tcl_FSFileAttrsGet.3
+    rm -f Tcl_FSFileAttrsSet.3
+    rm -f Tcl_FSFileAttrStrings.3
+    rm -f Tcl_FSStat.3
+    rm -f Tcl_FSAccess.3
+    rm -f Tcl_FSOpenFileChannel.3
+    rm -f Tcl_FSGetCwd.3
+    rm -f Tcl_FSChdir.3
+    rm -f Tcl_FSPathSeparator.3
+    rm -f Tcl_FSJoinPath.3
+    rm -f Tcl_FSSplitPath.3
+    rm -f Tcl_FSEqualPaths.3
+    rm -f Tcl_FSGetNormalizedPath.3
+    rm -f Tcl_FSJoinToPath.3
+    rm -f Tcl_FSConvertToPathType.3
+    rm -f Tcl_FSGetInternalRep.3
+    rm -f Tcl_FSGetTranslatedPath.3
+    rm -f Tcl_FSNewNativePath.3
+    rm -f Tcl_FSGetNativePath.3
+    rm -f Tcl_FSFileSystemInfo.3
+    ln FileSystem.3 Tcl_FSCopyFile.3
+    ln FileSystem.3 Tcl_FSCopyDirectory.3
+    ln FileSystem.3 Tcl_FSCreateDirectory.3
+    ln FileSystem.3 Tcl_FSDeleteFile.3
+    ln FileSystem.3 Tcl_FSRemoveDirectory.3
+    ln FileSystem.3 Tcl_FSRenameFile.3
+    ln FileSystem.3 Tcl_FSListVolumes.3
+    ln FileSystem.3 Tcl_FSEvalFile.3
+    ln FileSystem.3 Tcl_FSLoadFile.3
+    ln FileSystem.3 Tcl_FSMatchInDirectory.3
+    ln FileSystem.3 Tcl_FSReadlink.3
+    ln FileSystem.3 Tcl_FSLstat.3
+    ln FileSystem.3 Tcl_FSUtime.3
+    ln FileSystem.3 Tcl_FSFileAttrsGet.3
+    ln FileSystem.3 Tcl_FSFileAttrsSet.3
+    ln FileSystem.3 Tcl_FSFileAttrStrings.3
+    ln FileSystem.3 Tcl_FSStat.3
+    ln FileSystem.3 Tcl_FSAccess.3
+    ln FileSystem.3 Tcl_FSOpenFileChannel.3
+    ln FileSystem.3 Tcl_FSGetCwd.3
+    ln FileSystem.3 Tcl_FSChdir.3
+    ln FileSystem.3 Tcl_FSPathSeparator.3
+    ln FileSystem.3 Tcl_FSJoinPath.3
+    ln FileSystem.3 Tcl_FSSplitPath.3
+    ln FileSystem.3 Tcl_FSEqualPaths.3
+    ln FileSystem.3 Tcl_FSGetNormalizedPath.3
+    ln FileSystem.3 Tcl_FSJoinToPath.3
+    ln FileSystem.3 Tcl_FSConvertToPathType.3
+    ln FileSystem.3 Tcl_FSGetInternalRep.3
+    ln FileSystem.3 Tcl_FSGetTranslatedPath.3
+    ln FileSystem.3 Tcl_FSNewNativePath.3
+    ln FileSystem.3 Tcl_FSGetNativePath.3
+    ln FileSystem.3 Tcl_FSFileSystemInfo.3
+fi
 if test -r FindExec.3; then
     rm -f Tcl_FindExecutable.3
     rm -f Tcl_GetNameOfExecutable.3
@@ -651,6 +719,8 @@ if test -r OpenFileChnl.3; then
     rm -f Tcl_GetChannelNamesEx.3
     rm -f Tcl_RegisterChannel.3
     rm -f Tcl_UnregisterChannel.3
+    rm -f Tcl_DetachChannel.3
+    rm -f Tcl_IsStandardChannel.3
     rm -f Tcl_Close.3
     rm -f Tcl_ReadChars.3
     rm -f Tcl_Read.3
@@ -676,6 +746,8 @@ if test -r OpenFileChnl.3; then
     ln OpenFileChnl.3 Tcl_GetChannelNamesEx.3
     ln OpenFileChnl.3 Tcl_RegisterChannel.3
     ln OpenFileChnl.3 Tcl_UnregisterChannel.3
+    ln OpenFileChnl.3 Tcl_DetachChannel.3
+    ln OpenFileChnl.3 Tcl_IsStandardChannel.3
     ln OpenFileChnl.3 Tcl_Close.3
     ln OpenFileChnl.3 Tcl_ReadChars.3
     ln OpenFileChnl.3 Tcl_Read.3

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.50 2001/07/12 13:15:09 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.51 2001/07/31 19:12:06 vincentdarley Exp $
 
 library tcl
 
@@ -1514,7 +1514,6 @@ declare 432 generic {
 declare 433 generic {
     Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
 }
-
 # introduced in 8.4a3
 declare 434 generic {
     Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
@@ -1529,6 +1528,134 @@ declare 436 generic {
 }
 declare 437 generic {
     Tcl_Obj * Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+}
+declare 438 generic {
+    int Tcl_DetachChannel(Tcl_Interp* interp, Tcl_Channel channel)
+}
+declare 439 generic {
+    int Tcl_IsStandardChannel(Tcl_Channel channel)
+}
+declare 440 generic {
+    int	Tcl_FSCopyFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
+}
+declare 441 generic {
+    int	Tcl_FSCopyDirectory(Tcl_Obj *srcPathPtr, \
+			    Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr)
+}
+declare 442 generic {
+    int	Tcl_FSCreateDirectory(Tcl_Obj *pathPtr)
+}
+declare 443 generic {
+    int	Tcl_FSDeleteFile(Tcl_Obj *pathPtr)
+}
+declare 444 generic {
+    int	Tcl_FSLoadFile(Tcl_Interp * interp, \
+		    Tcl_Obj *pathPtr, char * sym1, char * sym2, \
+		    Tcl_PackageInitProc ** proc1Ptr, \
+		    Tcl_PackageInitProc ** proc2Ptr, \
+		    ClientData * clientDataPtr, \
+		    Tcl_FSUnloadFileProc **unloadProcPtr)
+}
+declare 445 generic {
+    int	Tcl_FSMatchInDirectory(Tcl_Interp *interp, Tcl_Obj * result, \
+		    Tcl_Obj *pathPtr, \
+		    char * pattern, Tcl_GlobTypeData * types)
+}
+declare 446 generic {
+    Tcl_Obj*	Tcl_FSReadlink(Tcl_Obj *pathPtr)
+}
+declare 447 generic {
+    int	Tcl_FSRemoveDirectory(Tcl_Obj *pathPtr, \
+		    int recursive, Tcl_Obj **errorPtr)
+}
+declare 448 generic {
+    int	Tcl_FSRenameFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
+}
+declare 449 generic {
+    int	Tcl_FSLstat(Tcl_Obj *pathPtr, struct stat *buf)
+}
+declare 450 generic {
+    int Tcl_FSUtime(Tcl_Obj *pathPtr, struct utimbuf *tval)
+}
+declare 451 generic {
+    int Tcl_FSFileAttrsGet(Tcl_Interp *interp, \
+			    int index, Tcl_Obj *pathPtr, \
+			    Tcl_Obj **objPtrRef)
+}
+declare 452 generic {
+    int Tcl_FSFileAttrsSet(Tcl_Interp *interp, \
+			    int index, Tcl_Obj *pathPtr, \
+			    Tcl_Obj *objPtr)
+}
+declare 453 generic {
+    char** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+}
+declare 454 generic {
+    int Tcl_FSStat(Tcl_Obj *pathPtr, struct stat *buf)
+}
+declare 455 generic {
+    int Tcl_FSAccess(Tcl_Obj *pathPtr, int mode)
+}
+declare 456 generic {
+    Tcl_Channel Tcl_FSOpenFileChannel(Tcl_Interp *interp, Tcl_Obj *pathPtr, \
+	    char *modeString, int permissions)
+}
+declare 457 generic {
+    Tcl_Obj*  Tcl_FSGetCwd(Tcl_Interp *interp)
+}
+declare 458 generic {
+    int Tcl_FSChdir(Tcl_Obj *pathPtr)
+}
+declare 459 generic {
+    int Tcl_FSConvertToPathType(Tcl_Interp *interp, Tcl_Obj *pathPtr)
+}
+declare 460 generic {
+    Tcl_Obj* Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
+}
+declare 461 generic {
+    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, int *lenPtr)
+}
+declare 462 generic {
+    int Tcl_FSEqualPaths(Tcl_Obj* firstPtr, Tcl_Obj* secondPtr)
+}
+declare 463 generic {
+    Tcl_Obj* Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj* pathObjPtr)
+}
+declare 464 generic {
+    Tcl_Obj* Tcl_FSJoinToPath(Tcl_Obj *basePtr, int objc, Tcl_Obj *CONST objv[])
+}
+declare 465 generic {
+    ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathObjPtr, Tcl_Filesystem *fsPtr)
+}
+declare 466 generic {
+    char* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+}
+declare 467 generic {
+    int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
+}
+declare 468 generic {
+    Tcl_Obj* Tcl_FSNewNativePath(Tcl_Obj* fromFilesystem, ClientData clientData)
+}
+declare 469 generic {
+    char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
+}
+declare 470 generic {
+    Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathObjPtr)
+}
+declare 471 generic {
+    Tcl_Obj* Tcl_FSPathSeparator(Tcl_Obj* pathObjPtr)
+}
+declare 472 generic {
+    int	Tcl_FSListVolumes(Tcl_Interp *interp)
+}
+declare 473 generic {
+    int Tcl_FSRegister(ClientData clientData, Tcl_Filesystem *fsPtr)
+}
+declare 474 generic {
+    int Tcl_FSUnregister(Tcl_Filesystem *fsPtr)
+}
+declare 475 generic {
+    ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
 }
 
 ##############################################################################

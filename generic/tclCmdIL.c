@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.32 2001/06/28 00:42:55 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.33 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1663,17 +1663,14 @@ InfoScriptCmd(dummy, interp, objc, objv)
     }
 
     if (objc == 3) {
-	int length;
-	char *filename = Tcl_GetStringFromObj(objv[2], &length);
-
 	if (iPtr->scriptFile != NULL) {
-	    ckfree(iPtr->scriptFile);
+	    Tcl_DecrRefCount(iPtr->scriptFile);
 	}
-	iPtr->scriptFile = ckalloc((unsigned) (length + 1));
-	strcpy(iPtr->scriptFile, filename);
+	iPtr->scriptFile = objv[2];
+	Tcl_IncrRefCount(iPtr->scriptFile);
     }
     if (iPtr->scriptFile != NULL) {
-        Tcl_SetStringObj(Tcl_GetObjResult(interp), iPtr->scriptFile, -1);
+        Tcl_SetObjResult(interp, iPtr->scriptFile);
     }
     return TCL_OK;
 }

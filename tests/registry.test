@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.10 2000/04/10 17:19:03 ericm Exp $
+# RCS: @(#) $Id: registry.test,v 1.11 2001/07/31 19:12:07 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,8 +19,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 if {$tcl_platform(platform) == "windows"} {
     if [catch {
-	set lib [lindex [glob [file join [pwd] [file dirname \
-		[info nameofexecutable]] tclreg*.dll]] 0]
+	set lib [lindex [glob -directory [file join [pwd] [file dirname \
+		[info nameofexecutable]]] tclreg*.dll] 0]
 	load $lib registry
     }] {
 	puts "Unable to find the registry package. Skipping registry tests."

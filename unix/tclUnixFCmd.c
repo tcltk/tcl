@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.6 2000/04/04 08:05:57 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.7 2001/07/31 19:12:07 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -149,6 +149,73 @@ static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr));
+
+int 
+TclpObjCreateDirectory(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    return TclpCreateDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+}
+
+int 
+TclpObjDeleteFile(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    return TclpDeleteFile(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+}
+
+int 
+TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+    Tcl_Obj **errorPtr;
+{
+    Tcl_DString ds;
+    int ret;
+    ret = TclpCopyDirectory(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			    Tcl_FSGetTranslatedPath(NULL,destPathPtr), &ds);
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
+}
+
+int 
+TclpObjCopyFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return TclpCopyFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+}
+
+int 
+TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
+    Tcl_Obj *pathPtr;
+    int recursive;
+    Tcl_Obj **errorPtr;
+{
+    Tcl_DString ds;
+    int ret;
+    ret = TclpRemoveDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr),recursive, &ds);
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
+}
+
+int 
+TclpObjRenameFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return TclpRenameFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			  Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -1608,4 +1675,53 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
 	}
     }
     return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpObjNormalizePath --
+ *
+ *	This function scans through a path specification and replaces
+ *	it, in place, with a normalized version.  On unix, this simply
+ *	ascertains where the valid path ends, and makes no change in
+ *	place.
+ *
+ * Results:
+ *	The new 'nextCheckpoint' value, giving as far as we could
+ *	understand in the path.
+ *
+ * Side effects:
+ *	The pathPtr string, which must contain a valid path, is
+ *	not modified (unlike Windows, MacOS versions).
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
+    Tcl_Interp *interp;
+    Tcl_Obj *pathPtr;
+    int nextCheckpoint;
+{
+    char *path = Tcl_GetString(pathPtr);
+    
+    while (1) {
+	char cur = path[nextCheckpoint];
+	if (cur == 0) {
+	    break;
+	}
+	if (cur == '/') {
+	    int access;
+	    path[nextCheckpoint] = 0;
+	    access = TclpAccess(path, F_OK);
+	    path[nextCheckpoint] = '/';
+	    if (access != 0) {
+		/* File doesn't exist */
+		break;
+	    }
+	}
+	nextCheckpoint++;
+    }
+    return nextCheckpoint;
 }

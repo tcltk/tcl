@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.57 2001/06/28 01:22:21 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.58 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1274,11 +1274,9 @@ typedef struct Interp {
 				 * are added/removed by calling
 				 * Tcl_AddInterpResolvers and
 				 * Tcl_RemoveInterpResolver. */
-    char *scriptFile;		/* NULL means there is no nested source
+    Tcl_Obj *scriptFile;	/* NULL means there is no nested source
 				 * command active;  otherwise this points to
-				 * the name of the file being sourced (it's
-				 * not malloc-ed:  it points to an argument
-				 * to Tcl_EvalFile. */
+				 * pathPtr of the file being sourced. */
     int flags;			/* Various flag bits.  See below. */
     long randSeed;		/* Seed used for rand() function. */
     Trace *tracePtr;		/* List of traces for this interpreter. */
@@ -1505,9 +1503,24 @@ typedef struct TclFileAttrProcs {
 typedef struct TclFile_ *TclFile;
     
 /*
+ * Opaque names for platform specific types.
+ */
+
+typedef struct TclpTime_t_ *TclpTime_t;
+
+/*
+ * The "globParameters" argument of the function TclGlob is an
+ * or'ed combination of the following values:
+ */
+
+#define TCL_GLOBMODE_NO_COMPLAIN      1
+#define TCL_GLOBMODE_JOIN             2
+#define TCL_GLOBMODE_DIR              4
+#define TCL_GLOBMODE_TAILS            8
+
+/*
  *----------------------------------------------------------------
- * Data structures related to hooking 'TclStat(...)' and
- * 'TclAccess(...)'.
+ * Data structures related to obsolete filesystem hooks
  *----------------------------------------------------------------
  */
 
@@ -1517,51 +1530,17 @@ typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
 	char *fileName, char *modeString,
 	int permissions));
 
+
+/*
+ *----------------------------------------------------------------
+ * Data structures related to procedures
+ *----------------------------------------------------------------
+ */
+
 typedef int (*TclCmdProcType) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int argc, char *argv[]));
 typedef int (*TclObjCmdProcType) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST objv[]));
-
-/*
- * Opaque names for platform specific types.
- */
-
-typedef struct TclpTime_t_ *TclpTime_t;
-
-/* 
- * The following structure is used to pass glob type data amongst
- * the various glob routines and TclpMatchFilesTypes.  Currently
- * most of the fields are ignored.  However they will be used in
- * a future release to implement glob's ability to find files
- * of particular types/permissions/etc only.
- */
-typedef struct GlobTypeData {
-    /* Corresponds to bcdpfls as in 'find -t' */
-    int type;
-    /* Corresponds to file permissions */
-    int perm;
-    /* Acceptable mac type */
-    Tcl_Obj* macType;
-    /* Acceptable mac creator */
-    Tcl_Obj* macCreator;
-} GlobTypeData;
-
-/*
- * type and permission definitions for glob command
- */
-#define TCL_GLOB_TYPE_BLOCK		(1<<0)
-#define TCL_GLOB_TYPE_CHAR		(1<<1)
-#define TCL_GLOB_TYPE_DIR		(1<<2)
-#define TCL_GLOB_TYPE_PIPE		(1<<3)
-#define TCL_GLOB_TYPE_FILE		(1<<4)
-#define TCL_GLOB_TYPE_LINK		(1<<5)
-#define TCL_GLOB_TYPE_SOCK		(1<<6)
-
-#define TCL_GLOB_PERM_RONLY		(1<<0)
-#define TCL_GLOB_PERM_HIDDEN		(1<<1)
-#define TCL_GLOB_PERM_R			(1<<2)
-#define TCL_GLOB_PERM_W			(1<<3)
-#define TCL_GLOB_PERM_X			(1<<4)
 
 /*
  *----------------------------------------------------------------
@@ -1577,8 +1556,6 @@ extern char *			tclDefaultEncodingDir;
 extern Tcl_ChannelType		tclFileChannelType;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;
-extern char *			tclpFileAttrStrings[];
-extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
  * Variables denoting the Tcl object types defined in the core.
@@ -1634,8 +1611,6 @@ extern char *		tclEmptyStringRep;
  *----------------------------------------------------------------
  */
 
-EXTERN int		TclAccess _ANSI_ARGS_((CONST char *path,
-			    int mode));
 EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN int		TclAccessInsertProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
@@ -1667,7 +1642,7 @@ EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp *iPtr,
 			    Tcl_HashTable *tablePtr));
 EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *separators, Tcl_DString *headPtr,
-			    char *tail, GlobTypeData *types));
+			    char *tail, Tcl_GlobTypeData *types));
 EXTERN void		TclDumpMemoryInfo _ANSI_ARGS_((FILE *outFile));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
@@ -1676,13 +1651,13 @@ EXTERN void		TclExprFloatError _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 EXTERN int		TclFileCopyCmd _ANSI_ARGS_((Tcl_Interp *interp, 
-			    int argc, char **argv)) ;
+			    int objc, Tcl_Obj *CONST objv[])) ;
 EXTERN int		TclFileDeleteCmd _ANSI_ARGS_((Tcl_Interp *interp,
-			    int argc, char **argv));
+			    int objc, Tcl_Obj *CONST objv[]));
 EXTERN int		TclFileMakeDirsCmd _ANSI_ARGS_((Tcl_Interp *interp,
-			    int argc, char **argv)) ;
+			    int objc, Tcl_Obj *CONST objv[])) ;
 EXTERN int		TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
-			    int argc, char **argv)) ;
+			    int objc, Tcl_Obj *CONST objv[])) ;
 EXTERN void		TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeCompilation _ANSI_ARGS_((void));
@@ -1730,8 +1705,8 @@ EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 			    Tcl_Command command));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *pattern, char *unquotedPrefix, 
-			    int globFlags, GlobTypeData* types));
+			    char *pattern, Tcl_Obj *unquotedPrefix, 
+			    int globFlags, Tcl_GlobTypeData* types));
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp *interp,
 			    int argc, char **argv, int flags));
 EXTERN int		TclGuessPackageName _ANSI_ARGS_((char *fileName,
@@ -1791,8 +1766,10 @@ EXTERN int		TclOpenFileChannelDeleteProc _ANSI_ARGS_((
 			    TclOpenFileChannelProc_ *proc));
 EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 			    TclOpenFileChannelProc_ *proc));
-EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *filename,
+EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
+EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+			    struct stat *buf));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN int		TclpCopyFile _ANSI_ARGS_((CONST char *source,
@@ -1816,6 +1793,7 @@ EXTERN int		TclpFindVariable _ANSI_ARGS_((CONST char *name,
 EXTERN void		TclpFree _ANSI_ARGS_((char *ptr));
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
+EXTERN long		TclpGetGMTOffset _ANSI_ARGS_((void));
 EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
 EXTERN void		TclpGetTime _ANSI_ARGS_((Tcl_Time *time));
 EXTERN int		TclpGetTimeZone _ANSI_ARGS_((unsigned long time));
@@ -1832,6 +1810,25 @@ EXTERN void		TclpMasterUnlock _ANSI_ARGS_((void));
 EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *separators, Tcl_DString *dirPtr,
 			    char *pattern, char *tail));
+EXTERN int              TclpObjNormalizePath _ANSI_ARGS_((Tcl_Interp *interp, 
+			    Tcl_Obj *pathPtr, int nextCheckpoint));
+EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN int		TclpObjDeleteFile _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN int		TclpObjCopyDirectory _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
+				Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr));
+EXTERN int		TclpObjCopyFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
+				Tcl_Obj *destPathPtr));
+EXTERN int		TclpObjRemoveDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+				int recursive, Tcl_Obj **errorPtr));
+EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
+				Tcl_Obj *destPathPtr));
+EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, char *pattern, Tcl_GlobTypeData *types));
+EXTERN int		TclpChdir _ANSI_ARGS_((CONST char *dirName));
+EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp *interp, Tcl_DString *bufferPtr));
+EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN Tcl_Obj*		TclpObjReadlink _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *fileName, char *modeString,
 			    int permissions));
@@ -1894,14 +1891,14 @@ EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, char *proto, int *portPtr));
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock,
 			    int size));
-EXTERN int		TclStat _ANSI_ARGS_((CONST char *path,
-			    struct stat *buf));
 EXTERN int		TclStatDeleteProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace *nsPtr));
 EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 			    int result, Tcl_Interp *targetInterp));
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
+EXTERN Tcl_Obj*         TclpNativeToNormalized 
+                            _ANSI_ARGS_((ClientData clientData));
 
 /*
  *----------------------------------------------------------------
