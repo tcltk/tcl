@@ -2,6 +2,8 @@
 
 	*** 8.4.7 TAGGED FOR RELEASE ***
 
+	* tests/io.test (io-61.1): create file in binary mode for x-plat.
+
 2004-07-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclThreadAlloc.c: Moved the tclInt.h include to provide
