@@ -1,3 +1,8 @@
+2003-10-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompile.c (TclCompileScript): backport fix for crash
+	on TCL_OUT_LINE_COMPILE mishandling. [Bug 705406, 735055]
+
 2003-02-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
