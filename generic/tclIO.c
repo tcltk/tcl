@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.43 2001/12/17 22:55:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.44 2002/01/15 17:55:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -112,7 +112,7 @@ static void		DiscardOutputQueued _ANSI_ARGS_((
 				ChannelState *chanPtr));
 static int		DoRead _ANSI_ARGS_((Channel *chanPtr, char *srcPtr,
 				int slen));
-static int		DoWrite _ANSI_ARGS_((Channel *chanPtr, char *src,
+static int		DoWrite _ANSI_ARGS_((Channel *chanPtr, CONST char *src,
 				int srcLen));
 static int		DoReadChars _ANSI_ARGS_ ((Channel* chan,
 				Tcl_Obj* objPtr, int toRead, int appendFlag));
@@ -756,7 +756,7 @@ Tcl_RegisterChannel(interp, chan)
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     statePtr = chanPtr->state;
 
-    if (statePtr->channelName == (char *) NULL) {
+    if (statePtr->channelName == (CONST char *) NULL) {
         panic("Tcl_RegisterChannel: channel without name");
     }
     if (interp != (Tcl_Interp *) NULL) {
@@ -1003,7 +1003,7 @@ Tcl_Channel
 Tcl_GetChannel(interp, chanName, modePtr)
     Tcl_Interp *interp;		/* Interpreter in which to find or create
                                  * the channel. */
-    char *chanName;		/* The name of the channel. */
+    CONST char *chanName;	/* The name of the channel. */
     int *modePtr;		/* Where to store the mode in which the
                                  * channel was opened? Will contain an ORed
                                  * combination of TCL_READABLE and
@@ -1012,7 +1012,7 @@ Tcl_GetChannel(interp, chanName, modePtr)
     Channel *chanPtr;		/* The actual channel. */
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
-    char *name;			/* Translated name. */
+    CONST char *name;		/* Translated name. */
 
     /*
      * Substitute "stdin", etc.  Note that even though we immediately
@@ -1081,7 +1081,7 @@ Tcl_GetChannel(interp, chanName, modePtr)
 Tcl_Channel
 Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
     Tcl_ChannelType *typePtr;	/* The channel type record. */
-    char *chanName;		/* Name of channel to record. */
+    CONST char *chanName;	/* Name of channel to record. */
     ClientData instanceData;	/* Instance specific data. */
     int mask;			/* TCL_READABLE & TCL_WRITABLE to indicate
                                  * if the channel is readable, writable. */
@@ -1121,8 +1121,9 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
      */
 
     if (chanName != (char *) NULL) {
-        statePtr->channelName = ckalloc((unsigned) (strlen(chanName) + 1));
-        strcpy(statePtr->channelName, chanName);
+	char *tmp = ckalloc((unsigned) (strlen(chanName) + 1));
+        statePtr->channelName = tmp;
+        strcpy(tmp, chanName);
     } else {
         panic("Tcl_CreateChannel: NULL channel name");
     }
@@ -1717,7 +1718,7 @@ Tcl_GetChannelMode(chan)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetChannelName(chan)
     Tcl_Channel chan;		/* The channel for which to return the name. */
 {
@@ -2276,7 +2277,7 @@ CloseChannel(interp, chanPtr, errorCode)
 
     if (chanPtr == statePtr->bottomChanPtr) {
 	if (statePtr->channelName != (char *) NULL) {
-	    ckfree(statePtr->channelName);
+	    ckfree((char *) statePtr->channelName);
 	    statePtr->channelName = NULL;
 	}
 
@@ -2682,7 +2683,7 @@ Tcl_ClearChannelHandlers (channel)
 int
 Tcl_Write(chan, src, srcLen)
     Tcl_Channel chan;			/* The channel to buffer output for. */
-    char *src;				/* Data to queue in output buffer. */
+    CONST char *src;			/* Data to queue in output buffer. */
     int srcLen;				/* Length of data in bytes, or < 0 for
 					 * strlen(). */
 {
@@ -2732,7 +2733,7 @@ Tcl_Write(chan, src, srcLen)
 int
 Tcl_WriteRaw(chan, src, srcLen)
     Tcl_Channel chan;			/* The channel to buffer output for. */
-    char *src;				/* Data to queue in output buffer. */
+    CONST char *src;			/* Data to queue in output buffer. */
     int srcLen;				/* Length of data in bytes, or < 0 for
 					 * strlen(). */
 {
@@ -4912,7 +4913,7 @@ TranslateInputEOL(statePtr, dstStart, srcStart, dstLenPtr, srcLenPtr)
 int
 Tcl_Ungets(chan, str, len, atEnd)
     Tcl_Channel chan;		/* The channel for which to add the input. */
-    char *str;			/* The input itself. */
+    CONST char *str;		/* The input itself. */
     int len;			/* The length of the input. */
     int atEnd;			/* If non-zero, add at end of queue; otherwise
                                  * add at head of queue. */    
@@ -5872,8 +5873,8 @@ Tcl_GetChannelBufferSize(chan)
 int
 Tcl_BadChannelOption(interp, optionName, optionList)
     Tcl_Interp *interp;			/* Current interpreter. (can be NULL)*/
-    char *optionName;			/* 'bad option' name */
-    char *optionList;			/* Specific options list to append 
+    CONST char *optionName;		/* 'bad option' name */
+    CONST char *optionList;		/* Specific options list to append 
 					 * to the standard generic options.
 					 * can be NULL for generic options 
 					 * only.
@@ -5935,7 +5936,7 @@ int
 Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
     Tcl_Channel chan;		/* Channel on which to get option. */
-    char *optionName;		/* Option to get. */
+    CONST char *optionName;	/* Option to get. */
     Tcl_DString *dsPtr;		/* Where to store value(s). */
 {
     size_t len;			/* Length of optionName string. */
@@ -6159,10 +6160,9 @@ int
 Tcl_SetChannelOption(interp, chan, optionName, newValue)
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
     Tcl_Channel chan;		/* Channel on which to set mode. */
-    char *optionName;		/* Which option to set? */
-    char *newValue;		/* New value for option. */
+    CONST char *optionName;	/* Which option to set? */
+    CONST char *newValue;	/* New value for option. */
 {
-    int newMode;		/* New (numeric) mode to sert. */
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     size_t len;			/* Length of optionName string. */
@@ -6203,6 +6203,7 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
 
     if ((len > 2) && (optionName[1] == 'b') &&
             (strncmp(optionName, "-blocking", len) == 0)) {
+	int newMode;
         if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
             return TCL_ERROR;
         }
@@ -6321,23 +6322,24 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
 	}
 
 	if (readMode) {
+	    TclEolTranslation translation;
 	    if (*readMode == '\0') {
-		newMode = statePtr->inputTranslation;
+		translation = statePtr->inputTranslation;
 	    } else if (strcmp(readMode, "auto") == 0) {
-		newMode = TCL_TRANSLATE_AUTO;
+		translation = TCL_TRANSLATE_AUTO;
 	    } else if (strcmp(readMode, "binary") == 0) {
-		newMode = TCL_TRANSLATE_LF;
+		translation = TCL_TRANSLATE_LF;
 		statePtr->inEofChar = 0;
 		Tcl_FreeEncoding(statePtr->encoding);		    
 		statePtr->encoding = NULL;
 	    } else if (strcmp(readMode, "lf") == 0) {
-		newMode = TCL_TRANSLATE_LF;
+		translation = TCL_TRANSLATE_LF;
 	    } else if (strcmp(readMode, "cr") == 0) {
-		newMode = TCL_TRANSLATE_CR;
+		translation = TCL_TRANSLATE_CR;
 	    } else if (strcmp(readMode, "crlf") == 0) {
-		newMode = TCL_TRANSLATE_CRLF;
+		translation = TCL_TRANSLATE_CRLF;
 	    } else if (strcmp(readMode, "platform") == 0) {
-		newMode = TCL_PLATFORM_TRANSLATION;
+		translation = TCL_PLATFORM_TRANSLATION;
 	    } else {
 		if (interp) {
 		    Tcl_AppendResult(interp,
@@ -6355,8 +6357,8 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
 	     * complete the line.
 	     */
 
-	    if (newMode != statePtr->inputTranslation) {
-		statePtr->inputTranslation = (Tcl_EolTranslation) newMode;
+	    if (translation != statePtr->inputTranslation) {
+		statePtr->inputTranslation = translation;
 		statePtr->flags &= ~(INPUT_SAW_CR);
 		statePtr->flags &= ~(CHANNEL_NEED_MORE_DATA);
 		UpdateInterest(chanPtr);
@@ -8023,14 +8025,14 @@ CopyBuffer(chanPtr, result, space)
 static int
 DoWrite(chanPtr, src, srcLen)
     Channel *chanPtr;			/* The channel to buffer output for. */
-    char *src;				/* Data to write. */
+    CONST char *src;			/* Data to write. */
     int srcLen;				/* Number of bytes to write. */
 {
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *outBufPtr;		/* Current output buffer. */
     int foundNewline;			/* Did we find a newline in output? */
     char *dPtr;
-    char *sPtr;				/* Search variables for newline. */
+    CONST char *sPtr;			/* Search variables for newline. */
     int crsent;				/* In CRLF eol translation mode,
                                          * remember the fact that a CR was
                                          * output to the channel without
@@ -8382,11 +8384,11 @@ Tcl_GetChannelNames(interp)
 int
 Tcl_GetChannelNamesEx(interp, pattern)
     Tcl_Interp *interp;		/* Interp for error reporting. */
-    char *pattern;		/* pattern to filter on. */
+    CONST char *pattern;	/* pattern to filter on. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ChannelState *statePtr;
-    char *name;			/* name for channel */
+    CONST char *name;		/* name for channel */
     Tcl_Obj *resultPtr;		/* pointer to result object */
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
@@ -8530,7 +8532,7 @@ Tcl_IsChannelExisting(chanName)
 {
     ChannelState *statePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    char *name;
+    CONST char *name;
     int chanNameLen;
 
     chanNameLen = strlen(chanName);
@@ -8572,7 +8574,7 @@ Tcl_IsChannelExisting(chanName)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_ChannelName(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.6 2001/07/16 23:30:16 mdejong Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.7 2002/01/15 17:55:30 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -145,8 +145,8 @@ static int		ConsoleGetHandleProc(ClientData instanceData,
 static ThreadSpecificData *ConsoleInit(void);
 static int		ConsoleInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		ConsoleOutputProc(ClientData instanceData, char *buf,
-			    int toWrite, int *errorCode);
+static int		ConsoleOutputProc(ClientData instanceData,
+			    CONST char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	ConsoleReaderThread(LPVOID arg);
 static void		ConsoleSetupProc(ClientData clientData, int flags);
 static void		ConsoleWatchProc(ClientData instanceData, int mask);
@@ -680,7 +680,7 @@ ConsoleInputProc(
 static int
 ConsoleOutputProc(
     ClientData instanceData,		/* Console state. */
-    char *buf,				/* The data buffer. */
+    CONST char *buf,			/* The data buffer. */
     int toWrite,			/* How many bytes to write? */
     int *errorCode)			/* Where to store error code. */
 {

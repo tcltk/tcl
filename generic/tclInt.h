@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.73 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.74 2002/01/15 17:55:30 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1432,7 +1432,7 @@ typedef struct ParseValue {
 #define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
 
 /*
- * The following macros are used to specify the runtime platform
+ * The following enum values are used to specify the runtime platform
  * setting of the tclPlatform variable.
  */
 
@@ -1441,6 +1441,19 @@ typedef enum {
     TCL_PLATFORM_MAC,		/* MacOS. */
     TCL_PLATFORM_WINDOWS	/* Any Microsoft Windows OS. */
 } TclPlatformType;
+
+/*
+ *  The following enum values are used to indicate the translation
+ *  of a Tcl channel.  Declared here so that each platform can define
+ *  TCL_PLATFORM_TRANSLATION to the native translation on that platform
+ */
+
+typedef enum TclEolTranslation {
+    TCL_TRANSLATE_AUTO,                 /* Eol == \r, \n and \r\n. */
+    TCL_TRANSLATE_CR,                   /* Eol == \r. */
+    TCL_TRANSLATE_LF,                   /* Eol == \n. */
+    TCL_TRANSLATE_CRLF                  /* Eol == \r\n. */
+} TclEolTranslation;
 
 /*
  * Flags for TclInvoke:

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.16 2001/10/15 17:34:53 hobbs Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.17 2002/01/15 17:55:30 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -88,7 +88,7 @@ static ThreadSpecificData *FileInit _ANSI_ARGS_((void));
 static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 	            	    char *buf, int toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toWrite, int *errorCode));
+			    CONST char *buf, int toWrite, int *errorCode));
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
@@ -535,7 +535,7 @@ FileInputProc(instanceData, buf, bufSize, errorCode)
 static int
 FileOutputProc(instanceData, buf, toWrite, errorCode)
     ClientData instanceData;		/* File state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCode;			/* Where to store error code. */
 {
