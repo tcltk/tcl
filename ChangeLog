@@ -1,3 +1,8 @@
+2002-10-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEnv.c (Tcl_PutEnv): correct possible mem leak.
+	[Patch #623269] (brouwers)
+
 2002-10-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* mac/tclMacFCmd.c: removed GenerateUniqueName(), use equivalent
