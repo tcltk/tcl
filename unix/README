@@ -1,7 +1,7 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.22 2002/06/25 15:20:44 rmax Exp $
+RCS: @(#) $Id: README,v 1.23 2002/09/11 03:19:18 mdejong Exp $
 
 This is the directory where you configure, compile, test, and install
 UNIX versions of Tcl.  This directory also contains source files for Tcl
@@ -81,7 +81,8 @@ How To Compile And Install Tcl:
     Note: by default gcc will be used if it can be located on the PATH.
     if you want to use cc instead of gcc, set the CC environment variable
     to "cc" before running configure. It is not safe to edit the
-    Makefile to use gcc after configure is run.
+    Makefile to use gcc after configure is run. Also note that
+    you should use the same compiler when building extensions.
 
     Note: be sure to use only absolute path names (those starting with "/")
     in the --prefix and --exec-prefix options.
