@@ -1,3 +1,11 @@
+2004-01-19  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c (Tcl_WaitPid): Fixed a thread-safety problem
+	with the process list.  The delayed cut operation after the wait
+	was going stale by being outside the list lock.  It now cuts
+	within the lock and does a locked splice for when it needs to
+	instead.  [Bug 859820]
+
 2004-01-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompile.c, generic/tclCompile.h: Two new opcodes,
