@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.10 1999/05/06 18:46:42 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.11 1999/05/06 19:21:11 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2063,7 +2063,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
     bytes = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((*bytes != 'e') ||
-	(strncmp(bytes, "end", (length > 3) ? 3 : length) != 0)) {
+	(strncmp(bytes, "end", (size_t)((length > 3) ? 3 : length)) != 0)) {
       if (Tcl_GetIntFromObj(NULL, objPtr, &offset) != TCL_OK) {
 	  goto intforindex_error;
       }
