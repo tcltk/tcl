@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.122 2004/11/19 14:48:33 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.123 2004/11/26 11:18:01 dkf Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.57)
@@ -135,9 +135,7 @@ AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD, 1, [Is getcwd Posix-compliant?])])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
-AC_REPLACE_FUNCS(opendir strstr)
-
-AC_REPLACE_FUNCS(strtol strtoll strtoull tmpnam waitpid)
+AC_REPLACE_FUNCS(opendir strtol strtoll strtoull tmpnam waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
@@ -216,21 +214,10 @@ AC_CHECK_FUNC(memmove, , [
 #	even if the original string is empty.
 #--------------------------------------------------------------------
 
-AC_MSG_CHECKING([proper strstr implementation])
-AC_TRY_RUN([
-extern int strstr();
-int main()
-{
+SC_TCL_CHECK_BROKEN_FUNC(strstr, [
+    extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
-}
-], tcl_ok=yes, tcl_ok=no, tcl_ok=no)
-if test $tcl_ok = yes; then
-    AC_MSG_RESULT(yes)
-else
-    AC_MSG_RESULT([broken, using substitute])
-    AC_LIBOBJ([strstr])
-    USE_COMPAT=1
-fi
+])
 
 #--------------------------------------------------------------------
 #	Check for strtoul function.  This is tricky because under some
@@ -238,50 +225,22 @@ fi
 #	pointer for the string "0".
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(strtoul, tcl_ok=1, tcl_ok=0)
-AC_TRY_RUN([
-extern int strtoul();
-int main()
-{
-    char *string = "0";
-    char *term;
-    int value;
-    value = strtoul(string, &term, 0);
-    if ((value != 0) || (term != (string+1))) {
-        exit(1);
-    }
-    exit(0);
-}], , tcl_ok=0, tcl_ok=0)
-if test "$tcl_ok" = 0; then
-    test -n "$verbose" && echo "	Adding strtoul.o."
-    AC_LIBOBJ([strtoul])
-    USE_COMPAT=1
-fi
+SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
+    extern int strtoul();
+    char *term, *string = "0";
+    exit(strtoul(string,&term,0) != 0 || term != string+1);
+])
 
 #--------------------------------------------------------------------
 #	Check for the strtod function.  This is tricky because in some
 #	versions of Linux strtod mis-parses strings starting with "+".
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(strtod, tcl_ok=1, tcl_ok=0)
-AC_TRY_RUN([
-extern double strtod();
-int main()
-{
-    char *string = " +69";
-    char *term;
-    double value;
-    value = strtod(string, &term);
-    if ((value != 69) || (term != (string+4))) {
-	exit(1);
-    }
-    exit(0);
-}], , tcl_ok=0, tcl_ok=0)
-if test "$tcl_ok" = 0; then
-    test -n "$verbose" && echo "	Adding strtod.o."
-    AC_LIBOBJ([strtod])
-    USE_COMPAT=1
-fi
+SC_TCL_CHECK_BROKEN_FUNC(strtod, [
+    extern double strtod();
+    char *term, *string = " +69";
+    exit(strtod(string,&term) != 69 || term != string+4);
+])
 
 #--------------------------------------------------------------------
 #	Under Solaris 2.4, strtod returns the wrong value for the
