@@ -361,6 +361,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_LD_LIBS="user32.lib advapi32.lib"
 	LIBS="user32.lib advapi32.lib"
 	AR="lib -nologo"
+	STLIB_LD="lib -nologo"
 	RC="rc"
 	MAKE_LIB="\${AR} -out:\[$]@"
 	MAKE_EXE="\${CC} -Fe\[$]@"
