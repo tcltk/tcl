@@ -1,3 +1,9 @@
+2004-01-11  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinThrd.c (Tcl_ConditionNotify): condPtr must be
+	dereferenced to see if there are waiters else uninitialized
+	datum is manipulated.  [Bug 849007]
+
 2004-01-09  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tcl.h: Renamed and deprecated #defines moved to within
