@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.14 2002/03/27 08:19:57 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.15 2002/04/15 17:04:29 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -120,12 +120,11 @@ section \fI"How to Customize the Test Harness"\fR.
 The \fBtcltest::test\fR command runs the value supplied for attribute
 \fIscript\fR and compares its result to possible results.  
 It prints an error message if actual results and expected results do
-not match.  The \fBtcltest::test\fR command returns 0 if it completes
-successfully. Any other return value indicates that an error has
-occurred in the tcltest package.  See the \fI"Tests"\fR section for
-more details on this command.   
+not match, or if an error occurs during evaluation of the \fIscript\fR.
+The \fBtcltest::test\fR command returns an empty string.  See the
+\fI"Tests"\fR section for more details on this command.   
 .TP
-\fBtcltest::cleanupTests\fR \fI?runningMultipleTests?\fR
+\fBtcltest::cleanupTests\fR \fI?calledFromAllFile?\fR
 This command should be called at the end of a test file.  It prints
 statistics about the tests run and removes files that were created by
 \fBtcltest::makeDirectory\fR and \fBtcltest::makeFile\fR.  Names
@@ -133,11 +132,12 @@ of files and directories created outside of
 \fBtcltest::makeFile\fR and \fBtcltest::makeDirectory\fR and
 never deleted are printed to \fBtcltest::outputChannel\fR.  This command
 also restores the original shell environment, as described by the ::env
-array. \fIcalledFromAll\fR should be specified if
+array. \fIcalledFromAllFile\fR should be specified as a true value if
 \fBtcltest::cleanupTests\fR is called explicitly from an "all.tcl"
-file.  Tcl files files are generally used to run multiple tests.  For
+file.  Tcl files are generally used to run multiple tests.  The
+\fBtcltest::cleanupTests\fR command returns an empty string.  For
 more details on how to run multiple tests, please see the section
-\fI"Running test files"\fR.  This proc has no defined return value.
+\fI"Running test files"\fR.  
 .TP
 \fBtcltest::runAllTests\fR
 This command should be used in your 'all.tcl' file.  It is used to
@@ -504,11 +504,11 @@ run will be compared.  Note that only output printed using
 puts is used for comparison.  If \fIoutput\fR is not specified, output
 sent to stdout and tcltest::outputChannel is not processed for comparison.
 .TP
-\fB-errorOutut \fIexpectedValue\fR
+\fB-errorOutput \fIexpectedValue\fR
 The \fIerrorOutput\fR attribute supplies the comparison value with which
 any output sent to stderr or tcltest::errorChannel during the script
 run will be compared. Note that only output printed using
-puts is used for comparison.  If \fIerrorOutut\fR is not specified, output
+puts is used for comparison.  If \fIerrorOutput\fR is not specified, output
 sent to stderr and tcltest::errorChannel is not processed for comparison.
 .TP
 \fB-returnCodes \fIexpectedCodeList\fR
