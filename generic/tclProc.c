@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.1 2003/07/18 23:35:39 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.2 2004/05/02 21:07:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -910,7 +910,6 @@ TclObjInterpProc(clientData, interp, objc, objv)
     register CompiledLocal *localPtr;
     char *procName;
     int nameLen, localCt, numArgs, argCt, i, result;
-    Tcl_Obj *objResult = Tcl_GetObjResult(interp);
 
     /*
      * This procedure generates an array "compiledLocals" that holds the
@@ -1037,13 +1036,32 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	localPtr = localPtr->nextPtr;
     }
     if (argCt > 0) {
+	Tcl_Obj *objResult;
+	int len, flags;
+
 	incorrectArgs:
 	/*
 	 * Build up equivalent to Tcl_WrongNumArgs message for proc
 	 */
+
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(objResult,
-		"wrong # args: should be \"", procName, (char *) NULL);
+	objResult = Tcl_GetObjResult(interp);
+	Tcl_AppendToObj(objResult, "wrong # args: should be \"", -1);
+
+	/*
+	 * Quote the proc name if it contains spaces (Bug 942757).
+	 */
+	
+	len = Tcl_ScanCountedElement(procName, nameLen, &flags);
+	if (len != nameLen) {
+	    char *procName1 = ckalloc((unsigned) len);
+	    len = Tcl_ConvertCountedElement(procName, nameLen, procName1, flags);
+	    Tcl_AppendToObj(objResult, procName1, len);
+	    ckfree(procName1);
+	} else {
+	    Tcl_AppendToObj(objResult, procName, len);
+	}
+
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 1;  i <= numArgs;  i++) {
 	    if (localPtr->defValuePtr != NULL) {
