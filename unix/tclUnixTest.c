@@ -55,10 +55,10 @@ typedef struct Pipe {
 static Pipe testPipes[MAX_PIPES];
 
 /*
- * The var below is used by the testalarm command.
+ * The stuff below is used by the testalarm and testgotsig ommands.
  */
 
-static Tcl_AsyncHandler sigToken;
+static char gotsig = '0';
 
 /*
  * Forward declarations of procedures defined later in this file:
@@ -77,11 +77,9 @@ static int		TestgetopenfileCmd _ANSI_ARGS_((ClientData dummy,
 int			TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
 static int		TestalarmCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestgotsigCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 void 			AlarmHandler _ANSI_ARGS_(());
-int 			HandleAlarmSignal _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int code));
-static void 		CleanupAlarmAssocData _ANSI_ARGS_((
-    			    ClientData clientData, Tcl_Interp *interp));
 
 /*
  *----------------------------------------------------------------------
@@ -113,6 +111,8 @@ TclplatformtestInit(interp)
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testgotsig", TestgotsigCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     return TCL_OK;
 }
@@ -525,42 +525,14 @@ TestalarmCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     char **argv;			/* Argument strings. */
 {
-    char *cmd;
-    char *oldData;
-    Tcl_InterpDeleteProc *procPtr;
     unsigned int sec;
     RETSIGTYPE (*oldhandler)();
 
-    if (argc < 2) {
-        Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-                " script ?seconds?\"", (char *) NULL);
-        return TCL_ERROR;
-    }
-
-    cmd = ckalloc((unsigned) strlen(argv[1]) + 1);
-    strcpy(cmd, argv[1]);
-    if (argc > 2) {
-	Tcl_GetInt(interp, argv[2], (int *)&sec);
+    if (argc > 1) {
+	Tcl_GetInt(interp, argv[1], (int *)&sec);
     } else {
 	sec = 1;
     }
-
-    /*
-     * If we previously associated a malloced value with the variable,
-     * free it before associating a new value.
-     */
-
-    oldData = (char *) Tcl_GetAssocData(interp, argv[1], &procPtr);
-    if ((oldData != NULL) && (procPtr == CleanupAlarmAssocData)) {
-	ckfree(oldData);
-    }
-
-    /*
-     * Store the command to execute when the signal is generated.
-     */
-    
-    Tcl_SetAssocData(interp, "alarmCmd", CleanupAlarmAssocData,
-	    (ClientData) cmd);
 
     /*
      * Setup the signal handling.
@@ -571,7 +543,6 @@ TestalarmCmd(clientData, interp, argc, argv)
 	Tcl_AppendResult(interp, "signal: ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
-    sigToken = Tcl_AsyncCreate(HandleAlarmSignal, NULL);
     if (alarm(sec) < 0) {
 	Tcl_AppendResult(interp, "alarm: ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
@@ -594,67 +565,36 @@ TestalarmCmd(clientData, interp, argc, argv)
  *
  *----------------------------------------------------------------------
  */
+
 void
 AlarmHandler()
 {
-    Tcl_AsyncMark(sigToken);
+    gotsig = '1';
 }
 
 /*
  *----------------------------------------------------------------------
+ * TestgotsigCmd --
  *
- * HandleAlarmSignal --
- *
- *	The async callback from Tcl that calls the alarm command.
+ * 	Verify the signal was handled after the testalarm command.
  *
  * Results:
- *	A standard Tcl result.
- *
- * Side effects:
  *	None.
+ *
+ * Side Effects:
+ *	Resets the value of gotsig back to '0'.
  *
  *----------------------------------------------------------------------
  */
 
 int
-HandleAlarmSignal(clientData, interp, code)
-    ClientData clientData;		/* Data to be released. */
-    Tcl_Interp *interp;			/* Interpreter being deleted. */
-    int code;
+TestgotsigCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
 {
-    char *cmd;
-
-    cmd = (char *) Tcl_GetAssocData(interp, "alarmCmd", NULL);
-    if (cmd != NULL) {
-        Tcl_GlobalEval(interp, cmd);
-	return TCL_OK;
-    } else {
-	Tcl_AppendResult(interp, "alarm assoc data is NULL", (char *) NULL);
-	return TCL_ERROR;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CleanupAlarmAssocData --
- *
- *	This function is called when an interpreter is deleted to clean
- *	up any data left over from running the testalarm command.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Releases storage.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-CleanupAlarmAssocData(clientData, interp)
-    ClientData clientData;		/* Data to be released. */
-    Tcl_Interp *interp;			/* Interpreter being deleted. */
-{
-    ckfree((char *) clientData);
+    Tcl_AppendResult(interp, &gotsig, (char *) NULL);
+    gotsig = '0';
+    return TCL_OK;
 }
