@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.41 2004/04/16 17:33:32 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.42 2004/04/23 12:09:37 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -500,7 +500,7 @@ part of the path).
 The separator is returned as a Tcl_Obj containing a string of length
 1.  If the path is invalid, NULL is returned.
 .PP
-\fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which should be a valid
+\fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which must be a valid
 list (which is allowed to have a refCount of zero), and returns the path
 object given by considering the first 'elements' elements as valid path
 segments.  If elements < 0, we use the entire list.
@@ -510,6 +510,8 @@ under some conditions) , containing the joined path.  The caller must
 add a refCount to the object before using it.  In particular, the
 returned object could be an element of the given list, so freeing the
 list might free the object prematurely if no refCount has been taken.
+If the number of elements is zero, then the returned object will be
+an empty-string Tcl_Obj.
 .PP
 \fBTcl_FSSplitPath\fR takes the given Tcl_Obj, which should be a valid path,
 and returns a Tcl List object containing each segment of that path as
@@ -944,9 +946,10 @@ typedef Tcl_Obj* Tcl_FSFilesystemPathTypeProc(
 .SH FILESYSTEMSEPARATORPROC
 .PP
 Function to return the separator character(s) for this filesystem.
-Must be implemented, otherwise the \fBfile separator\fR command will not
-function correctly.  The usual return value will be a Tcl_Obj
-containing the string "/".
+This need only be implemented if the filesystem wishes to use a
+different separator than the standard string "/".  Amongst other
+uses, it is returned by the \fBfile separator\fR command.  The
+return value should be an object with refCount of zero.
 .PP
 .CS
 typedef Tcl_Obj* Tcl_FSFilesystemSeparatorProc(
