@@ -1,5 +1,11 @@
 2002-06-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/dde.n:		Work in progress updating the documentation
+	* doc/http.n:		of the packages that come bundled with
+	* doc/msgcat.n:		the Tcl source distribution, notably tcltest.
+	* doc/registry.n:
+	* doc/tcltest.n:
+
 	* library/tcltest/tcltest.tcl:  Made sure that the TCLTEST_OPTIONS
 	environment variablle configures tcltest at package load time.
 
