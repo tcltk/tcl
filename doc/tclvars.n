@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.5 1999/08/05 16:56:31 hobbs Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.6 1999/08/09 16:30:35 hobbs Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -291,7 +291,7 @@ If this variable exists, then the interpreter
 was compiled with threads enabled.
 .TP
 \fBuser\fR
-Either \fBwindows\fR, \fBmacintosh\fR, or \fBunix\fR.  This identifies the
+This identifies the
 current user based on the login information available on the platform.
 This comes from the USER or LOGNAME environment variable on Unix,
 and the value from GetUserName on Windows and Macintosh.

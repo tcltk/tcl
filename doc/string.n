@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.11 1999/06/24 03:27:56 stanton Exp $
+'\" RCS: @(#) $Id: string.n,v 1.12 1999/08/09 16:30:35 hobbs Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -44,8 +44,8 @@ are used in the comparison.  If \fB\-length\fR is negative, it is
 ignored.  If \fB\-nocase\fR is specified, then the strings are
 compared in a case-insensitive manner.
 .TP
-\fBstring equal ?\fB\-nocase\fR? ?\fB-length int\fR? \fIstring1
-string2\fR Perform a character-by-character comparison of strings
+\fBstring equal ?\fB\-nocase\fR? ?\fB-length int\fR? \fIstring1 string2\fR
+Perform a character-by-character comparison of strings
 \fIstring1\fR and \fIstring2\fR.  Returns 1 if \fIstring1\fR and
 \fIstring2\fR are identical, or 0 when not.  If \fB\-length\fR is
 specified, then only the first \fIlength\fR characters are used in the
@@ -95,8 +95,8 @@ offset (e.g. \fBend\-1\fR would refer to the "c" in "abcd").
 If \fIcharIndex\fR is less than 0 or greater than
 or equal to the length of the string then an empty string is
 returned.
-.RE
 .VS 8.1
+.RE
 .TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 Returns 1 if \fIstring\fR is a valid member of the specified character
@@ -151,10 +151,11 @@ Any Unicode word character.  That is any alphanumeric character,
 and any Unicode connector punctuation characters (e.g. underscore).
 .IP \fBxdigit\fR 10
 Any hexadecimal digit character ([0\-9A\-Fa\-f]).
-.RE
+.PP
 In the case of \fBboolean\fR, \fBtrue\fR and \fBfalse\fR, if the
-function will return 0, the \fIvarname\fR will always be set to 0,
+function will return 0, then the \fIvarname\fR will always be set to 0,
 due to the varied nature of a valid boolean value.
+.RE
 .TP
 \fBstring last \fIstring1 string2\fR ?\fIstartIndex\fR?
 .VE 8.1
