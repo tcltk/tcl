@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.6 1999/06/26 20:55:12 rjohnson Exp $
+# RCS: @(#) $Id: scan.test,v 1.7 1999/10/29 03:04:37 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -60,8 +60,9 @@ test scan-3.3 {ValidateFormat} {
     list [catch {scan {} {%2$d%d} x} msg] $msg
 } {1 {"%n$" argument index out of range}}
 test scan-3.4 {ValidateFormat} {
+    # degenerate case, before changed from 8.2 to 8.3
     list [catch {scan {} %d} msg] $msg
-} {1 {different numbers of variable names and field specifiers}}
+} {0 {}}
 test scan-3.5 {ValidateFormat} {
     list [catch {scan {} {%10c} a} msg] $msg
 } {1 {field width may not be specified in %c conversion}}
@@ -73,10 +74,10 @@ test scan-3.7 {ValidateFormat} {
 } {1 {variable is assigned by multiple "%n$" conversion specifiers}}
 test scan-3.8 {ValidateFormat} {
     list [catch {scan {} a x} msg] $msg
-} {1 {variable is not assigend by any conversion specifiers}}
+} {1 {variable is not assigned by any conversion specifiers}}
 test scan-3.9 {ValidateFormat} {
     list [catch {scan {} {%2$s} x y} msg] $msg
-} {1 {variable is not assigend by any conversion specifiers}}
+} {1 {variable is not assigned by any conversion specifiers}}
 test scan-3.10 {ValidateFormat} {
     list [catch {scan {} {%[a} x} msg] $msg
 } {1 {unmatched [ in format string}}
@@ -97,8 +98,9 @@ test scan-4.2 {Tcl_ScanObjCmd, argument checks} {
     list [catch {scan string} msg] $msg
 } {1 {wrong # args: should be "scan string format ?varName varName ...?"}}
 test scan-4.3 {Tcl_ScanObjCmd, argument checks} {
+    # degenerate case, before changed from 8.2 to 8.3
     list [catch {scan string format} msg] $msg
-} {0 0}
+} {0 {}}
 test scan-4.4 {Tcl_ScanObjCmd, whitespace} {
     list [scan {   abc   def   } {%s%s} x y] $x $y
 } {2 abc def}
@@ -109,8 +111,9 @@ test scan-4.6 {Tcl_ScanObjCmd, whitespace} {
     list [scan {   abc   def   } { %s %s } x y] $x $y
 } {2 abc def}
 test scan-4.7 {Tcl_ScanObjCmd, literals} {
+    # degenerate case, before changed from 8.2 to 8.3
     scan {   abc   def   } { abc def }
-} 0
+} {}
 test scan-4.8 {Tcl_ScanObjCmd, literals} {
     set x {}
     list [scan {   abcg} { abc def %1s} x] $x
@@ -466,7 +469,7 @@ test scan-8.8 {error conditions} {
 } {1 {different numbers of variable names and field specifiers}}
 test scan-8.9 {error conditions} {
     list [catch {scan a "%d %d" a b c} msg] $msg
-} {1 {variable is not assigend by any conversion specifiers}}
+} {1 {variable is not assigned by any conversion specifiers}}
 test scan-8.10 {error conditions} {
     set a {}; set b {}; set c {}; set d {}
     list [expr {[scan "  a" " a %d %d %d %d" a b c d] <= 0}] $a $b $c $d
@@ -567,6 +570,34 @@ test scan-11.5 {alignment in results array (TCL_ALIGN)} {
     scan "1234567890123456789 13.6" "%s %f" a b
     set b
 } 13.6
+
+test scan-12.1 {Tcl_ScanObjCmd, inline case} {
+    scan a %c
+} 97
+test scan-12.2 {Tcl_ScanObjCmd, inline case} {
+    scan abc %c%c%c%c
+} {97 98 99 {}}
+test scan-12.3 {Tcl_ScanObjCmd, inline case} {
+    scan abc %s%c
+} {abc {}}
+test scan-12.4 {Tcl_ScanObjCmd, inline case} {
+    scan abc abc%c
+} {}
+test scan-12.5 {Tcl_ScanObjCmd, inline case} {
+    scan abc bogus%c%c%c
+} {{} {} {}}
+test scan-12.6 {Tcl_ScanObjCmd, inline case} {
+    list [catch {scan abc {%1$s}} msg] $msg
+} {1 {"%n$" argument index out of range}}
+test scan-12.7 {Tcl_ScanObjCmd, inline case} {
+    # degenerate case, behavior changed from 8.2 to 8.3
+    list [catch {scan foo foobar} msg] $msg
+} {0 {}}
+test scan-9.2 {Tcl_ScanObjCmd, inline case lots of arguments} {
+    scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140\
+	    150 160 170 180 190 200" \
+	    "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d"
+} {10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200 {}}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set.test,v 1.5 1999/06/26 20:55:12 rjohnson Exp $
+# RCS: @(#) $Id: set.test,v 1.6 1999/10/29 03:04:37 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -199,6 +199,12 @@ test set-1.24 {TclCompileSetCmd: too many arguments} {
     catch {set i 20 30} msg
     set msg
 } {wrong # args: should be "set varName ?newValue?"}
+
+test set-1.25 {TclCompileSetCmd: var is array, braced (no subs)} {
+    # This was a known error in 8.1a* - 8.2.1
+    catch {unset array}
+    set {array($foo)} 5
+} 5
 
 test set-2.1 {set command: runtime error, bad variable name} {
     list [catch {set {"foo}} msg] $msg $errorInfo
@@ -486,15 +492,3 @@ catch {unset x}
 catch {unset z}
 ::tcltest::cleanupTests
 return 
-
-
-
-
-
-
-
-
-
-
-
-
