@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.61 2002/04/23 17:03:35 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.62 2002/06/21 22:23:21 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -486,7 +486,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.4 opt0.4 encoding msgcat1.2 tcltest2.0; \
+	@for i in http1.0 http2.4 opt0.4 encoding msgcat1.3 tcltest2.1; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -520,15 +520,15 @@ install-libraries: libraries
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing library msgcat1.2 directory";
+	@echo "Installing library msgcat1.3 directory";
 	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
 	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.2"; \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.3"; \
 	    done;
-	@echo "Installing library tcltest2.0 directory";
+	@echo "Installing library tcltest2.1 directory";
 	@for j in $(ROOT_DIR)/library/tcltest/*.tcl; \
 	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.0"; \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.1"; \
 	    done;
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \

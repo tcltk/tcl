@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.100 2002/06/06 17:37:55 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.101 2002/06/21 22:23:21 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -590,7 +590,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.4 http1.0 opt0.4 encoding msgcat1.2 tcltest2.0; \
+	@for i in http2.4 http1.0 opt0.4 encoding msgcat1.3 tcltest2.1; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -628,15 +628,15 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/opt0.4; \
 	    done;
-	@echo "Installing library msgcat1.2 directory";
+	@echo "Installing library msgcat1.3 directory";
 	@for j in $(TOP_DIR)/library/msgcat/*.tcl ; \
 	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/msgcat1.2; \
+	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/msgcat1.3; \
 	    done;
-	@echo "Installing library tcltest2.0 directory";
+	@echo "Installing library tcltest2.1 directory";
 	@for j in $(TOP_DIR)/library/tcltest/*.tcl ; \
 	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/tcltest2.0; \
+	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/tcltest2.1; \
 	    done;
 	@echo "Installing library encoding directory";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
