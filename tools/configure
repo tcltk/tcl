@@ -523,7 +523,7 @@ else
 fi
 
 
-# RCS: @(#) $Id: configure,v 1.2 2001/10/04 20:18:09 hobbs Exp $
+# RCS: @(#) $Id: configure,v 1.3 2003/03/04 23:46:12 dgp Exp $
 
 # Recover information that Tcl computed with its configure script.
 
@@ -532,7 +532,7 @@ fi
 #       not, assume that its top-level directory is a sibling of ours.
 #--------------------------------------------------------------------
 
-DEF_VER=8.4
+DEF_VER=8.5
 
 # Check whether --with-tcl or --without-tcl was given.
 if test "${with_tcl+set}" = set; then

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153 2003/02/15 02:16:29 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.154 2003/03/04 23:45:58 dgp Exp $
  */
 
 #ifndef _TCL
@@ -44,6 +44,7 @@ extern "C" {
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.vc	(not patchlevel) 2 LOC
+ * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
  * macosx/Tcl.pbproj/project.pbxproj
@@ -57,15 +58,15 @@ extern "C" {
  * tools/tclSplash.bmp	(not patchlevel)
  */
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   4
-#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  2
+#define TCL_MINOR_VERSION   5
+#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#define TCL_RELEASE_SERIAL  0
 
 #define TCL_PREFIX_IDENT ""
 #define TCL_DEBUG_IDENT TCL_DBGX
 
-#define TCL_VERSION	    "8.4"
-#define TCL_PATCH_LEVEL	    "8.4.2"
+#define TCL_VERSION	    "8.5"
+#define TCL_PATCH_LEVEL	    "8.5a0"
 
 /*
  * The following definitions set up the proper options for Windows
