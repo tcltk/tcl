@@ -1,3 +1,12 @@
+2002-12-08  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclWinSock.c (SocketThreadExitHandler, InitSockets):  Check
+	that the tsdPtr is valid before dereferencing as we call it from
+	the exit handler, too [Bug 650353].  Another WSAStartup() loaded
+	version comparison byte swap issue fixed.  Although 0x0101 byte
+	swapped is still 0x0101, properly claiming which is major/minor
+	is more correct.
+
 2002-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclStubInit.c: regen
