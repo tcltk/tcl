@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.8 2003/09/18 11:29:27 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.9 2003/09/29 22:38:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -239,13 +239,13 @@ Tcl_PathType
 Tcl_FSGetPathType(pathObjPtr)
     Tcl_Obj *pathObjPtr;
 {
-    return FSGetPathType(pathObjPtr, NULL, NULL);
+    return TclFSGetPathType(pathObjPtr, NULL, NULL);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FSGetPathType --
+ * TclFSGetPathType --
  *
  *	Determines whether a given path is relative to the current
  *	directory, relative to the current volume, or absolute.  If the
@@ -267,25 +267,25 @@ Tcl_FSGetPathType(pathObjPtr)
  */
 
 Tcl_PathType
-FSGetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr)
+TclFSGetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr)
     Tcl_Obj *pathObjPtr;
     Tcl_Filesystem **filesystemPtrPtr;
     int *driveNameLengthPtr;
 {
     if (Tcl_FSConvertToPathType(NULL, pathObjPtr) != TCL_OK) {
-	return GetPathType(pathObjPtr, filesystemPtrPtr, 
-			   driveNameLengthPtr, NULL);
+	return TclGetPathType(pathObjPtr, filesystemPtrPtr, 
+		driveNameLengthPtr, NULL);
     } else {
 	FsPath *fsPathPtr = (FsPath*) PATHOBJ(pathObjPtr);
 	if (fsPathPtr->cwdPtr != NULL) {
 	    if (PATHFLAGS(pathObjPtr) == 0) {
 		return TCL_PATH_RELATIVE;
 	    }
-	    return FSGetPathType(fsPathPtr->cwdPtr, filesystemPtrPtr, 
-				 driveNameLengthPtr);
+	    return TclFSGetPathType(fsPathPtr->cwdPtr, filesystemPtrPtr, 
+		    driveNameLengthPtr);
 	} else {
-	    return GetPathType(pathObjPtr, filesystemPtrPtr, 
-			       driveNameLengthPtr, NULL);
+	    return TclGetPathType(pathObjPtr, filesystemPtrPtr, 
+		    driveNameLengthPtr, NULL);
 	}
     }
 }
@@ -357,7 +357,7 @@ Tcl_FSJoinPath(listObj, elements)
 	    Tcl_Obj *tail;
 	    Tcl_PathType type;
 	    Tcl_ListObjIndex(NULL, listObj, 1, &tail);
-	    type = GetPathType(tail, NULL, NULL, NULL);
+	    type = TclGetPathType(tail, NULL, NULL, NULL);
 	    if (type == TCL_PATH_RELATIVE) {
 		CONST char *str;
 		int len;
@@ -398,7 +398,7 @@ Tcl_FSJoinPath(listObj, elements)
 	
 	Tcl_ListObjIndex(NULL, listObj, i, &elt);
 	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
-	type = GetPathType(elt, &fsPtr, &driveNameLength, &driveName);
+	type = TclGetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /* Zero out the current result */
 	    Tcl_DecrRefCount(res);
@@ -1888,7 +1888,7 @@ UpdateStringOfFsPath(objPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * NativePathInFilesystem --
+ * TclNativePathInFilesystem --
  *
  *      Any path object is acceptable to the native filesystem, by
  *      default (we will throw errors when illegal paths are actually
@@ -1908,7 +1908,7 @@ UpdateStringOfFsPath(objPtr)
  *---------------------------------------------------------------------------
  */
 int 
-NativePathInFilesystem(pathPtr, clientDataPtr)
+TclNativePathInFilesystem(pathPtr, clientDataPtr)
     Tcl_Obj *pathPtr;
     ClientData *clientDataPtr;
 {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.26 2003/06/23 10:14:02 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.27 2003/09/29 22:38:21 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -181,7 +181,7 @@ MountPointMap *driveLetterLookup = NULL;
 TCL_DECLARE_MUTEX(mountPointMap)
 
 /* We will need this below */
-extern Tcl_FSDupInternalRepProc NativeDupInternalRep;
+extern Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 
 #ifdef __WIN32__
 #ifndef STATIC_BUILD
@@ -768,7 +768,7 @@ TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint)
 	    }
 	    if (!alreadyStored) {
 		dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
-		dlPtr2->volumeName = NativeDupInternalRep(Target);
+		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup  = dlPtr2;
@@ -789,7 +789,7 @@ TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint)
      * up each time.
      */
     dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = NativeDupInternalRep((ClientData)mountPoint);
+    dlPtr2->volumeName = TclNativeDupInternalRep((ClientData)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup  = dlPtr2;
