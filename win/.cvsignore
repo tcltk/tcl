@@ -6,6 +6,10 @@ Release
 *.ncb
 *.plg
 *.00?
+*.o
+*.obj
+*.i
+*.asm
 Makefile
 tcl.hpj
 tclConfig.sh
