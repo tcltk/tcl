@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.4 2002/03/18 22:30:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.5 2002/11/07 19:05:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -516,11 +516,13 @@ TclCleanupByteCode(codePtr)
 
 #ifdef TCL_COMPILE_STATS
     if (interp != NULL) {
-	ByteCodeStats *statsPtr;
+#ifdef TCL_THREAD_LITERALS
+	ByteCodeStats *statsPtr = TclGlobalByteCodeStats();
+#else
+	ByteCodeStats *statsPtr = &((Interp *) interp)->stats;
+#endif
 	Tcl_Time destroyTime;
 	int lifetimeSec, lifetimeMicroSec, log2;
-
-	statsPtr = &((Interp *) interp)->stats;
 
 	statsPtr->numByteCodesFreed++;
 	statsPtr->currentSrcBytes -= (double) codePtr->numSrcBytes;
@@ -3390,8 +3392,23 @@ RecordByteCodeStats(codePtr)
     ByteCode *codePtr;		/* Points to ByteCode structure with info
 				 * to add to accumulated statistics. */
 {
+#ifdef TCL_THREAD_LITERALS
+    register ByteCodeStats *statsPtr = TclGlobalByteCodeStats();
+#else
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     register ByteCodeStats *statsPtr = &(iPtr->stats);
+#endif
+
+#ifdef TCL_COMPILE_DEBUG_VERBOSE
+    char *ell = "";
+    if (codePtr->numSrcBytes > 20) {
+	ell = "...";
+    }
+    fprintf(stdout, "compiling %p: '%.20s%s' (%d bytes)\n",
+	    *codePtr->interpHandle,
+	    codePtr->source, ell, codePtr->numSrcBytes);
+    fflush(stdout);
+#endif
 
     statsPtr->numCompilations++;
     statsPtr->totalSrcBytes        += (double) codePtr->numSrcBytes;
@@ -3399,8 +3416,8 @@ RecordByteCodeStats(codePtr)
     statsPtr->currentSrcBytes      += (double) codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
     
-    statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2(codePtr->structureSize)]++;
+    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
+    statsPtr->byteCodeCount[TclLog2((int)codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes   += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes    +=

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.4 2002/11/05 22:56:03 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.5 2002/11/07 19:05:02 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -929,13 +929,14 @@ typedef struct ByteCodeStats {
     long numExecutions;		  /* Number of ByteCodes executed. */
     long numCompilations;	  /* Number of ByteCodes created. */
     long numByteCodesFreed;	  /* Number of ByteCodes destroyed. */
+    long numLiteralsCreated;	  /* Total literal objects ever compiled. */
+    long numLiteralsFreed;	  /* Total literal objects ever released. */
     long instructionCount[256];	  /* Number of times each instruction was
 				   * executed. */
     long srcCount[32];		  /* Source size distribution: # of srcs of
 				   * size [2**(n-1)..2**n), n in [0..32). */
     long byteCodeCount[32];	  /* ByteCode size distribution. */
     long lifetimeCount[32];	  /* ByteCode lifetime distribution (ms). */
-    long numLiteralsCreated;	  /* Total literal objects ever compiled. */
     long literalCount[32];	  /* Distribution of literal string sizes. */
 } ByteCodeStats;
 #endif /* TCL_COMPILE_STATS */
@@ -1149,12 +1150,6 @@ typedef struct Interp {
      * Miscellaneous information:
      */
 
-    LiteralTable literalTable;	/* Contains LiteralEntry's describing all
-				 * Tcl objects holding literals of scripts
-				 * compiled by the interpreter. Indexed by
-				 * the string representations of literals.
-				 * Used to avoid creating duplicate
-				 * objects. */
     Proc *compiledProcPtr;	/* If a procedure is being compiled, a
 				 * pointer to its Proc structure; otherwise,
 				 * this is NULL. Set by ObjInterpProc in
@@ -1267,6 +1262,14 @@ typedef struct Interp {
     char resultSpace[TCL_RESULT_SIZE+1];
 				/* Static space holding small results. */
 
+#ifndef TCL_THREAD_LITERALS
+    LiteralTable literalTable;	/* Contains LiteralEntry's describing all
+				 * Tcl objects holding literals of scripts
+				 * compiled by the interpreter. Indexed by
+				 * the string representations of literals.
+				 * Used to avoid creating duplicate
+				 * objects. */
+
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
@@ -1276,6 +1279,7 @@ typedef struct Interp {
     ByteCodeStats stats;	/* Holds compilation and execution
 				 * statistics for this interpreter. */
 #endif /* TCL_COMPILE_STATS */	  
+#endif
 } Interp;
 
 /*

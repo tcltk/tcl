@@ -1,3 +1,29 @@
+2002-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (EvalStatsCmd): obj-ify evalstats command,
+	add the ability to take options "?all? ?bytecodes? ?instructions?
+	?literals?" which will filter the output.
+	Make EvalStats command use sprintf instead of fprintf for format
+	printing to support IOS.
+	(TclExecuteByteCode): TCL_THREAD_LITERALS support
+	(TclCompileByteCodesForEval): simplify code and remove final
+	else/if case that should never be true (repeat check of iPtr and
+	epoch). 
+	(TclCompileByteCodesForExpr): better scope locals, remove last else.
+
+	* generic/tclCompile.h:
+	* generic/tclCompile.c (TclCleanupByteCode, RecordByteCodeStats): 
+	* generic/tclLiteral.c:
+	* generic/tclInt.h:
+	* generic/tclBasic.c (Tcl_CreateInterp, DeleteInterpProc): add
+	TCL_THREAD_LITERALS conditional support for making global literals
+	be thread-global instead of interp-global.  This adjusts the
+	placement and management of the LiteralTable and ByteCodeStats.
+
+	* generic/tcl.h: reduce TCL_RESULT_SIZE from 200 to 20.
+
+	* unix/Makefile.in: add shell/gdb targets
+
 2002-11-05  Andreas Kupries  <andreask@pliers.activestate.com>
 
 	* generic/tclParseExpr.c: 'struct ParseInfo'.

@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.11.10.1.2.1 2002/11/05 22:56:02 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.11.10.1.2.2 2002/11/07 19:05:02 hobbs Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -752,6 +752,12 @@ EXTERN void		TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
 EXTERN int		TclFindCompiledLocal _ANSI_ARGS_((char *name, 
         		    int nameChars, int create, int flags,
 			    Proc *procPtr));
+#ifdef TCL_THREAD_LITERALS
+EXTERN LiteralTable *	TclGlobalLiteralTable _ANSI_ARGS_((void));
+#ifdef TCL_COMPILE_STATS
+EXTERN ByteCodeStats *	TclGlobalByteCodeStats _ANSI_ARGS_((void));
+#endif
+#endif
 EXTERN LiteralEntry *	TclLookupLiteralEntry _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 EXTERN int		TclFixupForwardJump _ANSI_ARGS_((

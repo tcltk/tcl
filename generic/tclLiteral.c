@@ -12,12 +12,36 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.2 2002/11/07 19:05:04 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclPort.h"
+
+#ifdef TCL_THREAD_LITERALS
+typedef struct ThreadSpecificData {
+    /*
+     * True global literals
+     */
+    LiteralTable literalTable;
+
+    /*
+     * Statistical information about the bytecode compiler and interpreter's
+     * operation.
+     */
+
+#ifdef TCL_COMPILE_STATS
+    ByteCodeStats stats;	/* Holds compilation and execution
+				 * statistics for this interpreter. */
+#endif /* TCL_COMPILE_STATS */	  
+
+    int initialized;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+#endif
+
 /*
  * When there are this many entries per bucket, on average, rebuild
  * a literal's hash table to make it larger.
@@ -38,6 +62,43 @@ static unsigned int	HashString _ANSI_ARGS_((CONST char *bytes,
 			    int length));
 static void		RebuildLiteralTable _ANSI_ARGS_((
 			    LiteralTable *tablePtr));
+
+#ifdef TCL_THREAD_LITERALS
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGlobalLiteralTable --
+ *
+ *	This procedure returns a pointer to the thread-global literal
+ *	table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects: 
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+LiteralTable *
+TclGlobalLiteralTable()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (!tsdPtr->initialized) {
+	TclInitLiteralTable(&(tsdPtr->literalTable));
+	tsdPtr->initialized = 1;
+    }
+    return &(tsdPtr->literalTable);
+}
+
+ByteCodeStats *
+TclGlobalByteCodeStats()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    return &(tsdPtr->stats);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -179,7 +240,17 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 				 * procedure. */
 {
     Interp *iPtr = envPtr->iPtr;
+#ifdef TCL_THREAD_LITERALS
+    LiteralTable *globalTablePtr = TclGlobalLiteralTable();
+#ifdef TCL_COMPILE_STATS
+    ByteCodeStats *statsPtr = TclGlobalByteCodeStats();
+#endif
+#else
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
+#ifdef TCL_COMPILE_STATS
+    ByteCodeStats *statsPtr = &(iPtr->stats);
+#endif
+#endif
     LiteralTable *localTablePtr = &(envPtr->localLitTable);
     register LiteralEntry *globalPtr, *localPtr;
     register Tcl_Obj *objPtr;
@@ -327,10 +398,10 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     }
 #endif /*TCL_COMPILE_DEBUG*/
 #ifdef TCL_COMPILE_STATS   
-    iPtr->stats.numLiteralsCreated++;
-    iPtr->stats.totalLitStringBytes   += (double) (length + 1);
-    iPtr->stats.currentLitStringBytes += (double) (length + 1);
-    iPtr->stats.literalCount[TclLog2(length)]++;
+    statsPtr->numLiteralsCreated++;
+    statsPtr->totalLitStringBytes   += (double) (length + 1);
+    statsPtr->currentLitStringBytes += (double) (length + 1);
+    statsPtr->literalCount[TclLog2(length)]++;
 #endif /*TCL_COMPILE_STATS*/
     return objIndex;
 }
@@ -360,8 +431,12 @@ TclLookupLiteralEntry(interp, objPtr)
                                  * literal that was previously created by a
                                  * call to TclRegisterLiteral. */
 {
+#ifdef TCL_THREAD_LITERALS
+    LiteralTable *globalTablePtr = TclGlobalLiteralTable();
+#else
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
+#endif
     register LiteralEntry *entryPtr;
     char *bytes;
     int length, globalHash;
@@ -673,8 +748,18 @@ TclReleaseLiteral(interp, objPtr)
 				 * previously created by a call to
 				 * TclRegisterLiteral. */
 {
+#ifdef TCL_THREAD_LITERALS
+    LiteralTable *globalTablePtr = TclGlobalLiteralTable();
+#ifdef TCL_COMPILE_STATS
+    ByteCodeStats *statsPtr = TclGlobalByteCodeStats();
+#endif
+#else
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
+#ifdef TCL_COMPILE_STATS
+    ByteCodeStats *statsPtr = &(iPtr->stats);
+#endif
+#endif
     register LiteralEntry *entryPtr, *prevPtr;
     ByteCode* codePtr;
     char *bytes;
@@ -730,7 +815,8 @@ TclReleaseLiteral(interp, objPtr)
 		}
 
 #ifdef TCL_COMPILE_STATS
-		iPtr->stats.currentLitStringBytes -= (double) (length + 1);
+		statsPtr->currentLitStringBytes -= (double) (length + 1);
+		statsPtr->numLiteralsFreed++;
 #endif /*TCL_COMPILE_STATS*/
 	    }
 	    break;
@@ -1024,7 +1110,11 @@ TclVerifyGlobalLiteralTable(iPtr)
     Interp *iPtr;		/* Points to interpreter whose global
 				 * literal table is to be validated. */
 {
+#ifdef TCL_THREAD_LITERALS
+    register LiteralTable *globalTablePtr = TclGlobalLiteralTable();
+#else
     register LiteralTable *globalTablePtr = &(iPtr->literalTable);
+#endif
     register LiteralEntry *globalPtr;
     char *bytes;
     register int i;
