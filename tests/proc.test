@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.1.2.6 1999/03/24 02:49:34 hershey Exp $
+# RCS: @(#) $Id: proc.test,v 1.1.2.7 1999/03/26 19:14:06 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -168,6 +168,7 @@ catch {unset msg}
 if {[catch {package require procbodytest}]} {
     puts "This application couldn't load the \"procbodytest\" package, so I"
     puts "can't test creation of procs whose bodies have type \"procbody\"."
+    ::tcltest::cleanupTests
     return
 }
 

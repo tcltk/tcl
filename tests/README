@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.1.2.5 1999/03/24 19:26:02 hershey Exp $
+RCS: @(#) $Id: README,v 1.1.2.6 1999/03/26 19:13:55 hershey Exp $
 
 Contents:
 ---------
@@ -47,20 +47,19 @@ You can run the tests in three ways:
 			     when you run the test suite with the
 			     "all.tcl" file.
 
-	-constraints <list>  tests with any of the following two
-			     constraints:  knownBug and nonPortable
-			     that appear in <list> should not be
-			     skipped.
+	-constraints <list>  tests with any constraints in <list> will
+			     not be skipped.
 
     (c) start up tcltest in this directory, then "source" the test
         file (for example, type "source parse.test").  To run all
 	of the tests, type "source all.tcl".  To use the options in
 	interactive mode, you can set their corresponding tcltest
-	namespace variables:
+	namespace variables after sourcing the defs.tcl file.
 		  ::tcltest::matchingTests
 		  ::tcltest::skippingTests
 		  ::tcltest::testConfig(nonPortable)
 		  ::tcltest::testConfig(knownBug)
+		  ::tcltest::testConfig(userInteractive)
 
 In all cases, no output will be generated if all goes well, except for
 a listing of the test files and a statical summary.  If there are
@@ -200,25 +199,34 @@ pcCrash 	test crashes if it's run on Windows.  This flag is
 macCrash 	test crashes if it's run on a Mac.  This flag is used
 		to temporarily disable a test.
 
+emptyTest	test is empty, and so not worth running, but
+                it remains as a place-holder for a test to be
+                written in the future.  This constraint always
+                causes tests to be skipped.
+
+knownBug	test is known to fail and the bug is not yet
+                fixed.  This constraint always causes tests to be
+                skipped unless the user specifies otherwise.  See the
+                "Introduction" section for more details.
+
 nonPortable	test can only be run in the master Tcl/Tk
 		development environment.  Some tests are inherently
 		non-portable because they depend on things like word
 		length, file system configuration, window manager,
 		etc.  These tests are only run in the main Tcl
 		development directory where the configuration is
-		well known.
+		well known.  This constraint always causes tests to be
+		skipped unless the user specifies otherwise.  See the
+		"Introduction" section for more details.
+
+userInteraction test requires interaction from the user.  This
+                constraint always causes tests to be skipped unless
+                the user specifies otherwise.  See the "Introduction"
+                section for more details. 
 
 interactive	test can only be run in if the interpreter is in
-		interactive mode.
-
-
-knownBug	test is known to fail and the bug is not yet
-                fixed.  This constraint is always true.
-
-emptyTest	test is empty, and so not worth running, but
-                it remains as a place-holder for a test to be
-                written in the future.  This constraint is always
-                true.
+		interactive mode, that is the global tcl_interactive
+		variable is set to 1.
 
 nonBlockFiles	test can only be run if platform supports setting
 		files into nonblocking mode
@@ -401,4 +409,11 @@ that your shell does not perform the glob substitution.
    or with existing files.  All tests must now run independently of
    their working directory.
 
+4) The "all", "defs", and "visual" files are now called "all.tcl",
+   "defs.tcl", and "visual_bb.test", respectively.
 
+5) Instead of creating a doAllTests file in the tests directory, to
+   run all nonPortable tests, just use the "-constraints nonPortable"
+   command line flag.  If you are running interactively, you can set
+   the ::tcltest::testConfig(nonPortable) variable to 1 (after
+   sourcing the defs.tcl file).

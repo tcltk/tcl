@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.1.2.6 1999/03/24 04:25:42 stanton Exp $
+# RCS: @(#) $Id: event.test,v 1.1.2.7 1999/03/26 19:13:58 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -94,7 +94,8 @@ test event-2.1 {Tcl_DeleteFileHandler} {testfilehandler nonPortable} {
     testfilehandler close
     set result
 } {{0 1} {1 1} {1 2} {0 0}}
-test event-2.2 {Tcl_DeleteFileHandler, fd reused & events still pending} {testfilehandler nonPortable} {
+test event-2.2 {Tcl_DeleteFileHandler, fd reused & events still pending} \
+	{testfilehandler nonPortable} {
     testfilehandler close
     testfilehandler create 0 readable writable
     testfilehandler fillpartial 0
@@ -119,7 +120,8 @@ test event-3.1 {FileHandlerCheckProc, TCL_FILE_EVENTS off } {testfilehandler} {
     set result
 } {0 0}
 
-test event-4.1 {FileHandlerEventProc, race between event and disabling} {testfilehandler nonPortable} {
+test event-4.1 {FileHandlerEventProc, race between event and disabling} \
+	{testfilehandler nonPortable} {
     update
     testfilehandler close
     testfilehandler create 2 disabled disabled
@@ -138,7 +140,8 @@ test event-4.1 {FileHandlerEventProc, race between event and disabling} {testfil
     testfilehandler close
     set result
 } {{0 1} {1 1} {1 2} {0 0}}
-test event-4.2 {FileHandlerEventProc, TCL_FILE_EVENTS off} {testfilehandler nonPortable} {
+test event-4.2 {FileHandlerEventProc, TCL_FILE_EVENTS off} \
+	{testfilehandler nonPortable} {
     update
     testfilehandler close
     testfilehandler create 1 readable writable
@@ -499,7 +502,8 @@ test event-13.3 {Tcl_WaitForFile procedure, readable} testfilehandler {
     testfilehandler close
     list $result $x
 } {readable {no timeout}}
-test event-13.4 {Tcl_WaitForFile procedure, writable} {testfilehandler nonPortable} {
+test event-13.4 {Tcl_WaitForFile procedure, writable} \
+	{testfilehandler nonPortable} {
     foreach i [after info] {
 	after cancel $i
     }
@@ -513,7 +517,8 @@ test event-13.4 {Tcl_WaitForFile procedure, writable} {testfilehandler nonPortab
     testfilehandler close
     list $result $x
 } {{} {no timeout}}
-test event-13.5 {Tcl_WaitForFile procedure, writable} {testfilehandler nonPortable} {
+test event-13.5 {Tcl_WaitForFile procedure, writable} \
+	{testfilehandler nonPortable} {
     foreach i [after info] {
 	after cancel $i
     }

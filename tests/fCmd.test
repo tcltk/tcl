@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.1.2.7 1999/03/24 02:49:08 hershey Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.1.2.8 1999/03/26 19:13:59 hershey Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -20,6 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 if {[string compare testgetplatform [info commands testgetplatform]] != 0} {
     puts "This application hasn't been compiled with the \"testgetplatform\""
     puts "command, therefore I am skipping all of these tests."
+    ::tcltest::cleanupTests
     return
 }
 
@@ -28,6 +29,7 @@ set platform [testgetplatform]
 if {"[info commands testchmod]" != "testchmod"} {
     puts "Skipping fCmd tests. This application does not seem to have the"
     puts "testchmod command that is needed to run these tests."
+    ::tcltest::cleanupTests
     return
 }
 
@@ -596,12 +598,13 @@ test fCmd-6.30 {CopyRenameOneFile: TclpRemoveDirectory failed} \
     cleanup
     file mkdir foo/bar
     file attr foo -perm 040555
-    set msg [list [catch {file rename foo/bar /tmp} msg] $msg]
+    set catchResult [catch {file rename foo/bar /tmp} msg]
+    set msg [lindex [split $msg :] end]
     catch {file delete /tmp/bar}
     catch {file attr foo -perm 040777}
     catch {file delete -force foo}
-    set msg
-} {1 {can't unlink "foo/bar": permission denied}}
+    list $catchResult $msg
+} {1 { permission denied}}
 test fCmd-6.31 {CopyRenameOneFile: TclpDeleteFile passed} \
 	{unixOnly notRoot xdev} {
     catch {cleanup /tmp}

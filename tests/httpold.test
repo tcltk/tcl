@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: httpold.test,v 1.1.2.5 1999/03/24 02:49:13 hershey Exp $
+# RCS: @(#) $Id: httpold.test,v 1.1.2.6 1999/03/26 19:14:01 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -20,6 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 if {[catch {package require http 1.0}]} {
     if {[info exist httpold]} {
 	catch {puts "Cannot load http 1.0 package"}
+	::tcltest::cleanupTests
 	return
     } else {
 	catch {puts "Running http 1.0 tests in slave interp"}
@@ -27,6 +28,7 @@ if {[catch {package require http 1.0}]} {
 	$interp eval [list set httpold "running"]
 	$interp eval [list source [info script]]
 	interp delete $interp
+	::tcltest::cleanupTests
 	return
     }
 }
@@ -183,6 +185,7 @@ set port 8010
 if [catch {httpd_init $port} listen] {
     puts "Cannot start http server, http test skipped"
     unset port
+    ::tcltest::cleanupTests
     return
 }
 

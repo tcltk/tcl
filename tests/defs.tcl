@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.7 1999/03/25 17:20:00 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.8 1999/03/26 19:13:57 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -190,11 +190,17 @@ proc ::tcltest::initConfig {} {
 	}
     }
 
-    # By default, non-portable tests are skipped.
-    set ::tcltest::testConfig(nonPortable) 0
+    # Skip empty tests
+    set ::tcltest::testConfig(emptyTest) 0
 
     # By default, tests that expost known bugs are skipped.
     set ::tcltest::testConfig(knownBug) 0
+
+    # By default, non-portable tests are skipped.
+    set ::tcltest::testConfig(nonPortable) 0
+
+    # Some tests require user interaction.
+    set ::tcltest::testConfig(userInteraction) 0
 
     # Some tests must be skipped if the interpreter is not in interactive mode
     set ::tcltest::testConfig(interactive) $tcl_interactive
@@ -315,7 +321,9 @@ proc ::tcltest::initConfig {} {
 # ::tcltest::processCmdLineArgs --
 #
 #	Use command line args to set the verbose, skippingTests, and
-#	matchingTests variables.
+#	matchingTests variables.  This procedure must be run after
+#	constraints are initialized, because some constraints can be
+#	overridden.
 #
 # Arguments:
 #	none
@@ -374,16 +382,13 @@ proc ::tcltest::processCmdLineArgs {} {
 	set ::tcltest::skippingTests $flag(-skip)
     }
 
-    # Use the -constraints flag, if given, to turn on the following
-    # constraints:  knownBug and nonPortable
+    # Use the -constraints flag, if given, to turn on constraints that are
+    # turned off by default: userInteractive knownBug nonPortable.  This
+    # code fragment must be run after constraints are initialized.
     if {[info exists flag(-constraints)]} {
-	set constrList $flag(-constraints)
-    } else {
-	set constrList {}
-    }
-    foreach elt [list knownBug nonPortable] {
-	set ::tcltest::testConfig($elt) \
-		[expr {[lsearch -exact $constrList $elt] != -1}]
+	foreach elt $flag(-constraints) {
+	    set ::tcltest::testConfig($elt) 1
+	}
     }
 }
 
