@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.30 2002/07/03 01:14:55 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.31 2002/07/05 07:24:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -826,17 +826,17 @@ and subdirectories.  Default value is [\fBworkingDirectory\fR].
 Sets the list of patterns used by [\fBrunAllTests\fR] to determine
 what test files to evaluate.  Default value is \fB*.test\fR.
 .TP
-\fB-notfile \fBpatternList\fR
+\fB-notfile \fIpatternList\fR
 Sets the list of patterns used by [\fBrunAllTests\fR] to determine
 what test files to skip.  Default value is \fBl.*.test\fR, so
 that any SCCS lock files are skipped.
 .TP
-\fB-relateddir \fBpatternList\fR
+\fB-relateddir \fIpatternList\fR
 Sets the list of patterns used by [\fBrunAllTests\fR] to determine
 what subdirectories to search for an \fBall.tcl\fR file.  Default
 value is \fB*\fR.
 .TP
-\fB-asidefromdir \fBpatternList\fR
+\fB-asidefromdir \fIpatternList\fR
 Sets the list of patterns used by [\fBrunAllTests\fR] to determine
 what subdirectories to skip when searching for an \fBall.tcl\fR file.
 Default value is an empty list.
