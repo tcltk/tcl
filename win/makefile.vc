@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.24.4.1 1999/03/03 00:38:46 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.24.4.2 1999/03/05 20:18:09 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from
@@ -53,14 +53,14 @@ NODEBUG = 1
 #	-DTCL_MEM_DEBUG		Enables the debugging memory allocator.
 #	-DTCL_COMPILE_DEBUG	Enables byte compilation logging.
 #	-DTCL_COMPILE_STATS	Enables byte compilation statistics gathering.
-#	-DUSE_NATIVEMALLOC	Disables the Tcl memory allocator in favor
+#	-DUSE_NATIVE_MALLOC	Disables the Tcl memory allocator in favor
 #				of the native malloc implementation.  This is
 #				needed when using Purify.
 #
 #DEBUGDEFINES	= -DTCL_MEM_DEBUG
 #DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG
 #DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
-#DEBUGDEFINES	= -DUSE_NATIVEMALLOC
+#DEBUGDEFINES	= -DUSE_NATIVE_MALLOC
 
 ######################################################################
 # Do not modify below this line
@@ -456,7 +456,7 @@ package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]]
 # Regenerate the stubs files.
 #
 
-stubs:
+genstubs:
 	tclsh$(VERSION) $(ROOT)\tools\genStubs.tcl $(GENERICDIR) \
 		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
 

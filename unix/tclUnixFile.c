@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.4.4.2 1999/03/04 01:00:48 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.4.4.3 1999/03/05 20:18:08 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -556,7 +556,7 @@ TclpAccess(path, mode)
     CONST char *path;		/* Path of file to access. */
     int mode;			/* Permission setting. */
 {
-    return access(native, mode);
+    return access(path, mode);
 }
 
 /*

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.1 1999/03/03 00:38:45 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.1.2.1 1999/03/05 20:18:07 stanton Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -791,7 +791,7 @@ proc genStubs::makeInit {name textVar} {
 	}
     }
     append text "\};\n\n"
-    append text "extern ${capName}Stubs *${name}StubsPtr = &${name}Stubs;\n"
+    append text "${capName}Stubs *${name}StubsPtr = &${name}Stubs;\n"
     return
 }
 
