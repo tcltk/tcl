@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.75 2001/05/11 23:02:18 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.76 2001/05/28 04:30:38 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -913,7 +913,7 @@ tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 tclUtil.o: $(GENERIC_DIR)/tclUtil.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
 
-tclUtf.o: $(GENERIC_DIR)/tclUtf.c
+tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
 
 tclVar.o: $(GENERIC_DIR)/tclVar.c
