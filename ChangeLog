@@ -1,5 +1,12 @@
 1999-11-29  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* library/dde1.1/pkgIndex.tcl:
+	* library/reg1.0/pkgIndex.tcl: added supported for debugged
+	versions of the libraries
+
+	* unix/tclUnixPipe.c: fixed PipeBlockModeProc to properly set
+	isNonBlocking flag on pipe. [Bug: 1356 710]
+
 	* tests/scan.test:
 	* generic/tclScan.c: fixed scan where %[..] didn't match anything
 	and added test case [Bug: 3700]
