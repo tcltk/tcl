@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.13 2004/05/30 12:18:25 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.14 2004/08/02 20:55:36 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -200,14 +200,18 @@ Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
 Returns a list of the names of all hidden commands in the interpreter
 identified by \fIpath\fR.
 .TP
-\fBinterp\fR \fBinvokehidden\fR \fIpath\fR ?\fB-global\fR? \fIhiddenCmdName\fR ?\fIarg ...\fR?
+\fBinterp\fR \fBinvokehidden\fR \fIpath\fR ?\fB-namespace\fR \fInamespace\fR? ?\fB-global\fR? ?\fB\-\|\-\fR? \fIhiddenCmdName\fR ?\fIarg ...\fR?
 Invokes the hidden command \fIhiddenCmdName\fR with the arguments supplied
 in the interpreter denoted by \fIpath\fR. No substitutions or evaluation
 are applied to the arguments.
+If the \fB-namespace\fR flag is present, the hidden command is invoked in
+the specified namespace in the target interpreter.
 If the \fB-global\fR flag is present, the hidden command is invoked at the
 global level in the target interpreter; otherwise it is invoked at the
 current call frame and can access local variables in that and outer call
 frames.
+If both the \fB-namespace\fR and \fB-global\fR flags are present, the 
+\fB-namespace\fR flag is ignored.
 Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
 .TP
 \fBinterp\fR \fBlimit\fR \fIpath\fR \fIlimitType\fR ?\fIoption\fR? ?\fIvalue\fR \fI...\fR?
@@ -353,13 +357,17 @@ For more details on hidden commands, see HIDDEN COMMANDS, below.
 \fIslave \fBhidden\fR
 Returns a list of the names of all hidden commands in \fIslave\fR.
 .TP
-\fIslave \fBinvokehidden\fR ?\fB-global\fR \fIhiddenName \fR?\fIarg ..\fR?
+\fIslave \fBinvokehidden\fR ?\fB-namespace\fR \fInamespace\fR? ?\fB-global\fR ?\fB\-\|\-\fR? \fIhiddenName \fR?\fIarg ..\fR?
 This command invokes the hidden command \fIhiddenName\fR with the
 supplied arguments, in \fIslave\fR. No substitutions or evaluations are
 applied to the arguments.
+If the \fB-namespace\fR flag is given, the hidden command is invoked in
+the specified namespace in the slave.
 If the \fB-global\fR flag is given, the command is invoked at the global
 level in the slave; otherwise it is invoked at the current call frame and
 can access local variables in that or outer call frames.
+If both the \fB-namespace\fR and \fB-global\fR flags are given, the 
+\fB-namespace\fR flag is ignored.
 For more details on hidden commands, 
 see HIDDEN COMMANDS, below.
 .TP

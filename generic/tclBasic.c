@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.110 2004/07/21 00:42:38 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.111 2004/08/02 20:55:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1508,7 +1508,7 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
 
     if (strstr(cmdName, "::") != NULL) {
        TclGetNamespaceForQualName(interp, cmdName, (Namespace *) NULL,
-           CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+           TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
        if ((nsPtr == NULL) || (tail == NULL)) {
 	    return (Tcl_Command) NULL;
 	}
@@ -1663,7 +1663,7 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 
     if (strstr(cmdName, "::") != NULL) {
        TclGetNamespaceForQualName(interp, cmdName, (Namespace *) NULL,
-           CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
+           TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
        if ((nsPtr == NULL) || (tail == NULL)) {
 	    return (Tcl_Command) NULL;
 	}
@@ -2007,7 +2007,7 @@ TclRenameCommand(interp, oldName, newName)
      */
 
     TclGetNamespaceForQualName(interp, newName, (Namespace *) NULL,
-       CREATE_NS_IF_UNKNOWN, &newNsPtr, &dummy1, &dummy2, &newTail);
+       TCL_CREATE_NS_IF_UNKNOWN, &newNsPtr, &dummy1, &dummy2, &newTail);
 
     if ((newNsPtr == NULL) || (newTail == NULL)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -4390,6 +4390,10 @@ TclGlobalInvoke(interp, argc, argv, flags)
  *	interpreter, thus it cannot see any current state on the
  *	stack of that interpreter.
  *
+ *	NOTE: This routine is no longer used at all by Tcl itself.
+ *	It is kept only because it appears in the internal stub table,
+ *	for the sake of any extensions that might be calling it.
+ *
  * Results:
  *	A standard Tcl result.
  *
@@ -4419,6 +4423,59 @@ TclObjInvokeGlobal(interp, objc, objv, flags)
     iPtr->varFramePtr = NULL;
     result = TclObjInvoke(interp, objc, objv, flags);
     iPtr->varFramePtr = savedVarFramePtr;
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjInvokeNamespace --
+ *
+ *	Object version: Invokes a Tcl command, given an objv/objc, from
+ *	either the exposed or hidden set of commands in the given
+ *	interpreter.
+ *	NOTE: The command is invoked in the global stack frame of the
+ *	interpreter or namespace, thus it cannot see any current state on
+ *	the stack of that interpreter.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever the command does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclObjInvokeNamespace(interp, objc, objv, nsPtr, flags)
+    Tcl_Interp *interp;		/* Interpreter in which command is to be
+				 * invoked. */
+    int objc;			/* Count of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects; objv[0] points to the
+				 * name of the command to invoke. */
+    Tcl_Namespace *nsPtr;	/* The namespace to use. */
+    int flags;			/* Combination of flags controlling the
+				 * call: TCL_INVOKE_HIDDEN,
+				 * TCL_INVOKE_NO_UNKNOWN, or
+				 * TCL_INVOKE_NO_TRACEBACK. */
+{
+    Tcl_CallFrame frame;
+    int result;
+
+    /*
+     * Make the specified namespace the current namespace and invoke
+     * the command.
+     */
+
+    result = Tcl_PushCallFrame(interp, &frame, nsPtr, /*isProcCallFrame*/ 0);
+    if (result != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    result = TclObjInvoke(interp, objc, objv, flags);
+
+    Tcl_PopCallFrame(interp);
     return result;
 }
 
@@ -4501,7 +4558,7 @@ TclObjInvoke(interp, objc, objv, flags)
 	if (cmdPtr == NULL) {
             if (!(flags & TCL_INVOKE_NO_UNKNOWN)) {
 		cmd = Tcl_FindCommand(interp, "unknown",
-                        (Tcl_Namespace *) NULL, /*flags*/ TCL_GLOBAL_ONLY);
+	        	(Tcl_Namespace *) NULL, /*flags*/ TCL_GLOBAL_ONLY);
 		if (cmd != (Tcl_Command) NULL) {
 	            cmdPtr = (Command *) cmd;
                 }
