@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: MW_TclAppleScriptHeader.pch,v 1.2 1998/09/14 18:40:03 stanton Exp $
+ * RCS: @(#) $Id: MW_TclAppleScriptHeader.pch,v 1.3 1998/11/10 16:30:35 rjohnson Exp $
  */
 
 /*
@@ -22,6 +22,7 @@
  * architecture we are compiling for (see the code below).  For
  * example, for a 68k app the prefix file should be: MW_TclHeader68K.
  */
+
 #if __POWERPC__
 #pragma precompile_target "MW_TclAppleScriptHeaderPPC"
 #include "MW_TclHeaderPPC"
