@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.8 1999/03/24 02:49:17 hershey Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.9 1999/03/26 02:24:46 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -2329,21 +2329,27 @@ test interp-30.1 {deletion of aliases inside namespaces} {
     $i alias ns::cmd {}
 } {}
 
+test interp-31.1 {alias invocation scope} {
+    proc mySet {varName value} {
+	upvar 1 $varName localVar
+	set localVar $value
+    }
+
+    interp alias {} myNewSet {} mySet
+    proc testMyNewSet {value} {
+	myNewSet a $value
+	return $a
+    }
+    catch {unset a}
+    set result [testMyNewSet "ok"]
+    rename testMyNewSet {}
+    rename mySet {}
+    set result
+} ok
+
 # cleanup
 foreach i [interp slaves] {
   interp delete $i
 }
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.1.2.10 1999/03/14 18:56:20 stanton Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.11 1999/03/26 02:24:45 stanton Exp $
  */
 
 #include <stdio.h>
@@ -1406,7 +1406,7 @@ AliasObjCmd(clientData, interp, objc, objv)
     cmdPtr = Tcl_NewListObj(prefc, prefv);
     Tcl_ListObjReplace(NULL, cmdPtr, prefc, 0, objc - 1, objv + 1);
     Tcl_ListObjGetElements(NULL, cmdPtr, &cmdc, &cmdv);
-    result = TclObjInvokeGlobal(targetInterp, cmdc, cmdv,
+    result = TclObjInvoke(targetInterp, cmdc, cmdv,
 	    TCL_INVOKE_NO_TRACEBACK);
     Tcl_DecrRefCount(cmdPtr);
 
