@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.22 2002/01/29 02:40:50 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.23 2002/01/30 02:50:46 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2176,28 +2176,63 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing
 				 * the parse of the RE or string */
-    int length, code, exactMatch;
+    int i, len, code, exactMatch, nocase;
     char c, *str;
 
-    if (parsePtr->numWords != 3) {
-	/* We are only interested in compiling simple regexp cases. */
+    /*
+     * We are only interested in compiling simple regexp cases.
+     * Currently supported compile cases are:
+     *   regexp ?-nocase? ?--? staticString $var
+     *   regexp ?-nocase? ?--? {^staticString$} $var
+     */
+    if (parsePtr->numWords < 3) {
 	return TCL_OUT_LINE_COMPILE;
     }
 
-    varTokenPtr = parsePtr->tokenPtr + (parsePtr->tokenPtr->numComponents + 1);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	/* Not a simple string - punt to runtime. */
+    nocase = 0;
+    varTokenPtr = parsePtr->tokenPtr;
+
+    /*
+     * We only look for -nocase and -- as options.  Everything else
+     * gets pushed to runtime execution.  This is different than regexp's
+     * runtime option handling, but satisfies our stricter needs.
+     */
+    for (i = 1; i < parsePtr->numWords - 2; i++) {
+	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    /* Not a simple string - punt to runtime. */
+	    return TCL_OUT_LINE_COMPILE;
+	}
+	str = varTokenPtr[1].start;
+	len = varTokenPtr[1].size;
+	if ((len == 2) && (str[0] == '-') && (str[1] == '-')) {
+	    i++;
+	    break;
+	} else if ((len > 1)
+		&& (strncmp(str, "-nocase", (unsigned) len) == 0)) {
+	    nocase = 1;
+	} else {
+	    /* Not an option we recognize. */
+	    return TCL_OUT_LINE_COMPILE;
+	}
+    }
+
+    if ((parsePtr->numWords - i) != 2) {
+	/* We don't support capturing to variables */
 	return TCL_OUT_LINE_COMPILE;
     }
-    str    = varTokenPtr[1].start;
-    length = varTokenPtr[1].size;
-    if (*str == '-') {
-	/*
-	 * Looks like it may be an option.  With 3 args, this is an
-	 * incorrect call, but we punt on it here.
-	 */
+
+    /*
+     * Get the regexp string.  If it is not a simple string, punt to runtime.
+     * If it has a '-', it could be an incorrectly formed regexp command.
+     */
+    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
+	    || (*(varTokenPtr[1].start) == '-')) {
 	return TCL_OUT_LINE_COMPILE;
     }
+    str = varTokenPtr[1].start;
+    len = varTokenPtr[1].size;
 
     /*
      * On the first (pattern) arg, check to see if any RE special characters
@@ -2206,37 +2241,37 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * range.  If -nocase was specified, we can't do this because INST_STR_EQ
      * has no support for nocase.
      */
-    if ((length > 1) && (str[0] == '^') && (str[length-1] == '$')) {
+    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')) {
 	/*
 	 * It appears and exact search was requested (ie ^foo$), so strip
 	 * off the special chars and signal exactMatch.
 	 */
-	str++; length -= 2;
+	str++; len -= 2;
 	exactMatch = 1;
     } else {
 	exactMatch = 0;
     }
-    c = str[length];
-    str[length] = '\0';
+    c = str[len];
+    str[len] = '\0';
     if (strpbrk(str, "*+?{}()[].\\|^$") != NULL) {
-	str[length] = c;
+	str[len] = c;
 	/* We don't do anything with REs with special chars yet. */
 	return TCL_OUT_LINE_COMPILE;
     }
-    str[length] = c;
+    str[len] = c;
     if (exactMatch) {
-	TclEmitPush(TclRegisterLiteral(envPtr, str, length, 0), envPtr);
+	TclEmitPush(TclRegisterLiteral(envPtr, str, len, 0), envPtr);
     } else {
 	/*
 	 * This needs to find the substring anywhere in the string, so
 	 * use string match and *foo*.
 	 */
-	char *newStr = ckalloc((unsigned) length + 3);
-	newStr[0]        = '*';
-	strncpy(newStr + 1, str, (size_t) length);
-	newStr[length+1]   = '*';
-	newStr[length+2] = '\0';
-	TclEmitPush(TclRegisterLiteral(envPtr, newStr, length+2, 0), envPtr);
+	char *newStr  = ckalloc((unsigned) len + 3);
+	newStr[0]     = '*';
+	strncpy(newStr + 1, str, (size_t) len);
+	newStr[len+1] = '*';
+	newStr[len+2] = '\0';
+	TclEmitPush(TclRegisterLiteral(envPtr, newStr, len+2, 0), envPtr);
 	ckfree((char *) newStr);
     }
 
@@ -2255,10 +2290,10 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	}
     }
 
-    if (exactMatch) {
+    if (exactMatch && !nocase) {
 	TclEmitOpcode(INST_STR_EQ, envPtr);
     } else {
-	TclEmitInstInt1(INST_STR_MATCH, 0 /* nocase */, envPtr);
+	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
     }
 
     return TCL_OK;
