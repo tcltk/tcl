@@ -1,3 +1,21 @@
+2000-03-31  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclGet.c (Tcl_GetDouble): Added additional conditions to
+	error test (previously only errno was checked, but the return
+	value of strtod() should be checked as well).  [Bug: 4118].
+
+	* tests/exec.test: Added test for proper conversion of UTF data
+	when used with "<< $dataWithUTF" on exec's.
+
+	* unix/tclUnixPipe.c (TclpCreateTempFile): Added
+	Tcl_UtfToExternalDString call, so that if there is UTF content in
+	the string it will be properly converted to the system encoding
+	before being written [Bug: 4030].
+	(TclpCreateTempFile): Added a check on the return value of tmpnam;
+	some systems (Linux, for example) will start to return NULL after
+	tmpnam has been called TMP_MAX times; not checking for this can
+	have bad results (overwriting temp files, core dumps, etc.)
+
 2000-03-30  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): Added comments

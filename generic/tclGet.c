@@ -11,11 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.5 1999/12/04 06:15:41 hobbs Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.6 2000/03/31 19:39:42 ericm Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include "tclMath.h"
 
 
 /*
@@ -222,7 +223,7 @@ Tcl_GetDouble(interp, string, doublePtr)
         }
 	return TCL_ERROR;
     }
-    if (errno != 0) {
+    if (errno != 0 && (d == HUGE_VAL || d == -HUGE_VAL || d == 0)) {
         if (interp != (Tcl_Interp *) NULL) {
             TclExprFloatError(interp, d); 
         }
