@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.29 2002/12/04 05:41:14 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.30 2002/12/04 22:05:18 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -2465,7 +2465,7 @@ Tcl_WaitPid(
     ProcInfo *infoPtr, **prevPtrPtr;
     DWORD flags;
     Tcl_Pid result;
-    DWORD ret;
+    DWORD ret, exitCode;
 
     PipeInit();
 
@@ -2520,9 +2520,56 @@ Tcl_WaitPid(
 	} else {
 	    result = 0;
 	}
-    } else if (ret != WAIT_FAILED) {
-	GetExitCodeProcess(infoPtr->hProcess, (DWORD*)statPtr);
-	*statPtr = ((*statPtr << 8) & 0xff00);
+    } else if (ret == WAIT_OBJECT_0) {
+	GetExitCodeProcess(infoPtr->hProcess, &exitCode);
+	if (exitCode & 0xC0000000) {
+	    /*
+	     * A fatal exception occured.
+	     */
+	    switch (exitCode) {
+		case EXCEPTION_FLT_DENORMAL_OPERAND:
+		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+		case EXCEPTION_FLT_INEXACT_RESULT:
+		case EXCEPTION_FLT_INVALID_OPERATION:
+		case EXCEPTION_FLT_OVERFLOW:
+		case EXCEPTION_FLT_STACK_CHECK:
+		case EXCEPTION_FLT_UNDERFLOW:
+		case EXCEPTION_INT_DIVIDE_BY_ZERO:
+		case EXCEPTION_INT_OVERFLOW:
+		    *statPtr = SIGFPE;
+		    break;
+
+		case EXCEPTION_PRIV_INSTRUCTION:
+		case EXCEPTION_ILLEGAL_INSTRUCTION:
+		case EXCEPTION_INVALID_HANDLE:
+		    *statPtr = SIGILL;
+		    break;
+
+		case EXCEPTION_ACCESS_VIOLATION:
+		case EXCEPTION_DATATYPE_MISALIGNMENT:
+		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+		case EXCEPTION_STACK_OVERFLOW:
+		case EXCEPTION_NONCONTINUABLE_EXCEPTION:
+		case EXCEPTION_INVALID_DISPOSITION:
+		case EXCEPTION_GUARD_PAGE:
+		    *statPtr = SIGSEGV;
+		    break;
+
+		case CONTROL_C_EXIT:
+		    *statPtr = SIGINT;
+		    break;
+
+		default:
+		    *statPtr = SIGABRT;
+		    break;
+	    }
+	} else {
+	    /*
+	     * Non exception, normal, exit code.  Note that the exit code
+	     * is truncated to a byte range.
+	     */
+	    *statPtr = ((exitCode << 8) & 0xff00);
+	}
 	result = pid;
     } else {
 	errno = ECHILD;
