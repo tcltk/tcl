@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.25 2003/01/16 20:55:53 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.25.2.1 2003/05/11 00:31:41 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -647,6 +647,8 @@ SerialCloseProc(
 	}
 
         CloseHandle(serialPtr->writeThread);
+	CloseHandle(serialPtr->osWrite.hEvent);
+	DeleteCriticalSection(&serialPtr->csWrite);
         CloseHandle(serialPtr->evWritable);
         CloseHandle(serialPtr->evStartWriter);
         CloseHandle(serialPtr->evStopWriter);
