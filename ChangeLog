@@ -1,3 +1,17 @@
+2003-10-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/reg.test:	Corrected duplicate test names.
+	* tests/resource.test:	[Bugs 710370, 710358]
+	* tests/dict.test:
+
+	* tests/dict.test:	Updated [package require tcltest] lines to
+	* tests/fileSystem.test:	indiciate that these test files
+	* tests/lrepeat.test:	use features of tcltest 2.  [Bug 706114]
+	* tests/notify.test:
+	* tests/parseExpr.test:
+	* tests/unixNotfy.test:
+	* tests/winDde.test:
+
 2003-10-04  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TEBC):
