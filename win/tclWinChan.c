@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.32 2003/12/13 03:11:02 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.33 2003/12/24 04:18:22 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -779,7 +779,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 	    channelPermissions = (TCL_READABLE | TCL_WRITABLE);
 	    break;
 	default:
-	    panic("TclpOpenFileChannel: invalid mode value");
+	    Tcl_Panic("TclpOpenFileChannel: invalid mode value");
 	    break;
     }
 
@@ -1093,11 +1093,11 @@ Tcl_MakeFileChannel(rawHandle, mode)
               "=r"(RESTORED_HANDLER) );
 
     if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
+        Tcl_Panic("ESP restored incorrectly");
     if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
+        Tcl_Panic("EBP restored incorrectly");
     if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
+        Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 
         if (result)
@@ -1189,7 +1189,7 @@ TclpGetDefaultStdChannel(type)
 	    bufMode = "none";
 	    break;
 	default:
-	    panic("TclGetDefaultStdChannel: Unexpected channel type");
+	    Tcl_Panic("TclGetDefaultStdChannel: Unexpected channel type");
 	    break;
     }
 
@@ -1388,9 +1388,9 @@ TclpCutFileChannel(chan)
      * local data in each thread.
      */
 
-    if (!removed)
-        panic("file info ptr not on thread channel list");
-
+    if (!removed) {
+        Tcl_Panic("file info ptr not on thread channel list");
+    }
 }
 
 /*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.54 2003/11/19 22:04:39 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.55 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -372,7 +372,7 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     if (!traceInitialized) {
         if (Tcl_LinkVar(interp, "tcl_traceCompile",
 	            (char *) &tclTraceCompile,  TCL_LINK_INT) != TCL_OK) {
-            panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
+            Tcl_Panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
         }
         traceInitialized = 1;
     }
@@ -1316,7 +1316,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		break;
 
 	    default:
-		panic("Unexpected token type in TclCompileTokens");
+		Tcl_Panic("Unexpected token type in TclCompileTokens");
 	}
     }
 
@@ -1621,7 +1621,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
 #ifdef TCL_COMPILE_DEBUG
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {	
-	panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
+	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
     }
 #endif
     
@@ -2015,7 +2015,7 @@ EnterCmdStartData(envPtr, cmdIndex, srcOffset, codeOffset)
     CmdLocation *cmdLocPtr;
     
     if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	panic("EnterCmdStartData: bad command index %d\n", cmdIndex);
+	Tcl_Panic("EnterCmdStartData: bad command index %d\n", cmdIndex);
     }
     
     if (cmdIndex >= envPtr->cmdMapEnd) {
@@ -2047,7 +2047,7 @@ EnterCmdStartData(envPtr, cmdIndex, srcOffset, codeOffset)
 
     if (cmdIndex > 0) {
 	if (codeOffset < envPtr->cmdMapPtr[cmdIndex-1].codeOffset) {
-	    panic("EnterCmdStartData: cmd map not sorted by code offset");
+	    Tcl_Panic("EnterCmdStartData: cmd map not sorted by code offset");
 	}
     }
 
@@ -2092,11 +2092,11 @@ EnterCmdExtentData(envPtr, cmdIndex, numSrcBytes, numCodeBytes)
     CmdLocation *cmdLocPtr;
 
     if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	panic("EnterCmdExtentData: bad command index %d\n", cmdIndex);
+	Tcl_Panic("EnterCmdExtentData: bad command index %d\n", cmdIndex);
     }
     
     if (cmdIndex > envPtr->cmdMapEnd) {
-	panic("EnterCmdExtentData: missing start data for command %d\n",
+	Tcl_Panic("EnterCmdExtentData: missing start data for command %d\n",
 	        cmdIndex);
     }
 
@@ -2529,7 +2529,7 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
 	    rangePtr->catchOffset += 3;
 	    break;
 	default:
-	    panic("TclFixupForwardJump: bad ExceptionRange type %d\n",
+	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d\n",
 	            rangePtr->type);
 	}
     }
@@ -2755,7 +2755,7 @@ GetCmdLocEncodingSize(envPtr)
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = (mapPtr[i].codeOffset - prevCodeOffset);
 	if (codeDelta < 0) {
-	    panic("GetCmdLocEncodingSize: bad code offset");
+	    Tcl_Panic("GetCmdLocEncodingSize: bad code offset");
 	} else if (codeDelta <= 127) {
 	    codeDeltaNext++;
 	} else {
@@ -2765,7 +2765,7 @@ GetCmdLocEncodingSize(envPtr)
 
 	codeLen = mapPtr[i].numCodeBytes;
 	if (codeLen < 0) {
-	    panic("GetCmdLocEncodingSize: bad code length");
+	    Tcl_Panic("GetCmdLocEncodingSize: bad code length");
 	} else if (codeLen <= 127) {
 	    codeLengthNext++;
 	} else {
@@ -2782,7 +2782,7 @@ GetCmdLocEncodingSize(envPtr)
 
 	srcLen = mapPtr[i].numSrcBytes;
 	if (srcLen < 0) {
-	    panic("GetCmdLocEncodingSize: bad source length");
+	    Tcl_Panic("GetCmdLocEncodingSize: bad source length");
 	} else if (srcLen <= 127) {
 	    srcLengthNext++;
 	} else {
@@ -2840,7 +2840,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = (mapPtr[i].codeOffset - prevOffset);
 	if (codeDelta < 0) {
-	    panic("EncodeCmdLocMap: bad code offset");
+	    Tcl_Panic("EncodeCmdLocMap: bad code offset");
 	} else if (codeDelta <= 127) {
 	    TclStoreInt1AtPtr(codeDelta, p);
 	    p++;
@@ -2861,7 +2861,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
     for (i = 0;  i < numCmds;  i++) {
 	codeLen = mapPtr[i].numCodeBytes;
 	if (codeLen < 0) {
-	    panic("EncodeCmdLocMap: bad code length");
+	    Tcl_Panic("EncodeCmdLocMap: bad code length");
 	} else if (codeLen <= 127) {
 	    TclStoreInt1AtPtr(codeLen, p);
 	    p++;
@@ -2901,7 +2901,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
     for (i = 0;  i < numCmds;  i++) {
 	srcLen = mapPtr[i].numSrcBytes;
 	if (srcLen < 0) {
-	    panic("EncodeCmdLocMap: bad source length");
+	    Tcl_Panic("EncodeCmdLocMap: bad source length");
 	} else if (srcLen <= 127) {
 	    TclStoreInt1AtPtr(srcLen, p);
 	    p++;
@@ -3044,7 +3044,7 @@ TclPrintByteCodeObj(interp, objPtr)
 		fprintf(stdout,	"catch %d\n", rangePtr->catchOffset);
 		break;
 	    default:
-		panic("TclPrintByteCodeObj: bad ExceptionRange type %d\n",
+		Tcl_Panic("TclPrintByteCodeObj: bad ExceptionRange type %d\n",
 		        rangePtr->type);
 	    }
 	}
@@ -3255,7 +3255,7 @@ TclPrintInstruction(codePtr, pc)
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr = procPtr->firstLocalPtr;
 		if (opnd >= localCt) {
-		    panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
+		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {
@@ -3284,7 +3284,7 @@ TclPrintInstruction(codePtr, pc)
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr = procPtr->firstLocalPtr;
 		if (opnd >= localCt) {
-		    panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
+		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {

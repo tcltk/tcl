@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.15 2003/04/22 23:20:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.16 2003/12/24 04:18:21 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -737,7 +737,7 @@ TcpClose(
     	if (err != noErr) {
     	    Debugger();
     	    goto afterRelease;
-            /* panic("error closing server socket"); */
+            /* Tcl_Panic("error closing server socket"); */
     	}
 	statePtr->flags |= TCP_RELEASE;
 
@@ -750,7 +750,7 @@ TcpClose(
 	statePtr->pb.tcpStream = statePtr->tcpStream;
 	err = PBControlSync((ParmBlkPtr) &statePtr->pb);
 	if (err != noErr) {
-            panic("error releasing server socket");
+            Tcl_Panic("error releasing server socket");
 	}
 
 	/*
@@ -2839,7 +2839,7 @@ TclpCutSockChannel(chan)
      */
 
     if (!removed)
-        panic("file info ptr not on thread channel list");
+        Tcl_Panic("file info ptr not on thread channel list");
     return;
 }
 

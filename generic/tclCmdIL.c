@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.57 2003/11/03 12:48:52 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.58 2003/12/24 04:18:18 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -2693,7 +2693,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
      * We allocate using attemptckalloc() because if we ask for
      * something big but can't get it, we've still got a high chance
      * of having a proper failover strategy.  If *that* fails to get
-     * memory, panic() will happen just a few lines lower...
+     * memory, Tcl_Panic() will happen just a few lines lower...
      */
 
     if ((unsigned)elementCount > INT_MAX/sizeof(Tcl_Obj *)/objc) {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.48 2003/10/21 20:42:05 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.49 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -994,12 +994,12 @@ TclObjInterpProc(clientData, interp, objc, objv)
     argCt = objc;
     for (i = 1, argCt -= 1;  i <= numArgs;  i++, argCt--) {
 	if (!TclIsVarArgument(localPtr)) {
-	    panic("TclObjInterpProc: local variable %s is not argument but should be",
+	    Tcl_Panic("TclObjInterpProc: local variable %s is not argument but should be",
 		  localPtr->name);
 	    return TCL_ERROR;
 	}
 	if (TclIsVarTemporary(localPtr)) {
-	    panic("TclObjInterpProc: local variable %d is temporary but should be an argument", i);
+	    Tcl_Panic("TclObjInterpProc: local variable %d is temporary but should be an argument", i);
 	    return TCL_ERROR;
 	}
 
@@ -1623,14 +1623,14 @@ ProcBodyFree(objPtr)
  * ProcBodySetFromAny --
  *
  *  Tcl_ObjType's SetFromAny function for the proc body object.
- *  Calls panic.
+ *  Calls Tcl_Panic.
  *
  * Results:
  *  Theoretically returns a TCL result code.
  *
  * Side effects:
- *  Calls panic, since we can't set the value of the object from a string
- *  representation (or any other internal ones).
+ *  Calls Tcl_Panic, since we can't set the value of the object from a
+ *  string representation (or any other internal ones).
  *
  *----------------------------------------------------------------------
  */
@@ -1640,7 +1640,7 @@ ProcBodySetFromAny(interp, objPtr)
     Tcl_Interp *interp;			/* current interpreter */
     Tcl_Obj *objPtr;			/* object pointer */
 {
-    panic("called ProcBodySetFromAny");
+    Tcl_Panic("called ProcBodySetFromAny");
 
     /*
      * this to keep compilers happy.
@@ -1655,13 +1655,13 @@ ProcBodySetFromAny(interp, objPtr)
  * ProcBodyUpdateString --
  *
  *  Tcl_ObjType's UpdateString function for the proc body object.
- *  Calls panic.
+ *  Calls Tcl_Panic.
  *
  * Results:
  *  None.
  *
  * Side effects:
- *  Calls panic, since we this type has no string representation.
+ *  Calls Tcl_Panic, since we this type has no string representation.
  *
  *----------------------------------------------------------------------
  */
@@ -1670,7 +1670,7 @@ static void
 ProcBodyUpdateString(objPtr)
     Tcl_Obj *objPtr;		/* the object to update */
 {
-    panic("called ProcBodyUpdateString");
+    Tcl_Panic("called ProcBodyUpdateString");
 }
 
 

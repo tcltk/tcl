@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.76 2003/11/20 18:37:55 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.77 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -3345,7 +3345,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 
     if (index >= 0) {
 	if (!varFramePtr->isProcCallFrame) {
-	    panic("ObjMakeUpvar called with an index outside from a proc.\n");
+	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
     } else {
@@ -4686,7 +4686,7 @@ UpdateParsedVarName(objPtr)
 	 * This is a parsed scalar name: what is it
 	 * doing here?
 	 */
-	panic("ERROR: scalar parsedVarName without a string rep.\n");
+	Tcl_Panic("ERROR: scalar parsedVarName without a string rep.\n");
     }
     part1 = Tcl_GetStringFromObj(arrayPtr, &len1);
     len2 = strlen(part2);

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.117 2003/11/16 02:12:56 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.118 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -174,14 +174,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	 switch (nCleanup) {\
 	     case 1: goto cleanup1_pushObjResultPtr;\
 	     case 2: goto cleanup2_pushObjResultPtr;\
-	     default: panic("ERROR: bad usage of macro NEXT_INST_F");\
+	     default: Tcl_Panic("ERROR: bad usage of macro NEXT_INST_F");\
 	 }\
      } else {\
 	 pc += (pcAdjustment);\
 	 switch (nCleanup) {\
 	     case 1: goto cleanup1;\
 	     case 2: goto cleanup2;\
-	     default: panic("ERROR: bad usage of macro NEXT_INST_F");\
+	     default: Tcl_Panic("ERROR: bad usage of macro NEXT_INST_F");\
 	 }\
      }
 
@@ -465,7 +465,7 @@ InitByteCodeExecution(interp)
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
 		    TCL_LINK_INT) != TCL_OK) {
-	panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
+	Tcl_Panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
 #endif
 #ifdef TCL_COMPILE_STATS    
@@ -563,7 +563,7 @@ TclDeleteExecEnv(eePtr)
     if (eePtr->stackPtr[-1] == (Tcl_Obj *) ((char *) 1)) {
 	ckfree((char *) (eePtr->stackPtr-1));
     } else {
-	panic("ERROR: freeing an execEnv whose stack is still in use.\n");
+	Tcl_Panic("ERROR: freeing an execEnv whose stack is still in use.\n");
     }
     TclDecrRefCount(eePtr->errorInfo);
     TclDecrRefCount(eePtr->errorCode);
@@ -756,7 +756,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
             if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
                 if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    panic("Tcl_ExprObj: compiled expression jumped interps");
+                    Tcl_Panic("Tcl_ExprObj: compiled expression jumped interps");
                 }
 	        codePtr->compileEpoch = iPtr->compileEpoch;
             } else {
@@ -971,7 +971,7 @@ TclCompEvalObj(interp, objPtr)
 	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
             if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
                 if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    panic("Tcl_EvalObj: compiled script jumped interps");
+                    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
                 }
 	        codePtr->compileEpoch = iPtr->compileEpoch;
             } else {
@@ -3864,7 +3864,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	    if ((opnd < 0) || (opnd > LAST_BUILTIN_FUNC)) {
 		TRACE(("UNRECOGNIZED BUILTIN FUNC CODE %d\n", opnd));
-		panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
+		Tcl_Panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
 	    }
 	    mathFuncPtr = &(tclBuiltinFuncTable[opnd]);
 	    DECACHE_STACK_INFO();
@@ -4246,7 +4246,7 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(1, 0, 1);
 
     default:
-	panic("TclExecuteByteCode: unrecognized opCode %u", *pc);
+	Tcl_Panic("TclExecuteByteCode: unrecognized opCode %u", *pc);
     } /* end of switch on opCode */
 
     /*
@@ -4444,7 +4444,7 @@ TclExecuteByteCode(interp, codePtr)
 		    (unsigned int)(pc - codePtr->codeStart),
 		    (unsigned int) (tosPtr - eePtr->stackPtr),
 		    (unsigned int) initStackTop);
-	    panic("TclExecuteByteCode execution failure: end stack top < start stack top");
+	    Tcl_Panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	}
 	eePtr->tosPtr = initTosPtr - codePtr->maxExceptDepth;
     }
@@ -4557,12 +4557,12 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
     if (((unsigned int) pc < codeStart) || ((unsigned int) pc > codeEnd)) {
 	fprintf(stderr, "\nBad instruction pc 0x%x in TclExecuteByteCode\n",
 		(unsigned int) pc);
-	panic("TclExecuteByteCode execution failure: bad pc");
+	Tcl_Panic("TclExecuteByteCode execution failure: bad pc");
     }
     if ((unsigned int) opCode > LAST_INST_OPCODE) {
 	fprintf(stderr, "\nBad opcode %d at pc %u in TclExecuteByteCode\n",
 		(unsigned int) opCode, relativePc);
-        panic("TclExecuteByteCode execution failure: bad opcode");
+        Tcl_Panic("TclExecuteByteCode execution failure: bad opcode");
     }
     if ((stackTop < stackLowerBound) || (stackTop > stackUpperBound)) {
 	int numChars;
@@ -4579,7 +4579,7 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
 	} else {
 	    fprintf(stderr, "\n");
 	}
-	panic("TclExecuteByteCode execution failure: bad stack top");
+	Tcl_Panic("TclExecuteByteCode execution failure: bad stack top");
     }
 }
 #endif /* TCL_COMPILE_DEBUG */
@@ -5773,7 +5773,7 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     }
     mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
     if (mathFuncPtr->numArgs != (objc-1)) {
-	panic("ExprCallMathFunc: expected number of args %d != actual number %d",
+	Tcl_Panic("ExprCallMathFunc: expected number of args %d != actual number %d",
 	        mathFuncPtr->numArgs, objc);
 	result = TCL_ERROR;
 	goto done;

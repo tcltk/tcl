@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11 2001/10/11 22:28:01 msofer Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.12 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -63,7 +63,7 @@ TclInitLiteralTable(tablePtr)
 				      * is supplied by the caller. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4) 
-    panic("TclInitLiteralTable: TCL_SMALL_HASH_TABLE is %d, not 4\n",
+    Tcl_Panic("TclInitLiteralTable: TCL_SMALL_HASH_TABLE is %d, not 4\n",
 	    TCL_SMALL_HASH_TABLE);
 #endif
     
@@ -242,7 +242,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 	    objIndex = AddLocalLiteralEntry(envPtr, globalPtr, localHash);
 #ifdef TCL_COMPILE_DEBUG
 	    if (globalPtr->refCount < 1) {
-		panic("TclRegisterLiteral: global literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("TclRegisterLiteral: global literal \"%.*s\" had bad refCount %d",
 			(length>60? 60 : length), bytes,
 			globalPtr->refCount);
 	    }
@@ -282,7 +282,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     
 #ifdef TCL_COMPILE_DEBUG
     if (TclLookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
-	panic("TclRegisterLiteral: literal \"%.*s\" found globally but shouldn't be",
+	Tcl_Panic("TclRegisterLiteral: literal \"%.*s\" found globally but shouldn't be",
 	        (length>60? 60 : length), bytes);
     }
 #endif
@@ -321,7 +321,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 	    }
 	}
 	if (!found) {
-	    panic("TclRegisterLiteral: literal \"%.*s\" wasn't global",
+	    Tcl_Panic("TclRegisterLiteral: literal \"%.*s\" wasn't global",
 	            (length>60? 60 : length), bytes);
 	}
     }
@@ -563,7 +563,7 @@ AddLocalLiteralEntry(envPtr, globalPtr, localHash)
 	}
 	if (!found) {
 	    bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
-	    panic("AddLocalLiteralEntry: literal \"%.*s\" wasn't found locally",
+	    Tcl_Panic("AddLocalLiteralEntry: literal \"%.*s\" wasn't found locally",
 	            (length>60? 60 : length), bytes);
 	}
     }
@@ -959,7 +959,7 @@ TclLiteralStats(tablePtr)
  *	None.
  *
  * Side effects:
- *	Panics if problems are found.
+ *	Tcl_Panic if problems are found.
  *
  *----------------------------------------------------------------------
  */
@@ -982,23 +982,23 @@ TclVerifyLocalLiteralTable(envPtr)
 	    count++;
 	    if (localPtr->refCount != -1) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
-		panic("TclVerifyLocalLiteralTable: local literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("TclVerifyLocalLiteralTable: local literal \"%.*s\" had bad refCount %d",
 		        (length>60? 60 : length), bytes,
 		        localPtr->refCount);
 	    }
 	    if (TclLookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
 		    localPtr->objPtr) == NULL) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
-		panic("TclVerifyLocalLiteralTable: local literal \"%.*s\" is not global",
+		Tcl_Panic("TclVerifyLocalLiteralTable: local literal \"%.*s\" is not global",
 		         (length>60? 60 : length), bytes);
 	    }
 	    if (localPtr->objPtr->bytes == NULL) {
-		panic("TclVerifyLocalLiteralTable: literal has NULL string rep");
+		Tcl_Panic("TclVerifyLocalLiteralTable: literal has NULL string rep");
 	    }
 	}
     }
     if (count != localTablePtr->numEntries) {
-	panic("TclVerifyLocalLiteralTable: local literal table had %d entries, should be %d",
+	Tcl_Panic("TclVerifyLocalLiteralTable: local literal table had %d entries, should be %d",
 	      count, localTablePtr->numEntries);
     }
 }
@@ -1014,7 +1014,7 @@ TclVerifyLocalLiteralTable(envPtr)
  *	None.
  *
  * Side effects:
- *	Panics if problems are found.
+ *	Tcl_Panic if problems are found.
  *
  *----------------------------------------------------------------------
  */
@@ -1037,17 +1037,17 @@ TclVerifyGlobalLiteralTable(iPtr)
 	    count++;
 	    if (globalPtr->refCount < 1) {
 		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
-		panic("TclVerifyGlobalLiteralTable: global literal \"%.*s\" had bad refCount %d",
+		Tcl_Panic("TclVerifyGlobalLiteralTable: global literal \"%.*s\" had bad refCount %d",
 		        (length>60? 60 : length), bytes,
 		        globalPtr->refCount);
 	    }
 	    if (globalPtr->objPtr->bytes == NULL) {
-		panic("TclVerifyGlobalLiteralTable: literal has NULL string rep");
+		Tcl_Panic("TclVerifyGlobalLiteralTable: literal has NULL string rep");
 	    }
 	}
     }
     if (count != globalTablePtr->numEntries) {
-	panic("TclVerifyGlobalLiteralTable: global literal table had %d entries, should be %d",
+	Tcl_Panic("TclVerifyGlobalLiteralTable: global literal table had %d entries, should be %d",
 	      count, globalTablePtr->numEntries);
     }
 }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26 2003/05/13 10:16:17 mistachkin Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.27 2003/12/24 04:18:23 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -548,7 +548,7 @@ TclpThreadDataKeyInit(keyPtr)
         if (newKey != TLS_OUT_OF_INDEXES) {
             *indexPtr = newKey;
         } else {
-            panic("TlsAlloc failed from TclpThreadDataKeyInit!"); /* this should be a fatal error */
+            Tcl_Panic("TlsAlloc failed from TclpThreadDataKeyInit!"); /* this should be a fatal error */
         }
 	*keyPtr = (Tcl_ThreadDataKey)indexPtr;
 	TclRememberDataKey(keyPtr);
@@ -585,7 +585,7 @@ TclpThreadDataKeyGet(keyPtr)
     } else {
         result = TlsGetValue(*indexPtr);
         if ((result == NULL) && (GetLastError() != NO_ERROR)) {
-            panic("TlsGetValue failed from TclpThreadDataKeyGet!");
+            Tcl_Panic("TlsGetValue failed from TclpThreadDataKeyGet!");
         }
 	return result;
     }
@@ -618,7 +618,7 @@ TclpThreadDataKeySet(keyPtr, data)
     BOOL success;
     success = TlsSetValue(*indexPtr, (void *)data);
     if (!success) {
-        panic("TlsSetValue failed from TclpThreadDataKeySet!");
+        Tcl_Panic("TlsSetValue failed from TclpThreadDataKeySet!");
     }
 }
 
@@ -657,11 +657,11 @@ TclpFinalizeThreadData(keyPtr)
 	    ckfree((char *)result);
 	    success = TlsSetValue(*indexPtr, (void *)NULL);
             if (!success) {
-                panic("TlsSetValue failed from TclpFinalizeThreadData!");
+                Tcl_Panic("TlsSetValue failed from TclpFinalizeThreadData!");
             }
 	} else {
             if (GetLastError() != NO_ERROR) {
-                panic("TlsGetValue failed from TclpFinalizeThreadData!");
+                Tcl_Panic("TlsGetValue failed from TclpFinalizeThreadData!");
             }
 	}
     }
@@ -697,7 +697,7 @@ TclpFinalizeThreadDataKey(keyPtr)
 	indexPtr = *(DWORD **)keyPtr;
 	success = TlsFree(*indexPtr);
         if (!success) {
-            panic("TlsFree failed from TclpFinalizeThreadDataKey!");
+            Tcl_Panic("TlsFree failed from TclpFinalizeThreadDataKey!");
         }
 	ckfree((char *)indexPtr);
 	*keyPtr = NULL;
@@ -1017,7 +1017,7 @@ TclpNewAllocMutex(void)
 
     lockPtr = malloc(sizeof(struct lock));
     if (lockPtr == NULL) {
-	panic("could not allocate lock");
+	Tcl_Panic("could not allocate lock");
     }
     lockPtr->tlock = (Tcl_Mutex) &lockPtr->wlock;
     InitializeCriticalSection(&lockPtr->wlock);
@@ -1039,13 +1039,13 @@ TclpGetAllocCache(void)
     	key = TlsAlloc();
 	once = 1;
 	if (key == TLS_OUT_OF_INDEXES) {
-	    panic("could not allocate thread local storage");
+	    Tcl_Panic("could not allocate thread local storage");
 	}
     }
 
     result = TlsGetValue(key);
     if ((result == NULL) && (GetLastError() != NO_ERROR)) {
-        panic("TlsGetValue failed from TclpGetAllocCache!");
+        Tcl_Panic("TlsGetValue failed from TclpGetAllocCache!");
     }
     return result;
 }
@@ -1056,7 +1056,7 @@ TclpSetAllocCache(void *ptr)
     BOOL success;
     success = TlsSetValue(key, ptr);
     if (!success) {
-        panic("TlsSetValue failed from TclpSetAllocCache!");
+        Tcl_Panic("TlsSetValue failed from TclpSetAllocCache!");
     }
 }
 
@@ -1070,12 +1070,12 @@ TclWinFreeAllocCache(void)
     if (ptr != NULL) {
 	success = TlsSetValue(key, NULL);
         if (!success) {
-            panic("TlsSetValue failed from TclWinFreeAllocCache!");
+            Tcl_Panic("TlsSetValue failed from TclWinFreeAllocCache!");
         }
 	TclFreeAllocCache(ptr);
     } else {
       if (GetLastError() != NO_ERROR) {
-          panic("TlsGetValue failed from TclWinFreeAllocCache!");
+          Tcl_Panic("TlsGetValue failed from TclWinFreeAllocCache!");
       }
     }
 }

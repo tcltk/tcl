@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.31 2003/11/24 19:06:08 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.32 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -1002,7 +1002,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 	    parsePtr->numTokens++;
 	    src++; numBytes--;
 	} else {
-	    panic("ParseTokens encountered unknown character");
+	    Tcl_Panic("ParseTokens encountered unknown character");
 	}
     }
     if (parsePtr->numTokens == originalTokens) {

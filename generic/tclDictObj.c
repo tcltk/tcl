@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.11 2003/09/04 16:44:12 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.12 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -654,7 +654,7 @@ Tcl_DictObjPut(interp, dictPtr, keyPtr, valuePtr)
     int isNew;
 
     if (Tcl_IsShared(dictPtr)) {
-	panic("Tcl_DictObjPut called with shared object");
+	Tcl_Panic("Tcl_DictObjPut called with shared object");
     }
 
     if (dictPtr->typePtr != &tclDictType) {
@@ -752,7 +752,7 @@ Tcl_DictObjRemove(interp, dictPtr, keyPtr)
     Tcl_HashEntry *hPtr;
 
     if (Tcl_IsShared(dictPtr)) {
-	panic("Tcl_DictObjRemove called with shared object");
+	Tcl_Panic("Tcl_DictObjRemove called with shared object");
     }
 
     if (dictPtr->typePtr != &tclDictType) {
@@ -929,7 +929,7 @@ Tcl_DictObjNext(searchPtr, keyPtrPtr, valuePtrPtr, donePtr)
      * or removed.  This *shouldn't* happen, but...
      */
     if (((Dict *)searchPtr->dictionaryPtr)->epoch != searchPtr->epoch) {
-	panic("concurrent dictionary modification and search");
+	Tcl_Panic("concurrent dictionary modification and search");
     }
 
     hPtr = Tcl_NextHashEntry(&searchPtr->search);
@@ -1016,10 +1016,10 @@ Tcl_DictObjPutKeyList(interp, dictPtr, keyc, keyv, valuePtr)
     int isNew;
 
     if (Tcl_IsShared(dictPtr)) {
-	panic("Tcl_DictObjPutKeyList called with shared object");
+	Tcl_Panic("Tcl_DictObjPutKeyList called with shared object");
     }
     if (keyc < 1) {
-	panic("Tcl_DictObjPutKeyList called with empty key list");
+	Tcl_Panic("Tcl_DictObjPutKeyList called with empty key list");
     }
 
     dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, /*willUpdate*/ 1);
@@ -1072,10 +1072,10 @@ Tcl_DictObjRemoveKeyList(interp, dictPtr, keyc, keyv)
     Tcl_HashEntry *hPtr;
 
     if (Tcl_IsShared(dictPtr)) {
-	panic("Tcl_DictObjRemoveKeyList called with shared object");
+	Tcl_Panic("Tcl_DictObjRemoveKeyList called with shared object");
     }
     if (keyc < 1) {
-	panic("Tcl_DictObjRemoveKeyList called with empty key list");
+	Tcl_Panic("Tcl_DictObjRemoveKeyList called with empty key list");
     }
 
     dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, /*willUpdate*/ 1);
@@ -2492,7 +2492,7 @@ DictFilterCmd(interp, objc, objv)
 	}
 	return result;
     }
-    panic("unexpected fallthrough");
+    Tcl_Panic("unexpected fallthrough");
     /* Control never reaches this point. */
     return TCL_ERROR;
 
@@ -2571,7 +2571,7 @@ Tcl_DictObjCmd(/*ignored*/ clientData, interp, objc, objv)
     case DICT_UNSET:	return DictUnsetCmd(interp, objc, objv);
     case DICT_VALUES:	return DictValuesCmd(interp, objc, objv);
     }
-    panic("unexpected fallthrough!");
+    Tcl_Panic("unexpected fallthrough!");
     /*
      * Next line is NOT REACHED - stops compliler complaint though...
      */
