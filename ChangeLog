@@ -1,3 +1,13 @@
+2004-07-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* generic/tclEvent.c (NewThreadProc): Backout of changes
+	to fix the Tcl Bug #770053. See SF bugreport for more info.
+
+	* generic/tclNotify.c (TclFinalizeNotifier): Added conditional
+	notifier finalization based on the fact that an TclInitNotifier
+	has been called for the current thread. This fixes the Tcl
+	Bug #770053 again. Hopefully this time w/o unwanted side-effects.
+
 2004-07-14  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.h (CHANNEL_INCLOSE):       New flag. Set in
