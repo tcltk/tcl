@@ -3,7 +3,7 @@ README:  Tcl
     You can get this release from:
         http://www.scriptics.com/registration/8.2b1.tml
 
-RCS: @(#) $Id: README,v 1.20 1999/06/25 23:29:45 welch Exp $
+RCS: @(#) $Id: README,v 1.21 1999/07/21 16:04:23 jpeek Exp $
 
 Contents
 --------
@@ -114,7 +114,7 @@ for more information on TclPro and for a free evaluation download.
 
 There is a network news group "comp.lang.tcl" intended for the
 exchange of information about Tcl, Tk, and related applications.  The
-newsgroup is a greata place to ask general information questions.  For
+newsgroup is a great place to ask general information questions.  For
 bug reports, please see the "Support and bug fixes" section below.
 
 6. Tcl contributed archive
@@ -123,7 +123,7 @@ bug reports, please see the "Support and bug fixes" section below.
 Many people have created exciting packages and applications based on Tcl
 and/or Tk and made them freely available to the Tcl community.  An archive
 of these contributions is kept on the machine ftp.neosoft.com.  You
-can access the archive using anonymous FTP;  the Tcl contributed archive is
+can access the archive using anonymous FTP; the Tcl contributed archive is
 in the directory "/pub/tcl".  The archive also contains several FAQ
 ("frequently asked questions") documents that provide solutions to problems
 that are commonly encountered by TCL newcomers.
@@ -151,14 +151,14 @@ In the body of the message (the subject will be ignored) put:
 	
 	subscribe mactcl Joe Smith
 	
-Replacing Joe Smith with your real name, of course.  (Use wintcl
-instead of mactcl if your interested in the Windows list.)  If you
+Replace Joe Smith with your real name, of course.  (Use wintcl
+instead of mactcl if you're interested in the Windows list.)  If you
 would just like to receive more information about the list without
 subscribing put the line:
 
 	information mactcl
 	
-in the body instead (or wintcl).
+(or wintcl) in the body instead.
 
 9. Support and Training
 ------------------------
