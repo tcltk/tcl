@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.34 2003/12/12 17:02:51 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.35 2004/01/21 19:59:33 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1001,6 +1001,10 @@ test filename-10.3 {Tcl_TranslateFileName} {testsetplatform} {
     testsetplatform windows
     list [catch {testtranslatefilename {c:/\\foo/}} msg] $msg
 } {0 {c:\foo}}
+test filename-10.3.1 {Tcl_TranslateFileName} {testsetplatform} {
+    testsetplatform windows
+    list [catch {testtranslatefilename {c://///}} msg] $msg
+} {0 c:\\}
 test filename-10.4 {Tcl_TranslateFileName} {testsetplatform} {
     testsetplatform mac
     list [catch {testtranslatefilename foo} msg] $msg
@@ -1584,7 +1588,11 @@ test filename-11.45 {Tcl_GlobCmd on root volume} {
 	set res2 [glob *]
 	cd $tmpd
     }
-    expr {$res1 == $res2}
+    set res [expr {$res1 == $res2}]
+    if {!$res} {
+	lappend res $res1 $res2
+    }
+    set res
 } {1}
 test filename-11.46 {Tcl_GlobCmd} {
     list [catch {glob -types abcde -dir foo *} msg] $msg
@@ -1873,7 +1881,7 @@ test filename-15.4.1 {no complain: no errors, good result} {
 test filename-15.5 {unix specific globbing} {unixOnly nonPortable} {
     glob ~ouster/.csh*
 } "/home/ouster/.cshrc"
-catch {close [open globTest/odd\\\[\]*?\{\}name w]}
+catch {close [open globTest/odd\\\[\]*?\{\}name w]} 
 test filename-15.6 {unix specific globbing} {unixOnly} {
     global env
     set temp $env(HOME)
@@ -1883,6 +1891,23 @@ test filename-15.6 {unix specific globbing} {unixOnly} {
     set result
 } [list 0 [list [lindex [glob ~] 0]/globTest/odd\\\[\]*?\{\}name]]
 catch {file delete -force globTest/odd\\\[\]*?\{\}name}
+test filename-15.7 {win specific globbing} {winOnly} {
+    if {[string index [glob ~] end] == "/"} {
+	set res "glob ~ is [glob ~] but shouldn't end in a separator"
+    } else {
+	set res "ok"
+    }
+} {ok}
+test filename-15.8 {win and unix specific globbing} {unixOrWin} {
+    global env
+    set temp $env(HOME)
+    catch {close [open $env(HOME)/globTest/anyname w]} err
+    set env(HOME) $env(HOME)/globTest/anyname
+    set result [list [catch {glob ~} msg] $msg]
+    set env(HOME) $temp
+    catch {file delete -force $env(HOME)/globTest/anyname}
+    set result
+} [list 0 [list [lindex [glob ~] 0]/globTest/anyname]]
 
 # The following tests are only valid for Windows systems.
 set oldDir [pwd]
@@ -1909,31 +1934,31 @@ test filename-16.2.1 {windows specific globbing} {pcOnly} {
     set res
 } {0 c:}
 test filename-16.3 {windows specific globbing} {pcOnly} {
-    glob c:\\\\
+    glob -nocomplain c:\\\\
 } c:/
 test filename-16.4 {windows specific globbing} {pcOnly} {
-    glob c:/
+    glob -nocomplain c:/
 } c:/
 test filename-16.5 {windows specific globbing} {pcOnly} {
-    glob c:*bTest
+    glob -nocomplain c:*bTest
 } c:globTest
 test filename-16.6 {windows specific globbing} {pcOnly} {
-    glob c:\\\\*bTest
+    glob -nocomplain c:\\\\*bTest
 } c:/globTest
 test filename-16.7 {windows specific globbing} {pcOnly} {
-    glob c:/*bTest
+    glob -nocomplain c:/*bTest
 } c:/globTest
 test filename-16.8 {windows specific globbing} {pcOnly} {
-    lsort [glob c:globTest/*.bat]
+    lsort [glob -nocomplain c:globTest/*.bat]
 } {c:globTest/x1.BAT c:globTest/y1.Bat c:globTest/z1.bat}
 test filename-16.9 {windows specific globbing} {pcOnly} {
-    lsort [glob c:/globTest/*.bat]
+    lsort [glob -nocomplain c:/globTest/*.bat]
 } {c:/globTest/x1.BAT c:/globTest/y1.Bat c:/globTest/z1.bat}
 test filename-16.10 {windows specific globbing} {pcOnly} {
-    lsort [glob c:globTest\\\\*.bat]
+    lsort [glob -nocomplain c:globTest\\\\*.bat]
 } {c:globTest/x1.BAT c:globTest/y1.Bat c:globTest/z1.bat}
 test filename-16.11 {windows specific globbing} {pcOnly} {
-    lsort [glob c:\\\\globTest\\\\*.bat]
+    lsort [glob -nocomplain c:\\\\globTest\\\\*.bat]
 } {c:/globTest/x1.BAT c:/globTest/y1.Bat c:/globTest/z1.bat}
 
 # some tests require a shared C drive
@@ -1961,7 +1986,7 @@ test filename-16.15 {windows specific globbing} {pcOnly} {
     glob ..
 } {..}
 test filename-16.16 {windows specific globbing} {pcOnly} {
-    file tail [lindex [glob "[lindex [glob -types d -dir C:/ *] 0]/.."] 0]
+    file tail [lindex [glob -nocomplain "[lindex [glob -types d -dir C:/ *] 0]/.."] 0]
 } {..}
 
 test filename-17.1 {windows specific special files} {testsetplatform} {

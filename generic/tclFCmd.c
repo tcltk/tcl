@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.22 2003/06/23 10:14:02 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.23 2004/01/21 19:59:33 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -241,6 +241,7 @@ TclFileMakeDirsCmd(interp, objc, objv)
 	}
 
 	split = Tcl_FSSplitPath(objv[i],&pobjc);
+	Tcl_IncrRefCount(split);
 	if (pobjc == 0) {
 	    errno = ENOENT;
 	    errfile = objv[i];
@@ -553,12 +554,18 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 
     actualSource = source;
     Tcl_IncrRefCount(actualSource);
+    /* 
+     * Activate the following block to copy files instead of links.
+     * However Tcl's semantics currently say we should copy links, so
+     * any such change should be the subject of careful study on 
+     * the consequences.
+     * 
+     * Perhaps there could be an optional flag to 'file copy' to
+     * dictate which approach to use, with the default being _not_
+     * to have this block active.
+     */
 #if 0
 #ifdef S_ISLNK
-    /* 
-     * To add a flag to make 'copy' copy links instead of files, we could
-     * add a condition to ignore this 'if' here.
-     */
     if (copyFlag && S_ISLNK(sourceStatBuf.st_mode)) {
 	/* 
 	 * We want to copy files not links.  Therefore we must follow the
@@ -580,6 +587,17 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		Tcl_Obj *path = Tcl_FSLink(actualSource, NULL, 0);
 		if (path == NULL) {
 		    break;
+		}
+		/* 
+		 * Now we want to check if this is a relative path,
+		 * and if so, to make it absolute
+		 */
+		if (Tcl_FSGetPathType(path) == TCL_PATH_RELATIVE) {
+		    Tcl_Obj *abs = Tcl_FSJoinToPath(actualSource, 1, &path);
+		    if (abs == NULL) break;
+		    Tcl_IncrRefCount(abs);
+		    Tcl_DecrRefCount(path);
+		    path = abs;
 		}
 		Tcl_DecrRefCount(actualSource);
 		actualSource = path;
@@ -796,7 +814,8 @@ FileBasename(interp, pathPtr)
     Tcl_Obj *resultPtr = NULL;
     
     splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
-
+    Tcl_IncrRefCount(splitPtr);
+    
     if (objc != 0) {
 	if ((objc == 1) && (*Tcl_GetString(pathPtr) == '~')) {
 	    Tcl_DecrRefCount(splitPtr);
@@ -804,6 +823,7 @@ FileBasename(interp, pathPtr)
 		return NULL;
 	    }
 	    splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
+	    Tcl_IncrRefCount(splitPtr);
 	}
 
 	/*

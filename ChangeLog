@@ -1,3 +1,41 @@
+2004-01-21  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3: 
+	* generic/tcl.decls: 
+	* generic/tclCmdAH.c
+	* generic/tclDecls.h
+	* generic/tclFCmd.c
+	* generic/tclFileName.c
+	* generic/tclFileSystem.h
+	* generic/tclIOUtil.c
+	* generic/tclInt.decls
+	* generic/tclInt.h
+	* generic/tclIntDecls.h
+	* generic/tclPathObj.c
+	* generic/tclStubInit.c
+	* generic/tclTest.c
+	* mac/tclMacFile.c
+	* tests/fileName.test
+	* tests/fileSystem.test
+	* tests/winFCmd.test
+	* unix/tclUnixFile.c
+	* win/tclWin32Dll.c
+	* win/tclWinFCmd.c
+	* win/tclWinFile.c
+	* win/tclWinInt.h
+	
+	Three main issues accomplished: (1) cleaned up variable names in
+	the filesystem code so that 'pathPtr' is used throughout.  (2)
+	applied a round of filesystem optimisation with better handling
+	and caching of relative and absolute paths, requiring fewer
+	conversions.  (3) clarifications to the documentation,
+	particularly regarding the acceptable refCounts of objects.
+	Some new tests added.  Tcl benchmarks show a significant
+	improvement over 8.4.5, and typically a small improvement over
+	8.3.5.  TCL_FILESYSTEM_VERSION_2 introduced, but for internal
+	use only.  There should be no public incompatibilities from
+	these changes.  Thanks to dgp for extensive testing.
+	
 2004-01-19  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c (Tcl_WaitPid): Fixed a thread-safety problem

@@ -358,7 +358,7 @@ test filesystem-4.0 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {access foo}}
+    -result {*{access foo}}
 }
 
 test filesystem-4.1 {testfilesystem} {
@@ -371,7 +371,7 @@ test filesystem-4.1 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {stat foo}}
+    -result {*{stat foo}}
 }
 
 test filesystem-4.2 {testfilesystem} {
@@ -384,7 +384,7 @@ test filesystem-4.2 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {lstat foo}}
+    -result {*{lstat foo}}
 }
 
 test filesystem-4.3 {testfilesystem} {
@@ -397,7 +397,7 @@ test filesystem-4.3 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {matchindirectory *}*}
+    -result {*{matchindirectory *}*}
 }
 
 test filesystem-5.1 {cache and ~} {
