@@ -3,17 +3,12 @@
 	* win/makefile.vc: check for either MSDEVDIR or MSVCDIR being in
 	the environment, for VC7.  [Bug 942214]
 
-	* generic/tclIO.c (Tcl_SetChannelOption):  Invalid settings
-	for -buffersize weren't being reported as errors and were blindly
-	ignored.  Now reports conversion errors to an int and checks
-	ranges for validity.  atoi() swapped for Tcl_GetInt().
-
-	* tests/io.test:
-	* tests/iogt.test: Tests cases that set invalid -buffersize
-	settings on channels either wrapped in a catch or modified to a
-	valid range.  The assertion results were not modified to show
-	that the behavior of Tcl_SetChannelBufferSize is unchanged.
-	[Bug 964268 964270]
+	* generic/tclIO.c (Tcl_SetChannelOption):  -buffersize wasn't
+	understanding hexidecimal notation nor was reporting number
+	conversion errors.  The behavior to silently ignore settings
+	outside the acceptable range of Tcl_SetChannelBufferSize
+	(<10 or >1M) is unchanged.  This silent ignoring behavior
+	might be up for review soon..
 
 2004-05-30  David Gravereaux <davygrvy@pobox.com>
 
