@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.92 2001/07/12 13:15:09 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.93 2001/07/17 02:01:23 mdejong Exp $
  */
 
 #ifndef _TCL
@@ -71,7 +71,8 @@ extern "C" {
  */
 
 #ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32)
+#   if defined(_WIN32) || defined(WIN32) || \
+       defined(__CYGWIN__) || defined(__MINGW32__)
 #	define __WIN32__
 #   endif
 #endif
