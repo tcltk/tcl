@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.27 2004/03/26 19:04:49 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.28 2004/03/30 09:56:13 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -825,30 +825,36 @@ Tcl_FSJoinPath(listObj, elements)
 	     * It's the last path segment.  Perform a quick check if
 	     * the path is already in a suitable form.
 	     */
-	    int equal = 1;
 	    
 	    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 		if (strchr(strElt, '\\') != NULL) {
-		    equal = 0;
+		    goto noQuickReturn;
 		}
 	    }
-	    if (equal) {
-		ptr = strElt;
-		while (*ptr != '\0') {
-		    if (*ptr == '/' && (ptr[1] == '/' || ptr[1] == '\0')) {
-			equal = 0;
-			break;
-		    }
-		    ptr++;
-		}
-		if (res != NULL) Tcl_DecrRefCount(res);
-		/* 
-		 * This element is just what we want to return already -
-		 * no further manipulation is requred.
-		 */
-		return elt;
-	    }
+            ptr = strElt;
+            while (*ptr != '\0') {
+                if (*ptr == '/' && (ptr[1] == '/' || ptr[1] == '\0')) {
+                    /* 
+                     * We have a repeated file separator, which
+                     * means the path is not in normalized form
+                     */
+                    goto noQuickReturn;
+                }
+                ptr++;
+            }
+            if (res != NULL) Tcl_DecrRefCount(res);
+            /* 
+             * This element is just what we want to return already -
+             * no further manipulation is requred.
+             */
+            return elt;
 	}
+        /* 
+         * The path element was not of a suitable form to be
+         * returned as is.  We need to perform a more complex
+         * operation here.
+         */
+      noQuickReturn:
 	
 	if (res == NULL) {
 	    res = Tcl_NewObj();

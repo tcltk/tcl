@@ -1,3 +1,8 @@
+2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+        * generic/tclPathObj.c:   Fix to filename bugs recently
+        * tests/fileName.test:    introduced [Bug 918320].
+
 2004-03-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclMain.c (Tcl_Main, StdinProc):	Append newline only
