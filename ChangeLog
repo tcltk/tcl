@@ -1,3 +1,10 @@
+2003-04-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_ErrorObjCmd): Strings are only empty if
+	they have zero length, not if their first byte is zero, so fix
+	test guarding Tcl_AddObjErrorInfo to take this into account.  [Bug
+	reported by Don Porter; no bug-id.]
+
 2003-04-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileIfCmd):  Corrected string limits of
