@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacUtil.c,v 1.3 1998/11/10 06:49:55 jingham Exp $
+ * RCS: @(#) $Id: tclMacUtil.c,v 1.4 2000/04/17 01:52:56 jingham Exp $
  */
 
 #include "tcl.h"
@@ -351,13 +351,17 @@ FSpPathFromLocation(
 	     * If the file doesn't currently exist we start over.  If the
 	     * directory exists everything will work just fine.  Otherwise we
 	     * will just fail later.  If the object is a directory, append a
-	     * colon so full pathname ends with colon.
+	     * colon so full pathname ends with colon, but only if the name is
+	     * not empty.  NavServices returns FSSpec's with the parent ID set,
+	     * but the name empty...
 	     */
 	    if (err == fnfErr) {
 		BlockMoveData(spec, &tempSpec, sizeof(FSSpec));
 	    } else if ( (pb.hFileInfo.ioFlAttrib & ioDirMask) != 0 ) {
-		tempSpec.name[0] += 1;
-		tempSpec.name[tempSpec.name[0]] = ':';
+	        if (tempSpec.name[0] > 0) {
+		    tempSpec.name[0] += 1;
+		    tempSpec.name[tempSpec.name[0]] = ':';
+		}
 	    }
 			
 	    /* 
