@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.3 2004/02/20 05:27:17 mdejong Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.4 2004/03/21 21:03:37 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -569,14 +569,17 @@ TclpSetInitialEncodings()
     char buf[4 + TCL_INTEGER_SPACE];
 
     if (libraryPathEncodingFixed == 0) {
-	int platformId;
+	int platformId, useWide;
+
 	platformId = TclWinGetPlatformId();
-	TclWinSetInterfaces(platformId == VER_PLATFORM_WIN32_NT);
-	
+	useWide = ((platformId == VER_PLATFORM_WIN32_NT)
+		|| (platformId == VER_PLATFORM_WIN32_CE));
+	TclWinSetInterfaces(useWide);
+
 	wsprintfA(buf, "cp%d", GetACP());
 	Tcl_SetSystemEncoding(NULL, buf);
 
-	if (platformId != VER_PLATFORM_WIN32_NT) {
+	if (!useWide) {
 	    Tcl_Obj *pathPtr = TclGetLibraryPath();
 	    if (pathPtr != NULL) {
 		int i, objc;
