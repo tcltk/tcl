@@ -1,3 +1,7 @@
+2002-01-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/basic.test (basic-39.4): Reproducable script from Bug #494348
+
 2002-01-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/util.test (Wrapper_Tcl_StringMatch,util-5.*): Rewrote so
