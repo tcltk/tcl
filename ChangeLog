@@ -1,3 +1,10 @@
+2004-09-17  Kevin B.Kenny  <kennykb@acm.org>
+
+	* generic/tclDate.c:    Revised tclGetDate.y to use bison instead
+	* generic/tclGetDate.y: of yacc to build the parser, eliminating
+	* unix/Makefile.in:     all the complicated hackery involving
+	                        'sed' postprocessing.  Rebuilt the parser.
+	
 2004-09-14  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ClockOldscanObjCmd): Silenced a compiler
