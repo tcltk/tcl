@@ -8,6 +8,13 @@
 	ignored.  Now reports conversion errors to an int and checks
 	ranges for validity.  atoi() swapped for Tcl_GetInt().
 
+	* tests/io.test:
+	* tests/iogt.test: Tests cases that set invalid -buffersize
+	settings on channels either wrapped in a catch or modified to a
+	valid range.  The assertion results were not modified to show
+	that the behavior of Tcl_SetChannelBufferSize is unchanged.
+	[Bug 964268 964270]
+
 2004-05-30  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c:
