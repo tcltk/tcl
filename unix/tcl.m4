@@ -1304,24 +1304,48 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	OpenBSD-*)
-	    SHLIB_LD="${CC} -shared"
-	    SHLIB_LD_LIBS='${LIBS}'
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS=""
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    AC_MSG_CHECKING(for ELF)
-	    AC_EGREP_CPP(yes, [
+	    case `arch -s` in
+	    m88k|vax)
+		SHLIB_CFLAGS=""
+		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
+		SHLIB_LD_LIBS='${LIBS}'
+		SHLIB_SUFFIX=".a"
+		DL_OBJS="tclLoadAout.o"
+		DL_LIBS=""
+		LDFLAGS=""
+		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+		;;
+	    *)
+		# OpenBSD/SPARC[64] needs -fPIC, -fpic will not do.
+		case `machine` in
+		sparc|sparc64)
+		    SHLIB_CFLAGS="-fPIC";;
+	        *)
+		    SHLIB_CFLAGS="-fpic";;
+	        esac
+		SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
+		SHLIB_LD_LIBS=""
+		SHLIB_SUFFIX=".so"
+		DL_OBJS="tclLoadDl.o"
+		DL_LIBS=""
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+		AC_MSG_CHECKING(for ELF)
+		AC_EGREP_CPP(yes, [
 #ifdef __ELF__
 	yes
 #endif
-	    ],
-		[AC_MSG_RESULT(yes)
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'],
-		[AC_MSG_RESULT(no)
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0']
-	    )
+	        ],
+		    AC_MSG_RESULT(yes)
+		    [ LDFLAGS=-Wl,-export-dynamic ],
+		    AC_MSG_RESULT(no)
+		    LDFLAGS=""
+	        )
+		;;
+	    esac
 
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
