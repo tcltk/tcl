@@ -1,3 +1,29 @@
+2005-04-05  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
+
+	Set of changes correcting huge memory waste (not a leak)
+	when a thread exits. This has been introduced in 8.4.7
+	within an attempt to correctly cleanup after ourselves when
+	Tcl library is being unloaded with the Tcl_Finalize() call.
+
+	This fixes the Tcl Bug #1178445.
+
+	* generic/tclInt.h: added prototypes for TclpFreeAllocCache()
+	and TclFreeAllocCache()
+
+	* generic/tclThreadAlloc.c: modified TclFinalizeThreadAlloc()
+	to explicitly call TclpFreeAllocCache with the NULL-ptr as 
+	argument signalling cleanup of private tsd key used only by
+	the threading allocator.
+
+	* unix/tclUnixThrd.c: fixed TclpFreeAllocCache() to recognize
+	when being called with NULL argument. This is a signal for it
+	to clean up the tsd key associated with the threading allocator.
+
+	* win/tclWinThrd.c: renamed TclWinFreeAllocCache to TclpFreeAllocCache
+	and fixed to recognize when being called with NULL argument.
+	This is a signal for it to clean up the tsd key associated with the
+	threading allocator.
+
 2005-04-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (ExprSrandFunc):	Replaced incursions into the
