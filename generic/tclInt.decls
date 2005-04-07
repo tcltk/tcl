@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.10 2005/01/12 21:36:23 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.11 2005/04/07 17:32:05 dgp Exp $
 
 library tcl
 
@@ -734,14 +734,15 @@ declare 179 generic {
     Tcl_Obj *Tcl_GetStartupScript(CONST char **encodingNamePtr)
 }
 
+# REMOVED
 # Allocate lists without copying arrays
-declare 180 generic {
-    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj **objv)
-}
-declare 181 generic {
-    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
-	    CONST char *file, int line)
-}
+# declare 180 generic {
+#    Tcl_Obj *TclNewListObjDirect(int objc, Tcl_Obj **objv)
+# }
+#declare 181 generic {
+#    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
+#	    CONST char *file, int line)
+#}
 
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 

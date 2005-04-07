@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.11 2004/12/09 23:00:42 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.12 2005/04/07 17:32:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -62,8 +62,8 @@ typedef struct {
 
 /* 
  * Used by command execution traces.  Note that we assume in the code
- * that the first two defines are exactly 4 times the
- * 'TCL_TRACE_ENTER_EXEC' and 'TCL_TRACE_LEAVE_EXEC' constants.
+ * that TCL_TRACE_ENTER_DURING_EXEC == 4 * TCL_TRACE_ENTER_EXEC and
+ * that TCL_TRACE_LEAVE_DURING_EXEC == 4 * TCL_TRACE_LEAVE_EXEC.
  * 
  * TCL_TRACE_ENTER_DURING_EXEC  - Trace each command inside the command
  *                                currently being traced, before execution.
@@ -1462,7 +1462,6 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
     ActiveInterpTrace active;
     int curLevel;
     int traceCode = TCL_OK;
-    TraceCommandInfo* tcmdPtr;
     Tcl_InterpState state = NULL;
     
     if (command == NULL || iPtr->tracePtr == NULL ||
@@ -1516,16 +1515,16 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	    
 	    if (tracePtr->flags & (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC)) {
 	        /* New style trace */
-		if ((tracePtr->flags != TCL_TRACE_EXEC_IN_PROGRESS) &&
-		    ((tracePtr->flags & traceFlags) != 0)) {
-		    tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
-		    tcmdPtr->curFlags = traceFlags;
-		    tcmdPtr->curCode  = code;
-		    traceCode = (tracePtr->proc)((ClientData)tcmdPtr, 
-						 (Tcl_Interp*)interp,
-						 curLevel, command,
-						 (Tcl_Command)cmdPtr,
-						 objc, objv);
+		if (tracePtr->flags & traceFlags) {
+		    if (tracePtr->proc == TraceExecutionProc) {
+			TraceCommandInfo* tcmdPtr =
+				(TraceCommandInfo *) tracePtr->clientData;
+			tcmdPtr->curFlags = traceFlags;
+			tcmdPtr->curCode  = code;
+		    }
+		    traceCode = (tracePtr->proc)(tracePtr->clientData,
+			    interp, curLevel, command, (Tcl_Command) cmdPtr,
+			    objc, objv);
 		}
 	    } else {
 		/* Old-style trace */

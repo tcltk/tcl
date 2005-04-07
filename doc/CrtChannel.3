@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.5 2005/02/24 19:53:22 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.6 2005/04/07 17:31:58 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -31,10 +31,8 @@ const char *
 int
 \fBTcl_GetChannelHandle\fR(\fIchannel, direction, handlePtr\fR)
 .sp
-.VS 8.4
 Tcl_ThreadId
 \fBTcl_GetChannelThread\fR(\fIchannel\fR)
-.VE 8.4
 .sp
 int
 \fBTcl_GetChannelMode\fR(\fIchannel\fR)
@@ -48,7 +46,6 @@ int
 .sp
 int
 \fBTcl_BadChannelOption\fR(\fIinterp, optionName, optionList\fR)
-.VS 8.4
 .sp
 int
 \fBTcl_IsChannelShared\fR(\fIchannel\fR)
@@ -67,7 +64,6 @@ void
 .sp
 void
 \fBTcl_ClearChannelHandlers\fR(\fIchannel\fR)
-.VE 8.4
 .sp
 int
 \fBTcl_ChannelBuffered\fR(\fIchannel\fR)
@@ -96,13 +92,11 @@ Tcl_DriverOutputProc *
 Tcl_DriverSeekProc *
 \fBTcl_ChannelSeekProc\fR(\fItypePtr\fR)
 .sp
-.VS 8.4
 Tcl_DriverWideSeekProc *
 \fBTcl_ChannelWideSeekProc\fR(\fItypePtr\fR)
 .sp
 Tcl_DriverThreadActionProc *
 \fBTcl_ChannelThreadActionProc\fR(\fItypePtr\fR)
-.VE 8.4
 .sp
 Tcl_DriverSetOptionProc *
 \fBTcl_ChannelSetOptionProc\fR(\fItypePtr\fR)
@@ -238,12 +232,10 @@ the channel does not have a device handle for the specified direction,
 then \fBTCL_ERROR\fR is returned instead.  Different channel drivers
 will return different types of handle.  Refer to the manual entries
 for each driver to determine what type of handle is returned.
-.VS 8.4
 .PP
 \fBTcl_GetChannelThread\fR returns the id of the thread currently managing
 the specified \fIchannel\fR. This allows channel drivers to send their file
 events to the correct event queue even for a multi-threaded core.
-.VE 8.4
 .PP
 \fBTcl_GetChannelMode\fR returns an OR-ed combination of \fBTCL_READABLE\fR
 and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input
@@ -276,7 +268,6 @@ currently buffered in the internal buffer (push back area) of the
 channel itself. It does not report about the data in the overall
 buffers for the stack of channels the supplied channel is part of.
 .PP
-.VS 8.4
 \fBTcl_IsChannelShared\fR checks the refcount of the specified
 \fIchannel\fR and returns whether the \fIchannel\fR was shared among
 multiple interpreters (result == 1) or not (result == 0).
@@ -311,7 +302,6 @@ Also notifies the driver if the \fBTcl_ChannelType\fR version is
 \fBTcl_ClearChannelHandlers\fR removes all channelhandlers and event
 scripts associated with the specified \fIchannel\fR, thus shutting
 down all event processing for this channel.
-.VE 8.4
 .SH TCL_CHANNELTYPE
 .PP
 A channel driver provides a \fBTcl_ChannelType\fR structure that contains
@@ -358,10 +348,7 @@ structure, the following functions should be used to obtain the values:
 \fBTcl_ChannelBlockModeProc\fR, \fBTcl_ChannelCloseProc\fR,
 \fBTcl_ChannelClose2Proc\fR, \fBTcl_ChannelInputProc\fR,
 \fBTcl_ChannelOutputProc\fR, \fBTcl_ChannelSeekProc\fR,
-.VS 8.4
-\fBTcl_ChannelWideSeekProc\fR,
-\fBTcl_ChannelThreadActionProc\fR,
-.VE 8.4
+\fBTcl_ChannelWideSeekProc\fR, \fBTcl_ChannelThreadActionProc\fR,
 \fBTcl_ChannelSetOptionProc\fR, \fBTcl_ChannelGetOptionProc\fR,
 \fBTcl_ChannelWatchProc\fR, \fBTcl_ChannelGetHandleProc\fR,
 \fBTcl_ChannelFlushProc\fR, or \fBTcl_ChannelHandlerProc\fR.
@@ -383,9 +370,7 @@ a pointer to the string.
 
 The \fIversion\fR field should be set to the version of the structure
 that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
-.VS 8.4
 \fBTCL_CHANNEL_VERSION_3\fR must be set to specifiy the \fIwideSeekProc\fR member.
-.VE 8.4
 .VS 8.5
 \fBTCL_CHANNEL_VERSION_4\fR must be set to specifiy the
 \fIthreadActionProc\fR member (includes \fIwideSeekProc\fR).
@@ -397,9 +382,7 @@ and function with either structures, stacked channels must be of at
 least \fBTCL_CHANNEL_VERSION_2\fR to function correctly.
 .PP
 This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
-.VS 8.4
 one of \fBTCL_CHANNEL_VERSION_4\fR, \fBTCL_CHANNEL_VERSION_3\fR,
-.VE 8.4
 \fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
 .SS BLOCKMODEPROC
 .PP
@@ -600,7 +583,6 @@ does not implement seeking.
 The return value is the new access point or -1 in case of error. If an
 error occurred, the function should not move the access point.
 .PP
-.VS 8.4
 If there is a non-NULL \fIseekProc\fR field, the \fIwideSeekProc\fR
 field may contain the address of an alternative function to use which
 handles wide (i.e. larger than 32-bit) offsets, so allowing seeks
@@ -625,7 +607,6 @@ The \fIseekProc\fR value can be retrieved with
 \fBTcl_ChannelSeekProc\fR, which returns a pointer to the function,
 and similarly the \fIwideSeekProc\fR can be retrieved with
 \fBTcl_ChannelWideSeekProc\fR.
-.VE 8.4
 .SS SETOPTIONPROC
 .PP
 The \fIsetOptionProc\fR field contains the address of a function called by
@@ -800,7 +781,6 @@ type of event occurred on this channel.
 This value can be retrieved with \fBTcl_ChannelHandlerProc\fR, which returns
 a pointer to the function.
 
-.VS 8.4
 .SS "THREADACTIONPROC"
 .PP
 The \fIthreadActionProc\fR field contains the address of the function
@@ -827,7 +807,6 @@ typedef void Tcl_DriverThreadActionProc(
 .PP
 These values can be retrieved with \fBTcl_ChannelThreadActionProc\fR,
 which returns a pointer to the function.
-.VE 8.4
 
 .SH TCL_BADCHANNELOPTION
 .PP
@@ -884,7 +863,6 @@ the new \fBTcl_ChannelType\fR structure if you are creating a stacked
 channel driver, due to problems with the earlier stacked channel
 implementation (in 8.2.0 to 8.3.1).
 .PP
-.VS 8.4
 Prior to 8.4.0 (i.e. during the later releases of 8.3 and early part
 of the 8.4 development cycle) the \fBTcl_ChannelType\fR structure
 contained the following fields:
@@ -910,7 +888,6 @@ typedef struct Tcl_ChannelType {
 .PP
 When the above structure is registered as a channel type, the
 \fIversion\fR field should always be \fBTCL_CHANNEL_VERSION_2\fR.
-.VE 8.4
 
 .SH "SEE ALSO"
 Tcl_Close(3), Tcl_OpenFileChannel(3), Tcl_SetErrno(3), Tcl_QueueEvent(3), Tcl_StackChannel(3), Tcl_GetStdChannel(3)

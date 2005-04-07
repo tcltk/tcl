@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.5 2004/10/28 18:46:22 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.6 2005/04/07 17:32:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1365,31 +1365,28 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
      */
 
     haveImmValue = 0;
-    immValue = 0;
+    immValue = 1;
     if (parsePtr->numWords == 3) {
 	incrTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    CONST char *word = incrTokenPtr[1].start;
 	    int numBytes = incrTokenPtr[1].size;
-	    int validLength = TclParseInteger(word, numBytes);
-	    long n;
 
 	    /*
 	     * Note there is a danger that modifying the string could have
-	     * undesirable side effects.  In this case, TclLooksLikeInt and
-	     * TclGetLong do not have any dependencies on shared strings so we
-	     * should be safe.
+	     * undesirable side effects.  In this case, TclLooksLikeInt has
+	     * no dependencies on shared strings so we should be safe.
 	     */
 
-	    if (validLength == numBytes) {
+	    if (TclLooksLikeInt(word, numBytes)) {
 		int code;
-		Tcl_Obj *longObj = Tcl_NewStringObj(word, numBytes);
-		Tcl_IncrRefCount(longObj);
-		code = Tcl_GetLongFromObj(NULL, longObj, &n);
-		Tcl_DecrRefCount(longObj);
-		if ((code == TCL_OK) && (-127 <= n) && (n <= 127)) {
+		Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
+		Tcl_IncrRefCount(intObj);
+		code = Tcl_GetIntFromObj(NULL, intObj, &immValue);
+		Tcl_DecrRefCount(intObj);
+		if ((code == TCL_OK)
+			&& (-127 <= immValue) && (immValue <= 127)) {
 		    haveImmValue = 1;
-		    immValue = n;
 		}
 	    }
 	    if (!haveImmValue) {
@@ -1402,7 +1399,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	}
     } else {			/* no incr amount given so use 1 */
 	haveImmValue = 1;
-	immValue = 1;
     }
 
     /*
@@ -2895,7 +2891,6 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     if (tokenStartPtr != tokenPtr[1].start+tokenPtr[1].size) {
 	ckfree((char *)argv);
 	ckfree((char *)bodyTokenArray);
-	fprintf(stderr, "BAD ASSUMPTION\n");
 	return TCL_OUT_LINE_COMPILE;
     }
 

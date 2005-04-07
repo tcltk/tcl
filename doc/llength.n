@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: llength.n,v 1.6.6.2 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: llength.n,v 1.6.6.3 2005/04/07 17:32:01 dgp Exp $
 '\" 
 .so man.macros
 .TH llength n "" Tcl "Tcl Built-In Commands"
@@ -50,10 +50,8 @@ An empty list is not necessarily an empty string:
 .CE
 
 .SH "SEE ALSO"
-.VS 8.4
 list(n), lappend(n), lindex(n), linsert(n), lsearch(n), 
 lset(n), lsort(n), lrange(n), lreplace(n)
-.VE
 
 .SH KEYWORDS
 element, list, length

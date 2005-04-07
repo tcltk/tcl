@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.3 2004/10/28 18:46:11 dgp Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.4 2005/04/07 17:31:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -74,7 +74,6 @@ Tcl_Obj *
 .SH ARGUMENTS
 .AS "const Tcl_UniChar" *appendObjPtr in/out
 .AP "const char" *bytes in
-.VS 8.1
 Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string object.
 This byte array may contain embedded null characters
@@ -82,7 +81,6 @@ unless \fInumChars\fR is negative.  (Applications needing null bytes
 should represent them as the two-byte sequence \fI\\700\\600\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
-.VE 8.1
 .AP int length in
 The number of bytes to copy from \fIbytes\fR when
 initializing, setting, or appending to a string object.

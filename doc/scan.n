@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.9.4.2 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.9.4.3 2005/04/07 17:32:01 dgp Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -43,13 +43,11 @@ Otherwise, if it isn't a \fB%\fR character then it
 must match the next character of \fIstring\fR.
 When a \fB%\fR is encountered in \fIformat\fR, it indicates
 the start of a conversion specifier.
-.VS 8.4
 A conversion specifier contains up to four fields after the \fB%\fR:
 a \fB*\fR, which indicates that the converted value is to be discarded 
 instead of assigned to a variable; a XPG3 position specifier; a number
 indicating a maximum field width; a field size modifier; and a
 conversion character.
-.VE 8.4
 All of these fields are optional except for the conversion character.
 The fields that are present must appear in the order given above.
 .PP
@@ -75,16 +73,13 @@ The following conversion characters are supported:
 \fBd\fR
 The input field must be a decimal integer.
 It is read in and the value is stored in the variable as a decimal string.
-.VS 8.4
 If the \fBl\fR or \fBL\fR field size modifier is given, the scanned
 value will have an internal representation that is at least 64-bits in
 size.
-.VE 8.4
 .TP 10
 \fBo\fR
 The input field must be an octal integer. It is read in and the 
 value is stored in the variable as a decimal string.
-.VS 8.4
 If the \fBl\fR or \fBL\fR field size modifier is given, the scanned
 value will have an internal representation that is at least 64-bits in
 size.
@@ -92,12 +87,10 @@ If the value exceeds MAX_INT (017777777777 on platforms using 32-bit
 integers when the \fBl\fR and \fBL\fR modifiers are not given), it
 will be truncated to a signed integer.  Hence, 037777777777 will
 appear as -1 on a 32-bit machine by default.
-.VE 8.4
 .TP 10
 \fBx\fR
 The input field must be a hexadecimal integer. It is read in 
 and the value is stored in the variable as a decimal string.
-.VS 8.4
 If the \fBl\fR or \fBL\fR field size modifier is given, the scanned
 value will have an internal representation that is at least 64-bits in
 size.
@@ -105,26 +98,21 @@ If the value exceeds MAX_INT (0x7FFFFFFF on platforms using 32-bit
 integers when the \fBl\fR and \fBL\fR modifiers are not given), it
 will be truncated to a signed integer.  Hence, 0xFFFFFFFF will appear
 as -1 on a 32-bit machine.
-.VE 8.4
 .TP 10
 \fBu\fR
 The input field must be a decimal integer.  The value is stored in the
 variable as an unsigned decimal integer string.
-.VS 8.4
 If the \fBl\fR or \fBL\fR field size modifier is given, the scanned
 value will have an internal representation that is at least 64-bits in
 size.
-.VE 8.4
 .TP 10
 \fBi\fR 
 The input field must be an integer.  The base (i.e. decimal, octal, or
 hexadecimal) is determined in the same fashion as described in
 \fBexpr\fR.  The value is stored in the variable as a decimal string.
-.VS 8.4
 If the \fBl\fR or \fBL\fR field size modifier is given, the scanned
 value will have an internal representation that is at least 64-bits in
 size.
-.VE 8.4
 .TP 10
 \fBc\fR
 A single character is read in and its binary value is stored in 
@@ -199,11 +187,9 @@ converted to a decimal string, which is then assigned to the
 corresponding \fIvarName\fR;
 no field width may be specified for this conversion.
 .IP [3]
-.VS 8.4
 The \fBh\fR modifier is always ignored and the \fBl\fR and \fBL\fR
 modifiers are ignored when converting real values (i.e. type
 \fBdouble\fR is used for the internal representation).
-.VE 8.4
 .IP [4]
 If the end of the input string is reached before any conversions have been
 performed and no variables are given, an empty string is returned.

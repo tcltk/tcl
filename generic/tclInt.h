@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.21 2005/02/24 19:53:31 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.22 2005/04/07 17:32:05 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -747,6 +747,21 @@ typedef struct ActiveInterpTrace {
 } ActiveInterpTrace;
 
 /*
+ * Flag values designating types of execution traces.
+ * See tclTrace.c for related flag values.
+ *
+ * TCL_TRACE_ENTER_EXEC         - triggers enter/enterstep traces.
+ * 				- passed to Tcl_CreateObjTrace to set up
+ *                                "enterstep" traces.
+ * TCL_TRACE_LEAVE_EXEC         - triggets leave/leavestep traces.
+ * 				- passed to Tcl_CreateObjTrace to set up
+ *                                "leavestep" traces.
+ *
+ */
+#define TCL_TRACE_ENTER_EXEC            1
+#define TCL_TRACE_LEAVE_EXEC            2
+
+/*
  * The structure below defines an entry in the assocData hash table which
  * is associated with an interpreter. The entry contains a pointer to a
  * function to call when the interpreter is deleted, and a pointer to
@@ -941,6 +956,7 @@ typedef struct ExecEnv {
     Tcl_Obj **tosPtr;		/* Points to current top of stack; 
 				 * (stackPtr-1) when the stack is empty. */
     Tcl_Obj **endPtr;		/* Points to last usable item in stack. */
+    Tcl_Obj *constants[2];      /* Pointers to constant "0" and "1" objs. */    
 } ExecEnv;
 
 /*
@@ -1602,18 +1618,32 @@ typedef enum TclEolTranslation {
 
 /*
  * The structure used as the internal representation of Tcl list
- * objects. This is an array of pointers to the element objects. This array
- * is grown (reallocated and copied) as necessary to hold all the list's
- * element pointers. The array might contain more slots than currently used
- * to hold all element pointers. This is done to make append operations
- * faster.
+ * objects. This struct is grown (reallocated and copied) as necessary to hold
+ * all the list's element pointers. The struct might contain more slots than
+ * currently used to hold all element pointers. This is done to make append
+ * operations faster.
  */
 
 typedef struct List {
+    int refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */
-    Tcl_Obj **elements;		/* Array of pointers to element objects. */
+    Tcl_Obj *elements;		/* First list element; the struct is grown to
+				 * accomodate all elements. */
 } List;
+
+/*
+ * Macro used to get the elements of a list object - do NOT forget to verify
+ * that it is of list type before using!
+ */
+
+#define TclListObjGetElements(listPtr, objc, objv) \
+    { \
+	List *listRepPtr = \
+	    (List *) (listPtr)->internalRep.twoPtrValue.ptr1;\
+	(objc) = listRepPtr->elemCount;\
+	(objv) = &listRepPtr->elements;\
+    }
 
 /*
  *----------------------------------------------------------------
@@ -1959,6 +1989,7 @@ MODULE_SCOPE void	TclInitNamespaceSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitNotifier _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitObjSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitSubsystems ();
+MODULE_SCOPE int	TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE int	TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 			    int len));
 MODULE_SCOPE int	TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
@@ -2508,76 +2539,6 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp,
 #  define TclIncrObjsFreed()
 #endif /* TCL_COMPILE_STATS */
 
-/*
- * All context references used in the object freeing code are pointers
- * to this structure; every thread will have its own structure
- * instance.  The purpose of this structure is to allow deeply nested
- * collections of Tcl_Objs to be freed without taking a vast depth of
- * C stack (which could cause all sorts of breakage.)
- */
-
-typedef struct PendingObjData {
-    int deletionCount;		/* Count of the number of invokations of
-				 * TclFreeObj() are on the stack (at least
-				 * conceptually; many are actually expanded
-				 * macros). */
-    Tcl_Obj *deletionStack;	/* Stack of objects that have had TclFreeObj()
-				 * invoked upon them but which can't be deleted
-				 * yet because they are in a nested invokation
-				 * of TclFreeObj(). By postponing this way, we
-				 * limit the maximum overall C stack depth when
-				 * deleting a complex object. The down-side is
-				 * that we alter the overall behaviour by
-				 * altering the order in which objects are
-				 * deleted, and we change the order in which
-				 * the string rep and the internal rep of an
-				 * object are deleted. Note that code which
-				 * assumes the previous behaviour in either of
-				 * these respects is unsafe anyway; it was
-				 * never documented as to exactly what would
-				 * happen in these cases, and the overall
-				 * contract of a user-level Tcl_DecrRefCount()
-				 * is still preserved (assuming that a
-				 * particular T_DRC would delete an object is
-				 * not very safe). */
-} PendingObjData;
-
-/*
- * These are separated out so that some semantic content is attached
- * to them.
- */
-#define TclObjDeletionLock(contextPtr)   (contextPtr)->deletionCount++
-#define TclObjDeletionUnlock(contextPtr) (contextPtr)->deletionCount--
-#define TclObjDeletePending(contextPtr)  (contextPtr)->deletionCount > 0
-#define TclObjOnStack(contextPtr)	 (contextPtr)->deletionStack != NULL
-#define TclPushObjToDelete(contextPtr,objPtr) \
-    /* Invalidate the string rep first so we can use the bytes value \
-     * for our pointer chain. */ \
-    if (((objPtr)->bytes != NULL) \
-	    && ((objPtr)->bytes != tclEmptyStringRep)) { \
-	ckfree((char *) (objPtr)->bytes); \
-    } \
-    /* Now push onto the head of the stack. */ \
-    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack); \
-    (contextPtr)->deletionStack = (objPtr)
-#define TclPopObjToDelete(contextPtr,objPtrVar) \
-    (objPtrVar) = (contextPtr)->deletionStack; \
-    (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
-
-/*
- * Macro to set up the local reference to the deletion context.
- */
-#ifndef TCL_THREADS
-MODULE_SCOPE PendingObjData tclPendingObjData;
-#define TclObjInitDeletionContext(contextPtr) \
-    PendingObjData *CONST contextPtr = &tclPendingObjData
-#else
-MODULE_SCOPE Tcl_ThreadDataKey tclPendingObjDataKey;
-#define TclObjInitDeletionContext(contextPtr) \
-    PendingObjData *CONST contextPtr = (PendingObjData *) \
-	    Tcl_GetThreadData(&tclPendingObjDataKey, sizeof(PendingObjData))
-#endif
-
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
     TclIncrObjsAllocated(); \
@@ -2589,52 +2550,18 @@ MODULE_SCOPE Tcl_ThreadDataKey tclPendingObjDataKey;
 
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	TclObjInitDeletionContext(contextPtr); \
-	if (TclObjDeletePending(contextPtr)) { \
-	    TclPushObjToDelete(contextPtr,objPtr); \
+	if ((objPtr)->typePtr && (objPtr)->typePtr->freeIntRepProc) { \
+	    TclFreeObj(objPtr); \
 	} else { \
-	    TclFreeObjMacro(contextPtr,objPtr); \
+	    if ((objPtr)->bytes \
+                    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+		ckfree((char *) (objPtr)->bytes); \
+	    } \
+	    TclFreeObjStorage(objPtr); \
+	    TclIncrObjsFreed(); \
 	} \
     }
-
-/*
- * Note that the contents of the while loop assume that the string rep
- * has already been freed and we don't want to do anything fancy with
- * adding to the queue inside ourselves. Must take care to unstack the
- * object first since freeing the internal rep can add further objects
- * to the stack. The code assumes that it is the first thing in a
- * block; all current usages in the core satisfy this.
- *
- * Optimization opportunity: Allocate the context once in a large
- * function (e.g. TclExecuteByteCode) and use it directly instead of
- * looking it up each time.
- */
-#define TclFreeObjMacro(contextPtr,objPtr) \
-    if (((objPtr)->typePtr != NULL) \
-	    && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
-	TclObjDeletionLock(contextPtr); \
-	(objPtr)->typePtr->freeIntRepProc(objPtr); \
-	TclObjDeletionUnlock(contextPtr); \
-    } \
-    if (((objPtr)->bytes != NULL) \
-	    && ((objPtr)->bytes != tclEmptyStringRep)) { \
-	ckfree((char *) (objPtr)->bytes); \
-    } \
-    TclFreeObjStorage(objPtr); \
-    TclIncrObjsFreed(); \
-    TclObjDeletionLock(contextPtr); \
-    while (TclObjOnStack(contextPtr)) { \
-	Tcl_Obj *objToFree; \
-	TclPopObjToDelete(contextPtr,objToFree); \
-	if ((objToFree->typePtr != NULL) \
-		&& (objToFree->typePtr->freeIntRepProc != NULL)) { \
-	    objToFree->typePtr->freeIntRepProc(objToFree); \
-	} \
-	TclFreeObjStorage(objToFree); \
-	TclIncrObjsFreed(); \
-    } \
-    TclObjDeletionUnlock(contextPtr)
-
+	    
 #if defined(PURIFY)
 
 /*
@@ -2726,6 +2653,9 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
  *
  * MODULE_SCOPE void	TclInitStringRep _ANSI_ARGS_((
  *			    Tcl_Obj *objPtr, char *bytePtr, int len));
+ *
+ * This macro should only be called on an unshared objPtr where
+ *  objPtr->typePtr->freeIntRepProc == NULL
  *----------------------------------------------------------------
  */
 
@@ -2772,6 +2702,24 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
 	(objPtr)->typePtr->freeIntRepProc(objPtr); \
     }
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to clean out an object's string
+ * representation.  The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE void	TclInvalidateStringRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+ *----------------------------------------------------------------
+ */
+
+#define TclInvalidateStringRep(objPtr) \
+    if (objPtr->bytes != NULL) { \
+	if (objPtr->bytes != tclEmptyStringRep) {\
+	    ckfree((char *) objPtr->bytes);\
+	}\
+	objPtr->bytes = NULL;\
+    }\
+
 
 /*
  *----------------------------------------------------------------
@@ -2892,6 +2840,130 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     if ((nsPtr)->numExportPatterns) { \
 	(nsPtr)->exportLookupEpoch++; \
     }
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to set a Tcl_Obj's numeric representation
+ * avoiding the corresponding function calls in time critical parts of the
+ * core. They should only be called on unshared objects. The ANSI C
+ * "prototypes" for these macros are:  
+ *
+ * MODULE_SCOPE void	TclSetIntObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                           int intValue));
+ * MODULE_SCOPE void	TclSetLongObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                           long longValue));
+ * MODULE_SCOPE void	TclSetBooleanObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                           long boolValue));
+ * MODULE_SCOPE void	TclSetWideIntObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          Tcl_WideInt w));
+ * MODULE_SCOPE void	TclSetDoubleObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          double d));
+ *
+ *----------------------------------------------------------------
+ */
+
+#define TclSetIntObj(objPtr, i) \
+    TclInvalidateStringRep(objPtr);\
+    TclFreeIntRep(objPtr); \
+    (objPtr)->internalRep.longValue = (long)(i); \
+    (objPtr)->typePtr = &tclIntType
+
+#define TclSetLongObj(objPtr, l) \
+    TclSetIntObj((objPtr), (l))
+
+#define TclSetBooleanObj(objPtr, b) \
+    TclSetIntObj((objPtr), ((b)? 1 : 0));\
+    (objPtr)->typePtr = &tclBooleanType
+
+#define TclSetWideIntObj(objPtr, w) \
+    TclInvalidateStringRep(objPtr);\
+    TclFreeIntRep(objPtr); \
+    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
+    (objPtr)->typePtr = &tclWideIntType
+
+#define TclSetDoubleObj(objPtr, d) \
+    TclInvalidateStringRep(objPtr);\
+    TclFreeIntRep(objPtr); \
+    (objPtr)->internalRep.doubleValue = (double)(d); \
+    (objPtr)->typePtr = &tclDoubleType
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to create and initialise objects of
+ * standard types, avoiding the corresponding function calls in time
+ * critical parts of the core. The ANSI C "prototypes" for these
+ * macros are: 
+ *
+ * MODULE_SCOPE void	TclNewIntObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          int i));
+ * MODULE_SCOPE void	TclNewLongObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          long l));
+ * MODULE_SCOPE void	TclNewBooleanObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          int b));
+ * MODULE_SCOPE void	TclNewWideObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          Tcl_WideInt w));
+ * MODULE_SCOPE void	TclNewDoubleObj _ANSI_ARGS_((Tcl_Obj *objPtr),
+ *                          double d);
+ * MODULE_SCOPE void	TclNewStringObj _ANSI_ARGS_((Tcl_Obj *objPtr)
+ *                          char *s, int len);
+ *
+ *----------------------------------------------------------------
+ */
+#ifndef TCL_MEM_DEBUG
+#define TclNewIntObj(objPtr, i) \
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes = NULL; \
+    (objPtr)->internalRep.longValue = (long)(i); \
+    (objPtr)->typePtr = &tclIntType
+
+#define TclNewLongObj(objPtr, l) \
+    TclNewIntObj((objPtr), (l))
+
+#define TclNewBooleanObj(objPtr, b) \
+    TclNewIntObj((objPtr), ((b)? 1 : 0));\
+    (objPtr)->typePtr = &tclBooleanType
+
+#define TclNewWideIntObj(objPtr, w) \
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes = NULL; \
+    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
+    (objPtr)->typePtr = &tclWideIntType
+
+#define TclNewDoubleObj(objPtr, d) \
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes = NULL; \
+    (objPtr)->internalRep.doubleValue = (double)(d); \
+    (objPtr)->typePtr = &tclDoubleType
+
+#define TclNewStringObj(objPtr, s, len) \
+    TclNewObj(objPtr); \
+    TclInitStringRep((objPtr), (s), (len))
+
+#else /* TCL_MEM_DEBUG */
+#define TclNewIntObj(objPtr, i)   \
+    (objPtr) = Tcl_NewIntObj(i)
+
+#define TclNewLongObj(objPtr, l) \
+    (objPtr) = Tcl_NewLongObj(l)
+
+#define TclNewBooleanObj(objPtr, b) \
+    (objPtr) = Tcl_NewBooleanObj(b)
+
+#define TclNewWideIntObj(objPtr, w)\
+    (objPtr) = Tcl_NewWideIntObj(w)
+
+#define TclNewDoubleObj(objPtr, d) \
+    (objPtr) = Tcl_NewDoubleObj(d)
+
+#define TclNewStringObj(objPtr, s, len) \
+    (objPtr) = Tcl_NewStringObj((s), (len))
+#endif /* TCL_MEM_DEBUG */
 
 #include "tclPort.h"
 #include "tclIntDecls.h"

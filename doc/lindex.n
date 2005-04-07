@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.7.6.1 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: lindex.n,v 1.7.6.2 2005/04/07 17:32:01 dgp Exp $
 '\" 
 .so man.macros
 .TH lindex n 8.4 Tcl "Tcl Built-In Commands"
@@ -19,7 +19,6 @@ lindex \- Retrieve an element from a list
 .BE
 .SH DESCRIPTION
 .PP
-.VS 8.4
 The \fBlindex\fP command accepts a parameter, \fIlist\fP, which
 it treats as a Tcl list. It also accepts zero or more \fIindices\fP into
 the list.  The indices may be presented either consecutively on the
@@ -39,7 +38,6 @@ In this case, the return value of \fBlindex\fR is simply the value of the
 .PP
 When presented with a single index, the \fBlindex\fR command
 treats \fIlist\fR as a Tcl list and returns the
-.VE
 \fIindex\fR'th element from it (0 refers to the first element of the list).
 In extracting the element, \fBlindex\fR observes the same rules
 concerning braces and quotes and backslashes as the Tcl command
@@ -52,7 +50,6 @@ If \fIindex\fR has the value \fBend\fR, it refers to the last element
 in the list, and \fBend\-\fIinteger\fR refers to the last element in
 the list minus the specified integer offset.
 .PP
-.VS 8.4
 If additional \fIindex\fR arguments are supplied, then each argument is
 used in turn to select an element from the previous indexing operation,
 allowing the script to select elements from sublists.  The command,
@@ -80,14 +77,9 @@ lindex [lindex [lindex $a 1] 2] 3
 \fBlindex\fR {{{a b} {c d}} {{e f} {g h}}} 1 1 0 \fI=> g\fR
 \fBlindex\fR {{{a b} {c d}} {{e f} {g h}}} {1 1 0} \fI=> g\fR
 .CE
-.VE
 .SH "SEE ALSO"
 list(n), lappend(n), linsert(n), llength(n), lsearch(n), 
-.VS 8.4
-lset(n),
-.VE
-lsort(n),
-lrange(n), lreplace(n)
+lset(n), lsort(n), lrange(n), lreplace(n)
 
 .SH KEYWORDS
 element, index, list

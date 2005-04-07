@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.11 2004/10/28 18:46:59 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.12 2005/04/07 17:32:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2237,11 +2237,18 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
 		break;
 	    }
 
-	    case TCL_TOKEN_COMMAND:
-		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			flags);
+	    case TCL_TOKEN_COMMAND: {
+		Interp *iPtr = (Interp *) interp;
+		iPtr->numLevels++;
+		code = TclInterpReady(interp);
+		if (code == TCL_OK) {
+		    code = Tcl_EvalEx(interp, tokenPtr->start+1,
+			    tokenPtr->size-2, flags);
+		}
+		iPtr->numLevels--;
 		appendObj = Tcl_GetObjResult(interp);
 		break;
+	    }
 
 	    case TCL_TOKEN_VARIABLE: {
 		Tcl_Obj *arrayIndex = NULL;
@@ -2289,16 +2296,23 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
 		break;
 	    }
 
-	    case TCL_TOKEN_SCRIPT_SUBST:
-		if (count <= tokenPtr->numComponents) {
-		    Tcl_Panic("token components overflow token array");
+	    case TCL_TOKEN_SCRIPT_SUBST: {
+		Interp *iPtr = (Interp *) interp;
+		iPtr->numLevels++;
+		code = TclInterpReady(interp);
+		if (code == TCL_OK) {
+		    if (count <= tokenPtr->numComponents) {
+			Tcl_Panic("token components overflow token array");
+		    }
+		    code = TclEvalScriptTokens(interp, tokenPtr+1,
+			    tokenPtr->numComponents,flags);
+		    count -= tokenPtr->numComponents;
+		    tokenPtr += tokenPtr->numComponents;
 		}
-		code = TclEvalScriptTokens(interp, tokenPtr+1,
-			tokenPtr->numComponents,flags);
+		iPtr->numLevels--;
 		appendObj = Tcl_GetObjResult(interp);
-		count -= tokenPtr->numComponents;
-		tokenPtr += tokenPtr->numComponents;
 		break;
+	    }
 
 	    case TCL_TOKEN_ERROR:
 		Tcl_SetResult(interp, (char *)

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.2 2004/12/09 23:00:28 dgp Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.3 2005/04/07 17:31:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -27,7 +27,6 @@ void
 .sp
 void
 \fBTcl_QueueEvent\fR(\fIevPtr, position\fR)
-.VS 8.1
 .sp
 void
 \fBTcl_ThreadQueueEvent\fR(\fIthreadId, evPtr, position\fR)
@@ -67,7 +66,6 @@ int
 .sp
 int
 \fBTcl_SetServiceMode\fR(\fImode\fR)
-.VE
 
 .SH ARGUMENTS
 .AS Tcl_EventDeleteProc *deleteProc

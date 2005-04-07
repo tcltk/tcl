@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.8.4.3 2004/10/28 18:46:11 dgp Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.8.4.4 2005/04/07 17:31:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -108,21 +108,17 @@ array names or array get is called.  Note that this is called
 before an array set, but that will trigger write traces.
 .TP
 \fBTCL_TRACE_RESULT_DYNAMIC\fR
-.VS 8.4
 The result of invoking the \fIproc\fR is a dynamically allocated
 string that will be released by the Tcl library via a call to
 \fBckfree\fR.  Must not be specified at the same time as
 \fBTCL_TRACE_RESULT_OBJECT\fR.
-.VE 8.4
 .TP
 \fBTCL_TRACE_RESULT_OBJECT\fR
-.VS 8.4
 The result of invoking the \fIproc\fR is a Tcl_Obj* (cast to a char*)
 with a reference count of at least one.  The ownership of that
 reference will be transferred to the Tcl core for release (when the
 core has finished with it) via a call to \fBTcl_DecrRefCount\fR.  Must
 not be specified at the same time as \fBTCL_TRACE_RESULT_DYNAMIC\fR.
-.VE 8.4
 .PP
 Whenever one of the specified operations occurs on the variable,
 \fIproc\fR will be invoked.
@@ -209,7 +205,6 @@ The procedures \fBTcl_TraceVar2\fR, \fBTcl_UntraceVar2\fR, and
 except that the name of the variable consists of two parts.
 \fIName1\fR gives the name of a scalar variable or array,
 and \fIname2\fR gives the name of an element within an array.
-.VS 8.1
 When \fIname2\fR is NULL, 
 \fIname1\fR may contain both an array and an element name:
 if the name contains an open parenthesis and ends with a
@@ -219,7 +214,6 @@ the characters before the first open
 parenthesis are treated as the name of an array variable.
 If \fIname2\fR is NULL and \fIname1\fR does not refer
 to an array element 
-.VE
 it means that either the variable is
 a scalar or the trace is to be set on the entire array rather
 than an individual element (see WHOLE-ARRAY TRACES below for
@@ -325,13 +319,11 @@ If \fIproc\fR returns a non-NULL value it signifies that an
 error occurred.
 The return value must be a pointer to a static character string
 containing an error message,
-.VS 8.4
 unless (\fIexactly\fR one of) the \fBTCL_TRACE_RESULT_DYNAMIC\fR and
 \fBTCL_TRACE_RESULT_OBJECT\fR flags is set, which specify that the result is
 either a dynamic string (to be released with \fBckfree\fR) or a
 Tcl_Obj* (cast to char* and to be released with
 \fBTcl_DecrRefCount\fR) containing the error message.
-.VE 8.4
 If a trace procedure returns an error, no further traces are
 invoked for the access and the traced access aborts with the
 given message.

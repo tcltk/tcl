@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.24.2.6 2004/10/28 18:46:14 dgp Exp $
+'\" RCS: @(#) $Id: file.n,v 1.24.2.7 2005/04/07 17:32:00 dgp Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -81,7 +81,6 @@ the length of the resource fork of the file, this attribute can only be
 set to the value 0, which results in the resource fork being stripped
 off the file.
 .RE
-.VS
 .TP
 \fBfile channels ?\fIpattern\fR?
 .
@@ -89,7 +88,6 @@ If \fIpattern\fR isn't specified, returns a list of names of all
 registered open channels in this interpreter.  If \fIpattern\fR is
 specified, only those names matching \fIpattern\fR are returned.  Matching
 is determined using the same rules as for \fBstring match\fR.
-.VE
 .TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
 .TP

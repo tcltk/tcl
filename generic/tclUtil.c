@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.9 2005/01/12 21:36:35 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.10 2005/04/07 17:32:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2300,30 +2300,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
     int *indexPtr;		/* Location filled in with an integer
 				 * representing an index. */
 {
-    char *bytes;
-    int offset;
-    Tcl_WideInt wideOffset;
-
-    /*
-     * If the object is already an integer, use it.
-     */
-
-    if (objPtr->typePtr == &tclIntType) {
-	*indexPtr = (int)objPtr->internalRep.longValue;
+    if (Tcl_GetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
 	return TCL_OK;
-    }
-
-    /*
-     * If the object is already a wide-int, and it is not out of range
-     * for an integer, use it. [Bug #526717]
-     */
-    if (objPtr->typePtr == &tclWideIntType) {
-	TclGetWide(wideOffset,objPtr);
-	if (wideOffset >= Tcl_LongAsWide(INT_MIN)
-	    && wideOffset <= Tcl_LongAsWide(INT_MAX)) {
-	    *indexPtr = (int) Tcl_WideAsLong(wideOffset);
-	    return TCL_OK;
-	}
     }
 
     if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
@@ -2334,31 +2312,13 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 
 	*indexPtr = endValue + objPtr->internalRep.longValue;
 
-    } else if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideOffset) == TCL_OK) {
-	/*
-	 * If the object can be converted to a wide integer, use
-	 * that. [Bug #526717]
-	 */
-
-	offset = (int) Tcl_WideAsLong(wideOffset);
-	if (Tcl_LongAsWide(offset) == wideOffset) {
-	    /*
-	     * But it is representable as a narrow integer, so we
-	     * prefer that (so preserving old behaviour in the
-	     * majority of cases.)
-	     */
-	    objPtr->typePtr = &tclIntType;
-	    objPtr->internalRep.longValue = offset;
-	}
-	*indexPtr = offset;
-
     } else {
 	/*
 	 * Report a parse error.
 	 */
 
 	if (interp != NULL) {
-	    bytes = Tcl_GetString(objPtr);
+	    char *bytes = Tcl_GetString(objPtr);
 	    /*
 	     * The result might not be empty; this resets it which
 	     * should be both a cheap operation, and of little problem

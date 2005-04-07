@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.3.34.3 2005/01/12 21:35:56 dgp Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.3.34.4 2005/04/07 17:32:01 dgp Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -48,7 +48,7 @@ an empty branch matches the empty string.
 .PP
 A quantified atom is an \fIatom\fR possibly followed
 by a single \fIquantifier\fR.
-Without a quantifier, it matches a match for the atom.
+Without a quantifier, it matches a single match for the atom.
 The quantifiers,
 and what a so-quantified atom matches, are:
 .RS 2
@@ -85,43 +85,33 @@ permissible values from 0 to 255 inclusive.
 .PP
 An atom is one of:
 .RS 2
-.TP 6
-\fB(\fIre\fB)\fR
-(where \fIre\fR is any regular expression) matches a match for
-\fIre\fR, with the match noted for possible reporting
-.TP
-\fB(?:\fIre\fB)\fR
+.IP \fB(\fIre\fB)\fR 6
+matches a match for \fIre\fR (\fIre\fR is any regular expression) with
+the match noted for possible reporting
+.IP \fB(?:\fIre\fB)\fR
 as previous, but does no reporting (a ``non-capturing'' set of
 parentheses)
-.TP
-\fB()\fR
+.IP \fB()\fR
 matches an empty string, noted for possible reporting
-.TP
-\fB(?:)\fR
+.IP \fB(?:)\fR
 matches an empty string, without reporting
-.TP
-\fB[\fIchars\fB]\fR
+.IP \fB[\fIchars\fB]\fR
 a \fIbracket expression\fR, matching any one of the \fIchars\fR (see
 \fBBRACKET EXPRESSIONS\fR for more detail)
-.TP
-\fB.\fR
+.IP \fB.\fR
 matches any single character
-.TP
-\fB\e\fIk\fR
-(where \fIk\fR is a non-alphanumeric character) matches that character
-taken as an ordinary character, e.g. \e\e matches a backslash
+.IP \fB\e\fIk\fR
+matches the non-alphanumeric character \fIk\fR
+taken as an ordinary character, e.g. \fB\e\e\fR matches a backslash
 character
-.TP
-\fB\e\fIc\fR
+.IP \fB\e\fIc\fR
 where \fIc\fR is alphanumeric (possibly followed by other characters),
 an \fIescape\fR (AREs only), see \fBESCAPES\fR below
-.TP
-\fB{\fR
+.IP \fB{\fR
 when followed by a character other than a digit, matches the
 left-brace character `\fB{\fR'; when followed by a digit, it is the
 beginning of a \fIbound\fR (see above)
-.TP
-\fIx\fR
+.IP \fIx\fR
 where \fIx\fR is a single character with no other significance,
 matches that character.
 .RE

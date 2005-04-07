@@ -913,7 +913,7 @@ test filesystem-9.5 {path objects and file tail and object rep} {
     cd $origdir
     set res
 } {test test}
-test filesystem-9.6 {path objects and file tail and object rep} {winOnly} {
+test filesystem-9.6 {path objects and file tail and object rep} win {
     set res {}
     set p "C:\\toto"
     lappend res [file join $p toto]

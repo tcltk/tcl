@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.4.8 2004/10/28 18:47:18 dgp Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.4.9 2005/04/07 17:32:08 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1099,6 +1099,63 @@ test winFCmd-17.1 {Windows bad permissions cd} -constraints win -body {
 
 cd $pwd
 unset d dd pwd
+
+test winFCmd-18.1 {Windows reserved path names} -constraints win -body {
+    file pathtype com1
+} -result "absolute"
+
+test winFCmd-18.1.2 {Windows reserved path names} -constraints win -body {
+    file pathtype com4
+} -result "absolute"
+
+test winFCmd-18.1.3 {Windows reserved path names} -constraints win -body {
+    file pathtype com5
+} -result "relative"
+
+test winFCmd-18.1.4 {Windows reserved path names} -constraints win -body {
+    file pathtype lpt3
+} -result "absolute"
+
+test winFCmd-18.1.5 {Windows reserved path names} -constraints win -body {
+    file pathtype lpt4
+} -result "relative"
+
+test winFCmd-18.1.6 {Windows reserved path names} -constraints win -body {
+    file pathtype nul
+} -result "absolute"
+
+test winFCmd-18.1.7 {Windows reserved path names} -constraints win -body {
+    file pathtype null
+} -result "relative"
+
+test winFCmd-18.2 {Windows reserved path names} -constraints win -body {
+    file pathtype com1:
+} -result "absolute"
+
+test winFCmd-18.3 {Windows reserved path names} -constraints win -body {
+    file pathtype COM1
+} -result "absolute"
+
+test winFCmd-18.4 {Windows reserved path names} -constraints win -body {
+    file pathtype CoM1:
+} -result "absolute"
+
+test winFCmd-18.5 {Windows reserved path names} -constraints win -body {
+    file normalize com1:
+} -result COM1
+
+test winFCmd-18.6 {Windows reserved path names} -constraints win -body {
+    file normalize COM1:
+} -result COM1
+
+test winFCmd-18.7 {Windows reserved path names} -constraints win -body {
+    file normalize cOm1
+} -result COM1
+
+test winFCmd-18.8 {Windows reserved path names} -constraints win -body {
+    file normalize cOm1:
+} -result COM1
+
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.

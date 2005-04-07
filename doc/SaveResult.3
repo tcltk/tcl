@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SaveResult.3,v 1.2.36.1 2004/12/09 23:00:28 dgp Exp $
+'\" RCS: @(#) $Id: SaveResult.3,v 1.2.36.2 2005/04/07 17:31:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SaveResult 3 8.1 Tcl "Tcl Library Procedures"
@@ -99,7 +99,7 @@ must eventually be passed to either \fBTcl_RestoreInterpState\fR
 or \fBTcl_DiscardInterpState\fR to avoid a memory leak.  Once
 the \fBTcl_InterpState\fR token is passed to one of them, the
 token is no longer valid and should not be used anymore.
-.VE
+.VE 8.5
 .PP
 \fBTcl_SaveResult\fR moves the string and object results
 of \fIinterp\fR into the location specified by \fIstatePtr\fR.

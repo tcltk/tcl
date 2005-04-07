@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: seek.n,v 1.5.10.2 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: seek.n,v 1.5.10.3 2005/04/07 17:32:01 dgp Exp $
 '\" 
 .so man.macros
 .TH seek n 8.1 Tcl "Tcl Built-In Commands"
@@ -21,12 +21,10 @@ seek \- Change the access position for an open channel
 .PP
 Changes the current access position for \fIchannelId\fR.
 .PP
-.VS
 \fIChannelId\fR must be an identifier for an open channel such as a
 Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
 the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
 the result of a channel creation command provided by a Tcl extension.
-.VE
 .PP
 The \fIoffset\fR and \fIorigin\fR
 arguments specify the position at which the next read or write will occur
@@ -57,11 +55,9 @@ This command returns an empty string.
 An error occurs if this command is applied to channels whose underlying
 file or device does not support seeking.
 .PP
-.VS 8.1
 Note that \fIoffset\fR values are byte offsets, not character
 offsets.  Both \fBseek\fR and \fBtell\fR operate in terms of bytes,
 not characters, unlike \fBread\fR.
-.VE 8.1
 .SH EXAMPLES
 Read a file twice:
 .CS

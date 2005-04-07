@@ -95,7 +95,7 @@ cannot be set independently.  For example, if the
 current locale is en_US_funky, then \fB::msgcat::mcpreferences\fR
 .VS 1.4
 returns \fB{en_US_funky en_US en {}}\fR.
-.VE
+.VE 1.4
 .TP
 \fB::msgcat::mcload \fIdirname\fR
 Searches the specified directory for files that match
@@ -170,7 +170,7 @@ performed during string translation.  For example, if a user specifies
 .VS 1.4
 en_GB_Funky, the locales ``en_GB_Funky'', ``en_GB'', ``en'' and ``''
 (the empty string)
-.VE
+.VE 1.4
 are searched in order until a matching translation
 string is found.  If no translation string is available, then
 \fB::msgcat::unknown\fR is called.
@@ -240,12 +240,12 @@ followed by ``.msg''.  For example:
 es.msg    -- spanish
 en_gb.msg -- United Kingdom English
 .CE
-.VS
+.VS 1.4
 \fIException:\fR The message file for the root locale ``'' is
 called \fBROOT.msg\fR.  This exception is made so as not to
 cause peculiar behavior, such as marking the message file as
 ``hidden'' on Unix file systems.
-.VE
+.VE 1.4
 .IP [3]
 The file contains a series of calls to \fBmcset\fR and
 \fBmcmset\fR, setting the necessary translation strings

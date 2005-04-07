@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.22 2005/02/24 20:45:46 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.23 2005/04/07 17:32:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3809,25 +3809,30 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    && (objPtr->typePtr == &tclListType) /* and we have a list...    */
 	    && (objPtr->bytes == NULL)	/* ...without a string rep.          */
 	    ) {
-	List *listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
-	int i, objc = listRepPtr->elemCount;
-	Tcl_Obj **objv;
+	List *listRepPtr;
 
 	/*
-	 * Copy the list elements here, to avoid a segfault if objPtr
-	 * loses its List internal rep [Bug 1119369]
+	 * Increase the reference count of the List structure, to avoid a
+	 * segfault if objPtr loses its List internal rep [Bug 1119369]
+	 */
+	listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
+	listRepPtr->refCount++;
+
+	result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
+		&listRepPtr->elements, flags);
+
+	/*
+	 * If we are the last users of listRepPtr, free it.
 	 */
 
-	objv = (Tcl_Obj **) TclStackAlloc(interp, objc*sizeof(Tcl_Obj *));
-	for (i=0; i < objc; i++) {
-	    objv[i] = listRepPtr->elements[i];
-	    Tcl_IncrRefCount(objv[i]);
+	if (--listRepPtr->refCount <= 0) {
+	    int i, elemCount = listRepPtr->elemCount;
+	    Tcl_Obj **elements = &listRepPtr->elements;
+	    for (i=0; i<elemCount; i++) {
+		Tcl_DecrRefCount(elements[i]);
+	    }
+	    ckfree((char *) listRepPtr);
 	}
-	result = Tcl_EvalObjv(interp, objc, objv, flags);
-	for (i=0; i < objc; i++) {
-	    Tcl_DecrRefCount(objv[i]);
-	}
-	TclStackFree(interp);
 	return result;
     } else {
 	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);

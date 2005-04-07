@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.13.4.3 2004/10/28 18:46:11 dgp Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.13.4.4 2005/04/07 17:31:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -70,15 +70,11 @@ Specifies which range is desired:  0 means the range of the entire
 match, 1 or greater means the range that matched a parenthesized
 sub-expression.
 .AP "const char" **startPtr out
-.VS 8.4
 The address of the first character in the range is stored here, or
 NULL if there is no such range.
-.VE 8.4
 .AP "const char" **endPtr out
-.VS 8.4
 The address of the character just after the last one in the range
 is stored here, or NULL if there is no such range.
-.VE 8.4
 .AP int cflags in
 OR-ed combination of compilation flags. See below for more information.
 .AP Tcl_Obj *objPtr in/out

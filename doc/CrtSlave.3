@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.8.4.3 2004/10/28 18:46:08 dgp Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.8.4.4 2005/04/07 17:31:58 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -79,7 +79,7 @@ Vector of strings, the additional arguments to pass to the alias command.
 This storage is owned by the caller.
 .AP int objc in
 Count of additional object arguments to pass to the alias object command.
-.AP Tcl_Object **objv in
+.AP Tcl_Obj **objv in
 Vector of Tcl_Obj structures, the additional object arguments to pass to
 the alias object command.
 This storage is owned by the caller.

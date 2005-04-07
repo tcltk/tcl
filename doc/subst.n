@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.5.4.1 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.5.4.2 2005/04/07 17:32:01 dgp Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -36,7 +36,6 @@ For example, if \fB\-nocommands\fR is specified, command substitution
 is not performed:  open and close brackets are treated as ordinary characters
 with no special interpretation.
 .PP
-.VS 8.4
 Note that the substitution of one kind can include substitution of 
 other kinds.  For example, even when the \fB-novariables\fR option
 is specified, command substitution is performed without restriction.
@@ -59,7 +58,6 @@ substitution, then the returned value is substituted for that
 substitution.  See the EXAMPLES below.  In this way, all exceptional
 return codes are ``caught'' by \fBsubst\fR.  The \fBsubst\fR command
 itself will either return an error, or will complete successfully.
-.VE
 .SH EXAMPLES
 .PP
 When it performs its substitutions, \fIsubst\fR does not give any
@@ -70,7 +68,6 @@ set a 44
 \fBsubst\fR {xyz {$a}}
 .CE
 returns ``\fBxyz {44}\fR'', not ``\fBxyz {$a}\fR''
-.VS 8.4
 and the script
 .CS
 set a "p\\} q \\{r"
@@ -116,7 +113,6 @@ returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR'' and
 \fBsubst\fR {abc,[return -code 10 foo;expr 1+2],def}
 .CE
 also returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR''.
-.VE
 
 .SH "SEE ALSO"
 Tcl(n), eval(n), break(n), continue(n)
