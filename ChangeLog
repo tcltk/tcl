@@ -38,11 +38,11 @@
 
 2005-04-05  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclExecute.c (ExprSrandFunc): Replaced incursions into the
-        * generic/tclUtil.c (TclGetIntForIndex): intreps of numeric types
-        with simpler calls of Tcl_GetIntFromObj and Tcl_GetLongFromObj,
-        now that those routines are better behaved wrt shimmering.
-        [Patch 1177219]
+	* generic/tclExecute.c (ExprSrandFunc): Replaced incursions into the
+	* generic/tclUtil.c (TclGetIntForIndex): intreps of numeric types
+	with simpler calls of Tcl_GetIntFromObj and Tcl_GetLongFromObj,
+	now that those routines are better behaved wrt shimmering.
+	[Patch 1177219]
 
 2005-04-05  Miguel Sofer <msofer@users.sf.net>
 
@@ -812,7 +812,7 @@
 
 	* tests/unixInit.test:	Corrected tests to operate properly even
 	when a value of TCL_LIBRARY is required to find encodings.
-	 
+
 	* generic/tclInt.decls:	New internal stubs: TclGetEncodingSearchPath,
 	TclSetEncodingSearchPath, TclpGetEncodingNameFromEnvironment.  These
 	are candidates for public exposure by future TIPs.
