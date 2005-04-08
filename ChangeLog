@@ -1,3 +1,13 @@
+2005-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h (TclGetEncodingFromObj):	New function to 
+	* generic/tclEncoding.c (TclGetEncodingFromObj): retrieve a
+	Tcl_Encoding value, as well as cache it in the internal rep
+	of a new "encoding" Tcl_ObjType.
+	* generic/tclCmdAH.c (Tcl_EncodingObjCmd):	Updated to call
+	new function so that Tcl_Encoding's used by [encoding convert*]
+	routines are not freed too quickly.  [Bug 1077262]
+
 2005-04-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Rewritten to be
