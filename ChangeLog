@@ -1,3 +1,9 @@
+2005-04-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Rewritten to be
+	able to handle the other form of [switch] and generate slightly
+	simpler (but longer) code.
+
 2005-04-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/upvar.n, doc/unset.n, doc/tell.n, doc/tclvars.n, doc/subst.n: 
