@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.220 2005/04/05 16:19:09 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.221 2005/04/08 20:04:04 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1884,6 +1884,8 @@ MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
 MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
+MODULE_SCOPE int	TclGetEncodingFromObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr));
 MODULE_SCOPE int        TclGetNamespaceFromObj _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_Namespace **nsPtrPtr));
