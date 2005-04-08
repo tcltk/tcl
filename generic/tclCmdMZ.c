@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115 2004/10/21 15:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.116 2005/04/08 10:42:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2506,6 +2506,11 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
+    /*
+     * If you add options that make -e and -g not unique prefixes of
+     * -exact or -glob, you *must* fix TclCompileSwitchCmd's option
+     * parser as well.
+     */
     static CONST char *options[] = {
 	"-exact", "-glob", "-indexvar", "-matchvar", "-regexp", "--", 
 	NULL
