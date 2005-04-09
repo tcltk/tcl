@@ -1,3 +1,7 @@
+2005-04-09  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix possible leak of expansion Tcl_Objs
+
 2005-04-09  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/README: updated requirements for OS & developer tool
