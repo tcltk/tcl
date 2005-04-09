@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.3 2005/04/02 21:45:36 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.4 2005/04/09 20:48:17 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2762,8 +2762,8 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
     (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.longValue = (long)(i); \
-    (objPtr)->typePtr = &tclIntType
+    (objPtr)->typePtr = &tclIntType; \
+    (objPtr)->internalRep.longValue = (long)(i)
 
 #define TclNewLongObj(objPtr, l) \
     TclNewIntObj((objPtr), (l))
@@ -2777,16 +2777,16 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
     (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
-    (objPtr)->typePtr = &tclWideIntType
+    (objPtr)->typePtr = &tclWideIntType; \
+    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
     (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.doubleValue = (double)(d); \
-    (objPtr)->typePtr = &tclDoubleType
+    (objPtr)->typePtr = &tclDoubleType; \
+    (objPtr)->internalRep.doubleValue = (double)(d)
 
 #define TclNewStringObj(objPtr, s, len) \
     TclNewObj(objPtr); \

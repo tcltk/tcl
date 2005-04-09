@@ -1,3 +1,12 @@
+2005-04-09  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h: change of order in macros
+
+	*** FROM HEAD ***
+	* generic/tclListObj.c (Tcl_ListObjIndex): added missing NULL return
+	when getting index from an empty list.
+	
+
 2005-04-04  Miguel Sofer <msofer@users.sf.net>
 
 	*** FROM HEAD ***
