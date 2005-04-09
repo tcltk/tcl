@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.19 2005/04/04 22:17:06 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.20 2005/04/09 21:17:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1125,8 +1125,8 @@ TclExecuteByteCode(interp, codePtr)
      */
     
     int catchItems;
-    register Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
-    register TclVMWord *pc = codePtr->codeStart;
+    Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
+    TclVMWord *pc = codePtr->codeStart;
 				/* The current program counter. */
     int instructionCount = 0;	/* Counter that is used to work out
 				 * when to call Tcl_AsyncReady() */
@@ -4851,8 +4851,18 @@ TclExecuteByteCode(interp, codePtr)
 	{
 	    Tcl_Obj **initTosPtr = eePtr->stackPtr + initStackTop;
 	    while (tosPtr > initTosPtr) {
-		valuePtr = POP_OBJECT();
-		TclDecrRefCount(valuePtr);
+		Tcl_Obj *objPtr = POP_OBJECT();
+		TclDecrRefCount(objPtr);
+	    }
+
+	    /*
+	     * Clear all expansions. 
+	     */
+	    
+	    while (expandNestList) {
+		Tcl_Obj *objPtr = expandNestList->internalRep.twoPtrValue.ptr2;
+		TclDecrRefCount(expandNestList);
+		expandNestList = objPtr;
 	    }
 	    if (tosPtr < initTosPtr) {
 		fprintf(stderr, "\nTclExecuteByteCode: abnormal return at pc %u: stack top %d < entry stack top %d\n",
