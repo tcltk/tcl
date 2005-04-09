@@ -1,3 +1,9 @@
+2005-04-09  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): added -single_module linker flag to
+	TCL_SHLIB_LD_EXTRAS and TK_SHLIB_LD_EXTRAS.
+	* unix/configure: autoconf-2.59
+
 2005-04-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h (TclGetEncodingFromObj):	New function to 
