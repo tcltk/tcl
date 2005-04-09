@@ -1,5 +1,8 @@
 2005-04-09  Daniel Steffen  <das@users.sourceforge.net>
 
+	* macosx/README: updated requirements for OS & developer tool
+	versions + other small fixes/cleanup.
+
 	* unix/tcl.m4 (Darwin): added -single_module linker flag to
 	TCL_SHLIB_LD_EXTRAS and TK_SHLIB_LD_EXTRAS.
 	* unix/configure: autoconf-2.13
