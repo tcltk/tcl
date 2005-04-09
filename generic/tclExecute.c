@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.180 2005/04/09 21:12:36 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.181 2005/04/09 21:14:22 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5061,6 +5061,12 @@ TclExecuteByteCode(interp, codePtr)
 	
 	abnormalReturn:
 	{
+	    Tcl_Obj **initTosPtr = eePtr->stackPtr + initStackTop;
+	    while (tosPtr > initTosPtr) {
+		Tcl_Obj *objPtr = POP_OBJECT();
+		TclDecrRefCount(objPtr);
+	    }
+
 	    /*
 	     * Clear all expansions. 
 	     */
@@ -5069,11 +5075,6 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_Obj *objPtr = expandNestList->internalRep.twoPtrValue.ptr2;
 		TclDecrRefCount(expandNestList);
 		expandNestList = objPtr;
-	    }
-	    Tcl_Obj **initTosPtr = eePtr->stackPtr + initStackTop;
-	    while (tosPtr > initTosPtr) {
-		Tcl_Obj *objPtr = POP_OBJECT();
-		TclDecrRefCount(objPtr);
 	    }
 	    if (tosPtr < initTosPtr) {
 		fprintf(stderr, "\nTclExecuteByteCode: abnormal return at pc %u: stack top %d < entry stack top %d\n",
