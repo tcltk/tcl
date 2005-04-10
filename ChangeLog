@@ -12,6 +12,8 @@
 	obj allocator for vars. The Var struct has been reduced from
 	(2ints+6ptrs) to (2ints+4ptrs).
 
+	*** COMPAT: breaks both binary and (trivially) source compat for
+	extensions that access the Var struct
 	
 	* generic/tclCompile.c (optimiser):
 	* generic/tclExecute.c: storing pointers to literals instead of
