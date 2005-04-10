@@ -24,8 +24,7 @@
  *
  * Based on Algorithm 14.12 on pp.595 of HAC.
  */
-int
-fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
+int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 {
   int     olduse, res, pa, ix, iz;
   mp_digit W[MP_WARRAY];
@@ -72,7 +71,7 @@ fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   }
   
   /* store final carry */
-  W[ix] = _W;
+  W[ix] = (mp_digit)(_W & MP_MASK);
 
   /* setup dest */
   olduse  = c->used;
