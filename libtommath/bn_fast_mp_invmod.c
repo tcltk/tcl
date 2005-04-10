@@ -21,8 +21,7 @@
  * Based on slow invmod except this is optimized for the case where b is 
  * odd as per HAC Note 14.64 on pp. 610
  */
-int
-fast_mp_invmod (mp_int * a, mp_int * b, mp_int * c)
+int fast_mp_invmod (mp_int * a, mp_int * b, mp_int * c)
 {
   mp_int  x, y, u, v, B, D;
   int     res, neg;
@@ -43,7 +42,7 @@ fast_mp_invmod (mp_int * a, mp_int * b, mp_int * c)
   }
 
   /* we need y = |a| */
-  if ((res = mp_abs (a, &y)) != MP_OKAY) {
+  if ((res = mp_mod (a, b, &y)) != MP_OKAY) {
     goto LBL_ERR;
   }
 
