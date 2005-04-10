@@ -33,8 +33,8 @@ int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c)
   }
 
   /* x = a, y = b */
-  if ((res = mp_copy (a, &x)) != MP_OKAY) {
-    goto LBL_ERR;
+  if ((res = mp_mod(a, b, &x)) != MP_OKAY) {
+      goto LBL_ERR;
   }
   if ((res = mp_copy (b, &y)) != MP_OKAY) {
     goto LBL_ERR;
