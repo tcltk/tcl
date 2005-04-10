@@ -29,8 +29,7 @@
    #define TAB_SIZE 256
 #endif
 
-int
-mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode)
+int mp_exptmod_fast (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int redmode)
 {
   mp_int  M[TAB_SIZE], res;
   mp_digit buf, mp;

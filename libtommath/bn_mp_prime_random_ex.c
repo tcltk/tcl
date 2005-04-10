@@ -60,7 +60,7 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
 
    /* calc the maskOR_msb */
    maskOR_msb        = 0;
-   maskOR_msb_offset = (size - 2) >> 3;
+   maskOR_msb_offset = ((size & 7) == 1) ? 1 : 0;
    if (flags & LTM_PRIME_2MSB_ON) {
       maskOR_msb     |= 1 << ((size - 2) & 7);
    } else if (flags & LTM_PRIME_2MSB_OFF) {
@@ -68,7 +68,7 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
    } 
 
    /* get the maskOR_lsb */
-   maskOR_lsb         = 0;
+   maskOR_lsb         = 1;
    if (flags & LTM_PRIME_BBS) {
       maskOR_lsb     |= 3;
    }
