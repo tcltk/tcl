@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.18 2004/10/07 15:15:37 dkf Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.18.2.1 2005/04/10 23:14:41 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -100,12 +100,10 @@ its contents as a Tcl script.  It returns the same information as
 \fBTcl_EvalObjEx\fR.
 If the file couldn't be read then a Tcl error is returned to describe
 why the file couldn't be read.
-.VS 8.4
 The eofchar for files is '\\32' (^Z) for all platforms.
 If you require a ``^Z'' in code for string comparison, you can use
 ``\\032'' or ``\\u001a'', which will be safely substituted by the Tcl
 interpreter into ``^Z''.
-.VE 8.4
 .PP
 \fBTcl_EvalObjv\fR executes a single pre-parsed command instead of a
 script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values

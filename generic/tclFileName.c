@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.60.2.4 2005/03/15 20:23:44 kennykb Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.60.2.5 2005/04/10 23:14:50 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -187,17 +187,20 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	    }
 	} else if ((path[0] == 'p' || path[0] == 'P')
 		   && (path[1] == 'r' || path[1] == 'R')
-		   && (path[2] == 'n' || path[2] == 'N')) {
+		   && (path[2] == 'n' || path[2] == 'N')
+		   && path[3] == '\0') {
 	    /* Have match for 'prn' */
 	    abs = 3;
 	} else if ((path[0] == 'n' || path[0] == 'N')
 		   && (path[1] == 'u' || path[1] == 'U')
-		   && (path[2] == 'l' || path[2] == 'L')) {
+		   && (path[2] == 'l' || path[2] == 'L')
+		   && path[3] == '\0') {
 	    /* Have match for 'nul' */
 	    abs = 3;
 	} else if ((path[0] == 'a' || path[0] == 'A')
 		   && (path[1] == 'u' || path[1] == 'U')
-		   && (path[2] == 'x' || path[2] == 'X')) {
+		   && (path[2] == 'x' || path[2] == 'X')
+		   && path[3] == '\0') {
 	    /* Have match for 'aux' */
 	    abs = 3;
 	}

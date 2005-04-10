@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.14 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.14.2.1 2005/04/10 23:14:43 kennykb Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -75,7 +75,6 @@ into variable \fIvarname\fR.
 Returns \fB1\fR if the variable named \fIvarName\fR exists in the
 current context (either as a global or local variable) and has been
 defined by being given a value, returns \fB0\fR otherwise.
-.VS 8.4
 .TP
 \fBinfo functions \fR?\fIpattern\fR?
 If \fIpattern\fR isn't specified, returns a list of all the math
@@ -83,7 +82,6 @@ functions currently defined.
 If \fIpattern\fR is specified, only those functions whose name matches
 \fIpattern\fR are returned.  Matching is determined using the same
 rules as for \fBstring match\fR.
-.VE
 .TP
 \fBinfo globals \fR?\fIpattern\fR?
 If \fIpattern\fR isn't specified, returns a list of all the names
@@ -96,13 +94,11 @@ are returned.  Matching is determined using the same rules as for
 \fBinfo hostname\fR
 Returns the name of the computer on which this invocation is being
 executed.
-.VS
 Note that this name is not guaranteed to be the fully qualified domain
 name of the host.  Where machines have several different names (as is
 common on systems with both TCP/IP (DNS) and NetBIOS-based networking
 installed,) it is the name that is suitable for TCP/IP networking that
 is returned.
-.VE
 .TP
 \fBinfo level\fR ?\fInumber\fR?
 If \fInumber\fR is not specified, this command returns a number

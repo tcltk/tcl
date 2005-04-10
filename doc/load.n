@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: load.n,v 1.12 2004/10/27 12:53:22 dkf Exp $
+'\" RCS: @(#) $Id: load.n,v 1.12.2.1 2005/04/10 23:14:43 kennykb Exp $
 '\" 
 .so man.macros
 .TH load n 7.5 Tcl "Tcl Built-In Commands"
@@ -92,13 +92,10 @@ This may be done differently on different platforms.
 The default guess, which is used on most UNIX platforms, is to
 take the last element of \fIfileName\fR, strip off the first
 three characters if they are \fBlib\fR, and use any following
-.VS
 alphabetic and underline characters as the module name.
-.VE
 For example, the command \fBload libxyz4.2.so\fR uses the module
 name \fBxyz\fR and the command \fBload bin/last.so {}\fR uses the
 module name \fBlast\fR.
-.VS "" br
 .PP
 If \fIfileName\fR is an empty string, then \fIpackageName\fR must
 be specified.
@@ -109,7 +106,6 @@ Otherwise, the \fBload\fR command searches for a dynamically loaded
 package by that name, and uses it if it is found.  If several
 different files have been \fBload\fRed with different versions of
 the package, Tcl picks the file that was loaded first.
-.VE
 .SH "PORTABILITY ISSUES"
 .TP
 \fBWindows\fR\0\0\0\0\0

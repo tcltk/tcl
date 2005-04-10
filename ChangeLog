@@ -1,3 +1,171 @@
+2005-04-11  Kevin Kenny <kennykb@users.sf.net>
+
+        [tcl_numerics-branch] Merged with HEAD.
+
+	* generic/tclBasic.c: Attempted to repeat changes that applied
+	to tclExecute.c in Miguel Sofer's commit of 2005-04-01, together
+	with (possibly) a few more uses of his new object creation macros.
+	Also plugged a memory leak in TclObjInvoke. [Bug 1180368]
+	
+2005-04-09  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix possible leak of expansion Tcl_Objs
+
+2005-04-09  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/README: updated requirements for OS & developer tool
+	versions + other small fixes/cleanup.
+
+	* generic/tclListObj.c (Tcl_ListObjIndex): added missing NULL return
+	when getting index from an empty list.
+	
+	* unix/tcl.m4 (Darwin): added -single_module linker flag to
+	TCL_SHLIB_LD_EXTRAS and TK_SHLIB_LD_EXTRAS.
+	* unix/configure: autoconf-2.59
+
+2005-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h (TclGetEncodingFromObj):	New function to 
+	* generic/tclEncoding.c (TclGetEncodingFromObj): retrieve a
+	Tcl_Encoding value, as well as cache it in the internal rep
+	of a new "encoding" Tcl_ObjType.
+	* generic/tclCmdAH.c (Tcl_EncodingObjCmd):	Updated to call
+	new function so that Tcl_Encoding's used by [encoding convert*]
+	routines are not freed too quickly.  [Bug 1077262]
+
+2005-04-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Rewritten to be
+	able to handle the other form of [switch] and generate slightly
+	simpler (but longer) code.
+
+2005-04-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/upvar.n, doc/unset.n, doc/tell.n, doc/tclvars.n, doc/subst.n: 
+	* doc/seek.n, doc/scan.n, doc/regsub.n, doc/registry.n, doc/regexp.n:
+	* doc/read.n, doc/puts.n, doc/pkgMkIndex.n, doc/open.n, doc/lreplace.n:
+	* doc/lrange.n, doc/load.n, doc/llength.n, doc/linsert.n, doc/lindex.n:
+	* doc/lappend.n, doc/info.n, doc/gets.n, doc/format.n, doc/flush.n: 
+	* doc/fileevent.n, doc/file.n, doc/fblocked.n, doc/close.n: 
+	* doc/array.n, doc/Utf.3, doc/TraceVar.3, doc/StrMatch.3, doc/RegExp.3:
+	* doc/PrintDbl.3, doc/OpenTcp.3, doc/OpenFileChnl.3, doc/Object.3:
+	* doc/Notifier.3, doc/LinkVar.3, doc/IntObj.3, doc/Interp.3:
+	* doc/GetOpnFl.3, doc/GetIndex.3, doc/Eval.3, doc/CrtMathFnc.3:
+	* doc/CrtFileHdlr.3, doc/CrtCommand.3, doc/CrtChannel.3:
+	* doc/Backslash.3: Purge old .VS/.VE macro instances.
+
+	* tools/man2html2.tcl (IPmacro): Rewrote to understand what .IP
+	really is (.IP and .TP are really just two ways of doing the same
+	thing). Change below made this relevant.
+	* doc/re_syntax.n: Change some uses of .TP to .IP to work around
+	bugs in various *roff implementations. Also reworded the atom
+	descriptions slightly.
+
+2005-04-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (ExprSrandFunc): Replaced incursions into the
+	* generic/tclUtil.c (TclGetIntForIndex): intreps of numeric types
+	with simpler calls of Tcl_GetIntFromObj and Tcl_GetLongFromObj,
+	now that those routines are better behaved wrt shimmering.
+	[Patch 1177219]
+
+2005-04-05  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclObj.c: Change in TclDecrRefCount and TclFreeObj, to
+	speed up the freeing of simple Tcl_Obj [Patch 1174551]
+
+2005-04-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: small opts in obj handling
+
+2005-04-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: converted a few function calls to macros.
+
+2005-04-01  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/ListObj.3:
+	* generic/tclBasic.c:
+	* generic/tclCmdIL.c:
+	* generic/tclConfig.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclListObj.c:
+	* generic/tclStubInit.c:
+	* generic/tclVar.c: Changed the internal representation of lists
+	to (a) reduce the malloc/free calls at list creation (from 2 to
+	1), (b) reduce the cost of handling empty lists (we now never
+	create a list internal rep for them), (c) allow refcounting of the
+	list internal rep. The latter permits insuring that the pointers
+	returned by Tcl_ListObjGetElements remain valid even if the object
+	shimmers away from its original list type. This is [Patch 1158008]
+	
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclObj.c:
+	* generic/tclStringObj.c: 
+	(1) defined new internal macros for creating and setting
+	frequently used obj types (int,long, wideInt, double,
+	string). Changed TEBC to use eg 'TclNewIntObj(objPtr, i)' to avoid
+	the function call in 'objPtr = Tcl_NewIntObj(i)' 
+	(2) ExecEnv now stores two Tcl_Obj* pointing to the constants "0"
+	and "1", for use by TEBC. 
+	(3) slight reduction in cost of INST_START_CMD
+
+2005-03-31  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_JUMP_TRUE/FALSE): replaced 
+	"test and branch" with "compute index into table"
+
+2005-03-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/FileSystem.3: Defined loadHandle argument. [Bug 1172401]
+
+2005-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4, win/configure: do not require cygpath in macros to
+	allow msys alone as an alternative.
+
+2005-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.h:	Move the TclInterpReady() declaration from
+	* generic/tclInt.h:	tclCompile.h to tclInt.h.  Should have
+	been done as part of the 1115904 bug fix on 2005-03-18.
+
+	* generic/tclThreadTest.c:	Stop providing the phony package
+	"Thread 1.0" when the [::testthread] command is defined.  It's
+	never used by anything, and conflicts with loading the real
+	"Thread" package.
+
+2005-03-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileIncrCmd):	Corrected checks
+	for immediate operand usage to permit leading space and sign
+	characters.  Restores more efficient bytecode for [incr x -1]
+	that got lost in the CONST string reforms of Tcl 8.4.  [Bug 1165671]
+
+	* generic/tclBasic.c (Tcl_EvalEx):	Restored recursion limit
+	* generic/tclParse.c (TclSubstTokens):	testing in nested command
+	* tests/basic.test (basic-46.4):	substitutions within direct
+	* tests/parse.test (parse-19.*):	script evaluation (Tcl_EvalEx)
+	that got lost in the parser reforms of Tcl 8.1.  Added tests for
+	correct behavior.  [Bug 1115904]
+
+2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: 
+	* win/tclWinFile.c:
+	* tests/winFCMd.test: fix to 'file pathtype' and 'file norm' 
+	failures on reserved filenames like 'COM1:', etc.
+
+2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/tcl.m4:    Updated the OpenBSD configuration and regenerated
+	* unix/configure: the configure script.
+	
 2005-03-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merged with HEAD.
@@ -21,18 +189,6 @@
 	* tests/binary.test (binary-40.3, binary-40.6): Corrected tests
 	to allow NaN(7ffffffffffff).
 	
-2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
-
-	* generic/tclFileName.c: 
-	* win/tclWinFile.c:
-	* tests/winFCMd.test: fix to 'file pathtype' and 'file norm' 
-	failures on reserved filenames like 'COM1:', etc.
-
-2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
-
-	* unix/tcl.m4:    Updated the OpenBSD configuration and regenerated
-	* unix/configure: the configure script.
-	
 2005-03-14  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fixed INST_PUSH1's debugging code (wrong
@@ -49,9 +205,9 @@
 	
 2005-03-10  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclTrace.c (TclCheckInterpTraces):    Corrected mistaken
-        cast of ClientData to (TraceCommandInfo *) when not warranted.
-        Thanks to Yuri Victorovich for the report.  [Bug 1153871]
+	* generic/tclTrace.c (TclCheckInterpTraces):	Corrected mistaken
+	cast of ClientData to (TraceCommandInfo *) when not warranted.
+	Thanks to Yuri Victorovich for the report.  [Bug 1153871]
 	* generic/tcl.h:	Moved flag values TCL_TRACE_ENTER_EXEC and
 	* generic/tclInt.h:	TCL_TRACE_LEAVE_EXEC from public interface
 	into private.  Should be used only by internal workings of
@@ -937,7 +1093,7 @@
 
 	* tests/unixInit.test:	Corrected tests to operate properly even
 	when a value of TCL_LIBRARY is required to find encodings.
-	 
+
 	* generic/tclInt.decls:	New internal stubs: TclGetEncodingSearchPath,
 	TclSetEncodingSearchPath, TclpGetEncodingNameFromEnvironment.  These
 	are candidates for public exposure by future TIPs.

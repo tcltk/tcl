@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.99.2.2 2004/12/29 22:47:04 kennykb Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.99.2.3 2005/04/10 23:14:57 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -504,7 +504,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 		 * array name.
 		 */
 
-		part1Ptr = Tcl_NewStringObj(part1, len1);
+		TclNewStringObj(part1Ptr, part1, len1);
 		Tcl_IncrRefCount(part1Ptr);
 
 		objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) part1Ptr;
@@ -1619,7 +1619,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     oldValuePtr = varPtr->value.objPtr;
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
 	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
-	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
+	    TclDecrRefCount(oldValuePtr);     /* discard old value */
 	    varPtr->value.objPtr = NULL;
 	    oldValuePtr = NULL;
 	}
@@ -1630,7 +1630,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
 	    } else if (Tcl_IsShared(oldValuePtr)) {
 		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		Tcl_DecrRefCount(oldValuePtr);
+		TclDecrRefCount(oldValuePtr);
 		oldValuePtr = varPtr->value.objPtr;
 		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
 	    }
@@ -1849,10 +1849,10 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
     if (varValuePtr->typePtr == &tclWideIntType) {
 	Tcl_WideInt wide;
 	TclGetWide(wide,varValuePtr);
-	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	TclSetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
     } else if (varValuePtr->typePtr == &tclIntType) {
 	i = varValuePtr->internalRep.longValue;
-	Tcl_SetIntObj(varValuePtr, i + incrAmount);
+	TclSetIntObj(varValuePtr, i + incrAmount);
     } else {
 	/*
 	 * Not an integer or wide internal-rep...
@@ -1860,15 +1860,15 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
 	Tcl_WideInt wide;
 	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
 	    if (createdNewObj) {
-		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+		TclDecrRefCount(varValuePtr); /* free unneeded copy */
 	    }
 	    return NULL;
 	}
 	if (wide <= Tcl_LongAsWide(LONG_MAX)
 		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
-	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
+	    TclSetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
 	} else {
-	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	    TclSetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
 	}
     }
 
@@ -2012,10 +2012,10 @@ TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
     }
     if (varValuePtr->typePtr == &tclWideIntType) {
 	TclGetWide(wide, varValuePtr);
-	Tcl_SetWideIntObj(varValuePtr, wide + incrAmount);
+	TclSetWideIntObj(varValuePtr, wide + incrAmount);
     } else if (varValuePtr->typePtr == &tclIntType) {
 	long i = varValuePtr->internalRep.longValue;
-	Tcl_SetWideIntObj(varValuePtr, Tcl_LongAsWide(i) + incrAmount);
+	TclSetWideIntObj(varValuePtr, Tcl_LongAsWide(i) + incrAmount);
     } else {
 	/*
 	 * Not an integer or wide internal-rep...
@@ -2026,7 +2026,7 @@ TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
 	    }
 	    return NULL;
 	}
-	Tcl_SetWideIntObj(varValuePtr, wide + incrAmount);
+	TclSetWideIntObj(varValuePtr, wide + incrAmount);
     }
 
     /*
@@ -2468,11 +2468,10 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
-    register List *listRepPtr;
-    register Tcl_Obj **elemPtrs;
-    int numElems, numRequired, createdNewObj, createVar, i, j;
+    int numElems, createdNewObj, createVar;
     Var *varPtr, *arrayPtr;
     char *part1;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value value ...?");
@@ -2486,7 +2485,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	     * initial value.
 	     */
 	    
-	    varValuePtr = Tcl_NewObj();
+	    TclNewObj(varValuePtr);
 	    newValuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, varValuePtr,
 		    TCL_LEAVE_ERR_MSG);
 	    if (newValuePtr == NULL) {
@@ -2542,65 +2541,24 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	     */
 	    
 	    createVar = (TclIsVarUndefined(varPtr));
-	    varValuePtr = Tcl_NewObj();
+	    TclNewObj(varValuePtr);
 	    createdNewObj = 1;
 	} else if (Tcl_IsShared(varValuePtr)) {	
 	    varValuePtr = Tcl_DuplicateObj(varValuePtr);
 	    createdNewObj = 1;
 	}
 
-	/*
-	 * Convert the variable's old value to a list object if necessary.
-	 */
-
-	if (varValuePtr->typePtr != &tclListType) {
-	    int result = tclListType.setFromAnyProc(interp, varValuePtr);
-	    if (result != TCL_OK) {
-		if (createdNewObj) {
-		    Tcl_DecrRefCount(varValuePtr); /* free unneeded obj. */
-		}
-		return result;
+	result = Tcl_ListObjLength(interp, varValuePtr, &numElems);
+	if (result == TCL_OK) {
+	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
+		    (objc-2), (objv+2));
+	}
+	if (result != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded obj. */
 	    }
+	    return result;
 	}
-	listRepPtr = (List *) varValuePtr->internalRep.twoPtrValue.ptr1;
-	elemPtrs = listRepPtr->elements;
-	numElems = listRepPtr->elemCount;
-
-	/*
-	 * If there is no room in the current array of element pointers,
-	 * allocate a new, larger array and copy the pointers to it.
-	 */
-	
-	numRequired = numElems + (objc-2);
-	if (numRequired > listRepPtr->maxElemCount) {
-	    int newMax = (2 * numRequired);
-	    Tcl_Obj **newElemPtrs = (Tcl_Obj **)
-		ckalloc((unsigned) (newMax * sizeof(Tcl_Obj *)));
-	    
-	    memcpy((VOID *) newElemPtrs, (VOID *) elemPtrs,
-		    (size_t) (numElems * sizeof(Tcl_Obj *)));
-	    listRepPtr->maxElemCount = newMax;
-	    listRepPtr->elements = newElemPtrs;
-	    ckfree((char *) elemPtrs);
-	    elemPtrs = newElemPtrs;
-	}
-
-	/*
-	 * Insert the new elements at the end of the list.
-	 */
-
-	for (i = 2, j = numElems;  i < objc;  i++, j++) {
-            elemPtrs[j] = objv[i];
-            Tcl_IncrRefCount(objv[i]);
-        }
-	listRepPtr->elemCount = numRequired;
-
-	/*
-	 * Invalidate and free any old string representation since it no
-	 * longer reflects the list's internal representation.
-	 */
-
-	Tcl_InvalidateStringRep(varValuePtr);
 
 	/*
 	 * Now store the list object back into the variable. If there is an
@@ -2745,11 +2703,11 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 		searchPtr->nextEntry = Tcl_NextHashEntry(&searchPtr->search);
 		if (searchPtr->nextEntry == NULL) {
-		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+		    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[0]);
 		    return TCL_OK;
 		}
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[1]);
 	    break;
 	}
         case ARRAY_DONESEARCH: {
@@ -2785,7 +2743,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName");
 	        return TCL_ERROR;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!notArray));
+	    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[!notArray]);
 	    break;
 	}
         case ARRAY_GET: {
@@ -2811,7 +2769,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	     * Store the array names in a new object.
 	     */
 
-	    nameLstPtr = Tcl_NewObj();
+	    TclNewObj(nameLstPtr);
 	    Tcl_IncrRefCount(nameLstPtr);
 
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
@@ -2846,7 +2804,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	     * Get the array values corresponding to each element name 
 	     */
 
-	    tmpResPtr = Tcl_NewObj();
+	    TclNewObj(tmpResPtr);
 	    result = Tcl_ListObjGetElements(interp, nameLstPtr,
 		    &count, &namePtrPtr);
 	    if (result != TCL_OK) {
@@ -2883,7 +2841,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    }
 	    varPtr->refCount--;
 	    Tcl_SetObjResult(interp, tmpResPtr);
-	    Tcl_DecrRefCount(nameLstPtr);
+	    TclDecrRefCount(nameLstPtr);
 	    break;
 
 	    errorInArrayGet:
@@ -2922,7 +2880,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }       		
-	    resultPtr = Tcl_NewObj();
+	    TclNewObj(resultPtr);
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -4203,12 +4161,12 @@ TclDeleteVars(iPtr, tablePtr)
 	 */
 
 	if (varPtr->tracePtr != NULL) {
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    Tcl_IncrRefCount(objPtr); /* until done with traces */
 	    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
 	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, TclGetString(objPtr),
 		    NULL, flags, /* leaveErrMsg */ 0);
-	    Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
+	    TclDecrRefCount(objPtr); /* free no longer needed obj */
 
 	    while (varPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = varPtr->tracePtr;

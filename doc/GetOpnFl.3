@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetOpnFl.3,v 1.8 2004/10/07 15:15:38 dkf Exp $
+'\" RCS: @(#) $Id: GetOpnFl.3,v 1.8.2.1 2005/04/10 23:14:41 kennykb Exp $
 .so man.macros
 .TH Tcl_GetOpenFile 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -52,10 +52,8 @@ for the access specified by \fIwrite\fR) then \fBTCL_ERROR\fR is returned
 and the interpreter's result will contain an error message.
 In the current implementation \fIcheckUsage\fR is ignored and consistency
 checks are always performed.
-.VS
 .PP
 Note that this interface is only supported on the Unix platform.
-.VE
 
 .SH KEYWORDS
 channel, file handle, permissions, pipeline, read, write

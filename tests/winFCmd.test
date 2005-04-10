@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.35.2.1 2005/03/15 20:23:54 kennykb Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.35.2.2 2005/04/10 23:15:16 kennykb Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1118,6 +1118,14 @@ test winFCmd-18.1.4 {Windows reserved path names} -constraints win -body {
 
 test winFCmd-18.1.5 {Windows reserved path names} -constraints win -body {
     file pathtype lpt4
+} -result "relative"
+
+test winFCmd-18.1.6 {Windows reserved path names} -constraints win -body {
+    file pathtype nul
+} -result "absolute"
+
+test winFCmd-18.1.7 {Windows reserved path names} -constraints win -body {
+    file pathtype null
 } -result "relative"
 
 test winFCmd-18.2 {Windows reserved path names} -constraints win -body {

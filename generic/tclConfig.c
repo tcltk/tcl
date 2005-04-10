@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.6 2004/10/29 15:39:05 dkf Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.6.2.1 2005/04/10 23:14:48 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -196,7 +196,7 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
      struct Tcl_Obj * CONST *objv;
 {
     Tcl_Obj *pkgName = (Tcl_Obj*) clientData;
-    Tcl_Obj *pDB, *pkgDict, *val;
+    Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
     Tcl_DictSearch s;
     int n, i, res, done, index;
     Tcl_Obj *key, **vals;
@@ -248,19 +248,29 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
 	}
 
 	Tcl_DictObjSize(interp, pkgDict, &n);
-	if (n == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewListObj(0, NULL));
-	    return TCL_OK;
+	listPtr = Tcl_NewListObj(n, NULL);
+	
+	if (!listPtr) {
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("insufficient memory to create list", -1));
+	    return TCL_ERROR;
+	}
+	
+	if (n) {
+	    List *listRepPtr =
+		(List *) listPtr->internalRep.twoPtrValue.ptr1;
+
+	    listRepPtr->elemCount = n;
+	    vals = &listRepPtr->elements;
+
+	    for (i=0, Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
+		    !done; Tcl_DictObjNext(&s, &key, NULL, &done), i++) {
+		vals[i] = key;
+		Tcl_IncrRefCount(key);
+	    }
 	}
 
-	vals = (Tcl_Obj**) ckalloc(n * sizeof(Tcl_Obj*));
-
-	for (i=0, Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
-		!done; Tcl_DictObjNext(&s, &key, NULL, &done), i++) {
-	    vals[i] = key;
-	}
-
-	Tcl_SetObjResult(interp, TclNewListObjDirect(n, vals));
+	Tcl_SetObjResult(interp, listPtr);
 	return TCL_OK;
 
     default:

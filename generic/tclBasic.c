@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.5 2005/03/15 19:41:42 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.6 2005/04/10 23:14:45 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -386,10 +386,10 @@ Tcl_CreateInterp()
 
     iPtr->returnOpts = NULL;
     iPtr->errorInfo = NULL;
-    iPtr->eiVar = Tcl_NewStringObj("errorInfo", -1);
+    iPtr->eiVar = Tcl_NewStringObj( "errorInfo", -1 );
     Tcl_IncrRefCount(iPtr->eiVar);
     iPtr->errorCode = NULL;
-    iPtr->ecVar = Tcl_NewStringObj("errorCode", -1);
+    iPtr->ecVar = Tcl_NewStringObj( "errorCode", -1 );
     Tcl_IncrRefCount(iPtr->ecVar);
     iPtr->returnLevel = 0;
     iPtr->returnCode = TCL_OK;
@@ -2964,16 +2964,16 @@ OldMathFuncProc( clientData, interp, objc, objv )
     /* Return the result of the call */
 
     if (funcResult.type == TCL_INT) {
-	valuePtr = Tcl_NewLongObj(funcResult.intValue);
+	TclNewLongObj(valuePtr, funcResult.intValue);
     } else if (funcResult.type == TCL_WIDE_INT) {
-	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
+	TclNewWideIntObj(valuePtr, funcResult.wideValue);
     } else {
 	d = funcResult.doubleValue;
 	if (IS_NAN(d) || IS_INF(d)) {
 	    TclExprFloatError(interp, d);
 	    return TCL_ERROR;
 	}
-	valuePtr = Tcl_NewDoubleObj(d);
+	TclNewDoubleObj(valuePtr, d);
     }
     Tcl_SetObjResult( interp, valuePtr );
     return TCL_OK;
@@ -3055,7 +3055,8 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
     /* Report unknown functions */
 
     if ( cmdPtr == NULL ) {
-	Tcl_Obj* message = Tcl_NewStringObj( "unknown math function \"", -1 );
+	Tcl_Obj* message;
+	message = Tcl_NewStringObj( "unknown math function \"", -1 );
 	Tcl_AppendToObj( message, name, -1 );
 	Tcl_AppendToObj( message, "\"", 1 );
 	*numArgsPtr = -1; *argTypesPtr = NULL; 
@@ -3296,7 +3297,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	    for (i = objc-1; i >= 0; i--) {
 	        newObjv[i+1] = objv[i];
 	    }
-	    newObjv[0] = Tcl_NewStringObj("::unknown", -1);
+	    newObjv[0] = Tcl_NewStringObj( "::unknown", -1);
 	    Tcl_IncrRefCount(newObjv[0]);
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	    if (cmdPtr == NULL) {
@@ -3779,9 +3780,10 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 			    objv[objectsUsed], &numElements);
 		    if (code == TCL_ERROR) {
 			/* Attempt to expand a non-list */
-			Tcl_Obj *msg = 
-				Tcl_NewStringObj("\n    (expanding word ", -1);
-			Tcl_Obj *wordNum = Tcl_NewIntObj(objectsUsed);
+			Tcl_Obj *msg;
+			Tcl_Obj *wordNum;
+			msg = Tcl_NewStringObj("\n    (expanding word ", -1);
+			TclNewIntObj( wordNum, objectsUsed );
 			Tcl_IncrRefCount(wordNum);
 			Tcl_IncrRefCount(msg);
 			Tcl_AppendObjToObj(msg, wordNum);
@@ -3846,16 +3848,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	            parse.commandStart, parse.commandSize, 0);
 	    iPtr->numLevels--;
 	    if (code != TCL_OK) {
-		if (iPtr->numLevels == 0) {
-		    if (code == TCL_RETURN) {
-			code = TclUpdateReturnInfo(iPtr);
-		    }
-		    if ((code != TCL_OK) && (code != TCL_ERROR) 
-			&& !allowExceptions) {
-			ProcessUnexpectedResult(interp, code);
-			code = TCL_ERROR;
-		    }
-		}
 		goto error;
 	    }
 	    for (i = 0; i < objectsUsed; i++) {
@@ -3891,7 +3883,16 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 
     error:
     /* Generate and log various pieces of error information. */
-
+	if (iPtr->numLevels == 0) {
+	    if (code == TCL_RETURN) {
+		code = TclUpdateReturnInfo(iPtr);
+	    }
+	    if ((code != TCL_OK) && (code != TCL_ERROR) 
+		&& !allowExceptions) {
+		ProcessUnexpectedResult(interp, code);
+		code = TCL_ERROR;
+	    }
+	}
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) { 
 	commandLength = parse.commandSize;
 	if (parse.term == parse.commandStart + commandLength - 1) {
@@ -4063,26 +4064,31 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	 */
 	if ((objPtr->typePtr == &tclListType) && /* is a list... */
 		(objPtr->bytes == NULL) /* ...without a string rep */) {	    
-	    List *listRepPtr =
-		(List *) objPtr->internalRep.twoPtrValue.ptr1;
-	    int i, objc = listRepPtr->elemCount;
-	    Tcl_Obj **objv;
+	    List *listRepPtr;
 
 	    /*
-	     * Copy the list elements here, to avoid a segfault if objPtr
-	     * loses its List internal rep [Bug 1119369]
+	     * Increase the reference count of the List structure, to avoid a
+	     * segfault if objPtr loses its List internal rep [Bug 1119369]
 	     */
 	    
-	    objv = (Tcl_Obj **) TclStackAlloc(interp, objc*sizeof(Tcl_Obj *));
-	    for (i=0; i < objc; i++) {
-		objv[i] = listRepPtr->elements[i];
-		Tcl_IncrRefCount(objv[i]);
+	    listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
+	    listRepPtr->refCount++;
+
+	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
+		    &listRepPtr->elements, flags);
+
+	    /*
+	     * If we are the last users of listRepPtr, free it.
+	     */
+
+	    if (--listRepPtr->refCount <= 0) {
+		int i, elemCount = listRepPtr->elemCount;
+		Tcl_Obj **elements = &listRepPtr->elements;
+		for (i=0; i<elemCount; i++) {
+		    Tcl_DecrRefCount(elements[i]);
+		}
+		ckfree((char *) listRepPtr);
 	    }
-	    result = Tcl_EvalObjv(interp, objc, objv, flags);
-	    for (i=0; i < objc; i++) {
-		TclDecrRefCount(objv[i]);
-	    }
-	    TclStackFree(interp);
 	} else {
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
@@ -4199,7 +4205,7 @@ Tcl_ExprLong(interp, string, ptr)
     int result = TCL_OK;
 
     if (length > 0) {
-	exprPtr = Tcl_NewStringObj(string, length);
+	TclNewStringObj(exprPtr, string, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4267,7 +4273,7 @@ Tcl_ExprDouble(interp, string, ptr)
     int result = TCL_OK;
 
     if (length > 0) {
-	exprPtr = Tcl_NewStringObj(string, length);
+	TclNewStringObj(exprPtr, string, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4335,7 +4341,7 @@ Tcl_ExprBoolean(interp, string, ptr)
     int result = TCL_OK;
 
     if (length > 0) {
-	exprPtr = Tcl_NewStringObj(string, length);
+	TclNewStringObj(exprPtr, string, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4610,9 +4616,11 @@ TclObjInvoke(interp, objc, objv, flags)
 	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
 	int length;
 	Tcl_Obj *command = Tcl_NewListObj(objc, objv);
-	CONST char* cmdString = Tcl_GetStringFromObj(command, &length);
-
+	CONST char* cmdString;
+	Tcl_IncrRefCount( command );
+	cmdString = Tcl_GetStringFromObj(command, &length);
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, length);
+	Tcl_DecrRefCount( command );
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
     }
     return result;
@@ -5074,6 +5082,7 @@ ExprUnaryFunc(clientData, interp, objc, objv)
     Tcl_Obj *CONST *objv;	/* Actual parameter list */
 {
     double d, dResult;
+    Tcl_Obj* oResult;
     
     double (*func) _ANSI_ARGS_((double)) =
 	(double (*)_ANSI_ARGS_((double))) clientData;
@@ -5095,7 +5104,8 @@ ExprUnaryFunc(clientData, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	}
-	Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	TclNewDoubleObj( oResult, dResult );
+	Tcl_SetObjResult( interp, oResult );
 	return TCL_OK;
     }
 
@@ -5113,6 +5123,7 @@ ExprBinaryFunc( clientData, interp, objc, objv )
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
     double d1, d2, dResult;
+    Tcl_Obj* oResult;
     
     double (*func) _ANSI_ARGS_((double, double))
 	= (double (*)_ANSI_ARGS_((double, double))) clientData;
@@ -5136,7 +5147,8 @@ ExprBinaryFunc( clientData, interp, objc, objv )
 		return TCL_ERROR;
 	    }
 	}
-	Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	TclNewDoubleObj( oResult, dResult );
+	Tcl_SetObjResult( interp, oResult );
 	return TCL_OK;
     }
 
@@ -5155,6 +5167,7 @@ ExprAbsFunc( clientData, interp, objc, objv )
     register Tcl_Obj *valuePtr;
     long i, iResult;
     double d, dResult;
+    Tcl_Obj* oResult;
 
     if ( objc != 2 ) {
 	MathFuncWrongNumArgs( interp, 2, objc, objv );
@@ -5184,7 +5197,8 @@ ExprAbsFunc( clientData, interp, objc, objv )
 	} else {
 	    iResult = i;
 	}	    
-	Tcl_SetObjResult( interp, Tcl_NewLongObj( iResult ) );
+	TclNewLongObj( oResult, iResult );
+	Tcl_SetObjResult( interp, oResult );
     } else if (valuePtr->typePtr == &tclWideIntType) {
 	Tcl_WideInt wResult, w;
 	TclGetWide(w,valuePtr);
@@ -5200,7 +5214,8 @@ ExprAbsFunc( clientData, interp, objc, objv )
 	} else {
 	    wResult = w;
 	}	    
-	Tcl_SetObjResult( interp, Tcl_NewWideIntObj( wResult ) );
+	TclNewWideIntObj( oResult, wResult );
+	Tcl_SetObjResult( interp, oResult );
     } else {
 	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
@@ -5212,7 +5227,8 @@ ExprAbsFunc( clientData, interp, objc, objv )
 	    TclExprFloatError(interp, dResult);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	TclNewDoubleObj( oResult, dResult );
+	Tcl_SetObjResult( interp, oResult );
     }
 
     return TCL_OK;
@@ -5228,6 +5244,7 @@ ExprDoubleFunc(clientData, interp, objc, objv )
 {
     Tcl_Obj* valuePtr;
     double dResult;
+    Tcl_Obj* oResult;
 
     /*
      * Check parameter type
@@ -5239,7 +5256,8 @@ ExprDoubleFunc(clientData, interp, objc, objv )
 	valuePtr = objv[1];
 	if ( VerifyExprObjType( interp, valuePtr ) == TCL_OK ) {
 	    GET_DOUBLE_VALUE( dResult, valuePtr, valuePtr->typePtr );
-	    Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	    TclNewDoubleObj( oResult, dResult );
+	    Tcl_SetObjResult( interp, oResult );
 	    return TCL_OK;
 	}
     }
@@ -5259,6 +5277,7 @@ ExprIntFunc(clientData, interp, objc, objv)
     register Tcl_Obj *valuePtr;
     long iResult;
     double d;
+    Tcl_Obj* oResult;
 
     if ( objc != 2 ) {
 	MathFuncWrongNumArgs( interp, 2, objc, objv );
@@ -5292,7 +5311,8 @@ ExprIntFunc(clientData, interp, objc, objv)
 		}
 		iResult = (long) d;
 	    }
-	    Tcl_SetObjResult( interp, Tcl_NewLongObj( iResult ) );
+	    TclNewIntObj( oResult, iResult );
+	    Tcl_SetObjResult( interp, oResult );
 	    return TCL_OK;
 	}
     }
@@ -5311,6 +5331,7 @@ ExprWideFunc(clientData, interp, objc, objv)
     register Tcl_Obj *valuePtr;
     Tcl_WideInt wResult;
     double d;
+    Tcl_Obj* oResult;
 
     if ( objc != 2 ) {
 	MathFuncWrongNumArgs( interp, 2, objc, objv );
@@ -5344,7 +5365,8 @@ ExprWideFunc(clientData, interp, objc, objv)
 		}
 		wResult = (Tcl_WideInt) d;
 	    }
-	    Tcl_SetObjResult( interp, Tcl_NewWideIntObj( wResult ) );
+	    TclNewWideIntObj( oResult, wResult );
+	    Tcl_SetObjResult( interp, oResult );
 	    return TCL_OK;
 	}
     }
@@ -5363,6 +5385,7 @@ ExprRandFunc(clientData, interp, objc, objv)
     double dResult;
     long tmp;			/* Algorithm assumes at least 32 bits.
 				 * Only long guarantees that.  See below. */
+    Tcl_Obj* oResult;
 
     if ( objc != 1 ) {
 	MathFuncWrongNumArgs( interp, 1, objc, objv );
@@ -5439,7 +5462,8 @@ ExprRandFunc(clientData, interp, objc, objv)
      * Push a Tcl object with the result.
      */
 
-    Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+    TclNewDoubleObj( oResult, dResult );
+    Tcl_SetObjResult( interp, oResult );
     return TCL_OK;
 }
 
@@ -5487,9 +5511,9 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	    f = f + 1.0;
 	}
 	if ( f >= (double) LONG_MIN && f <= (double) LONG_MAX ) {
-	    resPtr = Tcl_NewLongObj( (long) f );
+	    TclNewLongObj( resPtr, (long) f );
 	} else {
-	    resPtr = Tcl_NewWideIntObj( Tcl_DoubleAsWide( f ) );
+	    TclNewWideIntObj( resPtr, Tcl_DoubleAsWide( f ) );
 	}
 	Tcl_SetObjResult( interp, resPtr );
 	return TCL_OK;
@@ -5535,11 +5559,7 @@ ExprSrandFunc(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    if (valuePtr->typePtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-    } else if (valuePtr->typePtr == &tclWideIntType) {
-	TclGetLongFromWide(i,valuePtr);
-    } else {
+    if ( Tcl_GetLongFromObj( NULL, valuePtr, &i ) != TCL_OK ) {
 	/*
 	 * At this point, the only other possible type is double
 	 */

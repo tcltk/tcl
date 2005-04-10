@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.19 2004/10/01 03:10:36 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.19.2.1 2005/04/10 23:14:59 kennykb Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -943,6 +943,52 @@ test parse-18.30 {Tcl_SubstObj, side effects} {
     catch {subst {foo[incr a; incr a parse error {}{}]bar}}
     set a
 } 1
+
+test parse-19.1 {Bug 1115904: recursion limit in Tcl_EvalEx} -constraints {
+    testevalex
+} -setup {
+    interp create i
+    load {} Tcltest i
+    i eval {proc {} args {}}
+    interp recursionlimit i 3
+} -body {
+    i eval {testevalex {[]}}
+} -cleanup {
+    interp delete i
+}
+
+test parse-19.2 {Bug 1115904: recursion limit in Tcl_EvalEx} -constraints {
+    testevalex
+} -setup {
+    interp create i
+    load {} Tcltest i
+    i eval {proc {} args {}}
+    interp recursionlimit i 3
+} -body {
+    i eval {testevalex {[[]]}}
+} -cleanup {
+    interp delete i
+} -returnCodes error -match glob -result {too many nested*}
+
+test parse-19.3 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
+    interp create i
+    i eval {proc {} args {}}
+    interp recursionlimit i 3
+} -body {
+    i eval {subst {[]}}
+} -cleanup {
+    interp delete i
+}
+
+test parse-19.4 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
+    interp create i
+    i eval {proc {} args {}}
+    interp recursionlimit i 3
+} -body {
+    i eval {subst {[[]]}}
+} -cleanup {
+    interp delete i
+} -returnCodes error -match glob -result {too many nested*}
 
     cleanupTests
 }

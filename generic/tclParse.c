@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.39 2004/10/26 21:52:37 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.39.2.1 2005/04/10 23:14:55 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2001,11 +2001,18 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
 		break;
 	    }
 
-	    case TCL_TOKEN_COMMAND:
-		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			0);
+	    case TCL_TOKEN_COMMAND: {
+		Interp *iPtr = (Interp *) interp;
+		iPtr->numLevels++;
+		code = TclInterpReady(interp);
+		if (code == TCL_OK) {
+		    code = Tcl_EvalEx(interp,
+			    tokenPtr->start+1, tokenPtr->size-2, 0);
+		}
+		iPtr->numLevels--;
 		appendObj = Tcl_GetObjResult(interp);
 		break;
+	    }
 
 	    case TCL_TOKEN_VARIABLE: {
 		Tcl_Obj *arrayIndex = NULL;

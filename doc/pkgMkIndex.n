@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.14.6.1 2005/01/20 14:53:39 kennykb Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.14.6.2 2005/04/10 23:14:43 kennykb Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 8.3 Tcl "Tcl Built-In Commands"
@@ -14,9 +14,7 @@
 pkg_mkIndex \- Build an index for automatic loading of packages
 .SH SYNOPSIS
 .nf
-.VS 8.3.0
 \fBpkg_mkIndex ?\fI\-direct\fR?  ?\fI\-lazy\fR?  ?\fI\-load pkgPat\fR? ?\fI\-verbose\fR? \fIdir\fR ?\fIpattern pattern ...\fR?
-.VE
 .fi
 .BE
 
@@ -41,9 +39,7 @@ Create the index by invoking \fBpkg_mkIndex\fR.
 The \fIdir\fR argument gives the name of a directory and each
 \fIpattern\fR argument is a \fBglob\fR-style pattern that selects
 script or binary files in \fIdir\fR.
-.VS 8.0.3
 The default pattern is \fB*.tcl\fR and \fB*.[info sharedlibextension]\fR.
-.VE
 .br
 \fBPkg_mkIndex\fR will create a file \fBpkgIndex.tcl\fR in \fIdir\fR
 with package information about all the files given by the \fIpattern\fR
@@ -160,10 +156,8 @@ commands for each version of each available package;  these commands
 invoke \fBpackage provide\fR commands to announce the
 availability of the package, and they setup auto-loader
 information to load the files of the package.
-.VS 8.3
 If the \fI\-lazy\fR flag was provided when the \fBpkgIndex.tcl\fR
 was generated,
-.VE
 a given file of a given version of a given package isn't
 actually loaded until the first time one of its commands
 is invoked.
@@ -171,7 +165,6 @@ Thus, after invoking \fBpackage require\fR you may
 not see the package's commands in the interpreter, but you will be able
 to invoke the commands and they will be auto-loaded.
 
-.VS 8.3
 .SH "DIRECT LOADING"
 .PP
 Some packages, for instance packages which use namespaces and export
@@ -180,7 +173,6 @@ that their package files be loaded immediately upon \fBpackage require\fR
 instead of delaying the actual loading to the first use of one of the
 package's command. This is the default mode when generating the package
 index.  It can be overridden by specifying the \fI\-lazy\fR argument.
-.VE
 
 .SH "COMPLEX CASES"
 Most complex cases of dependencies among scripts

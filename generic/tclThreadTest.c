@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.17 2004/10/20 05:28:39 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.1 2005/04/10 23:14:57 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -160,9 +160,6 @@ TclThread_Init(interp)
     
     Tcl_CreateObjCommand(interp,"testthread", Tcl_ThreadObjCmd, 
 	    (ClientData)NULL ,NULL);
-    if (Tcl_PkgProvide(interp, "Thread", "1.0" ) != TCL_OK) {
-	return TCL_ERROR;
-    }
     return TCL_OK;
 }
 

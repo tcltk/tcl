@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StrMatch.3,v 1.6 2004/10/07 15:15:48 dkf Exp $
+'\" RCS: @(#) $Id: StrMatch.3,v 1.6.2.1 2005/04/10 23:14:42 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -41,13 +41,11 @@ a given pattern.  If it does, then \fBTcl_StringMatch\fR returns
 used for matching is the same algorithm used in the ``string match''
 Tcl command and is similar to the algorithm used by the C-shell
 for file name matching;  see the Tcl manual entry for details.
-.VS 8.1
 .PP
 In \fBTcl_StringCaseMatch\fR, the algorithm is the same, but you have
 the option to make the matching case-insensitive.  If you choose this
 (by passing \fBnocase\fR as 1), then the string and pattern are
 essentially matched in the lower case.
-.VE 8.1
 
 .SH KEYWORDS
 match, pattern, string

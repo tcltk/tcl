@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetIndex.3,v 1.16 2004/10/07 16:05:13 dkf Exp $
+'\" RCS: @(#) $Id: GetIndex.3,v 1.16.2.1 2005/04/10 23:14:41 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -18,12 +18,10 @@ Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct \- lookup string in table of keyw
 int
 \fBTcl_GetIndexFromObj\fR(\fIinterp, objPtr, tablePtr, msg, flags,
 indexPtr\fR)
-.VS
 .sp
 int
 \fBTcl_GetIndexFromObjStruct\fR(\fIinterp, objPtr, structTablePtr, offset,
                           msg, flags, indexPtr\fR)
-.VE
 .SH ARGUMENTS
 .AS "const char" *structTablePtr in/out
 .AP Tcl_Interp *interp in
@@ -86,7 +84,6 @@ in \fItablePtr\fR are static: they must not change between
 invocations.  If the value of \fIobjPtr\fR is the empty string,
 \fBTcl_GetIndexFromObj\fR will treat it as a non-matching value
 and return \fBTCL_ERROR\fR.
-.VS
 .PP
 \fBTcl_GetIndexFromObjStruct\fR works just like
 \fBTcl_GetIndexFromObj\fR, except that instead of treating
@@ -98,7 +95,6 @@ array of characters at \fItablePtr\fR+\fIoffset\fR bytes, etc.)
 This is particularly useful when processing things like
 \fBTk_ConfigurationSpec\fR, whose string keys are in the same place in
 each of several array elements.
-.VE
 
 .SH "SEE ALSO"
 Tcl_WrongNumArgs

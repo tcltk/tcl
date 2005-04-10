@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.57.2.1 2005/02/02 15:53:17 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.57.2.2 2005/04/10 23:14:45 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -455,21 +455,18 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     switch ((enum options) index) {
 	case ENC_CONVERTTO:
 	case ENC_CONVERTFROM: {
-	    char *name;
 	    Tcl_Obj *data;
 	    if (objc == 3) {
-		name = NULL;
+		encoding = Tcl_GetEncoding(interp, NULL);
 		data = objv[2];
 	    } else if (objc == 4) {
-		name = TclGetString(objv[2]);
+		if (TclGetEncodingFromObj(interp, objv[2], &encoding)
+			!= TCL_OK) {
+		    return TCL_ERROR;
+		}
 		data = objv[3];
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, "?encoding? data");
-		return TCL_ERROR;
-	    }
-
-	    encoding = Tcl_GetEncoding(interp, name);
-	    if (!encoding) {
 		return TCL_ERROR;
 	    }
 

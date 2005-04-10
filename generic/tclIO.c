@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.81.2.1 2005/02/02 15:53:24 kennykb Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81.2.2 2005/04/10 23:14:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1141,6 +1141,13 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
 
     /*
      * Set the channel to system default encoding.
+     *
+     * Note the strange bit of protection taking place here.
+     * If the system encoding name is reported back as "binary",
+     * something weird is happening.  Tcl provides no "binary"
+     * encoding, so someone else has provided one.  We ignore it
+     * so as not to interfere with the "magic" interpretation
+     * that Tcl_Channels give to the "-encoding binary" option.
      */
 
     statePtr->encoding = NULL;

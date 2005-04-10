@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.10 2004/10/07 15:15:38 dkf Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.10.2.1 2005/04/10 23:14:42 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_Obj 3 8.1 Tcl "Tcl Library Procedures"
@@ -129,7 +129,6 @@ typedef struct Tcl_Obj {
 } Tcl_Obj;
 .CE
 The \fIbytes\fR and the \fIlength\fR members together hold
-.VS 8.1
 an object's UTF-8 string representation,
 which is a \fIcounted string\fR not containing null bytes (UTF-8 null
 characters should be encoded as a two byte sequence: 192, 128.)
@@ -139,7 +138,6 @@ The byte array must always have a null byte after the last data byte,
 at offset \fIlength\fR;
 this allows string representations
 to be treated as conventional null-terminated C strings.
-.VE 8.1
 C programs use \fBTcl_GetStringFromObj\fR and \fBTcl_GetString\fR to get
 an object's string representation.
 If \fIbytes\fR is NULL,

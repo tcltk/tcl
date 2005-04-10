@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: IntObj.3,v 1.6 2004/10/07 15:37:43 dkf Exp $
+'\" RCS: @(#) $Id: IntObj.3,v 1.6.2.1 2005/04/10 23:14:41 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_IntObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -21,18 +21,14 @@ Tcl_Obj *
 Tcl_Obj *
 \fBTcl_NewLongObj\fR(\fIlongValue\fR)
 .sp
-.VS 8.4
 Tcl_Obj *
 \fBTcl_NewWideIntObj\fR(\fIwideValue\fR)
-.VE 8.4
 .sp
 \fBTcl_SetIntObj\fR(\fIobjPtr, intValue\fR)
 .sp
 \fBTcl_SetLongObj\fR(\fIobjPtr, longValue\fR)
 .sp
-.VS 8.4
 \fBTcl_SetWideIntObj\fR(\fIobjPtr, wideValue\fR)
-.VE 8.4
 .sp
 int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
@@ -40,10 +36,8 @@ int
 int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
 .sp
-.VS 8.4
 int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
-.VE 8.4
 .SH ARGUMENTS
 .AS Tcl_WideInt longValue in/out
 .AP int intValue in
@@ -51,20 +45,16 @@ Integer value used to initialize or set an integer object.
 .AP long longValue in
 Long integer value used to initialize or set an integer object.
 .AP Tcl_WideInt wideValue in
-.VS 8.4
 Wide integer value (minimum 64-bits wide where supported by the
 compiler) used to initialize or set a wide integer object.
-.VE 8.4
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, and
-.VS 8.4
 \fBTcl_SetWideIntObj\fR, this points to the object to be converted to
 integer type.  For \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
 and \fBTcl_GetWideIntFromObj\fR, this refers to the object from which
 to get an integer or long integer value; if \fIobjPtr\fR does not
 already point to an integer object (or a wide integer object in the
 case of \fBTcl_SetWideIntObj\fR and \fBTcl_GetWideIntFromObj\fR), an
-.VE 8.4
 attempt will be made to convert it to one.
 .AP Tcl_Interp *interp in/out
 If an error occurs during conversion,
@@ -77,10 +67,8 @@ obtained by \fBTcl_GetIntFromObj\fR from \fIobjPtr\fR.
 Points to place to store the long integer value
 obtained by \fBTcl_GetLongFromObj\fR from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
-.VS 8.4
 Points to place to store the wide integer value
 obtained by \fBTcl_GetWideIntFromObj\fR from \fIobjPtr\fR.
-.VE 8.4
 .BE
 
 .SH DESCRIPTION
@@ -91,17 +79,14 @@ integer and wide integer Tcl objects from C code.
 \fBTcl_SetIntObj\fR, and \fBTcl_SetLongObj\fR
 create a new object of integer type
 or modify an existing object to have integer type,
-.VS 8.4
 and \fBTcl_NewWideIntObj\fR and \fBTcl_SetWideIntObj\fR create a new
 object of wide integer type or modify an existing object to have wide
 integer type. 
-.VE 8.4
 \fBTcl_NewIntObj\fR and \fBTcl_SetIntObj\fR set the object to have the
 integer value given by \fIintValue\fR,
 \fBTcl_NewLongObj\fR and \fBTcl_SetLongObj\fR
 set the object to have the
 long integer value given by \fIlongValue\fR,
-.VS 8.4
 and \fBTcl_NewWideIntObj\fR and \fBTcl_SetWideIntObj\fR set the object
 to have the wide integer value given by \fIwideValue\fR.
 \fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR and \fBTcl_NewWideIntObj\fR
@@ -111,19 +96,16 @@ and assign the integer value to the object's internal representation
 \fIlongValue\fR or \fIwideValue\fR member (as appropriate).
 \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR
 and \fBTcl_SetWideIntObj\fR
-.VE 8.4
 invalidate any old string representation and,
 if the object is not already an integer object,
 free any old internal representation.
 .PP
 \fBTcl_GetIntFromObj\fR and \fBTcl_GetLongFromObj\fR
 attempt to return an integer value from the Tcl object \fIobjPtr\fR,
-.VS 8.4
 and \fBTcl_GetWideIntFromObj\fR attempts to return a wide integer
 value from the Tcl object \fIobjPtr\fR.
 If the object is not already an integer object,
 or a wide integer object in the case of \fBTcl_GetWideIntFromObj\fR
-.VE 8.4
 they will attempt to convert it to one.
 If an error occurs during conversion, they return \fBTCL_ERROR\fR
 and leave an error message in the interpreter's result object
@@ -135,10 +117,8 @@ and leaves an error message in the interpreter's result object
 unless \fIinterp\fR is NULL.
 Otherwise, all three procedures return \fBTCL_OK\fR and
 store the integer, long integer value
-.VS 8.4
 or wide integer in the address given by \fIintPtr\fR, \fIlongPtr\fR
 and \fIwidePtr\fR
-.VE 8.4
 respectively.  If the object is not already an integer or wide integer
 object, the conversion will free any old internal representation.
 

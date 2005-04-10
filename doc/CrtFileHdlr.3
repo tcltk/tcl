@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtFileHdlr.3,v 1.3 2004/10/07 14:44:31 dkf Exp $
+'\" RCS: @(#) $Id: CrtFileHdlr.3,v 1.3.2.1 2005/04/10 23:14:41 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateFileHandler 3 8.0 Tcl "Tcl Library Procedures"
@@ -15,12 +15,10 @@ Tcl_CreateFileHandler, Tcl_DeleteFileHandler \- associate procedure callbacks wi
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
-.VS
 .sp
 \fBTcl_CreateFileHandler\fR(\fIfd, mask, proc, clientData\fR)
 .sp
 \fBTcl_DeleteFileHandler\fR(\fIfd\fR)
-.VE
 .SH ARGUMENTS
 .AS Tcl_FileProc clientData
 .AP int fd in
@@ -39,12 +37,10 @@ Arbitrary one-word value to pass to \fIproc\fR.
 
 .SH DESCRIPTION
 .PP
-.VS
 \fBTcl_CreateFileHandler\fR arranges for \fIproc\fR to be
 invoked in the future whenever I/O becomes possible on a file
 or an exceptional condition exists for the file.  The file
 is indicated by \fIfd\fR, and the conditions of interest
-.VE
 are indicated by \fImask\fR.  For example, if \fImask\fR
 is \fBTCL_READABLE\fR, \fIproc\fR will be called when
 the file is readable.
@@ -89,10 +85,8 @@ complete the application won't be able to service other events. Use
 \fBTcl_SetChannelOption\fR with \fB\-blocking\fR to set the channel into
 blocking or nonblocking mode as required.
 .PP
-.VS
 Note that these interfaces are only supported by the Unix
 implementation of the Tcl notifier.   
-.VE
 
 .SH KEYWORDS
 callback, file, handler

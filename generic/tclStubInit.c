@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.5 2005/02/02 15:53:27 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.6 2005/04/10 23:14:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -264,8 +264,8 @@ TclIntStubs tclIntStubs = {
     TclVarErrMsg, /* 177 */
     Tcl_SetStartupScript, /* 178 */
     Tcl_GetStartupScript, /* 179 */
-    TclNewListObjDirect, /* 180 */
-    TclDbNewListObjDirect, /* 181 */
+    NULL, /* 180 */
+    NULL, /* 181 */
     TclpLocaltime, /* 182 */
     TclpGmtime, /* 183 */
     TclThreadStorageLockInit, /* 184 */

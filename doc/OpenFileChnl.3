@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.29 2004/10/07 15:37:44 dkf Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.29.2.1 2005/04/10 23:14:42 kennykb Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -89,11 +89,9 @@ int
 .sp
 int
 \fBTcl_InputBuffered\fR(\fIchannel\fR)
-.VS 8.4
 .sp
 int
 \fBTcl_OutputBuffered\fR(\fIchannel\fR)
-.VE
 .sp
 Tcl_WideInt
 \fBTcl_Seek\fR(\fIchannel, offset, seekMode\fR)
@@ -643,11 +641,9 @@ buffered in the internal buffers for a channel. If the channel is not open
 for reading, this function always returns zero.
 
 .SH TCL_OUTPUTBUFFERED
-.VS 8.4
 \fBTcl_OutputBuffered\fR returns the number of bytes of output
 currently buffered in the internal buffers for a channel. If the
 channel is not open for writing, this function always returns zero.
-.VE
 
 .SH "PLATFORM ISSUES"
 .PP

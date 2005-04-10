@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.10 2003/12/14 18:32:36 dkf Exp $
+# RCS: @(#) $Id: switch.test,v 1.10.2.1 2005/04/10 23:15:16 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -256,12 +256,23 @@ proc cswtest-glob s {
 	    b {incr y}
 	}
     }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	switch -glob -- $c a {incr x} b {incr y}
+    }
     return $x,$y
 }
 proc iswtest-glob s {
-    set x 0; set y 0
+    set x 0; set y 0; set switch switch
     foreach c [split $s {}] {
-	switch -glob -- $c a {incr x} b {incr y}
+	$switch -glob -- $c {
+	    a {incr x}
+	    b {incr y}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	$switch -glob -- $c a {incr x} b {incr y}
     }
     return $x,$y
 }
@@ -273,12 +284,23 @@ proc cswtest-exact s {
 	    b {incr y}
 	}
     }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	switch -exact -- $c a {incr x} b {incr y}
+    }
     return $x,$y
 }
 proc iswtest-exact s {
-    set x 0; set y 0
+    set x 0; set y 0; set switch switch
     foreach c [split $s {}] {
-	switch -exact -- $c a {incr x} b {incr y}
+	$switch -exact -- $c {
+	    a {incr x}
+	    b {incr y}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	$switch -exact -- $c a {incr x} b {incr y}
     }
     return $x,$y
 }
@@ -291,12 +313,24 @@ proc cswtest2-glob s {
 	    default {incr z}
 	}
     }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	switch -glob -- $c a {incr x} b {incr y} default {incr z}
+    }
     return $x,$y,$z
 }
 proc iswtest2-glob s {
-    set x 0; set y 0; set z 0
+    set x 0; set y 0; set z 0; set switch switch
     foreach c [split $s {}] {
-	switch -glob -- $c a {incr x} b {incr y} default {incr z}
+	$switch -glob -- $c {
+	    a {incr x}
+	    b {incr y}
+	    default {incr z}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	$switch -glob -- $c a {incr x} b {incr y} default {incr z}
     }
     return $x,$y,$z
 }
@@ -309,28 +343,40 @@ proc cswtest2-exact s {
 	    default {incr z}
 	}
     }
-    return $x,$y,$z
-}
-proc iswtest2-exact s {
-    set x 0; set y 0; set z 0
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
     foreach c [split $s {}] {
 	switch -exact -- $c a {incr x} b {incr y} default {incr z}
     }
     return $x,$y,$z
 }
+proc iswtest2-exact s {
+    set x 0; set y 0; set z 0; set switch switch
+    foreach c [split $s {}] {
+	$switch -exact -- $c {
+	    a {incr x}
+	    b {incr y}
+	    default {incr z}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	$switch -exact -- $c a {incr x} b {incr y} default {incr z}
+    }
+    return $x,$y,$z
+}
 
 test switch-10.7 {comparison of compiled and interpreted behaviour of switch, exact matching} {
-    expr {[cswtest-exact abcb] eq [iswtest-exact abcb]}
-} 1
+    cswtest-exact abcb
+} [iswtest-exact abcb]
 test switch-10.8 {comparison of compiled and interpreted behaviour of switch, glob matching} {
-    expr {[cswtest-glob abcb] eq [iswtest-glob abcb]}
-} 1
+    cswtest-glob abcb
+} [iswtest-glob abcb]
 test switch-10.9 {comparison of compiled and interpreted behaviour of switch, exact matching with default} {
-    expr {[cswtest2-exact abcb] eq [iswtest2-exact abcb]}
-} 1
+    cswtest2-exact abcb
+} [iswtest2-exact abcb]
 test switch-10.10 {comparison of compiled and interpreted behaviour of switch, glob matching with default} {
-    expr {[cswtest2-glob abcb] eq [iswtest2-glob abcb]}
-} 1
+    cswtest2-glob abcb
+} [iswtest2-glob abcb]
 proc cswtest-default-exact {x} {
     switch -- $x {
 	a* {return b}

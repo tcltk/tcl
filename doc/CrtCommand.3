@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtCommand.3,v 1.10 2004/10/07 15:15:35 dkf Exp $
+'\" RCS: @(#) $Id: CrtCommand.3,v 1.10.2.1 2005/04/10 23:14:40 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateCommand 3 "" Tcl "Tcl Library Procedures"
@@ -95,16 +95,12 @@ the command name) and \fIargv\fR giving the values of the arguments
 as strings.  The \fIargv\fR array will contain \fIargc\fR+1 values;
 the first \fIargc\fR values point to the argument strings, and the
 last value is NULL.  
-.VS
 Note that the argument strings should not be modified as they may
 point to constant strings or may be shared with other parts of the
 interpreter.
-.VE
 .PP
-.VS
 Note that the argument strings are encoded in normalized UTF-8 since
 version 8.1 of Tcl.
-.VE
 .PP
 \fIProc\fR must return an integer code that is expected to be one of
 \fBTCL_OK\fR, \fBTCL_ERROR\fR, \fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or

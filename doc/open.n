@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.22 2004/11/09 04:51:31 davygrvy Exp $
+'\" RCS: @(#) $Id: open.n,v 1.22.2.1 2005/04/10 23:14:43 kennykb Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -142,7 +142,6 @@ returned (a silent \fBclose\fR with -blocking 0).
 It is often useful to use the \fBfileevent\fR command with pipelines
 so other processing may happen at the same time as running the command
 in the background.
-.VS 8.4
 .SH "SERIAL COMMUNICATIONS"
 .PP
 If \fIfileName\fR refers to a serial port, then the specified serial port
@@ -322,7 +321,6 @@ may cause this error.
 .TP 10
 \fBBREAK\fR
 A BREAK condition has been detected by your UART (see above).
-.VE
 
 .SH "PORTABILITY ISSUES"
 .TP
@@ -384,10 +382,8 @@ applications are run synchronously, as described above.
 Valid values for \fIfileName\fR to open a serial port are generally of the
 form \fB/dev/tty\fIX\fR, where \fIX\fR is \fBa\fR or \fBb\fR, but the name
 of any pseudo-file that maps to a serial port may be used.
-.VS 8.4
 Advanced configuration options are only supported for serial ports
 when Tcl is built to use the POSIX serial interface.
-.VE 8.4
 .sp
 When running Tcl interactively, there may be some strange interactions
 between the console, if one is present, and a command pipeline that uses

@@ -5,7 +5,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# $Id: man2html2.tcl,v 1.7 2004/11/24 11:24:34 dkf Exp $
+# $Id: man2html2.tcl,v 1.7.2.1 2005/04/10 23:15:16 kennykb Exp $
 #
 
 package require Tcl 8.4
@@ -719,17 +719,14 @@ proc IPmacro argList {
 	nest para UL LI
 	return
     }
-    if {$length == 1} {
+    if {[regexp {^\[\d+\]$} [lindex $argList 0]]} {
     	nest para OL LI
 	return
     }
-    if {$length > 1} {
-    	nest para DL DT
-	formattedText [lindex $argList 0]
-	puts $file "\n<DD>"
-	return
-    }
-    puts stderr "Bad .IP macro: .IP [join $argList " "]"
+    nest para DL DT
+    formattedText [lindex $argList 0]
+    puts $file "\n<DD>"
+    return
 }
 
 

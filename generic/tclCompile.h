@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.51.2.3 2005/03/15 19:41:44 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.51.2.4 2005/04/10 23:14:48 kennykb Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -690,8 +690,6 @@ MODULE_SCOPE AuxDataType		tclForeachInfoType;
 MODULE_SCOPE int	TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    CONST char *command, int length, int flags));
-MODULE_SCOPE int	TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
-
 
 /*
  *----------------------------------------------------------------
