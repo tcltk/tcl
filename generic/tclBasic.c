@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.143 2005/04/02 02:08:29 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.144 2005/04/10 23:07:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4309,6 +4309,7 @@ TclObjInvoke(interp, objc, objv, flags)
 	CONST char* cmdString = Tcl_GetStringFromObj(command, &length);
 
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, length);
+	Tcl_DecrRefCount(command);
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
     }
     return result;
