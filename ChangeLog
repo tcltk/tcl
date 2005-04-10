@@ -1,3 +1,25 @@
+2005-04-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tcl.h (comments):
+	* generic/tclCmdIL.c:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
+	* generic/tclVar.c: First part of variable reform. Change Var
+	struct so that sizeof(Var)==sizeof(Tcl_Obj), and use the special
+	obj allocator for vars. The Var struct has been reduced from
+	(2ints+6ptrs) to (2ints+4ptrs).
+
+	
+	* generic/tclCompile.c (optimiser):
+	* generic/tclExecute.c: storing pointers to literals instead of
+	offsets into the literal table for INST_PUSH. This is currently
+	implemented using NASTY CASTS (ptr->TclPSizedInt->ptr) [not used
+	when VM_USE_PACKED]
+	*** REQUIRES CLEANING: use a union for opnd, instead of casting.
+	
 2005-04-09  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h: change of order in macros

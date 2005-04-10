@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.1 2005/04/02 13:36:07 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.2 2005/04/10 18:13:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1112,13 +1112,15 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
 
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
     if (pattern != NULL && TclMatchIsTrivial(pattern)) {
-	entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable, pattern);
+	entryPtr = Tcl_FindHashEntry(
+	    (Tcl_HashTable *)&globalNsPtr->varTable, pattern);
 	if (entryPtr != NULL) {
 	    Tcl_ListObjAppendElement(interp, listPtr,
 		    Tcl_NewStringObj(pattern, -1));
 	}
     } else {
-	for (entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
+	for (entryPtr = Tcl_FirstHashEntry(
+		 (Tcl_HashTable *)&globalNsPtr->varTable, &search);
 		entryPtr != NULL;
 		entryPtr = Tcl_NextHashEntry(&search)) {
 	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
@@ -1444,7 +1446,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 
 	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)
 		&& (includeLinks || !TclIsVarLink(varPtr))) {
-	    varName = varPtr->name;
+	    varName = varPtr->id.name;
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,
 			Tcl_NewStringObj(varName, -1));
@@ -1975,7 +1977,8 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	     * a lot.
 	     */
 
-	    entryPtr = Tcl_FindHashEntry(&nsPtr->varTable, simplePattern);
+	    entryPtr = Tcl_FindHashEntry(
+		(Tcl_HashTable *)&nsPtr->varTable, simplePattern);
 	    if (entryPtr != NULL) {
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
@@ -1990,7 +1993,8 @@ InfoVarsCmd(dummy, interp, objc, objv)
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
 	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable,
+		entryPtr = Tcl_FindHashEntry(
+		    (Tcl_HashTable *)&globalNsPtr->varTable,
 			simplePattern);
 		if (entryPtr != NULL) {
 		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
@@ -2006,7 +2010,8 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	     * Have to scan the tables of variables.
 	     */
 
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->varTable, &search);
+	    entryPtr = Tcl_FirstHashEntry(
+		(Tcl_HashTable *)&nsPtr->varTable, &search);
 	    while (entryPtr != NULL) {
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
@@ -2037,16 +2042,19 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	     */
 
 	    if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
+		entryPtr = Tcl_FirstHashEntry(
+		    (Tcl_HashTable *)&globalNsPtr->varTable, &search);
 		while (entryPtr != NULL) {
 		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		    if (!TclIsVarUndefined(varPtr)
 			    || TclIsVarNamespaceVar(varPtr)) {
-			varName = Tcl_GetHashKey(&globalNsPtr->varTable,
-				entryPtr);
+			varName = Tcl_GetHashKey(
+			    (Tcl_HashTable *)&globalNsPtr->varTable,
+			    entryPtr);
 			if ((simplePattern == NULL)
 				|| Tcl_StringMatch(varName, simplePattern)) {
-			    if (Tcl_FindHashEntry(&nsPtr->varTable,
+			    if (Tcl_FindHashEntry(
+				    (Tcl_HashTable *)&nsPtr->varTable,
 				    varName) == NULL) {
 				Tcl_ListObjAppendElement(interp, listPtr,
 					Tcl_NewStringObj(varName, -1));

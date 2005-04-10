@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.20 2005/04/09 21:17:40 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.21 2005/04/10 18:13:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1371,8 +1371,14 @@ TclExecuteByteCode(interp, codePtr)
 #if ENABLE_PEEPHOLE
 	instPushPeephole:
 #endif
+#if defined(VM_USE_PACKED)
 	PUSH_OBJECT(codePtr->objArrayPtr[opnd]);
 	TRACE_WITH_OBJ(("%u => ", (unsigned) opnd), *(tosPtr));
+#else
+	/* /// UNHOLY CAST: fix when reading opnds from instructions, instead
+	 * of at the top. This here does ptr->TclPSizedInt->ptr */
+	PUSH_OBJECT((Tcl_Obj *) opnd); 
+#endif
 	pc++;
 #if ENABLE_PEEPHOLE
 	/*
@@ -1897,7 +1903,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_LOAD_SCALAR:
 	    index = opnd & HP_MASK;
 	    varPtr = &(compiledLocals[index]);
-	    part1 = varPtr->name;
+	    part1 = varPtr->id.name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
 	    }
@@ -1925,7 +1931,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 	    
 		varPtr = &(compiledLocals[index]);
-		part1 = varPtr->name;
+		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
 		}
@@ -2018,7 +2024,7 @@ TclExecuteByteCode(interp, codePtr)
 	    pushRes = !(opnd & HP_STASH(VM_VAR_OMIT_PUSH, 0));
 	    index = opnd & HP_MASK;
 	    varPtr = &(compiledLocals[index]);
-	    part1 = varPtr->name;
+	    part1 = varPtr->id.name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
 	    }
@@ -2087,7 +2093,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 	    
 		varPtr = &(compiledLocals[index]);
-		part1 = varPtr->name;
+		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
 		}
@@ -2233,7 +2239,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 	    
 		varPtr = &(compiledLocals[index]);
-		part1 = varPtr->name;
+		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
 		}
@@ -4496,7 +4502,7 @@ TclExecuteByteCode(interp, codePtr)
 			    
 			varIndex = varListPtr->varIndexes[j];
 			varPtr = &(compiledLocals[varIndex]);
-			part1 = varPtr->name;
+			part1 = varPtr->id.name;
 			while (TclIsVarLink(varPtr)) {
 			    varPtr = varPtr->value.linkPtr;
 			}
@@ -4585,7 +4591,7 @@ TclExecuteByteCode(interp, codePtr)
 	     */
 	    
 	    Var *varPtr = &(iPtr->varFramePtr->compiledLocals[opnd]);
-	    char *part1 = varPtr->name;
+	    char *part1 = varPtr->id.name;
 	    Tcl_Obj *valuePtr;
 
 	    valuePtr = *tosPtr;

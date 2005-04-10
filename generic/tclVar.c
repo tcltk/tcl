@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.2 2005/04/03 23:42:43 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.3 2005/04/10 18:13:51 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -412,8 +412,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	     */
 	    
 	    varPtr = &(varFramePtr->compiledLocals[localIndex]);
-	    if ((varPtr->name != NULL)
-		    && (strcmp(part1, varPtr->name) == 0)) {
+	    if ((varPtr->id.name != NULL)
+		    && (strcmp(part1, varPtr->id.name) == 0)) {
 		goto donePart1;
 	    }
 	}
@@ -439,14 +439,14 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 			/* careful: an undefined ns variable could
 			 * be hiding a valid global reference. */
 			&& !TclIsVarUndefined(varPtr))));
-	if (useReference && (varPtr->hPtr != NULL)) {
+	if (useReference && (varPtr->id.hPtr != NULL)) {
 	    /*
 	     * A straight global or namespace reference, use it. It isn't 
 	     * so simple to deal with 'implicit' namespace references, i.e., 
 	     * those where the reference could be to either a namespace 
 	     * or a global variable. Those we lookup again.
 	     *
-	     * If (varPtr->hPtr == NULL), this might be a reference to a
+	     * If (varPtr->id.hPtr == NULL), this might be a reference to a
 	     * variable in a deleted namespace, kept alive by e.g. part1Ptr.
 	     * We could conceivably be so unlucky that a new namespace was
 	     * created at the same address as the deleted one, so to be 
@@ -787,11 +787,11 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 		    *errMsgPtr = missingName;
 		    return NULL;
 		}
-		hPtr = Tcl_CreateHashEntry(&varNsPtr->varTable, tail, &new);
+		hPtr = Tcl_CreateHashEntry((Tcl_HashTable *)&varNsPtr->varTable,
+			tail, &new);
 		varPtr = NewVar();
 		Tcl_SetHashValue(hPtr, varPtr);
-		varPtr->hPtr = hPtr;
-		varPtr->nsPtr = varNsPtr;
+		varPtr->id.hPtr = hPtr;
 		if (lookGlobal) {
 		    /*
 		     * The variable was created starting from the global
@@ -816,7 +816,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	
 	for (i = 0;  i < localCt;  i++) {
 	    if (!TclIsVarTemporary(localPtr)) {
-		register char *localName = localVarPtr->name;
+		register char *localName = localVarPtr->id.name;
 		if ((varName[0] == localName[0])
 		        && (varNameLen == localPtr->nameLength)
 		        && (strcmp(varName, localName) == 0)) {
@@ -831,7 +831,8 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	if (create) {
 	    if (tablePtr == NULL) {
 		tablePtr = (Tcl_HashTable *)
-		    ckalloc(sizeof(Tcl_HashTable));
+		    ckalloc(sizeof(TclNSVarHashTable));
+		((TclNSVarHashTable *)tablePtr)->nsPtr = NULL;
 		Tcl_InitHashTable(tablePtr, TCL_STRING_KEYS);
 		varFramePtr->varTablePtr = tablePtr;
 	    }
@@ -839,8 +840,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	    if (new) {
 		varPtr = NewVar();
 		Tcl_SetHashValue(hPtr, varPtr);
-		varPtr->hPtr = hPtr;
-		varPtr->nsPtr = NULL; /* a local variable */
+		varPtr->id.hPtr = hPtr;
 	    } else {
 		varPtr = (Var *) Tcl_GetHashValue(hPtr);
 	    }
@@ -935,7 +935,7 @@ TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, create
 	 * Make sure we are not resurrecting a namespace variable from a
 	 * deleted namespace!
 	 */
-	if ((arrayPtr->flags & VAR_IN_HASHTABLE) && (arrayPtr->hPtr == NULL)) {
+	if ((arrayPtr->flags & VAR_IN_HASHTABLE) && (arrayPtr->id.hPtr == NULL)) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclVarErrMsg(interp, arrayName, elName, msg, danglingVar);
 	    }
@@ -962,8 +962,7 @@ TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, create
 	    }
 	    varPtr = NewVar();
 	    Tcl_SetHashValue(hPtr, varPtr);
-	    varPtr->hPtr = hPtr;
-	    varPtr->nsPtr = arrayPtr->nsPtr;
+	    varPtr->id.hPtr = hPtr;
 	    TclSetVarArrayElement(varPtr);
 	}
     } else {
@@ -1570,7 +1569,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
      * our storage allocation and is meaningless anyway).
      */
 
-    if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL)) {
+    if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->id.hPtr == NULL)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    if (TclIsVarArrayElement(varPtr)) {
 		TclVarErrMsg(interp, part1, part2, "set", danglingElement);
@@ -3328,8 +3327,16 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	 * variable in the shorter-lived procedure frame could go away
 	 * leaving the namespace var's reference invalid.
 	 */
-	
-	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL) 
+
+	Tcl_HashEntry *hPtr;
+	if (arrayPtr) {
+	    hPtr = (arrayPtr->flags & VAR_IN_HASHTABLE)?
+		arrayPtr->id.hPtr : NULL;
+	} else {
+	    hPtr = (otherPtr->flags & VAR_IN_HASHTABLE)?
+		otherPtr->id.hPtr : NULL;
+	}
+	if ((!hPtr || !((TclNSVarHashTable *)(hPtr->tablePtr))->nsPtr) 
 	    && ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		|| (varFramePtr == NULL)
 		|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
@@ -3544,21 +3551,22 @@ Tcl_GetVariableFullName(interp, variable, objPtr)
      * the "::" separator, then the variable name.
      */
 
-    if (varPtr != NULL) {
-	if (!TclIsVarArrayElement(varPtr)) {
-	    if (varPtr->nsPtr != NULL) {
-		Tcl_AppendToObj(objPtr, varPtr->nsPtr->fullName, -1);
-		if (varPtr->nsPtr != iPtr->globalNsPtr) {
+    if (varPtr && !TclIsVarArrayElement(varPtr)) {
+	if (varPtr->id.hPtr) {
+	    Namespace *nsPtr =
+		((TclNSVarHashTable *)(varPtr->id.hPtr->tablePtr))->nsPtr;
+	    if (nsPtr) {
+		Tcl_AppendToObj(objPtr, nsPtr->fullName, -1);
+		if (nsPtr != iPtr->globalNsPtr) {
 		    Tcl_AppendToObj(objPtr, "::", 2);
 		}
 	    }
-	    if (varPtr->name != NULL) {
-		Tcl_AppendToObj(objPtr, varPtr->name, -1);
-	    } else if (varPtr->hPtr != NULL) {
-		name = Tcl_GetHashKey(varPtr->hPtr->tablePtr, varPtr->hPtr);
-		Tcl_AppendToObj(objPtr, name, -1);
-	    }
 	}
+	name = Tcl_GetHashKey(
+	    (Tcl_HashTable *)varPtr->id.hPtr->tablePtr, varPtr->id.hPtr);
+	Tcl_AppendToObj(objPtr, name, -1);
+    } else if (varPtr->id.name) {
+	Tcl_AppendToObj(objPtr, varPtr->id.name, -1);
     }
 }
 
@@ -3883,16 +3891,16 @@ static Var *
 NewVar()
 {
     register Var *varPtr;
-
-    varPtr = (Var *) ckalloc(sizeof(Var));
+    Tcl_Obj *objPtr;
+    
+    TclAllocObjStorage(objPtr);
+    varPtr = (Var *) objPtr;
+    varPtr->flags = (VAR_SCALAR | VAR_UNDEFINED | VAR_IN_HASHTABLE);
     varPtr->value.objPtr = NULL;
-    varPtr->name = NULL;
-    varPtr->nsPtr = NULL;
-    varPtr->hPtr = NULL;
+    varPtr->id.name = NULL;
     varPtr->refCount = 0;
     varPtr->tracePtr = NULL;
     varPtr->searchPtr = NULL;
-    varPtr->flags = (VAR_SCALAR | VAR_UNDEFINED | VAR_IN_HASHTABLE);
     return varPtr;
 }
 
@@ -4113,9 +4121,9 @@ TclDeleteVars(iPtr, tablePtr)
      */
 
     flags = TCL_TRACE_UNSETS;
-    if (tablePtr == &iPtr->globalNsPtr->varTable) {
+    if (tablePtr == (Tcl_HashTable *)&iPtr->globalNsPtr->varTable) {
 	flags |= TCL_GLOBAL_ONLY;
-    } else if (tablePtr == &currNsPtr->varTable) {
+    } else if (tablePtr == (Tcl_HashTable *)&currNsPtr->varTable) {
 	flags |= TCL_NAMESPACE_ONLY;
     }
     if (Tcl_InterpDeleted(interp)) {
@@ -4140,11 +4148,11 @@ TclDeleteVars(iPtr, tablePtr)
 	    if ((linkPtr->refCount == 0) && TclIsVarUndefined(linkPtr)
 		    && (linkPtr->tracePtr == NULL)
 		    && (linkPtr->flags & VAR_IN_HASHTABLE)) {
-		if (linkPtr->hPtr == NULL) {
-		    ckfree((char *) linkPtr);
-		} else if (linkPtr->hPtr->tablePtr != tablePtr) {
-		    Tcl_DeleteHashEntry(linkPtr->hPtr);
-		    ckfree((char *) linkPtr);
+		if (linkPtr->id.hPtr == NULL) {
+		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
+		} else if (linkPtr->id.hPtr->tablePtr != tablePtr) {
+		    Tcl_DeleteHashEntry(linkPtr->id.hPtr);
+		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
 		}
 	    }
 	}
@@ -4191,7 +4199,7 @@ TclDeleteVars(iPtr, tablePtr)
 	    TclDecrRefCount(objPtr);
 	    varPtr->value.objPtr = NULL;
 	}
-	varPtr->hPtr = NULL;
+	varPtr->id.hPtr = NULL;
 	varPtr->tracePtr = NULL;
 	TclSetVarUndefined(varPtr);
 	TclSetVarScalar(varPtr);
@@ -4215,7 +4223,8 @@ TclDeleteVars(iPtr, tablePtr)
 	 */
 
 	if (varPtr->refCount == 0) {
-	    ckfree((char *) varPtr); /* this Var must be VAR_IN_HASHTABLE */
+            /* this Var must be VAR_IN_HASHTABLE */	    
+	    TclFreeObjStorage((Tcl_Obj *)varPtr); 
 	}
     }
     Tcl_DeleteHashTable(tablePtr);
@@ -4275,11 +4284,11 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	    if ((linkPtr->refCount == 0) && TclIsVarUndefined(linkPtr)
 		    && (linkPtr->tracePtr == NULL)
 		    && (linkPtr->flags & VAR_IN_HASHTABLE)) {
-		if (linkPtr->hPtr == NULL) {
-		    ckfree((char *) linkPtr);
+		if (linkPtr->id.hPtr == NULL) {
+		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
 		} else {
-		    Tcl_DeleteHashEntry(linkPtr->hPtr);
-		    ckfree((char *) linkPtr);
+		    Tcl_DeleteHashEntry(linkPtr->id.hPtr);
+		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
 		}
 	    }
 	}
@@ -4290,7 +4299,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 */
 
 	if (varPtr->tracePtr != NULL) {
-	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, varPtr->name, NULL,
+	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, varPtr->id.name, NULL,
 		    flags, /* leaveErrMsg */ 0);
 	    while (varPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = varPtr->tracePtr;
@@ -4312,13 +4321,13 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 */
 	    
 	if (TclIsVarArray(varPtr) && (varPtr->value.tablePtr != NULL)) {
-	    DeleteArray(iPtr, varPtr->name, varPtr, flags);
+	    DeleteArray(iPtr, varPtr->id.name, varPtr, flags);
 	}
 	if (TclIsVarScalar(varPtr) && (varPtr->value.objPtr != NULL)) {
 	    TclDecrRefCount(varPtr->value.objPtr);
 	    varPtr->value.objPtr = NULL;
 	}
-	varPtr->hPtr = NULL;
+	varPtr->id.hPtr = NULL;
 	varPtr->tracePtr = NULL;
 	TclSetVarUndefined(varPtr);
 	TclSetVarScalar(varPtr);
@@ -4375,7 +4384,7 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	    TclDecrRefCount(objPtr);
 	    elPtr->value.objPtr = NULL;
 	}
-	elPtr->hPtr = NULL;
+	elPtr->id.hPtr = NULL;
 	if (elPtr->tracePtr != NULL) {
 	    elPtr->flags &= ~VAR_TRACE_ACTIVE;
 	    TclCallVarTraces(iPtr, (Var *) NULL, elPtr, arrayName,
@@ -4409,7 +4418,8 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	    elPtr->refCount--;
 	}
 	if (elPtr->refCount == 0) {
-	    ckfree((char *) elPtr); /* element Vars are VAR_IN_HASHTABLE */
+	    /* element Vars are VAR_IN_HASHTABLE */
+	    TclFreeObjStorage((Tcl_Obj *)elPtr);
 	}
     }
     Tcl_DeleteHashTable(varPtr->value.tablePtr);
@@ -4449,19 +4459,19 @@ TclCleanupVar(varPtr, arrayPtr)
     if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)
 	    && (varPtr->tracePtr == NULL)
 	    && (varPtr->flags & VAR_IN_HASHTABLE)) {
-	if (varPtr->hPtr != NULL) {
-	    Tcl_DeleteHashEntry(varPtr->hPtr);
+	if (varPtr->id.hPtr != NULL) {
+	    Tcl_DeleteHashEntry(varPtr->id.hPtr);
 	}
-	ckfree((char *) varPtr);
+	TclFreeObjStorage((Tcl_Obj *)varPtr);
     }
     if (arrayPtr != NULL) {
 	if (TclIsVarUndefined(arrayPtr) && (arrayPtr->refCount == 0)
 		&& (arrayPtr->tracePtr == NULL)
 	        && (arrayPtr->flags & VAR_IN_HASHTABLE)) {
-	    if (arrayPtr->hPtr != NULL) {
-		Tcl_DeleteHashEntry(arrayPtr->hPtr);
+	    if (arrayPtr->id.hPtr != NULL) {
+		Tcl_DeleteHashEntry(arrayPtr->id.hPtr);
 	    }
-	    ckfree((char *) arrayPtr);
+	    TclFreeObjStorage((Tcl_Obj *)arrayPtr);
 	}
     }
 }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.73.2.1 2005/03/13 13:57:44 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73.2.2 2005/04/10 18:13:51 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -985,9 +985,7 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
 	Tcl_ResolvedVarInfo *resVarInfo;
 	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
 	    varPtr->value.objPtr = NULL;
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
+	    varPtr->id.name = localPtr->name; /* will be just '\0' if temp var */
 	    varPtr->refCount = 0;
 	    varPtr->tracePtr = NULL;
 	    varPtr->searchPtr = NULL;
@@ -1012,9 +1010,7 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
     } else {
 	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
 	    varPtr->value.objPtr = NULL;
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
+	    varPtr->id.name = localPtr->name; /* will be just '\0' if temp var */
 	    varPtr->refCount = 0;
 	    varPtr->tracePtr = NULL;
 	    varPtr->searchPtr = NULL;
@@ -1181,9 +1177,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	Tcl_Obj *objPtr = objv[i];
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
-	varPtr->name = localPtr->name;
-	varPtr->nsPtr = NULL;
-	varPtr->hPtr = NULL;
+	varPtr->id.name = localPtr->name;
 	varPtr->refCount = 0;
 	varPtr->tracePtr = NULL;
 	varPtr->searchPtr = NULL;
@@ -1200,9 +1194,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	    Tcl_Obj *objPtr = localPtr->defValuePtr;
 	    varPtr->value.objPtr = objPtr;
 	    Tcl_IncrRefCount(objPtr);  /* local var is a reference */
-	    varPtr->name = localPtr->name;
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
+	    varPtr->id.name = localPtr->name;
 	    varPtr->refCount = 0;
 	    varPtr->tracePtr = NULL;
 	    varPtr->searchPtr = NULL;
@@ -1286,9 +1278,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	goto procDone;
     }
 
-    varPtr->name = localPtr->name;
-    varPtr->nsPtr = NULL;
-    varPtr->hPtr = NULL;
+    varPtr->id.name = localPtr->name;
     varPtr->refCount = 0;
     varPtr->tracePtr = NULL;
     varPtr->searchPtr = NULL;

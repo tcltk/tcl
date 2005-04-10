@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.4 2005/04/09 20:48:17 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.5 2005/04/10 18:13:50 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -133,6 +133,50 @@ typedef struct Tcl_ResolverInfo {
 typedef struct Tcl_Ensemble Tcl_Ensemble;
 
 /*
+ * The hash tables that store namespace variables get an extra field for
+ * nsPtr, so that we can recover the namespace from its hash table. This is
+ * used to avoid having to store an nsPtr in every variable. Note that all
+ * fields (with the exception of the last) must correspond exactly to the
+ * fields of Tcl_HashTable in tcl.h.
+ */
+
+typedef struct TclNSVarHashTable {
+    Tcl_HashEntry **buckets;		/* Pointer to bucket array.  Each
+					 * element points to first entry in
+					 * bucket's hash chain, or NULL. */
+    Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
+					/* Bucket array used for small tables
+					 * (to avoid mallocs and frees). */
+    int numBuckets;			/* Total number of buckets allocated
+					 * at **bucketPtr. */
+    int numEntries;			/* Total number of entries present
+					 * in table. */
+    int rebuildSize;			/* Enlarge table when numEntries gets
+					 * to be this large. */
+    int downShift;			/* Shift count used in hashing
+					 * function.  Designed to use high-
+					 * order bits of randomized keys. */
+    int mask;				/* Mask value used in hashing
+					 * function. */
+    int keyType;			/* Type of keys used in this table. 
+					 * It's either TCL_CUSTOM_KEYS,
+					 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS,
+					 * or an integer giving the number of
+					 * ints that is the size of the key.
+					 */
+#if TCL_PRESERVE_BINARY_COMPATABILITY
+    Tcl_HashEntry *(*findProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+	    CONST char *key));
+    Tcl_HashEntry *(*createProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+	    CONST char *key, int *newPtr));
+#endif
+    Tcl_HashKeyType *typePtr;		/* Type of the keys used in the
+					 * Tcl_HashTable. */
+    struct Namespace *nsPtr;		/* Points to the namespace that uses 
+				         * this table to store variables. */  
+} TclNSVarHashTable;
+
+/*
  * The structure below defines a namespace.
  * Note: the first five fields must match exactly the fields in a
  * Tcl_Namespace structure (see tcl.h). If you change one, be sure to
@@ -179,7 +223,7 @@ typedef struct Namespace {
 				 * ImportedCmdRef structure) to the
 				 * Command structure in the source
 				 * namespace's command table. */
-    Tcl_HashTable varTable;	/* Contains all the (global) variables
+    TclNSVarHashTable varTable;	/* Contains all the (global) variables
 				 * currently in this namespace. Indexed
 				 * by strings; values have type (Var *). */
     char **exportArrayPtr;	/* Points to an array of string patterns
@@ -387,9 +431,17 @@ typedef struct ArraySearch {
  * global variables and any variable not known to the compiler). For each
  * Var structure in the heap, a hash table entry holds the variable name and
  * a pointer to the Var structure.
+ *
+ * NOTE: the quantity and type of the elements have been designed to
+ * allow the use of a Tcl_Obj to store a variable - so that we can profit from
+ * the optimised allocator for Tcl_Objs. Any change to this will require
+ * changing the memory management in tclVar.c - especially in NewVar and
+ * CleanupVar. 
  */
 
 typedef struct Var {
+    int flags;			/* Miscellaneous bits of information about
+				 * variable. See below for definitions. */
     union {
 	Tcl_Obj *objPtr;	/* The variable's object value. Used for 
 				 * scalar variables and array elements. */
@@ -402,17 +454,14 @@ typedef struct Var {
 				 * created by "upvar", this field points to
 				 * the referenced variable's Var struct. */
     } value;
-    char *name;			/* NULL if the variable is in a hashtable,
-				 * otherwise points to the variable's
-				 * name. It is used, e.g., by TclLookupVar
-				 * and "info locals". The storage for the
-				 * characters of the name is not owned by
-				 * the Var and must not be freed when
+    union {
+	char *name;		/* Used for compiled locals, points to the
+				 * variable's name. It is used, e.g., by
+				 * TclLookupVar and "info locals". The storage
+				 * for the characters of the name is not owned
+				 * by the Var and must not be freed when
 				 * freeing the Var. */
-    Namespace *nsPtr;		/* Points to the namespace that contains
-				 * this variable or NULL if the variable is
-				 * a local variable in a Tcl procedure. */
-    Tcl_HashEntry *hPtr;	/* If variable is in a hashtable, either the
+	Tcl_HashEntry *hPtr;	/* If variable is in a hashtable, either the
 				 * hash table entry that refers to this
 				 * variable or NULL if the variable has been
 				 * detached from its hash table (e.g. an
@@ -422,6 +471,7 @@ typedef struct Var {
 				 * hashtable. This is used to delete an
 				 * variable from its hashtable if it is no
 				 * longer needed. */
+    } id;
     int refCount;		/* Counts number of active uses of this
 				 * variable, not including its entry in the
 				 * call frame or the hash table: 1 for each
@@ -434,8 +484,6 @@ typedef struct Var {
 				 * variable. */
     ArraySearch *searchPtr;	/* First in list of all searches active
 				 * for this variable, or NULL if none. */
-    int flags;			/* Miscellaneous bits of information about
-				 * variable. See below for definitions. */
 } Var;
 
 /*
@@ -612,7 +660,7 @@ typedef struct Var {
 
 #define TclIsVarDirectWritable(varPtr) \
     (   !(((varPtr)->flags & VAR_IN_HASHTABLE) \
-		&& ((varPtr)->hPtr == NULL)) \
+		&& ((varPtr)->id.hPtr == NULL)) \
      && TclIsVarUntraced(varPtr) \
      && (TclIsVarScalar(varPtr) \
 	     || TclIsVarUndefined(varPtr)))

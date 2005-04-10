@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.71 2005/01/19 23:15:25 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.71.2.1 2005/04/10 18:13:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -829,7 +829,8 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     nsPtr->activationCount = 0;
     nsPtr->refCount = 0;
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
+    Tcl_InitHashTable((Tcl_HashTable *)&nsPtr->varTable, TCL_STRING_KEYS);
+    nsPtr->varTable.nsPtr = nsPtr;
     nsPtr->exportArrayPtr = NULL;
     nsPtr->numExportPatterns = 0;
     nsPtr->maxExportPatterns = 0;
@@ -980,7 +981,7 @@ Tcl_DeleteNamespace(namespacePtr)
 	     * variable list one last time.
 	     */
 
-	    TclDeleteVars((Interp *) nsPtr->interp, &nsPtr->varTable);
+	    TclDeleteVars((Interp *) nsPtr->interp, (Tcl_HashTable *)&nsPtr->varTable);
 
 	    Tcl_DeleteHashTable(&nsPtr->childTable);
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
@@ -1044,8 +1045,9 @@ TclTeardownNamespace(nsPtr)
      * TclDeleteVars frees it, so we reinitialize it afterwards.
      */
 
-    TclDeleteVars(iPtr, &nsPtr->varTable);
-    Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
+    TclDeleteVars(iPtr, (Tcl_HashTable *)&nsPtr->varTable);
+    Tcl_InitHashTable((Tcl_HashTable *)&nsPtr->varTable, TCL_STRING_KEYS);
+    nsPtr->varTable.nsPtr = nsPtr;
 
     /*
      * Remove the namespace from its parent's child hashtable.
@@ -2466,7 +2468,8 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
     varPtr = NULL;
     for (search = 0;  (search < 2) && (varPtr == NULL);  search++) {
 	if ((nsPtr[search] != NULL) && (simpleName != NULL)) {
-	    entryPtr = Tcl_FindHashEntry(&nsPtr[search]->varTable, simpleName);
+	    entryPtr = Tcl_FindHashEntry(
+		    (Tcl_HashTable *)&nsPtr[search]->varTable, simpleName);
 	    if (entryPtr != NULL) {
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 	    }

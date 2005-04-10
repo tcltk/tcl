@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.18 2005/04/02 21:04:32 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.19 2005/04/10 18:13:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4017,6 +4017,17 @@ OptInitCounts(codePtr, auxCount)
 		    }
 		}
 		break;
+#if !defined(VM_USE_PACKED)
+	    case INST_PUSH:
+		/* //// Move to TEBC: ptr opnd, and instructions
+		 * /// UNHOLY CAST: fix by making the opnd a union
+		 */ 
+	        {
+		    Tcl_Obj *objPtr = codePtr->objArrayPtr[opnd];
+		    TclVMStoreOpndAtPtr((TclPSizedInt) objPtr, pc);
+		}
+		break;		
+#endif
 	}
     }
 }
