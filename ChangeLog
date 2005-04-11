@@ -1,3 +1,9 @@
+2005-04-11  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tools/tclZIC.tcl: Rewrote to take advantage of more features of
+	Tcl 8.5 (on which it was dependent anyway). Also added a [package
+	require] line to formalize the relationship.
+
 2005-04-10  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata/America/Montevideo:
