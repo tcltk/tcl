@@ -1,6 +1,6 @@
 2005-04-11  Kevin Kenny <kennykb@users.sf.net>
 
-        [tcl_numerics-branch] Merged with HEAD. Updated to libtommath 0.35
+        [tcl_numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
 
 	* generic/tclBasic.c: Attempted to repeat changes that applied
 	to tclExecute.c in Miguel Sofer's commit of 2005-04-01, together
