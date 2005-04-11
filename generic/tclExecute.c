@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.21 2005/04/10 18:13:48 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.22 2005/04/11 00:40:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2050,7 +2050,6 @@ TclExecuteByteCode(interp, codePtr)
 			TclDecrRefCount(valuePtr);
 		    } else {
 			TclSetVarScalar(varPtr);
-			TclClearVarUndefined(varPtr);
 		    }
 		    varPtr->value.objPtr = objResultPtr;
 		    if (pushRes) {
@@ -2139,7 +2138,6 @@ TclExecuteByteCode(interp, codePtr)
 			    TclDecrRefCount(valuePtr);
 			} else {
 			    TclSetVarScalar(varPtr);
-			    TclClearVarUndefined(varPtr);
 			}
 			varPtr->value.objPtr = objResultPtr;
 			Tcl_IncrRefCount(objResultPtr);
@@ -4067,8 +4065,8 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 		    i = valuePtr->internalRep.longValue;
-		    TclNewLongObj(objResultPtr, -i)
-			TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
+		    TclNewLongObj(objResultPtr, -i);
+		    TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 		} else if (tPtr == &tclWideIntType) {
 		    TclGetWide(w,valuePtr);
 		    TclNewWideIntObj(objResultPtr, -w);		
@@ -4107,7 +4105,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = (w != W0);
 		TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 	    } else {
-		i = (valuePtr->internalRep.doubleValue != 0.0)
+		i = (valuePtr->internalRep.doubleValue != 0.0);
 		TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
 	    }
 	    objResultPtr = ((inst == INST_LNOT)?
@@ -4400,7 +4398,6 @@ TclExecuteByteCode(interp, codePtr)
 		TclSetLongObj(oldValuePtr, -1);
 	    }
 	    TclSetVarScalar(iterVarPtr);
-	    TclClearVarUndefined(iterVarPtr);
 	    TRACE(("%u => loop iter count temp %d\n", 
 		   (unsigned) opnd, iterTmpIndex));
 
@@ -4513,7 +4510,6 @@ TclExecuteByteCode(interp, codePtr)
 				    TclDecrRefCount(value2Ptr);
 				} else {
 				    TclSetVarScalar(varPtr);
-				    TclClearVarUndefined(varPtr);
 				}
 				varPtr->value.objPtr = valuePtr;
 				Tcl_IncrRefCount(valuePtr);

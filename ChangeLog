@@ -1,5 +1,23 @@
 2005-04-10  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* generic/tclVar.c: part 2 of variable reform. Removed the flags
+	VAR_SCALAR and VAR_UNDEFINED.
+
+
+	* generic/tclExecute.c: missing semicolons under TCL_COMPILE_DEBUG
+	* generic/tclInt.h: missing macros TclAllocObjsStorage and
+	TclFreeObjStorage, not needed under MEM_DEBUG for Tcl_Objs but
+	required for the new Var allocation model.	
+	Thanks dgp!
+	
+	*** FROM HEAD ***
+	* generic/tclBasic.c (TclObjInvoke):	Plug memory leak. [Bug 1180368]
+
 	* generic/tcl.h (comments):
 	* generic/tclCmdIL.c:
 	* generic/tclCompile.c:

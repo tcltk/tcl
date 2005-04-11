@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.5 2005/04/10 18:13:50 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.6 2005/04/11 00:40:31 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -487,17 +487,14 @@ typedef struct Var {
 } Var;
 
 /*
- * Flag bits for variables. The first three (VAR_SCALAR, VAR_ARRAY, and
- * VAR_LINK) are mutually exclusive and give the "type" of the variable.
- * VAR_UNDEFINED is independent of the variable's type. 
+ * Flag bits for variables. The first two (VAR_ARRAY and VAR_LINK) are
+ * mutually exclusive and give the "type" of the variable; a scalar is
+ * neither an array nor a link.
+ * A variable with a NULL value is undefined: this means that the variable is
+ * in the process of being deleted. An undefined variable logically does not
+ * exist and survives only while it has a trace, or if it is a global variable
+ * currently being used by some procedure.
  *
- * VAR_SCALAR -			1 means this is a scalar variable and not
- *				an array or link. The "objPtr" field points
- *				to the variable's value, a Tcl object.
- * VAR_ARRAY -			1 means this is an array variable rather
- *				than a scalar variable or link. The
- *				"tablePtr" field points to the array's
- *				hashtable for its elements.
  * VAR_LINK -			1 means this Var structure contains a
  *				pointer to another Var structure that
  *				either has the real value or is itself
@@ -505,12 +502,6 @@ typedef struct Var {
  *				this come about through "upvar" and "global"
  *				commands, or through references to variables
  *				in enclosing namespaces.
- * VAR_UNDEFINED -		1 means that the variable is in the process
- *				of being deleted. An undefined variable
- *				logically does not exist and survives only
- *				while it has a trace, or if it is a global
- *				variable currently being used by some
- *				procedure.
  * VAR_IN_HASHTABLE -		1 means this variable is in a hashtable and
  *				the Var structure is malloced. 0 if it is
  *				a local variable that was assigned a slot
@@ -544,12 +535,28 @@ typedef struct Var {
  *				name.
  * VAR_RESOLVED -		1 if name resolution has been done for this
  *				variable.
+ *
+ * The following additional flags are used to speed up variable access by
+ * the bytecode engine. The information contained is already present in the
+ * other flag values and/or the fields of the Var structure. There is special
+ * code to maintain these flag values in synch with the rest.
+ *
+ * VAR_DIRECT_READABLE          1 means that TEBC can read this variable
+ *                              directly:
+ *                                - VAR_SCALAR is set
+ *                                - VAR_UNDEFINED is not set
+ *                                - tracePtr is NULL.
+ * VAR_DIRECT_WRITABLE          1 means that TEBC can write this variable
+ *                              directly:
+ *                                - one of {VAR_SCALAR,VAR_UNDEFINED} is set 
+ *                                - tracePtr is NULL
+ *                                - VAR_IN_HASHTABLE is not set, or else hPtr
+ *                                  is not NULL.
  */
 
-#define VAR_SCALAR		0x1
 #define VAR_ARRAY		0x2
 #define VAR_LINK		0x4
-#define VAR_UNDEFINED		0x8
+
 #define VAR_IN_HASHTABLE	0x10
 #define VAR_TRACE_ACTIVE	0x20
 #define VAR_ARRAY_ELEMENT	0x40
@@ -559,6 +566,9 @@ typedef struct Var {
 #define VAR_TEMPORARY		0x200
 #define VAR_RESOLVED		0x400	
 #define VAR_IS_ARGS             0x800
+
+#define VAR_DIRECT_READABLE     0x1000
+#define VAR_DIRECT_WRITABLE     0x2000
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -573,22 +583,20 @@ typedef struct Var {
  */
 
 #define TclSetVarScalar(varPtr) \
-    (varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK)) | VAR_SCALAR
+    (varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK))
 
 #define TclSetVarArray(varPtr) \
-    (varPtr)->flags = ((varPtr)->flags & ~(VAR_SCALAR|VAR_LINK)) | VAR_ARRAY
+    (varPtr)->flags = ((varPtr)->flags & ~VAR_LINK) | VAR_ARRAY
 
 #define TclSetVarLink(varPtr) \
-    (varPtr)->flags = ((varPtr)->flags & ~(VAR_SCALAR|VAR_ARRAY)) | VAR_LINK
+    (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_LINK
 
 #define TclSetVarArrayElement(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
-    (varPtr)->flags |= VAR_UNDEFINED
-
-#define TclClearVarUndefined(varPtr) \
-    (varPtr)->flags &= ~VAR_UNDEFINED
+    (varPtr)->value.objPtr = NULL; \
+    TclSetVarScalar(varPtr)
 
 #define TclSetVarTraceActive(varPtr) \
     (varPtr)->flags |= VAR_TRACE_ACTIVE
@@ -617,7 +625,7 @@ typedef struct Var {
  */
     
 #define TclIsVarScalar(varPtr) \
-    ((varPtr)->flags & VAR_SCALAR)
+    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK))
 
 #define TclIsVarLink(varPtr) \
     ((varPtr)->flags & VAR_LINK)
@@ -626,7 +634,7 @@ typedef struct Var {
     ((varPtr)->flags & VAR_ARRAY)
 
 #define TclIsVarUndefined(varPtr) \
-    ((varPtr)->flags & VAR_UNDEFINED)
+    ((varPtr)->value.objPtr == NULL)
 
 #define TclIsVarArrayElement(varPtr) \
     ((varPtr)->flags & VAR_ARRAY_ELEMENT)
@@ -2579,6 +2587,19 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 # define TclNewListObjDirect(objc, objv) \
     TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
+
+#define TclAllocObjStorage(objPtr) \
+    TclNewObj(objPtr)
+
+#define TclFreeObjStorage(anyPtr) \
+    {\
+	Tcl_Obj *objPtr = (Tcl_Obj *) (anyPtr);\
+	objPtr->refCount = 1;\
+	objPtr->bytes = tclEmptyStringRep;\
+	objPtr->length = 0;\
+	objPtr->typePtr = NULL;\
+	TclDecrRefCount(objPtr);\
+    }
 
 #undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */

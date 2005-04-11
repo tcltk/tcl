@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.3 2005/04/10 18:13:51 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.4 2005/04/11 00:40:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -943,7 +943,6 @@ TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, create
 	}
 
 	TclSetVarArray(arrayPtr);
-	TclClearVarUndefined(arrayPtr);
 	arrayPtr->value.tablePtr =
 	    (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(arrayPtr->value.tablePtr, TCL_STRING_KEYS);
@@ -1612,10 +1611,10 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
      * "copy on write".
      */
 
+    oldValuePtr = varPtr->value.objPtr;
     if (flags & TCL_LIST_ELEMENT && !(flags & TCL_APPEND_VALUE)) {
 	TclSetVarUndefined(varPtr);
     }
-    oldValuePtr = varPtr->value.objPtr;
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
 	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
 	    TclDecrRefCount(oldValuePtr);     /* discard old value */
@@ -1669,10 +1668,6 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 	}
     }
     TclSetVarScalar(varPtr);
-    TclClearVarUndefined(varPtr);
-    if (arrayPtr != NULL) {
-	TclClearVarUndefined(arrayPtr);
-    }
 
     /*
      * Invoke any write traces for the variable.
@@ -2181,8 +2176,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 
     dummyVar = *varPtr;
     TclSetVarUndefined(varPtr);
-    TclSetVarScalar(varPtr);
-    varPtr->value.objPtr = NULL; /* dummyVar points to any value object */
     varPtr->tracePtr = NULL;
     varPtr->searchPtr = NULL;
 
@@ -3245,7 +3238,6 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 	}
     }
     TclSetVarArray(varPtr);
-    TclClearVarUndefined(varPtr);
     varPtr->value.tablePtr =
 	    (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
     Tcl_InitHashTable(varPtr->value.tablePtr, TCL_STRING_KEYS);
@@ -3421,7 +3413,6 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	}
     }
     TclSetVarLink(varPtr);
-    TclClearVarUndefined(varPtr);
     varPtr->value.linkPtr = otherPtr;
     otherPtr->refCount++;
     return TCL_OK;
@@ -3895,7 +3886,7 @@ NewVar()
     
     TclAllocObjStorage(objPtr);
     varPtr = (Var *) objPtr;
-    varPtr->flags = (VAR_SCALAR | VAR_UNDEFINED | VAR_IN_HASHTABLE);
+    varPtr->flags = VAR_IN_HASHTABLE;
     varPtr->value.objPtr = NULL;
     varPtr->id.name = NULL;
     varPtr->refCount = 0;
@@ -4192,17 +4183,14 @@ TclDeleteVars(iPtr, tablePtr)
 	if (TclIsVarArray(varPtr)) {
 	    DeleteArray(iPtr, Tcl_GetHashKey(tablePtr, hPtr), varPtr,
 	            flags);
-	    varPtr->value.tablePtr = NULL;
 	}
 	if (TclIsVarScalar(varPtr) && (varPtr->value.objPtr != NULL)) {
 	    objPtr = varPtr->value.objPtr;
 	    TclDecrRefCount(objPtr);
-	    varPtr->value.objPtr = NULL;
 	}
+	TclSetVarUndefined(varPtr);
 	varPtr->id.hPtr = NULL;
 	varPtr->tracePtr = NULL;
-	TclSetVarUndefined(varPtr);
-	TclSetVarScalar(varPtr);
 
 	/*
 	 * If the variable was a namespace variable, decrement its 
@@ -4325,12 +4313,10 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	}
 	if (TclIsVarScalar(varPtr) && (varPtr->value.objPtr != NULL)) {
 	    TclDecrRefCount(varPtr->value.objPtr);
-	    varPtr->value.objPtr = NULL;
 	}
+	TclSetVarUndefined(varPtr);
 	varPtr->id.hPtr = NULL;
 	varPtr->tracePtr = NULL;
-	TclSetVarUndefined(varPtr);
-	TclSetVarScalar(varPtr);
 	varPtr++;
     }
 }
@@ -4403,7 +4389,6 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	    }
 	}
 	TclSetVarUndefined(elPtr);
-	TclSetVarScalar(elPtr);
 
 	/*
 	 * Even though array elements are not supposed to be namespace

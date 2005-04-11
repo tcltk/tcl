@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.13 2005/03/28 22:21:25 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.14 2005/04/11 00:40:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -197,7 +197,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	    }
 	    localIndex = TclFindCompiledLocal(nameTokenPtr[1].start,
 		    nameTokenPtr[1].size, /*create*/ 1, 
-		    /*flags*/ VAR_SCALAR, envPtr->procPtr);
+		    /*flags*/ 0, envPtr->procPtr);
 	} else {
 	   return TCL_OUT_LINE_COMPILE;
 	}
@@ -627,13 +627,13 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     firstValueTemp = -1;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	tempVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-		/*create*/ 1, /*flags*/ VAR_SCALAR, procPtr);
+		/*create*/ 1, /*flags*/ 0, procPtr);
 	if (loopIndex == 0) {
 	    firstValueTemp = tempVar;
 	}
     }
     loopCtTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-	    /*create*/ 1, /*flags*/ VAR_SCALAR, procPtr);
+	    /*create*/ 1, /*flags*/ 0, procPtr);
 
     /*
      * Create and initialize the ForeachInfo and ForeachVarList data
@@ -656,7 +656,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    CONST char *varName = varvList[loopIndex][j];
 	    int nameChars = strlen(varName);
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
-		    nameChars, /*create*/ 1, /*flags*/ VAR_SCALAR, procPtr);
+		    nameChars, /*create*/ 1, /*flags*/ 0, procPtr);
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
@@ -3098,7 +3098,7 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	if ((envPtr->procPtr != NULL) && !hasNsQualifiers) {
 	    localIndex = TclFindCompiledLocal(name, nameChars,
 		    /*create*/ (flags & TCL_CREATE_VAR),
-                    /*flags*/ ((elName==NULL)? VAR_SCALAR : VAR_ARRAY),
+                    /*flags*/ ((elName==NULL)? 0 : VAR_ARRAY),
 		    envPtr->procPtr);
 	    if (localIndex >= HPUINT_MAX) {
 		/* we'll push the name */
