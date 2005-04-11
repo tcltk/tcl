@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.21 2004/11/15 21:47:23 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.21.4.1 2005/04/11 09:11:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2739,8 +2739,15 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
      * unset and unused, then free up the variable.
      */
 
-    if (TclIsVarUndefined(varPtr)) {
-	TclCleanupVar(varPtr, (Var *) NULL);
+    if (!varPtr->tracePtr) {
+	if (TclIsVarUndefined(varPtr)) {
+	    TclCleanupVar(varPtr, (Var *) NULL);
+	} else if (TclIsVarScalar(varPtr)) {
+	    if (!((varPtr->flags & VAR_IN_HASHTABLE)
+			&& (varPtr->id.hPtr == NULL))) {
+		varPtr->flags |= (VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE);
+	    }
+	}
     }
 }
 
@@ -2972,5 +2979,6 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
     tracePtr->flags		= flags & flagMask;
     tracePtr->nextPtr		= varPtr->tracePtr;
     varPtr->tracePtr		= tracePtr;
+    varPtr->flags &= ~(VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE);
     return TCL_OK;
 }

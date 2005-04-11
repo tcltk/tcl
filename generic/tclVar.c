@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.4 2005/04/11 00:40:32 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.5 2005/04/11 09:11:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -158,19 +158,19 @@ Tcl_ObjType tclArraySearchType = {
  *	variable structure for the array that contains the variable (or NULL
  *	if the variable is a scalar). If the variable can't be found and
  *	either createPart1 or createPart2 are 1, a new as-yet-undefined
- *	(VAR_UNDEFINED) variable structure is created, entered into a hash
- *	table, and returned.
+ *	variable structure is created, entered into a hash table, and
+ *      returned. 
  *
  *	If the variable isn't found and creation wasn't specified, or some
  *	other error occurs, NULL is returned and an error message is left in
  *	the interp's result if TCL_LEAVE_ERR_MSG is set in flags. 
  *
- *	Note: it's possible for the variable returned to be VAR_UNDEFINED
+ *	Note: it's possible for the variable returned to be undefined
  *	even if createPart1 or createPart2 are 1 (these only cause the hash
  *	table entry or array to be created). For example, the variable might
  *	be a global that has been unset but is still referenced by a
  *	procedure, or a variable that has been unset but it only being kept
- *	in existence (if VAR_UNDEFINED) by a trace.
+ *	in existence by a trace.
  *
  * Side effects:
  *	New hashtable entries may be created if createPart1 or createPart2
@@ -307,19 +307,19 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
  *	variable structure for the array that contains the variable (or NULL
  *	if the variable is a scalar). If the variable can't be found and
  *	either createPart1 or createPart2 are 1, a new as-yet-undefined
- *	(VAR_UNDEFINED) variable structure is created, entered into a hash
- *	table, and returned.
+ *	variable structure is created, entered into a hash table, and
+ *      returned. 
  *
  *	If the variable isn't found and creation wasn't specified, or some
  *	other error occurs, NULL is returned and an error message is left in
  *	the interp's result if TCL_LEAVE_ERR_MSG is set in flags. 
  *
- *	Note: it's possible for the variable returned to be VAR_UNDEFINED
+ *	Note: it's possible for the variable returned to be undefined
  *	even if createPart1 or createPart2 are 1 (these only cause the hash
  *	table entry or array to be created). For example, the variable might
  *	be a global that has been unset but is still referenced by a
  *	procedure, or a variable that has been unset but it only being kept
- *	in existence (if VAR_UNDEFINED) by a trace.
+ *	in existence by a trace.
  *
  * Side effects:
  *	New hashtable entries may be created if createPart1 or createPart2
@@ -621,8 +621,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  * Results:
  *	The return value is a pointer to the variable structure indicated by
  *	varName, or NULL if the variable couldn't be found. If the variable 
- *      can't be found and create is 1, a new as-yet-undefined (VAR_UNDEFINED) 
- *      variable structure is created, entered into a hash table, and returned.
+ *      can't be found and create is 1, a new as-yet-undefined variable
+ *      structure is created, entered into a hash table, and returned. 
  *
  *      If the current CallFrame corresponds to a proc and the variable found is
  *      one of the compiledLocals, its index is placed in *indexPtr. Otherwise,
@@ -638,12 +638,11 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  *	other error occurs, NULL is returned and the corresponding error
  *	message is left in *errMsgPtr. 
  *
- *	Note: it's possible for the variable returned to be VAR_UNDEFINED
+ *	Note: it's possible for the variable returned to be undefined
  *	even if create is 1 (this only causes the hash table entry to be
  *	created).  For example, the variable might be a global that has been
  *	unset but is still referenced by a procedure, or a variable that has
- *	been unset but it only being kept in existence (if VAR_UNDEFINED) by
- *	a trace.
+ *	been unset but it only being kept in existence by a trace.
  *
  * Side effects:
  *	A new hashtable entry may be created if create is 1.
@@ -881,12 +880,12 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
  *      created. Otherwise, NULL is returned and an error message is left in
  *	the interp's result if TCL_LEAVE_ERR_MSG is set in flags.
  *
- *	Note: it's possible for the variable returned to be VAR_UNDEFINED
+ *	Note: it's possible for the variable returned to be undefined
  *	even if createPart1 or createPart2 are 1 (these only cause the hash
  *	table entry or array to be created). For example, the variable might
  *	be a global that has been unset but is still referenced by a
  *	procedure, or a variable that has been unset but it only being kept
- *	in existence (if VAR_UNDEFINED) by a trace.
+ *	in existence by a trace.
  *
  * Side effects:
  *      The variable at arrayPtr may be converted to be an array if 
@@ -1202,6 +1201,15 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
     Interp *iPtr = (Interp *) interp;
     CONST char *msg;
 
+    /*
+     * Shortcut for direct readable variables
+     */
+
+    if ((varPtr->flags & VAR_DIRECT_READABLE)
+	    && !(arrayPtr && arrayPtr->tracePtr)) {
+	return varPtr->value.objPtr;
+    }
+    
     /*
      * Invoke any traces that have been set for the variable.
      */
@@ -1561,45 +1569,53 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     int result;
 
     /*
-     * If the variable is in a hashtable and its hPtr field is NULL, then we
-     * may have an upvar to an array element where the array was deleted
-     * or an upvar to a namespace variable whose namespace was deleted.
-     * Generate an error (allowing the variable to be reset would screw up
-     * our storage allocation and is meaningless anyway).
+     * Avoid all the checks for direct writable variables
      */
 
-    if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->id.hPtr == NULL)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    if (TclIsVarArrayElement(varPtr)) {
-		TclVarErrMsg(interp, part1, part2, "set", danglingElement);
-	    } else {
-		TclVarErrMsg(interp, part1, part2, "set", danglingVar);
+    if ((!(varPtr->flags & VAR_DIRECT_WRITABLE))
+	    || (arrayPtr && arrayPtr->tracePtr)) {
+    
+	/*
+	 * If the variable is in a hashtable and its hPtr field is NULL, then
+	 * we may have an upvar to an array element where the array was
+	 * deleted or an upvar to a namespace variable whose namespace was
+	 * deleted. Generate an error (allowing the variable to be reset would
+	 * screw up our storage allocation and is meaningless anyway).
+	 */
+	
+	if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->id.hPtr == NULL)) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		if (TclIsVarArrayElement(varPtr)) {
+		    TclVarErrMsg(interp, part1, part2, "set", danglingElement);
+		} else {
+		    TclVarErrMsg(interp, part1, part2, "set", danglingVar);
+		}
 	    }
-	}
-	return NULL;
-    }
-
-    /*
-     * It's an error to try to set an array variable itself.
-     */
-
-    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclVarErrMsg(interp, part1, part2, "set", isArray);
-	}
-	return NULL;
-    }
-
-    /*
-     * Invoke any read traces that have been set for the variable if it
-     * is requested; this is only done in the core when lappending.
-     */
-
-    if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL) 
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
-	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
-		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    return NULL;
+	}
+	
+	/*
+	 * It's an error to try to set an array variable itself.
+	 */
+	
+	if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		TclVarErrMsg(interp, part1, part2, "set", isArray);
+	    }
+	    return NULL;
+	}
+
+	/*
+	 * Invoke any read traces that have been set for the variable if it
+	 * is requested; this is only done in the core when lappending.
+	 */
+	
+	if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL) 
+		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
+	    if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
+			TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
+		return NULL;
+	    }
 	}
     }
 
@@ -1667,12 +1683,20 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 	    TclDecrRefCount(oldValuePtr);   /* discard old value */
 	}
     }
-    TclSetVarScalar(varPtr);
 
+    if (varPtr->flags & VAR_DIRECT_WRITABLE) {
+	varPtr->flags |= VAR_DIRECT_READABLE;
+	if (!(arrayPtr && arrayPtr->tracePtr)) {
+	    return varPtr->value.objPtr;
+	}
+    }
+    
+    TclSetVarScalar(varPtr);
+    
     /*
      * Invoke any write traces for the variable.
      */
-
+	    	    
     if ((varPtr->tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
 	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
@@ -1683,11 +1707,11 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     }
 
     /*
-     * Return the variable's value unless the variable was changed in some
+     * Return the variable's value unless the variable was changed in some 
      * gross way by a trace (e.g. it was unset and then recreated as an
      * array). 
      */
-
+    
     if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
 	return varPtr->value.objPtr;
     }
@@ -2244,6 +2268,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 		| TCL_TRACE_UNSETS);
 	/* Decr ref count */
     }
+    
     if (TclIsVarScalar(dummyVarPtr)
 	    && (dummyVarPtr->value.objPtr != NULL)) {
 	objPtr = dummyVarPtr->value.objPtr;
@@ -3886,7 +3911,7 @@ NewVar()
     
     TclAllocObjStorage(objPtr);
     varPtr = (Var *) objPtr;
-    varPtr->flags = VAR_IN_HASHTABLE;
+    varPtr->flags = (VAR_IN_HASHTABLE|VAR_DIRECT_WRITABLE);
     varPtr->value.objPtr = NULL;
     varPtr->id.name = NULL;
     varPtr->refCount = 0;
@@ -4191,6 +4216,7 @@ TclDeleteVars(iPtr, tablePtr)
 	TclSetVarUndefined(varPtr);
 	varPtr->id.hPtr = NULL;
 	varPtr->tracePtr = NULL;
+	varPtr->flags &= ~VAR_DIRECT_WRITABLE;
 
 	/*
 	 * If the variable was a namespace variable, decrement its 
@@ -4368,9 +4394,10 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	if (TclIsVarScalar(elPtr) && (elPtr->value.objPtr != NULL)) {
 	    objPtr = elPtr->value.objPtr;
 	    TclDecrRefCount(objPtr);
-	    elPtr->value.objPtr = NULL;
+	    TclSetVarUndefined(elPtr);
 	}
 	elPtr->id.hPtr = NULL;
+	elPtr->flags &= ~VAR_DIRECT_WRITABLE;
 	if (elPtr->tracePtr != NULL) {
 	    elPtr->flags &= ~VAR_TRACE_ACTIVE;
 	    TclCallVarTraces(iPtr, (Var *) NULL, elPtr, arrayName,

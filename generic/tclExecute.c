@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.22 2005/04/11 00:40:29 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.23 2005/04/11 09:11:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2049,7 +2049,7 @@ TclExecuteByteCode(interp, codePtr)
 		    if (valuePtr != NULL) {
 			TclDecrRefCount(valuePtr);
 		    } else {
-			TclSetVarScalar(varPtr);
+			TclSetVarDirectScalar(varPtr);
 		    }
 		    varPtr->value.objPtr = objResultPtr;
 		    if (pushRes) {
@@ -2137,7 +2137,7 @@ TclExecuteByteCode(interp, codePtr)
 			if (valuePtr != NULL) {
 			    TclDecrRefCount(valuePtr);
 			} else {
-			    TclSetVarScalar(varPtr);
+			    TclSetVarDirectScalar(varPtr);
 			}
 			varPtr->value.objPtr = objResultPtr;
 			Tcl_IncrRefCount(objResultPtr);
@@ -4394,10 +4394,10 @@ TclExecuteByteCode(interp, codePtr)
 	    if (oldValuePtr == NULL) {
 		TclNewLongObj(iterVarPtr->value.objPtr, -1);
 		Tcl_IncrRefCount(iterVarPtr->value.objPtr);
+		TclSetVarDirectScalar(iterVarPtr);
 	    } else {
 		TclSetLongObj(oldValuePtr, -1);
 	    }
-	    TclSetVarScalar(iterVarPtr);
 	    TRACE(("%u => loop iter count temp %d\n", 
 		   (unsigned) opnd, iterTmpIndex));
 
@@ -4509,7 +4509,7 @@ TclExecuteByteCode(interp, codePtr)
 				if (value2Ptr != NULL) {
 				    TclDecrRefCount(value2Ptr);
 				} else {
-				    TclSetVarScalar(varPtr);
+				    TclSetVarDirectScalar(varPtr);
 				}
 				varPtr->value.objPtr = valuePtr;
 				Tcl_IncrRefCount(valuePtr);

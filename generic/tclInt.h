@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.6 2005/04/11 00:40:31 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.7 2005/04/11 09:11:45 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -582,21 +582,27 @@ typedef struct Var {
  * MODULE_SCOPE void	TclClearVarUndefined _ANSI_ARGS_((Var *varPtr));
  */
 
+#define TclSetVarDirectScalar(varPtr) \
+    (varPtr)->flags = ((varPtr->flags) & ~(VAR_ARRAY|VAR_LINK)) \
+        | (VAR_DIRECT_WRITABLE|VAR_DIRECT_READABLE)
+
 #define TclSetVarScalar(varPtr) \
-    (varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK))
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK) 
 
 #define TclSetVarArray(varPtr) \
-    (varPtr)->flags = ((varPtr)->flags & ~VAR_LINK) | VAR_ARRAY
+    (varPtr)->flags = ((varPtr)->flags | VAR_ARRAY) \
+        & ~(VAR_LINK|VAR_DIRECT_WRITABLE|VAR_DIRECT_READABLE)
 
 #define TclSetVarLink(varPtr) \
-    (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_LINK
+    (varPtr)->flags = ((varPtr)->flags | VAR_LINK)\
+        & ~(VAR_ARRAY|VAR_DIRECT_WRITABLE|VAR_DIRECT_READABLE)
 
 #define TclSetVarArrayElement(varPtr) \
     (varPtr)->flags = ((varPtr)->flags & ~VAR_ARRAY) | VAR_ARRAY_ELEMENT
 
 #define TclSetVarUndefined(varPtr) \
     (varPtr)->value.objPtr = NULL; \
-    TclSetVarScalar(varPtr)
+    (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK|VAR_DIRECT_READABLE) 
 
 #define TclSetVarTraceActive(varPtr) \
     (varPtr)->flags |= VAR_TRACE_ACTIVE
@@ -662,16 +668,10 @@ typedef struct Var {
  */
 
 #define TclIsVarDirectReadable(varPtr) \
-       (TclIsVarScalar(varPtr) \
-    && !TclIsVarUndefined(varPtr) \
-    && TclIsVarUntraced(varPtr))
+    ((varPtr)->flags & VAR_DIRECT_READABLE)
 
 #define TclIsVarDirectWritable(varPtr) \
-    (   !(((varPtr)->flags & VAR_IN_HASHTABLE) \
-		&& ((varPtr)->id.hPtr == NULL)) \
-     && TclIsVarUntraced(varPtr) \
-     && (TclIsVarScalar(varPtr) \
-	     || TclIsVarUndefined(varPtr)))
+    ((varPtr)->flags & VAR_DIRECT_WRITABLE)
 
 /*
  *----------------------------------------------------------------

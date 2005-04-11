@@ -1,3 +1,13 @@
+2005-04-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclTrace.c:
+	* generic/tclVar.c: part 3 of variable reform. New flags
+	VAR_DIRECT_READABLE and VAR_DIRECT_WRITABLE for faster checks in
+	TEBC. Added code to maintain the flags when handling the variable
+	and its traces.
+	
 2005-04-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c:
@@ -31,7 +41,7 @@
 	(2ints+6ptrs) to (2ints+4ptrs).
 
 	*** COMPAT: breaks both binary and (trivially) source compat for
-	extensions that access the Var struct
+	extensions that access the Var struct - notably itcl and xotcl
 	
 	* generic/tclCompile.c (optimiser):
 	* generic/tclExecute.c: storing pointers to literals instead of
