@@ -1,3 +1,21 @@
+2005-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInterp.c:	Corrected bad syntax of Tcl_Panic() call.
+
+	* generic/tclUtil.c (TclGetProcessGlobalValue):	More robust handling
+	of bad TclInitProcessGlobalValueProc behavior; an immediate panic
+	rather than a mysterious crash later.
+
+	* generic/tclEncoding.c:	Several changes to the way the
+	encodingFileMap cache is maintained.  Previously, it was attempted
+	to keep the file map filled and up to date with changes in the
+	encoding search path.  This contributed to slow startup times since
+	it required an expensive "glob" operation to fill the cache.  Now the
+	validity of items in the cache are checked at the time they are
+	used, so the cache is permitted to fall out of sync with the
+	encoding search path.  Only [encoding names] and Tcl_GetEncodingNames()
+	now pay the full expense.  [Bug 1177363]
+
 2005-04-12  Kevin B. Kenny  <kennykb@acm.org>
 
 	* compat/strstr.c: Added default definition of NULL to

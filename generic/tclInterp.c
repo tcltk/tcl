@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.55 2004/12/16 19:36:34 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.56 2005/04/12 20:28:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -466,8 +466,8 @@ done:
     if (strcmp(Tcl_DStringValue(&encodingName), Tcl_GetEncodingName(NULL))) {
 	code = Tcl_SetSystemEncoding(NULL, Tcl_DStringValue(&encodingName));
 	if (code == TCL_ERROR) {
-	    Tcl_Panic("system encoding \"", Tcl_DStringValue(&encodingName),
-		    "\" not available");
+	    Tcl_Panic("system encoding \"%s\" not available",
+		    Tcl_DStringValue(&encodingName));
 	}
     }
     Tcl_DStringFree(&encodingName);
