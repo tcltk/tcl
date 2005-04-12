@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.23 2005/04/11 09:11:42 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.24 2005/04/12 18:23:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2071,6 +2071,7 @@ TclExecuteByteCode(interp, codePtr)
 			TclDecrRefCount(objResultPtr);
 		    }		    
 		}
+		TclSetVarDirectScalar(varPtr);
 		pc++;
 		NEXT_INST_F(0,0);
 	    }
@@ -2142,6 +2143,7 @@ TclExecuteByteCode(interp, codePtr)
 			varPtr->value.objPtr = objResultPtr;
 			Tcl_IncrRefCount(objResultPtr);
 		    }
+		    TclSetVarDirectScalar(varPtr);
 		    pc++;
 		    NEXT_INST_F(cleanup, pushRes);
 		}

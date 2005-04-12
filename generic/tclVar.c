@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.5 2005/04/11 09:11:47 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.6 2005/04/12 18:23:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1684,55 +1684,41 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 	}
     }
 
-    if (varPtr->flags & VAR_DIRECT_WRITABLE) {
-	varPtr->flags |= VAR_DIRECT_READABLE;
-	if (!(arrayPtr && arrayPtr->tracePtr)) {
-	    return varPtr->value.objPtr;
-	}
-    }
-    
-    TclSetVarScalar(varPtr);
-    
     /*
      * Invoke any write traces for the variable.
      */
 	    	    
-    if ((varPtr->tracePtr != NULL)
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+    if (varPtr->tracePtr || (arrayPtr && arrayPtr->tracePtr)) {
+	TclSetVarScalar(varPtr);    
 	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 	        (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto cleanup;
 	}
-    }
-
-    /*
-     * Return the variable's value unless the variable was changed in some 
-     * gross way by a trace (e.g. it was unset and then recreated as an
-     * array). 
-     */
+	if (!TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr)) {
+	    /*
+	     * A trace changed the value in some gross way. Return an empty
+	     * string object. 
+	     */
     
-    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return varPtr->value.objPtr;
+	    resultPtr = iPtr->emptyObjPtr;
+	    cleanup:
+	    if (TclIsVarUndefined(varPtr)) {
+		TclCleanupVar(varPtr, arrayPtr);
+	    }
+	    return resultPtr;	    
+	} else {
+	    if (TclIsVarUntraced(varPtr)) {
+		TclSetVarDirectScalar(varPtr);
+	    } else {
+		TclSetVarScalar(varPtr);    
+	    }
+	    return varPtr->value.objPtr;
+	}
     }
-
-    /*
-     * A trace changed the value in some gross way. Return an empty string
-     * object.
-     */
-    
-    resultPtr = iPtr->emptyObjPtr;
-
-    /*
-     * If the variable doesn't exist anymore and no-one's using it, then
-     * free up the relevant structures and hash table entries.
-     */
-
-    cleanup:
-    if (TclIsVarUndefined(varPtr)) {
-	TclCleanupVar(varPtr, arrayPtr);
-    }
-    return resultPtr;
+		
+    TclSetVarDirectScalar(varPtr);
+    return varPtr->value.objPtr;
 }
 
 /*

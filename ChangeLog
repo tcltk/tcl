@@ -1,3 +1,10 @@
+2005-04-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclProc.c:
+	* generic/tclVar.c: fixing setting of the new flags
+
 2005-04-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c:

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.73.2.3 2005/04/11 00:40:32 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73.2.4 2005/04/12 18:23:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -420,7 +420,8 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	    if ((localPtr->nameLength != nameLength)
 		    || (strcmp(localPtr->name, fieldValues[0]))
 		    || (localPtr->frameIndex != i)
-		    || (localPtr->flags != VAR_ARGUMENT)
+		    || (localPtr->flags !=
+			    (VAR_ARGUMENT|VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE))
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		char buf[40 + TCL_INTEGER_SPACE];
@@ -476,7 +477,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	    localPtr->nextPtr = NULL;
 	    localPtr->nameLength = nameLength;
 	    localPtr->frameIndex = i;
-	    localPtr->flags = VAR_ARGUMENT;
+	    localPtr->flags = (VAR_ARGUMENT|VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE);
 	    localPtr->resolveInfo = NULL;
 
 	    if (fieldCount == 2) {
