@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.7 2005/04/11 09:11:45 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.8 2005/04/12 21:09:59 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -425,21 +425,75 @@ typedef struct ArraySearch {
 } ArraySearch;
 
 /*
- * The structure below defines a variable, which associates a string name
+ * The structures below defines a variable, which associates a string name
  * with a Tcl_Obj value. These structures are kept in procedure call frames
  * (for local variables recognized by the compiler) or in the heap (for
  * global variables and any variable not known to the compiler). For each
  * Var structure in the heap, a hash table entry holds the variable name and
  * a pointer to the Var structure.
  *
- * NOTE: the quantity and type of the elements have been designed to
+ * NOTE: the quantity and type of the elements of Var have been designed to
  * allow the use of a Tcl_Obj to store a variable - so that we can profit from
  * the optimised allocator for Tcl_Objs. Any change to this will require
  * changing the memory management in tclVar.c - especially in NewVar and
- * CleanupVar. 
+ * CleanupVar.
  */
 
 typedef struct Var {
+    int flags;			/* Miscellaneous bits of information about
+				 * variable. See below for definitions. */
+    union {
+	Tcl_Obj *objPtr;	/* The variable's object value. Used for 
+				 * scalar variables and array elements. */
+	Tcl_HashTable *tablePtr;/* For array variables, this points to
+				 * information about the hash table used
+				 * to implement the associative array. 
+				 * Points to malloc-ed data. */
+	struct Var *linkPtr;	/* If this is a global variable being
+				 * referred to in a procedure, or a variable
+				 * created by "upvar", this field points to
+				 * the referenced variable's Var struct. */
+    } value;
+    union {
+	char *name;		/* Used for compiled locals, never used for
+				 * full Vars. */
+	Tcl_HashEntry *hPtr;	/* If variable is in a hashtable, either the
+				 * hash table entry that refers to this
+				 * variable or NULL if the variable has been
+				 * detached from its hash table (e.g. an
+				 * array is deleted, but some of its
+				 * elements are still referred to in
+				 * upvars). NULL if the variable is not in a
+				 * hashtable. This is used to delete an
+				 * variable from its hashtable if it is no
+				 * longer needed. */
+	struct Var *shortPtr;   /* Used for extensions, to point to the
+				 * original short variable. */
+    } id;
+    int refCount;		/* Counts number of active uses of this
+				 * variable, not including its entry in the
+				 * call frame or the hash table: 1 for each
+				 * additional variable whose linkPtr points
+				 * here, 1 for each nested trace active on
+				 * variable, and 1 if the variable is a 
+				 * namespace variable. This record can't be
+				 * deleted until refCount becomes 0. */
+    VarTrace *tracePtr;		/* First in list of all traces set for this
+				 * variable. */
+    ArraySearch *searchPtr;	/* First in list of all searches active
+				 * for this variable, or NULL if none. */
+} Var;
+
+/*
+ * The struct ShortVar is only used within the compiler/TEBC: compiledlocal
+ * variables are defined with the minimal required fields, and will be linked
+ * to full Var structs whenever the variable is traced or searched. The link
+ * remains valid until the corresponding function returns, even if the traces
+ * are removed or the search is finished.
+ * The definition of ShortVar must coincide exactly with the beginning of Var.
+ */
+
+typedef struct ShortVar {
     int flags;			/* Miscellaneous bits of information about
 				 * variable. See below for definitions. */
     union {
@@ -461,30 +515,11 @@ typedef struct Var {
 				 * for the characters of the name is not owned
 				 * by the Var and must not be freed when
 				 * freeing the Var. */
-	Tcl_HashEntry *hPtr;	/* If variable is in a hashtable, either the
-				 * hash table entry that refers to this
-				 * variable or NULL if the variable has been
-				 * detached from its hash table (e.g. an
-				 * array is deleted, but some of its
-				 * elements are still referred to in
-				 * upvars). NULL if the variable is not in a
-				 * hashtable. This is used to delete an
-				 * variable from its hashtable if it is no
-				 * longer needed. */
+	Tcl_HashEntry *hPtr;	/* Never used for shortvars */
+	struct Var *shortPtr;   /* Never used for shortvars. */
     } id;
-    int refCount;		/* Counts number of active uses of this
-				 * variable, not including its entry in the
-				 * call frame or the hash table: 1 for each
-				 * additional variable whose linkPtr points
-				 * here, 1 for each nested trace active on
-				 * variable, and 1 if the variable is a 
-				 * namespace variable. This record can't be
-				 * deleted until refCount becomes 0. */
-    VarTrace *tracePtr;		/* First in list of all traces set for this
-				 * variable. */
-    ArraySearch *searchPtr;	/* First in list of all searches active
-				 * for this variable, or NULL if none. */
-} Var;
+} ShortVar;
+
 
 /*
  * Flag bits for variables. The first two (VAR_ARRAY and VAR_LINK) are
@@ -507,6 +542,10 @@ typedef struct Var {
  *				a local variable that was assigned a slot
  *				in a procedure frame by	the compiler so the
  *				Var storage is part of the call frame.
+ * VAR_SHORT                    1 indicates that this is a ShortVar struct, 0
+ *                              that it is a full Var struct with all fields.
+ * VAR_EXTENSION                1 indicates that this is an extension to a
+ *                              short var.
  * VAR_TRACE_ACTIVE -		1 means that trace processing is currently
  *				underway for a read or write access, so
  *				new read or write accesses should not cause
@@ -567,8 +606,11 @@ typedef struct Var {
 #define VAR_RESOLVED		0x400	
 #define VAR_IS_ARGS             0x800
 
-#define VAR_DIRECT_READABLE     0x1000
-#define VAR_DIRECT_WRITABLE     0x2000
+#define VAR_SHORT               0x1000
+#define VAR_EXTENSION           0x2000
+
+#define VAR_DIRECT_READABLE     0x4000
+#define VAR_DIRECT_WRITABLE     0x8000
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -639,6 +681,12 @@ typedef struct Var {
 #define TclIsVarArray(varPtr) \
     ((varPtr)->flags & VAR_ARRAY)
 
+#define TclIsVarShort(varPtr) \
+    ((varPtr)->flags & VAR_SHORT)
+
+#define TclIsVarExtension(varPtr) \
+    ((varPtr)->flags & VAR_EXTENSION)
+
 #define TclIsVarUndefined(varPtr) \
     ((varPtr)->value.objPtr == NULL)
 
@@ -661,7 +709,10 @@ typedef struct Var {
     ((varPtr)->flags & VAR_TRACE_ACTIVE)
 
 #define TclIsVarUntraced(varPtr) \
-    ((varPtr)->tracePtr == NULL)
+    (TclIsVarShort(varPtr) || !(varPtr)->tracePtr)
+
+#define TclIsVarTraced(varPtr) \
+    (!TclIsVarShort(varPtr) && (varPtr)->tracePtr)
 
 /*
  * Macros for direct variable access by TEBC
@@ -868,7 +919,7 @@ typedef struct CallFrame {
 				 * Initially NULL and created if needed. */
     int numCompiledLocals;	/* Count of local variables recognized by
 				 * the compiler including arguments. */
-    Var* compiledLocals;	/* Points to the array of local variables
+    ShortVar* compiledLocals;	/* Points to the array of local variables
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
@@ -1896,6 +1947,7 @@ MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp* interp, LiteralTable* tablePtr));
 MODULE_SCOPE void	TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
+MODULE_SCOPE Var *      TclExtendVar _ANSI_ARGS_((Var *oldPtr));
 MODULE_SCOPE int	TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	TclFileCopyCmd _ANSI_ARGS_((Tcl_Interp *interp, 

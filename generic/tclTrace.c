@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.21.4.1 2005/04/11 09:11:47 msofer Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.21.4.2 2005/04/12 21:10:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2301,8 +2301,8 @@ TclVarTraceExists(interp, varName)
 	return NULL;
     }
 
-    if ((varPtr->tracePtr != NULL)
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+    if (TclIsVarTraced(varPtr) 
+	    || (arrayPtr && TclIsVarTraced(arrayPtr))) {
 	TclCallVarTraces((Interp *)interp, arrayPtr, varPtr, varName, NULL,
 		TCL_TRACE_READS, /* leaveErrMsg */ 0);
     }
@@ -2382,8 +2382,11 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 	return code;
     }
     TclSetVarTraceActive(varPtr);
-    varPtr->refCount++;
-    if (arrayPtr != NULL) {
+    
+    if (!TclIsVarShort(varPtr)) {
+	varPtr->refCount++;
+    }
+    if (arrayPtr && !TclIsVarShort(arrayPtr)) {
 	arrayPtr->refCount++;
     }
 
@@ -2429,7 +2432,8 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     active.nextPtr = iPtr->activeVarTracePtr;
     iPtr->activeVarTracePtr = &active;
     Tcl_Preserve((ClientData) iPtr);
-    if (arrayPtr != NULL && !TclIsVarTraceActive(arrayPtr)) {
+    if (arrayPtr && !TclIsVarShort(arrayPtr)
+	    && !TclIsVarTraceActive(arrayPtr)) {
 	active.varPtr = arrayPtr;
 	for (tracePtr = arrayPtr->tracePtr;  tracePtr != NULL;
 	     tracePtr = active.nextTracePtr) {
@@ -2466,6 +2470,11 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     if (flags & TCL_TRACE_UNSETS) {
 	flags |= TCL_TRACE_DESTROYED;
     }
+
+    if (TclIsVarShort(varPtr)) {
+	goto done;
+    }
+	    
     active.varPtr = varPtr;
     for (tracePtr = varPtr->tracePtr; tracePtr != NULL;
 	 tracePtr = active.nextTracePtr) {
@@ -2563,14 +2572,16 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 	}
     }
 
-    if (arrayPtr != NULL) {
+    if (arrayPtr && !TclIsVarShort(arrayPtr)) {
 	arrayPtr->refCount--;
     }
     if (copiedName) {
 	Tcl_DStringFree(&nameCopy);
     }
     TclClearVarTraceActive(varPtr);
-    varPtr->refCount--;
+    if (!TclIsVarShort(varPtr)) {	    
+	    varPtr->refCount--;
+    }
     iPtr->activeVarTracePtr = active.nextPtr;
     Tcl_Release((ClientData) iPtr);
     return code;
@@ -2694,6 +2705,14 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
 	return;
     }
 
+    /*
+     * Nothing to be done for short vars
+     */
+
+    if (TclIsVarShort(varPtr)) {
+	return;
+    }
+    
     /*
      * Set up a mask to mask out the parts of the flags that we are not
      * interested in now.
@@ -2840,6 +2859,14 @@ Tcl_VarTraceInfo2(interp, part1, part2, flags, proc, prevClientData)
     }
 
     /*
+     * Nothing to be done for short vars
+     */
+
+    if (TclIsVarShort(varPtr)) {
+	return NULL;
+    }
+    
+    /*
      * Find the relevant trace, if any, and return its clientData.
      */
 
@@ -2964,6 +2991,15 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
 	Tcl_Panic("bad result flag combination");
     }
 
+    /*
+     * Short vars have to be extended in order to record the traces.
+     */
+
+    if (TclIsVarShort(varPtr)) {
+	varPtr = TclExtendVar(varPtr);
+    }
+    
+    
     /*
      * Set up trace information.
      */

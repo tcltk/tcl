@@ -1,5 +1,21 @@
 2005-04-12  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCmdIL (AppendLocals):
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* generic/tclTrace.c:
+	* generic/tclVar.c: part 4 of variable reform. Compiled local vars
+	are half-length with respect to normal vars (missing refCount,
+	tracePtr and searchPtr). When a trace or search is done for the
+	first time on a compiled local, a new extension Var structure is
+	created and the local is linked to it. New flags VAR_SHORT
+	and VAR_EXTENDED are defined to indicate these special variable
+	structs. 
+
+2005-04-12  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c:
 	* generic/tclExecute.c:
 	* generic/tclProc.c:

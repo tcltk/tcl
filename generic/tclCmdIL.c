@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.2 2005/04/10 18:13:46 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.3 2005/04/12 21:09:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1427,7 +1427,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 {
     Interp *iPtr = (Interp *) interp;
     CompiledLocal *localPtr;
-    Var *varPtr;
+    ShortVar *varPtr;
     int i, localVarCt;
     char *varName;
     Tcl_HashTable *localVarTablePtr;
@@ -1460,7 +1460,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 	for (entryPtr = Tcl_FirstHashEntry(localVarTablePtr, &search);
 		entryPtr != NULL;
 		entryPtr = Tcl_NextHashEntry(&search)) {
-	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+	    varPtr = (ShortVar *) Tcl_GetHashValue(entryPtr);
 	    if (!TclIsVarUndefined(varPtr)
 		    && (includeLinks || !TclIsVarLink(varPtr))) {
 		varName = Tcl_GetHashKey(localVarTablePtr, entryPtr);

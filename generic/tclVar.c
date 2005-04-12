@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.6 2005/04/12 18:23:34 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.7 2005/04/12 21:10:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -411,7 +411,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	     * use the cached index if the names coincide.
 	     */
 	    
-	    varPtr = &(varFramePtr->compiledLocals[localIndex]);
+	    varPtr = (Var *) &(varFramePtr->compiledLocals[localIndex]);
 	    if ((varPtr->id.name != NULL)
 		    && (strcmp(part1, varPtr->id.name) == 0)) {
 		goto donePart1;
@@ -810,7 +810,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	Proc *procPtr = varFramePtr->procPtr;
 	int localCt = procPtr->numCompiledLocals;
 	CompiledLocal *localPtr = procPtr->firstLocalPtr;
-	Var *localVarPtr = varFramePtr->compiledLocals;
+	ShortVar *localVarPtr = varFramePtr->compiledLocals;
 	int varNameLen = strlen(varName);
 	
 	for (i = 0;  i < localCt;  i++) {
@@ -820,7 +820,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 		        && (varNameLen == localPtr->nameLength)
 		        && (strcmp(varName, localName) == 0)) {
 		    *indexPtr = i;
-		    return localVarPtr;
+		    return (Var *) localVarPtr;
 		}
 	    }
 	    localVarPtr++;
@@ -955,7 +955,7 @@ TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, create
     if (createElem) {
 	hPtr = Tcl_CreateHashEntry(arrayPtr->value.tablePtr, elName, &new);
 	if (new) {
-	    if (arrayPtr->searchPtr != NULL) {
+	    if (!TclIsVarShort(arrayPtr) && arrayPtr->searchPtr) {
 		DeleteSearches(arrayPtr);
 	    }
 	    varPtr = NewVar();
@@ -1200,13 +1200,16 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
 {
     Interp *iPtr = (Interp *) interp;
     CONST char *msg;
+    int checkTraces;
+
+    checkTraces = TclIsVarTraced(varPtr)
+	    || (arrayPtr && TclIsVarTraced(arrayPtr));
 
     /*
      * Shortcut for direct readable variables
      */
 
-    if ((varPtr->flags & VAR_DIRECT_READABLE)
-	    && !(arrayPtr && arrayPtr->tracePtr)) {
+    if (!checkTraces && (varPtr->flags & VAR_DIRECT_READABLE)) {
 	return varPtr->value.objPtr;
     }
     
@@ -1214,8 +1217,7 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
      * Invoke any traces that have been set for the variable.
      */
 
-    if ((varPtr->tracePtr != NULL)
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+    if (checkTraces) {
 	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 		(flags & (TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY))
 		| TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
@@ -1567,13 +1569,16 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
     int result;
+    int checkTraces;
 
+    checkTraces = TclIsVarTraced(varPtr) 
+	    || (arrayPtr && TclIsVarTraced(arrayPtr));
+    
     /*
      * Avoid all the checks for direct writable variables
      */
 
-    if ((!(varPtr->flags & VAR_DIRECT_WRITABLE))
-	    || (arrayPtr && arrayPtr->tracePtr)) {
+    if (checkTraces || !(varPtr->flags & VAR_DIRECT_WRITABLE)) {
     
 	/*
 	 * If the variable is in a hashtable and its hPtr field is NULL, then
@@ -1610,8 +1615,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 	 * is requested; this is only done in the core when lappending.
 	 */
 	
-	if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL) 
-		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
+	if (checkTraces && (flags & TCL_TRACE_READS)) {
 	    if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 			TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 		return NULL;
@@ -1684,12 +1688,20 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 	}
     }
 
+    if (varPtr->flags & VAR_DIRECT_WRITABLE) {
+	varPtr->flags |= VAR_DIRECT_READABLE;
+	if (!checkTraces) {
+	    return varPtr->value.objPtr;
+	}
+    }
+    
+    
     /*
      * Invoke any write traces for the variable.
      */
 	    	    
-    if (varPtr->tracePtr || (arrayPtr && arrayPtr->tracePtr)) {
-	TclSetVarScalar(varPtr);    
+    if (checkTraces) {
+	TclSetVarScalar(varPtr);
 	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 	        (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
@@ -2157,6 +2169,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     Tcl_Obj *objPtr;
     int result;
     char *part1;
+    int checkTraces;
 
     part1 = TclGetString(part1Ptr);
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "unset",
@@ -2167,7 +2180,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     
     result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
 
-    if ((arrayPtr != NULL) && (arrayPtr->searchPtr != NULL)) {
+    if (arrayPtr && !TclIsVarShort(arrayPtr) && arrayPtr->searchPtr) {
 	DeleteSearches(arrayPtr);
     }
 
@@ -2182,22 +2195,30 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
      * 3. If at the end of this the original variable is still
      *    undefined and has no outstanding references, then delete
      *	  it (but it could have gotten recreated by a trace).
-     */
-
-    dummyVar = *varPtr;
-    TclSetVarUndefined(varPtr);
-    varPtr->tracePtr = NULL;
-    varPtr->searchPtr = NULL;
-
-    /*
+     *
      * Keep the variable alive until we're done with it. We used to
      * increase/decrease the refCount for each operation, making it
      * hard to find [Bug 735335] - caused by unsetting the variable
      * whose value was the variable's name.
      */
-    
-    varPtr->refCount++;
 
+    checkTraces = TclIsVarTraced(varPtr) 
+	    || (arrayPtr && TclIsVarTraced(arrayPtr));
+
+    if (TclIsVarShort(varPtr)) {
+	dummyVar.flags = varPtr->flags;
+	dummyVar.value = varPtr->value;
+	dummyVar.id = varPtr->id;
+	dummyVar.refCount = 1;
+	dummyVar.tracePtr = NULL;
+	dummyVar.searchPtr = NULL;	
+    } else {
+	dummyVar = *varPtr;
+	varPtr->tracePtr = NULL;
+	varPtr->searchPtr = NULL;
+	varPtr->refCount++;
+    }
+    TclSetVarUndefined(varPtr);
 
     /*
      * Call trace procedures for the variable being deleted. Then delete
@@ -2209,8 +2230,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
      *    call unset traces even if other traces are pending.
      */
 
-    if ((dummyVar.tracePtr != NULL)
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+    if (checkTraces) {
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	TclCallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
@@ -2301,8 +2321,10 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
      * its value object, if any, was decremented above.
      */
 
-    varPtr->refCount--;
-    TclCleanupVar(varPtr, arrayPtr);
+    if (!TclIsVarShort(varPtr)) {
+	varPtr->refCount--;
+	TclCleanupVar(varPtr, arrayPtr);
+    }
     return result;
 }
 
@@ -2524,15 +2546,19 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	varPtr->refCount++;
-	if (arrayPtr != NULL) {
+	if (!TclIsVarShort(varPtr)) {
+	    varPtr->refCount++;
+	}
+	if (arrayPtr && !TclIsVarShort(arrayPtr)) {
 	    arrayPtr->refCount++;
 	}
 	part1 = TclGetString(objv[1]);
 	varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, NULL, 
 	        (TCL_TRACE_READS | TCL_LEAVE_ERR_MSG));
-	varPtr->refCount--;
-	if (arrayPtr != NULL) {
+	if (!TclIsVarShort(varPtr)) {
+	    varPtr->refCount--;
+	}
+	if (arrayPtr && !TclIsVarShort(arrayPtr)) {
 	    arrayPtr->refCount--;
 	}
 
@@ -2659,7 +2685,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
      * array names, array get, etc.
      */
 
-    if (varPtr != NULL && varPtr->tracePtr != NULL
+    if (varPtr && TclIsVarTraced(varPtr) 
 	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
 	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, varName,
 		NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY|
@@ -2801,7 +2827,9 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	     * a trace while we're working.
 	     */
 
-	    varPtr->refCount++;
+	    if (!TclIsVarShort(varPtr)) {
+		varPtr->refCount++;
+	    }
 
 	    /*
 	     * Get the array values corresponding to each element name 
@@ -2842,13 +2870,17 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    goto errorInArrayGet;
 		}
 	    }
-	    varPtr->refCount--;
+	    if (!TclIsVarShort(varPtr)) {
+		varPtr->refCount--;
+	    }
 	    Tcl_SetObjResult(interp, tmpResPtr);
 	    TclDecrRefCount(nameLstPtr);
 	    break;
 
 	    errorInArrayGet:
-	    varPtr->refCount--;
+	    if (!TclIsVarShort(varPtr)) {
+		varPtr->refCount--;
+	    }
 	    Tcl_DecrRefCount(nameLstPtr);
 	    Tcl_DecrRefCount(tmpResPtr); /* free unneeded temp result obj */
 	    return result;
@@ -3002,6 +3034,9 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	        goto error;
 	    }
 	    searchPtr = (ArraySearch *) ckalloc(sizeof(ArraySearch));
+	    if (!TclIsVarShort(varPtr)) {
+		varPtr = TclExtendVar(varPtr);
+	    }
 	    if (varPtr->searchPtr == NULL) {
 	        searchPtr->id = 1;
 		Tcl_AppendResult(interp, "s-1-", varName, NULL);
@@ -3318,11 +3353,19 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	return TCL_ERROR;
     }
 
+    if (TclIsVarExtension(otherPtr)) {
+	/*
+	 * Do not make links to extension variables, go back to the original. 
+	 */
+
+	otherPtr = otherPtr->id.shortPtr;
+    }
+    
     if (index >= 0) {
 	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
 	}
-	varPtr = &(varFramePtr->compiledLocals[index]);
+	varPtr = (Var *) &(varFramePtr->compiledLocals[index]);
     } else {
 	/*
 	 * Check that we are not trying to create a namespace var linked to
@@ -3396,7 +3439,16 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	return TCL_ERROR;
     }
 
-    if (varPtr->tracePtr != NULL) {
+    if (TclIsVarShort(varPtr) && TclIsVarLink(varPtr)
+	    && TclIsVarExtension(varPtr->value.linkPtr)) {
+	/*
+	 * Link to the extension instead
+	 */
+
+	varPtr = varPtr->value.linkPtr;
+    }
+
+    if (TclIsVarTraced(varPtr)) {
 	Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", myName,
 	        "\" has traces: can't use for upvar", (char *) NULL);
 	return TCL_ERROR;
@@ -3413,9 +3465,11 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	    if (linkPtr == otherPtr) {
 		return TCL_OK;
 	    }
-	    linkPtr->refCount--;
-	    if (TclIsVarUndefined(linkPtr)) {
-		TclCleanupVar(linkPtr, (Var *) NULL);
+	    if (!TclIsVarShort(linkPtr)) {
+		linkPtr->refCount--;
+		if (TclIsVarUndefined(linkPtr)) {
+		    TclCleanupVar(linkPtr, (Var *) NULL);
+		}
 	    }
 	} else {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", myName,
@@ -3425,7 +3479,9 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
     }
     TclSetVarLink(varPtr);
     varPtr->value.linkPtr = otherPtr;
-    otherPtr->refCount++;
+    if (!TclIsVarShort(otherPtr)) {
+	otherPtr->refCount++;
+    }
     return TCL_OK;
 }
 
@@ -4039,10 +4095,12 @@ ParseSearchId(interp, varPtr, varName, handleObj)
      * so we must scan this list every time.
      */
 
-    for (searchPtr = varPtr->searchPtr; searchPtr != NULL;
-	 searchPtr = searchPtr->nextPtr) {
-	if (searchPtr->id == id) {
-	    return searchPtr;
+    if (!TclIsVarShort(varPtr)) {
+	for (searchPtr = varPtr->searchPtr; searchPtr != NULL;
+	     searchPtr = searchPtr->nextPtr) {
+	    if (searchPtr->id == id) {
+		return searchPtr;
+	    }
 	}
     }
     Tcl_AppendResult(interp, "couldn't find search \"", string, "\"",
@@ -4074,10 +4132,12 @@ DeleteSearches(arrayVarPtr)
 {
     ArraySearch *searchPtr;
 
-    while (arrayVarPtr->searchPtr != NULL) {
-	searchPtr = arrayVarPtr->searchPtr;
-	arrayVarPtr->searchPtr = searchPtr->nextPtr;
-	ckfree((char *) searchPtr);
+    if (!TclIsVarShort(arrayVarPtr)) {
+	while (arrayVarPtr->searchPtr) {
+	    searchPtr = arrayVarPtr->searchPtr;
+	    arrayVarPtr->searchPtr = searchPtr->nextPtr;
+	    ckfree((char *) searchPtr);
+	}
     }
 }
 
@@ -4146,15 +4206,17 @@ TclDeleteVars(iPtr, tablePtr)
 
 	if (TclIsVarLink(varPtr)) {
 	    linkPtr = varPtr->value.linkPtr;
-	    linkPtr->refCount--;
-	    if ((linkPtr->refCount == 0) && TclIsVarUndefined(linkPtr)
-		    && (linkPtr->tracePtr == NULL)
-		    && (linkPtr->flags & VAR_IN_HASHTABLE)) {
-		if (linkPtr->id.hPtr == NULL) {
-		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
-		} else if (linkPtr->id.hPtr->tablePtr != tablePtr) {
-		    Tcl_DeleteHashEntry(linkPtr->id.hPtr);
-		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
+	    if (!TclIsVarShort(linkPtr)) {
+		linkPtr->refCount--;
+		if ((linkPtr->refCount == 0) && TclIsVarUndefined(linkPtr)
+			&& (linkPtr->tracePtr == NULL)
+			&& (linkPtr->flags & VAR_IN_HASHTABLE)) {
+		    if (linkPtr->id.hPtr == NULL) {
+			TclFreeObjStorage((Tcl_Obj *)linkPtr);
+		    } else if (linkPtr->id.hPtr->tablePtr != tablePtr) {
+			Tcl_DeleteHashEntry(linkPtr->id.hPtr);
+			TclFreeObjStorage((Tcl_Obj *)linkPtr);
+		    }
 		}
 	    }
 	}
@@ -4168,6 +4230,8 @@ TclDeleteVars(iPtr, tablePtr)
 	 * the variable's fully-qualified name so that any called
 	 * trace procedures can refer to these variables being
 	 * deleted.
+	 *
+	 * Note that a variable in a table is never short.
 	 */
 
 	if (varPtr->tracePtr != NULL) {
@@ -4260,16 +4324,31 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 				 * compiler-assigned local variables to
 				 * delete. */
 {
-    register Var *varPtr;
+    register ShortVar *shortPtr;
     int flags;			/* Flags passed to trace procedures. */
-    Var *linkPtr;
+    Var *varPtr, *linkPtr;
     ActiveVarTrace *activePtr;
     int numLocals, i;
+    int isExtended;
 
     flags = TCL_TRACE_UNSETS;
     numLocals = framePtr->numCompiledLocals;
-    varPtr = framePtr->compiledLocals;
+    shortPtr = framePtr->compiledLocals;
     for (i = 0;  i < numLocals;  i++) {
+	/*
+	 * If this variable is extended, we have to operate on the extension,
+	 * and then free it.
+	 */
+
+	if (TclIsVarLink(shortPtr)
+		&& TclIsVarExtension(shortPtr->value.linkPtr)) {
+	    isExtended = 1;
+	    varPtr = shortPtr->value.linkPtr;
+	} else {
+	    isExtended = 0;
+	    varPtr = (Var *) shortPtr;
+	}
+	
 	/*
 	 * For global/upvar variables referenced in procedures, decrement
 	 * the reference count on the variable referred to, and free
@@ -4280,15 +4359,17 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 
 	if (TclIsVarLink(varPtr)) {
 	    linkPtr = varPtr->value.linkPtr;
-	    linkPtr->refCount--;
-	    if ((linkPtr->refCount == 0) && TclIsVarUndefined(linkPtr)
-		    && (linkPtr->tracePtr == NULL)
-		    && (linkPtr->flags & VAR_IN_HASHTABLE)) {
-		if (linkPtr->id.hPtr == NULL) {
-		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
-		} else {
-		    Tcl_DeleteHashEntry(linkPtr->id.hPtr);
-		    TclFreeObjStorage((Tcl_Obj *)linkPtr);
+	    if (!TclIsVarShort(linkPtr)) {
+		linkPtr->refCount--;
+		if ((linkPtr->refCount == 0) && TclIsVarUndefined(linkPtr)
+			&& (linkPtr->tracePtr == NULL)
+			&& (linkPtr->flags & VAR_IN_HASHTABLE)) {
+		    if (linkPtr->id.hPtr == NULL) {
+			TclFreeObjStorage((Tcl_Obj *)linkPtr);
+		    } else {
+			Tcl_DeleteHashEntry(linkPtr->id.hPtr);
+			TclFreeObjStorage((Tcl_Obj *)linkPtr);
+		    }
 		}
 	    }
 	}
@@ -4298,10 +4379,10 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 * the variable's trace records.
 	 */
 
-	if (varPtr->tracePtr != NULL) {
-	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, varPtr->id.name, NULL,
+	if (isExtended && varPtr->tracePtr) {
+	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, shortPtr->id.name, NULL,
 		    flags, /* leaveErrMsg */ 0);
-	    while (varPtr->tracePtr != NULL) {
+	    while (varPtr->tracePtr) {
 		VarTrace *tracePtr = varPtr->tracePtr;
 		varPtr->tracePtr = tracePtr->nextPtr;
 		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
@@ -4320,16 +4401,24 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 * of its value.
 	 */
 	    
-	if (TclIsVarArray(varPtr) && (varPtr->value.tablePtr != NULL)) {
+	if (TclIsVarArray(varPtr) && varPtr->value.tablePtr) {
 	    DeleteArray(iPtr, varPtr->id.name, varPtr, flags);
 	}
-	if (TclIsVarScalar(varPtr) && (varPtr->value.objPtr != NULL)) {
+	if (TclIsVarScalar(varPtr) && varPtr->value.objPtr) {
 	    TclDecrRefCount(varPtr->value.objPtr);
 	}
-	TclSetVarUndefined(varPtr);
-	varPtr->id.hPtr = NULL;
-	varPtr->tracePtr = NULL;
-	varPtr++;
+
+	/*
+	 * Now delete the extension if there was any
+	 */
+
+	if (isExtended) {
+	    TclFreeObjStorage((Tcl_Obj *)varPtr);
+	}
+	
+	TclSetVarUndefined(shortPtr);
+	shortPtr->id.name = NULL;
+	shortPtr++;
     }
 }
 
@@ -4384,6 +4473,11 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	}
 	elPtr->id.hPtr = NULL;
 	elPtr->flags &= ~VAR_DIRECT_WRITABLE;
+
+	/*
+	 * Note that an array element is never a short variable.
+	 */
+	
 	if (elPtr->tracePtr != NULL) {
 	    elPtr->flags &= ~VAR_TRACE_ACTIVE;
 	    TclCallVarTraces(iPtr, (Var *) NULL, elPtr, arrayName,
@@ -4454,7 +4548,8 @@ TclCleanupVar(varPtr, arrayPtr)
 				 * NULL if this variable isn't an array
 				 * element. */
 {
-    if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)
+    if (!TclIsVarShort(varPtr)
+	    && TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)
 	    && (varPtr->tracePtr == NULL)
 	    && (varPtr->flags & VAR_IN_HASHTABLE)) {
 	if (varPtr->id.hPtr != NULL) {
@@ -4462,7 +4557,7 @@ TclCleanupVar(varPtr, arrayPtr)
 	}
 	TclFreeObjStorage((Tcl_Obj *)varPtr);
     }
-    if (arrayPtr != NULL) {
+    if (arrayPtr && !TclIsVarShort(arrayPtr)) {
 	if (TclIsVarUndefined(arrayPtr) && (arrayPtr->refCount == 0)
 		&& (arrayPtr->tracePtr == NULL)
 	        && (arrayPtr->flags & VAR_IN_HASHTABLE)) {
@@ -4676,3 +4771,51 @@ UpdateParsedVarName(objPtr)
     *p++ = ')';
     *p   = '\0';
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclExtendVar --
+ *
+ *	Creates a new heap allocated Var struct, and links the ShortVar
+ *	argument to it. This is called when a ShortVar is traced or searched
+ *	for the first time, and remains alive as long as the original ShortVar
+ *	is in existence. All properties are copied from the argument to the
+ *	new struct.
+ *
+ * Results:
+ *	The return value is a pointer to the new variable structure,
+ *      initialised to hold the same contents as the argument.
+ *
+ * Side effects:
+ *	Storage gets allocated. The argument ShortVar is transformed to be a
+ *      link to the new Var.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Var *
+TclExtendVar(oldPtr)
+    Var *oldPtr;
+{
+    Var *newPtr;
+
+    if (!TclIsVarShort(oldPtr)) {
+	return oldPtr;
+    }
+
+    newPtr = NewVar();
+    
+    newPtr->flags = (oldPtr->flags & ~VAR_SHORT)|VAR_EXTENSION;
+    newPtr->value = oldPtr->value;
+    newPtr->id.shortPtr = oldPtr;
+    newPtr->refCount = 1; /* new link! */
+
+    TclSetVarLink(oldPtr);
+    oldPtr->value.linkPtr = newPtr;
+
+    return newPtr;
+}
+
+    

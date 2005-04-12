@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.24 2005/04/12 18:23:13 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.25 2005/04/12 21:09:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1116,7 +1116,7 @@ TclExecuteByteCode(interp, codePtr)
     ExecEnv *eePtr;             /* Points to the execution environment. */
     int initStackTop;           /* Stack top at start of execution. */
     int initCatch;           /* Catch stack top at start of execution. */
-    Var *compiledLocals;
+    ShortVar *compiledLocals;
     Namespace *namespacePtr;
     
     /*
@@ -1902,7 +1902,7 @@ TclExecuteByteCode(interp, codePtr)
 	
     case INST_LOAD_SCALAR:
 	    index = opnd & HP_MASK;
-	    varPtr = &(compiledLocals[index]);
+	    varPtr = (Var *) &(compiledLocals[index]);
 	    part1 = varPtr->id.name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
@@ -1930,7 +1930,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * A local indexed variable. 
 		 */
 	    
-		varPtr = &(compiledLocals[index]);
+		varPtr = (Var *) &(compiledLocals[index]);
 		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
@@ -2023,7 +2023,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_STORE_SCALAR:
 	    pushRes = !(opnd & HP_STASH(VM_VAR_OMIT_PUSH, 0));
 	    index = opnd & HP_MASK;
-	    varPtr = &(compiledLocals[index]);
+	    varPtr = (Var *) &(compiledLocals[index]);
 	    part1 = varPtr->id.name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
@@ -2071,7 +2071,6 @@ TclExecuteByteCode(interp, codePtr)
 			TclDecrRefCount(objResultPtr);
 		    }		    
 		}
-		TclSetVarDirectScalar(varPtr);
 		pc++;
 		NEXT_INST_F(0,0);
 	    }
@@ -2092,7 +2091,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * A local indexed variable
 		 */
 	    
-		varPtr = &(compiledLocals[index]);
+		varPtr = (Var *) &(compiledLocals[index]);
 		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
@@ -2143,7 +2142,6 @@ TclExecuteByteCode(interp, codePtr)
 			varPtr->value.objPtr = objResultPtr;
 			Tcl_IncrRefCount(objResultPtr);
 		    }
-		    TclSetVarDirectScalar(varPtr);
 		    pc++;
 		    NEXT_INST_F(cleanup, pushRes);
 		}
@@ -2238,7 +2236,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * A local indexed variable
 		 */
 	    
-		varPtr = &(compiledLocals[index]);
+		varPtr = (Var *) &(compiledLocals[index]);
 		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
@@ -2262,8 +2260,7 @@ TclExecuteByteCode(interp, codePtr)
 		
 		objPtr = varPtr->value.objPtr;
 		if (TclIsVarDirectReadable(varPtr)
-			&& ((arrayPtr == NULL) 
-				|| TclIsVarUntraced(arrayPtr))
+			&& (!arrayPtr || TclIsVarUntraced(arrayPtr))
 			&& (objPtr->typePtr == &tclIntType) && !isWide) {
 		    /*
 		     * No errors, no traces, the variable already has an
@@ -4390,7 +4387,7 @@ TclExecuteByteCode(interp, codePtr)
 	    infoPtr = (ForeachInfo *)
 	            codePtr->auxDataArrayPtr[opnd].clientData;
 	    iterTmpIndex = infoPtr->loopCtTemp;
-	    iterVarPtr = &(compiledLocals[iterTmpIndex]);
+	    iterVarPtr = (Var *) &(compiledLocals[iterTmpIndex]);
 	    oldValuePtr = iterVarPtr->value.objPtr;
 	    
 	    if (oldValuePtr == NULL) {
@@ -4441,7 +4438,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * Increment the temp holding the loop iteration number.
 	     */
 
-	    iterVarPtr = &(compiledLocals[infoPtr->loopCtTemp]);
+	    iterVarPtr = (Var *) &(compiledLocals[infoPtr->loopCtTemp]);
 	    valuePtr = iterVarPtr->value.objPtr;
 	    iterNum = (valuePtr->internalRep.longValue + 1);
 	    TclSetLongObj(valuePtr, iterNum);
@@ -4457,7 +4454,7 @@ TclExecuteByteCode(interp, codePtr)
 		varListPtr = infoPtr->varLists[i];
 		numVars = varListPtr->numVars;
 		    
-		listVarPtr = &(compiledLocals[listTmpIndex]);
+		listVarPtr = (Var *) &(compiledLocals[listTmpIndex]);
 		listPtr = listVarPtr->value.objPtr;
 		result = Tcl_ListObjLength(interp, listPtr, &listLen);
 		if (result != TCL_OK) {
@@ -4485,7 +4482,7 @@ TclExecuteByteCode(interp, codePtr)
 		    varListPtr = infoPtr->varLists[i];
 		    numVars = varListPtr->numVars;
 
-		    listVarPtr = &(compiledLocals[listTmpIndex]);
+		    listVarPtr = (Var *) &(compiledLocals[listTmpIndex]);
 		    listPtr = listVarPtr->value.objPtr;
 		    TclListObjGetElements(listPtr, listLen, elements);
 			
@@ -4500,7 +4497,7 @@ TclExecuteByteCode(interp, codePtr)
 			}
 			    
 			varIndex = varListPtr->varIndexes[j];
-			varPtr = &(compiledLocals[varIndex]);
+			varPtr = (Var *) &(compiledLocals[varIndex]);
 			part1 = varPtr->id.name;
 			while (TclIsVarLink(varPtr)) {
 			    varPtr = varPtr->value.linkPtr;
@@ -4588,7 +4585,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * Store the interp's result in the local variable at index opnd.
 	     */
 	    
-	    Var *varPtr = &(iPtr->varFramePtr->compiledLocals[opnd]);
+	    Var *varPtr = (Var *) &(compiledLocals[opnd]);
 	    char *part1 = varPtr->id.name;
 	    Tcl_Obj *valuePtr;
 

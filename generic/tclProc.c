@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.73.2.4 2005/04/12 18:23:33 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73.2.5 2005/04/12 21:10:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -29,7 +29,7 @@ static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
 
 static void     InitCompiledLocals _ANSI_ARGS_((Tcl_Interp *interp,
 		    ByteCode *codePtr, CompiledLocal *localPtr,
-		    Var *varPtr, Namespace *nsPtr)); 
+		    ShortVar *varPtr, Namespace *nsPtr)); 
 
 /*
  * The ProcBodyObjType type
@@ -420,8 +420,8 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	    if ((localPtr->nameLength != nameLength)
 		    || (strcmp(localPtr->name, fieldValues[0]))
 		    || (localPtr->frameIndex != i)
-		    || (localPtr->flags !=
-			    (VAR_ARGUMENT|VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE))
+		    || (localPtr->flags != (VAR_ARGUMENT|VAR_SHORT
+				|VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE))
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		char buf[40 + TCL_INTEGER_SPACE];
@@ -477,7 +477,8 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	    localPtr->nextPtr = NULL;
 	    localPtr->nameLength = nameLength;
 	    localPtr->frameIndex = i;
-	    localPtr->flags = (VAR_ARGUMENT|VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE);
+	    localPtr->flags = (VAR_ARGUMENT|VAR_SHORT
+		    |VAR_DIRECT_READABLE|VAR_DIRECT_WRITABLE);
 	    localPtr->resolveInfo = NULL;
 
 	    if (fieldCount == 2) {
@@ -916,7 +917,7 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
     Tcl_Interp *interp;		/* Current interpreter. */
     ByteCode *codePtr;
     CompiledLocal *localPtr;
-    Var *varPtr;
+    ShortVar *varPtr;
     Namespace *nsPtr;		/* Pointer to current namespace. */
 {
     Interp *iPtr = (Interp*) interp;
@@ -984,12 +985,9 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
     if (haveResolvers) {
 	Tcl_ResolvedVarInfo *resVarInfo;
 	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	    varPtr->flags = localPtr->flags;
 	    varPtr->value.objPtr = NULL;
 	    varPtr->id.name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
     
 	    /*
 	     * Now invoke the resolvers to determine the exact variables that
@@ -1009,12 +1007,9 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
 	}
     } else {
 	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	    varPtr->flags = localPtr->flags;
 	    varPtr->value.objPtr = NULL;
 	    varPtr->id.name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
 	}
     }
 }
@@ -1046,7 +1041,7 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
     CallFrame *framePtr;	/* Call frame to initialize. */
     Namespace *nsPtr;		/* Pointer to current namespace. */
 {
-    Var *varPtr = framePtr->compiledLocals;
+    ShortVar *varPtr = framePtr->compiledLocals;
     Tcl_Obj *bodyPtr;
     ByteCode *codePtr;
     CompiledLocal *localPtr = framePtr->procPtr->firstLocalPtr;
@@ -1090,11 +1085,11 @@ TclObjInterpProc(clientData, interp, objc, objv)
     register Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame *framePtr, **framePtrPtr;
-    register Var *varPtr;
+    register ShortVar *varPtr;
     register CompiledLocal *localPtr;
     char *procName;
     int nameLen, localCt, numArgs, argCt, i, imax, result;
-    Var *compiledLocals;
+    ShortVar *compiledLocals;
 
     /*
      * Get the procedure's name.
@@ -1146,7 +1141,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
      */
 
     localCt = procPtr->numCompiledLocals;
-    compiledLocals = (Var *) TclStackAlloc(interp, localCt*sizeof(Var));
+    compiledLocals = (ShortVar *) TclStackAlloc(interp, localCt*sizeof(ShortVar));
     framePtr->numCompiledLocals = localCt;
     framePtr->compiledLocals = compiledLocals;
 
@@ -1177,11 +1172,8 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	Tcl_Obj *objPtr = objv[i];
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
-	varPtr->id.name = localPtr->name;
-	varPtr->refCount = 0;
-	varPtr->tracePtr = NULL;
-	varPtr->searchPtr = NULL;
 	varPtr->flags = localPtr->flags;
+	varPtr->id.name = localPtr->name;
 	varPtr++;
 	localPtr = localPtr->nextPtr;
     }
@@ -1192,13 +1184,10 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	 */
 	if (localPtr->defValuePtr != NULL) {
 	    Tcl_Obj *objPtr = localPtr->defValuePtr;
+	    varPtr->flags = localPtr->flags;
 	    varPtr->value.objPtr = objPtr;
 	    Tcl_IncrRefCount(objPtr);  /* local var is a reference */
 	    varPtr->id.name = localPtr->name;
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
 	    varPtr++;
 	    localPtr = localPtr->nextPtr;
 	} else {
@@ -1278,11 +1267,8 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	goto procDone;
     }
 
-    varPtr->id.name = localPtr->name;
-    varPtr->refCount = 0;
-    varPtr->tracePtr = NULL;
-    varPtr->searchPtr = NULL;
     varPtr->flags = localPtr->flags;
+    varPtr->id.name = localPtr->name;
 
     localPtr = localPtr->nextPtr;
     varPtr++;
