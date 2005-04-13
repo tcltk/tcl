@@ -1,3 +1,12 @@
+2005-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixInit.c (TclpGetEncodingNameFromEnvironment):  Reversed
+	order of verifying candidate [encoding system] value, checking against
+	a table in memory first before calling Tcl_GetEncoding and potentially
+	scanning through the filesystem.  Also ordered the table so that a
+	binary search could be used within it.  Improves startup time a bit
+	more on some systems.
+
 2004-04-13  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.n: Added a missing '--' on several [switch]
