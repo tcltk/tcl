@@ -1,3 +1,9 @@
+2005-04-13  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclExecute.c: Commented out the code to store pointers
+	to literals in INST_PUSH: it breaks TclPrintInstruction.
+
 2005-04-12  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdIL (AppendLocals):

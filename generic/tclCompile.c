@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.22 2005/04/12 21:09:49 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.23 2005/04/13 02:42:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4017,7 +4017,7 @@ OptInitCounts(codePtr, auxCount)
 		    }
 		}
 		break;
-#if !defined(VM_USE_PACKED)
+#if 0&&!defined(VM_USE_PACKED)
 	    case INST_PUSH:
 		/* //// Move to TEBC: ptr opnd, and instructions
 		 * /// UNHOLY CAST: fix by making the opnd a union
