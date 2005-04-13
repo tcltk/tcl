@@ -1,8 +1,11 @@
 2005-04-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* doc/fcopy.n: Improved documentation on copying binary files,
+	added an example and mentioned the use of [file copy].
 	* doc/fconfigure.n: Improved documentation of -encoding binary
-	option following comments from Steve Manning <steve@manning.net>
-	that the current documentation was not clear.
+	option.
+	This is all following comments from Steve Manning <steve@manning.net>
+	on comp.lang.tcl that the current documentation was not clear.
 
 2005-04-13  Miguel Sofer <msofer@users.sf.net>
 
