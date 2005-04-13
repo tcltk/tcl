@@ -1,3 +1,9 @@
+2004-04-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.n: Added a missing '--' on several [switch]
+	commands to improve performance of [clock format] and related
+	operations.  [Feature Request 1182459]
+	
 2005-04-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* doc/fcopy.n: Improved documentation on copying binary files,
