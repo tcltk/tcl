@@ -1,3 +1,9 @@
+2005-04-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/fconfigure.n: Improved documentation of -encoding binary
+	option following comments from Steve Manning <steve@manning.net>
+	that the current documentation was not clear.
+
 2005-04-13  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:Commented out the functions
