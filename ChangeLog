@@ -1,3 +1,9 @@
+2005-04-13  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:Commented out the functions
+	TclPrintInstruction(), TclPrintObject() and TclPrintSource() when
+	not debugging the compiler, as they are never called in that case.
+
 2005-04-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c:	Corrected bad syntax of Tcl_Panic() call.
