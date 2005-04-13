@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.13 2004/12/29 20:57:28 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.14 2005/04/13 19:28:51 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -707,7 +707,7 @@ proc ::tcl::clock::format { args } {
 	set state {}
 	set retval {}
 	foreach char [split $format {}] {
-	    switch -exact $state {
+	    switch -exact -- $state {
 		{} {
 		    if { [string equal % $char] } {
 			set state percent
@@ -4411,7 +4411,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
 
     # Get absolute year number from the civil year
 
-    switch -exact [dict get $date era] {
+    switch -exact -- [dict get $date era] {
 	BCE {
 	    set year [expr { 1 - [dict get $date year] }]
 	}
@@ -4493,7 +4493,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
 
     # Get absolute year number from the civil year
 
-    switch -exact [dict get $date era] {
+    switch -exact -- [dict get $date era] {
 	BCE {
 	    set year [expr { 1 - [dict get $date year] }]
 	}
