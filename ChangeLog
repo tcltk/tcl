@@ -1,9 +1,15 @@
 2005-04-13  Miguel Sofer <msofer@users.sf.net>
-
+	
+	*** FROM HEAD *** 
+	* generic/tclCompile.c:Commented out the functions
+	TclPrintInstruction(), TclPrintObject() and TclPrintSource() when
+	not debugging the compiler, as they are never called in that case.
+	
 	* generic/tclCompile.c:
 	* generic/tclExecute.c: Commented out the code to store pointers
-	to literals in INST_PUSH: it breaks TclPrintInstruction.
-
+	to literals in INST_PUSH: it breaks TclPrintInstruction. 
+	RESTORED in a second commit, when !defined(TCL_COMPILE_DEBUG).	
+	
 2005-04-12  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdIL (AppendLocals):

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.26 2005/04/13 02:42:29 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.27 2005/04/13 09:40:06 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1371,7 +1371,7 @@ TclExecuteByteCode(interp, codePtr)
 #if ENABLE_PEEPHOLE
 	instPushPeephole:
 #endif
-#if 1||defined(VM_USE_PACKED)
+#if (defined(TCL_COMPILE_DEBUG)||defined(VM_USE_PACKED))
 	PUSH_OBJECT(codePtr->objArrayPtr[opnd]);
 	TRACE_WITH_OBJ(("%u => ", (unsigned) opnd), *(tosPtr));
 #else
