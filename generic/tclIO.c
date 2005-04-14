@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.83 2005/04/08 17:10:17 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.84 2005/04/14 02:41:15 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -6045,7 +6045,7 @@ Tcl_ChannelBuffered(chan)
  * Tcl_SetChannelBufferSize --
  *
  *	Sets the size of buffers to allocate to store input or output
- *	in the channel. The size must be between 10 bytes and 1 MByte.
+ *	in the channel. The size must be between 1 byte and 1 MByte.
  *
  * Results:
  *	None.
@@ -6065,11 +6065,11 @@ Tcl_SetChannelBufferSize(chan, sz)
     ChannelState *statePtr;		/* State of real channel structure. */
 
     /*
-     * If the buffer size is smaller than 10 bytes or larger than one MByte,
+     * If the buffer size is smaller than 1 byte or larger than one MByte,
      * do not accept the requested size and leave the current buffer size.
      */
 
-    if (sz < 10) {
+    if (sz < 1) {
 	return;
     }
     if (sz > (1024 * 1024)) {
