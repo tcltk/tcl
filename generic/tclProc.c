@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.73.2.5 2005/04/12 21:10:02 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73.2.6 2005/04/14 18:39:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -29,7 +29,7 @@ static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
 
 static void     InitCompiledLocals _ANSI_ARGS_((Tcl_Interp *interp,
 		    ByteCode *codePtr, CompiledLocal *localPtr,
-		    ShortVar *varPtr, Namespace *nsPtr)); 
+		    ShortVar *varPtr, char **varNames, Namespace *nsPtr)); 
 
 /*
  * The ProcBodyObjType type
@@ -913,11 +913,12 @@ TclIsProc(cmdPtr)
  */
 
 static void
-InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
+InitCompiledLocals(interp, codePtr, localPtr, varPtr, varNames, nsPtr)
     Tcl_Interp *interp;		/* Current interpreter. */
     ByteCode *codePtr;
     CompiledLocal *localPtr;
     ShortVar *varPtr;
+    char **varNames;
     Namespace *nsPtr;		/* Pointer to current namespace. */
 {
     Interp *iPtr = (Interp*) interp;
@@ -984,10 +985,11 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
 
     if (haveResolvers) {
 	Tcl_ResolvedVarInfo *resVarInfo;
-	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	for (; localPtr != NULL;
+	        varPtr++, localPtr = localPtr->nextPtr, varNames++) {
 	    varPtr->flags = localPtr->flags;
 	    varPtr->value.objPtr = NULL;
-	    varPtr->id.name = localPtr->name; /* will be just '\0' if temp var */
+	    *varNames = localPtr->name; /* will be just '\0' if temp var */
     
 	    /*
 	     * Now invoke the resolvers to determine the exact variables that
@@ -1006,10 +1008,11 @@ InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
 	    }
 	}
     } else {
-	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	for (; localPtr != NULL;
+	       varPtr++, localPtr = localPtr->nextPtr, varNames++) {
 	    varPtr->flags = localPtr->flags;
 	    varPtr->value.objPtr = NULL;
-	    varPtr->id.name = localPtr->name; /* will be just '\0' if temp var */
+	    *varNames = localPtr->name; /* will be just '\0' if temp var */
 	}
     }
 }
@@ -1045,6 +1048,7 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
     Tcl_Obj *bodyPtr;
     ByteCode *codePtr;
     CompiledLocal *localPtr = framePtr->procPtr->firstLocalPtr;
+    char **varNames = (char **) (varPtr + framePtr->numCompiledLocals); 
 
     bodyPtr = framePtr->procPtr->bodyPtr;
     if (bodyPtr->typePtr != &tclByteCodeType) {
@@ -1052,7 +1056,7 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
     }
     codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
 
-    InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+    InitCompiledLocals(interp, codePtr, localPtr, varPtr, varNames, nsPtr);
 }
 
 /*
@@ -1087,7 +1091,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     CallFrame *framePtr, **framePtrPtr;
     register ShortVar *varPtr;
     register CompiledLocal *localPtr;
-    char *procName;
+    char *procName, **varNames;
     int nameLen, localCt, numArgs, argCt, i, imax, result;
     ShortVar *compiledLocals;
 
@@ -1141,10 +1145,11 @@ TclObjInterpProc(clientData, interp, objc, objv)
      */
 
     localCt = procPtr->numCompiledLocals;
-    compiledLocals = (ShortVar *) TclStackAlloc(interp, localCt*sizeof(ShortVar));
+    compiledLocals = (ShortVar *) TclStackAlloc(interp,
+	    localCt*(sizeof(ShortVar)+sizeof(char *)));
     framePtr->numCompiledLocals = localCt;
     framePtr->compiledLocals = compiledLocals;
-
+    
     /*
      * Match and assign the call's actual parameters to the procedure's
      * formal arguments. The formal arguments are described by the first
@@ -1155,6 +1160,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     numArgs = procPtr->numArgs;
     argCt = objc-1; /* set it to the number of args to the proc */
     varPtr = framePtr->compiledLocals;
+    varNames = (char **) (varPtr + framePtr->numCompiledLocals);
     localPtr = procPtr->firstLocalPtr;
     if (numArgs == 0) {
 	if (argCt) {
@@ -1164,7 +1170,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	}
     }    
     imax = ((argCt < numArgs - 1)? argCt : (numArgs - 1)); 
-    for (i = 1; i <= imax; i++) {
+    for (i = 1; i <= imax; i++, varNames++) {
 	/*
 	 * "Normal" arguments; last formal is special, depends on
 	 * it being 'args'.
@@ -1173,11 +1179,11 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
 	varPtr->flags = localPtr->flags;
-	varPtr->id.name = localPtr->name;
+	*varNames = localPtr->name;
 	varPtr++;
 	localPtr = localPtr->nextPtr;
     }
-    for (; i < numArgs; i++) {
+    for (; i < numArgs; i++, varNames++) {
 	/*
 	 * This loop is entered if argCt < (numArgs-1).
 	 * Set default values; last formal is special.
@@ -1187,7 +1193,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	    varPtr->flags = localPtr->flags;
 	    varPtr->value.objPtr = objPtr;
 	    Tcl_IncrRefCount(objPtr);  /* local var is a reference */
-	    varPtr->id.name = localPtr->name;
+	    *varNames = localPtr->name;
 	    varPtr++;
 	    localPtr = localPtr->nextPtr;
 	} else {
@@ -1222,7 +1228,8 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	 * DeleteLocalVars. 
 	 */
 	codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;
-	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+	InitCompiledLocals(interp, codePtr, localPtr,
+		varPtr, varNames, nsPtr);
 
         /*
 	 * Build up desired argument list for Tcl_WrongNumArgs
@@ -1268,7 +1275,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     }
 
     varPtr->flags = localPtr->flags;
-    varPtr->id.name = localPtr->name;
+    *(varNames++) = localPtr->name;
 
     localPtr = localPtr->nextPtr;
     varPtr++;
@@ -1281,7 +1288,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     if (localPtr) {
 	ByteCode *codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;		
 	InitCompiledLocals(interp, codePtr,
-		localPtr, varPtr, nsPtr);
+		localPtr, varPtr, varNames, nsPtr);
     }
 
     /*

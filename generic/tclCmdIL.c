@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.3 2005/04/12 21:09:48 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.4 2005/04/14 18:38:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1429,7 +1429,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
     CompiledLocal *localPtr;
     ShortVar *varPtr;
     int i, localVarCt;
-    char *varName;
+    char **varNames, *varName;
     Tcl_HashTable *localVarTablePtr;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
@@ -1439,6 +1439,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
     varPtr = iPtr->varFramePtr->compiledLocals;
     localVarTablePtr = iPtr->varFramePtr->varTablePtr;
 
+    varNames = (char **) &(varPtr[localVarCt]);
     for (i = 0; i < localVarCt; i++) {
 	/*
 	 * Skip nameless (temporary) variables and undefined variables
@@ -1446,10 +1447,9 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 
 	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)
 		&& (includeLinks || !TclIsVarLink(varPtr))) {
-	    varName = varPtr->id.name;
-	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
+	    if ((pattern == NULL) || Tcl_StringMatch(varNames[i], pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(varName, -1));
+			Tcl_NewStringObj(varNames[i], -1));
 	    }
 	}
 	varPtr++;

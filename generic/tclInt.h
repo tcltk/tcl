@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.8 2005/04/12 21:09:59 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.9 2005/04/14 18:39:09 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -455,8 +455,6 @@ typedef struct Var {
 				 * the referenced variable's Var struct. */
     } value;
     union {
-	char *name;		/* Used for compiled locals, never used for
-				 * full Vars. */
 	Tcl_HashEntry *hPtr;	/* If variable is in a hashtable, either the
 				 * hash table entry that refers to this
 				 * variable or NULL if the variable has been
@@ -508,16 +506,6 @@ typedef struct ShortVar {
 				 * created by "upvar", this field points to
 				 * the referenced variable's Var struct. */
     } value;
-    union {
-	char *name;		/* Used for compiled locals, points to the
-				 * variable's name. It is used, e.g., by
-				 * TclLookupVar and "info locals". The storage
-				 * for the characters of the name is not owned
-				 * by the Var and must not be freed when
-				 * freeing the Var. */
-	Tcl_HashEntry *hPtr;	/* Never used for shortvars */
-	struct Var *shortPtr;   /* Never used for shortvars. */
-    } id;
 } ShortVar;
 
 

@@ -1,3 +1,12 @@
+2005-04-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdIL (AppendLocals):
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* generic/tclVar.c: part 5 of variable reform. Compiled local vars 
+	are now (1int+1ptr).
+
 2005-04-13  Miguel Sofer <msofer@users.sf.net>
 	
 	*** FROM HEAD *** 

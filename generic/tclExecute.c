@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.27 2005/04/13 09:40:06 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.28 2005/04/14 18:38:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1118,6 +1118,7 @@ TclExecuteByteCode(interp, codePtr)
     int initCatch;           /* Catch stack top at start of execution. */
     ShortVar *compiledLocals;
     Namespace *namespacePtr;
+    char **varNames;
     
     /*
      * Globals: variables that store state, must remain valid at
@@ -1202,9 +1203,11 @@ TclExecuteByteCode(interp, codePtr)
     if (iPtr->varFramePtr != NULL) {
         namespacePtr = iPtr->varFramePtr->nsPtr;
 	compiledLocals = iPtr->varFramePtr->compiledLocals;
+	varNames = (char **)&(compiledLocals[iPtr->varFramePtr->numCompiledLocals]);
     } else {
         namespacePtr = iPtr->globalNsPtr;
 	compiledLocals = NULL;
+	varNames = NULL;       
     }
 
     /*
@@ -1895,15 +1898,13 @@ TclExecuteByteCode(interp, codePtr)
 	}
 
         {
-	    char *part1, *part2;
+	    char *part2;
 	    Var *varPtr, *arrayPtr;
 	    unsigned int index;
-	    int flags, isArray;
 	
     case INST_LOAD_SCALAR:
 	    index = opnd & HP_MASK;
 	    varPtr = (Var *) &(compiledLocals[index]);
-	    part1 = varPtr->id.name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
 	    }
@@ -1922,63 +1923,61 @@ TclExecuteByteCode(interp, codePtr)
 	    goto doCallPtrGetVar;
 
     case INST_LOAD:
-	    HP_EXTRACT(opnd, flags, index);
-	    isArray = ((flags & VM_VAR_ARRAY) != 0);
-
+	    index = opnd & HP_MASK;
 	    if (index < HPUINT_MAX) {
 		/*
 		 * A local indexed variable. 
 		 */
 	    
 		varPtr = (Var *) &(compiledLocals[index]);
-		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
 		}
 		TRACE(("%u => ", (unsigned) index));
-		if (!isArray) {
+		if (!(opnd & HP_STASH(VM_VAR_ARRAY, 0)) /*isArray*/) {
 		    /*
 		     * A local indexed scalar: With the optimiser, this branch
-		     * will never be followed.
+		     * will never be followed. We keep it functional, but
+		     * divert it to the "slow" version.
 		     */
 		    
 		    cleanup = 0;
 		    arrayPtr = NULL;
 		    part2 = NULL;
-		} else {
-		    cleanup = 1;
-		    part2 = Tcl_GetString(*tosPtr);  /* element name */
-		    arrayPtr = varPtr;
-		    varPtr = TclLookupArrayElement(interp, part1, part2, 
-			    TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
-		    if (varPtr == NULL) {
-			TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
-			result = TCL_ERROR;
-			goto checkForCatch;
-		    }
+		    goto doCallPtrGetVar;
 		}
-		if (TclIsVarDirectReadable(varPtr) && ((arrayPtr == NULL) 
-			    || TclIsVarUntraced(arrayPtr))) {
+		part2 = Tcl_GetString(*tosPtr);  /* element name */
+		arrayPtr = varPtr;
+		varPtr = TclLookupArrayElement(interp, varNames[index], part2, 
+			TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
+		if (!varPtr) {
+		    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		    result = TCL_ERROR;
+		    goto checkForCatch;
+		}
+		if (TclIsVarDirectReadable(varPtr)
+			&& TclIsVarUntraced(arrayPtr)) {
 		    /*
 		     * No errors, no traces: just get the value.
 		     */
 		    objResultPtr = varPtr->value.objPtr;
 		    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		    pc++;
-		    NEXT_INST_F(cleanup, 1); /* using _F, insert branching
-					      * here */ 
+		    NEXT_INST_F(1, 1); 
 		}
-		    
+		cleanup = 1;
+		
 		/*
 		 * There are either errors or the variable is traced:
 		 * call TclPtrGetVar to process fully.
 		 */
+
 		doCallPtrGetVar:		    
 		DECACHE_STACK_INFO();
-		objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, 
-			part2, TCL_LEAVE_ERR_MSG);
+		objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr,
+			varNames[index], part2, TCL_LEAVE_ERR_MSG);
 		CACHE_STACK_INFO();
-		if (objResultPtr == NULL) {
+		if (!objResultPtr) {
 		    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 		    result = TCL_ERROR;
 		    goto checkForCatch;
@@ -1992,7 +1991,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		
 		DECACHE_STACK_INFO();
-		if (isArray) {
+		if ((opnd & HP_STASH(VM_VAR_ARRAY, 0)) /*isArray*/) {
 		    cleanup = 2;
 		    objResultPtr = Tcl_ObjGetVar2(interp, *(tosPtr-1),
 			*tosPtr, TCL_LEAVE_ERR_MSG);
@@ -2014,17 +2013,15 @@ TclExecuteByteCode(interp, codePtr)
 	}
 
 	{
-	    char *part1, *part2;
+	    char *part2;
 	    Var *varPtr, *arrayPtr;
 	    Tcl_Obj *valuePtr;
 	    unsigned int index;
-	    int flags, isArray, pushRes;	    
+	    int flags;	    
 
     case INST_STORE_SCALAR:
-	    pushRes = !(opnd & HP_STASH(VM_VAR_OMIT_PUSH, 0));
 	    index = opnd & HP_MASK;
 	    varPtr = (Var *) &(compiledLocals[index]);
-	    part1 = varPtr->id.name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
 	    }
@@ -2052,79 +2049,75 @@ TclExecuteByteCode(interp, codePtr)
 			TclSetVarDirectScalar(varPtr);
 		    }
 		    varPtr->value.objPtr = objResultPtr;
-		    if (pushRes) {
-			/* Add the refCount for the variable value, stack remains
-			 * as is */
-			Tcl_IncrRefCount(objResultPtr);
-		    } else {
+		    if (opnd & HP_STASH(VM_VAR_OMIT_PUSH, 0)) {
 			/* Remove from stacktop, hijack its refCount for the
 			 * variable value. */
 			tosPtr--;
+		    } else {
+			/* Add the refCount for the variable value, stack remains
+			 * as is */
+			Tcl_IncrRefCount(objResultPtr);
 		    }
 		} else {
-		    if (pushRes) {
-			/* Do nothing - stacktop remains as is, refCount is
-			 * correct */
-		    } else {
+		    if (opnd & HP_STASH(VM_VAR_OMIT_PUSH, 0)) {
 			/* Remove from stacktop, reduce refCount*/
 			tosPtr--;
 			TclDecrRefCount(objResultPtr);
+		    } else {
+			/* Do nothing - stacktop remains as is, refCount is
+			 * correct */
 		    }		    
 		}
 		pc++;
 		NEXT_INST_F(0,0);
 	    }
+	    cleanup = 1;
 	    part2 = NULL;
 	    arrayPtr = NULL;
-	    cleanup = 1;
-	    HP_EXTRACT(opnd, flags, index);
-	    flags &= VM_STORE_FLAGS_FILTER;
+	    flags = TCL_LEAVE_ERR_MSG;
 	    goto doCallPtrSetVar;
 	    
     case INST_STORE:
 	    HP_EXTRACT(opnd, flags, index);
-	    pushRes = (!(flags & VM_VAR_OMIT_PUSH));
-	    isArray = ((flags & VM_VAR_ARRAY) != 0);
-	    flags &= VM_STORE_FLAGS_FILTER;
+
 	    if (index < HPUINT_MAX) {
 		/*
 		 * A local indexed variable
 		 */
 	    
 		varPtr = (Var *) &(compiledLocals[index]);
-		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
 		}
 		TRACE(("%u => ", (unsigned) index));
-		cleanup = isArray + 1;
 		
-		if (!isArray) {
+		if (!(flags & VM_VAR_ARRAY)) {
 		    /*
 		     * A local indexed scalar: With the optimiser, this branch
 		     * will only be followed for append and lappend, not for
-		     * plain set. 
+		     * plain set. This means that it will be processed by
+		     * doCallPtrSetVar, so go directly there.
 		     */
 
+		    cleanup = 1;
 		    part2 = NULL;
 		    arrayPtr = NULL;
-		    cleanup = 1;
-		} else {
-		    cleanup = 2;
-		    part2 = Tcl_GetString(*(tosPtr-1));  /* element name */
-		    arrayPtr = varPtr;
-		    varPtr = TclLookupArrayElement(interp, part1, part2, 
-			    TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr);
-		    if (varPtr == NULL) {
-			TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
-			result = TCL_ERROR;
-			goto checkForCatch;
-		    }
+		    goto doCallPtrSetVar;
 		}
-		if ((flags == TCL_LEAVE_ERR_MSG)
+		
+		part2 = Tcl_GetString(*(tosPtr-1));  /* element name */
+		arrayPtr = varPtr;
+		varPtr = TclLookupArrayElement(interp, varNames[index], part2, 
+			TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr);
+		if (!varPtr) {
+		    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		    result = TCL_ERROR;
+		    goto checkForCatch;
+		}
+		
+		if (((flags & VM_STORE_FLAGS_FILTER) == TCL_LEAVE_ERR_MSG) 
 			&& TclIsVarDirectWritable(varPtr)
-			&& ((arrayPtr == NULL) 
-				|| TclIsVarUntraced(arrayPtr))) {
+			&& TclIsVarUntraced(arrayPtr)) {
 		    /*
 		     * No traces, no errors, plain 'set': we can safely inline.
 		     * The value *will* be set to what's requested, so that 
@@ -2134,7 +2127,7 @@ TclExecuteByteCode(interp, codePtr)
 		    valuePtr = varPtr->value.objPtr;		    
 		    objResultPtr = *tosPtr;
 		    if (valuePtr != objResultPtr) {
-			if (valuePtr != NULL) {
+			if (valuePtr) {
 			    TclDecrRefCount(valuePtr);
 			} else {
 			    TclSetVarDirectScalar(varPtr);
@@ -2143,13 +2136,14 @@ TclExecuteByteCode(interp, codePtr)
 			Tcl_IncrRefCount(objResultPtr);
 		    }
 		    pc++;
-		    NEXT_INST_F(cleanup, pushRes);
+		    NEXT_INST_F(2, !(flags & VM_VAR_OMIT_PUSH));
 		}
+		cleanup = 2;
 
 		doCallPtrSetVar:
 		DECACHE_STACK_INFO();
 		objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr, 
-			part1, part2, *tosPtr, flags);
+			varNames[index], part2, *tosPtr, (flags & VM_STORE_FLAGS_FILTER));
 		CACHE_STACK_INFO();
 		if (objResultPtr == NULL) {
 		    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
@@ -2158,21 +2152,21 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		pc++;
-		NEXT_INST_V(cleanup, pushRes);
+		NEXT_INST_V(cleanup, !(flags & VM_VAR_OMIT_PUSH));
 	    } else {
 		/*
 		 * A lookup-by-name is requested - defer to TclObjGetVar2
 		 */
 
 		DECACHE_STACK_INFO();
-		if (isArray) {
+		if ((flags & VM_VAR_ARRAY)) {
 		    cleanup = 3;
 		    objResultPtr = Tcl_ObjSetVar2(interp, *(tosPtr-2),
-			*(tosPtr-1), *tosPtr, flags);
+			*(tosPtr-1), *tosPtr, (flags & VM_STORE_FLAGS_FILTER));
 		} else {
 		    cleanup = 2;
 		    objResultPtr = Tcl_ObjSetVar2(interp, *(tosPtr-1),
-			NULL, *tosPtr, flags);
+			NULL, *tosPtr, (flags & VM_STORE_FLAGS_FILTER));
 		}
 		CACHE_STACK_INFO();
 		if (objResultPtr == NULL) {
@@ -2182,7 +2176,7 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		pc++;
-		NEXT_INST_V(cleanup, pushRes);
+		NEXT_INST_V(cleanup, !(flags & VM_VAR_OMIT_PUSH));
 	    }
 	}
 
@@ -2192,7 +2186,7 @@ TclExecuteByteCode(interp, codePtr)
 	     int isWide = 0;
 	     long i;
 	     Tcl_WideInt w;
-	     char *part1, *part2 = NULL;
+	     char *part2 = NULL;
 	     Var *varPtr, *arrayPtr = NULL;
 	     unsigned int index;
 	     int pushRes, isArray;
@@ -2237,7 +2231,6 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 	    
 		varPtr = (Var *) &(compiledLocals[index]);
-		part1 = varPtr->id.name;
 		while (TclIsVarLink(varPtr)) {
 		    varPtr = varPtr->value.linkPtr;
 		}
@@ -2246,7 +2239,7 @@ TclExecuteByteCode(interp, codePtr)
 		if (isArray) {
 		    part2 = Tcl_GetString(*tosPtr);  /* element name */
 		    arrayPtr = varPtr;
-		    varPtr = TclLookupArrayElement(interp, part1, part2, 
+		    varPtr = TclLookupArrayElement(interp, varNames[index], part2, 
 			    TCL_LEAVE_ERR_MSG, "read", 0, 0, arrayPtr);
 		    if (varPtr == NULL) {
 			TRACE_APPEND(("ERROR: %.30s\n",
@@ -2281,10 +2274,10 @@ TclExecuteByteCode(interp, codePtr)
 		    DECACHE_STACK_INFO();
 		    if (isWide) {
 			objResultPtr = TclPtrIncrWideVar(interp, varPtr, arrayPtr,
-				part1,part2, w, TCL_LEAVE_ERR_MSG);
+				varNames[index],part2, w, TCL_LEAVE_ERR_MSG);
 		    } else {
 			objResultPtr = TclPtrIncrVar(interp, varPtr, arrayPtr,
-				part1, part2, i, TCL_LEAVE_ERR_MSG);
+				varNames[index], part2, i, TCL_LEAVE_ERR_MSG);
 		    }
 		    CACHE_STACK_INFO();
 		    if (objResultPtr == NULL) {
@@ -4498,7 +4491,6 @@ TclExecuteByteCode(interp, codePtr)
 			    
 			varIndex = varListPtr->varIndexes[j];
 			varPtr = (Var *) &(compiledLocals[varIndex]);
-			part1 = varPtr->id.name;
 			while (TclIsVarLink(varPtr)) {
 			    varPtr = varPtr->value.linkPtr;
 			}
@@ -4514,6 +4506,7 @@ TclExecuteByteCode(interp, codePtr)
 				Tcl_IncrRefCount(valuePtr);
 			    }
 			} else {
+			    part1 = varNames[varIndex];
 			    DECACHE_STACK_INFO();
 			    value2Ptr = TclPtrSetVar(interp, varPtr, NULL, part1, 
 						     NULL, valuePtr, TCL_LEAVE_ERR_MSG);
@@ -4586,7 +4579,7 @@ TclExecuteByteCode(interp, codePtr)
 	     */
 	    
 	    Var *varPtr = (Var *) &(compiledLocals[opnd]);
-	    char *part1 = varPtr->id.name;
+	    char *part1 = varNames[opnd];
 	    Tcl_Obj *valuePtr;
 
 	    valuePtr = *tosPtr;

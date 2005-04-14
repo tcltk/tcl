@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.7 2005/04/12 21:10:04 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.8 2005/04/14 18:39:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -402,7 +402,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     
     if (typePtr == &tclLocalVarNameType) {
 	int localIndex = (int) part1Ptr->internalRep.longValue;
-
+	char *varName;
+	
 	if ((varFramePtr != NULL)
 		&& (varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 	        && !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
@@ -410,10 +411,12 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	    /*
 	     * use the cached index if the names coincide.
 	     */
-	    
+
 	    varPtr = (Var *) &(varFramePtr->compiledLocals[localIndex]);
-	    if ((varPtr->id.name != NULL)
-		    && (strcmp(part1, varPtr->id.name) == 0)) {
+	    varName = localIndex + ((char *) (varFramePtr->compiledLocals
+					   + varFramePtr->numCompiledLocals));
+	    if (varName && (varName[0] == part1[0])
+		    && !strcmp(part1, varName)) {
 		goto donePart1;
 	    }
 	}
@@ -814,8 +817,8 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	int varNameLen = strlen(varName);
 	
 	for (i = 0;  i < localCt;  i++) {
+	    register char *localName = localPtr->name;
 	    if (!TclIsVarTemporary(localPtr)) {
-		register char *localName = localVarPtr->id.name;
 		if ((varName[0] == localName[0])
 		        && (varNameLen == localPtr->nameLength)
 		        && (strcmp(varName, localName) == 0)) {
@@ -3604,13 +3607,36 @@ Tcl_GetVariableFullName(interp, variable, objPtr)
     register Var *varPtr = (Var *) variable;
     char *name;
 
-    /*
-     * Add the full name of the containing namespace (if any), followed by
-     * the "::" separator, then the variable name.
-     */
-
     if (varPtr && !TclIsVarArrayElement(varPtr)) {
-	if (varPtr->id.hPtr) {
+	if (TclIsVarExtension(varPtr)) {
+	    /*
+	     * Retrieve the original local variable
+	     */
+	    
+	    varPtr = varPtr->id.shortPtr;
+	}
+	if (TclIsVarShort(varPtr)) {
+	    /*
+	     * Find the index of this var - which FramePtr? Assume the current
+	     * one (although it could be an uplevel one? Do check the index
+	     * for safety!
+	     */
+	    CallFrame *framePtr = iPtr->varFramePtr;
+	    ShortVar *compiledLocals = framePtr->compiledLocals;
+	    int index = ((ShortVar *) varPtr) - compiledLocals;
+	    int localCt = framePtr->numCompiledLocals;
+	    char **varNames = (char **) &(compiledLocals[localCt]);
+
+	    if ((index < localCt)
+		    && (varPtr == (Var *) compiledLocals[index])) {
+		Tcl_AppendToObj(objPtr, varNames[index], -1);
+	    }			    
+	} else if (varPtr->id.hPtr) {
+	    /*
+	     * Add the full name of the containing namespace (if any),
+	     * followed by the "::" separator, then the variable name.
+	     */
+
 	    Namespace *nsPtr =
 		((TclNSVarHashTable *)(varPtr->id.hPtr->tablePtr))->nsPtr;
 	    if (nsPtr) {
@@ -3619,12 +3645,10 @@ Tcl_GetVariableFullName(interp, variable, objPtr)
 		    Tcl_AppendToObj(objPtr, "::", 2);
 		}
 	    }
+	    name = Tcl_GetHashKey(
+		(Tcl_HashTable *)varPtr->id.hPtr->tablePtr, varPtr->id.hPtr);
+	    Tcl_AppendToObj(objPtr, name, -1);
 	}
-	name = Tcl_GetHashKey(
-	    (Tcl_HashTable *)varPtr->id.hPtr->tablePtr, varPtr->id.hPtr);
-	Tcl_AppendToObj(objPtr, name, -1);
-    } else if (varPtr->id.name) {
-	Tcl_AppendToObj(objPtr, varPtr->id.name, -1);
     }
 }
 
@@ -3955,7 +3979,7 @@ NewVar()
     varPtr = (Var *) objPtr;
     varPtr->flags = (VAR_IN_HASHTABLE|VAR_DIRECT_WRITABLE);
     varPtr->value.objPtr = NULL;
-    varPtr->id.name = NULL;
+    varPtr->id.hPtr = NULL;
     varPtr->refCount = 0;
     varPtr->tracePtr = NULL;
     varPtr->searchPtr = NULL;
@@ -4330,10 +4354,12 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
     ActiveVarTrace *activePtr;
     int numLocals, i;
     int isExtended;
+    char **varNames;
 
     flags = TCL_TRACE_UNSETS;
     numLocals = framePtr->numCompiledLocals;
     shortPtr = framePtr->compiledLocals;
+    varNames = (char **) &(framePtr->compiledLocals[framePtr->numCompiledLocals]);
     for (i = 0;  i < numLocals;  i++) {
 	/*
 	 * If this variable is extended, we have to operate on the extension,
@@ -4380,7 +4406,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 */
 
 	if (isExtended && varPtr->tracePtr) {
-	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, shortPtr->id.name, NULL,
+	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, varNames[i], NULL,
 		    flags, /* leaveErrMsg */ 0);
 	    while (varPtr->tracePtr) {
 		VarTrace *tracePtr = varPtr->tracePtr;
@@ -4402,7 +4428,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 */
 	    
 	if (TclIsVarArray(varPtr) && varPtr->value.tablePtr) {
-	    DeleteArray(iPtr, varPtr->id.name, varPtr, flags);
+	    DeleteArray(iPtr, varNames[i], varPtr, flags);
 	}
 	if (TclIsVarScalar(varPtr) && varPtr->value.objPtr) {
 	    TclDecrRefCount(varPtr->value.objPtr);
@@ -4417,7 +4443,6 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	}
 	
 	TclSetVarUndefined(shortPtr);
-	shortPtr->id.name = NULL;
 	shortPtr++;
     }
 }
