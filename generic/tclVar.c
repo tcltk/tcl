@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.8 2005/04/14 18:39:10 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.9 2005/04/14 19:02:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3628,7 +3628,7 @@ Tcl_GetVariableFullName(interp, variable, objPtr)
 	    char **varNames = (char **) &(compiledLocals[localCt]);
 
 	    if ((index < localCt)
-		    && (varPtr == (Var *) compiledLocals[index])) {
+		    && (varPtr == (Var *) &compiledLocals[index])) {
 		Tcl_AppendToObj(objPtr, varNames[index], -1);
 	    }			    
 	} else if (varPtr->id.hPtr) {
