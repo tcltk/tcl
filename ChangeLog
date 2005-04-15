@@ -1,3 +1,10 @@
+2005-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Use auto-loading to bring in Tcl Module
+	* library/tclIndex:	support as needed.  This reduces startup
+	* library/tm.tcl:	time by delaying this initialization to
+	a later time.
+
 2005-04-15  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: missing semicolons caused failure to
