@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.181 2005/04/09 21:14:22 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.182 2005/04/15 02:38:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4323,7 +4323,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 		    i = valuePtr->internalRep.longValue;
-		    TclNewLongObj(objResultPtr, -i)
+		    TclNewLongObj(objResultPtr, -i);
 			TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 		} else if (tPtr == &tclWideIntType) {
 		    TclGetWide(w,valuePtr);
@@ -4363,7 +4363,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = (w == W0);
 		TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 	    } else {
-		i = (valuePtr->internalRep.doubleValue == 0.0)
+		i = (valuePtr->internalRep.doubleValue == 0.0);
 		TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
 	    }
 	    objResultPtr = eePtr->constants[i];
