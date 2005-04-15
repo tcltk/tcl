@@ -1,3 +1,8 @@
+2005-04-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: missing semicolons caused failure to
+	compile with TCL_COMPILE_DEBUG.
+
 2005-04-13  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclIO.c (Tcl_SetChannelBufferSize): Lowest size limit
