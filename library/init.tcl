@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.69 2004/11/30 22:19:21 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.70 2005/04/15 15:50:35 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -48,8 +48,8 @@ if {![info exists auto_path]} {
 }
 namespace eval tcl {
     variable Dir
-    if {[info library] != ""} {
-	foreach Dir [list [info library] [file dirname [info library]]] {
+    if {$::tcl_library != ""} {
+	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
 	    if {[lsearch -exact $::auto_path $Dir] < 0} {
 		lappend ::auto_path $Dir
 	    }
@@ -118,6 +118,32 @@ if {![interp issafe]} {
     if {[string equal $::tcl_platform(platform) "unix"] && \
 	    [string equal $::tcl_platform(os) "Darwin"]} {
 	package unknown [list tcl::MacOSXPkgUnknown [package unknown]]
+    }
+    # Set up search for Tcl Modules (TIP #189).
+    package unknown [list ::tcl::tm::UnknownHandler [package unknown]]
+
+    # Set up the 'clock' ensemble
+
+    namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
+
+    proc clock args {
+	namespace eval ::tcl::clock [list namespace ensemble create -command \
+		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
+		-subcommands {
+		    add clicks format microseconds milliseconds scan seconds
+		}]
+	
+	# Auto-loading stubs for 'clock.tcl'
+	
+	foreach cmd {add format scan} {
+	    proc ::tcl::clock::$cmd args {
+		variable TclLibDir
+		source -encoding utf-8 [file join $TclLibDir clock.tcl]
+		return [uplevel 1 [info level 0]]
+	    }
+	}
+
+	return [uplevel 1 [info level 0]]
     }
 }
 
@@ -738,45 +764,4 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     return
-}
-
-# Set up the 'clock' ensemble
-
-if { ![interp issafe] } {
-
-    namespace eval ::tcl::clock \
-	[list variable TclLibDir [file dirname [info script]]]
-
-    namespace eval ::tcl::clock {
-	namespace ensemble create -command ::clock \
-	    -subcommands {
-		add clicks format 
-		microseconds milliseconds 
-		scan seconds
-	    }
-	
-	# Auto-loading stub for 'clock.tcl'
-	
-	proc add args {
-	    variable TclLibDir
-	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
-	    return [uplevel 1 [info level 0]]
-	}
-	proc format args {
-	    variable TclLibDir
-	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
-	    return [uplevel 1 [info level 0]]
-	}
-	proc scan args {
-	    variable TclLibDir
-	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
-	    return [uplevel 1 [info level 0]]
-	}
-    }
-}
-
-# Set up search for Tcl Modules (TIP #189).
-
-if { ![interp issafe] } {
-    source [file join [file dirname [info script]] tm.tcl]
 }
