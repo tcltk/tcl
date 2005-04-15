@@ -1,5 +1,9 @@
 2005-04-13  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/unixInit.test:	Disabled obsolete tests and removed code
+	* tests/encoding.test:	that supported them.
+	* generic/tclInterp.c:
+
 	* library/init.tcl:	Use auto-loading to bring in Tcl Module
 	* library/tclIndex:	support as needed.  This reduces startup
 	* library/tm.tcl:	time by delaying this initialization to
