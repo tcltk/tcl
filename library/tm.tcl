@@ -362,4 +362,3 @@ proc ::tcl::tm::roots {paths} {
 # handler into the chain.
 
 ::tcl::tm::Defaults
-package unknown [list ::tcl::tm::UnknownHandler [package unknown]]
