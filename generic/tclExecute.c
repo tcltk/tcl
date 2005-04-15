@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.28 2005/04/14 18:38:59 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.29 2005/04/15 02:40:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2074,7 +2074,7 @@ TclExecuteByteCode(interp, codePtr)
 	    cleanup = 1;
 	    part2 = NULL;
 	    arrayPtr = NULL;
-	    flags = TCL_LEAVE_ERR_MSG;
+	    HP_EXTRACT(opnd, flags, index);
 	    goto doCallPtrSetVar;
 	    
     case INST_STORE:

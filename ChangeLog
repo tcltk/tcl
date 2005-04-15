@@ -1,4 +1,8 @@
-2005-04-12  Miguel Sofer <msofer@users.sf.net>
+2005-04-14  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix for bad stack management
+
+2005-04-14  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdIL (AppendLocals):
 	* generic/tclExecute.c:
