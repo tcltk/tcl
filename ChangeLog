@@ -1,3 +1,9 @@
+2005-04-16  Miguel Sofer <msofer@users.sf.net>
+
+	*** FROM HEAD ***
+	* generic/Var.c (Tcl_ArrayObjCmd - ARRAY_NAMES): fix Tcl_Obj leak
+	[Bug 1084111] 
+
 2005-04-14  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix for bad stack management

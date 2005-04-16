@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.9 2005/04/14 19:02:35 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.10 2005/04/16 19:21:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2955,8 +2955,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
 		    return result;
 		}
-		Tcl_SetObjResult(interp, resultPtr);
 	    }
+	    Tcl_SetObjResult(interp, resultPtr);
 	    break;
 	}
         case ARRAY_NEXTELEMENT: {
