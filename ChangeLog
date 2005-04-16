@@ -1,3 +1,8 @@
+2005-04-16  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/Var.c (Tcl_ArrayObjCmd - ARRAY_NAMES): fix Tcl_Obj leak
+	[Bug 1084111] 
+
 2005-04-16  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* generic/tclIOUtil.c: force clenaup of the interp result
