@@ -933,13 +933,16 @@ TclpFreeAllocMutex(mutex)
 void TclpFreeAllocCache(ptr)
     void *ptr;
 {
-    extern void TclFreeAllocCache(void *);
-
-    TclFreeAllocCache(ptr);
-    /*
-     * Perform proper cleanup of things done in TclpGetAllocCache.
-     */
-    if (initialized) {
+    if (ptr != NULL) {
+        /*
+         * Called by the pthread lib when a thread exits
+         */
+        TclFreeAllocCache(ptr);
+    } else if (initialized) {
+        /*
+         * Called by us in TclFinalizeThreadAlloc() during
+         * the library finalization initiated from Tcl_Finalize()
+         */
         pthread_key_delete(key);
         initialized = 0;
     }
