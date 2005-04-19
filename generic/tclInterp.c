@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.57 2005/04/15 22:41:43 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.58 2005/04/19 16:32:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -298,10 +298,6 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;         /* Interpreter to initialize. */
 {
-    int code;
-    Tcl_DString script, encodingName;
-    Tcl_Obj *path;
-
     if (tclPreInitScript != NULL) {
 	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
 	    return (TCL_ERROR);
@@ -347,7 +343,7 @@ Tcl_Init(interp)
  * Note that this entire search mechanism can be bypassed by defining an
  * alternate tclInit procedure before calling Tcl_Init().
  */
-    code = Tcl_Eval(interp,
+    return Tcl_Eval(interp,
 "if {[info proc tclInit]==\"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
@@ -410,66 +406,6 @@ Tcl_Init(interp)
 "  }\n"
 "}\n"
 "tclInit");
-
-    if (code != TCL_OK) {
-	return code;
-    }
-
-    /* 
-     * Now that [info library] is initialized, make sure that
-     * [file join [info library] encoding] is on the encoding
-     * search path.
-     *
-     * Relying on use of original built-in commands.
-     * Should be a safe assumption during interp initialization.
-     * More robust would be to use C-coded equivalents, but that's such
-     * a pain...
-     */
-
-    Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, "lsearch -exact", -1);
-    path = Tcl_DuplicateObj(TclGetEncodingSearchPath());
-    Tcl_IncrRefCount(path);
-    Tcl_DStringAppendElement(&script, Tcl_GetString(path));
-    Tcl_DStringAppend(&script, " [file join [info library] encoding]", -1);
-    code = Tcl_EvalEx(interp, Tcl_DStringValue(&script),
-	    Tcl_DStringLength(&script), TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&script);
-    if (code == TCL_OK) {
-	int index;
-	Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &index);
-	if (index != -1) {
-	    /* [info library]/encoding already on the encoding search path */
-	    goto done;
-	}
-    }
-    Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, "file join [info library] encoding", -1);
-    code = Tcl_EvalEx(interp, Tcl_DStringValue(&script),
-	    Tcl_DStringLength(&script), TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&script);
-    if (code == TCL_OK) {
-	Tcl_ListObjAppendElement(NULL, path, Tcl_GetObjResult(interp));
-	TclSetEncodingSearchPath(path);
-    }
-done:
-    /*
-     * Now that we know the distributed *.enc files are on the encoding
-     * search path, check whether the [encoding system] matches that
-     * specified by the environment, and if not, attempt to correct it
-     */
-    TclpGetEncodingNameFromEnvironment(&encodingName);
-    if (strcmp(Tcl_DStringValue(&encodingName), Tcl_GetEncodingName(NULL))) {
-	code = Tcl_SetSystemEncoding(NULL, Tcl_DStringValue(&encodingName));
-	if (code == TCL_ERROR) {
-	    Tcl_Panic("system encoding \"%s\" not available",
-		    Tcl_DStringValue(&encodingName));
-	}
-    }
-    Tcl_DStringFree(&encodingName);
-    Tcl_DecrRefCount(path);
-    Tcl_ResetResult(interp);
-    return TCL_OK;
 }
 
 /*

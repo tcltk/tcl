@@ -1,3 +1,12 @@
+2005-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Added unsupported command
+	* generic/tclCmdAH.c:	[::tcl::unsupported::EncodingDirs] to permit
+	* generic/tclInt.h:	query/set of the encoding search path at
+	* generic/tclInterp.c:	the script level.  Updated init.tcl to make
+	* library/init.tcl:	use of the new command.  Also updated several
+	coding practices in init.tcl ("eq" for [string equal], etc.)
+
 2005-04-19  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (Initialize): Put initialization code into a
