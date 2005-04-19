@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.70 2005/04/15 15:50:35 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.71 2005/04/19 16:32:57 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -48,11 +48,9 @@ if {![info exists auto_path]} {
 }
 namespace eval tcl {
     variable Dir
-    if {$::tcl_library != ""} {
-	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
-	    if {[lsearch -exact $::auto_path $Dir] < 0} {
-		lappend ::auto_path $Dir
-	    }
+    foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
+	if {[lsearch -exact $::auto_path $Dir] < 0} {
+	    lappend ::auto_path $Dir
 	}
     }
     set Dir [file join [file dirname [file dirname \
@@ -60,18 +58,25 @@ namespace eval tcl {
     if {[lsearch -exact $::auto_path $Dir] < 0} {
 	lappend ::auto_path $Dir
     }
-    if {[info exists ::tcl_pkgPath]} {
+    catch {
 	foreach Dir $::tcl_pkgPath {
 	    if {[lsearch -exact $::auto_path $Dir] < 0} {
 		lappend ::auto_path $Dir
 	    }
 	}
     }
+
+    variable Path [unsupported::EncodingDirs]
+    set Dir [file join $::tcl_library encoding]
+    if {[lsearch -exact $Path $Dir] < 0} {
+	lappend Path $Dir
+	unsupported::EncodingDirs $Path
+    }
 }
-  
+
 # Windows specific end of initialization
 
-if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
+if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
     namespace eval tcl {
 	proc EnvTraceProc {lo n1 n2 op} {
 	    set x $::env($n2)
@@ -82,7 +87,7 @@ if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
 	    global env tcl_platform
 	    foreach p [array names env] {
 		set u [string toupper $p]
-		if {![string equal $u $p]} {
+		if {$u ne $p]} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
@@ -98,7 +103,7 @@ if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
 		}
 	    }
 	    if {![info exists env(COMSPEC)]} {
-		if {[string equal $tcl_platform(os) "Windows NT"]} {
+		if {$tcl_platform(os) eq "Windows NT"} {
 		    set env(COMSPEC) cmd.exe
 		} else {
 		    set env(COMSPEC) command.com
@@ -111,16 +116,19 @@ if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
 
 # Setup the unknown package handler
 
-package unknown tclPkgUnknown
 
-if {![interp issafe]} {
-    # setup platform specific unknown package handlers
-    if {[string equal $::tcl_platform(platform) "unix"] && \
-	    [string equal $::tcl_platform(os) "Darwin"]} {
-	package unknown [list tcl::MacOSXPkgUnknown [package unknown]]
-    }
+if {[interp issafe]} {
+    package unknown ::tclPkgUnknown
+} else {
     # Set up search for Tcl Modules (TIP #189).
-    package unknown [list ::tcl::tm::UnknownHandler [package unknown]]
+    # and setup platform specific unknown package handlers
+    if {$::tcl_platform(os) eq "Darwin"
+	    && $::tcl_platform(platform) eq "unix"} {
+	package unknown {::tcl::tm::UnknownHandler \
+		{::tcl::MacOSXPkgUnknown ::tclPkgUnknown}}
+    } else {
+	package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
+    }
 
     # Set up the 'clock' ensemble
 
@@ -290,19 +298,19 @@ proc unknown args {
 	}
     }
 
-    if {([info level] == 1) && [string equal [info script] ""] \
+    if {([info level] == 1) && ([info script] eq "") \
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
 	    if {$new != ""} {
 		set redir ""
-		if {[string equal [info commands console] ""]} {
+		if {[info commands console] eq ""} {
 		    set redir ">&@stdout <@stdin"
 		}
 		return [uplevel 1 exec $redir $new [lrange $args 1 end]]
 	    }
 	}
-	if {[string equal $name "!!"]} {
+	if {$name eq "!!"} {
 	    set newcmd [history event]
 	} elseif {[regexp {^!(.+)$} $name dummy event]} {
 	    set newcmd [history event $event]
@@ -317,7 +325,7 @@ proc unknown args {
 	}
 
 	set ret [catch {set candidates [info commands $name*]} msg]
-	if {[string equal $name "::"]} {
+	if {$name eq "::"} {
 	    set name ""
 	}
 	if {$ret != 0} {
@@ -337,7 +345,7 @@ proc unknown args {
 	    return [uplevel 1 [lreplace $args 0 0 $cmds]]
 	}
 	if {[llength $cmds]} {
-	    if {[string equal $name ""]} {
+	    if {$name eq ""} {
 		return -code error "empty command name \"\""
 	    } else {
 		return -code error \
@@ -416,8 +424,7 @@ proc auto_load_index {} {
     variable ::tcl::auto_oldpath
     global auto_index auto_path
 
-    if {[info exists auto_oldpath] && \
-	    [string equal $auto_oldpath $auto_path]} {
+    if {[info exists auto_oldpath] && ($auto_oldpath eq $auto_path)} {
 	return 0
     }
     set auto_oldpath $auto_path
@@ -436,12 +443,11 @@ proc auto_load_index {} {
 	} else {
 	    set error [catch {
 		set id [gets $f]
-		if {[string equal $id \
-			"# Tcl autoload index file, version 2.0"]} {
+		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
-		} elseif {[string equal $id "# Tcl autoload index file: each line identifies a Tcl"]} {
+		} elseif {$id eq "# Tcl autoload index file: each line identifies a Tcl"]} {
 		    while {[gets $f line] >= 0} {
-			if {[string equal [string index $line 0] "#"] \
+			if {([string index $line 0] eq "#") \
 				|| ([llength $line] != 2)} {
 			    continue
 			}
@@ -506,14 +512,14 @@ proc auto_qualify {cmd namespace} {
     # (if the current namespace is not the global one)
 
     if {$n == 0} {
-	if {[string equal $namespace ::]} {
+	if {$namespace eq "::"} {
 	    # ( nocolons , :: ) -> nocolons
 	    return [list $cmd]
 	} else {
 	    # ( nocolons , ::sub ) -> ::sub::nocolons nocolons
 	    return [list ${namespace}::$cmd $cmd]
 	}
-    } elseif {[string equal $namespace ::]} {
+    } elseif {$namespace eq "::"} {
 	#  ( foo::bar , :: ) -> ::foo::bar
 	return [list ::$cmd]
     } else {
@@ -568,7 +574,7 @@ proc auto_import {pattern} {
 # Arguments: 
 # name -			Name of a command.
 
-if {[string equal windows $tcl_platform(platform)]} {
+if {$tcl_platform(platform) eq "windows"} {
 # Windows version.
 #
 # Note that info executable doesn't work under Windows, so we have to
@@ -586,7 +592,7 @@ proc auto_execok name {
 
     set shellBuiltins [list cls copy date del erase dir echo mkdir \
 	    md rename ren rmdir rd time type ver vol]
-    if {[string equal $tcl_platform(os) "Windows NT"]} {
+    if {$tcl_platform(os) eq "Windows NT"} {
 	# NT includes the 'start' built-in
 	lappend shellBuiltins "start"
     }
@@ -623,7 +629,7 @@ proc auto_execok name {
 	set windir $env(WINDIR) 
     }
     if {[info exists windir]} {
-	if {[string equal $tcl_platform(os) "Windows NT"]} {
+	if {$tcl_platform(os) eq "Windows NT"} {
 	    append path "$windir/system32;"
 	}
 	append path "$windir/system;$windir;"
@@ -637,7 +643,7 @@ proc auto_execok name {
 
     foreach dir [split $path {;}] {
 	# Skip already checked directories
-	if {[info exists checked($dir)] || [string equal {} $dir]} { continue }
+	if {[info exists checked($dir)] || ($dir eq {})} { continue }
 	set checked($dir) {}
 	foreach ext $execExtensions {
 	    set file [file join $dir ${name}${ext}]
@@ -666,7 +672,7 @@ proc auto_execok name {
 	return $auto_execs($name)
     }
     foreach dir [split $env(PATH) :] {
-	if {[string equal $dir ""]} {
+	if {$dir eq ""} {
 	    set dir .
 	}
 	set file [file join $dir $name]
@@ -698,7 +704,7 @@ proc tcl::CopyDirectory {action src dest} {
     set nsrc [file normalize $src]
     set ndest [file normalize $dest]
 
-    if {[string equal $action "renaming"]} {
+    if {$action eq "renaming"} {
 	# Can't rename volumes.  We could give a more precise
 	# error message here, but that would break the test suite.
 	if {[lsearch -exact [file volumes] $nsrc] != -1} {
@@ -713,7 +719,7 @@ proc tcl::CopyDirectory {action src dest} {
 	      \"$dest\": trying to rename a volume or move a directory\
 	      into itself"
 	}
-	if {[string equal $action "copying"]} {
+	if {$action eq "copying"} {
 	    # We used to throw an error here, but, looking more closely
 	    # at the core copy code in tclFCmd.c, if the destination
 	    # exists, then we should only call this function if -force
