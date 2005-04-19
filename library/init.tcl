@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.71 2005/04/19 16:32:57 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.72 2005/04/19 18:44:18 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -87,7 +87,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 	    global env tcl_platform
 	    foreach p [array names env] {
 		set u [string toupper $p]
-		if {$u ne $p]} {
+		if {$u ne $p} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
