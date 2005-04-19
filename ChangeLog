@@ -1,3 +1,12 @@
+2005-04-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (Initialize): Put initialization code into a
+	proc to avoid inadvertently clobbering global variables.
+	[Bug 1185933]
+	* tests/clock.test (clock-48.1): Added regression test for the
+	above bug.
+	Thanks to Ulrich Ring for reporting this bug.
+	
 2005-04-16  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/Var.c (Tcl_ArrayObjCmd - ARRAY_NAMES): fix Tcl_Obj leak
