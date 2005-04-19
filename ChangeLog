@@ -1,3 +1,22 @@
+2005-04-19  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c:  The pipe channel driver now respects
+	the -blocking option when closing.  The windows pipe driver
+	now has the same behavior as the UNIX side.  This change is
+	to avoid a hung shell when exiting due to open pipes that
+	refuse to close in a graceful manner.
+	* doc/open.n: Added a note about -blocking 0 and lack of
+	exit status as it had never been documented. [Bug 947693]
+
+	***POTENTIAL INCOMPATIBILITY***
+
+	Scripts that use async pipes on windows, must (like the
+	UNIX side) set -blocking to 1 before calling [close] to
+	receive the exit status.
+
+	* tests/winPipe.test (winpipe-6.1/2):  added 'fconfigure $f 
+	-blocking 1' so the exit status can be acquired.
+
 2005-04-13  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclIO.c (Tcl_SetChannelBufferSize): Lowest size limit
