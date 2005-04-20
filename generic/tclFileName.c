@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.67 2005/03/15 22:10:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.68 2005/04/20 15:13:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2302,7 +2302,7 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	     * The current prefix must end in a separator, unless
 	     * this is a volume-relative path.  In particular
 	     * globbing in Windows shares, when not using -dir
-	     * or -path, e.g. 'glob //machine/share/subdir/*'
+	     * or -path, e.g. 'glob [file join //machine/share/subdir *]'
  	     * requires adding a separator here.  This behaviour
  	     * is not currently tested for in the test suite.
 	     */
