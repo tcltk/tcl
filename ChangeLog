@@ -1,3 +1,8 @@
+2005-04-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclFileName.c: Silenced a compiler warning about
+	'/*' within a comment.  
+	
 2005-04-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Added unsupported command
