@@ -1,3 +1,8 @@
+2005-04-20  Kevin B. Kenny <kennykb@acm.org>
+
+	* doc/expr.n:
+	* doc/mathfunc.n (new file):	Revised documentation for TIP 232
+	
 2005-04-11  Kevin Kenny <kennykb@users.sf.net>
 
         [tcl_numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
