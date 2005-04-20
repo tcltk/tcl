@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.75 2005/04/05 16:19:10 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.76 2005/04/20 16:04:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1958,15 +1958,14 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a int. */
     register int *intPtr;	/* Place to store resulting int. */
 {
-    register long l = 0;
     int result;
+    Tcl_WideInt w = 0;
 
     /* If the object isn't already an integer of any width, try to
      * convert it to one.
      */
 
-    if (objPtr->typePtr != &tclIntType
-	    && objPtr->typePtr != &tclWideIntType) {
+    if (objPtr->typePtr != &tclIntType && objPtr->typePtr != &tclWideIntType) {
 	result = SetIntOrWideFromAny(interp, objPtr);
 	if (result != TCL_OK) {
 	    return result;
@@ -1975,45 +1974,26 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
 
     /* Object should now be either int or wide. Get its value. */
 
-    if (objPtr->typePtr == &tclIntType) {
-	l = objPtr->internalRep.longValue;
-    } else if (objPtr->typePtr == &tclWideIntType) {
 #ifndef TCL_WIDE_INT_IS_LONG
-	/*
-	 * If the object is already a wide integer, don't convert it.
-	 * This code allows for any integer in the range -ULONG_MAX to
-	 * ULONG_MAX to be converted to a long, ignoring overflow.
-	 * The rule preserves existing semantics for conversion of
-	 * integers on input, but avoids inadvertent demotion of
-	 * wide integers to 32-bit ones in the internal rep.
-	 */
-	Tcl_WideInt w = objPtr->internalRep.wideValue;
-	if (w >= -(Tcl_WideInt)(ULONG_MAX)
-		&& w <= (Tcl_WideInt)(ULONG_MAX)) {
-	    l = Tcl_WideAsLong(w);
-	} else {
-	    goto tooBig;
-	}
-#else
-	l = objPtr->internalRep.longValue;
+    if (objPtr->typePtr == &tclWideIntType) {
+	w = objPtr->internalRep.wideValue;
+    } else
 #endif
-    } else {
-	Tcl_Panic("string->integer conversion failed to convert the obj.");
+    {
+	w = Tcl_LongAsWide(objPtr->internalRep.longValue);
     }
 
-    if (((long)((int)l)) == l) {
-	*intPtr = (int)l;
-	return TCL_OK;
-    }
-#ifndef TCL_WIDE_INT_IS_LONG
-  tooBig:
-#endif
-    if (interp != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+    if ((LLONG_MAX > UINT_MAX)
+	    && ((w > UINT_MAX) || (w < -(Tcl_WideInt)UINT_MAX))) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"integer value too large to represent as non-long integer",
 		-1));
+	}
+	return TCL_ERROR;
     }
-    return TCL_ERROR;
+    *intPtr = (int)w;
+    return TCL_OK;
 }
 
 /*

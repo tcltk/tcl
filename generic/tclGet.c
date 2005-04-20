@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.9 2004/04/06 22:25:51 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.10 2005/04/20 16:04:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -91,7 +91,11 @@ Tcl_GetInt(interp, string, intPtr)
      * an int.
      */
 
-    if ((errno == ERANGE) || (((long)(int) i) != i)) {
+    if ((errno == ERANGE) 
+#if (LONG_MAX > INT_MAX)
+	    || (i > UINT_MAX) || (i < -(long)UINT_MAX)
+#endif
+    ) {
         if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_SetResult(interp, "integer value too large to represent",
 		    TCL_STATIC);
