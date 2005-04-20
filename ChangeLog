@@ -1,3 +1,8 @@
+2005-04-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/winPipe.test (winpipe-6.2): remove -blocking 1 as this one
+	can truly block.
+
 2005-04-19  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c:  The pipe channel driver now respects
