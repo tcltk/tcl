@@ -6,6 +6,14 @@
 	Tcl_GetFoo() routines into wrappers around Tcl_GetFooFromObj().
 	Reduces code duplication, and the resulting potential for inconsistency.
 
+	* generic/tclObj.c:	Re-ordered error detection code so all values
+	with trailing garbage receive a "not an integer" message instead of
+	an "integer too large" message.
+	Removed inactive code meant to deal with strtoul* routines that fail
+	to parse leading signs.  All of them do, and if any are detected
+	that do not, the correct fix is replacement with compat/strtoul*.c,
+	not a lot of special care by the callers.
+
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c (Tcl_GetInt):	Corrected error that did not
