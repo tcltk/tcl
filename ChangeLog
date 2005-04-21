@@ -31,6 +31,11 @@
 	* tests/obj.test:	Corrected bad tests that actually expected
 	values like "47" and "0xac" to be accepted as booleans.
 
+	* generic/tclLiteral.c:	Disabled the code that forces some literals
+	into the "int" Tcl_ObjType during registration.  We can re-enable it
+	if this change causes trouble, but it seems more sensible to let
+	Tcl's "on-demand" shimmering rule, and not try to pre-guess things.
+
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c (Tcl_GetInt):	Corrected error that did not
