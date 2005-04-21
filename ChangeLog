@@ -1,3 +1,8 @@
+2005-04-22  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/unixInit.test (7.1): fixed failure when running tests
+	with -tmpdir arg not set to working dir.
+
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclGet.c (Tcl_GetInt):        Corrected error that did not
