@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.76 2005/04/20 16:04:20 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.77 2005/04/21 15:23:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1774,12 +1774,6 @@ SetDoubleFromAny(interp, objPtr)
 	}
 	return TCL_ERROR;
     }
-    if (errno != 0) {
-	if (interp != NULL) {
-	    TclExprFloatError(interp, newDouble);
-	}
-	return TCL_ERROR;
-    }
 
     /*
      * Make sure that the string has no garbage after the end of the double.
@@ -1791,6 +1785,13 @@ SetDoubleFromAny(interp, objPtr)
     }
     if (end != (string+length)) {
 	goto badDouble;
+    }
+
+    if (errno != 0) {
+	if (interp != NULL) {
+	    TclExprFloatError(interp, newDouble);
+	}
+	return TCL_ERROR;
     }
 
     /*
@@ -2064,7 +2065,6 @@ SetIntOrWideFromAny(interp, objPtr)
     register char *p;
     unsigned long newLong;
     int isNegative = 0;
-    int isWide = 0;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
@@ -2076,8 +2076,9 @@ SetIntOrWideFromAny(interp, objPtr)
      * Now parse "objPtr"s string as an int. We use an implementation here
      * that doesn't report errors in interp if interp is NULL. Note: use
      * strtoul instead of strtol for integer conversions to allow full-size
-     * unsigned numbers, but don't depend on strtoul to handle sign
-     * characters; it won't in some implementations.
+     * unsigned numbers.  We parse the leading space and sign ourselves so
+     * we can tell the difference between apparently positive and negative
+     * values.  
      */
 
     errno = 0;
@@ -2106,14 +2107,6 @@ SetIntOrWideFromAny(interp, objPtr)
     if (end == p) {
 	goto badInteger;
     }
-    if (errno == ERANGE) {
-	if (interp != NULL) {
-	    CONST char *s = "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
-	}
-	return TCL_ERROR;
-    }
 
     /*
      * Make sure that the string has no garbage after the end of the int.
@@ -2127,17 +2120,14 @@ SetIntOrWideFromAny(interp, objPtr)
 	goto badInteger;
     }
 
-    /*
-     * If the resulting integer will exceed the range of a long,
-     * put it into a wide instead.  (Tcl Bug #868489)
-     */
-
-#ifndef TCL_WIDE_INT_IS_LONG
-    if ((isNegative && newLong > (unsigned long) (LONG_MAX) + 1)
-	    || (!isNegative && newLong > LONG_MAX)) {
-	isWide = 1;
+    if (errno == ERANGE) {
+	if (interp != NULL) {
+	    CONST char *s = "integer value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
+	}
+	return TCL_ERROR;
     }
-#endif
 
     /*
      * The conversion to int succeeded. Free the old internalRep before
@@ -2147,11 +2137,20 @@ SetIntOrWideFromAny(interp, objPtr)
      */
 
     TclFreeIntRep(objPtr);
-    if (isWide) {
+#ifndef TCL_WIDE_INT_IS_LONG
+    /*
+     * If the resulting integer will exceed the range of a long,
+     * put it into a wide instead.  (Tcl Bug #868489)
+     */
+
+    if ((isNegative && newLong > (unsigned long) (LONG_MAX) + 1)
+	    || (!isNegative && newLong > LONG_MAX)) {
 	objPtr->internalRep.wideValue =
 		(isNegative ? -(Tcl_WideInt)newLong : (Tcl_WideInt)newLong);
 	objPtr->typePtr = &tclWideIntType;
-    } else {
+    } else
+#endif
+    {
 	objPtr->internalRep.longValue =
 		(isNegative ? -(long)newLong : (long)newLong);
 	objPtr->typePtr = &tclIntType;
@@ -2454,25 +2453,11 @@ SetWideIntFromAny(interp, objPtr)
      * Now parse "objPtr"s string as an int. We use an implementation here
      * that doesn't report errors in interp if interp is NULL. Note: use
      * strtoull instead of strtoll for integer conversions to allow full-size
-     * unsigned numbers, but don't depend on strtoull to handle sign
-     * characters; it won't in some implementations.
+     * unsigned numbers.
      */
 
     errno = 0;
-#ifdef TCL_STRTOUL_SIGN_CHECK
-    for (; isspace(UCHAR(*p)) ; p++) {	/* INTL: ISO space. */
-	/* Empty loop body. */
-    }
-    if (*p == '-') {
-	p++;
-	newWide = -((Tcl_WideInt)strtoull(p, &end, 0));
-    } else if (*p == '+') {
-	p++;
-	newWide = strtoull(p, &end, 0);
-    } else
-#else
-	newWide = strtoull(p, &end, 0);
-#endif
+    newWide = strtoull(p, &end, 0);
     if (end == p) {
 	badInteger:
 	if (interp != NULL) {
@@ -2482,14 +2467,6 @@ SetWideIntFromAny(interp, objPtr)
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    Tcl_SetObjResult(interp, msg);
 	    TclCheckBadOctal(interp, string);
-	}
-	return TCL_ERROR;
-    }
-    if (errno == ERANGE) {
-	if (interp != NULL) {
-	    CONST char *s = "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2506,6 +2483,14 @@ SetWideIntFromAny(interp, objPtr)
 	goto badInteger;
     }
 
+    if (errno == ERANGE) {
+	if (interp != NULL) {
+	    CONST char *s = "integer value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
+	}
+	return TCL_ERROR;
+    }
     /*
      * The conversion to int succeeded. Free the old internalRep before
      * setting the new one. We do this as late as possible to allow the
