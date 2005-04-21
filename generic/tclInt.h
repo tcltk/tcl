@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.223 2005/04/19 16:32:55 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.224 2005/04/21 20:24:13 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1892,6 +1892,8 @@ MODULE_SCOPE int        TclGetNamespaceFromObj _ANSI_ARGS_((
 
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue _ANSI_ARGS_ ((
 			    ProcessGlobalValue *pgvPtr));
+MODULE_SCOPE int	TclGetTruthValueFromObj _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *objPtr, int *boolPtr));
 MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
