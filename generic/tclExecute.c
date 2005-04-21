@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.182 2005/04/15 02:38:39 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.183 2005/04/21 20:24:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2539,7 +2539,7 @@ TclExecuteByteCode(interp, codePtr)
 		 
 		*/
 		int b1;
-		result = Tcl_GetBooleanFromObj(interp, valuePtr, &b1);
+		result = TclGetTruthValueFromObj(interp, valuePtr, &b1);
 		if (result != TCL_OK) {
 		    if ((*pc == INST_JUMP_FALSE1) || (*pc == INST_JUMP_FALSE4)) {
 			jmpOffset[1] = jmpOffset[0];
@@ -2616,7 +2616,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i1 = (w != W0);
 		}
 	    } else {
-		result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL,
+		result = TclGetTruthValueFromObj((Tcl_Interp *) NULL,
 					       valuePtr, &i1);
 		i1 = (i1 != 0);
 	    }
@@ -2647,7 +2647,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i2 = (w != W0);
 		}
 	    } else {
-		result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL, value2Ptr, &i2);
+		result = TclGetTruthValueFromObj((Tcl_Interp *) NULL, value2Ptr, &i2);
 	    }
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
@@ -4302,7 +4302,7 @@ TclExecuteByteCode(interp, codePtr)
 		            valuePtr, &d);
 		}
 		if (result == TCL_ERROR && *pc == INST_LNOT) {
-		    result = Tcl_GetBooleanFromObj((Tcl_Interp *)NULL,
+		    result = TclGetTruthValueFromObj((Tcl_Interp *)NULL,
 		            valuePtr, &boolvar);
 		    i = (long)boolvar; /* i is long, not int! */
 		}
