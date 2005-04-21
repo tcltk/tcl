@@ -13,6 +13,7 @@
 	to parse leading signs.  All of them do, and if any are detected
 	that do not, the correct fix is replacement with compat/strtoul*.c,
 	not a lot of special care by the callers.
+	Tcl_GetDoubleFromObj now avoids shimmering away a "wideInt" intrep.
 
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
