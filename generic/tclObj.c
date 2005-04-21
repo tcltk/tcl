@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.79 2005/04/21 20:24:13 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.80 2005/04/21 20:35:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1299,7 +1299,6 @@ TclGetTruthValueFromObj(interp, objPtr, boolPtr)
 {
     double d;
     long l;
-    Tcl_WideInt w;
 
     /* 
      * The following call retrieves a numeric value without shimmering
@@ -1318,13 +1317,16 @@ TclGetTruthValueFromObj(interp, objPtr, boolPtr)
 	return TCL_OK;
     }
 #ifndef TCL_WIDE_INT_IS_LONG
-    /*
-     * ...then a wide.  Check in that order so that we don't promote
-     * anything to wide unnecessarily.
-     */
-    if (Tcl_GetWideIntFromObj(NULL, objPtr, &w) == TCL_OK) {
-	*boolPtr = (w != 0);
-	return TCL_OK;
+    else {
+	Tcl_WideInt w;
+	/*
+	 * ...then a wide.  Check in that order so that we don't promote
+	 * anything to wide unnecessarily.
+	 */
+	if (Tcl_GetWideIntFromObj(NULL, objPtr, &w) == TCL_OK) {
+	    *boolPtr = (w != 0);
+	    return TCL_OK;
+	}
     }
 #endif
     /*
