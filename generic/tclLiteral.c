@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.21 2004/12/24 18:07:01 msofer Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.22 2005/04/21 22:42:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -366,6 +366,7 @@ TclRegisterLiteral(envPtr, bytes, length, flags)
 	TclInitStringRep(objPtr, bytes, length);
     }
 
+#if 0
     if (TclLooksLikeInt(bytes, length)) {
 	/*
 	 * From here we use the objPtr, because it is NULL terminated
@@ -378,6 +379,7 @@ TclRegisterLiteral(envPtr, bytes, length, flags)
 	    }
 	}
     }
+#endif
     
 #ifdef TCL_COMPILE_DEBUG
     if (TclLookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
