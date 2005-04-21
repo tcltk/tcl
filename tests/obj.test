@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.11 2004/09/10 21:29:42 dkf Exp $
+# RCS: @(#) $Id: obj.test,v 1.12 2005/04/21 20:24:14 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -202,9 +202,10 @@ test obj-11.1 {Tcl_GetBooleanFromObj, existing boolean object} testobj {
 test obj-11.2 {Tcl_GetBooleanFromObj, convert to boolean} testobj {
     set result ""
     lappend result [testintobj set 1 47]
-    lappend result [testbooleanobj not 1]    ;# must convert to bool
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
     lappend result [testobj type 1]
-} {47 0 boolean}
+} {47 1 {expected boolean value but got "47"} int}
 test obj-11.3 {Tcl_GetBooleanFromObj, error converting to boolean} testobj {
     set result ""
     lappend result [teststringobj set 1 abc]
@@ -220,15 +221,17 @@ test obj-11.4 {Tcl_GetBooleanFromObj, error converting from "empty string"} test
 test obj-11.5 {Tcl_GetBooleanFromObj, convert hex to boolean} testobj {
     set result ""
     lappend result [teststringobj set 1 0xac]
-    lappend result [testbooleanobj not 1]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
     lappend result [testobj type 1]
-} {0xac 0 boolean}
+} {0xac 1 {expected boolean value but got "0xac"} string}
 test obj-11.6 {Tcl_GetBooleanFromObj, convert float to boolean} testobj {
     set result ""
     lappend result [teststringobj set 1 5.42]
-    lappend result [testbooleanobj not 1]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
     lappend result [testobj type 1]
-} {5.42 0 boolean}
+} {5.42 1 {expected boolean value but got "5.42"} string}
 
 test obj-12.1 {DupBooleanInternalRep} testobj {
     set result ""
@@ -239,16 +242,17 @@ test obj-12.1 {DupBooleanInternalRep} testobj {
 
 test obj-13.1 {SetBooleanFromAny, int to boolean special case} testobj {
     set result ""
-    lappend result [testintobj set 1 1234]
+    lappend result [testintobj set 1 1]
     lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
     lappend result [testobj type 1]
-} {1234 0 boolean}
+} {1 0 boolean}
 test obj-13.2 {SetBooleanFromAny, double to boolean special case} testobj {
     set result ""
-    lappend result [testdoubleobj set 1 3.14159]
-    lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
+    lappend result [testdoubleobj set 1 0.0]
+    lappend result [catch {testbooleanobj not 1} msg]
+    lappend result $msg
     lappend result [testobj type 1]
-} {3.14159 0 boolean}
+} {0.0 1 {expected boolean value but got "0.0"} double}
 test obj-13.3 {SetBooleanFromAny, special case strings representing booleans} testobj {
     set result ""
     foreach s {yes no true false on off} {
@@ -259,11 +263,11 @@ test obj-13.3 {SetBooleanFromAny, special case strings representing booleans} te
 } {0 1 0 1 0 1 boolean}
 test obj-13.4 {SetBooleanFromAny, recompute string rep then parse it} testobj {
     set result ""
-    lappend result [testintobj set 1 456]
+    lappend result [testintobj set 1 16]
     lappend result [testintobj div10 1]
-    lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
+    lappend result [testbooleanobj not 1]
     lappend result [testobj type 1]
-} {456 45 0 boolean}
+} {16 1 0 boolean}
 test obj-13.5 {SetBooleanFromAny, error parsing string} testobj {
     set result ""
     lappend result [teststringobj set 1 abc]

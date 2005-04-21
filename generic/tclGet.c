@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.11 2005/04/21 14:23:48 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.12 2005/04/21 20:24:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -44,13 +44,18 @@ Tcl_GetInt(interp, str, intPtr)
     int *intPtr;		/* Place to store converted result. */
 {
     Tcl_Obj obj;
+    int code;
    
     obj.refCount = 1;
     obj.bytes = (char *) str;
     obj.length = strlen(str);
     obj.typePtr = NULL;
 
-    return Tcl_GetIntFromObj(interp, &obj, intPtr);
+    code = Tcl_GetIntFromObj(interp, &obj, intPtr);
+    if (obj.refCount > 1) {
+	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
+    }
+    return code;
 }
 
 /*
@@ -85,13 +90,18 @@ TclGetLong(interp, str, longPtr)
     long *longPtr;		/* Place to store converted long result. */
 {
     Tcl_Obj obj;
+    int code;
 
     obj.refCount = 1;
     obj.bytes = (char *) str;
     obj.length = strlen(str);
     obj.typePtr = NULL;
 
-    return Tcl_GetLongFromObj(interp, &obj, longPtr);
+    code = Tcl_GetLongFromObj(interp, &obj, longPtr);
+    if (obj.refCount > 1) {
+	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
+    }
+    return code;
 }
 
 /*
@@ -122,13 +132,18 @@ Tcl_GetDouble(interp, str, doublePtr)
     double *doublePtr;		/* Place to store converted result. */
 {
     Tcl_Obj obj;
+    int code;
 
     obj.refCount = 1;
     obj.bytes = (char *) str;
     obj.length = strlen(str);
     obj.typePtr = NULL;
 
-    return Tcl_GetDoubleFromObj(interp, &obj, doublePtr);
+    code = Tcl_GetDoubleFromObj(interp, &obj, doublePtr);
+    if (obj.refCount > 1) {
+	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
+    }
+    return code;
 }
 
 /*
@@ -160,71 +175,17 @@ Tcl_GetBoolean(interp, str, boolPtr)
     int *boolPtr;		/* Place to store converted result, which
 				 * will be 0 or 1. */
 {
-    /*
-     * Can't use this (yet) due to Bug 1187123.
-     *
     Tcl_Obj obj;
+    int code;
 
     obj.refCount = 1;
     obj.bytes = (char *) str;
     obj.length = strlen(str);
     obj.typePtr = NULL;
 
-    return Tcl_GetBooleanFromObj(interp, &obj, boolPtr);
-    */
-    int i;
-    char lowerCase[10], c;
-    size_t length;
-
-    /*
-     * Convert the input string to all lower-case. 
-     * INTL: This code will work on UTF strings.
-     */
-
-    for (i = 0; i < 9; i++) {
-	c = str[i];
-	if (c == 0) {
-	    break;
-	}
-	if ((c >= 'A') && (c <= 'Z')) {
-	    c += (char) ('a' - 'A');
-	}
-	lowerCase[i] = c;
+    code = Tcl_GetBooleanFromObj(interp, &obj, boolPtr);
+    if (obj.refCount > 1) {
+	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    lowerCase[i] = 0;
-
-    length = strlen(lowerCase);
-    c = lowerCase[0];
-    if ((c == '0') && (lowerCase[1] == '\0')) {
-	*boolPtr = 0;
-    } else if ((c == '1') && (lowerCase[1] == '\0')) {
-	*boolPtr = 1;
-    } else if ((c == 'y') && (strncmp(lowerCase, "yes", length) == 0)) {
-	*boolPtr = 1;
-    } else if ((c == 'n') && (strncmp(lowerCase, "no", length) == 0)) {
-	*boolPtr = 0;
-    } else if ((c == 't') && (strncmp(lowerCase, "true", length) == 0)) {
-	*boolPtr = 1;
-    } else if ((c == 'f') && (strncmp(lowerCase, "false", length) == 0)) {
-	*boolPtr = 0;
-    } else if ((c == 'o') && (length >= 2)) {
-	if (strncmp(lowerCase, "on", length) == 0) {
-	    *boolPtr = 1;
-	} else if (strncmp(lowerCase, "off", length) == 0) {
-	    *boolPtr = 0;
-	} else {
-	    goto badBoolean;
-	}
-    } else {
-	badBoolean:
-        if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_Obj *msg =
-		    Tcl_NewStringObj("expected boolean value but got \"", -1);
-	    TclAppendLimitedToObj(msg, str, -1, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
-	    Tcl_SetObjResult(interp, msg);
-        }
-	return TCL_ERROR;
-    }
-    return TCL_OK;
+    return code;
 }

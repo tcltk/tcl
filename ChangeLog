@@ -2,18 +2,31 @@
 
 	* doc/GetInt.3:	Convert argument "string" to "str" to agree with code.
 	Also clarified a few details on int and double formats.
-	* generic/tclGet.c:	Radical code simplification.  Converted most
+	* generic/tclGet.c:	Radical code simplification.  Converted
 	Tcl_GetFoo() routines into wrappers around Tcl_GetFooFromObj().
 	Reduces code duplication, and the resulting potential for inconsistency.
 
-	* generic/tclObj.c:	Re-ordered error detection code so all values
-	with trailing garbage receive a "not an integer" message instead of
-	an "integer too large" message.
-	Removed inactive code meant to deal with strtoul* routines that fail
-	to parse leading signs.  All of them do, and if any are detected
-	that do not, the correct fix is replacement with compat/strtoul*.c,
-	not a lot of special care by the callers.
-	Tcl_GetDoubleFromObj now avoids shimmering away a "wideInt" intrep.
+	* generic/tclObj.c:	Several changes:
+
+	  - Re-ordered error detection code so all values with trailing
+	    garbage receive a "not an integer" message instead of an
+	    "integer too large" message.
+	  - Removed inactive code meant to deal with strtoul* routines that
+	    fail to parse leading signs.  All of them do, and if any are
+	    detected that do not, the correct fix is replacement with
+	    compat/strtoul*.c, not a lot of special care by the callers.
+	  - Tcl_GetDoubleFromObj now avoids shimmering away a "wideInt" intrep.
+	  - Fixed Tcl_GetBooleanFromObj to agree with its documentation and
+	    with Tcl_GetBoolean, accepting only "0" and "1" and not other
+	    numeric strings.  [Bug 1187123]
+	  - Added new private routine TclGetTruthValueFromObj to perform
+	    the more permissive conversion of numeric values to boolean
+	    that is needed by the [expr] machinery.
+
+	* generic/tclInt.h (TclGetTruthValueFromObj):	New routine.
+	* generic/tclExecute.c:	Updated callers to call new routine.
+	* tests/obj.test:	Corrected bad tests that actually expected
+	values like "47" and "0xac" to be accepted as booleans.
 
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
