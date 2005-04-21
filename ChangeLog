@@ -1,3 +1,11 @@
+2005-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/GetInt.3:	Convert argument "string" to "str" to agree with code.
+	Also clarified a few details on int and double formats.
+	* generic/tclGet.c:	Radical code simplification.  Converted most
+	Tcl_GetFoo() routines into wrappers around Tcl_GetFooFromObj().
+	Reduces code duplication, and the resulting potential for inconsistency.
+
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c (Tcl_GetInt):	Corrected error that did not
