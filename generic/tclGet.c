@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.10 2005/04/20 16:04:19 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.11 2005/04/21 14:23:48 dgp Exp $
  */
 
 #include "tclInt.h"
-#include <math.h>
 
 
 /*
@@ -38,80 +37,20 @@
  */
 
 int
-Tcl_GetInt(interp, string, intPtr)
+Tcl_GetInt(interp, str, intPtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    CONST char *string;		/* String containing a (possibly signed)
-				 * integer in a form acceptable to strtol. */
+    CONST char *str;		/* String containing a (possibly signed)
+				 * integer in a form acceptable to strtoul. */
     int *intPtr;		/* Place to store converted result. */
 {
-    char *end;
-    CONST char *p = string;
-    long i;
+    Tcl_Obj obj;
+   
+    obj.refCount = 1;
+    obj.bytes = (char *) str;
+    obj.length = strlen(str);
+    obj.typePtr = NULL;
 
-    /*
-     * Note: use strtoul instead of strtol for integer conversions
-     * to allow full-size unsigned numbers, but don't depend on strtoul
-     * to handle sign characters;  it won't in some implementations.
-     */
-
-    errno = 0;
-#ifdef TCL_STRTOUL_SIGN_CHECK
-    /*
-     * This special sign check actually causes bad numbers to be allowed
-     * when strtoul.  I can't find a strtoul that doesn't validly handle
-     * signed characters, and the C standard implies that this is all
-     * unnecessary. [Bug #634856]
-     */
-    for ( ; isspace(UCHAR(*p)); p++) {	/* INTL: ISO space. */
-	/* Empty loop body. */
-    }
-    if (*p == '-') {
-	p++;
-	i = -((long)strtoul(p, &end, 0)); /* INTL: Tcl source. */
-    } else if (*p == '+') {
-	p++;
-	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-    } else
-#else
-	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-#endif
-    if (end == p) {
-	badInteger:
-        if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "expected integer but got \"", string,
-		    "\"", (char *) NULL);
-	    TclCheckBadOctal(interp, string);
-        }
-	return TCL_ERROR;
-    }
-
-    /*
-     * The second test below is needed on platforms where "long" is
-     * larger than "int" to detect values that fit in a long but not in
-     * an int.
-     */
-
-    if ((errno == ERANGE) 
-#if (LONG_MAX > INT_MAX)
-	    || (i > UINT_MAX) || (i < -(long)UINT_MAX)
-#endif
-    ) {
-        if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_SetResult(interp, "integer value too large to represent",
-		    TCL_STATIC);
-            Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-		    Tcl_GetStringResult(interp), (char *) NULL);
-        }
-	return TCL_ERROR;
-    }
-    while ((*end != '\0') && isspace(UCHAR(*end))) { /* INTL: ISO space. */
-	end++;
-    }
-    if (*end != 0) {
-	goto badInteger;
-    }
-    *intPtr = (int) i;
-    return TCL_OK;
+    return Tcl_GetIntFromObj(interp, &obj, intPtr);
 }
 
 /*
@@ -137,64 +76,22 @@ Tcl_GetInt(interp, string, intPtr)
  */
 
 int
-TclGetLong(interp, string, longPtr)
+TclGetLong(interp, str, longPtr)
     Tcl_Interp *interp;		/* Interpreter used for error reporting
 				 * if not NULL. */
-    CONST char *string;		/* String containing a (possibly signed)
+    CONST char *str;		/* String containing a (possibly signed)
 				 * long integer in a form acceptable to
 				 * strtoul. */
     long *longPtr;		/* Place to store converted long result. */
 {
-    char *end;
-    CONST char *p = string;
-    long i;
+    Tcl_Obj obj;
 
-    /*
-     * Note: don't depend on strtoul to handle sign characters; it won't
-     * in some implementations.
-     */
+    obj.refCount = 1;
+    obj.bytes = (char *) str;
+    obj.length = strlen(str);
+    obj.typePtr = NULL;
 
-    errno = 0;
-#ifdef TCL_STRTOUL_SIGN_CHECK
-    for ( ; isspace(UCHAR(*p)); p++) {	/* INTL: ISO space. */
-	/* Empty loop body. */
-    }
-    if (*p == '-') {
-	p++;
-	i = -(int)strtoul(p, &end, 0); /* INTL: Tcl source. */
-    } else if (*p == '+') {
-	p++;
-	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-    } else
-#else
-	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-#endif
-    if (end == p) {
-	badInteger:
-        if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "expected integer but got \"", string,
-		    "\"", (char *) NULL);
-	    TclCheckBadOctal(interp, string);
-        }
-	return TCL_ERROR;
-    }
-    if (errno == ERANGE) {
-        if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_SetResult(interp, "integer value too large to represent",
-		    TCL_STATIC);
-            Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-                    Tcl_GetStringResult(interp), (char *) NULL);
-        }
-	return TCL_ERROR;
-    }
-    while ((*end != '\0') && isspace(UCHAR(*end))) { /* INTL: ISO space. */
-	end++;
-    }
-    if (*end != 0) {
-	goto badInteger;
-    }
-    *longPtr = i;
-    return TCL_OK;
+    return Tcl_GetLongFromObj(interp, &obj, longPtr);
 }
 
 /*
@@ -218,40 +115,20 @@ TclGetLong(interp, string, longPtr)
  */
 
 int
-Tcl_GetDouble(interp, string, doublePtr)
+Tcl_GetDouble(interp, str, doublePtr)
     Tcl_Interp *interp;		/* Interpreter used for error reporting. */
-    CONST char *string;		/* String containing a floating-point number
+    CONST char *str;		/* String containing a floating-point number
 				 * in a form acceptable to strtod. */
     double *doublePtr;		/* Place to store converted result. */
 {
-    char *end;
-    double d;
+    Tcl_Obj obj;
 
-    errno = 0;
-    d = strtod(string, &end); /* INTL: Tcl source. */
-    if (end == string) {
-	badDouble:
-        if (interp != (Tcl_Interp *) NULL) {
-            Tcl_AppendResult(interp,
-                    "expected floating-point number but got \"",
-                    string, "\"", (char *) NULL);
-        }
-	return TCL_ERROR;
-    }
-    if (errno != 0 && (d == HUGE_VAL || d == -HUGE_VAL || d == 0)) {
-        if (interp != (Tcl_Interp *) NULL) {
-            TclExprFloatError(interp, d); 
-        }
-	return TCL_ERROR;
-    }
-    while ((*end != 0) && isspace(UCHAR(*end))) { /* INTL: ISO space. */
-	end++;
-    }
-    if (*end != 0) {
-	goto badDouble;
-    }
-    *doublePtr = d;
-    return TCL_OK;
+    obj.refCount = 1;
+    obj.bytes = (char *) str;
+    obj.length = strlen(str);
+    obj.typePtr = NULL;
+
+    return Tcl_GetDoubleFromObj(interp, &obj, doublePtr);
 }
 
 /*
@@ -275,14 +152,26 @@ Tcl_GetDouble(interp, string, doublePtr)
  */
 
 int
-Tcl_GetBoolean(interp, string, boolPtr)
+Tcl_GetBoolean(interp, str, boolPtr)
     Tcl_Interp *interp;		/* Interpreter used for error reporting. */
-    CONST char *string;		/* String containing a boolean number
+    CONST char *str;		/* String containing a boolean number
 				 * specified either as 1/0 or true/false or
 				 * yes/no. */
     int *boolPtr;		/* Place to store converted result, which
 				 * will be 0 or 1. */
 {
+    /*
+     * Can't use this (yet) due to Bug 1187123.
+     *
+    Tcl_Obj obj;
+
+    obj.refCount = 1;
+    obj.bytes = (char *) str;
+    obj.length = strlen(str);
+    obj.typePtr = NULL;
+
+    return Tcl_GetBooleanFromObj(interp, &obj, boolPtr);
+    */
     int i;
     char lowerCase[10], c;
     size_t length;
@@ -293,7 +182,7 @@ Tcl_GetBoolean(interp, string, boolPtr)
      */
 
     for (i = 0; i < 9; i++) {
-	c = string[i];
+	c = str[i];
 	if (c == 0) {
 	    break;
 	}
@@ -329,8 +218,11 @@ Tcl_GetBoolean(interp, string, boolPtr)
     } else {
 	badBoolean:
         if (interp != (Tcl_Interp *) NULL) {
-            Tcl_AppendResult(interp, "expected boolean value but got \"",
-                    string, "\"", (char *) NULL);
+	    Tcl_Obj *msg =
+		    Tcl_NewStringObj("expected boolean value but got \"", -1);
+	    TclAppendLimitedToObj(msg, str, -1, 50, "");
+	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_SetObjResult(interp, msg);
         }
 	return TCL_ERROR;
     }
