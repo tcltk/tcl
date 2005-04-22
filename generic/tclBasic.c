@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.146 2005/04/21 21:24:03 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.147 2005/04/22 15:46:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4042,7 +4042,7 @@ Tcl_ExprBoolean(interp, string, ptr)
 	    /*
 	     * Store a boolean based on the expression result.
 	     */
-	    result = TclGetTruthValueFromObj(interp, resultPtr, ptr);
+	    result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
 	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
 	}
 	if (result != TCL_OK) {
@@ -4152,7 +4152,7 @@ Tcl_ExprBooleanObj(interp, objPtr, ptr)
 
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
     if (result == TCL_OK) {
-	result = TclGetTruthValueFromObj(interp, resultPtr, ptr);
+	result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
 	Tcl_DecrRefCount(resultPtr);  /* discard the result object */
     }
     return result;

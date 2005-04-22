@@ -1,3 +1,29 @@
+2005-04-22  Don Porter  <dgp@users.sourceforge.net>
+
+	The 2005-04-21 changes to Tcl_GetBooleanFromObj were done to bring
+	it into agreement with its docs.  Further investigation reveals it
+	was the docs that were incorrect.  
+
+	* doc/BoolObj.3:	Corrections to the documentation of
+	Tcl_GetBooleanFromObj to bring it into agreement with what this
+	public interface has always done, including noting the difference
+	in function between Tcl_GetBooleanFromObj and Tcl_GetBoolean.
+
+	* generic/tclGet.c:	Revised Tcl_GetBoolean to no longer be a
+	wrapper around Tcl_GetBooleanFromObj (different function!).
+
+	* generic/tclObj.c:	Removed TclGetTruthValueFromObj routine 
+	that was added yesterday.  Revisions so that only
+	Tcl_GetBoolean-approved values get the "boolean" Tcl_ObjType.
+	This retains the fix for [Bug 1187123].
+
+	* generic/tclInt.h:	Revert most recent change.
+	* generic/tclBasic.c:
+	* generic/tclCompCmds.c:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* tests/obj.test:
+
 2005-04-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/GetInt.3:	Convert argument "string" to "str" to agree with code.

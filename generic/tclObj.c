@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.80 2005/04/21 20:35:04 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.81 2005/04/22 15:46:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1233,50 +1233,6 @@ Tcl_SetBooleanObj(objPtr, boolValue)
  *
  * Tcl_GetBooleanFromObj --
  *
- *	Attempt to return a boolean from the Tcl object "objPtr". If the
- *	object is not already of the "boolean" Tcl_ObjType, an attempt
- *	will be made to convert	it to one.
- *
- *	Note that only exact boolean values are recognized, not all
- *	numeric values (use TclGetTruthValueFromObj() for that).
- *
- * Results:
- *	The return value is a standard Tcl object result. If an error occurs
- *	during conversion, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- * Side effects:
- *	If the object is not already a boolean, the conversion will free
- *	any old internal representation.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
-    Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr;	/* The object from which to get boolean. */
-    register int *boolPtr;	/* Place to store resulting boolean. */
-{
-    register int result;
-
-    if (objPtr->typePtr == &tclBooleanType) {
-	result = TCL_OK;
-    } else {
-	result = SetBooleanFromAny(interp, objPtr);
-    }
-
-    if (result == TCL_OK) {
-	*boolPtr = (int) objPtr->internalRep.longValue;
-    }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetTruthValueFromObj --
- *
  *	Attempt to return a boolean from the Tcl object "objPtr". This
  *	includes conversion from any of Tcl's numeric types.
  *
@@ -1292,7 +1248,7 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
  */
 
 int
-TclGetTruthValueFromObj(interp, objPtr, boolPtr)
+Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object from which to get boolean. */
     register int *boolPtr;	/* Place to store resulting boolean. */
@@ -1300,12 +1256,19 @@ TclGetTruthValueFromObj(interp, objPtr, boolPtr)
     double d;
     long l;
 
+    if (objPtr->typePtr == &tclBooleanType) {
+	*boolPtr = (int) objPtr->internalRep.longValue;
+	return TCL_OK;
+    }
     /* 
      * The following call retrieves a numeric value without shimmering
      * away any existing numeric intrep Tcl_ObjTypes.
      */
     if (Tcl_GetDoubleFromObj(NULL, objPtr, &d) == TCL_OK) {
 	*boolPtr = (d != 0.0);
+
+	/* Attempt shimmer to "boolean" objType */
+	SetBooleanFromAny(NULL, objPtr); 
 	return TCL_OK;
     }
     /*
@@ -1331,8 +1294,13 @@ TclGetTruthValueFromObj(interp, objPtr, boolPtr)
 #endif
     /*
      * Finally, check for the string values like "yes"
+     * and generate error message for non-boolean values.
      */
-    return Tcl_GetBooleanFromObj(interp, objPtr, boolPtr);
+    if (SetBooleanFromAny(interp, objPtr) == TCL_OK) {
+	*boolPtr = (int) objPtr->internalRep.longValue;
+	return TCL_OK;
+    }
+    return TCL_ERROR;
 }
 
 /*
