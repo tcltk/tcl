@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.12 2005/04/21 20:24:13 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.13 2005/04/22 15:46:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -183,9 +183,12 @@ Tcl_GetBoolean(interp, str, boolPtr)
     obj.length = strlen(str);
     obj.typePtr = NULL;
 
-    code = Tcl_GetBooleanFromObj(interp, &obj, boolPtr);
+    code = Tcl_ConvertToType(interp, &obj, &tclBooleanType);
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
+    }
+    if (code == TCL_OK) {
+	*boolPtr = obj.internalRep.longValue;
     }
     return code;
 }
