@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.28 2005/04/21 21:29:18 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.29 2005/04/22 15:46:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2645,7 +2645,7 @@ DictFilterCmd(interp, objc, objv)
 		boolObj = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(boolObj);
 		Tcl_ResetResult(interp);
-		if (TclGetTruthValueFromObj(interp, boolObj,
+		if (Tcl_GetBooleanFromObj(interp, boolObj,
 			&satisfied) != TCL_OK) {
 		    TclDecrRefCount(boolObj);
 		    result = TCL_ERROR;

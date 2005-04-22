@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.63 2005/04/21 21:24:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.64 2005/04/22 15:46:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1113,7 +1113,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    Tcl_Obj *boolObj = Tcl_NewStringObj(testTokenPtr[1].start,
 		    testTokenPtr[1].size);
 	    Tcl_IncrRefCount(boolObj);
-	    code = TclGetTruthValueFromObj(NULL, boolObj, &boolVal);
+	    code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
 	    Tcl_DecrRefCount(boolObj);
 	    if (code == TCL_OK) {
 		/*
@@ -3247,7 +3247,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
     boolObj = Tcl_NewStringObj(testTokenPtr[1].start, testTokenPtr[1].size);
     Tcl_IncrRefCount(boolObj);
-    code = TclGetTruthValueFromObj(NULL, boolObj, &boolVal);
+    code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
     Tcl_DecrRefCount(boolObj);
     if (code == TCL_OK) {
 	if (boolVal) {
