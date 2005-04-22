@@ -16,6 +16,7 @@
 	that was added yesterday.  Revisions so that only
 	Tcl_GetBoolean-approved values get the "boolean" Tcl_ObjType.
 	This retains the fix for [Bug 1187123].
+	* tests/string.test:	Test string-23.0 for Bug 1187123.
 
 	* generic/tclInt.h:	Revert most recent change.
 	* generic/tclBasic.c:
