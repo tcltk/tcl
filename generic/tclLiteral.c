@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.22 2005/04/21 22:42:04 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.23 2005/04/25 02:08:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -270,8 +270,6 @@ TclRegisterLiteral(envPtr, bytes, length, flags)
     register Tcl_Obj *objPtr;
     unsigned int hash;
     int localHash, globalHash, objIndex;
-    long n;
-    char buf[TCL_INTEGER_SPACE];
     Namespace *nsPtr;
 
     if (length < 0) {
@@ -371,6 +369,8 @@ TclRegisterLiteral(envPtr, bytes, length, flags)
 	/*
 	 * From here we use the objPtr, because it is NULL terminated
 	 */
+	long n;
+	char buf[TCL_INTEGER_SPACE];
 	if (TclGetLong((Tcl_Interp *) NULL, objPtr->bytes, &n) == TCL_OK) {
 	    TclFormatInt(buf, n);
 	    if (strcmp(objPtr->bytes, buf) == 0) {
