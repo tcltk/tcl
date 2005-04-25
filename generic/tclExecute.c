@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.185 2005/04/25 10:01:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.186 2005/04/25 10:05:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4713,7 +4713,10 @@ TclExecuteByteCode(interp, codePtr)
 	     * If some var in some var list still has a remaining list
 	     * element iterate one more time. Assign to var the next
 	     * element from its value list. We already checked above
-	     * that each list temp holds a valid list object.
+	     * that each list temp holds a valid list object (by calling
+	     * Tcl_ListObjLength), but cannot rely on that check remaining
+	     * valid: one list could have been shimmered as a side effect of
+	     * setting a traced variable.
 	     */
 		
 	    if (continueLoop) {
