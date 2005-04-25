@@ -1,4 +1,12 @@
+2005-04-25  Kevin B. Kenny <kennykb@acm.org>
+	
+	[tcl-numerics-branch]
+
+	* doc/CrtMathFunc.n:		Revised documentation for TIP 232
+	
 2005-04-20  Kevin B. Kenny <kennykb@acm.org>
+
+	[tcl-numerics-branch]
 
 	* doc/expr.n:
 	* doc/mathfunc.n (new file):	Revised documentation for TIP 232
