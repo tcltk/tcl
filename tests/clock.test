@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.52.2.1 2004/12/29 22:47:05 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.52.2.2 2005/04/25 21:37:26 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35398,6 +35398,18 @@ test clock-47.1 {regression test - four-digit time} {
 test clock-47.2 {regression test - four digit time} {
     clock scan 0039
 } [clock scan 0039 -format %H%M]
+
+test clock-48.1 {Bug 1185933: 'i' destroyed by clock init} -setup {
+    interp create child
+} -body {
+    interp eval child {
+	set i 12345
+	clock format 0
+	list [catch { set i } result] $result
+    }
+} -cleanup {
+    interp delete child
+} -result {0 12345}
 
 # cleanup
 

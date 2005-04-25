@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.10 2005/04/10 23:14:52 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.11 2005/04/25 21:37:22 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2143,6 +2143,9 @@ MODULE_SCOPE int	Tcl_DictObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_EncodingObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int	TclEncodingDirsObjCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	Tcl_EofObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -2504,10 +2507,12 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclThreadAllocObj _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
 MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex _ANSI_ARGS_((void));
+MODULE_SCOPE void   TclFreeAllocCache _ANSI_ARGS_((void *));
 MODULE_SCOPE void *	TclpGetAllocCache _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpSetAllocCache _ANSI_ARGS_((void *));
 MODULE_SCOPE void	TclFinalizeThreadAlloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpFreeAllocMutex _ANSI_ARGS_((Tcl_Mutex* mutex));
+MODULE_SCOPE void   TclpFreeAllocCache _ANSI_ARGS_((void *));
 
 #  define TclAllocObjStorage(objPtr) \
 	(objPtr) = TclThreadAllocObj()

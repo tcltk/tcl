@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: BoolObj.3,v 1.5 2004/10/07 15:37:43 dkf Exp $
+'\" RCS: @(#) $Id: BoolObj.3,v 1.5.2.1 2005/04/25 21:37:18 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_BooleanObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -65,25 +65,35 @@ and, if the object is not already a boolean object,
 frees any old internal representation.
 .PP
 \fBTcl_GetBooleanFromObj\fR attempts to return a boolean value
-from the Tcl object \fIobjPtr\fR.
-If the object is not already a boolean object,
-it will attempt to convert it to one.
-If an error occurs during conversion, it returns \fBTCL_ERROR\fR
-and leaves an error message in the interpreter's result object
-unless \fIinterp\fR is NULL.
-Otherwise, \fBTcl_GetBooleanFromObj\fR returns \fBTCL_OK\fR
-and stores the boolean value in the address given by \fIboolPtr\fR.
-If the object is not already a boolean object,
-the conversion will free any old internal representation.
-Objects having a string representation equal to any of \fB0\fR,
-\fBfalse\fR, \fBno\fR, or \fBoff\fR have a boolean value 0; if the
-string representation is any of \fB1\fR, \fBtrue\fR, \fByes\fR, or
-\fBon\fR the boolean value is 1.
-Any of these string values may be abbreviated, and upper-case spellings
-are also acceptable.
+corresponding to the value of the Tcl object \fIobjPtr\fR.
+If \fIobjPtr\fR is of the boolean type, its boolean value
+is written at the address given by \fIboolPtr\fR.  
+If \fIobjPtr\fR has a string representation recognized by
+\fBTcl_GetBoolean\fR, then \fIobjPtr\fR is converted to boolean
+type and its boolean value is written at the address given
+by \fIboolPtr\fR.  If \fIobjPtr\fR holds any value recognized as
+a number by Tcl, then if that value is zero a 0 is written at
+the address given by \fIboolPtr\fR and if that
+value is non-zero a 1 is written at the address given by \fIboolPtr\fR.
+In all cases where a value is written at the address given
+by \fIboolPtr\fR, \fBTCL_OK\fR is returned.
+If the value of \fIobjPtr\fR does not meet any of the conditions
+above, then \fBTCL_ERROR\fR is returned and error message is 
+left in the interpreter's result unless \fIinterp\fR is NULL.
+.PP
+Note that the routines \fBTcl_GetBooleanFromObj\fR and
+\fBTcl_GetBoolean\fR are not functional equivalents.
+The set of values for which \fBTcl_GetBooleanFromObj\fR
+will return \fBTCL_OK\fR is strictly larger than
+the set of values for which \fBTcl_GetBoolean\fR will do the same.
+For example, the value "5" passed to \fBTcl_GetBooleanFromObj\fR
+will lead to a \fBTCL_OK\fR return (and the boolean value 1),
+while the same value passed to \fBTcl_GetBoolean\fR will lead to
+a \fBTCL_ERROR\fR return.
 
 .SH "SEE ALSO"
-Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
+Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult,
+Tcl_GetBoolean
 
 .SH KEYWORDS
 boolean, boolean object, boolean type, internal representation, object, object type, string representation

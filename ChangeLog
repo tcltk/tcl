@@ -1,9 +1,110 @@
-2005-04-25  Kevin B. Kenny <kennykb@acm.org>
-	
-	[tcl-numerics-branch]
+2005-04-25  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	[tcl-numerics-branch] Merged with HEAD.
 
 	* doc/CrtMathFunc.n:		Revised documentation for TIP 232
 	
+2005-04-25  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	* library/tzdata/America/Boise:
+	* library/tzdata/America/Chicago:
+	* library/tzdata/America/Denver
+	* library/tzdata/America/Indianapolis:
+	* library/tzdata/America/Los_Angeles:
+	* library/tzdata/America/Louisville:
+	* library/tzdata/America/Managua:
+	* library/tzdata/America/New_York:
+	* library/tzdata/America/Phoenix:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/America/Indiana/Knox:
+	* library/tzdata/America/Indiana/Marengo:
+	* library/tzdata/America/Indiana/Vevay:
+	* library/tzdata/America/Kentucky/Monticello:
+	* library/tzdata/America/North_Dakota/Center:
+	* library/tzdata/Asia/Tehran:
+	Olson's tzdata2005i.  Corrects exact time at which Standard Time
+	was adopted in the US (generally, noon, Standard Time, rather than
+	noon, Local Mean Time).  Adopts new civil rules for Nicaragua
+	and Iran.
+	
+2005-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Use "ni" and "in" operators.
+
+2005-04-25  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix for [Bug 1189274].
+	
+2005-04-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLiteral.c:	Silence compiler warnings.
+	* generic/tclObj.c:	[Bug 1188863].
+
+2005-04-22  Don Porter  <dgp@users.sourceforge.net>
+
+	The 2005-04-21 changes to Tcl_GetBooleanFromObj were done to bring
+	it into agreement with its docs.  Further investigation reveals it
+	was the docs that were incorrect.  
+
+	* doc/BoolObj.3:	Corrections to the documentation of
+	Tcl_GetBooleanFromObj to bring it into agreement with what this
+	public interface has always done, including noting the difference
+	in function between Tcl_GetBooleanFromObj and Tcl_GetBoolean.
+
+	* generic/tclGet.c:	Revised Tcl_GetBoolean to no longer be a
+	wrapper around Tcl_GetBooleanFromObj (different function!).
+
+	* generic/tclObj.c:	Removed TclGetTruthValueFromObj routine 
+	that was added yesterday.  Revisions so that only
+	Tcl_GetBoolean-approved values get the "boolean" Tcl_ObjType.
+	This retains the fix for [Bug 1187123].
+	* tests/string.test:	Test string-23.0 for Bug 1187123.
+
+	* generic/tclInt.h:	Revert most recent change.
+	* generic/tclBasic.c:
+	* generic/tclCompCmds.c:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* tests/obj.test:
+
+2005-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/GetInt.3:	Convert argument "string" to "str" to agree with code.
+	Also clarified a few details on int and double formats.
+	* generic/tclGet.c:	Radical code simplification.  Converted
+	Tcl_GetFoo() routines into wrappers around Tcl_GetFooFromObj().
+	Reduces code duplication, and the resulting potential for inconsistency.
+
+	* generic/tclObj.c:	Several changes:
+
+	  - Re-ordered error detection code so all values with trailing
+	    garbage receive a "not an integer" message instead of an
+	    "integer too large" message.
+	  - Removed inactive code meant to deal with strtoul* routines that
+	    fail to parse leading signs.  All of them do, and if any are
+	    detected that do not, the correct fix is replacement with
+	    compat/strtoul*.c, not a lot of special care by the callers.
+	  - Tcl_GetDoubleFromObj now avoids shimmering away a "wideInt" intrep.
+	  - Fixed Tcl_GetBooleanFromObj to agree with its documentation and
+	    with Tcl_GetBoolean, accepting only "0" and "1" and not other
+	    numeric strings.  [Bug 1187123]
+	  - Added new private routine TclGetTruthValueFromObj to perform
+	    the more permissive conversion of numeric values to boolean
+	    that is needed by the [expr] machinery.
+
+	* generic/tclInt.h (TclGetTruthValueFromObj):	New routine.
+	* generic/tclExecute.c:	Updated callers to call new routine.
+	* generic/tclBasic.c:	Updated callers to call new routine.
+	* generic/tclCompCmds.c:	Updated callers to call new routine.
+	* generic/tclDictObj.c:	Updated callers to call new routine.
+	* tests/obj.test:	Corrected bad tests that actually expected
+	values like "47" and "0xac" to be accepted as booleans.
+
+	* generic/tclLiteral.c:	Disabled the code that forces some literals
+	into the "int" Tcl_ObjType during registration.  We can re-enable it
+	if this change causes trouble, but it seems more sensible to let
+	Tcl's "on-demand" shimmering rule, and not try to pre-guess things.
+
 2005-04-20  Kevin B. Kenny <kennykb@acm.org>
 
 	[tcl-numerics-branch]
@@ -11,6 +112,159 @@
 	* doc/expr.n:
 	* doc/mathfunc.n (new file):	Revised documentation for TIP 232
 	
+2005-04-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c (Tcl_GetInt):	Corrected error that did not
+	* generic/tclObj.c (Tcl_GetIntFromObj): permit 0x80000000 to be 
+	recognized as an integer on TCL_WIDE_INT_IS_LONG systems [Bug 1090869].
+
+2005-04-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclFileName.c: Silenced a compiler warning about
+	'/*' within a comment.  
+	
+2005-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Added unsupported command
+	* generic/tclCmdAH.c:	[::tcl::unsupported::EncodingDirs] to permit
+	* generic/tclInt.h:	query/set of the encoding search path at
+	* generic/tclInterp.c:	the script level.  Updated init.tcl to make
+	* library/init.tcl:	use of the new command.  Also updated several
+	coding practices in init.tcl ("eq" for [string equal], etc.)
+
+2005-04-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (Initialize): Put initialization code into a
+	proc to avoid inadvertently clobbering global variables.
+	[Bug 1185933]
+	* tests/clock.test (clock-48.1): Added regression test for the
+	above bug.
+	Thanks to Ulrich Ring for reporting this bug.
+	
+2005-04-16  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/Var.c (Tcl_ArrayObjCmd - ARRAY_NAMES): fix Tcl_Obj leak
+	[Bug 1084111] 
+
+2005-04-16  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* generic/tclIOUtil.c: force clenaup of the interp result
+	in TclLoadFile(). Some implementations of TclpFindSymbol()
+	will seed the interp result with error message when unable
+	to find the requested symbol (this is not considered to
+	be an error).
+
+        Set of changes correcting huge memory waste (not a leak)
+        when a thread exits. This has been introduced in 8.4.7
+        within an attempt to correctly cleanup after ourselves when
+        Tcl library is being unloaded with the Tcl_Finalize() call.
+
+        This fixes the Tcl Bug #1178445.
+
+        * generic/tclInt.h: added prototypes for TclpFreeAllocCache()
+        and TclFreeAllocCache()
+
+        * generic/tclThreadAlloc.c: modified TclFinalizeThreadAlloc()
+        to explicitly call TclpFreeAllocCache with the NULL-ptr as 
+        argument signalling cleanup of private tsd key used only by
+        the threading allocator.
+
+        * unix/tclUnixThrd.c: fixed TclpFreeAllocCache() to recognize
+        when being called with NULL argument. This is a signal for it
+        to clean up the tsd key associated with the threading allocator.
+
+        * win/tclWinThrd.c: renamed TclWinFreeAllocCache to TclpFreeAllocCache
+        and fixed to recognize when being called with NULL argument.
+        This is a signal for it to clean up the tsd key associated with the
+        threading allocator.
+
+2005-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test:	Disabled obsolete tests and removed code
+	* tests/encoding.test:	that supported them.
+	* generic/tclInterp.c:
+
+	* library/init.tcl:	Use auto-loading to bring in Tcl Module
+	* library/tclIndex:	support as needed.  This reduces startup
+	* library/tm.tcl:	time by delaying this initialization to
+	a later time.
+
+2005-04-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: missing semicolons caused failure to
+	compile with TCL_COMPILE_DEBUG.
+
+2005-04-13  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclIO.c (Tcl_SetChannelBufferSize): Lowest size limit
+	* tests/io.test: 	changed from ten bytes to one byte.  Need
+	* tests/iogt.test:	for this change was proven by
+	Ross Cartlidge <rossc@cisco.com> where [read stdin 1] was grabbing
+	10 bytes followed by starting a child process that was intended to
+	continue reading from stdin.  Even with -buffersize set to one,
+	nine chars were getting lost by the buffersize over reading for
+	the native read() caused by [read].
+
+2005-04-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixInit.c (TclpGetEncodingNameFromEnvironment):  Reversed
+	order of verifying candidate [encoding system] value, checking against
+	a table in memory first before calling Tcl_GetEncoding and potentially
+	scanning through the filesystem.  Also ordered the table so that a
+	binary search could be used within it.  Improves startup time a bit
+	more on some systems.
+
+2004-04-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.n: Added a missing '--' on several [switch]
+	commands to improve performance of [clock format] and related
+	operations.  [Feature Request 1182459]
+	
+2005-04-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/fcopy.n: Improved documentation on copying binary files,
+	added an example and mentioned the use of [file copy].
+	* doc/fconfigure.n: Improved documentation of -encoding binary
+	option.
+	This is all following comments from Steve Manning <steve@manning.net>
+	on comp.lang.tcl that the current documentation was not clear.
+
+2005-04-13  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:Commented out the functions
+	TclPrintInstruction(), TclPrintObject() and TclPrintSource() when
+	not debugging the compiler, as they are never called in that case.
+
+2005-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInterp.c:	Corrected bad syntax of Tcl_Panic() call.
+
+	* generic/tclUtil.c (TclGetProcessGlobalValue):	More robust handling
+	of bad TclInitProcessGlobalValueProc behavior; an immediate panic
+	rather than a mysterious crash later.
+
+	* generic/tclEncoding.c:	Several changes to the way the
+	encodingFileMap cache is maintained.  Previously, it was attempted
+	to keep the file map filled and up to date with changes in the
+	encoding search path.  This contributed to slow startup times since
+	it required an expensive "glob" operation to fill the cache.  Now the
+	validity of items in the cache are checked at the time they are
+	used, so the cache is permitted to fall out of sync with the
+	encoding search path.  Only [encoding names] and Tcl_GetEncodingNames()
+	now pay the full expense.  [Bug 1177363]
+
+2005-04-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* compat/strstr.c: Added default definition of NULL to
+	accommodate building on systems with badly broken headers.
+	[Bug #1175161]
+	
+2005-04-11  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tools/tclZIC.tcl: Rewrote to take advantage of more features of
+	Tcl 8.5 (on which it was dependent anyway). Also added a [package
+	require] line to formalize the relationship.
+
 2005-04-11  Kevin Kenny <kennykb@users.sf.net>
 
         [tcl_numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
@@ -20,6 +274,23 @@
 	with (possibly) a few more uses of his new object creation macros.
 	Also plugged a memory leak in TclObjInvoke. [Bug 1180368]
 	
+2005-04-10  Kevin Kenny  <kennykb@acm.org>
+
+	* library/tzdata/America/Montevideo:
+	* library/tzdata/Asia/Almaty:
+	* library/tzdata/Asia/Aqtau:
+	* library/tzdata/Asia/Aqtobe:
+	* library/tzdata/Asia/Baku:
+	* library/tzdata/Asia/Jerusalem:
+	* library/tzdata/Asia/Oral:
+	* library/tzdata/Asia/Qyzylorda:
+	* library/tzdata/Indian/Chagos:
+	* library/tzdata/Indian/Cocos:		Olson's tzdata2005h
+	
+2005-04-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (TclObjInvoke):	Plug memory leak. [Bug 1180368]
+
 2005-04-09  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix possible leak of expansion Tcl_Objs

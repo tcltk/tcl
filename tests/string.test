@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.43.2.1 2005/03/09 14:39:28 kennykb Exp $
+# RCS: @(#) $Id: string.test,v 1.43.2.2 2005/04/25 21:37:30 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -22,6 +22,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
+testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
@@ -1384,6 +1385,12 @@ test string-22.12 {string wordstart, unicode} {
 test string-22.13 {string wordstart, unicode} {
     string wordstart "\uc700\uc700 abc" 8
 } 3
+
+test string-23.0 {string is boolean, Bug 1187123} testindexobj {
+    set x 5
+    catch {testindexobj $x foo bar soom}
+    string is boolean $x
+} 0
 
 # cleanup
 ::tcltest::cleanupTests

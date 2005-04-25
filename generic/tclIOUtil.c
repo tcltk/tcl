@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.113.2.1 2005/01/20 14:53:39 kennykb Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.113.2.2 2005/04/25 21:37:21 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2986,7 +2986,8 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 		}
 		/* Copy this across, since both are equal for the native fs */
 		*clientDataPtr = (ClientData)*handlePtr;
-		return retVal;
+                Tcl_ResetResult(interp);
+		return TCL_OK;
 	    }
 	    if (Tcl_GetErrno() != EXDEV) {
 	        return retVal;
@@ -3011,7 +3012,9 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	 */
 	copyToPtr = TclpTempFileName();
 	if (copyToPtr == NULL) {
-	    return -1;
+	    Tcl_AppendResult(interp, "couldn't create temporary file: ",
+			     Tcl_PosixError(interp), (char *) NULL);
+	    return TCL_ERROR;
 	}
 	Tcl_IncrRefCount(copyToPtr);
 	
@@ -3025,7 +3028,9 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	     */
 	    Tcl_FSDeleteFile(copyToPtr);
 	    Tcl_DecrRefCount(copyToPtr);
-	    return -1;
+	    Tcl_AppendResult(interp, "couldn't load from current filesystem",
+			     (char *) NULL);
+	    return TCL_ERROR;
 	}
 	
 	if (TclCrossFilesystemCopy(interp, pathPtr, copyToPtr) == TCL_OK) {
@@ -3090,6 +3095,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 		(*handlePtr) = newLoadHandle;
 		(*clientDataPtr) = newClientData;
 		(*unloadProcPtr) = newUnloadProcPtr;
+		Tcl_ResetResult(interp);
 		return TCL_OK;
 	    }
 	    /* 
@@ -3138,6 +3144,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	    (*handlePtr) = newLoadHandle;
 	    (*clientDataPtr) = (ClientData)tvdlPtr;
 	    (*unloadProcPtr) = &FSUnloadTempFile;
+	    Tcl_ResetResult(interp);
 	    return retVal;
 	} else {
 	    /* Cross-platform copy failed */
@@ -3147,7 +3154,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	}
     }
     Tcl_SetErrno(ENOENT);
-    return -1;
+    return TCL_ERROR;
 }
 /* 
  * This function used to be in the platform specific directories, but it

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.78.2.3 2005/03/15 20:23:39 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.78.2.4 2005/04/25 21:37:19 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3108,6 +3108,7 @@ TclPrintByteCodeObj(interp, objPtr)
 }
 #endif /* TCL_COMPILE_DEBUG */
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  *----------------------------------------------------------------------
  *
@@ -3238,7 +3239,9 @@ TclPrintInstruction(codePtr, pc)
     fprintf(stdout, "\n");
     return numBytes;
 }
+#endif /* TCL_COMPILE_DEBUG */
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  *----------------------------------------------------------------------
  *
@@ -3269,7 +3272,9 @@ TclPrintObject(outFile, objPtr, maxChars)
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
+#endif /* TCL_COMPILE_DEBUG */
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  *----------------------------------------------------------------------
  *
@@ -3331,6 +3336,7 @@ TclPrintSource(outFile, stringPtr, maxChars)
     }
     fprintf(outFile, "\"");
 }
+#endif /* TCL_COMPILE_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
 /*

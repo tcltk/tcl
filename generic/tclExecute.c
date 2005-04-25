@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.10 2005/04/10 23:14:48 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.11 2005/04/25 21:37:20 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4289,7 +4289,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 		    i = valuePtr->internalRep.longValue;
-		    TclNewLongObj(objResultPtr, -i)
+		    TclNewLongObj(objResultPtr, -i);
 			TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 		} else if (tPtr == &tclWideIntType) {
 		    TclGetWide(w,valuePtr);
@@ -4329,7 +4329,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = (w == W0);
 		TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 	    } else {
-		i = (valuePtr->internalRep.doubleValue == 0.0)
+		i = (valuePtr->internalRep.doubleValue == 0.0);
 		TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
 	    }
 	    objResultPtr = eePtr->constants[i];
@@ -4639,7 +4639,10 @@ TclExecuteByteCode(interp, codePtr)
 	     * If some var in some var list still has a remaining list
 	     * element iterate one more time. Assign to var the next
 	     * element from its value list. We already checked above
-	     * that each list temp holds a valid list object.
+	     * that each list temp holds a valid list object (by calling
+	     * Tcl_ListObjLength), but cannot rely on that check remaining
+	     * valid: one list could have been shimmered as a side effect of
+	     * setting a traced variable.
 	     */
 		
 	    if (continueLoop) {
@@ -4650,7 +4653,7 @@ TclExecuteByteCode(interp, codePtr)
 
 		    listVarPtr = &(compiledLocals[listTmpIndex]);
 		    listPtr = listVarPtr->value.objPtr;
-		    TclListObjGetElements(listPtr, listLen, elements);
+		    Tcl_ListObjGetElements(interp, listPtr, &listLen, &elements);
 			
 		    valIndex = (iterNum * numVars);
 		    for (j = 0;  j < numVars;  j++) {

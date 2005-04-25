@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.54.2.1 2004/12/29 22:47:00 kennykb Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.54.2.2 2005/04/25 21:37:22 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -298,10 +298,6 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;         /* Interpreter to initialize. */
 {
-    int code;
-    Tcl_DString script, encodingName;
-    Tcl_Obj *path;
-
     if (tclPreInitScript != NULL) {
 	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
 	    return (TCL_ERROR);
@@ -347,133 +343,69 @@ Tcl_Init(interp)
  * Note that this entire search mechanism can be bypassed by defining an
  * alternate tclInit procedure before calling Tcl_Init().
  */
-    code = Tcl_Eval(interp,
+    return Tcl_Eval(interp,
 "if {[info proc tclInit]==\"\"} {\n"
 "  proc tclInit {} {\n"
-"    global tcl_libPath tcl_library\n"
-"    global env tclDefaultLibrary\n"
-"    variable ::tcl::LibPath\n"
+"    global tcl_libPath tcl_library env tclDefaultLibrary\n"
 "    rename tclInit {}\n"
-"    set errors {}\n"
-"    set localPath {}\n"
-"    set LibPath {}\n"
 "    if {[info exists tcl_library]} {\n"
-"	lappend localPath $tcl_library\n"
+"	set scripts {{set tcl_library}}\n"
 "    } else {\n"
-"	if {[info exists env(TCL_LIBRARY)]\n"
-"		&& [string length $env(TCL_LIBRARY)]} {\n"
-"	    lappend localPath $env(TCL_LIBRARY)\n"
-"	    lappend LibPath $env(TCL_LIBRARY)\n"
-"	    if {[regexp ^tcl(.*)$ [file tail $env(TCL_LIBRARY)] -> tail]} {\n"
-"		if {$tail ne [info tclversion]} {\n"
-"		    lappend localPath [file join [file dirname\\\n"
-"			    $env(TCL_LIBRARY)] tcl[info tclversion]]\n"
-"		    lappend LibPath [file join [file dirname\\\n"
-"			    $env(TCL_LIBRARY)] tcl[info tclversion]]\n"
-"		}\n"
+"	set scripts {}\n"
+"	if {[info exists env(TCL_LIBRARY)] && ($env(TCL_LIBRARY) ne {})} {\n"
+"	    lappend scripts {set env(TCL_LIBRARY)}\n"
+"	    lappend scripts {\n"
+"if {[regexp ^tcl(.*)$ [file tail $env(TCL_LIBRARY)] -> tail] == 0} continue\n"
+"if {$tail eq [info tclversion]} continue\n"
+"file join [file dirname $env(TCL_LIBRARY)] tcl[info tclversion]}\n"
+"	}\n"
+"	if {[info exists tclDefaultLibrary]} {\n"
+"	    lappend scripts {set tclDefaultLibrary}\n"
+"	} else {\n"
+"	    lappend scripts {::tcl::pkgconfig get scriptdir,runtime}\n"
+"	}\n"
+"	lappend scripts {\n"
+"set parentDir [file dirname [file dirname [info nameofexecutable]]]\n"
+"set grandParentDir [file dirname $parentDir]\n"
+"file join $parentDir lib tcl[info tclversion]} \\\n"
+"	{file join $grandParentDir lib tcl[info tclversion]} \\\n"
+"	{file join $parentDir library} \\\n"
+"	{file join $grandParentDir library} \\\n"
+"	{file join $grandParentDir tcl[info patchlevel] library} \\\n"
+"	{\n"
+"file join [file dirname $grandParentDir] tcl[info patchlevel] library}\n"
+"	if {[info exists tcl_libPath]\n"
+"		&& [catch {llength $tcl_libPath} len] == 0} {\n"
+"	    for {set i 0} {$i < $len} {incr i} {\n"
+"		lappend scripts [list lindex \\$tcl_libPath $i]\n"
 "	    }\n"
 "	}\n"
-"	if {[catch {\n"
-"	    lappend localPath $tclDefaultLibrary\n"
-"	    unset tclDefaultLibrary\n"
-"	}]} {\n"
-"	    lappend localPath [::tcl::pkgconfig get scriptdir,runtime]\n"
-"	}\n"
-"	set parentDir [file normalize [file dirname [file dirname\\\n"
-"		[info nameofexecutable]]]]\n"
-"	set grandParentDir [file dirname $parentDir]\n"
-"	lappend LibPath [file join $parentDir lib tcl[info tclversion]]\n"
-"	lappend LibPath [file join $grandParentDir lib tcl[info tclversion]]\n"
-"	lappend LibPath [file join $parentDir library]\n"
-"	lappend LibPath [file join $grandParentDir library]\n"
-"	lappend LibPath [file join $grandParentDir\\\n"
-"       		tcl[info patchlevel] library]\n"
-"	lappend LibPath [file join [file dirname $grandParentDir]\\\n"
-"       		tcl[info patchlevel] library]\n"
-"	catch {\n"
-"            set LibPath [concat $LibPath $tcl_libPath]\n"
-"	}\n"
 "    }\n"
-"    foreach i [concat $localPath $LibPath] {\n"
-"	set tcl_library $i\n"
-"	set tclfile [file join $i init.tcl]\n"
+"    set dirs {}\n"
+"    set errors {}\n"
+"    foreach script $scripts {\n"
+"	lappend dirs [eval $script]\n"
+"	set tcl_library [lindex $dirs end]\n"
+"	set tclfile [file join $tcl_library init.tcl]\n"
 "	if {[file exists $tclfile]} {\n"
-"	    if {![catch {uplevel #0 [list source $tclfile]} msg opts]} {\n"
-"		return\n"
-"	    } else {\n"
+"	    if {[catch {uplevel #0 [list source $tclfile]} msg opts]} {\n"
 "		append errors \"$tclfile: $msg\n\"\n"
 "		append errors \"[dict get $opts -errorinfo]\n\"\n"
+"		continue\n"
 "	    }\n"
+"	    unset -nocomplain tclDefaultLibrary\n"
+"	    return\n"
 "	}\n"
 "    }\n"
+"    unset -nocomplain tclDefaultLibrary\n"
 "    set msg \"Can't find a usable init.tcl in the following directories: \n\"\n"
-"    append msg \"    $localPath $LibPath\n\n\"\n"
+"    append msg \"    $dirs\n\n\"\n"
 "    append msg \"$errors\n\n\"\n"
 "    append msg \"This probably means that Tcl wasn't installed properly.\n\"\n"
 "    error $msg\n"
 "  }\n"
 "}\n"
 "tclInit");
-
-    if (code != TCL_OK) {
-	return code;
-    }
-
-    /* 
-     * Now that [info library] is initialized, make sure that
-     * [file join [info library] encoding] is on the encoding
-     * search path.
-     *
-     * Relying on use of original built-in commands.
-     * Should be a safe assumption during interp initialization.
-     * More robust would be to use C-coded equivalents, but that's such
-     * a pain...
-     */
-
-    Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, "lsearch -exact", -1);
-    path = Tcl_DuplicateObj(TclGetEncodingSearchPath());
-    Tcl_IncrRefCount(path);
-    Tcl_DStringAppendElement(&script, Tcl_GetString(path));
-    Tcl_DStringAppend(&script, " [file join [info library] encoding]", -1);
-    code = Tcl_EvalEx(interp, Tcl_DStringValue(&script),
-	    Tcl_DStringLength(&script), TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&script);
-    if (code == TCL_OK) {
-	int index;
-	Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &index);
-	if (index != -1) {
-	    /* [info library]/encoding already on the encoding search path */
-	    goto done;
-	}
-    }
-    Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, "file join [info library] encoding", -1);
-    code = Tcl_EvalEx(interp, Tcl_DStringValue(&script),
-	    Tcl_DStringLength(&script), TCL_EVAL_GLOBAL);
-    Tcl_DStringFree(&script);
-    if (code == TCL_OK) {
-	Tcl_ListObjAppendElement(NULL, path, Tcl_GetObjResult(interp));
-	TclSetEncodingSearchPath(path);
-    }
-done:
-    /*
-     * Now that we know the distributed *.enc files are on the encoding
-     * search path, check whether the [encoding system] matches that
-     * specified by the environment, and if not, attempt to correct it
-     */
-    TclpGetEncodingNameFromEnvironment(&encodingName);
-    if (strcmp(Tcl_DStringValue(&encodingName), Tcl_GetEncodingName(NULL))) {
-	code = Tcl_SetSystemEncoding(NULL, Tcl_DStringValue(&encodingName));
-	if (code == TCL_ERROR) {
-	    Tcl_Panic("system encoding \"", Tcl_DStringValue(&encodingName),
-		    "\" not available");
-	}
-    }
-    Tcl_DStringFree(&encodingName);
-    Tcl_DecrRefCount(path);
-    Tcl_ResetResult(interp);
-    return TCL_OK;
 }
 
 /*
