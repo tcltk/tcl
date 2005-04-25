@@ -1,3 +1,26 @@
+2005-04-25  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	* library/tzdata/America/Boise:
+	* library/tzdata/America/Chicago:
+	* library/tzdata/America/Denver
+	* library/tzdata/America/Indianapolis:
+	* library/tzdata/America/Los_Angeles:
+	* library/tzdata/America/Louisville:
+	* library/tzdata/America/Managua:
+	* library/tzdata/America/New_York:
+	* library/tzdata/America/Phoenix:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/America/Indiana/Knox:
+	* library/tzdata/America/Indiana/Marengo:
+	* library/tzdata/America/Indiana/Vevay:
+	* library/tzdata/America/Kentucky/Monticello:
+	* library/tzdata/America/North_Dakota/Center:
+	* library/tzdata/Asia/Tehran:
+	Olson's tzdata2005i.  Corrects exact time at which Standard Time
+	was adopted in the US (generally, noon, Standard Time, rather than
+	noon, Local Mean Time).  Adopts new civil rules for Nicaragua
+	and Iran.
+	
 2005-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:	Use "ni" and "in" operators.
