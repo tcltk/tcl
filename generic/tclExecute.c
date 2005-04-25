@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.184 2005/04/22 15:46:54 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.185 2005/04/25 10:01:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4724,7 +4724,7 @@ TclExecuteByteCode(interp, codePtr)
 
 		    listVarPtr = &(compiledLocals[listTmpIndex]);
 		    listPtr = listVarPtr->value.objPtr;
-		    TclListObjGetElements(listPtr, listLen, elements);
+		    Tcl_ListObjGetElements(interp, listPtr, &listLen, &elements);
 			
 		    valIndex = (iterNum * numVars);
 		    for (j = 0;  j < numVars;  j++) {
