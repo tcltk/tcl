@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.81 2005/04/22 15:46:59 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.82 2005/04/25 02:08:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1677,7 +1677,7 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
 	*dblPtr = objPtr->internalRep.longValue;
 	return TCL_OK;
     } else if (objPtr->typePtr == &tclWideIntType) {
-	*dblPtr = objPtr->internalRep.wideValue;
+	*dblPtr = (double) objPtr->internalRep.wideValue;
 	return TCL_OK;
     }
 
