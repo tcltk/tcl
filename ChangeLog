@@ -3,7 +3,8 @@
 	* generic/tclObj.c (Tcl_GetDoubleFromObj): 
 	Restored silent overflow/underflow behaviour that the merge
 	of 2004-04-25 messed up.  Thanks to Don Porter for calling 
-	attention to this bug.
+	attention to this bug. Also removed an uninitialised memory
+	reference in this function that valgrind caught.
 	
 	* tests/expr.test (expr-29.*, expr-30.*): 
 	Added further tests of overflow/underflow on input conversions.

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.12 2005/04/26 16:33:03 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.13 2005/04/26 16:54:41 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1734,7 +1734,7 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
 
     result = SetDoubleFromAny(interp, objPtr);
     if ( result == TCL_OK ) {
-	if ( IS_NAN( *dblPtr ) ) {
+	if ( IS_NAN( objPtr->internalRep.doubleValue ) ) {
 	    if ( interp != NULL ) {
 		Tcl_SetObjResult
 		    ( interp,
