@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: string.h,v 1.4 2000/07/18 18:16:17 ericm Exp $
+ * RCS: @(#) $Id: string.h,v 1.4.18.1 2005/04/26 00:46:02 das Exp $
  */
 
 #ifndef _STRING
@@ -28,7 +28,11 @@
 #include <sys/types.h>
 #endif
 
+#ifdef __APPLE__
+extern VOID *		memchr _ANSI_ARGS_((CONST VOID *s, int c, size_t n));
+#else
 extern char *		memchr _ANSI_ARGS_((CONST VOID *s, int c, size_t n));
+#endif
 extern int		memcmp _ANSI_ARGS_((CONST VOID *s1, CONST VOID *s2,
 			    size_t n));
 extern char *		memcpy _ANSI_ARGS_((VOID *t, CONST VOID *f, size_t n));

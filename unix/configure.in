@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.12 2004/11/25 00:19:33 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.13 2005/04/26 00:46:03 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -206,20 +206,22 @@ AC_CHECK_FUNC(memmove, , [AC_DEFINE(NO_MEMMOVE) AC_DEFINE(NO_STRING_H)])
 #	On some systems strstr is broken: it returns a pointer even
 #	even if the original string is empty.
 #--------------------------------------------------------------------
-
-AC_MSG_CHECKING([proper strstr implementation])
-AC_TRY_RUN([
-extern int strstr();
-int main()
-{
-    exit(strstr("\0test", "test") ? 1 : 0);
-}
-], tcl_ok=yes, tcl_ok=no, tcl_ok=no)
-if test $tcl_ok = yes; then
-    AC_MSG_RESULT(yes)
-else
-    AC_MSG_RESULT([broken, using substitute])
-    LIBOBJS="$LIBOBJS strstr.o"
+dnl only run if AC_REPLACE_FUNCS(strstr) hasn't already added strstr.o
+if test "x${ac_cv_func_strstr}" = "xyes"; then
+    AC_MSG_CHECKING([proper strstr implementation])
+    AC_TRY_RUN([
+    extern int strstr();
+    int main()
+    {
+        exit(strstr("\0test", "test") ? 1 : 0);
+    }
+    ], tcl_ok=yes, tcl_ok=no, tcl_ok=no)
+    if test $tcl_ok = yes; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT([broken, using substitute])
+        LIBOBJS="$LIBOBJS strstr.o"
+    fi
 fi
 
 #--------------------------------------------------------------------
