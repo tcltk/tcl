@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.20 2005/01/21 22:25:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.21 2005/04/26 00:45:01 das Exp $
  */
 
 #include "tclInt.h"
@@ -685,7 +685,9 @@ Tcl_WaitForEvent(timePtr)
         myTime.sec  = timePtr->sec;
 	myTime.usec = timePtr->usec;
 
-	(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+	if (myTime.sec != 0 || myTime.usec != 0) {
+	    (*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+	}
 
 #ifdef TCL_THREADS
 	myTimePtr = &myTime;
