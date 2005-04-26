@@ -908,6 +908,7 @@ dnl AC_CHECK_TOOL(AR, ar)
     STLIB_LD='${AR} cr'
     LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH"
     PLAT_OBJS=""
+    PLAT_SRCS=""
     case $system in
 	AIX-*)
 	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
@@ -1378,26 +1379,44 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    esac
 	    ;;
 	Darwin-*)
+	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
-	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -install_name \${DYLIB_INSTALL_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr 0xa000000 -Wl,-single_module"
-	    TK_SHLIB_LD_EXTRAS="-compatibility_version ${TK_VERSION} -current_version \${VERSION} -install_name \${DYLIB_INSTALL_DIR}/\${TK_LIB_FILE} -prebind -seg1addr 0xb000000 -Wl,-single_module"
+	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
+	        hold_ldflags=$LDFLAGS
+	        LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
+	        AC_TRY_LINK(, [int i;], tcl_cv_ld_single_module=yes, tcl_cv_ld_single_module=no)
+	        LDFLAGS=$hold_ldflags])
+	    if test $tcl_cv_ld_single_module = yes; then
+	        SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
+	    fi
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind -Wl,-search_paths_first"
+	    LDFLAGS="$LDFLAGS -prebind"
+	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
+	        hold_ldflags=$LDFLAGS
+	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
+	        AC_TRY_LINK(, [int i;], tcl_cv_ld_search_paths_first=yes, tcl_cv_ld_search_paths_first=no)
+	        LDFLAGS=$hold_ldflags])
+	    if test $tcl_cv_ld_search_paths_first = yes; then
+	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
+	    fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
-	    CFLAGS_OPTIMIZE="-Os"
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    PLAT_OBJS="\${MAC_OSX_OBJS}"
+	    PLAT_SRCS="\${MAC_OSX_SRCS}"
+	    TCL_SHLIB_LD_EXTRAS='-compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
+	    TK_SHLIB_LD_EXTRAS=' -compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TK_LIB_FILE}  -seg1addr 0xb000000 -unexported_symbols_list $$(f=$(TCL_STUB_LIB_FILE).E && nm -gjp $(TCL_BIN_DIR)/$(TCL_STUB_LIB_FILE) | tail +3 > $$f && echo $$f)'
+	    LIBS="$LIBS -framework CoreFoundation"
 	    AC_DEFINE(MAC_OSX_TCL, 1, ["Is this a Mac I see before me?"])
 	    AC_DEFINE(HAVE_CFBUNDLE, 1, [Do we have access to Mac bundles?])
 	    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8",
 		[Are we to override what our default encoding is?])
-	    LIBS="$LIBS -framework CoreFoundation"
+	    AC_DEFINE(MODULE_SCOPE, __private_extern__, [Linker support for module scope symbols])
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
@@ -1879,6 +1898,7 @@ dnl        esac
 
     AC_SUBST(DL_OBJS)
     AC_SUBST(PLAT_OBJS)
+    AC_SUBST(PLAT_SRCS)
     AC_SUBST(CFLAGS)
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
@@ -2059,6 +2079,7 @@ int main() {
 
 AC_DEFUN(SC_MISSING_POSIX_HEADERS, [
     AC_MSG_CHECKING(dirent.h)
+    AC_CACHE_VAL(tcl_cv_dirent_h,
     AC_TRY_LINK([#include <sys/types.h>
 #include <dirent.h>], [
 #ifndef _POSIX_SOURCE
@@ -2078,9 +2099,9 @@ d = opendir("foobar");
 entryPtr = readdir(d);
 p = entryPtr->d_name;
 closedir(d);
-], tcl_ok=yes, tcl_ok=no)
+], tcl_cv_dirent_h=yes, tcl_cv_dirent_h=no))
 
-    if test $tcl_ok = no; then
+    if test $tcl_cv_dirent_h = no; then
 	AC_DEFINE(NO_DIRENT_H, 1, [Do we have <dirent.h>?])
     fi
 
