@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.21.2.1 2005/03/03 21:29:28 kennykb Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.21.2.2 2005/04/26 17:09:46 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1613,6 +1613,7 @@ FormatNumber(interp, type, src, cursorPtr)
 	    if ( src->typePtr != &tclDoubleType ) {
 		return TCL_ERROR;
 	    }
+	    dvalue = src->internalRep.doubleValue;
 	}
 	CopyNumber(&dvalue, *cursorPtr, sizeof(double), type);
 	*cursorPtr += sizeof(double);

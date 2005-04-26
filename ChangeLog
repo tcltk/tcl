@@ -1,10 +1,15 @@
 2005-04-26  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
+	* generic/tclBinary.c (FormatNumber):
+	Dredge the NaN out of the internal representation if
+	Tcl_GetDoubleFromObj returns TCL_ERROR on a NaN.
+	
 	* generic/tclObj.c (Tcl_GetDoubleFromObj): 
 	Restored silent overflow/underflow behaviour that the merge
 	of 2004-04-25 messed up.  Thanks to Don Porter for calling 
 	attention to this bug. Also removed an uninitialised memory
-	reference in this function that valgrind caught.
+	reference in this function that valgrind caught. Also changed
+	to return TCL_ERROR on a pure NaN.
 	
 	* tests/expr.test (expr-29.*, expr-30.*): 
 	Added further tests of overflow/underflow on input conversions.
