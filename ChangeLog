@@ -1,3 +1,35 @@
+2005-04-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* compat/string.h: fixed memchr() protoype for __APPLE__ so that we
+	build on Mac OS X 10.1 again.
+
+	* generic/tclNotify.c (TclFinalizeNotifier): fixed notifier not being
+	finalized in unthreaded core (was testing for notifier initialization in
+	current thread by checking thread id != 0 but thread id is always 0 in
+	untreaded core).
+
+	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): sync with HEAD: only declare
+	and use timeout var in unthreaded core.
+
+	* unix/Makefile.in: added @PLAT_SRCS@ to SRCS and split out NOTIFY_SRCS
+	from UNIX_SRCS for parity with UNIX_OBJS & NOTIFY_OBJS.
+
+	* unix/configure.in: only run check for broken strstr implementation if
+	AC_REPLACE_FUNCS(strstr) hasn't already determined that strstr is
+	unavailable, otherwise compat/strstr.o will be used twice (resulting in
+	duplicate symbol link errors on Mac OS X 10.1)
+	
+	* unix/tcl.m4 (Darwin): added configure checks for recently added linker
+	flags -single_module and -search_paths_first to allow building with
+	older tools (and on Mac OS X 10.1), use -single_module in SHLIB_LD and
+	not just T{CL,K}_SHLIB_LD_EXTRAS, added unexporting from Tk of symbols
+	from libtclstub to avoid duplicate symbol warnings, added PLAT_SRCS
+	definition for Mac OS X.
+	(SC_MISSING_POSIX_HEADERS): added caching of dirent.h check.
+	(SC_TCL_64BIT_FLAGS): fixed 'checking for off64_t' message output.
+
+	* unix/configure: autoconf-2.13
+
 2005-04-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	Corrected intrep-dependence of
