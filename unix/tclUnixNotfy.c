@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.7 2004/12/07 00:07:54 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.8 2005/04/26 00:46:02 das Exp $
  */
 
 #include "tclInt.h"
@@ -653,11 +653,15 @@ Tcl_WaitForEvent(timePtr)
 {
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
-    struct timeval timeout, *timeoutPtr;
     int mask;
 #ifdef TCL_THREADS
     int waitForFiles;
 #else
+    /* Impl. notes: timeout & timeoutPtr are used if, and only if
+     * threads are not enabled. They are the arguments for the regular
+     * select() used when the core is not thread-enabled. */
+
+    struct timeval timeout, *timeoutPtr;
     int numFound;
 #endif
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -666,6 +670,7 @@ Tcl_WaitForEvent(timePtr)
 	return tclStubs.tcl_WaitForEvent(timePtr);
     }
 
+#ifndef TCL_THREADS
     /*
      * Set up the timeout structure.  Note that if there are no events to
      * check for, we return with a negative result rather than blocking
@@ -676,7 +681,6 @@ Tcl_WaitForEvent(timePtr)
 	timeout.tv_sec = timePtr->sec;
 	timeout.tv_usec = timePtr->usec;
 	timeoutPtr = &timeout;
-#ifndef TCL_THREADS
     } else if (tsdPtr->numFdBits == 0) {
 	/*
 	 * If there are no threads, no timeout, and no fds registered,
@@ -687,10 +691,10 @@ Tcl_WaitForEvent(timePtr)
 	 */
 
 	return -1;
-#endif
     } else {
 	timeoutPtr = NULL;
     }
+#endif
 
 #ifdef TCL_THREADS
     /*
