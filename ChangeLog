@@ -11,6 +11,11 @@
 	reference in this function that valgrind caught. Also changed
 	to return TCL_ERROR on a pure NaN.
 	
+	* generic/tclStrToD.c (RefineResult):
+	Added a test for the initial approximation being HUGE_VAL;
+	this test avoids EDOM being returned from ldexp on some platforms
+	on input values exceeding the floating point range.
+	
 	* tests/expr.test (expr-29.*, expr-30.*): 
 	Added further tests of overflow/underflow on input conversions.
 	

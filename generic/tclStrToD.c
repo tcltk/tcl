@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.8 2005/03/03 21:54:09 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.9 2005/04/26 20:54:00 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -572,6 +572,15 @@ RefineResult( double approxResult,
 				 * of the correction term. */
     int i;
     CONST char* p;
+
+    /*
+     * The first approximation is always low.  If we find that
+     * it's HUGE_VAL, we're done.
+     */
+
+    if ( approxResult == HUGE_VAL ) {
+	return approxResult;
+    }
 
     /*
      * Find a common denominator for the decimal and binary fractions.
