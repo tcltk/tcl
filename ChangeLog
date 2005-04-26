@@ -1,3 +1,30 @@
+2005-04-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* compat/string.h: fixed memchr() protoype for __APPLE__ so that we
+	build on Mac OS X 10.1 again.
+
+	* generic/tclNotify.c (TclFinalizeNotifier): fixed notifier not being
+	finalized in unthreaded core (was testing for notifier initialization in
+	current thread by checking thread id != 0 but thread id is always 0 in
+	untreaded core).
+
+	* win/tclWinNotify.c (Tcl_WaitForEvent): 
+	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): don't call ScaleTimeProc for
+	zero wait times (as specified in TIP 233).
+
+	* unix/Makefile.in: added @PLAT_SRCS@ to SRCS and split out NOTIFY_SRCS
+	from UNIX_SRCS for parity with UNIX_OBJS & NOTIFY_OBJS.
+
+	* unix/tcl.m4 (Darwin): added configure checks for recently added linker
+	flags -single_module and -search_paths_first to allow building with
+	older tools (and on Mac OS X 10.1), use -single_module in SHLIB_LD and
+	not just T{CL,K}_SHLIB_LD_EXTRAS, added unexporting from Tk of symbols
+	from libtclstub to avoid duplicate symbol warnings, added PLAT_SRCS
+	definition for Mac OS X, defined MODULE_SCOPE to __private_extern__.
+	(SC_MISSING_POSIX_HEADERS): added caching of dirent.h check.
+
+	* unix/configure: autoconf-2.59
+
 2005-04-25  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* library/tzdata/America/Boise:
