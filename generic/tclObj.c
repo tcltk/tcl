@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.11 2005/04/25 21:37:22 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.12 2005/04/26 16:33:03 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1815,7 +1815,7 @@ SetDoubleFromAny(interp, objPtr)
 	goto badDouble;
     }
 
-    if (errno != 0) {
+    if (errno != 0 && errno != ERANGE) {
 	if (interp != NULL) {
 	    TclExprFloatError(interp, newDouble);
 	}
