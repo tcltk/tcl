@@ -1,3 +1,8 @@
+2005-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (7.1):	Alternative fix for the
+	2005-04-22 commit.
+
 2005-04-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* compat/string.h: fixed memchr() protoype for __APPLE__ so that we
