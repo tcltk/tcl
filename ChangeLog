@@ -1,3 +1,14 @@
+2005-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#183 IMPLEMENTATION	[Patch 577093]
+
+	* generic/tclIOUtil.c (TclGetOpenModeEx):	New routine.
+	* generic/tclInt.h:
+
+	* generic/tclIO.c (Tcl_OpenObjCmd):	Support for "b" and
+	* doc/open.n:		"BINARY" in "access" argument to [open].
+	* tests/ioCmd.test:
+
 2005-04-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* compat/string.h: fixed memchr() protoype for __APPLE__ so that we
