@@ -1,5 +1,8 @@
 2005-04-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/init.tcl:	Corrected flaw in interactive command
+	* tests/main.test:	auto-completion.  [Bug 1191409].
+
 	* tests/unixInit.test (7.1):	Alternative fix for the
 	2005-04-22 commit.
 
