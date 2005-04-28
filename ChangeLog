@@ -1,5 +1,8 @@
 2005-04-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/init.tcl:	Corrected flaw in interactive command
+	* tests/main.test:	auto-completion.  [Bug 1191409].
+
 	TIP#183 IMPLEMENTATION	[Patch 577093]
 
 	* generic/tclIOUtil.c (TclGetOpenModeEx):	New routine.
