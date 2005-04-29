@@ -1,3 +1,38 @@
+2005-04-29  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#176 IMPLEMENTATION	[Patch 1165695]
+
+	* generic/tclUtil.c:	Extended TclGetIntForIndex to recognize
+	index formats including end+integer and integer+/-integer.
+
+	* generic/tclCmdMZ.c:	Extended the -start switch of [regexp]
+	and [regsub] to accept all index formats known by TclGetIntForIndex.
+
+	* doc/lindex.n:		Updated docs to note new index formats.
+	* doc/linsert.n:
+	* doc/lrange.n:
+	* doc/lreplace.n:
+	* doc/lsearch.n:
+	* doc/lset.n:
+	* doc/lsort.n:
+	* doc/regexp.n:
+	* doc/regsub.n:
+	* doc/string.n:
+
+	* tests/cmdIL.test:	Updated tests.
+	* tests/compile.test:
+	* tests/lindex.test:
+	* tests/linsert.test:
+	* tests/lrange.test:
+	* tests/lreplace.test:
+	* tests/lsearch.test:
+	* tests/lset.test:
+	* tests/regexp.test:
+	* tests/regexpComp.test:
+	* tests/string.test:
+	* tests/stringComp.test:
+	* tests/util.test:
+
 2005-04-28  Don Porter  <dgp@users.sourceforge.net>
 
         * tests/unixInit.test (7.1):    Alternative fix for the
