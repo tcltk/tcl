@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.8 2005/01/12 21:36:03 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.9 2005/04/29 22:40:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -150,9 +150,8 @@ static ProcessGlobalValue encodingSearchPath =
  * threads.  Access to the shared string is governed by a mutex lock.
  */
 
-static TclInitProcessGlobalValueProc	InitializeEncodingFileMap;
 static ProcessGlobalValue encodingFileMap = 
-	{0, 0, NULL, NULL, InitializeEncodingFileMap, NULL, NULL};
+	{0, 0, NULL, NULL, NULL, NULL, NULL};
 
 /*
  * A list of directories making up the "library path".  Historically
@@ -200,6 +199,8 @@ static int		BinaryProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+static void		DupEncodingIntRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
+			    Tcl_Obj *dupPtr));
 static void		EscapeFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		EscapeFromUtfProc _ANSI_ARGS_((ClientData clientData,
 			    CONST char *src, int srcLen, int flags,
@@ -213,6 +214,7 @@ static int		EscapeToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    int *dstCharsPtr));
 static void		FillEncodingFileMap ();
 static void		FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
+static void		FreeEncodingIntRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static Encoding *	GetTableEncoding _ANSI_ARGS_((
 			    EscapeEncodingData *dataPtr, int state));
 static Tcl_Encoding	LoadEncodingFile _ANSI_ARGS_((Tcl_Interp *interp,
@@ -221,7 +223,8 @@ static Tcl_Encoding	LoadTableEncoding _ANSI_ARGS_((CONST char *name,
 			    int type, Tcl_Channel chan));
 static Tcl_Encoding	LoadEscapeEncoding _ANSI_ARGS_((CONST char *name, 
 			    Tcl_Channel chan));
-static Tcl_Obj *	MakeFileMap ();
+static Tcl_Channel	OpenEncodingFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *name));
 static void		TableFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		TableFromUtfProc _ANSI_ARGS_((ClientData clientData,
 			    CONST char *src, int srcLen, int flags,
@@ -260,6 +263,89 @@ static int		UtfExtToUtfIntProc _ANSI_ARGS_((ClientData clientData,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
 
+/*
+ * A Tcl_ObjType for holding a cached Tcl_Encoding as the intrep.
+ * This should help the lifetime of encodings be more useful.  
+ * See concerns raised in [Bug 1077262].
+ */
+
+static Tcl_ObjType EncodingType = {
+    "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEncodingFromObj --
+ *
+ *      Writes to (*encodingPtr) the Tcl_Encoding value of (*objPtr),
+ *      if possible, and returns TCL_OK.  If no such encoding exists,
+ *      TCL_ERROR is returned, and if interp is non-NULL, an error message
+ *      is written there.
+ *
+ * Results:
+ *      Standard Tcl return code.
+ *
+ * Side effects:
+ * 	Caches the Tcl_Encoding value as the internal rep of (*objPtr).
+ *
+ *----------------------------------------------------------------------
+ */
+int 
+TclGetEncodingFromObj(interp, objPtr, encodingPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+    Tcl_Encoding *encodingPtr;
+{
+    CONST char *name = Tcl_GetString(objPtr);
+    if (objPtr->typePtr != &EncodingType) {
+	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
+
+	if (encoding == NULL) {
+	    return TCL_ERROR;
+	}
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep.otherValuePtr = (VOID *) encoding;
+	objPtr->typePtr = &EncodingType;
+    }
+    *encodingPtr = Tcl_GetEncoding(NULL, name);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeEncodingIntRep --
+ *
+ *      The Tcl_FreeInternalRepProc for the "encoding" Tcl_ObjType.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeEncodingIntRep(objPtr)
+    Tcl_Obj *objPtr;
+{
+    Tcl_FreeEncoding((Tcl_Encoding) objPtr->internalRep.otherValuePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupEncodingIntRep --
+ *
+ *      The Tcl_DupInternalRepProc for the "encoding" Tcl_ObjType.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DupEncodingIntRep(srcPtr, dupPtr)
+    Tcl_Obj *srcPtr;
+    Tcl_Obj *dupPtr;
+{
+    dupPtr->internalRep.otherValuePtr = (VOID *)
+	    Tcl_GetEncoding(NULL, srcPtr->bytes);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -302,7 +388,6 @@ TclSetEncodingSearchPath(searchPath)
 	return TCL_ERROR;
     }
     TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
-    FillEncodingFileMap();
     return TCL_OK;
 }
 
@@ -355,7 +440,10 @@ TclSetLibraryPath(path)
 /*
  *---------------------------------------------------------------------------
  *
- * MakeFileMap --
+ * FillEncodingFileMap --
+ *
+ * 	Called to bring the encoding file map in sync with the current
+ * 	value of the encoding search path.
  *
  *	Scan the directories on the encoding search path, find the
  *	*.enc files, and store the found pathnames in a map associated
@@ -376,8 +464,8 @@ TclSetLibraryPath(path)
  *---------------------------------------------------------------------------
  */
 
-static Tcl_Obj *
-MakeFileMap()
+void
+FillEncodingFileMap()
 {
     int i, numDirs = 0;
     Tcl_Obj *map, *searchPath;
@@ -419,33 +507,6 @@ MakeFileMap()
 	Tcl_DecrRefCount(directory);
     }
     Tcl_DecrRefCount(searchPath);
-    return map;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * FillEncodingFileMap --
- *
- * 	Called to bring the encoding file map in sync with the current
- * 	value of the encoding search path.
- *
- * 	TODO: Check the callers of this routine to see if it's called
- * 	too frequently.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Entries are added to the encoding file map.
- *
- *---------------------------------------------------------------------------
- */
-
-void
-FillEncodingFileMap()
-{
-    Tcl_Obj *map = MakeFileMap();
     TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
     Tcl_DecrRefCount(map);
 }
@@ -1309,6 +1370,104 @@ Tcl_FindExecutable(argv0)
 /*
  *---------------------------------------------------------------------------
  *
+ * OpenEncodingFileChannel --
+ *
+ *	Open the file believed to hold data for the encoding, "name".
+ *
+ * Results:
+ * 	Returns the readable Tcl_Channel from opening the file, or NULL
+ * 	if the file could not be successfully opened.  If NULL was
+ *	returned, an error message is left in interp's result object,
+ *	unless interp was NULL.
+ *
+ * Side effects:
+ *	Channel may be opened.  Information about the filesystem may be
+ *	cached to speed later calls.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static Tcl_Channel
+OpenEncodingFileChannel(interp, name)
+    Tcl_Interp *interp;		/* Interp for error reporting, if not NULL. */
+    CONST char *name;		/* The name of the encoding file on disk
+				 * and also the name for new encoding. */
+{
+    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
+    Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
+    Tcl_Obj *searchPath = Tcl_DuplicateObj(TclGetEncodingSearchPath());
+    Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
+    Tcl_Obj **dir, *path, *directory = NULL;
+    Tcl_Channel chan = NULL;
+    int i, numDirs;
+
+    Tcl_ListObjGetElements(NULL, searchPath, &numDirs, &dir);
+    Tcl_IncrRefCount(nameObj);
+    Tcl_AppendToObj(fileNameObj, ".enc", -1);
+    Tcl_IncrRefCount(fileNameObj);
+    Tcl_DictObjGet(NULL, map, nameObj, &directory);
+
+    /* Check that any cached directory is still on the encoding search path */
+    if (NULL != directory) {
+	int verified = 0;
+
+	for (i=0; i<numDirs && !verified; i++) {
+	    if (dir[i] == directory) {
+		verified = 1;
+	    }
+	}
+	if (!verified) {
+	    CONST char *dirString = Tcl_GetString(directory);
+	    for (i=0; i<numDirs && !verified; i++) {
+		if (strcmp(dirString, Tcl_GetString(dir[i])) == 0) {
+		    verified = 1;
+		}
+	    }
+	}
+	if (!verified) {
+	    /* Directory no longer on the search path.  Remove from cache */
+	    map = Tcl_DuplicateObj(map);
+	    Tcl_DictObjRemove(NULL, map, nameObj);
+	    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+	    directory = NULL;
+	}
+    }
+
+    if (NULL != directory) {
+	/* Got a directory from the cache.  Try to use it first */
+	Tcl_IncrRefCount(directory);
+	path = Tcl_FSJoinToPath(directory, 1, &fileNameObj);
+	Tcl_IncrRefCount(path);
+	Tcl_DecrRefCount(directory);
+	chan = Tcl_FSOpenFileChannel(NULL, path, "r", 0);
+	Tcl_DecrRefCount(path);
+    }
+
+    /* Scan the search path until we find it. */
+    for (i=0; i<numDirs && (chan == NULL); i++) {
+	path = Tcl_FSJoinToPath(dir[i], 1, &fileNameObj);
+	Tcl_IncrRefCount(path);
+	chan = Tcl_FSOpenFileChannel(NULL, path, "r", 0);
+	Tcl_DecrRefCount(path);
+	if (chan != NULL) {
+	    /* Save directory in the cache */
+	    map = Tcl_DuplicateObj(TclGetProcessGlobalValue(&encodingFileMap));
+	    Tcl_DictObjPut(NULL, map, nameObj, dir[i]);
+	    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
+	}
+    }
+    if ((NULL == chan) && (interp != NULL)) {
+	Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
+    }
+    Tcl_DecrRefCount(fileNameObj);
+    Tcl_DecrRefCount(nameObj);
+    Tcl_DecrRefCount(searchPath);
+    return chan;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * LoadEncodingFile --
  *
  *	Read a file that describes an encoding and create a new Encoding
@@ -1332,44 +1491,13 @@ LoadEncodingFile(interp, name)
     CONST char *name;		/* The name of the encoding file on disk
 				 * and also the name for new encoding. */
 {
-    Tcl_Channel chan;
-    Tcl_Encoding encoding;
-    Tcl_Obj *map, *path, *directory = NULL;
-    Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
-    int ch, scanned = 0;
+    Tcl_Channel chan = NULL;
+    Tcl_Encoding encoding = NULL;
+    int ch;
 
-
-    Tcl_IncrRefCount(nameObj);
-    while (1) {
-	map = TclGetProcessGlobalValue(&encodingFileMap);
-	Tcl_DictObjGet(NULL, map, nameObj, &directory);
-	if (scanned || (NULL != directory)) {
-	    break;
-	}
-scan:
-	FillEncodingFileMap();
-	scanned = 1;
-    }
-    if (NULL == directory) {
-	Tcl_DecrRefCount(nameObj);
-	goto unknown;
-    }
-
-    /* Construct $directory/$encoding.enc path name */
-    Tcl_IncrRefCount(directory);
-    Tcl_AppendToObj(nameObj, ".enc", -1);
-    path = Tcl_FSJoinToPath(directory, 1, &nameObj);
-    Tcl_DecrRefCount(directory);
-    Tcl_DecrRefCount(nameObj);
-    Tcl_IncrRefCount(path);
-    chan = Tcl_FSOpenFileChannel(NULL, path, "r", 0);
-    Tcl_DecrRefCount(path);
-
-    if (NULL == chan) {
-	if (!scanned) {
-	    goto scan;
-	}
-	goto unknown;
+    chan = OpenEncodingFileChannel(interp, name);
+    if (chan == NULL) {
+	return NULL;
     }
 
     Tcl_SetChannelOption(NULL, chan, "-encoding", "utf-8");
@@ -1386,7 +1514,6 @@ scan:
 	}
     }
 
-    encoding = NULL;
     switch (ch) {
 	case 'S': {
 	    encoding = LoadTableEncoding(name, ENCODING_SINGLEBYTE, chan);
@@ -1410,12 +1537,6 @@ scan:
     }
     Tcl_Close(NULL, chan);
     return encoding;
-
-    unknown:
-    if (interp != NULL) {
-	Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
-    }
-    return NULL;
 }
 
 /*
@@ -3098,44 +3219,4 @@ InitializeEncodingSearchPath(valuePtr, lengthPtr, encodingPtr)
     *valuePtr = ckalloc((unsigned int) numBytes + 1);
     memcpy((VOID *) *valuePtr, (VOID *) bytes, (size_t) numBytes + 1);
     Tcl_DecrRefCount(searchPath);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * InitializeEncodingFileMap --
- *
- *	This is the fallback routine that fills the encoding data
- *	file map if the application has not set up an encoding
- *	search path by the first time the file map is needed to
- *	load encoding data.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Fills the encoding data file map.
- *
- *-------------------------------------------------------------------------
- */
-	     
-void
-InitializeEncodingFileMap(valuePtr, lengthPtr, encodingPtr)
-    char **valuePtr; 
-    int *lengthPtr;
-    Tcl_Encoding *encodingPtr;
-{
-    char *bytes;
-    int numBytes;
-    Tcl_Obj *map = MakeFileMap();
-
-    *encodingPtr = encodingSearchPath.encoding;
-    if (*encodingPtr) {
-	((Encoding *)(*encodingPtr))->refCount++;
-    }
-    bytes = Tcl_GetStringFromObj(map, &numBytes);
-    *lengthPtr = numBytes;
-    *valuePtr = ckalloc((unsigned int) numBytes + 1);
-    memcpy((VOID *) *valuePtr, (VOID *) bytes, (size_t) numBytes + 1);
-    Tcl_DecrRefCount(map);
 }

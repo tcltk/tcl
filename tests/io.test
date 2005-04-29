@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.10 2005/02/24 19:53:35 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.11 2005/04/29 22:40:44 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -4792,7 +4792,7 @@ test io-38.2 {Tcl_SetChannelBufferSize, Tcl_GetChannelBufferSize} {
     lappend l [fconfigure $f -buffersize]
     close $f
     set l
-} {4096 10000 10000 10000 10000 100000 100000}
+} {4096 10000 1 1 1 100000 100000}
 test io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} {
     # This test crashes the interp if Bug #427196 is not fixed
 

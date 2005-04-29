@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.5 2004/09/08 23:02:49 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.6 2005/04/29 22:40:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -988,6 +988,8 @@ TclFinalizeThreadAlloc()
 
     TclpFreeAllocMutex(listLockPtr);
     listLockPtr = NULL;
+
+    TclpFreeAllocCache(NULL);
 }
 
 #else

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10.6.3 2004/05/27 14:29:22 dgp Exp $
+# RCS: @(#) $Id: util.test,v 1.10.6.4 2005/04/29 22:41:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -387,6 +387,190 @@ test util-8.6 {TclNeedSpace - correct UTF8 handling} testdstring {
     testdstring append \} -1
     list [llength [testdstring get]] [string length [testdstring get]]
 } {2 9}
+
+test util-9.0.0 {TclGetIntForIndex} {
+    string index abcd 0
+} a
+test util-9.0.1 {TclGetIntForIndex} {
+    string index abcd 0x0
+} a
+test util-9.0.2 {TclGetIntForIndex} {
+    string index abcd -0x0
+} a
+test util-9.0.3 {TclGetIntForIndex} {
+    string index abcd { 0 }
+} a
+test util-9.0.4 {TclGetIntForIndex} {
+    string index abcd { 0x0 }
+} a
+test util-9.0.5 {TclGetIntForIndex} {
+    string index abcd { -0x0 }
+} a
+test util-9.0.6 {TclGetIntForIndex} {
+    string index abcd 01
+} b
+test util-9.0.7 {TclGetIntForIndex} {
+    string index abcd { 01 }
+} b
+test util-9.1.0 {TclGetIntForIndex} {
+    string index abcd 3
+} d
+test util-9.1.1 {TclGetIntForIndex} {
+    string index abcd { 3 }
+} d
+test util-9.1.2 {TclGetIntForIndex} {
+    string index abcdefghijk 0xa
+} k
+test util-9.1.3 {TclGetIntForIndex} {
+    string index abcdefghijk { 0xa }
+} k
+test util-9.2.0 {TclGetIntForIndex} {
+    string index abcd end
+} d 
+test util-9.2.1 {TclGetIntForIndex} -body {
+    string index abcd { end}
+} -returnCodes error -match glob -result *
+test util-9.2.2 {TclGetIntForIndex} -body {
+    string index abcd {end }
+} -returnCodes error -match glob -result *
+test util-9.3 {TclGetIntForIndex} {
+    # Deprecated
+    string index abcd en
+} d
+test util-9.4 {TclGetIntForIndex} {
+    # Deprecated
+    string index abcd e
+} d
+test util-9.5.0 {TclGetIntForIndex} {
+    string index abcd end-1
+} c
+test util-9.5.1 {TclGetIntForIndex} {
+    string index abcd {end-1 }
+} c
+test util-9.5.2 {TclGetIntForIndex} -body {
+    string index abcd { end-1}
+} -returnCodes error -match glob -result *
+test util-9.6 {TclGetIntForIndex} {
+    string index abcd end+-1
+} c
+test util-9.7 {TclGetIntForIndex} {
+    string index abcd end+1
+} {}
+test util-9.8 {TclGetIntForIndex} {
+    string index abcd end--1
+} {}
+test util-9.9.0 {TclGetIntForIndex} {
+    string index abcd 0+0
+} a
+test util-9.9.1 {TclGetIntForIndex} {
+    string index abcd { 0+0 }
+} a
+test util-9.10 {TclGetIntForIndex} {
+    string index abcd 0-0
+} a
+test util-9.11 {TclGetIntForIndex} {
+    string index abcd 1+0
+} b
+test util-9.12 {TclGetIntForIndex} {
+    string index abcd 1-0
+} b
+test util-9.13 {TclGetIntForIndex} {
+    string index abcd 1+1
+} c
+test util-9.14 {TclGetIntForIndex} {
+    string index abcd 1-1
+} a
+test util-9.15 {TclGetIntForIndex} {
+    string index abcd -1+2
+} b
+test util-9.16 {TclGetIntForIndex} {
+    string index abcd -1--2
+} b
+test util-9.17 {TclGetIntForIndex} {
+    string index abcd { -1+2 }
+} b
+test util-9.18 {TclGetIntForIndex} {
+    string index abcd { -1--2 }
+} b
+test util-9.19 {TclGetIntForIndex} -body {
+    string index a {}
+} -returnCodes error -match glob -result *
+test util-9.20 {TclGetIntForIndex} -body {
+    string index a { }
+} -returnCodes error -match glob -result *
+test util-9.21 {TclGetIntForIndex} -body {
+    string index a " \r\t\n"
+} -returnCodes error -match glob -result *
+test util-9.22 {TclGetIntForIndex} -body {
+    string index a +
+} -returnCodes error -match glob -result *
+test util-9.23 {TclGetIntForIndex} -body {
+    string index a -
+} -returnCodes error -match glob -result *
+test util-9.24 {TclGetIntForIndex} -body {
+    string index a x
+} -returnCodes error -match glob -result *
+test util-9.25 {TclGetIntForIndex} -body {
+    string index a +x
+} -returnCodes error -match glob -result *
+test util-9.26 {TclGetIntForIndex} -body {
+    string index a -x
+} -returnCodes error -match glob -result *
+test util-9.27 {TclGetIntForIndex} -body {
+    string index a 0y
+} -returnCodes error -match glob -result *
+test util-9.28 {TclGetIntForIndex} -body {
+    string index a 1*
+} -returnCodes error -match glob -result *
+test util-9.29 {TclGetIntForIndex} -body {
+    string index a 0+
+} -returnCodes error -match glob -result *
+test util-9.30 {TclGetIntForIndex} -body {
+    string index a {0+ }
+} -returnCodes error -match glob -result *
+test util-9.31 {TclGetIntForIndex} -body {
+    string index a 0x
+} -returnCodes error -match glob -result *
+test util-9.32 {TclGetIntForIndex} -body {
+    string index a 0x1FFFFFFFF+0
+} -returnCodes error -match glob -result *
+test util-9.33 {TclGetIntForIndex} -body {
+    string index a 100000000000+0
+} -returnCodes error -match glob -result *
+test util-9.34 {TclGetIntForIndex} -body {
+    string index a 1.0
+} -returnCodes error -match glob -result *
+test util-9.35 {TclGetIntForIndex} -body {
+    string index a 1e23
+} -returnCodes error -match glob -result *
+test util-9.36 {TclGetIntForIndex} -body {
+    string index a 1.5e2
+} -returnCodes error -match glob -result *
+test util-9.37 {TclGetIntForIndex} -body {
+    string index a 0+x
+} -returnCodes error -match glob -result *
+test util-9.38 {TclGetIntForIndex} -body {
+    string index a 0+0x
+} -returnCodes error -match glob -result *
+test util-9.39 {TclGetIntForIndex} -body {
+    string index a 0+0xg
+} -returnCodes error -match glob -result *
+test util-9.40 {TclGetIntForIndex} -body {
+    string index a 0+0xg
+} -returnCodes error -match glob -result *
+test util-9.41 {TclGetIntForIndex} -body {
+    string index a 0+1.0
+} -returnCodes error -match glob -result *
+test util-9.42 {TclGetIntForIndex} -body {
+    string index a 0+1e2
+} -returnCodes error -match glob -result *
+test util-9.43 {TclGetIntForIndex} -body {
+    string index a 0+1.5e1
+} -returnCodes error -match glob -result *
+test util-9.44 {TclGetIntForIndex} -body {
+    string index a 0+1000000000000
+} -returnCodes error -match glob -result *
+
 
 # cleanup
 ::tcltest::cleanupTests

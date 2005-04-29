@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.4 2004/10/28 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.5 2005/04/29 22:41:15 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -683,13 +683,16 @@ TclpFinalizeThreadData(keyPtr)
     DWORD *indexPtr;
     BOOL success;
 
-#ifdef USE_THREAD_ALLOC
-    TclWinFreeAllocCache();
-#endif
     if (*keyPtr != NULL) {
 	indexPtr = *(DWORD **)keyPtr;
 	result = (VOID *)TlsGetValue(*indexPtr);
 	if (result != NULL) {
+#if defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
+        if (indexPtr == &key) {
+            TclpFreeAllocCache(result);
+            return;
+        }
+#endif
 	    ckfree((char *)result);
 	    success = TlsSetValue(*indexPtr, (void *)NULL);
             if (!success) {
@@ -1080,7 +1083,7 @@ TclpGetAllocCache(void)
 
     if (!once) {
 	/*
-	 * We need to make sure that TclWinFreeAllocCache is called
+	 * We need to make sure that TclpFreeAllocCache is called
 	 * on each thread that calls this, but only on threads that
 	 * call this.
 	 */
@@ -1109,32 +1112,32 @@ TclpSetAllocCache(void *ptr)
 }
 
 void
-TclWinFreeAllocCache(void)
+TclpFreeAllocCache(void *ptr)
 {
-    void *ptr;
     BOOL success;
 
-    ptr = TlsGetValue(key);
     if (ptr != NULL) {
-	success = TlsSetValue(key, NULL);
+        /*
+         * Called by us in TclpFinalizeThreadData when a thread exits
+         * and destroys the tsd key which stores allocator caches.
+         */
+        TclFreeAllocCache(ptr);
+        success = TlsSetValue(key, NULL);
         if (!success) {
-            Tcl_Panic("TlsSetValue failed from TclWinFreeAllocCache!");
+            panic("TlsSetValue failed from TclpFreeAllocCache!");
         }
-	TclFreeAllocCache(ptr);
-    } else {
-      if (GetLastError() != NO_ERROR) {
-          Tcl_Panic("TlsGetValue failed from TclWinFreeAllocCache!");
-      }
-    }
-
-    if (once) {    
+    } else if (once) { 
+        /*
+         * Called by us in TclFinalizeThreadAlloc() during
+         * the library finalization initiated from Tcl_Finalize()
+         */   
         success = TlsFree(key);
         if (!success) {
-            Tcl_Panic("TlsFree failed from TclWinFreeAllocCache!");
+            Tcl_Panic("TlsFree failed from TclpFreeAllocCache!");
         }
-
         once = 0; /* reset for next time. */
     }
+
 }
 
 #endif /* USE_THREAD_ALLOC */

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.18.2.3 2004/12/09 23:01:05 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.18.2.4 2005/04/29 22:40:43 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -555,6 +555,19 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
 	} {}
     }
 }
+
+testConstraint testgetdefenc [llength [info commands testgetdefenc]]
+
+test encoding-26.0 {Tcl_GetDefaultEncodingDir} -constraints {
+    testgetdefenc 
+} -setup {
+     set origDir [testgetdefenc]
+     testsetdefenc slappy
+} -body {
+     testgetdefenc
+} -cleanup {
+     testsetdefenc $origDir
+} -result slappy
 
 file delete {expand}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
 # ===> Cut here <===

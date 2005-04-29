@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.5 2004/10/28 18:46:37 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.6 2005/04/29 22:40:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -960,14 +960,14 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
     if (!pipeline) {
         chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, seekFlag, cmdObjc;
+	int mode, seekFlag, cmdObjc, binary;
 	CONST char **cmdArgv;
 
         if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {
             return TCL_ERROR;
         }
 
-        mode = TclGetOpenMode(interp, modeString, &seekFlag);
+        mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
         if (mode == -1) {
 	    chan = NULL;
         } else {
@@ -987,6 +987,9 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 		    break;
 	    }
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
+	    if (binary) {
+		Tcl_SetChannelOption(interp, chan, "-translation", "binary");
+	    }
 	}
         ckfree((char *) cmdArgv);
     }

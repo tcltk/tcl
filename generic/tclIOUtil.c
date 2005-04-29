@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.15 2005/01/24 21:44:38 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.16 2005/04/29 22:40:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1412,9 +1412,43 @@ TclFSNormalizeToUniquePath(interp, pathPtr, startAt, clientDataPtr)
  * TclGetOpenMode --
  *
  * Description:
+ * 	This routine is an obsolete, limited version of
+ * 	TclGetOpenModeEx() below.  It exists only to satisfy any
+ * 	extensions imprudently using it via Tcl's internal stubs table.
+ *
+ * Results:
+ * 	Same as TclGetOpenModeEx().
+ *
+ * Side effects:
+ * 	Same as TclGetOpenModeEx().
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclGetOpenMode(interp, modeString, seekFlagPtr)
+    Tcl_Interp *interp;			/* Interpreter to use for error
+					 * reporting - may be NULL. */
+    CONST char *modeString;		/* Mode string, e.g. "r+" or
+					 * "RDONLY CREAT". */
+    int *seekFlagPtr;			/* Set this to 1 if the caller
+                                         * should seek to EOF during the
+                                         * opening of the file. */
+{
+    int binary = 0;
+    return TclGetOpenModeEx(interp, modeString, seekFlagPtr, &binary);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclGetOpenModeEx --
+ *
+ * Description:
  *	Computes a POSIX mode mask for opening a file, from a given string,
- *	and also sets a flag to indicate whether the caller should seek to
- *	EOF after opening the file.
+ *	and also sets flags to indicate whether the caller should seek to
+ *	EOF after opening the file, and whether the caller should
+ *	configure the channel for binary data.
  *
  * Results:
  *	On success, returns mode to pass to "open". If an error occurs, the
@@ -1423,7 +1457,9 @@ TclFSNormalizeToUniquePath(interp, pathPtr, startAt, clientDataPtr)
  *
  * Side effects:
  *	Sets the integer referenced by seekFlagPtr to 1 to tell the caller
- *	to seek to EOF after opening the file.
+ *	to seek to EOF after opening the file, or to 0 otherwise.  Sets the
+ *	integer referenced by binaryPtr to 1 to tell the caller	to seek to
+ *	configure the channel for binary data, or to 0 otherwise.
  *
  * Special note:
  *	This code is based on a prototype implementation contributed
@@ -1431,16 +1467,18 @@ TclFSNormalizeToUniquePath(interp, pathPtr, startAt, clientDataPtr)
  *
  *---------------------------------------------------------------------------
  */
-
 int
-TclGetOpenMode(interp, string, seekFlagPtr)
+TclGetOpenModeEx(interp, modeString, seekFlagPtr, binaryPtr)
     Tcl_Interp *interp;			/* Interpreter to use for error
 					 * reporting - may be NULL. */
-    CONST char *string;			/* Mode string, e.g. "r+" or
+    CONST char *modeString;		/* Mode string, e.g. "r+" or
 					 * "RDONLY CREAT". */
     int *seekFlagPtr;			/* Set this to 1 if the caller
                                          * should seek to EOF during the
                                          * opening of the file. */
+    int *binaryPtr;			/* Set this to 1 if the caller
+					 * should configure the opened
+					 * channel for binary operations */
 {
     int mode, modeArgc, c, i, gotRW;
     CONST char **modeArgv, *flag;
@@ -1453,6 +1491,7 @@ TclGetOpenMode(interp, string, seekFlagPtr)
      */
 
     *seekFlagPtr = 0;
+    *binaryPtr = 0;
     mode = 0;
 
     /*
@@ -1460,9 +1499,9 @@ TclGetOpenMode(interp, string, seekFlagPtr)
      * routines.
      */
 
-    if (!(string[0] & 0x80)
-	    && islower(UCHAR(string[0]))) { /* INTL: ISO only. */
-	switch (string[0]) {
+    if (!(modeString[0] & 0x80)
+	    && islower(UCHAR(modeString[0]))) { /* INTL: ISO only. */
+	switch (modeString[0]) {
 	    case 'r':
 		mode = O_RDONLY;
 		break;
@@ -1475,20 +1514,33 @@ TclGetOpenMode(interp, string, seekFlagPtr)
 		break;
 	    default:
 		error:
+                *seekFlagPtr = 0;
+		*binaryPtr = 0;
                 if (interp != (Tcl_Interp *) NULL) {
                     Tcl_AppendResult(interp,
-                            "illegal access mode \"", string, "\"",
+                            "illegal access mode \"", modeString, "\"",
                             (char *) NULL);
                 }
 		return -1;
 	}
-	if (string[1] == '+') {
-	    mode &= ~(O_RDONLY|O_WRONLY);
-	    mode |= O_RDWR;
-	    if (string[2] != 0) {
+	i=1;
+	while (i<3 && modeString[i]) {
+	    if (modeString[i] == modeString[i-1]) {
 		goto error;
 	    }
-	} else if (string[1] != 0) {
+	    switch (modeString[i++]) {
+		case '+':
+		    mode &= ~(O_RDONLY|O_WRONLY);
+		    mode |= O_RDWR;
+		    break;
+		case 'b':
+		    *binaryPtr = 1;
+		    break;
+		default:
+		    goto error;
+	    }
+	}
+	if (modeString[i] != 0) {
 	    goto error;
 	}
         return mode;
@@ -1502,11 +1554,11 @@ TclGetOpenMode(interp, string, seekFlagPtr)
      * a NULL interpreter is passed in.
      */
 
-    if (Tcl_SplitList(interp, string, &modeArgc, &modeArgv) != TCL_OK) {
+    if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
         if (interp != (Tcl_Interp *) NULL) {
             Tcl_AddErrorInfo(interp,
                     "\n    while processing open access modes \"");
-            Tcl_AddErrorInfo(interp, string);
+            Tcl_AddErrorInfo(interp, modeString);
             Tcl_AddErrorInfo(interp, "\"");
         }
         return -1;
@@ -1560,11 +1612,14 @@ TclGetOpenMode(interp, string, seekFlagPtr)
 #endif
 	} else if ((c == 'T') && (strcmp(flag, "TRUNC") == 0)) {
 	    mode |= O_TRUNC;
+	} else if ((c == 'B') && (strcmp(flag, "BINARY") == 0)) {
+	    *binaryPtr = 1;
 	} else {
             if (interp != (Tcl_Interp *) NULL) {
                 Tcl_AppendResult(interp, "invalid access mode \"", flag,
-                        "\": must be RDONLY, WRONLY, RDWR, APPEND, CREAT",
-                        " EXCL, NOCTTY, NONBLOCK, or TRUNC", (char *) NULL);
+			"\": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, "
+			"CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC",
+			(char *) NULL);
             }
 	    ckfree((char *) modeArgv);
 	    return -1;
@@ -2087,8 +2142,8 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
     if (fsPtr != NULL) {
 	Tcl_FSOpenFileChannelProc *proc = fsPtr->openFileChannelProc;
 	if (proc != NULL) {
-	    int mode, seekFlag;
-	    mode = TclGetOpenMode(interp, modeString, &seekFlag);
+	    int mode, seekFlag, binary;
+	    mode = TclGetOpenModeEx(interp, modeString, &seekFlag, &binary);
 	    if (mode == -1) {
 	        return NULL;
 	    }
@@ -2106,6 +2161,10 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
 			Tcl_Close(NULL, retVal);
 			return NULL;
 		    }
+		}
+		if (binary) {
+		    Tcl_SetChannelOption(interp, retVal,
+			    "-translation", "binary");
 		}
 	    }
 	    return retVal;
@@ -2987,7 +3046,8 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 		}
 		/* Copy this across, since both are equal for the native fs */
 		*clientDataPtr = (ClientData)*handlePtr;
-		return retVal;
+                Tcl_ResetResult(interp);
+		return TCL_OK;
 	    }
 	    if (Tcl_GetErrno() != EXDEV) {
 	        return retVal;
@@ -3012,7 +3072,9 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	 */
 	copyToPtr = TclpTempFileName();
 	if (copyToPtr == NULL) {
-	    return -1;
+	    Tcl_AppendResult(interp, "couldn't create temporary file: ",
+			     Tcl_PosixError(interp), (char *) NULL);
+	    return TCL_ERROR;
 	}
 	Tcl_IncrRefCount(copyToPtr);
 	
@@ -3026,7 +3088,9 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	     */
 	    Tcl_FSDeleteFile(copyToPtr);
 	    Tcl_DecrRefCount(copyToPtr);
-	    return -1;
+	    Tcl_AppendResult(interp, "couldn't load from current filesystem",
+			     (char *) NULL);
+	    return TCL_ERROR;
 	}
 	
 	if (TclCrossFilesystemCopy(interp, pathPtr, copyToPtr) == TCL_OK) {
@@ -3091,6 +3155,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 		(*handlePtr) = newLoadHandle;
 		(*clientDataPtr) = newClientData;
 		(*unloadProcPtr) = newUnloadProcPtr;
+		Tcl_ResetResult(interp);
 		return TCL_OK;
 	    }
 	    /* 
@@ -3139,6 +3204,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	    (*handlePtr) = newLoadHandle;
 	    (*clientDataPtr) = (ClientData)tvdlPtr;
 	    (*unloadProcPtr) = &FSUnloadTempFile;
+	    Tcl_ResetResult(interp);
 	    return retVal;
 	} else {
 	    /* Cross-platform copy failed */
@@ -3148,7 +3214,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	}
     }
     Tcl_SetErrno(ENOENT);
-    return -1;
+    return TCL_ERROR;
 }
 /* 
  * This function used to be in the platform specific directories, but it

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.10 2005/04/07 17:32:07 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.11 2005/04/29 22:40:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2269,15 +2269,14 @@ TclLooksLikeInt(bytes, length)
  *
  *	This procedure returns an integer corresponding to the list index
  *	held in a Tcl object. The Tcl object's value is expected to be
- *	either an integer or a string of the form "end([+-]integer)?". 
+ *	in the format integer([+-]integer)? or the format end([+-]integer)?. 
  *
  * Results:
  *	The return value is normally TCL_OK, which means that the index was
  *	successfully stored into the location referenced by "indexPtr".  If
  *	the Tcl object referenced by "objPtr" has the value "end", the
- *	value stored is "endValue". If "objPtr"s values is not of the form
- *	"end([+-]integer)?" and
- *	can not be converted to an integer, TCL_ERROR is returned and, if
+ *	value stored is "endValue". If "objPtr"s values is not of one
+ *	of the expected formats, TCL_ERROR is returned and, if
  *	"interp" is non-NULL, an error message is left in the interpreter's
  *	result object.
  *
@@ -2313,10 +2312,51 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	*indexPtr = endValue + objPtr->internalRep.longValue;
 
     } else {
+	int opIdx, length;
+	char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+	char *p = bytes;
+
+	while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
+	    length--; p++;
+	}
+	if (length == 0) {
+            goto parseError;
+	}
+	if ((*p == '+') || (*p == '-')) {
+	    p++; length--;
+	}
+	opIdx = TclParseInteger(p, length) + (int) (p-bytes);
+	if (opIdx) {
+	    int code, first, second;
+	    char savedOp = bytes[opIdx];
+	    if ((savedOp != '+') && (savedOp != '-')) {
+		goto parseError;
+	    }
+	    if (isspace(UCHAR(bytes[opIdx+1]))) {
+		goto parseError;
+	    }
+	    bytes[opIdx] = '\0';
+	    code = Tcl_GetInt(interp, bytes, &first);
+	    bytes[opIdx] = savedOp;
+	    if (code == TCL_ERROR)  {
+		goto parseError;
+	    }
+	    if (TCL_ERROR == Tcl_GetInt(interp, bytes+opIdx+1, &second))  {
+		goto parseError;
+	    }
+	    if (savedOp == '+') {
+		*indexPtr = first + second;
+	    } else {
+		*indexPtr = first - second;
+	    }
+	    return TCL_OK;
+	}
+
 	/*
 	 * Report a parse error.
 	 */
 
+parseError:
 	if (interp != NULL) {
 	    char *bytes = Tcl_GetString(objPtr);
 	    /*
@@ -2326,7 +2366,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	     */
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be integer or end?-integer?", (char *) NULL);
+		    "\": must be integer?[+-]integer? or end?[+-]integer?",
+		    (char *) NULL);
 	    if (!strncmp(bytes, "end-", 3)) {
 		bytes += 3;
 	    }
@@ -2383,7 +2424,7 @@ UpdateStringOfEndOffset(objPtr)
  *
  * SetEndOffsetFromAny --
  *
- *	Look for a string of the form "end-offset" and convert it
+ *	Look for a string of the form "end[+-]offset" and convert it
  *	to an internal representation holding the offset.
  *
  * Results:
@@ -2419,7 +2460,7 @@ SetEndOffsetFromAny(interp, objPtr)
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be end?-integer?", (char*) NULL);
+		    "\": must be end?[+-]integer?", (char*) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2428,15 +2469,20 @@ SetEndOffsetFromAny(interp, objPtr)
 
     if (length <= 3) {
 	offset = 0;
-    } else if ((length > 4) && (bytes[3] == '-')) {
+    } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
 	/*
 	 * This is our limited string expression evaluator.  Pass everything
 	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
+	if (isspace(UCHAR(bytes[4]))) {
+	    return TCL_ERROR;
+	}
 	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	offset = -offset;
+	if (bytes[3] == '-') {
+	    offset = -offset;
+	}
     } else {
 	/*
 	 * Conversion failed.  Report the error.
@@ -2444,7 +2490,7 @@ SetEndOffsetFromAny(interp, objPtr)
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be integer or end?-integer?", (char *) NULL);
+		    "\": must be end?[+-]integer?", (char *) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2745,14 +2791,14 @@ TclGetProcessGlobalValue(pgvPtr)
 
 	/* If no thread has set the shared value, call the initializer */
 	Tcl_MutexLock(&pgvPtr->mutex);
-	if (NULL == pgvPtr->value) {
-	    if (pgvPtr->proc) {
-		pgvPtr->epoch++;
-		(*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
-			&pgvPtr->encoding);
-		Tcl_CreateExitHandler(FreeProcessGlobalValue,
-			(ClientData) pgvPtr);
+	if ((NULL == pgvPtr->value) && (pgvPtr->proc)) {
+	    pgvPtr->epoch++;
+	    (*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
+		    &pgvPtr->encoding);
+	    if (pgvPtr->value == NULL) {
+		Tcl_Panic("PGV Initializer did not initialize.");
 	    }
+	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
 	}
 
 	/* Store a copy of the shared value in our epoch-indexed cache */

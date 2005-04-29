@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.18.2.4 2005/04/07 17:32:01 dgp Exp $
+'\" RCS: @(#) $Id: string.n,v 1.18.2.5 2005/04/29 22:40:14 dgp Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -72,18 +72,38 @@ will return \fB\-1\fR.
 Returns the \fIcharIndex\fR'th character of the \fIstring\fR argument.
 A \fIcharIndex\fR of 0 corresponds to the first character of the
 string.  \fIcharIndex\fR may be specified as follows:
+.VS 8.5
 .RS
 .IP \fIinteger\fR 10
-The char specified at this integral index.
+For any index value that passes \fBstring is integer -strict\fR,
+the char specified at this integral index
+(e.g. \fB2\fR would refer to the "c" in "abcd").
 .IP \fBend\fR 10
-The last char of the string.
-.IP \fBend\-\fIinteger\fR 10
-The last char of the string minus the specified integer offset
+The last char of the string
+(e.g. \fBend\fR would refer to the "d" in "abcd").
+.IP \fBend\-\fIN\fR 10
+The last char of the string minus the specified integer offset \fIN\fR
 (e.g. \fBend\-1\fR would refer to the "c" in "abcd").
+.IP \fBend\+\fIN\fR 10
+The last char of the string plus the specified integer offset \fIN\fR
+(e.g. \fBend\+\-1\fR would refer to the "c" in "abcd").
+.IP \fIM\fR\+\fIN\fR 10
+The char specified at the integral index that is the sum of 
+integer values \fIM\fR and \fIN\fR
+(e.g. \fB1\+1\fR would refer to the "c" in "abcd").
+.IP \fIM\fR\-\fIN\fR 10
+The char specified at the integral index that is the difference of 
+integer values \fIM\fR and \fIN\fR
+(e.g. \fB2\-1\fR would refer to the "b" in "abcd").
+.PP
+In the specifications above, the integer value \fIM\fR contains no
+trailing whitespace and the integer value \fIN\fR contains no
+leading whitespace.
 .PP
 If \fIcharIndex\fR is less than 0 or greater than or equal to the
-length of the string then an empty string is returned.
+length of the string then this command returns an empty string.
 .RE
+.VE
 .TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 Returns 1 if \fIstring\fR is a valid member of the specified character

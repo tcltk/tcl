@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.13.4.2 2003/10/16 02:28:03 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.13.4.3 2005/04/29 22:40:46 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -905,6 +905,22 @@ namespace eval ::tcl::test::main {
 	close $f
 	file delete result
     } -result "1\n% "
+
+    test Tcl_Main-6.7 {
+	[unknown]: interactive auto-completion.
+    } -constraints {
+	exec
+    } -body {
+	exec [interpreter] << {
+		proc foo\{ x {}
+		set tcl_interactive 1
+		foo y} >& result
+	set f [open result]
+	read $f
+    } -cleanup {
+	close $f
+	file delete result
+    } -result "1\n% % "
 
     # Tests Tcl_Main-7.*: exiting
 

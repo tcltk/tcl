@@ -9,10 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strstr.c,v 1.3.4.1 2004/04/09 20:58:08 dgp Exp $
+ * RCS: @(#) $Id: strstr.c,v 1.3.4.2 2005/04/29 22:40:12 dgp Exp $
  */
 
 #include "tcl.h"
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*
  *----------------------------------------------------------------------

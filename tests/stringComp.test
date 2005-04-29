@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringComp.test,v 1.6.4.1 2004/05/27 14:29:22 dgp Exp $
+# RCS: @(#) $Id: stringComp.test,v 1.6.4.2 2005/04/29 22:40:46 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -226,7 +226,7 @@ test stringComp-4.1 {string first, too few args} {
 test stringComp-4.2 {string first, bad args} {
     proc foo {} {string first a b c}
     list [catch {foo} msg] $msg
-} {1 {bad index "c": must be integer or end?-integer?}}
+} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test stringComp-4.3 {string first, too many args} {
     proc foo {} {string first a b 5 d}
     list [catch {foo} msg] $msg
@@ -303,7 +303,7 @@ test stringComp-5.6 {string index} {
 test stringComp-5.7 {string index} {
     proc foo {} {string index a xyz}
     list [catch {foo} msg] $msg
-} {1 {bad index "xyz": must be integer or end?-integer?}}
+} {1 {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}}
 test stringComp-5.8 {string index} {
     proc foo {} {string index abc end}
     foo
@@ -352,11 +352,11 @@ test stringComp-5.16 {string index, bytearray object with string obj shimmering}
 test stringComp-5.17 {string index, bad integer} {
     proc foo {} {string index "abc" 08}
     list [catch {foo} msg] $msg
-} {1 {bad index "08": must be integer or end?-integer? (looks like invalid octal number)}}
+} {1 {bad index "08": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 test stringComp-5.18 {string index, bad integer} {
     proc foo {} {string index "abc" end-00289}
     list [catch {foo} msg] $msg
-} {1 {bad index "end-00289": must be integer or end?-integer? (looks like invalid octal number)}}
+} {1 {bad index "end-00289": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 test stringComp-5.19 {string index, bytearray object out of bounds} {
     proc foo {} {string index [binary format I* {0x50515253 0x52}] -1}
     foo

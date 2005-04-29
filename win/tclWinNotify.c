@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.5 2005/01/24 21:45:53 dgp Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.6 2005/04/29 22:41:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -452,7 +452,9 @@ Tcl_WaitForEvent(
         myTime.sec  = timePtr->sec;
 	myTime.usec = timePtr->usec;
 
-	(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+	if (myTime.sec != 0 || myTime.usec != 0) {
+	    (*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+	}
 
 	timeout = myTime.sec * 1000 + myTime.usec / 1000;
     } else {

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.6 2004/12/09 23:01:34 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.7 2005/04/29 22:41:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -131,8 +131,19 @@ typedef struct LocaleTable {
     CONST char *encoding;
 } LocaleTable;
 
+/* 
+ * The table below is sorted for the sake of doing binary searches on it.
+ * The indenting reflects different categories of data.  The leftmost
+ * data represent the encoding names directly implemented by data files
+ * in Tcl's default encoding directory.  Indented by one TAB are the
+ * encoding names that are common alternative spellings.  Indented by
+ * two TABs are the accumulated "bug fixes" that have been added to
+ * deal with the wide variability seen among existing platforms.
+ */
+
 static CONST LocaleTable localeTable[] = {
-	/* First list all the encoding files installed with Tcl */
+	    {"",		"iso8859-1"},
+	    {"ansi_x3.4-1968",	"iso8859-1"},
     {"ascii",		"ascii"},
     {"big5",		"big5"},
     {"cp1250",		"cp1250"},
@@ -169,13 +180,64 @@ static CONST LocaleTable localeTable[] = {
     {"euc-cn",		"euc-cn"},
     {"euc-jp",		"euc-jp"},
     {"euc-kr",		"euc-kr"},
+		    {"eucjp",		"euc-jp"},
+		    {"euckr",		"euc-kr"},
+		    {"euctw",		"euc-cn"},
     {"gb12345",		"gb12345"},
     {"gb1988",		"gb1988"},
-    {"gb2312-raw",	"gb2312-raw"},
     {"gb2312",		"gb2312"},
+		    {"gb2312-1980",	"gb2312"},
+    {"gb2312-raw",	"gb2312-raw"},
+		    {"greek8",		"cp869"},
+	    {"ibm1250",		"cp1250"},
+	    {"ibm1251",		"cp1251"},
+	    {"ibm1252",		"cp1252"},
+	    {"ibm1253",		"cp1253"},
+	    {"ibm1254",		"cp1254"},
+	    {"ibm1255",		"cp1255"},
+	    {"ibm1256",		"cp1256"},
+	    {"ibm1257",		"cp1257"},
+	    {"ibm1258",		"cp1258"},
+	    {"ibm437",		"cp437"},
+	    {"ibm737",		"cp737"},
+	    {"ibm775",		"cp775"},
+	    {"ibm850",		"cp850"},
+	    {"ibm852",		"cp852"},
+	    {"ibm855",		"cp855"},
+	    {"ibm857",		"cp857"},
+	    {"ibm860",		"cp860"},
+	    {"ibm861",		"cp861"},
+	    {"ibm862",		"cp862"},
+	    {"ibm863",		"cp863"},
+	    {"ibm864",		"cp864"},
+	    {"ibm865",		"cp865"},
+	    {"ibm866",		"cp866"},
+	    {"ibm869",		"cp869"},
+	    {"ibm874",		"cp874"},
+	    {"ibm932",		"cp932"},
+	    {"ibm936",		"cp936"},
+	    {"ibm949",		"cp949"},
+	    {"ibm950",		"cp950"},
+	    {"iso-2022",	"iso2022"},
+	    {"iso-2022-jp",	"iso2022-jp"},
+	    {"iso-2022-kr",	"iso2022-kr"},
+	    {"iso-8859-1",	"iso8859-1"},
+	    {"iso-8859-10",	"iso8859-10"},
+	    {"iso-8859-13",	"iso8859-13"},
+	    {"iso-8859-14",	"iso8859-14"},
+	    {"iso-8859-15",	"iso8859-15"},
+	    {"iso-8859-16",	"iso8859-16"},
+	    {"iso-8859-2",	"iso8859-2"},
+	    {"iso-8859-3",	"iso8859-3"},
+	    {"iso-8859-4",	"iso8859-4"},
+	    {"iso-8859-5",	"iso8859-5"},
+	    {"iso-8859-6",	"iso8859-6"},
+	    {"iso-8859-7",	"iso8859-7"},
+	    {"iso-8859-8",	"iso8859-8"},
+	    {"iso-8859-9",	"iso8859-9"},
+    {"iso2022",		"iso2022"},
     {"iso2022-jp",	"iso2022-jp"},
     {"iso2022-kr",	"iso2022-kr"},
-    {"iso2022",		"iso2022"},
     {"iso8859-1",	"iso8859-1"},
     {"iso8859-10",	"iso8859-10"},
     {"iso8859-13",	"iso8859-13"},
@@ -190,28 +252,48 @@ static CONST LocaleTable localeTable[] = {
     {"iso8859-7",	"iso8859-7"},
     {"iso8859-8",	"iso8859-8"},
     {"iso8859-9",	"iso8859-9"},
+		    {"iso88591",	"iso8859-1"},
+		    {"iso885915",	"iso8859-15"},
+		    {"iso88592",	"iso8859-2"},
+		    {"iso88595",	"iso8859-5"},
+		    {"iso88596",	"iso8859-6"},
+		    {"iso88597",	"iso8859-7"},
+		    {"iso88598",	"iso8859-8"},
+		    {"iso88599",	"iso8859-9"},
+#ifdef hpux
+		    {"ja",		"shiftjis"},
+#else
+		    {"ja",		"euc-jp"},
+#endif
+		    {"ja_jp",		"euc-jp"},
+		    {"ja_jp.euc",	"euc-jp"},
+		    {"ja_jp.eucjp",     "euc-jp"},
+		    {"ja_jp.jis",	"iso2022-jp"},
+		    {"ja_jp.mscode",	"shiftjis"},
+		    {"ja_jp.sjis",	"shiftjis"},
+		    {"ja_jp.ujis",	"euc-jp"},
+		    {"japan",		"euc-jp"},
+#ifdef hpux
+		    {"japanese",	"shiftjis"},
+#else
+		    {"japanese",	"euc-jp"},
+#endif
+		    {"japanese-sjis",	"shiftjis"},
+		    {"japanese-ujis",	"euc-jp"},
+		    {"japanese.euc",	"euc-jp"},
+		    {"japanese.sjis",	"shiftjis"},
     {"jis0201",		"jis0201"},
     {"jis0208",		"jis0208"},
     {"jis0212",		"jis0212"},
+		    {"jp_jp",		"shiftjis"},
+		    {"ko",              "euc-kr"},
+		    {"ko_kr",           "euc-kr"},
+		    {"ko_kr.euc",       "euc-kr"},
+		    {"ko_kw.euckw",     "euc-kr"},
     {"koi8-r",		"koi8-r"},
     {"koi8-u",		"koi8-u"},
+		    {"korean",          "euc-kr"},
     {"ksc5601",		"ksc5601"},
-    {"macCentEuro",	"macCentEuro"},
-    {"macCroatian",	"macCroatian"},
-    {"macCyrillic",	"macCyrillic"},
-    {"macDingbats",	"macDingbats"},
-    {"macGreek",	"macGreek"},
-    {"macIceland",	"macIceland"},
-    {"macJapan",	"macJapan"},
-    {"macRoman",	"macRoman"},
-    {"macRomania",	"macRomania"},
-    {"macThai",		"macThai"},
-    {"macTurkish",	"macTurkish"},
-    {"macUkraine",	"macUkraine"},
-    {"shiftjis",	"shiftjis"},
-    {"symbol",		"symbol"},
-    {"tis-620",		"tis-620"},
-	/* Next list a few common variants */
     {"maccenteuro",	"macCentEuro"},
     {"maccroatian",	"macCroatian"},
     {"maccyrillic",	"macCyrillic"},
@@ -224,119 +306,23 @@ static CONST LocaleTable localeTable[] = {
     {"macthai",		"macThai"},
     {"macturkish",	"macTurkish"},
     {"macukraine",	"macUkraine"},
-    {"iso-2022-jp",	"iso2022-jp"},
-    {"iso-2022-kr",	"iso2022-kr"},
-    {"iso-2022",	"iso2022"},
-    {"iso-8859-1",	"iso8859-1"},
-    {"iso-8859-10",	"iso8859-10"},
-    {"iso-8859-13",	"iso8859-13"},
-    {"iso-8859-14",	"iso8859-14"},
-    {"iso-8859-15",	"iso8859-15"},
-    {"iso-8859-16",	"iso8859-16"},
-    {"iso-8859-2",	"iso8859-2"},
-    {"iso-8859-3",	"iso8859-3"},
-    {"iso-8859-4",	"iso8859-4"},
-    {"iso-8859-5",	"iso8859-5"},
-    {"iso-8859-6",	"iso8859-6"},
-    {"iso-8859-7",	"iso8859-7"},
-    {"iso-8859-8",	"iso8859-8"},
-    {"iso-8859-9",	"iso8859-9"},
-    {"ibm1250",		"cp1250"},
-    {"ibm1251",		"cp1251"},
-    {"ibm1252",		"cp1252"},
-    {"ibm1253",		"cp1253"},
-    {"ibm1254",		"cp1254"},
-    {"ibm1255",		"cp1255"},
-    {"ibm1256",		"cp1256"},
-    {"ibm1257",		"cp1257"},
-    {"ibm1258",		"cp1258"},
-    {"ibm437",		"cp437"},
-    {"ibm737",		"cp737"},
-    {"ibm775",		"cp775"},
-    {"ibm850",		"cp850"},
-    {"ibm852",		"cp852"},
-    {"ibm855",		"cp855"},
-    {"ibm857",		"cp857"},
-    {"ibm860",		"cp860"},
-    {"ibm861",		"cp861"},
-    {"ibm862",		"cp862"},
-    {"ibm863",		"cp863"},
-    {"ibm864",		"cp864"},
-    {"ibm865",		"cp865"},
-    {"ibm866",		"cp866"},
-    {"ibm869",		"cp869"},
-    {"ibm874",		"cp874"},
-    {"ibm932",		"cp932"},
-    {"ibm936",		"cp936"},
-    {"ibm949",		"cp949"},
-    {"ibm950",		"cp950"},
-    {"",		"iso8859-1"},
-    {"ansi_x3.4-1968",	"iso8859-1"},
-	/* Finally, the accumulated bug fixes... */
-#ifdef HAVE_LANGINFO
-    {"gb2312-1980",	"gb2312"},
-#ifdef __hpux
-    {"SJIS",		"shiftjis"},
-    {"eucjp",		"euc-jp"},
-    {"euckr",		"euc-kr"},
-    {"euctw",		"euc-cn"},
-    {"greek8",		"cp869"},
-    {"iso88591",	"iso8859-1"},
-    {"iso88592",	"iso8859-2"},
-    {"iso88595",	"iso8859-5"},
-    {"iso88596",	"iso8859-6"},
-    {"iso88597",	"iso8859-7"},
-    {"iso88598",	"iso8859-8"},
-    {"iso88599",	"iso8859-9"},
-    {"iso885915",	"iso8859-15"},
-    {"roman8",		"iso8859-1"},
-    {"tis620",		"tis-620"},
-    {"turkish8",	"cp857"},
-    {"utf8",		"utf-8"},
-#endif /* __hpux */
-#endif /* HAVE_LANGINFO */
-
-    {"ja_JP.SJIS",	"shiftjis"},
-    {"ja_JP.EUC",	"euc-jp"},
-    {"ja_JP.eucJP",     "euc-jp"},
-    {"ja_JP.JIS",	"iso2022-jp"},
-    {"ja_JP.mscode",	"shiftjis"},
-    {"ja_JP.ujis",	"euc-jp"},
-    {"ja_JP",		"euc-jp"},
-    {"Ja_JP",		"shiftjis"},
-    {"Jp_JP",		"shiftjis"},
-    {"japan",		"euc-jp"},
-#ifdef hpux
-    {"japanese",	"shiftjis"},
-    {"ja",		"shiftjis"},
-#else
-    {"japanese",	"euc-jp"},
-    {"ja",		"euc-jp"},
-#endif
-    {"japanese.sjis",	"shiftjis"},
-    {"japanese.euc",	"euc-jp"},
-    {"japanese-sjis",	"shiftjis"},
-    {"japanese-ujis",	"euc-jp"},
-
-    {"ko",              "euc-kr"},
-    {"ko_KR",           "euc-kr"},
-    {"ko_KR.EUC",       "euc-kr"},
-    {"ko_KR.euc",       "euc-kr"},
-    {"ko_KR.eucKR",     "euc-kr"},
-    {"korean",          "euc-kr"},
-
-    {"ru",		"iso8859-5"},
-    {"ru_RU",		"iso8859-5"},
-    {"ru_SU",		"iso8859-5"},
-
-    {"zh",		"cp936"},
-    {"zh_CN.gb2312",	"euc-cn"},
-    {"zh_CN.GB2312",	"euc-cn"},
-    {"zh_CN.GBK",	"euc-cn"},
-    {"zh_TW.Big5",	"big5"},
-    {"zh_TW",		"euc-tw"},
-
-    {NULL, NULL}
+		    {"roman8",		"iso8859-1"},
+		    {"ru",		"iso8859-5"},
+		    {"ru_ru",		"iso8859-5"},
+		    {"ru_su",		"iso8859-5"},
+    {"shiftjis",	"shiftjis"},
+		    {"sjis",		"shiftjis"},
+    {"symbol",		"symbol"},
+    {"tis-620",		"tis-620"},
+		    {"tis620",		"tis-620"},
+		    {"turkish8",	"cp857"},
+		    {"utf8",		"utf-8"},
+		    {"zh",		"cp936"},
+		    {"zh_cn.gb2312",	"euc-cn"},
+		    {"zh_cn.gbk",	"euc-cn"},
+		    {"zh_cz.gb2312",	"euc-cn"},
+		    {"zh_tw",		"euc-tw"},
+		    {"zh_tw.big5",	"big5"},
 };
 
 #ifndef TCL_NO_STACK_CHECK
@@ -589,12 +575,33 @@ TclpSetInterfaces()
 	/* do nothing */
 }
 
+static CONST char *
+SearchKnownEncodings(encoding)
+    CONST char *encoding;
+{
+    int left = 0;
+    int right = sizeof(localeTable)/sizeof(LocaleTable);
+    while (left <= right) {
+	int test = (left + right)/2;
+	int code = strcmp(localeTable[test].lang, encoding);
+	if (code == 0) {
+	    return localeTable[test].encoding;
+	}
+	if (code < 0) {
+	    left = test+1;
+	} else {
+	    right = test-1;
+	}
+    }
+    return NULL;
+}
+
 CONST char *
 TclpGetEncodingNameFromEnvironment(bufPtr)
     Tcl_DString *bufPtr;
 {
     CONST char *encoding;
-    int i;
+    CONST char *knownEncoding;
 
     Tcl_DStringInit(bufPtr);
 
@@ -611,16 +618,10 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
 	Tcl_DStringInit(&ds);
 	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
-	/* Check whether it's a known encoding... */
-	if (NULL == Tcl_GetEncoding(NULL, encoding)) {
-	    /* ... or in the table if encodings we *should* know */
-	    for (i = 0; localeTable[i].lang != NULL; i++) {
-		if (strcmp(localeTable[i].lang, encoding) == 0) {
-		    Tcl_DStringAppend(bufPtr, localeTable[i].encoding, -1);
-		    break;
-		}
-	    }
-	} else {
+	knownEncoding = SearchKnownEncodings(encoding);
+	if (knownEncoding != NULL) {
+	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
 	    Tcl_DStringAppend(bufPtr, encoding, -1);
 	}
 	Tcl_DStringFree(&ds);
@@ -648,20 +649,21 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
 
     if (encoding != NULL) {
 	CONST char *p;
+	Tcl_DString ds;
 
-	/* Check whether it's a known encoding... */
-	if (NULL == Tcl_GetEncoding(NULL, encoding)) {
-	    /* ... or in the table if encodings we *should* know */
-	    for (i = 0; localeTable[i].lang != NULL; i++) {
-		if (strcmp(localeTable[i].lang, encoding) == 0) {
-		    Tcl_DStringAppend(bufPtr, localeTable[i].encoding, -1);
-		    break;
-		}
-	    }
-	} else {
+	Tcl_DStringInit(&ds);
+	p = encoding;
+	encoding = Tcl_DStringAppend(&ds, p, -1);
+	Tcl_UtfToLower(Tcl_DStringValue(&ds));
+
+	knownEncoding = SearchKnownEncodings(encoding);
+	if (knownEncoding != NULL) {
+	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
 	    Tcl_DStringAppend(bufPtr, encoding, -1);
 	}
 	if (Tcl_DStringLength(bufPtr)) {
+	    Tcl_DStringFree(&ds);
 	    return Tcl_DStringValue(bufPtr);
 	}
 
@@ -677,28 +679,16 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
 	    }
 	}
 	if (*p != '\0') {
-	    Tcl_DString ds;
-	    Tcl_DStringInit(&ds);
-	    encoding = Tcl_DStringAppend(&ds, p, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&ds));
-
-	    /* Check whether it's a known encoding... */
-	    if (NULL == Tcl_GetEncoding(NULL, encoding)) {
-		/* ... or in the table if encodings we *should* know */
-		for (i = 0; localeTable[i].lang != NULL; i++) {
-		    if (strcmp(localeTable[i].lang, encoding) == 0) {
-			Tcl_DStringAppend(bufPtr, localeTable[i].encoding, -1);
-			break;
-		    }
-		}
-	    } else {
-		Tcl_DStringAppend(bufPtr, encoding, -1);
+	    knownEncoding = SearchKnownEncodings(p);
+	    if (knownEncoding != NULL) {
+		Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    } else if (NULL != Tcl_GetEncoding(NULL, p)) {
+		Tcl_DStringAppend(bufPtr, p, -1);
 	    }
-	    Tcl_DStringFree(&ds);
-	    if (Tcl_DStringLength(bufPtr)) {
-		return Tcl_DStringValue(bufPtr);
-	    }
-
+	}
+	Tcl_DStringFree(&ds);
+	if (Tcl_DStringLength(bufPtr)) {
+	    return Tcl_DStringValue(bufPtr);
 	}
     }
     return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, -1);

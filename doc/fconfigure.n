@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.3 2004/10/28 18:46:14 dgp Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.4 2005/04/29 22:40:13 dgp Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -91,11 +91,14 @@ If a file contains pure binary data (for instance, a JPEG image), the
 encoding for the channel should be configured to be \fBbinary\fR.  Tcl
 will then assign no interpretation to the data in the file and simply read or
 write raw bytes.  The Tcl \fBbinary\fR command can be used to manipulate this
-byte-oriented data.
+byte-oriented data.  It is usually better to set the
+\fB\-translation\fR option to \fBbinary\fR when you want to transfer
+binary data, as this turns off the other automatic interpretations of
+the bytes in the stream as well.
 .PP
 The default encoding for newly opened channels is the same platform- and
 locale-dependent system encoding used for interfacing with the operating
-system.  
+system, as returned by \fBencoding system\fR.
 .RE
 .TP
 \fB\-eofchar\fR \fIchar\fR

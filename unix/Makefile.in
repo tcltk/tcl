@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.14 2005/02/24 19:53:36 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.15 2005/04/29 22:41:02 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -414,13 +414,15 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixEvent.c \
 	$(UNIX_DIR)/tclUnixFCmd.c \
 	$(UNIX_DIR)/tclUnixFile.c \
-	$(UNIX_DIR)/tclUnixNotfy.c \
 	$(UNIX_DIR)/tclUnixPipe.c \
 	$(UNIX_DIR)/tclUnixSock.c \
 	$(UNIX_DIR)/tclUnixTest.c \
 	$(UNIX_DIR)/tclUnixThrd.c \
 	$(UNIX_DIR)/tclUnixTime.c \
 	$(UNIX_DIR)/tclUnixInit.c
+
+NOTIFY_SRCS = \
+	$(UNIX_DIR)/tclUnixNotfy.c
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
@@ -441,7 +443,7 @@ MAC_OSX_SRCS = \
 # files won't compile on the current machine, and they will cause
 # problems for things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
+SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) $(STUB_SRCS) @PLAT_SRCS@
 
 all: binaries libraries doc
 
@@ -1109,7 +1111,7 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
 
-# This is the CFBundle interface.  It is only used on Mac OS X.
+# The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
 

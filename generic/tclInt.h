@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.22 2005/04/07 17:32:05 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.23 2005/04/29 22:40:31 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1967,10 +1967,14 @@ MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
 MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
+MODULE_SCOPE int	TclGetEncodingFromObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr));
 MODULE_SCOPE int        TclGetNamespaceFromObj _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Tcl_Namespace **nsPtrPtr));
-
+MODULE_SCOPE int	TclGetOpenModeEx _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *modeString, int *seekFlagPtr,
+			    int *binaryPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue _ANSI_ARGS_ ((
 			    ProcessGlobalValue *pgvPtr));
 MODULE_SCOPE Tcl_Token *TclGetTokensFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
@@ -2226,6 +2230,9 @@ MODULE_SCOPE int	Tcl_DictObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_EncodingObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int	TclEncodingDirsObjCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	Tcl_EofObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -2587,10 +2594,12 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclThreadAllocObj _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
 MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex _ANSI_ARGS_((void));
+MODULE_SCOPE void   TclFreeAllocCache _ANSI_ARGS_((void *));
 MODULE_SCOPE void *	TclpGetAllocCache _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpSetAllocCache _ANSI_ARGS_((void *));
 MODULE_SCOPE void	TclFinalizeThreadAlloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpFreeAllocMutex _ANSI_ARGS_((Tcl_Mutex* mutex));
+MODULE_SCOPE void   TclpFreeAllocCache _ANSI_ARGS_((void *));
 
 #  define TclAllocObjStorage(objPtr) \
 	(objPtr) = TclThreadAllocObj()

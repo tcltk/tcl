@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.5 2005/04/07 17:32:05 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.6 2005/04/29 22:40:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -622,7 +622,8 @@ Tcl_ListObjIndex(interp, listPtr, index, objPtrPtr)
 
 	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (!length) {
-	    return 0;
+	    *objPtrPtr = NULL;
+	    return TCL_OK;
 	}
 
 	result = SetListFromAny(interp, listPtr);
