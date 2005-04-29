@@ -9,34 +9,18 @@
 	and [regsub] to accept all index formats known by TclGetIntForIndex.
 
 	* doc/lindex.n:		Updated docs to note new index formats.
-	* doc/linsert.n:
-	* doc/lrange.n:
-	* doc/lreplace.n:
-	* doc/lsearch.n:
-	* doc/lset.n:
-	* doc/lsort.n:
-	* doc/regexp.n:
-	* doc/regsub.n:
-	* doc/string.n:
+	* doc/linsert.n, doc/lrange.n, doc/lreplace.n, doc/lsearch.n:
+	* doc/lset.n, doc/lsort.n, doc/regexp.n, doc/regsub.n, doc/string.n:
 
 	* tests/cmdIL.test:	Updated tests.
-	* tests/compile.test:
-	* tests/lindex.test:
-	* tests/linsert.test:
-	* tests/lrange.test:
-	* tests/lreplace.test:
-	* tests/lsearch.test:
-	* tests/lset.test:
-	* tests/regexp.test:
-	* tests/regexpComp.test:
-	* tests/string.test:
-	* tests/stringComp.test:
-	* tests/util.test:
+	* tests/compile.test, tests/lindex.test, tests/linsert.test:
+	* tests/lrange.test, tests/lreplace.test, tests/lsearch.test:
+	* tests/lset.test, tests/regexp.test, tests/regexpComp.test:
+	* tests/string.test, tests/stringComp.test, tests/util.test:
 
 2005-04-28  Don Porter  <dgp@users.sourceforge.net>
 
-        * tests/unixInit.test (7.1):    Alternative fix for the
-        2004-11-11 commit.
+	* tests/unixInit.test (7.1): Alternative fix for the 2004-11-11 commit.
 
 2005-04-27  Don Porter  <dgp@users.sourceforge.net>
 
@@ -222,29 +206,29 @@
 	to find the requested symbol (this is not considered to
 	be an error).
 
-        Set of changes correcting huge memory waste (not a leak)
-        when a thread exits. This has been introduced in 8.4.7
-        within an attempt to correctly cleanup after ourselves when
-        Tcl library is being unloaded with the Tcl_Finalize() call.
+	Set of changes correcting huge memory waste (not a leak)
+	when a thread exits. This has been introduced in 8.4.7
+	within an attempt to correctly cleanup after ourselves when
+	Tcl library is being unloaded with the Tcl_Finalize() call.
 
-        This fixes the Tcl Bug #1178445.
+	This fixes the Tcl Bug #1178445.
 
-        * generic/tclInt.h: added prototypes for TclpFreeAllocCache()
-        and TclFreeAllocCache()
+	* generic/tclInt.h: added prototypes for TclpFreeAllocCache()
+	and TclFreeAllocCache()
 
-        * generic/tclThreadAlloc.c: modified TclFinalizeThreadAlloc()
-        to explicitly call TclpFreeAllocCache with the NULL-ptr as 
-        argument signalling cleanup of private tsd key used only by
-        the threading allocator.
+	* generic/tclThreadAlloc.c: modified TclFinalizeThreadAlloc()
+	to explicitly call TclpFreeAllocCache with the NULL-ptr as 
+	argument signalling cleanup of private tsd key used only by
+	the threading allocator.
 
-        * unix/tclUnixThrd.c: fixed TclpFreeAllocCache() to recognize
-        when being called with NULL argument. This is a signal for it
-        to clean up the tsd key associated with the threading allocator.
+	* unix/tclUnixThrd.c: fixed TclpFreeAllocCache() to recognize
+	when being called with NULL argument. This is a signal for it
+	to clean up the tsd key associated with the threading allocator.
 
-        * win/tclWinThrd.c: renamed TclWinFreeAllocCache to TclpFreeAllocCache
-        and fixed to recognize when being called with NULL argument.
-        This is a signal for it to clean up the tsd key associated with the
-        threading allocator.
+	* win/tclWinThrd.c: renamed TclWinFreeAllocCache to TclpFreeAllocCache
+	and fixed to recognize when being called with NULL argument.
+	This is a signal for it to clean up the tsd key associated with the
+	threading allocator.
 
 2005-04-13  Don Porter  <dgp@users.sourceforge.net>
 
@@ -856,14 +840,14 @@
 		leading zeroes appeared to be a	two-digit group, leading to
 		misinterpreting the time 0012 as 1200.	[Bug # 1090413]
 	* library/clock.tcl: Added code to interpret correctly months
-	                     outside the range 01-12 as reduced modulo 12
+			     outside the range 01-12 as reduced modulo 12
 			     with a corresponding adjustment to the year.
 			     [Bug 1092789]
 	* tests/clock.test: Added regression test cases for the above two
-		            bugs.
+			    bugs.
 	* unix/Makefile.in: Added --no-lines to the 'bison' command line 
 	* win/Makefile.in:  to help constrain the number of diffs in a cvs
-	                    checkin.
+			    checkin.
 	
 2004-12-24  Miguel Sofer <msofer@users.sf.net>
 
@@ -1874,7 +1858,7 @@
 2004-10-26  Kevin Kenny <kennykb@acm.org>
 
 	* tests/format.test (format-19.1): Additional regression test for
-	                                   Bug 868489.
+					   Bug 868489.
 
 2004-10-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -2515,8 +2499,8 @@
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Removed some grubby
 	* generic/tclObj.c (SetBooleanFromAny):  work-around code
-					         that was needed only
-	                                         because of Bug 868489.
+						 that was needed only
+						 because of Bug 868489.
 
 	* generic/tclBasic.c (TclObjInvoke): Removed three unused
 	variables to silence a compiler warning in VC++.
@@ -3929,9 +3913,9 @@
 2004-05-25  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/winFCmd.test: Correct test for the presence of a CD-ROM so
-	                      that it doesn't misdetect some other sort
-	                      of filesystem with a write-protected root as
-	                      being a CD-ROM drive. [Bug 918267]
+			      that it doesn't misdetect some other sort
+			      of filesystem with a write-protected root as
+			      being a CD-ROM drive. [Bug 918267]
 
 2004-05-25  Don Porter  <dgp@users.sourceforge.net>
 
@@ -4076,15 +4060,15 @@
 
 	* generic/tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem
 	* generic/tclIO.h: as [SF Tcl Bug 462317], see ChangeLog entry
-	           2001-09-26. The fix done at that time is incomplete. It
-	           is possible to get around it if the actual read
-	           operation is defered and not executed in the event
-	           handler itself. Instead of tracking if we are in an
-	           read caused by a synthesized fileevent we now track if
-	           the OS has delivered a true event = actual data and
-	           bypass the driver if a read finds that there is no
-	           actual data waiting. The flag is cleared by a short or
-	           full read.
+		   2001-09-26. The fix done at that time is incomplete. It
+		   is possible to get around it if the actual read
+		   operation is defered and not executed in the event
+		   handler itself. Instead of tracking if we are in an
+		   read caused by a synthesized fileevent we now track if
+		   the OS has delivered a true event = actual data and
+		   bypass the driver if a read finds that there is no
+		   actual data waiting. The flag is cleared by a short or
+		   full read.
 
 	  ***POTENTIAL INCOMPATIBILITY*** for channel drivers.
 
@@ -4203,17 +4187,17 @@
 	* unix/tclUnixPort.h:
 
 	* generic/tclClock.c: Changed a buggy 'GMT' timezone specification
-	                      to the correct 'GMT0'. [Bug #922848]
+			      to the correct 'GMT0'. [Bug #922848]
 
 	* unix/tclUnixThrd.c: Moved TclpGmtime and TclpLocaltime to
-	                      unix/tclUnixTime.c where they belong.
+			      unix/tclUnixTime.c where they belong.
 
 	* unix/tclUnixTime.c (TclpGmtime, TclpLocaltime, TclpGetTimeZone,
-	                      ThreadSafeGMTime [removed],
-	                      ThreadSafeLocalTime [removed],
-	                      SetTZIfNecessary, CleanupMemory):
+			      ThreadSafeGMTime [removed],
+			      ThreadSafeLocalTime [removed],
+			      SetTZIfNecessary, CleanupMemory):
 	    Restructured to make sure that the same mutex protects
-	    all calls to localtime, gmtime, and tzset.  Added a check
+	    all calls to localtime, gmtime, and tzset.	Added a check
 	    in front of those calls to make sure that the TZ env var
 	    hasn't changed since the last call to tzset, and repeat
 	    tzset if necessary. [Bug #942078]  Removed a buggy test
