@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.32.2.2 2003/10/03 17:24:34 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32.2.3 2005/04/29 14:09:35 dkf Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -58,7 +58,8 @@ int
 \fBTcl_FSEvalFile\fR(\fIinterp, pathPtr\fR)
 .sp
 int
-\fBTcl_FSLoadFile\fR(\fIinterp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, handlePtr, unloadProcPtr\fR)
+\fBTcl_FSLoadFile\fR(\fIinterp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
+               handlePtr, unloadProcPtr\fR)
 .sp
 int
 \fBTcl_FSMatchInDirectory\fR(\fIinterp, result, pathPtr, pattern, types\fR)
@@ -200,6 +201,8 @@ Name of a procedure to look up in the file's symbol table
 Filled with the init function for this code.
 .AP Tcl_PackageInitProc **proc2Ptr out
 Filled with the safe-init function for this code.
+.AP Tcl_LoadHandle *handlePtr out
+Filled with an abstract token representing the loaded file.
 .AP ClientData *clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
