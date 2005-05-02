@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.108 2005/01/27 00:22:58 andreas_kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.109 2005/05/02 21:45:58 dgp Exp $
 
 library tcl
 
@@ -509,7 +509,7 @@ declare 141 generic {
 	    Tcl_Obj **resultPtrPtr)
 }
 declare 142 generic {
-    int Tcl_ExprString(Tcl_Interp *interp, CONST char *string)
+    int Tcl_ExprString(Tcl_Interp *interp, CONST char *exprString)
 }
 declare 143 generic {
     void Tcl_Finalize(void)
