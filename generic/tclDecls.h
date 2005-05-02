@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.110 2005/01/27 00:23:16 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.111 2005/05/02 21:45:59 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -918,7 +918,7 @@ EXTERN int		Tcl_ExprObj _ANSI_ARGS_((Tcl_Interp * interp,
 #define Tcl_ExprString_TCL_DECLARED
 /* 142 */
 EXTERN int		Tcl_ExprString _ANSI_ARGS_((Tcl_Interp * interp, 
-				CONST char * string));
+				CONST char * exprString));
 #endif
 #ifndef Tcl_Finalize_TCL_DECLARED
 #define Tcl_Finalize_TCL_DECLARED
@@ -3626,7 +3626,7 @@ typedef struct TclStubs {
     int (*tcl_ExprLong) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, long * ptr)); /* 139 */
     int (*tcl_ExprLongObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, long * ptr)); /* 140 */
     int (*tcl_ExprObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Obj ** resultPtrPtr)); /* 141 */
-    int (*tcl_ExprString) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * string)); /* 142 */
+    int (*tcl_ExprString) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * exprString)); /* 142 */
     void (*tcl_Finalize) _ANSI_ARGS_((void)); /* 143 */
     void (*tcl_FindExecutable) _ANSI_ARGS_((CONST char * argv0)); /* 144 */
     Tcl_HashEntry * (*tcl_FirstHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, Tcl_HashSearch * searchPtr)); /* 145 */

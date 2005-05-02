@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.147 2005/04/22 15:46:52 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.148 2005/05/02 21:45:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1801,8 +1801,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
 
     for (i = 0;  i < argc;  i++) {
 	length = strlen(argv[i]);
-	TclNewObj(objPtr);
-	TclInitStringRep(objPtr, argv[i], length);
+	TclNewStringObj(objPtr, argv[i], length);
 	Tcl_IncrRefCount(objPtr);
 	objv[i] = objPtr;
     }
@@ -4322,61 +4321,29 @@ TclObjInvoke(interp, objc, objv, flags)
  */
 
 int
-Tcl_ExprString(interp, string)
+Tcl_ExprString(interp, exprString)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprString;	/* Expression to evaluate. */
 {
-    register Tcl_Obj *exprPtr;
-    Tcl_Obj *resultPtr;
-    int length = strlen(string);
-    char buf[TCL_DOUBLE_SPACE];
-    int result = TCL_OK;
-
-    if (length > 0) {
-	TclNewObj(exprPtr);
-	TclInitStringRep(exprPtr, string, length);
-	Tcl_IncrRefCount(exprPtr);
-
-	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	if (result == TCL_OK) {
-	    /*
-	     * Set the interpreter's string result from the result object.
-	     */
-	    
-	    if (resultPtr->typePtr == &tclIntType) {
-		sprintf(buf, "%ld", resultPtr->internalRep.longValue);
-		Tcl_SetResult(interp, buf, TCL_VOLATILE);
-	    } else if (resultPtr->typePtr == &tclDoubleType) {
-		Tcl_PrintDouble((Tcl_Interp *) NULL,
-		        resultPtr->internalRep.doubleValue, buf);
-		Tcl_SetResult(interp, buf, TCL_VOLATILE);
-	    } else {
-		/*
-		 * Set interpreter's string result from the result object.
-		 */
-	    
-		Tcl_SetResult(interp, TclGetString(resultPtr),
-		        TCL_VOLATILE);
-	    }
-	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
-	} else {
-	    /*
-	     * Move the interpreter's object result to the string result, 
-	     * then reset the object result.
-	     */
-	    
-	    (void) Tcl_GetStringResult(interp);
-	}
-	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
-    } else {
-	/*
-	 * An empty string. Just set the interpreter's result to 0.
-	 */
-	
+    int code = TCL_OK;
+    if (exprString[0] == '\0') {
+	/* An empty string.  Just set the interpreter's result to 0. */
 	Tcl_SetResult(interp, "0", TCL_VOLATILE);
+    } else {
+	Tcl_Obj *resultPtr, *exprPtr = Tcl_NewStringObj(exprString, -1);
+	Tcl_IncrRefCount(exprPtr);
+	code = Tcl_ExprObj(interp, exprPtr, &resultPtr);
+	Tcl_DecrRefCount(exprPtr);
+	if (code == TCL_OK) {
+	    Tcl_SetObjResult(interp, resultPtr);
+	    Tcl_DecrRefCount(resultPtr);
+	}
+
+	/* Force the string rep of the interp result */
+	(void) Tcl_GetStringResult(interp);
     }
-    return result;
+    return code;
 }
 
 /*
