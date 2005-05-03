@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.148 2005/05/02 21:45:59 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.149 2005/05/03 18:07:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3645,12 +3645,12 @@ Tcl_EvalEx(interp, script, numBytes, flags)
  */
 
 int
-Tcl_Eval(interp, string)
+Tcl_Eval(interp, script)
     Tcl_Interp *interp;		/* Token for command interpreter (returned
 				 * by previous call to Tcl_CreateInterp). */
-    CONST char *string;		/* Pointer to TCL command to execute. */
+    CONST char *script;		/* Pointer to TCL command to execute. */
 {
-    int code = Tcl_EvalEx(interp, string, -1, 0);
+    int code = Tcl_EvalEx(interp, script, -1, 0);
 
     /*
      * For backwards compatibility with old C code that predates the
@@ -3886,19 +3886,19 @@ ProcessUnexpectedResult(interp, returnCode)
  */
 
 int
-Tcl_ExprLong(interp, string, ptr)
+Tcl_ExprLong(interp, exprstring, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprstring;		/* Expression to evaluate. */
     long *ptr;			/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
-    int length = strlen(string);
+    int length = strlen(exprstring);
     int result = TCL_OK;
 
     if (length > 0) {
-	exprPtr = Tcl_NewStringObj(string, length);
+	exprPtr = Tcl_NewStringObj(exprstring, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -3954,19 +3954,19 @@ Tcl_ExprLong(interp, string, ptr)
 }
 
 int
-Tcl_ExprDouble(interp, string, ptr)
+Tcl_ExprDouble(interp, exprstring, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprstring;		/* Expression to evaluate. */
     double *ptr;		/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
-    int length = strlen(string);
+    int length = strlen(exprstring);
     int result = TCL_OK;
 
     if (length > 0) {
-	exprPtr = Tcl_NewStringObj(string, length);
+	exprPtr = Tcl_NewStringObj(exprstring, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4022,19 +4022,19 @@ Tcl_ExprDouble(interp, string, ptr)
 }
 
 int
-Tcl_ExprBoolean(interp, string, ptr)
+Tcl_ExprBoolean(interp, exprstring, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 			         * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprstring;		/* Expression to evaluate. */
     int *ptr;			/* Where to store 0/1 result. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
-    int length = strlen(string);
+    int length = strlen(exprstring);
     int result = TCL_OK;
 
     if (length > 0) {
-	exprPtr = Tcl_NewStringObj(string, length);
+	exprPtr = Tcl_NewStringObj(exprstring, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4321,20 +4321,20 @@ TclObjInvoke(interp, objc, objv, flags)
  */
 
 int
-Tcl_ExprString(interp, exprString)
+Tcl_ExprString(interp, expr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprString;	/* Expression to evaluate. */
+    CONST char *expr;		/* Expression to evaluate. */
 {
     int code = TCL_OK;
-    if (exprString[0] == '\0') {
+    if (expr[0] == '\0') {
 	/* An empty string.  Just set the interpreter's result to 0. */
 	Tcl_SetResult(interp, "0", TCL_VOLATILE);
     } else {
-	Tcl_Obj *resultPtr, *exprPtr = Tcl_NewStringObj(exprString, -1);
-	Tcl_IncrRefCount(exprPtr);
-	code = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	Tcl_DecrRefCount(exprPtr);
+	Tcl_Obj *resultPtr, *exprObj = Tcl_NewStringObj(expr, -1);
+	Tcl_IncrRefCount(exprObj);
+	code = Tcl_ExprObj(interp, exprObj, &resultPtr);
+	Tcl_DecrRefCount(exprObj);
 	if (code == TCL_OK) {
 	    Tcl_SetObjResult(interp, resultPtr);
 	    Tcl_DecrRefCount(resultPtr);
