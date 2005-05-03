@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLong.3,v 1.6 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: ExprLong.3,v 1.6.2.1 2005/05/03 17:53:41 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
@@ -30,7 +30,7 @@ int
 .SH ARGUMENTS
 .AS Tcl_Interp *booleanPtr
 .AP Tcl_Interp *interp in
-Interpreter in whose context to evaluate \fIstring\fR or \fIobjPtr\fR.
+Interpreter in whose context to evaluate \fIstring\fR.
 .VS 8.4
 .AP "CONST char" *string in
 .VE
@@ -98,12 +98,6 @@ such as ``yes'' or ``no'', or else an error occurs.
 .PP
 \fBTcl_ExprString\fR returns the value of the expression as a
 string stored in the interpreter's result.
-If the expression's actual value is an integer
-then \fBTcl_ExprString\fR converts it to a string using \fBsprintf\fR
-with a ``%d'' converter.
-If the expression's actual value is a floating-point
-number, then \fBTcl_ExprString\fR calls \fBTcl_PrintDouble\fR
-to convert it to a string.
 
 .SH "SEE ALSO"
 Tcl_ExprLongObj, Tcl_ExprDoubleObj, Tcl_ExprBooleanObj, Tcl_ExprObj
