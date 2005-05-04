@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.10 2005/02/24 19:53:48 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.11 2005/05/04 17:35:33 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3033,9 +3033,9 @@ TclpGetDefaultStdChannel(type)
  */
 
 int
-Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
+Tcl_GetOpenFile(interp, chanID, forWriting, checkUsage, filePtr)
     Tcl_Interp *interp;		/* Interpreter in which to find file. */
-    CONST char *string;		/* String that identifies file. */
+    CONST char *chanID;		/* String that identifies file. */
     int forWriting;		/* 1 means the file is going to be used
 				 * for writing, 0 means for reading. */
     int checkUsage;		/* 1 means verify that the file was opened
@@ -3052,17 +3052,17 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
     int fd;
     FILE *f;
 
-    chan = Tcl_GetChannel(interp, string, &chanMode);
+    chan = Tcl_GetChannel(interp, chanID, &chanMode);
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
     if ((forWriting) && ((chanMode & TCL_WRITABLE) == 0)) {
 	Tcl_AppendResult(interp,
-		"\"", string, "\" wasn't opened for writing", (char *) NULL);
+		"\"", chanID, "\" wasn't opened for writing", (char *) NULL);
 	return TCL_ERROR;
     } else if ((!(forWriting)) && ((chanMode & TCL_READABLE) == 0)) {
 	Tcl_AppendResult(interp,
-		"\"", string, "\" wasn't opened for reading", (char *) NULL);
+		"\"", chanID, "\" wasn't opened for reading", (char *) NULL);
 	return TCL_ERROR;
     }
 
@@ -3092,7 +3092,7 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
 
 	    f = fdopen(fd, (forWriting ? "w" : "r"));
 	    if (f == NULL) {
-		Tcl_AppendResult(interp, "cannot get a FILE * for \"", string,
+		Tcl_AppendResult(interp, "cannot get a FILE * for \"", chanID,
 			"\"", (char *) NULL);
 		return TCL_ERROR;
 	    }
@@ -3101,7 +3101,7 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
 	}
     }
 
-    Tcl_AppendResult(interp, "\"", string,
+    Tcl_AppendResult(interp, "\"", chanID,
 	    "\" cannot be used to get a FILE *", (char *) NULL);
     return TCL_ERROR;	     
 }

@@ -1,3 +1,29 @@
+2005-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/DString.3:	Eliminated use of identifier "string" in Tcl's
+	* doc/Environment.3:	public C API to avoid conflict/confusion with
+	* doc/Eval.3:		the std::string of C++.
+	* doc/ExprLong.3, doc/ExprLongObj.3, doc/GetInt.3, doc/GetOpnFl.3:
+	* doc/ParseCmd.3, doc/RegExp.3, doc/SetResult.3, doc/StrMatch.3:
+	* doc/Utf.3, generic/tcl.decls, generic/tclBasic.c, generic/tclEnv.c:
+	* generic/tclGet.c, generic/tclParse.c, generic/tclParseExpr.c:
+	* generic/tclRegexp.c, generic/tclResult.c, generic/tclUtf.c:
+	* generic/tclUtil.c, unix/tclUnixChan.c:
+
+	* generic/tclDecls.h:	`make genstubs`
+
+2005-05-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.decls:
+	* generic/tclBasic.c:	Simplified implementation of Tcl_ExprString.
+	* tests/expr-old.test:
+
+	* generic/tclDecls.h:	`make genstubs`
+
+2005-04-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c: applied dkf's tkMacOSXNotify.c cleanup changes.
+
 2005-04-29  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#176 IMPLEMENTATION	[Patch 1165695]

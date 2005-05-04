@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.11 2005/04/29 22:40:34 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.12 2005/05/04 17:35:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1177,12 +1177,12 @@ Tcl_ConcatObj(objc, objv)
  */
 
 int
-Tcl_StringMatch(string, pattern)
-    CONST char *string;		/* String. */
+Tcl_StringMatch(str, pattern)
+    CONST char *str;		/* String. */
     CONST char *pattern;	/* Pattern, which may contain special
 				 * characters. */
 {
-    return Tcl_StringCaseMatch(string, pattern, 0);
+    return Tcl_StringCaseMatch(str, pattern, 0);
 }
 
 /*
@@ -1206,8 +1206,8 @@ Tcl_StringMatch(string, pattern)
  */
 
 int
-Tcl_StringCaseMatch(string, pattern, nocase)
-    CONST char *string;		/* String. */
+Tcl_StringCaseMatch(str, pattern, nocase)
+    CONST char *str;		/* String. */
     CONST char *pattern;	/* Pattern, which may contain special
 				 * characters. */
     int nocase;			/* 0 for case sensitive, 1 for insensitive */
@@ -1226,9 +1226,9 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	 */
 	
 	if (p == '\0') {
-	    return (*string == '\0');
+	    return (*str == '\0');
 	}
-	if ((*string == '\0') && (p != '*')) {
+	if ((*str == '\0') && (p != '*')) {
 	    return 0;
 	}
 
@@ -1268,12 +1268,12 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		 */
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
-			while (*string) {
-			    charLen = TclUtfToUniChar(string, &ch1);
+			while (*str) {
+			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
-			    string += charLen;
+			    str += charLen;
 			}
 		    } else {
 			/*
@@ -1281,22 +1281,22 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 			 * shorter, as the number of bytes you want to
 			 * compare each time is non-constant.
 			 */
-			while (*string) {
-			    charLen = TclUtfToUniChar(string, &ch1);
+			while (*str) {
+			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2 == ch1) {
 				break;
 			    }
-			    string += charLen;
+			    str += charLen;
 			}
 		    }
 		}
-		if (Tcl_StringCaseMatch(string, pattern, nocase)) {
+		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
 		    return 1;
 		}
-		if (*string == '\0') {
+		if (*str == '\0') {
 		    return 0;
 		}
-		string += TclUtfToUniChar(string, &ch1);
+		str += TclUtfToUniChar(str, &ch1);
 	    }
 	}
 
@@ -1307,7 +1307,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 
 	if (p == '?') {
 	    pattern++;
-	    string += TclUtfToUniChar(string, &ch1);
+	    str += TclUtfToUniChar(str, &ch1);
 	    continue;
 	}
 
@@ -1321,12 +1321,12 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    Tcl_UniChar startChar, endChar;
 
 	    pattern++;
-	    if (UCHAR(*string) < 0x80) {
+	    if (UCHAR(*str) < 0x80) {
 		ch1 = (Tcl_UniChar)
-		    (nocase ? tolower(UCHAR(*string)) : UCHAR(*string));
-		string++;
+		    (nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
+		str++;
 	    } else {
-		string += Tcl_UtfToUniChar(string, &ch1);
+		str += Tcl_UtfToUniChar(str, &ch1);
 		if (nocase) {
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
@@ -1401,7 +1401,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	 * bytes of each string match.
 	 */
 
-	string  += TclUtfToUniChar(string, &ch1);
+	str  += TclUtfToUniChar(str, &ch1);
 	pattern += TclUtfToUniChar(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
@@ -1483,13 +1483,13 @@ Tcl_DStringInit(dsPtr)
  *
  * Tcl_DStringAppend --
  *
- *	Append more characters to the current value of a dynamic string.
+ *	Append more bytes to the current value of a dynamic string.
  *
  * Results:
  *	The return value is a pointer to the dynamic string's new value.
  *
  * Side effects:
- *	Length bytes from string (or all of string if length is less
+ *	Length bytes from "bytes" (or all of "bytes" if length is less
  *	than zero) are added to the current value of the string. Memory
  *	gets reallocated if needed to accomodate the string's new size.
  *
@@ -1497,12 +1497,12 @@ Tcl_DStringInit(dsPtr)
  */
 
 char *
-Tcl_DStringAppend(dsPtr, string, length)
+Tcl_DStringAppend(dsPtr, bytes, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *string;		/* String to append.  If length is -1 then
+    CONST char *bytes;		/* String to append.  If length is -1 then
 				 * this must be null-terminated. */
-    int length;			/* Number of characters from string to
-				 * append.  If < 0, then append all of string,
+    int length;			/* Number of bytes from "bytes" to
+				 * append.  If < 0, then append all of bytes,
 				 * up to null at end. */
 {
     int newSize;
@@ -1510,7 +1510,7 @@ Tcl_DStringAppend(dsPtr, string, length)
     CONST char *end;
 
     if (length < 0) {
-	length = strlen(string);
+	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
 
@@ -1540,9 +1540,9 @@ Tcl_DStringAppend(dsPtr, string, length)
      * one.
      */
 
-    for (dst = dsPtr->string + dsPtr->length, end = string+length;
-	    string < end; string++, dst++) {
-	*dst = *string;
+    for (dst = dsPtr->string + dsPtr->length, end = bytes+length;
+	    bytes < end; bytes++, dst++) {
+	*dst = *bytes;
     }
     *dst = '\0';
     dsPtr->length += length;
@@ -1568,16 +1568,16 @@ Tcl_DStringAppend(dsPtr, string, length)
  */
 
 char *
-Tcl_DStringAppendElement(dsPtr, string)
+Tcl_DStringAppendElement(dsPtr, element)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *string;		/* String to append.  Must be
+    CONST char *element;	/* String to append.  Must be
 				 * null-terminated. */
 {
     int newSize, flags, strSize;
     char *dst;
 
-    strSize = ((string == NULL) ? 0 : strlen(string));
-    newSize = Tcl_ScanCountedElement(string, strSize, &flags)
+    strSize = ((element== NULL) ? 0 : strlen(element));
+    newSize = Tcl_ScanCountedElement(element, strSize, &flags)
 	+ dsPtr->length + 1;
 
     /*
@@ -1621,7 +1621,7 @@ Tcl_DStringAppendElement(dsPtr, string)
 	 */
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    dsPtr->length += Tcl_ConvertCountedElement(string, strSize, dst, flags);
+    dsPtr->length += Tcl_ConvertCountedElement(element, strSize, dst, flags);
     return dsPtr->string;
 }
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.6 2004/12/09 23:00:41 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.7 2005/05/04 17:35:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -381,23 +381,23 @@ Tcl_DiscardResult(statePtr)
  *
  * Tcl_SetResult --
  *
- *	Arrange for "string" to be the Tcl return value.
+ *	Arrange for "result" to be the Tcl return value.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	interp->result is left pointing either to "string" (if "copy" is 0)
- *	or to a copy of string. Also, the object result is reset.
+ *	interp->result is left pointing either to "result"
+ *	or to a copy of it. Also, the object result is reset.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Tcl_SetResult(interp, stringPtr, freeProc)
+Tcl_SetResult(interp, result, freeProc)
     Tcl_Interp *interp;		/* Interpreter with which to associate the
 				 * return value. */
-    register char *stringPtr;	/* Value to be returned.  If NULL, the
+    register char *result;	/* Value to be returned.  If NULL, the
 				 * result is set to an empty string. */
     Tcl_FreeProc *freeProc;	/* Gives information about the string:
 				 * TCL_STATIC, TCL_VOLATILE, or the address
@@ -408,12 +408,12 @@ Tcl_SetResult(interp, stringPtr, freeProc)
     register Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
     char *oldResult = iPtr->result;
 
-    if (stringPtr == NULL) {
+    if (result == NULL) {
 	iPtr->resultSpace[0] = 0;
 	iPtr->result = iPtr->resultSpace;
 	iPtr->freeProc = 0;
     } else if (freeProc == TCL_VOLATILE) {
-	length = strlen(stringPtr);
+	length = strlen(result);
 	if (length > TCL_RESULT_SIZE) {
 	    iPtr->result = (char *) ckalloc((unsigned) length+1);
 	    iPtr->freeProc = TCL_DYNAMIC;
@@ -421,9 +421,9 @@ Tcl_SetResult(interp, stringPtr, freeProc)
 	    iPtr->result = iPtr->resultSpace;
 	    iPtr->freeProc = 0;
 	}
-	strcpy(iPtr->result, stringPtr);
+	strcpy(iPtr->result, result);
     } else {
-	iPtr->result = stringPtr;
+	iPtr->result = result;
 	iPtr->freeProc = freeProc;
     }
 
@@ -706,10 +706,10 @@ Tcl_AppendResult TCL_VARARGS_DEF(Tcl_Interp *,arg1)
  */
 
 void
-Tcl_AppendElement(interp, stringPtr)
+Tcl_AppendElement(interp, element)
     Tcl_Interp *interp;		/* Interpreter whose result is to be
 				 * extended. */
-    CONST char *stringPtr;	/* String to convert to list element and
+    CONST char *element;	/* String to convert to list element and
 				 * add to result. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -729,7 +729,7 @@ Tcl_AppendElement(interp, stringPtr)
      * needed to accommodate the list element.
      */
 
-    size = Tcl_ScanElement(stringPtr, &flags) + 1;
+    size = Tcl_ScanElement(element, &flags) + 1;
     if ((iPtr->result != iPtr->appendResult)
 	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
 	    || ((size + iPtr->appendUsed) >= iPtr->appendAvl)) {
@@ -753,7 +753,7 @@ Tcl_AppendElement(interp, stringPtr)
 	 */
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    iPtr->appendUsed += Tcl_ConvertElement(stringPtr, dst, flags);
+    iPtr->appendUsed += Tcl_ConvertElement(element, dst, flags);
 }
 
 /*

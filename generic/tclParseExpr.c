@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.7 2004/10/28 18:47:00 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.8 2005/05/04 17:35:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -207,7 +207,7 @@ static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
  *	Given a string, this procedure parses the first Tcl expression
  *	in the string and returns information about the structure of
  *	the expression. This procedure is the top-level interface to the
- *	the expression parsing module.  No more that numBytes bytes will
+ *	the expression parsing module.  No more than numBytes bytes will
  *	be scanned.
  *
  * Results:
@@ -228,9 +228,9 @@ static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
  */
 
 int
-Tcl_ParseExpr(interp, string, numBytes, parsePtr)
+Tcl_ParseExpr(interp, start, numBytes, parsePtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    CONST char *string;		/* The source string to parse. */
+    CONST char *start;		/* Start of source string to parse. */
     int numBytes;		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -239,7 +239,7 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
 				 * information in the structure is
 				 * ignored. */
 {
-    int code = TclParseExpr(interp, string, numBytes, 0, parsePtr);
+    int code = TclParseExpr(interp, start, numBytes, 0, parsePtr);
     if (code == TCL_ERROR) {
 	Tcl_FreeParse(parsePtr);
     }
@@ -247,9 +247,9 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
 }
 
 int
-TclParseExpr(interp, string, numBytes, useInternalTokens, parsePtr)
+TclParseExpr(interp, start, numBytes, useInternalTokens, parsePtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    CONST char *string;		/* The source string to parse. */
+    CONST char *start;		/* The source string to parse. */
     int numBytes;		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -264,16 +264,16 @@ TclParseExpr(interp, string, numBytes, useInternalTokens, parsePtr)
     int code;
 
     if (numBytes < 0) {
-	numBytes = (string? strlen(string) : 0);
+	numBytes = (start? strlen(start) : 0);
     }
 #ifdef TCL_COMPILE_DEBUG
     if (traceParseExpr) {
 	fprintf(stderr, "Tcl_ParseExpr: string=\"%.*s\"\n",
-	        numBytes, string);
+	        numBytes, start);
     }
 #endif /* TCL_COMPILE_DEBUG */
     
-    TclParseInit(interp, string, numBytes, parsePtr);
+    TclParseInit(interp, start, numBytes, parsePtr);
 
     /*
      * Initialize the ParseInfo structure that holds state while parsing
@@ -284,10 +284,10 @@ TclParseExpr(interp, string, numBytes, useInternalTokens, parsePtr)
     info.lexeme = UNKNOWN;
     info.start = NULL;
     info.size = 0;
-    info.next = string;
-    info.prevEnd = string;
-    info.originalExpr = string;
-    info.lastChar = (string + numBytes); /* just after last char of expr */
+    info.next = start;
+    info.prevEnd = start;
+    info.originalExpr = start;
+    info.lastChar = (start + numBytes); /* just after last char of expr */
     info.useInternalTokens = useInternalTokens;
 
     /*

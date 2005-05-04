@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.13.4.5 2005/04/07 17:31:59 dgp Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.13.4.6 2005/05/04 17:35:19 dgp Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
@@ -24,34 +24,34 @@ int
 \fBTcl_UtfToUniChar\fR(\fIsrc, chPtr\fR)
 .sp
 char *
-\fBTcl_UniCharToUtfDString\fR(\fIuniStr, numChars, dstPtr\fR)
+\fBTcl_UniCharToUtfDString\fR(\fIuniStr, uniLength, dsPtr\fR)
 .sp
 Tcl_UniChar *
-\fBTcl_UtfToUniCharDString\fR(\fIsrc, len, dstPtr\fR)
+\fBTcl_UtfToUniCharDString\fR(\fIsrc, length, dsPtr\fR)
 .sp
 int
 \fBTcl_UniCharLen\fR(\fIuniStr\fR)
 .sp
 int
-\fBTcl_UniCharNcmp\fR(\fIuniStr, uniStr, num\fR)
+\fBTcl_UniCharNcmp\fR(\fIucs, uct, numChars\fR)
 .sp
 int
-\fBTcl_UniCharNcasecmp\fR(\fIuniStr, uniStr, num\fR)
+\fBTcl_UniCharNcasecmp\fR(\fIucs, uct, numChars\fR)
 .sp
 int
 \fBTcl_UniCharCaseMatch\fR(\fIuniStr, uniPattern, nocase\fR)
 .sp
 int
-\fBTcl_UtfNcmp\fR(\fIsrc, src, num\fR)
+\fBTcl_UtfNcmp\fR(\fIcs, ct, numChars\fR)
 .sp
 int
-\fBTcl_UtfNcasecmp\fR(\fIsrc, src, num\fR)
+\fBTcl_UtfNcasecmp\fR(\fIcs, ct, numChars\fR)
 .sp
 int
-\fBTcl_UtfCharComplete\fR(\fIsrc, len\fR)
+\fBTcl_UtfCharComplete\fR(\fIsrc, length\fR)
 .sp
 int 
-\fBTcl_NumUtfChars\fR(\fIsrc, len\fR)
+\fBTcl_NumUtfChars\fR(\fIsrc, length\fR)
 .sp
 const char *
 \fBTcl_UtfFindFirst\fR(\fIsrc, ch\fR)
@@ -84,19 +84,27 @@ The Tcl_UniChar to be converted or examined.
 Filled with the Tcl_UniChar represented by the head of the UTF-8 string.
 .AP "const char" *src in
 Pointer to a UTF-8 string.
+.AP "const char" *cs in
+Pointer to a UTF-8 string.
+.AP "const char" *ct in
+Pointer to a UTF-8 string.
 .AP "const Tcl_UniChar" *uniStr in
+A null-terminated Unicode string.
+.AP "const Tcl_UniChar" *ucs in
+A null-terminated Unicode string.
+.AP "const Tcl_UniChar" *uct in
 A null-terminated Unicode string.
 .AP "const Tcl_UniChar" *uniPattern in
 A null-terminated Unicode string.
-.AP int len in
+.AP int length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
 negative, all bytes up to the first null byte are used.
-.AP int numChars in
+.AP int uniLength in
 The length of the Unicode string in characters.  Must be greater than or
 equal to 0.
-.AP "Tcl_DString" *dstPtr in/out
+.AP "Tcl_DString" *dsPtr in/out
 A pointer to a previously initialized \fBTcl_DString\fR.
-.AP "unsigned long" num in
+.AP "unsigned long" numChars in
 The number of characters to compare.
 .AP "const char" *start in
 Pointer to the beginning of a UTF-8 string.
@@ -140,15 +148,16 @@ byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x0000 and
 .PP
 \fBTcl_UniCharToUtfDString\fR converts the given Unicode string
 to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
-You must specify the length of the given Unicode string.
+You must specify \fIuniLength\fR, the length of the given Unicode string.
 The return value is a pointer to the UTF-8 representation of the
 Unicode string.  Storage for the return value is appended to the
 end of the \fBTcl_DString\fR.
 .PP
 \fBTcl_UtfToUniCharDString\fR converts the given UTF-8 string to Unicode,
 storing the result in the previously initialized \fBTcl_DString\fR.
-You may either specify the length of the given UTF-8 string or "-1",
-in which case \fBTcl_UtfToUniCharDString\fR uses \fBstrlen\fR to
+In the argument \fIlength\fR, you may either specify the length of
+the given UTF-8 string in bytes or "-1", in which
+case \fBTcl_UtfToUniCharDString\fR uses \fBstrlen\fR to
 calculate the length.  The return value is a pointer to the Unicode
 representation of the UTF-8 string.  Storage for the return value
 is appended to the end of the \fBTcl_DString\fR.  The Unicode string
@@ -161,7 +170,7 @@ the number of Unicode characters (not bytes) in that string.
 \fBTcl_UniCharNcmp\fR and \fBTcl_UniCharNcasecmp\fR correspond to
 \fBstrncmp\fR and \fBstrncasecmp\fR, respectively, for Unicode characters.
 They accept two null-terminated Unicode strings and the number of characters
-to compare.  Both strings are assumed to be at least \fIlen\fR characters
+to compare.  Both strings are assumed to be at least \fInumChars\fR characters
 long. \fBTcl_UniCharNcmp\fR  compares the two strings character-by-character
 according to the Unicode character ordering.  It returns an integer greater
 than, equal to, or less than 0 if the first string is greater than, equal
@@ -175,7 +184,7 @@ be case sensitive and returns whether the string matches the pattern.
 .PP
 \fBTcl_UtfNcmp\fR corresponds to \fBstrncmp\fR for UTF-8 strings. It
 accepts two null-terminated UTF-8 strings and the number of characters
-to compare.  (Both strings are assumed to be at least \fIlen\fR
+to compare.  (Both strings are assumed to be at least \fInumChars\fR
 characters long.)  \fBTcl_UtfNcmp\fR compares the two strings
 character-by-character according to the Unicode character ordering.
 It returns an integer greater than, equal to, or less than 0 if the
@@ -188,7 +197,7 @@ differences in case when comparing upper, lower or title case
 characters.
 .PP
 \fBTcl_UtfCharComplete\fR returns 1 if the source UTF-8 string \fIsrc\fR
-of length \fIlen\fR bytes is long enough to be decoded by
+of \fIlength\fR bytes is long enough to be decoded by
 \fBTcl_UtfToUniChar\fR, or 0 otherwise.  This function does not guarantee
 that the UTF-8 string is properly formed.  This routine is used by
 procedures that are operating on a byte at a time and need to know if a
@@ -196,7 +205,7 @@ full Tcl_UniChar has been seen.
 .PP
 \fBTcl_NumUtfChars\fR corresponds to \fBstrlen\fR for UTF-8 strings.  It
 returns the number of Tcl_UniChars that are represented by the UTF-8 string
-\fIsrc\fR.  The length of the source string is \fIlen\fR bytes.  If the
+\fIsrc\fR.  The length of the source string is \fIlength\fR bytes.  If the
 length is negative, all bytes up to the first null byte are used.
 .PP
 \fBTcl_UtfFindFirst\fR corresponds to \fBstrchr\fR for UTF-8 strings.  It

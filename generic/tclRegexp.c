@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.2 2004/09/30 00:51:45 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.3 2005/05/04 17:35:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -137,13 +137,13 @@ Tcl_ObjType tclRegexpType = {
  */
 
 Tcl_RegExp
-Tcl_RegExpCompile(interp, string)
+Tcl_RegExpCompile(interp, pattern)
     Tcl_Interp *interp;		/* For use in error reporting and
 				 * to access the interp regexp cache. */
-    CONST char *string;		/* String for which to produce
+    CONST char *pattern;		/* String for which to produce
 				 * compiled regular expression. */
 {
-    return (Tcl_RegExp) CompileRegexp(interp, string, (int) strlen(string),
+    return (Tcl_RegExp) CompileRegexp(interp, pattern, (int) strlen(pattern),
 	    REG_ADVANCED);
 }
 
@@ -169,13 +169,13 @@ Tcl_RegExpCompile(interp, string)
  */
 
 int
-Tcl_RegExpExec(interp, re, string, start)
+Tcl_RegExpExec(interp, re, text, start)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
     Tcl_RegExp re;		/* Compiled regular expression;  must have
 				 * been returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
-    CONST char *string;		/* String against which to match re. */
-    CONST char *start;		/* If string is part of a larger string,
+    CONST char *text;		/* Text against which to match re. */
+    CONST char *start;		/* If text is part of a larger string,
 				 * this identifies beginning of larger
 				 * string, so that "^" won't match. */
 {
@@ -189,7 +189,7 @@ Tcl_RegExpExec(interp, re, string, start)
      * then we need to tell the regexp engine not to match "^".
      */
 
-    if (string > start) {
+    if (text > start) {
 	flags = REG_NOTBOL;
     } else {
 	flags = 0;
@@ -199,7 +199,7 @@ Tcl_RegExpExec(interp, re, string, start)
      * Remember the string for use by Tcl_RegExpRange().
      */
 
-    regexp->string = string;
+    regexp->string = text;
     regexp->objPtr = NULL;
 
     /*
@@ -207,7 +207,7 @@ Tcl_RegExpExec(interp, re, string, start)
      */
 
     Tcl_DStringInit(&ds);
-    ustr = Tcl_UtfToUniCharDString(string, -1, &ds);
+    ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
     result = RegExpExecUniChar(interp, re, ustr, numChars,
 	    -1 /* nmatches */, flags);
@@ -385,7 +385,7 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
  * Results:
  *	If an error occurs during the matching operation then -1
  *	is returned and the interp's result contains an error message.
- *	Otherwise the return value is 1 if "string" matches "pattern"
+ *	Otherwise the return value is 1 if "text" matches "pattern"
  *	and 0 otherwise.
  *
  * Side effects:
@@ -395,11 +395,10 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
  */
 
 int
-Tcl_RegExpMatch(interp, string, pattern)
+Tcl_RegExpMatch(interp, text, pattern)
     Tcl_Interp *interp;		/* Used for error reporting. May be NULL. */
-    CONST char *string;		/* String. */
-    CONST char *pattern;	/* Regular expression to match against
-				 * string. */
+    CONST char *text;		/* Text to search for pattern matches. */
+    CONST char *pattern;	/* Regular expression to match against text. */
 {
     Tcl_RegExp re;
 
@@ -407,7 +406,7 @@ Tcl_RegExpMatch(interp, string, pattern)
     if (re == NULL) {
 	return -1;
     }
-    return Tcl_RegExpExec(interp, re, string, string);
+    return Tcl_RegExpExec(interp, re, text, text);
 }
 
 /*
@@ -430,12 +429,12 @@ Tcl_RegExpMatch(interp, string, pattern)
  */
 
 int
-Tcl_RegExpExecObj(interp, re, objPtr, offset, nmatches, flags)
+Tcl_RegExpExecObj(interp, re, textObj, offset, nmatches, flags)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
     Tcl_RegExp re;		/* Compiled regular expression;  must have
 				 * been returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
-    Tcl_Obj *objPtr;		/* String against which to match re. */
+    Tcl_Obj *textObj;		/* Text against which to match re. */
     int offset;			/* Character index that marks where matching
 				 * should begin. */
     int nmatches;		/* How many subexpression matches (counting
@@ -452,9 +451,9 @@ Tcl_RegExpExecObj(interp, re, objPtr, offset, nmatches, flags)
      */
 
     regexpPtr->string = NULL;
-    regexpPtr->objPtr = objPtr;
+    regexpPtr->objPtr = textObj;
 
-    udata = Tcl_GetUnicodeFromObj(objPtr, &length);
+    udata = Tcl_GetUnicodeFromObj(textObj, &length);
 
     if (offset > length) {
 	offset = length;
@@ -475,7 +474,7 @@ Tcl_RegExpExecObj(interp, re, objPtr, offset, nmatches, flags)
  * Results:
  *	If an error occurs during the matching operation then -1
  *	is returned and the interp's result contains an error message.
- *	Otherwise the return value is 1 if "string" matches "pattern"
+ *	Otherwise the return value is 1 if "text" matches "pattern"
  *	and 0 otherwise.
  *
  * Side effects:
@@ -485,9 +484,9 @@ Tcl_RegExpExecObj(interp, re, objPtr, offset, nmatches, flags)
  */
 
 int
-Tcl_RegExpMatchObj(interp, stringObj, patternObj)
+Tcl_RegExpMatchObj(interp, textObj, patternObj)
     Tcl_Interp *interp;		/* Used for error reporting. May be NULL. */
-    Tcl_Obj *stringObj;		/* Object containing the String to search. */
+    Tcl_Obj *textObj;		/* Object containing the String to search. */
     Tcl_Obj *patternObj;	/* Regular expression to match against
 				 * string. */
 {
@@ -498,7 +497,7 @@ Tcl_RegExpMatchObj(interp, stringObj, patternObj)
     if (re == NULL) {
 	return -1;
     }
-    return Tcl_RegExpExecObj(interp, re, stringObj, 0 /* offset */,
+    return Tcl_RegExpExecObj(interp, re, textObj, 0 /* offset */,
 	    0 /* nmatches */, 0 /* flags */);
 }
 
