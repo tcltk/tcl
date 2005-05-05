@@ -1,5 +1,8 @@
 2005-05-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompCmds.c:	Factored common efficiency trick into
+	a macro named CompileWord.
+
 	* generic/tclCompCmds.c:	Replaced all instance of
 	* generic/tclCompile.c:		TCL_OUT_LINE_COMPILE with TCL_ERROR.
 	* generic/tclInt.h:		Now that we've eradicated the mistaken
