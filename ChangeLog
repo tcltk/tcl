@@ -5,6 +5,19 @@
 	
 2005-05-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInt.decls:	Converted TclMatchIsTrivial to a macro.
+	* generic/tclInt.h:
+	* generic/tclUtil.c:
+	* generic/tclIntDecls.h:	`make genstubs`
+	* generic/tclStubInit.c:
+	* generic/tclBasic.c:	Added callers of TclMatchIsTrivial where
+	* generic/tclCmdIL.c:	a search can be done more efficiently
+	* generic/tclCompCmds.c:when it is recognized that a pattern match
+	* generic/tclDictObj.c:	is really an exact match. [Patch 1076088]
+	* generic/tclIO.c:
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+
 	* generic/tclCompCmds.c:	Factored common efficiency trick into
 	a macro named CompileWord.
 

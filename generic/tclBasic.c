@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.149 2005/05/03 18:07:45 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.150 2005/05/05 18:37:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2822,6 +2822,14 @@ Tcl_ListMathFuncs(interp, pattern)
     Tcl_HashSearch hSearch;
     CONST char *name;
 
+    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+	if ((Tcl_FindHashEntry(&iPtr->mathFuncTable, pattern) != NULL)
+		&& (Tcl_ListObjAppendElement(interp, resultList,
+		Tcl_NewStringObj(pattern,-1)) != TCL_OK)) {
+	    goto error;
+	}
+	return resultList;
+    }
     for (hPtr = Tcl_FirstHashEntry(&iPtr->mathFuncTable, &hSearch);
 	 hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
         name = Tcl_GetHashKey(&iPtr->mathFuncTable, hPtr);
@@ -2829,6 +2837,7 @@ Tcl_ListMathFuncs(interp, pattern)
 	    /* I don't expect this to fail, but... */
 	    Tcl_ListObjAppendElement(interp, resultList,
 				     Tcl_NewStringObj(name,-1)) != TCL_OK) {
+error:
 	    Tcl_DecrRefCount(resultList);
 	    return NULL;
 	}
