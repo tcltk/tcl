@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.226 2005/04/27 18:48:25 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.227 2005/05/05 15:32:20 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -916,18 +916,21 @@ struct CompileEnv;
  * must be one of the following:
  *
  * TCL_OK		Compilation completed normally.
- * TCL_OUT_LINE_COMPILE	Compilation could not be completed.  This can
+ * TCL_ERROR 		Compilation could not be completed.  This can
  * 			be just a judgment by the CompileProc that the
  * 			command is too complex to compile effectively,
  * 			or it can indicate that in the current state of
  * 			the interp, the command would raise an error.
- * 			In the latter circumstance, we defer error reporting
+ * 			The bytecode compiler will not do any error reporting
+ * 			at compiler time.  Error reporting is deferred
  * 			until the actual runtime, because by then changes
  * 			in the interp state may allow the command to be
- * 			successfully evaluated.
+ * 			successfully evaluated.  
+ * TCL_OUT_LINE_COMPILE	A source-compatible alias for TCL_ERROR, kept
+ * 			for the sake of old code only.
  */
 
-#define TCL_OUT_LINE_COMPILE	(TCL_CONTINUE + 1)
+#define TCL_OUT_LINE_COMPILE	TCL_ERROR
 
 typedef int (CompileProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	Tcl_Parse *parsePtr, struct CompileEnv *compEnvPtr));
