@@ -1,3 +1,8 @@
+2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWinThrd.c:  Corrected a compilation error on the
+	                     --enable-threads configuration.
+	
 2005-05-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompCmds.c:	Factored common efficiency trick into
