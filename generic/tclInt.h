@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.227 2005/05/05 15:32:20 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.228 2005/05/05 18:38:01 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2715,6 +2715,19 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     if ((nsPtr)->numExportPatterns) { \
 	(nsPtr)->exportLookupEpoch++; \
     }
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to check whether a pattern has
+ * any characters special to [string match].
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclMatchIsTrivial _ANSI_ARGS_((
+ * 			    CONST char *pattern));
+ *----------------------------------------------------------------
+ */
+
+#define TclMatchIsTrivial(pattern) strpbrk((pattern), "*[]]?\\") == NULL
 
 /*
  *----------------------------------------------------------------
