@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.66 2005/05/05 17:21:03 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.67 2005/05/05 18:37:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2612,18 +2612,13 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    length = varTokenPtr[1].size;
 		    if (!nocase && (i == 0)) {
 			/*
-			 * On the first (pattern) arg, check to see if any
-			 * glob special characters are in the word '*[]?\\'.
-			 * If not, this is the same as 'string equal'.  We
-			 * can use strpbrk here because the glob chars are all
-			 * in the ascii-7 range.  If -nocase was specified,
-			 * we can't do this because INST_STR_EQ has no support
-			 * for nocase.
+			 * Trivial matches can be done by 'string equal'.  
+			 * If -nocase was specified, we can't do this
+			 * because INST_STR_EQ has no support for nocase.
 			 */
 			Tcl_Obj *copy = Tcl_NewStringObj(str, length);
 			Tcl_IncrRefCount(copy);
-			exactMatch = (strpbrk(Tcl_GetString(copy),
-				"*[]?\\") == NULL);
+			exactMatch = TclMatchIsTrivial(Tcl_GetString(copy));
 			Tcl_DecrRefCount(copy);
 		    }
 		    TclEmitPush(

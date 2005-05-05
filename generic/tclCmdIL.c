@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.72 2005/04/02 02:08:31 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.73 2005/05/05 18:37:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1455,6 +1455,13 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
     }
 
     if (localVarTablePtr != NULL) {
+	if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+	    if (Tcl_FindHashEntry(localVarTablePtr, pattern)) {
+		Tcl_ListObjAppendElement(interp, listPtr,
+			Tcl_NewStringObj(pattern,-1));
+	    }
+	    return;
+	}
 	for (entryPtr = Tcl_FirstHashEntry(localVarTablePtr, &search);
 		entryPtr != NULL;
 		entryPtr = Tcl_NextHashEntry(&search)) {
