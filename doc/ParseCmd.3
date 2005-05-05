@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ParseCmd.3,v 1.18.2.1 2005/04/10 23:14:42 kennykb Exp $
+'\" RCS: @(#) $Id: ParseCmd.3,v 1.18.2.2 2005/05/05 17:55:22 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_ParseCommand 3 8.3 Tcl "Tcl Library Procedures"
@@ -16,22 +16,22 @@ Tcl_ParseCommand, Tcl_ParseExpr, Tcl_ParseBraces, Tcl_ParseQuotedString, Tcl_Par
 \fB#include <tcl.h>\fR
 .sp
 int
-\fBTcl_ParseCommand\fR(\fIinterp, string, numBytes, nested, parsePtr\fR)
+\fBTcl_ParseCommand\fR(\fIinterp, start, numBytes, nested, parsePtr\fR)
 .sp
 int
-\fBTcl_ParseExpr\fR(\fIinterp, string, numBytes, parsePtr\fR)
+\fBTcl_ParseExpr\fR(\fIinterp, start, numBytes, parsePtr\fR)
 .sp
 int
-\fBTcl_ParseBraces\fR(\fIinterp, string, numBytes, parsePtr, append, termPtr\fR)
+\fBTcl_ParseBraces\fR(\fIinterp, start, numBytes, parsePtr, append, termPtr\fR)
 .sp
 int
-\fBTcl_ParseQuotedString\fR(\fIinterp, string, numBytes, parsePtr, append, termPtr\fR)
+\fBTcl_ParseQuotedString\fR(\fIinterp, start, numBytes, parsePtr, append, termPtr\fR)
 .sp
 int
-\fBTcl_ParseVarName\fR(\fIinterp, string, numBytes, parsePtr, append\fR)
+\fBTcl_ParseVarName\fR(\fIinterp, start, numBytes, parsePtr, append\fR)
 .sp
 const char *
-\fBTcl_ParseVar\fR(\fIinterp, string, termPtr\fR)
+\fBTcl_ParseVar\fR(\fIinterp, start, termPtr\fR)
 .sp
 \fBTcl_FreeParse\fR(\fIusedParsePtr\fR)
 .sp
@@ -49,12 +49,12 @@ if NULL, then no error messages are left after errors.
 For \fBTcl_EvalTokens\fR and \fBTcl_EvalTokensStandard\fR,
 determines the context for evaluating the
 script and also is used for error reporting; must not be NULL.
-.AP "const char" *string in
+.AP "const char" *start in
 Pointer to first character in string to parse.
 .AP int numBytes in
-Number of bytes in \fIstring\fR, not including any terminating null
+Number of bytes in string to parse, not including any terminating null
 character.  If less than 0 then the script consists of all characters
-in \fIstring\fR up to the first null character.
+following \fIstart\fR up to the first null character.
 .AP int nested in
 Non-zero means that the script is part of a command substitution so an
 unquoted close bracket should be treated as a command terminator.  If zero,
@@ -120,8 +120,8 @@ result, and no information is left at \fI*parsePtr\fR.
 \fBTcl_ParseBraces\fR parses a string or command argument
 enclosed in braces such as
 \fB{hello}\fR or \fB{string \\t with \\t tabs}\fR
-from the beginning of its argument \fIstring\fR.
-The first character of \fIstring\fR must be \fB{\fR. 
+from the beginning of its argument \fIstart\fR.
+The first character of \fIstart\fR must be \fB{\fR. 
 If the braced string was parsed successfully,
 \fBTcl_ParseBraces\fR returns \fBTCL_OK\fR,
 fills in the structure pointed to by \fIparsePtr\fR
@@ -136,8 +136,8 @@ and no information is left at \fI*parsePtr\fR or \fI*termPtr\fR.
 .PP
 \fBTcl_ParseQuotedString\fR parses a double-quoted string such as
 \fB"sum is [expr $a+$b]"\fR
-from the beginning of the argument \fIstring\fR.
-The first character of \fIstring\fR must be \fB"\fR. 
+from the beginning of the argument \fIstart\fR.
+The first character of \fIstart\fR must be \fB"\fR. 
 If the double-quoted string was parsed successfully,
 \fBTcl_ParseQuotedString\fR returns \fBTCL_OK\fR,
 fills in the structure pointed to by \fIparsePtr\fR
@@ -152,8 +152,8 @@ and no information is left at \fI*parsePtr\fR or \fI*termPtr\fR.
 .PP
 \fBTcl_ParseVarName\fR parses a Tcl variable reference such as
 \fB$abc\fR or \fB$x([expr $index + 1])\fR from the beginning of its
-\fIstring\fR argument.
-The first character of \fIstring\fR must be \fB$\fR. 
+\fIstart\fR argument.
+The first character of \fIstart\fR must be \fB$\fR. 
 If a variable name was parsed successfully, \fBTcl_ParseVarName\fR
 returns \fBTCL_OK\fR and fills in the structure pointed to by
 \fIparsePtr\fR with information about the structure of the variable name
@@ -163,8 +163,8 @@ error message is left in \fIinterp\fR's result (if \fIinterp\fR isn't
 NULL), and no information is left at \fI*parsePtr\fR.
 .PP
 \fBTcl_ParseVar\fR parse a Tcl variable reference such as \fB$abc\fR
-or \fB$x([expr $index + 1])\fR from the beginning of its \fIstring\fR
-argument.  The first character of \fIstring\fR must be \fB$\fR.  If
+or \fB$x([expr $index + 1])\fR from the beginning of its \fIstart\fR
+argument.  The first character of \fIstart\fR must be \fB$\fR.  If
 the variable name is parsed successfully, \fBTcl_ParseVar\fR returns a
 pointer to the string value of the variable.  If an error occurs while
 parsing, then NULL is returned and an error message is left in
@@ -431,7 +431,7 @@ Tcl_Parse structure depends on the contents of the quoted string.
 It will consist of one or more \fBTCL_TOKEN_TEXT\fR, \fBTCL_TOKEN_BS\fR,
 \fBTCL_TOKEN_COMMAND\fR, and \fBTCL_TOKEN_VARIABLE\fR sub-tokens.
 The array always contains at least one token;
-for example, if the argument \fIstring\fR is empty,
+for example, if the argument \fIstart\fR is empty,
 the array returned consists of a single \fBTCL_TOKEN_TEXT\fR token
 with a zero \fIsize\fR field.
 Only the token information in the Tcl_Parse structure
@@ -452,7 +452,7 @@ the \fIcommentStart\fR, \fIcommentSize\fR,
 .PP
 All of the character pointers in the
 Tcl_Parse and Tcl_Token structures refer
-to characters in the \fIstring\fR argument passed to
+to characters in the \fIstart\fR argument passed to
 \fBTcl_ParseCommand\fR, \fBTcl_ParseExpr\fR, \fBTcl_ParseBraces\fR,
 \fBTcl_ParseQuotedString\fR, and \fBTcl_ParseVarName\fR.
 .PP

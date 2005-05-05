@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.10 2005/04/25 21:37:22 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.11 2005/05/05 17:56:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1196,12 +1196,12 @@ Tcl_ConcatObj(objc, objv)
  */
 
 int
-Tcl_StringMatch(string, pattern)
-    CONST char *string;		/* String. */
+Tcl_StringMatch(str, pattern)
+    CONST char *str;		/* String. */
     CONST char *pattern;	/* Pattern, which may contain special
 				 * characters. */
 {
-    return Tcl_StringCaseMatch(string, pattern, 0);
+    return Tcl_StringCaseMatch(str, pattern, 0);
 }
 
 /*
@@ -1225,8 +1225,8 @@ Tcl_StringMatch(string, pattern)
  */
 
 int
-Tcl_StringCaseMatch(string, pattern, nocase)
-    CONST char *string;		/* String. */
+Tcl_StringCaseMatch(str, pattern, nocase)
+    CONST char *str;		/* String. */
     CONST char *pattern;	/* Pattern, which may contain special
 				 * characters. */
     int nocase;			/* 0 for case sensitive, 1 for insensitive */
@@ -1245,9 +1245,9 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	 */
 	
 	if (p == '\0') {
-	    return (*string == '\0');
+	    return (*str == '\0');
 	}
-	if ((*string == '\0') && (p != '*')) {
+	if ((*str == '\0') && (p != '*')) {
 	    return 0;
 	}
 
@@ -1287,12 +1287,12 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		 */
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
-			while (*string) {
-			    charLen = TclUtfToUniChar(string, &ch1);
+			while (*str) {
+			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
-			    string += charLen;
+			    str += charLen;
 			}
 		    } else {
 			/*
@@ -1300,22 +1300,22 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 			 * shorter, as the number of bytes you want to
 			 * compare each time is non-constant.
 			 */
-			while (*string) {
-			    charLen = TclUtfToUniChar(string, &ch1);
+			while (*str) {
+			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2 == ch1) {
 				break;
 			    }
-			    string += charLen;
+			    str += charLen;
 			}
 		    }
 		}
-		if (Tcl_StringCaseMatch(string, pattern, nocase)) {
+		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
 		    return 1;
 		}
-		if (*string == '\0') {
+		if (*str == '\0') {
 		    return 0;
 		}
-		string += TclUtfToUniChar(string, &ch1);
+		str += TclUtfToUniChar(str, &ch1);
 	    }
 	}
 
@@ -1326,7 +1326,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 
 	if (p == '?') {
 	    pattern++;
-	    string += TclUtfToUniChar(string, &ch1);
+	    str += TclUtfToUniChar(str, &ch1);
 	    continue;
 	}
 
@@ -1340,12 +1340,12 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    Tcl_UniChar startChar, endChar;
 
 	    pattern++;
-	    if (UCHAR(*string) < 0x80) {
+	    if (UCHAR(*str) < 0x80) {
 		ch1 = (Tcl_UniChar)
-		    (nocase ? tolower(UCHAR(*string)) : UCHAR(*string));
-		string++;
+		    (nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
+		str++;
 	    } else {
-		string += Tcl_UtfToUniChar(string, &ch1);
+		str += Tcl_UtfToUniChar(str, &ch1);
 		if (nocase) {
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
@@ -1420,7 +1420,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	 * bytes of each string match.
 	 */
 
-	string  += TclUtfToUniChar(string, &ch1);
+	str  += TclUtfToUniChar(str, &ch1);
 	pattern += TclUtfToUniChar(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
@@ -1502,13 +1502,13 @@ Tcl_DStringInit(dsPtr)
  *
  * Tcl_DStringAppend --
  *
- *	Append more characters to the current value of a dynamic string.
+ *	Append more bytes to the current value of a dynamic string.
  *
  * Results:
  *	The return value is a pointer to the dynamic string's new value.
  *
  * Side effects:
- *	Length bytes from string (or all of string if length is less
+ *	Length bytes from "bytes" (or all of "bytes" if length is less
  *	than zero) are added to the current value of the string. Memory
  *	gets reallocated if needed to accomodate the string's new size.
  *
@@ -1516,12 +1516,12 @@ Tcl_DStringInit(dsPtr)
  */
 
 char *
-Tcl_DStringAppend(dsPtr, string, length)
+Tcl_DStringAppend(dsPtr, bytes, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *string;		/* String to append.  If length is -1 then
+    CONST char *bytes;		/* String to append.  If length is -1 then
 				 * this must be null-terminated. */
-    int length;			/* Number of characters from string to
-				 * append.  If < 0, then append all of string,
+    int length;			/* Number of bytes from "bytes" to
+				 * append.  If < 0, then append all of bytes,
 				 * up to null at end. */
 {
     int newSize;
@@ -1529,7 +1529,7 @@ Tcl_DStringAppend(dsPtr, string, length)
     CONST char *end;
 
     if (length < 0) {
-	length = strlen(string);
+	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
 
@@ -1559,9 +1559,9 @@ Tcl_DStringAppend(dsPtr, string, length)
      * one.
      */
 
-    for (dst = dsPtr->string + dsPtr->length, end = string+length;
-	    string < end; string++, dst++) {
-	*dst = *string;
+    for (dst = dsPtr->string + dsPtr->length, end = bytes+length;
+	    bytes < end; bytes++, dst++) {
+	*dst = *bytes;
     }
     *dst = '\0';
     dsPtr->length += length;
@@ -1587,16 +1587,16 @@ Tcl_DStringAppend(dsPtr, string, length)
  */
 
 char *
-Tcl_DStringAppendElement(dsPtr, string)
+Tcl_DStringAppendElement(dsPtr, element)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *string;		/* String to append.  Must be
+    CONST char *element;	/* String to append.  Must be
 				 * null-terminated. */
 {
     int newSize, flags, strSize;
     char *dst;
 
-    strSize = ((string == NULL) ? 0 : strlen(string));
-    newSize = Tcl_ScanCountedElement(string, strSize, &flags)
+    strSize = ((element== NULL) ? 0 : strlen(element));
+    newSize = Tcl_ScanCountedElement(element, strSize, &flags)
 	+ dsPtr->length + 1;
 
     /*
@@ -1640,7 +1640,7 @@ Tcl_DStringAppendElement(dsPtr, string)
 	 */
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    dsPtr->length += Tcl_ConvertCountedElement(string, strSize, dst, flags);
+    dsPtr->length += Tcl_ConvertCountedElement(element, strSize, dst, flags);
     return dsPtr->string;
 }
 
@@ -2375,15 +2375,14 @@ TclLooksLikeInt(bytes, length)
  *
  *	This procedure returns an integer corresponding to the list index
  *	held in a Tcl object. The Tcl object's value is expected to be
- *	either an integer or a string of the form "end([+-]integer)?". 
+ *	in the format integer([+-]integer)? or the format end([+-]integer)?. 
  *
  * Results:
  *	The return value is normally TCL_OK, which means that the index was
  *	successfully stored into the location referenced by "indexPtr".  If
  *	the Tcl object referenced by "objPtr" has the value "end", the
- *	value stored is "endValue". If "objPtr"s values is not of the form
- *	"end([+-]integer)?" and
- *	can not be converted to an integer, TCL_ERROR is returned and, if
+ *	value stored is "endValue". If "objPtr"s values is not of one
+ *	of the expected formats, TCL_ERROR is returned and, if
  *	"interp" is non-NULL, an error message is left in the interpreter's
  *	result object.
  *
@@ -2419,10 +2418,51 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	*indexPtr = endValue + objPtr->internalRep.longValue;
 
     } else {
+	int opIdx, length;
+	char *bytes = Tcl_GetStringFromObj(objPtr, &length);
+	char *p = bytes;
+
+	while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
+	    length--; p++;
+	}
+	if (length == 0) {
+            goto parseError;
+	}
+	if ((*p == '+') || (*p == '-')) {
+	    p++; length--;
+	}
+	opIdx = TclParseInteger(p, length) + (int) (p-bytes);
+	if (opIdx) {
+	    int code, first, second;
+	    char savedOp = bytes[opIdx];
+	    if ((savedOp != '+') && (savedOp != '-')) {
+		goto parseError;
+	    }
+	    if (isspace(UCHAR(bytes[opIdx+1]))) {
+		goto parseError;
+	    }
+	    bytes[opIdx] = '\0';
+	    code = Tcl_GetInt(interp, bytes, &first);
+	    bytes[opIdx] = savedOp;
+	    if (code == TCL_ERROR)  {
+		goto parseError;
+	    }
+	    if (TCL_ERROR == Tcl_GetInt(interp, bytes+opIdx+1, &second))  {
+		goto parseError;
+	    }
+	    if (savedOp == '+') {
+		*indexPtr = first + second;
+	    } else {
+		*indexPtr = first - second;
+	    }
+	    return TCL_OK;
+	}
+
 	/*
 	 * Report a parse error.
 	 */
 
+parseError:
 	if (interp != NULL) {
 	    char *bytes = Tcl_GetString(objPtr);
 	    /*
@@ -2432,7 +2472,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	     */
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be integer or end?-integer?", (char *) NULL);
+		    "\": must be integer?[+-]integer? or end?[+-]integer?",
+		    (char *) NULL);
 	    if (!strncmp(bytes, "end-", 3)) {
 		bytes += 3;
 	    }
@@ -2489,7 +2530,7 @@ UpdateStringOfEndOffset(objPtr)
  *
  * SetEndOffsetFromAny --
  *
- *	Look for a string of the form "end-offset" and convert it
+ *	Look for a string of the form "end[+-]offset" and convert it
  *	to an internal representation holding the offset.
  *
  * Results:
@@ -2525,7 +2566,7 @@ SetEndOffsetFromAny(interp, objPtr)
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be end?-integer?", (char*) NULL);
+		    "\": must be end?[+-]integer?", (char*) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2534,15 +2575,20 @@ SetEndOffsetFromAny(interp, objPtr)
 
     if (length <= 3) {
 	offset = 0;
-    } else if ((length > 4) && (bytes[3] == '-')) {
+    } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
 	/*
 	 * This is our limited string expression evaluator.  Pass everything
 	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
+	if (isspace(UCHAR(bytes[4]))) {
+	    return TCL_ERROR;
+	}
 	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	offset = -offset;
+	if (bytes[3] == '-') {
+	    offset = -offset;
+	}
     } else {
 	/*
 	 * Conversion failed.  Report the error.
@@ -2550,7 +2596,7 @@ SetEndOffsetFromAny(interp, objPtr)
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
-		    "\": must be integer or end?-integer?", (char *) NULL);
+		    "\": must be end?[+-]integer?", (char *) NULL);
 	}
 	return TCL_ERROR;
     }

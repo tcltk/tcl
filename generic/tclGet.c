@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.9.2.3 2005/04/25 21:37:20 kennykb Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.9.2.4 2005/05/05 17:56:02 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -26,8 +26,8 @@
  *
  * Results:
  *	The return value is normally TCL_OK;  in this case *intPtr
- *	will be set to the integer value equivalent to string.  If
- *	string is improperly formed then TCL_ERROR is returned and
+ *	will be set to the integer value equivalent to src.  If
+ *	src is improperly formed then TCL_ERROR is returned and
  *	an error message will be left in the interp's result.
  *
  * Side effects:
@@ -37,9 +37,9 @@
  */
 
 int
-Tcl_GetInt(interp, str, intPtr)
+Tcl_GetInt(interp, src, intPtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    CONST char *str;		/* String containing a (possibly signed)
+    CONST char *src;		/* String containing a (possibly signed)
 				 * integer in a form acceptable to strtoul. */
     int *intPtr;		/* Place to store converted result. */
 {
@@ -47,8 +47,8 @@ Tcl_GetInt(interp, str, intPtr)
     int code;
    
     obj.refCount = 1;
-    obj.bytes = (char *) str;
-    obj.length = strlen(str);
+    obj.bytes = (char *) src;
+    obj.length = strlen(src);
     obj.typePtr = NULL;
 
     code = Tcl_GetIntFromObj(interp, &obj, intPtr);
@@ -69,8 +69,8 @@ Tcl_GetInt(interp, str, intPtr)
  *
  * Results:
  *	The return value is normally TCL_OK; in this case *longPtr
- *	will be set to the long integer value equivalent to string. If
- *	string is improperly formed then TCL_ERROR is returned and
+ *	will be set to the long integer value equivalent to src. If
+ *	src is improperly formed then TCL_ERROR is returned and
  *	an error message will be left in the interp's result if interp
  *	is non-NULL. 
  *
@@ -81,10 +81,10 @@ Tcl_GetInt(interp, str, intPtr)
  */
 
 int
-TclGetLong(interp, str, longPtr)
+TclGetLong(interp, src, longPtr)
     Tcl_Interp *interp;		/* Interpreter used for error reporting
 				 * if not NULL. */
-    CONST char *str;		/* String containing a (possibly signed)
+    CONST char *src;		/* String containing a (possibly signed)
 				 * long integer in a form acceptable to
 				 * strtoul. */
     long *longPtr;		/* Place to store converted long result. */
@@ -93,8 +93,8 @@ TclGetLong(interp, str, longPtr)
     int code;
 
     obj.refCount = 1;
-    obj.bytes = (char *) str;
-    obj.length = strlen(str);
+    obj.bytes = (char *) src;
+    obj.length = strlen(src);
     obj.typePtr = NULL;
 
     code = Tcl_GetLongFromObj(interp, &obj, longPtr);
@@ -114,8 +114,8 @@ TclGetLong(interp, str, longPtr)
  *
  * Results:
  *	The return value is normally TCL_OK; in this case *doublePtr
- *	will be set to the double-precision value equivalent to string.
- *	If string is improperly formed then TCL_ERROR is returned and
+ *	will be set to the double-precision value equivalent to src.
+ *	If src is improperly formed then TCL_ERROR is returned and
  *	an error message will be left in the interp's result.
  *
  * Side effects:
@@ -125,9 +125,9 @@ TclGetLong(interp, str, longPtr)
  */
 
 int
-Tcl_GetDouble(interp, str, doublePtr)
+Tcl_GetDouble(interp, src, doublePtr)
     Tcl_Interp *interp;		/* Interpreter used for error reporting. */
-    CONST char *str;		/* String containing a floating-point number
+    CONST char *src;		/* String containing a floating-point number
 				 * in a form acceptable to strtod. */
     double *doublePtr;		/* Place to store converted result. */
 {
@@ -135,8 +135,8 @@ Tcl_GetDouble(interp, str, doublePtr)
     int code;
 
     obj.refCount = 1;
-    obj.bytes = (char *) str;
-    obj.length = strlen(str);
+    obj.bytes = (char *) src;
+    obj.length = strlen(src);
     obj.typePtr = NULL;
 
     code = Tcl_GetDoubleFromObj(interp, &obj, doublePtr);
@@ -156,8 +156,8 @@ Tcl_GetDouble(interp, str, doublePtr)
  *
  * Results:
  *	The return value is normally TCL_OK;  in this case *boolPtr
- *	will be set to the 0/1 value equivalent to string.  If
- *	string is improperly formed then TCL_ERROR is returned and
+ *	will be set to the 0/1 value equivalent to src.  If
+ *	src is improperly formed then TCL_ERROR is returned and
  *	an error message will be left in the interp's result.
  *
  * Side effects:
@@ -167,9 +167,9 @@ Tcl_GetDouble(interp, str, doublePtr)
  */
 
 int
-Tcl_GetBoolean(interp, str, boolPtr)
+Tcl_GetBoolean(interp, src, boolPtr)
     Tcl_Interp *interp;		/* Interpreter used for error reporting. */
-    CONST char *str;		/* String containing a boolean number
+    CONST char *src;		/* String containing a boolean number
 				 * specified either as 1/0 or true/false or
 				 * yes/no. */
     int *boolPtr;		/* Place to store converted result, which
@@ -179,8 +179,8 @@ Tcl_GetBoolean(interp, str, boolPtr)
     int code;
 
     obj.refCount = 1;
-    obj.bytes = (char *) str;
-    obj.length = strlen(str);
+    obj.bytes = (char *) src;
+    obj.length = strlen(src);
     obj.typePtr = NULL;
 
     code = Tcl_ConvertToType(interp, &obj, &tclBooleanType);

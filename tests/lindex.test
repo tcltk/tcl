@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lindex.test,v 1.11 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: lindex.test,v 1.11.2.1 2005/05/05 17:56:17 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -49,7 +49,7 @@ test lindex-2.3 {multiple indices in list} testevalex {
 test lindex-2.4 {malformed index list} testevalex {
     set x \{
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} {1 bad\ index\ \"\{\":\ must\ be\ integer\ or\ end?-integer?}
+} {1 bad\ index\ \"\{\":\ must\ be\ integer?\[+-\]integer?\ or\ end?\[+-\]integer?}
 
 # Indices that are integers or convertible to integers
 
@@ -76,12 +76,12 @@ test lindex-3.4 {integer 3} testevalex {
 test lindex-3.5 {bad octal} testevalex {
     set x 08
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} "1 {bad index \"08\": must be integer or end?-integer? (looks like invalid octal number)}"
+} {1 {bad index "08": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 
 test lindex-3.6 {bad octal} testevalex {
     set x -09
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} "1 {bad index \"-09\": must be integer or end?-integer? (looks like invalid octal number)}"
+} {1 {bad index "-09": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 
 test lindex-3.7 {indexes don't shimmer wide ints} {
     set x [expr {(wide(1)<<31) - 2}]
@@ -118,31 +118,31 @@ test lindex-4.5 {index = end-3} testevalex {
 test lindex-4.6 {bad octal} testevalex {
     set x end-08
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} "1 {bad index \"end-08\": must be integer or end?-integer? (looks like invalid octal number)}"
+} {1 {bad index "end-08": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 
 test lindex-4.7 {bad octal} testevalex {
     set x end--09
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} "1 {bad index \"end--09\": must be integer or end?-integer?}"
+} {1 {bad index "end--09": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-4.8 {bad integer, not octal} testevalex {
     set x end-0a2
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} "1 {bad index \"end-0a2\": must be integer or end?-integer?}"
+} {1 {bad index "end-0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 
-test lindex-4.9 {incomplete end} testevalex {
-    set x en
+test lindex-4.9 {obsolete test} testevalex {
+    set x end
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {c c}
 
 test lindex-4.10 {incomplete end-} testevalex {
     set x end-
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} "1 {bad index \"end-\": must be integer or end?-integer?}"
+} {1 {bad index "end-": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-5.1 {bad second index} testevalex {
     list [catch { testevalex {lindex {a b c} 0 0a2} } result] $result
-} "1 {bad index \"0a2\": must be integer or end?-integer?}"
+} {1 {bad index "0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-5.2 {good second index} testevalex {
     testevalex {lindex {{a b c} {d e f} {g h i}} 1 2}
@@ -245,7 +245,7 @@ test lindex-10.3 {multiple indices in list} {
 test lindex-10.4 {malformed index list} {
     set x \{
     list [catch { lindex {a b c} $x } result] $result
-} {1 bad\ index\ \"\{\":\ must\ be\ integer\ or\ end?-integer?}
+} {1 bad\ index\ \"\{\":\ must\ be\ integer?\[+-\]integer?\ or\ end?\[+-\]integer?}
 
 # Indices that are integers or convertible to integers
 
@@ -284,12 +284,12 @@ test lindex-11.4 {integer 3} {
 test lindex-11.5 {bad octal} {
     set x 08
     list [catch { lindex {a b c} $x } result] $result
-} "1 {bad index \"08\": must be integer or end?-integer? (looks like invalid octal number)}"
+} {1 {bad index "08": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 
 test lindex-11.6 {bad octal} {
     set x -09
     list [catch { lindex {a b c} $x } result] $result
-} "1 {bad index \"-09\": must be integer or end?-integer? (looks like invalid octal number)}"
+} {1 {bad index "-09": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 
 # Indices relative to end
 
@@ -336,20 +336,20 @@ test lindex-12.5 {index = end-3} {
 test lindex-12.6 {bad octal} {
     set x end-08
     list [catch { lindex {a b c} $x } result] $result
-} "1 {bad index \"end-08\": must be integer or end?-integer? (looks like invalid octal number)}"
+} {1 {bad index "end-08": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 
 test lindex-12.7 {bad octal} {
     set x end--09
     list [catch { lindex {a b c} $x } result] $result
-} "1 {bad index \"end--09\": must be integer or end?-integer?}"
+} {1 {bad index "end--09": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-12.8 {bad integer, not octal} {
     set x end-0a2
     list [catch { lindex {a b c} $x } result] $result
-} "1 {bad index \"end-0a2\": must be integer or end?-integer?}"
+} {1 {bad index "end-0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 
-test lindex-12.9 {incomplete end} {
-    set x en
+test lindex-12.9 {obsolete test} {
+    set x end
     catch {
 	list [lindex {a b c} $x] [lindex {a b c} $x]
     } result
@@ -359,11 +359,11 @@ test lindex-12.9 {incomplete end} {
 test lindex-12.10 {incomplete end-} {
     set x end-
     list [catch { lindex {a b c} $x } result] $result
-} "1 {bad index \"end-\": must be integer or end?-integer?}"
+} {1 {bad index "end-": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-13.1 {bad second index} {
     list [catch { lindex {a b c} 0 0a2 } result] $result
-} "1 {bad index \"0a2\": must be integer or end?-integer?}"
+} {1 {bad index "0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-13.2 {good second index} {
     catch {

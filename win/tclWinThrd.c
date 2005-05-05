@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.34.2.1 2005/04/25 21:37:30 kennykb Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.34.2.2 2005/05/05 17:57:00 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -112,6 +112,19 @@ typedef struct WinCondition {
     struct ThreadSpecificData *lastPtr;
 } WinCondition;
 
+/*
+ * Additions by AOL for specialized thread memory allocator.
+ */
+#ifdef USE_THREAD_ALLOC
+static int once;
+static DWORD key;
+
+typedef struct allocMutex {
+    Tcl_Mutex        tlock;
+    CRITICAL_SECTION wlock;
+} allocMutex;
+
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1044,13 +1057,6 @@ TclpFinalizeCondition(condPtr)
  * Additions by AOL for specialized thread memory allocator.
  */
 #ifdef USE_THREAD_ALLOC
-static int once;
-static DWORD key;
-
-typedef struct allocMutex {
-    Tcl_Mutex        tlock;
-    CRITICAL_SECTION wlock;
-} allocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)

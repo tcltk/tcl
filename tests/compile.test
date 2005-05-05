@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.34.2.2 2005/03/15 19:41:46 kennykb Exp $
+# RCS: @(#) $Id: compile.test,v 1.34.2.3 2005/05/05 17:56:15 kennykb Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -236,15 +236,15 @@ test compile-11.1 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 	lindex a bogus
     }
     list [catch {p} msg] $msg
-} {1 {bad index "bogus": must be integer or end?-integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
 test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; string index a bogus }
     list [catch {p} msg] $msg
-} {1 {bad index "bogus": must be integer or end?-integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
 test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; string index a 09 }
     list [catch {p} msg] $msg
-} {1 {bad index "09": must be integer or end?-integer? (looks like invalid octal number)}}
+} {1 {bad index "09": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; array set var {one two many} }
     list [catch {p} msg] $msg

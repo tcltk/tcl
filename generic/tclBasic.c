@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.7 2005/04/25 21:37:19 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.8 2005/05/05 17:55:30 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1963,8 +1963,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
 
     for (i = 0;  i < argc;  i++) {
 	length = strlen(argv[i]);
-	TclNewObj(objPtr);
-	TclInitStringRep(objPtr, argv[i], length);
+	TclNewStringObj(objPtr, argv[i], length);
 	Tcl_IncrRefCount(objPtr);
 	objv[i] = objPtr;
     }
@@ -3956,12 +3955,12 @@ Tcl_EvalEx(interp, script, numBytes, flags)
  */
 
 int
-Tcl_Eval(interp, string)
+Tcl_Eval(interp, script)
     Tcl_Interp *interp;		/* Token for command interpreter (returned
 				 * by previous call to Tcl_CreateInterp). */
-    CONST char *string;		/* Pointer to TCL command to execute. */
+    CONST char *script;		/* Pointer to TCL command to execute. */
 {
-    int code = Tcl_EvalEx(interp, string, -1, 0);
+    int code = Tcl_EvalEx(interp, script, -1, 0);
 
     /*
      * For backwards compatibility with old C code that predates the
@@ -4197,19 +4196,19 @@ ProcessUnexpectedResult(interp, returnCode)
  */
 
 int
-Tcl_ExprLong(interp, string, ptr)
+Tcl_ExprLong(interp, exprstring, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprstring;		/* Expression to evaluate. */
     long *ptr;			/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
-    int length = strlen(string);
+    int length = strlen(exprstring);
     int result = TCL_OK;
 
     if (length > 0) {
-	TclNewStringObj(exprPtr, string, length);
+	exprPtr = Tcl_NewStringObj(exprstring, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4265,19 +4264,19 @@ Tcl_ExprLong(interp, string, ptr)
 }
 
 int
-Tcl_ExprDouble(interp, string, ptr)
+Tcl_ExprDouble(interp, exprstring, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprstring;		/* Expression to evaluate. */
     double *ptr;		/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
-    int length = strlen(string);
+    int length = strlen(exprstring);
     int result = TCL_OK;
 
     if (length > 0) {
-	TclNewStringObj(exprPtr, string, length);
+	exprPtr = Tcl_NewStringObj(exprstring, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4333,19 +4332,19 @@ Tcl_ExprDouble(interp, string, ptr)
 }
 
 int
-Tcl_ExprBoolean(interp, string, ptr)
+Tcl_ExprBoolean(interp, exprstring, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 			         * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *exprstring;		/* Expression to evaluate. */
     int *ptr;			/* Where to store 0/1 result. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
-    int length = strlen(string);
+    int length = strlen(exprstring);
     int result = TCL_OK;
 
     if (length > 0) {
-	TclNewStringObj(exprPtr, string, length);
+	exprPtr = Tcl_NewStringObj(exprstring, length);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
 	if (result == TCL_OK) {
@@ -4633,61 +4632,29 @@ TclObjInvoke(interp, objc, objv, flags)
  */
 
 int
-Tcl_ExprString(interp, string)
+Tcl_ExprString(interp, expr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *string;		/* Expression to evaluate. */
+    CONST char *expr;		/* Expression to evaluate. */
 {
-    register Tcl_Obj *exprPtr;
-    Tcl_Obj *resultPtr;
-    int length = strlen(string);
-    char buf[TCL_DOUBLE_SPACE];
-    int result = TCL_OK;
-
-    if (length > 0) {
-	TclNewObj(exprPtr);
-	TclInitStringRep(exprPtr, string, length);
-	Tcl_IncrRefCount(exprPtr);
-
-	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	if (result == TCL_OK) {
-	    /*
-	     * Set the interpreter's string result from the result object.
-	     */
-	    
-	    if (resultPtr->typePtr == &tclIntType) {
-		sprintf(buf, "%ld", resultPtr->internalRep.longValue);
-		Tcl_SetResult(interp, buf, TCL_VOLATILE);
-	    } else if (resultPtr->typePtr == &tclDoubleType) {
-		Tcl_PrintDouble((Tcl_Interp *) NULL,
-		        resultPtr->internalRep.doubleValue, buf);
-		Tcl_SetResult(interp, buf, TCL_VOLATILE);
-	    } else {
-		/*
-		 * Set interpreter's string result from the result object.
-		 */
-	    
-		Tcl_SetResult(interp, TclGetString(resultPtr),
-		        TCL_VOLATILE);
-	    }
-	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
-	} else {
-	    /*
-	     * Move the interpreter's object result to the string result, 
-	     * then reset the object result.
-	     */
-	    
-	    (void) Tcl_GetStringResult(interp);
-	}
-	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
-    } else {
-	/*
-	 * An empty string. Just set the interpreter's result to 0.
-	 */
-	
+    int code = TCL_OK;
+    if (expr[0] == '\0') {
+	/* An empty string.  Just set the interpreter's result to 0. */
 	Tcl_SetResult(interp, "0", TCL_VOLATILE);
+    } else {
+	Tcl_Obj *resultPtr, *exprObj = Tcl_NewStringObj(expr, -1);
+	Tcl_IncrRefCount(exprObj);
+	code = Tcl_ExprObj(interp, exprObj, &resultPtr);
+	Tcl_DecrRefCount(exprObj);
+	if (code == TCL_OK) {
+	    Tcl_SetObjResult(interp, resultPtr);
+	    Tcl_DecrRefCount(resultPtr);
+	}
+
+	/* Force the string rep of the interp result */
+	(void) Tcl_GetStringResult(interp);
     }
-    return result;
+    return code;
 }
 
 /*

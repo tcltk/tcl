@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.2.2 2005/04/10 23:14:47 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.2.3 2005/05/05 17:55:34 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -53,7 +53,7 @@ AuxDataType tclForeachInfoType = {
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "append" command
@@ -74,7 +74,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 
     numWords = parsePtr->numWords;
     if (numWords == 1) {
-        return TCL_OUT_LINE_COMPILE;
+        return TCL_ERROR;
     } else if (numWords == 2) {
 	/*
 	 * append varName == set varName
@@ -84,7 +84,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 	/*
 	 * APPEND instructions currently only handle one value
 	 */
-        return TCL_OUT_LINE_COMPILE;
+        return TCL_ERROR;
     }
 
     /*
@@ -160,7 +160,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "break" command
@@ -177,7 +177,7 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     if (parsePtr->numWords != 1) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -197,7 +197,7 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "catch" command
@@ -224,7 +224,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * compile.  Let runtime checks determine if syntax has changed.
      */
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -234,7 +234,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      */
 
     if ((parsePtr->numWords == 3) && (envPtr->procPtr == NULL)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -251,13 +251,13 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	    name = nameTokenPtr[1].start;
 	    nameChars = nameTokenPtr[1].size;
 	    if (!TclIsLocalScalar(name, nameChars)) {
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 	    localIndex = TclFindCompiledLocal(nameTokenPtr[1].start,
 		    nameTokenPtr[1].size, /*create*/ 1, 
 		    /*flags*/ VAR_SCALAR, envPtr->procPtr);
 	} else {
-	   return TCL_OUT_LINE_COMPILE;
+	   return TCL_ERROR;
 	}
     }
 
@@ -358,7 +358,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "continue" command
@@ -379,7 +379,7 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
      */
 
     if (parsePtr->numWords != 1) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -399,7 +399,7 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "expr" command
@@ -418,7 +418,7 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
     Tcl_Token *firstWordPtr;
 
     if (parsePtr->numWords == 1) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     firstWordPtr = parsePtr->tokenPtr
@@ -436,7 +436,7 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "for" command
@@ -458,7 +458,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     int savedStackDepth = envPtr->currStackDepth;
 
     if (parsePtr->numWords != 5) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -471,7 +471,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
     testTokenPtr = startTokenPtr + (startTokenPtr->numComponents + 1);
     if (testTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -483,7 +483,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     bodyTokenPtr = nextTokenPtr + (nextTokenPtr->numComponents + 1);
     if ((nextTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) 
 	    || (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -608,7 +608,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "foreach" command
@@ -657,12 +657,12 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      */
 
     if (procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     numWords = parsePtr->numWords;
     if ((numWords < 4) || (numWords%2 != 0)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -675,7 +675,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     }
     bodyTokenPtr = tokenPtr;
     if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -712,7 +712,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    i++, tokenPtr += (tokenPtr->numComponents + 1)) {
 	if (i%2 == 1) {
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		code = TCL_OUT_LINE_COMPILE;
+		code = TCL_ERROR;
 		goto done;
 	    } else {
 		/* Lots of copying going on here.  Need a ListObj wizard
@@ -727,14 +727,14 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 			&varcList[loopIndex], &varvList[loopIndex]);
 		Tcl_DStringFree(&varList);
 		if (code != TCL_OK) {
-		    code = TCL_OUT_LINE_COMPILE;
+		    code = TCL_ERROR;
 		    goto done;
 		}
 		numVars = varcList[loopIndex];
 		for (j = 0;  j < numVars;  j++) {
 		    CONST char *varName = varvList[loopIndex][j];
 		    if (!TclIsLocalScalar(varName, (int) strlen(varName))) {
-			code = TCL_OUT_LINE_COMPILE;
+			code = TCL_ERROR;
 			goto done;
 		    }
 		}
@@ -1014,7 +1014,7 @@ FreeForeachInfo(clientData)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "if" command
@@ -1060,7 +1060,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 
     for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
 	tokenPtr += 2;
     }
@@ -1092,7 +1092,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    break;
 	}
 	if (wordIdx >= numWords) {
-	    code = TCL_OUT_LINE_COMPILE;
+	    code = TCL_ERROR;
 	    goto done;
 	}
 
@@ -1145,7 +1145,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	tokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
 	wordIdx++;
 	if (wordIdx >= numWords) {
-	    code = TCL_OUT_LINE_COMPILE;
+	    code = TCL_ERROR;
 	    goto done;
 	}
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -1155,7 +1155,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 		tokenPtr += (tokenPtr->numComponents + 1);
 		wordIdx++;
 		if (wordIdx >= numWords) {
-		    code = TCL_OUT_LINE_COMPILE;
+		    code = TCL_ERROR;
 		    goto done;
 		}
 	    }
@@ -1246,7 +1246,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    wordIdx++;
 	    if (wordIdx >= numWords) {
-		code = TCL_OUT_LINE_COMPILE;
+		code = TCL_ERROR;
 		goto done;
 	    }
 	}
@@ -1266,7 +1266,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 
 	wordIdx++;
 	if (wordIdx < numWords) {
-	    code = TCL_OUT_LINE_COMPILE;
+	    code = TCL_ERROR;
 	    goto done;
 	}
     } else {
@@ -1329,7 +1329,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "incr" command
@@ -1349,7 +1349,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
 
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     varTokenPtr = parsePtr->tokenPtr
@@ -1457,7 +1457,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lappend" command
@@ -1480,18 +1480,18 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
      * If we're not in a procedure, don't compile.
      */
     if (envPtr->procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     numWords = parsePtr->numWords;
     if (numWords == 1) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
     if (numWords != 3) {
 	/*
 	 * LAPPEND instructions currently only handle one value appends
 	 */
-        return TCL_OUT_LINE_COMPILE;
+        return TCL_ERROR;
     }
 
     /*
@@ -1570,7 +1570,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lassign" command
@@ -1594,7 +1594,7 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
      * Check for command syntax error, but we'll punt that to runtime
      */
     if (numWords < 3) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -1680,7 +1680,7 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lindex" command
@@ -1705,7 +1705,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
      */
 
     if (numWords <= 1) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     varTokenPtr = parsePtr->tokenPtr
@@ -1750,7 +1750,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "list" command
@@ -1770,7 +1770,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
      * If we're not in a procedure, don't compile.
      */
     if (envPtr->procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     if (parsePtr->numWords == 1) {
@@ -1815,7 +1815,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "llength" command
@@ -1834,7 +1834,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
     Tcl_Token *varTokenPtr;
 
     if (parsePtr->numWords != 2) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
     varTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
@@ -1863,7 +1863,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lset" command
@@ -1914,7 +1914,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
 
     if (parsePtr->numWords < 3) {
 	/* Fail at run time, not in compilation */
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -2044,7 +2044,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "regexp" command
@@ -2072,7 +2072,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
     if (parsePtr->numWords < 3) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     nocase = 0;
@@ -2087,7 +2087,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /* Not a simple string - punt to runtime. */
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
 	str = (char *) varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
@@ -2099,13 +2099,13 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	    nocase = 1;
 	} else {
 	    /* Not an option we recognize. */
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
     }
 
     if ((parsePtr->numWords - i) != 2) {
 	/* We don't support capturing to variables */
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -2116,7 +2116,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     str = (char *) varTokenPtr[1].start;
     len = varTokenPtr[1].size;
     if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (*str == '-')) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     if (len == 0) {
@@ -2176,7 +2176,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     if ((strpbrk(str + start, "*+?{}()[].\\|^$") != NULL)
 	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
 	ckfree((char *) str);
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     if (anchorLeft && anchorRight) {
@@ -2234,7 +2234,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "return" command
@@ -2303,7 +2303,7 @@ cleanup:
 	 * must be interpreted at runtime.
 	 */
 	Tcl_ResetResult(interp);
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -2376,7 +2376,7 @@ cleanup:
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "set" command
@@ -2397,7 +2397,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 
     numWords = parsePtr->numWords;
     if ((numWords != 2) && (numWords != 3)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
     isAssignment = (numWords == 3);
 
@@ -2482,7 +2482,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string" command
@@ -2521,7 +2521,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 
     if (parsePtr->numWords < 2) {
 	/* Fail at run time, not in compilation */
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
     opTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
@@ -2531,7 +2531,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    &index) != TCL_OK) {
 	Tcl_DecrRefCount(opObj);
 	Tcl_ResetResult(interp);
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
     Tcl_DecrRefCount(opObj);
 
@@ -2557,7 +2557,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    /*
 	     * All other cases: compile out of line.
 	     */
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 
 	case STR_COMPARE: 
 	case STR_EQUAL: {
@@ -2568,7 +2568,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	     */
 
 	    if (parsePtr->numWords != 4) {
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 
 	    /*
@@ -2595,7 +2595,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 
 	    if (parsePtr->numWords != 4) {
 		/* Fail at run time, not in compilation */
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 
 	    /*
@@ -2619,7 +2619,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	case STR_LENGTH: {
 	    if (parsePtr->numWords != 3) {
 		/* Fail at run time, not in compilation */
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 
 	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -2646,12 +2646,12 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 
 	    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
 		/* Fail at run time, not in compilation */
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 
 	    if (parsePtr->numWords == 5) {
 		if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		    return TCL_OUT_LINE_COMPILE;
+		    return TCL_ERROR;
 		}
 		str    = varTokenPtr[1].start;
 		length = varTokenPtr[1].size;
@@ -2660,7 +2660,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    nocase = 1;
 		} else {
 		    /* Fail at run time, not in compilation */
-		    return TCL_OUT_LINE_COMPILE;
+		    return TCL_ERROR;
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
@@ -2714,7 +2714,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "switch" command.
  *
  * Results:
- * 	Returns TCL_OK for successful compile, or TCL_OUT_LINE_COMPILE
+ * 	Returns TCL_OK for successful compile, or TCL_ERROR
  * 	to defer evaluation to runtime (either when it is too complex
  * 	to get the semantics right, or when we know for sure that it
  * 	is an error but need the error to happen at the right time).
@@ -2794,7 +2794,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
      */
 
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     } else {
 	register int size = tokenPtr[1].size;
 	register CONST char *chrs = tokenPtr[1].start;
@@ -2803,7 +2803,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	 * Assume that -e and -g are unique prefixes of -exact and -glob
 	 */
 	if (size < 2) {
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
 	if ((size <= 6) && (numWords >= 4)
 		&& !strncmp(chrs, "-exact", (unsigned) TclMin(size, 6))) {
@@ -2823,12 +2823,12 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	     */
 	    mode = Switch_Exact;
 	} else {
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
     }
     if ((tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (tokenPtr[1].size != 2)
 	    || strncmp(tokenPtr[1].start, "--", 2)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
     tokenPtr += 2;
     numWords--;
@@ -2865,19 +2865,19 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	 */
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
 	Tcl_DStringInit(&bodyList);
 	Tcl_DStringAppend(&bodyList, tokenPtr[1].start, tokenPtr[1].size);
 	if (Tcl_SplitList(NULL, Tcl_DStringValue(&bodyList), &numWords,
 		&argv) != TCL_OK) {
 	    Tcl_DStringFree(&bodyList);
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
 	Tcl_DStringFree(&bodyList);
 	if (numWords == 0 || numWords % 2) {
 	    ckfree((char *) argv);
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
 	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * numWords);
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
@@ -2910,7 +2910,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 		ckfree((char *) argv);
 		ckfree((char *) bodyToken);
 		ckfree((char *) bodyTokenArray);
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 	    while (isspace(UCHAR(*tokenStartPtr))) {
 		tokenStartPtr++;
@@ -2934,10 +2934,10 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	if (tokenStartPtr != tokenPtr[1].start+tokenPtr[1].size) {
 	    ckfree((char *) bodyToken);
 	    ckfree((char *) bodyTokenArray);
-	    return TCL_OUT_LINE_COMPILE;
+	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     } else {
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
 	bodyTokenArray = NULL;
@@ -2950,7 +2950,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
 		    tokenPtr->numComponents != 1) {
 		ckfree((char *) bodyToken);
-		return TCL_OUT_LINE_COMPILE;
+		return TCL_ERROR;
 	    }
 	    bodyToken[i] = tokenPtr+1;
 	    tokenPtr += tokenPtr->numComponents+1;
@@ -2969,7 +2969,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	if (bodyTokenArray != NULL) {
 	    ckfree((char *) bodyTokenArray);
 	}
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -3140,7 +3140,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
  *      "variable" command. The command itself is *not* compiled.
  *
  * Results:
- *      Always returns TCL_OUT_LINE_COMPILE.
+ *      Always returns TCL_ERROR.
  *
  * Side effects:
  *      Indexed local variables are added to the environment.
@@ -3159,7 +3159,7 @@ TclCompileVariableCmd(interp, parsePtr, envPtr)
     CONST char *varName, *tail;
 
     if (envPtr->procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     numWords = parsePtr->numWords;
@@ -3182,7 +3182,7 @@ TclCompileVariableCmd(interp, parsePtr, envPtr)
 	    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	}
     }
-    return TCL_OUT_LINE_COMPILE;
+    return TCL_ERROR;
 }
 
 /*
@@ -3194,7 +3194,7 @@ TclCompileVariableCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "while" command
@@ -3221,7 +3221,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     int boolVal;
 
     if (parsePtr->numWords != 3) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -3238,7 +3238,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     bodyTokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
     if ((testTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
 	    || (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)) {
-	return TCL_OUT_LINE_COMPILE;
+	return TCL_ERROR;
     }
 
     /*
@@ -3371,7 +3371,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
  *
  * Results:
  * 	Returns TCL_OK for a successful compile.
- * 	Returns TCL_OUT_LINE_COMPILE to defer evaluation to runtime.
+ * 	Returns TCL_ERROR to defer evaluation to runtime.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "set" command

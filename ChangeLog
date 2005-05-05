@@ -1,3 +1,85 @@
+2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch] Merged with HEAD.
+	
+2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWinThrd.c:  Corrected a compilation error on the
+	                     --enable-threads configuration.
+	
+2005-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c:	Replaced all instance of
+	* generic/tclCompile.c:		TCL_OUT_LINE_COMPILE with TCL_ERROR.
+	* generic/tclInt.h:		Now that we've eradicated the mistaken
+	* tests/appendComp.test:	notion of a "compile-time error", we
+	can use the TCL_ERROR return code to signal any failure to produce
+	bytecode.  
+
+2005-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/DString.3:	Eliminated use of identifier "string" in Tcl's
+	* doc/Environment.3:	public C API to avoid conflict/confusion with
+	* doc/Eval.3:		the std::string of C++.
+	* doc/ExprLong.3, doc/ExprLongObj.3, doc/GetInt.3, doc/GetOpnFl.3:
+	* doc/ParseCmd.3, doc/RegExp.3, doc/SetResult.3, doc/StrMatch.3:
+	* doc/Utf.3, generic/tcl.decls, generic/tclBasic.c, generic/tclEnv.c:
+	* generic/tclGet.c, generic/tclParse.c, generic/tclParseExpr.c:
+	* generic/tclRegexp.c, generic/tclResult.c, generic/tclUtf.c:
+	* generic/tclUtil.c, unix/tclUnixChan.c:
+
+	* generic/tclDecls.h:	`make genstubs`
+
+2005-05-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.decls:
+	* generic/tclBasic.c:	Simplified implementation of Tcl_ExprString.
+	* tests/expr-old.test:
+
+	* generic/tclDecls.h:	`make genstubs`
+
+2005-04-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c: applied dkf's tkMacOSXNotify.c cleanup changes.
+
+2005-04-29  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#176 IMPLEMENTATION	[Patch 1165695]
+
+	* generic/tclUtil.c:	Extended TclGetIntForIndex to recognize
+	index formats including end+integer and integer+/-integer.
+
+	* generic/tclCmdMZ.c:	Extended the -start switch of [regexp]
+	and [regsub] to accept all index formats known by TclGetIntForIndex.
+
+	* doc/lindex.n:		Updated docs to note new index formats.
+	* doc/linsert.n, doc/lrange.n, doc/lreplace.n, doc/lsearch.n:
+	* doc/lset.n, doc/lsort.n, doc/regexp.n, doc/regsub.n, doc/string.n:
+
+	* tests/cmdIL.test:	Updated tests.
+	* tests/compile.test, tests/lindex.test, tests/linsert.test:
+	* tests/lrange.test, tests/lreplace.test, tests/lsearch.test:
+	* tests/lset.test, tests/regexp.test, tests/regexpComp.test:
+	* tests/string.test, tests/stringComp.test, tests/util.test:
+
+2005-04-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (7.1): Alternative fix for the 2004-11-11 commit.
+
+2005-04-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Corrected flaw in interactive command
+	* tests/main.test:	auto-completion.  [Bug 1191409].
+
+	TIP#183 IMPLEMENTATION	[Patch 577093]
+
+	* generic/tclIOUtil.c (TclGetOpenModeEx):	New routine.
+	* generic/tclInt.h:
+
+	* generic/tclIO.c (Tcl_OpenObjCmd):	Support for "b" and
+	* doc/open.n:		"BINARY" in "access" argument to [open].
+	* tests/ioCmd.test:
+
 2005-04-26  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclBinary.c (FormatNumber):
@@ -25,6 +107,33 @@
 
 	* doc/CrtMathFunc.n:		Revised documentation for TIP 232
 	
+2005-04-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* compat/string.h: fixed memchr() protoype for __APPLE__ so that we
+	build on Mac OS X 10.1 again.
+
+	* generic/tclNotify.c (TclFinalizeNotifier): fixed notifier not being
+	finalized in unthreaded core (was testing for notifier initialization in
+	current thread by checking thread id != 0 but thread id is always 0 in
+	untreaded core).
+
+	* win/tclWinNotify.c (Tcl_WaitForEvent): 
+	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): don't call ScaleTimeProc for
+	zero wait times (as specified in TIP 233).
+
+	* unix/Makefile.in: added @PLAT_SRCS@ to SRCS and split out NOTIFY_SRCS
+	from UNIX_SRCS for parity with UNIX_OBJS & NOTIFY_OBJS.
+
+	* unix/tcl.m4 (Darwin): added configure checks for recently added linker
+	flags -single_module and -search_paths_first to allow building with
+	older tools (and on Mac OS X 10.1), use -single_module in SHLIB_LD and
+	not just T{CL,K}_SHLIB_LD_EXTRAS, added unexporting from Tk of symbols
+	from libtclstub to avoid duplicate symbol warnings, added PLAT_SRCS
+	definition for Mac OS X, defined MODULE_SCOPE to __private_extern__.
+	(SC_MISSING_POSIX_HEADERS): added caching of dirent.h check.
+
+	* unix/configure: autoconf-2.59
+
 2005-04-25  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* library/tzdata/America/Boise:
@@ -175,29 +284,29 @@
 	to find the requested symbol (this is not considered to
 	be an error).
 
-        Set of changes correcting huge memory waste (not a leak)
-        when a thread exits. This has been introduced in 8.4.7
-        within an attempt to correctly cleanup after ourselves when
-        Tcl library is being unloaded with the Tcl_Finalize() call.
+	Set of changes correcting huge memory waste (not a leak)
+	when a thread exits. This has been introduced in 8.4.7
+	within an attempt to correctly cleanup after ourselves when
+	Tcl library is being unloaded with the Tcl_Finalize() call.
 
-        This fixes the Tcl Bug #1178445.
+	This fixes the Tcl Bug #1178445.
 
-        * generic/tclInt.h: added prototypes for TclpFreeAllocCache()
-        and TclFreeAllocCache()
+	* generic/tclInt.h: added prototypes for TclpFreeAllocCache()
+	and TclFreeAllocCache()
 
-        * generic/tclThreadAlloc.c: modified TclFinalizeThreadAlloc()
-        to explicitly call TclpFreeAllocCache with the NULL-ptr as 
-        argument signalling cleanup of private tsd key used only by
-        the threading allocator.
+	* generic/tclThreadAlloc.c: modified TclFinalizeThreadAlloc()
+	to explicitly call TclpFreeAllocCache with the NULL-ptr as 
+	argument signalling cleanup of private tsd key used only by
+	the threading allocator.
 
-        * unix/tclUnixThrd.c: fixed TclpFreeAllocCache() to recognize
-        when being called with NULL argument. This is a signal for it
-        to clean up the tsd key associated with the threading allocator.
+	* unix/tclUnixThrd.c: fixed TclpFreeAllocCache() to recognize
+	when being called with NULL argument. This is a signal for it
+	to clean up the tsd key associated with the threading allocator.
 
-        * win/tclWinThrd.c: renamed TclWinFreeAllocCache to TclpFreeAllocCache
-        and fixed to recognize when being called with NULL argument.
-        This is a signal for it to clean up the tsd key associated with the
-        threading allocator.
+	* win/tclWinThrd.c: renamed TclWinFreeAllocCache to TclpFreeAllocCache
+	and fixed to recognize when being called with NULL argument.
+	This is a signal for it to clean up the tsd key associated with the
+	threading allocator.
 
 2005-04-13  Don Porter  <dgp@users.sourceforge.net>
 
@@ -1074,14 +1183,14 @@
 		leading zeroes appeared to be a	two-digit group, leading to
 		misinterpreting the time 0012 as 1200.	[Bug # 1090413]
 	* library/clock.tcl: Added code to interpret correctly months
-	                     outside the range 01-12 as reduced modulo 12
+			     outside the range 01-12 as reduced modulo 12
 			     with a corresponding adjustment to the year.
 			     [Bug 1092789]
 	* tests/clock.test: Added regression test cases for the above two
-		            bugs.
+			    bugs.
 	* unix/Makefile.in: Added --no-lines to the 'bison' command line 
 	* win/Makefile.in:  to help constrain the number of diffs in a cvs
-	                    checkin.
+			    checkin.
 	
 2004-12-24  Miguel Sofer <msofer@users.sf.net>
 
@@ -2092,7 +2201,7 @@
 2004-10-26  Kevin Kenny <kennykb@acm.org>
 
 	* tests/format.test (format-19.1): Additional regression test for
-	                                   Bug 868489.
+					   Bug 868489.
 
 2004-10-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -2733,8 +2842,8 @@
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Removed some grubby
 	* generic/tclObj.c (SetBooleanFromAny):  work-around code
-					         that was needed only
-	                                         because of Bug 868489.
+						 that was needed only
+						 because of Bug 868489.
 
 	* generic/tclBasic.c (TclObjInvoke): Removed three unused
 	variables to silence a compiler warning in VC++.
@@ -4147,9 +4256,9 @@
 2004-05-25  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/winFCmd.test: Correct test for the presence of a CD-ROM so
-	                      that it doesn't misdetect some other sort
-	                      of filesystem with a write-protected root as
-	                      being a CD-ROM drive. [Bug 918267]
+			      that it doesn't misdetect some other sort
+			      of filesystem with a write-protected root as
+			      being a CD-ROM drive. [Bug 918267]
 
 2004-05-25  Don Porter  <dgp@users.sourceforge.net>
 
@@ -4294,15 +4403,15 @@
 
 	* generic/tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem
 	* generic/tclIO.h: as [SF Tcl Bug 462317], see ChangeLog entry
-	           2001-09-26. The fix done at that time is incomplete. It
-	           is possible to get around it if the actual read
-	           operation is defered and not executed in the event
-	           handler itself. Instead of tracking if we are in an
-	           read caused by a synthesized fileevent we now track if
-	           the OS has delivered a true event = actual data and
-	           bypass the driver if a read finds that there is no
-	           actual data waiting. The flag is cleared by a short or
-	           full read.
+		   2001-09-26. The fix done at that time is incomplete. It
+		   is possible to get around it if the actual read
+		   operation is defered and not executed in the event
+		   handler itself. Instead of tracking if we are in an
+		   read caused by a synthesized fileevent we now track if
+		   the OS has delivered a true event = actual data and
+		   bypass the driver if a read finds that there is no
+		   actual data waiting. The flag is cleared by a short or
+		   full read.
 
 	  ***POTENTIAL INCOMPATIBILITY*** for channel drivers.
 
@@ -4421,17 +4530,17 @@
 	* unix/tclUnixPort.h:
 
 	* generic/tclClock.c: Changed a buggy 'GMT' timezone specification
-	                      to the correct 'GMT0'. [Bug #922848]
+			      to the correct 'GMT0'. [Bug #922848]
 
 	* unix/tclUnixThrd.c: Moved TclpGmtime and TclpLocaltime to
-	                      unix/tclUnixTime.c where they belong.
+			      unix/tclUnixTime.c where they belong.
 
 	* unix/tclUnixTime.c (TclpGmtime, TclpLocaltime, TclpGetTimeZone,
-	                      ThreadSafeGMTime [removed],
-	                      ThreadSafeLocalTime [removed],
-	                      SetTZIfNecessary, CleanupMemory):
+			      ThreadSafeGMTime [removed],
+			      ThreadSafeLocalTime [removed],
+			      SetTZIfNecessary, CleanupMemory):
 	    Restructured to make sure that the same mutex protects
-	    all calls to localtime, gmtime, and tzset.  Added a check
+	    all calls to localtime, gmtime, and tzset.	Added a check
 	    in front of those calls to make sure that the TZ env var
 	    hasn't changed since the last call to tzset, and repeat
 	    tzset if necessary. [Bug #942078]  Removed a buggy test

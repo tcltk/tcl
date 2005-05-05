@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lrange.test,v 1.7 2000/04/10 17:19:01 ericm Exp $
+# RCS: @(#) $Id: lrange.test,v 1.7.28.1 2005/05/05 17:56:18 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -43,7 +43,7 @@ test lrange-1.8 {range of list elements} {
     lrange {a b c d e} -2 -1
 } {}
 test lrange-1.9 {range of list elements} {
-    lrange {a b c d e} -2 e
+    lrange {a b c d e} -2 end
 } {a b c d e}
 test lrange-1.10 {range of list elements} {
     lrange "a b\{c d" 1 2
@@ -55,7 +55,7 @@ test lrange-1.12 {range of list elements} {
     lrange "a b c d" end 100000
 } d
 test lrange-1.13 {range of list elements} {
-    lrange "a b c d" e 3
+    lrange "a b c d" end 3
 } d
 test lrange-1.14 {range of list elements} {
     lrange "a b c d" end 2
@@ -75,10 +75,10 @@ test lrange-2.2 {error conditions} {
 } {1 {wrong # args: should be "lrange list first last"}}
 test lrange-2.3 {error conditions} {
     list [catch {lrange a b 6} msg] $msg
-} {1 {bad index "b": must be integer or end?-integer?}}
+} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.4 {error conditions} {
     list [catch {lrange a 0 enigma} msg] $msg
-} {1 {bad index "enigma": must be integer or end?-integer?}}
+} {1 {bad index "enigma": must be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.5 {error conditions} {
     list [catch {lrange "a \{b c" 3 4} msg] $msg
 } {1 {unmatched open brace in list}}

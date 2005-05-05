@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.78.2.4 2005/04/25 21:37:19 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.78.2.5 2005/05/05 17:55:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1128,18 +1128,17 @@ TclCompileScript(interp, script, numBytes, envPtr)
 				    TclStoreInt4AtPtr(fixLen, fixPtr);
 				}				
 				goto finishCommand;
-			    } else if (code == TCL_OUT_LINE_COMPILE) {
+			    } else {
 				/*
 				 * Restore numCommands and codeNext to their
 				 * correct values, removing any commands
-				 * compiled before TCL_OUT_LINE_COMPILE
+				 * compiled before the failure to produce
+				 * bytecode got reported.
 				 * [Bugs 705406 and 735055]
 				 */
 				envPtr->numCommands = savedNumCmds;
 				envPtr->codeNext = envPtr->codeStart
 					+ savedCodeNext;
-			    } else { /* an error */
-				Tcl_Panic("TclCompileScript: compileProc returned TCL_ERROR\n");
 			    }
 			}
 

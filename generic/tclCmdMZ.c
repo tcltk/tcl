@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.3 2005/04/10 23:14:46 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.4 2005/05/05 17:55:32 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -90,7 +90,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     int i, indices, match, about, offset, all, doinline, numMatchesSaved;
     int cflags, eflags, stringLength;
     Tcl_RegExp regExpr;
-    Tcl_Obj *objPtr, *resultPtr = NULL;
+    Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
     static CONST char *options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
@@ -121,7 +121,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
 		&index) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto optionError;
 	}
 	switch ((enum options) index) {
 	    case REGEXP_ALL: {
@@ -161,15 +161,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGEXP_START: {
+		int temp;
 		if (++i >= objc) {
 		    goto endOfForLoop;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i], &offset) != TCL_OK) {
-		    return TCL_ERROR;
+		if (TclGetIntForIndex(interp, objv[i], 0, &temp) != TCL_OK) {
+		    goto optionError;
 		}
-		if (offset < 0) {
-		    offset = 0;
+		if (startIndex) {
+		    Tcl_DecrRefCount(startIndex);
 		}
+		startIndex = objv[i];
+		Tcl_IncrRefCount(startIndex);
 		break;
 	    }
 	    case REGEXP_LAST: {
@@ -183,7 +186,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv, 
 	  "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
-	return TCL_ERROR;
+	goto optionError;
     }
     objc -= i;
     objv += i;
@@ -194,7 +197,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	 */
 	Tcl_AppendResult(interp, "regexp match variables not allowed",
 		" when using -inline", (char *) NULL);
-	return TCL_ERROR;
+	goto optionError;
     }
 
     /*
@@ -203,6 +206,10 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     if (about) {
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
 	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
+optionError:
+	    if (startIndex) {
+		Tcl_DecrRefCount(startIndex);
+	    }
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -215,6 +222,14 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
      */
     objPtr = objv[1];
     stringLength = Tcl_GetCharLength(objPtr);
+
+    if (startIndex) {
+	TclGetIntForIndex(NULL, startIndex, stringLength, &offset);
+	Tcl_DecrRefCount(startIndex);
+	if (offset < 0) {
+	    offset = 0;
+	}
+    }
 
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
@@ -426,7 +441,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     int start, end, subStart, subEnd, match;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
-    Tcl_Obj *resultPtr, *subPtr, *objPtr;
+    Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static CONST char *options[] = {
@@ -455,7 +470,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[idx], options, "switch",
 		TCL_EXACT, &index) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto optionError;
 	}
 	switch ((enum options) index) {
 	    case REGSUB_ALL: {
@@ -483,15 +498,18 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGSUB_START: {
+		int temp;
 		if (++idx >= objc) {
 		    goto endOfForLoop;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[idx], &offset) != TCL_OK) {
-		    return TCL_ERROR;
+		if (TclGetIntForIndex(interp, objv[idx], 0, &temp) != TCL_OK) {
+		    goto optionError;
 		}
-		if (offset < 0) {
-		    offset = 0;
+		if (startIndex) {
+		    Tcl_DecrRefCount(startIndex);
 		}
+		startIndex = objv[idx];
+		Tcl_IncrRefCount(startIndex);
 		break;
 	    }
 	    case REGSUB_LAST: {
@@ -504,11 +522,24 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     if (objc-idx < 3 || objc-idx > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? exp string subSpec ?varName?");
-	return TCL_ERROR;
+optionError:
+	    if (startIndex) {
+		Tcl_DecrRefCount(startIndex);
+	    }
+	    return TCL_ERROR;
     }
 
     objc -= idx;
     objv += idx;
+
+    if (startIndex) {
+	int stringLength = Tcl_GetCharLength(objv[1]);
+	TclGetIntForIndex(NULL, startIndex, stringLength, &offset);
+	Tcl_DecrRefCount(startIndex);
+	if (offset < 0) {
+	    offset = 0;
+	}
+    }
 
     if (all && (offset == 0)
 	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
