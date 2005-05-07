@@ -4,7 +4,10 @@
 	* generic/tclEvent.c:  Moved initialization of tclStrToD.c's
 	* generic/tclInt.h:    static constants into a procedure called
 	* generic/tclStrToD.c: from TclInitSubsystems to avoid double
-	                       checked locking protocol.
+	                       checked locking protocol. Cleaned up
+			       an issue where MSVC ignored the 'volatile'
+			       specifier, causing incorrect comparison
+			       of an underflowed number against zero.
 	
 2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
 
