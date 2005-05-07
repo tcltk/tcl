@@ -8094,7 +8094,8 @@ _ACEOF
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
-	SunOS-5.[0-6]*)
+	SunOS-5.[0-6])
+	    # Careful to not let 5.10+ fall into this case
 
 	    # Note: If _REENTRANT isn't defined, then Solaris
 	    # won't define thread-safe library routines.
@@ -8130,7 +8131,6 @@ _ACEOF
 	    fi
 	    ;;
 	SunOS-5*)
-
 	    # Note: If _REENTRANT isn't defined, then Solaris
 	    # won't define thread-safe library routines.
 
@@ -8171,9 +8171,18 @@ echo "$as_me: WARNING: 64bit mode not supported with GCC < 3.2 on $system" >&2;}
 			    	LDFLAGS_ARCH="-xarch=v9"
 			    fi
 			fi
+		elif test "$arch" = "amd64 i386" ; then
+		    if test "$GCC" = "yes" ; then
+			{ echo "$as_me:$LINENO: WARNING: 64bit mode not supported with GCC on $system" >&5
+echo "$as_me: WARNING: 64bit mode not supported with GCC on $system" >&2;}
+		    else
+			do64bit_ok=yes
+			CFLAGS="$CFLAGS -xarch=amd64"
+			LDFLAGS="$LDFLAGS -xarch=amd64"
+		    fi
 		else
-		    { echo "$as_me:$LINENO: WARNING: 64bit mode only supported sparcv9 system" >&5
-echo "$as_me: WARNING: 64bit mode only supported sparcv9 system" >&2;}
+		    { echo "$as_me:$LINENO: WARNING: 64bit mode not supported for $arch" >&5
+echo "$as_me: WARNING: 64bit mode not supported for $arch" >&2;}
 		fi
 	    fi
 
