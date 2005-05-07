@@ -1,3 +1,8 @@
+2005-05-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure: correct Solaris 10 (5.10) check and
+	add support for x86_64 Solaris cc builds.
+
 2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/tclWinThrd.c:  Corrected a compilation error on the
