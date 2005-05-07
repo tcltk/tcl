@@ -1,3 +1,11 @@
+2005-05-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+	* generic/tclEvent.c:  Moved initialization of tclStrToD.c's
+	* generic/tclInt.h:    static constants into a procedure called
+	* generic/tclStrToD.c: from TclInitSubsystems to avoid double
+	                       checked locking protocol.
+	
 2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merged with HEAD.
@@ -103,7 +111,7 @@
 	
 2005-04-25  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
-	[tcl-numerics-branch] Merged with HEAD.
+	[kennykb-numerics-branch] Merged with HEAD.
 
 	* doc/CrtMathFunc.n:		Revised documentation for TIP 232
 	
@@ -237,8 +245,7 @@
 
 2005-04-20  Kevin B. Kenny <kennykb@acm.org>
 
-	[tcl-numerics-branch]
-
+	[kennykb-numerics-branch]
 	* doc/expr.n:
 	* doc/mathfunc.n (new file):	Revised documentation for TIP 232
 	
@@ -397,7 +404,7 @@
 
 2005-04-11  Kevin Kenny <kennykb@users.sf.net>
 
-        [tcl_numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
+        [kennykb-numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
 
 	* generic/tclBasic.c: Attempted to repeat changes that applied
 	to tclExecute.c in Miguel Sofer's commit of 2005-04-01, together

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.12 2005/05/05 17:56:06 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.13 2005/05/07 19:18:13 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1852,6 +1852,7 @@ MODULE_SCOPE void	TclAppendObjToErrorInfo _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 MODULE_SCOPE int	TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
+MODULE_SCOPE double     TclBignumToDouble _ANSI_ARGS_((mp_int* bignum));
 MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
@@ -1874,6 +1875,7 @@ MODULE_SCOPE int	TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
 MODULE_SCOPE void	TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompilation _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFinalizeDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEnvironment _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeExecution _ANSI_ARGS_((void));
@@ -1906,6 +1908,7 @@ MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    int globFlags, Tcl_GlobTypeData* types));
 MODULE_SCOPE void	TclInitAlloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitDbCkalloc _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclInitDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation 
 			    _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE void	TclInitEncodingSubsystem _ANSI_ARGS_((void));

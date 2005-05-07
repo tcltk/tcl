@@ -5,14 +5,17 @@
  *
  *	This file contains a TclStrToD procedure that handles conversion
  *	of string to double, with correct rounding even where extended
- *	precision is needed to achieve that.
+ *	precision is needed to achieve that.  It also contains a
+ *	TclDoubleDigits procedure that handles conversion of double
+ *	to string (at least the significand), and several utility functions
+ *	for interconverting 'double' and the integer types.
  *
  * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.9 2005/04/26 20:54:00 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.10 2005/05/07 19:18:13 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -57,12 +60,13 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
 #endif
 
-TCL_DECLARE_MUTEX( initMutex )
-
 /* The powers of ten that can be represented exactly as IEEE754 doubles. */
 
 #define MAXPOW 22
 static double pow10 [MAXPOW+1];
+
+static int mmaxpow;		/* Largest power of ten that can be
+				 * represented exactly in a 'double'. */
 
 /* Inexact higher powers of ten */
 
@@ -78,10 +82,6 @@ static CONST double pow_10_2_n [] = {
     1.0e+256
 };
 
-/* Flag for whether the constants have been initialized */
-
-static volatile int constantsInitialized = 0;
-
 /* Logarithm of the floating point radix. */
 
 static int log2FLT_RADIX;
@@ -94,13 +94,28 @@ static int mantBits;
 
 static mp_int pow5[9];
 
+/* The smallest representable double */
+
+static double tiny;
+
+/* The maximum number of digits to the left of the decimal point of a
+ * double. */
+
+static int maxDigits;
+
+/* The maximum number of digits to the right of the decimal point in a
+ * double. */
+
+static int minDigits;
+
+/* Number of mp_digit's needed to hold the significand of a double */
+
+static int mantDIGIT;
+
 /* Static functions defined in this file */
 
-static void InitializeConstants _ANSI_ARGS_((void));
-static void FreeConstants _ANSI_ARGS_((ClientData));
 static double RefineResult _ANSI_ARGS_((double approx, CONST char* start,
 					int nDigits, long exponent));
-static double BignumToDouble _ANSI_ARGS_(( mp_int* a ));
 static double ParseNaN _ANSI_ARGS_(( int signum, CONST char** end ));
 static double SafeLdExp _ANSI_ARGS_(( double fraction, int exponent ));
 
@@ -151,9 +166,6 @@ TclStrToD( CONST char* s,
 
     char c;			/* One character extracted from the input */
 
-    static int mmaxpow = 0;	/* Largest power of ten that can be
-				 * represented exactly in a 'double'. */
-
     /* 
      * v must be 'volatile double' on gc-ix86 to force correct rounding
      * to IEEE double and not Intel double-extended.
@@ -180,17 +192,6 @@ TclStrToD( CONST char* s,
     _FPU_GETCW( oldRoundingMode );
     _FPU_SETCW( roundTo53Bits );
 #endif
-
-    InitializeConstants();
-
-    if ( mmaxpow == 0 ) {
-	int x = (int) (DBL_MANT_DIG * log((double) FLT_RADIX) / log( 5.0 ));
-	if ( x < MAXPOW ) {
-	    mmaxpow = x;
-	} else {
-	    mmaxpow = MAXPOW;
-	}
-    }
 
     /* Discard leading whitespace */
 
@@ -412,15 +413,12 @@ TclStrToD( CONST char* s,
      * Begin by testing for obvious overflows and underflows.
      */
 
-    if ( nSigDigs + exponent - 1
-	 > DBL_MAX_EXP * log( (double) FLT_RADIX ) / log( 10. ) ) {
+    if ( nSigDigs + exponent - 1 > maxDigits ) {
 	v = HUGE_VAL;
 	errno = ERANGE;
 	goto returnValue;
     }
-    if ( nSigDigs + exponent - 1
-	 < floor ( ( DBL_MIN_EXP - DBL_MANT_DIG )
-		   * log( (double) FLT_RADIX ) / log( 10. ) ) ) {
+    if ( nSigDigs + exponent - 1 < minDigits ) {
 	errno = ERANGE;
 	v = 0.;
 	goto returnValue;
@@ -472,10 +470,9 @@ TclStrToD( CONST char* s,
 	errno = ERANGE;
 	goto returnValue;
     }
-	
     v = SafeLdExp( v, machexp );
     if ( v == 0.0 ) {
-	v = SafeLdExp( 1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits );
+	v = tiny;
     }
 
     /* We have a first approximation in v. Now we need to refine it. */
@@ -690,8 +687,8 @@ RefineResult( double approxResult,
      * accurately to floating point numbers.
      */
 
-    num = BignumToDouble( &twoMd );
-    den = BignumToDouble( &twoMv );
+    num = TclBignumToDouble( &twoMd );
+    den = TclBignumToDouble( &twoMv );
 
     quot = SafeLdExp( num/den, scale );
     minincr = SafeLdExp( 1.0, binExponent - mantBits );
@@ -914,7 +911,7 @@ TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
 	e = DBL_MIN_EXP;
 	n = ( n + DIGIT_BIT - 1 ) / DIGIT_BIT;
     } else {
-	n = ( mantBits + DIGIT_BIT - 1 ) / DIGIT_BIT;
+	n = mantDIGIT;
     }
 
     /*
@@ -924,7 +921,7 @@ TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
      */
     
     a = f;
-    n = ( mantBits + DIGIT_BIT - 1 ) / DIGIT_BIT;
+    n = mantDIGIT;
     mp_init_size( &r, n );
     r.used = n;
     r.sign = MP_ZPOS;
@@ -1137,10 +1134,10 @@ TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
 /*
  *----------------------------------------------------------------------
  *
- * InitializeConstants --
+ * TclInitDoubleConversion --
  *
- *	Initializes constants that are needed for string-to-double
- *      conversion.
+ *	Initializes constants that are needed for conversions to and
+ *      from 'double'
  *
  * Results:
  *	None.
@@ -1153,40 +1150,48 @@ TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
  *----------------------------------------------------------------------
  */
 
-static void
-InitializeConstants( void )
+void
+TclInitDoubleConversion( void )
 {
     int i;
+    int x;
     double d;
-    if ( !constantsInitialized ) {
-	Tcl_MutexLock( &initMutex );
-	if ( !constantsInitialized ) {
-	    frexp( (double) FLT_RADIX, &log2FLT_RADIX );
-	    --log2FLT_RADIX;
-	    mantBits = DBL_MANT_DIG * log2FLT_RADIX;
-	    d = 1.0;
-	    for ( i = 0; i <= MAXPOW; ++i ) {
-		pow10[i] = d;
-		d *= 10.0;
-	    }
-	    for ( i = 0; i < 9; ++i ) {
-		mp_init( pow5 + i );
-	    }
-	    mp_set( pow5, 5 );
-	    for ( i = 0; i < 8; ++i ) {
-		mp_sqr( pow5+i, pow5+i+1 );
-	    }
-	    Tcl_CreateExitHandler( FreeConstants, (ClientData) NULL );
-	}
-	constantsInitialized = 1;
-	Tcl_MutexUnlock( &initMutex );
+    if ( frexp( (double) FLT_RADIX, &log2FLT_RADIX ) != 0.5 ) {
+	Tcl_Panic( "This code doesn't work on a decimal machine!" );
     }
+    --log2FLT_RADIX;
+    mantBits = DBL_MANT_DIG * log2FLT_RADIX;
+    d = 1.0;
+    x = (int) (DBL_MANT_DIG * log((double) FLT_RADIX) / log( 5.0 ));
+    if ( x < MAXPOW ) {
+	mmaxpow = x;
+    } else {
+	mmaxpow = MAXPOW;
+    }
+    for ( i = 0; i <= mmaxpow; ++i ) {
+	pow10[i] = d;
+	d *= 10.0;
+    }
+    for ( i = 0; i < 9; ++i ) {
+	mp_init( pow5 + i );
+    }
+    mp_set( pow5, 5 );
+    for ( i = 0; i < 8; ++i ) {
+	mp_sqr( pow5+i, pow5+i+1 );
+    }
+    tiny = SafeLdExp( 1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits );
+    maxDigits = (int) ((DBL_MAX_EXP * log((double) FLT_RADIX)
+			+ 0.5 * log(10))
+		       / log( 10. ));
+    minDigits = (int) floor ( ( DBL_MIN_EXP - DBL_MANT_DIG )
+			      * log( (double) FLT_RADIX ) / log( 10. ) );
+    mantDIGIT = ( mantBits + DIGIT_BIT - 1 ) / DIGIT_BIT;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FreeConstants --
+ * TclFinalizeDoubleConversion --
  *
  *	Cleans up this file on exit.
  *
@@ -1194,27 +1199,24 @@ InitializeConstants( void )
  *	None
  *
  * Side effects:
- *	Memory allocated by InitializeConstants is freed.
+ *	Memory allocated by TclInitDoubleConversion is freed.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-FreeConstants( ClientData unused )
+void
+TclFinalizeDoubleConversion()
 {
     int i;
-    Tcl_MutexLock( &initMutex );
-    constantsInitialized = 0;
     for ( i = 0; i < 9; ++i ) {
 	mp_clear( pow5 + i );
     }
-    Tcl_MutexUnlock( &initMutex );
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * BignumToDouble --
+ * TclBignumToDouble --
  *
  *	Convert an arbitrary-precision integer to a native floating 
  *	point number.
@@ -1227,7 +1229,7 @@ FreeConstants( ClientData unused )
  */
 
 static double
-BignumToDouble( mp_int* a )
+TclBignumToDouble( mp_int* a )
 				/* Integer to convert */
 {
     mp_int b;
@@ -1240,6 +1242,10 @@ BignumToDouble( mp_int* a )
      * the input. Round to nearest unit in the last place. */
 
     bits = mp_count_bits( a );
+    if ( bits > DBL_MAX_EXP * log2FLT_RADIX ) {
+	errno = ERANGE;
+	return HUGE_VAL;
+    }
     shift = mantBits + 1 - bits;
     mp_init( &b );
     if ( shift > 0 ) {
@@ -1260,17 +1266,9 @@ BignumToDouble( mp_int* a )
     }
     mp_clear( &b );
 
-    /* 
-     * Test for overflow, and scale the result to the correct number 
-     * of bits. 
-     */
+    /* Scale the result to the correct number of bits. */
 
-    if ( bits / log2FLT_RADIX > DBL_MAX_EXP ) {
-	errno = ERANGE;
-	r = HUGE_VAL;
-    } else {
-	r = ldexp( r, bits - mantBits );
-    }
+    r = ldexp( r, bits - mantBits );
 
     /* Return the result with the appropriate sign. */
 
