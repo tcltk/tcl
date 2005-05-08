@@ -1,3 +1,17 @@
+2005-05-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+	* generic/tclStrToD.c: Made code more portable by finding a
+	                       workaround for MSVC's 'volatile' issue that
+			       does not require conditional compilation.
+	* win/tclWin32DLL.c (TclWinCPUID): Removed structured event
+	                                   handling from the GCC code
+					   since (a) bad code is generated
+					   by the instruction scheduling
+					   with -O2, and (b) it's not
+					   needed on any reasonably modern
+					   CPU.
+	
 2005-05-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.11 2005/05/07 21:09:37 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.12 2005/05/08 20:42:00 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -58,10 +58,6 @@ extern int errno;			/* Use errno from tclExecute.c. */
 typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
 #define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
-#endif
-
-#ifdef _MSC_VER
-static double DoNothing( double v );
 #endif
 
 /* The powers of ten that can be represented exactly as IEEE754 doubles. */
@@ -465,8 +461,8 @@ TclStrToD( CONST char* s,
      * A first approximation is that the result will be v * 2 ** machexp.
      * v is greater than or equal to 0.5 and less than 1.
      * If machexp > DBL_MAX_EXP * log2(FLT_RADIX), there is an overflow.
-     * If the result of SafeLdExp is zero, there may be an underflow; start
-     * from the smallest representible number in that case.
+     * Constrain the result to the smallest representible number to avoid
+     * premature underflow.
      */
 
     if ( machexp > DBL_MAX_EXP * log2FLT_RADIX ) {
@@ -476,7 +472,7 @@ TclStrToD( CONST char* s,
     }
 
     v = SafeLdExp( v, machexp );
-    if ( v == 0.0 ) {
+    if ( v < tiny ) {
 	v = tiny;
     }
 
@@ -1310,16 +1306,7 @@ SafeLdExp( double fract, int expt )
     if ( expt < minexpt ) {
 	a = ldexp( fract, expt - mantBits - minexpt );
 	b = ldexp( 1.0, mantBits + minexpt );
-#ifdef _MSC_VER
-	/*
-	 * MS VC++ returns the value in a register, and storing it
-	 * in a volatile temp doesn't help.  Explicitly pass it as
-	 * a parameter to another function to force truncation.
-	 */
-	retval = DoNothing( a * b );
-#else
 	retval = a * b;
-#endif
     } else {
 	retval = ldexp( fract, expt );
     }
@@ -1372,11 +1359,3 @@ TclFormatNaN( double value,	/* The Not-a-Number to format */
 
 #endif
 }
-
-#ifdef _MSC_VER
-double
-DoNothing( double v )
-{
-    return v;
-}
-#endif
