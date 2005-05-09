@@ -1,10 +1,17 @@
+2005-05-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+	* win/tclWin32Dll.c (TclpCheckStackSpace, TclWinCPUID):
+	        Reworked structured event handling to function even
+		with -fomit-frame-pointers.
+	
 2005-05-08  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]
 	* generic/tclStrToD.c: Made code more portable by finding a
 	                       workaround for MSVC's 'volatile' issue that
 			       does not require conditional compilation.
-	* win/tclWin32DLL.c (TclWinCPUID): Removed structured event
+	* win/tclWin32Dll.c (TclWinCPUID): Removed structured event
 	                                   handling from the GCC code
 					   since (a) bad code is generated
 					   by the instruction scheduling
