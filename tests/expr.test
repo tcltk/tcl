@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.8 2005/04/26 16:33:05 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.9 2005/05/10 16:12:30 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -929,6 +929,9 @@ test expr-23.30 {INST_EXPON: special cases} {expr {wide(-1)**wide(2)}} 1
 test expr-23.31 {INST_EXPON: special cases} {expr {wide(-1)**wide(-1)}} -1
 test expr-23.32 {INST_EXPON: special cases} {expr {wide(1)**wide(1234567)}} 1
 test expr-23.33 {INST_EXPON: special cases} {expr {wide(2)**wide(-2)}} 0
+test expr-23.34 {INST_EXPON: special cases} {expr {2**0}} 1
+test expr-23.35 {INST_EXPON: special cases} {expr {wide(2)**0}} 1
+
 
 # Some compilers get this wrong; ensure that we work around it correctly
 test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0

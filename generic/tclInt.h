@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.13 2005/05/07 19:18:13 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.14 2005/05/10 16:11:54 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2738,6 +2738,19 @@ MODULE_SCOPE void* TclBNRealloc( void* oldBlock, size_t newNBytes );
 MODULE_SCOPE void TclBNFree( void* block );
 MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
 
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to check whether a pattern has
+ * any characters special to [string match].
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclMatchIsTrivial _ANSI_ARGS_((
+ * 			    CONST char *pattern));
+ *----------------------------------------------------------------
+ */
+
+#define TclMatchIsTrivial(pattern) strpbrk((pattern), "*[]]?\\") == NULL
 
 /*
  *----------------------------------------------------------------

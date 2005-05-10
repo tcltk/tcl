@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.81.2.3 2005/04/25 21:37:20 kennykb Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81.2.4 2005/05/10 16:11:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -8766,7 +8766,16 @@ Tcl_GetChannelNamesEx(interp, pattern)
 
     hTblPtr = GetChannelTable(interp);
     TclNewObj(resultPtr);
-
+    if ((pattern != NULL) && TclMatchIsTrivial(pattern)
+	    && !((pattern[0] == 's') && (pattern[1] == 't')
+	    && (pattern[2] == 'd'))) {
+	if ((Tcl_FindHashEntry(hTblPtr, pattern) != NULL)
+		&& (Tcl_ListObjAppendElement(interp, resultPtr,
+		Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
+	    goto error;
+	}
+	goto done;
+    }
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != (Tcl_HashEntry *) NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
@@ -8790,10 +8799,12 @@ Tcl_GetChannelNamesEx(interp, pattern)
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
 			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
+error:
 	    TclDecrRefCount(resultPtr);
 	    return TCL_ERROR;
 	}
     }
+done:
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }

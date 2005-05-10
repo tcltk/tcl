@@ -11,11 +11,29 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.2.3 2005/05/05 17:55:34 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.2.4 2005/05/10 16:11:45 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+
+/*
+ * Macro that encapsulates an efficiency trick that avoids a function
+ * call for the simplest of compiles.  The ANSI C "prototype" for this
+ * macro is:
+ *
+ * static void		CompileWord _ANSI_ARGS((CompileEnv *envPtr,
+ * 			    Tcl_Token *tokenPtr, Tcl_Inter *interp));
+ */
+
+#define CompileWord(envPtr, tokenPtr, interp) \
+   if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) { \
+	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
+		(tokenPtr)[1].size), (envPtr)); \
+    } else { \
+	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
+		(envPtr)); \
+    }
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -109,13 +127,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 
     if (numWords > 2) {
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, 
-		    valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, valueTokenPtr+1,
-	            valueTokenPtr->numComponents, envPtr);
-	}
+	CompileWord(envPtr, valueTokenPtr, interp);
     }
 
     /*
@@ -247,6 +259,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
     if (parsePtr->numWords == 3) {
 	nameTokenPtr = cmdTokenPtr + (cmdTokenPtr->numComponents + 1);
+	/* DGP */
 	if (nameTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    name = nameTokenPtr[1].start;
 	    nameChars = nameTokenPtr[1].size;
@@ -1515,13 +1528,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 
     if (numWords > 2) {
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, 
-		    valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, valueTokenPtr+1,
-	            valueTokenPtr->numComponents, envPtr);
-	}
+	CompileWord(envPtr, valueTokenPtr, interp);
     }
 
     /*
@@ -1601,12 +1608,7 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
      * Generate code to push list being taken apart by [lassign].
      */
     tokenPtr = parsePtr->tokenPtr + (parsePtr->tokenPtr->numComponents + 1);
-    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, 
-		tokenPtr[1].start, tokenPtr[1].size), envPtr);
-    } else {
-	TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents, envPtr);
-    }
+    CompileWord(envPtr, tokenPtr, interp);
 
     /*
      * Generate code to assign values from the list to variables
@@ -1716,14 +1718,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
      */
 
     for (i=1 ; i<numWords ; i++) {
-	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(
-		    TclRegisterNewLiteral(envPtr, varTokenPtr[1].start,
-		    varTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, varTokenPtr+1,
-		    varTokenPtr->numComponents, envPtr);
-	}
+	CompileWord(envPtr, varTokenPtr, interp);
 	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
     }
 
@@ -1791,13 +1786,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 	valueTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
 	for (i = 1; i < numWords; i++) {
-	    if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		TclEmitPush(TclRegisterNewLiteral(envPtr,
-			valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
-	    } else {
-		TclCompileTokens(interp, valueTokenPtr+1,
-			valueTokenPtr->numComponents, envPtr);
-	    }
+	    CompileWord(envPtr, valueTokenPtr, interp);
 	    valueTokenPtr = valueTokenPtr + (valueTokenPtr->numComponents + 1);
 	}
 	TclEmitInstInt4(INST_LIST, numWords - 1, envPtr);
@@ -1839,17 +1828,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
 
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	/*
-	 * We could simply count the number of elements here and push
-	 * that value, but that is too rare a case to waste the code space.
-	 */
-	TclEmitPush(TclRegisterNewLiteral(envPtr, varTokenPtr[1].start,
-		varTokenPtr[1].size), envPtr);
-    } else {
-	TclCompileTokens(interp, varTokenPtr+1,
-		varTokenPtr->numComponents, envPtr);
-    }
+    CompileWord(envPtr, varTokenPtr, interp);
     TclEmitOpcode(INST_LIST_LENGTH, envPtr);
     return TCL_OK;
 }
@@ -1939,13 +1918,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
 
 	/* Push an arg */
 
-	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, varTokenPtr[1].start,
-		    varTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, varTokenPtr+1,
-		    varTokenPtr->numComponents, envPtr);
-	}
+	CompileWord(envPtr, varTokenPtr, interp);
     }
 
     /*
@@ -2208,13 +2181,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * Push the string arg
      */
     varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr,
-		varTokenPtr[1].start, varTokenPtr[1].size), envPtr);
-    } else {
-	TclCompileTokens(interp, varTokenPtr+1,
-		varTokenPtr->numComponents, envPtr);
-    }
+    CompileWord(envPtr, varTokenPtr, interp);
 
     if (anchorLeft && anchorRight && !nocase) {
 	TclEmitOpcode(INST_STR_EQ, envPtr);
@@ -2312,15 +2279,7 @@ cleanup:
      */
 
     if (explicitResult) {
-	if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    /* Simple word: compile quickly to a simple push */
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, wordTokenPtr[1].start,
-			wordTokenPtr[1].size), envPtr);
-	} else {
-	    /* More complex tokens get compiled */
-	    TclCompileTokens(interp, wordTokenPtr+1,
-		    wordTokenPtr->numComponents, envPtr);
-	}
+	CompileWord(envPtr, wordTokenPtr, interp);
     } else {
 	/* No explict result argument, so default result is empty string */
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
@@ -2421,13 +2380,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 
     if (isAssignment) {
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, valueTokenPtr[1].start,
-		    valueTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, valueTokenPtr+1,
-	            valueTokenPtr->numComponents, envPtr);
-	}
+	CompileWord(envPtr, valueTokenPtr, interp);
     }
 
     /*
@@ -2576,13 +2529,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	     */
 
 	    for (i = 0; i < 2; i++) {
-		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		    TclEmitPush(TclRegisterNewLiteral(envPtr,
-			    varTokenPtr[1].start, varTokenPtr[1].size), envPtr);
-		} else {
-		    TclCompileTokens(interp, varTokenPtr+1,
-			    varTokenPtr->numComponents, envPtr);
-		}
+		CompileWord(envPtr, varTokenPtr, interp);
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
 
@@ -2603,13 +2550,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	     */
 
 	    for (i = 0; i < 2; i++) {
-		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		    TclEmitPush(TclRegisterNewLiteral(envPtr,
-			    varTokenPtr[1].start, varTokenPtr[1].size), envPtr);
-		} else {
-		    TclCompileTokens(interp, varTokenPtr+1,
-			    varTokenPtr->numComponents, envPtr);
-		}
+		CompileWord(envPtr, varTokenPtr, interp);
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
 
@@ -2671,18 +2612,13 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    length = varTokenPtr[1].size;
 		    if (!nocase && (i == 0)) {
 			/*
-			 * On the first (pattern) arg, check to see if any
-			 * glob special characters are in the word '*[]?\\'.
-			 * If not, this is the same as 'string equal'.  We
-			 * can use strpbrk here because the glob chars are all
-			 * in the ascii-7 range.  If -nocase was specified,
-			 * we can't do this because INST_STR_EQ has no support
-			 * for nocase.
+			 * Trivial matches can be done by 'string equal'.  
+			 * If -nocase was specified, we can't do this
+			 * because INST_STR_EQ has no support for nocase.
 			 */
 			Tcl_Obj *copy = Tcl_NewStringObj(str, length);
 			Tcl_IncrRefCount(copy);
-			exactMatch = (strpbrk(Tcl_GetString(copy),
-				"*[]?\\") == NULL);
+			exactMatch = TclMatchIsTrivial(Tcl_GetString(copy));
 			Tcl_DecrRefCount(copy);
 		    }
 		    TclEmitPush(

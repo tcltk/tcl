@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.3 2005/04/10 23:14:53 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.4 2005/05/10 16:12:14 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1015,11 +1015,7 @@ EXTERN int		TclCompEvalObj _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN int		TclObjGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, CallFrame ** framePtrPtr));
 #endif
-#ifndef TclMatchIsTrivial_TCL_DECLARED
-#define TclMatchIsTrivial_TCL_DECLARED
-/* 199 */
-EXTERN int		TclMatchIsTrivial _ANSI_ARGS_((CONST char * pattern));
-#endif
+/* Slot 199 is reserved */
 #ifndef TclpObjRemoveDirectory_TCL_DECLARED
 #define TclpObjRemoveDirectory_TCL_DECLARED
 /* 200 */
@@ -1379,7 +1375,7 @@ typedef struct TclIntStubs {
     void (*tclFinalizeThreadStorageDataKey) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 196 */
     int (*tclCompEvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 197 */
     int (*tclObjGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CallFrame ** framePtrPtr)); /* 198 */
-    int (*tclMatchIsTrivial) _ANSI_ARGS_((CONST char * pattern)); /* 199 */
+    void *reserved199;
     int (*tclpObjRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 200 */
     int (*tclpObjCopyDirectory) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr, Tcl_Obj ** errorPtr)); /* 201 */
     int (*tclpObjCreateDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 202 */
@@ -2081,10 +2077,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclObjGetFrame \
 	(tclIntStubsPtr->tclObjGetFrame) /* 198 */
 #endif
-#ifndef TclMatchIsTrivial
-#define TclMatchIsTrivial \
-	(tclIntStubsPtr->tclMatchIsTrivial) /* 199 */
-#endif
+/* Slot 199 is reserved */
 #ifndef TclpObjRemoveDirectory
 #define TclpObjRemoveDirectory \
 	(tclIntStubsPtr->tclpObjRemoveDirectory) /* 200 */

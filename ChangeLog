@@ -1,3 +1,12 @@
+2005-05-10  Kevin Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch] Merged changes from HEAD.
+	
+2005-05-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (ExponLong, ExponWide): fixed special case
+	'i**0' for i>0 [Bug 1198892]
+
 2005-05-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]
@@ -30,6 +39,11 @@
 			       specifier, causing incorrect comparison
 			       of an underflowed number against zero.
 	
+2005-05-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure: correct Solaris 10 (5.10) check and
+	add support for x86_64 Solaris cc builds.
+
 2005-05-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merged with HEAD.
@@ -40,6 +54,22 @@
 	                     --enable-threads configuration.
 	
 2005-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.decls:	Converted TclMatchIsTrivial to a macro.
+	* generic/tclInt.h:
+	* generic/tclUtil.c:
+	* generic/tclIntDecls.h:	`make genstubs`
+	* generic/tclStubInit.c:
+	* generic/tclBasic.c:	Added callers of TclMatchIsTrivial where
+	* generic/tclCmdIL.c:	a search can be done more efficiently
+	* generic/tclCompCmds.c:when it is recognized that a pattern match
+	* generic/tclDictObj.c:	is really an exact match. [Patch 1076088]
+	* generic/tclIO.c:
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+
+	* generic/tclCompCmds.c:	Factored common efficiency trick into
+	a macro named CompileWord.
 
 	* generic/tclCompCmds.c:	Replaced all instance of
 	* generic/tclCompile.c:		TCL_OUT_LINE_COMPILE with TCL_ERROR.

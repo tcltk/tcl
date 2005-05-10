@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.34.2.2 2005/05/05 17:57:00 kennykb Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.34.2.3 2005/05/10 16:13:12 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -123,7 +123,6 @@ typedef struct allocMutex {
     Tcl_Mutex        tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
-
 #endif
 
 /*

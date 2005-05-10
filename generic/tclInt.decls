@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.3 2005/04/10 23:14:52 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.4 2005/05/10 16:11:54 kennykb Exp $
 
 library tcl
 
@@ -807,9 +807,9 @@ declare 198 generic {
 	    CallFrame **framePtrPtr)
 }
 
-declare 199 generic {
-    int TclMatchIsTrivial(CONST char *pattern)
-}
+#declare 199 generic {
+#    int TclMatchIsTrivial(CONST char *pattern)
+#}
 
 # 200-208 exported for use by the test suite [Bug 1054748]
 declare 200 generic {
