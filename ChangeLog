@@ -1,5 +1,11 @@
 2005-05-10  Kevin Kenny  <kennykb@acm.org>
 
+	* tclBinary.c (FormatNumber): Fixed a bug where NaN's
+	resulted in reads of uninitialized memory when using 'd',
+	'q', or 'Q' format.
+	
+2005-05-10  Kevin Kenny  <kennykb@acm.org>
+
 	Merged all changes on kennykb-numerics-branch back into the
 	HEAD.  TIP's 132 and 232 are now Final.
 	
