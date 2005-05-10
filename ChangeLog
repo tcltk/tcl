@@ -3,6 +3,10 @@
 	* generic/tclBinary.c (FormatNumber): Fixed a bug where NaN's
 	resulted in reads of uninitialized memory when using 'd',
 	'q', or 'Q' format.
+	* generic/tclStrToD.c (ParseNaN, TclFormatNaN): Added code to
+	handle the peculiarities of HP's PA_RISC, which uses a different
+	'quiet' bit in NaN from everyone else.
+	* libtommath/tommath_superclass.h: Corrected C++-style comment.
 	
 2005-05-10  Kevin Kenny  <kennykb@acm.org>
 
