@@ -4,7 +4,7 @@
 #define LTM_ALL
 
 /* RSA only (does not support DH/DSA/ECC) */
-// #define SC_RSA_1
+/* #define SC_RSA_1 */
 
 /* For reference.... On an Athlon64 optimizing for speed...
 
