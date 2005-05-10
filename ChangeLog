@@ -1,6 +1,6 @@
 2005-05-10  Kevin Kenny  <kennykb@acm.org>
 
-	* tclBinary.c (FormatNumber): Fixed a bug where NaN's
+	* generic/tclBinary.c (FormatNumber): Fixed a bug where NaN's
 	resulted in reads of uninitialized memory when using 'd',
 	'q', or 'Q' format.
 	
