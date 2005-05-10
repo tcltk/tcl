@@ -1,3 +1,8 @@
+2005-05-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (ExponLong, ExponWide): fixed special case
+	'i**0' for i>0 [Bug 1198892]
+
 2005-05-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4, unix/configure: correct Solaris 10 (5.10) check and
