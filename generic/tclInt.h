@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.228 2005/05/05 18:38:01 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.229 2005/05/10 18:34:42 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1852,10 +1852,14 @@ MODULE_SCOPE void	TclAppendObjToErrorInfo _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 MODULE_SCOPE int	TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
+MODULE_SCOPE double     TclBignumToDouble _ANSI_ARGS_((mp_int* bignum));
 MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp* interp, LiteralTable* tablePtr));
+MODULE_SCOPE int	TclDoubleDigits _ANSI_ARGS_((char* buf,
+						     double value,
+						     int* signum));
 MODULE_SCOPE void	TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 MODULE_SCOPE int	TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1871,6 +1875,7 @@ MODULE_SCOPE int	TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
 MODULE_SCOPE void	TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompilation _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFinalizeDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEnvironment _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeExecution _ANSI_ARGS_((void));
@@ -1884,6 +1889,7 @@ MODULE_SCOPE void	TclFinalizeAsync _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFormatNaN _ANSI_ARGS_((double value, char* buffer));
 MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
@@ -1902,6 +1908,7 @@ MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    int globFlags, Tcl_GlobTypeData* types));
 MODULE_SCOPE void	TclInitAlloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitDbCkalloc _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclInitDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation 
 			    _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE void	TclInitEncodingSubsystem _ANSI_ARGS_((void));
@@ -2048,6 +2055,8 @@ MODULE_SCOPE void	TclSetProcessGlobalValue _ANSI_ARGS_ ((
 			    Tcl_Encoding encoding));
 MODULE_SCOPE VOID	TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
+MODULE_SCOPE double	TclStrToD _ANSI_ARGS_((CONST char* string,
+					       CONST char** endPtr));
 MODULE_SCOPE int	TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    int *tokensLeftPtr));
@@ -2715,6 +2724,20 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     if ((nsPtr)->numExportPatterns) { \
 	(nsPtr)->exportLookupEpoch++; \
     }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Core procedures added to libtommath for bignum manipulation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+MODULE_SCOPE void* TclBNAlloc( size_t nBytes );
+MODULE_SCOPE void* TclBNRealloc( void* oldBlock, size_t newNBytes );
+MODULE_SCOPE void TclBNFree( void* block );
+MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
+
 
 /*
  *----------------------------------------------------------------

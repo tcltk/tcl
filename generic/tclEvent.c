@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.56 2004/12/16 19:36:17 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.57 2005/05/10 18:34:35 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -798,6 +798,8 @@ TclInitSubsystems()
 #endif
 
 	    TclpInitPlatform(); /* creates signal handler(s) */
+	    TclInitDoubleConversion(); /* initializes constants for
+					* converting to/from double */
     	    TclInitObjSubsystem(); /* register obj types, create mutexes */
 	    TclInitIOSubsystem(); /* inits a tsd key (noop) */
 	    TclInitEncodingSubsystem(); /* process wide encoding init */
@@ -938,6 +940,10 @@ Tcl_Finalize()
 
 	TclFinalizeLoad();
 	TclResetFilesystem();
+
+	/* Now we can free constants for conversions to/from double */
+
+	TclFinalizeDoubleConversion();
 	
 	/*
 	 * There shouldn't be any malloc'ed memory after this.

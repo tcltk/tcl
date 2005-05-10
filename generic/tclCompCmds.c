@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.67 2005/05/05 18:37:57 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.68 2005/05/10 18:34:09 kennykb Exp $
  */
 
 #include "tclInt.h"

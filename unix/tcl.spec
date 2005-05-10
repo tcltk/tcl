@@ -1,4 +1,4 @@
-# $Id: tcl.spec,v 1.21 2004/12/10 23:00:32 dkf Exp $
+# $Id: tcl.spec,v 1.22 2005/05/10 18:35:27 kennykb Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
 %define version 8.5a3

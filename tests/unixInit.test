@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.47 2005/04/28 14:24:40 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.48 2005/05/10 18:35:24 kennykb Exp $
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*

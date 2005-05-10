@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: string.h,v 1.6 2005/04/26 00:45:01 das Exp $
+ * RCS: @(#) $Id: string.h,v 1.7 2005/05/10 18:33:53 kennykb Exp $
  */
 
 #ifndef _STRING
