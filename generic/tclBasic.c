@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.9 2005/05/10 16:11:42 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.10 2005/05/10 16:57:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3131,14 +3131,21 @@ Tcl_ListMathFuncs(interp, pattern)
 				&dummyNamePtr );
 
     if ( nsPtr != NULL ) {
-	for ( cmdHashEntry = Tcl_FirstHashEntry( &nsPtr->cmdTable,
-						 &cmdHashSearch );
-	      cmdHashEntry != NULL;
-	      cmdHashEntry = Tcl_NextHashEntry( &cmdHashSearch ) ) {
-	    cmdNamePtr = Tcl_GetHashKey( &nsPtr->cmdTable, cmdHashEntry );
-	    if ( pattern == NULL || Tcl_StringMatch( cmdNamePtr, pattern ) ) {
-		Tcl_ListObjAppendElement( interp, result,
-					  Tcl_NewStringObj( cmdNamePtr, -1 ) );
+	if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+	    if (Tcl_FindHashEntry(&nsPtr->cmdTable, pattern) != NULL) {
+		Tcl_ListObjAppendElement(NULL, result,
+			Tcl_NewStringObj(pattern,-1));
+	    }
+	} else {
+	    for ( cmdHashEntry =
+		    Tcl_FirstHashEntry( &nsPtr->cmdTable, &cmdHashSearch );
+		    cmdHashEntry != NULL;
+		    cmdHashEntry = Tcl_NextHashEntry( &cmdHashSearch ) ) {
+		cmdNamePtr = Tcl_GetHashKey( &nsPtr->cmdTable, cmdHashEntry );
+		if (pattern == NULL || Tcl_StringMatch(cmdNamePtr, pattern)) {
+		    Tcl_ListObjAppendElement( NULL, result,
+			    Tcl_NewStringObj( cmdNamePtr, -1 ) );
+		}
 	    }
 	}
     }
