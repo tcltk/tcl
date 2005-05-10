@@ -1,7 +1,7 @@
 Tcl MacOSX README 
 -----------------
 
-RCS: @(#) $Id: README,v 1.3 2005/04/09 15:38:29 das Exp $
+RCS: @(#) $Id: README,v 1.4 2005/05/10 18:34:56 kennykb Exp $
 
 This is the README file for the Mac OS X native version of Tcl (framework build).
 

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.117 2005/04/29 20:49:43 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.118 2005/05/10 18:34:08 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1536,17 +1536,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			}
 		    }
 		    errno = 0;
-		    strtod(string1, &stop); /* INTL: Tcl source. */
-		    if (errno == ERANGE) {
-			/*
-			 * if (errno == ERANGE), then it was an over/underflow
-			 * problem, but in this method, we only want to know
-			 * yes or no, so bad flow returns 0 (false) and sets
-			 * the failVarObj to the string length.
-			 */
-			result = 0;
-			failat = -1;
-		    } else if (stop == string1) {
+		    TclStrToD(string1, (CONST char **) &stop); /* INTL: Tcl source. */
+		    if (stop == string1) {
 			/*
 			 * In this case, nothing like a number was found
 			 */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.40 2005/02/05 09:15:42 davidw Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.41 2005/05/10 18:34:47 kennykb Exp $
  */
 
 #include "tclInt.h"

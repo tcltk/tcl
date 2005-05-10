@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.4 2005/04/11 10:02:12 dkf Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.5 2005/05/10 18:35:25 kennykb Exp $
 #
 #----------------------------------------------------------------------
 

@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.20 2005/01/10 18:43:39 jenglish Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.21 2005/05/10 18:35:27 kennykb Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'

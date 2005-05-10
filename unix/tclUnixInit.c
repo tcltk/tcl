@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.55 2005/04/13 21:26:15 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.56 2005/05/10 18:35:27 kennykb Exp $
  */
 
 #include "tclInt.h"
