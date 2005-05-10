@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.15 2005/04/16 08:00:17 vasiljevic Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.16 2005/05/10 18:34:50 kennykb Exp $
  */
 
 #include "tclInt.h"

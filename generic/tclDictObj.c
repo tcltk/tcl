@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.30 2005/05/05 18:37:58 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.31 2005/05/10 18:34:34 kennykb Exp $
  */
 
 #include "tclInt.h"
