@@ -5,7 +5,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# $Id: man2html2.tcl,v 1.8 2005/04/06 09:52:00 dkf Exp $
+# $Id: man2html2.tcl,v 1.9 2005/05/10 18:35:25 kennykb Exp $
 #
 
 package require Tcl 8.4

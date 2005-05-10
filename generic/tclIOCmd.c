@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.23 2005/04/27 18:48:25 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.24 2005/05/10 18:34:40 kennykb Exp $
  */
 
 #include "tclInt.h"

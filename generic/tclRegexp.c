@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.18 2005/05/03 18:08:19 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.19 2005/05/10 18:34:48 kennykb Exp $
  */
 
 #include "tclInt.h"

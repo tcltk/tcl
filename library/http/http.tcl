@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.50 2005/01/06 15:15:42 dkf Exp $
+# RCS: @(#) $Id: http.tcl,v 1.51 2005/05/10 18:34:54 kennykb Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface

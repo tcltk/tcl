@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.65 2004/12/04 21:19:19 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.66 2005/05/10 18:35:39 kennykb Exp $
  */
 
 #include "tclWinInt.h"

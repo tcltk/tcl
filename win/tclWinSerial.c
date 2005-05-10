@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.29 2005/01/27 00:23:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.30 2005/05/10 18:35:40 kennykb Exp $
  */
 
 #include "tclWinInt.h"

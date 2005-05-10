@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.73 2005/03/15 18:07:57 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.74 2005/05/10 18:35:38 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
