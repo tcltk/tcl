@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.23 2005/04/29 22:40:31 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.24 2005/05/11 16:58:45 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -916,18 +916,21 @@ struct CompileEnv;
  * must be one of the following:
  *
  * TCL_OK		Compilation completed normally.
- * TCL_OUT_LINE_COMPILE	Compilation could not be completed.  This can
+ * TCL_ERROR 		Compilation could not be completed.  This can
  * 			be just a judgment by the CompileProc that the
  * 			command is too complex to compile effectively,
  * 			or it can indicate that in the current state of
  * 			the interp, the command would raise an error.
- * 			In the latter circumstance, we defer error reporting
+ * 			The bytecode compiler will not do any error reporting
+ * 			at compiler time.  Error reporting is deferred
  * 			until the actual runtime, because by then changes
  * 			in the interp state may allow the command to be
- * 			successfully evaluated.
+ * 			successfully evaluated.  
+ * TCL_OUT_LINE_COMPILE	A source-compatible alias for TCL_ERROR, kept
+ * 			for the sake of old code only.
  */
 
-#define TCL_OUT_LINE_COMPILE	(TCL_CONTINUE + 1)
+#define TCL_OUT_LINE_COMPILE	TCL_ERROR
 
 typedef int (CompileProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	Tcl_Parse *parsePtr, struct CompileEnv *compEnvPtr));
@@ -1930,14 +1933,20 @@ MODULE_SCOPE void	TclAppendObjToErrorInfo _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 MODULE_SCOPE int	TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
+MODULE_SCOPE double     TclBignumToDouble _ANSI_ARGS_((mp_int* bignum));
 MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp* interp, LiteralTable* tablePtr));
 MODULE_SCOPE void	TclDiscardInterpState _ANSI_ARGS_ ((
 			    Tcl_InterpState state));
+MODULE_SCOPE int	TclDoubleDigits _ANSI_ARGS_((char* buf,
+						     double value,
+						     int* signum));
 MODULE_SCOPE int	TclEvalScriptTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int length, int flags));
+MODULE_SCOPE void	TclExpandTokenArray _ANSI_ARGS_((
+			    Tcl_Parse *parsePtr));
 MODULE_SCOPE int	TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	TclFileCopyCmd _ANSI_ARGS_((Tcl_Interp *interp, 
@@ -1951,6 +1960,7 @@ MODULE_SCOPE int	TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
 MODULE_SCOPE void	TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompilation _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFinalizeDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEnvironment _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeExecution _ANSI_ARGS_((void));
@@ -1964,6 +1974,7 @@ MODULE_SCOPE void	TclFinalizeAsync _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFormatNaN _ANSI_ARGS_((double value, char* buffer));
 MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
@@ -1984,6 +1995,7 @@ MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    int globFlags, Tcl_GlobTypeData* types));
 MODULE_SCOPE void	TclInitAlloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitDbCkalloc _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclInitDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation 
 			    _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE void	TclInitEncodingSubsystem _ANSI_ARGS_((void));
@@ -2136,6 +2148,8 @@ MODULE_SCOPE void	TclSetProcessGlobalValue _ANSI_ARGS_ ((
 			    Tcl_Encoding encoding));
 MODULE_SCOPE VOID	TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
+MODULE_SCOPE double	TclStrToD _ANSI_ARGS_((CONST char* string,
+					       CONST char** endPtr));
 MODULE_SCOPE int	TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    int *tokensLeftPtr, int flags));
@@ -2849,6 +2863,33 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     if ((nsPtr)->numExportPatterns) { \
 	(nsPtr)->exportLookupEpoch++; \
     }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Core procedures added to libtommath for bignum manipulation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+MODULE_SCOPE void* TclBNAlloc( size_t nBytes );
+MODULE_SCOPE void* TclBNRealloc( void* oldBlock, size_t newNBytes );
+MODULE_SCOPE void TclBNFree( void* block );
+MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
+
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to check whether a pattern has
+ * any characters special to [string match].
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclMatchIsTrivial _ANSI_ARGS_((
+ * 			    CONST char *pattern));
+ *----------------------------------------------------------------
+ */
+
+#define TclMatchIsTrivial(pattern) strpbrk((pattern), "*[]]?\\") == NULL
 
 /*
  *----------------------------------------------------------------

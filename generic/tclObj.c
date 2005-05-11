@@ -7,15 +7,28 @@
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
  * Copyright (c) 2001 by ActiveState Corporation.
+ * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.17 2005/04/29 22:40:33 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.18 2005/05/11 16:58:46 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tommath.h"
 #include "tclCompile.h"
+#include <float.h>
+
+/*
+ * Define test for NaN
+ */
+
+#ifdef _MSC_VER
+#define IS_NAN(f) _isnan((f))
+#else
+#define IS_NAN(f) ((f) != (f))
+#endif
 
 /*
  * Table of all object types.
@@ -136,6 +149,28 @@ Tcl_ThreadDataKey pendingObjDataKey;
 
 
 /*
+ * Macros to pack/unpack a bignum's fields in a Tcl_Obj internal rep
+ */
+
+#define PACK_BIGNUM( bignum, objPtr ) \
+  do { \
+    (objPtr)->internalRep.bignumValue.digits = (void*) (bignum).dp; \
+    (objPtr)->internalRep.bignumValue.misc = ( \
+      ( (bignum).sign << 30 ) \
+      | ( (bignum).alloc << 15 ) \
+      | ( (bignum).used ) ); \
+  } while ( 0 )
+
+#define UNPACK_BIGNUM( objPtr, bignum ) \
+  do { \
+    (bignum).dp = (mp_digit*) (objPtr)->internalRep.bignumValue.digits; \
+    (bignum).sign = (objPtr)->internalRep.bignumValue.misc >> 30; \
+    (bignum).alloc = ( (objPtr)->internalRep.bignumValue.misc >> 15 ) \
+                     & 0x7fff; \
+    (bignum).used = (objPtr)->internalRep.bignumValue.misc & 0x7fff; \
+  } while ( 0 )
+
+/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -156,6 +191,13 @@ static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 #ifndef TCL_WIDE_INT_IS_LONG
 static void		UpdateStringOfWideInt _ANSI_ARGS_((Tcl_Obj *objPtr));
 #endif
+
+static void		FreeBignum _ANSI_ARGS_(( Tcl_Obj *objPtr ));
+static void		DupBignum _ANSI_ARGS_(( Tcl_Obj *objPtr,
+						Tcl_Obj *copyPtr ));
+static void		UpdateStringOfBignum _ANSI_ARGS_(( Tcl_Obj *objPtr ));
+static int		SetBignumFromAny _ANSI_ARGS_(( Tcl_Interp* interp,
+						       Tcl_Obj* objPtr ));
 
 /*
  * Prototypes for the array hash key methods.
@@ -224,6 +266,14 @@ Tcl_ObjType tclWideIntType = {
     UpdateStringOfWideInt,		/* updateStringProc */
 #endif /* TCL_WIDE_INT_IS_LONG */
     SetWideIntFromAny			/* setFromAnyProc */
+};
+
+Tcl_ObjType tclBignumType = {
+    "bignum",				/* name */
+    FreeBignum,				/* freeIntRepProc */
+    DupBignum,				/* dupIntRepProc */
+    UpdateStringOfBignum,               /* updateStringProc */
+    SetBignumFromAny			/* setFromAnyProc */
 };
 
 /*
@@ -331,6 +381,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclEndOffsetType);
     Tcl_RegisterObjType(&tclIntType);
     Tcl_RegisterObjType(&tclWideIntType);
+    Tcl_RegisterObjType( &tclBignumType );
     Tcl_RegisterObjType(&tclStringType);
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
@@ -1671,22 +1722,29 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
 {
     register int result;
 
-    if (objPtr->typePtr == &tclDoubleType) {
-	*dblPtr = objPtr->internalRep.doubleValue;
-	return TCL_OK;
-    } else if (objPtr->typePtr == &tclIntType) {
+    if (objPtr->typePtr == &tclIntType) {
 	*dblPtr = objPtr->internalRep.longValue;
 	return TCL_OK;
     } else if (objPtr->typePtr == &tclWideIntType) {
 	*dblPtr = (double) objPtr->internalRep.wideValue;
 	return TCL_OK;
+    } else if (objPtr->typePtr != &tclDoubleType) {
+	result = SetDoubleFromAny(interp, objPtr);
+	if ( result != TCL_OK ) {
+	    return TCL_ERROR;
+	}
     }
-
-    result = SetDoubleFromAny(interp, objPtr);
-    if (result == TCL_OK) {
-	*dblPtr = objPtr->internalRep.doubleValue;
+    if ( IS_NAN( objPtr->internalRep.doubleValue ) ) {
+	if ( interp != NULL ) {
+	    Tcl_SetObjResult
+		( interp,
+		  Tcl_NewStringObj( "floating point value is Not a Number",
+				    -1 ) );
+	}
+	return TCL_ERROR;
     }
-    return result;
+    *dblPtr = objPtr->internalRep.doubleValue;
+    return TCL_OK;
 }
 
 /*
@@ -1714,7 +1772,7 @@ SetDoubleFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    char *string, *end;
+    CONST char *string, *end;
     double newDouble;
     int length;
 
@@ -1731,7 +1789,7 @@ SetDoubleFromAny(interp, objPtr)
      */
 
     errno = 0;
-    newDouble = strtod(string, &end);
+    newDouble = TclStrToD(string, &end);
     if (end == string) {
 	badDouble:
 	if (interp != NULL) {
@@ -1756,7 +1814,7 @@ SetDoubleFromAny(interp, objPtr)
 	goto badDouble;
     }
 
-    if (errno != 0) {
+    if (errno != 0 && errno != ERANGE) {
 	if (interp != NULL) {
 	    TclExprFloatError(interp, newDouble);
 	}
@@ -2711,6 +2769,390 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
 	*wideIntPtr = objPtr->internalRep.wideValue;
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeBignum --
+ *
+ *	This procedure frees the internal rep of a bignum.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeBignum( Tcl_Obj* objPtr )
+{
+    mp_int toFree;		/* Bignum to free */
+    UNPACK_BIGNUM( objPtr, toFree );
+    mp_clear( &toFree );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupBignum --
+ *
+ *	This procedure duplicates the internal rep of a bignum.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The destination object receies a copy of the source object
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DupBignum( srcPtr, copyPtr )
+    Tcl_Obj* srcPtr;
+    Tcl_Obj* copyPtr;
+{
+    mp_int bignumVal;
+    mp_int bignumCopy;
+    copyPtr->typePtr = &tclBignumType;
+    UNPACK_BIGNUM( srcPtr, bignumVal );
+    if ( mp_init_copy( &bignumCopy, &bignumVal ) != MP_OKAY ) {
+	Tcl_Panic( "initialization failure in DupBignum" );
+    }
+    PACK_BIGNUM( bignumVal, copyPtr );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetBignumFromAny --
+ *
+ *	This procedure interprets a Tcl_Obj as a bignum and sets
+ *	the internal representation accordingly.
+ *
+ * Results:
+ *	Returns a standard Tcl status.  If conversion fails, an
+ *	error message is left in the interpreter result.
+ *
+ * Side effects:
+ *	The bignum internal representation is packed into the object.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetBignumFromAny( interp, objPtr )
+    Tcl_Interp* interp;
+    Tcl_Obj* objPtr;
+{
+    CONST char* stringVal;
+    CONST char* p;
+    int length;
+    int signum = MP_ZPOS;
+    int radix = 10;
+    int status;
+    mp_int bignumVal;
+
+    if ( objPtr->typePtr == &tclIntType ) {
+
+	/*
+	 * If the number already contains an integer, simply widen it to
+	 * a bignum.
+	 */
+	
+	TclBNInitBignumFromLong( &bignumVal, objPtr->internalRep.longValue );
+    } else {
+
+	/* 
+	 * The number doesn't contain an integer. Convert its string rep
+	 * to a bignum, handling 0XXX and 0xXXX notation
+	 */
+
+	stringVal = Tcl_GetStringFromObj( objPtr, &length );
+	p = stringVal;
+	
+	/*
+	 * Pull off the signum
+	 */
+	
+	if ( *p == '+' ) {
+	    ++p;
+	} else if ( *p == '-' ) {
+	    ++p;
+	    signum = MP_NEG;
+	}
+	
+	/*
+	 * Handle octal and hexadecimal
+	 */
+	
+	if ( *p == '0' ) {
+	    ++p;
+	    if ( *p == 'x' || *p == 'X' ) {
+		++p;
+		radix = 16;
+	    } else {
+		--p;
+		radix = 8;
+	    }
+	}
+	
+	/* Convert the value */
+	
+	if ( mp_init( &bignumVal ) != MP_OKAY ) {
+	    Tcl_Panic( "initialization failure in SetBignumFromAny" );
+	}
+	status = mp_read_radix( &bignumVal, p, radix );
+	switch ( status ) {
+	    case MP_MEM: 
+	        Tcl_Panic( "out of memory in SetBignumFromAny" );
+	    case MP_OKAY:
+	        break;
+	    default:
+	    {
+		if ( interp != NULL ) {
+		    Tcl_Obj* msg
+			= Tcl_NewStringObj( "expected integer but got \"",
+					    -1 );
+		    TclAppendLimitedToObj( msg, stringVal, length, 50, "" );
+		    Tcl_AppendToObj( msg, "\"", -1 );
+		    Tcl_SetObjResult( interp, msg );
+		    TclCheckBadOctal( interp, stringVal );
+		}
+		mp_clear( &bignumVal );
+		return TCL_ERROR;
+	    }
+	}
+	
+	/* Conversion to bignum succeeded.  Make sure that everything fits. */
+	
+	if ( bignumVal.alloc > 0x7fff ) {
+	    Tcl_Obj* msg
+		= Tcl_NewStringObj( "integer value too large to represent", -1 );
+	    Tcl_SetObjResult( interp, msg );
+	    mp_clear( &bignumVal );
+	    return TCL_ERROR;
+	}
+    }
+	
+    /* 
+     * Conversion succeeded. Clean up the old internal rep and 
+     * store the new one.
+     */
+    
+    TclFreeIntRep( objPtr );
+    bignumVal.sign = signum;
+    PACK_BIGNUM( bignumVal, objPtr );
+    objPtr->typePtr = &tclBignumType;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfBignum --
+ *
+ *	This procedure updates the string representation of a bignum
+ *	object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string is set to whatever results from the bignum-
+ *	to-string conversion.
+ *
+ * The object's existing string representation is NOT freed; memory
+ * will leak if the string rep is still valid at the time this procedure
+ * is called.
+ */
+
+void
+UpdateStringOfBignum( Tcl_Obj* objPtr )
+{
+    mp_int bignumVal;
+    int size;
+    int status;
+    char* stringVal;
+    UNPACK_BIGNUM( objPtr, bignumVal );
+    status = mp_radix_size( &bignumVal, 10, &size );
+    if ( status != MP_OKAY ) {
+	Tcl_Panic( "radix size failure in UpdateStringOfBignum" );
+    }
+    stringVal = Tcl_Alloc( (size_t) size );
+    status = mp_toradix_n( &bignumVal, stringVal, 10, size );
+    if ( status != MP_OKAY ) {
+	Tcl_Panic( "conversion failure in UpdateStringOfBignum" );
+    }
+    objPtr->bytes = stringVal;
+    objPtr->length = size - 1;	/* size includes a trailing null byte */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_NewBignumObj --
+ *
+ *	Creates an initializes a bignum object.
+ *
+ * Results:
+ *	Returns the newly created object.
+ *
+ * Side effects:
+ *	The bignum value is cleared, since ownership has transferred
+ *	to Tcl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+#undef Tcl_NewBignumObj
+Tcl_Obj*
+Tcl_NewBignumObj( mp_int* bignumValue )
+{
+    return Tcl_DbNewBignumObj( bignumValue, "unknown", 0 );
+}
+#else
+Tcl_Obj *
+Tcl_NewBignumObj( mp_int* bignumValue )
+{
+    Tcl_Obj* objPtr;
+    TclNewObj( objPtr );
+    PACK_BIGNUM( *bignumValue, objPtr );
+    objPtr->typePtr=&tclBignumType;
+    objPtr->bytes = NULL;
+
+    /* Clear with mp_init; mp_clear would overwrite the digit array. */
+
+    mp_init( bignumValue );
+
+    return objPtr;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DbNewBignumObj --
+ *
+ *	This procedure is normally called when debugging: that is, when
+ *	TCL_MEM_DEBUG is defined.  It constructs a bignum object, recording
+ *	the creation point so that [memory active] can report it.
+ *
+ * Results:
+ *	Returns the newly created object.
+ *
+ * Side effects:
+ *	The bignum value is cleared, since ownership has transferred
+ *	to Tcl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+Tcl_Obj*
+Tcl_DbNewBignumObj( mp_int* bignumValue, CONST char* file, int line )
+{
+    Tcl_Obj* objPtr;
+    TclDbNewObj( objPtr, file, line );
+    objPtr->bytes = NULL;
+    PACK_BIGNUM( *bignumValue, objPtr );
+    objPtr->typePtr=&tclBignumType;
+    objPtr->bytes = NULL;
+
+    /* Clear with mp_init; mp_clear would overwrite the digit array. */
+
+    mp_init( bignumValue );
+
+    return objPtr;
+}
+#else
+Tcl_Obj*
+Tcl_DbNewBignumObj( mp_int* bignumValue, CONST char* file, int line )
+{
+    return Tcl_NewBignumObj( bignumValue );
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetBignumFromObj --
+ *
+ *	This procedure retrieves a 'bignum' value from a Tcl object,
+ *	converting the object if necessary.
+ *
+ * Results:
+ *	Returns TCL_OK if the conversion is successful, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	A copy of bignum is stored in *bignumValue, which is expected
+ *	to be uninitialized or cleared.  If conversion fails, an
+ *	the 'interp' argument is not NULL, an error message is stored
+ *	in the interpreter result.
+ *
+ * It is expected that the caller will NOT have invoked mp_init on the
+ * bignum value before passing it in. The raw value of the object is
+ * returned, and Tcl owns that memory, so the caller should NOT invoke
+ * mp_clear afterwards.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetBignumFromObj( Tcl_Interp* interp,
+				/* Tcl interpreter for error reporting */
+		      Tcl_Obj* objPtr,
+				/* Object to read */
+		      mp_int* bignumValue )
+				/* Returned bignum value. */
+{
+    mp_int temp;
+    if ( objPtr -> typePtr != &tclBignumType ) {
+	if ( SetBignumFromAny( interp, objPtr ) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+    }
+    UNPACK_BIGNUM( objPtr, temp );
+    mp_init_copy( bignumValue, &temp );
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetBignumObj --
+ *
+ *	This procedure sets the value of a Tcl_Obj to a large integer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Object value is stored.  The bignum value is cleared, since
+ *	ownership has transferred to Tcl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetBignumObj( Tcl_Obj* objPtr,
+				/* Object to set */
+		  mp_int* bignumValue )
+				/* Value to store */
+{
+    if ( Tcl_IsShared( objPtr ) ) {
+	Tcl_Panic( "Tcl_SetBignumObj called with shared object" );
+    }
+    TclFreeIntRep( objPtr );
+    objPtr->typePtr = &tclBignumType;
+    PACK_BIGNUM( *bignumValue, objPtr );
+    Tcl_InvalidateStringRep( objPtr );
+
+    /* Clear the value with mp_init; mp_clear overwrites the digit array. */
+
+    mp_init( bignumValue );
 }
 
 /*

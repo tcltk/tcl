@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.19 2005/04/29 22:40:19 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.20 2005/05/11 16:58:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -19,6 +19,18 @@
 
 #ifndef TCL_NO_MATH
 #   include <math.h>
+#endif
+#include <float.h>
+
+/*
+ * Hack to determine whether we may expect IEEE floating point.
+ * The hack is formally incorrect in that non-IEEE platforms might
+ * have the same precision and range, but VAX, IBM, and Cray do not;
+ * are there any other floating point units that we might care about?
+ */
+
+#if ( FLT_RADIX == 2 ) && ( DBL_MANT_DIG == 53 ) && ( DBL_MAX_EXP == 1024 )
+#define IEEE_FLOATING_POINT
 #endif
 
 /*
@@ -136,8 +148,13 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * by comparing against the largest floating-point value.
  */
 
-#define IS_NAN(v) ((v) != (v))
-#define IS_INF(v) (((v) > DBL_MAX) || ((v) < -DBL_MAX))
+#ifdef _MSC_VER
+#define IS_NAN(f) (_isnan((f)))
+#define IS_INF(f) ( ! (_finite((f))))
+#else
+#define IS_NAN(f) ((f) != (f))
+#define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
+#endif
 
 /*
  * The new macro for ending an instruction; note that a
@@ -345,26 +362,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 static int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    ByteCode *codePtr));
-static int		ExprAbsFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprBinaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprCallMathFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objc, Tcl_Obj **objv));
-static int		ExprDoubleFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprIntFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprRandFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprRoundFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprSrandFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprUnaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
-static int		ExprWideFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj **tosPtr, ClientData clientData));
 #ifdef TCL_COMPILE_STATS
 static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
@@ -391,50 +388,11 @@ static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    int stackTop, int stackLowerBound, 
 			    int checkStack));
 #endif /* TCL_COMPILE_DEBUG */
-static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
 static Tcl_WideInt	ExponWide _ANSI_ARGS_((Tcl_WideInt w, Tcl_WideInt w2,
 			    int *errExpon));
 static long		ExponLong _ANSI_ARGS_((long i, long i2,
 			    int *errExpon));
 
-/*
- * Table describing the built-in math functions. Entries in this table are
- * indexed by the values of the INST_CALL_BUILTIN_FUNC instruction's
- * operand byte.
- */
-
-BuiltinFunc tclBuiltinFuncTable[] = {
-#ifndef TCL_NO_MATH
-    {"acos", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) acos},
-    {"asin", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) asin},
-    {"atan", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) atan},
-    {"atan2", 2, {TCL_DOUBLE, TCL_DOUBLE}, ExprBinaryFunc, (ClientData) atan2},
-    {"ceil", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) ceil},
-    {"cos", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) cos},
-    {"cosh", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) cosh},
-    {"exp", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) exp},
-    {"floor", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) floor},
-    {"fmod", 2, {TCL_DOUBLE, TCL_DOUBLE}, ExprBinaryFunc, (ClientData) fmod},
-    {"hypot", 2, {TCL_DOUBLE, TCL_DOUBLE}, ExprBinaryFunc, (ClientData) hypot},
-    {"log", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) log},
-    {"log10", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) log10},
-    {"pow", 2, {TCL_DOUBLE, TCL_DOUBLE}, ExprBinaryFunc, (ClientData) pow},
-    {"sin", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) sin},
-    {"sinh", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) sinh},
-    {"sqrt", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) sqrt},
-    {"tan", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) tan},
-    {"tanh", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) tanh},
-#endif
-    {"abs", 1, {TCL_EITHER}, ExprAbsFunc, 0},
-    {"double", 1, {TCL_EITHER}, ExprDoubleFunc, 0},
-    {"int", 1, {TCL_EITHER}, ExprIntFunc, 0},
-    {"rand", 0, {TCL_EITHER}, ExprRandFunc, 0},	/* NOTE: rand takes no args. */
-    {"round", 1, {TCL_EITHER}, ExprRoundFunc, 0},
-    {"srand", 1, {TCL_INT}, ExprSrandFunc, 0},
-    {"wide", 1, {TCL_EITHER}, ExprWideFunc, 0},
-    {0},
-};
 
 /*
  *----------------------------------------------------------------------
@@ -4033,10 +3991,18 @@ TclExecuteByteCode(interp, codePtr)
 		    dResult = d1 * d2;
 		    break;
 	        case INST_DIV:
+#ifndef IEEE_FLOATING_POINT
 		    if (d2 == 0.0) {
 			TRACE(("%.6g %.6g => DIVIDE BY ZERO\n", d1, d2));
 			goto divideByZero;
 		    }
+#endif
+		    /*
+		     * We presume that we are running with zero-divide
+		     * unmasked if we're on an IEEE box. Otherwise,
+		     * this statement might cause demons to fly out
+		     * our noses.
+		     */
 		    dResult = d1 / d2;
 		    break;
 		case INST_EXPON:
@@ -4052,7 +4018,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * Check now for IEEE floating-point error.
 	     */
 		    
-	    if (IS_NAN(dResult) || IS_INF(dResult)) {
+	    if (IS_NAN(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
 		        O2S(valuePtr), O2S(value2Ptr)));
 		TclExprFloatError(interp, dResult);
@@ -4440,53 +4406,13 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_CALL_BUILTIN_FUNC1:
         {
-	    int opnd;
-	    BuiltinFunc *mathFuncPtr;
-	
-	    /*
-	     * Call one of the built-in Tcl math functions.
-	     */
-
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    if ((opnd < 0) || (opnd > LAST_BUILTIN_FUNC)) {
-		TRACE(("UNRECOGNIZED BUILTIN FUNC CODE %d\n", opnd));
-		Tcl_Panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
-	    }
-	    mathFuncPtr = &(tclBuiltinFuncTable[opnd]);
-	    result = (*mathFuncPtr->proc)(interp, tosPtr,
-	            mathFuncPtr->clientData);
-	    if (result != TCL_OK) {
-		goto checkForCatch;
-	    }
-	    tosPtr -= (mathFuncPtr->numArgs - 1);
-	    TRACE_WITH_OBJ(("%d => ", opnd), *tosPtr);
+	    Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
 	}
-	NEXT_INST_F(2, 0, 0);
 		    
     case INST_CALL_FUNC1:
 	{
-	    /*
-	     * Call a non-builtin Tcl math function previously
-	     * registered by a call to Tcl_CreateMathFunc.
-	     */
-		
-	    int objc;          /* Number of arguments. The function name
-				* is the 0-th argument. */
-	    Tcl_Obj **objv;    /* The array of arguments. The function
-				* name is objv[0]. */
-
-	    objc = TclGetUInt1AtPtr(pc+1);
-	    objv = (tosPtr - (objc-1)); /* "objv[0]" */
-	    DECACHE_STACK_INFO();
-	    result = ExprCallMathFunc(interp, objc, objv);
-	    CACHE_STACK_INFO();
-	    if (result != TCL_OK) {
-		goto checkForCatch;
-	    }
-	    tosPtr = objv;
-	    TRACE_WITH_OBJ(("%d => ", objc), *tosPtr);
+	    Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_FUNC1 found");
 	}
-	NEXT_INST_F(2, 0, 0);
 
     case INST_TRY_CVT_TO_NUMERIC:
     {
@@ -4579,7 +4505,7 @@ TclExecuteByteCode(interp, codePtr)
 		
 	    if (tPtr == &tclDoubleType) {
 		d = objResultPtr->internalRep.doubleValue;
-		if (IS_NAN(d) || IS_INF(d)) {
+		if (IS_NAN(d)) {
 		    TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 		            O2S(objResultPtr)));
 		    TclExprFloatError(interp, d);
@@ -5604,765 +5530,6 @@ GetOpcodeName(pc)
 /*
  *----------------------------------------------------------------------
  *
- * VerifyExprObjType --
- *
- *	This procedure is called by the math functions to verify that
- *	the object is either an int or double, coercing it if necessary.
- *	If an error occurs during conversion, an error message is left
- *	in the interpreter's result unless "interp" is NULL.
- *
- * Results:
- *	TCL_OK if it was int or double, TCL_ERROR otherwise
- *
- * Side effects:
- *	objPtr is ensured to be of tclIntType, tclWideIntType or
- *	tclDoubleType.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-VerifyExprObjType(interp, objPtr)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj *objPtr;		/* Points to the object to type check. */
-{
-    if (IS_NUMERIC_TYPE(objPtr->typePtr)) {
-	return TCL_OK;
-    } else {
-	int length, result = TCL_OK;
-	char *s = Tcl_GetStringFromObj(objPtr, &length);
-	
-	if (TclLooksLikeInt(s, length)) {
-	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
-	    Tcl_WideInt w;
-	    GET_WIDE_OR_INT(result, objPtr, i, w);
-	} else {
-	    double d;
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
-	}
-	if ((result != TCL_OK) && (interp != NULL)) {
-	    if (TclCheckBadOctal((Tcl_Interp *) NULL, s)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"argument to math function was an invalid octal number",
-			-1));
-	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"argument to math function didn't have numeric value",
-			-1));
-	    }
-	}
-	return result;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Math Functions --
- *
- *	This page contains the procedures that implement all of the
- *	built-in math functions for expressions.
- *
- * Results:
- *	Each procedure returns TCL_OK if it succeeds and pushes an
- *	Tcl object holding the result. If it fails it returns TCL_ERROR
- *	and leaves an error message in the interpreter's result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ExprUnaryFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Contains the address of a procedure that
-				 * takes one double argument and returns a
-				 * double result. */
-{
-    register Tcl_Obj *valuePtr, *resPtr;
-    double d, dResult;
-    
-    double (*func) _ANSI_ARGS_((double)) =
-	(double (*)_ANSI_ARGS_((double))) clientData;
-
-    /*
-     * Pop the function's argument from the evaluation stack. Convert it
-     * to a double if necessary.
-     */
-
-    valuePtr = POP_OBJECT();
-
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
-
-    errno = 0;
-    dResult = (*func)(d);
-    if ((errno != 0) || IS_NAN(dResult) || IS_INF(dResult)) {
-	TclExprFloatError(interp, dResult);
-	return TCL_ERROR;
-    }
-    
-    /*
-     * Push a Tcl object holding the result.
-     */
-
-    TclNewDoubleObj(resPtr, dResult);
-    PUSH_OBJECT(resPtr);
-    TclDecrRefCount(valuePtr);
-    return TCL_OK;
-}
-
-static int
-ExprBinaryFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Contains the address of a procedure that
-				 * takes two double arguments and
-				 * returns a double result. */
-{
-    register Tcl_Obj *valuePtr, *value2Ptr, *resPtr;
-    double d1, d2, dResult;
-    
-    double (*func) _ANSI_ARGS_((double, double))
-	= (double (*)_ANSI_ARGS_((double, double))) clientData;
-
-    /*
-     * Pop the function's two arguments from the evaluation stack. Convert
-     * them to doubles if necessary.
-     */
-
-    value2Ptr = POP_OBJECT();
-    valuePtr  = POP_OBJECT();
-
-    if ((VerifyExprObjType(interp, valuePtr) != TCL_OK) ||
-	    (VerifyExprObjType(interp, value2Ptr) != TCL_OK)) {
-	return TCL_ERROR;
-    }
-
-    GET_DOUBLE_VALUE(d1, valuePtr, valuePtr->typePtr);
-    GET_DOUBLE_VALUE(d2, value2Ptr, value2Ptr->typePtr);
-
-    errno = 0;
-    dResult = (*func)(d1, d2);
-    if ((errno != 0) || IS_NAN(dResult) || IS_INF(dResult)) {
-	TclExprFloatError(interp, dResult);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Push a Tcl object holding the result.
-     */
-
-    TclNewDoubleObj(resPtr, dResult);
-    PUSH_OBJECT(resPtr);
-    TclDecrRefCount(valuePtr);
-    TclDecrRefCount(value2Ptr);
-    return TCL_OK;
-}
-
-static int
-ExprAbsFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    register Tcl_Obj *valuePtr, *resPtr;
-    long i, iResult;
-    double d, dResult;
-
-    /*
-     * Pop the argument from the evaluation stack.
-     */
-
-    valuePtr = POP_OBJECT();
-
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Push a Tcl object with the result.
-     */
-    if (valuePtr->typePtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-	if (i < 0) {
-	    iResult = -i;
-	    if (iResult < 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		        "integer value too large to represent", -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent", (char *) NULL);
-		return TCL_ERROR;
-	    }
-	} else {
-	    iResult = i;
-	}	    
-	TclNewLongObj(resPtr, iResult);
-	PUSH_OBJECT(resPtr);	
-    } else if (valuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wResult, w;
-	TclGetWide(w,valuePtr);
-	if (w < W0) {
-	    wResult = -w;
-	    if (wResult < 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		        "integer value too large to represent", -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent", (char *) NULL);
-		return TCL_ERROR;
-	    }
-	} else {
-	    wResult = w;
-	}	    
-	TclNewWideIntObj(resPtr, wResult);
-	PUSH_OBJECT(resPtr);	
-    } else {
-	d = valuePtr->internalRep.doubleValue;
-	if (d < 0.0) {
-	    dResult = -d;
-	} else {
-	    dResult = d;
-	}
-	if (IS_NAN(dResult) || IS_INF(dResult)) {
-	    TclExprFloatError(interp, dResult);
-	    return TCL_ERROR;
-	}
-	TclNewDoubleObj(resPtr, dResult);
-	PUSH_OBJECT(resPtr);	
-    }
-
-    TclDecrRefCount(valuePtr);
-    return TCL_OK;
-}
-
-static int
-ExprDoubleFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    register Tcl_Obj *valuePtr, *resPtr;
-    double dResult;
-
-    /*
-     * Pop the argument from the evaluation stack.
-     */
-
-    valuePtr = POP_OBJECT();
-
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    GET_DOUBLE_VALUE(dResult, valuePtr, valuePtr->typePtr);
-
-    /*
-     * Push a Tcl object with the result.
-     */
-
-    TclNewDoubleObj(resPtr, dResult);
-    PUSH_OBJECT(resPtr);	
-
-    TclDecrRefCount(valuePtr);
-    return TCL_OK;
-}
-
-static int
-ExprIntFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    register Tcl_Obj *valuePtr, *resPtr;
-    long iResult;
-    double d;
-
-    /*
-     * Pop the argument from the evaluation stack.
-     */
-
-    valuePtr = POP_OBJECT();
-    
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    
-    if (valuePtr->typePtr == &tclIntType) {
-	iResult = valuePtr->internalRep.longValue;
-    } else if (valuePtr->typePtr == &tclWideIntType) {
-	TclGetLongFromWide(iResult,valuePtr);
-    } else {
-	d = valuePtr->internalRep.doubleValue;
-	if (d < 0.0) {
-	    if (d < (double) (long) LONG_MIN) {
-		tooLarge:
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		        "integer value too large to represent", -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent", (char *) NULL);
-		return TCL_ERROR;
-	    }
-	} else {
-	    if (d > (double) LONG_MAX) {
-		goto tooLarge;
-	    }
-	}
-	if (IS_NAN(d) || IS_INF(d)) {
-	    TclExprFloatError(interp, d);
-	    return TCL_ERROR;
-	}
-	iResult = (long) d;
-    }
-
-    /*
-     * Push a Tcl object with the result.
-     */
-    
-    TclNewLongObj(resPtr, iResult);
-    PUSH_OBJECT(resPtr);	
-    TclDecrRefCount(valuePtr);
-    return TCL_OK;
-}
-
-static int
-ExprWideFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    register Tcl_Obj *valuePtr, *resPtr;
-    Tcl_WideInt wResult;
-    double d;
-
-    /*
-     * Pop the argument from the evaluation stack.
-     */
-
-    valuePtr = POP_OBJECT();
-    
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    
-    if (valuePtr->typePtr == &tclWideIntType) {
-	TclGetWide(wResult,valuePtr);
-    } else if (valuePtr->typePtr == &tclIntType) {
-	wResult = Tcl_LongAsWide(valuePtr->internalRep.longValue);
-    } else {
-	d = valuePtr->internalRep.doubleValue;
-	if (d < 0.0) {
-	    if (d < Tcl_WideAsDouble(LLONG_MIN)) {
-		tooLarge:
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		        "integer value too large to represent", -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent", (char *) NULL);
-		return TCL_ERROR;
-	    }
-	} else {
-	    if (d > Tcl_WideAsDouble(LLONG_MAX)) {
-		goto tooLarge;
-	    }
-	}
-	if (IS_NAN(d) || IS_INF(d)) {
-	    TclExprFloatError(interp, d);
-	    return TCL_ERROR;
-	}
-	wResult = Tcl_DoubleAsWide(d);
-    }
-
-    /*
-     * Push a Tcl object with the result.
-     */
-    
-    TclNewWideIntObj(resPtr, wResult);
-    PUSH_OBJECT(resPtr);	
-    TclDecrRefCount(valuePtr);
-    return TCL_OK;
-}
-
-static int
-ExprRandFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    Interp *iPtr = (Interp *) interp;
-    double dResult;
-    long tmp;			/* Algorithm assumes at least 32 bits.
-				 * Only long guarantees that.  See below. */
-    Tcl_Obj *resPtr;
-    
-    if (!(iPtr->flags & RAND_SEED_INITIALIZED)) {
-	iPtr->flags |= RAND_SEED_INITIALIZED;
-        
-        /* 
-	 * Take into consideration the thread this interp is running in order
-	 * to insure different seeds in different threads (bug #416643)
-	 */
-
-	iPtr->randSeed = TclpGetClicks() + ((long)Tcl_GetCurrentThread()<<12);
-
-	/*
-	 * Make sure 1 <= randSeed <= (2^31) - 2.  See below.
-	 */
-
-        iPtr->randSeed &= (unsigned long) 0x7fffffff;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
-	    iPtr->randSeed ^= 123459876;
-	}
-    }
-
-    /*
-     * Generate the random number using the linear congruential
-     * generator defined by the following recurrence:
-     *		seed = ( IA * seed ) mod IM
-     * where IA is 16807 and IM is (2^31) - 1.  The recurrence maps
-     * a seed in the range [1, IM - 1] to a new seed in that same range.
-     * The recurrence maps IM to 0, and maps 0 back to 0, so those two
-     * values must not be allowed as initial values of seed.
-     *
-     * In order to avoid potential problems with integer overflow, the
-     * recurrence is implemented in terms of additional constants
-     * IQ and IR such that
-     *		IM = IA*IQ + IR
-     * None of the operations in the implementation overflows a 32-bit
-     * signed integer, and the C type long is guaranteed to be at least
-     * 32 bits wide.
-     *
-     * For more details on how this algorithm works, refer to the following
-     * papers: 
-     *
-     *	S.K. Park & K.W. Miller, "Random number generators: good ones
-     *	are hard to find," Comm ACM 31(10):1192-1201, Oct 1988
-     *
-     *	W.H. Press & S.A. Teukolsky, "Portable random number
-     *	generators," Computers in Physics 6(5):522-524, Sep/Oct 1992.
-     */
-
-#define RAND_IA		16807
-#define RAND_IM		2147483647
-#define RAND_IQ		127773
-#define RAND_IR		2836
-#define RAND_MASK	123459876
-
-    tmp = iPtr->randSeed/RAND_IQ;
-    iPtr->randSeed = RAND_IA*(iPtr->randSeed - tmp*RAND_IQ) - RAND_IR*tmp;
-    if (iPtr->randSeed < 0) {
-	iPtr->randSeed += RAND_IM;
-    }
-
-    /*
-     * Since the recurrence keeps seed values in the range [1, RAND_IM - 1],
-     * dividing by RAND_IM yields a double in the range (0, 1).
-     */
-
-    dResult = iPtr->randSeed * (1.0/RAND_IM);
-
-    /*
-     * Push a Tcl object with the result.
-     */
-
-    TclNewDoubleObj(resPtr, dResult);
-    PUSH_OBJECT(resPtr);	
-    return TCL_OK;
-}
-
-static int
-ExprRoundFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    Tcl_Obj *valuePtr, *resPtr;
-    double d;
-
-    /*
-     * Pop the argument from the evaluation stack.
-     */
-
-    valuePtr = POP_OBJECT();
-
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    
-    if ((valuePtr->typePtr == &tclIntType) ||
-	    (valuePtr->typePtr == &tclWideIntType)) {
-	return TCL_OK;
-    }
-
-    d = valuePtr->internalRep.doubleValue;
-    if (d < 0.0) {
-	if (d <= Tcl_WideAsDouble(LLONG_MIN)-0.5) {
-	    goto tooLarge;
-	} else if (d <= (((double) (long) LONG_MIN) - 0.5)) {
-	    TclNewWideIntObj(resPtr, Tcl_DoubleAsWide(d - 0.5));
-	} else {
-	    TclNewLongObj(resPtr, (long) (d - 0.5));
-	}			    
-    } else {
-	if (d >= Tcl_WideAsDouble(LLONG_MAX)+0.5) {
-	    goto tooLarge;
-	} else if (d >= (((double) LONG_MAX + 0.5))) {
-	    TclNewWideIntObj(resPtr, Tcl_DoubleAsWide(d + 0.5));
-	} else {
-	    TclNewLongObj(resPtr, (long) (d + 0.5));
-	}
-    }
-
-    /*
-     * Free the argument Tcl_Obj and push the result object.
-     */
-    
-    TclDecrRefCount(valuePtr);
-    PUSH_OBJECT(resPtr);
-    return TCL_OK;
-
-    /*
-     * Error return: result cannot be represented as an integer.
-     */
-    
-    tooLarge:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "integer value too large to represent", -1));
-    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-	    "integer value too large to represent",
-	    (char *) NULL);
-    return TCL_ERROR;
-}
-
-static int
-ExprSrandFunc(interp, tosPtr, clientData)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
-    ClientData clientData;	/* Ignored. */
-{
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *valuePtr;
-    long i = 0;			/* Initialized to avoid compiler warning. */
-
-    /*
-     * Pop the argument from the evaluation stack.  Use the value
-     * to reset the random number seed.
-     */
-
-    valuePtr = POP_OBJECT();
-
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if (Tcl_GetLongFromObj(NULL, valuePtr, &i) != TCL_OK) {
-	/*
-	 * At this point, the only other possible type is double
-	 */
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"can't use floating-point value as argument to srand", -1));
-	return TCL_ERROR;
-    }
-    
-    /*
-     * Reset the seed.  Make sure 1 <= randSeed <= 2^31 - 2.
-     * See comments in ExprRandFunc() for more details.
-     */
-
-    iPtr->flags |= RAND_SEED_INITIALIZED;
-    iPtr->randSeed = i;
-    iPtr->randSeed &= (unsigned long) 0x7fffffff;
-    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
-	iPtr->randSeed ^= 123459876;
-    }
-
-    /*
-     * To avoid duplicating the random number generation code we simply
-     * clean up our state and call the real random number function. That
-     * function will always succeed.
-     */
-    
-    TclDecrRefCount(valuePtr);
-    ExprRandFunc(interp, tosPtr, clientData);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ExprCallMathFunc --
- *
- *	This procedure is invoked to call a non-builtin math function
- *	during the execution of an expression. 
- *
- * Results:
- *	TCL_OK is returned if all went well and the function's value
- *	was computed successfully. If an error occurred, TCL_ERROR
- *	is returned and an error message is left in the interpreter's
- *	result.	After a successful return this procedure pops its
- *      objc arguments and pushes a Tcl object holding the result. 
- *
- * Side effects:
- *	None, unless the called math function has side effects.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ExprCallMathFunc(interp, objc, objv)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    int objc;			/* Number of arguments. The function name is
-				 * the 0-th argument. */
-    Tcl_Obj **objv;		/* The array of arguments. The function name
-				 * is objv[0]. */
-{
-    Interp *iPtr = (Interp *) interp;
-    char *funcName;
-    Tcl_HashEntry *hPtr;
-    MathFunc *mathFuncPtr;	/* Information about math function. */
-    Tcl_Value args[MAX_MATH_ARGS]; /* Arguments for function call. */
-    Tcl_Value funcResult;	/* Result of function call as Tcl_Value. */
-    register Tcl_Obj *valuePtr;
-    long i;
-    double d;
-    int j, k, result;
-
-    Tcl_ResetResult(interp);
-
-    /*
-     * Look up the MathFunc record for the function.
-     */
-
-    funcName = TclGetString(objv[0]);
-    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown math function \"", funcName,
-		"\"", (char *) NULL);
-	return TCL_ERROR;
-    }
-    mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
-    if (mathFuncPtr->numArgs != (objc-1)) {
-	Tcl_Panic("ExprCallMathFunc: expected number of args %d != actual number %d",
-	        mathFuncPtr->numArgs, objc);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Collect the arguments for the function, if there are any, into the
-     * array "args". Note that args[0] will have the Tcl_Value that
-     * corresponds to objv[1].
-     */
-
-    for (j = 1, k = 0;  j < objc;  j++, k++) {
-	valuePtr = objv[j];
-
-	if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Copy the object's numeric value to the argument record,
-	 * converting it if necessary. 
-	 */
-
-	if (valuePtr->typePtr == &tclIntType) {
-	    i = valuePtr->internalRep.longValue;
-	    if (mathFuncPtr->argTypes[k] == TCL_DOUBLE) {
-		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = i;
-	    } else if (mathFuncPtr->argTypes[k] == TCL_WIDE_INT) {
-		args[k].type = TCL_WIDE_INT;
-		args[k].wideValue = Tcl_LongAsWide(i);
-	    } else {
-		args[k].type = TCL_INT;
-		args[k].intValue = i;
-	    }
-	} else if (valuePtr->typePtr == &tclWideIntType) {
-	    Tcl_WideInt w;
-	    TclGetWide(w,valuePtr);
-	    if (mathFuncPtr->argTypes[k] == TCL_DOUBLE) {
-		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = Tcl_WideAsDouble(w);
-	    } else if (mathFuncPtr->argTypes[k] == TCL_INT) {
-		args[k].type = TCL_INT;
-		args[k].intValue = Tcl_WideAsLong(w);
-	    } else {
-		args[k].type = TCL_WIDE_INT;
-		args[k].wideValue = w;
-	    }
-	} else {
-	    d = valuePtr->internalRep.doubleValue;
-	    if (mathFuncPtr->argTypes[k] == TCL_INT) {
-		args[k].type = TCL_INT;
-		args[k].intValue = (long) d;
-	    } else if (mathFuncPtr->argTypes[k] == TCL_WIDE_INT) {
-		args[k].type = TCL_WIDE_INT;
-		args[k].wideValue = Tcl_DoubleAsWide(d);
-	    } else {
-		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = d;
-	    }
-	}
-    }
-
-    /*
-     * Invoke the function and copy its result back into valuePtr.
-     */
-
-    result = (*mathFuncPtr->proc)(mathFuncPtr->clientData, interp, args,
-	    &funcResult);
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    /*
-     * Pop the objc top stack elements and decrement their ref counts.
-     */
-
-    for (k = 0; k < objc; k++) {
-	valuePtr = objv[k];
-	TclDecrRefCount(valuePtr);
-    }
-    
-    /*
-     * Push the call's object result.
-     */
-    
-    if (funcResult.type == TCL_INT) {
-	TclNewLongObj(objv[0], funcResult.intValue);
-    } else if (funcResult.type == TCL_WIDE_INT) {
-	TclNewWideIntObj(objv[0], funcResult.wideValue);
-    } else {
-	d = funcResult.doubleValue;
-	if (IS_NAN(d) || IS_INF(d)) {
-	    TclExprFloatError(interp, d);
-	    return TCL_ERROR;
-	}
-	TclNewDoubleObj(objv[0], d);
-    }
-    Tcl_IncrRefCount(objv[0]);
-    
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclExprFloatError --
  *
  *	This procedure is called when an error occurs during a
@@ -6927,7 +6094,7 @@ ExponWide(w, w2, errExpon)
 	}
     } else if (w == -1) {
 	return (w2 & 1) ? Tcl_LongAsWide(-1) :  Tcl_LongAsWide(1);
-    } else if (w == 1) {
+    } else if ((w == 1) || (w2 == 0)) {
 	return Tcl_LongAsWide(1);
     } else if (w>1 && w2<0) {
 	return W0;
@@ -6997,7 +6164,7 @@ ExponLong(i, i2, errExpon)
         }
     } else if (i == -1) {
         return (i2&1) ? -1L : 1L;
-    } else if (i == 1) {
+    } else if ((i == 1) || (i2 == 0)) {
         return 1L;
     } else if (i > 1 && i2 < 0) {
         return 0L;

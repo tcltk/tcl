@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.19 2005/04/07 17:32:06 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.20 2005/05/11 16:58:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -283,7 +283,7 @@ TclIntStubs tclIntStubs = {
     TclFinalizeThreadStorageDataKey, /* 196 */
     NULL, /* 197 */
     TclObjGetFrame, /* 198 */
-    TclMatchIsTrivial, /* 199 */
+    NULL, /* 199 */
     TclpObjRemoveDirectory, /* 200 */
     TclpObjCopyDirectory, /* 201 */
     TclpObjCreateDirectory, /* 202 */
@@ -303,6 +303,11 @@ TclIntStubs tclIntStubs = {
     TclStackFree, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
+    TclBN_mp_div_d, /* 219 */
+    TclBN_mp_mul_d, /* 220 */
+    TclBN_mp_clear, /* 221 */
+    TclBN_mp_init, /* 222 */
+    TclBN_mp_read_radix, /* 223 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -971,6 +976,10 @@ TclStubs tclStubs = {
     Tcl_SetTimeProc, /* 552 */
     Tcl_QueryTimeProc, /* 553 */
     Tcl_ChannelThreadActionProc, /* 554 */
+    Tcl_NewBignumObj, /* 555 */
+    Tcl_DbNewBignumObj, /* 556 */
+    Tcl_SetBignumObj, /* 557 */
+    Tcl_GetBignumFromObj, /* 558 */
 };
 
 /* !END!: Do not edit above this line. */

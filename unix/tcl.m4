@@ -1565,7 +1565,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
-	SunOS-5.[[0-6]]*)
+	SunOS-5.[[0-6]])
+	    # Careful to not let 5.10+ fall into this case
 
 	    # Note: If _REENTRANT isn't defined, then Solaris
 	    # won't define thread-safe library routines.
@@ -1594,7 +1595,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    fi
 	    ;;
 	SunOS-5*)
-
 	    # Note: If _REENTRANT isn't defined, then Solaris
 	    # won't define thread-safe library routines.
 
@@ -1627,8 +1627,16 @@ dnl AC_CHECK_TOOL(AR, ar)
 			    	LDFLAGS_ARCH="-xarch=v9"
 			    fi
 			fi
+		elif test "$arch" = "amd64 i386" ; then
+		    if test "$GCC" = "yes" ; then
+			AC_MSG_WARN([64bit mode not supported with GCC on $system])
+		    else
+			do64bit_ok=yes
+			CFLAGS="$CFLAGS -xarch=amd64"
+			LDFLAGS="$LDFLAGS -xarch=amd64"
+		    fi
 		else
-		    AC_MSG_WARN([64bit mode only supported sparcv9 system])
+		    AC_MSG_WARN([64bit mode not supported for $arch])
 		fi
 	    fi
 	    

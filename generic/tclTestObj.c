@@ -8,14 +8,16 @@
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12 2002/12/04 13:09:24 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.1 2005/05/11 16:58:47 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tommath.h"
 
 /*
  * An array of Tcl_Obj pointers used in the commands that operate on or get
@@ -37,6 +39,9 @@ static int		GetVariableIndex _ANSI_ARGS_((Tcl_Interp *interp,
 static void		SetVarToObj _ANSI_ARGS_((int varIndex,
 			    Tcl_Obj *objPtr));
 int			TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+static int		TestbignumobjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
 static int		TestbooleanobjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -95,6 +100,8 @@ TclObjTest_Init(interp)
         varPtr[i] = NULL;
     }
 	
+    Tcl_CreateObjCommand( interp, "testbignumobj", TestbignumobjCmd,
+			  (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testconvertobj", TestconvertobjCmd,
@@ -109,6 +116,169 @@ TclObjTest_Init(interp)
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestbignumobjCmd --
+ *
+ *	This procedure implmenets the "testbignumobj" command.  It is used
+ *	to exercise the bignum Tcl object type implementation.
+ *
+ * Results:
+ *	Returns a standard Tcl object result.
+ *
+ * Side effects:
+ *	Creates and frees bignum objects; converts objects to have bignum
+ *	type.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestbignumobjCmd( clientData, interp, objc, objv )
+    ClientData clientData;	/* unused */
+    Tcl_Interp* interp;		/* Tcl interpreter */
+    int objc;			/* Argument count */
+    Tcl_Obj* CONST objv[];	/* Argument vector */
+{
+
+    const char * subcmds[] = {
+	"set",      "get",      "mult10",      "div10", 
+	NULL
+    };
+    enum options {
+	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10
+    };
+
+    int index;
+    int varIndex;
+    char* string;
+    mp_int bignumValue, newValue;
+
+    if ( objc < 3 ) {
+	Tcl_WrongNumArgs( interp, 1, objv, "option ?arg?..." );
+	return TCL_ERROR;
+    }
+    if ( Tcl_GetIndexFromObj( interp, objv[1], subcmds, "option", 0, &index )
+	 != TCL_OK ) {
+	return TCL_ERROR;
+    }
+    string = Tcl_GetString( objv[ 2 ] );
+    if ( GetVariableIndex( interp, string, &varIndex ) != TCL_OK ) {
+	return TCL_ERROR;
+    }
+
+    switch ( index )
+	{
+	case BIGNUM_SET:
+	    if ( objc != 4 ) {
+		Tcl_WrongNumArgs( interp, 2, objv, "var value" );
+	    }
+	    string = Tcl_GetString( objv[3] );
+	    if ( mp_init( &bignumValue ) != MP_OKAY ) {
+		Tcl_SetObjResult( interp, 
+				  Tcl_NewStringObj( "error in mp_init", -1 ) );
+		return TCL_ERROR;
+	    }
+	    if ( mp_read_radix( &bignumValue, string, 10 )
+		 != MP_OKAY ) {
+		mp_clear( &bignumValue );
+		Tcl_SetObjResult( interp,
+				  Tcl_NewStringObj( "error in mp_read_radix",
+						    -1 ) );
+		return TCL_ERROR;
+	    }
+
+	    /*
+             * If the object currently bound to the variable with index
+             * varIndex has ref count 1 (i.e. the object is unshared) we can
+             * modify that object directly.  Otherwise, if RC>1 (i.e. the
+             * object is shared), we must create a new object to modify/set and
+             * decrement the old formerly-shared object's ref count. This is
+             * "copy on write".
+	     */
+
+	    if ((varPtr[varIndex] != NULL)
+		&& !Tcl_IsShared(varPtr[varIndex])) {
+		Tcl_SetBignumObj(varPtr[varIndex], &bignumValue );
+	    } else {
+		SetVarToObj(varIndex, Tcl_NewBignumObj(&bignumValue));
+	    }
+	    break;
+	    
+	case BIGNUM_GET:
+	    if ( objc != 3 ) {
+		Tcl_WrongNumArgs( interp, 2, objv, "varIndex" );
+		return TCL_ERROR;
+	    }
+	    if ( CheckIfVarUnset( interp, varIndex ) ) {
+		return TCL_ERROR;
+	    }
+	    break;
+
+	case BIGNUM_MULT10:
+	    if ( objc != 3 ) {
+		Tcl_WrongNumArgs( interp, 2, objv, "varIndex" );
+		return TCL_ERROR;
+	    }
+	    if ( CheckIfVarUnset( interp, varIndex ) ) {
+		return TCL_ERROR;
+	    }
+	    if ( Tcl_GetBignumFromObj( interp, varPtr[varIndex],
+				       &bignumValue )  != TCL_OK ) {
+		return TCL_ERROR;
+	    }
+	    if ( mp_init( &newValue ) != MP_OKAY 
+		 || ( mp_mul_d( &bignumValue, 10, &newValue ) != MP_OKAY ) ) {
+		mp_clear( &bignumValue );
+		mp_clear( &newValue );
+		Tcl_SetObjResult( interp,
+				  Tcl_NewStringObj( "error in mp_mul_d",
+						    -1 ) );
+		return TCL_ERROR;
+	    }
+	    mp_clear( &bignumValue );
+	    if ( !Tcl_IsShared( varPtr[varIndex] ) ) {
+		Tcl_SetBignumObj( varPtr[varIndex], &newValue );
+	    } else {
+		SetVarToObj( varIndex, Tcl_NewBignumObj( &newValue ) );
+	    }
+	    break;
+
+	case BIGNUM_DIV10:
+	    if ( objc != 3 ) {
+		Tcl_WrongNumArgs( interp, 2, objv, "varIndex" );
+		return TCL_ERROR;
+	    }
+	    if ( CheckIfVarUnset( interp, varIndex ) ) {
+		return TCL_ERROR;
+	    }
+	    if ( Tcl_GetBignumFromObj( interp, varPtr[varIndex],
+				       &bignumValue )  != TCL_OK ) {
+		return TCL_ERROR;
+	    }
+	    if ( mp_init( &newValue ) != MP_OKAY 
+		 || ( mp_div_d( &bignumValue, 10, &newValue, NULL )
+		      != MP_OKAY ) ) {
+		mp_clear( &bignumValue );
+		mp_clear( &newValue );
+		Tcl_SetObjResult( interp,
+				  Tcl_NewStringObj( "error in mp_div_d",
+						    -1 ) );
+		return TCL_ERROR;
+	    }
+	    mp_clear( &bignumValue );
+	    if ( !Tcl_IsShared( varPtr[varIndex] ) ) {
+		Tcl_SetBignumObj( varPtr[varIndex], &newValue );
+	    } else {
+		SetVarToObj( varIndex, Tcl_NewBignumObj( &newValue ) );
+	    }
+	}
+
+    Tcl_SetObjResult( interp, varPtr[varIndex] );
     return TCL_OK;
 }
 

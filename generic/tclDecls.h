@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.14 2005/05/04 17:35:21 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.15 2005/05/11 16:58:33 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3461,6 +3461,29 @@ EXTERN void		Tcl_QueryTimeProc _ANSI_ARGS_((
 EXTERN Tcl_DriverThreadActionProc * Tcl_ChannelThreadActionProc _ANSI_ARGS_((
 				Tcl_ChannelType * chanTypePtr));
 #endif
+#ifndef Tcl_NewBignumObj_TCL_DECLARED
+#define Tcl_NewBignumObj_TCL_DECLARED
+/* 555 */
+EXTERN Tcl_Obj*		Tcl_NewBignumObj _ANSI_ARGS_((mp_int* value));
+#endif
+#ifndef Tcl_DbNewBignumObj_TCL_DECLARED
+#define Tcl_DbNewBignumObj_TCL_DECLARED
+/* 556 */
+EXTERN Tcl_Obj*		Tcl_DbNewBignumObj _ANSI_ARGS_((mp_int* value, 
+				CONST char* file, int line));
+#endif
+#ifndef Tcl_SetBignumObj_TCL_DECLARED
+#define Tcl_SetBignumObj_TCL_DECLARED
+/* 557 */
+EXTERN void		Tcl_SetBignumObj _ANSI_ARGS_((Tcl_Obj* obj, 
+				mp_int* value));
+#endif
+#ifndef Tcl_GetBignumFromObj_TCL_DECLARED
+#define Tcl_GetBignumFromObj_TCL_DECLARED
+/* 558 */
+EXTERN int		Tcl_GetBignumFromObj _ANSI_ARGS_((Tcl_Interp* interp, 
+				Tcl_Obj* obj, mp_int* value));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4057,6 +4080,10 @@ typedef struct TclStubs {
     void (*tcl_SetTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc* getProc, Tcl_ScaleTimeProc* scaleProc, ClientData clientData)); /* 552 */
     void (*tcl_QueryTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc** getProc, Tcl_ScaleTimeProc** scaleProc, ClientData* clientData)); /* 553 */
     Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 554 */
+    Tcl_Obj* (*tcl_NewBignumObj) _ANSI_ARGS_((mp_int* value)); /* 555 */
+    Tcl_Obj* (*tcl_DbNewBignumObj) _ANSI_ARGS_((mp_int* value, CONST char* file, int line)); /* 556 */
+    void (*tcl_SetBignumObj) _ANSI_ARGS_((Tcl_Obj* obj, mp_int* value)); /* 557 */
+    int (*tcl_GetBignumFromObj) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)); /* 558 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6316,6 +6343,22 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ChannelThreadActionProc
 #define Tcl_ChannelThreadActionProc \
 	(tclStubsPtr->tcl_ChannelThreadActionProc) /* 554 */
+#endif
+#ifndef Tcl_NewBignumObj
+#define Tcl_NewBignumObj \
+	(tclStubsPtr->tcl_NewBignumObj) /* 555 */
+#endif
+#ifndef Tcl_DbNewBignumObj
+#define Tcl_DbNewBignumObj \
+	(tclStubsPtr->tcl_DbNewBignumObj) /* 556 */
+#endif
+#ifndef Tcl_SetBignumObj
+#define Tcl_SetBignumObj \
+	(tclStubsPtr->tcl_SetBignumObj) /* 557 */
+#endif
+#ifndef Tcl_GetBignumFromObj
+#define Tcl_GetBignumFromObj \
+	(tclStubsPtr->tcl_GetBignumFromObj) /* 558 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

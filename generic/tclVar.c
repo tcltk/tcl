@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.14 2005/04/29 22:40:34 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.15 2005/05/11 16:58:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2771,7 +2771,23 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
 	    TclNewObj(nameLstPtr);
 	    Tcl_IncrRefCount(nameLstPtr);
-
+	    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+		hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, pattern);
+		if (hPtr == NULL) {
+		    goto searchDone;
+		}
+	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
+		if (TclIsVarUndefined(varPtr2)) {
+		    goto searchDone;
+		}
+		result = Tcl_ListObjAppendElement(interp, nameLstPtr,
+		        Tcl_NewStringObj(pattern, -1));
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(nameLstPtr);
+		    return result;
+		}
+		goto searchDone;
+	    }
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL;  hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -2792,6 +2808,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    return result;
 		}
 	    }
+searchDone:
 
 	    /*
 	     * Make sure the Var structure of the array is not removed by
@@ -2881,6 +2898,19 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 	    }       		
 	    TclNewObj(resultPtr);
+	    if ((((enum options) mode) == OPT_GLOB) && (pattern != NULL)
+		    && TclMatchIsTrivial(pattern)) {
+		hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, pattern);
+		if ((hPtr != NULL)
+			&& !TclIsVarUndefined((Var *) Tcl_GetHashValue(hPtr))
+			&& (result = Tcl_ListObjAppendElement(interp,
+			resultPtr, Tcl_NewStringObj(pattern, -1))) != TCL_OK) {
+		    Tcl_DecrRefCount(resultPtr);
+		    return result;
+		}
+		Tcl_SetObjResult(interp, resultPtr);
+		return TCL_OK;
+	    }
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -3059,6 +3089,15 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 	    } else {
 		pattern = TclGetString(objv[3]);
+		if (TclMatchIsTrivial(pattern)) {
+		    hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, pattern);
+		    result = TCL_OK;
+		    (hPtr != NULL)
+			&& !TclIsVarUndefined((Var *) Tcl_GetHashValue(hPtr))
+			&& (result 
+			= TclObjUnsetVar2(interp, varNamePtr, pattern, 0));
+		    return result;
+		}
 		for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr,
 			&search);
 		     hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {

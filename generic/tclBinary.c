@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.5 2004/10/28 18:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.6 2005/05/11 16:58:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1605,10 +1605,15 @@ FormatNumber(interp, type, src, cursorPtr)
     case 'Q':
 	/*
 	 * Double-precision floating point values.
+	 * Tcl_GetDoubleFromObj returns TCL_ERROR for NaN, but
+	 * we can check by comparing the object's type pointer.
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    return TCL_ERROR;
+	    if ( src->typePtr != &tclDoubleType ) {
+		return TCL_ERROR;
+	    }
+	    dvalue = src->internalRep.doubleValue;
 	}
 	CopyNumber(&dvalue, *cursorPtr, sizeof(double), type);
 	*cursorPtr += sizeof(double);
@@ -1619,10 +1624,15 @@ FormatNumber(interp, type, src, cursorPtr)
     case 'R':
 	/*
 	 * Single-precision floating point values.
+	 * Tcl_GetDoubleFromObj returns TCL_ERROR for NaN, but
+	 * we can check by comparing the object's type pointer.
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    return TCL_ERROR;
+	    if ( src->typePtr != &tclDoubleType ) {
+		return TCL_ERROR;
+	    }
+	    dvalue = src->internalRep.doubleValue;
 	}
 
 	/*

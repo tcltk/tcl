@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.17 2005/04/29 22:40:17 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.18 2005/05/11 16:58:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1027,7 +1027,7 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		    (Command *) Tcl_GetCommandFromObj(interp, cmdName);
 	    int savedNumCmds = envPtr->numCommands;
 	    unsigned int savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-	    int code = TCL_OUT_LINE_COMPILE;
+	    int code = TCL_ERROR;
 
 	    if ((cmdPtr != NULL) && (cmdPtr->compileProc != NULL)
 		    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)

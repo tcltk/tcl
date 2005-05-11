@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: PrintDbl.3,v 1.2.42.4 2005/04/07 17:31:59 dgp Exp $
+'\" RCS: @(#) $Id: PrintDbl.3,v 1.2.42.5 2005/05/11 16:58:32 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_PrintDouble 3 8.0 Tcl "Tcl Library Procedures"
@@ -40,6 +40,15 @@ special twist: the string is guaranteed to contain either
 a ``.'' or an ``e'' so that it doesn't look like an integer.  Where
 \fB%g\fR would generate an integer with no decimal point, \fBTcl_PrintDouble\fR
 adds ``.0''.
+.VS 8.5
+.PP
+If the \fBtcl_precision\fR value is non-zero, the result will have
+precisely that many digits of significance.  If the value is zero
+(the default), the result will have the fewest digits needed to
+represent the number in such a way that \fBTcl_NewDoubleObj\fR
+will generate the same number when presented with the given string.
+IEEE semantics of rounding to even apply to the conversion.
+.VE
 
 .SH KEYWORDS
 conversion, double-precision, floating-point, string

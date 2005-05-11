@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.10 2005/02/24 19:53:50 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.11 2005/05/11 16:58:53 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -102,6 +102,7 @@ MAN2TCLFLAGS =		@MAN2TCLFLAGS@
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
 GENERIC_DIR		= @srcdir@/../generic
+TOMMATH_DIR		= @srcdir@/../libtommath
 WIN_DIR			= @srcdir@
 COMPAT_DIR		= @srcdir@/../compat
 
@@ -109,6 +110,7 @@ COMPAT_DIR		= @srcdir@/../compat
 CYGPATH			= @CYGPATH@
 
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
+TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's/\\*$$//' )
 
@@ -156,7 +158,7 @@ MAN2TCL			= man2tcl$(EXEEXT)
 # makefile to look into these paths when resolving .c to .obj
 # dependencies.
 
-VPATH = $(GENERIC_DIR):$(WIN_DIR):$(COMPAT_DIR)
+VPATH = $(GENERIC_DIR):$(TOMMATH_DIR):$(WIN_DIR):$(COMPAT_DIR)
 
 AR		= @AR@
 RANLIB		= @RANLIB@
@@ -186,14 +188,16 @@ RM		= rm -f
 COPY		= cp
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
+-I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -I"${TOMMATH_DIR_NATIVE}" \
+-I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
 ${COMPILE_DEBUG_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
+-I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -I"${TOMMATH_DIR_NATIVE}" \
+-I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
 ${COMPILE_DEBUG_FLAGS}
 
 TCLTEST_OBJS = \
@@ -263,6 +267,7 @@ GENERIC_OBJS = \
 	tclResult.$(OBJEXT) \
 	tclScan.$(OBJEXT) \
 	tclStringObj.$(OBJEXT) \
+	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclStubLib.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
@@ -270,10 +275,64 @@ GENERIC_OBJS = \
 	tclThreadJoin.$(OBJEXT) \
 	tclThreadStorage.$(OBJEXT) \
 	tclTimer.$(OBJEXT) \
+	tclTomMathInterface.$(OBJEXT) \
 	tclTrace.$(OBJEXT) \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
 	tclVar.$(OBJEXT)
+
+TOMMATH_OBJS = \
+	bncore.${OBJEXT} \
+	bn_reverse.${OBJEXT} \
+	bn_fast_s_mp_mul_digs.${OBJEXT} \
+	bn_fast_s_mp_sqr.${OBJEXT} \
+	bn_mp_add.${OBJEXT} \
+	bn_mp_add_d.${OBJEXT} \
+	bn_mp_clamp.${OBJEXT} \
+	bn_mp_clear.${OBJEXT} \
+	bn_mp_clear_multi.${OBJEXT} \
+	bn_mp_cmp.${OBJEXT} \
+	bn_mp_cmp_mag.${OBJEXT} \
+	bn_mp_copy.${OBJEXT} \
+	bn_mp_count_bits.${OBJEXT} \
+	bn_mp_div.${OBJEXT} \
+	bn_mp_div_d.${OBJEXT} \
+	bn_mp_div_2.${OBJEXT} \
+	bn_mp_div_2d.${OBJEXT} \
+	bn_mp_div_3.${OBJEXT} \
+	bn_mp_exch.${OBJEXT} \
+	bn_mp_grow.${OBJEXT} \
+	bn_mp_init.${OBJEXT} \
+	bn_mp_init_copy.${OBJEXT} \
+	bn_mp_init_multi.${OBJEXT} \
+	bn_mp_init_set.${OBJEXT} \
+	bn_mp_init_size.${OBJEXT} \
+	bn_mp_karatsuba_mul.${OBJEXT} \
+	bn_mp_karatsuba_sqr.$(OBJEXT) \
+	bn_mp_lshd.${OBJEXT} \
+	bn_mp_mod.${OBJEXT} \
+	bn_mp_mod_2d.${OBJEXT} \
+	bn_mp_mul.${OBJEXT} \
+	bn_mp_mul_2.${OBJEXT} \
+	bn_mp_mul_2d.${OBJEXT} \
+	bn_mp_mul_d.${OBJEXT} \
+	bn_mp_radix_size.${OBJEXT} \
+	bn_mp_radix_smap.${OBJEXT} \
+	bn_mp_read_radix.${OBJEXT} \
+	bn_mp_rshd.${OBJEXT} \
+	bn_mp_set.${OBJEXT} \
+	bn_mp_sqr.${OBJEXT} \
+	bn_mp_sub.${OBJEXT} \
+	bn_mp_sub_d.${OBJEXT} \
+	bn_mp_toom_mul.${OBJEXT} \
+	bn_mp_toom_sqr.${OBJEXT} \
+	bn_mp_toradix_n.${OBJEXT} \
+	bn_mp_zero.${OBJEXT} \
+	bn_s_mp_add.${OBJEXT} \
+	bn_s_mp_mul_digs.${OBJEXT} \
+	bn_s_mp_sqr.${OBJEXT} \
+	bn_s_mp_sub.${OBJEXT}
+
 
 WIN_OBJS = \
 	tclWin32Dll.$(OBJEXT) \
@@ -304,7 +363,7 @@ STUB_OBJS = tclStubLib.$(OBJEXT)
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
-TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} ${COMPAT_OBJS}
+TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${COMPAT_OBJS}
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -470,6 +529,15 @@ gendate:
 	--name-prefix=TclDate \
 	--no-lines \
 	$(GENERIC_DIR)/tclGetDate.y
+
+# The following target generates the file generic/tommath.h.
+# It needs to be run (and the results checked) after updating
+# to a new release of libtommath.
+
+gentommath_h:
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\fix_tommath_h.tcl" \
+		"$(TOMMATH_DIR_NATIVE)\tommath.h" \
+		> "$(GENERIC_DIR_NATIVE)\tommath.h"
 
 install: all install-binaries install-libraries install-doc
 

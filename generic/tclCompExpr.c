@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.6 2004/10/28 18:46:22 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.7 2005/05/11 16:58:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -835,95 +835,54 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
 				 * just after the last token in the
 				 * subexpression is stored here. */
 {
-    Tcl_Interp *interp = infoPtr->interp;
-    Interp *iPtr = (Interp *) interp;
-    MathFunc *mathFuncPtr;
-    Tcl_HashEntry *hPtr;
+    Tcl_DString cmdName;
+    int objIndex;
     Tcl_Token *tokenPtr, *afterSubexprPtr;
-    int code, i;
-
+    int argCount;
+    int code = TCL_OK;
+		       
     /*
-     * Look up the MathFunc record for the function.
+     * Prepend "tcl::mathfunc::" to the function name, to produce the 
+     * name of a command that evaluates the function.  Push that
+     * command name on the stack, in a literal registered to the
+     * namespace so that resolution can be cached.
      */
 
-    code = TCL_OK;
-    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown math function \"", funcName,
-		"\"", (char *) NULL);
-	code = TCL_ERROR;
-	goto done;
-    }
-    mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
-
-    /*
-     * If not a builtin function, push an object with the function's name.
-     */
-
-    if (mathFuncPtr->builtinFuncIndex < 0) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, funcName, -1), envPtr);
-    }
+    Tcl_DStringInit( &cmdName );
+    Tcl_DStringAppend( &cmdName, "tcl::mathfunc::", -1 );
+    Tcl_DStringAppend( &cmdName, funcName, -1 );
+    objIndex = TclRegisterNewNSLiteral( envPtr,
+					 Tcl_DStringValue( &cmdName ),
+					 Tcl_DStringLength( &cmdName ) );
+    TclEmitPush( objIndex, envPtr );
+    Tcl_DStringFree( &cmdName );
 
     /*
      * Compile any arguments for the function.
      */
 
+    argCount = 1;
     tokenPtr = exprTokenPtr+2;
     afterSubexprPtr = exprTokenPtr + (exprTokenPtr->numComponents + 1);
-    if (mathFuncPtr->numArgs > 0) {
-	for (i = 0;  i < mathFuncPtr->numArgs;  i++) {
-	    if (tokenPtr == afterSubexprPtr) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		        "too few arguments for math function", -1));
-		code = TCL_ERROR;
-		goto done;
-	    }
-	    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
-	    tokenPtr += (tokenPtr->numComponents + 1);
+    while (tokenPtr != afterSubexprPtr) {
+	++argCount;
+	code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
+	if (code != TCL_OK) {
+	    return code;
 	}
-	if (tokenPtr != afterSubexprPtr) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "too many arguments for math function", -1));
-	    code = TCL_ERROR;
-	    goto done;
-	} 
-    } else if (tokenPtr != afterSubexprPtr) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"too many arguments for math function", -1));
-	code = TCL_ERROR;
-	goto done;
+	tokenPtr += (tokenPtr->numComponents + 1);
     }
     
-    /*
-     * Compile the call on the math function. Note that the "objc" argument
-     * count for non-builtin functions is incremented by 1 to include the
-     * function name itself.
-     */
+    /* Invoke the function */
 
-    if (mathFuncPtr->builtinFuncIndex >= 0) { /* a builtin function */
-	/*
-	 * Adjust the current stack depth by the number of arguments
-	 * of the builtin function. This cannot be handled by the 
-	 * TclEmitInstInt1 macro as the number of arguments is not
-	 * passed as an operand.
-	 */
-
-	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
-	    envPtr->maxStackDepth = envPtr->currStackDepth;
-	}
-	TclEmitInstInt1(INST_CALL_BUILTIN_FUNC1,
-	        mathFuncPtr->builtinFuncIndex, envPtr);
-	envPtr->currStackDepth -= mathFuncPtr->numArgs;
+    if ( argCount < 255 ) {
+	TclEmitInstInt1( INST_INVOKE_STK1, argCount, envPtr );
     } else {
-	TclEmitInstInt1(INST_CALL_FUNC1, (mathFuncPtr->numArgs+1), envPtr);
+	TclEmitInstInt4( INST_INVOKE_STK4, argCount, envPtr );
     }
-    *endPtrPtr = afterSubexprPtr;
 
-    done:
-    return code;
+    *endPtrPtr = afterSubexprPtr;
+    return TCL_OK;
 }
 
 /*

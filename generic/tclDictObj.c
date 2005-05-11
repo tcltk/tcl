@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.9 2004/12/09 23:00:33 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.10 2005/05/11 16:58:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1671,6 +1671,14 @@ DictKeysCmd(interp, objc, objv)
 	pattern = TclGetString(objv[3]);
     }
     listPtr = Tcl_NewListObj(0, NULL);
+    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+	Tcl_Obj *valuePtr = NULL;
+	Tcl_DictObjGet(interp, objv[2], objv[3], &valuePtr);
+	if (valuePtr != NULL) {
+	    Tcl_ListObjAppendElement(interp, listPtr, objv[3]);
+	}
+	goto searchDone;
+    }
     for (; !done ; Tcl_DictObjNext(&search, &keyPtr, NULL, &done)) {
 	if (pattern==NULL || Tcl_StringMatch(TclGetString(keyPtr), pattern)) {
 	    /*
@@ -1679,6 +1687,7 @@ DictKeysCmd(interp, objc, objv)
 	    Tcl_ListObjAppendElement(interp, listPtr, keyPtr);
 	}
     }
+searchDone:
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
@@ -2531,11 +2540,18 @@ DictFilterCmd(interp, objc, objv)
 	}
 	pattern = TclGetString(objv[4]);
 	resultObj = Tcl_NewDictObj();
-	while (!done) {
-	    if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
-		Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+	if (TclMatchIsTrivial(pattern)) {
+	    Tcl_DictObjGet(interp, objv[2], objv[4], &valueObj);
+	    if (valueObj != NULL) {
+		Tcl_DictObjPut(interp, resultObj, objv[4], valueObj);
 	    }
-	    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+	} else {
+	    while (!done) {
+		if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
+		    Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+		}
+		Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+	    }
 	}
 	Tcl_SetObjResult(interp, resultObj);
 	return TCL_OK;

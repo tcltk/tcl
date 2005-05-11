@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.11 2005/05/04 17:35:19 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.12 2005/05/11 16:58:32 dgp Exp $
 
 library tcl
 
@@ -1987,6 +1987,21 @@ declare 553 generic {
 # TIP#218 (Driver Thread Actions) davygrvy/akupries ChannelType ver 4
 declare 554 generic {
     Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(Tcl_ChannelType *chanTypePtr)
+}
+
+# TIP #237:
+
+declare 555 generic {
+    Tcl_Obj* Tcl_NewBignumObj( mp_int* value )
+}
+declare 556 generic {
+    Tcl_Obj* Tcl_DbNewBignumObj( mp_int* value, CONST char* file, int line )
+}
+declare 557 generic {
+    void Tcl_SetBignumObj( Tcl_Obj* obj, mp_int* value )
+}
+declare 558 generic {
+    int Tcl_GetBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
 
 ##############################################################################

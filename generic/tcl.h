@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.20 2005/04/07 17:32:02 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.21 2005/05/11 16:58:32 dgp Exp $
  */
 
 #ifndef _TCL
@@ -768,6 +768,12 @@ typedef struct Tcl_Obj {
 	    VOID *ptr1;
 	    VOID *ptr2;
 	} twoPtrValue;
+	struct {		/*   - internal rep as a wide int,
+				 *     tightly packed fields */
+	    VOID *digits;	/* Pointer to digits */
+	    unsigned long misc;	/* Alloc, used, and signum packed
+				 * into a single word */
+	} bignumValue;
     } internalRep;
 } Tcl_Obj;
 
@@ -809,6 +815,8 @@ int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
  */
 
 #ifdef TCL_MEM_DEBUG
+#  define Tcl_NewBignumObj(val) \
+     Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  define Tcl_NewBooleanObj(val) \
      Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
 #  define Tcl_NewByteArrayObj(bytes, len) \
@@ -2291,6 +2299,15 @@ typedef void (Tcl_LimitHandlerProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp));
 typedef void (Tcl_LimitHandlerDeleteProc) _ANSI_ARGS_((ClientData clientData));
 
+
+#ifndef MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#define MP_INT_DECLARED
+#endif
+#ifndef MP_DIGIT_DECLARED
+typedef unsigned long mp_digit;
+#define MP_DIGIT_DECLARED
+#endif
 
 #ifndef TCL_NO_DEPRECATED
 

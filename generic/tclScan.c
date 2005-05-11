@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.5 2004/10/28 18:47:01 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.6 2005/05/11 16:58:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1144,7 +1144,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		if (!(flags & SCAN_SUPPRESS)) {
 		    double dvalue;
 		    *end = '\0';
-		    dvalue = strtod(buf, NULL);
+		    dvalue = TclStrToD(buf, NULL);
 		    objPtr = Tcl_NewDoubleObj(dvalue);
 		    Tcl_IncrRefCount(objPtr);
 		    objs[objIndex++] = objPtr;

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.11 2005/04/07 17:32:05 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.12 2005/05/11 16:58:45 dgp Exp $
 
 library tcl
 
@@ -807,9 +807,9 @@ declare 198 generic {
 	    CallFrame **framePtrPtr)
 }
 
-declare 199 generic {
-    int TclMatchIsTrivial(CONST char *pattern)
-}
+#declare 199 generic {
+#    int TclMatchIsTrivial(CONST char *pattern)
+#}
 
 # 200-208 exported for use by the test suite [Bug 1054748]
 declare 200 generic {
@@ -874,6 +874,23 @@ declare 218 generic {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
 
+# Entries in tommath needed only by tcltest
+
+declare 219 generic {
+    int TclBN_mp_div_d(mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
+}
+declare 220 generic {
+    int TclBN_mp_mul_d(mp_int *a, mp_digit b, mp_int *c)
+}
+declare 221 generic {
+    void TclBN_mp_clear(mp_int *a)
+}
+declare 222 generic {
+    int TclBN_mp_init(mp_int *a)
+}
+declare 223 generic {
+    int TclBN_mp_read_radix(mp_int *a, const char *str, int radix)
+}
 
 ##############################################################################
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.13 2005/04/07 17:32:05 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.14 2005/05/11 16:58:45 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1010,11 +1010,7 @@ EXTERN void		TclFinalizeThreadStorageDataKey _ANSI_ARGS_((
 EXTERN int		TclObjGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, CallFrame ** framePtrPtr));
 #endif
-#ifndef TclMatchIsTrivial_TCL_DECLARED
-#define TclMatchIsTrivial_TCL_DECLARED
-/* 199 */
-EXTERN int		TclMatchIsTrivial _ANSI_ARGS_((CONST char * pattern));
-#endif
+/* Slot 199 is reserved */
 #ifndef TclpObjRemoveDirectory_TCL_DECLARED
 #define TclpObjRemoveDirectory_TCL_DECLARED
 /* 200 */
@@ -1126,6 +1122,34 @@ EXTERN int		TclPushStackFrame _ANSI_ARGS_((Tcl_Interp * interp,
 #define TclPopStackFrame_TCL_DECLARED
 /* 218 */
 EXTERN void		TclPopStackFrame _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef TclBN_mp_div_d_TCL_DECLARED
+#define TclBN_mp_div_d_TCL_DECLARED
+/* 219 */
+EXTERN int		TclBN_mp_div_d _ANSI_ARGS_((mp_int * a, mp_digit b, 
+				mp_int * c, mp_digit * d));
+#endif
+#ifndef TclBN_mp_mul_d_TCL_DECLARED
+#define TclBN_mp_mul_d_TCL_DECLARED
+/* 220 */
+EXTERN int		TclBN_mp_mul_d _ANSI_ARGS_((mp_int * a, mp_digit b, 
+				mp_int * c));
+#endif
+#ifndef TclBN_mp_clear_TCL_DECLARED
+#define TclBN_mp_clear_TCL_DECLARED
+/* 221 */
+EXTERN void		TclBN_mp_clear _ANSI_ARGS_((mp_int * a));
+#endif
+#ifndef TclBN_mp_init_TCL_DECLARED
+#define TclBN_mp_init_TCL_DECLARED
+/* 222 */
+EXTERN int		TclBN_mp_init _ANSI_ARGS_((mp_int * a));
+#endif
+#ifndef TclBN_mp_read_radix_TCL_DECLARED
+#define TclBN_mp_read_radix_TCL_DECLARED
+/* 223 */
+EXTERN int		TclBN_mp_read_radix _ANSI_ARGS_((mp_int * a, 
+				const char * str, int radix));
 #endif
 
 typedef struct TclIntStubs {
@@ -1346,7 +1370,7 @@ typedef struct TclIntStubs {
     void (*tclFinalizeThreadStorageDataKey) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 196 */
     void *reserved197;
     int (*tclObjGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CallFrame ** framePtrPtr)); /* 198 */
-    int (*tclMatchIsTrivial) _ANSI_ARGS_((CONST char * pattern)); /* 199 */
+    void *reserved199;
     int (*tclpObjRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 200 */
     int (*tclpObjCopyDirectory) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr, Tcl_Obj ** errorPtr)); /* 201 */
     int (*tclpObjCreateDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 202 */
@@ -1366,6 +1390,11 @@ typedef struct TclIntStubs {
     void (*tclStackFree) _ANSI_ARGS_((Tcl_Interp * interp)); /* 216 */
     int (*tclPushStackFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_CallFrame ** framePtrPtr, Tcl_Namespace * namespacePtr, int isProcCallFrame)); /* 217 */
     void (*tclPopStackFrame) _ANSI_ARGS_((Tcl_Interp * interp)); /* 218 */
+    int (*tclBN_mp_div_d) _ANSI_ARGS_((mp_int * a, mp_digit b, mp_int * c, mp_digit * d)); /* 219 */
+    int (*tclBN_mp_mul_d) _ANSI_ARGS_((mp_int * a, mp_digit b, mp_int * c)); /* 220 */
+    void (*tclBN_mp_clear) _ANSI_ARGS_((mp_int * a)); /* 221 */
+    int (*tclBN_mp_init) _ANSI_ARGS_((mp_int * a)); /* 222 */
+    int (*tclBN_mp_read_radix) _ANSI_ARGS_((mp_int * a, const char * str, int radix)); /* 223 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2040,10 +2069,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclObjGetFrame \
 	(tclIntStubsPtr->tclObjGetFrame) /* 198 */
 #endif
-#ifndef TclMatchIsTrivial
-#define TclMatchIsTrivial \
-	(tclIntStubsPtr->tclMatchIsTrivial) /* 199 */
-#endif
+/* Slot 199 is reserved */
 #ifndef TclpObjRemoveDirectory
 #define TclpObjRemoveDirectory \
 	(tclIntStubsPtr->tclpObjRemoveDirectory) /* 200 */
@@ -2119,6 +2145,26 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclPopStackFrame
 #define TclPopStackFrame \
 	(tclIntStubsPtr->tclPopStackFrame) /* 218 */
+#endif
+#ifndef TclBN_mp_div_d
+#define TclBN_mp_div_d \
+	(tclIntStubsPtr->tclBN_mp_div_d) /* 219 */
+#endif
+#ifndef TclBN_mp_mul_d
+#define TclBN_mp_mul_d \
+	(tclIntStubsPtr->tclBN_mp_mul_d) /* 220 */
+#endif
+#ifndef TclBN_mp_clear
+#define TclBN_mp_clear \
+	(tclIntStubsPtr->tclBN_mp_clear) /* 221 */
+#endif
+#ifndef TclBN_mp_init
+#define TclBN_mp_init \
+	(tclIntStubsPtr->tclBN_mp_init) /* 222 */
+#endif
+#ifndef TclBN_mp_read_radix
+#define TclBN_mp_read_radix \
+	(tclIntStubsPtr->tclBN_mp_read_radix) /* 223 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

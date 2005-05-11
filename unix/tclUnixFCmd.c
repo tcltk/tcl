@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.10 2005/01/12 21:37:22 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.11 2005/05/11 16:58:53 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -135,6 +135,7 @@ enum {
     MACOSX_HIDDEN_ATTRIBUTE,
     MACOSX_RSRCLENGTH_ATTRIBUTE,
 #endif
+    UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
 };
 
 CONST char *tclpFileAttrStrings[] = {
