@@ -4,6 +4,13 @@
 	checkpoint [-rkennykb-numerics-branch-20050511], the HEAD and
 	kennykb-numerics-branch contain identical code.
 	
+2005-05-11  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (TclStrToD, RefineResult, ParseNaN):
+	Changed the code to cast 'char' to UCHAR explicitly when
+	using ctype macros, to silence complaints from the Solaris
+	compiler.
+	
 2005-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c: add lint attr to enum to satisfy strictly
