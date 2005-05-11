@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.18.2.4 2005/03/15 19:08:08 kennykb Exp $
+# RCS: @(#) $Id: binary.test,v 1.18.2.5 2005/05/11 15:01:22 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1932,25 +1932,6 @@ test binary-57.9 {Tcl_BinaryObjCmd: scan} bigEndian  {
     list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
 } {2 {1386435412 16909060} 5}
 
-# scan m
-test binary-60.1 {Tcl_BinaryObjCmd: scan wide int} bigEndian {
-    binary scan HelloTcl m x
-    set x
-} 5216694956358656876
-test binary-60.2 {Tcl_BinaryObjCmd: scan wide int} littleEndian {
-    binary scan lcTolleH m x
-    set x
-} 5216694956358656876
-test binary-60.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set}  littleEndian {
-    binary scan [binary format w [expr {wide(3) << 31}]] m x
-    set x
-} 6442450944
-test binary-60.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
-    binary scan [binary format W [expr {wide(3) << 31}]] m x
-    set x
-} 6442450944
-
-
 # scan Q/q
 test binary-58.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc q} msg] $msg
@@ -2085,11 +2066,30 @@ test binary-59.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 r2c* arg1 arg2] $arg1 $arg2
 } {2 {1.600000023841858 3.4000000953674316} 5}
 
-test binary-60.1 {[binary format] with NaN} {
+test binary-60.1 {[binary format] with NaN} -body {
     binary scan [binary format dqQfrR NaN NaN NaN NaN NaN NaN] dqQfrR \
 	v1 v2 v3 v4 v5 v6
     list $v1 $v2 $v3 $v4 $v5 $v6
-} {NaN NaN NaN NaN NaN NaN}
+} -match regexp -result {NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))?}
+
+# scan m
+test binary-61.1 {Tcl_BinaryObjCmd: scan wide int} bigEndian {
+    binary scan HelloTcl m x
+    set x
+} 5216694956358656876
+test binary-61.2 {Tcl_BinaryObjCmd: scan wide int} littleEndian {
+    binary scan lcTolleH m x
+    set x
+} 5216694956358656876
+test binary-61.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set}  littleEndian {
+    binary scan [binary format w [expr {wide(3) << 31}]] m x
+    set x
+} 6442450944
+test binary-61.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
+    binary scan [binary format W [expr {wide(3) << 31}]] m x
+    set x
+} 6442450944
+
 
 # cleanup
 ::tcltest::cleanupTests

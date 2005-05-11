@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.40.2.2 2005/05/09 22:13:22 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.40.2.3 2005/05/11 15:01:23 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -554,7 +554,7 @@ TclpCheckStackSpace()
         "leal   %[stat],        %%edx"          "\n\t"
         "pushl  %%edx"                          "\n\t"
         "pushl  %%ebp"                          "\n\t"
-        "leal   %%cs:1f,        %%edx"          "\n\t"
+        "leal   1f,	        %%edx"          "\n\t"
         "pushl  %%edx"                          "\n\t"
         "pushl  %%fs:0"                         "\n\t"
         "movl   %%esp,          %%fs:0"         "\n\t"
@@ -1066,7 +1066,7 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
 
 int
 TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
-             register unsigned int * regsPtr ) /* Registers after the CPUID */
+             unsigned int * regsPtr ) /* Registers after the CPUID */
 {
 
     int status = TCL_ERROR;
@@ -1093,7 +1093,7 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
         "movl   %[rptr],        %%edi"          "\n\t"
         "pushl  %%edx"                          "\n\t"
         "pushl  %%ebp"                          "\n\t"
-        "leal   %%cs:1f,        %%edx"          "\n\t"
+        "leal   1f,	        %%edx"          "\n\t"
         "pushl  %%edx"                          "\n\t"
         "pushl  %%fs:0"                         "\n\t"
         "movl   %%esp,          %%fs:0"         "\n\t"
@@ -1135,7 +1135,7 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 
         : [stat]"=m"(status)
         : [index]"m"(index),
-          [rptr]"r"(regsPtr),
+          [rptr]"m"(regsPtr),
           [ok]"i"(TCL_OK),
           [error]"i"(TCL_ERROR)
         : "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory" );

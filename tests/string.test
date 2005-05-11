@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.43.2.3 2005/05/05 17:56:35 kennykb Exp $
+# RCS: @(#) $Id: string.test,v 1.43.2.4 2005/05/11 15:01:22 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -810,6 +810,36 @@ test string-10.21 {string map, nasty sharing crash from [Bug 1018562]} {
     set a {a b}
     string map $a $a
 } {b b}
+test string-10.21 {string map, ABR checks} {
+    string map {longstring foob} long
+} long
+test string-10.22 {string map, ABR checks} {
+    string map {long foob} long
+} foob
+test string-10.23 {string map, ABR checks} {
+    string map {lon foob} long
+} foobg
+test string-10.24 {string map, ABR checks} {
+    string map {lon foob} longlo
+} foobglo
+test string-10.25 {string map, ABR checks} {
+    string map {lon foob} longlon
+} foobgfoob
+test string-10.26 {string map, ABR checks} {
+    string map {longstring foob longstring bar} long
+} long
+test string-10.27 {string map, ABR checks} {
+    string map {long foob longstring bar} long
+} foob
+test string-10.28 {string map, ABR checks} {
+    string map {lon foob longstring bar} long
+} foobg
+test string-10.29 {string map, ABR checks} {
+    string map {lon foob longstring bar} longlo
+} foobglo
+test string-10.30 {string map, ABR checks} {
+    string map {lon foob longstring bar} longlon
+} foobgfoob
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg

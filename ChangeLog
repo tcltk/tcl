@@ -1,11 +1,42 @@
+2005-05-11  Kevin Kenny <kennykb@acm.org>
+
+	[kennykb-numerics-branch] Resynchronized with the HEAD; at this
+	checkpoint [-rkennykb-numerics-branch-20050511], the HEAD and
+	kennykb-numerics-branch contain identical code.
+	
+2005-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c: add lint attr to enum to satisfy strictly
+	compliant compilers that don't like trailing ,s.
+
+	* tests/string.test: string-10.[21-30]
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): add extra checks to
+	prevent possible UMR in unichar cmp function for string map.
+
+2005-05-10  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBinary.c (FormatNumber): Fixed a bug where NaN's
+	resulted in reads of uninitialized memory when using 'd',
+	'q', or 'Q' format.
+	* generic/tclStrToD.c (ParseNaN, TclFormatNaN): Added code to
+	handle the peculiarities of HP's PA_RISC, which uses a different
+	'quiet' bit in NaN from everyone else.
+	* libtommath/tommath_superclass.h: Corrected C++-style comment.
+	
+2005-05-10  Kevin Kenny  <kennykb@acm.org>
+
+	Merged all changes on kennykb-numerics-branch back into the
+	HEAD.  TIP's 132 and 232 are now Final.
+	
 2005-05-10  Kevin Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merged changes from HEAD.
 	
 2005-05-10  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclExecute.c (ExponLong, ExponWide): fixed special case
-	'i**0' for i>0 [Bug 1198892]
+	* generic/tclExecute.c (ExponLong, ExponWide): 
+	* tests/expr.test (expr-23.34/35): fixed special case 'i**0' for
+	i>0 [Bug 1198892] 
 
 2005-05-09  Kevin B. Kenny  <kennykb@acm.org>
 
