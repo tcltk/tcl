@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.118 2005/05/10 18:34:08 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.119 2005/05/11 00:51:28 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1907,7 +1907,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
 		p = ustring1;
-		if (length2 == 0) {
+		if ((length2 > length1) || (length2 == 0)) {
+		    /* match string is either longer than input or empty */
 		    ustring1 = end;
 		} else {
 		    mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
@@ -1965,6 +1966,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			if ((length2 > 0) && ((*ustring1 == *ustring2) ||
 				(nocase && (Tcl_UniCharToLower(*ustring1) ==
 					u2lc[index/2]))) &&
+				/* restrict max compare length */
+				((end - ustring1) >= length2) &&
 				((length2 == 1) || strCmpFn(ustring2, ustring1,
 					(unsigned long) length2) == 0)) {
 			    if (p != ustring1) {
