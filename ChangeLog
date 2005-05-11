@@ -1,3 +1,9 @@
+2005-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/string.test: string-10.[21-30]
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): add extra checks to
+	prevent possible UMR in unichar cmp function for string map.
+
 2005-05-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4, unix/configure: correct Solaris 10 (5.10) check and
@@ -20,10 +26,10 @@
 	* compat/string.h: fixed memchr() protoype for __APPLE__ so that we
 	build on Mac OS X 10.1 again.
 
-	* generic/tclNotify.c (TclFinalizeNotifier): fixed notifier not being
-	finalized in unthreaded core (was testing for notifier initialization in
-	current thread by checking thread id != 0 but thread id is always 0 in
-	untreaded core).
+	* generic/tclNotify.c (TclFinalizeNotifier): fixed notifier not
+	being finalized in unthreaded core (was testing for notifier
+	initialization in current thread by checking thread id != 0 but
+	thread id is always 0 in untreaded core).
 
 	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): sync with HEAD: only declare
 	and use timeout var in unthreaded core.
@@ -36,12 +42,12 @@
 	unavailable, otherwise compat/strstr.o will be used twice (resulting in
 	duplicate symbol link errors on Mac OS X 10.1)
 	
-	* unix/tcl.m4 (Darwin): added configure checks for recently added linker
-	flags -single_module and -search_paths_first to allow building with
-	older tools (and on Mac OS X 10.1), use -single_module in SHLIB_LD and
-	not just T{CL,K}_SHLIB_LD_EXTRAS, added unexporting from Tk of symbols
-	from libtclstub to avoid duplicate symbol warnings, added PLAT_SRCS
-	definition for Mac OS X.
+	* unix/tcl.m4 (Darwin): added configure checks for recently added
+	linker flags -single_module and -search_paths_first to allow
+	building with older tools (and on Mac OS X 10.1), use
+	-single_module in SHLIB_LD and not just T{CL,K}_SHLIB_LD_EXTRAS,
+	added unexporting from Tk of symbols from libtclstub to avoid
+	duplicate symbol warnings, added PLAT_SRCS definition for Mac OS X.
 	(SC_MISSING_POSIX_HEADERS): added caching of dirent.h check.
 	(SC_TCL_64BIT_FLAGS): fixed 'checking for off64_t' message output.
 
@@ -59,9 +65,9 @@
 
 2005-04-20  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclGet.c (Tcl_GetInt):        Corrected error that did not
-        * generic/tclObj.c (Tcl_GetIntFromObj): permit 0x80000000 to be
-        recognized as an integer on TCL_WIDE_INT_IS_LONG systems [Bug 1090869].
+	* generic/tclGet.c (Tcl_GetInt):	Corrected error that did not
+	* generic/tclObj.c (Tcl_GetIntFromObj): permit 0x80000000 to be
+	recognized as an integer on TCL_WIDE_INT_IS_LONG systems [Bug 1090869].
 
 2005-04-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
