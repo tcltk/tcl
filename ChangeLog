@@ -1,5 +1,8 @@
 2005-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/tclUnixFCmd.c: add lint attr to enum to satisfy strictly
+	compliant compilers that don't like trailing ,s.
+
 	* tests/string.test: string-10.[21-30]
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): add extra checks to
 	prevent possible UMR in unichar cmp function for string map.
