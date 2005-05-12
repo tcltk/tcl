@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.9.2.1 2004/10/27 14:23:57 dkf Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.9.2.2 2005/05/12 16:23:11 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.0 Tcl "Tcl Built-In Commands"
@@ -610,7 +610,7 @@ grill
 .PP
 Look up where the command imported in the previous example came from:
 .CS
-puts "grill came from [\fBnamespace which\fR grill]"
+puts "grill came from [\fBnamespace origin\fR grill]"
 .CE
 
 .SH "SEE ALSO"
