@@ -1,3 +1,10 @@
+2005-05-13  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWin32Dll.c: Further rework of the SEH logic.  All
+	                     EXCEPTION_REGISTRATION records are now
+			     in the activation record rather than pushed
+	                     on the stack.
+	
 2005-05-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Dropped the TCL_NO_MATH configuration.
