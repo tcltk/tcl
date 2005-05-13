@@ -13,15 +13,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.151 2005/05/10 18:34:06 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.152 2005/05/13 17:11:58 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 #include <float.h>
-#ifndef TCL_NO_MATH
 #include <math.h>
-#endif
 
 /*
  * The following structure defines the client data for a math function
@@ -271,7 +269,6 @@ typedef struct {
 } BuiltinFuncDef;
 BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::abs",	ExprAbsFunc,	NULL 			},
-#ifndef TCL_NO_MATH
     { "::tcl::mathfunc::acos",	ExprUnaryFunc,	(ClientData) acos 	},
     { "::tcl::mathfunc::asin",	ExprUnaryFunc,	(ClientData) asin 	},
     { "::tcl::mathfunc::atan",	ExprUnaryFunc,	(ClientData) atan 	},
@@ -279,32 +276,23 @@ BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::ceil",	ExprUnaryFunc,	(ClientData) ceil 	},
     { "::tcl::mathfunc::cos",	ExprUnaryFunc,	(ClientData) cos 	},
     { "::tcl::mathfunc::cosh",	ExprUnaryFunc,	(ClientData) cosh	},
-#endif
     { "::tcl::mathfunc::double",ExprDoubleFunc,	NULL			},
-#ifndef TCL_NO_MATH
     { "::tcl::mathfunc::exp",	ExprUnaryFunc,	(ClientData) exp	},
     { "::tcl::mathfunc::floor",	ExprUnaryFunc,	(ClientData) floor 	},
     { "::tcl::mathfunc::fmod",	ExprBinaryFunc,	(ClientData) fmod	},
     { "::tcl::mathfunc::hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
-#endif
     { "::tcl::mathfunc::int",	ExprIntFunc,	NULL			},
-#ifndef TCL_NO_MATH
     { "::tcl::mathfunc::log",	ExprUnaryFunc,	(ClientData) log 	},
     { "::tcl::mathfunc::log10",	ExprUnaryFunc,  (ClientData) log10 	},
     { "::tcl::mathfunc::pow",	ExprBinaryFunc,	(ClientData) pow 	},
-#endif
     { "::tcl::mathfunc::rand",	ExprRandFunc,	NULL			},
     { "::tcl::mathfunc::round",	ExprRoundFunc,	NULL			},
-#ifndef TCL_NO_MATH
     { "::tcl::mathfunc::sin",	ExprUnaryFunc,	(ClientData) sin 	},
     { "::tcl::mathfunc::sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
     { "::tcl::mathfunc::sqrt",	ExprUnaryFunc,	(ClientData) sqrt 	},
-#endif
     { "::tcl::mathfunc::srand",	ExprSrandFunc,	NULL			},
-#ifndef TCL_NO_MATH
     { "::tcl::mathfunc::tan",	ExprUnaryFunc,	(ClientData) tan 	},
     { "::tcl::mathfunc::tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
-#endif
     { "::tcl::mathfunc::wide",	ExprWideFunc,	NULL		 	},
     { NULL, NULL, NULL }
 };
