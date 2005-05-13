@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.165 2005/05/10 18:35:25 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.166 2005/05/13 17:12:19 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -104,12 +104,6 @@ LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 # on the following lines:
 PROTO_FLAGS		=
 #PROTO_FLAGS		= -DNO_PROTOTYPE
-
-# Mathematical functions like sin and atan2 are enabled for expressions
-# by default.  To disable them, reverse the comment characters on the
-# following pairs of lines:
-MATH_FLAGS		=
-#MATH_FLAGS		= -DTCL_NO_MATH
 
 # If you use the setenv, putenv, or unsetenv procedures to modify
 # environment variables in your application and you'd like those
@@ -273,18 +267,17 @@ DDD			= ddd
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
 ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
 
 LIBS		= @TCL_LIBS@
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} \
-${GENERIC_FLAGS} ${PROTO_FLAGS}
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS}
 
 TCLSH_OBJS = tclAppInit.o
 
