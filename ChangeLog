@@ -1,3 +1,10 @@
+2005-05-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Dropped the TCL_NO_MATH configuration.
+	* generic/tclBinary.c:	It's believed this has not been working
+	* generic/tclExecute.c: in a long time.  Tcl needs math.h.
+	* unix/Makefile.in:	[RFE 1200680].
+
 2005-05-12  Kevin Kenny  <kennykb@acm.org>
 
 	* doc/mathfunc.n: Changed NAME line to match the name of the page.
