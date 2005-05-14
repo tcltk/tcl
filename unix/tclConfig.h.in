@@ -1,5 +1,8 @@
 /* tclConfig.h.in.  Generated from configure.in by autoheader.  */
 
+#ifndef _TCLCONFIG
+#define _TCLCONFIG
+
 /* Is pthread_attr_get_np() declared in <pthread.h>? */
 #undef ATTRGETNP_NOT_DECLARED
 
@@ -12,11 +15,11 @@
 /* Do we have BSDgettimeofday()? */
 #undef HAVE_BSDGETTIMEOFDAY
 
-/* Do we have access to Mac bundles? */
-#undef HAVE_CFBUNDLE
-
 /* Define to 1 if you have the `chflags' function. */
 #undef HAVE_CHFLAGS
+
+/* Do we have access to Darwin CoreFoundation.framework ? */
+#undef HAVE_COREFOUNDATION
 
 /* Define to 1 if you have the `getattrlist' function. */
 #undef HAVE_GETATTRLIST
@@ -33,11 +36,17 @@
 /* Do we have nl_langinfo()? */
 #undef HAVE_LANGINFO
 
+/* Define to 1 if you have the <libkern/OSAtomic.h> header file. */
+#undef HAVE_LIBKERN_OSATOMIC_H
+
 /* Do we have <limits.h>? */
 #undef HAVE_LIMITS_H
 
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
+
+/* Define to 1 if you have the `lseek64' function. */
+#undef HAVE_LSEEK64
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -48,8 +57,14 @@
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
 
+/* Define to 1 if you have the `open64' function. */
+#undef HAVE_OPEN64
+
 /* Define to 1 if you have the `opendir' function. */
 #undef HAVE_OPENDIR
+
+/* Define to 1 if you have the `OSSpinLockLock' function. */
+#undef HAVE_OSSPINLOCKLOCK
 
 /* Do we want a BSD-like thread-attribute interface? */
 #undef HAVE_PTHREAD_ATTR_GET_NP
@@ -77,9 +92,6 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
-
-/* Define to 1 if you have the `strstr' function. */
-#undef HAVE_STRSTR
 
 /* Define to 1 if you have the `strtol' function. */
 #undef HAVE_STRTOL
@@ -159,8 +171,11 @@
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
 
-/* "Is this a Mac I see before me?" */
+/* Is this a Mac I see before me? */
 #undef MAC_OSX_TCL
+
+/* Linker support for module scope symbols */
+#undef MODULE_SCOPE
 
 /* Do we have <dirent.h>? */
 #undef NO_DIRENT_H
@@ -260,9 +275,6 @@
 
 /* Are bytecode statistics enabled? */
 #undef TCL_COMPILE_STATS
-
-/* What extra letters do we insert for debugging binary code? */
-#undef TCL_DBGX
 
 /* Are we to override what our default encoding is? */
 #undef TCL_DEFAULT_ENCODING
@@ -386,3 +398,5 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
+
+#endif /* _TCLCONFIG */
