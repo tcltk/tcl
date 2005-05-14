@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.18 2004/11/19 06:28:29 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.19 2005/05/14 20:46:46 das Exp $
 #
 ########################################################################################################
 
@@ -124,7 +124,7 @@ export CPPROG		:= cp -p
 ${PROJECT}: install-${PROJECT}
 
 ${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure
-	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && ${UNIX_DIR}/configure \
+	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && ${UNIX_DIR}/configure -C \
 	--prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} \
 	--includedir=${INCLUDEDIR} --mandir=${MANDIR} --enable-threads \
 	--enable-framework ${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}

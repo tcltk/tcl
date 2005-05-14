@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.42 2005/05/13 21:20:36 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.43 2005/05/14 20:46:48 das Exp $
  */
 
 #include "tclWinInt.h"
@@ -624,29 +624,6 @@ TclpCheckStackSpace()
 #endif /* HAVE_NO_SEH */
     
     return retval;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinGetPlatform --
- *
- *      This is a kludge that allows the test library to get access
- *      the internal tclPlatform variable.
- *
- * Results:
- *      Returns a pointer to the tclPlatform variable.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-TclPlatformType *
-TclWinGetPlatform()
-{
-    return &tclPlatform;
 }
 
 /*
