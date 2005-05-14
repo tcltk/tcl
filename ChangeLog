@@ -1,3 +1,34 @@
+2005-05-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXBundle.c:
+	* unix/tclUnixInit.c: 
+	* unix/tcl.m4 (Darwin): made use of CoreFoundation API configurable
+	and added test of CoreFoundation availablility to allow building on
+	ppc64, replaced HAVE_CFBUNDLE by HAVE_COREFOUNDATION; test for
+	availability of Tiger or later OSSpinLockLock API.
+
+	* unix/tclUnixNotfy.c:
+	* unix/Makefile.in:
+	* macosx/tclMacOSXNotify.c (new file): when CoreFoundation is
+	available, use new CFRunLoop based notifier: allows easy integration
+	with other event loops on Mac OS X, in particular the TkAqua Carbon
+	event loop is now integrated via a standard tcl event source (instead
+	of TkAqua upon loading having to finalize the exsting notifier and 
+	replace it with its custom version). [Patch 1202052]
+
+	* tests/unixNotfy.test: don't run unthreaded tests on Darwin
+	since notifier may be using threads even in unthreaded core.
+
+	* unix/tclUnixPort.h:
+	* unix/tcl.m4 (Darwin): test for thread-unsafe realpath durning
+	configure, as Darwin 7 and later realpath is threadsafe.
+
+	* macosx/tclMacOSXBundle.c:
+	* unix/tclLoadDyld.c:
+	* unix/tclUnixInit.c: fixed gcc 4.0 warnings.
+
+	* unix/configure: autoconf-2.13
+
 2005-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/string.test: string-10.[21-30]
