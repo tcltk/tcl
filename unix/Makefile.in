@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.11 2005/04/26 00:46:02 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.12 2005/05/14 20:52:31 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -318,7 +318,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
-MAC_OSX_OBJS = tclMacOSXBundle.o
+MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXNotify.o
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
         @DL_OBJS@ @PLAT_OBJS@
@@ -438,7 +438,8 @@ DL_SRCS = \
 	$(UNIX_DIR)/tclLoadShl.c
 
 MAC_OSX_SRCS = \
-	$(MAC_OSX_DIR)/tclMacOSXBundle.c
+	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
+	$(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
@@ -1034,6 +1035,9 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 # The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
+
+tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
+	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

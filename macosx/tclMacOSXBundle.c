@@ -51,8 +51,11 @@
  *      license.
  */
 
+#ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 #include <mach-o/dyld.h>
+#endif /* HAVE_COREFOUNDATION */
+
 #include "tcl.h"
 
 /*
@@ -119,6 +122,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
     int         maxPathLen,
     char       *libraryPath)
 {
+#ifdef HAVE_COREFOUNDATION
     CFBundleRef bundleRef;
     CFStringRef bundleNameRef;
     CFURLRef libURL;
@@ -199,7 +203,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	     */
 
 	    CFURLGetFileSystemRepresentation(libURL, TRUE,
-		    libraryPath, maxPathLen);
+		    (unsigned char*) libraryPath, maxPathLen);
 	    CFRelease(libURL);
 	}
     }
@@ -209,4 +213,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
     } else {
 	return TCL_ERROR;
     }
+#else  /* HAVE_COREFOUNDATION */
+    return TCL_ERROR;
+#endif /* HAVE_COREFOUNDATION */
 }
