@@ -1,24 +1,27 @@
 /*
- * tclUnixNotify.c --
+ * tclMacOSXNotify.c --
  *
- *	This file contains the implementation of the select-based
- *	Unix-specific notifier, which is the lowest-level part of the
- *	Tcl event loop.  This file works together with
- *	../generic/tclNotify.c.
+ *	This file contains the implementation of a merged 
+ *	CFRunLoop/select-based notifier, which is the lowest-level part 
+ *	of the Tcl event loop.  This file works together with
+ *	generic/tclNotify.c.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright 2001, Apple Computer, Inc.
+ * Copyright 2005, Tcl Core Team.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.9 2005/05/14 20:52:33 das Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.2 2005/05/14 20:52:31 das Exp $
  */
 
-#ifndef HAVE_COREFOUNDATION /* Darwin/Mac OS X CoreFoundation notifier
-                             * is in tclMacOSXNotify.c */
+#ifdef HAVE_COREFOUNDATION /* Traditional unix select-based notifier
+                            * is in tclUnixNotfy.c */ 
 #include "tclInt.h"
 #include "tclPort.h"
-#include <signal.h> 
+#include <CoreFoundation/CoreFoundation.h>
+#include <pthread.h>
 
 extern TclStubs tclStubs;
 extern Tcl_NotifierProcs tclOriginalNotifier;
@@ -77,7 +80,7 @@ typedef struct SelectMasks {
 typedef struct ThreadSpecificData {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
-    
+
     SelectMasks checkMasks;	/* This structure is used to build up the masks
 				 * to be used in the next call to select.
 				 * Bits are set in response to calls to
@@ -88,35 +91,33 @@ typedef struct ThreadSpecificData {
     int numFdBits;		/* Number of valid bits in checkMasks
 				 * (one more than highest fd for which
 				 * Tcl_WatchFile has been called). */
-#ifdef TCL_THREADS
     int onList;			/* True if it is in this list */
     unsigned int pollState;	/* pollState is used to implement a polling 
 				 * handshake between each thread and the
 				 * notifier thread. Bits defined below. */
     struct ThreadSpecificData *nextPtr, *prevPtr;
-                                /* All threads that are currently waiting on 
-                                 * an event have their ThreadSpecificData
-                                 * structure on a doubly-linked listed formed
-                                 * from these pointers.  You must hold the
-                                 * notifierMutex lock before accessing these
-                                 * fields. */
-    Tcl_Condition waitCV;     /* Any other thread alerts a notifier
+				/* All threads that are currently waiting on 
+				 * an event have their ThreadSpecificData
+				 * structure on a doubly-linked listed formed
+				 * from these pointers.  You must hold the
+				 * notifierLock before accessing these
+				 * fields. */
+    CFRunLoopSourceRef runLoopSource;
+                                /* Any other thread alerts a notifier
 				 * that an event is ready to be processed
-				 * by signaling this condition variable. */
-    int eventReady;           /* True if an event is ready to be processed.
-                               * Used as condition flag together with
-                               * waitCV above. */
-#endif
+				 * by signaling this CFRunLoopSource. */
+    CFRunLoopRef runLoop;       /* This thread's CFRunLoop, needs to be woken
+                                 * up whenever the runLoopSource is signaled. */
+    int eventReady;		/* True if an event is ready to be processed. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
 
-#ifdef TCL_THREADS
 /*
  * The following static indicates the number of threads that have
  * initialized notifiers.
  *
- * You must hold the notifierMutex lock before accessing this variable.
+ * You must hold the notifierInitLock before accessing this variable.
  */
 
 static int notifierCount = 0;
@@ -126,7 +127,7 @@ static int notifierCount = 0;
  * of ThreadSpecificData structures for all threads that are currently
  * waiting on an event.
  *
- * You must hold the notifierMutex lock before accessing this list.
+ * You must hold the notifierLock before accessing this list.
  */
 
 static ThreadSpecificData *waitingListPtr = NULL;
@@ -143,24 +144,47 @@ static ThreadSpecificData *waitingListPtr = NULL;
  * to this file descriptor will cause the select() system call to return
  * and wake up the notifier thread.
  *
- * You must hold the notifierMutex lock before accessing this list.
+ * You must hold the notifierLock lock before writing to the pipe.
  */
 
 static int triggerPipe = -1;
+static int receivePipe = -1; /* Output end of triggerPipe */
 
 /*
- * The notifierMutex locks access to all of the global notifier state. 
+ * We use Darwin-native spinlocks instead of pthread mutexes for notifier
+ * locking: this radically simplifies the implementation and lowers
+ * overhead. Note that these are not pure spinlocks, they employ various
+ * strategies to back off, making them immune to most priority-inversion
+ * livelocks (c.f. man 3 OSSpinLockLock).
  */
 
-TCL_DECLARE_MUTEX(notifierMutex)
+#if defined(HAVE_LIBKERN_OSATOMIC_H) && defined(HAVE_OSSPINLOCKLOCK)
+/* Use OSSpinLock API where available (Tiger or later) */
+#include <libkern/OSAtomic.h>
+#else
+/* Otherwise, use commpage spinlock SPI directly */
+typedef uint32_t OSSpinLock;
+extern void _spin_lock(OSSpinLock *lock);
+extern void _spin_unlock(OSSpinLock *lock);
+#define OSSpinLockLock(p) _spin_lock(p)
+#define OSSpinLockUnlock(p) _spin_unlock(p)
+#endif
 
 /*
- * The notifier thread signals the notifierCV when it has finished
- * initializing the triggerPipe and right before the notifier
- * thread terminates.
+ * These spinlocks lock access to the global notifier state. 
  */
 
-static Tcl_Condition notifierCV;
+static OSSpinLock notifierInitLock = 0;
+static OSSpinLock notifierLock = 0;
+
+/* 
+ * Macros abstracting notifier locking/unlocking
+ */
+
+#define LOCK_NOTIFIER_INIT   OSSpinLockLock(&notifierInitLock)
+#define UNLOCK_NOTIFIER_INIT OSSpinLockUnlock(&notifierInitLock)
+#define LOCK_NOTIFIER        OSSpinLockLock(&notifierLock)
+#define UNLOCK_NOTIFIER      OSSpinLockUnlock(&notifierLock)
 
 /*
  * The pollState bits
@@ -177,19 +201,14 @@ static Tcl_Condition notifierCV;
 /*
  * This is the thread ID of the notifier thread that does select.
  */
-static Tcl_ThreadId notifierThread;
-
-#endif
+static pthread_t notifierThread;
 
 /*
  * Static routines defined in this file.
  */
 
-#ifdef TCL_THREADS
-static void	NotifierThreadProc _ANSI_ARGS_((ClientData clientData));
-#endif
-static int	FileHandlerEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
-		    int flags));
+static void	NotifierThreadProc(ClientData clientData);
+static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 /*
  *----------------------------------------------------------------------
@@ -212,32 +231,69 @@ Tcl_InitNotifier()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-#ifdef TCL_THREADS
     tsdPtr->eventReady = 0;
+    
+     /*
+     * Initialize CFRunLoopSource and add it to CFRunLoop of this thread
+     */
+    
+    if (!tsdPtr->runLoop) {
+        CFRunLoopRef runLoop = CFRunLoopGetCurrent();
+        CFRunLoopSourceRef runLoopSource;
+        CFRunLoopSourceContext runLoopSourceContext;
+        
+        bzero(&runLoopSourceContext, sizeof(CFRunLoopSourceContext));
+        runLoopSourceContext.info = tsdPtr;
+        runLoopSource = CFRunLoopSourceCreate(NULL, 0, &runLoopSourceContext);
+        if (!runLoopSource) {
+            Tcl_Panic("Tcl_InitNotifier: could not create CFRunLoopSource.");
+        }
+        CFRunLoopAddSource(runLoop, runLoopSource, kCFRunLoopCommonModes);
+        CFRelease(runLoopSource);
+        tsdPtr->runLoopSource = runLoopSource;
+        tsdPtr->runLoop = runLoop;
+    }
 
     /*
-     * Start the Notifier thread if necessary.
+     * Initialize trigger pipe and start the Notifier thread if necessary.
      */
 
-    Tcl_MutexLock(&notifierMutex);
+    LOCK_NOTIFIER_INIT;
     if (notifierCount == 0) {
-	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
-		     TCL_THREAD_STACK_DEFAULT, TCL_THREAD_NOFLAGS) != TCL_OK) {
-	    panic("Tcl_InitNotifier: unable to start notifier thread");
+        int fds[2], status, result;
+        pthread_attr_t attr;
+    
+        if (pipe(fds) != 0) {
+            Tcl_Panic("Tcl_InitNotifier: could not create trigger pipe.");
+        }
+        
+        status = fcntl(fds[0], F_GETFL);
+        status |= O_NONBLOCK;
+        if (fcntl(fds[0], F_SETFL, status) < 0) {
+            Tcl_Panic("Tcl_InitNotifier: could not make receive pipe non blocking.");
+        }
+        status = fcntl(fds[1], F_GETFL);
+        status |= O_NONBLOCK;
+        if (fcntl(fds[1], F_SETFL, status) < 0) {
+            Tcl_Panic("Tcl_InitNotifier: could not make trigger pipe non blocking.");
+        }
+
+        receivePipe = fds[0];
+        triggerPipe = fds[1];
+
+        pthread_attr_init(&attr);
+        pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+        pthread_attr_setstacksize(&attr, 60 * 1024);
+        result = pthread_create(&notifierThread, &attr, (void * (*)(void *))NotifierThreadProc, NULL);
+        pthread_attr_destroy(&attr);
+	if (result) {
+	    Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread.");
 	}
     }
     notifierCount++;
-
-    /*
-     * Wait for the notifier pipe to be created.
-     */
-
-    while (triggerPipe < 0) {
-	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
-    }
-
-    Tcl_MutexUnlock(&notifierMutex);
-#endif
+    UNLOCK_NOTIFIER_INIT;
+    
     return (ClientData) tsdPtr;
 }
 
@@ -263,10 +319,9 @@ void
 Tcl_FinalizeNotifier(clientData)
     ClientData clientData;		/* Not used. */
 {
-#ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    Tcl_MutexLock(&notifierMutex);
+    LOCK_NOTIFIER_INIT;
     notifierCount--;
 
     /*
@@ -275,11 +330,13 @@ Tcl_FinalizeNotifier(clientData)
      */
 
     if (notifierCount == 0) {
+        int result;
+        
 	if (triggerPipe < 0) {
-	    panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
+	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized.");
 	}
 
-        /*
+	/*
 	 * Send "q" message to the notifier thread so that it will
 	 * terminate.  The notifier will return from its call to select()
 	 * and notice that a "q" message has arrived, it will then close
@@ -292,17 +349,24 @@ Tcl_FinalizeNotifier(clientData)
 	write(triggerPipe, "q", 1);
 	close(triggerPipe);
 
-	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
+	result = pthread_join(notifierThread, NULL); 
+	if (result) {
+	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread.");
+	}
+	
+	close(receivePipe);
+        triggerPipe = -1;
     }
-
-    /*
-     * Clean up any synchronization objects in the thread local storage.
-     */
-
-    Tcl_ConditionFinalize(&(tsdPtr->waitCV));
-
-    Tcl_MutexUnlock(&notifierMutex);
-#endif
+    UNLOCK_NOTIFIER_INIT;
+    
+    LOCK_NOTIFIER; /* for concurrency with Tcl_AlertNotifier */
+    if (tsdPtr->runLoop) {
+        tsdPtr->runLoop = NULL;
+        /* Remove runLoopSource from all CFRunLoops and release it */
+        CFRunLoopSourceInvalidate(tsdPtr->runLoopSource);
+        tsdPtr->runLoopSource = NULL;
+    }
+    UNLOCK_NOTIFIER;
 }
 
 /*
@@ -330,13 +394,14 @@ void
 Tcl_AlertNotifier(clientData)
     ClientData clientData;
 {
-#ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
-    Tcl_MutexLock(&notifierMutex);
-    tsdPtr->eventReady = 1;
-    Tcl_ConditionNotify(&tsdPtr->waitCV);
-    Tcl_MutexUnlock(&notifierMutex);
-#endif
+    LOCK_NOTIFIER;
+    if (tsdPtr->runLoop) {
+        tsdPtr->eventReady = 1;
+        CFRunLoopSourceSignal(tsdPtr->runLoopSource);
+        CFRunLoopWakeUp(tsdPtr->runLoop);
+    }
+    UNLOCK_NOTIFIER;
 }
 
 /*
@@ -431,7 +496,7 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
     }
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
-	 filePtr = filePtr->nextPtr) {
+	    filePtr = filePtr->nextPtr) {
 	if (filePtr->fd == fd) {
 	    break;
 	}
@@ -451,20 +516,20 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
      * Update the check masks for this file.
      */
 
-    if ( mask & TCL_READABLE ) {
-	FD_SET( fd, &(tsdPtr->checkMasks.readable) );
+    if (mask & TCL_READABLE) {
+	FD_SET(fd, &(tsdPtr->checkMasks.readable));
     } else {
-	FD_CLR( fd, &(tsdPtr->checkMasks.readable) );
+	FD_CLR(fd, &(tsdPtr->checkMasks.readable));
     }
-    if ( mask & TCL_WRITABLE ) {
-	FD_SET( fd, &(tsdPtr->checkMasks.writable) );
+    if (mask & TCL_WRITABLE) {
+	FD_SET(fd, &(tsdPtr->checkMasks.writable));
     } else {
-	FD_CLR( fd, &(tsdPtr->checkMasks.writable) );
+	FD_CLR(fd, &(tsdPtr->checkMasks.writable));
     }
-    if ( mask & TCL_EXCEPTION ) {
-	FD_SET( fd, &(tsdPtr->checkMasks.exceptional) );
+    if (mask & TCL_EXCEPTION) {
+	FD_SET(fd, &(tsdPtr->checkMasks.exceptional));
     } else {
-	FD_CLR( fd, &(tsdPtr->checkMasks.exceptional) );
+	FD_CLR(fd, &(tsdPtr->checkMasks.exceptional));
     }
     if (tsdPtr->numFdBits <= fd) {
 	tsdPtr->numFdBits = fd+1;
@@ -520,13 +585,13 @@ Tcl_DeleteFileHandler(fd)
      */
 
     if (filePtr->mask & TCL_READABLE) {
-	FD_CLR( fd, &(tsdPtr->checkMasks.readable) );
+	FD_CLR(fd, &(tsdPtr->checkMasks.readable));
     }
     if (filePtr->mask & TCL_WRITABLE) {
-	FD_CLR( fd, &(tsdPtr->checkMasks.writable) );
+	FD_CLR(fd, &(tsdPtr->checkMasks.writable));
     }
     if (filePtr->mask & TCL_EXCEPTION) {
-	FD_CLR( fd, &(tsdPtr->checkMasks.exceptional) );
+	FD_CLR(fd, &(tsdPtr->checkMasks.exceptional));
     }
 
     /*
@@ -536,9 +601,9 @@ Tcl_DeleteFileHandler(fd)
     if (fd+1 == tsdPtr->numFdBits) {
 	tsdPtr->numFdBits = 0;
 	for (i = fd-1; i >= 0; i--) {
-	    if ( FD_ISSET( i, &(tsdPtr->checkMasks.readable) )
-		 || FD_ISSET( i, &(tsdPtr->checkMasks.writable) )
-		 || FD_ISSET( i, &(tsdPtr->checkMasks.exceptional ) ) ) {
+	    if (FD_ISSET(i, &(tsdPtr->checkMasks.readable))
+		    || FD_ISSET(i, &(tsdPtr->checkMasks.writable))
+		    || FD_ISSET(i, &(tsdPtr->checkMasks.exceptional))) {
 		tsdPtr->numFdBits = i+1;
 		break;
 	    }
@@ -603,7 +668,7 @@ FileHandlerEventProc(evPtr, flags)
 
     tsdPtr = TCL_TSD_INIT(&dataKey);
     for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
-	 filePtr = filePtr->nextPtr) {
+	    filePtr = filePtr->nextPtr) {
 	if (filePtr->fd != fileEvPtr->fd) {
 	    continue;
 	}
@@ -656,55 +721,19 @@ Tcl_WaitForEvent(timePtr)
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
     int mask;
-#ifdef TCL_THREADS
     int waitForFiles;
-#else
-    /* Impl. notes: timeout & timeoutPtr are used if, and only if
-     * threads are not enabled. They are the arguments for the regular
-     * select() used when the core is not thread-enabled. */
-
-    struct timeval timeout, *timeoutPtr;
-    int numFound;
-#endif
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tclStubs.tcl_WaitForEvent != tclOriginalNotifier.waitForEventProc) {
 	return tclStubs.tcl_WaitForEvent(timePtr);
     }
 
-#ifndef TCL_THREADS
-    /*
-     * Set up the timeout structure.  Note that if there are no events to
-     * check for, we return with a negative result rather than blocking
-     * forever.
-     */
-
-    if (timePtr) {
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
-	timeoutPtr = &timeout;
-    } else if (tsdPtr->numFdBits == 0) {
-	/*
-	 * If there are no threads, no timeout, and no fds registered,
-	 * then there are no events possible and we must avoid deadlock.
-	 * Note that this is not entirely correct because there might
-	 * be a signal that could interrupt the select call, but we
-	 * don't handle that case if we aren't using threads.
-	 */
-
-	return -1;
-    } else {
-	timeoutPtr = NULL;
-    }
-#endif
-
-#ifdef TCL_THREADS
     /*
      * Place this thread on the list of interested threads, signal the
      * notifier thread, and wait for a response or a timeout.
      */
 
-    Tcl_MutexLock(&notifierMutex);
+    LOCK_NOTIFIER;
 
     waitForFiles = (tsdPtr->numFdBits > 0);
     if (timePtr != NULL && timePtr->sec == 0 && timePtr->usec == 0) {
@@ -724,30 +753,38 @@ Tcl_WaitForEvent(timePtr)
     }
 
     if (waitForFiles) {
-        /*
-         * Add the ThreadSpecificData structure of this thread to the list
-         * of ThreadSpecificData structures of all threads that are waiting
-         * on file events.
-         */
+	/*
+	 * Add the ThreadSpecificData structure of this thread to the list
+	 * of ThreadSpecificData structures of all threads that are waiting
+	 * on file events.
+	 */
 
-
-        tsdPtr->nextPtr = waitingListPtr;
-        if (waitingListPtr) {
-            waitingListPtr->prevPtr = tsdPtr;
-        }
-        tsdPtr->prevPtr = 0;
-        waitingListPtr = tsdPtr;
+	tsdPtr->nextPtr = waitingListPtr;
+	if (waitingListPtr) {
+	    waitingListPtr->prevPtr = tsdPtr;
+	}
+	tsdPtr->prevPtr = 0;
+	waitingListPtr = tsdPtr;
 	tsdPtr->onList = 1;
-	
+
 	write(triggerPipe, "", 1);
     }
 
-    FD_ZERO( &(tsdPtr->readyMasks.readable) );
-    FD_ZERO( &(tsdPtr->readyMasks.writable) );
-    FD_ZERO( &(tsdPtr->readyMasks.exceptional) );
+    FD_ZERO(&(tsdPtr->readyMasks.readable));
+    FD_ZERO(&(tsdPtr->readyMasks.writable));
+    FD_ZERO(&(tsdPtr->readyMasks.exceptional));
 
     if (!tsdPtr->eventReady) {
-        Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+        CFTimeInterval waitTime;
+
+        if (timePtr == NULL) {
+            waitTime = 1.0e10; /* Wait forever, as per CFRunLoop.c */
+        } else {
+            waitTime = timePtr->sec + 1.0e-6 * timePtr->usec;
+        }
+        UNLOCK_NOTIFIER;
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode, waitTime, TRUE);
+        LOCK_NOTIFIER;
     }
     tsdPtr->eventReady = 0;
 
@@ -759,55 +796,35 @@ Tcl_WaitForEvent(timePtr)
 	 * which the notifier thread was still doing a select on.
 	 */
 
-        if (tsdPtr->prevPtr) {
-            tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
-        } else {
-            waitingListPtr = tsdPtr->nextPtr;
-        }
-        if (tsdPtr->nextPtr) {
-            tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
-        }
-        tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
+	if (tsdPtr->prevPtr) {
+	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
+	} else {
+	    waitingListPtr = tsdPtr->nextPtr;
+	}
+	if (tsdPtr->nextPtr) {
+	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
+	}
+	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	tsdPtr->onList = 0;
 	write(triggerPipe, "", 1);
     }
 
     
-#else
-    tsdPtr->readyMasks = tsdPtr->checkMasks;
-    numFound = select( tsdPtr->numFdBits,
-		       &(tsdPtr->readyMasks.readable),
-		       &(tsdPtr->readyMasks.writable),
-		       &(tsdPtr->readyMasks.exceptional),
-		       timeoutPtr );
-
-    /*
-     * Some systems don't clear the masks after an error, so
-     * we have to do it here.
-     */
-
-    if (numFound == -1) {
-	FD_ZERO( &(tsdPtr->readyMasks.readable ) );
-	FD_ZERO( &(tsdPtr->readyMasks.writable ) );
-	FD_ZERO( &(tsdPtr->readyMasks.exceptional ) );
-    }
-#endif
-
     /*
      * Queue all detected file events before returning.
      */
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; (filePtr != NULL);
-	 filePtr = filePtr->nextPtr) {
+	    filePtr = filePtr->nextPtr) {
 
 	mask = 0;
-	if ( FD_ISSET( filePtr->fd, &(tsdPtr->readyMasks.readable) ) ) {
+	if (FD_ISSET(filePtr->fd, &(tsdPtr->readyMasks.readable))) {
 	    mask |= TCL_READABLE;
 	}
-	if ( FD_ISSET( filePtr->fd, &(tsdPtr->readyMasks.writable) ) ) {
+	if (FD_ISSET(filePtr->fd, &(tsdPtr->readyMasks.writable))) {
 	    mask |= TCL_WRITABLE;
 	}
-	if ( FD_ISSET( filePtr->fd, &(tsdPtr->readyMasks.exceptional) ) ) {
+	if (FD_ISSET(filePtr->fd, &(tsdPtr->readyMasks.exceptional))) {
 	    mask |= TCL_EXCEPTION;
 	}
 
@@ -821,21 +838,17 @@ Tcl_WaitForEvent(timePtr)
 	 */
 
 	if (filePtr->readyMask == 0) {
-	    fileEvPtr = (FileHandlerEvent *) ckalloc(
-		sizeof(FileHandlerEvent));
+	    fileEvPtr = (FileHandlerEvent *) ckalloc(sizeof(FileHandlerEvent));
 	    fileEvPtr->header.proc = FileHandlerEventProc;
 	    fileEvPtr->fd = filePtr->fd;
 	    Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
 	}
 	filePtr->readyMask = mask;
     }
-#ifdef TCL_THREADS
-    Tcl_MutexUnlock(&notifierMutex);
-#endif
+    UNLOCK_NOTIFIER;
     return 0;
 }
 
-#ifdef TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
@@ -869,82 +882,40 @@ NotifierThreadProc(clientData)
     fd_set readableMask;
     fd_set writableMask;
     fd_set exceptionalMask;
-    int fds[2];
-    int i, status, numFdBits = 0, receivePipe;
+    int i, numFdBits = 0;
     long found;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
-
-    if (pipe(fds) != 0) {
-	panic("NotifierThreadProc: could not create trigger pipe.");
-    }
-
-    receivePipe = fds[0];
-
-#ifndef USE_FIONBIO
-    status = fcntl(receivePipe, F_GETFL);
-    status |= O_NONBLOCK;
-    if (fcntl(receivePipe, F_SETFL, status) < 0) {
-	panic("NotifierThreadProc: could not make receive pipe non blocking.");
-    }
-    status = fcntl(fds[1], F_GETFL);
-    status |= O_NONBLOCK;
-    if (fcntl(fds[1], F_SETFL, status) < 0) {
-	panic("NotifierThreadProc: could not make trigger pipe non blocking.");
-    }
-#else
-    if (ioctl(receivePipe, (int) FIONBIO, &status) < 0) {
-	panic("NotifierThreadProc: could not make receive pipe non blocking.");
-    }
-    if (ioctl(fds[1], (int) FIONBIO, &status) < 0) {
-	panic("NotifierThreadProc: could not make trigger pipe non blocking.");
-    }
-#endif
-
-    /*
-     * Install the write end of the pipe into the global variable.
-     */
-
-    Tcl_MutexLock(&notifierMutex);
-    triggerPipe = fds[1];
-
-    /*
-     * Signal any threads that are waiting.
-     */
-
-    Tcl_ConditionNotify(&notifierCV);
-    Tcl_MutexUnlock(&notifierMutex);
 
     /*
      * Look for file events and report them to interested threads.
      */
 
     while (1) {
-
-	FD_ZERO( &readableMask );
-	FD_ZERO( &writableMask );
-	FD_ZERO( &exceptionalMask );
+	FD_ZERO(&readableMask);
+	FD_ZERO(&writableMask);
+	FD_ZERO(&exceptionalMask);
 
 	/*
 	 * Compute the logical OR of the select masks from all the
 	 * waiting notifiers.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
+	LOCK_NOTIFIER;
 	timePtr = NULL;
-        for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-	    for ( i = tsdPtr->numFdBits-1; i >= 0; --i ) {
-		if ( FD_ISSET( i, &(tsdPtr->checkMasks.readable) ) ) {
-		    FD_SET( i, &readableMask );
+	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
+		if (FD_ISSET(i, &(tsdPtr->checkMasks.readable))) {
+		    FD_SET(i, &readableMask);
 		}
-		if ( FD_ISSET( i, &(tsdPtr->checkMasks.writable) ) ) {
-		    FD_SET( i, &writableMask );
+		if (FD_ISSET(i, &(tsdPtr->checkMasks.writable))) {
+		    FD_SET(i, &writableMask);
 		}
-		if ( FD_ISSET( i, &(tsdPtr->checkMasks.exceptional) ) ) {
-		    FD_SET( i, &exceptionalMask );
+		if (FD_ISSET(i, &(tsdPtr->checkMasks.exceptional))) {
+		    FD_SET(i, &exceptionalMask);
 		}
 	    }
-	    if ( tsdPtr->numFdBits > numFdBits ) {
+	    if (tsdPtr->numFdBits > numFdBits) {
 		numFdBits = tsdPtr->numFdBits;
 	    }
 	    if (tsdPtr->pollState & POLL_WANT) {
@@ -957,54 +928,54 @@ NotifierThreadProc(clientData)
 		timePtr = &poll;
 	    }
 	}
-	Tcl_MutexUnlock(&notifierMutex);
+	UNLOCK_NOTIFIER;
 
 	/*
 	 * Set up the select mask to include the receive pipe.
 	 */
 
-	if ( receivePipe >= numFdBits ) {
+	if (receivePipe >= numFdBits) {
 	    numFdBits = receivePipe + 1;
 	}
-	FD_SET( receivePipe, &readableMask );
+	FD_SET(receivePipe, &readableMask);
 
-	if ( select( numFdBits, &readableMask, &writableMask,
-		     &exceptionalMask, timePtr) == -1 ) {
+	if (select(numFdBits, &readableMask, &writableMask, &exceptionalMask,
+		timePtr) == -1) {
 	    /*
 	     * Try again immediately on an error.
 	     */
 
 	    continue;
-        }
+	}
 
 	/*
 	 * Alert any threads that are waiting on a ready file descriptor.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
-        for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+	LOCK_NOTIFIER;
+	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
 
-	    for ( i = tsdPtr->numFdBits-1; i >= 0; --i ) {
-		if ( FD_ISSET( i, &(tsdPtr->checkMasks.readable) )
-		     && FD_ISSET( i, &readableMask ) ) {
-		    FD_SET( i, &(tsdPtr->readyMasks.readable) );
+	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
+		if (FD_ISSET(i, &(tsdPtr->checkMasks.readable))
+			&& FD_ISSET(i, &readableMask)) {
+		    FD_SET(i, &(tsdPtr->readyMasks.readable));
 		    found = 1;
 		}
-		if ( FD_ISSET( i, &(tsdPtr->checkMasks.writable) )
-		     && FD_ISSET( i, &writableMask ) ) {
-		    FD_SET( i, &(tsdPtr->readyMasks.writable) );
+		if (FD_ISSET(i, &(tsdPtr->checkMasks.writable))
+			&& FD_ISSET(i, &writableMask)) {
+		    FD_SET(i, &(tsdPtr->readyMasks.writable));
 		    found = 1;
 		}
-		if ( FD_ISSET( i, &(tsdPtr->checkMasks.exceptional) )
-		     && FD_ISSET( i, &exceptionalMask ) ) {
-		    FD_SET( i, &(tsdPtr->readyMasks.exceptional) );
+		if (FD_ISSET(i, &(tsdPtr->checkMasks.exceptional))
+			&& FD_ISSET(i, &exceptionalMask)) {
+		    FD_SET(i, &(tsdPtr->readyMasks.exceptional));
 		    found = 1;
 		}
 	    }
 
-            if (found || (tsdPtr->pollState & POLL_DONE)) {
-                tsdPtr->eventReady = 1;
+	    if (found || (tsdPtr->pollState & POLL_DONE)) {
+		tsdPtr->eventReady = 1;
 		if (tsdPtr->onList) {
 		    /*
 		     * Remove the ThreadSpecificData structure of this
@@ -1025,10 +996,13 @@ NotifierThreadProc(clientData)
 		    tsdPtr->onList = 0;
 		    tsdPtr->pollState = 0;
 		}
-		Tcl_ConditionNotify(&tsdPtr->waitCV);
-            }
-        }
-	Tcl_MutexUnlock(&notifierMutex);
+		if (tsdPtr->runLoop) {
+		    CFRunLoopSourceSignal(tsdPtr->runLoopSource);
+		    CFRunLoopWakeUp(tsdPtr->runLoop);
+		}
+	    }
+	}
+	UNLOCK_NOTIFIER;
 
 	/*
 	 * Consume the next byte from the notifier pipe if the pipe was
@@ -1036,7 +1010,7 @@ NotifierThreadProc(clientData)
 	 * to avoid a race condition we only read one at a time.
 	 */
 
-	if ( FD_ISSET( receivePipe, &readableMask ) ) {
+	if (FD_ISSET(receivePipe, &readableMask)) {
 	    i = read(receivePipe, buf, 1);
 
 	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
@@ -1050,20 +1024,7 @@ NotifierThreadProc(clientData)
 	    }
 	}
     }
-
-    /*
-     * Clean up the read end of the pipe and signal any threads waiting on
-     * termination of the notifier thread.
-     */
-
-    close(receivePipe);
-    Tcl_MutexLock(&notifierMutex);
-    triggerPipe = -1;
-    Tcl_ConditionNotify(&notifierCV);
-    Tcl_MutexUnlock(&notifierMutex);
-
-    TclpThreadExit (0);
+    pthread_exit (0);
 }
-#endif
 
 #endif /* HAVE_COREFOUNDATION */
