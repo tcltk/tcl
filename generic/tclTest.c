@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.89 2005/05/10 18:34:50 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.90 2005/05/14 20:46:46 das Exp $
  */
 
 #define TCL_TEST
@@ -2457,11 +2457,7 @@ TestgetplatformCmd(clientData, interp, argc, argv)
     static CONST char *platformStrings[] = { "unix", "mac", "windows" };
     TclPlatformType *platform;
 
-#ifdef __WIN32__
-    platform = TclWinGetPlatform();
-#else
-    platform = &tclPlatform;
-#endif
+    platform = TclGetPlatform();
     
     if (argc != 1) {
         Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
@@ -3697,11 +3693,7 @@ TestsetplatformCmd(clientData, interp, argc, argv)
     size_t length;
     TclPlatformType *platform;
 
-#ifdef __WIN32__
-    platform = TclWinGetPlatform();
-#else
-    platform = &tclPlatform;
-#endif
+    platform = TclGetPlatform();
     
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
