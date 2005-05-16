@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.43 2005/05/14 20:46:48 das Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.44 2005/05/16 15:35:41 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -288,7 +288,9 @@ DllMain(hInst, reason, reserved)
     DWORD reason;		/* Reason this function is being called. */
     LPVOID reserved;		/* Not used. */
 {
+#ifdef HAVE_NO_SEH
     EXCEPTION_REGISTRATION registration;
+#endif
 
     switch (reason) {
     case DLL_PROCESS_ATTACH:
@@ -526,7 +528,9 @@ int
 TclpCheckStackSpace()
 {
 
+#ifdef HAVE_NO_SEH
     EXCEPTION_REGISTRATION registration;
+#endif
     int retval = 0;
 
     /*
@@ -1047,7 +1051,9 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
              unsigned int * regsPtr ) /* Registers after the CPUID */
 {
 
+#ifdef HAVE_NO_SEH
     EXCEPTION_REGISTRATION registration;
+#endif
     int status = TCL_ERROR;
 
 #if defined(__GNUC__) && !defined(_WIN64)
