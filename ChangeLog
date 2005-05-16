@@ -1,3 +1,9 @@
+2005-05-15  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* win/tclWin32Dll.c: conditioned definition of
+	EXCEPTION_REGISTRATION structures on HAVE_NO_SEH, to fix a bug in
+	buildability on MSVC.
+	
 2005-05-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.decls:
