@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.16 2005/05/11 16:58:50 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.17 2005/05/16 19:23:19 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -104,12 +104,6 @@ LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 # on the following lines:
 PROTO_FLAGS		=
 #PROTO_FLAGS		= -DNO_PROTOTYPE
-
-# Mathematical functions like sin and atan2 are enabled for expressions
-# by default.  To disable them, reverse the comment characters on the
-# following pairs of lines:
-MATH_FLAGS		=
-#MATH_FLAGS		= -DTCL_NO_MATH
 
 # If you use the setenv, putenv, or unsetenv procedures to modify
 # environment variables in your application and you'd like those
@@ -273,18 +267,17 @@ DDD			= ddd
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
 ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
 
 LIBS		= @TCL_LIBS@
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} \
-${GENERIC_FLAGS} ${PROTO_FLAGS}
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS}
 
 TCLSH_OBJS = tclAppInit.o
 
@@ -330,7 +323,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
-MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o
+MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
 OBJS = ${GENERIC_OBJS} ${TOMMATH_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} \
 	${COMPAT_OBJS} @DL_OBJS@ @PLAT_OBJS@
@@ -511,7 +504,8 @@ DL_SRCS = \
 
 MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
-	$(MAC_OSX_DIR)/tclMacOSXFCmd.c
+	$(MAC_OSX_DIR)/tclMacOSXFCmd.c \
+	$(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
@@ -832,6 +826,9 @@ install-private-headers: libraries
 	    do \
 	    $(INSTALL_DATA) $$i $(PRIVATE_INCLUDE_INSTALL_DIR); \
 	    done;
+	@if test -f tclConfig.h; then\
+	    $(INSTALL_DATA) tclConfig.h $(PRIVATE_INCLUDE_INSTALL_DIR); \
+	    fi;
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -1358,6 +1355,9 @@ tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXFCmd.c
+
+tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
+	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

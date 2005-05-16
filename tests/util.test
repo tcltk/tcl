@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10.6.5 2005/05/11 16:58:48 dgp Exp $
+# RCS: @(#) $Id: util.test,v 1.10.6.6 2005/05/16 19:23:19 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1105,7 +1105,7 @@ test util-11.21 {Tcl_PrintDouble - scaling} {
 test util-11.22 {Tcl_PrintDouble - scaling} {
     expr 1.1e16
 } {11000000000000000.0}
-test util-11.21 {Tcl_PrintDouble - scaling} {
+test util-11.23 {Tcl_PrintDouble - scaling} {
     expr 1.1e17
 } {1.1e+17}
 

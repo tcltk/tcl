@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.7 2005/05/11 16:58:48 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.8 2005/05/16 19:23:19 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -806,10 +806,6 @@ test string-10.20 {string map, dictionaries can alter map ordering} {
     set map {aa X a Y}
     list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
 } {YYY XY 2 XY}
-test string-10.21 {string map, nasty sharing crash from [Bug 1018562]} {
-    set a {a b}
-    string map $a $a
-} {b b}
 test string-10.21 {string map, ABR checks} {
     string map {longstring foob} long
 } long
@@ -840,6 +836,10 @@ test string-10.29 {string map, ABR checks} {
 test string-10.30 {string map, ABR checks} {
     string map {lon foob longstring bar} longlon
 } foobgfoob
+test string-10.31 {string map, nasty sharing crash from [Bug 1018562]} {
+    set a {a b}
+    string map $a $a
+} {b b}
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg

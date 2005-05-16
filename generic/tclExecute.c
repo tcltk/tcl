@@ -11,15 +11,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.20 2005/05/11 16:58:40 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.21 2005/05/16 19:23:09 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 
-#ifndef TCL_NO_MATH
-#   include <math.h>
-#endif
+#include <math.h>
 #include <float.h>
 
 /*

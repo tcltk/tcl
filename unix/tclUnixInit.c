@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.7 2005/04/29 22:41:13 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.8 2005/05/16 19:23:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,7 @@
 #	include <dlfcn.h>
 #   endif
 #endif
-#ifdef HAVE_CFBUNDLE
+#ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
@@ -328,11 +328,11 @@ static CONST LocaleTable localeTable[] = {
 #ifndef TCL_NO_STACK_CHECK
 static int		GetStackSize _ANSI_ARGS_((size_t *stackSizePtr));
 #endif /* TCL_NO_STACK_CHECK */
-#ifdef HAVE_CFBUNDLE
+#ifdef HAVE_COREFOUNDATION
 static int		MacOSXGetLibraryPath _ANSI_ARGS_((
 			    Tcl_Interp *interp, int maxPathLen,
 			    char *tclLibPath));
-#endif /* HAVE_CFBUNDLE */
+#endif /* HAVE_COREFOUNDATION */
 
 
 /*
@@ -511,13 +511,13 @@ TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
      */
 
     {
-#ifdef HAVE_CFBUNDLE
+#ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
 
     if (MacOSXGetLibraryPath(NULL, MAXPATHLEN, tclLibPath) == TCL_OK) {
         str = tclLibPath;
     } else
-#endif /* HAVE_CFBUNDLE */
+#endif /* HAVE_COREFOUNDATION */
     {
 	/* TODO: Pull this value from the TIP 59 table */
         str = defaultLibraryDir;
@@ -724,7 +724,7 @@ TclpSetVariables(interp)
     CONST char *user;
     Tcl_DString ds;
 
-#ifdef HAVE_CFBUNDLE
+#ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
 
     if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
@@ -756,7 +756,7 @@ TclpSetVariables(interp)
             Tcl_StatBuf statBuf;
             if((frameworksURL = CFBundleCopyPrivateFrameworksURL(bundleRef))) {
                 if(CFURLGetFileSystemRepresentation(frameworksURL, TRUE,
-                            tclLibPath, MAXPATHLEN) &&
+                            (unsigned char*) tclLibPath, MAXPATHLEN) &&
                         ! TclOSstat(tclLibPath, &statBuf) &&
                         S_ISDIR(statBuf.st_mode)) {
                     Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
@@ -768,7 +768,7 @@ TclpSetVariables(interp)
             }
             if((frameworksURL = CFBundleCopySharedFrameworksURL(bundleRef))) {
                 if(CFURLGetFileSystemRepresentation(frameworksURL, TRUE,
-                            tclLibPath, MAXPATHLEN) &&
+                            (unsigned char*) tclLibPath, MAXPATHLEN) &&
                         ! TclOSstat(tclLibPath, &statBuf) &&
                         S_ISDIR(statBuf.st_mode)) {
                     Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
@@ -782,7 +782,7 @@ TclpSetVariables(interp)
         Tcl_SetVar(interp, "tcl_pkgPath", pkgPath,
                 TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
     } else
-#endif /* HAVE_CFBUNDLE */
+#endif /* HAVE_COREFOUNDATION */
     {
         Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
     }
@@ -1131,7 +1131,7 @@ GetStackSize(stackSizePtr)
  *----------------------------------------------------------------------
  */
 
-#ifdef HAVE_CFBUNDLE
+#ifdef HAVE_COREFOUNDATION
 static int
 MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
 {
@@ -1142,4 +1142,4 @@ MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
 #endif
     return foundInFramework;
 }
-#endif /* HAVE_CFBUNDLE */
+#endif /* HAVE_COREFOUNDATION */
