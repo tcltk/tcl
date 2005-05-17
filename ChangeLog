@@ -1,3 +1,15 @@
+2005-05-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (TclInitObjSubsystem):	Removed the
+	* tests/listObj.test:	registration of the Tcl_ObjType's "list",
+	* tests/obj.test:	"procbody", "index", "ensembleCommand",
+	"localVarName", and "levelReference".  The only reason to register
+	a Tcl_ObjType is to have it returned by Tcl_GetObjType, and the
+	only reason for that is to retrieve a (Tcl_ObjType *) to pass to
+	Tcl_ConvertToType().  None of the types above can support a
+	Tcl_ConvertToType() call; they panic.  Better not to offer something
+	than to lead users into a panic.
+
 2005-05-15  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/tclWin32Dll.c: conditioned definition of
