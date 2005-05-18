@@ -1,5 +1,16 @@
 2005-05-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_ExprBoolean):	Rewrite as wrapper around
+	Tcl_ExprBooleanObj.
+
+	* generic/tclCmdMZ.c ([string is boolean/true/false]):  Rewrite
+	dropping string-based Tcl_GetBoolean call, so that internal reps
+	are kept for subsequent quick boolean operations.
+
+	* generic/tclExecute.c:	Dropped most special handling of the
+	"boolean" Tcl_ObjType, since that type should now be rarely
+	encountered.
+
 	* doc/BoolObj.3:	Rewrite of documentation dropping many details
 	about the internals of Tcl_Objs.  Shorter documentation focuses on
 	the function and use of the routines.
