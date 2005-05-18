@@ -1,5 +1,9 @@
 2005-05-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/BoolObj.3:	Rewrite of documentation dropping many details
+	about the internals of Tcl_Objs.  Shorter documentation focuses on
+	the function and use of the routines.
+
 	* generic/tclInt.h:	Revision to the "boolean" Tcl_ObjType, so
 	* generic/tclObj.c:	that only string values like "yes" and "false"
 	* tests/obj.test:	are kept as the "boolean" Tcl_ObjType.  The
