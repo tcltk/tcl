@@ -1,3 +1,16 @@
+2005-05-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Revision to the "boolean" Tcl_ObjType, so
+	* generic/tclObj.c:	that only string values like "yes" and "false"
+	* tests/obj.test:	are kept as the "boolean" Tcl_ObjType.  The
+	string values "0" and "1" are kept as "int" Tcl_ObjType, which also
+	produce quick calls to Tcl_GetBooleanFromObj().  Since this internal
+	change means a Tcl_ConvertToType to a "boolean" Tcl_ObjType might
+	not produce a Tcl_Obj of type "boolean", the registration of the
+	"boolean" type is also removed.
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType on the type name "boolean".  
+
 2005-05-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c (TclInitObjSubsystem):	Removed the
@@ -9,6 +22,8 @@
 	Tcl_ConvertToType().  None of the types above can support a
 	Tcl_ConvertToType() call; they panic.  Better not to offer something
 	than to lead users into a panic.
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType on the type names listed above.
 
 2005-05-15  Kevin Kenny  <kennykb@users.sourceforge.net>
 
