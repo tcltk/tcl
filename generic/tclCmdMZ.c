@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.119 2005/05/11 00:51:28 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.120 2005/05/18 20:55:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1480,19 +1480,13 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		case STR_IS_BOOL:
 		case STR_IS_TRUE:
 		case STR_IS_FALSE:
-		    if (objPtr->typePtr == &tclBooleanType) {
-			if ((((enum isOptions) index == STR_IS_TRUE) &&
+		    if (TCL_OK != Tcl_ConvertToType(NULL, objPtr,
+			    &tclBooleanType)) {
+			result = 0;
+		    } else if ((((enum isOptions) index == STR_IS_TRUE) &&
 			     objPtr->internalRep.longValue == 0) ||
 			    (((enum isOptions) index == STR_IS_FALSE) &&
 			     objPtr->internalRep.longValue != 0)) {
-			    result = 0;
-			}
-		    } else if ((Tcl_GetBoolean(NULL, string1, &i)
-				== TCL_ERROR) ||
-			       (((enum isOptions) index == STR_IS_TRUE) &&
-				i == 0) ||
-			       (((enum isOptions) index == STR_IS_FALSE) &&
-				i != 0)) {
 			result = 0;
 		    }
 		    break;

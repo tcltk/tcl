@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.153 2005/05/14 23:15:11 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.154 2005/05/18 20:55:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4293,22 +4293,19 @@ Tcl_ExprBoolean(interp, exprstring, ptr)
     CONST char *exprstring;	/* Expression to evaluate. */
     int *ptr;			/* Where to store 0/1 result. */
 {
-    register Tcl_Obj *exprPtr;
-    Tcl_Obj *resultPtr;
-    int length = strlen(exprstring);
-    int result = TCL_OK;
+    if (*exprstring == '\0') {
+	/*
+	 * An empty string. Just set the result boolean to 0 (false).
+	 */
 
-    if (length > 0) {
-	exprPtr = Tcl_NewStringObj(exprstring, length);
+	*ptr = 0;
+	return TCL_OK;
+    } else {
+	int result;
+	Tcl_Obj *exprPtr = Tcl_NewStringObj(exprstring, -1);
 	Tcl_IncrRefCount(exprPtr);
-	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	if (result == TCL_OK) {
-	    /*
-	     * Store a boolean based on the expression result.
-	     */
-	    result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
-	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
-	}
+	result = Tcl_ExprBooleanObj(interp, exprPtr, ptr);
+	Tcl_DecrRefCount(exprPtr);
 	if (result != TCL_OK) {
 	    /*
 	     * Move the interpreter's object result to the string result, 
@@ -4317,15 +4314,8 @@ Tcl_ExprBoolean(interp, exprstring, ptr)
 
 	    (void) Tcl_GetStringResult(interp);
 	}
-	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
-    } else {
-	/*
-	 * An empty string. Just set the result boolean to 0 (false).
-	 */
-
-	*ptr = 0;
+	return result;
     }
-    return result;
 }
 
 /*
