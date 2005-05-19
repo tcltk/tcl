@@ -1,3 +1,10 @@
+2005-05-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier): fixed incorrect
+	CFRelease of runLoopSource in Tcl_InitNotifier (reported by Zoran).
+	CFRunLoopAddSource doesn't CFRetain, so moved the CFRelease to
+	Tcl_FinalizeNotifier.
+
 2005-05-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_ExprBoolean):	Rewrite as wrapper around
