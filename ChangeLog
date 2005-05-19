@@ -1,3 +1,10 @@
+2005-05-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier): fixed crashing
+	CFRelease of runLoopSource in Tcl_InitNotifier (reported by Zoran):
+	CFRunLoopAddSource doesn't CFRetain, so can only CFRelease the
+	runLoopSource in Tcl_FinalizeNotifier.
+
 2005-05-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXBundle.c:
