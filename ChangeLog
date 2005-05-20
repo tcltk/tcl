@@ -1,3 +1,10 @@
+2005-05-20  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclParseExpr.c:       Corrected parser to recognize all
+        boolean literals accepted by Tcl_GetBoolean, including prefixes
+        like "y" and "f", and to allow "eq" and "ne" as function names
+        in the proper context.  [Bug 1201589].
+
 2005-05-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c (TclEvalObjvInternal): Rewrite for greater
