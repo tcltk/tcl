@@ -1,3 +1,8 @@
+2005-05-20  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclParseExpr.c: removed unreferenced stack variable "errMsg"
+	probably included by fixing the Bug #1201589 (see below).
+
 2005-05-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c:	Corrected parser to recognize all

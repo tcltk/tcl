@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.2.1 2005/05/20 15:28:17 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.2.2 2005/05/20 17:19:10 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -1387,8 +1387,7 @@ ParsePrimaryExpr(infoPtr)
 	    Tcl_DString functionName;
 	    Tcl_HashEntry *hPtr;
 	    Interp *iPtr = (Interp *) infoPtr->parsePtr->interp;
-	    Tcl_Obj *errMsg, *objPtr
-		    = Tcl_NewStringObj(savedInfo.start, savedInfo.size);
+	    Tcl_Obj *objPtr = Tcl_NewStringObj(savedInfo.start, savedInfo.size);
 
 	    /* Check for boolean literals (true, false, yes, no, on, off) */
 	    Tcl_IncrRefCount(objPtr);
