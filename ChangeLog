@@ -1,3 +1,141 @@
+2005-05-20  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclParseExpr.c:       Corrected parser to recognize all
+        boolean literals accepted by Tcl_GetBoolean, including prefixes
+        like "y" and "f", and to allow "eq" and "ne" as function names
+        in the proper context.  [Bug 1201589].
+
+2005-05-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (TclEvalObjvInternal): Rewrite for greater
+	clarity; although 'goto' is Bad, the contortions you have to go
+	through to avoid it can be worse...
+
+2005-05-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier): fixed crashing
+	CFRelease of runLoopSource in Tcl_InitNotifier (reported by Zoran):
+	CFRunLoopAddSource doesn't CFRetain, so can only CFRelease the
+	runLoopSource in Tcl_FinalizeNotifier.
+
+2005-05-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_ExprBoolean):	Rewrite as wrapper around
+	Tcl_ExprBooleanObj.
+
+	* generic/tclCmdMZ.c ([string is boolean/true/false]):  Rewrite
+	dropping string-based Tcl_GetBoolean call, so that internal reps
+	are kept for subsequent quick boolean operations.
+
+	* generic/tclExecute.c:	Dropped most special handling of the
+	"boolean" Tcl_ObjType, since that type should now be rarely
+	encountered.
+
+	* doc/BoolObj.3:	Rewrite of documentation dropping many details
+	about the internals of Tcl_Objs.  Shorter documentation focuses on
+	the function and use of the routines.
+
+	* generic/tclInt.h:	Revision to the "boolean" Tcl_ObjType, so
+	* generic/tclObj.c:	that only string values like "yes" and "false"
+	* tests/obj.test:	are kept as the "boolean" Tcl_ObjType.  The
+	string values "0" and "1" are kept as "int" Tcl_ObjType, which also
+	produce quick calls to Tcl_GetBooleanFromObj().  Since this internal
+	change means a Tcl_ConvertToType to a "boolean" Tcl_ObjType might
+	not produce a Tcl_Obj of type "boolean", the registration of the
+	"boolean" type is also removed.
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType on the type name "boolean".  
+
+2005-05-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (TclInitObjSubsystem):	Removed the
+	* tests/listObj.test:	registration of the Tcl_ObjType's "list",
+	* tests/obj.test:	"procbody", "index", "ensembleCommand",
+	"localVarName", and "levelReference".  The only reason to register
+	a Tcl_ObjType is to have it returned by Tcl_GetObjType, and the
+	only reason for that is to retrieve a (Tcl_ObjType *) to pass to
+	Tcl_ConvertToType().  None of the types above can support a
+	Tcl_ConvertToType() call; they panic.  Better not to offer something
+	than to lead users into a panic.
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType on the type names listed above.
+
+2005-05-15  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* win/tclWin32Dll.c: conditioned definition of
+	EXCEPTION_REGISTRATION structures on HAVE_NO_SEH, to fix a bug in
+	buildability on MSVC.
+	
+2005-05-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.decls:
+	* generic/tclTest.c:
+	* generic/tclUtil.c:
+	* win/tclWin32Dll.c: fixed link error due to direct access by
+	tclTest.c to the MODULE_SCOPE tclPlatform global: renamed existing
+	TclWinGetPlatform() accessor to TclGetPlatform() and moved it to
+	generic code so that it can be used by on all platforms where
+	MODULE_SCOPE is enforced.
+	
+	* macosx/tclMacOSXBundle.c:
+	* unix/tclUnixInit.c: 
+	* unix/tcl.m4 (Darwin): made use of CoreFoundation API configurable
+	and added test of CoreFoundation availablility to allow building on
+	ppc64, replaced HAVE_CFBUNDLE by HAVE_COREFOUNDATION; test for
+	availability of Tiger or later OSSpinLockLock API.
+
+	* unix/tclUnixNotfy.c:
+	* unix/Makefile.in:
+	* macosx/tclMacOSXNotify.c (new file): when CoreFoundation is
+	available, use new CFRunLoop based notifier: allows easy integration
+	with other event loops on Mac OS X, in particular the TkAqua Carbon
+	event loop is now integrated via a standard tcl event source (instead
+	of TkAqua upon loading having to finalize the exsting notifier and 
+	replace it with its custom version). [Patch 1202052]
+
+	* tests/unixNotfy.test: don't run unthreaded tests on Darwin
+	since notifier may be using threads even in unthreaded core.
+
+	* unix/tclUnixPort.h:
+	* unix/tcl.m4 (Darwin): test for thread-unsafe realpath durning
+	configure, as Darwin 7 and later realpath is threadsafe.
+	
+	* macosx/Makefile: enable configure caching.
+
+	* unix/configure.in: wrap tclConfig.h header in #ifndef _TCLCONFIG so
+	that it can be included more than once without warnings from gcc4.0
+	(as happens e.g. when including both tclInt.h and tclPort.h)
+
+	* macosx/tclMacOSXBundle.c:
+	* unix/tclUnixChan.c:
+	* unix/tclLoadDyld.c:
+	* unix/tclUnixInit.c: fixed gcc 4.0 warnings.
+
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c: make genstubs
+
+2005-05-13  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWin32Dll.c: Further rework of the SEH logic.  All
+	                     EXCEPTION_REGISTRATION records are now
+			     in the activation record rather than pushed
+	                     on the stack.
+	
+2005-05-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Dropped the TCL_NO_MATH configuration.
+	* generic/tclBinary.c:	It's believed this has not been working
+	* generic/tclExecute.c: in a long time.  Tcl needs math.h.
+	* unix/Makefile.in:	[RFE 1200680].
+
+2005-05-12  Kevin Kenny  <kennykb@acm.org>
+
+	* doc/mathfunc.n: Changed NAME line to match the name of the page.
+	
 2005-05-11  Kevin Kenny <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Resynchronized with the HEAD; at this
@@ -496,7 +634,7 @@
 
 2005-04-11  Kevin Kenny <kennykb@users.sf.net>
 
-        [kennykb-numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
+	[kennykb-numerics-branch] Merged with HEAD. Updated to libtommath 0.35.
 
 	* generic/tclBasic.c: Attempted to repeat changes that applied
 	to tclExecute.c in Miguel Sofer's commit of 2005-04-01, together

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.15 2004/04/06 22:25:56 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.15.2.1 2005/05/21 15:10:30 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -23,7 +23,7 @@ typedef struct Tcl_DyldModuleHandle {
 } Tcl_DyldModuleHandle;
 
 typedef struct Tcl_DyldLoadHandle {
-    const struct mach_header *dyld_lib;
+    CONST struct mach_header *dyld_lib;
     Tcl_DyldModuleHandle *firstModuleHandle;
 } Tcl_DyldLoadHandle;
 
@@ -59,7 +59,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 				 * this file. */
 {
     Tcl_DyldLoadHandle *dyldLoadHandle;
-    const struct mach_header *dyld_lib;
+    CONST struct mach_header *dyld_lib;
     CONST char *native;
 
     /* 
@@ -89,7 +89,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     
     if (!dyld_lib) {
         NSLinkEditErrors editError;
-        char *name, *msg;
+        CONST char *name, *msg;
         NSLinkEditError(&editError, &errno, &name, &msg);
         Tcl_AppendResult(interp, msg, (char *) NULL);
         return TCL_ERROR;
@@ -152,7 +152,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
 	}
     } else {
         NSLinkEditErrors editError;
-        char *name, *msg;
+        CONST char *name, *msg;
         NSLinkEditError(&editError, &errno, &name, &msg);
         Tcl_AppendResult(interp, msg, (char *) NULL);
     }
@@ -198,7 +198,7 @@ TclpUnloadFile(loadHandle)
 	dyldModuleHandle = dyldModuleHandle->nextModuleHandle;
 	ckfree(ptr);
     }
-    ckfree(dyldLoadHandle);
+    ckfree((char*) dyldLoadHandle);
 }
 
 /*

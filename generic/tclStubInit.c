@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.7 2005/05/10 16:12:25 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.8 2005/05/21 15:10:27 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -308,6 +308,7 @@ TclIntStubs tclIntStubs = {
     TclBN_mp_clear, /* 221 */
     TclBN_mp_init, /* 222 */
     TclBN_mp_read_radix, /* 223 */
+    TclGetPlatform, /* 224 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -356,7 +357,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateTempFile, /* 22 */
     TclpGetTZName, /* 23 */
     TclWinNoBackslash, /* 24 */
-    TclWinGetPlatform, /* 25 */
+    NULL, /* 25 */
     TclWinSetInterfaces, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */

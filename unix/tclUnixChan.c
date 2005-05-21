@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.53.2.2 2005/05/05 17:56:57 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.53.2.3 2005/05/21 15:10:30 kennykb Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -42,6 +42,13 @@
 #undef PENDIN
 
 #define SUPPORTS_TTY
+
+#undef DIRECT_BAUD
+#ifdef B4800
+#   if (B4800 == 4800)
+#	define DIRECT_BAUD
+#   endif /* B4800 == 4800 */
+#endif /* B4800 */
 
 #ifdef USE_TERMIOS
 #   include <termios.h>
@@ -261,11 +268,15 @@ static int		TtyCloseProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp));
 static void		TtyGetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
+#ifndef DIRECT_BAUD
 static int		TtyGetBaud _ANSI_ARGS_((unsigned long speed));
+#endif
 static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
+#ifndef DIRECT_BAUD
 static unsigned long	TtyGetSpeed _ANSI_ARGS_((int baud));
+#endif
 static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
 static void		TtyModemStatusStr _ANSI_ARGS_((int status,
 			    Tcl_DString *dsPtr));
@@ -1190,13 +1201,6 @@ TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     }
 }
 
-#undef DIRECT_BAUD
-#ifdef B4800
-#   if (B4800 == 4800)
-#	define DIRECT_BAUD
-#   endif /* B4800 == 4800 */
-#endif /* B4800 */
-
 #ifdef DIRECT_BAUD
 #   define TtyGetSpeed(baud)   ((unsigned) (baud))
 #   define TtyGetBaud(speed)   ((int) (speed))

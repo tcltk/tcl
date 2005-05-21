@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.12 2005/05/10 16:12:27 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.13 2005/05/21 15:10:27 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2992,4 +2992,27 @@ TclpGetTime(timePtr)
     Tcl_Time* timePtr;
 {
     Tcl_GetTime(timePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetPlatform --
+ *
+ *      This is a kludge that allows the test library to get access
+ *      the internal tclPlatform variable.
+ *
+ * Results:
+ *      Returns a pointer to the tclPlatform variable.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclPlatformType *
+TclGetPlatform()
+{
+    return &tclPlatform;
 }

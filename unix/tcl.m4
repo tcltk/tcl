@@ -402,6 +402,10 @@ AC_DEFUN(SC_ENABLE_FRAMEWORK, [
 	    AC_MSG_WARN("Frameworks can only be built if --enable-shared is yes")
 	    FRAMEWORK_BUILD=0
 	fi
+	if test $tcl_corefoundation = no; then
+	    AC_MSG_WARN("Frameworks can only be used when CoreFoundation is available")
+	    FRAMEWORK_BUILD=0
+	fi
     else
 	AC_MSG_RESULT([standard shared library])
 	FRAMEWORK_BUILD=0
@@ -1406,17 +1410,42 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
-	    PLAT_OBJS="\${MAC_OSX_OBJS}"
-	    PLAT_SRCS="\${MAC_OSX_SRCS}"
+	    PLAT_OBJS='${MAC_OSX_OBJS}'
+	    PLAT_SRCS='${MAC_OSX_SRCS}'
 	    TCL_SHLIB_LD_EXTRAS='-compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
 	    TK_SHLIB_LD_EXTRAS=' -compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TK_LIB_FILE}  -seg1addr 0xb000000 -unexported_symbols_list $$(f=$(TCL_STUB_LIB_FILE).E && nm -gjp $(TCL_BIN_DIR)/$(TCL_STUB_LIB_FILE) | tail +3 > $$f && echo $$f)'
-	    LIBS="$LIBS -framework CoreFoundation"
-	    AC_DEFINE(MAC_OSX_TCL, 1, ["Is this a Mac I see before me?"])
-	    AC_DEFINE(HAVE_CFBUNDLE, 1, [Do we have access to Mac bundles?])
+            AC_MSG_CHECKING([whether to use CoreFoundation])
+            AC_ARG_ENABLE(corefoundation, [  --enable-corefoundation use CoreFoundation API [--enable-corefoundation]],
+                [tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
+            AC_MSG_RESULT([$tcl_corefoundation])
+            if test $tcl_corefoundation = yes; then
+                AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
+                    hold_libs=$LIBS
+                    LIBS="$LIBS -framework CoreFoundation"
+                    AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
+                        [CFBundleRef b = CFBundleGetMainBundle();], 
+                        tcl_cv_lib_corefoundation=yes, tcl_cv_lib_corefoundation=no)
+                    LIBS=$hold_libs])
+                if test $tcl_cv_lib_corefoundation = yes; then
+                    LIBS="$LIBS -framework CoreFoundation"
+                    AC_DEFINE(HAVE_COREFOUNDATION, 1, 
+                        [Do we have access to Darwin CoreFoundation.framework ?])
+                fi
+	    fi
+	    AC_CHECK_HEADERS(libkern/OSAtomic.h)
+	    AC_CHECK_FUNCS(OSSpinLockLock)
+	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8",
 		[Are we to override what our default encoding is?])
 	    AC_DEFINE(MODULE_SCOPE, __private_extern__, [Linker support for module scope symbols])
+	    # prior to Darwin 7, realpath is not threadsafe, so don't
+	    # use it when threads are enabled, c.f. bug # 711232:
+	    AC_CHECK_FUNC(realpath)
+	    if test "$ac_cv_func_realpath" = yes -a "${TCL_THREADS}" = 1 \
+	            -a `uname -r | awk -F. '{print [$]1}'` -lt 7 ; then
+	        ac_cv_func_realpath=no
+	    fi
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""

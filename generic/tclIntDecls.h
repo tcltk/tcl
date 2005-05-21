@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.4 2005/05/10 16:12:14 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.5 2005/05/21 15:10:27 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1156,6 +1156,11 @@ EXTERN int		TclBN_mp_init _ANSI_ARGS_((mp_int * a));
 EXTERN int		TclBN_mp_read_radix _ANSI_ARGS_((mp_int * a, 
 				const char * str, int radix));
 #endif
+#ifndef TclGetPlatform_TCL_DECLARED
+#define TclGetPlatform_TCL_DECLARED
+/* 224 */
+EXTERN TclPlatformType * TclGetPlatform _ANSI_ARGS_((void));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1400,6 +1405,7 @@ typedef struct TclIntStubs {
     void (*tclBN_mp_clear) _ANSI_ARGS_((mp_int * a)); /* 221 */
     int (*tclBN_mp_init) _ANSI_ARGS_((mp_int * a)); /* 222 */
     int (*tclBN_mp_read_radix) _ANSI_ARGS_((mp_int * a, const char * str, int radix)); /* 223 */
+    TclPlatformType * (*tclGetPlatform) _ANSI_ARGS_((void)); /* 224 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2173,6 +2179,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclBN_mp_read_radix
 #define TclBN_mp_read_radix \
 	(tclIntStubsPtr->tclBN_mp_read_radix) /* 223 */
+#endif
+#ifndef TclGetPlatform
+#define TclGetPlatform \
+	(tclIntStubsPtr->tclGetPlatform) /* 224 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.14 2005/05/10 16:11:54 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.15 2005/05/21 15:10:27 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2782,9 +2782,15 @@ MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
 #define TclSetLongObj(objPtr, l) \
     TclSetIntObj((objPtr), (l))
 
+/*
+ * NOTE: There is to be no such thing as a "pure" boolean.
+ * Boolean values set programmatically go straight to being
+ * "int" Tcl_Obj's, with value 0 or 1.  The only "boolean"
+ * Tcl_Obj's shall be those holding the cached boolean value
+ * of strings like: "yes", "no", "true", "false", "on", "off".
+ */
 #define TclSetBooleanObj(objPtr, b) \
-    TclSetIntObj((objPtr), ((b)? 1 : 0));\
-    (objPtr)->typePtr = &tclBooleanType
+    TclSetIntObj((objPtr), ((b)? 1 : 0));
 
 #define TclSetWideIntObj(objPtr, w) \
     TclInvalidateStringRep(objPtr);\
@@ -2832,9 +2838,12 @@ MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
 #define TclNewLongObj(objPtr, l) \
     TclNewIntObj((objPtr), (l))
 
+/*
+ * NOTE: There is to be no such thing as a "pure" boolean.
+ * See comment above TclSetBooleanObj macro above.
+ */
 #define TclNewBooleanObj(objPtr, b) \
-    TclNewIntObj((objPtr), ((b)? 1 : 0));\
-    (objPtr)->typePtr = &tclBooleanType
+    TclNewIntObj((objPtr), ((b)? 1 : 0))
 
 #define TclNewWideIntObj(objPtr, w) \
     TclIncrObjsAllocated(); \

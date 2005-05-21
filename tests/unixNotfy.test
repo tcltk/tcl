@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.17 2004/06/24 10:34:12 dkf Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.17.2.1 2005/05/21 15:10:27 kennykb Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -24,8 +24,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # When run in a Tk shell, these tests hang.
 testConstraint noTk       [expr {![info exists tk_version]}]
 testConstraint testthread [expr {[info commands testthread] != {}}]
+# Darwin always uses a threaded notifier
 testConstraint unthreaded [expr {
-    ![info exist tcl_platform(threaded)] || !$tcl_platform(threaded)
+    (![info exist tcl_platform(threaded)] || !$tcl_platform(threaded))
+    && $tcl_platform(os) ne "Darwin"
 }]
 
 # The next two tests will hang if threads are enabled because the notifier

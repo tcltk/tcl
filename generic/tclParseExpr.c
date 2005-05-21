@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.7 2005/05/05 17:56:09 kennykb Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.8 2005/05/21 15:10:27 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1244,6 +1244,7 @@ ParsePrimaryExpr(infoPtr)
 	 * Int or double number.
 	 */
 	
+	tokenizeLiteral:
 	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
 	    TclExpandTokenArray(parsePtr);
 	}
@@ -1431,20 +1432,16 @@ ParsePrimaryExpr(infoPtr)
 	}
 	break;
 	
-    case FUNC_NAME:
+    case STREQ:
+    case STRNEQ:
+    case IN_LIST:
+    case NOT_IN_LIST:
+    case FUNC_NAME: {
 	/*
 	 * math_func '(' expr {',' expr} ')'
 	 */
-	
-	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
-	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
-	tokenPtr->type = TCL_TOKEN_OPERATOR;
-	tokenPtr->start = infoPtr->start;
-	tokenPtr->size = infoPtr->size;
-	tokenPtr->numComponents = 0;
-	parsePtr->numTokens++;
+
+	ParseInfo savedInfo = *infoPtr;
 	
 	code = GetLexeme(infoPtr); /* skip over function name */
 	if (code != TCL_OK) {
@@ -1452,13 +1449,25 @@ ParsePrimaryExpr(infoPtr)
 	}
 	if (infoPtr->lexeme != OPEN_PAREN) {
 
+	    int code;
+	    Tcl_Obj *errMsg, *objPtr
+		    = Tcl_NewStringObj(savedInfo.start, savedInfo.size);
+
+	    /* Check for boolean literals (true, false, yes, no, on, off) */
+	    Tcl_IncrRefCount(objPtr);
+	    code = Tcl_ConvertToType(NULL, objPtr, &tclBooleanType);
+	    Tcl_DecrRefCount(objPtr);
+	    if (code == TCL_OK) {
+		*infoPtr = savedInfo;
+		goto tokenizeLiteral;
+	    }
+	    
 	    /*
 	     * Either there's a math function without a (, or a
 	     * variable name without a '$'.
 	     */
 
-	    Tcl_Obj* errMsg 
-		= Tcl_NewStringObj( "syntax error in expression \"", -1 );
+	    errMsg = Tcl_NewStringObj( "syntax error in expression \"", -1 );
 	    TclAppendLimitedToObj( errMsg,
 				   infoPtr->originalExpr,
 				   (int) (infoPtr->lastChar
@@ -1466,7 +1475,7 @@ ParsePrimaryExpr(infoPtr)
 				   63,
 				   NULL );
 	    Tcl_AppendToObj( errMsg, "\": the word \"", -1 );
-	    Tcl_AppendToObj( errMsg, tokenPtr->start, tokenPtr->size );
+	    Tcl_AppendToObj( errMsg, savedInfo.start, savedInfo.size );
 	    Tcl_AppendToObj( errMsg,
 			     "\" requires a preceding $ if it's a variable ",
 			     -1 );
@@ -1478,6 +1487,17 @@ ParsePrimaryExpr(infoPtr)
 	    return TCL_ERROR;
 
 	}
+
+	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
+	    TclExpandTokenArray(parsePtr);
+	}
+	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
+	tokenPtr->type = TCL_TOKEN_OPERATOR;
+	tokenPtr->start = savedInfo.start;
+	tokenPtr->size = savedInfo.size;
+	tokenPtr->numComponents = 0;
+	parsePtr->numTokens++;
+	
 	code = GetLexeme(infoPtr); /* skip over '(' */
 	if (code != TCL_OK) {
 	    return code;
@@ -1505,6 +1525,7 @@ ParsePrimaryExpr(infoPtr)
 	exprTokenPtr->size = (infoPtr->next - exprTokenPtr->start);
 	exprTokenPtr->numComponents = parsePtr->numTokens - firstIndex;
 	break;
+    }
 
     case COMMA:
 	LogSyntaxError(infoPtr,
@@ -1917,50 +1938,6 @@ GetLexeme(infoPtr)
 		infoPtr->size = (src - infoPtr->start);
 		infoPtr->next = src;
 		parsePtr->term = infoPtr->next;
-		/*
-		 * Check for boolean literals (true, false, yes, no, on, off)
-		 */
-		switch (infoPtr->start[0]) {
-		case 'f':
-		    if (infoPtr->size == 5 &&
-			strncmp("false", infoPtr->start, 5) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 'n':
-		    if (infoPtr->size == 2 &&
-			strncmp("no", infoPtr->start, 2) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 'o':
-		    if (infoPtr->size == 3 &&
-			strncmp("off", infoPtr->start, 3) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    } else if (infoPtr->size == 2 &&
-			strncmp("on", infoPtr->start, 2) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 't':
-		    if (infoPtr->size == 4 &&
-			strncmp("true", infoPtr->start, 4) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 'y':
-		    if (infoPtr->size == 3 &&
-			strncmp("yes", infoPtr->start, 3) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		}
 		return TCL_OK;
 	    }
 	    infoPtr->lexeme = UNKNOWN_CHAR;

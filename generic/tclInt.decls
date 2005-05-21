@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.4 2005/05/10 16:11:54 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.5 2005/05/21 15:10:26 kennykb Exp $
 
 library tcl
 
@@ -891,6 +891,10 @@ declare 222 generic {
 declare 223 generic {
     int TclBN_mp_read_radix(mp_int *a, const char *str, int radix)
 }
+# for use in tclTest.c
+declare 224 generic {
+    TclPlatformType *TclGetPlatform(void)
+}
 
 ##############################################################################
 
@@ -993,9 +997,10 @@ declare 23 win {
 declare 24 win {
     char *TclWinNoBackslash(char *path)
 }
-declare 25 win {
-    TclPlatformType *TclWinGetPlatform(void)
-}
+# replaced by generic TclGetPlatform
+#declare 25 win {
+#    TclPlatformType *TclWinGetPlatform(void)
+#}
 declare 26 win {
     void TclWinSetInterfaces(int wide)
 }

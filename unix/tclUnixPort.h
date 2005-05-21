@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.39.2.1 2005/01/20 14:53:41 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.39.2.2 2005/05/21 15:10:35 kennykb Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -563,13 +563,6 @@ EXTERN char *          	TclpInetNtoa(struct in_addr);
  * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa
 #   define inet_ntoa(x)	TclpInetNtoa(x)
-#   ifdef MAC_OSX_TCL
-/* 
- * On Mac OS X, realpath is currently not
- * thread safe, c.f. SF bug # 711232.
- */
-#	define NO_REALPATH
-#   endif
 #   ifdef HAVE_PTHREAD_ATTR_GET_NP
 #	define TclpPthreadGetAttrs	pthread_attr_get_np
 #	ifdef ATTRGETNP_NOT_DECLARED
