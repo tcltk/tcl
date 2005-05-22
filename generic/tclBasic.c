@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.155 2005/05/19 15:18:02 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.156 2005/05/22 01:30:44 chengyemao Exp $
  */
 
 #include "tclInt.h"
@@ -5380,6 +5380,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
     }
     if ((valuePtr->typePtr == &tclIntType) ||
 	    (valuePtr->typePtr == &tclWideIntType)) {
+	Tcl_SetObjResult(interp, valuePtr);
 	return TCL_OK;
     }
     GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
