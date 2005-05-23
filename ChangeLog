@@ -1,5 +1,31 @@
 2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
 
+	* macosx/Makefile:
+	* macosx/README:
+	* macosx/Tcl-Info.plist.in (new file):
+	* unix/Makefile.in:
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* unix/tclUnixInit.c: moved all Darwin framework build support from
+	macosx/Makefile into the standard unix configure/make buildsystem, the
+	macosx/Makefile is no longer required to build Tcl.framework (but its
+	functionality is still available for backwards compatibility).
+	* unix/configure: autoconf-2.59
+
+	* generic/tclIOUtil.c (TclLoadFile):
+	* generic/tclInt.h:
+	* unix/tcl.m4:
+	* unix/tclLoadDyld.c: added support for [load]ing .bundle binaries in
+	addition to .dylib's: .bundle's can be [unload]ed (unlike .dylib's),
+	and can be [load]ed from memory, e.g. directly from VFS without
+	needing to be written out to a temporary location first. [Bug 1202209]
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): change [time] called with a
+	count > 1 to return a string with a float value instead of a rounded
+	off integer. [Bug 1202178]
+
 	* doc/expr.n:
 	* doc/string.n: fixed roff syntax complaints from 'make html'.
 
