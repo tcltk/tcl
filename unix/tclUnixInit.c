@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.7 2005/05/14 20:52:33 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.8 2005/05/24 04:20:12 das Exp $
  */
 
 #if defined(HAVE_COREFOUNDATION)
@@ -146,7 +146,9 @@ static CONST LocaleTable localeTable[] = {
 };
 
 #ifdef HAVE_COREFOUNDATION
-static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath);
+static int		MacOSXGetLibraryPath _ANSI_ARGS_((
+			    Tcl_Interp *interp, int maxPathLen,
+			    char *tclLibPath));
 #endif /* HAVE_COREFOUNDATION */
 
 
@@ -439,12 +441,12 @@ CONST char *path;		/* Path to the executable in native
      * This is needed when users install Tcl with an exec-prefix that
      * is different from the prtefix.
      */
-			      
+
     {
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
-    
-    if (Tcl_MacOSXGetLibraryPath(NULL, MAXPATHLEN, tclLibPath) == TCL_OK) {
+
+    if (MacOSXGetLibraryPath(NULL, MAXPATHLEN, tclLibPath) == TCL_OK) {
         str = tclLibPath;
     } else
 #endif /* HAVE_COREFOUNDATION */
@@ -741,8 +743,8 @@ TclpSetVariables(interp)
 
 #ifdef HAVE_COREFOUNDATION
     char tclLibPath[MAXPATHLEN + 1];
-    
-    if (Tcl_MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
+
+    if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
         CONST char *str;
         Tcl_DString ds;
         CFBundleRef bundleRef;
@@ -1053,11 +1055,10 @@ TclpCheckStackSpace()
     return 1;
 }
 
-#ifdef HAVE_COREFOUNDATION
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MacOSXGetLibraryPath --
+ * MacOSXGetLibraryPath --
  *
  *	If we have a bundle structure for the Tcl installation,
  *	then check there first to see if we can find the libraries
@@ -1071,14 +1072,16 @@ TclpCheckStackSpace()
  *
  *----------------------------------------------------------------------
  */
-static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
+
+#ifdef HAVE_COREFOUNDATION
+static int
+MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
 {
     int foundInFramework = TCL_ERROR;
 #ifdef TCL_FRAMEWORK
     foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp, 
-	"com.tcltk.tcllibrary", TCL_VERSION, 0, maxPathLen, tclLibPath);
+	"com.tcltk.tcllibrary", TCL_FRAMEWORK_VERSION, 0, maxPathLen, tclLibPath);
 #endif
     return foundInFramework;
 }
 #endif /* HAVE_COREFOUNDATION */
-
