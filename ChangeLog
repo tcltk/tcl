@@ -1,3 +1,9 @@
+2005-05-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Updated [unknown] to be sure the [return]
+	* tests/init.test:	options from an auto-loaded command are
+	seen correctly by the caller.
+
 2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
 
         * tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
