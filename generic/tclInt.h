@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.9 2005/04/07 11:24:13 vasiljevic Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.10 2005/05/24 04:19:33 das Exp $
  */
 
 #ifndef _TCLINT
@@ -1788,6 +1788,15 @@ EXTERN int              TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_FSUnloadFileProc **unloadProcPtr));
 EXTERN int              TclpUtime _ANSI_ARGS_((Tcl_Obj *pathPtr,
 					       struct utimbuf *tval));
+
+#ifdef TCL_LOAD_FROM_MEMORY
+EXTERN void*	        TclpLoadMemoryGetBuffer _ANSI_ARGS_((
+			    Tcl_Interp *interp, int size));
+EXTERN int	        TclpLoadMemory _ANSI_ARGS_((Tcl_Interp *interp, 
+			    void *buffer, int size, int codeSize, 
+			    Tcl_LoadHandle *loadHandle, 
+			    Tcl_FSUnloadFileProc **unloadProcPtr));
+#endif
 
 /*
  *----------------------------------------------------------------

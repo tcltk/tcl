@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.20 2004/12/02 18:48:14 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.21 2005/05/24 04:19:32 das Exp $
  */
 
 #include "tclInt.h"
@@ -2785,6 +2785,56 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		return TCL_ERROR;
 	    }
 	    
+#ifdef TCL_LOAD_FROM_MEMORY
+	/* 
+	 * The platform supports loading code from memory, so ask for a
+	 * buffer of the appropriate size, read the file into it and 
+	 * load the code from the buffer:
+	 */
+	do {
+            int ret, size;
+            void *buffer;
+            Tcl_StatBuf statBuf;
+            Tcl_Channel data;
+            
+            ret = Tcl_FSStat(pathPtr, &statBuf);
+            if (ret < 0) {
+                break;
+            }
+            size = (int) statBuf.st_size;
+            /* Tcl_Read takes an int: check that file size isn't wide */
+            if (size != (Tcl_WideInt)statBuf.st_size) {
+                break;
+            }
+	    data = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0666);
+            if (!data) {
+                break;
+            }
+            buffer = TclpLoadMemoryGetBuffer(interp, size);
+            if (!buffer) {
+                Tcl_Close(interp, data);
+                break;
+            }
+            Tcl_SetChannelOption(interp, data, "-translation", "binary");
+            ret = Tcl_Read(data, buffer, size);
+            Tcl_Close(interp, data);
+            ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr, unloadProcPtr);
+            if (ret == TCL_OK) {
+		if (*handlePtr == NULL) {
+		    break;
+		}
+                if (sym1 != NULL) {
+                    *proc1Ptr = TclpFindSymbol(interp, *handlePtr, sym1);
+                }
+                if (sym2 != NULL) {
+                    *proc2Ptr = TclpFindSymbol(interp, *handlePtr, sym2);
+                }
+		return TCL_OK;
+	    }
+	} while (0); 
+	Tcl_ResetResult(interp);
+#endif
+
 	    /* 
 	     * Get a temporary filename to use, first to
 	     * copy the file into, and then to load. 
