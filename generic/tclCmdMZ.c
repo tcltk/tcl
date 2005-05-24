@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.17 2005/05/11 00:48:01 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.18 2005/05/24 04:18:54 das Exp $
  */
 
 #include "tclInt.h"
@@ -2912,11 +2912,11 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Tcl_Obj *objPtr;
+    Tcl_Obj *objs[4];
     register int i, result;
     int count;
     double totalMicroSec;
     Tcl_Time start, stop;
-    char buf[100];
 
     if (objc == 2) {
 	count = 1;
@@ -2943,10 +2943,15 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     
     totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
 		      + ( stop.usec - start.usec ) );
-    sprintf(buf, "%.0f microseconds per iteration",
-	((count <= 0) ? 0 : totalMicroSec/count));
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+    if (count <= 1) {
+	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : totalMicroSec);
+    } else {
+	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+    }
+    objs[1] = Tcl_NewStringObj("microseconds", -1);
+    objs[2] = Tcl_NewStringObj("per", -1);
+    objs[3] = Tcl_NewStringObj("iteration", -1);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
     return TCL_OK;
 }
 
