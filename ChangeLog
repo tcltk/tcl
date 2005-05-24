@@ -1,5 +1,8 @@
 2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
 
+        * tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
+        that need to be handled specially.
+
 	* macosx/Makefile:
 	* macosx/README:
 	* macosx/Tcl-Info.plist.in (new file):
