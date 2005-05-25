@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.121 2005/05/23 20:18:57 das Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.122 2005/05/25 19:27:10 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2921,7 +2921,8 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
 		      + ( stop.usec - start.usec ) );
     if (count <= 1) {
-	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : totalMicroSec);
+	/* Use int obj since we know time is not fractional [Bug 1202178] */
+	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }
