@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.14 2005/05/24 04:20:12 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.15 2005/05/25 18:49:28 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -479,13 +479,13 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     tcl_config_files="${tcl_config_files} [Tcl-Info.plist:../macosx/Tcl-Info.plist.in]"
     # Construct a fake local framework structure to make linking with
     # '-framework Tcl' and running of tcltest work
-    AC_OUTPUT_COMMANDS([n=Tcl && echo "creating $n.framework" &&
-        f=$n.framework && v=Versions/$VERSION &&
-        rm -rf $f && mkdir -p $f/$v/Resources &&
-        ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
-        ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
-        unset n f v
-    ], VERSION=${TCL_VERSION})
+    AC_OUTPUT_COMMANDS([test "$FRAMEWORK_BUILD" = "1" &&
+	n=Tcl && f=$n.framework && v=Versions/$VERSION &&
+	echo "creating $f" && rm -rf $f && mkdir -p $f/$v/Resources &&
+	ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
+	ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
+	unset n f v
+    ], [VERSION=${TCL_VERSION} FRAMEWORK_BUILD=${FRAMEWORK_BUILD}])
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
     if test "${libdir}" = '${exec_prefix}/lib'; then
         # override libdir default

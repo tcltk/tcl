@@ -8188,16 +8188,16 @@ rm -f conftest.s*
 
 EOF
 cat >> $CONFIG_STATUS <<EOF
-VERSION=${TCL_VERSION}
+VERSION=${TCL_VERSION} FRAMEWORK_BUILD=${FRAMEWORK_BUILD}
 
 EOF
 cat >> $CONFIG_STATUS <<\EOF
-n=Tcl && echo "creating $n.framework" &&
-        f=$n.framework && v=Versions/$VERSION &&
-        rm -rf $f && mkdir -p $f/$v/Resources &&
-        ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
-        ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
-        unset n f v
+test "$FRAMEWORK_BUILD" = "1" &&
+	n=Tcl && f=$n.framework && v=Versions/$VERSION &&
+	echo "creating $f" && rm -rf $f && mkdir -p $f/$v/Resources &&
+	ln -s $v/$n $v/Resources $f && ln -s ../../../$n $f/$v &&
+	ln -s ../../../../$n-Info.plist $f/$v/Resources/Info.plist &&
+	unset n f v
     
 
 exit 0

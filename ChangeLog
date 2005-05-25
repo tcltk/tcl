@@ -1,7 +1,12 @@
+2005-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure.in: ensure false Tcl.framework is only created
+	with --enable-framework
+
 2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
 
-        * tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
-        that need to be handled specially.
+	* tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
+	that need to be handled specially.
 
 	* macosx/Makefile:
 	* macosx/README:
