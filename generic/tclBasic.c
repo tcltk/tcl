@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.156 2005/05/22 01:30:44 chengyemao Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.157 2005/05/25 16:13:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -51,6 +51,8 @@ static void	OldMathFuncDeleteProc _ANSI_ARGS_((ClientData));
 static int	ExprAbsFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprBinaryFunc _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
+static int	ExprBoolFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprDoubleFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
@@ -249,6 +251,7 @@ BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::asin",	ExprUnaryFunc,	(ClientData) asin 	},
     { "::tcl::mathfunc::atan",	ExprUnaryFunc,	(ClientData) atan 	},
     { "::tcl::mathfunc::atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
+    { "::tcl::mathfunc::bool",	ExprBoolFunc,	NULL			},
     { "::tcl::mathfunc::ceil",	ExprUnaryFunc,	(ClientData) ceil 	},
     { "::tcl::mathfunc::cos",	ExprUnaryFunc,	(ClientData) cos 	},
     { "::tcl::mathfunc::cosh",	ExprUnaryFunc,	(ClientData) cosh	},
@@ -5123,6 +5126,27 @@ ExprAbsFunc(clientData, interp, objc, objv)
 	Tcl_SetObjResult(interp, oResult);
     }
 
+    return TCL_OK;
+}
+
+static int
+ExprBoolFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    int value;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[1], &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
     return TCL_OK;
 }
 

@@ -1,3 +1,12 @@
+2005-05-25  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#182 IMPLEMENTATION	[Patch 1165062]
+
+	* doc/mathfunc.n:	New built-in math function bool().
+	* generic/tclBasic.c:
+	* tests/expr.test:
+	* tests/info.test:
+
 2005-05-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:	Updated [unknown] to be sure the [return]
