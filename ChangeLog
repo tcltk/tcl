@@ -1,7 +1,9 @@
 2005-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/configure.in: ensure false Tcl.framework is only created
-	with --enable-framework
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): add necessary cast
+
+	* unix/configure, unix/configure.in: ensure false Tcl.framework is
+	only created with --enable-framework
 
 2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
 
