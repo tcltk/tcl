@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.14 2005/05/11 16:58:46 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.15 2005/05/25 15:01:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1699,10 +1699,11 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 	if (TclMatchIsTrivial(simplePattern)) {
 	    Command *cmdPtr;
 	    hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
-	    (hPtr != NULL)
+	    if ((hPtr != NULL)
 		    && (cmdPtr = (Command *) Tcl_GetHashValue(hPtr))
-		    && (cmdPtr->deleteProc == DeleteImportedCmd)
-		    && Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+		    && (cmdPtr->deleteProc == DeleteImportedCmd)) {
+		Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+	    }
 	    return TCL_OK;
 	}
 	for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);

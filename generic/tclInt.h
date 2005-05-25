@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.24 2005/05/11 16:58:45 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.25 2005/05/25 15:01:47 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2168,6 +2168,14 @@ MODULE_SCOPE int	TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 MODULE_SCOPE int	TclpUtime _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    struct utimbuf *tval));
+#ifdef TCL_LOAD_FROM_MEMORY
+MODULE_SCOPE void*	TclpLoadMemoryGetBuffer _ANSI_ARGS_((
+			    Tcl_Interp *interp, int size));
+MODULE_SCOPE int	TclpLoadMemory _ANSI_ARGS_((Tcl_Interp *interp, 
+			    void *buffer, int size, int codeSize, 
+			    Tcl_LoadHandle *loadHandle, 
+			    Tcl_FSUnloadFileProc **unloadProcPtr));
+#endif
 
 /*
  *----------------------------------------------------------------
@@ -2921,9 +2929,15 @@ MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
 #define TclSetLongObj(objPtr, l) \
     TclSetIntObj((objPtr), (l))
 
+/*
+ * NOTE: There is to be no such thing as a "pure" boolean.
+ * Boolean values set programmatically go straight to being
+ * "int" Tcl_Obj's, with value 0 or 1.  The only "boolean"
+ * Tcl_Obj's shall be those holding the cached boolean value
+ * of strings like: "yes", "no", "true", "false", "on", "off".
+ */
 #define TclSetBooleanObj(objPtr, b) \
-    TclSetIntObj((objPtr), ((b)? 1 : 0));\
-    (objPtr)->typePtr = &tclBooleanType
+    TclSetIntObj((objPtr), ((b)? 1 : 0));
 
 #define TclSetWideIntObj(objPtr, w) \
     TclInvalidateStringRep(objPtr);\
@@ -2971,9 +2985,12 @@ MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
 #define TclNewLongObj(objPtr, l) \
     TclNewIntObj((objPtr), (l))
 
+/*
+ * NOTE: There is to be no such thing as a "pure" boolean.
+ * See comment above TclSetBooleanObj macro above.
+ */
 #define TclNewBooleanObj(objPtr, b) \
-    TclNewIntObj((objPtr), ((b)? 1 : 0));\
-    (objPtr)->typePtr = &tclBooleanType
+    TclNewIntObj((objPtr), ((b)? 1 : 0))
 
 #define TclNewWideIntObj(objPtr, w) \
     TclIncrObjsAllocated(); \

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.27 2005/05/16 19:23:08 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.28 2005/05/25 15:01:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3276,6 +3276,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **newObjv;
     int i;
+    CallFrame *savedVarFramePtr;	/* Save old copy of iPtr->varFramePtr
+					 * in case TCL_EVAL_GLOBAL was set. */
     int code = TCL_OK;
     int traceCode = TCL_OK;
     int checkTraces = 1;
@@ -3289,93 +3291,88 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     }
 
     /*
+     * Find the procedure to execute this command. If there isn't one,
+     * then see if there is a command "unknown".  If so, create a new
+     * word array with "unknown" as the first word and the original
+     * command words as arguments.  Then call ourselves recursively to
+     * execute it.
+     *
+     * If caller requests, or if we're resolving the target end of an
+     * interpeter alias (TCL_EVAL_INVOKE), be sure to do command name
+     * resolution in the global namespace.
+     *
      * If any execution traces rename or delete the current command,
      * we may need (at most) two passes here.
      */
-    while (1) {
-	CallFrame *savedVarFramePtr = iPtr->varFramePtr;
-					/* Save old copy of iPtr->varFramePtr
-					 * in case TCL_EVAL_GLOBAL was set. */
 
-	/*
-	 * Find the procedure to execute this command. If there isn't one,
-	 * then see if there is a command "unknown".  If so, create a new
-	 * word array with "unknown" as the first word and the original
-	 * command words as arguments.  Then call ourselves recursively
-	 * to execute it.
-	 *
-	 * If caller requests, or if we're resolving the target end of
-	 * an interpeter alias (TCL_EVAL_INVOKE), be sure to do command
-	 * name resolution in the global namespace.
-	 */
+  reparseBecauseOfTraces:
+    savedVarFramePtr = iPtr->varFramePtr;
+    if (flags & (TCL_EVAL_INVOKE | TCL_EVAL_GLOBAL)) {
+	iPtr->varFramePtr = NULL;
+    }
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
+    iPtr->varFramePtr = savedVarFramePtr;
 
-	if (flags & (TCL_EVAL_INVOKE | TCL_EVAL_GLOBAL)) {
-	    iPtr->varFramePtr = NULL;
+    if (cmdPtr == NULL) {
+	Tcl_Obj *fqCommand = NULL;
+
+	newObjv = (Tcl_Obj **) ckalloc((unsigned)
+		((objc + 1) * sizeof(Tcl_Obj *)));
+	for (i = objc-1; i >= 0; i--) {
+	    newObjv[i+1] = objv[i];
 	}
-	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-	iPtr->varFramePtr = savedVarFramePtr;
 
+	if ((flags & TCL_EVAL_INVOKE) && (iPtr->varFramePtr != NULL)) {
+	    /* Be sure alias targets are resolved in :: */
+	    fqCommand = Tcl_NewStringObj("::",-1);
+	    Tcl_IncrRefCount(fqCommand);
+	    Tcl_AppendObjToObj(fqCommand,newObjv[1]);
+	    newObjv[1] = fqCommand;
+	}
+
+	newObjv[0] = Tcl_NewStringObj("::unknown", -1);
+	Tcl_IncrRefCount(newObjv[0]);
+	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	if (cmdPtr == NULL) {
-	    Tcl_Obj *fqCommand = NULL;
-
-	    newObjv = (Tcl_Obj **) ckalloc((unsigned)
-		    ((objc + 1) * sizeof(Tcl_Obj *)));
-	    for (i = objc-1; i >= 0; i--) {
-		newObjv[i+1] = objv[i];
-	    }
-	    if ((flags & TCL_EVAL_INVOKE) && (iPtr->varFramePtr != NULL)) {
-		/* Be sure alias targets are resolved in :: */
-		fqCommand = Tcl_NewStringObj("::",-1);
-		Tcl_IncrRefCount(fqCommand);
-		Tcl_AppendObjToObj(fqCommand,newObjv[1]);
-		newObjv[1] = fqCommand;
-	    }
-	    newObjv[0] = Tcl_NewStringObj("::unknown", -1);
-	    Tcl_IncrRefCount(newObjv[0]);
-	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
-	    if (cmdPtr == NULL) {
-		Tcl_AppendResult(interp, "invalid command name \"",
-			Tcl_GetString(objv[0]), "\"", (char *) NULL);
-		code = TCL_ERROR;
-	    } else {
-	        code = TEOVI(interp, objc+1, newObjv, command, length, 0);
-	    }
-	    Tcl_DecrRefCount(newObjv[0]);
-	    if (fqCommand != NULL) {
-		Tcl_DecrRefCount(fqCommand);
-	    }
-	    ckfree((char *) newObjv);
-	    goto done;
+	    Tcl_AppendResult(interp, "invalid command name \"",
+		    TclGetString(objv[0]), "\"", (char *) NULL);
+	    code = TCL_ERROR;
+	} else {
+	    code = TEOVI(interp, objc+1, newObjv, command, length, 0);
 	}
+	Tcl_DecrRefCount(newObjv[0]);
+	if (fqCommand != NULL) {
+	    Tcl_DecrRefCount(fqCommand);
+	}
+	ckfree((char *) newObjv);
+	goto done;
+    }
 
-	/*
-	 * Call trace procedures if needed.
+    /*
+     * Call trace procedures if needed.
+     */
+    if ((checkTraces) && (command != NULL)) {
+	int cmdEpoch = cmdPtr->cmdEpoch;
+	cmdPtr->refCount++;
+	/* 
+	 * If the first set of traces modifies/deletes the command or
+	 * any existing traces, then the set checkTraces to 0 and go
+	 * through this while loop one more time.
 	 */
-	if ((checkTraces) && (command != NULL)) {
-	    int cmdEpoch = cmdPtr->cmdEpoch;
-	    cmdPtr->refCount++;
-	    /* 
-	     * If the first set of traces modifies/deletes the command or
-	     * any existing traces, then the set checkTraces to 0 and
-	     * go through this while loop one more time.
-	     */
-	    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-		traceCode = TclCheckInterpTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	    }
-	    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) 
-		    && (traceCode == TCL_OK)) {
-		traceCode = TclCheckExecutionTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	    }
-	    cmdPtr->refCount--;
-	    if (cmdEpoch != cmdPtr->cmdEpoch) {
-		/* The command has been modified in some way */
-		checkTraces = 0;
-		continue;
-	    }
+	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+	    traceCode = TclCheckInterpTraces(interp, command, length,
+		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
-	break;
+	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+	    traceCode = TclCheckExecutionTraces(interp, command, length,
+		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	}
+	cmdPtr->refCount--;
+	if (cmdEpoch != cmdPtr->cmdEpoch) {
+	    /* The command has been modified in some way */
+	    checkTraces = 0;
+	    goto reparseBecauseOfTraces;
+	}
     }
 
     /*
@@ -4355,22 +4352,19 @@ Tcl_ExprBoolean(interp, exprstring, ptr)
     CONST char *exprstring;	/* Expression to evaluate. */
     int *ptr;			/* Where to store 0/1 result. */
 {
-    register Tcl_Obj *exprPtr;
-    Tcl_Obj *resultPtr;
-    int length = strlen(exprstring);
-    int result = TCL_OK;
+    if (*exprstring == '\0') {
+	/*
+	 * An empty string. Just set the result boolean to 0 (false).
+	 */
 
-    if (length > 0) {
-	exprPtr = Tcl_NewStringObj(exprstring, length);
+	*ptr = 0;
+	return TCL_OK;
+    } else {
+	int result;
+	Tcl_Obj *exprPtr = Tcl_NewStringObj(exprstring, -1);
 	Tcl_IncrRefCount(exprPtr);
-	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	if (result == TCL_OK) {
-	    /*
-	     * Store a boolean based on the expression result.
-	     */
-	    result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
-	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
-	}
+	result = Tcl_ExprBooleanObj(interp, exprPtr, ptr);
+	Tcl_DecrRefCount(exprPtr);
 	if (result != TCL_OK) {
 	    /*
 	     * Move the interpreter's object result to the string result, 
@@ -4379,15 +4373,8 @@ Tcl_ExprBoolean(interp, exprstring, ptr)
 
 	    (void) Tcl_GetStringResult(interp);
 	}
-	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
-    } else {
-	/*
-	 * An empty string. Just set the result boolean to 0 (false).
-	 */
-
-	*ptr = 0;
+	return result;
     }
-    return result;
 }
 
 /*
@@ -5455,6 +5442,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
     }
     if ((valuePtr->typePtr == &tclIntType) ||
 	    (valuePtr->typePtr == &tclWideIntType)) {
+	Tcl_SetObjResult(interp, valuePtr);
 	return TCL_OK;
     }
     GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);

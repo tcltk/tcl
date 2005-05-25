@@ -1,3 +1,105 @@
+2005-05-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Updated [unknown] to be sure the [return]
+	* tests/init.test:	options from an auto-loaded command are
+	seen correctly by the caller.
+
+2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
+
+        * tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
+        that need to be handled specially.
+
+	* macosx/Makefile:
+	* macosx/README:
+	* macosx/Tcl-Info.plist.in (new file):
+	* unix/Makefile.in:
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* unix/tclUnixInit.c: moved all Darwin framework build support from
+	macosx/Makefile into the standard unix configure/make buildsystem, the
+	macosx/Makefile is no longer required to build Tcl.framework (but its
+	functionality is still available for backwards compatibility).
+	* unix/configure: autoconf-2.59
+
+	* generic/tclIOUtil.c (TclLoadFile):
+	* generic/tclInt.h:
+	* unix/tcl.m4:
+	* unix/tclLoadDyld.c: added support for [load]ing .bundle binaries in
+	addition to .dylib's: .bundle's can be [unload]ed (unlike .dylib's),
+	and can be [load]ed from memory, e.g. directly from VFS without
+	needing to be written out to a temporary location first. [Bug 1202209]
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): change [time] called with a
+	count > 1 to return a string with a float value instead of a rounded
+	off integer. [Bug 1202178]
+
+	* doc/expr.n:
+	* doc/string.n: fixed roff syntax complaints from 'make html'.
+
+2005-05-20  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclParseExpr.c:       Corrected parser to recognize all
+        boolean literals accepted by Tcl_GetBoolean, including prefixes
+        like "y" and "f", and to allow "eq" and "ne" as function names
+        in the proper context.  [Bug 1201589].
+
+2005-05-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (TclEvalObjvInternal): Rewrite for greater
+	clarity; although 'goto' is Bad, the contortions you have to go
+	through to avoid it can be worse...
+
+2005-05-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier): fixed crashing
+	CFRelease of runLoopSource in Tcl_InitNotifier (reported by Zoran):
+	CFRunLoopAddSource doesn't CFRetain, so can only CFRelease the
+	runLoopSource in Tcl_FinalizeNotifier.
+
+2005-05-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_ExprBoolean):	Rewrite as wrapper around
+	Tcl_ExprBooleanObj.
+
+	* generic/tclCmdMZ.c ([string is boolean/true/false]):  Rewrite
+	dropping string-based Tcl_GetBoolean call, so that internal reps
+	are kept for subsequent quick boolean operations.
+
+	* generic/tclExecute.c:	Dropped most special handling of the
+	"boolean" Tcl_ObjType, since that type should now be rarely
+	encountered.
+
+	* doc/BoolObj.3:	Rewrite of documentation dropping many details
+	about the internals of Tcl_Objs.  Shorter documentation focuses on
+	the function and use of the routines.
+
+	* generic/tclInt.h:	Revision to the "boolean" Tcl_ObjType, so
+	* generic/tclObj.c:	that only string values like "yes" and "false"
+	* tests/obj.test:	are kept as the "boolean" Tcl_ObjType.  The
+	string values "0" and "1" are kept as "int" Tcl_ObjType, which also
+	produce quick calls to Tcl_GetBooleanFromObj().  Since this internal
+	change means a Tcl_ConvertToType to a "boolean" Tcl_ObjType might
+	not produce a Tcl_Obj of type "boolean", the registration of the
+	"boolean" type is also removed.
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType on the type name "boolean".  
+
+2005-05-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (TclInitObjSubsystem):	Removed the
+	* tests/listObj.test:	registration of the Tcl_ObjType's "list",
+	* tests/obj.test:	"procbody", "index", "ensembleCommand",
+	"localVarName", and "levelReference".  The only reason to register
+	a Tcl_ObjType is to have it returned by Tcl_GetObjType, and the
+	only reason for that is to retrieve a (Tcl_ObjType *) to pass to
+	Tcl_ConvertToType().  None of the types above can support a
+	Tcl_ConvertToType() call; they panic.  Better not to offer something
+	than to lead users into a panic.
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType on the type names listed above.
+
 2005-05-15  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/tclWin32Dll.c: conditioned definition of

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.2 2005/05/16 19:23:19 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.3 2005/05/25 15:01:51 dgp Exp $
  */
 
 #ifdef HAVE_COREFOUNDATION /* Traditional unix select-based notifier
@@ -248,7 +248,6 @@ Tcl_InitNotifier()
             Tcl_Panic("Tcl_InitNotifier: could not create CFRunLoopSource.");
         }
         CFRunLoopAddSource(runLoop, runLoopSource, kCFRunLoopCommonModes);
-        CFRelease(runLoopSource);
         tsdPtr->runLoopSource = runLoopSource;
         tsdPtr->runLoop = runLoop;
     }
@@ -363,6 +362,7 @@ Tcl_FinalizeNotifier(clientData)
         tsdPtr->runLoop = NULL;
         /* Remove runLoopSource from all CFRunLoops and release it */
         CFRunLoopSourceInvalidate(tsdPtr->runLoopSource);
+        CFRelease(tsdPtr->runLoopSource);
         tsdPtr->runLoopSource = NULL;
     }
     UNLOCK_NOTIFIER;

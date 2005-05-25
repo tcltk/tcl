@@ -1,7 +1,7 @@
 Tcl MacOSX README 
 -----------------
 
-RCS: @(#) $Id: README,v 1.2.2.2 2005/04/29 22:40:40 dgp Exp $
+RCS: @(#) $Id: README,v 1.2.2.3 2005/05/25 15:01:51 dgp Exp $
 
 This is the README file for the Mac OS X native version of Tcl (framework build).
 
@@ -77,8 +77,12 @@ that came with OSX preinstalled. It can also be downloaded from
 http://connect.apple.com (after you register for free ADC membership).
 
 - Tcl is built as a Mac OS X framework via the Makefile in tcl/macosx, but can
-also be built from Apple's ProjectBuilder IDE using the Tcl.pbproj project (which
-calls through to the Makefile).
+but can also be built directly with the standard unix configure and make
+buildsystem in tcl/unix.
+
+- It is still possible to build with Apple's Xcode IDE using the Tcl.pbproj
+project but this is not recommended anymore (currently Tcl.pbproj calls through
+to the tcl/macosx/Makefile so there should be no build differences).
 
 - Unpack the tcl source release archive.
 
@@ -94,9 +98,7 @@ set ${ver} to the empty string instead:
 	set ver=""     ;: if your shell is csh
 	ver=""         ;: if your shell is sh
 
-- If you're only interested in _building_ Tcl.framework and don't plan on doing
-development with the ProjectBuilder projects, using the Makefile is easiest.
-The following steps will build Tcl from the Terminal, assuming you are
+- The following steps will build Tcl from the Terminal, assuming you are
 located in the directory containing the tcl source tree:
 	make -C tcl${ver}/macosx
 and the following will then install Tcl onto the root volume (admin password 

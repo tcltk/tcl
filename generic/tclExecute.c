@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.21 2005/05/16 19:23:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.22 2005/05/25 15:01:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2488,8 +2488,7 @@ TclExecuteByteCode(interp, codePtr)
 	doCondJump:		
 	    valuePtr = *tosPtr;
 	    
-	    if ((valuePtr->typePtr == &tclIntType)
-		    || (valuePtr->typePtr == &tclBooleanType)) {
+	    if (valuePtr->typePtr == &tclIntType) {
 		b = (valuePtr->internalRep.longValue != 0);
 	    } else if (valuePtr->typePtr == &tclDoubleType) {
 		b = (valuePtr->internalRep.doubleValue != 0.0);
@@ -2563,7 +2562,7 @@ TclExecuteByteCode(interp, codePtr)
 	t1Ptr = valuePtr->typePtr;
 	t2Ptr = value2Ptr->typePtr;
 
-	if ((t1Ptr == &tclIntType) || (t1Ptr == &tclBooleanType)) {
+	if (t1Ptr == &tclIntType) {
 	    i1 = (valuePtr->internalRep.longValue != 0);
 	} else if (t1Ptr == &tclWideIntType) {
 	    TclGetWide(w,valuePtr);
@@ -2582,9 +2581,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i1 = (w != W0);
 		}
 	    } else {
-		result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL,
-					       valuePtr, &i1);
-		i1 = (i1 != 0);
+		result = Tcl_GetBooleanFromObj(NULL, valuePtr, &i1);
 	    }
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
@@ -2594,7 +2591,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
 		
-	if ((t2Ptr == &tclIntType) || (t2Ptr == &tclBooleanType)) {
+	if (t2Ptr == &tclIntType) {
 	    i2 = (value2Ptr->internalRep.longValue != 0);
 	} else if (t2Ptr == &tclWideIntType) {
 	    TclGetWide(w,value2Ptr);
@@ -2613,7 +2610,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i2 = (w != W0);
 		}
 	    } else {
-		result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL, value2Ptr, &i2);
+		result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
 	    }
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
@@ -4264,28 +4261,22 @@ TclExecuteByteCode(interp, codePtr)
 	     * Otherwise, we need to generate a numeric internal rep.
 	     * from the string rep.
 	     */
-	    if ((tPtr == &tclBooleanType) && (valuePtr->bytes == NULL)) {
-		valuePtr->typePtr = &tclIntType;
+	    int length;
+	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
+	    if (TclLooksLikeInt(s, length)) {
+		GET_WIDE_OR_INT(result, valuePtr, i, w);
 	    } else {
-		int length;
-		char *s = Tcl_GetStringFromObj(valuePtr, &length);
-		if (TclLooksLikeInt(s, length)) {
-		    GET_WIDE_OR_INT(result, valuePtr, i, w);
-		} else {
-		    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-		            valuePtr, &d);
-		}
-		if (result == TCL_ERROR && *pc == INST_LNOT) {
-		    result = Tcl_GetBooleanFromObj((Tcl_Interp *)NULL,
-		            valuePtr, &boolvar);
-		    i = (long)boolvar; /* i is long, not int! */
-		}
-		if (result != TCL_OK) {
-		    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
-		            s, (tPtr? tPtr->name : "null")));
-		    IllegalExprOperandType(interp, pc, valuePtr);
-		    goto checkForCatch;
-		}
+		result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
+	    }
+	    if (result == TCL_ERROR && *pc == INST_LNOT) {
+		result = Tcl_GetBooleanFromObj(NULL, valuePtr, &boolvar);
+		i = (long)boolvar; /* i is long, not int! */
+	    }
+	    if (result != TCL_OK) {
+		TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", s,
+			(tPtr? tPtr->name : "null")));
+		IllegalExprOperandType(interp, pc, valuePtr);
+		goto checkForCatch;
 	    }
 	    tPtr = valuePtr->typePtr;
 	}
@@ -4295,7 +4286,7 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * Create a new object.
 		 */
-		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
+		if (tPtr == &tclIntType) {
 		    i = valuePtr->internalRep.longValue;
 		    TclNewLongObj(objResultPtr, -i);
 			TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
@@ -4313,7 +4304,7 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * valuePtr is unshared. Modify it directly.
 		 */
-		if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
+		if (tPtr == &tclIntType) {
 		    i = valuePtr->internalRep.longValue;
 		    TclSetLongObj(valuePtr, -i);
 		    TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
@@ -4445,22 +4436,16 @@ TclExecuteByteCode(interp, codePtr)
 	     * Otherwise, we need to generate a numeric internal rep.
 	     * from the string rep.
 	     */
-	    if ((tPtr == &tclBooleanType) && (valuePtr->bytes == NULL)) {
-		valuePtr->typePtr = &tclIntType;
-		converted = 1;
+	    s = Tcl_GetStringFromObj(valuePtr, &length);
+	    if (TclLooksLikeInt(s, length)) {
+		GET_WIDE_OR_INT(result, valuePtr, i, w);
 	    } else {
-		s = Tcl_GetStringFromObj(valuePtr, &length);
-		if (TclLooksLikeInt(s, length)) {
-		    GET_WIDE_OR_INT(result, valuePtr, i, w);
-		} else {
-		    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-		            valuePtr, &d);
-		}
-		if (result == TCL_OK) {
-		    converted = 1;
-		}
-		result = TCL_OK; /* reset the result variable */
+		result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 	    }
+	    if (result == TCL_OK) {
+		converted = 1;
+	    }
+	    result = TCL_OK; /* reset the result variable */
 	    tPtr = valuePtr->typePtr;
 	}
 

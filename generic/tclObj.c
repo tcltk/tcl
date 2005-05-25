@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.18 2005/05/11 16:58:46 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.19 2005/05/25 15:01:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -375,7 +375,6 @@ TclInitObjSubsystem()
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
-    Tcl_RegisterObjType(&tclBooleanType);
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclEndOffsetType);
@@ -383,19 +382,13 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclWideIntType);
     Tcl_RegisterObjType( &tclBignumType );
     Tcl_RegisterObjType(&tclStringType);
-    Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
-    Tcl_RegisterObjType(&tclProcBodyType);
     Tcl_RegisterObjType(&tclArraySearchType);
-    Tcl_RegisterObjType(&tclIndexType);
     Tcl_RegisterObjType(&tclNsNameType);
-    Tcl_RegisterObjType(&tclEnsembleCmdType);
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclTokensType);
-    Tcl_RegisterObjType(&tclLocalVarNameType);
     Tcl_RegisterObjType(&tclRegexpType);
-    Tcl_RegisterObjType(&tclLevelReferenceType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -1232,7 +1225,7 @@ Tcl_DbNewBooleanObj(boolValue, file, line)
     objPtr->bytes = NULL;
 
     objPtr->internalRep.longValue = (boolValue? 1 : 0);
-    objPtr->typePtr = &tclBooleanType;
+    objPtr->typePtr = &tclIntType;
     return objPtr;
 }
 
@@ -1308,19 +1301,52 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
     double d;
     long l;
 
+    /* 
+     * The flow through this routine is "optimized" to avoid the
+     * generation of string rep. for "pure" numeric values.  However,
+     * once the string rep is generated it's fairly inefficient at
+     * determining a string is *not* a valid boolean.  It has to
+     * scan the string as many as four times (ruling out "double",
+     * "long", "wideint", and "boolean" in turn) to figure out that
+     * an invalid boolean value is stored in objPtr->bytes.
+     */
+
+    if (objPtr->typePtr == &tclIntType) {
+	*boolPtr = (int) (objPtr->internalRep.longValue != 0);
+	return TCL_OK;
+    }
     if (objPtr->typePtr == &tclBooleanType) {
 	*boolPtr = (int) objPtr->internalRep.longValue;
 	return TCL_OK;
     }
+    if (objPtr->typePtr == &tclWideIntType) {
+	*boolPtr = (int) (objPtr->internalRep.wideValue != 0);
+	return TCL_OK;
+    }
+
+    /*
+     * Caution: Don't be tempted to check directly for the
+     * "double" Tcl_ObjType and then compare the intrep to 0.0.
+     * This isn't reliable because a "double" Tcl_ObjType can
+     * hold the NaN value.  Use the API Tcl_GetDoubleFromObj,
+     * which does the checking for us.
+     */
+
     /* 
-     * The following call retrieves a numeric value without shimmering
-     * away any existing numeric intrep Tcl_ObjTypes.
+     * The following call retrieves a numeric value without
+     * generating the string rep of a double.
      */
     if (Tcl_GetDoubleFromObj(NULL, objPtr, &d) == TCL_OK) {
 	*boolPtr = (d != 0.0);
 
-	/* Attempt shimmer to "boolean" objType */
-	SetBooleanFromAny(NULL, objPtr); 
+	/* Tcl_GetDoubleFromObj() will succeed on the strings "0"
+	 * and "1", but we'd rather keep those values around as
+	 * a better objType for boolean value.  Following call
+	 * will shimmer appropriately.
+	 */
+	if (objPtr->bytes != NULL) {
+	    SetBooleanFromAny(NULL, objPtr); 
+	}
 	return TCL_OK;
     }
     /*
@@ -1394,11 +1420,9 @@ SetBooleanFromAny(interp, objPtr)
 	    goto badBoolean;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    long l = objPtr->internalRep.longValue;
-	    switch (l) {
+	    switch (objPtr->internalRep.longValue) {
 		case 0: case 1:
-		    newBool = (int)l;
-		    goto goodBoolean;
+		    return TCL_OK;
 	    }
 	    goto badBoolean;
 	}
@@ -1407,7 +1431,7 @@ SetBooleanFromAny(interp, objPtr)
 	    switch (w) {
 		case 0: case 1:
 		    newBool = (int)w;
-		    goto goodBoolean;
+		    goto numericBoolean;
 	    }
 	    goto badBoolean;
 	}
@@ -1428,16 +1452,15 @@ SetBooleanFromAny(interp, objPtr)
     case '0':
 	if (length == 1) {
 	    newBool = 0;
-	    goto goodBoolean;
+	    goto numericBoolean;
 	}
 	goto badBoolean;
     case '1':
 	if (length == 1) {
 	    newBool = 1;
-	    goto goodBoolean;
+	    goto numericBoolean;
 	}
 	goto badBoolean;
-
     }
 
     /*
@@ -1525,6 +1548,12 @@ SetBooleanFromAny(interp, objPtr)
 	Tcl_SetObjResult(interp, msg);
     }
     return TCL_ERROR;
+
+    numericBoolean:
+    TclFreeIntRep(objPtr);
+    objPtr->internalRep.longValue = newBool;
+    objPtr->typePtr = &tclIntType;
+    return TCL_OK;
 }
 
 /*

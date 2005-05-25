@@ -1412,8 +1412,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
 	    PLAT_OBJS='${MAC_OSX_OBJS}'
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
-	    TCL_SHLIB_LD_EXTRAS='-compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
-	    TK_SHLIB_LD_EXTRAS=' -compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TK_LIB_FILE}  -seg1addr 0xb000000 -unexported_symbols_list $$(f=$(TCL_STUB_LIB_FILE).E && nm -gjp $(TCL_BIN_DIR)/$(TCL_STUB_LIB_FILE) | tail +3 > $$f && echo $$f)'
             AC_MSG_CHECKING([whether to use CoreFoundation])
             AC_ARG_ENABLE(corefoundation, [  --enable-corefoundation use CoreFoundation API [--enable-corefoundation]],
                 [tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
@@ -1439,6 +1437,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8",
 		[Are we to override what our default encoding is?])
 	    AC_DEFINE(MODULE_SCOPE, __private_extern__, [Linker support for module scope symbols])
+	    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1, [Can this platform load code from memory?])
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)

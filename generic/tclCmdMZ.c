@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.15 2005/05/11 16:58:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.16 2005/05/25 15:01:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1480,19 +1480,13 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		case STR_IS_BOOL:
 		case STR_IS_TRUE:
 		case STR_IS_FALSE:
-		    if (objPtr->typePtr == &tclBooleanType) {
-			if ((((enum isOptions) index == STR_IS_TRUE) &&
+		    if (TCL_OK != Tcl_ConvertToType(NULL, objPtr,
+			    &tclBooleanType)) {
+			result = 0;
+		    } else if ((((enum isOptions) index == STR_IS_TRUE) &&
 			     objPtr->internalRep.longValue == 0) ||
 			    (((enum isOptions) index == STR_IS_FALSE) &&
 			     objPtr->internalRep.longValue != 0)) {
-			    result = 0;
-			}
-		    } else if ((Tcl_GetBoolean(NULL, string1, &i)
-				== TCL_ERROR) ||
-			       (((enum isOptions) index == STR_IS_TRUE) &&
-				i == 0) ||
-			       (((enum isOptions) index == STR_IS_FALSE) &&
-				i != 0)) {
 			result = 0;
 		    }
 		    break;
@@ -2895,11 +2889,11 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Tcl_Obj *objPtr;
+    Tcl_Obj *objs[4];
     register int i, result;
     int count;
     double totalMicroSec;
     Tcl_Time start, stop;
-    char buf[100];
 
     if (objc == 2) {
 	count = 1;
@@ -2926,9 +2920,15 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     
     totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
 		      + ( stop.usec - start.usec ) );
-    sprintf(buf, "%.0f microseconds per iteration",
-	((count <= 0) ? 0 : totalMicroSec/count));
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+    if (count <= 1) {
+	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : totalMicroSec);
+    } else {
+	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+    }
+    objs[1] = Tcl_NewStringObj("microseconds", -1);
+    objs[2] = Tcl_NewStringObj("per", -1);
+    objs[3] = Tcl_NewStringObj("iteration", -1);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
     return TCL_OK;
 }
 

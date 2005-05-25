@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.8 2005/05/16 19:23:24 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.9 2005/05/25 15:02:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1138,7 +1138,7 @@ MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
     int foundInFramework = TCL_ERROR;
 #ifdef TCL_FRAMEWORK
     foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp, 
-	"com.tcltk.tcllibrary", TCL_VERSION, 0, maxPathLen, tclLibPath);
+	"com.tcltk.tcllibrary", TCL_FRAMEWORK_VERSION, 0, maxPathLen, tclLibPath);
 #endif
     return foundInFramework;
 }

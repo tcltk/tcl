@@ -11,21 +11,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: listObj.test,v 1.5.26.1 2004/05/27 14:29:20 dgp Exp $
+# RCS: @(#) $Id: listObj.test,v 1.5.26.2 2005/05/25 15:01:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-testConstraint testobj [llength [info commands testobj]]
-
 catch {unset x}
-test listobj-1.1 {Tcl_GetListObjType} testobj {
-    set t [testobj types]
-    set first [string first "list" $t]
-    set result [expr {$first != -1}]
-} {1}
+test listobj-1.1 {Tcl_GetListObjType} empty {
+    # Test removed; tested an internal detail
+    # that's no longer correct, and duplicated test obj-1.1
+} {}
 
 test listobj-2.1 {Tcl_SetListObj, use in lappend} {
     catch {unset x}
