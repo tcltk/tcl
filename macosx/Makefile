@@ -4,7 +4,7 @@
 #	uses the standard unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# RCS: @(#) $Id: Makefile,v 1.20 2005/05/23 20:21:02 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.21 2005/05/26 11:18:20 das Exp $
 #
 ########################################################################################################
 
@@ -130,11 +130,6 @@ ${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure
 	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}
 
 build-${PROJECT}: ${OBJ_DIR}/Makefile
-ifeq (${EMBEDDED_BUILD}_${INSTALL_ROOT},1_)
-	@echo "Cannot install-embedded with empty INSTALL_ROOT !" && false
-else
-	@rm -rf "${INSTALL_ROOT}/${LIBDIR}/Tcl.framework"
-endif
 	${DO_MAKE}
 # symolic link hackery to trick
 # 'make install INSTALL_ROOT=${OBJ_DIR}'
@@ -144,6 +139,12 @@ endif
 	ln -fs ${SYMROOT} ./${BINDIR} && ln -fs ${OBJ_DIR}/tcltest ${SYMROOT}
 
 install-${PROJECT}: build-${PROJECT}
+ifeq (${EMBEDDED_BUILD}_${INSTALL_ROOT},1_)
+	@echo "Cannot install-embedded with empty INSTALL_ROOT !" && false
+endif
+ifeq (${EMBEDDED_BUILD},1)
+	@rm -rf "${INSTALL_ROOT}/${LIBDIR}/Tcl.framework"
+endif
 	${DO_MAKE}
 ifeq (${INSTALL_BUILD},1)
 ifeq (${EMBEDDED_BUILD},1)
