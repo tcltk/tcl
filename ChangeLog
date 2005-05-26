@@ -1,3 +1,11 @@
+2005-05-26  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: moved & corrected EMBEDDED_BUILD check.
+	
+	* unix/configure.in: corrected framework finalization to softlink
+	stub library to Versions/8.x subdir instead of Versions/Current.
+	* unix/configure: autoconf-2.59
+
 2005-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): add necessary cast
