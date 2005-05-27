@@ -1,3 +1,11 @@
+2005-05-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:           Bumped patchlevel to 8.4.10
+	* generic/tcl.h:
+	* tools/tcl.wse.in: 
+	* unix/tcl.spec, unix/configure, unix/configure.in:
+	* win/configure, win/configure.in:
+
 2005-05-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: moved & corrected EMBEDDED_BUILD check.
