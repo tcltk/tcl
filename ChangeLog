@@ -1,3 +1,19 @@
+2005-05-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	TIP #229 IMPLEMENTATION
+
+	* generic/tclNamesp.c (Tcl_FindCommand, TclResetShadowedCmdRefs) 
+	(NamespacePathCmd, SetNsPath, UnlinkNsPath, TclInvalidateNsPath):
+	Implementation of the [namespace path] command and the command
+	name resolution engine.
+	* doc/info.n, doc/namespace.n: Doc updates.
+	* tests/namespace.test (namespace-51.*): Test updates.
+	* generic/tclResolve.c (BumpCmdRefEpochs, Tcl_SetNamespaceResolvers):
+	* generic/tclBasic.c (Tcl_CreateCommand, Tcl_CreateObjCommand): 
+	Ensure that people don't see stale paths.
+	* generic/tclInt.h (Namespace, NamespacePathEntry): Structure defs.
+	* generic/tclCmdIL.c (InfoCommandsCmd): Updates to [info commands].
+
 2005-05-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: moved & corrected EMBEDDED_BUILD check.

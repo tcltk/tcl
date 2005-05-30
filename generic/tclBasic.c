@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.157 2005/05/25 16:13:17 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.158 2005/05/30 00:04:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1579,6 +1579,7 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
 	 */
 
 	TclInvalidateNsCmdLookup(nsPtr);
+	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
@@ -1703,6 +1704,7 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     }
 
     hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
+    TclInvalidateNsPath(nsPtr);
     if (!new) {
 	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
 
@@ -1749,6 +1751,7 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 	 */
 
 	TclInvalidateNsCmdLookup(nsPtr);
+	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
