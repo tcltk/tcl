@@ -1,3 +1,7 @@
+2005-05-30  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* win/tclWinThrd.c: Fixed Tcl Bug #1204064.
+
 2005-05-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP #229 IMPLEMENTATION
