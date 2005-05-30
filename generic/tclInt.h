@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.231 2005/05/23 20:19:45 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.232 2005/05/30 00:04:47 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -131,6 +131,7 @@ typedef struct Tcl_ResolverInfo {
  */
 
 typedef struct Tcl_Ensemble Tcl_Ensemble;
+typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
  * The structure below defines a namespace.
@@ -233,7 +234,33 @@ typedef struct Namespace {
     Tcl_Ensemble *ensembles;	/* List of structures that contain the details
 				 * of the ensembles that are implemented on
 				 * top of this namespace. */
+    int commandPathLength;	/* The length of the explicit path. */
+    NamespacePathEntry *commandPathArray;
+				/* The explicit path of the namespace as an
+				 * array. */
+    NamespacePathEntry *commandPathSourceList;
+				/* Linked list of path entries that point to
+				 * this namespace. */
 } Namespace;
+
+/*
+ * An entry on a namespace's command resolution path.
+ */
+
+struct NamespacePathEntry {
+    Namespace *nsPtr;		/* What does this path entry point to? If it
+				 *is NULL, this path entry points is redundant
+				 * and should be skipped. */
+    Namespace *creatorNsPtr;	/* Where does this path entry point from? This
+				 * allows for efficient invalidation of
+				 * references when the path entry's target
+				 * updates its current list of defined
+				 * commands. */
+    NamespacePathEntry *prevPtr, *nextPtr;
+				/* Linked list pointers or NULL at either end
+				 * of the list that hangs off Namespace's
+				 * commandPathSourceList field. */
+};
 
 /*
  * Flags used to represent the status of a namespace:
@@ -2442,6 +2469,7 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, CONST char *part1,
 			    CONST char *part2, CONST Tcl_WideInt i,
 			    CONST int flags));
+MODULE_SCOPE void	TclInvalidateNsPath _ANSI_ARGS_((Namespace *nsPtr));
 
 /*
  *----------------------------------------------------------------

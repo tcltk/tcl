@@ -11,11 +11,12 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2005 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.74 2005/05/10 18:34:08 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.75 2005/05/30 00:04:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -712,6 +713,7 @@ InfoCommandsCmd(dummy, interp, objc, objv)
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
     Tcl_Command cmd;
+    int i;
 
     /*
      * Get the pattern and find the "effective namespace" in which to
@@ -779,16 +781,43 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 	    }
 	    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
-	} else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    entryPtr = Tcl_FindHashEntry(&globalNsPtr->cmdTable,
-		    simplePattern);
+	    Tcl_SetObjResult(interp, listPtr);
+	    return TCL_OK;
+	}
+	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+	    Tcl_HashTable *tablePtr;
+
+	    for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+		Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
+
+		if (pathNsPtr == NULL) {
+		    continue;
+		}
+		tablePtr = &pathNsPtr->cmdTable;
+		entryPtr = Tcl_FindHashEntry(tablePtr, simplePattern);
+		if (entryPtr != NULL) {
+		    break;
+		}
+	    }
+	    if (entryPtr == NULL) {
+		tablePtr = &globalNsPtr->cmdTable;
+		entryPtr = Tcl_FindHashEntry(tablePtr, simplePattern);
+	    }
 	    if (entryPtr != NULL) {
-		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+		cmdName = Tcl_GetHashKey(tablePtr, entryPtr);
 		Tcl_ListObjAppendElement(interp, listPtr,
 			Tcl_NewStringObj(cmdName, -1));
+		Tcl_SetObjResult(interp, listPtr);
+		return TCL_OK;
 	    }
 	}
-    } else {
+    } else if (nsPtr->commandPathLength == 0 || specificNsInPattern) {
+	/*
+	 * The pattern is non-trivial, but either there is no explicit
+	 * path or there is an explicit namespace in the pattern. In
+	 * both cases, the old matching scheme is perfect.
+	 */
+
 	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	while (entryPtr != NULL) {
 	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -828,6 +857,95 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 		entryPtr = Tcl_NextHashEntry(&search);
 	    }
 	}
+    } else {
+	/*
+	 * The pattern is non-trivial (can match more than one command
+	 * name), there is an explicit path, and there is no explicit
+	 * namespace in the pattern. This means that we have to
+	 * traverse the path to discover all the commands defined.
+	 */
+
+	Tcl_HashTable addedCommandsTable;
+	int isNew;
+	int foundGlobal = (nsPtr == globalNsPtr);
+
+	/*
+	 * We keep a hash of the objects already added to the result
+	 * list.
+	 */
+	Tcl_InitObjHashTable(&addedCommandsTable);
+
+	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+	while (entryPtr != NULL) {
+	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+	    if ((simplePattern == NULL)
+		    || Tcl_StringMatch(cmdName, simplePattern)) {
+		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		(void) Tcl_CreateHashEntry(&addedCommandsTable,
+			(char *)elemObjPtr, &isNew);
+	    }
+	    entryPtr = Tcl_NextHashEntry(&search);
+	}
+
+	/*
+	 * Search the path next.
+	 */
+
+	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+	    Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
+
+	    if (pathNsPtr == NULL) {
+		continue;
+	    }
+	    if (pathNsPtr == globalNsPtr) {
+		foundGlobal = 1;
+	    }
+	    entryPtr = Tcl_FirstHashEntry(&pathNsPtr->cmdTable, &search);
+	    while (entryPtr != NULL) {
+		cmdName = Tcl_GetHashKey(&pathNsPtr->cmdTable, entryPtr);
+		if ((simplePattern == NULL)
+			|| Tcl_StringMatch(cmdName, simplePattern)) {
+		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    (void) Tcl_CreateHashEntry(&addedCommandsTable,
+			    (char *) elemObjPtr, &isNew);
+		    if (isNew) {
+			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		    } else {
+			TclDecrRefCount(elemObjPtr);
+		    }
+		}
+		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+	}
+
+	/*
+	 * If the effective namespace isn't the global :: namespace, and a
+	 * specific namespace wasn't requested in the pattern, then add in
+	 * all global :: commands that match the simple pattern. Of course,
+	 * we add in only those commands that aren't hidden by a command in
+	 * the effective namespace.
+	 */
+
+	if (!foundGlobal) {
+	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->cmdTable, &search);
+	    while (entryPtr != NULL) {
+		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+		if ((simplePattern == NULL)
+			|| Tcl_StringMatch(cmdName, simplePattern)) {
+		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    if (Tcl_FindHashEntry(&addedCommandsTable,
+			    (char *) elemObjPtr) == NULL) {
+			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		    } else {
+			TclDecrRefCount(elemObjPtr);
+		    }
+		}
+		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+	}
+
+	Tcl_DeleteHashTable(&addedCommandsTable);
     }
 
     Tcl_SetObjResult(interp, listPtr);
