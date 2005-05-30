@@ -1,3 +1,8 @@
+2005-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinThrd.c (TclpFinalizeThreadData): move tlsKey defn
+	to top of file and clarify name (was 'key'). [Bug 1204064]
+
 2005-05-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:           Bumped patchlevel to 8.4.10
