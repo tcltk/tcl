@@ -1,3 +1,9 @@
+2005-05-31  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+        * unix/tclUnixNotfy.c: the notifier thread is now created as
+        joinable thread and it is properly joined in Tcl_FinalizeNotifier.
+        This is an attempt to fix the Tcl Bug #1082283.
+
 2005-05-30  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* win/tclWinThrd.c: Fixed Tcl Bug #1204064.
