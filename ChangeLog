@@ -1,3 +1,9 @@
+2005-05-31  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c: the notifier thread is now created as
+	joinable thread and it is properly joined in Tcl_FinalizeNotifier.
+	This is an attempt to fix the Tcl Bug #1082283.
+
 2005-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinThrd.c (TclpFinalizeThreadData): move tlsKey defn
