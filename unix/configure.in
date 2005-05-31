@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.132 2005/05/26 11:18:23 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.133 2005/05/31 12:29:05 dkf Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.57)
@@ -432,7 +432,8 @@ SC_BLOCKING_STYLE
 #------------------------------------------------------------------------
 
 AC_ARG_ENABLE(dll-unloading,
-    [  --enable-dll-unloading  turn on the 'unload' command (default: on)],
+    AC_HELP_STRING([--enable-dll-unloading],
+	[turn on the 'unload' command (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test $tcl_ok = yes; then
     AC_DEFINE(TCL_UNLOAD_DLLS, 1, [Do we allow unloading of shared libraries?])
