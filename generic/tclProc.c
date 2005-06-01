@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.74 2005/05/10 18:34:47 kennykb Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.75 2005/06/01 22:19:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1671,7 +1671,9 @@ TclUpdateReturnInfo(iPtr)
     }
     if (iPtr->returnLevel == 0) {
 	/* Now we've reached the level to return the requested -code */
-	return iPtr->returnCode;
+	code = iPtr->returnCode;
+	iPtr->returnLevel = 1;
+	iPtr->returnCode = TCL_OK;
     }
     return code;
 }
