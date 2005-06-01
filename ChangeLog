@@ -1,5 +1,17 @@
 2005-06-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Allow compilation
+	of -nocase -glob [switch]es (only one we know how to compile).
+
+	TIP#241 IMPLEMENTATION from Joe Mistachkin
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd, Tcl_LsortObjCmd): 
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Implementation of -nocase
+	option for [lsearch], [lsort] and [switch] commands.
+	* win/tclWinPort.h: Win uses nonstandard function names...
+	* tests/cmdIL.test, tests/lsearch.test, tests/switch.test: Tests
+	* doc/lsearch.n, doc/lsort.n, doc/switch.n: Docs
+
 	* generic/tclCompCmds.c (TclCompileLindexCmd): Compile the most
 	common case of [lindex] more efficiently.
 
