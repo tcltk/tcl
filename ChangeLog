@@ -1,5 +1,8 @@
 2005-06-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclProc.c:	Revised fix for [Bug 1209759] is more complex,
+	* generic/tclResult.c:	but should have less performance impact.
+
 	* generic/tclBasic.c:	For compatibility with earlier Tcl releases,
 	* generic/tclResult.c:	when a command procedure simply does a
 	* generic/tclTest.c:	"return TCL_RETURN;" we must interpret that
