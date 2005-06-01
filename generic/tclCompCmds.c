@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.69 2005/06/01 10:02:19 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.70 2005/06/01 11:00:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2723,6 +2723,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 				 * to the current (or next) real body. */
 
     int savedStackDepth = envPtr->currStackDepth;
+    int noCase;
     int i;
 
     /*
@@ -2753,50 +2754,55 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
      * interpreted code falls apart if it encounters them, so we punt
      * if we *might* encounter them as that is the easiest way of
      * emulating the behaviour).
-     *
-     * Note that this parsing would probably be better done with a
-     * loop, but it works for now...
      */
 
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    } else {
-	register int size = tokenPtr[1].size;
+    noCase = 0;
+    mode = Switch_Exact;
+    for (; numWords>=3 ; tokenPtr+=2,numWords--) {
+	register unsigned size = tokenPtr[1].size;
 	register CONST char *chrs = tokenPtr[1].start;
 
 	/*
-	 * Assume that -e and -g are unique prefixes of -exact and -glob
+	 * We only process literal options, and we assume that -e, -g
+	 * and -n are unique prefixes of -exact, -glob and -nocase
+	 * respectively (true at time of writing).
 	 */
-	if (size < 2) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || size < 2) {
 	    return TCL_ERROR;
 	}
-	if ((size <= 6) && (numWords >= 4)
-		&& !strncmp(chrs, "-exact", (unsigned) TclMin(size, 6))) {
+
+	if ((size <= 6) && !memcmp(chrs, "-exact", size)) {
 	    mode = Switch_Exact;
-	    tokenPtr += 2;
-	    numWords--;
-	} else if ((size <= 5) && (numWords >= 4)
-		&& !strncmp(chrs, "-glob", (unsigned) TclMin(size, 5))) {
+	    continue;
+	} else if ((size <= 5) && !memcmp(chrs, "-glob", size)) {
 	    mode = Switch_Glob;
-	    tokenPtr += 2;
-	    numWords--;
-	} else if ((size == 2) && (numWords >= 3) && !strncmp(chrs, "--", 2)) {
-	    /*
-	     * If no control flag present, use exact matching (the default).
-	     *
-	     * We end up re-checking this word, but that's the way things are.
-	     */
-	    mode = Switch_Exact;
-	} else {
-	    return TCL_ERROR;
+	    continue;
+	} else if ((size <= 7) && !memcmp(chrs, "-nocase", size)) {
+	    noCase = 1;
+	    continue;
+	} else if ((size == 2) && !memcmp(chrs, "--", 2)) {
+	    break;
 	}
+
+	/*
+	 * The switch command has many flags we cannot compile at all
+	 * (e.g. all the RE-related ones) which we must have
+	 * encountered. Either that or we have run off the end. The
+	 * action here is the same: punt to interpreted version.
+	 */
+	return TCL_ERROR;
     }
-    if ((tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (tokenPtr[1].size != 2)
-	    || strncmp(tokenPtr[1].start, "--", 2)) {
+    if (numWords < 3) {
 	return TCL_ERROR;
     }
     tokenPtr += 2;
     numWords--;
+    if (noCase && (mode == Switch_Exact)) {
+	/*
+	 * Can't compile this case!
+	 */
+	return TCL_ERROR;
+    }
 
     /*
      * The value to test against is going to always get pushed on the
@@ -2902,6 +2908,14 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
+	/*
+	 * Odd number of words (>1) available, or no words at all
+	 * available. Both are error cases, so punt and let the
+	 * interpreted-version generate the error message. Note that
+	 * the second case probably should get caught earlier, but
+	 * it's easy to check here again anyway because it'd cause a
+	 * nasty crash otherwise.
+	 */
 	return TCL_ERROR;
     } else {
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
@@ -2962,7 +2976,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	int nextArmFixupIndex = -1;
 	envPtr->currStackDepth = savedStackDepth + 1;
 	if (i!=numWords-2 || bodyToken[numWords-2]->size != 7 ||
-		strncmp(bodyToken[numWords-2]->start, "default", 7)) {
+		memcmp(bodyToken[numWords-2]->start, "default", 7)) {
 	    /*
 	     * Generate the test for the arm. This code is slightly
 	     * inefficient, but much simpler than the first version.
@@ -2975,7 +2989,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 		TclEmitOpcode(INST_STR_EQ, envPtr);
 		break;
 	    case Switch_Glob:
-		TclEmitInstInt1(INST_STR_MATCH, /*nocase*/0, envPtr);
+		TclEmitInstInt1(INST_STR_MATCH, noCase, envPtr);
 		break;
 	    default:
 		Tcl_Panic("unknown switch mode: %d",mode);
