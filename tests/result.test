@@ -109,6 +109,14 @@ test result-5.4 {Tcl_SetErrorCode - two args, list quoting} testseterrorcode {
     set errorCode
 } {{a b} c}
 
+::tcltest::testConstraint testreturn \
+	[expr {[info commands testreturn] != {}}]
+test result-6.0 {Bug 1209759} testreturn {
+    # Might panic if bug is not fixed.
+    proc foo {} {testreturn}
+    foo
+}
+
 # cleanup
 ::tcltest::cleanupTests
 return
