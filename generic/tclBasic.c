@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.158 2005/05/30 00:04:45 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.159 2005/06/01 21:38:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -358,7 +358,7 @@ Tcl_CreateInterp()
     iPtr->errorCode = NULL;
     iPtr->ecVar = Tcl_NewStringObj("errorCode", -1);
     Tcl_IncrRefCount(iPtr->ecVar);
-    iPtr->returnLevel = 0;
+    iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
 
     iPtr->appendResult = NULL;

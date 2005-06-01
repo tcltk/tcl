@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.25 2005/05/10 18:34:48 kennykb Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.26 2005/06/01 21:38:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -927,6 +927,8 @@ Tcl_ResetResult(interp)
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
+    iPtr->returnLevel = 1;
+    iPtr->returnCode = TCL_OK;
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
 	iPtr->returnOpts = NULL;

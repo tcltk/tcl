@@ -1,3 +1,11 @@
+2005-06-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	For compatibility with earlier Tcl releases,
+	* generic/tclResult.c:	when a command procedure simply does a
+	* generic/tclTest.c:	"return TCL_RETURN;" we must interpret that
+	* tests/result.test:	the same as
+	"return Tcl_SetReturnOptions(interp, Tcl_NewObj());"  [Bug 1209759].
+
 2005-06-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Allow compilation
