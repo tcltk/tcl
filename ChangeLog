@@ -1,5 +1,8 @@
 2005-06-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclCompCmds.c (TclCompileLindexCmd): Compile the most
+	common case of [lindex] more efficiently.
+
 	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier): Pass the correct
 	number of arguments to Tcl_JoinThread.
 
