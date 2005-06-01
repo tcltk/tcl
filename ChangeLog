@@ -1,3 +1,8 @@
+2005-06-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier): Pass the correct
+	number of arguments to Tcl_JoinThread.
+
 2005-05-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/configure.in, unix/tcl.m4: Standardize generation of help

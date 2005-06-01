@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.25 2005/05/31 11:37:46 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.26 2005/06/01 09:38:05 dkf Exp $
  */
 
 #ifndef HAVE_COREFOUNDATION /* Darwin/Mac OS X CoreFoundation notifier
@@ -273,7 +273,7 @@ Tcl_FinalizeNotifier(clientData)
      */
 
     if (notifierCount == 0) {
-	int result;
+	int result, ignored;
 	if (triggerPipe < 0) {
 	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
 	}
@@ -292,7 +292,7 @@ Tcl_FinalizeNotifier(clientData)
 	close(triggerPipe);
 
 	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
-	result = Tcl_JoinThread(notifierThread);
+	result = Tcl_JoinThread(notifierThread, &ignored);
 	if (result) {
 	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread");
 	}
