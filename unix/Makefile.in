@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.168 2005/05/23 20:20:53 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.169 2005/06/02 22:56:03 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1659,7 +1659,7 @@ allpatch: dist
 # This target creates the HTML folder for Tcl & Tk and places it
 # in DISTDIR/html.  It uses the tcltk-man2html.tcl tool from
 # the Tcl group's tool workspace.  It depends on the Tcl & Tk being
-# in directories called tcl8.3 & tk8.3 up two directories from the
+# in directories called tcl8.* & tk8.* up two directories from the
 # TOOL_DIR.
 #
 
@@ -1677,7 +1677,7 @@ BUILD_HTML = \
 	@@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) \
-		--srcdir=$(TOP_DIR)/..
+		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #
 # Targets to build Solaris package of the distribution for the current
