@@ -1,3 +1,7 @@
+2005-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* changes: updated for 8.4.10 release (porter)
+
 2005-05-31  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* unix/tclUnixNotfy.c: the notifier thread is now created as
