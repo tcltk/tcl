@@ -81,9 +81,12 @@ proc parse_command_line {} {
     set webdir ../html
     set build_tcl 0
     set build_tk 0
+    # Default search version is a glob pattern
+    set useversion {{,[8-9].[0-9]{,.[0-9]}}}
 
     # Handle arguments a la GNU:
     #   --version
+    #   --useversion=<version>
     #   --help
     #   --srcdir=/path
     #   --htmldir=/path
@@ -103,6 +106,7 @@ proc parse_command_line {} {
 		puts "  --htmldir=DIR       put generated HTML in DIR"
 		puts "  --tcl               build tcl help"
 		puts "  --tk                build tk help"
+		puts "  --useversion        version of tcl/tk to search for"
 		exit 0
 	    }
 
@@ -114,6 +118,11 @@ proc parse_command_line {} {
 	    --htmldir=* {
 		# length of "--htmldir=" is 10
 		set webdir [string range $option 10 end]
+	    }
+
+	    --useversion=* {
+		# length of "--useversion=" is 13
+		set useversion [string range $option 13 end]
 	    }
 
 	    --tcl {
@@ -134,25 +143,25 @@ proc parse_command_line {} {
     if {!$build_tcl && !$build_tk} {set build_tcl 1; set build_tk 1}
 
     if {$build_tcl} {
-    # Find Tcl.
-    set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
-		-directory $tcltkdir {tcl{,[8-9].[0-9]{,.[0-9]}}}]] end]
-    if {$tcldir == ""} then {
-	puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
-	exit 1
-    }
-    puts "using Tcl source directory $tcldir"
+	# Find Tcl.
+	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
+				       -directory $tcltkdir tcl$useversion]] end]
+	if {$tcldir == ""} then {
+	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
+	    exit 1
+	}
+	puts "using Tcl source directory $tcldir"
     }
 
     if {$build_tk} {
-    # Find Tk.
-    set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
-		-directory $tcltkdir {tk{,[8-9].[0-9]{,.[0-9]}}}]] end]
-    if {$tkdir == ""} then {
-	puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
-	exit 1
-    }
-    puts "using Tk source directory $tkdir"
+	# Find Tk.
+	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
+				      -directory $tcltkdir tk$useversion]] end]
+	if {$tkdir == ""} then {
+	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
+	    exit 1
+	}
+	puts "using Tk source directory $tkdir"
     }
 
     # the title for the man pages overall
