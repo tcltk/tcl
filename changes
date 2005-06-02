@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.16 2004/12/03 00:34:46 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.79.2.17 2005/06/02 16:54:33 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6136,3 +6136,71 @@ search path uniqification added in 8.4.8 (porter)
 by 'glob' (darley)
 
 --- Released 8.4.9, December 6, 2004 --- See ChangeLog for details ---
+
+2004-12-29 (platform support)[1092952,1091967] MSVC7, gcc OPT compiles (hobbs)
+
+2005-01-05 (bug fix)[1084595] encoding maps for some Chinese locales (fellows)
+
+2005-01-06 (performance)[1020491] [http::mapReply] (fellows)
+=> http 2.5.1
+
+2005-01-25 (bug fix)[1101670] [auto_reset] update for [namespace] (porter)
+
+2005-01-27 (new feature)[TIP 218] Tcl_Channel API update for threads (kupries)
+
+2005-01-27 (bug fix)[1109484] Tcl_Expr* updates for Tcl_WideInt (hobbs)
+
+2005-01-28 (platform support)[1021871] Solaris gcc 64-bit support (hobbs)
+
+2005-02-10 (bug fix)[1119369] Tcl_EvalObjEx: avoid shimmer loss of List intrep
+(sofer,macdonald)
+
+2005-02-10 (platform support) correct gcc builds for AIX-4+, HP-UX-11 (hobbs)
+
+2005-02-24 (bug fix)[1119798] prevent [source $directory] (porter,mpettigr)
+=> tcltest 2.2.8
+
+2005-03-10 (bug fix)[1153871] bad ClientData cast (porter,victorovich)
+
+2005-03-15 (platform support) OpenBSD ports patch (thoyts)
+
+2005-03-15 (platform support)[1163422] time_t wider than long (kenny)
+
+2005-03-18 (bug fix)[1115904] restore recursion limit in direct eval (porter)
+
+2005-03-29 (platform support) allow msys alone, no cugwin requirement (hobbs)
+
+2005-04-06 (bug fix)[1178445] memory waste at thread exit (vasiljevic)
+
+2005-04-13 (bug fix) min buffer size dropped from 10 to 1 byte (gravereaux)
+
+2005-04-19 (bug fix)[947693] Win pipes honor -blocking during close (gravereaux)
+***POTENTIAL INCOMPATIBILITY***
+async pipes on windows, set -blocking 1 before [close] to receive exit status
+
+2005-04-20 (bug fix)[1090869] Tcl_GetInt accept 0x80000000, 64-bit(porter,singh)
+
+2005-04-22 (bug fix)[1187123] [string is boolean] respect EIAS (porter)
+
+2005-04-25 (platform support) builds on Mac OS X 10.1 (steffen)
+
+2005-05-06 (platform support) x86_64 Solarix cc and Solaris 10 builds (hobbs)
+
+2005-05-14 (platform support) Mac OSX: configurable CoreFoundation API (steffen)
+
+2005-05-14 (platform support) Mac OSX: use realpath when threadsafe (steffen)
+
+2005-05-20 (bug fix)[1201589] boolean literal prefix in expressions (porter)
+
+2005-05-24 (platform support) Darwin build support merged into unix (steffen)
+
+2005-05-24 (new feature)[1202209] Mac OSX: support [load] of .bundle binaries
+Can support [load] from memory as well (steffen)
+
+2005-05-24 (new feature)[1202178] [time] returns non-integer result (steffen)
+
+2005-05-31 (bug fix)[1082283] Unix: notifier thread now joinable (vasiljevic)
+
+Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
+
+--- Released 8.4.10, June XX, 2005 --- See ChangeLog for details ---
