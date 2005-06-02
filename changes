@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.17 2005/06/02 16:54:33 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.18 2005/06/02 22:52:15 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6168,17 +6168,18 @@ by 'glob' (darley)
 
 2005-03-18 (bug fix)[1115904] restore recursion limit in direct eval (porter)
 
-2005-03-29 (platform support) allow msys alone, no cugwin requirement (hobbs)
+2005-03-29 (platform support) allow msys builds without cygwin (hobbs)
 
-2005-04-06 (bug fix)[1178445] memory waste at thread exit (vasiljevic)
+2005-04-06 (bug fix)[1178445] fix memory waste at thread exit (vasiljevic)
 
 2005-04-13 (bug fix) min buffer size dropped from 10 to 1 byte (gravereaux)
 
-2005-04-19 (bug fix)[947693] Win pipes honor -blocking during close (gravereaux)
-***POTENTIAL INCOMPATIBILITY***
+2005-04-19 (bug fix)[947693] Windows pipes honor -blocking during close
+(gravereaux)  ***POTENTIAL INCOMPATIBILITY***
 async pipes on windows, set -blocking 1 before [close] to receive exit status
 
-2005-04-20 (bug fix)[1090869] Tcl_GetInt accept 0x80000000, 64-bit(porter,singh)
+2005-04-20 (bug fix)[1090869] Tcl_GetInt accept 0x80000000, 64-bit
+(porter,singh)
 
 2005-04-22 (bug fix)[1187123] [string is boolean] respect EIAS (porter)
 
@@ -6186,7 +6187,8 @@ async pipes on windows, set -blocking 1 before [close] to receive exit status
 
 2005-05-06 (platform support) x86_64 Solarix cc and Solaris 10 builds (hobbs)
 
-2005-05-14 (platform support) Mac OSX: configurable CoreFoundation API (steffen)
+2005-05-14 (platform support) Mac OSX: configurable CoreFoundation API
+(steffen)
 
 2005-05-14 (platform support) Mac OSX: use realpath when threadsafe (steffen)
 
@@ -6203,4 +6205,4 @@ Can support [load] from memory as well (steffen)
 
 Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 
---- Released 8.4.10, June XX, 2005 --- See ChangeLog for details ---
+--- Released 8.4.10, June 4, 2005 --- See ChangeLog for details ---
