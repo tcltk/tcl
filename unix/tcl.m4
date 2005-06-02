@@ -708,11 +708,11 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
     AC_ARG_ENABLE(man-compression,
 	AC_HELP_STRING([--enable-man-compression=PROG],
 	    [compress the manpages with PROG (default: off)]),
-	case $enableval in
+	[case $enableval in
 	    yes) AC_MSG_ERROR([missing argument to --enable-man-compression]);;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --compress $enableval";;
-	esac,
+	esac],
 	enableval="no")
     AC_MSG_RESULT([$enableval])
     if test "$enableval" != "no"; then
@@ -729,11 +729,11 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
     AC_ARG_ENABLE(man-suffix,
 	AC_HELP_STRING([--enable-man-suffix=STRING],
 	    [use STRING as a suffix to manpage file names (default: no, AC_PACKAGE_NAME if enabled without specifying STRING)]),
-	case $enableval in
+	[case $enableval in
 	    yes) enableval="AC_PACKAGE_NAME";;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
-	esac,
+	esac],
 	enableval="no")
     AC_MSG_RESULT([$enableval])
 
