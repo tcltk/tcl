@@ -1,5 +1,9 @@
 2005-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/Makefile.in (html): add BUILD_HTML_FLAGS optional var
+	* tools/tcltk-man2html.tcl: add a --useversion to prevent
+	confusion when multiple Tcl source dirs exist.
+
 	* changes: updated for 8.4.10 release (porter)
 
 2005-05-31  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
