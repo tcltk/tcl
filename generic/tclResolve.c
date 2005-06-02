@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResolve.c,v 1.4 2002/01/25 22:01:32 dgp Exp $
+ * RCS: @(#) $Id: tclResolve.c,v 1.4.4.1 2005/06/02 04:17:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -273,8 +273,8 @@ BumpCmdRefEpochs(nsPtr)
         childNsPtr = (Namespace *) Tcl_GetHashValue(entry);
         BumpCmdRefEpochs(childNsPtr);
     }
+    TclInvalidateNsPath(nsPtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -369,6 +369,7 @@ Tcl_SetNamespaceResolvers(namespacePtr, cmdProc, varProc, compiledVarProc)
 
     nsPtr->cmdRefEpoch++;
     nsPtr->resolverEpoch++;
+    TclInvalidateNsPath(nsPtr);
 }
 
 /*

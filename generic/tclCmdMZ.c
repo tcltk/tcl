@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.16 2005/05/25 15:01:24 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.17 2005/06/02 04:17:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2520,7 +2520,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, result, splitObjs, numMatchesSaved;
+    int i, j, index, mode, result, splitObjs, numMatchesSaved, noCase;
     char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
@@ -2531,17 +2531,21 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      * parser as well.
      */
     static CONST char *options[] = {
-	"-exact", "-glob", "-indexvar", "-matchvar", "-regexp", "--", 
-	NULL
+	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
+	"--", NULL
     };
     enum options {
-	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_REGEXP, OPT_LAST
+	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
+	OPT_LAST
     };
+    typedef int (*strCmpFn_t) _ANSI_ARGS_((const char *, const char *));
+    strCmpFn_t strCmpFn = strcmp;
 
     mode = OPT_EXACT;
     indexVarObj = NULL;
     matchVarObj = NULL;
     numMatchesSaved = 0;
+    noCase = 0;
     for (i = 1; i < objc; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
@@ -2580,6 +2584,9 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    }
 	    matchVarObj = objv[i];
 	    numMatchesSaved = -1;
+	} else if (index == OPT_NOCASE) {
+	    strCmpFn = strcasecmp;
+	    noCase = 1;
 	} else {
 	    mode = index;
 	}
@@ -2718,18 +2725,19 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	} else {
 	    switch (mode) {
 	    case OPT_EXACT:
-		if (strcmp(TclGetString(stringObj), pattern) == 0) {
+		if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
 		    goto matchFound;
 		}
 		break;
 	    case OPT_GLOB:
-		if (Tcl_StringMatch(TclGetString(stringObj), pattern)) {
+		if (Tcl_StringCaseMatch(TclGetString(stringObj), pattern,
+			noCase)) {
 		    goto matchFound;
 		}
 		break;
 	    case OPT_REGEXP:
 		regExpr = Tcl_GetRegExpFromObj(interp, objv[i],
-			TCL_REG_ADVANCED);
+			TCL_REG_ADVANCED | (noCase ? TCL_REG_NOCASE : 0));
 		if (regExpr == NULL) {
 		    return TCL_ERROR;
 		} else {
@@ -2921,7 +2929,8 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
 		      + ( stop.usec - start.usec ) );
     if (count <= 1) {
-	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : totalMicroSec);
+	/* Use int obj since we know time is not fractional [Bug 1202178] */
+	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }

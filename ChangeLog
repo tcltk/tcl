@@ -1,3 +1,85 @@
+2005-06-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	For compatibility with earlier Tcl releases,
+	* generic/tclResult.c:	when a command procedure simply does a
+	* generic/tclTest.c:	"return TCL_RETURN;" we must interpret that
+	* tests/result.test:	the same as
+	"return Tcl_SetReturnOptions(interp, Tcl_NewObj());"  [Bug 1209759].
+
+2005-06-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Allow compilation
+	of -nocase -glob [switch]es (only one we know how to compile).
+
+	TIP#241 IMPLEMENTATION from Joe Mistachkin
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd, Tcl_LsortObjCmd): 
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Implementation of -nocase
+	option for [lsearch], [lsort] and [switch] commands.
+	* win/tclWinPort.h: Win uses nonstandard function names...
+	* tests/cmdIL.test, tests/lsearch.test, tests/switch.test: Tests
+	* doc/lsearch.n, doc/lsort.n, doc/switch.n: Docs
+
+	* generic/tclCompCmds.c (TclCompileLindexCmd): Compile the most
+	common case of [lindex] more efficiently.
+
+	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier): Pass the correct
+	number of arguments to Tcl_JoinThread.
+
+2005-05-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/configure.in, unix/tcl.m4: Standardize generation of help
+	messages to always use AC_HELP_STRING and always (except for
+	--with-tcl and --with-tk, where the default is complex) say what
+	the default is.
+
+2005-05-31  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c: the notifier thread is now created as
+	joinable thread and it is properly joined in Tcl_FinalizeNotifier.
+	This is an attempt to fix the Tcl Bug #1082283.
+
+2005-05-30  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* win/tclWinThrd.c: Fixed Tcl Bug #1204064.
+
+2005-05-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	TIP #229 IMPLEMENTATION
+
+	* generic/tclNamesp.c (Tcl_FindCommand, TclResetShadowedCmdRefs) 
+	(NamespacePathCmd, SetNsPath, UnlinkNsPath, TclInvalidateNsPath):
+	Implementation of the [namespace path] command and the command
+	name resolution engine.
+	* doc/info.n, doc/namespace.n: Doc updates.
+	* tests/namespace.test (namespace-51.*): Test updates.
+	* generic/tclResolve.c (BumpCmdRefEpochs, Tcl_SetNamespaceResolvers):
+	* generic/tclBasic.c (Tcl_CreateCommand, Tcl_CreateObjCommand): 
+	Ensure that people don't see stale paths.
+	* generic/tclInt.h (Namespace, NamespacePathEntry): Structure defs.
+	* generic/tclCmdIL.c (InfoCommandsCmd): Updates to [info commands].
+
+2005-05-26  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: moved & corrected EMBEDDED_BUILD check.
+	
+	* unix/configure.in: corrected framework finalization to softlink
+	stub library to Versions/8.x subdir instead of Versions/Current.
+	* unix/configure: autoconf-2.59
+
+2005-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): add necessary cast
+
+2005-05-25  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#182 IMPLEMENTATION	[Patch 1165062]
+
+	* doc/mathfunc.n:	New built-in math function bool().
+	* generic/tclBasic.c:
+	* tests/expr.test:
+	* tests/info.test:
+
 2005-05-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:	Updated [unknown] to be sure the [return]
@@ -6,8 +88,8 @@
 
 2005-05-24  Daniel Steffen  <das@users.sourceforge.net>
 
-        * tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
-        that need to be handled specially.
+	* tests/env.test: added DYLD_FRAMEWORK_PATH to the list of env vars
+	that need to be handled specially.
 
 	* macosx/Makefile:
 	* macosx/README:
@@ -40,10 +122,10 @@
 
 2005-05-20  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclParseExpr.c:       Corrected parser to recognize all
-        boolean literals accepted by Tcl_GetBoolean, including prefixes
-        like "y" and "f", and to allow "eq" and "ne" as function names
-        in the proper context.  [Bug 1201589].
+	* generic/tclParseExpr.c:       Corrected parser to recognize all
+	boolean literals accepted by Tcl_GetBoolean, including prefixes
+	like "y" and "f", and to allow "eq" and "ne" as function names
+	in the proper context.  [Bug 1201589].
 
 2005-05-19  Donal K. Fellows  <dkf@users.sf.net>
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.6 2004/12/09 23:01:39 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.7 2005/06/02 04:18:04 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -43,6 +43,13 @@
 #include <process.h>
 #include <signal.h>
 #include <string.h>
+
+/*
+ * These string functions are not defined with the same names on Windows.
+ */
+
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
 
 /*
  * Need to block out these includes for building extensions with MetroWerks

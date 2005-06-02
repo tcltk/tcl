@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.4 2005/04/07 17:32:00 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.5 2005/06/02 04:17:52 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -40,7 +40,10 @@ in this interpreter.
 .TP
 \fBinfo commands \fR?\fIpattern\fR?
 If \fIpattern\fR isn't specified,
-returns a list of names of all the Tcl commands in the current namespace,
+'\" Do not move this .VS above the .TP
+.VS 8.5
+returns a list of names of all the Tcl commands visible
+(i.e. executable without using a qualified name) to the current namespace,
 including both the built-in commands written in C and
 the command procedures defined using the \fBproc\fR command.
 If \fIpattern\fR is specified,
@@ -53,7 +56,11 @@ and may have pattern matching special characters
 at the end to specify a set of commands in that namespace.
 If \fIpattern\fR is a qualified name,
 the resulting list of command names has each one qualified with the name
-of the specified namespace.
+of the specified namespace, and only the commands defined in the named
+namespace are returned.
+'\" Technically, most of this hasn't changed; that's mostly just the
+'\" way it always worked. Hardly anyone knew that though.
+.VE 8.5
 .TP
 \fBinfo complete \fIcommand\fR
 Returns 1 if \fIcommand\fR is a complete Tcl command in the sense of

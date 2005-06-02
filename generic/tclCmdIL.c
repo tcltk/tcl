@@ -11,11 +11,12 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2005 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.10 2005/05/11 16:58:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.11 2005/06/02 04:17:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,6 +36,15 @@ typedef struct SortElement {
 } SortElement;
 
 /*
+ * These function pointer types are used with the "lsearch" and "lsort"
+ * commands to facilitate the "-nocase" option.
+ */
+
+typedef int (*SortStrCmpFn_t) _ANSI_ARGS_((const char *, const char *));
+typedef int (*SortMemCmpFn_t) _ANSI_ARGS_((const void *, const void *,
+			    size_t));
+
+/*
  * The "lsort" command needs to pass certain information down to the
  * function that compares two list elements, and the comparison function
  * needs to pass success or failure information back up to the top-level
@@ -46,6 +56,8 @@ typedef struct SortInfo {
     int isIncreasing;		/* Nonzero means sort in increasing order. */
     int sortMode;		/* The sort mode.  One of SORTMODE_*
 				 * values defined below */
+    SortStrCmpFn_t strCmpFn;     /* Basic string compare command (used with
+				 * ASCII mode). */
     Tcl_Obj *compareCmdPtr;     /* The Tcl comparison command when sortMode
 				 * is SORTMODE_COMMAND.  Pre-initialized to
 				 * hold base of command.*/
@@ -712,6 +724,7 @@ InfoCommandsCmd(dummy, interp, objc, objv)
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
     Tcl_Command cmd;
+    int i;
 
     /*
      * Get the pattern and find the "effective namespace" in which to
@@ -779,16 +792,43 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 	    }
 	    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
-	} else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    entryPtr = Tcl_FindHashEntry(&globalNsPtr->cmdTable,
-		    simplePattern);
+	    Tcl_SetObjResult(interp, listPtr);
+	    return TCL_OK;
+	}
+	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+	    Tcl_HashTable *tablePtr;
+
+	    for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+		Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
+
+		if (pathNsPtr == NULL) {
+		    continue;
+		}
+		tablePtr = &pathNsPtr->cmdTable;
+		entryPtr = Tcl_FindHashEntry(tablePtr, simplePattern);
+		if (entryPtr != NULL) {
+		    break;
+		}
+	    }
+	    if (entryPtr == NULL) {
+		tablePtr = &globalNsPtr->cmdTable;
+		entryPtr = Tcl_FindHashEntry(tablePtr, simplePattern);
+	    }
 	    if (entryPtr != NULL) {
-		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+		cmdName = Tcl_GetHashKey(tablePtr, entryPtr);
 		Tcl_ListObjAppendElement(interp, listPtr,
 			Tcl_NewStringObj(cmdName, -1));
+		Tcl_SetObjResult(interp, listPtr);
+		return TCL_OK;
 	    }
 	}
-    } else {
+    } else if (nsPtr->commandPathLength == 0 || specificNsInPattern) {
+	/*
+	 * The pattern is non-trivial, but either there is no explicit
+	 * path or there is an explicit namespace in the pattern. In
+	 * both cases, the old matching scheme is perfect.
+	 */
+
 	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	while (entryPtr != NULL) {
 	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -828,6 +868,95 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 		entryPtr = Tcl_NextHashEntry(&search);
 	    }
 	}
+    } else {
+	/*
+	 * The pattern is non-trivial (can match more than one command
+	 * name), there is an explicit path, and there is no explicit
+	 * namespace in the pattern. This means that we have to
+	 * traverse the path to discover all the commands defined.
+	 */
+
+	Tcl_HashTable addedCommandsTable;
+	int isNew;
+	int foundGlobal = (nsPtr == globalNsPtr);
+
+	/*
+	 * We keep a hash of the objects already added to the result
+	 * list.
+	 */
+	Tcl_InitObjHashTable(&addedCommandsTable);
+
+	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+	while (entryPtr != NULL) {
+	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+	    if ((simplePattern == NULL)
+		    || Tcl_StringMatch(cmdName, simplePattern)) {
+		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		(void) Tcl_CreateHashEntry(&addedCommandsTable,
+			(char *)elemObjPtr, &isNew);
+	    }
+	    entryPtr = Tcl_NextHashEntry(&search);
+	}
+
+	/*
+	 * Search the path next.
+	 */
+
+	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+	    Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
+
+	    if (pathNsPtr == NULL) {
+		continue;
+	    }
+	    if (pathNsPtr == globalNsPtr) {
+		foundGlobal = 1;
+	    }
+	    entryPtr = Tcl_FirstHashEntry(&pathNsPtr->cmdTable, &search);
+	    while (entryPtr != NULL) {
+		cmdName = Tcl_GetHashKey(&pathNsPtr->cmdTable, entryPtr);
+		if ((simplePattern == NULL)
+			|| Tcl_StringMatch(cmdName, simplePattern)) {
+		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    (void) Tcl_CreateHashEntry(&addedCommandsTable,
+			    (char *) elemObjPtr, &isNew);
+		    if (isNew) {
+			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		    } else {
+			TclDecrRefCount(elemObjPtr);
+		    }
+		}
+		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+	}
+
+	/*
+	 * If the effective namespace isn't the global :: namespace, and a
+	 * specific namespace wasn't requested in the pattern, then add in
+	 * all global :: commands that match the simple pattern. Of course,
+	 * we add in only those commands that aren't hidden by a command in
+	 * the effective namespace.
+	 */
+
+	if (!foundGlobal) {
+	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->cmdTable, &search);
+	    while (entryPtr != NULL) {
+		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+		if ((simplePattern == NULL)
+			|| Tcl_StringMatch(cmdName, simplePattern)) {
+		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    if (Tcl_FindHashEntry(&addedCommandsTable,
+			    (char *) elemObjPtr) == NULL) {
+			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		    } else {
+			TclDecrRefCount(elemObjPtr);
+		    }
+		}
+		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+	}
+
+	Tcl_DeleteHashTable(&addedCommandsTable);
     }
 
     Tcl_SetObjResult(interp, listPtr);
@@ -3083,7 +3212,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     char *bytes, *patternBytes;
     int i, match, mode, index, result, listc, length, elemLen;
     int dataType, isIncreasing, lower, upper, patInt, objInt;
-    int offset, allMatches, inlineReturn, negatedMatch, returnSubindices;
+    int offset, allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
@@ -3091,15 +3220,17 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     static CONST char *options[] = {
 	"-all",	    "-ascii",   "-decreasing", "-dictionary",
 	"-exact",   "-glob",    "-increasing", "-index",
-	"-inline",  "-integer", "-not",        "-real",
-	"-regexp",  "-sorted",  "-start",      "-subindices",
+	"-inline",  "-integer", "-nocase",     "-not",
+	"-real",    "-regexp",  "-sorted",     "-start",
+	"-subindices",
 	NULL
     };
     enum options {
 	LSEARCH_ALL, LSEARCH_ASCII, LSEARCH_DECREASING, LSEARCH_DICTIONARY,
 	LSEARCH_EXACT, LSEARCH_GLOB, LSEARCH_INCREASING, LSEARCH_INDEX,
-	LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOT, LSEARCH_REAL,
-	LSEARCH_REGEXP, LSEARCH_SORTED, LSEARCH_START, LSEARCH_SUBINDICES
+	LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOCASE, LSEARCH_NOT,
+	LSEARCH_REAL, LSEARCH_REGEXP, LSEARCH_SORTED, LSEARCH_START,
+	LSEARCH_SUBINDICES
     };
     enum datatypes {
 	ASCII, DICTIONARY, INTEGER, REAL
@@ -3107,6 +3238,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     enum modes {
 	EXACT, GLOB, REGEXP, SORTED
     };
+    SortStrCmpFn_t strCmpFn = strcmp;
 
     mode = GLOB;
     dataType = ASCII;
@@ -3118,6 +3250,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     listPtr = NULL;
     startPtr = NULL;
     offset = 0;
+    noCase = 0;
     sortInfo.compareCmdPtr = NULL;
     sortInfo.isIncreasing = 0;
     sortInfo.sortMode = 0;
@@ -3169,6 +3302,10 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    break;
 	case LSEARCH_INTEGER:		/* -integer */
 	    dataType = INTEGER;
+	    break;
+	case LSEARCH_NOCASE:		/* -nocase */
+	    strCmpFn = strcasecmp;
+	    noCase = 1;
 	    break;
 	case LSEARCH_NOT:		/* -not */
 	    negatedMatch = 1;
@@ -3304,7 +3441,8 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	 * regexp rep before the list rep.
 	 */
 	regexp = Tcl_GetRegExpFromObj(interp, objv[objc - 1],
-		TCL_REG_ADVANCED | TCL_REG_NOSUB);
+		TCL_REG_ADVANCED | TCL_REG_NOSUB |
+		(noCase ? TCL_REG_NOCASE : 0));
 	if (regexp == NULL) {
 	    if (startPtr != NULL) {
 		Tcl_DecrRefCount(startPtr);
@@ -3413,7 +3551,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    switch ((enum datatypes) dataType) {
 	    case ASCII:
 		bytes = TclGetString(itemPtr);
-		match = strcmp(patternBytes, bytes);
+		match = strCmpFn(patternBytes, bytes);
 		break;
 	    case DICTIONARY:
 		bytes = TclGetString(itemPtr);
@@ -3511,8 +3649,16 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 		case ASCII:
 		    bytes = Tcl_GetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
-			match = (memcmp(bytes, patternBytes,
-				(size_t) length) == 0);
+			/*
+			 * This split allows for more optimal
+			 * compilation of memcmp
+			 */
+			if (noCase) {
+			    match = (strcasecmp(bytes, patternBytes) == 0);
+			} else {
+			    match = (memcmp(bytes, patternBytes,
+				    (size_t) length) == 0);
+			}
 		    }
 		    break;
 		case DICTIONARY:
@@ -3551,7 +3697,8 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 		break;
 
 	    case GLOB:
-		match = Tcl_StringMatch(TclGetString(itemPtr), patternBytes);
+		match = Tcl_StringCaseMatch(TclGetString(itemPtr),
+			patternBytes, noCase);
 		break;
 	    case REGEXP:
 		match = Tcl_RegExpExecObj(interp, regexp, itemPtr, 0, 0, 0);
@@ -3753,12 +3900,13 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 					 * comparison function */
     static CONST char *switches[] = {
 	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
-	"-index", "-indices", "-integer", "-real", "-unique", (char *) NULL
+	"-index", "-indices", "-integer", "-nocase", "-real", "-unique",
+	(char *) NULL
     };
     enum Lsort_Switches {
 	LSORT_ASCII, LSORT_COMMAND, LSORT_DECREASING, LSORT_DICTIONARY,
 	LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES, LSORT_INTEGER,
-	LSORT_REAL, LSORT_UNIQUE
+	LSORT_NOCASE, LSORT_REAL, LSORT_UNIQUE
     };
 
     if (objc < 2) {
@@ -3772,6 +3920,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
     sortInfo.isIncreasing = 1;
     sortInfo.sortMode = SORTMODE_ASCII;
+    sortInfo.strCmpFn = strcmp;
     sortInfo.indexv = NULL;
     sortInfo.indexc = 0;
     sortInfo.interp = interp;
@@ -3869,6 +4018,9 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	}
 	case LSORT_INTEGER:
 	    sortInfo.sortMode = SORTMODE_INTEGER;
+	    break;
+	case LSORT_NOCASE:
+	    sortInfo.strCmpFn = strcasecmp;
 	    break;
 	case LSORT_REAL:
 	    sortInfo.sortMode = SORTMODE_REAL;
@@ -4144,7 +4296,7 @@ SortCompare(objPtr1, objPtr2, infoPtr)
     }
 
     if (infoPtr->sortMode == SORTMODE_ASCII) {
-	order = strcmp(TclGetString(objPtr1), TclGetString(objPtr2));
+	order = infoPtr->strCmpFn(TclGetString(objPtr1), TclGetString(objPtr2));
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
 	order = DictionaryCompare(
 		TclGetString(objPtr1), TclGetString(objPtr2));

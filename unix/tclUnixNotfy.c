@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.9 2005/05/16 19:23:24 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.10 2005/06/02 04:18:04 dgp Exp $
  */
 
 #ifndef HAVE_COREFOUNDATION /* Darwin/Mac OS X CoreFoundation notifier
@@ -220,7 +220,7 @@ Tcl_InitNotifier()
     Tcl_MutexLock(&notifierMutex);
     if (notifierCount == 0) {
 	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
-		TCL_THREAD_STACK_DEFAULT, TCL_THREAD_NOFLAGS) != TCL_OK) {
+		TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 	    Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
 	}
     }
@@ -273,6 +273,7 @@ Tcl_FinalizeNotifier(clientData)
      */
 
     if (notifierCount == 0) {
+	int result, ignored;
 	if (triggerPipe < 0) {
 	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
 	}
@@ -291,6 +292,10 @@ Tcl_FinalizeNotifier(clientData)
 	close(triggerPipe);
 
 	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
+	result = Tcl_JoinThread(notifierThread, &ignored);
+	if (result) {
+	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread");
+	}
     }
 
     /*

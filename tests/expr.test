@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.9 2005/05/11 16:58:47 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.10 2005/06/02 04:17:59 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
@@ -5180,6 +5180,69 @@ test expr-30.4 {silent overflow on input conversion} {ieeeFloatingPoint} {
     set v ?
     list [scan -1.7976931348623159e+308 %f v] $v
 } {1 -Inf}
+
+# bool() tests (TIP #182)
+set i 0
+foreach s {yes true on} {
+    test expr-31.$i.0 {boolean conversion} {expr bool($s)} 1
+    test expr-31.$i.1 {boolean conversion} {expr bool(!$s)} 0
+    test expr-31.$i.2 {boolean conversion} {expr bool("$s")} 1
+    test expr-31.$i.3 {boolean conversion} {expr bool(!"$s")} 0
+    set j 1
+    while {$j < [string length $s]-1} {
+	test expr-31.$i.4.$j {boolean conversion} {
+	    expr bool([string range $s 0 $j])
+	} 1
+	test expr-31.$i.5.$j {boolean conversion} {
+	    expr bool("[string range $s 0 $j]")
+	} 1
+	incr j
+    }
+    incr i
+}
+test expr-31.0.4.0 {boolean conversion} {expr bool(y)} 1
+test expr-31.0.5.0 {boolean conversion} {expr bool("y")} 1
+test expr-31.1.4.0 {boolean conversion} {expr bool(t)} 1
+test expr-31.1.5.0 {boolean conversion} {expr bool("t")} 1
+test expr-31.2.4.0 {boolean conversion} -body {
+    expr bool(o)
+} -returnCodes error -match glob -result *
+test expr-31.2.5.0 {boolean conversion} -body {
+    expr bool("o")
+} -returnCodes error -match glob -result *
+foreach s {no false off} {
+    test expr-31.$i.0 {boolean conversion} {expr bool($s)} 0
+    test expr-31.$i.1 {boolean conversion} {expr bool(!$s)} 1
+    test expr-31.$i.2 {boolean conversion} {expr bool("$s")} 0
+    test expr-31.$i.3 {boolean conversion} {expr bool(!"$s")} 1
+    set j 1
+    while {$j < [string length $s]-1} {
+	test expr-31.$i.4.$j {boolean conversion} {
+	    expr bool([string range $s 0 $j])
+	} 0
+	test expr-31.$i.5.$j {boolean conversion} {
+	    expr bool("[string range $s 0 $j]")
+	} 0
+	incr j
+    }
+    incr i
+}
+test expr-31.3.4.0 {boolean conversion} {expr bool(n)} 0
+test expr-31.3.5.0 {boolean conversion} {expr bool("n")} 0
+test expr-31.4.4.0 {boolean conversion} {expr bool(f)} 0
+test expr-31.4.5.0 {boolean conversion} {expr bool("f")} 0
+test expr-31.6  {boolean conversion} {expr bool(-1 + 1)} 0
+test expr-31.7  {boolean conversion} {expr bool(0 + 1)} 1
+test expr-31.8  {boolean conversion} {expr bool(0.0)} 0
+test expr-31.9  {boolean conversion} {expr bool(0x0)} 0
+test expr-31.10 {boolean conversion} {expr bool(wide(0))} 0
+test expr-31.11 {boolean conversion} {expr bool(5.0)} 1
+test expr-31.12 {boolean conversion} {expr bool(5)} 1
+test expr-31.13 {boolean conversion} {expr bool(0x5)} 1
+test expr-31.14 {boolean conversion} {expr bool(wide(5))} 1
+test expr-31.15 {boolean conversion} -body {
+    expr bool("fred")
+} -returnCodes error -match glob -result *
 
 # cleanup
 if {[info exists a]} {
