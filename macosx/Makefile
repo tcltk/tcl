@@ -4,7 +4,7 @@
 #	uses the standard unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.12 2005/05/26 11:19:32 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.13 2005/06/03 08:53:12 das Exp $
 #
 ########################################################################################################
 
@@ -115,12 +115,11 @@ clean-${PROJECT} distclean-${PROJECT} test-${PROJECT}: \
 
 DO_MAKE			= +${MAKE} -C ${OBJ_DIR} ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
 
-${PROJECT}:		override INSTALL_ROOT := ${OBJ_DIR}/
-
 #-------------------------------------------------------------------------------------------------------
 # build rules
 
-${PROJECT}: install-${PROJECT}
+${PROJECT}:
+	${MAKE} install-${PROJECT} INSTALL_ROOT=${OBJ_DIR}/
 
 ${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure
 	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && ${UNIX_DIR}/configure \
