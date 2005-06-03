@@ -1,7 +1,7 @@
 # parray:
 # Print the contents of a global array on stdout.
 #
-# RCS: @(#) $Id: parray.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
+# RCS: @(#) $Id: parray.tcl,v 1.4 2005/06/03 10:02:23 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
@@ -16,13 +16,14 @@ proc parray {a {pattern *}} {
 	error "\"$a\" isn't an array"
     }
     set maxl 0
-    foreach name [lsort [array names array $pattern]] {
+    set names [lsort [array names array $pattern]]
+    foreach name $names {
 	if {[string length $name] > $maxl} {
 	    set maxl [string length $name]
 	}
     }
     set maxl [expr {$maxl + [string length $a] + 2}]
-    foreach name [lsort [array names array $pattern]] {
+    foreach name $names {
 	set nameString [format %s(%s) $a $name]
 	puts stdout [format "%-*s = %s" $maxl $nameString $array($name)]
     }
