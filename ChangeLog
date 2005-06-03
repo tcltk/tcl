@@ -1,3 +1,8 @@
+2005-06-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* library/parray.tcl (parray): Only generate the sorted list of
+	element names once. Thanks to Andreas Leitgeb for spotting this.
+
 2005-06-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: fixed 'embedded' target.
