@@ -1,6 +1,10 @@
-2005-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
+2005-06-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.10 TAGGED FOR RELEASE ***
+
+	* macosx/Makefile: fixed 'embedded' target.
+
+2005-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in (html): add BUILD_HTML_FLAGS optional var
 	* tools/tcltk-man2html.tcl: add a --useversion to prevent
