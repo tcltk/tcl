@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.169 2005/06/02 22:56:03 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.170 2005/06/04 21:06:24 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1627,6 +1627,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 		$(DISTDIR)/tools
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools/tcl.wse.in
+	mkdir $(DISTDIR)/libtommath
+	cp -p $(TOP_DIR)/libtommath/*.* \
+		$(DISTDIR)/libtommath
 
 #
 # The following target can only be used for non-patch releases.  Use
