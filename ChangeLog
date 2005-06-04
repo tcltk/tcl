@@ -2,6 +2,9 @@
 
 	*** 8.4.10 TAGGED FOR RELEASE ***
 
+	* unix/tclLoadDyld.c: fixed header confilict when building this file
+	with USE_TCL_STUBS.
+	
 	* macosx/Makefile: fixed 'embedded' target.
 
 2005-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
