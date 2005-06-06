@@ -1,3 +1,12 @@
+2005-06-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWin32Dll.c: Corrected another buglet in the assembly
+	code for stack probing on Win32/gcc. [Bug #1213678]
+	* generic/tclObj,c: Added missing 'static' on definition of
+	UpdateStringOfBignum, and removed a 'switch' on a 'long long'
+	operand (which HP-UX native 'cc' seems unable to handle).
+	[Bug #1215775]
+	
 2005-06-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.5a3 TAGGED FOR RELEASE ***
