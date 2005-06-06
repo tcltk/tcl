@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.232 2005/05/30 00:04:47 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.233 2005/06/06 23:45:44 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2141,6 +2141,9 @@ MODULE_SCOPE int	Tcl_CatchObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_CdObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int	TclChanTruncateObjCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	TclClockClicksObjCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
