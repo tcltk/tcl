@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.159 2005/06/01 21:38:40 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.160 2005/06/06 23:45:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -526,6 +526,9 @@ Tcl_CreateInterp()
 	    (Tcl_CmdDeleteProc*) NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::Oldscan",
 	    TclClockOldscanObjCmd,	(ClientData) NULL,
+	    (Tcl_CmdDeleteProc*) NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::chan::Truncate",
+	    TclChanTruncateObjCmd, (ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL);
 
     /*
