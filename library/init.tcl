@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.76 2005/05/24 19:13:45 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.77 2005/06/06 23:45:46 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -71,6 +71,26 @@ namespace eval tcl {
     if {$Dir ni $Path} {
 	lappend Path $Dir
 	unsupported::EncodingDirs $Path
+    }
+
+    # Set up the 'chan' ensemble
+    namespace eval chan {
+	namespace ensemble create -command ::chan -map {
+	    blocked	::fblocked
+	    close	::close
+	    configure	::fconfigure
+	    copy	::fcopy
+	    eof		::eof
+	    event	::fileevent
+	    flush	::flush
+	    gets	::gets
+	    names	{::file channels}
+	    puts	::puts
+	    read	::read
+	    seek	::seek
+	    tell	::tell
+	    truncate	::tcl::chan::Truncate
+	}
     }
 }
 

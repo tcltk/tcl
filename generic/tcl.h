@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.198 2005/05/10 18:34:05 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.199 2005/06/06 23:45:42 dkf Exp $
  */
 
 #ifndef _TCL
@@ -1461,6 +1461,7 @@ typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData cli
 #define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
 #define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
 #define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
+#define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
  * TIP #218: Channel Actions, Ids for Tcl_DriverThreadActionProc
@@ -1504,8 +1505,11 @@ typedef Tcl_WideInt (Tcl_DriverWideSeekProc) _ANSI_ARGS_((
 		    int mode, int *errorCodePtr));
 
 /* TIP #218, Channel Thread Actions */
-typedef void     (Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
+typedef void	(Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
 		    ClientData instanceData, int action));
+/* TIP #208, File Truncation (etc.) */
+typedef int	(Tcl_DriverTruncateProc) _ANSI_ARGS_((
+		    ClientData instanceData, Tcl_WideInt length));
 
 /*
  * The following declarations either map ckalloc and ckfree to
@@ -1596,16 +1600,24 @@ typedef struct Tcl_ChannelType {
 					 * handle 64-bit offsets. May be
 					 * NULL, and must be NULL if
 					 * seekProc is NULL. */
-
-     /*
-      * Only valid in TCL_CHANNEL_VERSION_4 channels or later
-      * TIP #218, Channel Thread Actions
-      */
-     Tcl_DriverThreadActionProc *threadActionProc;
+    /*
+     * Only valid in TCL_CHANNEL_VERSION_4 channels or later
+     * TIP #218, Channel Thread Actions
+     */
+    Tcl_DriverThreadActionProc *threadActionProc;
  					/* Procedure to call to notify
  					 * the driver of thread specific
  					 * activity for a channel.
 					 * May be NULL. */
+    /*
+     * Only valid TCL_CHANNEL_VERSION_5 channels or later
+     * TIP#208 (part relating to truncation)
+     */
+    Tcl_DriverTruncateProc *truncateProc;
+					/* Procedure to call to truncate the
+					 * underlying file to a particular
+					 * length. May be NULL if the channel
+					 * does not support truncation. */
 } Tcl_ChannelType;
 
 /*

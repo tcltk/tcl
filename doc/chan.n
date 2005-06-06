@@ -1,0 +1,119 @@
+'\" 
+'\" Copyright (c) 2005 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+'\" RCS: @(#) $Id: chan.n,v 1.1 2005/06/06 23:45:41 dkf Exp $
+.so man.macros
+.TH chan n 8.5 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+chan \- Read, write and manipulate channels
+.SH SYNOPSIS
+\fBchan \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+This command provides several operations for reading from, writing to
+and otherwise manipulating open channels (such as have been created
+with the \fBopen\fR and \fBsocket\fR commands). \fIOption\fR indicates
+what to do with the channel; any unique abbreviation for \fIoption\fR
+is acceptable. Valid options are:
+.TP
+\fBchan blocked \fIchannelId\fR
+Test whether the last input operation on the channel called
+\fIchannelId\fR failed because it would have otherwise caused the
+process to block.
+.TP
+\fBchan close \fIchannelId\fR
+Close and destroy the channel called \fIchannelId\fR. Note that this
+deletes all existing file-events registered on the channel.
+.TP
+\fBchan configure \fIchannelId\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
+Query or set the configuration options of the channel named
+\fIchannelId\fR (see \fBfconfigure\fR for details).
+'\" FIXME: describe common channel options here and refer to creator
+'\" commands for special option descriptions.
+.TP
+\fBchan copy \fIinput output\fR ?\fB\-size \fIsize\fR? ?\fB\-command \fIcallback\fR?
+Copy the contents of the channel \fIinput\fR, which must have been
+opened for reading, to the channel \fIoutput\fR, which must have been
+opened for writing. If \fIsize\fR is specified, only that many bytes
+will be transferred. If \fIcallback\fR is specified, this command
+returns immediately and arranges for \fIcallback\fR to be called when
+the requested transfer has completed or an error occurs (assuming that
+the event loop is running) with extra arguments appended to
+\fIcallback\fR to indicate what happened.
+.TP
+\fBchan eof \fIchannelId\fR
+Test whether the last input operation on the channel called
+\fIchannelId\fR failed because the end of the data stream was reached.
+.TP
+\fBchan event \fIchannelId mode\fR ?\fIscript\fR?
+Arrange for the Tcl script \fIscript\fR to be called whenever the
+channel called \fIchannelId\fR enters the state described by
+\fImode\fR (which must be either \fBreadable\fR or \fBwritable\fR). If
+\fIscript\fR is omitted, the currently installed script is returned.
+The callback is only performed if the event loop is being serviced.
+.TP
+\fBchan flush \fIchannelId\fR
+Ensures that all pending output for the channel called \fIchannelId\fR
+is written.
+.TP
+\fBchan gets \fIchannelId\fR ?\fIvarName\fR?
+Reads a line from the channel called \fIchannelId\fR. If \fIvarName\fR
+is not specified, the result of the command will be the line that has
+been read (without a trailing newline character) or an empty string
+upon error. If \fIvarName\fR is specified, the line that has been read
+will be written to the variable called \fIvarName\fR and result will
+be the number of characters that have been read or -1 if an error
+occurred.
+.TP
+\fBchan names\fR ?\fIpattern\fR?
+Produces a list of all channel names. If \fIpattern\fR is specified,
+only those channel names that match it (according to the rules of
+\fBstring match\fR) will be returned.
+.TP
+\fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
+Writes \fIstring\fR to the channel named \fIchannelId\fR (by default,
+to the standard output stream) followed by a newline character. If the
+optional flag \fB\-nonewline\fR is given, no trailing newline
+character is written.
+.TP
+\fBchan read \fIchannelId\fR ?\fInumChars\fR?
+.TP
+\fBchan read \fR?\fB\-nonewline\fR? \fIchannelId\fR
+In the first form, the result will be the next \fInumChars\fR
+characters read from the channel named \fIchannelId\fR; if
+\fInumChars\fR is omitted, all characters up to the point when the
+channel would signal a failure (whether an end-of-file, blocked or
+other error condition) are read. In the second form (i.e. when
+\fInumChars\fR has been omitted) the flag \fB\-nonewline\fR may be
+given to indicate that any trailing newline in the string that has
+been read should be trimmed.
+.TP
+\fBchan seek \fIchannelId offset\fR ?\fIorigin\fR?
+Sets the current position within the underlying data stream for the
+channel named \fIchannelId\fR to be \fIoffset\fR bytes relative to
+\fIorigin\fR. \fIOrigin\fR should be one of \fBstart\fR (the default
+origin), \fBcurrent\fR or \fBend\fR.
+.TP
+\fBchan tell \fIchannelId\fR
+Reports the current byte offset within the underlying data stream for
+the channel named \fIchannelId\fR.
+.TP
+\fBchan truncate \fIchannelId\fR ?\fIlength\fR?
+Sets the byte length of the underlying data stream for the channel
+named \fIchannelId\fR to be \fIlength\fR (or to the current byte
+offset within the underlying data stream if \fIlength\fR is omitted).
+
+.SH "SEE ALSO"
+close(n), eof(n), fblocked(n), fconfigure(n), fcopy(n), file(n),
+fileevent(n), flush(n), gets(n), open(n), puts(n), read(n), seek(n),
+socket(n), tell(n)
+
+.SH KEYWORDS
+channel, input, output, events, offset

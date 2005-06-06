@@ -1,3 +1,22 @@
+2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP#208 IMPLEMENTATION
+
+	* library/init.tcl: Create the chan ensemble.
+	* tests/chan.test: Rudimentary test suite.
+	* doc/chan.n: General documentation.
+
+	TRUNCATION API (part of TIP#208)
+	* generic/tcl.h, generic/tcl.decls: Declaration of the API.
+	* doc/CrtChannel.3, doc/OpenFileChnl.3: Documentation of the API.
+	* generic/tclBasic.c (Tcl_CreateInterp): Create the mapping into Tcl.
+	* generic/tclIOCmd.c (TclChanTruncateObjCmd): Implementation of
+	Tcl-level truncation API.
+	* generic/tclIO.c (Tcl_TruncateChannel): Generic C-level
+	truncation API implementation.
+	* unix/tclUnixChan.c (FileTruncateProc): Basic implementation of
+	truncating driver.
+
 2005-06-06  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/tclWin32Dll.c: Corrected another buglet in the assembly

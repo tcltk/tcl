@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.111 2005/05/10 18:34:04 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.112 2005/06/06 23:45:42 dkf Exp $
 
 library tcl
 
@@ -2002,6 +2002,15 @@ declare 557 generic {
 }
 declare 558 generic {
     int Tcl_GetBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
+}
+
+# TIP #208:
+declare 559 generic {
+    int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
+}
+declare 560 generic {
+    Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
+	    Tcl_ChannelType *chanTypePtr)
 }
 
 ##############################################################################
