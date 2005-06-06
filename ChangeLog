@@ -2,7 +2,7 @@
 
 	*** 8.4.10 TAGGED FOR RELEASE ***
 
-	* unix/tclLoadDyld.c: fixed header confilict when building this file
+	* unix/tclLoadDyld.c: fixed header conflict when building this file
 	with USE_TCL_STUBS.
 	
 	* macosx/Makefile: fixed 'embedded' target.
