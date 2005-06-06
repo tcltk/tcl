@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.6 2004/09/01 17:28:04 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.7 2005/06/06 21:04:47 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -37,46 +37,25 @@ typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 static int platformId;		/* Running under NT, or 95/98? */
 
-#if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
-static void *INITIAL_ESP,
-            *INITIAL_EBP,
-            *INITIAL_HANDLER,
-            *RESTORED_ESP,
-            *RESTORED_EBP,
-            *RESTORED_HANDLER;
-#endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
-
 #ifdef HAVE_NO_SEH
 
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_dllmain_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
+/*
+ * Unlike Borland and Microsoft, we don't register exception handlers
+ * by pushing registration records onto the runtime stack.  Instead, we
+ * register them by creating an EXCEPTION_REGISTRATION within the activation
+ * record.
+ */
 
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_checkstackspace_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
+typedef struct EXCEPTION_REGISTRATION {
+    struct EXCEPTION_REGISTRATION* link;
+    EXCEPTION_DISPOSITION (*handler)( struct _EXCEPTION_RECORD*, void*,
+				      struct _CONTEXT*, void* );
+    void* ebp;
+    void* esp;
+    int status;
+} EXCEPTION_REGISTRATION;
 
-static
-__attribute__((cdecl))
-EXCEPTION_DISPOSITION
-_except_TclWinCPUID_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
-
-#endif /* HAVE_NO_SEH */
-
+#endif
 
 /*
  * VC++ 5.x has no 'cpuid' assembler instruction, so we
@@ -293,6 +272,10 @@ DllMain(hInst, reason, reserved)
     DWORD reason;		/* Reason this function is being called. */
     LPVOID reserved;		/* Not used. */
 {
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
+
     switch (reason) {
     case DLL_PROCESS_ATTACH:
 	DisableThreadLibraryCalls(hInst);
@@ -306,102 +289,85 @@ DllMain(hInst, reason, reserved)
 	 * be unstable.
 	 */
 #ifdef HAVE_NO_SEH
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl %%esp,  %0" "\n\t"
-            "movl %%ebp,  %1" "\n\t"
-            "movl %%fs:0, %2" "\n\t"
-            : "=m"(INITIAL_ESP),
-              "=m"(INITIAL_EBP),
-              "=r"(INITIAL_HANDLER) );
-# endif /* TCL_MEM_DEBUG */
+        __asm__ __volatile__ (
 
-    __asm__ __volatile__ (
-            "pushl %%ebp" "\n\t"
-            "pushl %0" "\n\t"
-            "pushl %%fs:0" "\n\t"
-            "movl  %%esp, %%fs:0"
+            /*
+             * Construct an EXCEPTION_REGISTRATION to protect the
+             * call to Tcl_Finalize
+             */
+            "leal       %[registration], %%edx"         "\n\t"
+            "movl       %%fs:0,         %%eax"          "\n\t"
+            "movl       %%eax,          0x0(%%edx)"     "\n\t" /* link */
+            "leal       1f,             %%eax"          "\n\t"
+            "movl       %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+            "movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+            "movl       %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+            "movl       %[error],       0x10(%%edx)"    "\n\t" /* status */
+
+            /*
+             * Link the EXCEPTION_REGISTRATION on the chain
+             */
+            "movl       %%edx,          %%fs:0"         "\n\t"
+
+            /*
+             * Call Tcl_Finalize
+             */
+            "call       _Tcl_Finalize"                  "\n\t"
+
+            /*
+             * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+             * and store a TCL_OK status
+             */
+
+            "movl       %%fs:0,         %%edx"          "\n\t"
+            "movl       %[ok],          %%eax"          "\n\t"
+            "movl       %%eax,          0x10(%%edx)"    "\n\t"
+            "jmp        2f"                             "\n"
+
+            /*
+             * Come here on an exception. Get the EXCEPTION_REGISTRATION
+             * that we previously put on the chain.
+             */
+
+            "1:"                                        "\t"
+            "movl       %%fs:0,         %%edx"          "\n\t"
+            "movl       0x8(%%edx),     %%edx"          "\n"
+
+
+            /* 
+             * Come here however we exited.  Restore context from the
+             * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+             */
+
+            "2:"                                        "\t"
+            "movl       0xc(%%edx),     %%esp"          "\n\t"
+            "movl       0x8(%%edx),     %%ebp"          "\n\t"
+            "movl       0x0(%%edx),     %%eax"          "\n\t"
+            "movl       %%eax,          %%fs:0"         "\n\t"
+
             :
-            : "r" (_except_dllmain_detach_handler) );
-#else
+            /* No outputs */
+            :
+            [registration]      "m"     (registration),
+            [ok]                "i"     (TCL_OK),
+            [error]             "i"     (TCL_ERROR)
+            :
+            "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
+            );
+
+#else /* HAVE_NO_SEH */
 	__try {
-#endif /* HAVE_NO_SEH */
-
-  	    Tcl_Finalize();
-
-#ifdef HAVE_NO_SEH
-    __asm__ __volatile__ (
-            "jmp  dllmain_detach_pop" "\n"
-        "dllmain_detach_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-        "dllmain_detach_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            :
-            :
-            : "%eax");
-
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
-
-    if (INITIAL_ESP != RESTORED_ESP)
-        Tcl_Panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
-        Tcl_Panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
-        Tcl_Panic("HANDLER restored incorrectly");
-# endif /* TCL_MEM_DEBUG */
-#else
+	    Tcl_Finalize();
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	    /* empty handler body. */
 	}
-#endif /* HAVE_NO_SEH */
+#endif
+
 	break;
     }
 
     return TRUE; 
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_dllmain_detach_handler --
- *
- *	SEH exception handler for DllMain.
- *
- * Results:
- *	See DllMain.
- *
- * Side effects:
- *	See DllMain.
- *
- *----------------------------------------------------------------------
- */
-#ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_dllmain_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-            "jmp dllmain_detach_reentry");
-    return 0; /* Function does not return */
-}
-#endif /* HAVE_NO_SEH */
-
 
 #endif /* !STATIC_BUILD */
 #endif /* __WIN32__ */
@@ -544,6 +510,10 @@ TclWinNoBackslash(
 int
 TclpCheckStackSpace()
 {
+
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
     int retval = 0;
 
     /*
@@ -554,109 +524,93 @@ TclpCheckStackSpace()
      */
 
 #ifdef HAVE_NO_SEH
-# ifdef TCL_MEM_DEBUG
     __asm__ __volatile__ (
-            "movl %%esp,  %0" "\n\t"
-            "movl %%ebp,  %1" "\n\t"
-            "movl %%fs:0, %2" "\n\t"
-            : "=m"(INITIAL_ESP),
-              "=m"(INITIAL_EBP),
-              "=r"(INITIAL_HANDLER) );
-# endif /* TCL_MEM_DEBUG */
 
-    __asm__ __volatile__ (
-            "pushl %%ebp" "\n\t"
-            "pushl %0" "\n\t"
-            "pushl %%fs:0" "\n\t"
-            "movl  %%esp, %%fs:0"
-            :
-            : "r" (_except_checkstackspace_handler) );
-#else
+        /*
+         * Construct an EXCEPTION_REGISTRATION to protect the
+         * call to __alloca
+         */
+        "leal   %[registration], %%edx"         "\n\t"
+        "movl   %%fs:0,         %%eax"          "\n\t"
+        "movl   %%eax,          0x0(%%edx)"     "\n\t" /* link */
+        "leal   1f,             %%eax"          "\n\t"
+        "movl   %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+        "movl   %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+        "movl   %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+        "movl   %[error],       0x10(%%edx)"    "\n\t" /* status */
+        
+        /*
+         * Link the EXCEPTION_REGISTRATION on the chain
+         */
+        "movl   %%edx,          %%fs:0"         "\n\t"
+
+        /*
+         * Attempt a call to __alloca, to determine whether there's
+         * sufficient memory to be had.
+         */
+
+        "movl   %[size],        %%eax"          "\n\t"
+        "pushl  %%eax"                          "\n\t"
+        "call   __alloca"                       "\n\t"
+
+        /*
+         * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+         * and store a TCL_OK status
+         */
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   %[ok],          %%eax"          "\n\t"
+        "movl   %%eax,          0x10(%%edx)"    "\n\t"
+        "jmp    2f"                             "\n"
+
+        /*
+         * Come here on an exception. Get the EXCEPTION_REGISTRATION
+         * that we previously put on the chain.
+         */
+        "1:"                                    "\t"
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   0x8(%%edx),     %%edx"          "\n\t"
+        
+        /* 
+         * Come here however we exited.  Restore context from the
+         * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+         */
+        
+        "2:"                                    "\t"
+        "movl   0xc(%%edx),     %%esp"          "\n\t"
+        "movl   0x8(%%edx),     %%ebp"          "\n\t"
+        "movl   0x0(%%edx),     %%eax"          "\n\t"
+        "movl   %%eax,          %%fs:0"         "\n\t"
+        
+        :
+        /* No outputs */
+        :
+        [registration]  "m"     (registration),
+        [ok]            "i"     (TCL_OK),
+        [error]         "i"     (TCL_ERROR),
+        [size]          "i"     (TCL_WIN_STACK_THRESHOLD)
+        :
+        "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
+        );
+    retval = (registration.status == TCL_OK);
+
+#else /* !HAVE_NO_SEH */
     __try {
-#endif /* HAVE_NO_SEH */
 #ifdef HAVE_ALLOCA_GCC_INLINE
-    __asm__ __volatile__ (
+        __asm__ __volatile__ (
             "movl  %0, %%eax" "\n\t"
             "call  __alloca" "\n\t"
             :
             : "i"(TCL_WIN_STACK_THRESHOLD)
             : "%eax");
 #else
-	alloca(TCL_WIN_STACK_THRESHOLD);
+        alloca(TCL_WIN_STACK_THRESHOLD);
 #endif /* HAVE_ALLOCA_GCC_INLINE */
-	retval = 1;
-#ifdef HAVE_NO_SEH
-    __asm__ __volatile__ (
-            "movl %%fs:0, %%esp" "\n\t"
-            "jmp  checkstackspace_pop" "\n"
-        "checkstackspace_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-        "checkstackspace_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            :
-            :
-            : "%eax");
-
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
-
-    if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
-# endif /* TCL_MEM_DEBUG */
-#else
+        retval = 1;
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 #endif /* HAVE_NO_SEH */
 
-    /*
-     * Avoid using control flow statements in the SEH guarded block!
-     */
     return retval;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_checkstackspace_handler --
- *
- *	SEH exception handler for TclpCheckStackSpace.
- *
- * Results:
- *	See TclpCheckStackSpace.
- *
- * Side effects:
- *	See TclpCheckStackSpace.
- *
- *----------------------------------------------------------------------
- */
-#ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_checkstackspace_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-            "jmp checkstackspace_reentry");
-    return 0; /* Function does not return */
-}
-#endif /* HAVE_NO_SEH */
 
 /*
  *----------------------------------------------------------------------
@@ -1055,70 +1009,93 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
 
 int
 TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
-	     register unsigned int * regsPtr ) /* Registers after the CPUID */
+	     unsigned int * regsPtr ) /* Registers after the CPUID */
 {
 
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
     int status = TCL_ERROR;
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(_WIN64)
 
-    /* Establish structured exception handling */
-
-# ifdef HAVE_NO_SEH
+    /* 
+     * Execute the CPUID instruction with the given index, and
+     * store results off 'regPtr'.
+     */
+    
     __asm__ __volatile__ (
-	    "pushl %%ebp" "\n\t"
-	    "pushl %0" "\n\t"
-	    "pushl %%fs:0" "\n\t"
-	    "movl  %%esp, %%fs:0"
-            :
-            : "r" (_except_TclWinCPUID_detach_handler) );
-#  else
-    __try {
-#  endif
 
-	/* 
-	 * Execute the CPUID instruction with the given index, and
-	 * store results off 'regPtr'.
-	 */
+        /*
+         * Construct an EXCEPTION_REGISTRATION to protect the
+         * CPUID instruction (early 486's don't have CPUID)
+         */
+        "leal   %[registration], %%edx"         "\n\t"
+        "movl   %%fs:0,         %%eax"          "\n\t"
+        "movl   %%eax,          0x0(%%edx)"     "\n\t" /* link */
+        "leal   1f,             %%eax"          "\n\t"
+        "movl   %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+        "movl   %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+        "movl   %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+        "movl   %[error],       0x10(%%edx)"    "\n\t" /* status */
+        
+        /*
+         * Link the EXCEPTION_REGISTRATION on the chain
+         */
+        "movl   %%edx,          %%fs:0"         "\n\t"
 
-	__asm__ __volatile__ (
-	    "movl %4, %%eax" "\n\t"
-            "cpuid" "\n\t"
-	    "movl %%eax, %0" "\n\t"
-	    "movl %%ebx, %1" "\n\t"
-	    "movl %%ecx, %2" "\n\t"
-	    "movl %%edx, %3"
-	    : 
-	    "=m"(regsPtr[0]),
-	    "=m"(regsPtr[1]),
-	    "=m"(regsPtr[2]),
-	    "=m"(regsPtr[3])
-	    : "m"(index)
-	    : "%eax", "%ebx", "%ecx", "%edx" );
-	status = TCL_OK;
+        /*
+         * Do the CPUID instruction, and save the results in
+         * the 'regsPtr' area
+         */
 
-	/* End the structured exception handler */
+        "movl   %[rptr],        %%edi"          "\n\t"
+        "movl   %[index],       %%eax"          "\n\t"
+        "cpuid"                                 "\n\t"
+        "movl   %%eax,          0x0(%%edi)"     "\n\t"
+        "movl   %%ebx,          0x4(%%edi)"     "\n\t"
+        "movl   %%ecx,          0x8(%%edi)"     "\n\t"
+        "movl   %%edx,          0xc(%%edi)"     "\n\t"
 
-#  ifndef HAVE_NO_SEH
-    } __except( EXCEPTION_EXECUTE_HANDLER ) {
-	/* do nothing */
-    }
-#  else
-    __asm __volatile__ (
-	    "jmp  TclWinCPUID_detach_pop" "\n"
-        "TclWinCPUID_detach_reentry:" "\n\t"
-	    "movl %%fs:0, %%eax" "\n\t"
-	    "movl 0x8(%%eax), %%esp" "\n\t"
-	    "movl 0x8(%%esp), %%ebp" "\n"
-	"TclWinCPUID_detach_pop:" "\n\t"
-	    "movl (%%esp), %%eax" "\n\t"
-	    "movl %%eax, %%fs:0" "\n\t"
-	    "add  $12, %%esp" "\n\t"
-	:
-	:
-	: "%eax");
-#  endif
+        /*
+         * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+         * and store a TCL_OK status
+         */
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   %[ok],          %%eax"          "\n\t"
+        "movl   %%eax,          0x10(%%edx)"    "\n\t"
+        "jmp    2f"                             "\n"
 
+        /*
+         * Come here on an exception. Get the EXCEPTION_REGISTRATION
+         * that we previously put on the chain.
+         */
+        "1:"                                    "\t"
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   0x8(%%edx),     %%edx"          "\n\t"
+        
+        /* 
+         * Come here however we exited.  Restore context from the
+         * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+         */
+        
+        "2:"                                    "\t"
+        "movl   0xc(%%edx),     %%esp"          "\n\t"
+        "movl   0x8(%%edx),     %%ebp"          "\n\t"
+        "movl   0x0(%%edx),     %%eax"          "\n\t"
+        "movl   %%eax,          %%fs:0"         "\n\t"
+
+        : 
+        /* No outputs */
+        : 
+        [index]         "m"     (index),
+        [rptr]          "m"     (regsPtr),
+        [registration]  "m"     (registration),
+        [ok]            "i"     (TCL_OK),
+        [error]         "i"     (TCL_ERROR)
+        :
+        "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory" );
+    status = registration.status;
 
 #elif defined(_MSC_VER) && !defined(_WIN64)
 
@@ -1140,7 +1117,7 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 	    push    ecx
 	    push    edx
 	    mov     eax, regs.dw0
-            cpuid
+	    cpuid
 	    mov     regs.dw0, eax
 	    mov     regs.dw1, ebx
 	    mov     regs.dw2, ecx
@@ -1167,36 +1144,3 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 #endif
     return status;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_TclWinCPUID_detach_handler --
- *
- *	SEH exception handler for TclWinCPUID.
- *
- * Results:
- *	See TclWinCPUID.
- *
- * Side effects:
- *	See TclWinCPUID.
- *
- *----------------------------------------------------------------------
- */
-
-#if defined( HAVE_NO_SEH )
-static
-__attribute__((cdecl))
-EXCEPTION_DISPOSITION
-_except_TclWinCPUID_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-	"jmp TclWinCPUID_detach_reentry" );
-    return 0; /* Function does not return */
-}
-#endif
-
