@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.88 2005/06/07 02:10:21 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.89 2005/06/07 20:37:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -9438,11 +9438,28 @@ Tcl_ChannelThreadActionProc(chanTypePtr)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelTruncateProc --
+ *
+ *      TIP #208 (subsection relating to truncation, based on TIP #206).
+ *	Return the Tcl_DriverTruncateProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 Tcl_DriverTruncateProc *
 Tcl_ChannelTruncateProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_5)) {
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
 	return chanTypePtr->truncateProc;
     } else {
 	return NULL;
