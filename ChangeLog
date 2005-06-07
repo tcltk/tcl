@@ -1,3 +1,8 @@
+2005-06-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier): Add dummy variable
+	so threaded build compiles.
+
 2005-06-06  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/tclWin32Dll.c: Corrected another buglet in the assembly
