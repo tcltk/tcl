@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.124 2005/06/07 09:06:17 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.125 2005/06/07 09:07:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2146,7 +2146,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objc < 5 || objc > 6) {
 	        Tcl_WrongNumArgs(interp, 2, objv,
-				 "string first last ?string?");
+			"string first last ?string?");
 		return TCL_ERROR;
 	    }
 
