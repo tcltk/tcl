@@ -1,9 +1,10 @@
-2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
-
-	* win/tclWinChan.c (FileTruncateProc): Added implementation of
-	file truncation for Windows.
-
 2005-06-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:		Reduced the Tcl_ObjTypes "index",
+	* generic/tclIndexObj.c:	"enembleCmd", "localVarName", and
+	* generic/tclNamesp.c:		"levelReference" to file static scope.
+	* generic/tclProc.c:
+	* generic/tclVar.c:
 
 	* generic/tclObj.c:	Restored registration of the "procbody"
 	Tcl_ObjType, as required by the tclcompiler application.
@@ -12,8 +13,6 @@
 	* generic/tclStubInit.c:
 
 2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
-
-	* tests/chan.test (chan-15.2): Added real test of truncation.
 
 	* generic/tclIO.c (Tcl_ChannelTruncateProc): Stop proliferation of
 	* generic/tcl.h:			     channel type versions
@@ -41,6 +40,10 @@
 	truncation API implementation.
 	* unix/tclUnixChan.c (FileTruncateProc): Basic implementation of
 	truncating driver.
+
+	* win/tclWinChan.c (FileTruncateProc): Added implementation of
+	file truncation for Windows.
+	* tests/chan.test (chan-15.2): Added real test of truncation.
 
 2005-06-06  Kevin B. Kenny  <kennykb@acm.org>
 
