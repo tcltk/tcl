@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.25 2005/06/06 23:45:46 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.26 2005/06/07 02:12:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1564,9 +1564,8 @@ TclChanTruncateObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Channel chan;
-    Tcl_Obj *cmdPtr;
     int mode;
-    Tcl_WideInt targetLength;
+    Tcl_WideInt length;
     char *chanName;
 
     if ((objc < 2) || (objc > 3)) {
