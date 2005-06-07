@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.117 2005/05/14 20:46:45 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.118 2005/06/07 02:07:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -981,6 +981,8 @@ TclStubs tclStubs = {
     Tcl_DbNewBignumObj, /* 556 */
     Tcl_SetBignumObj, /* 557 */
     Tcl_GetBignumFromObj, /* 558 */
+    Tcl_TruncateChannel, /* 559 */
+    Tcl_ChannelTruncateProc, /* 560 */
 };
 
 /* !END!: Do not edit above this line. */
