@@ -1,3 +1,8 @@
+2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinChan.c (FileTruncateProc): Added implementation of
+	file truncation for Windows.
+
 2005-06-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c:	Restored registration of the "procbody"
