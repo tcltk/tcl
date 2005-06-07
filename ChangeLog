@@ -1,3 +1,11 @@
+2005-06-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c:	Restored registration of the "procbody"
+	Tcl_ObjType, as required by the tclcompiler application.
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclStubInit.c:
+
 2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/chan.test (chan-15.2): Added real test of truncation.
@@ -6,22 +14,11 @@
 	* generic/tcl.h:			     channel type versions
 	* doc/CrtChannel.3:			     following advice from AKu
 
-2005-06-07  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
-
 	Bump patchlevel to a4 to distinguish from a3 release.
-
-2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInt.h (INTERP_TRACE_IN_PROGRESS): Add flag so the error
 	* generic/tclIndexObj.c (Tcl_WrongNumArgs):    messages from ensembles
 	* generic/tclIOCmd.c (Tcl_ReadObjCmd):	       can be correct.
-
-2005-06-07  Don Porter  <dgp@users.sourceforge.net>
-
-	* generic/tclDecls.h:		make genstubs
-	* generic/tclStubInit.c:
-
-2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP#208 IMPLEMENTATION
 
