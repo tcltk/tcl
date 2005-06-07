@@ -1,3 +1,9 @@
+2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (INTERP_TRACE_IN_PROGRESS): Add flag so the error
+	* generic/tclIndexObj.c (Tcl_WrongNumArgs):    messages from ensembles
+	* generic/tclIOCmd.c (Tcl_ReadObjCmd):	       can be correct.
+
 2005-06-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclDecls.h:		make genstubs

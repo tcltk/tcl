@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.233 2005/06/06 23:45:44 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.234 2005/06/07 10:05:00 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1530,6 +1530,10 @@ typedef struct Interp {
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
+ * INTERP_ALTERNATE_WRONG_ARGS: Used for listing second and subsequent forms
+ *			of the wrong-num-args string in Tcl_WrongNumArgs.
+ *			Makes it append instead of replacing and uses
+ *			different intermediate text.
  *
  * WARNING: For the sake of some extensions that have made use of former
  * internal values, do not re-use the flag values 2 (formerly ERR_IN_PROGRESS)
@@ -1542,6 +1546,7 @@ typedef struct Interp {
 #define RAND_SEED_INITIALIZED		 0x40
 #define SAFE_INTERP			 0x80
 #define INTERP_TRACE_IN_PROGRESS	0x200
+#define INTERP_ALTERNATE_WRONG_ARGS	0x400
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
