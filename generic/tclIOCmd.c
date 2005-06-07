@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.26 2005/06/07 02:12:45 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.27 2005/06/07 10:05:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -305,10 +305,18 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *resultPtr;
 
     if ((objc != 2) && (objc != 3)) {
-	argerror:
+	Interp *iPtr;
+
+      argerror:
+	iPtr = (Interp *) interp;
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?numChars?");
-	Tcl_AppendResult(interp, " or \"", Tcl_GetString(objv[0]),
-		" ?-nonewline? channelId\"", (char *) NULL);
+	/*
+	 * Do not append directly; that makes ensembles using this
+	 * command as a subcommand produce the wrong message.
+	 */
+	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channelId");
+	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
