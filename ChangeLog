@@ -1,3 +1,8 @@
+2005-06-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclStubInit.c:
+
 2005-06-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP#208 IMPLEMENTATION
