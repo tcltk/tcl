@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.87 2005/06/06 23:45:45 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.88 2005/06/07 02:10:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5812,7 +5812,7 @@ Tcl_TruncateChannel(chan, length)
 	return TCL_ERROR;
     }
 
-    if (!(chanPtr->stateptr->flags & TCL_WRITABLE)) {
+    if (!(chanPtr->state->flags & TCL_WRITABLE)) {
 	/*
 	 * We require that the file was opened of writing. Do that
 	 * check now so that we only flush if we think we're going to
