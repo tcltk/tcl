@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.61 2005/05/10 18:34:08 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.62 2005/06/07 09:04:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -552,6 +552,7 @@ TclEncodingDirsObjCmd(dummy, interp, objc, objv)
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
+	return TCL_ERROR;
     }
     if (objc == 1) {
 	Tcl_SetObjResult(interp, TclGetEncodingSearchPath());
