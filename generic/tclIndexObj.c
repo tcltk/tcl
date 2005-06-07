@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.22 2004/11/25 16:37:15 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.23 2005/06/07 10:05:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -462,7 +462,12 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 #endif /* AVOID_HACKS_FOR_ITCL */
 
     TclNewObj(objPtr);
-    Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+    if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
+	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
+	Tcl_AppendToObj(objPtr, " or \"", -1);
+    } else {
+	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+    }
 
     /*
      * Check to see if we are processing an ensemble implementation,
