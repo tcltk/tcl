@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.41 2005/06/07 21:31:53 dkf Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.42 2005/06/08 14:12:19 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -100,7 +100,7 @@ static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static void             FileThreadActionProc _ANSI_ARGS_ ((
 			   ClientData instanceData, int action));
-static void		FileTruncateProc _ANSI_ARGS_ ((
+static int		FileTruncateProc _ANSI_ARGS_ ((
 			   ClientData instanceData, Tcl_WideInt length));
 
 /*
