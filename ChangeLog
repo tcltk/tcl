@@ -1,7 +1,7 @@
 2005-06-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:		Reduced the Tcl_ObjTypes "index",
-	* generic/tclIndexObj.c:	"enembleCmd", "localVarName", and
+	* generic/tclIndexObj.c:	"ensembleCmd", "localVarName", and
 	* generic/tclNamesp.c:		"levelReference" to file static scope.
 	* generic/tclProc.c:
 	* generic/tclVar.c:
