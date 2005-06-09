@@ -1,3 +1,8 @@
+2005-06-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/expr.n, doc/mathfunc.n: Fix minor typos [Bug 1211078] and
+	add mention of distinctly-relevant [namespace path] subcommand.
+
 2005-06-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:		Reduced the Tcl_ObjTypes "index",
