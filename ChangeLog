@@ -1,3 +1,8 @@
+2005-06-09  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFCmd.c: fix to race condition in file mkdir [Bug 1217375]
+	* doc/glob.n: improve glob documentation [Bug 1190891]
+
 2005-06-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/expr.n, doc/mathfunc.n: Fix minor typos [Bug 1211078] and
