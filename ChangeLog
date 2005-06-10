@@ -1,3 +1,8 @@
+2005-06-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/chan.n: Fold in the descriptive parts of the documentation
+	for all the commands that [chan] builds on top of.
+
 2005-06-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFCmd.c: fix to race condition in file mkdir [Bug 1217375]
