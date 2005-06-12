@@ -1,3 +1,8 @@
+2005-06-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c: Factor out some common idioms into named
+	forms for greater clarity.
+
 2005-06-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/chan.n: Fold in the descriptive parts of the documentation
