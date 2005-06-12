@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.71 2005/06/12 22:13:27 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.72 2005/06/12 22:19:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -332,7 +332,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	startOffset = CurrentOffset(envPtr);
-	CompileBody(envPtr, cmdTokenPtr, envPtr);
+	CompileBody(envPtr, cmdTokenPtr, interp);
     } else {
 	TclCompileTokens(interp, cmdTokenPtr+1,
 		cmdTokenPtr->numComponents, envPtr);
