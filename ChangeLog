@@ -1,3 +1,7 @@
+2005-06-13  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFCmd.c: correct fix to file mkdir 2005-06-09, [Bug 1219176]
+
 2005-06-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c: Factor out some common idioms into named
