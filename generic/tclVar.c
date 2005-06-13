@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101.2.10 2005/04/16 19:21:39 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.11 2005/06/13 01:46:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -94,7 +94,7 @@ static Tcl_SetFromAnyProc PanicOnSetVarName;
  *                      it is a scalar variable
  */
 
-Tcl_ObjType tclLocalVarNameType = {
+static Tcl_ObjType localVarNameType = {
     "localVarName",
     NULL, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
@@ -324,7 +324,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
  * Side effects:
  *	New hashtable entries may be created if createPart1 or createPart2
  *	are 1.
- *      The object part1Ptr is converted to one of tclLocalVarNameType, 
+ *      The object part1Ptr is converted to one of localVarNameType, 
  *      tclNsVarNameType or tclParsedVarNameType and caches as much of the
  *      lookup as it can.
  *
@@ -400,7 +400,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	goto doParse;
     }
     
-    if (typePtr == &tclLocalVarNameType) {
+    if (typePtr == &localVarNameType) {
 	int localIndex = (int) part1Ptr->internalRep.longValue;
 	char *varName;
 	
@@ -547,7 +547,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	 * An indexed local variable.
 	 */
 
-	part1Ptr->typePtr = &tclLocalVarNameType;
+	part1Ptr->typePtr = &localVarNameType;
 	part1Ptr->internalRep.longValue = (long) index;
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
@@ -2803,7 +2803,23 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
 	    TclNewObj(nameLstPtr);
 	    Tcl_IncrRefCount(nameLstPtr);
-
+	    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+		hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, pattern);
+		if (hPtr == NULL) {
+		    goto searchDone;
+		}
+	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
+		if (TclIsVarUndefined(varPtr2)) {
+		    goto searchDone;
+		}
+		result = Tcl_ListObjAppendElement(interp, nameLstPtr,
+		        Tcl_NewStringObj(pattern, -1));
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(nameLstPtr);
+		    return result;
+		}
+		goto searchDone;
+	    }
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL;  hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -2824,6 +2840,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    return result;
 		}
 	    }
+searchDone:
 
 	    /*
 	     * Make sure the Var structure of the array is not removed by
@@ -2919,6 +2936,19 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 	    }       		
 	    TclNewObj(resultPtr);
+	    if ((((enum options) mode) == OPT_GLOB) && (pattern != NULL)
+		    && TclMatchIsTrivial(pattern)) {
+		hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, pattern);
+		if ((hPtr != NULL)
+			&& !TclIsVarUndefined((Var *) Tcl_GetHashValue(hPtr))
+			&& (result = Tcl_ListObjAppendElement(interp,
+			resultPtr, Tcl_NewStringObj(pattern, -1))) != TCL_OK) {
+		    Tcl_DecrRefCount(resultPtr);
+		    return result;
+		}
+		Tcl_SetObjResult(interp, resultPtr);
+		return TCL_OK;
+	    }
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -3100,6 +3130,15 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 	    } else {
 		pattern = TclGetString(objv[3]);
+		if (TclMatchIsTrivial(pattern)) {
+		    hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, pattern);
+		    result = TCL_OK;
+		    (hPtr != NULL)
+			&& !TclIsVarUndefined((Var *) Tcl_GetHashValue(hPtr))
+			&& (result 
+			= TclObjUnsetVar2(interp, varNamePtr, pattern, 0));
+		    return result;
+		}
 		for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr,
 			&search);
 		     hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
@@ -4674,7 +4713,7 @@ DupLocalVarName(srcPtr, dupPtr)
     Tcl_Obj *dupPtr;
 {
     dupPtr->internalRep.longValue = srcPtr->internalRep.longValue;
-    dupPtr->typePtr = &tclLocalVarNameType;
+    dupPtr->typePtr = &localVarNameType;
 }
 
 #if ENABLE_NS_VARNAME_CACHING

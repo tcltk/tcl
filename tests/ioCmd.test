@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.21 2004/06/23 15:36:57 dkf Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.21.4.1 2005/06/13 01:46:49 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -426,11 +426,36 @@ unmatched open brace in list
 \"open \$path(test3) \"FOO \\{BAR BAZ\"\""
 test iocmd-12.7 {POSIX open access modes: errors} {
   list [catch {open $path(test3) {FOO BAR BAZ}} msg] $msg
-} {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, CREAT EXCL, NOCTTY, NONBLOCK, or TRUNC}}
+} {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC}}
 test iocmd-12.8 {POSIX open access modes: errors} {
     list [catch {open $path(test3) {TRUNC CREAT}} msg] $msg
 } {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
 close [open $path(test3) w]
+test iocmd-12.9 {POSIX open access modes: BINARY} {
+    list [catch {open $path(test1) BINARY} msg] $msg
+} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+test iocmd-12.10 {POSIX open access modes: BINARY} {
+    set f [open $path(test1) {WRONLY BINARY TRUNC}]
+    puts $f a
+    puts $f b
+    puts -nonewline $f c	;# contents are now 5 bytes: a\nb\nc
+    close $f
+    set f [open $path(test1) r]
+    fconfigure $f -translation binary
+    set result [string length [read $f]]
+    close $f
+    set result
+} 5
+test iocmd-12.11 {POSIX open access modes: BINARY} {
+    set f [open $path(test1) {WRONLY BINARY TRUNC}]
+    puts $f \u0248	;# gets truncated to \u0048
+    close $f
+    set f [open $path(test1) r]
+    fconfigure $f -translation binary
+    set result [read -nonewline $f]
+    close $f
+    set result
+} \u0048
 
 test iocmd-13.1 {errors in open command} {
     list [catch {open} msg] $msg
@@ -452,6 +477,15 @@ test iocmd-13.6 {errors in open command} {
     regsub [file join {} _non_existent_] $msg "_non_existent_" msg
 	string tolower $msg
 } {1 {couldn't open "_non_existent_": no such file or directory} {posix enoent {no such file or directory}}}
+test iocmd-13.7 {errors in open command} {
+    list [catch {open $path(test1) b} msg] $msg
+} {1 {illegal access mode "b"}}
+test iocmd-13.8 {errors in open command} {
+    list [catch {open $path(test1) rbb} msg] $msg
+} {1 {illegal access mode "rbb"}}
+test iocmd-13.9 {errors in open command} {
+    list [catch {open $path(test1) r++} msg] $msg
+} {1 {illegal access mode "r++"}}
 
 test iocmd-14.1 {file id parsing errors} {
     list [catch {eof gorp} msg] $msg $errorCode

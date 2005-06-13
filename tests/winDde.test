@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.27 2005/01/05 10:34:08 patthoyts Exp $
+# RCS: @(#) $Id: winDde.test,v 1.27.2.1 2005/06/13 01:46:51 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2

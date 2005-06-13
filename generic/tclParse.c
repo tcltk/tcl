@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.39 2004/10/26 21:52:37 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.39.4.1 2005/06/13 01:46:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -243,11 +243,11 @@ TclParseInit(interp, string, numBytes, parsePtr)
  */
 
 int
-Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
+Tcl_ParseCommand(interp, start, numBytes, nested, parsePtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
-    CONST char *string;		/* First character of string containing
+    CONST char *start;		/* First character of string containing
 				 * one or more Tcl commands. */
     register int numBytes;	/* Total number of bytes in string.  If < 0,
 				 * the script consists of all bytes up to 
@@ -273,16 +273,16 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 				 * point to char after terminating one. */
     int scanned;
     
-    if ((string == NULL) && (numBytes>0)) {
+    if ((start == NULL) && (numBytes>0)) {
 	if (interp != NULL) {
 	    Tcl_SetResult(interp, "can't parse a NULL pointer", TCL_STATIC);
 	}
 	return TCL_ERROR;
     }
     if (numBytes < 0) {
-	numBytes = strlen(string);
+	numBytes = strlen(start);
     }
-    TclParseInit(interp, string, numBytes, parsePtr);
+    TclParseInit(interp, start, numBytes, parsePtr);
     parsePtr->commentStart = NULL;
     parsePtr->commentSize = 0;
     parsePtr->commandStart = NULL;
@@ -298,8 +298,8 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
      * command.
      */
 
-    scanned = ParseComment(string, numBytes, parsePtr);
-    src = (string + scanned); numBytes -= scanned;
+    scanned = ParseComment(start, numBytes, parsePtr);
+    src = (start + scanned); numBytes -= scanned;
     if (numBytes == 0) {
 	if (nested) {
 	    parsePtr->incomplete = nested;
@@ -1148,12 +1148,12 @@ TclExpandTokenArray(parsePtr)
  */
 
 int
-Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
+Tcl_ParseVarName(interp, start, numBytes, parsePtr, append)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
-    CONST char *string;		/* String containing variable name.  First
-				 * character must be "$". */
+    CONST char *start;		/* Start of variable substitution string.
+				 * First character must be "$". */
     register int numBytes;	/* Total number of bytes in string.  If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
@@ -1171,15 +1171,15 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
     Tcl_UniChar ch;
     unsigned array;
 
-    if ((numBytes == 0) || (string == NULL)) {
+    if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
     if (numBytes < 0) {
-	numBytes = strlen(string);
+	numBytes = strlen(start);
     }
 
     if (!append) {
-	TclParseInit(interp, string, numBytes, parsePtr);
+	TclParseInit(interp, start, numBytes, parsePtr);
     }
 
     /*
@@ -1188,7 +1188,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
      * there is one.
      */
 
-    src = string;
+    src = start;
     if ((parsePtr->numTokens + 2) > parsePtr->tokensAvailable) {
 	TclExpandTokenArray(parsePtr);
     }
@@ -1354,9 +1354,9 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
  */
 
 CONST char *
-Tcl_ParseVar(interp, string, termPtr)
+Tcl_ParseVar(interp, start, termPtr)
     Tcl_Interp *interp;			/* Context for looking up variable. */
-    register CONST char *string;	/* String containing variable name.
+    register CONST char *start;		/* Start of variable substitution.
 					 * First character must be "$". */
     CONST char **termPtr;		/* If non-NULL, points to word to fill
 					 * in with character just after last
@@ -1367,12 +1367,12 @@ Tcl_ParseVar(interp, string, termPtr)
     register Tcl_Obj *objPtr;
     int code;
 
-    if (Tcl_ParseVarName(interp, string, -1, &parse, 0) != TCL_OK) {
+    if (Tcl_ParseVarName(interp, start, -1, &parse, 0) != TCL_OK) {
 	return NULL;
     }
 
     if (termPtr != NULL) {
-	*termPtr = string + parse.tokenPtr->size;
+	*termPtr = start + parse.tokenPtr->size;
     }
     if (parse.numTokens == 1) {
 	/*
@@ -1436,12 +1436,12 @@ Tcl_ParseVar(interp, string, termPtr)
  */
 
 int
-Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
+Tcl_ParseBraces(interp, start, numBytes, parsePtr, append, termPtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
-    CONST char *string;		/* String containing the string in braces.
-				 * The first character must be '{'. */
+    CONST char *start;		/* Start of string enclosed in braces.
+				 * The first character must be {'. */
     register int numBytes;	/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to
 				 * the first null character. */
@@ -1462,18 +1462,18 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
     register CONST char *src;
     int startIndex, level, length;
 
-    if ((numBytes == 0) || (string == NULL)) {
+    if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
     if (numBytes < 0) {
-	numBytes = strlen(string);
+	numBytes = strlen(start);
     }
 
     if (!append) {
-	TclParseInit(interp, string, numBytes, parsePtr);
+	TclParseInit(interp, start, numBytes, parsePtr);
     }
 
-    src = string;
+    src = start;
     startIndex = parsePtr->numTokens;
 
     if (parsePtr->numTokens == parsePtr->tokensAvailable) {
@@ -1494,7 +1494,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 	    register int openBrace = 0;
 
 	    parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
-	    parsePtr->term = string;
+	    parsePtr->term = start;
 	    parsePtr->incomplete = 1;
 	    if (interp == NULL) {
 		/*
@@ -1514,7 +1514,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 	     *  by a '<whitespace>#' on the same line.
 	     */
 
-	    for (; src > string; src--) {
+	    for (; src > start; src--) {
 		switch (*src) {
 		    case '{':
 			openBrace = 1;
@@ -1640,11 +1640,11 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
  */
 
 int
-Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
+Tcl_ParseQuotedString(interp, start, numBytes, parsePtr, append, termPtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
-    CONST char *string;		/* String containing the quoted string. 
+    CONST char *start;		/* Start of the quoted string. 
 				 * The first character must be '"'. */
     register int numBytes;	/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to
@@ -1661,18 +1661,18 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
 				 * after the quoted string's terminating
 				 * close-quote if the parse succeeds. */
 {
-    if ((numBytes == 0) || (string == NULL)) {
+    if ((numBytes == 0) || (start == NULL)) {
 	return TCL_ERROR;
     }
     if (numBytes < 0) {
-	numBytes = strlen(string);
+	numBytes = strlen(start);
     }
 
     if (!append) {
-	TclParseInit(interp, string, numBytes, parsePtr);
+	TclParseInit(interp, start, numBytes, parsePtr);
     }
     
-    if (TCL_OK != ParseTokens(string+1, numBytes-1, TYPE_QUOTE,
+    if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE,
 	    TCL_SUBST_ALL, parsePtr)) {
 	goto error;
     }
@@ -1681,7 +1681,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
 	    Tcl_SetResult(parsePtr->interp, "missing \"", TCL_STATIC);
 	}
 	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
-	parsePtr->term = string;
+	parsePtr->term = start;
 	parsePtr->incomplete = 1;
 	goto error;
     }
@@ -2001,11 +2001,18 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
 		break;
 	    }
 
-	    case TCL_TOKEN_COMMAND:
-		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			0);
+	    case TCL_TOKEN_COMMAND: {
+		Interp *iPtr = (Interp *) interp;
+		iPtr->numLevels++;
+		code = TclInterpReady(interp);
+		if (code == TCL_OK) {
+		    code = Tcl_EvalEx(interp,
+			    tokenPtr->start+1, tokenPtr->size-2, 0);
+		}
+		iPtr->numLevels--;
 		appendObj = Tcl_GetObjResult(interp);
 		break;
+	    }
 
 	    case TCL_TOKEN_VARIABLE: {
 		Tcl_Obj *arrayIndex = NULL;

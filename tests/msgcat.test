@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.17 2004/12/06 22:49:40 dgp Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.17.2.1 2005/06/13 01:46:50 msofer Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {

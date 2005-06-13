@@ -25,13 +25,15 @@
 #
 #----------------------------------------------------------------------
 #
-# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright (c) 2004 by Kevin B. Kenny.	 All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.3 2004/11/02 15:16:38 kennykb Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.3.4.1 2005/06/13 01:46:52 msofer Exp $
 #
 #----------------------------------------------------------------------
+
+package require Tcl 8.5
 
 # Define the names of the Olson files that we need to load.
 # We avoid the solar time files and the leap seconds.
@@ -52,40 +54,15 @@ set maxyear 2100
 
 # Determine how big a wide integer is.
 
-set MAXWIDE [expr { wide(1) }]
+set MAXWIDE [expr {wide(1)}]
 while 1 {
-    set next [expr { $MAXWIDE + $MAXWIDE + 1}]
-    if { $next < 0 } {
+    set next [expr {$MAXWIDE + $MAXWIDE + 1}]
+    if {$next < 0} {
 	break
     }
     set MAXWIDE $next
 }
-set MINWIDE [expr { - $MAXWIDE - 1 }]
-
-#----------------------------------------------------------------------
-#
-# K --
-#
-#	The K combinator returns its first argument.  It's used for
-#	reference count management.
-#
-# Parameters:
-#	x - Argument to be unreferenced.
-#	y - Unused.
-#
-# Results:
-#	Returns the first argument.
-#
-# Side effects:
-#	None.
-#
-# The K combinator is used for its effect that [K $x [set x {}]]
-# reads out the value of x destructively, giving an unshared Tcl
-# object and avoiding 'copy on write'
-#
-#----------------------------------------------------------------------
-
-proc K {x y} {return $x}
+set MINWIDE [expr {-$MAXWIDE-1}]
 
 #----------------------------------------------------------------------
 #
@@ -105,7 +82,7 @@ proc K {x y} {return $x}
 #
 #----------------------------------------------------------------------
 
-proc loadFiles { dir } {
+proc loadFiles {dir} {
     variable olsonFiles
     foreach file $olsonFiles {
 	puts "loading: [file join $dir $file]"
@@ -136,9 +113,10 @@ proc loadFiles { dir } {
 proc checkForwardRuleRefs {} {
     variable forwardRuleRefs
     variable rules
-    foreach { rule where } [array get forwardRuleRefs] {
-	if { ![info exists rules($rule)] } {
-	    foreach { fileName lno } $where {
+
+    foreach {rule where} [array get forwardRuleRefs] {
+	if {![info exists rules($rule)]} {
+	    foreach {fileName lno} $where {
 		puts stderr "$fileName:$lno:can't locate rule \"$rule\""
 		incr errorCount
 	    }
@@ -167,8 +145,7 @@ proc checkForwardRuleRefs {} {
 #
 #----------------------------------------------------------------------
 
-proc loadZIC { fileName } {
-
+proc loadZIC {fileName} {
     variable errorCount
     variable links
 
@@ -186,19 +163,16 @@ proc loadZIC { fileName } {
 
 	# Break a line of input into words.
 
-	regsub {[[:space:]]*(\#.*)?$} $line {} line
-	if { $line eq {} } {
+	regsub {\s*(\#.*)?$} $line {} line
+	if {$line eq ""} {
 	    continue
 	}
 	set words {}
-	if { [regexp {^[[:space:]]+(.*)} $line -> l] } {
-	    lappend words {}
-	    set line $l
+	if {[regexp {^\s} $line]} {
+	    # Detect continuations of a zone and flag the list appropriately
+	    lappend words ""
 	}
-	while {[regexp {^([^[:space:]]+)[[:space:]]*(.*)} $line -> \
-		    word line]} {
-	    lappend words $word
-	}
+	lappend words {expand}[regexp -all -inline {\S+} $line]
 
 	# Switch on the directive
 
@@ -212,12 +186,14 @@ proc loadZIC { fileName } {
 	    Zone {
 		set lastZone [lindex $words 1]
 		set until [parseZone $fileName $lno \
-			       $lastZone [lrange $words 2 end] minimum]
+			$lastZone [lrange $words 2 end] "minimum"]
 	    }
-	    {} {			# Continuation of a Zone
+	    {} {
 		set i 0
 		foreach word $words {
-		    if { [lindex $words $i] ne {} } break
+		    if {[lindex $words $i] ne ""} {
+			break
+		    }
 		    incr i
 		}
 		set words [lrange $words $i end]
@@ -231,7 +207,6 @@ proc loadZIC { fileName } {
     }
 
     return
-
 }
 
 #----------------------------------------------------------------------
@@ -254,50 +229,47 @@ proc loadZIC { fileName } {
 #
 #----------------------------------------------------------------------
 
-proc parseRule { fileName lno words } {
-
+proc parseRule {fileName lno words} {
     variable rules
     variable errorCount
 
     # Break out the columns
 
-    foreach { Rule name from to type in on at save letter } $words {}
+    lassign $words  Rule name from to type in on at save letter
 
     # Handle the 'only' keyword
 
-    if { $to eq {only} } {
+    if {$to eq "only"} {
 	set to $from
     }
 
     # Process the start year
 
-    set l [string length $from]
-    if { ![string is integer $from] } {
-	if { $from ne [string range {minumum} 0 [expr { $l - 1 }]] } {
+    if {![string is integer $from]} {
+	if {![string equal -length [string length $from] $from "minimum"]} {
 	    puts stderr "$fileName:$lno:FROM field \"$from\" not an integer."
 	    incr errorCount
 	    return
 	} else {
-	    set from minimum
+	    set from "minimum"
 	}
     }
 
     # Process the end year
 
-    set l [string length $to]
-    if { ![string is integer $to] } {
-	if { $to ne [string range {maximum} 0 [expr { $l - 1 }]] } {
+    if {![string is integer $to]} {
+	if {![string equal -length [string length $to] $to "maximum"]} {
 	    puts stderr "$fileName:$lno:TO field \"$to\" not an integer."
 	    incr errorCount
 	    return
 	} else {
-	    set to maximum
+	    set to "maximum"
 	}
     }
 
     # Process the type of year in which the rule applies
 
-    if { $type ne {-} } {
+    if {$type ne "-"} {
 	puts stderr "$fileName:$lno:year types are not yet supported."
 	incr errorCount
 	return
@@ -305,7 +277,7 @@ proc parseRule { fileName lno words } {
 
     # Process the month in which the rule starts
 
-    if { [catch {lookupMonth $in} in] } {
+    if {[catch {lookupMonth $in} in]} {
 	puts stderr "$fileName:$lno:$in"
 	incr errorCount
 	return
@@ -313,7 +285,7 @@ proc parseRule { fileName lno words } {
 
     # Process the day of the month on which the rule starts
 
-    if { [catch {parseON $on} on] } {
+    if {[catch {parseON $on} on]} {
 	puts stderr "$fileName:$lno:$on"
 	incr errorCount
 	return
@@ -321,7 +293,7 @@ proc parseRule { fileName lno words } {
 
     # Process the time of day on which the rule starts
 
-    if { [catch {parseTOD $at} at] } {
+    if {[catch {parseTOD $at} at]} {
 	puts stderr "$fileName:$lno:$at"
 	incr errorCount
 	return
@@ -329,16 +301,16 @@ proc parseRule { fileName lno words } {
 
     # Process the DST adder
 
-    if { [catch {parseOffsetTime $save} save] } {
+    if {[catch {parseOffsetTime $save} save]} {
 	puts stderr "$fileName:$lno:$save"
 	incr errorCount
 	return
     }
-	
+
     # Process the letter to use for summer time
 
-    if { $letter eq {-} } {
-	set letter {}
+    if {$letter eq "-"} {
+	set letter ""
     }
 
     # Accumulate all the data.
@@ -358,7 +330,7 @@ proc parseRule { fileName lno words } {
 #	on - the ON field from a line in an Olson file.
 #
 # Results:
-#	Returns a partial Tcl command.  When the year and number of the
+#	Returns a partial Tcl command.	When the year and number of the
 #	month are appended, the command will return the Julian Day Number
 #	of the desired date.
 #
@@ -374,14 +346,14 @@ proc parseRule { fileName lno words } {
 #	  space.  This designates the last occurrence of the given weekday
 #	  in the month.
 #
-#----------------------------------------------------------------------	
+#----------------------------------------------------------------------
 
-proc parseON { on } {
-    if { ! [regexp -expanded {
+proc parseON {on} {
+    if {![regexp -expanded {
 	^(?:
 	  # first possibility - simple number - field 1
 	  ([[:digit:]]+)
-	  |
+	|
 	  # second possibility - weekday >= (or <=) number
 	  # field 2 - weekday
 	  ([[:alpha:]]+)
@@ -389,26 +361,26 @@ proc parseON { on } {
 	  ([<>]=)
 	  # field 4 - number
 	  ([[:digit:]]+)
-	  |
+	|
 	  # third possibility - lastWeekday - field 5
 	  last([[:alpha:]]+)
-	  )$
-    } $on -> dom1 wday2 dir2 num2 wday3] } {
+	)$
+    } $on -> dom1 wday2 dir2 num2 wday3]} then {
 	error "can't parse ON field \"$on\""
     }
-    if { $dom1 ne {} } {
+    if {$dom1 ne ""} {
 	return [list onDayOfMonth $dom1]
-    } elseif { $wday2 ne {} } {
+    } elseif {$wday2 ne ""} {
 	set wday2 [lookupDayOfWeek $wday2]
 	return [list onWeekdayInMonth $wday2 $dir2 $num2]
-    } elseif { $wday3 ne {} } {
+    } elseif {$wday3 ne ""} {
 	set wday3 [lookupDayOfWeek $wday3]
 	return [list onLastWeekdayInMonth $wday3]
     } else {
 	error "in parseOn \"$on\": can't happen"
     }
 }
-      
+
 #----------------------------------------------------------------------
 #
 # onDayOfMonth --
@@ -428,10 +400,9 @@ proc parseON { on } {
 #
 #----------------------------------------------------------------------
 
-proc onDayOfMonth { day year month } {
-    set date [dict create era CE year $year month $month dayOfMonth $day]
+proc onDayOfMonth {day year month} {
     set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
-		  [K $date [set date {}]]]
+	    [dict create era CE year $year month $month dayOfMonth $day]]
     return [dict get $date julianDay]
 }
 
@@ -462,19 +433,17 @@ proc onDayOfMonth { day year month } {
 #
 #----------------------------------------------------------------------
 
-proc onWeekdayInMonth { dayOfWeek relation dayOfMonth year month } {
-    set date [dict create \
-		  era CE year $year month $month dayOfMonth $dayOfMonth]
-    set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
-		  [K $date [set date {}]]]
+proc onWeekdayInMonth {dayOfWeek relation dayOfMonth year month} {
+    set date [::tcl::clock::GetJulianDayFromEraYearMonthDay [dict create \
+	    era CE year $year month $month dayOfMonth $dayOfMonth]]
     switch -exact -- $relation {
 	<= {
 	    return [::tcl::clock::WeekdayOnOrBefore $dayOfWeek \
-			[dict get $date julianDay]]
+		    [dict get $date julianDay]]
 	}
 	>= {
 	    return [::tcl::clock::WeekdayOnOrBefore $dayOfWeek \
-			[expr { [dict get $date julianDay] + 6 }]]
+		    [expr {[dict get $date julianDay] + 6}]]
 	}
     }
 }
@@ -499,18 +468,16 @@ proc onWeekdayInMonth { dayOfWeek relation dayOfMonth year month } {
 #
 #----------------------------------------------------------------------
 
-proc onLastWeekdayInMonth { dayOfWeek year month } {
+proc onLastWeekdayInMonth {dayOfWeek year month} {
     incr month
     # Find day 0 of the following month, which is the last day of
     # the current month.  Yes, it works to ask for day 0 of month 13!
-    set date [dict create \
-		  era CE year $year month $month dayOfMonth 0]
-    set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
-		  [K $date [set date {}]]]
+    set date [::tcl::clock::GetJulianDayFromEraYearMonthDay [dict create \
+	    era CE year $year month $month dayOfMonth 0]]
     return [::tcl::clock::WeekdayOnOrBefore $dayOfWeek \
-		[dict get $date julianDay]]
+	    [dict get $date julianDay]]
 }
-		  
+
 #----------------------------------------------------------------------
 #
 # parseTOD --
@@ -532,42 +499,38 @@ proc onLastWeekdayInMonth { dayOfWeek year month } {
 #
 #----------------------------------------------------------------------
 
-proc parseTOD { tod } {
-    if { ![regexp -expanded {
+proc parseTOD {tod} {
+    if {![regexp -expanded {
 	^
-	# field 1 - hour
-	([[:digit:]]{1,2})
+	([[:digit:]]{1,2})		# field 1 - hour
 	(?:
-	 # field 2 - minute
-	 :([[:digit:]]{2})
-	 (?:
-	  # field 3 - second
-	  :([[:digit:]]{2})
-	  )?
+	    :([[:digit:]]{2})		# field 2 - minute
+	    (?:
+		:([[:digit:]]{2})	# field 3 - second
+	    )?
 	)?
 	(?:
-	 # field 4 - type indicator
-	 ([wsugz])
-	 )?
-    } $tod -> hour minute second ind] } {
+	    ([wsugz])			# field 4 - type indicator
+	)?
+    } $tod -> hour minute second ind]} then {
 	puts stderr "$fileName:$lno:can't parse time field \"$tod\""
 	incr errorCount
     }
     scan $hour %d hour
-    if { $minute ne {} } {
+    if {$minute ne ""} {
 	scan $minute %d minute
     } else {
 	set minute 0
     }
-    if { $second ne {} } {
+    if {$second ne ""} {
 	scan $second %d second
     } else {
 	set second 0
     }
-    if { $ind eq {} } {
+    if {$ind eq ""} {
 	set ind w
     }
-    return [list [expr { ( $hour * 60 + $minute ) * 60 + $second }] $ind]
+    return [list [expr {($hour * 60 + $minute) * 60 + $second}] $ind]
 }
 
 #----------------------------------------------------------------------
@@ -587,38 +550,34 @@ proc parseTOD { tod } {
 #
 #----------------------------------------------------------------------
 
-proc parseOffsetTime { offset } {
-    if { ![regexp -expanded {
+proc parseOffsetTime {offset} {
+    if {![regexp -expanded {
 	^
-	# field 1 - signum
-	([-+])?
-	# field 2 - hour
-	([[:digit:]]{1,2})
+	([-+])?				# field 1 - signum
+	([[:digit:]]{1,2})		# field 2 - hour
 	(?:
-	 # field 3 - minute
-	 :([[:digit:]]{2})
-	 (?:
-	  # field 4 - second
-	  :([[:digit:]]{2})
-	  )?
+	    :([[:digit:]]{2})		# field 3 - minute
+	    (?:
+		:([[:digit:]]{2})	# field 4 - second
+	    )?
 	)?
-    } $offset -> signum hour minute second] } {
+    } $offset -> signum hour minute second]} then {
 	puts stderr "$fileName:$lno:can't parse offset time \"$offset\""
 	incr errorCount
     }
     append signum 1
     scan $hour %d hour
-    if { $minute ne {} } {
+    if {$minute ne ""} {
 	scan $minute %d minute
     } else {
 	set minute 0
     }
-    if { $second ne {} } {
+    if {$second ne ""} {
 	scan $second %d second
     } else {
 	set second 0
     }
-    return [expr { ( ( $hour * 60 + $minute ) * 60 + $second ) * $signum }]
+    return [expr {(($hour * 60 + $minute) * 60 + $second) * $signum}]
 
 }
 
@@ -638,13 +597,12 @@ proc parseOffsetTime { offset } {
 #
 #----------------------------------------------------------------------
 
-proc lookupMonth { month } {
-
+proc lookupMonth {month} {
     set indx [lsearch -regexp {
 	{} January February March April May June
 	July August September October November December
     } ${month}.*]
-    if { $indx < 1 } {
+    if {$indx < 1} {
 	error "unknown month name \"$month\""
     }
     return $indx
@@ -667,11 +625,11 @@ proc lookupMonth { month } {
 #
 #----------------------------------------------------------------------
 
-proc lookupDayOfWeek { wday } {
+proc lookupDayOfWeek {wday} {
     set indx [lsearch -regexp {
 	{} Monday Tuesday Wednesday Thursday Friday Saturday Sunday
     } ${wday}.*]
-    if { $indx < 1 } {
+    if {$indx < 1} {
 	error "unknown weekday name \"$wday\""
     }
     return $indx
@@ -689,7 +647,7 @@ proc lookupDayOfWeek { wday } {
 #	zone -- Name of the time zone
 #	words -- Remaining words on the line.
 #	start -- 'Until' time from the previous line if this is a
-#	         continuation line, or 'minimum' if this is the first line.
+#		 continuation line, or 'minimum' if this is the first line.
 #
 # Results:
 #	Returns the 'until' field of the current line
@@ -701,8 +659,8 @@ proc lookupDayOfWeek { wday } {
 #	Standard Time, and a format for printing the time zone.
 #
 #	The start time is the result of an earlier call to 'parseUntil'
-#	or else the keyword 'minimum'.  The GMT offset is the
-#	result of a call to 'parseOffsetTime'.  The Daylight Saving
+#	or else the keyword 'minimum'.	The GMT offset is the
+#	result of a call to 'parseOffsetTime'.	The Daylight Saving
 #	Time offset is represented as a partial Tcl command. To the
 #	command will be appended a start time (seconds from epoch)
 #	the current offset of Standard Time from Greenwich, the current
@@ -714,31 +672,30 @@ proc lookupDayOfWeek { wday } {
 #
 #----------------------------------------------------------------------
 
-proc parseZone { fileName lno zone words start } {
+proc parseZone {fileName lno zone words start} {
     variable zones
     variable rules
     variable errorCount
     variable forwardRuleRefs
-    foreach { gmtoff save format } $words break
-    if { [catch {parseOffsetTime $gmtoff} gmtoff] } {
+
+    lassign $words gmtoff save format
+    if {[catch {parseOffsetTime $gmtoff} gmtoff]} {
 	puts stderr "$fileName:$lno:$gmtoff"
 	incr errorCount
 	return
-    } 
-    if { [info exists rules($save)] } {
+    }
+    if {[info exists rules($save)]} {
 	set save [list applyRules $save]
-    } elseif { $save eq {-} } {
+    } elseif {$save eq "-"} {
 	set save [list applyNoRule]
+    } elseif {[catch {parseOffsetTime $save} save2]} {
+	lappend forwardRuleRefs($save) $fileName $lno
+	set save [list applyRules $save]
     } else {
-	if { [catch { parseOffsetTime $save } save2] } {
-	    lappend forwardRuleRefs($save) $fileName $lno
-	    set save [list applyRules $save]
-	} else {
-	    set save [list applyDSTOffset $save2]
-	}
+	set save [list applyDSTOffset $save2]
     }
     lappend zones($zone) $start $gmtoff $save $format
-    if { [llength $words] >= 4 } {
+    if {[llength $words] >= 4} {
 	return [parseUntil [lrange $words 3 end]]
     } else {
 	return {}
@@ -748,7 +705,7 @@ proc parseZone { fileName lno zone words start } {
 #----------------------------------------------------------------------
 #
 # parseUntil --
-#	
+#
 #	Parses the 'UNTIL' part of a 'Zone' directive.
 #
 # Parameters:
@@ -761,30 +718,31 @@ proc parseZone { fileName lno zone words start } {
 #
 #----------------------------------------------------------------------
 
-proc parseUntil { words } {
+proc parseUntil {words} {
     variable firstYear
-    if { [llength $words] >= 1 } {
+
+    if {[llength $words] >= 1} {
 	set year [lindex $words 0]
-	if { ![string is integer $year] } {
+	if {![string is integer $year]} {
 	    error "can't parse UNTIL field \"$words\""
 	}
-	if { ![info exists firstYear] || $year < $firstYear } {
+	if {![info exists firstYear] || $year < $firstYear} {
 	    set firstYear $year
 	}
     } else {
-	set year maximum
+	set year "maximum"
     }
-    if { [llength $words] >= 2 } {
+    if {[llength $words] >= 2} {
 	set month [lookupMonth [lindex $words 1]]
     } else {
 	set month 1
     }
-    if { [llength $words] >= 3 } {
+    if {[llength $words] >= 3} {
 	set day [parseON [lindex $words 2]]
     } else {
 	set day {onDayOfMonth 1}
     }
-    if { [llength $words] >= 4 } {
+    if {[llength $words] >= 4} {
 	set tod [parseTOD [lindex $words 3]]
     } else {
 	set tod {0 w}
@@ -824,25 +782,24 @@ proc parseUntil { words } {
 #
 #----------------------------------------------------------------------
 
-proc applyNoRule { year startSecs stdGMTOffset DSTOffset nextGMTOffset
-		   namePattern until pointsVar } {
+proc applyNoRule {year startSecs stdGMTOffset DSTOffset nextGMTOffset
+		  namePattern until pointsVar} {
     upvar 1 $pointsVar points
     lappend points $startSecs $nextGMTOffset 0 \
-	[convertNamePattern $namePattern -]
+	    [convertNamePattern $namePattern -]
     return [list $nextGMTOffset 0]
-
 }
 
 #----------------------------------------------------------------------
 #
-# applyNoRule --
+# applyDSTOffset --
 #
 #	Generates time zone data for a zone with permanent Daylight
 #	Saving Time.
 #
 # Parameters:
 #	nextDSTOffset - Offset of Daylight from Standard while the
-#	                rule is in effect.
+#			rule is in effect.
 #	year - Year in which the rule applies
 #	startSecs - Time at which the rule starts.
 #	stdGMTOffset - Offset from Greenwich prior to the start of the
@@ -866,15 +823,15 @@ proc applyNoRule { year startSecs stdGMTOffset DSTOffset nextGMTOffset
 #
 #----------------------------------------------------------------------
 
-proc applyDSTOffset { nextDSTOffset year startSecs
-		      stdGMTOffset DSTOffset nextGMTOffset 
-		      namePattern until pointsVar } {
+proc applyDSTOffset {nextDSTOffset year startSecs
+		     stdGMTOffset DSTOffset nextGMTOffset
+		     namePattern until pointsVar} {
     upvar 1 $pointsVar points
     lappend points \
-	$startSecs \
-	[expr { $nextGMTOffset + $nextDSTOffset }] \
-	1 \
-	[convertNamePattern $namePattern S]
+	    $startSecs \
+	    [expr {$nextGMTOffset + $nextDSTOffset}] \
+	    1 \
+	    [convertNamePattern $namePattern S]
     return [list $nextGMTOffset $nextDSTOffset]
 }
 
@@ -911,8 +868,8 @@ proc applyDSTOffset { nextDSTOffset year startSecs
 #
 #----------------------------------------------------------------------
 
-proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
-		      namePattern until pointsVar } {
+proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
+		 namePattern until pointsVar} {
     variable done
     variable rules
     variable maxyear
@@ -923,91 +880,80 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
     # of rules (now or in future) that will end at a specific year.
     # Ignore rules entirely in the past.
 
-    foreach { 
-	currentRules nSunsetRules
-    } [divideRules $ruleSet $year] break
+    lassign [divideRules $ruleSet $year] currentRules nSunsetRules
 
     # If the first transition is later than $startSecs, and $stdGMTOffset is
     # different from $nextGMTOffset, we will need an initial record like:
-    #    lappend points $startSecs $stdGMTOffset 0 \
-    #                   [convertNamePattern $namePattern -]
+    #	 lappend points $startSecs $stdGMTOffset 0 \
+    #			[convertNamePattern $namePattern -]
 
     set didTransitionIn false
 
     # Determine the letter to use in Standard Time
 
-    set prevLetter {}
-    foreach { 
+    set prevLetter ""
+    foreach {
 	fromYear toYear yearType monthIn daySpecOn timeAt save letter
-    }  $rules($ruleSet) {
-	if { $save == 0 } {
+    } $rules($ruleSet) {
+	if {$save == 0} {
 	    set prevLetter $letter
 	    break
-	} 
+	}
     }
 
     # Walk through each year in turn. This loop will break when
-    #    (a) the 'until' time is passed
+    #	 (a) the 'until' time is passed
     # or (b) the 'until' time is empty and all remaining rules extend to
-    #        the end of time
+    #	     the end of time
 
     set stdGMTOffset $nextGMTOffset
 
     # convert "until" to seconds from epoch in current time zone
 
-    if { $until ne {} } {
-	foreach { 
-	    untilYear untilMonth untilDaySpec untilTimeOfDay 
-	} $until break
+    if {$until ne ""} {
+	lassign $until untilYear untilMonth untilDaySpec untilTimeOfDay
 	lappend untilDaySpec $untilYear $untilMonth
 	set untilJCD [eval $untilDaySpec]
 	set untilBaseSecs [expr {
-				 wide(86400) * wide($untilJCD)
-				 - 210866803200 }]
-	set untilSecs [eval [linsert $untilTimeOfDay 0 convertTimeOfDay \
-				 $untilBaseSecs $stdGMTOffset $DSTOffset]]
+		wide(86400) * wide($untilJCD) - 210866803200 }]
+	set untilSecs [convertTimeOfDay $untilBaseSecs $stdGMTOffset \
+		$DSTOffset {expand}$untilTimeOfDay]
     }
 
     set origStartSecs $startSecs
 
-    while { ( $until ne {} && 
-	      $startSecs < $untilSecs )
-	    || ( $until eq {} && 
-		 ( $nSunsetRules > 0 || $year < $maxyear ) ) } {
-
+    while {($until ne "" && $startSecs < $untilSecs)
+	    || ($until eq "" && ($nSunsetRules > 0 || $year < $maxyear))} {
 	set remainingRules $currentRules
-	while { [llength $remainingRules] > 0 } {
-
+	while {[llength $remainingRules] > 0} {
 
 	    # Find the rule with the earliest start time from among the
 	    # active rules that haven't yet been processed.
 
-	    foreach { 
-		earliestSecs earliestIndex 
-	    } [findEarliestRule $remainingRules $year \
-		   $stdGMTOffset $DSTOffset] break
-	       
+	    lassign [findEarliestRule $remainingRules $year \
+		    $stdGMTOffset $DSTOffset] earliestSecs earliestIndex
+
 	    set endi [expr {$earliestIndex + 7}]
 	    set rule [lrange $remainingRules $earliestIndex $endi]
-	    foreach { 
-		fromYear toYear yearType monthIn daySpecOn timeAt save letter
-	    } $rule break
+	    lassign $rule fromYear toYear \
+		    yearType monthIn daySpecOn timeAt save letter
 
 	    # Test if the rule is in effect.
 
-	    if { $earliestSecs > $startSecs && 
-		 ( $until eq {} || $earliestSecs < $untilSecs ) } {
-
+	    if {
+		$earliestSecs > $startSecs &&
+		($until eq "" || $earliestSecs < $untilSecs)
+	    } then {
 		# Test if the initial transition has been done.
 		# If not, do it now.
 
-		if { !$didTransitionIn && $earliestSecs > $origStartSecs } {
+		if {!$didTransitionIn && $earliestSecs > $origStartSecs} {
 		    set nm [convertNamePattern $namePattern $prevLetter]
 		    lappend points \
-			$origStartSecs \
-			[expr { $stdGMTOffset + $DSTOffset }] \
-			0 \
-			$nm
+			    $origStartSecs \
+			    [expr {$stdGMTOffset + $DSTOffset}] \
+			    0 \
+			    $nm
 		    set didTransitionIn true
 		}
 
@@ -1015,18 +961,17 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
 
 		set nm [convertNamePattern $namePattern $letter]
 		lappend points \
-		    $earliestSecs \
-		    [expr { $stdGMTOffset + $save }] \
-		    [expr { $save != 0 }] \
-		    $nm
+			$earliestSecs \
+			[expr {$stdGMTOffset + $save}] \
+			[expr {$save != 0}] \
+			$nm
 	    }
 
 	    # Remove the rule just applied from the queue
 
 	    set remainingRules [lreplace \
-				    [K $remainingRules \
-					 [set remainingRules {}]] \
-				    $earliestIndex $endi]
+		    $remainingRules[set remainingRules {}] \
+		    $earliestIndex $endi]
 
 	    # Update current DST offset and time zone letter
 
@@ -1034,11 +979,10 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
 	    set prevLetter $letter
 
 	    # Reconvert the 'until' time in the current zone.
-	    
-	    if { $until ne {} } {
-		set untilSecs [eval [linsert $untilTimeOfDay 0 \
-					 convertTimeOfDay $untilBaseSecs \
-					 $stdGMTOffset $DSTOffset]]
+
+	    if {$until ne ""} {
+		set untilSecs [convertTimeOfDay $untilBaseSecs \
+			$stdGMTOffset $DSTOffset {expand}$untilTimeOfDay]
 	    }
 	}
 
@@ -1046,18 +990,15 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
 
 	incr year
 	set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
-		      [dict create era CE year $year month 1 dayOfMonth 1]]
-	set startSecs [expr { [dict get $date julianDay] * wide(86400) \
-			     -210866803200 }]
-	set startSecs [expr { $startSecs - $stdGMTOffset - $DSTOffset }]
-
+		[dict create era CE year $year month 1 dayOfMonth 1]]
+	set startSecs [expr {
+	    [dict get $date julianDay] * wide(86400) - 210866803200 
+		- $stdGMTOffset - $DSTOffset
+	}]
 
 	# Get rules in effect in the new year.
 
-	foreach { 
-	    currentRules nSunsetRules 
-	}  [divideRules $ruleSet $year] break
-	
+	lassign [divideRules $ruleSet $year] currentRules nSunsetRules
     }
 
     return [list $stdGMTOffset $DSTOffset]
@@ -1085,24 +1026,23 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
 #
 #----------------------------------------------------------------------
 
-proc divideRules { ruleSet year } {
-
+proc divideRules {ruleSet year} {
     variable rules
 
     set currentRules {}
     set nSunsetRules 0
 
-    foreach { 
+    foreach {
 	fromYear toYear yearType monthIn daySpecOn timeAt save letter
-    }  $rules($ruleSet) {
-	if { $toYear ne {maximum} && $year > $toYear } {
+    } $rules($ruleSet) {
+	if {$toYear ne "maximum" && $year > $toYear} {
 	    # ignore - rule is in the past
 	} else {
-	    if { $fromYear eq {minimum} || $fromYear <= $year } {
+	    if {$fromYear eq "minimum" || $fromYear <= $year} {
 		lappend currentRules $fromYear $toYear $yearType $monthIn \
-		    $daySpecOn $timeAt $save $letter
+			$daySpecOn $timeAt $save $letter
 	    }
-	    if { $toYear ne {maximum} } {
+	    if {$toYear ne "maximum"} {
 		incr nSunsetRules
 	    }
 	}
@@ -1123,7 +1063,7 @@ proc divideRules { ruleSet year } {
 #	year - Year being processed.
 #	stdGMTOffset - Current offset of standard time from GMT
 #	DSTOffset - Current offset of daylight time from standard,
-#	            if daylight time is in effect.
+#		    if daylight time is in effect.
 #
 # Results:
 #	Returns the index in remainingRules of the next rule to
@@ -1134,8 +1074,7 @@ proc divideRules { ruleSet year } {
 #
 #----------------------------------------------------------------------
 
-proc findEarliestRule { remainingRules year stdGMTOffset DSTOffset } {
-
+proc findEarliestRule {remainingRules year stdGMTOffset DSTOffset} {
     set earliest $::MAXWIDE
     set i 0
     foreach {
@@ -1143,12 +1082,10 @@ proc findEarliestRule { remainingRules year stdGMTOffset DSTOffset } {
     } $remainingRules {
 	lappend daySpecOn $year $monthIn
 	set dayIn [eval $daySpecOn]
-	set secs [expr {
-			wide(86400) * wide($dayIn)
-			-210866803200 }]
-	set secs [eval [linsert $timeAt 0 convertTimeOfDay \
-			    $secs $stdGMTOffset $DSTOffset]]
-	if { $secs < $earliest } {
+	set secs [expr {wide(86400) * wide($dayIn) - 210866803200}]
+	set secs [convertTimeOfDay $secs \
+		$stdGMTOffset $DSTOffset {expand}$timeAt]
+	if {$secs < $earliest} {
 	    set earliest $secs
 	    set earliestIdx $i
 	}
@@ -1156,7 +1093,6 @@ proc findEarliestRule { remainingRules year stdGMTOffset DSTOffset } {
     }
 
     return [list $earliest $earliestIdx]
-
 }
 
 #----------------------------------------------------------------------
@@ -1178,9 +1114,9 @@ proc findEarliestRule { remainingRules year stdGMTOffset DSTOffset } {
 #
 #----------------------------------------------------------------------
 
-proc convertNamePattern { pattern flag } {
-    if { [regexp {(.*)/(.*)} $pattern -> standard daylight] } {
-	if { $flag ne {} } {
+proc convertNamePattern {pattern flag} {
+    if {[regexp {(.*)/(.*)} $pattern -> standard daylight]} {
+	if {$flag ne ""} {
 	    set pattern $daylight
 	} else {
 	    set pattern $standard
@@ -1204,7 +1140,7 @@ proc convertNamePattern { pattern flag } {
 #	timeOfDay - Time of day to convert, in seconds from midnight
 #	flag - Flag indicating whether the time is Greenwich, Standard
 #	       or wall-clock. (g, s, or w)
-#      
+#
 # Results:
 #	Returns the time of day in seconds from the Posix epoch.
 #
@@ -1213,17 +1149,17 @@ proc convertNamePattern { pattern flag } {
 #
 #----------------------------------------------------------------------
 
-proc convertTimeOfDay { seconds stdGMTOffset DSTOffset timeOfDay flag } {
+proc convertTimeOfDay {seconds stdGMTOffset DSTOffset timeOfDay flag} {
     incr seconds $timeOfDay
     switch -exact $flag {
 	g - u - z {
 	}
 	w {
-	    incr seconds [expr { -$stdGMTOffset }]
-	    incr seconds [expr { -$DSTOffset }]
+	    incr seconds [expr {-$stdGMTOffset}]
+	    incr seconds [expr {-$DSTOffset}]
 	}
 	z {
-	    incr seconds [expr { -$stdGMTOffset }]
+	    incr seconds [expr {-$stdGMTOffset}]
 	}
     }
     return $seconds
@@ -1242,7 +1178,7 @@ proc convertTimeOfDay { seconds stdGMTOffset DSTOffset timeOfDay flag } {
 #		   obtained from 'parseZone.
 #
 # Results:
-#	Returns a list of rows.  Each row consists of a time in
+#	Returns a list of rows.	 Each row consists of a time in
 #	seconds from the Posix epoch, an offset from GMT to local
 #	that begins at that time, a flag indicating whether DST
 #	is in effect after that time, and the printable name of the
@@ -1253,36 +1189,33 @@ proc convertTimeOfDay { seconds stdGMTOffset DSTOffset timeOfDay flag } {
 #
 #----------------------------------------------------------------------
 
-proc processTimeZone { zoneName zoneData } {
-
+proc processTimeZone {zoneName zoneData} {
     set points {}
     set i 0
-    foreach { startTime nextGMTOffset dstRule namePattern } $zoneData {
+    foreach {startTime nextGMTOffset dstRule namePattern} $zoneData {
 	incr i 4
 	set until [lindex $zoneData $i]
-	if {! [info exists stdGMTOffset] } {
+	if {![info exists stdGMTOffset]} {
 	    set stdGMTOffset $nextGMTOffset
 	}
-	if {! [info exists DSTOffset] } {
+	if {![info exists DSTOffset]} {
 	    set DSTOffset 0
 	}
-	if { $startTime eq {minimum} } {
+	if {$startTime eq "minimum"} {
 	    set secs $::MINWIDE
 	    set year 0
 	} else {
-	    foreach { year month dayRule timeOfDay } $startTime break
+	    lassign $startTime year month dayRule timeOfDay
 	    lappend dayRule $year $month
 	    set startDay [eval $dayRule]
-	    set secs [expr {
-			    wide(86400) * wide($startDay)
-			    -210866803200}]
-	    set secs [eval [linsert $timeOfDay 0 convertTimeOfDay \
-				$secs $stdGMTOffset $DSTOffset]]
+	    set secs [expr {wide(86400) * wide($startDay) -210866803200}]
+	    set secs [convertTimeOfDay $secs \
+		    $stdGMTOffset $DSTOffset {expand}$timeOfDay]
 	}
 	lappend dstRule \
-	    $year $secs $stdGMTOffset $DSTOffset $nextGMTOffset \
-	    $namePattern $until points
-	foreach {stdGMTOffset DSTOffset} [eval $dstRule] break
+		$year $secs $stdGMTOffset $DSTOffset $nextGMTOffset \
+		$namePattern $until points
+	lassign [eval $dstRule] stdGMTOffset DSTOffset
     }
     return $points
 }
@@ -1305,8 +1238,7 @@ proc processTimeZone { zoneName zoneData } {
 #
 #----------------------------------------------------------------------
 
-proc writeZones { outDir } {
- 
+proc writeZones {outDir} {
     variable zones
 
     # Walk the zones
@@ -1318,18 +1250,18 @@ proc writeZones { outDir } {
 	# Create directories as needed
 
 	set dirName [file dirname $fileName]
-	if { ![file exists $dirName] } {
+	if {![file exists $dirName]} {
 	    puts "creating directory: $dirName"
 	    file mkdir $dirName
 	}
 
 	# Generate data for a zone
 
-	set data {}
-	foreach { 
-	    time offset dst name 
+	set data ""
+	foreach {
+	    time offset dst name
 	} [processTimeZone $zoneName $zones($zoneName)] {
-	    append data \n {    } [list [list $time $offset $dst $name]]
+	    append data "\n    " [list [list $time $offset $dst $name]]
 	}
 	append data \n
 
@@ -1337,10 +1269,9 @@ proc writeZones { outDir } {
 
 	set f [open $fileName w]
 	puts $f "\# created by $::argv0 - do not edit"
-	puts $f {}
+	puts $f ""
 	puts $f [list set TZData(:$zoneName) $data]
 	close $f
-
     }
 
     return
@@ -1362,8 +1293,7 @@ proc writeZones { outDir } {
 # Side effects:
 #	Creates a file for each link.
 
-proc writeLinks { outDir } {
-
+proc writeLinks {outDir} {
     variable links
 
     # Walk the links
@@ -1375,7 +1305,7 @@ proc writeLinks { outDir } {
 	# Create directories as needed
 
 	set dirName [file dirname $fileName]
-	if { ![file exists $dirName] } {
+	if {![file exists $dirName]} {
 	    puts "creating directory: $dirName"
 	    file mkdir $dirName
 	}
@@ -1407,7 +1337,7 @@ proc writeLinks { outDir } {
 
 # Determine directories
 
-foreach { inDir outDir } $argv break
+lassign $argv inDir outDir
 
 # Initialize count of errors
 
@@ -1416,14 +1346,14 @@ set errorCount 0
 # Parse the Olson files
 
 loadFiles $inDir
-if { $errorCount > 0 } {
+if {$errorCount > 0} {
     exit 1
 }
 
 # Check that all riles appearing in Zone and Link lines actually exist
 
 checkForwardRuleRefs
-if { $errorCount > 0 } {
+if {$errorCount > 0} {
     exit 1
 }
 
@@ -1431,7 +1361,7 @@ if { $errorCount > 0 } {
 
 writeZones $outDir
 writeLinks $outDir
-if { $errorCount > 0 } {
+if {$errorCount > 0} {
     exit 1
 }
 

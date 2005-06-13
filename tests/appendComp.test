@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: appendComp.test,v 1.7 2004/09/22 03:19:52 dgp Exp $
+# RCS: @(#) $Id: appendComp.test,v 1.7.4.1 2005/06/13 01:46:40 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -351,7 +351,7 @@ test appendComp-7.9 {append var does not trigger read trace} {
     bar
 } {0}
 
-test appendComp-8.1 {TCL_OUT_LINE_COMPILE, not TCL_ERROR} -setup {
+test appendComp-8.1 {defer error to runtime} -setup {
     interp create slave
 } -body {
     slave eval {

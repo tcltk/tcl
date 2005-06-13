@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.10 2004/11/12 11:03:16 dkf Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.10.4.1 2005/06/13 01:45:40 msofer Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -68,7 +68,6 @@ the outermost procedure call or the outermost \fBnamespace eval\fR command.
 Also, \fBuplevel #0\fR evaluates a script
 at top-level in the outermost namespace (the global namespace).
 .PP
-.VS
 If an upvar variable is unset (e.g. \fBx\fR in \fBadd2\fR above), the
 \fBunset\fR operation affects the variable it is linked to, not the
 upvar variable.  There is no way to unset an upvar variable except
@@ -101,7 +100,6 @@ traces set for the entire array will not be invoked when \fImyVar\fR
 is accessed (but traces on the particular element will still be
 invoked).  In particular, if the array is \fBenv\fR, then changes
 made to \fImyVar\fR will not be passed to subprocesses correctly.
-.VE
 .SH EXAMPLE
 A \fBdecr\fR command that works like \fBincr\fR except it subtracts
 the value from the variable instead of adding it:

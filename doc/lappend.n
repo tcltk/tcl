@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lappend.n,v 1.9 2004/10/27 12:53:22 dkf Exp $
+'\" RCS: @(#) $Id: lappend.n,v 1.9.4.1 2005/06/13 01:45:38 msofer Exp $
 '\" 
 .so man.macros
 .TH lappend n "" Tcl "Tcl Built-In Commands"
@@ -43,10 +43,7 @@ Using \fBlappend\fR to build up a list of numbers.
 .CE
 
 .SH "SEE ALSO"
-list(n), lindex(n), linsert(n), llength(n), 
-.VS 8.4
-lset(n)
-.VE
+list(n), lindex(n), linsert(n), llength(n), lset(n),
 lsort(n), lrange(n)
 
 .SH KEYWORDS

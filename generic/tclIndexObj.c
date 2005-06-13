@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.22 2004/11/25 16:37:15 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.22.4.1 2005/06/13 01:46:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -31,7 +31,7 @@ static void		FreeIndex _ANSI_ARGS_((Tcl_Obj *objPtr));
  * procedures that can be invoked by generic object code.
  */
 
-Tcl_ObjType tclIndexType = {
+static Tcl_ObjType indexType = {
     "index",				/* name */
     FreeIndex,				/* freeIntRepProc */
     DupIndex,				/* dupIntRepProc */
@@ -110,7 +110,7 @@ Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
      * is cached).
      */
 
-    if (objPtr->typePtr == &tclIndexType) {
+    if (objPtr->typePtr == &indexType) {
 	IndexRep *indexRep = (IndexRep *) objPtr->internalRep.otherValuePtr;
 	/*
 	 * Here's hoping we don't get hit by unfortunate packing
@@ -181,7 +181,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (objPtr->typePtr == &tclIndexType) {
+    if (objPtr->typePtr == &indexType) {
 	indexRep = (IndexRep *) objPtr->internalRep.otherValuePtr;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
@@ -246,13 +246,13 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
      * allocating a new internal-rep if at all possible since that is
      * potentially a slow operation.
      */
-    if (objPtr->typePtr == &tclIndexType) {
+    if (objPtr->typePtr == &indexType) {
  	indexRep = (IndexRep *) objPtr->internalRep.otherValuePtr;
     } else {
 	TclFreeIntRep(objPtr);
  	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
  	objPtr->internalRep.otherValuePtr = (VOID *) indexRep;
- 	objPtr->typePtr = &tclIndexType;
+ 	objPtr->typePtr = &indexType;
     }
     indexRep->tablePtr = (VOID*) tablePtr;
     indexRep->offset = offset;
@@ -381,7 +381,7 @@ DupIndex(srcPtr, dupPtr)
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
     dupPtr->internalRep.otherValuePtr = (VOID *) dupIndexRep;
-    dupPtr->typePtr = &tclIndexType;
+    dupPtr->typePtr = &indexType;
 }
 
 /*
@@ -462,7 +462,12 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 #endif /* AVOID_HACKS_FOR_ITCL */
 
     TclNewObj(objPtr);
-    Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+    if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
+	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
+	Tcl_AppendToObj(objPtr, " or \"", -1);
+    } else {
+	Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+    }
 
     /*
      * Check to see if we are processing an ensemble implementation,
@@ -529,7 +534,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 	 * abbreviated.  Otherwise, just use the string rep.
 	 */
 	
-	if (objv[i]->typePtr == &tclIndexType) {
+	if (objv[i]->typePtr == &indexType) {
 	    indexRep = (IndexRep *) objv[i]->internalRep.otherValuePtr;
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (char *) NULL);
 	} else {

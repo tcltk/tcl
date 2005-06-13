@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.16 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.16.4.1 2005/06/13 01:45:38 msofer Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -83,7 +83,6 @@ manual page).
 \fB\-nocase\fR
 Causes upper-case characters in \fIstring\fR to be treated as
 lower case during the matching process.
-.VS 8.3
 .TP 15
 \fB\-all\fR
 Causes the regular expression to be matched as many times as possible
@@ -108,13 +107,17 @@ regular expression.  Examples are:
 .TP 15
 \fB\-start\fR \fIindex\fR
 Specifies a character index offset into the string to start
-matching the regular expression at.  When using this switch, `^'
+matching the regular expression at.  
+.VS 8.5
+The \fIindex\fR value is interpreted in the same manner
+as the \fIindex\fR argument to \fBstring index\fR.
+.VE 8.5
+When using this switch, `^'
 will not match the beginning of the line, and \\A will still
 match the start of the string at \fIindex\fR.  If \fB\-indices\fR
 is specified, the indices will be indexed starting from the
 absolute beginning of the input string.
 \fIindex\fR will be constrained to the bounds of the input string.
-.VE 8.3
 .TP 15
 \fB\-\|\-\fR
 Marks the end of switches.  The argument following this one will
@@ -155,7 +158,11 @@ characters) in a string:
 .CE
 
 .SH "SEE ALSO"
-re_syntax(n), regsub(n)
+re_syntax(n), regsub(n),
+.VS 8.5
+string(n)
+.VE
+
 
 .SH KEYWORDS
 match, regular expression, string

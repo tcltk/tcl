@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.94 2005/02/24 18:05:42 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.94.2.1 2005/06/13 01:46:37 msofer Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.40 2004/11/01 16:58:37 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.40.4.1 2005/06/13 01:47:19 msofer Exp $
  */
 
 #include "tclWinInt.h"
@@ -37,46 +37,25 @@ typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 static int platformId;		/* Running under NT, or 95/98? */
 
-#if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
-static void *INITIAL_ESP,
-            *INITIAL_EBP,
-            *INITIAL_HANDLER,
-            *RESTORED_ESP,
-            *RESTORED_EBP,
-            *RESTORED_HANDLER;
-#endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
-
 #ifdef HAVE_NO_SEH
 
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_dllmain_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
+/*
+ * Unlike Borland and Microsoft, we don't register exception handlers
+ * by pushing registration records onto the runtime stack.  Instead, we
+ * register them by creating an EXCEPTION_REGISTRATION within the activation
+ * record.
+ */
 
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_checkstackspace_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
+typedef struct EXCEPTION_REGISTRATION {
+    struct EXCEPTION_REGISTRATION* link;
+    EXCEPTION_DISPOSITION (*handler)( struct _EXCEPTION_RECORD*, void*,
+				      struct _CONTEXT*, void* );
+    void* ebp;
+    void* esp;
+    int status;
+} EXCEPTION_REGISTRATION;
 
-static
-__attribute__((cdecl))
-EXCEPTION_DISPOSITION
-_except_TclWinCPUID_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
-
-#endif /* HAVE_NO_SEH */
-
+#endif
 
 /*
  * VC++ 5.x has no 'cpuid' assembler instruction, so we
@@ -300,6 +279,10 @@ DllMain(hInst, reason, reserved)
     DWORD reason;		/* Reason this function is being called. */
     LPVOID reserved;		/* Not used. */
 {
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
+
     switch (reason) {
     case DLL_PROCESS_ATTACH:
 	DisableThreadLibraryCalls(hInst);
@@ -313,100 +296,85 @@ DllMain(hInst, reason, reserved)
 	 * be unstable.
 	 */
 #ifdef HAVE_NO_SEH
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl %%esp,  %0" "\n\t"
-            "movl %%ebp,  %1" "\n\t"
-            "movl %%fs:0, %2" "\n\t"
-            : "=m"(INITIAL_ESP),
-              "=m"(INITIAL_EBP),
-              "=r"(INITIAL_HANDLER) );
-# endif /* TCL_MEM_DEBUG */
+        __asm__ __volatile__ (
 
-    __asm__ __volatile__ (
-            "pushl %%ebp" "\n\t"
-            "pushl %0" "\n\t"
-            "pushl %%fs:0" "\n\t"
-            "movl  %%esp, %%fs:0"
+            /*
+             * Construct an EXCEPTION_REGISTRATION to protect the
+             * call to Tcl_Finalize
+             */
+            "leal       %[registration], %%edx"         "\n\t"
+            "movl       %%fs:0,         %%eax"          "\n\t"
+            "movl       %%eax,          0x0(%%edx)"     "\n\t" /* link */
+            "leal       1f,             %%eax"          "\n\t"
+            "movl       %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+            "movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+            "movl       %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+            "movl       %[error],       0x10(%%edx)"    "\n\t" /* status */
+
+            /*
+             * Link the EXCEPTION_REGISTRATION on the chain
+             */
+            "movl       %%edx,          %%fs:0"         "\n\t"
+
+            /*
+             * Call Tcl_Finalize
+             */
+            "call       _Tcl_Finalize"                  "\n\t"
+
+            /*
+             * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+             * and store a TCL_OK status
+             */
+
+            "movl       %%fs:0,         %%edx"          "\n\t"
+            "movl       %[ok],          %%eax"          "\n\t"
+            "movl       %%eax,          0x10(%%edx)"    "\n\t"
+            "jmp        2f"                             "\n"
+
+            /*
+             * Come here on an exception. Get the EXCEPTION_REGISTRATION
+             * that we previously put on the chain.
+             */
+
+            "1:"                                        "\t"
+            "movl       %%fs:0,         %%edx"          "\n\t"
+            "movl       0x8(%%edx),     %%edx"          "\n"
+
+
+            /* 
+             * Come here however we exited.  Restore context from the
+             * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+             */
+
+            "2:"                                        "\t"
+            "movl       0xc(%%edx),     %%esp"          "\n\t"
+            "movl       0x8(%%edx),     %%ebp"          "\n\t"
+            "movl       0x0(%%edx),     %%eax"          "\n\t"
+            "movl       %%eax,          %%fs:0"         "\n\t"
+
             :
-            : "r" (_except_dllmain_detach_handler) );
-#else
+            /* No outputs */
+            :
+            [registration]      "m"     (registration),
+            [ok]                "i"     (TCL_OK),
+            [error]             "i"     (TCL_ERROR)
+            :
+            "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
+            );
+
+#else /* HAVE_NO_SEH */
 	__try {
-#endif /* HAVE_NO_SEH */
-  	    Tcl_Finalize();
-#ifdef HAVE_NO_SEH
-    __asm__ __volatile__ (
-            "jmp  dllmain_detach_pop" "\n"
-        "dllmain_detach_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-        "dllmain_detach_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            :
-            :
-            : "%eax");
-
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
-
-    if (INITIAL_ESP != RESTORED_ESP)
-        Tcl_Panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
-        Tcl_Panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
-        Tcl_Panic("HANDLER restored incorrectly");
-# endif /* TCL_MEM_DEBUG */
-#else
+	    Tcl_Finalize();
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	    /* empty handler body. */
 	}
-#endif /* HAVE_NO_SEH */
+#endif
+
 	break;
     }
 
     return TRUE; 
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_dllmain_detach_handler --
- *
- *	SEH exception handler for DllMain.
- *
- * Results:
- *	See DllMain.
- *
- * Side effects:
- *	See DllMain.
- *
- *----------------------------------------------------------------------
- */
-#ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_dllmain_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-            "jmp dllmain_detach_reentry");
-    return 0; /* Function does not return */
-}
-#endif /* HAVE_NO_SEH */
-
 
 #endif /* !STATIC_BUILD */
 #endif /* __WIN32__ */
@@ -549,6 +517,10 @@ TclWinNoBackslash(
 int
 TclpCheckStackSpace()
 {
+
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
     int retval = 0;
 
     /*
@@ -559,131 +531,92 @@ TclpCheckStackSpace()
      */
 
 #ifdef HAVE_NO_SEH
-# ifdef TCL_MEM_DEBUG
     __asm__ __volatile__ (
-            "movl %%esp,  %0" "\n\t"
-            "movl %%ebp,  %1" "\n\t"
-            "movl %%fs:0, %2" "\n\t"
-            : "=m"(INITIAL_ESP),
-              "=m"(INITIAL_EBP),
-              "=r"(INITIAL_HANDLER) );
-# endif /* TCL_MEM_DEBUG */
 
-    __asm__ __volatile__ (
-            "pushl %%ebp" "\n\t"
-            "pushl %0" "\n\t"
-            "pushl %%fs:0" "\n\t"
-            "movl  %%esp, %%fs:0"
-            :
-            : "r" (_except_checkstackspace_handler) );
-#else
+        /*
+         * Construct an EXCEPTION_REGISTRATION to protect the
+         * call to __alloca
+         */
+        "leal   %[registration], %%edx"         "\n\t"
+        "movl   %%fs:0,         %%eax"          "\n\t"
+        "movl   %%eax,          0x0(%%edx)"     "\n\t" /* link */
+        "leal   1f,             %%eax"          "\n\t"
+        "movl   %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+        "movl   %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+        "movl   %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+        "movl   %[error],       0x10(%%edx)"    "\n\t" /* status */
+        
+        /*
+         * Link the EXCEPTION_REGISTRATION on the chain
+         */
+        "movl   %%edx,          %%fs:0"         "\n\t"
+
+        /*
+         * Attempt a call to __alloca, to determine whether there's
+         * sufficient memory to be had.
+         */
+
+        "movl   %[size],        %%eax"          "\n\t"
+        "pushl  %%eax"                          "\n\t"
+        "call   __alloca"                       "\n\t"
+
+        /*
+         * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+         * and store a TCL_OK status
+         */
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   %[ok],          %%eax"          "\n\t"
+        "movl   %%eax,          0x10(%%edx)"    "\n\t"
+        "jmp    2f"                             "\n"
+
+        /*
+         * Come here on an exception. Get the EXCEPTION_REGISTRATION
+         * that we previously put on the chain.
+         */
+        "1:"                                    "\t"
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   0x8(%%edx),     %%edx"          "\n\t"
+        
+        /* 
+         * Come here however we exited.  Restore context from the
+         * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+         */
+        
+        "2:"                                    "\t"
+        "movl   0xc(%%edx),     %%esp"          "\n\t"
+        "movl   0x8(%%edx),     %%ebp"          "\n\t"
+        "movl   0x0(%%edx),     %%eax"          "\n\t"
+        "movl   %%eax,          %%fs:0"         "\n\t"
+        
+        :
+        /* No outputs */
+        :
+        [registration]  "m"     (registration),
+        [ok]            "i"     (TCL_OK),
+        [error]         "i"     (TCL_ERROR),
+        [size]          "i"     (TCL_WIN_STACK_THRESHOLD)
+        :
+        "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
+        );
+    retval = (registration.status == TCL_OK);
+
+#else /* !HAVE_NO_SEH */
     __try {
-#endif /* HAVE_NO_SEH */
 #ifdef HAVE_ALLOCA_GCC_INLINE
-    __asm__ __volatile__ (
+        __asm__ __volatile__ (
             "movl  %0, %%eax" "\n\t"
             "call  __alloca" "\n\t"
             :
             : "i"(TCL_WIN_STACK_THRESHOLD)
             : "%eax");
 #else
-	alloca(TCL_WIN_STACK_THRESHOLD);
+        alloca(TCL_WIN_STACK_THRESHOLD);
 #endif /* HAVE_ALLOCA_GCC_INLINE */
-	retval = 1;
-#ifdef HAVE_NO_SEH
-    __asm__ __volatile__ (
-            "movl %%fs:0, %%esp" "\n\t"
-            "jmp  checkstackspace_pop" "\n"
-        "checkstackspace_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-        "checkstackspace_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            :
-            :
-            : "%eax");
-
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
-
-    if (INITIAL_ESP != RESTORED_ESP)
-        Tcl_Panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
-        Tcl_Panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
-        Tcl_Panic("HANDLER restored incorrectly");
-# endif /* TCL_MEM_DEBUG */
-#else
+        retval = 1;
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 #endif /* HAVE_NO_SEH */
-
-    /*
-     * Avoid using control flow statements in the SEH guarded block!
-     */
+    
     return retval;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_checkstackspace_handler --
- *
- *	SEH exception handler for TclpCheckStackSpace.
- *
- * Results:
- *	See TclpCheckStackSpace.
- *
- * Side effects:
- *	See TclpCheckStackSpace.
- *
- *----------------------------------------------------------------------
- */
-#ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_checkstackspace_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-            "jmp checkstackspace_reentry");
-    return 0; /* Function does not return */
-}
-#endif /* HAVE_NO_SEH */
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinGetPlatform --
- *
- *	This is a kludge that allows the test library to get access
- *	the internal tclPlatform variable.
- *
- * Results:
- *	Returns a pointer to the tclPlatform variable.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-TclPlatformType *
-TclWinGetPlatform()
-{
-    return &tclPlatform;
 }
 
 /*
@@ -691,123 +624,123 @@ TclWinGetPlatform()
  *
  * TclWinSetInterfaces --
  *
- *	A helper proc that allows the test library to change the
- *	tclWinProcs structure to dispatch to either the wide-character
- *	or multi-byte versions of the operating system calls, depending
- *	on whether Unicode is the system encoding.
- *	
- *	As well as this, we can also try to load in some additional
- *	procs which may/may not be present depending on the current
- *	Windows version (e.g. Win95 will not have the procs below).
+ *      A helper proc that allows the test library to change the
+ *      tclWinProcs structure to dispatch to either the wide-character
+ *      or multi-byte versions of the operating system calls, depending
+ *      on whether Unicode is the system encoding.
+ *      
+ *      As well as this, we can also try to load in some additional
+ *      procs which may/may not be present depending on the current
+ *      Windows version (e.g. Win95 will not have the procs below).
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *---------------------------------------------------------------------------
  */
 
 void
 TclWinSetInterfaces(
-    int wide)			/* Non-zero to use wide interfaces, 0
-				 * otherwise. */
+    int wide)                   /* Non-zero to use wide interfaces, 0
+                                 * otherwise. */
 {
     Tcl_FreeEncoding(tclWinTCharEncoding);
 
     if (wide) {
-	tclWinProcs = &unicodeProcs;
-	tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-	if (tclWinProcs->getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
-	        tclWinProcs->getFileAttributesExProc = 
-		  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
-		  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExW");
-		tclWinProcs->createHardLinkProc = 
-		  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
-		  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
-		  "CreateHardLinkW");
-	        tclWinProcs->findFirstFileExProc = 
-		  (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
-		  LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
-		  "FindFirstFileExW");
-	        tclWinProcs->getVolumeNameForVMPProc = 
-		  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
-		  DWORD)) GetProcAddress(hInstance, 
-		  "GetVolumeNameForVolumeMountPointW");
-		tclWinProcs->getLongPathNameProc = 
-		  (DWORD (WINAPI *)(CONST TCHAR*, TCHAR*, 
-		  DWORD)) GetProcAddress(hInstance, 
-		  "GetLongPathNameW");
-		FreeLibrary(hInstance);
-	    }
-	    hInstance = LoadLibraryA("advapi32");
-	    if (hInstance != NULL) {
-		tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
-		  LPCTSTR lpFileName, 
-		  SECURITY_INFORMATION RequestedInformation,
-		  PSECURITY_DESCRIPTOR pSecurityDescriptor, DWORD nLength, 
-		  LPDWORD lpnLengthNeeded)) GetProcAddress(hInstance, 
-							   "GetFileSecurityW"); 
-		tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
-		  SECURITY_IMPERSONATION_LEVEL ImpersonationLevel)) 
-		  GetProcAddress(hInstance, "ImpersonateSelf");
-		tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
-		  HANDLE ThreadHandle, DWORD DesiredAccess, BOOL OpenAsSelf,
-		  PHANDLE TokenHandle)) GetProcAddress(hInstance, 
-						       "OpenThreadToken");
-		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void)) 
-		  GetProcAddress(hInstance, "RevertToSelf");
-		tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
-		  PDWORD AccessMask, PGENERIC_MAPPING GenericMapping)) 
-		  GetProcAddress(hInstance, "MapGenericMask");
-		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
-		  PSECURITY_DESCRIPTOR pSecurityDescriptor, 
-	          HANDLE ClientToken, DWORD DesiredAccess,
-	          PGENERIC_MAPPING GenericMapping,
-		  PPRIVILEGE_SET PrivilegeSet,
-		  LPDWORD PrivilegeSetLength,
-		  LPDWORD GrantedAccess,
-		  LPBOOL AccessStatus)) GetProcAddress(hInstance, 
-		  "AccessCheck");
-		FreeLibrary(hInstance);
-	    }
-	}
+        tclWinProcs = &unicodeProcs;
+        tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+        if (tclWinProcs->getFileAttributesExProc == NULL) {
+            HINSTANCE hInstance = LoadLibraryA("kernel32");
+            if (hInstance != NULL) {
+                tclWinProcs->getFileAttributesExProc = 
+                  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
+                  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExW");
+                tclWinProcs->createHardLinkProc = 
+                  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
+                  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
+                  "CreateHardLinkW");
+                tclWinProcs->findFirstFileExProc = 
+                  (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
+                  LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
+                  "FindFirstFileExW");
+                tclWinProcs->getVolumeNameForVMPProc = 
+                  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
+                  DWORD)) GetProcAddress(hInstance, 
+                  "GetVolumeNameForVolumeMountPointW");
+                tclWinProcs->getLongPathNameProc = 
+                  (DWORD (WINAPI *)(CONST TCHAR*, TCHAR*, 
+                  DWORD)) GetProcAddress(hInstance, 
+                  "GetLongPathNameW");
+                FreeLibrary(hInstance);
+            }
+            hInstance = LoadLibraryA("advapi32");
+            if (hInstance != NULL) {
+                tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
+                  LPCTSTR lpFileName, 
+                  SECURITY_INFORMATION RequestedInformation,
+                  PSECURITY_DESCRIPTOR pSecurityDescriptor, DWORD nLength, 
+                  LPDWORD lpnLengthNeeded)) GetProcAddress(hInstance, 
+                                                           "GetFileSecurityW"); 
+                tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
+                  SECURITY_IMPERSONATION_LEVEL ImpersonationLevel)) 
+                  GetProcAddress(hInstance, "ImpersonateSelf");
+                tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
+                  HANDLE ThreadHandle, DWORD DesiredAccess, BOOL OpenAsSelf,
+                  PHANDLE TokenHandle)) GetProcAddress(hInstance, 
+                                                       "OpenThreadToken");
+                tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void)) 
+                  GetProcAddress(hInstance, "RevertToSelf");
+                tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
+                  PDWORD AccessMask, PGENERIC_MAPPING GenericMapping)) 
+                  GetProcAddress(hInstance, "MapGenericMask");
+                tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
+                  PSECURITY_DESCRIPTOR pSecurityDescriptor, 
+                  HANDLE ClientToken, DWORD DesiredAccess,
+                  PGENERIC_MAPPING GenericMapping,
+                  PPRIVILEGE_SET PrivilegeSet,
+                  LPDWORD PrivilegeSetLength,
+                  LPDWORD GrantedAccess,
+                  LPBOOL AccessStatus)) GetProcAddress(hInstance, 
+                  "AccessCheck");
+                FreeLibrary(hInstance);
+            }
+        }
     } else {
-	tclWinProcs = &asciiProcs;
-	tclWinTCharEncoding = NULL;
-	if (tclWinProcs->getFileAttributesExProc == NULL) {
-	    HINSTANCE hInstance = LoadLibraryA("kernel32");
-	    if (hInstance != NULL) {
-		tclWinProcs->getFileAttributesExProc = 
-		  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
-		  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExA");
-		tclWinProcs->createHardLinkProc = 
-		  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
-		  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
-		  "CreateHardLinkA");
-		tclWinProcs->findFirstFileExProc = NULL;
-		tclWinProcs->getLongPathNameProc = NULL;
-		/*
-		 * The 'findFirstFileExProc' function exists on some
-		 * of 95/98/ME, but it seems not to work as anticipated.
-		 * Therefore we don't set this function pointer.  The
-		 * relevant code will fall back on a slower approach
-		 * using the normal findFirstFileProc.
-		 * 
-		 * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
-		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
-		 * "FindFirstFileExA");
-		 */
-		tclWinProcs->getVolumeNameForVMPProc = 
-		  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
-		  DWORD)) GetProcAddress(hInstance, 
-		  "GetVolumeNameForVolumeMountPointA");
-		FreeLibrary(hInstance);
-	    }
-	}
+        tclWinProcs = &asciiProcs;
+        tclWinTCharEncoding = NULL;
+        if (tclWinProcs->getFileAttributesExProc == NULL) {
+            HINSTANCE hInstance = LoadLibraryA("kernel32");
+            if (hInstance != NULL) {
+                tclWinProcs->getFileAttributesExProc = 
+                  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
+                  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExA");
+                tclWinProcs->createHardLinkProc = 
+                  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
+                  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
+                  "CreateHardLinkA");
+                tclWinProcs->findFirstFileExProc = NULL;
+                tclWinProcs->getLongPathNameProc = NULL;
+                /*
+                 * The 'findFirstFileExProc' function exists on some
+                 * of 95/98/ME, but it seems not to work as anticipated.
+                 * Therefore we don't set this function pointer.  The
+                 * relevant code will fall back on a slower approach
+                 * using the normal findFirstFileProc.
+                 * 
+                 * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
+                 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
+                 * "FindFirstFileExA");
+                 */
+                tclWinProcs->getVolumeNameForVMPProc = 
+                  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
+                  DWORD)) GetProcAddress(hInstance, 
+                  "GetVolumeNameForVolumeMountPointA");
+                FreeLibrary(hInstance);
+            }
+        }
     }
 }
 
@@ -816,9 +749,9 @@ TclWinSetInterfaces(
  *
  * TclWinResetInterfaceEncodings --
  *
- *	Called during finalization to free up any encodings we use.
- *	The tclWinProcs-> look up table is still ok to use after
- *	this call, provided no encoding conversion is required.
+ *      Called during finalization to free up any encodings we use.
+ *      The tclWinProcs-> look up table is still ok to use after
+ *      this call, provided no encoding conversion is required.
  *
  *      We also clean up any memory allocated in our mount point
  *      map which is used to follow certain kinds of symlinks.
@@ -826,10 +759,10 @@ TclWinSetInterfaces(
  *      down.
  *      
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *---------------------------------------------------------------------------
  */
@@ -838,17 +771,17 @@ TclWinResetInterfaceEncodings()
 {
     MountPointMap *dlIter, *dlIter2;
     if (tclWinTCharEncoding != NULL) {
-	Tcl_FreeEncoding(tclWinTCharEncoding);
-	tclWinTCharEncoding = NULL;
+        Tcl_FreeEncoding(tclWinTCharEncoding);
+        tclWinTCharEncoding = NULL;
     }
     /* Clean up the mount point map */
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup; 
     while (dlIter != NULL) {
-	dlIter2 = dlIter->nextPtr;
-	ckfree((char*)dlIter->volumeName);
-	ckfree((char*)dlIter);
-	dlIter = dlIter2;
+        dlIter2 = dlIter->nextPtr;
+        ckfree((char*)dlIter->volumeName);
+        ckfree((char*)dlIter);
+        dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
 }
@@ -858,15 +791,15 @@ TclWinResetInterfaceEncodings()
  *
  * TclWinResetInterfaces --
  *
- *	Called during finalization to reset us to a safe state for reuse.
- *	After this call, it is best not to use the tclWinProcs-> look
- *	up table since it is likely to be different to what is expected.
+ *      Called during finalization to reset us to a safe state for reuse.
+ *      After this call, it is best not to use the tclWinProcs-> look
+ *      up table since it is likely to be different to what is expected.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *---------------------------------------------------------------------------
  */
@@ -912,84 +845,84 @@ TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint)
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup; 
     while (dlIter != NULL) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
-	    /* 
-	     * We need to check whether this information is
-	     * still valid, since either the user or various
-	     * programs could have adjusted the mount points on
-	     * the fly.
-	     */
-	    drive[0] = L'A' + (dlIter->driveLetter - 'A');
-	    /* Try to read the volume mount point and see where it points */
-	    if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR*)drive, 
-					       (TCHAR*)Target, 55) != 0) {
-		if (wcscmp((WCHAR*)dlIter->volumeName, Target) == 0) {
-		    /* Nothing has changed */
-		    Tcl_MutexUnlock(&mountPointMap);
-		    return dlIter->driveLetter;
-		}
-	    }
-	    /* 
-	     * If we reach here, unfortunately, this mount point is
-	     * no longer valid at all
-	     */
-	    if (driveLetterLookup == dlIter) {
-		dlPtr2 = dlIter;
-		driveLetterLookup = dlIter->nextPtr;
-	    } else {
-		for (dlPtr2 = driveLetterLookup; 
-		     dlPtr2 != NULL; dlPtr2 = dlPtr2->nextPtr) {
-		    if (dlPtr2->nextPtr == dlIter) {
-			dlPtr2->nextPtr = dlIter->nextPtr;
-			dlPtr2 = dlIter;
-			break;
-		    }
-		}
-	    }
-	    /* Now dlPtr2 points to the structure to free */
-	    ckfree((char*)dlPtr2->volumeName);
-	    ckfree((char*)dlPtr2);
-	    /* 
-	     * Restart the loop --- we could try to be clever
-	     * and continue half way through, but the logic is a 
-	     * bit messy, so it's cleanest just to restart
-	     */
-	    dlIter = driveLetterLookup;
-	    continue;
-	}
-	dlIter = dlIter->nextPtr;
+        if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+            /* 
+             * We need to check whether this information is
+             * still valid, since either the user or various
+             * programs could have adjusted the mount points on
+             * the fly.
+             */
+            drive[0] = L'A' + (dlIter->driveLetter - 'A');
+            /* Try to read the volume mount point and see where it points */
+            if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR*)drive, 
+                                               (TCHAR*)Target, 55) != 0) {
+                if (wcscmp((WCHAR*)dlIter->volumeName, Target) == 0) {
+                    /* Nothing has changed */
+                    Tcl_MutexUnlock(&mountPointMap);
+                    return dlIter->driveLetter;
+                }
+            }
+            /* 
+             * If we reach here, unfortunately, this mount point is
+             * no longer valid at all
+             */
+            if (driveLetterLookup == dlIter) {
+                dlPtr2 = dlIter;
+                driveLetterLookup = dlIter->nextPtr;
+            } else {
+                for (dlPtr2 = driveLetterLookup; 
+                     dlPtr2 != NULL; dlPtr2 = dlPtr2->nextPtr) {
+                    if (dlPtr2->nextPtr == dlIter) {
+                        dlPtr2->nextPtr = dlIter->nextPtr;
+                        dlPtr2 = dlIter;
+                        break;
+                    }
+                }
+            }
+            /* Now dlPtr2 points to the structure to free */
+            ckfree((char*)dlPtr2->volumeName);
+            ckfree((char*)dlPtr2);
+            /* 
+             * Restart the loop --- we could try to be clever
+             * and continue half way through, but the logic is a 
+             * bit messy, so it's cleanest just to restart
+             */
+            dlIter = driveLetterLookup;
+            continue;
+        }
+        dlIter = dlIter->nextPtr;
     }
    
     /* We couldn't find it, so we must iterate over the letters */
     
     for (drive[0] = L'A'; drive[0] <= L'Z'; drive[0]++) {
-	/* Try to read the volume mount point and see where it points */
-	if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR*)drive, 
-					   (TCHAR*)Target, 55) != 0) {
-	    int alreadyStored = 0;
-	    for (dlIter = driveLetterLookup; dlIter != NULL; 
-		 dlIter = dlIter->nextPtr) {
-		if (wcscmp((WCHAR*)dlIter->volumeName, Target) == 0) {
-		    alreadyStored = 1;
-		    break;
-		}
-	    }
-	    if (!alreadyStored) {
-		dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
-		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
-		dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
-		dlPtr2->nextPtr = driveLetterLookup;
-		driveLetterLookup  = dlPtr2;
-	    }
-	}
+        /* Try to read the volume mount point and see where it points */
+        if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR*)drive, 
+                                           (TCHAR*)Target, 55) != 0) {
+            int alreadyStored = 0;
+            for (dlIter = driveLetterLookup; dlIter != NULL; 
+                 dlIter = dlIter->nextPtr) {
+                if (wcscmp((WCHAR*)dlIter->volumeName, Target) == 0) {
+                    alreadyStored = 1;
+                    break;
+                }
+            }
+            if (!alreadyStored) {
+                dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
+                dlPtr2->volumeName = TclNativeDupInternalRep(Target);
+                dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
+                dlPtr2->nextPtr = driveLetterLookup;
+                driveLetterLookup  = dlPtr2;
+            }
+        }
     }
     /* Try again */
     for (dlIter = driveLetterLookup; dlIter != NULL; 
-					dlIter = dlIter->nextPtr) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
-	    Tcl_MutexUnlock(&mountPointMap);
-	    return dlIter->driveLetter;
-	}
+                                        dlIter = dlIter->nextPtr) {
+        if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+            Tcl_MutexUnlock(&mountPointMap);
+            return dlIter->driveLetter;
+        }
     }
     /* 
      * The volume doesn't appear to correspond to a drive letter -- we
@@ -1010,78 +943,78 @@ TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint)
  *
  * Tcl_WinUtfToTChar, Tcl_WinTCharToUtf --
  *
- *	Convert between UTF-8 and Unicode when running Windows NT or 
- *	the current ANSI code page when running Windows 95.
+ *      Convert between UTF-8 and Unicode when running Windows NT or 
+ *      the current ANSI code page when running Windows 95.
  *
- *	On Mac, Unix, and Windows 95, all strings exchanged between Tcl
- *	and the OS are "char" oriented.  We need only one Tcl_Encoding to
- *	convert between UTF-8 and the system's native encoding.  We use
- *	NULL to represent that encoding.
+ *      On Mac, Unix, and Windows 95, all strings exchanged between Tcl
+ *      and the OS are "char" oriented.  We need only one Tcl_Encoding to
+ *      convert between UTF-8 and the system's native encoding.  We use
+ *      NULL to represent that encoding.
  *
- *	On NT, some strings exchanged between Tcl and the OS are "char"
- *	oriented, while others are in Unicode.  We need two Tcl_Encoding
- *	APIs depending on whether we are targeting a "char" or Unicode
- *	interface.  
+ *      On NT, some strings exchanged between Tcl and the OS are "char"
+ *      oriented, while others are in Unicode.  We need two Tcl_Encoding
+ *      APIs depending on whether we are targeting a "char" or Unicode
+ *      interface.  
  *
- *	Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an
- *	encoding of NULL should always used to convert between UTF-8
- *	and the system's "char" oriented encoding.  The following two
- *	functions are used in Windows-specific code to convert between
- *	UTF-8 and Unicode strings (NT) or "char" strings(95).  This saves
- *	you the trouble of writing the following type of fragment over and
- *	over:
+ *      Calling Tcl_UtfToExternal() or Tcl_ExternalToUtf() with an
+ *      encoding of NULL should always used to convert between UTF-8
+ *      and the system's "char" oriented encoding.  The following two
+ *      functions are used in Windows-specific code to convert between
+ *      UTF-8 and Unicode strings (NT) or "char" strings(95).  This saves
+ *      you the trouble of writing the following type of fragment over and
+ *      over:
  *
- *		if (running NT) {
- *		    encoding <- Tcl_GetEncoding("unicode");
- *		    nativeBuffer <- UtfToExternal(encoding, utfBuffer);
- *		    Tcl_FreeEncoding(encoding);
- *		} else {
- *		    nativeBuffer <- UtfToExternal(NULL, utfBuffer);
- *		}
+ *              if (running NT) {
+ *                  encoding <- Tcl_GetEncoding("unicode");
+ *                  nativeBuffer <- UtfToExternal(encoding, utfBuffer);
+ *                  Tcl_FreeEncoding(encoding);
+ *              } else {
+ *                  nativeBuffer <- UtfToExternal(NULL, utfBuffer);
+ *              }
  *
- *	By convention, in Windows a TCHAR is a character in the ANSI code
- *	page on Windows 95, a Unicode character on Windows NT.  If you
- *	plan on targeting a Unicode interfaces when running on NT and a
- *	"char" oriented interface while running on 95, these functions
- *	should be used.  If you plan on targetting the same "char"
- *	oriented function on both 95 and NT, use Tcl_UtfToExternal()
- *	with an encoding of NULL.
+ *      By convention, in Windows a TCHAR is a character in the ANSI code
+ *      page on Windows 95, a Unicode character on Windows NT.  If you
+ *      plan on targeting a Unicode interfaces when running on NT and a
+ *      "char" oriented interface while running on 95, these functions
+ *      should be used.  If you plan on targetting the same "char"
+ *      oriented function on both 95 and NT, use Tcl_UtfToExternal()
+ *      with an encoding of NULL.
  *
  * Results:
- *	The result is a pointer to the string in the desired target
- *	encoding.  Storage for the result string is allocated in
- *	dsPtr; the caller must call Tcl_DStringFree() when the result
- *	is no longer needed.
+ *      The result is a pointer to the string in the desired target
+ *      encoding.  Storage for the result string is allocated in
+ *      dsPtr; the caller must call Tcl_DStringFree() when the result
+ *      is no longer needed.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *---------------------------------------------------------------------------
  */
 
 TCHAR *
 Tcl_WinUtfToTChar(string, len, dsPtr)
-    CONST char *string;		/* Source string in UTF-8. */
-    int len;			/* Source string length in bytes, or < 0 for
-				 * strlen(). */
-    Tcl_DString *dsPtr;		/* Uninitialized or free DString in which 
-				 * the converted string is stored. */
+    CONST char *string;         /* Source string in UTF-8. */
+    int len;                    /* Source string length in bytes, or < 0 for
+                                 * strlen(). */
+    Tcl_DString *dsPtr;         /* Uninitialized or free DString in which 
+                                 * the converted string is stored. */
 {
     return (TCHAR *) Tcl_UtfToExternalDString(tclWinTCharEncoding, 
-	    string, len, dsPtr);
+            string, len, dsPtr);
 }
 
 char *
 Tcl_WinTCharToUtf(string, len, dsPtr)
-    CONST TCHAR *string;	/* Source string in Unicode when running
-				 * NT, ANSI when running 95. */
-    int len;			/* Source string length in bytes, or < 0 for
-				 * platform-specific string length. */
-    Tcl_DString *dsPtr;		/* Uninitialized or free DString in which 
-				 * the converted string is stored. */
+    CONST TCHAR *string;        /* Source string in Unicode when running
+                                 * NT, ANSI when running 95. */
+    int len;                    /* Source string length in bytes, or < 0 for
+                                 * platform-specific string length. */
+    Tcl_DString *dsPtr;         /* Uninitialized or free DString in which 
+                                 * the converted string is stored. */
 {
     return Tcl_ExternalToUtfDString(tclWinTCharEncoding, 
-	    (CONST char *) string, len, dsPtr);
+            (CONST char *) string, len, dsPtr);
 }
 
 /*
@@ -1089,14 +1022,14 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
  *
  * TclWinCPUID --
  *
- *	Get CPU ID information on an Intel box under Windows
+ *      Get CPU ID information on an Intel box under Windows
  *
  * Results:
- *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not
- *	supported or fails.
+ *      Returns TCL_OK if successful, TCL_ERROR if CPUID is not
+ *      supported or fails.
  *
  * Side effects:
- *	If successful, stores EAX, EBX, ECX and EDX registers after 
+ *      If successful, stores EAX, EBX, ECX and EDX registers after 
  *      the CPUID instruction in the four integers designated by 'regsPtr'
  *
  *----------------------------------------------------------------------
@@ -1104,70 +1037,93 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
 
 int
 TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
-	     register unsigned int * regsPtr ) /* Registers after the CPUID */
+             unsigned int * regsPtr ) /* Registers after the CPUID */
 {
 
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
     int status = TCL_ERROR;
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(_WIN64)
 
-    /* Establish structured exception handling */
-
-# ifdef HAVE_NO_SEH
+    /* 
+     * Execute the CPUID instruction with the given index, and
+     * store results off 'regPtr'.
+     */
+    
     __asm__ __volatile__ (
-	    "pushl %%ebp" "\n\t"
-	    "pushl %0" "\n\t"
-	    "pushl %%fs:0" "\n\t"
-	    "movl  %%esp, %%fs:0"
-            :
-            : "r" (_except_TclWinCPUID_detach_handler) );
-#  else
-    __try {
-#  endif
 
-	/* 
-	 * Execute the CPUID instruction with the given index, and
-	 * store results off 'regPtr'.
-	 */
+        /*
+         * Construct an EXCEPTION_REGISTRATION to protect the
+         * CPUID instruction (early 486's don't have CPUID)
+         */
+        "leal   %[registration], %%edx"         "\n\t"
+        "movl   %%fs:0,         %%eax"          "\n\t"
+        "movl   %%eax,          0x0(%%edx)"     "\n\t" /* link */
+        "leal   1f,             %%eax"          "\n\t"
+        "movl   %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+        "movl   %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+        "movl   %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+        "movl   %[error],       0x10(%%edx)"    "\n\t" /* status */
+        
+        /*
+         * Link the EXCEPTION_REGISTRATION on the chain
+         */
+        "movl   %%edx,          %%fs:0"         "\n\t"
 
-	__asm__ __volatile__ (
-	    "movl %4, %%eax" "\n\t"
-            "cpuid" "\n\t"
-	    "movl %%eax, %0" "\n\t"
-	    "movl %%ebx, %1" "\n\t"
-	    "movl %%ecx, %2" "\n\t"
-	    "movl %%edx, %3"
-	    : 
-	    "=m"(regsPtr[0]),
-	    "=m"(regsPtr[1]),
-	    "=m"(regsPtr[2]),
-	    "=m"(regsPtr[3])
-	    : "m"(index)
-	    : "%eax", "%ebx", "%ecx", "%edx" );
-	status = TCL_OK;
+        /*
+         * Do the CPUID instruction, and save the results in
+         * the 'regsPtr' area
+         */
 
-	/* End the structured exception handler */
+        "movl   %[rptr],        %%edi"          "\n\t"
+        "movl   %[index],       %%eax"          "\n\t"
+        "cpuid"                                 "\n\t"
+        "movl   %%eax,          0x0(%%edi)"     "\n\t"
+        "movl   %%ebx,          0x4(%%edi)"     "\n\t"
+        "movl   %%ecx,          0x8(%%edi)"     "\n\t"
+        "movl   %%edx,          0xc(%%edi)"     "\n\t"
 
-#  ifndef HAVE_NO_SEH
-    } __except( EXCEPTION_EXECUTE_HANDLER ) {
-	/* do nothing */
-    }
-#  else
-    __asm __volatile__ (
-	    "jmp  TclWinCPUID_detach_pop" "\n"
-        "TclWinCPUID_detach_reentry:" "\n\t"
-	    "movl %%fs:0, %%eax" "\n\t"
-	    "movl 0x8(%%eax), %%esp" "\n\t"
-	    "movl 0x8(%%esp), %%ebp" "\n"
-	"TclWinCPUID_detach_pop:" "\n\t"
-	    "movl (%%esp), %%eax" "\n\t"
-	    "movl %%eax, %%fs:0" "\n\t"
-	    "add  $12, %%esp" "\n\t"
-	:
-	:
-	: "%eax");
-#  endif
+        /*
+         * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
+         * and store a TCL_OK status
+         */
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   %[ok],          %%eax"          "\n\t"
+        "movl   %%eax,          0x10(%%edx)"    "\n\t"
+        "jmp    2f"                             "\n"
 
+        /*
+         * Come here on an exception. Get the EXCEPTION_REGISTRATION
+         * that we previously put on the chain.
+         */
+        "1:"                                    "\t"
+        "movl   %%fs:0,         %%edx"          "\n\t"
+        "movl   0x8(%%edx),     %%edx"          "\n\t"
+        
+        /* 
+         * Come here however we exited.  Restore context from the
+         * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+         */
+        
+        "2:"                                    "\t"
+        "movl   0xc(%%edx),     %%esp"          "\n\t"
+        "movl   0x8(%%edx),     %%ebp"          "\n\t"
+        "movl   0x0(%%edx),     %%eax"          "\n\t"
+        "movl   %%eax,          %%fs:0"         "\n\t"
+
+        : 
+        /* No outputs */
+        : 
+        [index]         "m"     (index),
+        [rptr]          "m"     (regsPtr),
+        [registration]  "m"     (registration),
+        [ok]            "i"     (TCL_OK),
+        [error]         "i"     (TCL_ERROR)
+        :
+        "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory" );
+    status = registration.status;
 
 #elif defined(_MSC_VER) && !defined(_WIN64)
 
@@ -1216,36 +1172,4 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 #endif
     return status;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_TclWinCPUID_detach_handler --
- *
- *	SEH exception handler for TclWinCPUID.
- *
- * Results:
- *	See TclWinCPUID.
- *
- * Side effects:
- *	See TclWinCPUID.
- *
- *----------------------------------------------------------------------
- */
-
-#if defined( HAVE_NO_SEH )
-static
-__attribute__((cdecl))
-EXCEPTION_DISPOSITION
-_except_TclWinCPUID_detach_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-	"jmp TclWinCPUID_detach_reentry" );
-    return 0; /* Function does not return */
-}
-#endif
 

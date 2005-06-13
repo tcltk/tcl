@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.52 2005/02/05 09:15:41 davidw Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.52.2.1 2005/06/13 01:45:37 msofer Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -209,6 +209,8 @@ Filled with the safe-init function for this code.
 .AP ClientData *clientDataPtr out
 Filled with the clientData value to pass to this code's unload
 function when it is called.
+.AP Tcl_LoadHandle *handlePtr out
+Filled with an abstract token representing the loaded file.
 .AP Tcl_FSUnloadFileProc **unloadProcPtr out
 Filled with the function to use to unload this piece of code.
 .AP utimbuf *tval in
@@ -1414,7 +1416,7 @@ message is left in the \fIinterp\fR's result.  The function dynamically loads a
 binary code file into memory.  On a successful load, the \fIhandlePtr\fR
 should be filled with a token for the dynamically loaded file, and the
 \fIunloadProcPtr\fR should be filled in with the address of a procedure.
-The unload procedure will be called with the given Tcl_LoadHandle as its
+The unload procedure will be called with the given \fBTcl_LoadHandle\fR as its
 only parameter when Tcl needs to unload the file.  For example, for the
 native filesystem, the \fBTcl_LoadHandle\fR returned is currently a token
 which can be used in the private \fBTclpFindSymbol\fR to access functions

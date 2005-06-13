@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.25 2005/02/10 09:33:01 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.25.2.1 2005/06/13 01:45:38 msofer Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"

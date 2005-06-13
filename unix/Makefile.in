@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.163 2005/02/24 18:05:42 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.163.2.1 2005/06/13 01:46:52 msofer Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -38,10 +38,10 @@ mandir			= @mandir@
 # to be different than those used for actually reference files at
 # run-time.  INSTALL_ROOT is prepended to $prefix and $exec_prefix
 # when installing files.
-INSTALL_ROOT		=
+INSTALL_ROOT		= $(DESTDIR)
 
 # Path for the platform independent Tcl scripting libraries:
-TCL_LIBRARY		= $(prefix)/lib/tcl$(VERSION)
+TCL_LIBRARY		= @TCL_LIBRARY@
 
 # Path to use at runtime to refer to LIB_INSTALL_DIR:
 LIB_RUNTIME_DIR		= $(libdir)
@@ -58,8 +58,11 @@ SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
 
+# Path to the private tcl header dir:
+PRIVATE_INCLUDE_DIR	= @PRIVATE_INCLUDE_DIR@
+
 # Directory in which to (optionally) install the private tcl headers:
-PRIVATE_INCLUDE_INSTALL_DIR = $(INSTALL_ROOT)$(includedir)
+PRIVATE_INCLUDE_INSTALL_DIR = $(INSTALL_ROOT)$(PRIVATE_INCLUDE_DIR)
 
 # Top-level directory in which to install manual entries:
 MAN_INSTALL_DIR		= $(INSTALL_ROOT)$(mandir)
@@ -75,11 +78,17 @@ MAN3_INSTALL_DIR	= $(MAN_INSTALL_DIR)/man3
 # Tcl commands:
 MANN_INSTALL_DIR	= $(MAN_INSTALL_DIR)/mann
 
+# Path to the html documentation dir:
+HTML_DIR		= @HTML_DIR@
+
+# Directory in which to install html documentation:
+HTML_INSTALL_DIR	= $(INSTALL_ROOT)$(HTML_DIR)
+
 # Package search path.
 TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
 
 # Tcl Module default path roots (TIP189).
-TCL_MODULE_PATH		=
+TCL_MODULE_PATH		= @TCL_MODULE_PATH@
 
 # warning flags
 CFLAGS_WARNING		= @CFLAGS_WARNING@
@@ -104,12 +113,6 @@ LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 # on the following lines:
 PROTO_FLAGS		=
 #PROTO_FLAGS		= -DNO_PROTOTYPE
-
-# Mathematical functions like sin and atan2 are enabled for expressions
-# by default.  To disable them, reverse the comment characters on the
-# following pairs of lines:
-MATH_FLAGS		=
-#MATH_FLAGS		= -DTCL_NO_MATH
 
 # If you use the setenv, putenv, or unsetenv procedures to modify
 # environment variables in your application and you'd like those
@@ -163,7 +166,7 @@ SHELL			= /bin/sh
 # with the distribution, which is slower but guaranteed to work.
 
 INSTALL_STRIP_PROGRAM   = -s
-INSTALL_STRIP_LIBRARY  = -S -S
+INSTALL_STRIP_LIBRARY   = -S -S
 
 INSTALL			= @srcdir@/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
@@ -238,6 +241,7 @@ SRC_DIR			= @srcdir@
 TOP_DIR			= $(SRC_DIR)/..
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
+TOMMATH_DIR		= $(TOP_DIR)/libtommath
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(SRC_DIR)
@@ -271,19 +275,18 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
-${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
+${NO_DEPRECATED_FLAGS} ${ENV_FLAGS} @EXTRA_CC_SWITCHES@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} @EXTRA_CC_SWITCHES@
 
 LIBS		= @TCL_LIBS@
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} \
-${GENERIC_FLAGS} ${PROTO_FLAGS}
+${AC_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} @EXTRA_CC_SWITCHES@
 
 TCLSH_OBJS = tclAppInit.o
 
@@ -302,17 +305,37 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPathObj.o tclPipe.o \
-	tclPkg.o tclPkgConfig.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
-	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
+	tclPkg.o tclPkgConfig.o tclPosixStr.o \
+	tclPreserve.o tclProc.o tclRegexp.o \
+	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
+	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
-	tclStubLib.o tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o
+	tclStubLib.o tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o \
+	tclTomMathInterface.o
+
+TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
+	bn_fast_s_mp_sqr.o bn_mp_add.o \
+        bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
+        bn_mp_cmp.o bn_mp_cmp_mag.o bn_mp_copy.o bn_mp_count_bits.o \
+        bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o \
+        bn_mp_exch.o bn_mp_grow.o bn_mp_init.o bn_mp_init_copy.o \
+        bn_mp_init_multi.o bn_mp_init_set.o \
+	bn_mp_init_size.o bn_mp_karatsuba_mul.o \
+	bn_mp_karatsuba_sqr.o \
+        bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
+        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_radix_size.o bn_mp_radix_smap.o \
+        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_sqr.o \
+	bn_mp_sub.o bn_mp_sub_d.o \
+        bn_mp_toom_mul.o bn_mp_toom_sqr.o \
+	bn_mp_toradix_n.o bn_mp_zero.o bn_s_mp_add.o \
+        bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
-MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o
+MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
-OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
-        @DL_OBJS@ @PLAT_OBJS@
+OBJS = ${GENERIC_OBJS} ${TOMMATH_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} \
+	${COMPAT_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -389,6 +412,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclStubInit.c \
 	$(GENERIC_DIR)/tclStubLib.c \
 	$(GENERIC_DIR)/tclStringObj.c \
+	$(GENERIC_DIR)/tclStrToD.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
@@ -404,6 +428,58 @@ GENERIC_SRCS = \
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c
 
+TOMMATH_SRCS = \
+	$(TOMMATH_DIR)/bncore.c \
+	$(TOMMATH_DIR)/bn_reverse.c \
+	$(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c \
+	$(TOMMATH_DIR)/bn_fast_s_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_add.c \
+	$(TOMMATH_DIR)/bn_mp_add_d.c \
+	$(TOMMATH_DIR)/bn_mp_clamp.c \
+	$(TOMMATH_DIR)/bn_mp_clear.c \
+	$(TOMMATH_DIR)/bn_mp_clear_multi.c \
+	$(TOMMATH_DIR)/bn_mp_cmp.c \
+	$(TOMMATH_DIR)/bn_mp_cmp_mag.c \
+	$(TOMMATH_DIR)/bn_mp_copy.c \
+	$(TOMMATH_DIR)/bn_mp_count_bits.c \
+	$(TOMMATH_DIR)/bn_mp_div.c \
+	$(TOMMATH_DIR)/bn_mp_div_d.c \
+	$(TOMMATH_DIR)/bn_mp_div_2.c \
+	$(TOMMATH_DIR)/bn_mp_div_2d.c \
+	$(TOMMATH_DIR)/bn_mp_div_3.c \
+	$(TOMMATH_DIR)/bn_mp_exch.c \
+	$(TOMMATH_DIR)/bn_mp_grow.c \
+	$(TOMMATH_DIR)/bn_mp_init.c \
+	$(TOMMATH_DIR)/bn_mp_init_copy.c \
+	$(TOMMATH_DIR)/bn_mp_init_multi.c \
+	$(TOMMATH_DIR)/bn_mp_init_set.c \
+	$(TOMMATH_DIR)/bn_mp_init_size.c \
+	$(TOMMATH_DIR)/bn_mp_karatsuba_mul.c \
+	$(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_lshd.c \
+	$(TOMMATH_DIR)/bn_mp_mod.c \
+	$(TOMMATH_DIR)/bn_mp_mod_2d.c \
+	$(TOMMATH_DIR)/bn_mp_mul.c \
+	$(TOMMATH_DIR)/bn_mp_mul_2.c \
+	$(TOMMATH_DIR)/bn_mp_mul_2d.c \
+	$(TOMMATH_DIR)/bn_mp_mul_d.c \
+	$(TOMMATH_DIR)/bn_mp_radix_size.c \
+	$(TOMMATH_DIR)/bn_mp_radix_smap.c \
+	$(TOMMATH_DIR)/bn_mp_read_radix.c \
+	$(TOMMATH_DIR)/bn_mp_rshd.c \
+	$(TOMMATH_DIR)/bn_mp_set.c \
+	$(TOMMATH_DIR)/bn_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_sub.c \
+	$(TOMMATH_DIR)/bn_mp_sub_d.c \
+	$(TOMMATH_DIR)/bn_mp_toom_mul.c \
+	$(TOMMATH_DIR)/bn_mp_toom_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_toradix_n.c \
+	$(TOMMATH_DIR)/bn_mp_zero.c \
+	$(TOMMATH_DIR)/bn_s_mp_add.c \
+	$(TOMMATH_DIR)/bn_s_mp_mul_digs.c \
+	$(TOMMATH_DIR)/bn_s_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_s_mp_sub.c
+
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
 #	$(UNIX_DIR)/tclConfig.h
@@ -414,13 +490,15 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixEvent.c \
 	$(UNIX_DIR)/tclUnixFCmd.c \
 	$(UNIX_DIR)/tclUnixFile.c \
-	$(UNIX_DIR)/tclUnixNotfy.c \
 	$(UNIX_DIR)/tclUnixPipe.c \
 	$(UNIX_DIR)/tclUnixSock.c \
 	$(UNIX_DIR)/tclUnixTest.c \
 	$(UNIX_DIR)/tclUnixThrd.c \
 	$(UNIX_DIR)/tclUnixTime.c \
 	$(UNIX_DIR)/tclUnixInit.c
+
+NOTIFY_SRCS = \
+	$(UNIX_DIR)/tclUnixNotfy.c
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
@@ -435,13 +513,16 @@ DL_SRCS = \
 
 MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
-	$(MAC_OSX_DIR)/tclMacOSXFCmd.c
+	$(MAC_OSX_DIR)/tclMacOSXFCmd.c \
+	$(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
 # problems for things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
+SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) \
+	$(UNIX_SRCS) $(NOTIFY_SRCS) $(STUB_SRCS) \
+	@PLAT_SRCS@
 
 all: binaries libraries doc
 
@@ -497,46 +578,46 @@ tcltest-real:
 #	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
 test: tcltest
-	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) $(TCLTESTARGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
-	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
 # Useful target for running the test suite with an unwritable current
 # directory...
 ro-test: tcltest
-	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | ./tcltest
 
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
-	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: tclsh
-	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
+	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	$(GDB) ./tclsh --command=gdb.run
 	rm gdb.run
 
 # This target can be used to run tclsh inside ddd
 ddd: tclsh
-	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
+	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	$(DDD) -command=gdb.run ./tclsh
 	rm gdb.run
 
 valgrind: tclsh tcltest
-	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	valgrind --num-callers=8 --leak-resolution=high -v --leak-check=yes --show-reachable=yes $(VALGRINDARGS) ./tcltest $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS) $(TCLTESTARGS)
 
@@ -573,6 +654,15 @@ gendate:
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 #	rm y.tab.c
 
+# The following target generates the file generic/tommath.h.
+# It needs to be run (and the results checked) after updating
+# to a new release of libtommath.
+
+gentommath_h:
+	$(TCL_EXE) "$(TOP_DIR)/tools/fix_tommath_h.tcl" \
+		"$(TOMMATH_DIR)/tommath.h" \
+		> "$(GENERIC_DIR)/tommath.h"
+
 # The following target generates the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
 # target (via the BUILD_DLTEST variable) if dynamic loading is supported
@@ -582,10 +672,12 @@ gendate:
 dltest.marker:
 	cd dltest ; $(MAKE)
 
-install: install-binaries install-libraries install-doc
+INSTALL_TARGETS = install-binaries install-libraries install-doc @EXTRA_INSTALL@
+
+install: $(INSTALL_TARGETS)
 
 install-strip:
-	$(MAKE) install \
+	$(MAKE) $(INSTALL_TARGETS) \
 		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
 		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
@@ -622,6 +714,7 @@ install-binaries: binaries
 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    @INSTALL_STUB_LIB@ ; \
 	fi
+	@EXTRA_INSTALL_BINARIES@
 
 install-libraries: libraries install-tzdata install-msgs
 	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
@@ -684,14 +777,14 @@ install-libraries: libraries install-tzdata install-msgs
 
 install-tzdata:
 	@echo "Installing time zone data"
-	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/tzdata $(SCRIPT_INSTALL_DIR)/tzdata
 
 install-msgs:
 	@echo "Installing message catalogs"
-	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(TOOL_DIR)/installData.tcl \
 	    $(TOP_DIR)/library/msgs $(SCRIPT_INSTALL_DIR)/msgs
@@ -745,6 +838,9 @@ install-private-headers: libraries
 	    do \
 	    $(INSTALL_DATA) $$i $(PRIVATE_INCLUDE_INSTALL_DIR); \
 	    done;
+	@if test -f tclConfig.h; then\
+	    $(INSTALL_DATA) tclConfig.h $(PRIVATE_INCLUDE_INSTALL_DIR); \
+	    fi;
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -753,12 +849,12 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 
 clean:
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
-		errors tclsh tcltest lib.exp
+		errors tclsh tcltest lib.exp Tcl
 	cd dltest ; $(MAKE) clean
 
 distclean: clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
-		$(PACKAGE).* prototype #tclConfig.h
+		$(PACKAGE).* prototype tclConfig.h *.plist Tcl.framework
 	cd dltest ; $(MAKE) distclean
 
 depend:
@@ -1032,6 +1128,9 @@ tclScan.o: $(GENERIC_DIR)/tclScan.c
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
+tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c
+
 tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubInit.c
 
@@ -1074,6 +1173,159 @@ tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
 
+tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
+
+bncore.o: $(TOMMATH_DIR)/bncore.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
+
+bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
+
+bn_fast_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+
+bn_fast_s_mp_sqr.o: $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
+
+bn_mp_add.o: $(TOMMATH_DIR)/bn_mp_add.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add.c
+
+bn_mp_add_d.o: $(TOMMATH_DIR)/bn_mp_add_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add_d.c
+
+bn_mp_clamp.o: $(TOMMATH_DIR)/bn_mp_clamp.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clamp.c
+
+bn_mp_clear.o: $(TOMMATH_DIR)/bn_mp_clear.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear.c
+
+bn_mp_clear_multi.o: $(TOMMATH_DIR)/bn_mp_clear_multi.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear_multi.c
+
+bn_mp_cmp.o: $(TOMMATH_DIR)/bn_mp_cmp.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp.c
+
+bn_mp_cmp_mag.o: $(TOMMATH_DIR)/bn_mp_cmp_mag.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_mag.c
+
+bn_mp_copy.o: $(TOMMATH_DIR)/bn_mp_copy.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_copy.c
+
+bn_mp_count_bits.o: $(TOMMATH_DIR)/bn_mp_count_bits.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_count_bits.c
+
+bn_mp_div.o: $(TOMMATH_DIR)/bn_mp_div.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div.c
+
+bn_mp_div_d.o: $(TOMMATH_DIR)/bn_mp_div_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_d.c
+
+bn_mp_div_2.o: $(TOMMATH_DIR)/bn_mp_div_2.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2.c
+
+bn_mp_div_2d.o: $(TOMMATH_DIR)/bn_mp_div_2d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2d.c
+
+bn_mp_div_3.o: $(TOMMATH_DIR)/bn_mp_div_3.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_3.c
+
+bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
+
+bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
+
+bn_mp_init.o: $(TOMMATH_DIR)/bn_mp_init.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init.c
+
+bn_mp_init_copy.o: $(TOMMATH_DIR)/bn_mp_init_copy.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_copy.c
+
+bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
+
+bn_mp_init_set.o: $(TOMMATH_DIR)/bn_mp_init_set.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set.c
+
+bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
+
+bn_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
+
+bn_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
+
+bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
+
+bn_mp_mod.o: $(TOMMATH_DIR)/bn_mp_mod.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod.c
+
+bn_mp_mod_2d.o: $(TOMMATH_DIR)/bn_mp_mod_2d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod_2d.c
+
+bn_mp_mul.o: $(TOMMATH_DIR)/bn_mp_mul.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul.c
+
+bn_mp_mul_2.o: $(TOMMATH_DIR)/bn_mp_mul_2.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2.c
+
+bn_mp_mul_2d.o: $(TOMMATH_DIR)/bn_mp_mul_2d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2d.c
+
+bn_mp_mul_d.o: $(TOMMATH_DIR)/bn_mp_mul_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_d.c
+
+bn_mp_radix_size.o: $(TOMMATH_DIR)/bn_mp_radix_size.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c
+
+bn_mp_radix_smap.o: $(TOMMATH_DIR)/bn_mp_radix_smap.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_smap.c
+
+bn_mp_read_radix.o: $(TOMMATH_DIR)/bn_mp_read_radix.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_read_radix.c
+
+bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_rshd.c
+
+bn_mp_set.o: $(TOMMATH_DIR)/bn_mp_set.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
+
+bn_mp_sqr.o: $(TOMMATH_DIR)/bn_mp_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqr.c
+
+bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub.c
+
+bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub_d.c
+
+bn_mp_toom_mul.o: $(TOMMATH_DIR)/bn_mp_toom_mul.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_mul.c
+
+bn_mp_toom_sqr.o: $(TOMMATH_DIR)/bn_mp_toom_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_sqr.c
+
+bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
+
+bn_mp_zero.o: $(TOMMATH_DIR)/bn_mp_zero.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_zero.c
+
+bn_s_mp_add.o: $(TOMMATH_DIR)/bn_s_mp_add.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_add.c
+
+bn_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
+
+bn_s_mp_sqr.o: $(TOMMATH_DIR)/bn_s_mp_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sqr.c
+
+bn_s_mp_sub.o: $(TOMMATH_DIR)/bn_s_mp_sub.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sub.c
+
 tclUnixChan.o: $(UNIX_DIR)/tclUnixChan.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
 
@@ -1109,12 +1361,15 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
 
-# This is the CFBundle interface.  It is only used on Mac OS X.
+# The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXFCmd.c
+
+tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
+	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in
@@ -1177,7 +1432,6 @@ waitpid.o: $(COMPAT_DIR)/waitpid.c
 
 # Stub library binaries, these must be compiled for use in a shared library
 # even though they will be placed in a static archive
-
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
@@ -1267,7 +1521,7 @@ rpm: all /bin/rpm
 #
 # Target to create a proper Tcl distribution from information in the
 # master source directory.  DISTDIR must be defined to indicate where
-# to put the distribution.
+# to put the distribution.  DISTDIR must be an absolute path name.
 #
 
 DISTROOT = /tmp/dist
@@ -1355,7 +1609,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/macosx
 	cp -p $(TOP_DIR)/macosx/Makefile \
-		$(TOP_DIR)/macosx/*.c \
+		$(TOP_DIR)/macosx/*.c $(TOP_DIR)/macosx/*.in \
 		$(DISTDIR)/macosx
 	mkdir $(DISTDIR)/macosx/Tcl.pbproj
 	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
@@ -1373,6 +1627,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 		$(DISTDIR)/tools
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools/tcl.wse.in
+	mkdir $(DISTDIR)/libtommath
+	cp -p $(TOP_DIR)/libtommath/*.* \
+		$(DISTDIR)/libtommath
 
 #
 # The following target can only be used for non-patch releases.  Use
@@ -1405,20 +1662,25 @@ allpatch: dist
 # This target creates the HTML folder for Tcl & Tk and places it
 # in DISTDIR/html.  It uses the tcltk-man2html.tcl tool from
 # the Tcl group's tool workspace.  It depends on the Tcl & Tk being
-# in directories called tcl8.3 & tk8.3 up two directories from the
+# in directories called tcl8.* & tk8.* up two directories from the
 # TOOL_DIR.
 #
 
 html:
 	$(BUILD_HTML)
+	@EXTRA_BUILD_HTML@
 html-tcl:
 	$(BUILD_HTML) --tcl
+	@EXTRA_BUILD_HTML@
 html-tk:
 	$(BUILD_HTML) --tk
+	@EXTRA_BUILD_HTML@
 
 BUILD_HTML = \
-	$(TCL_EXE) $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(DISTDIR)/html \
-		--srcdir=$(TOP_DIR)/..
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./tclsh $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) \
+		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #
 # Targets to build Solaris package of the distribution for the current

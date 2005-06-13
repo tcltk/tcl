@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.196.2.1 2005/04/10 18:13:46 msofer Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.196.2.2 2005/06/13 01:45:41 msofer Exp $
  */
 
 #ifndef _TCL
@@ -57,10 +57,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   5
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  3
+#define TCL_RELEASE_SERIAL  4
 
 #define TCL_VERSION	    "8.5"
-#define TCL_PATCH_LEVEL	    "8.5a3"
+#define TCL_PATCH_LEVEL	    "8.5a4"
 
 /*
  * The following definitions set up the proper options for Windows
@@ -768,6 +768,12 @@ typedef struct Tcl_Obj {
 	    VOID *ptr1;
 	    VOID *ptr2;
 	} twoPtrValue;
+	struct {		/*   - internal rep as a wide int,
+				 *     tightly packed fields */
+	    VOID *digits;	/* Pointer to digits */
+	    unsigned long misc;	/* Alloc, used, and signum packed
+				 * into a single word */
+	} bignumValue;
     } internalRep;
 } Tcl_Obj;
 
@@ -809,6 +815,8 @@ int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
  */
 
 #ifdef TCL_MEM_DEBUG
+#  define Tcl_NewBignumObj(val) \
+     Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
 #  define Tcl_NewBooleanObj(val) \
      Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
 #  define Tcl_NewByteArrayObj(bytes, len) \
@@ -1067,14 +1075,6 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DELETE 0x4000
 
 #define TCL_ALLOW_INLINE_COMPILATION 0x20000
-
-/*
- * Flag values passed to Tcl_CreateObjTrace, and used internally
- * by command execution traces.  Slots 4,8,16 and 32 are
- * used internally by execution traces (see tclCmdMZ.c)
- */
-#define TCL_TRACE_ENTER_EXEC		1
-#define TCL_TRACE_LEAVE_EXEC		2
 
 /*
  * The TCL_PARSE_PART1 flag is deprecated and has no effect. 
@@ -1507,8 +1507,11 @@ typedef Tcl_WideInt (Tcl_DriverWideSeekProc) _ANSI_ARGS_((
 		    int mode, int *errorCodePtr));
 
 /* TIP #218, Channel Thread Actions */
-typedef void     (Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
+typedef void	(Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
 		    ClientData instanceData, int action));
+/* TIP #208, File Truncation (etc.) */
+typedef int	(Tcl_DriverTruncateProc) _ANSI_ARGS_((
+		    ClientData instanceData, Tcl_WideInt length));
 
 /*
  * The following declarations either map ckalloc and ckfree to
@@ -1599,16 +1602,21 @@ typedef struct Tcl_ChannelType {
 					 * handle 64-bit offsets. May be
 					 * NULL, and must be NULL if
 					 * seekProc is NULL. */
-
-     /*
-      * Only valid in TCL_CHANNEL_VERSION_4 channels or later
-      * TIP #218, Channel Thread Actions
-      */
-     Tcl_DriverThreadActionProc *threadActionProc;
+    /*
+     * Only valid in TCL_CHANNEL_VERSION_4 channels or later
+     * TIP #218, Channel Thread Actions
+     * TIP #208 (part relating to truncation)
+     */
+    Tcl_DriverThreadActionProc *threadActionProc;
  					/* Procedure to call to notify
  					 * the driver of thread specific
  					 * activity for a channel.
 					 * May be NULL. */
+    Tcl_DriverTruncateProc *truncateProc;
+					/* Procedure to call to truncate the
+					 * underlying file to a particular
+					 * length. May be NULL if the channel
+					 * does not support truncation. */
 } Tcl_ChannelType;
 
 /*
@@ -2302,6 +2310,15 @@ typedef void (Tcl_LimitHandlerProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp));
 typedef void (Tcl_LimitHandlerDeleteProc) _ANSI_ARGS_((ClientData clientData));
 
+
+#ifndef MP_INT_DECLARED
+typedef struct mp_int mp_int;
+#define MP_INT_DECLARED
+#endif
+#ifndef MP_DIGIT_DECLARED
+typedef unsigned long mp_digit;
+#define MP_DIGIT_DECLARED
+#endif
 
 #ifndef TCL_NO_DEPRECATED
 

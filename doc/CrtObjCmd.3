@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.11 2004/10/07 15:15:36 dkf Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.11.4.1 2005/06/13 01:45:37 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -30,17 +30,13 @@ int
 int
 \fBTcl_SetCommandInfo\fR(\fIinterp, cmdName, infoPtr\fR)
 .sp
-.VS 8.4
 int
 \fBTcl_GetCommandInfoFromToken\fR(\fItoken, infoPtr\fR)
 .sp
 int
 \fBTcl_SetCommandInfoFromToken\fR(\fItoken, infoPtr\fR)
-.VE
 .sp
-.VS 8.4
 const char *
-.VE
 \fBTcl_GetCommandName\fR(\fIinterp, token\fR)
 .sp
 void
@@ -99,7 +95,6 @@ typedef int Tcl_ObjCmdProc(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
-.VS
         Tcl_Obj *const \fIobjv\fR[]);
 .CE
 When \fIproc\fR is invoked, the \fIclientData\fR and \fIinterp\fR parameters
@@ -125,7 +120,6 @@ object argument.  For instance, the user may call
 representation of that object; that call may change the type of the object
 that \fIobjv\fR[\fB2\fR] points at, but will not change where
 \fIobjv\fR[\fB2\fR] points.
-.VE
 .PP
 \fIproc\fR must return an integer code that is either \fBTCL_OK\fR,
 \fBTCL_ERROR\fR, \fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR.

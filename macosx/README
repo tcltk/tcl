@@ -1,7 +1,7 @@
 Tcl MacOSX README 
 -----------------
 
-RCS: @(#) $Id: README,v 1.2 2003/07/18 02:02:02 das Exp $
+RCS: @(#) $Id: README,v 1.2.6.1 2005/06/13 01:46:40 msofer Exp $
 
 This is the README file for the Mac OS X native version of Tcl (framework build).
 
@@ -34,10 +34,10 @@ tracker and not the tcl one.
 2. Using Tcl on MacOSX
 ----------------------
 
-- Mac OS X 10.1 (or higher) is required to run Tcl on MacOSX.
+- Mac OS X 10.2 (or higher) is required to run Tcl on MacOSX.
 
-- Tcl built on Mac OS X 10.2 or higher will not run on 10.1 due to missing
-symbols in libSystem, however Tcl built on 10.1 will run on 10.2 (but without
+- Tcl built on Mac OS X 10.3 or higher will not run on 10.2 due to missing
+symbols in libSystem, however Tcl built on 10.2 will run on 10.3 (but without
 prebinding and other optimizations).
 
 - Tcl extensions will be found in any of:
@@ -51,7 +51,7 @@ in the Resources/Scripts directory of the framework.
 
 - The Tcl framework contains documentation in html format in the
 standard location for frameworks:
-	Tcl.framework/Resources/English.lproj/Documentation/Reference/Tcl
+	Tcl.framework/Resources/Documentation/Reference/Tcl
 No manpages are installed by default.
 
 - the framework Tcl.framework can be placed in any of the system's standard
@@ -68,19 +68,23 @@ not supported.
 3. Building Tcl.framework
 -------------------------
 
-- Mac OS X 10.1.5 (or higher) is required to build TclMacOSX.
+- Mac OS X 10.2 (or higher) is required to build Tcl on MacOSX.
 
-- Apple's Developer Tools CD needs to be installed (the version matching your OS
-release, but no earlier than April 2002). This CD should have come with Mac OS X
-retail or should be present as a disk image on new macs that came with OSX
-preinstalled. It can also be downloaded from http://connect.apple.com (after you
-register for free ADC membership).
+- Apple's Developer Tools CD needs to be installed (the most recent version
+matching your OS release, but no earlier than December 2002). This CD should
+have come with Mac OS X retail or should be present as a disk image on new macs
+that came with OSX preinstalled. It can also be downloaded from
+http://connect.apple.com (after you register for free ADC membership).
 
 - Tcl is built as a Mac OS X framework via the Makefile in tcl/macosx, but can
-also be built from Apple's ProjectBuilder IDE using the Tcl.pbproj project (which
-calls through to the Makefile).
+but can also be built directly with the standard unix configure and make
+buildsystem in tcl/unix.
 
-- Unpack the tcl archive
+- It is still possible to build with Apple's Xcode IDE using the Tcl.pbproj
+project but this is not recommended anymore (currently Tcl.pbproj calls through
+to the tcl/macosx/Makefile so there should be no build differences).
+
+- Unpack the tcl source release archive.
 
 - The following instructions assume the tcl source tree is named "tcl${ver}", 
 where ${ver} is a shell variable containing the tcl version number (for 
@@ -94,9 +98,7 @@ set ${ver} to the empty string instead:
 	set ver=""     ;: if your shell is csh
 	ver=""         ;: if your shell is sh
 
-- If you're only interested in _building_ Tcl.framework and don't plan on doing
-development with the ProjectBuilder projects, using the Makefile is easiest.
-The following steps will build Tcl from the Terminal, assuming you are
+- The following steps will build Tcl from the Terminal, assuming you are
 located in the directory containing the tcl source tree:
 	make -C tcl${ver}/macosx
 and the following will then install Tcl onto the root volume (admin password 

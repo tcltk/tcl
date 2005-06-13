@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.39 2005/01/27 00:23:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.39.2.1 2005/06/13 01:47:20 msofer Exp $
  */
 
 #include "tclWinInt.h"
@@ -100,6 +100,8 @@ static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static void             FileThreadActionProc _ANSI_ARGS_ ((
 			   ClientData instanceData, int action));
+static int		FileTruncateProc _ANSI_ARGS_ ((
+			   ClientData instanceData, Tcl_WideInt length));
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -122,6 +124,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* Wide seek proc. */
     FileThreadActionProc,	/* Thread action proc. */
+    FileTruncateProc,		/* Truncate proc. */
 };
 
 #if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
@@ -572,6 +575,76 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
 	}
     }
     return (Tcl_LongAsWide(newPos) | (Tcl_LongAsWide(newPosHigh) << 32));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileTruncateProc --
+ *
+ *	Truncates a file-based channel. Returns the error code.
+ *
+ * Results:
+ *	0 if successful, POSIX-y error code if it failed.
+ *
+ * Side effects:
+ *	Truncates the file, may move file pointers too.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileTruncateProc(instanceData, length)
+    ClientData instanceData;		/* File state. */
+    Tcl_WideInt length;			/* Length to truncate at. */
+{
+    FileInfo *infoPtr = (FileInfo *) instanceData;
+    LONG newPos, newPosHigh, oldPos, oldPosHigh;
+
+    /*
+     * Save where we were...
+     */
+    oldPosHigh = 0;
+    oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
+    if (oldPos == INVALID_SET_FILE_POINTER) {
+	DWORD winError = GetLastError();
+	if (winError != NO_ERROR) {
+	    TclWinConvertError(winError);
+	    return errno;
+	}
+    }
+
+    /*
+     * Move to where we want to truncate
+     */
+    newPosHigh = Tcl_WideAsLong(length >> 32);
+    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
+	    &newPosHigh, FILE_BEGIN);
+    if (newPos == INVALID_SET_FILE_POINTER) {
+	DWORD winError = GetLastError();
+	if (winError != NO_ERROR) {
+	    TclWinConvertError(winError);
+	    return errno;
+	}
+    }
+
+    /*
+     * Perform the truncation (unlike POSIX ftruncate(), we needed to
+     * move to the location to truncate at first).
+     */
+    if (!SetEndOfFile(infoPtr->handle)) {
+	TclWinConvertError(GetLastError());
+	return errno;
+    }
+
+    /*
+     * Move back. If this last step fails, we don't care; it's just a
+     * "best effort" attempt to restore our file pointer to where it
+     * was.
+     */
+    SetFilePointer(infoPtr->handle, oldPos, &oldPosHigh, FILE_BEGIN);
+
+    return 0;
 }
 
 /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.18 2004/06/23 15:36:55 dkf Exp $
+# RCS: @(#) $Id: binary.test,v 1.18.4.1 2005/06/13 01:46:40 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1071,27 +1071,27 @@ test binary-31.1 {Tcl_BinaryObjCmd: scan} {
 test binary-31.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f* arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f* arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-31.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-31.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd f1 arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-31.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f f1 arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-31.8 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd f0 arg1] $arg1
@@ -1103,11 +1103,11 @@ test binary-31.9 {Tcl_BinaryObjCmd: scan} littleEndian {
 test binary-31.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f2 arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.11 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f2 arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-31.12 {Tcl_BinaryObjCmd: scan} {
     catch {unset arg1}
     set arg1 foo
@@ -1123,13 +1123,13 @@ test binary-31.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     set arg1 foo
     set arg2 bar
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a\x05 f2c* arg1 arg2] $arg1 $arg2
-} {2 {1.60000002384 3.40000009537} 5}
+} {2 {1.600000023841858 3.4000000953674316} 5}
 test binary-31.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1 arg2}
     set arg1 foo
     set arg2 bar
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 f2c* arg1 arg2] $arg1 $arg2
-} {2 {1.60000002384 3.40000009537} 5}
+} {2 {1.600000023841858 3.4000000953674316} 5}
 
 test binary-32.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc d} msg] $msg
@@ -1391,12 +1391,8 @@ test binary-40.1 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
 test binary-40.3 {ScanNumber: floating point overflow} {littleEndian win} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff f1 arg1]
-    if {[string equal $arg1 -1.\#QNAN] || [string equal $arg1 -NAN]} {
-	lappend result success
-    } else {
-	lappend result failure $arg1
-    }
-} {1 success}
+    lappend result [regexp -nocase NaN $arg1]
+} {1 1}
 test binary-40.4 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
@@ -1404,12 +1400,8 @@ test binary-40.4 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
 test binary-40.6 {ScanNumber: floating point overflow} {littleEndian win} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1]
-    if {[string equal $arg1 -1.\#QNAN] || [string equal $arg1 -NAN]} {
-	lappend result success
-    } else {
-	lappend result failure $arg1
-    }
-} {1 success}
+    lappend result [regexp -nocase NaN $arg1]
+} {1 1}
 
 test binary-41.1 {ScanNumber: word alignment} {
     catch {unset arg1; unset arg2}
@@ -1430,11 +1422,11 @@ test binary-41.4 {ScanNumber: word alignment} {
 test binary-41.5 {ScanNumber: word alignment} bigEndian {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x3f\xcc\xcc\xcd c1f1 arg1 arg2] $arg1 $arg2
-} {2 1 1.60000002384}
+} {2 1 1.600000023841858}
 test binary-41.6 {ScanNumber: word alignment} littleEndian {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\xcd\xcc\xcc\x3f c1f1 arg1 arg2] $arg1 $arg2
-} {2 1 1.60000002384}
+} {2 1 1.600000023841858}
 test binary-41.7 {ScanNumber: word alignment} bigEndian {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a c1d1 arg1 arg2] $arg1 $arg2
@@ -1940,25 +1932,6 @@ test binary-57.9 {Tcl_BinaryObjCmd: scan} bigEndian  {
     list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
 } {2 {1386435412 16909060} 5}
 
-# scan m
-test binary-60.1 {Tcl_BinaryObjCmd: scan wide int} bigEndian {
-    binary scan HelloTcl m x
-    set x
-} 5216694956358656876
-test binary-60.2 {Tcl_BinaryObjCmd: scan wide int} littleEndian {
-    binary scan lcTolleH m x
-    set x
-} 5216694956358656876
-test binary-60.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set}  littleEndian {
-    binary scan [binary format w [expr {wide(3) << 31}]] m x
-    set x
-} 6442450944
-test binary-60.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
-    binary scan [binary format W [expr {wide(3) << 31}]] m x
-    set x
-} 6442450944
-
-
 # scan Q/q
 test binary-58.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc q} msg] $msg
@@ -2033,27 +2006,27 @@ test binary-59.1 {Tcl_BinaryObjCmd: scan} {
 test binary-59.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R* arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r* arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.4 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-59.5 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-59.6 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd R1 arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-59.7 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f r1 arg1] $arg1
-} {1 1.60000002384}
+} {1 1.600000023841858}
 test binary-59.8 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd R0 arg1] $arg1
@@ -2065,11 +2038,11 @@ test binary-59.9 {Tcl_BinaryObjCmd: scan} littleEndian {
 test binary-59.10 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R2 arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.11 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r2 arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.12 {Tcl_BinaryObjCmd: scan} {
     catch {unset arg1}
     set arg1 foo
@@ -2085,13 +2058,38 @@ test binary-59.14 {Tcl_BinaryObjCmd: scan} bigEndian {
     set arg1 foo
     set arg2 bar
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a\x05 R2c* arg1 arg2] $arg1 $arg2
-} {2 {1.60000002384 3.40000009537} 5}
+} {2 {1.600000023841858 3.4000000953674316} 5}
 test binary-59.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1 arg2}
     set arg1 foo
     set arg2 bar
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 r2c* arg1 arg2] $arg1 $arg2
-} {2 {1.60000002384 3.40000009537} 5}
+} {2 {1.600000023841858 3.4000000953674316} 5}
+
+test binary-60.1 {[binary format] with NaN} -body {
+    binary scan [binary format dqQfrR NaN NaN NaN NaN NaN NaN] dqQfrR \
+	v1 v2 v3 v4 v5 v6
+    list $v1 $v2 $v3 $v4 $v5 $v6
+} -match regexp -result {NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))? NaN(\([[:xdigit:]]+\))?}
+
+# scan m
+test binary-61.1 {Tcl_BinaryObjCmd: scan wide int} bigEndian {
+    binary scan HelloTcl m x
+    set x
+} 5216694956358656876
+test binary-61.2 {Tcl_BinaryObjCmd: scan wide int} littleEndian {
+    binary scan lcTolleH m x
+    set x
+} 5216694956358656876
+test binary-61.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set}  littleEndian {
+    binary scan [binary format w [expr {wide(3) << 31}]] m x
+    set x
+} 6442450944
+test binary-61.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
+    binary scan [binary format W [expr {wide(3) << 31}]] m x
+    set x
+} 6442450944
+
 
 # cleanup
 ::tcltest::cleanupTests

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.13 2004/12/29 20:57:28 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.13.2.1 2005/06/13 01:46:37 msofer Exp $
 #
 #----------------------------------------------------------------------
 
@@ -82,9 +82,37 @@ namespace eval ::tcl::clock {
     namespace import ::msgcat::mcload
     namespace import ::msgcat::mclocale
 
+}
+
+#----------------------------------------------------------------------
+#
+# ::tcl::clock::Initialize --
+#
+#	Finish initializing the 'clock' subsystem
+#
+# Results:
+#	None.
+#
+# Side effects:
+#	Namespace variable in the 'clock' subsystem are initialized.
+#
+# The '::tcl::clock::Initialize' procedure initializes the namespace
+# variables and root locale message catalog for the 'clock' subsystem.
+# It is broken into a procedure rather than simply evaluated as a script
+# so that it will be able to use local variables, avoiding the dangers
+# of 'creative writing' as in Bug 1185933.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::Initialize {} {
+
+    rename ::tcl::clock::Initialize {}
+
+    variable LibDir
+
     # Define the Greenwich time zone
 
-    proc initTZData {} {
+    proc InitTZData {} {
 	variable TZData
 	array unset TZData
 	set TZData(:Etc/GMT) {
@@ -96,7 +124,7 @@ namespace eval ::tcl::clock {
 	}
 	set TZData(:UTC) $TZData(:Etc/UTC)
     }
-    initTZData
+    InitTZData
 
     # Define the message catalog for the root locale.
 
@@ -227,21 +255,16 @@ namespace eval ::tcl::clock {
     # are known to reside on various operating systems
 
     variable ZoneinfoPaths {}
-    proc ZoneinfoInit {} {
-	variable ZoneinfoPaths
-	rename ZoneinfoInit {}
-	foreach path {
-	    /usr/share/zoneinfo
-	    /usr/share/lib/zoneinfo
-	    /usr/local/etc/zoneinfo
-	    C:/Progra~1/cygwin/usr/local/etc/zoneinfo
-	} {
-	    if { [file isdirectory $path] } {
-		lappend ZoneinfoPaths $path
-	    }
+    foreach path {
+	/usr/share/zoneinfo
+	/usr/share/lib/zoneinfo
+	/usr/local/etc/zoneinfo
+	C:/Progra~1/cygwin/usr/local/etc/zoneinfo
+    } {
+	if { [file isdirectory $path] } {
+	    lappend ZoneinfoPaths $path
 	}
     }
-    ZoneinfoInit
 
     # Define the directories for time zone data and message catalogs.
 
@@ -264,7 +287,6 @@ namespace eval ::tcl::clock {
     foreach j $DaysInRomanMonthInLeapYear {
 	lappend DaysInPriorMonthsInLeapYear [incr i $j]
     }
-    unset i j
 
     # Another epoch (Hi, Jeff!)
 
@@ -598,6 +620,7 @@ namespace eval ::tcl::clock {
 					# Daylight Saving Time indicator, and
 					# time zone abbreviation.
 }
+::tcl::clock::Initialize
 
 #----------------------------------------------------------------------
 #
@@ -707,7 +730,7 @@ proc ::tcl::clock::format { args } {
 	set state {}
 	set retval {}
 	foreach char [split $format {}] {
-	    switch -exact $state {
+	    switch -exact -- $state {
 		{} {
 		    if { [string equal % $char] } {
 			set state percent
@@ -1304,10 +1327,6 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     
     if { [llength $parseWeekday] > 0 } {
 
-	# TODO - There's no reason for this to involve the
-	#        ISO calendar; day of week is determined by
-	#        Julian Day and there's no need to extract
-	#        week of year
 	foreach {dayOrdinal dayOfWeek} $parseWeekday break
 	set date2 [GetJulianDay \
 		       [ConvertUTCToLocal \
@@ -4411,7 +4430,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
 
     # Get absolute year number from the civil year
 
-    switch -exact [dict get $date era] {
+    switch -exact -- [dict get $date era] {
 	BCE {
 	    set year [expr { 1 - [dict get $date year] }]
 	}
@@ -4493,7 +4512,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
 
     # Get absolute year number from the civil year
 
-    switch -exact [dict get $date era] {
+    switch -exact -- [dict get $date era] {
 	BCE {
 	    set year [expr { 1 - [dict get $date year] }]
 	}
@@ -5042,6 +5061,6 @@ proc ::tcl::clock::ClearCaches {} {
     set LocaleNumeralCache {}
     set McLoaded {}
     catch {unset CachedSystemTimeZone}
-    initTZData
+    InitTZData
 
 }

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: variable.n,v 1.7 2005/02/16 18:52:24 msofer Exp $
+'\" RCS: @(#) $Id: variable.n,v 1.7.2.1 2005/06/13 01:45:40 msofer Exp $
 '\" 
 .so man.macros
 .TH variable n 8.0 Tcl "Tcl Built-In Commands"

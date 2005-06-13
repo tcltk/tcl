@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.51 2005/02/24 22:12:47 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.51.2.1 2005/06/13 01:46:51 msofer Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup

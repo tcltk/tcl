@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.73.2.6 2005/04/14 18:39:10 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73.2.7 2005/06/13 01:46:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@ Tcl_ObjType tclProcBodyType = {
  * string rep; it's just a cache type.
  */
 
-Tcl_ObjType tclLevelReferenceType = {
+static Tcl_ObjType levelReferenceType = {
     "levelReference",
     NULL, NULL, NULL, NULL
 };
@@ -651,7 +651,7 @@ TclObjGetFrame(interp, objPtr, framePtrPtr)
 
     result = 1;
     curLevel = (iPtr->varFramePtr == NULL) ? 0 : iPtr->varFramePtr->level;
-    if (objPtr->typePtr == &tclLevelReferenceType) {
+    if (objPtr->typePtr == &levelReferenceType) {
 	if ((int) objPtr->internalRep.twoPtrValue.ptr1) {
 	    level = curLevel - (int) objPtr->internalRep.twoPtrValue.ptr2;
 	} else {
@@ -675,7 +675,7 @@ TclObjGetFrame(interp, objPtr, framePtrPtr)
 	     * Cache for future reference.
 	     */
 	    TclFreeIntRep(objPtr);
-	    objPtr->typePtr = &tclLevelReferenceType;
+	    objPtr->typePtr = &levelReferenceType;
 	    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) 0;
 	    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) level;
 	} else if (isdigit(UCHAR(*name))) { /* INTL: digit */
@@ -686,7 +686,7 @@ TclObjGetFrame(interp, objPtr, framePtrPtr)
 	     * Cache for future reference.
 	     */
 	    TclFreeIntRep(objPtr);
-	    objPtr->typePtr = &tclLevelReferenceType;
+	    objPtr->typePtr = &levelReferenceType;
 	    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) 1;
 	    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) level;
 	    level = curLevel - level;
@@ -1654,7 +1654,7 @@ TclUpdateReturnInfo(iPtr)
     }
     if (iPtr->returnLevel == 0) {
 	/* Now we've reached the level to return the requested -code */
-	return iPtr->returnCode;
+	code = iPtr->returnCode;
     }
     return code;
 }

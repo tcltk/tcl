@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.16 2004/11/30 19:34:49 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.16.4.1 2005/06/13 01:46:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -67,6 +67,7 @@ typedef struct ThreadSpecificData {
     Tcl_ThreadId threadId;	/* Thread that owns this notifier instance. */
     ClientData clientData;	/* Opaque handle for platform specific
 				 * notifier. */
+    int initialized;		/* 1 if notifier has been initialized. */
     struct ThreadSpecificData *nextPtr;
 				/* Next notifier in global list of notifiers.
 				 * Access is controlled by the listLock global
@@ -124,6 +125,7 @@ TclInitNotifier()
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->threadId = threadId;
 	tsdPtr->clientData = tclStubs.tcl_InitNotifier();
+	tsdPtr->initialized = 1;
 	tsdPtr->nextPtr = firstNotifierPtr;
 	firstNotifierPtr = tsdPtr;
     }
@@ -163,7 +165,7 @@ TclFinalizeNotifier()
     ThreadSpecificData **prevPtrPtr;
     Tcl_Event *evPtr, *hold;
 
-    if (tsdPtr->threadId == (Tcl_ThreadId)0) {
+    if (!tsdPtr->initialized) {
         return; /* Notifier not initialized for the current thread */
     }
 
@@ -190,6 +192,7 @@ TclFinalizeNotifier()
 	    break;
 	}
     }
+    tsdPtr->initialized = 0;
 
     Tcl_MutexUnlock(&listLock);
 }

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: array.n,v 1.13 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: array.n,v 1.13.4.1 2005/06/13 01:45:37 msofer Exp $
 '\" 
 .so man.macros
 .TH array n 8.3 Tcl "Tcl Built-In Commands"
@@ -122,15 +122,12 @@ It is currently more efficient and easier to use either the \fBarray
 get\fR or \fBarray names\fR, together with \fBforeach\fR, to iterate
 over all but very large arrays.  See the examples below for how to do
 this.
-.VS 8.4
 .TP
 \fBarray statistics \fIarrayName\fR
 Returns statistics about the distribution of data within the hashtable
 that represents the array.  This information includes the number of
 entries in the table, the number of buckets, and the utilization of
 the buckets.
-.VE 8.4
-.VS 8.3
 .TP
 \fBarray unset \fIarrayName\fR ?\fIpattern\fR?
 Unsets all of the elements in the array that match \fIpattern\fR (using the
@@ -139,7 +136,6 @@ of an array variable or there are no matching elements in the array, no
 error will be raised.  If \fIpattern\fR is omitted and \fIarrayName\fR is
 an array variable, then the command unsets the entire array.
 The command always returns an empty string.
-.VE 8.3
 .SH EXAMPLES
 .CS
 \fBarray set\fR colorcount {

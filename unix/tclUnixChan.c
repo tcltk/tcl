@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.54 2005/01/27 00:23:31 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.54.2.1 2005/06/13 01:47:15 msofer Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -42,6 +42,13 @@
 #undef PENDIN
 
 #define SUPPORTS_TTY
+
+#undef DIRECT_BAUD
+#ifdef B4800
+#   if (B4800 == 4800)
+#	define DIRECT_BAUD
+#   endif /* B4800 == 4800 */
+#endif /* B4800 */
 
 #ifdef USE_TERMIOS
 #   include <termios.h>
@@ -234,8 +241,10 @@ static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 #ifdef DEPRECATED
 static void             FileThreadActionProc _ANSI_ARGS_ ((
-			   ClientData instanceData, int action));
+			    ClientData instanceData, int action));
 #endif
+static int		FileTruncateProc _ANSI_ARGS_ ((ClientData instanceData,
+			    Tcl_WideInt length));
 static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -261,11 +270,15 @@ static int		TtyCloseProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp));
 static void		TtyGetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
+#ifndef DIRECT_BAUD
 static int		TtyGetBaud _ANSI_ARGS_((unsigned long speed));
+#endif
 static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
+#ifndef DIRECT_BAUD
 static unsigned long	TtyGetSpeed _ANSI_ARGS_((int baud));
+#endif
 static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
 static void		TtyModemStatusStr _ANSI_ARGS_((int status,
 			    Tcl_DString *dsPtr));
@@ -314,6 +327,7 @@ static Tcl_ChannelType fileChannelType = {
 #else
     NULL,
 #endif
+    FileTruncateProc,		/* truncate proc. */
 };
 
 #ifdef SUPPORTS_TTY
@@ -343,6 +357,7 @@ static Tcl_ChannelType ttyChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
+    NULL,			/* truncate proc. */
 };
 #endif	/* SUPPORTS_TTY */
 
@@ -368,6 +383,7 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
+    NULL,			/* truncate proc. */
 };
 
 
@@ -1190,13 +1206,6 @@ TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     }
 }
 
-#undef DIRECT_BAUD
-#ifdef B4800
-#   if (B4800 == 4800)
-#	define DIRECT_BAUD
-#   endif /* B4800 == 4800 */
-#endif /* B4800 */
-
 #ifdef DIRECT_BAUD
 #   define TtyGetSpeed(baud)   ((unsigned) (baud))
 #   define TtyGetBaud(speed)   ((int) (speed))
@@ -3033,9 +3042,9 @@ TclpGetDefaultStdChannel(type)
  */
 
 int
-Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
+Tcl_GetOpenFile(interp, chanID, forWriting, checkUsage, filePtr)
     Tcl_Interp *interp;		/* Interpreter in which to find file. */
-    CONST char *string;		/* String that identifies file. */
+    CONST char *chanID;		/* String that identifies file. */
     int forWriting;		/* 1 means the file is going to be used
 				 * for writing, 0 means for reading. */
     int checkUsage;		/* 1 means verify that the file was opened
@@ -3052,17 +3061,17 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
     int fd;
     FILE *f;
 
-    chan = Tcl_GetChannel(interp, string, &chanMode);
+    chan = Tcl_GetChannel(interp, chanID, &chanMode);
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
     if ((forWriting) && ((chanMode & TCL_WRITABLE) == 0)) {
 	Tcl_AppendResult(interp,
-		"\"", string, "\" wasn't opened for writing", (char *) NULL);
+		"\"", chanID, "\" wasn't opened for writing", (char *) NULL);
 	return TCL_ERROR;
     } else if ((!(forWriting)) && ((chanMode & TCL_READABLE) == 0)) {
 	Tcl_AppendResult(interp,
-		"\"", string, "\" wasn't opened for reading", (char *) NULL);
+		"\"", chanID, "\" wasn't opened for reading", (char *) NULL);
 	return TCL_ERROR;
     }
 
@@ -3092,7 +3101,7 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
 
 	    f = fdopen(fd, (forWriting ? "w" : "r"));
 	    if (f == NULL) {
-		Tcl_AppendResult(interp, "cannot get a FILE * for \"", string,
+		Tcl_AppendResult(interp, "cannot get a FILE * for \"", chanID,
 			"\"", (char *) NULL);
 		return TCL_ERROR;
 	    }
@@ -3101,7 +3110,7 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
 	}
     }
 
-    Tcl_AppendResult(interp, "\"", string,
+    Tcl_AppendResult(interp, "\"", chanID,
 	    "\" cannot be used to get a FILE *", (char *) NULL);
     return TCL_ERROR;	     
 }
@@ -3314,3 +3323,45 @@ FileThreadActionProc (instanceData, action)
     }
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileTruncateProc --
+ *
+ *	Truncates a file to a given length.
+ *
+ * Results:
+ *	0 if the operation succeeded, and -1 if it failed (in which
+ *	case *errorCodePtr will be set to errno).
+ *
+ * Side effects:
+ *	The underlying file is potentially truncated. This can have a
+ *	wide variety of side effects, including moving file pointers
+ *	that point at places later in the file than the truncate
+ *	point.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+FileTruncateProc(instanceData, length)
+    ClientData instanceData;
+    Tcl_WideInt length;
+{
+    FileState *fsPtr = (FileState *) instanceData;
+    int result;
+
+#ifdef HAVE_TYPE_OFF64_T
+    /*
+     * We assume this goes with the type for now...
+     */
+    result = ftruncate64(fsPtr->fd, (off64_t) length);
+#else
+    result = ftruncate(fsPtr->fd, (off_t) length);
+#endif
+    if (result) {
+	return errno;
+    }
+    return 0;
+}

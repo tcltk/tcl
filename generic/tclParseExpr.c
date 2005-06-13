@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23 2004/10/08 15:39:55 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.4.1 2005/06/13 01:46:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -205,7 +205,7 @@ static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
  *	Given a string, this procedure parses the first Tcl expression
  *	in the string and returns information about the structure of
  *	the expression. This procedure is the top-level interface to the
- *	the expression parsing module.  No more that numBytes bytes will
+ *	the expression parsing module.  No more than numBytes bytes will
  *	be scanned.
  *
  * Results:
@@ -226,9 +226,9 @@ static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
  */
 
 int
-Tcl_ParseExpr(interp, string, numBytes, parsePtr)
+Tcl_ParseExpr(interp, start, numBytes, parsePtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    CONST char *string;		/* The source string to parse. */
+    CONST char *start;		/* Start of source string to parse. */
     int numBytes;		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -241,16 +241,16 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
     int code;
 
     if (numBytes < 0) {
-	numBytes = (string? strlen(string) : 0);
+	numBytes = (start? strlen(start) : 0);
     }
 #ifdef TCL_COMPILE_DEBUG
     if (traceParseExpr) {
 	fprintf(stderr, "Tcl_ParseExpr: string=\"%.*s\"\n",
-	        numBytes, string);
+	        numBytes, start);
     }
 #endif /* TCL_COMPILE_DEBUG */
     
-    TclParseInit(interp, string, numBytes, parsePtr);
+    TclParseInit(interp, start, numBytes, parsePtr);
 
     /*
      * Initialize the ParseInfo structure that holds state while parsing
@@ -261,10 +261,10 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
     info.lexeme = UNKNOWN;
     info.start = NULL;
     info.size = 0;
-    info.next = string;
-    info.prevEnd = string;
-    info.originalExpr = string;
-    info.lastChar = (string + numBytes); /* just after last char of expr */
+    info.next = start;
+    info.prevEnd = start;
+    info.originalExpr = start;
+    info.lastChar = (start + numBytes); /* just after last char of expr */
 
     /*
      * Get the first lexeme then parse the expression.
@@ -1244,6 +1244,7 @@ ParsePrimaryExpr(infoPtr)
 	 * Int or double number.
 	 */
 	
+	tokenizeLiteral:
 	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
 	    TclExpandTokenArray(parsePtr);
 	}
@@ -1431,64 +1432,72 @@ ParsePrimaryExpr(infoPtr)
 	}
 	break;
 	
-    case FUNC_NAME:
+    case STREQ:
+    case STRNEQ:
+    case IN_LIST:
+    case NOT_IN_LIST:
+    case FUNC_NAME: {
 	/*
 	 * math_func '(' expr {',' expr} ')'
 	 */
-	
-	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
-	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
-	tokenPtr->type = TCL_TOKEN_OPERATOR;
-	tokenPtr->start = infoPtr->start;
-	tokenPtr->size = infoPtr->size;
-	tokenPtr->numComponents = 0;
-	parsePtr->numTokens++;
+
+	ParseInfo savedInfo = *infoPtr;
 	
 	code = GetLexeme(infoPtr); /* skip over function name */
 	if (code != TCL_OK) {
 	    return code;
 	}
 	if (infoPtr->lexeme != OPEN_PAREN) {
-	    /*
-	     * Guess what kind of error we have by trying to tell
-	     * whether we have a function or variable name here.
-	     * Alas, this makes the parser more tightly bound with the
-	     * rest of the interpreter, but that is the only way to
-	     * give a sensible message here.  Still, it is not too
-	     * serious as this is only done when generating an error.
-	     */
-	    Interp *iPtr = (Interp *) infoPtr->parsePtr->interp;
-	    Tcl_DString functionName;
-	    Tcl_HashEntry *hPtr;
 
-	    /*
-	     * Look up the name as a function name.  We need a writable
-	     * copy (DString) so we can terminate it with a NULL for
-	     * the benefit of Tcl_FindHashEntry which operates on
-	     * NULL-terminated string keys.
-	     */
-	    Tcl_DStringInit(&functionName);
-	    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, 
-	    	Tcl_DStringAppend(&functionName, tokenPtr->start,
-		tokenPtr->size));
-	    Tcl_DStringFree(&functionName);
+	    int code;
+	    Tcl_Obj *errMsg, *objPtr
+		    = Tcl_NewStringObj(savedInfo.start, savedInfo.size);
 
-	    /*
-	     * Assume that we have an attempted variable reference
-	     * unless we've got a function name, as the set of
-	     * potential function names is typically much smaller.
-	     */
-	    if (hPtr != NULL) {
-		LogSyntaxError(infoPtr,
-			"expected parenthesis enclosing function arguments");
-	    } else {
-		LogSyntaxError(infoPtr,
-			"variable references require preceding $");
+	    /* Check for boolean literals (true, false, yes, no, on, off) */
+	    Tcl_IncrRefCount(objPtr);
+	    code = Tcl_ConvertToType(NULL, objPtr, &tclBooleanType);
+	    Tcl_DecrRefCount(objPtr);
+	    if (code == TCL_OK) {
+		*infoPtr = savedInfo;
+		goto tokenizeLiteral;
 	    }
+	    
+	    /*
+	     * Either there's a math function without a (, or a
+	     * variable name without a '$'.
+	     */
+
+	    errMsg = Tcl_NewStringObj( "syntax error in expression \"", -1 );
+	    TclAppendLimitedToObj( errMsg,
+				   infoPtr->originalExpr,
+				   (int) (infoPtr->lastChar
+					  - infoPtr->originalExpr ), 
+				   63,
+				   NULL );
+	    Tcl_AppendToObj( errMsg, "\": the word \"", -1 );
+	    Tcl_AppendToObj( errMsg, savedInfo.start, savedInfo.size );
+	    Tcl_AppendToObj( errMsg,
+			     "\" requires a preceding $ if it's a variable ",
+			     -1 );
+	    Tcl_AppendToObj( errMsg,
+			     "or function arguments if it's a function", -1 );
+	    Tcl_SetObjResult( infoPtr->parsePtr->interp, errMsg );
+	    infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;
+	    infoPtr->parsePtr->term = infoPtr->start;
 	    return TCL_ERROR;
+
 	}
+
+	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
+	    TclExpandTokenArray(parsePtr);
+	}
+	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
+	tokenPtr->type = TCL_TOKEN_OPERATOR;
+	tokenPtr->start = savedInfo.start;
+	tokenPtr->size = savedInfo.size;
+	tokenPtr->numComponents = 0;
+	parsePtr->numTokens++;
+	
 	code = GetLexeme(infoPtr); /* skip over '(' */
 	if (code != TCL_OK) {
 	    return code;
@@ -1516,6 +1525,7 @@ ParsePrimaryExpr(infoPtr)
 	exprTokenPtr->size = (infoPtr->next - exprTokenPtr->start);
 	exprTokenPtr->numComponents = parsePtr->numTokens - firstIndex;
 	break;
+    }
 
     case COMMA:
 	LogSyntaxError(infoPtr,
@@ -1666,23 +1676,17 @@ GetLexeme(infoPtr)
 	     * so we can set an terminating NULL to keep strtod from
 	     * scanning too far.
 	     */
-	    char *startPtr, *termPtr;
+	    char *startPtr;
+	    CONST char *termPtr;
 	    double doubleValue;
 	    Tcl_DString toParse;
 
 	    errno = 0;
 	    Tcl_DStringInit(&toParse);
 	    startPtr = Tcl_DStringAppend(&toParse, src, length);
-	    doubleValue = strtod(startPtr, &termPtr);
+	    doubleValue = TclStrToD(startPtr, &termPtr);
 	    Tcl_DStringFree(&toParse);
 	    if (termPtr != startPtr) {
-		if (errno != 0) {
-		    if (interp != NULL) {
-			TclExprFloatError(interp, doubleValue);
-		    }
-		    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
-		    return TCL_ERROR;
-		}
 		
 		/*
                  * startPtr was the start of a valid double, copied
@@ -1934,50 +1938,6 @@ GetLexeme(infoPtr)
 		infoPtr->size = (src - infoPtr->start);
 		infoPtr->next = src;
 		parsePtr->term = infoPtr->next;
-		/*
-		 * Check for boolean literals (true, false, yes, no, on, off)
-		 */
-		switch (infoPtr->start[0]) {
-		case 'f':
-		    if (infoPtr->size == 5 &&
-			strncmp("false", infoPtr->start, 5) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 'n':
-		    if (infoPtr->size == 2 &&
-			strncmp("no", infoPtr->start, 2) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 'o':
-		    if (infoPtr->size == 3 &&
-			strncmp("off", infoPtr->start, 3) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    } else if (infoPtr->size == 2 &&
-			strncmp("on", infoPtr->start, 2) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 't':
-		    if (infoPtr->size == 4 &&
-			strncmp("true", infoPtr->start, 4) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		case 'y':
-		    if (infoPtr->size == 3 &&
-			strncmp("yes", infoPtr->start, 3) == 0) {
-			infoPtr->lexeme = LITERAL;
-			return TCL_OK;
-		    }
-		    break;
-		}
 		return TCL_OK;
 	    }
 	    infoPtr->lexeme = UNKNOWN_CHAR;
@@ -2077,7 +2037,7 @@ ParseMaxDoubleLength(string, end)
 	    case 'C': case 'D': case 'E': case 'F': case 'I': case 'N':
 	    case 'P': case 'X': case 'a': case 'b': case 'c': case 'd':
 	    case 'e': case 'f': case 'i': case 'n': case 'p': case 'x':
-	    case '.': case '+': case '-':
+	    case '.': case '+': case '-': case '(': case ' ': case ')':
 		p++;
 		break;
 	    default:

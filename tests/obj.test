@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.11 2004/09/10 21:29:42 dkf Exp $
+# RCS: @(#) $Id: obj.test,v 1.11.4.1 2005/06/13 01:46:50 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -47,17 +47,18 @@ test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} tes
     set r 1
     foreach {t} {
 	{array search} 
-	boolean
+	bignum
 	bytearray
 	bytecode
+	cmdName
+	dict
 	double
 	end-offset
-	index
 	int
-	list
 	nsName
-	procbody
+	regexp
 	string
+	wideInt
     } {
         set first [string first $t [testobj types]]
         set r [expr {$r && ($first != -1)}]
@@ -175,7 +176,7 @@ test obj-9.1 {Tcl_NewBooleanObj} testobj {
     lappend result [testbooleanobj set 1 0]
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
-} {{} 0 boolean 2}
+} {{} 0 int 2}
 
 test obj-10.1 {Tcl_SetBooleanObj, existing "empty string" object} testobj {
     set result ""
@@ -184,7 +185,7 @@ test obj-10.1 {Tcl_SetBooleanObj, existing "empty string" object} testobj {
     lappend result [testbooleanobj set 1 0]  ;# makes existing obj boolean
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
-} {{} {} 0 boolean 2}
+} {{} {} 0 int 2}
 test obj-10.2 {Tcl_SetBooleanObj, existing non-"empty string" object} testobj {
     set result ""
     lappend result [testobj freeallvars]
@@ -192,7 +193,7 @@ test obj-10.2 {Tcl_SetBooleanObj, existing non-"empty string" object} testobj {
     lappend result [testbooleanobj set 1 1]  ;# makes existing obj boolean
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
-} {{} 98765 1 boolean 2}
+} {{} 98765 1 int 2}
 
 test obj-11.1 {Tcl_GetBooleanFromObj, existing boolean object} testobj {
     set result ""
@@ -204,7 +205,7 @@ test obj-11.2 {Tcl_GetBooleanFromObj, convert to boolean} testobj {
     lappend result [testintobj set 1 47]
     lappend result [testbooleanobj not 1]    ;# must convert to bool
     lappend result [testobj type 1]
-} {47 0 boolean}
+} {47 0 int}
 test obj-11.3 {Tcl_GetBooleanFromObj, error converting to boolean} testobj {
     set result ""
     lappend result [teststringobj set 1 abc]
@@ -222,13 +223,13 @@ test obj-11.5 {Tcl_GetBooleanFromObj, convert hex to boolean} testobj {
     lappend result [teststringobj set 1 0xac]
     lappend result [testbooleanobj not 1]
     lappend result [testobj type 1]
-} {0xac 0 boolean}
+} {0xac 0 int}
 test obj-11.6 {Tcl_GetBooleanFromObj, convert float to boolean} testobj {
     set result ""
     lappend result [teststringobj set 1 5.42]
     lappend result [testbooleanobj not 1]
     lappend result [testobj type 1]
-} {5.42 0 boolean}
+} {5.42 0 int}
 
 test obj-12.1 {DupBooleanInternalRep} testobj {
     set result ""
@@ -242,13 +243,13 @@ test obj-13.1 {SetBooleanFromAny, int to boolean special case} testobj {
     lappend result [testintobj set 1 1234]
     lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
     lappend result [testobj type 1]
-} {1234 0 boolean}
+} {1234 0 int}
 test obj-13.2 {SetBooleanFromAny, double to boolean special case} testobj {
     set result ""
     lappend result [testdoubleobj set 1 3.14159]
     lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
     lappend result [testobj type 1]
-} {3.14159 0 boolean}
+} {3.14159 0 int}
 test obj-13.3 {SetBooleanFromAny, special case strings representing booleans} testobj {
     set result ""
     foreach s {yes no true false on off} {
@@ -256,14 +257,14 @@ test obj-13.3 {SetBooleanFromAny, special case strings representing booleans} te
         lappend result [testbooleanobj not 1]
     }
     lappend result [testobj type 1]
-} {0 1 0 1 0 1 boolean}
+} {0 1 0 1 0 1 int}
 test obj-13.4 {SetBooleanFromAny, recompute string rep then parse it} testobj {
     set result ""
     lappend result [testintobj set 1 456]
     lappend result [testintobj div10 1]
     lappend result [testbooleanobj not 1]    ;# converts with SetBooleanFromAny
     lappend result [testobj type 1]
-} {456 45 0 boolean}
+} {456 45 0 int}
 test obj-13.5 {SetBooleanFromAny, error parsing string} testobj {
     set result ""
     lappend result [teststringobj set 1 abc]
@@ -571,7 +572,7 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
     lappend result [testobj type 2]
     lappend result [testobj refcount 1]
     lappend result [testobj refcount 2]
-} {{} 1024 1024 int 4 4 0 boolean 3 2}
+} {{} 1024 1024 int 4 4 0 int 3 2}
 
 
 test obj-31.1 {regenerate string rep of "end"} testobj {

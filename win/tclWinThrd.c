@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.34 2004/10/27 20:53:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.34.4.1 2005/06/13 01:47:24 msofer Exp $
  */
 
 #include "tclWinInt.h"
@@ -112,6 +112,18 @@ typedef struct WinCondition {
     struct ThreadSpecificData *lastPtr;
 } WinCondition;
 
+/*
+ * Additions by AOL for specialized thread memory allocator.
+ */
+#ifdef USE_THREAD_ALLOC
+static int once;
+static DWORD tlsKey;
+
+typedef struct allocMutex {
+    Tcl_Mutex        tlock;
+    CRITICAL_SECTION wlock;
+} allocMutex;
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -683,13 +695,16 @@ TclpFinalizeThreadData(keyPtr)
     DWORD *indexPtr;
     BOOL success;
 
-#ifdef USE_THREAD_ALLOC
-    TclWinFreeAllocCache();
-#endif
     if (*keyPtr != NULL) {
 	indexPtr = *(DWORD **)keyPtr;
 	result = (VOID *)TlsGetValue(*indexPtr);
 	if (result != NULL) {
+#if defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
+        if (indexPtr == &tlsKey) {
+            TclpFreeAllocCache(result);
+            return;
+        }
+#endif
 	    ckfree((char *)result);
 	    success = TlsSetValue(*indexPtr, (void *)NULL);
             if (!success) {
@@ -1041,13 +1056,6 @@ TclpFinalizeCondition(condPtr)
  * Additions by AOL for specialized thread memory allocator.
  */
 #ifdef USE_THREAD_ALLOC
-static int once;
-static DWORD key;
-
-typedef struct allocMutex {
-    Tcl_Mutex        tlock;
-    CRITICAL_SECTION wlock;
-} allocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)
@@ -1080,18 +1088,18 @@ TclpGetAllocCache(void)
 
     if (!once) {
 	/*
-	 * We need to make sure that TclWinFreeAllocCache is called
+	 * We need to make sure that TclpFreeAllocCache is called
 	 * on each thread that calls this, but only on threads that
 	 * call this.
 	 */
-    	key = TlsAlloc();
+	tlsKey = TlsAlloc();
 	once = 1;
-	if (key == TLS_OUT_OF_INDEXES) {
+	if (tlsKey == TLS_OUT_OF_INDEXES) {
 	    Tcl_Panic("could not allocate thread local storage");
 	}
     }
 
-    result = TlsGetValue(key);
+    result = TlsGetValue(tlsKey);
     if ((result == NULL) && (GetLastError() != NO_ERROR)) {
         Tcl_Panic("TlsGetValue failed from TclpGetAllocCache!");
     }
@@ -1102,39 +1110,39 @@ void
 TclpSetAllocCache(void *ptr)
 {
     BOOL success;
-    success = TlsSetValue(key, ptr);
+    success = TlsSetValue(tlsKey, ptr);
     if (!success) {
         Tcl_Panic("TlsSetValue failed from TclpSetAllocCache!");
     }
 }
 
 void
-TclWinFreeAllocCache(void)
+TclpFreeAllocCache(void *ptr)
 {
-    void *ptr;
     BOOL success;
 
-    ptr = TlsGetValue(key);
     if (ptr != NULL) {
-	success = TlsSetValue(key, NULL);
+        /*
+         * Called by us in TclpFinalizeThreadData when a thread exits
+         * and destroys the tsd key which stores allocator caches.
+         */
+        TclFreeAllocCache(ptr);
+        success = TlsSetValue(tlsKey, NULL);
         if (!success) {
-            Tcl_Panic("TlsSetValue failed from TclWinFreeAllocCache!");
+            panic("TlsSetValue failed from TclpFreeAllocCache!");
         }
-	TclFreeAllocCache(ptr);
-    } else {
-      if (GetLastError() != NO_ERROR) {
-          Tcl_Panic("TlsGetValue failed from TclWinFreeAllocCache!");
-      }
-    }
-
-    if (once) {    
-        success = TlsFree(key);
+    } else if (once) { 
+        /*
+         * Called by us in TclFinalizeThreadAlloc() during
+         * the library finalization initiated from Tcl_Finalize()
+         */   
+        success = TlsFree(tlsKey);
         if (!success) {
-            Tcl_Panic("TlsFree failed from TclWinFreeAllocCache!");
+            Tcl_Panic("TlsFree failed from TclpFreeAllocCache!");
         }
-
         once = 0; /* reset for next time. */
     }
+
 }
 
 #endif /* USE_THREAD_ALLOC */

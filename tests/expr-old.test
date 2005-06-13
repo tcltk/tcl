@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.23 2005/01/28 13:38:59 dkf Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.23.2.1 2005/06/13 01:46:45 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -25,6 +25,64 @@ if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
 } else {
     testConstraint testmathfunctions 1
 }
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
 
 # First, test all of the integer operators individually.
 
@@ -91,7 +149,7 @@ test expr-old-1.53 {integer operators} {
 # automatic conversion to integers where needed.
 
 test expr-old-2.1 {floating-point operators} {expr -4.2} -4.2
-test expr-old-2.2 {floating-point operators} {expr -(1.1+4.2)} -5.3
+test expr-old-2.2 {floating-point operators} {expr -(1.125+4.25)} -5.375
 test expr-old-2.3 {floating-point operators} {expr +5.7} 5.7
 test expr-old-2.4 {floating-point operators} {expr +--+-62.0} -62.0
 test expr-old-2.5 {floating-point operators} {expr !2.1} 0
@@ -428,7 +486,7 @@ test expr-old-25.15 {type conversions} {expr {24.1 > "24.1a"}} 0
 test expr-old-25.16 {type conversions} {expr 2+2.5} 4.5
 test expr-old-25.17 {type conversions} {expr 2+2.5} 4.5
 test expr-old-25.18 {type conversions} {expr 2.0e2} 200.0
-test expr-old-25.19 {type conversions} {eformat} {expr 2.0e15} 2e+15
+test expr-old-25.19 {type conversions} {expr 2.0e15} 2000000000000000.0
 test expr-old-25.20 {type conversions} {expr 10.0} 10.0
 
 # Various error conditions.
@@ -462,36 +520,39 @@ test expr-old-26.8 {error conditions} {
 test expr-old-26.9 {error conditions} {
     list [catch {expr 2%0} msg] $msg $errorCode
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
-test expr-old-26.10 {error conditions} {
+test expr-old-26.10a {error conditions} !ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg $errorCode
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
+test expr-old-26.10b {error conditions} ieeeFloatingPoint {
+    list [catch {expr 2.0/0.0} msg] $msg
+} {0 Inf}
 test expr-old-26.11 {error conditions} {
     list [catch {expr 2#} msg] $msg
 } {1 {syntax error in expression "2#": extra tokens at end of expression}}
-test expr-old-26.12 {error conditions} {
+test expr-old-26.12 {error conditions} -body {
     list [catch {expr a.b} msg] $msg
-} {1 {syntax error in expression "a.b": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "a.b": * preceding $*}}
 test expr-old-26.13 {error conditions} {
     list [catch {expr {"a"/"b"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "/"}}
 test expr-old-26.14 {error conditions} {
     list [catch {expr 2:3} msg] $msg
 } {1 {syntax error in expression "2:3": extra tokens at end of expression}}
-test expr-old-26.15 {error conditions} {
+test expr-old-26.15 {error conditions} -body {
     list [catch {expr a@b} msg] $msg
-} {1 {syntax error in expression "a@b": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "a@b": * preceding $*}}
 test expr-old-26.16 {error conditions} {
     list [catch {expr a[b} msg] $msg
 } {1 {missing close-bracket}}
-test expr-old-26.17 {error conditions} {
+test expr-old-26.17 {error conditions} -body {
     list [catch {expr a`b} msg] $msg
-} {1 {syntax error in expression "a`b": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "a`b": * preceding $*}}
 test expr-old-26.18 {error conditions} {
     list [catch {expr \"a\"\{b} msg] $msg
 } {1 syntax\ error\ in\ expression\ \"\"a\"\{b\":\ extra\ tokens\ at\ end\ of\ expression}
-test expr-old-26.19 {error conditions} {
+test expr-old-26.19 {error conditions} -body {
     list [catch {expr a} msg] $msg
-} {1 {syntax error in expression "a": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "a": * preceding $*}}
 test expr-old-26.20 {error conditions} {
     list [catch expr msg] $msg
 } {1 {wrong # args: should be "expr arg ?arg ...?"}}
@@ -539,12 +600,12 @@ test expr-old-27.10 {cancelled evaluation} {
     set x -1.0
     list [catch {expr {($x > 0) ? round(log($x)) : 0}} msg] $msg
 } {0 0}
-test expr-old-27.11 {cancelled evaluation} {
+test expr-old-27.11 {cancelled evaluation} -body {
     list [catch {expr {0 && foo}} msg] $msg
-} {1 {syntax error in expression "0 && foo": variable references require preceding $}}
-test expr-old-27.12 {cancelled evaluation} {
+} -match glob -result {1 {syntax error in expression "0 && foo": * preceding $*}}
+test expr-old-27.12 {cancelled evaluation} -body {
     list [catch {expr {0 ? 1 : foo}} msg] $msg
-} {1 {syntax error in expression "0 ? 1 : foo": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "0 ? 1 : foo": * preceding $*}}
 
 # Tcl_ExprBool as used in "if" statements
 
@@ -799,12 +860,12 @@ test expr-old-32.44 {math functions in expressions} testmathfunctions {
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
-test expr-old-32.46 {math functions in expressions} {
+test expr-old-32.46 {math functions in expressions} -body {
     list [catch {expr rand(24)} msg] $msg
-} {1 {too many arguments for math function}}
-test expr-old-32.47 {math functions in expressions} {
+} -match glob -result {1 {too many arguments for math function*}}
+test expr-old-32.47 {math functions in expressions} -body {
     list [catch {expr srand()} msg] $msg
-} {1 {too few arguments for math function}}
+} -match glob -result {1 {too few arguments for math function*}}
 test expr-old-32.48 {math functions in expressions} {
     list [catch {expr srand(3.79)} msg] $msg
 } {1 {can't use floating-point value as argument to srand}}
@@ -841,15 +902,15 @@ test expr-old-33.4 {conversions and fancy args to math functions} {
     format %.6g [expr cos(acos(0.1))]
 } 0.1
 
-test expr-old-34.1 {errors in math functions} {
+test expr-old-34.1 {errors in math functions} -body {
     list [catch {expr func_2(1.0)} msg] $msg
-} {1 {unknown math function "func_2"}}
-test expr-old-34.2 {errors in math functions} {
+} -match glob -result {1 {* "*func_2"}}
+test expr-old-34.2 {errors in math functions} -body {
     list [catch {expr func|(1.0)} msg] $msg
-} {1 {syntax error in expression "func|(1.0)": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "func|(1.0)": * preceding $*}}
 test expr-old-34.3 {errors in math functions} {
     list [catch {expr {hypot("a b", 2.0)}} msg] $msg
-} {1 {argument to math function didn't have numeric value}}
+} {1 {expected floating-point number but got "a b"}}
 test expr-old-34.4 {errors in math functions} {
     list [catch {expr hypot(1.0 2.0)} msg] $msg
 } {1 {syntax error in expression "hypot(1.0 2.0)": missing close parenthesis at end of function call}}
@@ -859,24 +920,30 @@ test expr-old-34.5 {errors in math functions} {
 test expr-old-34.6 {errors in math functions} {
     list [catch {expr hypot(1.0 ,} msg] $msg
 } {1 {syntax error in expression "hypot(1.0 ,": premature end of expression}}
-test expr-old-34.7 {errors in math functions} {
+test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
-} {1 {too few arguments for math function}}
-test expr-old-34.8 {errors in math functions} {
+} -match glob -result {1 {too few arguments for math function*}}
+test expr-old-34.8 {errors in math functions} -body {
     list [catch {expr hypot(1.0, 2.0, 3.0)} msg] $msg
-} {1 {too many arguments for math function}}
+} -match glob -result {1 {too many arguments for math function*}}
 test expr-old-34.9 {errors in math functions} {
     list [catch {expr acos(-2.0)} msg] $msg $errorCode
 } {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}
 test expr-old-34.10 {errors in math functions} {nonPortable} {
     list [catch {expr pow(-3, 1000001)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
-test expr-old-34.11 {errors in math functions} {
+test expr-old-34.11a {errors in math functions} !ieeeFloatingPoint {
     list [catch {expr pow(3, 1000001)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
-test expr-old-34.12 {errors in math functions} {
+test expr-old-34.11b {errors in math functions} ieeeFloatingPoint {
+    list [catch {expr pow(3, 1000001)} msg] $msg
+} {0 Inf}
+test expr-old-34.12a {errors in math functions} !ieeeFloatingPoint {
     list [catch {expr -14.0*exp(100000)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
+test expr-old-34.12b {errors in math functions} ieeeFloatingPoint {
+    list [catch {expr -14.0*exp(100000)} msg] $msg
+} {0 -Inf}
 test expr-old-34.13 {errors in math functions} {
     list [catch {expr int(1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
@@ -889,9 +956,10 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     list [catch {expr round(-1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-test expr-old-34.17 {errors in math functions} testmathfunctions {
-    list [catch {expr T1(4)} msg] $msg
-} {1 {too many arguments for math function}}
+test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
+    -body {
+        list [catch {expr T1(4)} msg] $msg
+    } -match glob -result {1 {too many arguments for math function*}}
 
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0289
@@ -972,6 +1040,13 @@ test expr-old-38.1 {Verify Tcl_ExprString's basic operation} testexprstring {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
 } {5 10.2 1 {syntax error in expression "1+": premature end of expression}}
+test expr-old-38.2 {Tcl_ExprString} testexprstring {
+    # This one is "magical"
+    testexprstring {}
+} 0
+test expr-old-38.3 {Tcl_ExprString} -constraints testexprstring -body {
+    testexprstring { }
+} -returnCodes error -match glob -result *
 
 #
 # Test for bug #908375: rounding numbers that do not fit in a

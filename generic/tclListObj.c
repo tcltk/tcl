@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.20.4.2 2005/04/09 20:48:17 msofer Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.20.4.3 2005/06/13 01:46:13 msofer Exp $
  */
 
 #include "tclInt.h"

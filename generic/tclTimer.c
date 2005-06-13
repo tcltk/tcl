@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.13 2004/12/16 19:36:35 dkf Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.13.2.1 2005/06/13 01:46:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -784,9 +784,7 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
 
     /*
      * Create the "after" information associated for this interpreter,
-     * if it doesn't already exist.  Associate it with the command too,
-     * so that it will be passed in as the ClientData argument in the
-     * future.
+     * if it doesn't already exist.  
      */
 
     assocPtr = Tcl_GetAssocData( interp, "tclAfter", NULL );

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115 2004/10/21 15:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.4.1 2005/06/13 01:45:44 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -90,7 +90,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     int i, indices, match, about, offset, all, doinline, numMatchesSaved;
     int cflags, eflags, stringLength;
     Tcl_RegExp regExpr;
-    Tcl_Obj *objPtr, *resultPtr = NULL;
+    Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
     static CONST char *options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
@@ -121,7 +121,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
 		&index) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto optionError;
 	}
 	switch ((enum options) index) {
 	    case REGEXP_ALL: {
@@ -161,15 +161,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGEXP_START: {
+		int temp;
 		if (++i >= objc) {
 		    goto endOfForLoop;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i], &offset) != TCL_OK) {
-		    return TCL_ERROR;
+		if (TclGetIntForIndex(interp, objv[i], 0, &temp) != TCL_OK) {
+		    goto optionError;
 		}
-		if (offset < 0) {
-		    offset = 0;
+		if (startIndex) {
+		    Tcl_DecrRefCount(startIndex);
 		}
+		startIndex = objv[i];
+		Tcl_IncrRefCount(startIndex);
 		break;
 	    }
 	    case REGEXP_LAST: {
@@ -182,8 +185,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     endOfForLoop:
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv, 
-	  "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
-	return TCL_ERROR;
+	    "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+	goto optionError;
     }
     objc -= i;
     objv += i;
@@ -194,7 +197,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	 */
 	Tcl_AppendResult(interp, "regexp match variables not allowed",
 		" when using -inline", (char *) NULL);
-	return TCL_ERROR;
+	goto optionError;
     }
 
     /*
@@ -203,6 +206,10 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     if (about) {
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
 	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
+	  optionError:
+	    if (startIndex) {
+		Tcl_DecrRefCount(startIndex);
+	    }
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -215,6 +222,14 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
      */
     objPtr = objv[1];
     stringLength = Tcl_GetCharLength(objPtr);
+
+    if (startIndex) {
+	TclGetIntForIndex(NULL, startIndex, stringLength, &offset);
+	Tcl_DecrRefCount(startIndex);
+	if (offset < 0) {
+	    offset = 0;
+	}
+    }
 
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
@@ -426,7 +441,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     int start, end, subStart, subEnd, match;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
-    Tcl_Obj *resultPtr, *subPtr, *objPtr;
+    Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static CONST char *options[] = {
@@ -455,7 +470,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[idx], options, "switch",
 		TCL_EXACT, &index) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto optionError;
 	}
 	switch ((enum options) index) {
 	    case REGSUB_ALL: {
@@ -483,15 +498,18 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGSUB_START: {
+		int temp;
 		if (++idx >= objc) {
 		    goto endOfForLoop;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[idx], &offset) != TCL_OK) {
-		    return TCL_ERROR;
+		if (TclGetIntForIndex(interp, objv[idx], 0, &temp) != TCL_OK) {
+		    goto optionError;
 		}
-		if (offset < 0) {
-		    offset = 0;
+		if (startIndex) {
+		    Tcl_DecrRefCount(startIndex);
 		}
+		startIndex = objv[idx];
+		Tcl_IncrRefCount(startIndex);
 		break;
 	    }
 	    case REGSUB_LAST: {
@@ -500,15 +518,28 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    endOfForLoop:
+  endOfForLoop:
     if (objc-idx < 3 || objc-idx > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? exp string subSpec ?varName?");
+      optionError:
+	if (startIndex) {
+	  Tcl_DecrRefCount(startIndex);
+	}
 	return TCL_ERROR;
     }
 
     objc -= idx;
     objv += idx;
+
+    if (startIndex) {
+	int stringLength = Tcl_GetCharLength(objv[1]);
+	TclGetIntForIndex(NULL, startIndex, stringLength, &offset);
+	Tcl_DecrRefCount(startIndex);
+	if (offset < 0) {
+	    offset = 0;
+	}
+    }
 
     if (all && (offset == 0)
 	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
@@ -1449,19 +1480,13 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		case STR_IS_BOOL:
 		case STR_IS_TRUE:
 		case STR_IS_FALSE:
-		    if (objPtr->typePtr == &tclBooleanType) {
-			if ((((enum isOptions) index == STR_IS_TRUE) &&
+		    if (TCL_OK != Tcl_ConvertToType(NULL, objPtr,
+			    &tclBooleanType)) {
+			result = 0;
+		    } else if ((((enum isOptions) index == STR_IS_TRUE) &&
 			     objPtr->internalRep.longValue == 0) ||
 			    (((enum isOptions) index == STR_IS_FALSE) &&
 			     objPtr->internalRep.longValue != 0)) {
-			    result = 0;
-			}
-		    } else if ((Tcl_GetBoolean(NULL, string1, &i)
-				== TCL_ERROR) ||
-			       (((enum isOptions) index == STR_IS_TRUE) &&
-				i == 0) ||
-			       (((enum isOptions) index == STR_IS_FALSE) &&
-				i != 0)) {
 			result = 0;
 		    }
 		    break;
@@ -1505,17 +1530,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			}
 		    }
 		    errno = 0;
-		    strtod(string1, &stop); /* INTL: Tcl source. */
-		    if (errno == ERANGE) {
-			/*
-			 * if (errno == ERANGE), then it was an over/underflow
-			 * problem, but in this method, we only want to know
-			 * yes or no, so bad flow returns 0 (false) and sets
-			 * the failVarObj to the string length.
-			 */
-			result = 0;
-			failat = -1;
-		    } else if (stop == string1) {
+		    TclStrToD(string1, (CONST char **) &stop); /* INTL: Tcl source. */
+		    if (stop == string1) {
 			/*
 			 * In this case, nothing like a number was found
 			 */
@@ -1885,7 +1901,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
 		p = ustring1;
-		if (length2 == 0) {
+		if ((length2 > length1) || (length2 == 0)) {
+		    /* match string is either longer than input or empty */
 		    ustring1 = end;
 		} else {
 		    mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
@@ -1943,6 +1960,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			if ((length2 > 0) && ((*ustring1 == *ustring2) ||
 				(nocase && (Tcl_UniCharToLower(*ustring1) ==
 					u2lc[index/2]))) &&
+				/* restrict max compare length */
+				((end - ustring1) >= length2) &&
 				((length2 == 1) || strCmpFn(ustring2, ustring1,
 					(unsigned long) length2) == 0)) {
 			    if (p != ustring1) {
@@ -2127,7 +2146,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objc < 5 || objc > 6) {
 	        Tcl_WrongNumArgs(interp, 2, objv,
-				 "string first last ?string?");
+			"string first last ?string?");
 		return TCL_ERROR;
 	    }
 
@@ -2501,23 +2520,32 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, result, splitObjs, numMatchesSaved;
+    int i, j, index, mode, result, splitObjs, numMatchesSaved, noCase;
     char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
+    /*
+     * If you add options that make -e and -g not unique prefixes of
+     * -exact or -glob, you *must* fix TclCompileSwitchCmd's option
+     * parser as well.
+     */
     static CONST char *options[] = {
-	"-exact", "-glob", "-indexvar", "-matchvar", "-regexp", "--", 
-	NULL
+	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
+	"--", NULL
     };
     enum options {
-	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_REGEXP, OPT_LAST
+	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
+	OPT_LAST
     };
+    typedef int (*strCmpFn_t) _ANSI_ARGS_((const char *, const char *));
+    strCmpFn_t strCmpFn = strcmp;
 
     mode = OPT_EXACT;
     indexVarObj = NULL;
     matchVarObj = NULL;
     numMatchesSaved = 0;
+    noCase = 0;
     for (i = 1; i < objc; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
@@ -2556,6 +2584,9 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    }
 	    matchVarObj = objv[i];
 	    numMatchesSaved = -1;
+	} else if (index == OPT_NOCASE) {
+	    strCmpFn = strcasecmp;
+	    noCase = 1;
 	} else {
 	    mode = index;
 	}
@@ -2694,18 +2725,19 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	} else {
 	    switch (mode) {
 	    case OPT_EXACT:
-		if (strcmp(TclGetString(stringObj), pattern) == 0) {
+		if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
 		    goto matchFound;
 		}
 		break;
 	    case OPT_GLOB:
-		if (Tcl_StringMatch(TclGetString(stringObj), pattern)) {
+		if (Tcl_StringCaseMatch(TclGetString(stringObj), pattern,
+			noCase)) {
 		    goto matchFound;
 		}
 		break;
 	    case OPT_REGEXP:
 		regExpr = Tcl_GetRegExpFromObj(interp, objv[i],
-			TCL_REG_ADVANCED);
+			TCL_REG_ADVANCED | (noCase ? TCL_REG_NOCASE : 0));
 		if (regExpr == NULL) {
 		    return TCL_ERROR;
 		} else {
@@ -2865,11 +2897,11 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Tcl_Obj *objPtr;
+    Tcl_Obj *objs[4];
     register int i, result;
     int count;
     double totalMicroSec;
     Tcl_Time start, stop;
-    char buf[100];
 
     if (objc == 2) {
 	count = 1;
@@ -2896,9 +2928,16 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     
     totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
 		      + ( stop.usec - start.usec ) );
-    sprintf(buf, "%.0f microseconds per iteration",
-	((count <= 0) ? 0 : totalMicroSec/count));
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+    if (count <= 1) {
+	/* Use int obj since we know time is not fractional [Bug 1202178] */
+	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
+    } else {
+	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+    }
+    objs[1] = Tcl_NewStringObj("microseconds", -1);
+    objs[2] = Tcl_NewStringObj("per", -1);
+    objs[3] = Tcl_NewStringObj("iteration", -1);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
     return TCL_OK;
 }
 

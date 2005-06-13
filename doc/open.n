@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.22 2004/11/09 04:51:31 davygrvy Exp $
+'\" RCS: @(#) $Id: open.n,v 1.22.4.1 2005/06/13 01:45:38 msofer Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -61,6 +61,14 @@ Set the initial access position  to the end of the file.
 Open the file for reading and writing.  If the file doesn't exist,
 create a new empty file.
 Set the initial access position  to the end of the file.
+.VS 8.5
+.PP
+All of the legal \fIaccess\fR values above may have the character
+\fBb\fR added as the second or third character in the value to
+indicate that the opened channel should be configured with the
+\fB-translation binary\fR option, making the channel suitable for 
+reading or writing of binary data.
+.VE 8.5
 .PP
 In the second form, \fIaccess\fR consists of a list of any of the
 following flags, all of which have the standard POSIX meanings.
@@ -77,6 +85,11 @@ Open the file for both reading and writing.
 .TP 15
 \fBAPPEND\fR
 Set the file pointer to the end of the file prior to each write.
+.TP 15
+.VS 8.5
+\fBBINARY\fR
+Configure the opened channed with the \fB-translation binary\fR option.
+.VE 8.5
 .TP 15
 \fBCREAT\fR
 Create the file if it doesn't already exist (without this flag it
@@ -106,14 +119,6 @@ If a new file is created as part of opening it, \fIpermissions\fR
 (an integer) is used to set the permissions for the new file in
 conjunction with the process's file mode creation mask.
 \fIPermissions\fR defaults to 0666.
-.PP
-Note that if you are going to be reading or writing binary data from
-the channel created by this command, you should use the
-\fBfconfigure\fR command to change the \fB-translation\fR option of
-the channel to \fBbinary\fR before transferring any binary data.  This
-is in contrast to the ``b'' character passed as part of the equivalent
-of the \fIaccess\fR parameter to some versions of the C library
-\fIfopen()\fR function.
 
 .SH "COMMAND PIPELINES"
 .PP
@@ -142,7 +147,6 @@ returned (a silent \fBclose\fR with -blocking 0).
 It is often useful to use the \fBfileevent\fR command with pipelines
 so other processing may happen at the same time as running the command
 in the background.
-.VS 8.4
 .SH "SERIAL COMMUNICATIONS"
 .PP
 If \fIfileName\fR refers to a serial port, then the specified serial port
@@ -322,7 +326,6 @@ may cause this error.
 .TP 10
 \fBBREAK\fR
 A BREAK condition has been detected by your UART (see above).
-.VE
 
 .SH "PORTABILITY ISSUES"
 .TP
@@ -384,10 +387,8 @@ applications are run synchronously, as described above.
 Valid values for \fIfileName\fR to open a serial port are generally of the
 form \fB/dev/tty\fIX\fR, where \fIX\fR is \fBa\fR or \fBb\fR, but the name
 of any pseudo-file that maps to a serial port may be used.
-.VS 8.4
 Advanced configuration options are only supported for serial ports
 when Tcl is built to use the POSIX serial interface.
-.VE 8.4
 .sp
 When running Tcl interactively, there may be some strange interactions
 between the console, if one is present, and a command pipeline that uses

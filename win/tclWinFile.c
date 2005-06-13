@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.72 2004/12/01 23:18:55 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.72.4.1 2005/06/13 01:47:20 msofer Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -189,6 +189,7 @@ static int NativeWriteReparse(CONST TCHAR* LinkDirectory,
 static int NativeMatchType(int isDrive, DWORD attr, CONST TCHAR* nativeName, 
 			   Tcl_GlobTypeData *types);
 static int WinIsDrive(CONST char *name, int nameLen);
+static int WinIsReserved(CONST char *path);
 static Tcl_Obj* WinReadLink(CONST TCHAR* LinkSource);
 static Tcl_Obj* WinReadLinkDirectory(CONST TCHAR* LinkDirectory);
 static int WinLink(CONST TCHAR* LinkSource, CONST TCHAR* LinkTarget, 
@@ -1032,6 +1033,52 @@ WinIsDrive(
 	    /* Path is of the form 'x:' or 'x:/' or 'x:\' */
 	    return 1;
 	}
+    }
+    return 0;
+}
+
+/* 
+ * Does the given path represent a reserved window path name?  If not
+ * return 0, if true, return the number of characters of the path that
+ * we actually want (not any trailing :).
+ */
+static int WinIsReserved(
+   CONST char *path)    /* Path in UTF-8  */
+{
+    if ((path[0] == 'c' || path[0] == 'C') 
+	&& (path[1] == 'o' || path[1] == 'O')) {
+	if ((path[2] == 'm' || path[2] == 'M')
+	    && path[3] >= '1' && path[3] <= '4') {
+	    /* May have match for 'com[1-4]:?', which is a serial port */
+	    if (path[4] == '\0') {
+		return 4;
+	    } else if (path [4] == ':' && path[5] == '\0') {
+		return 4;
+	    }
+	} else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
+	    /* Have match for 'con' */
+	    return 3;
+	}
+    } else if ((path[0] == 'l' || path[0] == 'L')
+	       && (path[1] == 'p' || path[1] == 'P')
+	       && (path[2] == 't' || path[2] == 'T')) {
+	if (path[3] >= '1' && path[3] <= '3') {
+	    /* May have match for 'lpt[1-3]:?' */
+	    if (path[4] == '\0') {
+		return 4;
+	    } else if (path [4] == ':' && path[5] == '\0') {
+		return 4;
+	    }
+	}
+    } else if (stricmp(path, "prn") == 0) {
+	/* Have match for 'prn' */
+	return 3;
+    } else if (stricmp(path, "nul") == 0) {
+	/* Have match for 'nul' */
+	return 3;
+    } else if (stricmp(path, "aux") == 0) {
+	/* Have match for 'aux' */
+	return 3;
     }
     return 0;
 }
@@ -2351,9 +2398,22 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		 * the current normalized path, if the file exists.
 		 */
 		if (isDrive) {
-		    if (GetFileAttributesA(nativePath) 
-			== 0xffffffff) {
+		    if (GetFileAttributesA(nativePath) == 0xffffffff) {
 			/* File doesn't exist */
+			if (isDrive) {
+			    int len = WinIsReserved(path);
+			    if (len > 0) {
+				/* Actually it does exist - COM1, etc */
+				int i;
+				for (i=0;i<len;i++) {
+				    if (nativePath[i] >= 'a') {
+					((char*)nativePath)[i] -= ('a' - 'A');
+				    }
+				}
+				Tcl_DStringAppend(&dsNorm, nativePath, len);
+				lastValidPathEnd = currentPathEndPosition;
+			    }
+			}
 			Tcl_DStringFree(&ds);
 			break;
 		    }
@@ -2447,6 +2507,23 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
 		    GetFileExInfoStandard, &data) != TRUE) {
 		    /* File doesn't exist */
+		    if (isDrive) {
+		        int len = WinIsReserved(path);
+			if (len > 0) {
+			    /* Actually it does exist - COM1, etc */
+			    int i;
+			    for (i=0;i<len;i++) {
+			        WCHAR wc = ((WCHAR*)nativePath)[i];
+				if (wc >= L'a') {
+				    wc -= (L'a' - L'A');
+				    ((WCHAR*)nativePath)[i] = wc;
+				}
+			    }
+			    Tcl_DStringAppend(&dsNorm, nativePath,
+					      sizeof(WCHAR)*len);
+			    lastValidPathEnd = currentPathEndPosition;
+			}
+		    }
 		    Tcl_DStringFree(&ds);
 		    break;
 		}

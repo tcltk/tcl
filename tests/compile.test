@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.36 2005/01/14 15:27:53 dkf Exp $
+# RCS: @(#) $Id: compile.test,v 1.36.2.1 2005/06/13 01:46:45 msofer Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -236,15 +236,15 @@ test compile-11.1 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 	lindex a bogus
     }
     list [catch {p} msg] $msg
-} {1 {bad index "bogus": must be integer or end?-integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
 test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; string index a bogus }
     list [catch {p} msg] $msg
-} {1 {bad index "bogus": must be integer or end?-integer?}}
+} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
 test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; string index a 09 }
     list [catch {p} msg] $msg
-} {1 {bad index "09": must be integer or end?-integer? (looks like invalid octal number)}}
+} {1 {bad index "09": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
 test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; array set var {one two many} }
     list [catch {p} msg] $msg
@@ -257,14 +257,14 @@ test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; incr foo bogus }
     list [catch {p} msg] $msg
 } {1 {expected integer but got "bogus"}}
-test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     proc p {} { set r [list foobar] ; expr !a }
     list [catch {p} msg] $msg
-} {1 {syntax error in expression "!a": variable references require preceding $}}
-test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+} -match glob -result {1 {syntax error in expression "!a": * preceding $*}}
+test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     proc p {} { set r [list foobar] ; expr {!a} }
     list [catch {p} msg] $msg
-} {1 {syntax error in expression "!a": variable references require preceding $}}
+} -match glob -result {1 {syntax error in expression "!a": * preceding $*}}
 test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; llength "\{" }
     list [catch {p} msg] $msg
@@ -320,7 +320,7 @@ test compile-12.3 {check for a buffer overrun} -body {
     crash
 } -returnCodes error -cleanup {
     rename crash {}
-} -result {syntax error in expression "a+2": variable references require preceding $}
+} -match glob -result {syntax error in expression "a+2": * preceding $*}
 test compile-12.4 {TclCleanupLiteralTable segfault} -body {
     # Tcl Bug 1001997
     # Here, we're trying to test a case that causes a crash in

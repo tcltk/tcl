@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: LinkVar.3,v 1.9 2004/10/07 15:15:38 dkf Exp $
+'\" RCS: @(#) $Id: LinkVar.3,v 1.9.4.1 2005/06/13 01:45:37 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_LinkVar 3 7.5 Tcl "Tcl Library Procedures"
@@ -33,9 +33,7 @@ Name of global variable.
 Address of C variable that is to be linked to \fIvarName\fR.
 .AP int type in
 Type of C variable.  Must be one of \fBTCL_LINK_INT\fR, \fBTCL_LINK_DOUBLE\fR,
-.VS 8.4
 \fBTCL_LINK_WIDE_INT\fR,
-.VE 8.4
 \fBTCL_LINK_BOOLEAN\fR, or \fBTCL_LINK_STRING\fR, optionally OR'ed with
 \fBTCL_LINK_READ_ONLY\fR to make Tcl variable read-only.
 .BE
@@ -72,14 +70,12 @@ non-real values into \fIvarName\fR will be rejected with
 Tcl errors.
 .TP
 \fBTCL_LINK_WIDE_INT\fR
-.VS 8.4
 The C variable is of type \fBTcl_WideInt\fR (which is an integer type
 at least 64-bits wide on all platforms that can support it.)
 Any value written into the Tcl variable must have a proper integer
 form acceptable to \fBTcl_GetWideIntFromObj\fR;  attempts to write
 non-integer values into \fIvarName\fR will be rejected with
 Tcl errors.
-.VE 8.4
 .TP
 \fBTCL_LINK_BOOLEAN\fR
 The C variable is of type \fBint\fR.
@@ -94,10 +90,8 @@ Tcl errors.
 .TP
 \fBTCL_LINK_STRING\fR
 The C variable is of type \fBchar *\fR.
-.VS
 If its value is not NULL then it must be a pointer to a string
 allocated with \fBTcl_Alloc\fR or \fBckalloc\fR.
-.VE
 Whenever the Tcl variable is modified the current C string will be
 freed and new memory will be allocated to hold a copy of the variable's
 new value.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.113.2.1 2005/04/02 13:36:10 msofer Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.113.2.2 2005/06/13 01:46:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -283,7 +283,7 @@ TclIntStubs tclIntStubs = {
     TclFinalizeThreadStorageDataKey, /* 196 */
     TclCompEvalObj, /* 197 */
     TclObjGetFrame, /* 198 */
-    TclMatchIsTrivial, /* 199 */
+    NULL, /* 199 */
     TclpObjRemoveDirectory, /* 200 */
     TclpObjCopyDirectory, /* 201 */
     TclpObjCreateDirectory, /* 202 */
@@ -303,6 +303,12 @@ TclIntStubs tclIntStubs = {
     TclStackFree, /* 216 */
     TclPushStackFrame, /* 217 */
     TclPopStackFrame, /* 218 */
+    TclBN_mp_div_d, /* 219 */
+    TclBN_mp_mul_d, /* 220 */
+    TclBN_mp_clear, /* 221 */
+    TclBN_mp_init, /* 222 */
+    TclBN_mp_read_radix, /* 223 */
+    TclGetPlatform, /* 224 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -351,7 +357,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateTempFile, /* 22 */
     TclpGetTZName, /* 23 */
     TclWinNoBackslash, /* 24 */
-    TclWinGetPlatform, /* 25 */
+    NULL, /* 25 */
     TclWinSetInterfaces, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
@@ -971,6 +977,12 @@ TclStubs tclStubs = {
     Tcl_SetTimeProc, /* 552 */
     Tcl_QueryTimeProc, /* 553 */
     Tcl_ChannelThreadActionProc, /* 554 */
+    Tcl_NewBignumObj, /* 555 */
+    Tcl_DbNewBignumObj, /* 556 */
+    Tcl_SetBignumObj, /* 557 */
+    Tcl_GetBignumFromObj, /* 558 */
+    Tcl_TruncateChannel, /* 559 */
+    Tcl_ChannelTruncateProc, /* 560 */
 };
 
 /* !END!: Do not edit above this line. */

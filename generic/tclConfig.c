@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.6.4.1 2005/04/02 13:36:07 msofer Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.6.4.2 2005/06/13 01:45:46 msofer Exp $
  */
 
 #include "tclInt.h"

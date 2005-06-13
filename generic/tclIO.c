@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.82 2005/01/27 00:23:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.82.2.1 2005/06/13 01:46:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1141,6 +1141,13 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
 
     /*
      * Set the channel to system default encoding.
+     *
+     * Note the strange bit of protection taking place here.
+     * If the system encoding name is reported back as "binary",
+     * something weird is happening.  Tcl provides no "binary"
+     * encoding, so someone else has provided one.  We ignore it
+     * so as not to interfere with the "magic" interpretation
+     * that Tcl_Channels give to the "-encoding binary" option.
      */
 
     statePtr->encoding = NULL;
@@ -5770,6 +5777,77 @@ Tcl_TellOld(chan)
 /*
  *---------------------------------------------------------------------------
  *
+ * Tcl_TruncateChannel --
+ *
+ *	Truncate a channel to the given length.
+ *
+ * Results:
+ *	TCL_OK on success, TCL_ERROR if the operation failed (e.g. is
+ *	not supported by the type of channel, or the underlying OS
+ *	operation failed in some way).
+ *
+ * Side effects:
+ *	Seeks the channel to the current location. Sets errno on OS
+ *	error.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+Tcl_TruncateChannel(chan, length)
+    Tcl_Channel chan;
+    Tcl_WideInt length;
+{
+    Channel *chanPtr = (Channel *) chan;
+    Tcl_DriverTruncateProc *truncateProc =
+	    Tcl_ChannelTruncateProc(chanPtr->typePtr);
+    int result;
+
+    if (truncateProc == NULL) {
+	/*
+	 * Feature not supported and it's not emulatable. Pretend it's
+	 * returned an EINVAL, a very generic error!
+	 */
+	Tcl_SetErrno(EINVAL);
+	return TCL_ERROR;
+    }
+
+    if (!(chanPtr->state->flags & TCL_WRITABLE)) {
+	/*
+	 * We require that the file was opened of writing. Do that
+	 * check now so that we only flush if we think we're going to
+	 * succeed.
+	 */
+	Tcl_SetErrno(EINVAL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Seek first to force a total flush of all pending buffers and
+     * ditch any pre-read input data.
+     */
+
+    if (Tcl_Seek(chan, 0, SEEK_CUR) == Tcl_LongAsWide(-1)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * We're all flushed to disk now and we also don't have any
+     * unfortunate input baggage around either; can truncate with
+     * impunity.
+     */
+
+    result = truncateProc(chanPtr->instanceData, length);
+    if (result != 0) {
+	Tcl_SetErrno(result);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * CheckChannelErrors --
  *
  *	See if the channel is in an ready state and can perform the
@@ -6038,7 +6116,7 @@ Tcl_ChannelBuffered(chan)
  * Tcl_SetChannelBufferSize --
  *
  *	Sets the size of buffers to allocate to store input or output
- *	in the channel. The size must be between 10 bytes and 1 MByte.
+ *	in the channel. The size must be between 1 byte and 1 MByte.
  *
  * Results:
  *	None.
@@ -6058,11 +6136,11 @@ Tcl_SetChannelBufferSize(chan, sz)
     ChannelState *statePtr;		/* State of real channel structure. */
 
     /*
-     * If the buffer size is smaller than 10 bytes or larger than one MByte,
+     * If the buffer size is smaller than 1 byte or larger than one MByte,
      * do not accept the requested size and leave the current buffer size.
      */
 
-    if (sz < 10) {
+    if (sz < 1) {
 	return;
     }
     if (sz > (1024 * 1024)) {
@@ -8759,7 +8837,16 @@ Tcl_GetChannelNamesEx(interp, pattern)
 
     hTblPtr = GetChannelTable(interp);
     TclNewObj(resultPtr);
-
+    if ((pattern != NULL) && TclMatchIsTrivial(pattern)
+	    && !((pattern[0] == 's') && (pattern[1] == 't')
+	    && (pattern[2] == 'd'))) {
+	if ((Tcl_FindHashEntry(hTblPtr, pattern) != NULL)
+		&& (Tcl_ListObjAppendElement(interp, resultPtr,
+		Tcl_NewStringObj(pattern, -1)) != TCL_OK)) {
+	    goto error;
+	}
+	goto done;
+    }
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != (Tcl_HashEntry *) NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
@@ -8783,10 +8870,12 @@ Tcl_GetChannelNamesEx(interp, pattern)
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
 			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
+error:
 	    TclDecrRefCount(resultPtr);
 	    return TCL_ERROR;
 	}
     }
+done:
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
@@ -9344,6 +9433,34 @@ Tcl_ChannelThreadActionProc(chanTypePtr)
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
 	return chanTypePtr->threadActionProc;
+    } else {
+	return NULL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelTruncateProc --
+ *
+ *      TIP #208 (subsection relating to truncation, based on TIP #206).
+ *	Return the Tcl_DriverTruncateProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverTruncateProc *
+Tcl_ChannelTruncateProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
+	return chanTypePtr->truncateProc;
     } else {
 	return NULL;
     }

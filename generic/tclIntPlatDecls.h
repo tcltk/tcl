@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.26 2004/11/03 19:13:40 davygrvy Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.26.4.1 2005/06/13 01:46:12 msofer Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -249,11 +249,7 @@ EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 /* 24 */
 EXTERN char *		TclWinNoBackslash _ANSI_ARGS_((char * path));
 #endif
-#ifndef TclWinGetPlatform_TCL_DECLARED
-#define TclWinGetPlatform_TCL_DECLARED
-/* 25 */
-EXTERN TclPlatformType * TclWinGetPlatform _ANSI_ARGS_((void));
-#endif
+/* Slot 25 is reserved */
 #ifndef TclWinSetInterfaces_TCL_DECLARED
 #define TclWinSetInterfaces_TCL_DECLARED
 /* 26 */
@@ -348,7 +344,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
     char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 23 */
     char * (*tclWinNoBackslash) _ANSI_ARGS_((char * path)); /* 24 */
-    TclPlatformType * (*tclWinGetPlatform) _ANSI_ARGS_((void)); /* 25 */
+    void *reserved25;
     void (*tclWinSetInterfaces) _ANSI_ARGS_((int wide)); /* 26 */
     void (*tclWinFlushDirtyChannels) _ANSI_ARGS_((void)); /* 27 */
     void (*tclWinResetInterfaces) _ANSI_ARGS_((void)); /* 28 */
@@ -520,10 +516,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinNoBackslash \
 	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
 #endif
-#ifndef TclWinGetPlatform
-#define TclWinGetPlatform \
-	(tclIntPlatStubsPtr->tclWinGetPlatform) /* 25 */
-#endif
+/* Slot 25 is reserved */
 #ifndef TclWinSetInterfaces
 #define TclWinSetInterfaces \
 	(tclIntPlatStubsPtr->tclWinSetInterfaces) /* 26 */

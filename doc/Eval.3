@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.18 2004/10/07 15:15:37 dkf Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.18.4.1 2005/06/13 01:45:37 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -39,7 +39,7 @@ int
 \fBTcl_GlobalEvalObj\fR(\fIinterp, objPtr\fR)
 .sp
 int
-\fBTcl_VarEval\fR(\fIinterp, string, string, ... \fB(char *) NULL\fR)
+\fBTcl_VarEval\fR(\fIinterp, part, part, ... \fB(char *) NULL\fR)
 .sp
 int
 \fBTcl_VarEvalVA\fR(\fIinterp, argList\fR)
@@ -67,7 +67,7 @@ null terminating character.  If \-1, then all characters up to the
 first null byte are used.
 .AP "const char" *script in
 Points to first byte of script to execute (null-terminated and UTF-8).
-.AP char *string in
+.AP char *part in
 String forming part of a Tcl script.
 .AP va_list argList in
 An argument list which must have been initialized using
@@ -100,12 +100,10 @@ its contents as a Tcl script.  It returns the same information as
 \fBTcl_EvalObjEx\fR.
 If the file couldn't be read then a Tcl error is returned to describe
 why the file couldn't be read.
-.VS 8.4
 The eofchar for files is '\\32' (^Z) for all platforms.
 If you require a ``^Z'' in code for string comparison, you can use
 ``\\032'' or ``\\u001a'', which will be safely substituted by the Tcl
 interpreter into ``^Z''.
-.VE 8.4
 .PP
 \fBTcl_EvalObjv\fR executes a single pre-parsed command instead of a
 script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values

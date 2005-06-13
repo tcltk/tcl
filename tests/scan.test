@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.15 2004/08/19 20:59:00 dkf Exp $
+# RCS: @(#) $Id: scan.test,v 1.15.4.1 2005/06/13 01:46:51 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -451,10 +451,10 @@ test scan-6.5 {floating-point scanning} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "4.6 99999.7 876.43e-1 118" "%f %f %f %e" a b c d] $a $b $c $d
 } {4 4.6 99999.7 87.643 118.0}
-test scan-6.6 {floating-point scanning} {eformat} {
+test scan-6.6 {floating-point scanning} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "1.2345 697.0e-3 124 .00005" "%f %e %f %e" a b c d] $a $b $c $d
-} {4 1.2345 0.697 124.0 5e-05}
+} {4 1.2345 0.697 124.0 5e-5}
 test scan-6.7 {floating-point scanning} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "4.6abc" "%f %f %f %f" a b c d] $a $b $c $d

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.88 2005/01/28 13:38:57 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.88.2.1 2005/06/13 01:46:17 msofer Exp $
  */
 
 #define TCL_TEST
@@ -307,6 +307,9 @@ static int		TestparsevarnameObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 static int		TestregexpObjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
+static int		TestreturnObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 static void		TestregexpXflags _ANSI_ARGS_((char *string,
@@ -663,6 +666,8 @@ Tcltest_Init(interp)
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -2457,11 +2462,7 @@ TestgetplatformCmd(clientData, interp, argc, argv)
     static CONST char *platformStrings[] = { "unix", "mac", "windows" };
     TclPlatformType *platform;
 
-#ifdef __WIN32__
-    platform = TclWinGetPlatform();
-#else
-    platform = &tclPlatform;
-#endif
+    platform = TclGetPlatform();
     
     if (argc != 1) {
         Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
@@ -3619,6 +3620,37 @@ TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * TestreturnObjCmd --
+ *
+ *	This procedure implements the "testreturn" command. It is
+ *	used to verify that a
+ *		return TCL_RETURN;
+ *	has same behavior as
+ *		return Tcl_SetReturnOptions(interp, Tcl_NewObj());
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestreturnObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    return TCL_RETURN;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestsetassocdataCmd --
  *
  *	This procedure implements the "testsetassocdata" command. It is used
@@ -3697,11 +3729,7 @@ TestsetplatformCmd(clientData, interp, argc, argv)
     size_t length;
     TclPlatformType *platform;
 
-#ifdef __WIN32__
-    platform = TclWinGetPlatform();
-#else
-    platform = &tclPlatform;
-#endif
+    platform = TclGetPlatform();
     
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
