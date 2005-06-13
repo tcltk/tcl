@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.33 2005/06/09 16:24:47 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.34 2005/06/13 08:32:05 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -262,11 +262,14 @@ TclFileMakeDirsCmd(interp, objc, objv)
 		    goto done;
 		}
 	    } else if (errno != ENOENT) {
+		/* 
+		 * If Tcl_FSStat() failed and the error is anything
+		 * other than non-existence of the target, throw the
+		 * error.
+		 */
 		errfile = target;
 		goto done;
-	    }
-	    
-	    if (Tcl_FSCreateDirectory(target) != TCL_OK) {
+	    } else if (Tcl_FSCreateDirectory(target) != TCL_OK) {
 		/* 
 		 * Create might have failed because of being in a race
 		 * condition with another process trying to create the
