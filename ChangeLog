@@ -1,3 +1,13 @@
+2005-06-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): Only delete a
+	* tests/namespace.test (namespace-49.2): command from the hashtable on
+	reentrant processing if it has not been already deleted; at least
+	three deletes of the same command are possible. [Bug 1220058]
+	* generic/tclTrace.c (TraceCommandProc): Remove bogus error message
+	creation when traces trigger in situations where the command has
+	already been deleted.
+
 2005-06-13  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFCmd.c: correct fix to file mkdir 2005-06-09, [Bug 1219176]
