@@ -1,3 +1,8 @@
+2005-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Fix for [Bug 1154163]; only
+	* tests/format.test: insert 'l' modifier when it is needed.
+
 2005-06-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier): Add dummy variable
