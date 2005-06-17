@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.11 2004/10/30 21:00:09 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.12 2005/06/17 23:26:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2187,31 +2187,37 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	case 'u':
 	case 'x':
 	case 'X':
-	    if ( useWide ) {
-		if ( Tcl_GetWideIntFromObj( interp, /* INTL: Tcl source. */
-					    objv[objIndex], &wideValue )
-		     != TCL_OK ) {
+	    if (useWide) {
+		if (Tcl_GetWideIntFromObj(interp,	/* INTL: Tcl source. */
+			objv[objIndex], &wideValue) != TCL_OK) {
 		    goto fmtError;
 		}
 		whichValue = WIDE_VALUE;
 		size = 40 + precision;
 		break;
 	    }
-	    if ( Tcl_GetLongFromObj( interp, /* INTL: Tcl source. */
-				     objv[objIndex], &intValue ) != TCL_OK ) {
+	    if (Tcl_GetLongFromObj(interp,		/* INTL: Tcl source. */
+		    objv[objIndex], &intValue) != TCL_OK) {
 		goto fmtError;
 	    }
 
 #if (LONG_MAX > INT_MAX)
-	    /*
-	     * Add the 'l' for long format type because we are on an
-	     * LP64 archtecture and we are really going to pass a long
-	     * argument to sprintf.
-	     */
-	    newPtr++;
-	    *newPtr = 0;
-	    newPtr[-1] = newPtr[-2];
-	    newPtr[-2] = 'l';
+	    if (!useShort) {
+		/*
+		 * Add the 'l' for long format type because we are on an
+		 * LP64 archtecture and we are really going to pass a long
+		 * argument to sprintf.
+		 *
+		 * Do not add this if we're going to pass in a short (i.e.
+		 * if we've got an 'h' modifier already in the string); some
+		 * libc implementations of sprintf() do not like it at all.
+		 * [Bug 1154163]
+		 */
+		newPtr++;
+		*newPtr = 0;
+		newPtr[-1] = newPtr[-2];
+		newPtr[-2] = 'l';
+	    }
 #endif /* LONG_MAX > INT_MAX */
 	    whichValue = INT_VALUE;
 	    size = 40 + precision;
