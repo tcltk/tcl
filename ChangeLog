@@ -1,3 +1,8 @@
+2005-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Fix for [Bug 1154163]; only
+	* tests/format.test: insert 'l' modifier when it is needed.
+
 2005-06-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclTimer.c (AfterDelay): Split out the code to manage
