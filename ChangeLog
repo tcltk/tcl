@@ -1,3 +1,10 @@
+2005-06-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclTimer.c (AfterDelay): Split out the code to manage
+	synchronous-delay [after] commands.
+	* tests/interp.test (interp-34.10): Time limits and synch-delay
+	[after] did not mix well... [Bug 1221395]
+
 2005-06-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): Only delete a
