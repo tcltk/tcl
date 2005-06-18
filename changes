@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.18 2005/06/02 22:52:15 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.79.2.19 2005/06/18 19:52:36 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6206,3 +6206,11 @@ Can support [load] from memory as well (steffen)
 Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 
 --- Released 8.4.10, June 4, 2005 --- See ChangeLog for details ---
+
+2005-06-06 (bug fix)[1213678] Windows/gcc: crash in stack.test (kenny)
+
+2005-06-07 (bug fix) Unix: --enable-threads compile failure (fellows)
+
+2005-06-18 (bug fix)[1154163] [format %h] on 64-bit OS's (kraft,fellows)
+
+--- Released 8.4.11, June 24, 2005 --- See ChangeLog for details ---
