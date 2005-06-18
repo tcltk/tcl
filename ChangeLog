@@ -1,5 +1,7 @@
 2005-06-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:		Update changes for 8.4.11 release
+
 	* README:		Bump version number to 8.4.11
 	* generic/tcl.h:
 	* tools/tcl.wse.in:
