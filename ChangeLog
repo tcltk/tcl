@@ -1,3 +1,15 @@
+2005-06-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.h: ensure WORDS_BIGENDIAN is defined correctly with fat
+	compiles on Darwin (i.e. ppc and i386 at the same time), the configure
+	AC_C_BIGENDIAN check is not sufficient in this case because a single run
+	of the compiler builds for two architectures with different endianness.
+
+	* unix/tcl.m4 (Darwin): add -headerpad_max_install_names to LDFLAGS to
+	ensure we can always relocate binaries with install_name_tool.
+
+	* unix/configure: autoconf-2.59
+
 2005-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Fix for [Bug 1154163]; only
