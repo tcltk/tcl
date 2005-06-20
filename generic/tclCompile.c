@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.86 2005/06/20 21:27:10 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.87 2005/06/20 22:55:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -308,7 +308,7 @@ InstructionDesc tclInstructionTable[] = {
     {"listNotIn",	  1,	-1,	   0,	{OPERAND_NONE}},
 	/* List negated containment: push [lsearch stktop stknext]<0) */
 
-    {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}}
+    {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}},
 	/* Push the interpreter's return option dictionary as an object on the
 	 * stack. */
     {0}
