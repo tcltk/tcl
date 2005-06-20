@@ -1,5 +1,10 @@
 2005-06-20  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCompile.h (INST_PUSH_RETURN_OPTIONS): New opcode to allow
+	* generic/tclCompCmds.c (TclCompileCatchCmd):	   compilation of TIP90
+	* generic/tclCompile.c:				   catch [Bug 1219112]
+	* generic/tclExecute.c (TclExecuteByteCode): 
+
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Ensure we spill to the
 	command form in all cases where it generates an error.
 
