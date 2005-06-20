@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.72 2005/06/12 22:19:37 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.73 2005/06/20 10:01:47 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1099,7 +1099,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
 	}
-	tokenPtr += 2;
+	tokenPtr = TokenAfter(tokenPtr);
     }
 
 
@@ -2706,7 +2706,8 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 				 * the current (or next) real body. */
 
     int savedStackDepth = envPtr->currStackDepth;
-    int noCase;
+    int noCase;			/* Has the -nocase flag been given? */
+    int foundMode = 0;		/* Have we seen a mode flag yet? */
     int i;
 
     /*
@@ -2718,18 +2719,13 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
      *   switch -exact -- word simpleWordPattern simpleWordBody ...
      *   switch -glob  -- word simpleWordPattern simpleWordBody ...
      * When the mode is -glob, can also handle a -nocase flag.
+     *
+     * First off, we don't care how the command's word was generated; we're
+     * compiling it anyway! So skip it...
      */
 
-    tokenPtr = parsePtr->tokenPtr;
-    numWords = parsePtr->numWords;
-
-    /*
-     * We don't care how the command's word was generated; we're compiling it
-     * anyway!
-     */
-
-    tokenPtr = TokenAfter(tokenPtr);
-    numWords--;
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    numWords = parsePtr->numWords-1;
 
     /*
      * Check for options. There must be at least one, --, because without that
@@ -2741,24 +2737,33 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 
     noCase = 0;
     mode = Switch_Exact;
-    for (; numWords>=3 ; tokenPtr+=2,numWords--) {
+    for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
 	register unsigned size = tokenPtr[1].size;
 	register CONST char *chrs = tokenPtr[1].start;
 
 	/*
 	 * We only process literal options, and we assume that -e, -g and -n
 	 * are unique prefixes of -exact, -glob and -nocase respectively (true
-	 * at time of writing).
+	 * at time of writing). Note that -exact and -glob may only be given
+	 * at most once or we bail out (error case).
 	 */
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || size < 2) {
 	    return TCL_ERROR;
 	}
 
 	if ((size <= 6) && !memcmp(chrs, "-exact", size)) {
+	    if (foundMode) {
+		return TCL_ERROR;
+	    }
 	    mode = Switch_Exact;
+	    foundMode = 1;
 	    continue;
 	} else if ((size <= 5) && !memcmp(chrs, "-glob", size)) {
+	    if (foundMode) {
+		return TCL_ERROR;
+	    }
 	    mode = Switch_Glob;
+	    foundMode = 1;
 	    continue;
 	} else if ((size <= 7) && !memcmp(chrs, "-nocase", size)) {
 	    noCase = 1;
@@ -2779,7 +2784,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     if (numWords < 3) {
 	return TCL_ERROR;
     }
-    tokenPtr += 2;
+    tokenPtr = TokenAfter(tokenPtr);
     numWords--;
     if (noCase && (mode == Switch_Exact)) {
 	/*
@@ -2935,7 +2940,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 		return TCL_ERROR;
 	    }
 	    bodyToken[i] = tokenPtr+1;
-	    tokenPtr += tokenPtr->numComponents+1;
+	    tokenPtr = TokenAfter(tokenPtr);
 	}
     }
 
