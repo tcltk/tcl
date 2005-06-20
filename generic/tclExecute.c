@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.191 2005/06/20 21:27:13 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.192 2005/06/20 23:10:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1542,6 +1542,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	valuePtr = *tosPtr;
 	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+	    result = TCL_ERROR;
 	    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
 		    Tcl_GetObjResult(interp));
 	    objPtr = expandNestList;
