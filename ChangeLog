@@ -1,6 +1,11 @@
-2005-06-18  Daniel Steffen  <das@users.sourceforge.net>
+2005-06-18  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
+
+	* doc/FileSystem.3: added missing Tcl_GlobTypeData documentation
+	[Bug 935853]
+
+2005-06-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.h: ensure WORDS_BIGENDIAN is defined correctly with fat
 	compiles on Darwin (i.e. ppc and i386 at the same time), the configure
