@@ -1,3 +1,19 @@
+2005-06-20  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Generate
+	an error if a mode argument like -exact is passed
+	more than once to the switch command. The previous
+	implementation silently accepted invalid switch
+	invocations like [switch -exact -glob $str ...].
+	* tests/for.test: Check some error cases when
+	invoking continue and break inside a for loop
+	next script.
+	* tests/switch.test: Add checks for shortened
+	version of a mode argument like -exact. Add
+	test for more than one mode argument. Add test
+	for odd case of passing a variable as a
+	body script.
+
 2005-06-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.h: ensure WORDS_BIGENDIAN is defined correctly with fat
