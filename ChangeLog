@@ -1,25 +1,27 @@
+2005-06-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Ensure we spill to the
+	command form in all cases where it generates an error.
+
 2005-06-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Generate
-	an error if a mode argument like -exact is passed
-	more than once to the switch command. The previous
-	implementation silently accepted invalid switch
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Generate an error if a mode
+	argument like -exact is passed more than once to the switch
+	command. The previous implementation silently accepted invalid switch
 	invocations like [switch -exact -glob $str ...].
-	* tests/for.test: Check some error cases when
-	invoking continue and break inside a for loop
-	next script.
-	* tests/switch.test: Add checks for shortened
-	version of a mode argument like -exact. Add
-	test for more than one mode argument. Add test
-	for odd case of passing a variable as a
-	body script.
+	* tests/for.test: Check some error cases when invoking continue and
+	break inside a for loop next script.
+	* tests/switch.test: Add checks for shortened version of a mode
+	argument like -exact. Add test for more than one mode argument. Add
+	test for odd case of passing a variable as a body script.
 
 2005-06-18  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclInt.h: ensure WORDS_BIGENDIAN is defined correctly with fat
-	compiles on Darwin (i.e. ppc and i386 at the same time), the configure
-	AC_C_BIGENDIAN check is not sufficient in this case because a single run
-	of the compiler builds for two architectures with different endianness.
+	* generic/tclInt.h: ensure WORDS_BIGENDIAN is defined correctly with
+	fat compiles on Darwin (i.e. ppc and i386 at the same time), the
+	configure AC_C_BIGENDIAN check is not sufficient in this case because
+	a single run of the compiler builds for two architectures with
+	different endianness.
 
 	* unix/tcl.m4 (Darwin): add -headerpad_max_install_names to LDFLAGS to
 	ensure we can always relocate binaries with install_name_tool.
