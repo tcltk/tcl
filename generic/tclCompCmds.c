@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.74 2005/06/20 21:27:09 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.75 2005/06/20 23:10:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -273,7 +273,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * If syntax does not match what we expect for [catch], do not compile.
      * Let runtime checks determine if syntax has changed.
      */
-    if ((parsePtr->numWords < 2) && (parsePtr->numWords > 4)) {
+    if ((parsePtr->numWords < 2) || (parsePtr->numWords > 4)) {
 	return TCL_ERROR;
     }
 
