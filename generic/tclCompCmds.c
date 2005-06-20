@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.73 2005/06/20 10:01:47 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.74 2005/06/20 21:27:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -264,49 +264,64 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     JumpFixup jumpFixup;
-    Tcl_Token *cmdTokenPtr, *nameTokenPtr;
+    Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     CONST char *name;
-    int localIndex, nameChars, range, startOffset;
+    int resultIndex, optsIndex, nameChars, range, startOffset;
     int savedStackDepth = envPtr->currStackDepth;
 
     /*
      * If syntax does not match what we expect for [catch], do not compile.
      * Let runtime checks determine if syntax has changed.
      */
-    if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
+    if ((parsePtr->numWords < 2) && (parsePtr->numWords > 4)) {
 	return TCL_ERROR;
     }
 
     /*
-     * If a variable was specified and the catch command is at global level
+     * If variables were specified and the catch command is at global level
      * (not in a procedure), don't compile it inline: the payoff is too small.
      */
 
-    if ((parsePtr->numWords == 3) && (envPtr->procPtr == NULL)) {
+    if ((parsePtr->numWords >= 3) && (envPtr->procPtr == NULL)) {
 	return TCL_ERROR;
     }
 
     /*
-     * Make sure the variable name, if any, has no substitutions and just
-     * refers to a local scaler.
+     * Make sure the variable names, if any, have no substitutions and just
+     * refer to local scalars.
      */
 
-    localIndex = -1;
+    resultIndex = optsIndex = -1;
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (parsePtr->numWords == 3) {
-	nameTokenPtr = TokenAfter(cmdTokenPtr);
+    if (parsePtr->numWords >= 3) {
+	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
 	/* DGP */
-	if (nameTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    name = nameTokenPtr[1].start;
-	    nameChars = nameTokenPtr[1].size;
+	if (resultNameTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    name = resultNameTokenPtr[1].start;
+	    nameChars = resultNameTokenPtr[1].size;
 	    if (!TclIsLocalScalar(name, nameChars)) {
 		return TCL_ERROR;
 	    }
-	    localIndex = TclFindCompiledLocal(nameTokenPtr[1].start,
-		    nameTokenPtr[1].size, /*create*/ 1, VAR_SCALAR,
+	    resultIndex = TclFindCompiledLocal(resultNameTokenPtr[1].start,
+		    resultNameTokenPtr[1].size, /*create*/ 1, VAR_SCALAR,
 		    envPtr->procPtr);
 	} else {
 	   return TCL_ERROR;
+	}
+	/* DKF */
+	if (parsePtr->numWords == 4) {
+	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
+	    if (optsNameTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+		return TCL_ERROR;
+	    }
+	    name = optsNameTokenPtr[1].start;
+	    nameChars = optsNameTokenPtr[1].size;
+	    if (!TclIsLocalScalar(name, nameChars)) {
+		return TCL_ERROR;
+	    }
+	    optsIndex = TclFindCompiledLocal(optsNameTokenPtr[1].start,
+		    optsNameTokenPtr[1].size, /*create*/ 1, VAR_SCALAR,
+		    envPtr->procPtr);
 	}
     }
 
@@ -346,14 +361,31 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     /*
      * The "no errors" epilogue code: store the body's result into the
      * variable (if any), push "0" (TCL_OK) as the catch's "no error" result,
-     * and jump around the "error case" code.
+     * and jump around the "error case" code. Note that we issue the push of
+     * the return options first so that if alterations happen to the current
+     * interpreter state during the writing of the variable, we won't see
+     * them; this results in a slightly complex instruction issuing flow
+     * (can't exchange, only duplicate and pop).
      */
 
-    if (localIndex != -1) {
-	if (localIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
+    if (resultIndex != -1) {
+	if (optsIndex != -1) {
+	    TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
+	    TclEmitInstInt4(INST_OVER, 1, envPtr);
+	}
+	if (resultIndex <= 255) {
+	    TclEmitInstInt1(INST_STORE_SCALAR1, resultIndex, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    TclEmitInstInt4(INST_STORE_SCALAR4, resultIndex, envPtr);
+	}
+	if (optsIndex != -1) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    if (optsIndex <= 255) {
+		TclEmitInstInt1(INST_STORE_SCALAR1, optsIndex, envPtr);
+	    } else {
+		TclEmitInstInt4(INST_STORE_SCALAR4, optsIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }
     TclEmitOpcode(INST_POP, envPtr);
@@ -363,22 +395,34 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     /*
      * The "error case" code: store the body's result into the variable (if
      * any), then push the error result code. The initial PC offset here is
-     * the catch's error target.
+     * the catch's error target. Note that if we are saving the return
+     * options, we do that first so the preservation cannot get affected by
+     * any intermediate result handling.
      */
 
     envPtr->currStackDepth = savedStackDepth;
     envPtr->exceptArrayPtr[range].catchOffset = CurrentOffset(envPtr);
-    if (localIndex != -1) {
+    if (resultIndex != -1) {
+	if (optsIndex != -1) {
+	    TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
+	}
 	TclEmitOpcode(INST_PUSH_RESULT, envPtr);
-	if (localIndex <= 255) {
-	    TclEmitInstInt1(INST_STORE_SCALAR1, localIndex, envPtr);
+	if (resultIndex <= 255) {
+	    TclEmitInstInt1(INST_STORE_SCALAR1, resultIndex, envPtr);
 	} else {
-	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    TclEmitInstInt4(INST_STORE_SCALAR4, resultIndex, envPtr);
 	}
 	TclEmitOpcode(INST_POP, envPtr);
+	if (optsIndex != -1) {
+	    if (optsIndex <= 255) {
+		TclEmitInstInt1(INST_STORE_SCALAR1, optsIndex, envPtr);
+	    } else {
+		TclEmitInstInt4(INST_STORE_SCALAR4, optsIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_POP, envPtr);
+	}
     }
     TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
-
 
     /*
      * Update the target of the jump after the "no errors" code, then emit an
