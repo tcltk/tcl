@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.10 2005/04/19 16:28:22 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.11 2005/06/21 19:07:58 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -2046,42 +2046,27 @@ PipeClose2Proc(
 	}
     }
 
-    if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
-	/*
-	 * If the channel is non-blocking or Tcl is being cleaned up,
-	 * just detach the children PIDs, reap them (important if we are
-	 * in a dynamic load module), and discard the errorFile.
-	 */
+    /*
+     * Wrap the error file into a channel and give it to the cleanup
+     * routine.
+     */
 
-	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
-	Tcl_ReapDetachedProcs();
+    if (pipePtr->errorFile) {
+	WinFile *filePtr;
 
-	if (pipePtr->errorFile) {
-	    TclpCloseFile(pipePtr->errorFile);
-	}
+	filePtr = (WinFile*)pipePtr->errorFile;
+	errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
+		TCL_READABLE);
+	ckfree((char *) filePtr);
     } else {
-	/*
-	 * Wrap the error file into a channel and give it to the cleanup
-	 * routine.
-	 */
-
-	if (pipePtr->errorFile) {
-	    WinFile *filePtr;
-
-	    filePtr = (WinFile*)pipePtr->errorFile;
-	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
-		    TCL_READABLE);
-	    ckfree((char *) filePtr);
-	} else {
-	    errChan = NULL;
-	}
-
-	result = TclCleanupChildren(interp, pipePtr->numPids,
-		pipePtr->pidPtr, errChan);
+        errChan = NULL;
     }
 
+    result = TclCleanupChildren(interp, pipePtr->numPids, pipePtr->pidPtr,
+            errChan);
+
     if (pipePtr->numPids > 0) {
-	ckfree((char *) pipePtr->pidPtr);
+        ckfree((char *) pipePtr->pidPtr);
     }
 
     if (pipePtr->writeBuf != NULL) {
@@ -2091,7 +2076,7 @@ PipeClose2Proc(
     ckfree((char*) pipePtr);
 
     if (errorCode == 0) {
-	return result;
+        return result;
     }
     return errorCode;
 }
