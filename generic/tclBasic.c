@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.161 2005/06/14 13:46:02 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.162 2005/06/21 18:33:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2683,6 +2683,7 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
+    active.reverseScan = 0;
     iPtr->activeCmdTracePtr = &active;
 
     if (flags & TCL_TRACE_DELETE) {

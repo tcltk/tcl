@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.24 2005/06/14 13:46:03 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.25 2005/06/21 18:33:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1176,7 +1176,11 @@ Tcl_UntraceCommand(interp, cmdName, flags, proc, clientData)
     for (activePtr = iPtr->activeCmdTracePtr;  activePtr != NULL;
 	 activePtr = activePtr->nextPtr) {
 	if (activePtr->nextTracePtr == tracePtr) {
-	    activePtr->nextTracePtr = tracePtr->nextPtr;
+	    if (activePtr->reverseScan) {
+		activePtr->nextTracePtr = prevPtr;
+	    } else {
+		activePtr->nextTracePtr = tracePtr->nextPtr;
+	    }
 	}
     }
     if (prevPtr == NULL) {
@@ -1395,6 +1399,7 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	 tracePtr = active.nextTracePtr) {
         if (traceFlags & TCL_TRACE_LEAVE_EXEC) {
             /* execute the trace command in order of creation for "leave" */
+	    active.reverseScan = 1;
 	    active.nextTracePtr = NULL;
             tracePtr = cmdPtr->tracePtr;
             while (tracePtr->nextPtr != lastTracePtr) {
@@ -1402,6 +1407,7 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	        tracePtr = tracePtr->nextPtr;
             }
         } else {
+	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
         }
 	tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
@@ -1418,7 +1424,9 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	        ckfree((char*)tcmdPtr);
 	    }
 	}
-        lastTracePtr = tracePtr;
+	if (active.nextTracePtr) {
+	    lastTracePtr = active.nextTracePtr->nextPtr;
+	}
     }
     iPtr->activeCmdTracePtr = active.nextPtr;
     if (state) {
@@ -1493,6 +1501,7 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
              * Tcl_CreateObjTrace creates one more linked list of traces
              * which results in one more reversal of trace invocation.
              */
+	    active.reverseScan = 1;
 	    active.nextTracePtr = NULL;
             tracePtr = iPtr->tracePtr;
             while (tracePtr->nextPtr != lastTracePtr) {
@@ -1500,6 +1509,7 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	        tracePtr = tracePtr->nextPtr;
             }
         } else {
+	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
         }
 	if (tracePtr->level > 0 && curLevel > tracePtr->level) {
@@ -1547,7 +1557,9 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	    tracePtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 	    Tcl_Release((ClientData) tracePtr);
 	}
-        lastTracePtr = tracePtr;
+	if (active.nextTracePtr) {
+	    lastTracePtr = active.nextTracePtr->nextPtr;
+	}
     }
     iPtr->activeInterpTracePtr = active.nextPtr;
     if (state) {
@@ -2219,21 +2231,41 @@ Tcl_DeleteTrace(interp, trace)
 				 * Tcl_CreateTrace). */
 {
     Interp *iPtr = (Interp *) interp;
-    Trace *tracePtr = (Trace *) trace;
+    Trace *prevPtr, *tracePtr = (Trace *) trace;
     register Trace **tracePtr2 = &(iPtr->tracePtr);
+    ActiveInterpTrace *activePtr;
 
     /*
      * Locate the trace entry in the interpreter's trace list,
      * and remove it from the list.
      */
 
+    prevPtr = NULL;
     while ((*tracePtr2) != NULL && (*tracePtr2) != tracePtr) {
+	prevPtr = *tracePtr2;
 	tracePtr2 = &((*tracePtr2)->nextPtr);
     }
     if (*tracePtr2 == NULL) {
 	return;
     }
     (*tracePtr2) = (*tracePtr2)->nextPtr;
+
+    /*
+     * The code below makes it possible to delete traces while traces
+     * are active: it makes sure that the deleted trace won't be
+     * processed by TclCheckInterpTraces.
+     */
+
+    for (activePtr = iPtr->activeInterpTracePtr;  activePtr != NULL;
+	    activePtr = activePtr->nextPtr) {
+	if (activePtr->nextTracePtr == tracePtr) {
+	    if (activePtr->reverseScan) {
+		activePtr->nextTracePtr = prevPtr;
+	    } else {
+		activePtr->nextTracePtr = tracePtr->nextPtr;
+	    }
+	}
+    }
 
     /*
      * If the trace forbids bytecode compilation, change the interpreter's
