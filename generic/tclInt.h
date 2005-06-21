@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.236 2005/06/18 21:45:02 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.237 2005/06/21 18:33:04 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -385,6 +385,8 @@ typedef struct ActiveCommandTrace {
 				 * trace procedure returns;  if this
 				 * trace gets deleted, must update pointer
 				 * to avoid using free'd memory. */
+    int reverseScan;		/* Boolean set true when traces
+				 * are scanning in reverse order. */
 } ActiveCommandTrace;
 
 /*
@@ -796,6 +798,8 @@ typedef struct ActiveInterpTrace {
 				 * trace procedure returns;  if this
 				 * trace gets deleted, must update pointer
 				 * to avoid using free'd memory. */
+    int reverseScan;		/* Boolean set true when traces
+				 * are scanning in reverse order. */
 } ActiveInterpTrace;
 
 /*

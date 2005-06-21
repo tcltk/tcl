@@ -1,3 +1,11 @@
+2005-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclBasic.c:   Added missing walk of the list of active traces
+        * generic/tclTrace.c:   to cleanup references to traces being deleted.
+        * generic/tclInt.h:     [Bug 1201035] Made the walk of the active trace
+        * tests/trace.test (trace-34.*): list aware of the direction of trace
+	scanning, so the proper correction can be made. [Bug 1224585]
+
 2005-06-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Only enable the 'compile'
