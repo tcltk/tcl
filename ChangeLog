@@ -8,7 +8,6 @@
 
 2005-06-20  Don Porter  <dgp@users.sourceforge.net>
 
-
 	* doc/FileSystem.3: added missing Tcl_GlobTypeData documentation
 	[Bug 935853]
 
