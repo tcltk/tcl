@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.237 2005/06/21 18:33:04 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.238 2005/06/21 19:49:25 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -74,6 +74,7 @@ typedef int ptrdiff_t;
 #ifdef BYTE_ORDER
 #    ifdef BIG_ENDIAN
 #        if BYTE_ORDER == BIG_ENDIAN
+#            undef WORDS_BIGENDIAN
 #            define WORDS_BIGENDIAN
 #        endif
 #    endif
