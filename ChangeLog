@@ -1,3 +1,11 @@
+2005-06-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclInt.h: Followup to change made on 2005-06-18 by
+	  Daniel Steffen. There are compilers (*) who error out on the
+	  redefinition of WORDS_BIGENDIAN. We have to undef the previous
+	  definition (on the command line) first to make this
+	  acceptable. (*): AIX native.
+
 2005-06-21  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclFileName.c: Changed [file split] and [file join]
