@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.10 2005/03/15 22:10:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.11 2005/06/21 19:07:41 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -792,8 +792,9 @@ SplitWinPath(path)
     Tcl_DStringFree(&buf);
     
     /*
-     * Split on slashes.  Embedded elements that start with tilde will be
-     * prefixed with "./" so they are not affected by tilde substitution.
+     * Split on slashes.  Embedded elements that start with tilde 
+     * or a drive letter will be prefixed with "./" so they are not 
+     * affected by tilde substitution.
      */
 
     do {
@@ -804,7 +805,10 @@ SplitWinPath(path)
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart[0] == '~') && (elementStart != path)) {
+	    if ((elementStart != path)
+		&& ((elementStart[0] == '~')
+		    || (isalpha(UCHAR(elementStart[0]))
+			&& elementStart[1] == ':'))) {
 		nextElt = Tcl_NewStringObj("./",2);
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
@@ -1125,22 +1129,24 @@ TclpNativeJoinPath(prefix, joining)
     start = Tcl_GetStringFromObj(prefix, &length);
 
     /*
-     * Remove the ./ from tilde prefixed elements unless
-     * it is the first component.
+     * Remove the ./ from tilde prefixed elements, and drive-letter
+     * prefixed elements on Windows, unless it is the first component.
      */
     
     p = joining;
     
     if (length != 0) {
-	if ((p[0] == '.') && (p[1] == '/') && (p[2] == '~')) {
+	if ((p[0] == '.') && (p[1] == '/')
+	    && ((p[2] == '~')
+		|| ((tclPlatform == TCL_PLATFORM_WINDOWS)
+		    && isalpha(UCHAR(p[2]))
+		    && (p[3] == ':')))) {
 	    p += 2;
 	}
     }
-       
     if (*p == '\0') {
 	return;
     }
-
 
     switch (tclPlatform) {
         case TCL_PLATFORM_UNIX:
