@@ -1,6 +1,13 @@
-2005-06-20  Don Porter  <dgp@users.sourceforge.net>
+2005-06-21  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
+
+	* generic/tclBasic.c (Tcl_DeleteTrace):	Added missing walk of the
+	* tests/trace.test (trace-34.1):	list of active traces to
+	cleanup references to traces being deleted. [Bug 1201035]
+
+2005-06-20  Don Porter  <dgp@users.sourceforge.net>
+
 
 	* doc/FileSystem.3: added missing Tcl_GlobTypeData documentation
 	[Bug 935853]

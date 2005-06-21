@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.14 2005/03/18 16:33:41 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.15 2005/06/21 14:44:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5160,6 +5160,7 @@ Tcl_DeleteTrace(interp, trace)
     Interp *iPtr = (Interp *) interp;
     Trace *tracePtr = (Trace *) trace;
     register Trace **tracePtr2 = &(iPtr->tracePtr);
+    ActiveInterpTrace *activePtr;
 
     /*
      * Locate the trace entry in the interpreter's trace list,
@@ -5173,6 +5174,19 @@ Tcl_DeleteTrace(interp, trace)
 	return;
     }
     (*tracePtr2) = (*tracePtr2)->nextPtr;
+
+    /*
+     * The code below makes it possible to delete traces while traces
+     * are active: it makes sure that the deleted trace won't be
+     * processed by TclCheckInterpTraces.
+     */
+
+    for (activePtr = iPtr->activeInterpTracePtr;  activePtr != NULL;
+	    activePtr = activePtr->nextPtr) {
+	if (activePtr->nextTracePtr == tracePtr) {
+	    activePtr->nextTracePtr = tracePtr->nextPtr;
+	}
+    }
 
     /*
      * If the trace forbids bytecode compilation, change the interpreter's
