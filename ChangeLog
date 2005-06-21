@@ -1,3 +1,10 @@
+2005-06-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/winDde.test: Added some waits to the dde server script to
+	let event processing run after we create the dde server and before
+	we exit the server process. This avoids 'server did not respond'
+	errors.
+
 2005-06-21  Kevin Kenny  <kennykb@acm.org>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
