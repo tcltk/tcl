@@ -9140,6 +9140,7 @@ echo "${ECHO_T}yes (standard debugging)" >&6
     fi
 
 
+    ### FIXME: Surely TCL_CFG_DEBUG should be set to whether we're debugging?
 
 cat >>confdefs.h <<\_ACEOF
 #define TCL_CFG_DEBUG 1
@@ -9154,7 +9155,7 @@ _ACEOF
 
     fi
 
-    if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
+    	if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define TCL_COMPILE_DEBUG 1
@@ -9165,7 +9166,7 @@ cat >>confdefs.h <<\_ACEOF
 #define TCL_COMPILE_STATS 1
 _ACEOF
 
-    fi
+	fi
 
     if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
 	if test "$tcl_ok" = "all"; then
