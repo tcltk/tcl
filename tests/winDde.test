@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.13.2.1 2004/06/15 13:00:57 patthoyts Exp $
+# RCS: @(#) $Id: winDde.test,v 1.13.2.2 2005/06/21 22:59:03 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -52,14 +52,18 @@ proc createChildProcess { ddeServerName } {
     }
     puts $f [list dde servername $ddeServerName]
     puts $f {
+        after 200 {set ready 1}
+        vwait ready
 	puts ready
 	vwait done
-	update
+	after 200 {set final 1}
+        vwait final
 	exit
     }
     close $f
     
     set f [open |[list [interpreter] $::scriptName] r]
+    fconfigure $f -buffering line -blocking 1
     gets $f
     return $f
 }
@@ -113,42 +117,46 @@ test winDde-3.5 {DDE request locally} {pcOnly} {
 } "foo\x00"
 
 test winDde-4.1 {DDE execute remotely} {stdio pcOnly} {
-    set a ""
-    set child [createChildProcess child]
-    dde execute TclEval child {set a "foo"}
-    dde execute TclEval child {set done 1}
-
-    set a
-} ""
+    list [catch {
+        set a ""
+        set child [createChildProcess child]
+        dde execute TclEval child {set a "foo"}
+        dde execute TclEval child {set done 1}
+        set a
+    } err] $err
+} [list 0 ""]
 
 test winDde-4.2 {DDE execute remotely} {stdio pcOnly} {
-    set a ""
-    set child [createChildProcess child]
-    dde execute -async TclEval child {set a "foo"}
-    update
-    dde execute TclEval child {set done 1}
-
-    set a
-} ""
+    list [catch {
+        set a ""
+        set child [createChildProcess child]
+        dde execute -async TclEval child {set a "foo"}
+        after 400 {set ::_dde_forever 1} ; vwait ::_dde_forever; #update
+        dde execute TclEval child {set done 1}
+        set a
+    } err] $err
+} [list 0 ""]
 
 test winDde-4.3 {DDE request locally} {stdio pcOnly} {
-    set a ""
-    set child [createChildProcess child]
-    dde execute TclEval child {set a "foo"}
-    set a [dde request TclEval child a]
-    dde execute TclEval child {set done 1}
-
-    set a
-} foo
+    list [catch {
+        set a ""
+        set child [createChildProcess child]
+        dde execute TclEval child {set a "foo"}
+        set a [dde request TclEval child a]
+        dde execute TclEval child {set done 1}
+        set a
+    } err] $err
+} [list 0 foo]
 
 test winDde-4.4 {DDE eval locally} {stdio pcOnly} {
-    set a ""
-    set child [createChildProcess child]
-    set a [dde eval child set a "foo"]
-    dde execute TclEval child {set done 1}
-
-    set a
-} foo
+    list [catch {
+        set a ""
+        set child [createChildProcess child]
+        set a [dde eval child set a "foo"]
+        dde execute TclEval child {set done 1}
+        set a
+    } err] $err
+} [list 0 foo]
 
 test winDde-5.1 {check for bad arguments} {pcOnly} {
     catch {dde execute "" "" "" ""} result
