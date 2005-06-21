@@ -1,3 +1,11 @@
+2005-06-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclFileName.c: Changed [file split] and [file join]
+	to treat Windows drive letters similarly to ~ syntax and make
+	sure that they appear with "./" in front when they are in
+	intermediate components of the path. [Bug 1194458]
+	* tests/fileName.test: Added test for the above bug.
+	
 2005-06-21  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclBasic.c:   Added missing walk of the list of active traces
