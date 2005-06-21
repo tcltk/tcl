@@ -2,6 +2,11 @@
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
 
+	* generic/tclBasic.c:	Made the walk of the active trace list aware
+	* generic/tclCmdMZ.c:	of the direction of trace scanning, so the
+	* generic/tclInt.h:	proper correction can be made. [Bug 1224585]
+	* tests/trace.test (trace-34.2,3):
+
 	* generic/tclBasic.c (Tcl_DeleteTrace):	Added missing walk of the
 	* tests/trace.test (trace-34.1):	list of active traces to
 	cleanup references to traces being deleted. [Bug 1201035]
