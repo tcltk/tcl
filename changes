@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.20 2005/06/21 17:19:40 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.21 2005/06/21 19:38:40 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6214,5 +6214,12 @@ Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 2005-06-18 (bug fix)[1154163] [format %h] on 64-bit OS's (kraft,fellows)
 
 2005-06-21 (bug fix)[1201035,1224585] execution trace crashes (porter)
+
+2005-06-21 (bug fix)[1194458] Windows: [file split] (kenny,porter)
+
+2005-06-21 (revert)[947693,1225044] Windows: 2005-04-19 change to honor
+blocking during close led to multiple test suite failures.  Undone.  (kenny)
+***POTENTIAL INCOMPATIBILITY***
+with Tcl 8.4.10 and 8.5.  Restores compatibility with 8.4.9 and earlier.
 
 --- Released 8.4.11, June 24, 2005 --- See ChangeLog for details ---
