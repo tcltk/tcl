@@ -1,3 +1,10 @@
+2005-06-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Only enable the 'compile'
+	special debugging feature when requested in configure.in; removes
+	irrelevant junk from the configure files of extensions that use
+	Tcl's tcl.m4.
+
 2005-06-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompile.h (INST_PUSH_RETURN_OPTIONS): New opcode to allow
