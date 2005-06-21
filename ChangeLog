@@ -1,3 +1,12 @@
+2005-06-21  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclFileName.c: Corrected a problem where a directory name
+	containing a colon can crash the process on Windows [Bug 1194458].
+	* tests/fileName.test: Added test for [file split] and
+	[file join] with a name containing a colon.
+	* win/tclWinPipe.c: Reverted davygrvy's changes of 2005-04-19;
+	they cause multiple failures in io.test.  [Bug 1225044, still open].
+	
 2005-06-21  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
