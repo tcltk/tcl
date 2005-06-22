@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.12 2005/06/21 17:19:43 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.13 2005/06/22 16:49:28 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -66,6 +66,7 @@
 #ifdef BYTE_ORDER
 #    ifdef BIG_ENDIAN
 #        if BYTE_ORDER == BIG_ENDIAN
+#            undef WORDS_BIGENDIAN
 #            define WORDS_BIGENDIAN
 #        endif
 #    endif
