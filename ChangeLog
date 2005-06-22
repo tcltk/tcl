@@ -22,6 +22,9 @@
 
 2005-06-22  Don Porter  <dgp@users.sourceforge.net>
 
+	* win/tclWinFile.c:	Potential buffer overflow.  [Bug 1225571]
+	Thanks to Pat Thoyts for discovery and fix.
+
 	* tests/safe.test:	Backport performance improvement from 
 	reduced $::auto_path.
 
