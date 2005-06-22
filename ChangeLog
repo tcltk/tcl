@@ -1,5 +1,7 @@
 2005-06-22  Kevin Kenny <kennykb@acm.org>
 
+	*** 8.4.11 TAGGED FOR RELEASE ***
+
 	* generic/tclInt.h:    			    Changed the finalization
 	* generic/tclEvent.c (Tcl_Finalize):        logic to defer the
 	* generic/tclIO.c (TclFinalizeIOSubsystem): shutdown of the pipe
@@ -19,8 +21,6 @@
 	  acceptable. (*): AIX native.
 
 2005-06-22  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.11 TAGGED FOR RELEASE ***
 
 	* tests/safe.test:	Backport performance improvement from 
 	reduced $::auto_path.
