@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.7 2005/04/07 17:32:07 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.8 2005/06/22 21:12:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -118,6 +118,7 @@ static Tcl_ThreadDataKey dataKey;
 
 static void		AfterCleanupProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp));
+static int		AfterDelay _ANSI_ARGS_((Tcl_Interp *interp, int ms));
 static void		AfterProc _ANSI_ARGS_((ClientData clientData));
 static void		FreeAfterPtr _ANSI_ARGS_((AfterInfo *afterPtr));
 static AfterInfo *	GetAfterEvent _ANSI_ARGS_((AfterAssocData *assocPtr,
@@ -814,40 +815,7 @@ processInteger:
 	    ms = 0;
 	}
 	if (objc == 2) {
-	    Interp *iPtr = (Interp *) interp;
-
-	    if (iPtr->limit.timeEvent != NULL) {
-		Tcl_Time endTime, now;
-
-		Tcl_GetTime(&endTime);
-		endTime.sec += ms/1000;
-		endTime.usec += (ms%1000)*1000;
-		if (endTime.usec >= 1000000) {
-		    endTime.sec++;
-		    endTime.usec -= 1000000;
-		}
-
-		do {
-		    Tcl_GetTime(&now);
-		    if (endTime.sec < iPtr->limit.time.sec ||
-			    (endTime.sec == iPtr->limit.time.sec &&
-			    endTime.usec < iPtr->limit.time.usec)) {
-			Tcl_Sleep(1000*(endTime.sec - now.sec) +
-				(endTime.usec - now.usec)/1000);
-			break;
-		    } else {
-			Tcl_Sleep(1000*(iPtr->limit.time.sec - now.sec) +
-				(iPtr->limit.time.usec - now.usec)/1000);
-			if (Tcl_LimitCheck(interp) != TCL_OK) {
-			    return TCL_ERROR;
-			}
-		    }
-		} while (endTime.sec > now.sec ||
-			(endTime.sec == now.sec && endTime.usec > now.usec));
-	    } else {
-		Tcl_Sleep(ms);
-	    }
-	    return TCL_OK;
+	    return AfterDelay(interp, ms);
 	}
 	afterPtr = (AfterInfo *) ckalloc((unsigned) (sizeof(AfterInfo)));
 	afterPtr->assocPtr = assocPtr;
@@ -986,6 +954,74 @@ processInteger:
 	    Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
 	}
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AfterDelay --
+ *
+ *	Implements the blocking delay behaviour of [after $time].
+ *	Tricky because it has to take into account any time limit that
+ *	has been set.
+ *
+ * Results:
+ *	Standard Tcl result code (with error set if an error occurred
+ *	due to a time limit being exceeded).
+ *
+ * Side effects:
+ *	May adjust the time limit granularity marker.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+AfterDelay(interp, ms)
+    Tcl_Interp *interp;
+    int ms;
+{
+    Interp *iPtr = (Interp *) interp;
+#define TCL_TIME_BEFORE(t1,t2) \
+    (((t1).sec<(t2).sec)||((t1).sec==(t2).sec&&(t1).usec<(t2).usec))
+#define TCL_TIME_DIFF_MS(t1,t2) \
+    (1000*((long)(t1).sec - (long)(t2).sec) + \
+	    ((long)(t1).usec - (long)(t2).usec)/1000)
+
+    if (iPtr->limit.timeEvent != NULL) {
+	Tcl_Time endTime, now;
+
+	Tcl_GetTime(&endTime);
+	endTime.sec += ms/1000;
+	endTime.usec += (ms%1000)*1000;
+	if (endTime.usec >= 1000000) {
+	    endTime.sec++;
+	    endTime.usec -= 1000000;
+	}
+
+	do {
+	    Tcl_GetTime(&now);
+	    if (TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+		iPtr->limit.granularityTicker = 0;
+		if (Tcl_LimitCheck(interp) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	    if (TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
+		Tcl_Sleep(TCL_TIME_DIFF_MS(endTime, now));
+		break;
+	    } else {
+		Tcl_Sleep(TCL_TIME_DIFF_MS(iPtr->limit.time, now));
+		if (Tcl_LimitCheck(interp) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	} while (TCL_TIME_BEFORE(now, endTime));
+    } else {
+	Tcl_Sleep(ms);
+    }
+#undef TCL_TIME_BEFORE
+#undef TCL_TIME_DIFF_MS
     return TCL_OK;
 }
 

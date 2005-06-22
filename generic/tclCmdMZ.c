@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.17 2005/06/02 04:17:54 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.18 2005/06/22 21:12:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     endOfForLoop:
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv, 
-	  "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+	    "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
 	goto optionError;
     }
     objc -= i;
@@ -206,7 +206,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     if (about) {
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
 	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
-optionError:
+	  optionError:
 	    if (startIndex) {
 		Tcl_DecrRefCount(startIndex);
 	    }
@@ -518,15 +518,15 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    endOfForLoop:
+  endOfForLoop:
     if (objc-idx < 3 || objc-idx > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? exp string subSpec ?varName?");
-optionError:
-	    if (startIndex) {
-		Tcl_DecrRefCount(startIndex);
-	    }
-	    return TCL_ERROR;
+      optionError:
+	if (startIndex) {
+	  Tcl_DecrRefCount(startIndex);
+	}
+	return TCL_ERROR;
     }
 
     objc -= idx;
@@ -2146,7 +2146,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objc < 5 || objc > 6) {
 	        Tcl_WrongNumArgs(interp, 2, objv,
-				 "string first last ?string?");
+			"string first last ?string?");
 		return TCL_ERROR;
 	    }
 
@@ -2520,7 +2520,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, result, splitObjs, numMatchesSaved, noCase;
+    int i, j, index, mode, foundmode, result, splitObjs, numMatchesSaved, noCase;
     char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
@@ -2542,6 +2542,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     strCmpFn_t strCmpFn = strcmp;
 
     mode = OPT_EXACT;
+    foundmode = 0;
     indexVarObj = NULL;
     matchVarObj = NULL;
     numMatchesSaved = 0;
@@ -2588,6 +2589,18 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    strCmpFn = strcasecmp;
 	    noCase = 1;
 	} else {
+	    if ( foundmode ) {
+		/* Mode already set via -exact, -glob, or -regexp */
+		Tcl_AppendResult(interp,
+			"bad option \"",
+			TclGetString(objv[i]),
+			"\": ",
+			options[mode],
+			" option already found",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	    foundmode = 1;
 	    mode = index;
 	}
     }

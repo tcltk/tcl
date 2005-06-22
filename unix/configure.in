@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.11 2005/06/02 04:18:03 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.12 2005/06/22 21:12:52 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.57)
@@ -17,7 +17,7 @@ dnl AH_BOTTOM([#endif /* _TCLCONFIG */])
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL="a3"
+TCL_PATCH_LEVEL="a4"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -108,7 +108,7 @@ SC_ENABLE_SHARED
 
 SC_CONFIG_CFLAGS
 
-SC_ENABLE_SYMBOLS
+SC_ENABLE_SYMBOLS(bccdebug)
 
 #--------------------------------------------------------------------
 #	Detect what compiler flags to set for 64-bit support.

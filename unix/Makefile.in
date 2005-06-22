@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.18 2005/05/25 15:01:52 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.19 2005/06/22 21:12:47 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1627,6 +1627,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 		$(DISTDIR)/tools
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools/tcl.wse.in
+	mkdir $(DISTDIR)/libtommath
+	cp -p $(TOP_DIR)/libtommath/*.* \
+		$(DISTDIR)/libtommath
 
 #
 # The following target can only be used for non-patch releases.  Use
@@ -1659,7 +1662,7 @@ allpatch: dist
 # This target creates the HTML folder for Tcl & Tk and places it
 # in DISTDIR/html.  It uses the tcltk-man2html.tcl tool from
 # the Tcl group's tool workspace.  It depends on the Tcl & Tk being
-# in directories called tcl8.3 & tk8.3 up two directories from the
+# in directories called tcl8.* & tk8.* up two directories from the
 # TOOL_DIR.
 #
 
@@ -1677,7 +1680,7 @@ BUILD_HTML = \
 	@@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) \
-		--srcdir=$(TOP_DIR)/..
+		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #
 # Targets to build Solaris package of the distribution for the current

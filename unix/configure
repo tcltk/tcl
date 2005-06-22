@@ -841,28 +841,32 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-man-symlinks   use symlinks for the manpages
+  --enable-man-symlinks   use symlinks for the manpages (default: off)
   --enable-man-compression=PROG
-                          compress the manpages with PROG
+                          compress the manpages with PROG (default: off)
   --enable-man-suffix=STRING
                           use STRING as a suffix to manpage file names
-                          (default: tcl)
-  --enable-threads        build with threads
-  --enable-shared         build and link with shared libraries --enable-shared
-  --enable-64bit          enable 64bit support (where applicable)
-  --enable-64bit-vis      enable 64bit Sparc VIS support
-  --enable-corefoundation use CoreFoundation API --enable-corefoundation
+                          (default: no, tcl if enabled without
+                          specifying STRING)
+  --enable-threads        build with threads (default: off)
+  --enable-shared         build and link with shared libraries (default: on)
+  --enable-64bit          enable 64bit support (default: off)
+  --enable-64bit-vis      enable 64bit Sparc VIS support (default: off)
+  --enable-corefoundation use CoreFoundation API on MacOSX (default: yes)
   --disable-load          disallow dynamic loading and "load" command
-  --enable-symbols        build with debugging symbols --disable-symbols
-  --enable-langinfo	  use nl_langinfo if possible to determine
-			  encoding at startup, otherwise use old heuristic
+                          (default: enabled)
+  --enable-symbols        build with debugging symbols (default: off)
+  --enable-langinfo       use nl_langinfo if possible to determine encoding at
+                          startup, otherwise use old heuristic (default: on)
   --enable-dll-unloading  turn on the 'unload' command (default: on)
-  --enable-framework      package shared libraries in MacOSX frameworks --disable-framework
+  --enable-framework      package shared libraries in MacOSX frameworks
+                          (default: off)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-encoding              encoding for configuration values
+  --with-encoding         encoding for configuration values (default:
+                          iso8859-1)
 
 Some influential environment variables:
   CC          C compiler command
@@ -1327,7 +1331,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL="a3"
+TCL_PATCH_LEVEL="a4"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -1346,56 +1350,61 @@ TCL_SRC_DIR=`cd $srcdir/..; pwd`
 # Compress and/or soft link the manpages?
 #------------------------------------------------------------------------
 
-
-	echo "$as_me:$LINENO: checking whether to use symlinks for manpages" >&5
+    echo "$as_me:$LINENO: checking whether to use symlinks for manpages" >&5
 echo $ECHO_N "checking whether to use symlinks for manpages... $ECHO_C" >&6
-	# Check whether --enable-man-symlinks or --disable-man-symlinks was given.
+    # Check whether --enable-man-symlinks or --disable-man-symlinks was given.
 if test "${enable_man_symlinks+set}" = set; then
   enableval="$enable_man_symlinks"
   test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks"
 else
   enableval="no"
 fi;
-	echo "$as_me:$LINENO: result: $enableval" >&5
+    echo "$as_me:$LINENO: result: $enableval" >&5
 echo "${ECHO_T}$enableval" >&6
 
-	echo "$as_me:$LINENO: checking whether to compress the manpages" >&5
+    echo "$as_me:$LINENO: checking whether to compress the manpages" >&5
 echo $ECHO_N "checking whether to compress the manpages... $ECHO_C" >&6
-	# Check whether --enable-man-compression or --disable-man-compression was given.
+    # Check whether --enable-man-compression or --disable-man-compression was given.
 if test "${enable_man_compression+set}" = set; then
   enableval="$enable_man_compression"
-  test "$enableval" = "yes" && { { echo "$as_me:$LINENO: error: missing argument to --enable-man-compression" >&5
+  case $enableval in
+	    yes) { { echo "$as_me:$LINENO: error: missing argument to --enable-man-compression" >&5
 echo "$as_me: error: missing argument to --enable-man-compression" >&2;}
-   { (exit 1); exit 1; }; }
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --compress $enableval"
+   { (exit 1); exit 1; }; };;
+	    no)  ;;
+	    *)   MAN_FLAGS="$MAN_FLAGS --compress $enableval";;
+	esac
 else
   enableval="no"
 fi;
-	echo "$as_me:$LINENO: result: $enableval" >&5
+    echo "$as_me:$LINENO: result: $enableval" >&5
 echo "${ECHO_T}$enableval" >&6
-	if test "$enableval" != "no"; then
-		echo "$as_me:$LINENO: checking for compressed file suffix" >&5
+    if test "$enableval" != "no"; then
+	echo "$as_me:$LINENO: checking for compressed file suffix" >&5
 echo $ECHO_N "checking for compressed file suffix... $ECHO_C" >&6
-		touch TeST
-		$enableval TeST
-		Z=`ls TeST* | sed 's/^....//'`
-		rm -f TeST*
-		MAN_FLAGS="$MAN_FLAGS --extension $Z"
-		echo "$as_me:$LINENO: result: $Z" >&5
+	touch TeST
+	$enableval TeST
+	Z=`ls TeST* | sed 's/^....//'`
+	rm -f TeST*
+	MAN_FLAGS="$MAN_FLAGS --extension $Z"
+	echo "$as_me:$LINENO: result: $Z" >&5
 echo "${ECHO_T}$Z" >&6
-	fi
+    fi
 
-	echo "$as_me:$LINENO: checking whether to add a package name suffix for the manpages" >&5
+    echo "$as_me:$LINENO: checking whether to add a package name suffix for the manpages" >&5
 echo $ECHO_N "checking whether to add a package name suffix for the manpages... $ECHO_C" >&6
-	# Check whether --enable-man-suffix or --disable-man-suffix was given.
+    # Check whether --enable-man-suffix or --disable-man-suffix was given.
 if test "${enable_man_suffix+set}" = set; then
   enableval="$enable_man_suffix"
-  test "$enableval" = "yes" && enableval="tcl"
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --suffix $enableval"
+  case $enableval in
+	    yes) enableval="tcl";;
+	    no)  ;;
+	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
+	esac
 else
   enableval="no"
 fi;
-	echo "$as_me:$LINENO: result: $enableval" >&5
+    echo "$as_me:$LINENO: result: $enableval" >&5
 echo "${ECHO_T}$enableval" >&6
 
 
@@ -7848,7 +7857,7 @@ echo "${ECHO_T}$tcl_cv_ld_single_module" >&6
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind"
+	    LDFLAGS="$LDFLAGS -prebind -headerpad_max_install_names"
 	    echo "$as_me:$LINENO: checking if ld accepts -search_paths_first flag" >&5
 echo $ECHO_N "checking if ld accepts -search_paths_first flag... $ECHO_C" >&6
 if test "${tcl_cv_ld_search_paths_first+set}" = set; then
@@ -9131,6 +9140,7 @@ echo "${ECHO_T}yes (standard debugging)" >&6
     fi
 
 
+    ### FIXME: Surely TCL_CFG_DEBUG should be set to whether we're debugging?
 
 cat >>confdefs.h <<\_ACEOF
 #define TCL_CFG_DEBUG 1
@@ -9145,7 +9155,7 @@ _ACEOF
 
     fi
 
-    if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
+    	if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define TCL_COMPILE_DEBUG 1
@@ -9156,7 +9166,7 @@ cat >>confdefs.h <<\_ACEOF
 #define TCL_COMPILE_STATS 1
 _ACEOF
 
-    fi
+	fi
 
     if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
 	if test "$tcl_ok" = "all"; then

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.12 2005/04/07 17:32:07 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.13 2005/06/22 21:12:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1176,7 +1176,11 @@ Tcl_UntraceCommand(interp, cmdName, flags, proc, clientData)
     for (activePtr = iPtr->activeCmdTracePtr;  activePtr != NULL;
 	 activePtr = activePtr->nextPtr) {
 	if (activePtr->nextTracePtr == tracePtr) {
-	    activePtr->nextTracePtr = tracePtr->nextPtr;
+	    if (activePtr->reverseScan) {
+		activePtr->nextTracePtr = prevPtr;
+	    } else {
+		activePtr->nextTracePtr = tracePtr->nextPtr;
+	    }
 	}
     }
     if (prevPtr == NULL) {
@@ -1284,6 +1288,7 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
      */
     if (flags & (TCL_TRACE_DESTROYED | TCL_TRACE_DELETE)) {
 	int untraceFlags = tcmdPtr->flags;
+	Tcl_InterpState state;
 
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
@@ -1315,9 +1320,14 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	 * Remove the trace since TCL_TRACE_DESTROYED tells us to, or the
 	 * command we're tracing has just gone away.  Then decrement the
 	 * clientData refCount that was set up by trace creation.
+	 *
+	 * Note that we save the (return) state of the interpreter to
+	 * prevent bizarre error messages.
 	 */
+	state = Tcl_SaveInterpState(interp, TCL_OK);
 	Tcl_UntraceCommand(interp, oldName, untraceFlags,
 		TraceCommandProc, clientData);
+	(void) Tcl_RestoreInterpState(interp, state);
 	tcmdPtr->refCount--;
     }
     if ((--tcmdPtr->refCount) <= 0) {
@@ -1389,6 +1399,7 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	 tracePtr = active.nextTracePtr) {
         if (traceFlags & TCL_TRACE_LEAVE_EXEC) {
             /* execute the trace command in order of creation for "leave" */
+	    active.reverseScan = 1;
 	    active.nextTracePtr = NULL;
             tracePtr = cmdPtr->tracePtr;
             while (tracePtr->nextPtr != lastTracePtr) {
@@ -1396,6 +1407,7 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	        tracePtr = tracePtr->nextPtr;
             }
         } else {
+	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
         }
 	tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
@@ -1412,7 +1424,9 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	        ckfree((char*)tcmdPtr);
 	    }
 	}
-        lastTracePtr = tracePtr;
+	if (active.nextTracePtr) {
+	    lastTracePtr = active.nextTracePtr->nextPtr;
+	}
     }
     iPtr->activeCmdTracePtr = active.nextPtr;
     if (state) {
@@ -1487,6 +1501,7 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
              * Tcl_CreateObjTrace creates one more linked list of traces
              * which results in one more reversal of trace invocation.
              */
+	    active.reverseScan = 1;
 	    active.nextTracePtr = NULL;
             tracePtr = iPtr->tracePtr;
             while (tracePtr->nextPtr != lastTracePtr) {
@@ -1494,6 +1509,7 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	        tracePtr = tracePtr->nextPtr;
             }
         } else {
+	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
         }
 	if (tracePtr->level > 0 && curLevel > tracePtr->level) {
@@ -1541,7 +1557,9 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	    tracePtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 	    Tcl_Release((ClientData) tracePtr);
 	}
-        lastTracePtr = tracePtr;
+	if (active.nextTracePtr) {
+	    lastTracePtr = active.nextTracePtr->nextPtr;
+	}
     }
     iPtr->activeInterpTracePtr = active.nextPtr;
     if (state) {
@@ -2213,21 +2231,41 @@ Tcl_DeleteTrace(interp, trace)
 				 * Tcl_CreateTrace). */
 {
     Interp *iPtr = (Interp *) interp;
-    Trace *tracePtr = (Trace *) trace;
+    Trace *prevPtr, *tracePtr = (Trace *) trace;
     register Trace **tracePtr2 = &(iPtr->tracePtr);
+    ActiveInterpTrace *activePtr;
 
     /*
      * Locate the trace entry in the interpreter's trace list,
      * and remove it from the list.
      */
 
+    prevPtr = NULL;
     while ((*tracePtr2) != NULL && (*tracePtr2) != tracePtr) {
+	prevPtr = *tracePtr2;
 	tracePtr2 = &((*tracePtr2)->nextPtr);
     }
     if (*tracePtr2 == NULL) {
 	return;
     }
     (*tracePtr2) = (*tracePtr2)->nextPtr;
+
+    /*
+     * The code below makes it possible to delete traces while traces
+     * are active: it makes sure that the deleted trace won't be
+     * processed by TclCheckInterpTraces.
+     */
+
+    for (activePtr = iPtr->activeInterpTracePtr;  activePtr != NULL;
+	    activePtr = activePtr->nextPtr) {
+	if (activePtr->nextTracePtr == tracePtr) {
+	    if (activePtr->reverseScan) {
+		activePtr->nextTracePtr = prevPtr;
+	    } else {
+		activePtr->nextTracePtr = tracePtr->nextPtr;
+	    }
+	}
+    }
 
     /*
      * If the trace forbids bytecode compilation, change the interpreter's

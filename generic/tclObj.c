@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.19 2005/05/25 15:01:48 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.20 2005/06/22 21:12:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -389,6 +389,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclTokensType);
     Tcl_RegisterObjType(&tclRegexpType);
+    Tcl_RegisterObjType(&tclProcBodyType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -1421,19 +1422,19 @@ SetBooleanFromAny(interp, objPtr)
 	}
 	if (objPtr->typePtr == &tclIntType) {
 	    switch (objPtr->internalRep.longValue) {
-		case 0: case 1:
+		case 0L: case 1L:
 		    return TCL_OK;
 	    }
 	    goto badBoolean;
 	}
 	if (objPtr->typePtr == &tclWideIntType) {
 	    Tcl_WideInt w = objPtr->internalRep.wideValue;
-	    switch (w) {
-		case 0: case 1:
-		    newBool = (int)w;
-		    goto numericBoolean;
+	    if ( w == 0 || w == 1 ) {
+		newBool = (int)w;
+		goto numericBoolean;
+	    } else {
+		goto badBoolean;
 	    }
-	    goto badBoolean;
 	}
     }
 
@@ -2997,7 +2998,7 @@ SetBignumFromAny( interp, objPtr )
  * is called.
  */
 
-void
+static void
 UpdateStringOfBignum( Tcl_Obj* objPtr )
 {
     mp_int bignumVal;

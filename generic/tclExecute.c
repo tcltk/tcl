@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.22 2005/05/25 15:01:25 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.23 2005/06/22 21:12:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1095,8 +1095,8 @@ TclExecuteByteCode(interp, codePtr)
     register Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
     register unsigned char *pc = codePtr->codeStart;
 				/* The current program counter. */
-    int instructionCount = 0;	/* Counter that is used to work out
-				 * when to call Tcl_AsyncReady() */
+    int instructionCount = 0;	/* Counter that is used to work out when to
+				 * call Tcl_AsyncReady() */
     Tcl_Obj *expandNestList = NULL;
     int checkInterp = 0;        /* Indicates when a check of interp readyness
 				 * is necessary. Set by DECACHE_STACK_INFO() */
@@ -1111,8 +1111,8 @@ TclExecuteByteCode(interp, codePtr)
 
     
     /*
-     * Result variable - needed only when going to checkForcatch or
-     * other error handlers; also used as local in some opcodes.
+     * Result variable - needed only when going to checkForcatch or other
+     * error handlers; also used as local in some opcodes.
      */
 
     int result = TCL_OK;	/* Return code returned after execution. */
@@ -1257,25 +1257,28 @@ TclExecuteByteCode(interp, codePtr)
 #endif
 
     /*
-     * Check for asynchronous handlers [Bug 746722]; we
-     * do the check every ASYNC_CHECK_COUNT_MASK instruction,
-     * of the form (2**n-1).
+     * Check for asynchronous handlers [Bug 746722]; we do the check every
+     * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
      */
 
     if ((instructionCount++ & ASYNC_CHECK_COUNT_MASK) == 0) {
 	if (Tcl_AsyncReady()) {
+	    int localResult;
 	    DECACHE_STACK_INFO();
-	    result = Tcl_AsyncInvoke(interp, result);
+	    localResult = Tcl_AsyncInvoke(interp, result);
 	    CACHE_STACK_INFO();
-	    if (result == TCL_ERROR) {
+	    if (localResult == TCL_ERROR) {
+		result = localResult;
 		goto checkForCatch;
 	    }
 	}
 	if (Tcl_LimitReady(interp)) {
+	    int localResult;
 	    DECACHE_STACK_INFO();
-	    result = Tcl_LimitCheck(interp);
+	    localResult = Tcl_LimitCheck(interp);
 	    CACHE_STACK_INFO();
-	    if (result == TCL_ERROR) {
+	    if (localResult == TCL_ERROR) {
+		result = localResult;
 		goto checkForCatch;
 	    }
 	}
@@ -1430,177 +1433,167 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
-    case INST_OVER:
-        {
-	    int opnd;
-	    
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    objResultPtr = *(tosPtr - opnd);
-	    TRACE_WITH_OBJ(("=> "), objResultPtr);
-	    NEXT_INST_F(5, 0, 1);
-	}
+    case INST_OVER: {
+	int opnd;
 
-    case INST_CONCAT1:
-	{
-	    int opnd, length, appendLen = 0;
-	    char *bytes, *p;		
-	    Tcl_Obj **currPtr;
-	    
-	    opnd = TclGetUInt1AtPtr(pc+1);
+	opnd = TclGetUInt4AtPtr(pc+1);
+	objResultPtr = *(tosPtr - opnd);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(5, 0, 1);
+    }
 
-	    /*
-	     * Compute the length to be appended.
-	     */
-	    
-	    for (currPtr = tosPtr - (opnd-2); currPtr <= tosPtr; 
-		     currPtr++) {
-		bytes = Tcl_GetStringFromObj(*currPtr, &length);
-		if (bytes != NULL) {
-		    appendLen += length;
-		}
-	    }
+    case INST_CONCAT1: {
+	int opnd, length, appendLen = 0;
+	char *bytes, *p;		
+	Tcl_Obj **currPtr;
 
-	    /*
-	     * If nothing is to be appended, just return the first
-	     * object by dropping all the others from the stack; this
-	     * saves both the computation and copy of the string rep
-	     * of the first object, enabling the fast '$x[set x {}]'
-	     * idiom for 'K $x [set x{}]'.
-	     */
+	opnd = TclGetUInt1AtPtr(pc+1);
 
-	    if (appendLen == 0) {
-		TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
-		NEXT_INST_V(2, (opnd-1), 0);
-	    }
-
-	    /*
-	     * If the first object is shared, we need a new obj for
-	     * the result; otherwise, we can reuse the first object.
-	     * In any case, make sure it has enough room to accomodate
-	     * all the concatenated bytes. Note that if it is unshared
-	     * its bytes are already copied by Tcl_SetObjectLength, so
-	     * that we set the loop parameters to avoid copying them
-	     * again: p points to the end of the already copied bytes,
-	     * currPtr to the second object.
-	     */
-	    
-	    objResultPtr = *(tosPtr-(opnd-1));
-	    bytes = Tcl_GetStringFromObj(objResultPtr, &length);
-#if !TCL_COMPILE_DEBUG
-	    if (!Tcl_IsShared(objResultPtr)) {
-		Tcl_SetObjLength(objResultPtr, (length + appendLen));
-		p = TclGetString(objResultPtr) + length;
-		currPtr = tosPtr - (opnd - 2);
-	    } else {
-#endif
-		p = (char *) ckalloc((unsigned) (length + appendLen + 1));
-		TclNewObj(objResultPtr);
-		objResultPtr->bytes = p;
-		objResultPtr->length = length + appendLen;
-		currPtr = tosPtr - (opnd - 1);
-#if !TCL_COMPILE_DEBUG
-	    } 
-#endif
-
-	    /*
-	     * Append the remaining characters.
-	     */
-
-	    for (; currPtr <= tosPtr; currPtr++) {
-		bytes = Tcl_GetStringFromObj(*currPtr, &length);
-		if (bytes != NULL) {
-		    memcpy((VOID *) p, (VOID *) bytes,
-			    (size_t) length);
-		    p += length;
-		}
-	    }
-	    *p = '\0';
-		
-	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
-	    NEXT_INST_V(2, opnd, 1);
-	}
-
-    case INST_EXPAND_START:
 	/*
-	 * Push an element to the expandNestList. This records
-	 * the current tosPtr - i.e., the point in the stack
-	 * where the expanded command starts.
-	 *
-	 * Use a Tcl_Obj as linked list element; slight mem waste,
-	 * but faster allocation than ckalloc. This also abuses
-	 * the Tcl_Obj structure, as we do not define a special
-	 * tclObjType for it. It is not dangerous as the obj is
-	 * never passed anywhere, so that all manipulations are
-	 * performed here and in INST_INVOKE_EXPANDED (in case of
-	 * an expansion error, also in INST_EXPAND_STKTOP).
+	 * Compute the length to be appended.
 	 */
 
-        {
-	    Tcl_Obj *objPtr;
-
-	    TclNewObj(objPtr);
-	    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) (tosPtr - eePtr->stackPtr);
-	    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) expandNestList;
-	    expandNestList = objPtr;
-	    NEXT_INST_F(1, 0, 0);
+	for (currPtr = tosPtr - (opnd-2); currPtr <= tosPtr; currPtr++) {
+	    bytes = Tcl_GetStringFromObj(*currPtr, &length);
+	    if (bytes != NULL) {
+		appendLen += length;
+	    }
 	}
 
-    case INST_EXPAND_STKTOP:
-	{  
-	    int objc, length, i;
-	    Tcl_Obj **objv, *valuePtr, *objPtr;
+	/*
+	 * If nothing is to be appended, just return the first object by
+	 * dropping all the others from the stack; this saves both the
+	 * computation and copy of the string rep of the first object,
+	 * enabling the fast '$x[set x {}]' idiom for 'K $x [set x{}]'.
+	 */
 
-	    /*
-	     * Make sure that the element at stackTop is a list; if not,
-	     * remove the element from the expand link list and leave.
-	     */
-	    
-
-	    valuePtr = *tosPtr;
-	    result = Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv);
-	    if (result != TCL_OK) {
-		TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
-	        	Tcl_GetObjResult(interp));
-		objPtr = expandNestList;
-		expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
-		TclDecrRefCount(objPtr);
-		goto checkForCatch;
-	    }
-	    tosPtr--;
-
-	    /*
-	     * Make sure there is enough room in the stack to expand
-	     * this list *and* process the rest of the command (at least
-	     * up to the next argument expansion or command end).
-	     * The operand is the current stack depth, as seen by the 
-	     * compiler.
-	     */ 
-
-	    length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1);
-	    while ((tosPtr + length) > eePtr->endPtr) {
-		DECACHE_STACK_INFO();
-		GrowEvaluationStack(eePtr); 
-		CACHE_STACK_INFO();
-	    }
-	    
-	    /*
-	     * Expand the list at stacktop onto the stack; free the list.
-	     */
-
-	    for (i = 0; i < objc; i++) {
-		PUSH_OBJECT(objv[i]);
-	    }
-	    TclDecrRefCount(valuePtr);
-	    NEXT_INST_F(5, 0, 0);
+	if (appendLen == 0) {
+	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	    NEXT_INST_V(2, (opnd-1), 0);
 	}
+
+	/*
+	 * If the first object is shared, we need a new obj for the result;
+	 * otherwise, we can reuse the first object.  In any case, make sure
+	 * it has enough room to accomodate all the concatenated bytes. Note
+	 * that if it is unshared its bytes are already copied by
+	 * Tcl_SetObjectLength, so that we set the loop parameters to avoid
+	 * copying them again: p points to the end of the already copied
+	 * bytes, currPtr to the second object.
+	 */
+
+	objResultPtr = *(tosPtr-(opnd-1));
+	bytes = Tcl_GetStringFromObj(objResultPtr, &length);
+#if !TCL_COMPILE_DEBUG
+	if (!Tcl_IsShared(objResultPtr)) {
+	    Tcl_SetObjLength(objResultPtr, (length + appendLen));
+	    p = TclGetString(objResultPtr) + length;
+	    currPtr = tosPtr - (opnd - 2);
+	} else {
+#endif
+	    p = (char *) ckalloc((unsigned) (length + appendLen + 1));
+	    TclNewObj(objResultPtr);
+	    objResultPtr->bytes = p;
+	    objResultPtr->length = length + appendLen;
+	    currPtr = tosPtr - (opnd - 1);
+#if !TCL_COMPILE_DEBUG
+	} 
+#endif
+
+	/*
+	 * Append the remaining characters.
+	 */
+
+	for (; currPtr <= tosPtr; currPtr++) {
+	    bytes = Tcl_GetStringFromObj(*currPtr, &length);
+	    if (bytes != NULL) {
+		memcpy((VOID *) p, (VOID *) bytes, (size_t) length);
+		p += length;
+	    }
+	}
+	*p = '\0';
+
+	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	NEXT_INST_V(2, opnd, 1);
+    }
+
+    case INST_EXPAND_START: {
+	/*
+	 * Push an element to the expandNestList. This records the current
+	 * tosPtr - i.e., the point in the stack where the expanded command
+	 * starts.
+	 *
+	 * Use a Tcl_Obj as linked list element; slight mem waste, but faster
+	 * allocation than ckalloc. This also abuses the Tcl_Obj structure, as
+	 * we do not define a special tclObjType for it. It is not dangerous
+	 * as the obj is never passed anywhere, so that all manipulations are
+	 * performed here and in INST_INVOKE_EXPANDED (in case of an expansion
+	 * error, also in INST_EXPAND_STKTOP).
+	 */
+
+	Tcl_Obj *objPtr;
+
+	TclNewObj(objPtr);
+	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *)
+		(tosPtr - eePtr->stackPtr);
+	objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) expandNestList;
+	expandNestList = objPtr;
+	NEXT_INST_F(1, 0, 0);
+    }
+
+    case INST_EXPAND_STKTOP: {  
+	int objc, length, i;
+	Tcl_Obj **objv, *valuePtr, *objPtr;
+
+	/*
+	 * Make sure that the element at stackTop is a list; if not, remove
+	 * the element from the expand link list and leave.
+	 */
+
+	valuePtr = *tosPtr;
+	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+	    result = TCL_ERROR;
+	    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
+		    Tcl_GetObjResult(interp));
+	    objPtr = expandNestList;
+	    expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
+	    TclDecrRefCount(objPtr);
+	    goto checkForCatch;
+	}
+	tosPtr--;
+
+	/*
+	 * Make sure there is enough room in the stack to expand this list
+	 * *and* process the rest of the command (at least up to the next
+	 * argument expansion or command end).  The operand is the current
+	 * stack depth, as seen by the compiler.
+	 */ 
+
+	length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1);
+	while ((tosPtr + length) > eePtr->endPtr) {
+	    DECACHE_STACK_INFO();
+	    GrowEvaluationStack(eePtr); 
+	    CACHE_STACK_INFO();
+	}
+
+	/*
+	 * Expand the list at stacktop onto the stack; free the list.
+	 */
+
+	for (i = 0; i < objc; i++) {
+	    PUSH_OBJECT(objv[i]);
+	}
+	TclDecrRefCount(valuePtr);
+	NEXT_INST_F(5, 0, 0);
+    }
 
     {
 	/*
 	 * INVOCATION BLOCK
 	 */
-	
+
 	int objc, pcAdjustment;
-	
+
 	case INST_INVOKE_EXPANDED:
             {
 		Tcl_Obj *objPtr;
@@ -2708,8 +2701,7 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 2, -1); /* already has the correct refCount */
 	}
 
-    case INST_LIST_INDEX_IMM:
-    {
+    case INST_LIST_INDEX_IMM: {
 	/*** lindex with objc==3 and index in bytecode stream ***/
 
 	int listc, idx, opnd;
@@ -4750,6 +4742,11 @@ TclExecuteByteCode(interp, codePtr)
     case INST_PUSH_RETURN_CODE:
 	TclNewLongObj(objResultPtr, result);
 	TRACE(("=> %u\n", result));
+	NEXT_INST_F(1, 0, 1);
+
+    case INST_PUSH_RETURN_OPTIONS:
+	objResultPtr = Tcl_GetReturnOptions(interp, result);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
     default:

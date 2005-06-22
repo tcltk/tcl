@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.26 2005/06/02 04:17:55 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.27 2005/06/22 21:12:34 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -57,6 +57,32 @@
 #include <stddef.h>
 #else
 typedef int ptrdiff_t;
+#endif
+
+/*
+ * Ensure WORDS_BIGENDIAN is defined correcly:
+ * Needs to happen here in addition to configure to work with
+ * fat compiles on Darwin (i.e. ppc and i386 at the same time).
+ */
+
+#ifdef HAVE_SYS_TYPES_H
+#    include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#    include <sys/param.h>
+#endif
+#ifdef BYTE_ORDER
+#    ifdef BIG_ENDIAN
+#        if BYTE_ORDER == BIG_ENDIAN
+#            undef WORDS_BIGENDIAN
+#            define WORDS_BIGENDIAN
+#        endif
+#    endif
+#    ifdef LITTLE_ENDIAN
+#        if BYTE_ORDER == LITTLE_ENDIAN
+#            undef WORDS_BIGENDIAN
+#        endif
+#    endif
 #endif
 
 /*
@@ -360,6 +386,8 @@ typedef struct ActiveCommandTrace {
 				 * trace procedure returns;  if this
 				 * trace gets deleted, must update pointer
 				 * to avoid using free'd memory. */
+    int reverseScan;		/* Boolean set true when traces
+				 * are scanning in reverse order. */
 } ActiveCommandTrace;
 
 /*
@@ -771,6 +799,8 @@ typedef struct ActiveInterpTrace {
 				 * trace procedure returns;  if this
 				 * trace gets deleted, must update pointer
 				 * to avoid using free'd memory. */
+    int reverseScan;		/* Boolean set true when traces
+				 * are scanning in reverse order. */
 } ActiveInterpTrace;
 
 /*
@@ -1530,6 +1560,10 @@ typedef struct Interp {
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
+ * INTERP_ALTERNATE_WRONG_ARGS: Used for listing second and subsequent forms
+ *			of the wrong-num-args string in Tcl_WrongNumArgs.
+ *			Makes it append instead of replacing and uses
+ *			different intermediate text.
  *
  * WARNING: For the sake of some extensions that have made use of former
  * internal values, do not re-use the flag values 2 (formerly ERR_IN_PROGRESS)
@@ -1542,6 +1576,7 @@ typedef struct Interp {
 #define RAND_SEED_INITIALIZED		 0x40
 #define SAFE_INTERP			 0x80
 #define INTERP_TRACE_IN_PROGRESS	0x200
+#define INTERP_ALTERNATE_WRONG_ARGS	0x400
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
@@ -1865,13 +1900,9 @@ MODULE_SCOPE Tcl_ObjType tclDictType;
 MODULE_SCOPE Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE Tcl_ObjType tclStringType;
 MODULE_SCOPE Tcl_ObjType tclArraySearchType;
-MODULE_SCOPE Tcl_ObjType tclIndexType;
 MODULE_SCOPE Tcl_ObjType tclNsNameType;
-MODULE_SCOPE Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE Tcl_ObjType tclWideIntType;
-MODULE_SCOPE Tcl_ObjType tclLocalVarNameType;
 MODULE_SCOPE Tcl_ObjType tclRegexpType;
-MODULE_SCOPE Tcl_ObjType tclLevelReferenceType;
 MODULE_SCOPE Tcl_ObjType tclTokensType;
 
 /*
@@ -2093,6 +2124,7 @@ MODULE_SCOPE int	TclpDeleteFile _ANSI_ARGS_((CONST char *path));
 MODULE_SCOPE void	TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));
 MODULE_SCOPE void	TclpFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutexPtr));
+MODULE_SCOPE void	TclpFinalizePipes _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpFinalizeThreadData _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 MODULE_SCOPE int	TclpThreadCreate _ANSI_ARGS_((
@@ -2234,6 +2266,9 @@ MODULE_SCOPE int	Tcl_CatchObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_CdObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int	TclChanTruncateObjCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	TclClockClicksObjCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));

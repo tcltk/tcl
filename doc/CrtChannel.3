@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.6 2005/04/07 17:31:58 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.7 2005/06/22 21:12:05 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelWideSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_ChannelThreadActionProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelWideSeekProc, Tcl_ChannelTruncateProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_ChannelThreadActionProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -97,6 +97,11 @@ Tcl_DriverWideSeekProc *
 .sp
 Tcl_DriverThreadActionProc *
 \fBTcl_ChannelThreadActionProc\fR(\fItypePtr\fR)
+.sp
+.VS 8.5
+Tcl_DriverTruncateProc *
+\fBTcl_ChannelTruncateProc\fR(\fItypePtr\fR)
+.VE 8.5
 .sp
 Tcl_DriverSetOptionProc *
 \fBTcl_ChannelSetOptionProc\fR(\fItypePtr\fR)
@@ -314,22 +319,25 @@ details about the old structure.
 The \fBTcl_ChannelType\fR structure contains the following fields:
 .CS
 typedef struct Tcl_ChannelType {
-	char *\fItypeName\fR;
-	Tcl_ChannelTypeVersion \fIversion\fR;
-	Tcl_DriverCloseProc *\fIcloseProc\fR;
-	Tcl_DriverInputProc *\fIinputProc\fR;
-	Tcl_DriverOutputProc *\fIoutputProc\fR;
-	Tcl_DriverSeekProc *\fIseekProc\fR;
-	Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
-	Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
-	Tcl_DriverWatchProc *\fIwatchProc\fR;
-	Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
-	Tcl_DriverClose2Proc *\fIclose2Proc\fR;
-	Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
-	Tcl_DriverFlushProc *\fIflushProc\fR;
-	Tcl_DriverHandlerProc *\fIhandlerProc\fR;
-	Tcl_DriverWideSeekProc *\fIwideSeekProc\fR;
-	Tcl_DriverThreadActionProc *\fIthreadActionProc\fR;
+        char *\fItypeName\fR;
+        Tcl_ChannelTypeVersion \fIversion\fR;
+        Tcl_DriverCloseProc *\fIcloseProc\fR;
+        Tcl_DriverInputProc *\fIinputProc\fR;
+        Tcl_DriverOutputProc *\fIoutputProc\fR;
+        Tcl_DriverSeekProc *\fIseekProc\fR;
+        Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
+        Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
+        Tcl_DriverWatchProc *\fIwatchProc\fR;
+        Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
+        Tcl_DriverClose2Proc *\fIclose2Proc\fR;
+        Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
+        Tcl_DriverFlushProc *\fIflushProc\fR;
+        Tcl_DriverHandlerProc *\fIhandlerProc\fR;
+        Tcl_DriverWideSeekProc *\fIwideSeekProc\fR;
+.VS 8.5
+        Tcl_DriverThreadActionProc *\fIthreadActionProc\fR;
+        Tcl_DriverTruncateProc *\fItruncateProc\fR;
+.VE 8.5
 } Tcl_ChannelType;
 .CE
 .PP
@@ -349,6 +357,9 @@ structure, the following functions should be used to obtain the values:
 \fBTcl_ChannelClose2Proc\fR, \fBTcl_ChannelInputProc\fR,
 \fBTcl_ChannelOutputProc\fR, \fBTcl_ChannelSeekProc\fR,
 \fBTcl_ChannelWideSeekProc\fR, \fBTcl_ChannelThreadActionProc\fR,
+.VS 8.5
+\fBTcl_ChannelTruncateProc\fR,
+.VE 8.5
 \fBTcl_ChannelSetOptionProc\fR, \fBTcl_ChannelGetOptionProc\fR,
 \fBTcl_ChannelWatchProc\fR, \fBTcl_ChannelGetHandleProc\fR,
 \fBTcl_ChannelFlushProc\fR, or \fBTcl_ChannelHandlerProc\fR.
@@ -373,7 +384,8 @@ that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
 \fBTCL_CHANNEL_VERSION_3\fR must be set to specifiy the \fIwideSeekProc\fR member.
 .VS 8.5
 \fBTCL_CHANNEL_VERSION_4\fR must be set to specifiy the
-\fIthreadActionProc\fR member (includes \fIwideSeekProc\fR).
+\fIthreadActionProc\fR and \fItruncateProc\fR members (includes
+\fIwideSeekProc\fR).
 .VE 8.5
 If it is not set to any of these, then this
 \fBTcl_ChannelType\fR is assumed to have the original structure.  See
@@ -382,7 +394,11 @@ and function with either structures, stacked channels must be of at
 least \fBTCL_CHANNEL_VERSION_2\fR to function correctly.
 .PP
 This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
-one of \fBTCL_CHANNEL_VERSION_4\fR, \fBTCL_CHANNEL_VERSION_3\fR,
+one of
+.VS 8.5
+\fBTCL_CHANNEL_VERSION_4\fR,
+.VE 8.5
+\fBTCL_CHANNEL_VERSION_3\fR,
 \fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
 .SS BLOCKMODEPROC
 .PP
@@ -798,8 +814,8 @@ might be maintaining using the calling thread as the associate. See
 .PP
 .CS
 typedef void Tcl_DriverThreadActionProc(
-	ClientData \fIinstanceData\fR,
-      int        \fIaction\fR);
+        ClientData \fIinstanceData\fR,
+        int        \fIaction\fR);
 .CE
 .PP
 \fIInstanceData\fR is the same as the value passed to
@@ -807,7 +823,26 @@ typedef void Tcl_DriverThreadActionProc(
 .PP
 These values can be retrieved with \fBTcl_ChannelThreadActionProc\fR,
 which returns a pointer to the function.
-
+.SS "TRUNCATEPROC"
+.PP
+The \fItruncateProc\fR field contains the address of the function
+called by the generic layer when a channel is truncated to some
+length. It can be NULL.
+.PP
+.CS
+typedef int Tcl_DriverTruncateProc(
+        ClientData \fIinstanceData\fR,
+        Tcl_WideInt \fIlength\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created, and
+\fIlength\fR is the new length of the underlying file, which should
+not be negative. The result should be 0 on success or an errno code
+(suitable for use with \fBTcl_SetErrno\fR) on failure.
+.PP
+These values can be retrieved with \fBTcl_ChannelTruncateProc\fR,
+which returns a pointer to the function.
 .SH TCL_BADCHANNELOPTION
 .PP
 This procedure generates a "bad option" error message in an
@@ -883,6 +918,7 @@ typedef struct Tcl_ChannelType {
         Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
         Tcl_DriverFlushProc *\fIflushProc\fR;
         Tcl_DriverHandlerProc *\fIhandlerProc\fR;
+        Tcl_DriverTruncateProc *\fItruncateProc\fR;
 } Tcl_ChannelType;
 .CE
 .PP

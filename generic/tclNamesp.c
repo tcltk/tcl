@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.16 2005/06/02 04:17:56 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.17 2005/06/22 21:12:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -299,7 +299,7 @@ Tcl_ObjType tclNsNameType = {
  * the real command that implements it.
  */
 
-Tcl_ObjType tclEnsembleCmdType = {
+static Tcl_ObjType ensembleCmdType = {
     "ensembleCommand",		/* the type's name */
     FreeEnsembleCmdRep,		/* freeIntRepProc */
     DupEnsembleCmdRep,		/* dupIntRepProc */
@@ -5856,7 +5856,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	 * subcommand.
 	 */
 
-	if (objv[1]->typePtr == &tclEnsembleCmdType) {
+	if (objv[1]->typePtr == &ensembleCmdType) {
 	    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)
 		    objv[1]->internalRep.otherValuePtr;
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
@@ -6152,7 +6152,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
     register EnsembleCmdRep *ensembleCmd;
     int length;
 
-    if (objPtr->typePtr == &tclEnsembleCmdType) {
+    if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = (EnsembleCmdRep *) objPtr->internalRep.otherValuePtr;
 	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
 	ensembleCmd->nsPtr->refCount--;
@@ -6169,7 +6169,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
 	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.otherValuePtr = (VOID *) ensembleCmd;
-	objPtr->typePtr = &tclEnsembleCmdType;
+	objPtr->typePtr = &ensembleCmdType;
     }
 
     /*
@@ -6596,7 +6596,7 @@ DupEnsembleCmdRep(objPtr, copyPtr)
 	    ckalloc(sizeof(EnsembleCmdRep));
     int length = strlen(ensembleCmd->fullSubcmdName);
 
-    copyPtr->typePtr = &tclEnsembleCmdType;
+    copyPtr->typePtr = &ensembleCmdType;
     copyPtr->internalRep.otherValuePtr = (VOID *) ensembleCopy;
     ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;

@@ -603,20 +603,22 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     fi
     AC_SUBST(CFLAGS_DEFAULT)
     AC_SUBST(LDFLAGS_DEFAULT)
+    ### FIXME: Surely TCL_CFG_DEBUG should be set to whether we're debugging?
     AC_DEFINE(TCL_CFG_DEBUG, 1, [Is debugging enabled?])
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
 	AC_DEFINE(TCL_MEM_DEBUG, 1, [Is memory debugging enabled?])
     fi
 
-    if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
-	AC_DEFINE(TCL_COMPILE_DEBUG, 1, [Is bytecode debugging enabled?])
-	AC_DEFINE(TCL_COMPILE_STATS, 1, [Are bytecode statistics enabled?])
-    fi
+    ifelse($1,bccdebug,dnl Only enable 'compile' for the Tcl core itself
+	if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
+	    AC_DEFINE(TCL_COMPILE_DEBUG, 1, [Is bytecode debugging enabled?])
+	    AC_DEFINE(TCL_COMPILE_STATS, 1, [Are bytecode statistics enabled?])
+	fi)
 
     if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
 	if test "$tcl_ok" = "all"; then
-	    AC_MSG_RESULT([enabled symbols mem compile debugging])
+	    AC_MSG_RESULT([enabled symbols mem ]ifelse($1,bccdebug,[compile ])[debugging])
 	else
 	    AC_MSG_RESULT([enabled $tcl_ok debugging])
 	fi
@@ -708,11 +710,11 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
     AC_ARG_ENABLE(man-compression,
 	AC_HELP_STRING([--enable-man-compression=PROG],
 	    [compress the manpages with PROG (default: off)]),
-	case $enableval in
+	[case $enableval in
 	    yes) AC_MSG_ERROR([missing argument to --enable-man-compression]);;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --compress $enableval";;
-	esac,
+	esac],
 	enableval="no")
     AC_MSG_RESULT([$enableval])
     if test "$enableval" != "no"; then
@@ -729,11 +731,11 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
     AC_ARG_ENABLE(man-suffix,
 	AC_HELP_STRING([--enable-man-suffix=STRING],
 	    [use STRING as a suffix to manpage file names (default: no, AC_PACKAGE_NAME if enabled without specifying STRING)]),
-	case $enableval in
+	[case $enableval in
 	    yes) enableval="AC_PACKAGE_NAME";;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
-	esac,
+	esac],
 	enableval="no")
     AC_MSG_RESULT([$enableval])
 
@@ -1423,7 +1425,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind"
+	    LDFLAGS="$LDFLAGS -prebind -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
 	        hold_ldflags=$LDFLAGS
 	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"

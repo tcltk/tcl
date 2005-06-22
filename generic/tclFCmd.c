@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.6 2005/01/24 21:44:35 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.7 2005/06/22 21:12:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -261,11 +261,38 @@ TclFileMakeDirsCmd(interp, objc, objv)
 		    errfile = target;
 		    goto done;
 		}
-	    } else if ((errno != ENOENT)
-		    || (Tcl_FSCreateDirectory(target) != TCL_OK)) {
+	    } else if (errno != ENOENT) {
+		/* 
+		 * If Tcl_FSStat() failed and the error is anything
+		 * other than non-existence of the target, throw the
+		 * error.
+		 */
 		errfile = target;
 		goto done;
+	    } else if (Tcl_FSCreateDirectory(target) != TCL_OK) {
+		/* 
+		 * Create might have failed because of being in a race
+		 * condition with another process trying to create the
+		 * same subdirectory.
+		 */
+		if (errno == EEXIST) {
+		    if ((Tcl_FSStat(target, &statBuf) == 0)
+			&& S_ISDIR(statBuf.st_mode)) {
+			/* 
+			 * It is a directory that wasn't there before,
+			 * so keep going without error.
+			 */
+			Tcl_ResetResult(interp);
+		    } else {
+			errfile = target;
+			goto done;
+		    }
+		} else {
+		    errfile = target;
+		    goto done;
+		}
 	    }
+	    
 	    /* Forget about this sub-path */
 	    Tcl_DecrRefCount(target);
 	    target = NULL;

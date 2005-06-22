@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.21 2005/05/11 16:58:32 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.22 2005/06/22 21:12:07 dgp Exp $
  */
 
 #ifndef _TCL
@@ -57,10 +57,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   5
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  3
+#define TCL_RELEASE_SERIAL  4
 
 #define TCL_VERSION	    "8.5"
-#define TCL_PATCH_LEVEL	    "8.5a3"
+#define TCL_PATCH_LEVEL	    "8.5a4"
 
 /*
  * The following definitions set up the proper options for Windows
@@ -1504,8 +1504,11 @@ typedef Tcl_WideInt (Tcl_DriverWideSeekProc) _ANSI_ARGS_((
 		    int mode, int *errorCodePtr));
 
 /* TIP #218, Channel Thread Actions */
-typedef void     (Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
+typedef void	(Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
 		    ClientData instanceData, int action));
+/* TIP #208, File Truncation (etc.) */
+typedef int	(Tcl_DriverTruncateProc) _ANSI_ARGS_((
+		    ClientData instanceData, Tcl_WideInt length));
 
 /*
  * The following declarations either map ckalloc and ckfree to
@@ -1596,16 +1599,21 @@ typedef struct Tcl_ChannelType {
 					 * handle 64-bit offsets. May be
 					 * NULL, and must be NULL if
 					 * seekProc is NULL. */
-
-     /*
-      * Only valid in TCL_CHANNEL_VERSION_4 channels or later
-      * TIP #218, Channel Thread Actions
-      */
-     Tcl_DriverThreadActionProc *threadActionProc;
+    /*
+     * Only valid in TCL_CHANNEL_VERSION_4 channels or later
+     * TIP #218, Channel Thread Actions
+     * TIP #208 (part relating to truncation)
+     */
+    Tcl_DriverThreadActionProc *threadActionProc;
  					/* Procedure to call to notify
  					 * the driver of thread specific
  					 * activity for a channel.
 					 * May be NULL. */
+    Tcl_DriverTruncateProc *truncateProc;
+					/* Procedure to call to truncate the
+					 * underlying file to a particular
+					 * length. May be NULL if the channel
+					 * does not support truncation. */
 } Tcl_ChannelType;
 
 /*

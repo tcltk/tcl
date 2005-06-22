@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.12.4.5 2004/10/28 18:46:14 dgp Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.12.4.6 2005/06/22 21:12:05 dgp Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,9 @@ glob \- Return names of files that match patterns
 .PP
 This command performs file name ``globbing'' in a fashion similar to
 the csh shell.  It returns a list of the files whose names match any
-of the \fIpattern\fR arguments.
+of the \fIpattern\fR arguments.  No particular order is guaranteed
+in the list, so if a sorted list is required the caller should use 
+\fBlsort\fR.
 .LP
 If the initial arguments to \fBglob\fR start with \fB\-\fR then
 they are treated as switches.  The following switches are
@@ -157,11 +159,6 @@ be used with \fBfile join\fR, to avoid them being interpreted as
 absolute paths pointing to a given user's home directory.
 .SH "PORTABILITY ISSUES"
 .PP
-Unlike other Tcl commands that will accept both network and native
-style names (see the \fBfilename\fR manual entry for details on how
-native and network names are specified), the \fBglob\fR command only
-accepts native names.  
-.TP
 \fBWindows\fR
 .
 For Windows UNC names, the servername and sharename components of the path

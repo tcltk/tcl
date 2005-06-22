@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.9.2.3 2005/06/02 04:18:00 dgp Exp $
+# RCS: @(#) $Id: switch.test,v 1.9.2.4 2005/06/22 21:12:46 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -139,6 +139,34 @@ test switch-3.11 {-exact vs. -glob vs. -regexp with -nocase} {
     }
 } exact
 
+test switch-3.7 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -exa Foo Foo {set result OK}} msg] $msg
+} {0 OK}
+
+test switch-3.8 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -gl Foo Fo? {set result OK}} msg] $msg
+} {0 OK}
+
+test switch-3.9 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -re Foo Fo. {set result OK}} msg] $msg
+} {0 OK}
+
+test switch-3.10 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -exact -exact Foo Foo {set result OK}} msg] $msg
+} {1 {bad option "-exact": -exact option already found}}
+
+test switch-3.11 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -exact -glob Foo Foo {set result OK}} msg] $msg
+} {1 {bad option "-glob": -exact option already found}}
+
+test switch-3.12 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -glob -regexp Foo Foo {set result OK}} msg] $msg
+} {1 {bad option "-regexp": -glob option already found}}
+
+test switch-3.13 {-exact vs. -glob vs. -regexp} {
+    list [catch {switch -regexp -glob Foo Foo {set result OK}} msg] $msg
+} {1 {bad option "-glob": -regexp option already found}}
+
 test switch-4.1 {error in executed command} {
     list [catch {switch a a {error "Just a test"} default {format 1}} msg] \
 	    $msg $errorInfo
@@ -220,6 +248,15 @@ test switch-7.3 {"-" bodies} {
 	}
     } msg] $msg
 } {1 {no body specified for pattern "c"}}
+test switch-7.4 {"-" bodies} {
+    list [catch {
+	switch a {
+	    a -
+	    b -foo
+	    c {}
+	}
+    } msg] $msg
+} {1 {invalid command name "-foo"}}
 
 test switch-8.1 {empty body} {
     set msg {}
@@ -229,6 +266,24 @@ test switch-8.1 {empty body} {
         default {set msg 2}
     }
 } {}
+
+proc test_switch_body {} {
+    return "INVOKED"
+}
+
+test switch-8.2 {weird body text, variable} {
+    set cmd {test_switch_body}
+    switch Foo {
+    	Foo $cmd
+    }
+} {INVOKED}
+
+test switch-8.3 {weird body text, variable} {
+    set cmd {test_switch_body}
+    switch Foo {
+    	Foo {$cmd}
+    }
+} {INVOKED}
 
 test switch-9.1 {empty pattern/body list} {
     list [catch {switch x} msg] $msg

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.15 2005/05/11 16:58:47 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.16 2005/06/22 21:12:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -94,7 +94,7 @@ static Tcl_SetFromAnyProc PanicOnSetVarName;
  *                      it is a scalar variable
  */
 
-Tcl_ObjType tclLocalVarNameType = {
+static Tcl_ObjType localVarNameType = {
     "localVarName",
     NULL, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
@@ -324,7 +324,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
  * Side effects:
  *	New hashtable entries may be created if createPart1 or createPart2
  *	are 1.
- *      The object part1Ptr is converted to one of tclLocalVarNameType, 
+ *      The object part1Ptr is converted to one of localVarNameType, 
  *      tclNsVarNameType or tclParsedVarNameType and caches as much of the
  *      lookup as it can.
  *
@@ -400,7 +400,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	goto doParse;
     }
     
-    if (typePtr == &tclLocalVarNameType) {
+    if (typePtr == &localVarNameType) {
 	int localIndex = (int) part1Ptr->internalRep.longValue;
 
 	if ((varFramePtr != NULL)
@@ -544,7 +544,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	 * An indexed local variable.
 	 */
 
-	part1Ptr->typePtr = &tclLocalVarNameType;
+	part1Ptr->typePtr = &localVarNameType;
 	part1Ptr->internalRep.longValue = (long) index;
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
@@ -4585,7 +4585,7 @@ DupLocalVarName(srcPtr, dupPtr)
     Tcl_Obj *dupPtr;
 {
     dupPtr->internalRep.longValue = srcPtr->internalRep.longValue;
-    dupPtr->typePtr = &tclLocalVarNameType;
+    dupPtr->typePtr = &localVarNameType;
 }
 
 #if ENABLE_NS_VARNAME_CACHING

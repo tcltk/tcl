@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.10 2005/06/02 04:18:00 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.11 2005/06/22 21:12:46 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1923,6 +1923,19 @@ test namespace-49.1 {ensemble subcommand caching} -body {
     rename a {}
     rename c {}
     rename x {}
+}
+test namespace-49.2 {strange delete crash} -body {
+    namespace eval foo {namespace ensemble create -command ::bar}
+    trace add command ::bar delete DeleteTrace
+    proc DeleteTrace {old new op} {
+	trace remove command ::bar delete DeleteTrace
+	rename $old ""
+	# This next line caused a bus error in [Bug 1220058]
+	namespace delete foo
+    }
+    rename ::bar ""
+} -result "" -cleanup {
+    rename DeleteTrace ""
 }
 
 test namespace-50.1 {ensembles affect proc arguments error messages} -body {
