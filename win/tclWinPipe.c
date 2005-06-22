@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.12 2005/06/22 19:36:35 kennykb Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.13 2005/06/22 21:30:20 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -1884,7 +1884,7 @@ PipeClose2Proc(
 
     errorCode = 0;
     if ((!flags || (flags == TCL_CLOSE_READ))
-	    && (pipePtr->readFile != NULL)) {
+	&& (pipePtr->readFile != NULL)) {
 	/*
 	 * Clean up the background thread if necessary.  Note that this
 	 * must be done before we can close the file, since the 
@@ -1913,7 +1913,7 @@ PipeClose2Proc(
 		 */
 
 		if (WaitForSingleObject(pipePtr->readThread, 20)
-			== WAIT_TIMEOUT) {
+		    == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
 		     * become readable in ReadFile().  There isn't a clean way
@@ -1949,7 +1949,7 @@ PipeClose2Proc(
 	pipePtr->readFile = NULL;
     }
     if ((!flags || (flags & TCL_CLOSE_WRITE))
-	    && (pipePtr->writeFile != NULL)) {
+	&& (pipePtr->writeFile != NULL)) {
 
 	if (pipePtr->writeThread) {
 	    /*
@@ -1982,7 +1982,7 @@ PipeClose2Proc(
 		 */
 
 		if (WaitForSingleObject(pipePtr->writeThread, 20)
-			== WAIT_TIMEOUT) {
+		    == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
 		     * consume input in WriteFile().  There isn't a clean way
@@ -2035,32 +2035,52 @@ PipeClose2Proc(
      */
 
     for (nextPtrPtr = &(tsdPtr->firstPipePtr), infoPtr = *nextPtrPtr;
-	    infoPtr != NULL;
-	    nextPtrPtr = &infoPtr->nextPtr, infoPtr = *nextPtrPtr) {
+	 infoPtr != NULL;
+	 nextPtrPtr = &infoPtr->nextPtr, infoPtr = *nextPtrPtr) {
 	if (infoPtr == (PipeInfo *)pipePtr) {
 	    *nextPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
     }
 
-    /*
-     * Wrap the error file into a channel and give it to the cleanup
-     * routine.
-     */
+    if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
+	/*
+	 * If the channel is non-blocking or Tcl is being cleaned up,
+	 * just detach the children PIDs, reap them (important if we are
+	 * in a dynamic load module), and discard the errorFile.
+	 */
 
-    if (pipePtr->errorFile) {
-	WinFile *filePtr;
+	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
+	Tcl_ReapDetachedProcs();
 
-	filePtr = (WinFile*)pipePtr->errorFile;
-	errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
-		TCL_READABLE);
-	ckfree((char *) filePtr);
+	if (pipePtr->errorFile) {
+	    if (TclpCloseFile(pipePtr->errorFile) != 0) {
+		if ( errorCode == 0 ) {
+		    errorCode = errno;
+		}
+	    }
+	}
+	result = 0;
     } else {
-        errChan = NULL;
-    }
+	/*
+	 * Wrap the error file into a channel and give it to the cleanup
+	 * routine.
+	 */
 
-    result = TclCleanupChildren(interp, pipePtr->numPids, pipePtr->pidPtr,
-            errChan);
+	if (pipePtr->errorFile) {
+	    WinFile *filePtr;
+
+	    filePtr = (WinFile*)pipePtr->errorFile;
+	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
+					  TCL_READABLE);
+	    ckfree((char *) filePtr);
+	} else {
+	    errChan = NULL;
+	}
+
+	result = TclCleanupChildren(interp, pipePtr->numPids,
+				    pipePtr->pidPtr, errChan);
+    }
 
     if (pipePtr->numPids > 0) {
         ckfree((char *) pipePtr->pidPtr);
