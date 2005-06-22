@@ -11,6 +11,9 @@
 	    PipeCloseProc2 would re-establish the exit handler after
 	    exit handlers had already run, corrupting the heap.
 	    [Bug #1225727]
+	Corrected a read of uninitialized memory in PipeCloseProc2,
+	which (at least on certain configurations) caused a great
+	number of tests to either fail or hang [Bug #1225044].
 	
 2005-06-22  Andreas Kupries <andreask@activestate.com>
 
