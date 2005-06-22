@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.21 2005/06/21 19:38:40 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.22 2005/06/22 20:26:22 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6221,5 +6221,7 @@ Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 blocking during close led to multiple test suite failures.  Undone.  (kenny)
 ***POTENTIAL INCOMPATIBILITY***
 with Tcl 8.4.10 and 8.5.  Restores compatibility with 8.4.9 and earlier.
+
+2005-06-22 (bug fix)[1225727] Windows: pipe finalization crash (kenny)
 
 --- Released 8.4.11, June 24, 2005 --- See ChangeLog for details ---
