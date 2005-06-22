@@ -1,3 +1,15 @@
+2005-06-22  Kevin Kenny <kennykb@acm.org>
+
+	* generic/tclInt.h:    			    Changed the finalization
+	* generic/tclEvent.c (Tcl_Finalize):        logic to defer the
+	* generic/tclIO.c (TclFinalizeIOSubsystem): shutdown of the pipe
+	* unix/tclUnixPipe.c (TclFinalizePipes):    management until after
+	* win/tclWinPipe.c (TclFinalizePipes):      all channels have been
+	    closed, in order to avoid a situation where the Windows
+	    PipeCloseProc2 would re-establish the exit handler after
+	    exit handlers had already run, corrupting the heap.
+	    [Bug #1225727]
+	
 2005-06-21  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclInt.h: Followup to change made on 2005-06-18 by
