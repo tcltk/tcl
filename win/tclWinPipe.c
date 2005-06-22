@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.56 2005/06/22 19:48:11 kennykb Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.57 2005/06/22 21:39:01 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -2068,8 +2068,13 @@ PipeClose2Proc(
 	Tcl_ReapDetachedProcs();
 
 	if (pipePtr->errorFile) {
-	    TclpCloseFile(pipePtr->errorFile);
+	    if (TclpCloseFile(pipePtr->errorFile) != 0) {
+		if ( errorCode == 0 ) {
+		    errorCode = errno;
+		}
+	    }
 	}
+	result = 0;
     } else {
 	/*
 	 * Wrap the error file into a channel and give it to the cleanup
