@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.24 2005/06/23 15:45:24 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.25 2005/06/23 20:25:24 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6225,4 +6225,4 @@ Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 
 2005-06-23 (bug fix)[1225957] Windows/gcc: crashes in assembler code (kenny)
 
---- Released 8.4.11, June 24, 2005 --- See ChangeLog for details ---
+--- Released 8.4.11, June 28, 2005 --- See ChangeLog for details ---
