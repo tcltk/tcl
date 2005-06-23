@@ -1,6 +1,12 @@
-2005-06-22  Kevin Kenny <kennykb@acm.org>
+2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
+
+	* unix/Makefile.in (install-private-headers): rewrite tclPort.h when
+	installing private headers to remove ../unix relative #include path to
+	tclUnixPort.h (which is incorrect at the installed location).
+
+2005-06-22  Kevin Kenny <kennykb@acm.org>
 
 	* generic/tclInt.h:    			    Changed the finalization
 	* generic/tclEvent.c (Tcl_Finalize):        logic to defer the
