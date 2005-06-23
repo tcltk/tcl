@@ -1,3 +1,10 @@
+2005-06-23  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWinChan.c: More rewriting of __asm__ blocks that
+	* win/tclWinFCmd.c: implement SEH in GCC, because mingw's
+	gcc 3.4.2 is not as forgiving of violations committed by
+	the old code and caused panics. [Bug #1225957]
+	
 2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/tcltk-man2html.tcl: fixed useversion glob pattern to accept
@@ -5,7 +12,7 @@
 	
 2005-06-22  Don Porter  <dgp@users.sourceforge.net>
 
-        * win/tclWinFile.c:     Potential buffer overflow.  [Bug 1225571]
+	* win/tclWinFile.c: Potential buffer overflow.  [Bug 1225571]
         Thanks to Pat Thoyts for discovery and fix.
 
 2005-06-22  Kevin Kenny <kennykb@acm.org>
