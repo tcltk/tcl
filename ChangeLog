@@ -1,13 +1,13 @@
 2005-06-23  Kevin Kenny  <kennykb@acm.org>
 
+	*** 8.4.11 TAGGED FOR RELEASE ***
+
 	* win/tclWinChan.c: More rewriting of __asm__ blocks that
 	* win/tclWinFCmd.c: implement SEH in GCC, because mingw's
 	gcc 3.4.2 is not as forgiving of violations committed by
 	the old code and caused panics. [Bug #1225957]
 	
 2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
-
-	*** 8.4.11 TAGGED FOR RELEASE ***
 
 	* unix/Makefile.in (install-private-headers): rewrite tclPort.h when
 	installing private headers to remove ../unix relative #include path to
