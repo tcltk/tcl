@@ -1,6 +1,11 @@
-2005-06-23  Kevin Kenny  <kennykb@acm.org>
+2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
+
+	* tools/tcltk-man2html.tcl: fixed useversion glob pattern to accept
+	multi-digit patchlevels.
+	
+2005-06-23  Kevin Kenny  <kennykb@acm.org>
 
 	* win/tclWinChan.c: More rewriting of __asm__ blocks that
 	* win/tclWinFCmd.c: implement SEH in GCC, because mingw's
