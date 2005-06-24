@@ -1,3 +1,15 @@
+2005-06-24  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclEvent.c (Tcl_Finalize):
+	* generic/tclInt.h:
+	* generic/tclPreserve.c (TclFinalizePreserve): Changed the
+	finalization logic so that Tcl_Preserve finalizes after exit
+	handlers run; a lot of code called from Tk's exit handlers
+	presumes tha Tcl_Preserve will still work even from an exit
+	handler.  Also, made the assertion check that no exit handlers
+	are created in Tcl_Finalize conditional on TCL_MEM_DEBUG to
+	avoid spurios panics in the "stable" release.
+	
 2005-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
