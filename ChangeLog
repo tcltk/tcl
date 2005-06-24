@@ -1,5 +1,7 @@
 2005-06-24  Kevin Kenny  <kennykb@acm.org>
 
+	*** 8.4.11 TAGGED FOR RELEASE ***
+
 	* generic/tclEvent.c (Tcl_Finalize):
 	* generic/tclInt.h:
 	* generic/tclPreserve.c (TclFinalizePreserve): Changed the
@@ -8,11 +10,9 @@
 	presumes tha Tcl_Preserve will still work even from an exit
 	handler.  Also, made the assertion check that no exit handlers
 	are created in Tcl_Finalize conditional on TCL_MEM_DEBUG to
-	avoid spurios panics in the "stable" release.
+	avoid spurious panics in the "stable" release.
 	
 2005-06-24  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.11 TAGGED FOR RELEASE ***
 
 	* library/auto.tcl:	Make file safe to re-[source] without
 	destroying registered auto_mkindex_parser hooks.
