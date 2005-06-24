@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.10 2005/06/22 19:35:15 kennykb Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28.2.11 2005/06/24 18:21:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -904,13 +904,16 @@ Tcl_Finalize()
 	 * nobody's done this.
 	 */
 
+#ifdef TCL_MEM_DEBUG
 	if ( firstExitPtr != NULL ) {
 	    Tcl_Panic( "exit handlers were created during Tcl_Finalize" );
 	}
+#endif
 
 	/*
 	 * There shouldn't be any malloc'ed memory after this.
 	 */
+	TclFinalizePreserve();
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG) && !defined(PURIFY)
 	TclFinalizeThreadAlloc();
 #endif
