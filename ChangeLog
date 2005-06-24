@@ -1,3 +1,8 @@
+2005-06-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl:     Make file safe to re-[source] without
+        destroying registered auto_mkindex_parser hooks.
+
 2005-06-23  Kevin Kenny  <kennykb@acm.org>
 
 	* win/tclWinChan.c: More rewriting of __asm__ blocks that
