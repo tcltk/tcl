@@ -1,6 +1,11 @@
-2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
+2005-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
+
+	* library/auto.tcl:	Make file safe to re-[source] without
+	destroying registered auto_mkindex_parser hooks.
+
+2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/tcltk-man2html.tcl: fixed useversion glob pattern to accept
 	multi-digit patchlevels.
