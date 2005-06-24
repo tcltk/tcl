@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.24 2005/05/10 18:34:53 kennykb Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.25 2005/06/24 15:06:23 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -293,7 +293,10 @@ namespace eval auto_mkindex_parser {
     variable scriptFile ""      ;# name of file being processed
     variable contextStack ""    ;# stack of namespace scopes
     variable imports ""         ;# keeps track of all imported cmds
-    variable initCommands ""    ;# list of commands that create aliases
+    variable initCommands       ;# list of commands that create aliases
+    if {![info exists initCommands]} {
+	set initCommands [list]
+    }
 
     proc init {} {
 	variable parser
@@ -515,24 +518,6 @@ proc auto_mkindex_parser::fullname {name} {
     return [string map [list \0 \$] $name]
 }
 
-# Register all of the procedures for the auto_mkindex parser that
-# will build the "tclIndex" file.
-
-# AUTO MKINDEX:  proc name arglist body
-# Adds an entry to the auto index list for the given procedure name.
-
-auto_mkindex_parser::command proc {name args} {
-    variable index
-    variable scriptFile
-    # Do some fancy reformatting on the "source" call to handle platform
-    # differences with respect to pathnames.  Use format just so that the
-    # command is a little easier to read (otherwise it'd be full of 
-    # backslashed dollar signs, etc.
-    append index [list set auto_index([fullname $name])] \
-	    [format { [list source [file join $dir %s]]} \
-	    [file split $scriptFile]] "\n"
-}
-
 # Conditionally add support for Tcl byte code files.  There are some
 # tricky details here.  First, we need to get the tbcload library
 # initialized in the current interpreter.  We cannot load tbcload into the
@@ -564,6 +549,28 @@ auto_mkindex_parser::hook {
 		    [file split $scriptFile]] "\n"
 	}
     }
+}
+
+if {[llength $::auto_mkindex_parser::initCommands]} {
+    return
+}
+
+# Register all of the procedures for the auto_mkindex parser that
+# will build the "tclIndex" file.
+
+# AUTO MKINDEX:  proc name arglist body
+# Adds an entry to the auto index list for the given procedure name.
+
+auto_mkindex_parser::command proc {name args} {
+    variable index
+    variable scriptFile
+    # Do some fancy reformatting on the "source" call to handle platform
+    # differences with respect to pathnames.  Use format just so that the
+    # command is a little easier to read (otherwise it'd be full of 
+    # backslashed dollar signs, etc.
+    append index [list set auto_index([fullname $name])] \
+	    [format { [list source [file join $dir %s]]} \
+	    [file split $scriptFile]] "\n"
 }
 
 # AUTO MKINDEX:  namespace eval name command ?arg arg...?
