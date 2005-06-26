@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4 2005/05/11 15:39:50 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.5 2005/06/26 22:10:08 dkf Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -72,6 +72,12 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #  define NAN_START 0x7ff8
 #  define NAN_MASK (((Tcl_WideUInt) 1) << 51)
 #endif
+
+/*
+ * There now follows a lot of static variables that are shared across all
+ * threads but which are not guarded by mutexes. This is OK, because they are
+ * only ever assigned _ONCE_ during Tcl's library initialization sequence.
+ */
 
 /* The powers of ten that can be represented exactly as IEEE754 doubles. */
 
