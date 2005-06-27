@@ -1,6 +1,17 @@
-2005-06-24  Kevin Kenny  <kennykb@acm.org>
+2005-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.11 TAGGED FOR RELEASE ***
+
+	* library/auto.tcl:	Reverted to Revision 1.12.2.3 (Tcl 8.4.9).
+	Restores the (buggy) behavior of [auto_reset] that fails to clear
+	away auto-loaded commands from non-global namespaces.  Fixing this
+	bug exposed an unknown number of buggy files out there (including at
+	least portions of the Tk script library) that cannot tolerate double
+	[source]-ing.  The burden of fixing these exposed bugs will not be
+	forced on package/extension/application authors until Tcl 8.5.
+
+2005-06-24  Kevin Kenny  <kennykb@acm.org>
+
 
 	* generic/tclEvent.c (Tcl_Finalize):
 	* generic/tclInt.h:
