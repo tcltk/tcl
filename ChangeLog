@@ -1,3 +1,15 @@
+2005-06-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode):
+        When parsing an integer operand for a unary
+        minus expression operator, check for a wide
+        integer that is actually LONG_MIN. If found,
+        convert it back to a long int type.
+	* tests/expr.test: Add constraint for 32bit
+        long int type and 64bit wide int type. Add
+        tests that parse the smallest/largest long int
+        and wide int values.
+
 2004-06-24  Kevin Kenny  <kennykb@acm.org>
 	
 	* generic/tclEvent.c (Tcl_Finalize):
