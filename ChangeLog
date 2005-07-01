@@ -1,3 +1,9 @@
+2005-07-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c: protect against spurious wake-ups while
+	waiting on the condition variable when tearing down the notifier
+	thread [Bug# 1222872].
+
 2005-06-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode):
