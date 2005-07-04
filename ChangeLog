@@ -1,3 +1,10 @@
+2005-07-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictForCmd, DictFilterCmd): Interlocking of
+	dictionary internal representations is now done in the core of the
+	dict iterator. Purge the last attempts at doing it at a higher level
+	as they didn't work and were no longer needed.
+
 2005-07-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* unix/tclUnixNotfy.c: protect against spurious wake-ups while
