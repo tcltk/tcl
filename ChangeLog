@@ -1,5 +1,12 @@
 2005-07-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclUtil.c:	Converted TclFormatInt() into a macro.
+	* generic/tclInt.decls:	[RFE 1194015]
+	* generic/tclInt.h:
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 	* generic/tclNamesp.c:	Allow for [namespace import] of a command
 	* tests/namespace.test:	over a previous [namespace import] of itself
 	without throwing an error.  [RFE 1230597]
