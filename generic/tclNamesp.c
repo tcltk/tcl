@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.77 2005/06/07 21:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.78 2005/07/05 17:33:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1639,6 +1639,15 @@ DoImport(interp, nsPtr, hPtr, cmdName, pattern, importNsPtr, allowOverwrite)
 	refPtr->nextPtr = cmdPtr->importRefPtr;
 	cmdPtr->importRefPtr = refPtr;
     } else {
+	Command *overwrite = (Command *) Tcl_GetHashValue(found);
+	if (overwrite->deleteProc == DeleteImportedCmd) {
+	    ImportedCmdData *dataPtr =
+		    (ImportedCmdData *) overwrite->objClientData;
+	    if (dataPtr->realCmdPtr == (Command *) Tcl_GetHashValue(hPtr)) {
+		/* Repeated import of same command -- acceptable */
+		return TCL_OK;
+	    }
+	}
 	Tcl_AppendResult(interp, "can't import command \"", cmdName,
 		"\": already exists", (char *) NULL);
 	return TCL_ERROR;
