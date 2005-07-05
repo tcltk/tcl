@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.15 2005/06/24 18:21:40 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.16 2005/07/05 21:18:23 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1668,6 +1668,8 @@ EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizePreserve _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
+EXTERN int		TclGetEncodingFromObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
