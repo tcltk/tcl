@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.23 2005/06/22 21:12:31 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.24 2005/07/05 15:09:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4234,10 +4234,11 @@ TclExecuteByteCode(interp, codePtr)
 	double d;
 	int boolvar;
 	long i;
+	int negate_value = 1;
 	Tcl_WideInt w;
 	Tcl_ObjType *tPtr;
 	Tcl_Obj *valuePtr;
-	
+
 	valuePtr = *tosPtr;
 	tPtr = valuePtr->typePtr;
 	if (IS_INTEGER_TYPE(tPtr) 
@@ -4257,6 +4258,23 @@ TclExecuteByteCode(interp, codePtr)
 	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
 	    if (TclLooksLikeInt(s, length)) {
 		GET_WIDE_OR_INT(result, valuePtr, i, w);
+
+		/*
+		 * An integer was parsed. If parsing a literal that
+		 * is the smallest long value, then it would have
+		 * been promoted to a wide since it would not fit in
+		 * a long type without the leading '-'. Convert
+		 * back to the smallest possible long.
+		 */
+
+		if ((result == TCL_OK) &&
+		        (*pc == INST_UMINUS) &&
+		        (valuePtr->typePtr == &tclWideIntType) &&
+		        (w == -Tcl_LongAsWide(LONG_MIN))) {
+		    valuePtr->typePtr = &tclIntType;
+		    valuePtr->internalRep.longValue = LONG_MIN;
+		    negate_value = 0;
+		}
 	    } else {
 		result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 	    }
@@ -4280,11 +4298,14 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		if (tPtr == &tclIntType) {
 		    i = valuePtr->internalRep.longValue;
-		    TclNewLongObj(objResultPtr, -i);
+		    if (negate_value) {
+		        i = -i;
+		    }
+		    TclNewLongObj(objResultPtr, i);
 			TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 		} else if (tPtr == &tclWideIntType) {
 		    TclGetWide(w,valuePtr);
-		    TclNewWideIntObj(objResultPtr, -w);		
+		    TclNewWideIntObj(objResultPtr, -w);
 		    TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 		} else {
 		    d = valuePtr->internalRep.doubleValue;
@@ -4298,7 +4319,10 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		if (tPtr == &tclIntType) {
 		    i = valuePtr->internalRep.longValue;
-		    TclSetLongObj(valuePtr, -i);
+		    if (negate_value) {
+		        i = -i;
+		    }
+		    TclSetLongObj(valuePtr, i);
 		    TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
 		} else if (tPtr == &tclWideIntType) {
 		    TclGetWide(w,valuePtr);

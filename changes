@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.6 2005/06/22 21:12:04 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.7 2005/07/05 15:09:04 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6380,6 +6380,8 @@ Test suite expansion [1036649,1001997,etc.]
 2005-01-21 (new feature)[TIP 233] virtual time (kupries)
 
 2005-01-25 (bug fix)[1101670] [auto_reset] update for [namespace] (porter)
+***POTENTIAL INCOMPATIBILITY***
+May cause re-[source]-ing of files that have not anticipated that before.
 
 2005-01-27 (new feature)[TIP 218] Tcl_Channel API update for threads (kupries)
 

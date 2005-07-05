@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.10 2005/05/11 16:58:35 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.11 2005/07/05 15:09:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2256,7 +2256,7 @@ DictForCmd(interp, objc, objv)
     int objc;
     Tcl_Obj *CONST *objv;
 {
-    Tcl_Obj *dictObj, *scriptObj, *keyVarObj, *valueVarObj;
+    Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch search;
     int varc, done, result;
@@ -2277,23 +2277,17 @@ DictForCmd(interp, objc, objv)
     }
     keyVarObj = varv[0];
     valueVarObj = varv[1];
-    dictObj = objv[3];
     scriptObj = objv[4];
     /*
-     * Make sure that these objects (which we need throughout the body
-     * of the loop) don't vanish.  Note that we also care that the
-     * dictObj remains a dictionary, which requires slightly more
-     * elaborate precautions.  That we achieve by making sure that the
-     * type is static throughout and that the hash is the same hash
-     * throughout; taking a copy of the whole thing would be easier,
-     * but much less efficient.
+     * Make sure that these objects (which we need throughout the body of the
+     * loop) don't vanish.  Note that the dictionary internal rep is locked
+     * internally so that updates, shimmering, etc are not a problem.
      */
     Tcl_IncrRefCount(keyVarObj);
     Tcl_IncrRefCount(valueVarObj);
-    Tcl_IncrRefCount(dictObj);
     Tcl_IncrRefCount(scriptObj);
 
-    result = Tcl_DictObjFirst(interp, dictObj,
+    result = Tcl_DictObjFirst(interp, objv[3],
 	    &search, &keyObj, &valueObj, &done);
     if (result != TCL_OK) {
 	goto doneFor;
@@ -2347,7 +2341,6 @@ DictForCmd(interp, objc, objv)
      */
     TclDecrRefCount(keyVarObj);
     TclDecrRefCount(valueVarObj);
-    TclDecrRefCount(dictObj);
     TclDecrRefCount(scriptObj);
 
     Tcl_DictObjDone(&search);
@@ -2508,7 +2501,7 @@ DictFilterCmd(interp, objc, objv)
     enum FilterTypes {
 	FILTER_KEYS, FILTER_SCRIPT, FILTER_VALUES
     };
-    Tcl_Obj *dictObj, *scriptObj, *keyVarObj, *valueVarObj;
+    Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj, *resultObj, *boolObj;
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
@@ -2604,28 +2597,22 @@ DictFilterCmd(interp, objc, objv)
 	}
 	keyVarObj = varv[0];
 	valueVarObj = varv[1];
-	dictObj = objv[2];
 	scriptObj = objv[5];
 	/*
-	 * Make sure that these objects (which we need throughout the
-	 * body of the loop) don't vanish.  Note that we also care
-	 * that the dictObj remains a dictionary, which requires
-	 * slightly more elaborate precautions.  That we achieve by
-	 * making sure that the type is static throughout and that the
-	 * hash is the same hash throughout; taking a copy of the
-	 * whole thing would be easier, but much less efficient.
+	 * Make sure that these objects (which we need throughout the body of
+	 * the loop) don't vanish.  Note that the dictionary internal rep is
+	 * locked internally so that updates, shimmering, etc are not a
+	 * problem.
 	 */
 	Tcl_IncrRefCount(keyVarObj);
 	Tcl_IncrRefCount(valueVarObj);
-	Tcl_IncrRefCount(dictObj);
 	Tcl_IncrRefCount(scriptObj);
 
-	result = Tcl_DictObjFirst(interp, dictObj,
+	result = Tcl_DictObjFirst(interp, objv[2],
 		&search, &keyObj, &valueObj, &done);
 	if (result != TCL_OK) {
 	    TclDecrRefCount(keyVarObj);
 	    TclDecrRefCount(valueVarObj);
-	    TclDecrRefCount(dictObj);
 	    TclDecrRefCount(scriptObj);
 	    return TCL_ERROR;
 	}
@@ -2671,16 +2658,16 @@ DictFilterCmd(interp, objc, objv)
 		if (satisfied) {
 		    Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
 		}
-	    case TCL_CONTINUE:
-		result = TCL_OK;
 		break;
 	    case TCL_BREAK:
 		/*
-		 * Force loop termination.  Has to be done with a jump
-		 * so we remove references to the dictionary correctly.
+		 * Force loop termination by calling Tcl_DictObjDone; this
+		 * makes the next Tcl_DictObjNext say there is nothing more to
+		 * do.
 		 */
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
+	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
 	    case TCL_ERROR:
@@ -2702,7 +2689,6 @@ DictFilterCmd(interp, objc, objv)
 	 */
 	TclDecrRefCount(keyVarObj);
 	TclDecrRefCount(valueVarObj);
-	TclDecrRefCount(dictObj);
 	TclDecrRefCount(scriptObj);
 	Tcl_DictObjDone(&search);
 
@@ -2712,21 +2698,19 @@ DictFilterCmd(interp, objc, objv)
 	    TclDecrRefCount(resultObj);
 	}
 	return result;
+    abnormalResult:
+	Tcl_DictObjDone(&search);
+	TclDecrRefCount(keyObj);
+	TclDecrRefCount(valueObj);
+	TclDecrRefCount(keyVarObj);
+	TclDecrRefCount(valueVarObj);
+	TclDecrRefCount(scriptObj);
+	TclDecrRefCount(resultObj);
+	return result;
     }
     Tcl_Panic("unexpected fallthrough");
     /* Control never reaches this point. */
     return TCL_ERROR;
-
-  abnormalResult:
-    Tcl_DictObjDone(&search);
-    TclDecrRefCount(keyObj);
-    TclDecrRefCount(valueObj);
-    TclDecrRefCount(keyVarObj);
-    TclDecrRefCount(valueVarObj);
-    TclDecrRefCount(dictObj);
-    TclDecrRefCount(scriptObj);
-    TclDecrRefCount(resultObj);
-    return result;
 }
 
 /*
@@ -2914,7 +2898,6 @@ DictWithCmd(interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    Tcl_IncrRefCount(dictPtr);
     TclNewObj(keysPtr);
     Tcl_IncrRefCount(keysPtr);
 
@@ -2922,13 +2905,11 @@ DictWithCmd(interp, objc, objv)
 	Tcl_ListObjAppendElement(NULL, keysPtr, keyPtr);
 	if (Tcl_ObjSetVar2(interp, keyPtr, NULL, valPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
-	    TclDecrRefCount(dictPtr);
 	    TclDecrRefCount(keysPtr);
 	    Tcl_DictObjDone(&s);
 	    return TCL_ERROR;
 	}
     }
-    TclDecrRefCount(dictPtr);
 
     /*
      * Execute the body.

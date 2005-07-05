@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.2 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.3 2005/07/05 15:09:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -66,17 +66,11 @@ typedef struct HandleStruct {
 } HandleStruct;
 
 
-/*
- * Static routines in this file:
- */
-
-static void	PreserveExitProc _ANSI_ARGS_((ClientData clientData));
-
 
 /*
  *----------------------------------------------------------------------
  *
- * PreserveExitProc --
+ * TclFinalizePreserve --
  *
  *	Called during exit processing to clean up the reference array.
  *
@@ -90,9 +84,8 @@ static void	PreserveExitProc _ANSI_ARGS_((ClientData clientData));
  */
 
 	/* ARGSUSED */
-static void
-PreserveExitProc(clientData)
-    ClientData clientData;		/* NULL -Unused. */
+void
+TclFinalizePreserve()
 {
     Tcl_MutexLock(&preserveMutex);
     if (spaceAvl != 0) {
@@ -151,8 +144,6 @@ Tcl_Preserve(clientData)
 
     if (inUse == spaceAvl) {
 	if (spaceAvl == 0) {
-            Tcl_CreateExitHandler((Tcl_ExitProc *) PreserveExitProc,
-                    (ClientData) NULL);
 	    refArray = (Reference *) ckalloc((unsigned)
 		    (INITIAL_SIZE*sizeof(Reference)));
 	    spaceAvl = INITIAL_SIZE;

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.13.2.6 2005/02/24 19:53:33 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.13.2.7 2005/07/05 15:09:09 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -293,7 +293,10 @@ namespace eval auto_mkindex_parser {
     variable scriptFile ""      ;# name of file being processed
     variable contextStack ""    ;# stack of namespace scopes
     variable imports ""         ;# keeps track of all imported cmds
-    variable initCommands ""    ;# list of commands that create aliases
+    variable initCommands       ;# list of commands that create aliases
+    if {![info exists initCommands]} {
+	set initCommands [list]
+    }
 
     proc init {} {
 	variable parser
@@ -513,6 +516,10 @@ proc auto_mkindex_parser::fullname {name} {
     # Earlier, mkindex replaced all $'s with \0.  Now, we have to reverse
     # that replacement.
     return [string map [list \0 \$] $name]
+}
+
+if {[llength $::auto_mkindex_parser::initCommands]} {
+    return
 }
 
 # Register all of the procedures for the auto_mkindex parser that

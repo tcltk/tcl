@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.6 2005/02/24 19:53:50 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.7 2005/07/05 15:09:29 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -74,35 +74,25 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 	{GetWinFileShortName, CannotSetAttribute},
 	{GetWinFileAttributes, SetWinFileAttributes}};
 
-#if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
-static void *INITIAL_ESP,
-            *INITIAL_EBP,
-            *INITIAL_HANDLER,
-            *RESTORED_ESP,
-            *RESTORED_EBP,
-            *RESTORED_HANDLER;
-#endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
-
 #ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_dorenamefile_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
 
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_docopyfile_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext);
+/*
+ * Unlike Borland and Microsoft, we don't register exception handlers
+ * by pushing registration records onto the runtime stack.  Instead, we
+ * register them by creating an EXCEPTION_REGISTRATION within the activation
+ * record.
+ */
 
-#endif /* HAVE_NO_SEH */
+typedef struct EXCEPTION_REGISTRATION {
+    struct EXCEPTION_REGISTRATION* link;
+    EXCEPTION_DISPOSITION (*handler)( struct _EXCEPTION_RECORD*, void*,
+				      struct _CONTEXT*, void* );
+    void* ebp;
+    void* esp;
+    int status;
+} EXCEPTION_REGISTRATION;
+
+#endif
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -193,6 +183,9 @@ DoRenameFile(
     CONST TCHAR *nativeDst)	/* New pathname for file or directory
 				 * (native). */
 {    
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
     DWORD srcAttr, dstAttr;
     int retval = -1;
 
@@ -212,72 +205,95 @@ DoRenameFile(
      * if one of the arguments is a char block device.
      */
 
-#ifdef HAVE_NO_SEH
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl %%esp,  %0" "\n\t"
-            "movl %%ebp,  %1" "\n\t"
-            "movl %%fs:0, %2" "\n\t"
-            : "=m"(INITIAL_ESP),
-              "=m"(INITIAL_EBP),
-              "=r"(INITIAL_HANDLER) );
-# endif /* TCL_MEM_DEBUG */
-
-    __asm__ __volatile__ (
-            "pushl %%ebp" "\n\t"
-            "pushl %0" "\n\t"
-            "pushl %%fs:0" "\n\t"
-            "movl  %%esp, %%fs:0"
-            :
-            : "r" (_except_dorenamefile_handler)
-            );
-#else
+#ifndef HAVE_NO_SEH
     __try {
-#endif /* HAVE_NO_SEH */
 	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
 	    retval = TCL_OK;
 	}
-#ifdef HAVE_NO_SEH
-    __asm__ __volatile__ (
-            "jmp  dorenamefile_pop" "\n"
-        "dorenamefile_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-        "dorenamefile_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            :
-            :
-            : "%eax");
-
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
-
-    if (INITIAL_ESP != RESTORED_ESP) {
-        Tcl_Panic("ESP restored incorrectly");
-    }
-    if (INITIAL_EBP != RESTORED_EBP) {
-        Tcl_Panic("EBP restored incorrectly");
-    }
-    if (INITIAL_HANDLER != RESTORED_HANDLER) {
-        Tcl_Panic("HANDLER restored incorrectly");
-    }
-# endif /* TCL_MEM_DEBUG */
-#else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif /* HAVE_NO_SEH */
+#else
 
     /*
-     * Avoid using control flow statements in the SEH guarded block!
+     * Don't have SEH available, do things the hard way.
+     * Note that this needs to be one block of asm, to avoid stack
+     * imbalance; also, it is illegal for one asm block to contain 
+     * a jump to another.
      */
+
+    __asm__ __volatile__ (
+	/*
+	 * Pick up params before messing with the stack */
+
+	"movl	    %[nativeDst],   %%ebx"	    "\n\t"
+	"movl       %[nativeSrc],   %%ecx"          "\n\t"
+
+	/*
+	 * Construct an EXCEPTION_REGISTRATION to protect the
+	 * call to MoveFile
+	 */
+	"leal       %[registration], %%edx"         "\n\t"
+	"movl       %%fs:0,         %%eax"          "\n\t"
+	"movl       %%eax,          0x0(%%edx)"     "\n\t" /* link */
+	"leal       1f,             %%eax"          "\n\t"
+	"movl       %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+	"movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+	"movl       %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+	"movl       $0,             0x10(%%edx)"    "\n\t" /* status */
+	
+	/* Link the EXCEPTION_REGISTRATION on the chain */
+	
+	"movl       %%edx,          %%fs:0"         "\n\t"
+	
+	/* Call MoveFile( nativeSrc, nativeDst ) */
+	
+	"pushl	    %%ebx"			    "\n\t"
+	"pushl	    %%ecx"			    "\n\t"
+	"movl	    %[moveFile],    %%eax"	    "\n\t"
+	"call	    *%%eax"			    "\n\t"
+	
+	/* 
+	 * Come here on normal exit.  Recover the EXCEPTION_REGISTRATION
+	 * and put the status return from MoveFile into it.
+	 */
+	
+	"movl	    %%fs:0,	    %%edx"	    "\n\t"
+	"movl	    %%eax,	    0x10(%%edx)"    "\n\t"
+	"jmp	    2f"				    "\n"
+	
+	/*
+	 * Come here on an exception.  Recover the EXCEPTION_REGISTRATION
+	 */
+	
+	"1:"					    "\t"
+	"movl       %%fs:0,         %%edx"          "\n\t"
+	"movl       0x8(%%edx),     %%edx"          "\n\t"
+	
+	/* 
+	 * Come here however we exited.  Restore context from the
+	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 */
+	
+	"2:"                                        "\t"
+	"movl       0xc(%%edx),     %%esp"          "\n\t"
+	"movl       0x8(%%edx),     %%ebp"          "\n\t"
+	"movl       0x0(%%edx),     %%eax"          "\n\t"
+	"movl       %%eax,          %%fs:0"         "\n\t"
+	
+	:
+	/* No outputs */
+        :
+	[registration]  "m"     (registration),
+	[nativeDst]	"m"     (nativeDst),
+	[nativeSrc]     "m"     (nativeSrc),
+	[moveFile]      "r"     (tclWinProcs->moveFileProc)
+        :
+	"%eax", "%ebx", "%ecx", "%edx", "memory"
+        );
+    if (registration.status != FALSE) {
+	retval = TCL_OK;
+    }
+#endif
+
     if (retval != -1) {
         return retval;
     }
@@ -506,37 +522,6 @@ DoRenameFile(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * _except_dorenamefile_handler --
- *
- *	SEH exception handler for DoRenameFile.
- *
- * Results:
- *	See DoRenameFile.
- *
- * Side effects:
- *	See DoRenameFile.
- *
- *----------------------------------------------------------------------
- */
-#ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_dorenamefile_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-            "jmp dorenamefile_reentry");
-    return 0; /* Function does not return */
-}
-#endif /* HAVE_NO_SEH */
-
-/*
  *---------------------------------------------------------------------------
  *
  * TclpObjCopyFile, DoCopyFile --
@@ -577,6 +562,9 @@ DoCopyFile(
    CONST TCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
    CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
+#ifdef HAVE_NO_SEH
+    EXCEPTION_REGISTRATION registration;
+#endif
     int retval = -1;
 
     /*
@@ -595,72 +583,97 @@ DoCopyFile(
      * of the arguments is a char block device.
      */
 
-#ifdef HAVE_NO_SEH
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl %%esp,  %0" "\n\t"
-            "movl %%ebp,  %1" "\n\t"
-            "movl %%fs:0, %2" "\n\t"
-            : "=m"(INITIAL_ESP),
-              "=m"(INITIAL_EBP),
-              "=r"(INITIAL_HANDLER) );
-# endif /* TCL_MEM_DEBUG */
-
-    __asm__ __volatile__ (
-            "pushl %%ebp" "\n\t"
-            "pushl %0" "\n\t"
-            "pushl %%fs:0" "\n\t"
-            "movl  %%esp, %%fs:0"
-            :
-            : "r" (_except_docopyfile_handler)
-            );
-#else
+#ifndef HAVE_NO_SEH
     __try {
-#endif /* HAVE_NO_SEH */
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
 	    retval = TCL_OK;
 	}
-#ifdef HAVE_NO_SEH
-    __asm__ __volatile__ (
-            "jmp  docopyfile_pop" "\n"
-        "docopyfile_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-        "docopyfile_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            :
-            :
-            : "%eax");
-
-# ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
-
-    if (INITIAL_ESP != RESTORED_ESP) {
-        Tcl_Panic("ESP restored incorrectly");
-    }
-    if (INITIAL_EBP != RESTORED_EBP) {
-        Tcl_Panic("EBP restored incorrectly");
-    }
-    if (INITIAL_HANDLER != RESTORED_HANDLER) {
-        Tcl_Panic("HANDLER restored incorrectly");
-    }
-# endif /* TCL_MEM_DEBUG */
-#else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
-#endif /* HAVE_NO_SEH */
+#else
 
     /*
-     * Avoid using control flow statements in the SEH guarded block!
+     * Don't have SEH available, do things the hard way.
+     * Note that this needs to be one block of asm, to avoid stack
+     * imbalance; also, it is illegal for one asm block to contain 
+     * a jump to another.
      */
+
+    __asm__ __volatile__ (
+
+	/*
+	 * Pick up parameters before messing with the stack
+	 */
+
+	"movl       %[nativeDst],   %%ebx"          "\n\t"
+        "movl       %[nativeSrc],   %%ecx"          "\n\t"
+	/*
+	 * Construct an EXCEPTION_REGISTRATION to protect the
+	 * call to CopyFile
+	 */
+	"leal       %[registration], %%edx"         "\n\t"
+	"movl       %%fs:0,         %%eax"          "\n\t"
+	"movl       %%eax,          0x0(%%edx)"     "\n\t" /* link */
+	"leal       1f,             %%eax"          "\n\t"
+	"movl       %%eax,          0x4(%%edx)"     "\n\t" /* handler */
+	"movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
+	"movl       %%esp,          0xc(%%edx)"     "\n\t" /* esp */
+	"movl       $0,             0x10(%%edx)"    "\n\t" /* status */
+	
+	/* Link the EXCEPTION_REGISTRATION on the chain */
+	
+	"movl       %%edx,          %%fs:0"         "\n\t"
+	
+	/* Call CopyFile( nativeSrc, nativeDst, 0 ) */
+	
+	"movl	    %[copyFile],    %%eax"	    "\n\t"
+	"pushl	    $0" 			    "\n\t"
+	"pushl	    %%ebx"			    "\n\t"
+	"pushl	    %%ecx"			    "\n\t"
+	"call	    *%%eax"			    "\n\t"
+	
+	/* 
+	 * Come here on normal exit.  Recover the EXCEPTION_REGISTRATION
+	 * and put the status return from CopyFile into it.
+	 */
+	
+	"movl	    %%fs:0,	    %%edx"	    "\n\t"
+	"movl	    %%eax,	    0x10(%%edx)"    "\n\t"
+	"jmp	    2f"				    "\n"
+	
+	/*
+	 * Come here on an exception.  Recover the EXCEPTION_REGISTRATION
+	 */
+	
+	"1:"					    "\t"
+	"movl       %%fs:0,         %%edx"          "\n\t"
+	"movl       0x8(%%edx),     %%edx"          "\n\t"
+	
+	/* 
+	 * Come here however we exited.  Restore context from the
+	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 */
+	
+	"2:"                                        "\t"
+	"movl       0xc(%%edx),     %%esp"          "\n\t"
+	"movl       0x8(%%edx),     %%ebp"          "\n\t"
+	"movl       0x0(%%edx),     %%eax"          "\n\t"
+	"movl       %%eax,          %%fs:0"         "\n\t"
+	
+	:
+	/* No outputs */
+        :
+	[registration]  "m"     (registration),
+	[nativeDst]	"m"     (nativeDst),
+	[nativeSrc]     "m"     (nativeSrc),
+	[copyFile]      "r"     (tclWinProcs->copyFileProc)
+        :
+	"%eax", "%ebx", "%ecx", "%edx", "memory"
+        );
+    if (registration.status != FALSE) {
+	retval = TCL_OK;
+    }
+#endif
+
     if (retval != -1) {
         return retval;
     }
@@ -707,37 +720,6 @@ DoCopyFile(
     }
     return TCL_ERROR;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * _except_docopyfile_handler --
- *
- *	SEH exception handler for DoCopyFile.
- *
- * Results:
- *	See DoCopyFile.
- *
- * Side effects:
- *	See DoCopyFile.
- *
- *----------------------------------------------------------------------
- */
-#ifdef HAVE_NO_SEH
-static
-__attribute__ ((cdecl))
-EXCEPTION_DISPOSITION
-_except_docopyfile_handler(
-    struct _EXCEPTION_RECORD *ExceptionRecord,
-    void *EstablisherFrame,
-    struct _CONTEXT *ContextRecord,
-    void *DispatcherContext)
-{
-    __asm__ __volatile__ (
-            "jmp docopyfile_reentry");
-    return 0; /* Function does not return */
-}
-#endif /* HAVE_NO_SEH */
 
 /*
  *---------------------------------------------------------------------------
