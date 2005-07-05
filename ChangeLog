@@ -1,5 +1,7 @@
 2005-07-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/Makefile.in:	Purged use of TCLTESTARGS [RFE 1161550].
+
 	* generic/tclUtil.c:	Converted TclFormatInt() into a macro.
 	* generic/tclInt.decls:	[RFE 1194015]
 	* generic/tclInt.h:
