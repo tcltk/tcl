@@ -1,3 +1,9 @@
+2005-07-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	Allow for [namespace import] of a command
+	* tests/namespace.test:	over a previous [namespace import] of itself
+	without throwing an error.  [RFE 1230597]
+
 2005-07-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictForCmd, DictFilterCmd): Interlocking of
