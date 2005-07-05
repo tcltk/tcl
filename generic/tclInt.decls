@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.89 2005/05/14 20:46:44 das Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.90 2005/07/05 18:15:55 dgp Exp $
 
 library tcl
 
@@ -114,9 +114,10 @@ declare 22 generic {
 declare 23 generic {
     Proc *TclFindProc(Interp *iPtr, CONST char *procName)
 }
-declare 24 generic {
-    int TclFormatInt(char *buffer, long n)
-}
+# Replaced with macro (see tclInt.h) in Tcl 8.5
+#declare 24 generic {
+#    int TclFormatInt(char *buffer, long n)
+#}
 declare 25 generic {
     void TclFreePackageInfo(Interp *iPtr)
 }
