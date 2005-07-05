@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.6 2004/11/12 23:42:00 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.7 2005/07/05 21:18:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -178,6 +178,8 @@ static int		BinaryProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+static void		DupEncodingIntRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
+			    Tcl_Obj *dupPtr));
 static void		EscapeFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		EscapeFromUtfProc _ANSI_ARGS_((ClientData clientData,
 			    CONST char *src, int srcLen, int flags,
@@ -190,6 +192,7 @@ static int		EscapeToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
 static void		FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
+static void		FreeEncodingIntRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static Encoding *	GetTableEncoding _ANSI_ARGS_((
 			    EscapeEncodingData *dataPtr, int state));
 static Tcl_Encoding	LoadEncodingFile _ANSI_ARGS_((Tcl_Interp *interp,
@@ -239,6 +242,91 @@ static int		UtfExtToUtfIntProc _ANSI_ARGS_((ClientData clientData,
 			    int *dstCharsPtr));
 static int		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
 
+/*
+ * A Tcl_ObjType for holding a cached Tcl_Encoding as the intrep.
+ * This should help the lifetime of encodings be more useful.  
+ * See concerns raised in [Bug 1077262].
+ */
+
+static Tcl_ObjType EncodingType = {
+    "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEncodingFromObj --
+ *
+ *      Writes to (*encodingPtr) the Tcl_Encoding value of (*objPtr),
+ *      if possible, and returns TCL_OK.  If no such encoding exists,
+ *      TCL_ERROR is returned, and if interp is non-NULL, an error message
+ *      is written there.
+ *
+ * Results:
+ *      Standard Tcl return code.
+ *
+ * Side effects:
+ * 	Caches the Tcl_Encoding value as the internal rep of (*objPtr).
+ *
+ *----------------------------------------------------------------------
+ */
+int 
+TclGetEncodingFromObj(interp, objPtr, encodingPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+    Tcl_Encoding *encodingPtr;
+{
+    CONST char *name = Tcl_GetString(objPtr);
+    if (objPtr->typePtr != &EncodingType) {
+	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
+
+	if (encoding == NULL) {
+	    return TCL_ERROR;
+	}
+	if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
+	    objPtr->typePtr->freeIntRepProc(objPtr);
+	}
+	objPtr->internalRep.otherValuePtr = (VOID *) encoding;
+	objPtr->typePtr = &EncodingType;
+    }
+    *encodingPtr = Tcl_GetEncoding(NULL, name);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeEncodingIntRep --
+ *
+ *      The Tcl_FreeInternalRepProc for the "encoding" Tcl_ObjType.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeEncodingIntRep(objPtr)
+    Tcl_Obj *objPtr;
+{
+    Tcl_FreeEncoding((Tcl_Encoding) objPtr->internalRep.otherValuePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupEncodingIntRep --
+ *
+ *      The Tcl_DupInternalRepProc for the "encoding" Tcl_ObjType.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DupEncodingIntRep(srcPtr, dupPtr)
+    Tcl_Obj *srcPtr;
+    Tcl_Obj *dupPtr;
+{
+    dupPtr->internalRep.otherValuePtr = (VOID *)
+	    Tcl_GetEncoding(NULL, srcPtr->bytes);
+}
 
 /*
  *---------------------------------------------------------------------------
