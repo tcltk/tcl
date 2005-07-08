@@ -484,43 +484,6 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	AC_CHECK_FUNCS(pthread_attr_setstacksize)
 	AC_CHECK_FUNCS(pthread_atfork)
 	LIBS=$ac_saved_libs
-	AC_CHECK_FUNCS(readdir_r)
-	if test "x$ac_cv_func_readdir_r" = "xyes"; then
-            AC_MSG_CHECKING([how many args readdir_r takes])
-	    # IRIX 5.3 has a 2 arg version of readdir_r
-	    # while other systems have a 3 arg version.
-	    AC_CACHE_VAL(tcl_cv_two_arg_readdir_r,
-	        AC_TRY_COMPILE([#include <stdlib.h>
-#include <sys/types.h>
-#ifdef NO_DIRENT_H
-# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
-# define dirent direct  *                                */
-#else
-# include <dirent.h>
-#endif
-], [readdir_r(NULL, NULL);],
-	        tcl_cv_two_arg_readdir_r=yes, tcl_cv_two_arg_readdir_r=no))
-	    AC_CACHE_VAL(tcl_cv_three_arg_readdir_r,
-	        AC_TRY_COMPILE([#include <stdlib.h>
-#include <sys/types.h>
-#ifdef NO_DIRENT_H
-# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
-# define dirent direct  *                                */
-#else
-# include <dirent.h>
-#endif
-], [readdir_r(NULL, NULL, NULL);],
-	        tcl_cv_three_arg_readdir_r=yes, tcl_cv_three_arg_readdir_r=no))
-	    if test "x$tcl_cv_two_arg_readdir_r" = "xyes" ; then
-                AC_MSG_RESULT([2])
-	        AC_DEFINE(HAVE_TWO_ARG_READDIR_R)
-	    elif test "x$tcl_cv_three_arg_readdir_r" = "xyes" ; then
-                AC_MSG_RESULT([3])
-	        AC_DEFINE(HAVE_THREE_ARG_READDIR_R)
-	    else
-	        AC_MSG_ERROR([unknown number of args for readdir_r])
-	    fi
-	fi
     else
 	TCL_THREADS=0
 	AC_MSG_RESULT([no (default)])
@@ -896,9 +859,14 @@ dnl AC_CHECK_TOOL(AR, ar)
 	AIX-*)
 	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
 		# AIX requires the _r compiler when gcc isn't being used
-		if test "${CC}" != "cc_r" ; then
-		    CC=${CC}_r
-		fi
+		case "${CC}" in
+		    *_r)
+			# ok ...
+			;;
+		    *)
+			CC=${CC}_r
+			;;
+		esac
 		AC_MSG_RESULT([Using $CC for compiling with threads])
 	    fi
 	    LIBS="$LIBS -lc"

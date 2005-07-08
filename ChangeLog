@@ -1,14 +1,20 @@
+2005-07-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure: Backported [Bug 1095909], removing
+	* unix/tclUnixPort.h:          any use of readdir_r as it is not
+	* unix/tclUnixThrd.c:          necessary and just confuses things.
+
 2005-07-05  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdAH.c	New "encoding" Tcl_ObjType (not registered)
-	* generic/tclEncoding.c	that permits longer lifetimes of the 
-	* generic/tclInt.h	Tcl_Encoding values kept as intreps of
+	* generic/tclCmdAH.c:	 New "encoding" Tcl_ObjType (not registered)
+	* generic/tclEncoding.c: that permits longer lifetimes of the 
+	* generic/tclInt.h:	 Tcl_Encoding values kept as intreps of
 	Tcl_Obj's.  Reduces the need for repeated reading of encoding
 	definition files from the filesystem.  [Bug 1077262]
 
-        * generic/tclNamesp.c:  Allow for [namespace import] of a command
-        * tests/namespace.test: over a previous [namespace import] of itself
-        without throwing an error.  [RFE 1230597]
+	* generic/tclNamesp.c:	Allow for [namespace import] of a command
+	* tests/namespace.test: over a previous [namespace import] of itself
+	without throwing an error.  [RFE 1230597]
 
 2005-07-01  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
