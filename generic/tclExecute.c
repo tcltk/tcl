@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.193 2005/06/29 03:29:00 mdejong Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.194 2005/07/09 00:27:32 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -3556,7 +3556,7 @@ TclExecuteByteCode(interp, codePtr)
 	 * Only integers are allowed. We compute value op value2.
 	 */
 
-	long i = 0, i2 = 0, rem, negative;
+	long i = 0, i2 = 0, rem, neg_divisor = 0;
 	long iResult = 0; /* Init. avoids compiler warning. */
 	Tcl_WideInt w, w2, wResult = W0;
 	int doWide = 0;
@@ -3599,8 +3599,9 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_MOD:
 	    /*
 	     * This code is tricky: C doesn't guarantee much about
-	     * the quotient or remainder, but Tcl does. The
-	     * remainder always has the same sign as the divisor and
+	     * the quotient or remainder, and results with a negative
+	     * divisor are not specified. Tcl guarantees that the
+	     * remainder will have the same sign as the divisor and
 	     * a smaller absolute value.
 	     */
 	    if (value2Ptr->typePtr == &tclWideIntType && w2 == W0) {
@@ -3619,7 +3620,6 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		goto divideByZero;
 	    }
-	    negative = 0;
 	    if (valuePtr->typePtr == &tclWideIntType
 		|| value2Ptr->typePtr == &tclWideIntType) {
 		Tcl_WideInt wRemainder;
@@ -3631,32 +3631,102 @@ TclExecuteByteCode(interp, codePtr)
 		} else if (value2Ptr->typePtr == &tclIntType) {
 		    w2 = Tcl_LongAsWide(i2);
 		}
-		if (w2 < 0) {
-		    w2 = -w2;
-		    w = -w;
-		    negative = 1;
+		if ( w == LLONG_MIN && w2 == -1 ) {
+		    /* Integer overflow could happen with
+		     * (LLONG_MIN % -1) even though it
+		     * is not possible in the code below. */
+		    wRemainder = 0;
+		} else if ( w == LLONG_MIN && w2 == LLONG_MAX ) {
+		    wRemainder = LLONG_MAX - 1;
+		} else if ( w2 == LLONG_MIN ) {
+		    /* In C, a modulus operation is not well
+		     * defined when the divisor is a negative
+		     * number. So w % LLONG_MIN is not well
+		     * defined in the code below because
+		     * -LLONG_MIN is still a negative number.
+		     */
+		    if (w == 0 || w == LLONG_MIN) {
+		        wRemainder = 0;
+		    } else if (w < 0) {
+		        wRemainder = w;
+		    } else {
+		        wRemainder = LLONG_MIN + w;
+		    }
+		    neg_divisor = 1;
+		} else {
+		    if (w2 < 0) {
+		        w2 = -w2;
+		        w = -w; /* Note: -LLONG_MIN == LLONG_MIN */
+		        neg_divisor = 1;
+		    }
+		    wRemainder = w % w2;
+
+		    /*
+		     * remainder is (remainder + divisor) when the
+		     * remainder is negative. Watch out for the
+		     * special case of a LLONG_MIN dividend and
+		     * a negative divisor. Don't add the divisor
+		     * in that case because the remainder should
+		     * not be negative.
+		     */
+		    if (wRemainder < 0 && !(neg_divisor && (w == LLONG_MIN))) {
+		        wRemainder += w2;
+		    }
 		}
-		wRemainder  = w % w2;
-		if (wRemainder < 0) {
-		    wRemainder += w2;
-		}
-		if (negative) {
+		if ((neg_divisor && (wRemainder > 0)) ||
+		        (!neg_divisor && (wRemainder < 0))) {
 		    wRemainder = -wRemainder;
 		}
 		wResult = wRemainder;
 		doWide = 1;
 		break;
 	    }
-	    if (i2 < 0) {
-		i2 = -i2;
-		i = -i;
-		negative = 1;
+
+	    if ( i == LONG_MIN && i2 == -1 ) {
+		/* Integer overflow could happen with
+		 * (LONG_MIN % -1) even though it
+		 * is not possible in the code below. */
+		rem = 0;
+	    } else if ( i == LONG_MIN && i2 == LONG_MAX ) {
+		rem = LONG_MAX - 1;
+	    } else if ( i2 == LONG_MIN ) {
+		/* In C, a modulus operation is not well
+		 * defined when the divisor is a negative
+		 * number. So i % LONG_MIN is not well
+		 * defined in the code below because
+		 * -LONG_MIN is still a negative number.
+		 */
+		if (i == 0 || i == LONG_MIN) {
+		    rem = 0;
+		} else if (i < 0) {
+		    rem = i;
+		} else {
+		    rem = LONG_MIN + i;
+		}
+		neg_divisor = 1;
+	    } else {
+		if (i2 < 0) {
+		    i2 = -i2;
+		    i = -i; /* Note: -LONG_MIN == LONG_MIN */
+		    neg_divisor = 1;
+		}
+		rem = i % i2;
+
+		/*
+		 * remainder is (remainder + divisor) when the
+		 * remainder is negative. Watch out for the
+		 * special case of a LONG_MIN dividend and
+		 * a negative divisor. Don't add the divisor
+		 * in that case because the remainder should
+		 * not be negative.
+		 */
+		if (rem < 0 && !(neg_divisor && (i == LONG_MIN))) {
+		    rem += i2;
+		}
 	    }
-	    rem  = i % i2;
-	    if (rem < 0) {
-		rem += i2;
-	    }
-	    if (negative) {
+
+	    if ((neg_divisor && (rem > 0)) ||
+		    (!neg_divisor && (rem < 0))) {
 		rem = -rem;
 	    }
 	    iResult = rem;
@@ -3863,12 +3933,12 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	Tcl_ObjType *t1Ptr, *t2Ptr;
-	long i = 0, i2 = 0, quot, rem;	/* Init. avoids compiler warning. */
+	long i = 0, i2 = 0, quot;	/* Init. avoids compiler warning. */
 	double d1, d2;
 	long iResult = 0;	/* Init. avoids compiler warning. */
 	double dResult = 0.0;	/* Init. avoids compiler warning. */
 	int doDouble = 0;	/* 1 if doing floating arithmetic */
-	Tcl_WideInt w, w2, wquot, wrem;
+	Tcl_WideInt w, w2, wquot;
 	Tcl_WideInt wResult = W0; /* Init. avoids compiler warning. */
 	int doWide = 0;		/* 1 if doing wide arithmetic. */
 	Tcl_Obj *valuePtr,*value2Ptr;
@@ -4025,23 +4095,34 @@ TclExecuteByteCode(interp, codePtr)
 		    break;
 	        case INST_DIV:
 		    /*
-		     * This code is tricky: C doesn't guarantee much
-		     * about the quotient or remainder, but Tcl does.
-		     * The remainder always has the same sign as the
-		     * divisor and a smaller absolute value.
+		     * When performing integer division, protect
+		     * against integer overflow. Round towards zero
+		     * when the quotient is positive, otherwise
+		     * round towards -Infinity.
 		     */
 		    if (w2 == W0) {
 			TRACE((LLD" "LLD" => DIVIDE BY ZERO\n", w, w2));
 			goto divideByZero;
 		    }
-		    if (w2 < 0) {
-			w2 = -w2;
-			w = -w;
-		    }
-		    wquot = w / w2;
-		    wrem  = w % w2;
-		    if (wrem < W0) {
-			wquot -= 1;
+		    if (w == LLONG_MIN && w2 == -1) {
+			/* Avoid integer overflow on (LLONG_MIN / -1) */
+			wquot = LLONG_MIN;
+                    } else {
+			wquot = w / w2;
+			/* Round down to a smaller negative number if
+			 * there is a remainder and the quotient is
+			 * negative or zero and the signs don't match.
+			 * Note that we don't use a modulus to find the
+			 * remainder since it is not well defined in C
+			 * when the divisor is negative.
+			 */
+			if (((wquot < 0) ||
+			        ((wquot == 0) &&
+			            (((w < 0) && (w2 > 0)) ||
+			             ((w > 0) && (w2 < 0))))) &&
+			        ((wquot * w2) != w)) {
+			    wquot -= 1;
+			}
 		    }
 		    wResult = wquot;
 		    break;
@@ -4072,23 +4153,34 @@ TclExecuteByteCode(interp, codePtr)
 		    break;
 	        case INST_DIV:
 		    /*
-		     * This code is tricky: C doesn't guarantee much
-		     * about the quotient or remainder, but Tcl does.
-		     * The remainder always has the same sign as the
-		     * divisor and a smaller absolute value.
+		     * When performing integer division, protect
+		     * against integer overflow. Round towards zero
+		     * when the quotient is positive, otherwise
+		     * round towards -Infinity.
 		     */
 		    if (i2 == 0) {
 			TRACE(("%ld %ld => DIVIDE BY ZERO\n", i, i2));
 			goto divideByZero;
 		    }
-		    if (i2 < 0) {
-			i2 = -i2;
-			i = -i;
-		    }
-		    quot = i / i2;
-		    rem  = i % i2;
-		    if (rem < 0) {
-			quot -= 1;
+		    if (i == LONG_MIN && i2 == -1) {
+			/* Avoid integer overflow on (LONG_MIN / -1) */
+			quot = LONG_MIN;
+		    } else {
+			quot = i / i2;
+			/* Round down to a smaller negative number if
+			 * there is a remainder and the quotient is
+			 * negative or zero and the signs don't match.
+			 * Note that we don't use a modulus to find the
+			 * remainder since it is not well defined in C
+			 * when the divisor is negative.
+			 */
+			if (((quot < 0) ||
+			        ((quot == 0) &&
+			            (((i < 0) && (i2 > 0)) ||
+			             ((i > 0) && (i2 < 0))))) &&
+			        ((quot * i2) != i)) {
+			    quot -= 1;
+			}
 		    }
 		    iResult = quot;
 		    break;

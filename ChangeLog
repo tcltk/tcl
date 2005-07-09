@@ -1,3 +1,21 @@
+2005-07-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode):
+        Reimplement long and wide type integer division
+        and modulus operations so that the smallest
+        and largest integer values are handled properly.
+        The divide operation is more efficient since
+        it no longer does a modulus or negation and
+        only checks for a remainder when the quotient
+        will be a negative number. The modulus operation
+        is now a bit more complex because of a number of
+        special cases dealing with the smallest and
+        largest integers.
+	* tests/expr.test: Add test cases for division
+        and modulus operations on the smallest and
+        largest integer values for 32 and 64 bit types.
+	[Patch 1230205]
+
 2005-07-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclLink.c:	Simplified LinkTraceProc [Bug 1208108].
