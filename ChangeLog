@@ -1,19 +1,18 @@
+2005-07-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c: General style cleanup.
+
 2005-07-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* generic/tclExecute.c (TclExecuteByteCode):
-        Reimplement long and wide type integer division
-        and modulus operations so that the smallest
-        and largest integer values are handled properly.
-        The divide operation is more efficient since
-        it no longer does a modulus or negation and
-        only checks for a remainder when the quotient
-        will be a negative number. The modulus operation
-        is now a bit more complex because of a number of
-        special cases dealing with the smallest and
-        largest integers.
-	* tests/expr.test: Add test cases for division
-        and modulus operations on the smallest and
-        largest integer values for 32 and 64 bit types.
+	* generic/tclExecute.c (TclExecuteByteCode): Reimplement long and wide
+	type integer division and modulus operations so that the smallest and
+	largest integer values are handled properly.  The divide operation is
+	more efficient since it no longer does a modulus or negation and only
+	checks for a remainder when the quotient will be a negative number.
+	The modulus operation is now a bit more complex because of a number of
+	special cases dealing with the smallest and largest integers.
+	* tests/expr.test: Add test cases for division and modulus operations
+	on the smallest and largest integer values for 32 and 64 bit types.
 	[Patch 1230205]
 
 2005-07-06  Don Porter  <dgp@users.sourceforge.net>
@@ -50,23 +49,22 @@
 
 2005-06-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* generic/tclExecute.c (TclExecuteByteCode): When parsing an
-	integer operand for a unary minus expression operator, check for a
-	wide integer that is actually LONG_MIN. If found, convert it back
-	to a long int type.
-	* tests/expr.test: Add constraint for 32bit long int type and
-	64bit wide int type. Add tests that parse the smallest/largest
-	long int and wide int values.
+	* generic/tclExecute.c (TclExecuteByteCode): When parsing an integer
+	operand for a unary minus expression operator, check for a wide
+	integer that is actually LONG_MIN. If found, convert it back to a long
+	int type.
+	* tests/expr.test: Add constraint for 32bit long int type and 64bit
+	wide int type. Add tests that parse the smallest/largest long int and
+	wide int values.
 
 2004-06-24  Kevin Kenny  <kennykb@acm.org>
 	
 	* generic/tclEvent.c (Tcl_Finalize):
 	* generic/tclInt.h:
 	* generic/tclPreserve.c (TclFinalizePreserve): Changed the
-	finalization logic so that Tcl_Preserve finalizes after exit
-	handlers run; a lot of code called from Tk's exit handlers
-	presumes tha Tcl_Preserve will still work even from an exit
-	handler.
+	finalization logic so that Tcl_Preserve finalizes after exit handlers
+	run; a lot of code called from Tk's exit handlers presumes that
+	Tcl_Preserve will still work even from an exit handler.
 	
 2005-06-24  Don Porter  <dgp@users.sourceforge.net>
 
@@ -75,10 +73,10 @@
 
 2005-06-23  Kevin Kenny  <kennykb@acm.org>
 
-	* win/tclWinChan.c: More rewriting of __asm__ blocks that
-	* win/tclWinFCmd.c: implement SEH in GCC, because mingw's
-	gcc 3.4.2 is not as forgiving of violations committed by
-	the old code and caused panics. [Bug #1225957]
+	* win/tclWinChan.c: More rewriting of __asm__ blocks that implement
+	* win/tclWinFCmd.c: SEH in GCC, because mingw's gcc 3.4.2 is not as
+	forgiving of violations committed by the old code and caused panics.
+	[Bug #1225957]
 	
 2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -97,27 +95,25 @@
 	* generic/tclIO.c (TclFinalizeIOSubsystem): shutdown of the pipe
 	* unix/tclUnixPipe.c (TclFinalizePipes):    management until after
 	* win/tclWinPipe.c (TclFinalizePipes):      all channels have been
-	    closed, in order to avoid a situation where the Windows
-	    PipeCloseProc2 would re-establish the exit handler after
-	    exit handlers had already run, corrupting the heap.
-	    [Bug #1225727]
+	closed, in order to avoid a situation where the Windows PipeCloseProc2
+	would re-establish the exit handler after exit handlers had already
+	run, corrupting the heap. [Bug #1225727]
 	Also corrected a potential read of uninitialized memory in
 	PipeClose2Proc [Bug #1225044]
 	
 2005-06-21  Andreas Kupries <andreask@activestate.com>
 
-	* generic/tclInt.h: Followup to change made on 2005-06-18 by
-	  Daniel Steffen. There are compilers (*) who error out on the
-	  redefinition of WORDS_BIGENDIAN. We have to undef the previous
-	  definition (on the command line) first to make this
-	  acceptable. (*): AIX native.
+	* generic/tclInt.h: Followup to change made on 2005-06-18 by Daniel
+	Steffen. There are compilers (*) who error out on the redefinition of
+	WORDS_BIGENDIAN. We have to undef the previous definition (on the
+	command line) first to make this acceptable. (*): AIX native.
 
 2005-06-21  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclFileName.c: Changed [file split] and [file join]
-	to treat Windows drive letters similarly to ~ syntax and make
-	sure that they appear with "./" in front when they are in
-	intermediate components of the path. [Bug 1194458]
+	* generic/tclFileName.c: Changed [file split] and [file join] to treat
+	Windows drive letters similarly to ~ syntax and make sure that they
+	appear with "./" in front when they are in intermediate components of
+	the path. [Bug 1194458]
 	* tests/fileName.test: Added test for the above bug.
 	
 2005-06-21  Don Porter  <dgp@users.sourceforge.net>
@@ -130,10 +126,9 @@
 
 2005-06-21  Donal K. Fellows  <dkf@users.sf.net>
 
-	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Only enable the 'compile'
-	special debugging feature when requested in configure.in; removes
-	irrelevant junk from the configure files of extensions that use
-	Tcl's tcl.m4.
+	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Only enable the 'compile' special
+	debugging feature when requested in configure.in; removes irrelevant
+	junk from the configure files of extensions that use Tcl's tcl.m4.
 
 2005-06-20  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -148,8 +143,8 @@
 2005-06-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Generate an error if a mode
-	argument like -exact is passed more than once to the switch
-	command. The previous implementation silently accepted invalid switch
+	argument like -exact is passed more than once to the switch command.
+	The previous implementation silently accepted invalid switch
 	invocations like [switch -exact -glob $str ...].
 	* tests/for.test: Check some error cases when invoking continue and
 	break inside a for loop next script.
@@ -265,12 +260,11 @@
 
 2005-06-06  Kevin B. Kenny  <kennykb@acm.org>
 
-	* win/tclWin32Dll.c: Corrected another buglet in the assembly
-	code for stack probing on Win32/gcc. [Bug #1213678]
+	* win/tclWin32Dll.c: Corrected another buglet in the assembly code for
+	stack probing on Win32/gcc. [Bug #1213678]
 	* generic/tclObj,c: Added missing 'static' on definition of
-	UpdateStringOfBignum, and removed a 'switch' on a 'long long'
-	operand (which HP-UX native 'cc' seems unable to handle).
-	[Bug #1215775]
+	UpdateStringOfBignum, and removed a 'switch' on a 'long long' operand
+	(which HP-UX native 'cc' seems unable to handle). [Bug #1215775]
 	
 2005-06-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
