@@ -431,7 +431,6 @@
 	* doc/expr.n:
 	* doc/string.n: fixed roff syntax complaints from 'make html'.
 
->>>>>>> 1.2707
 2005-05-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c:       Corrected parser to recognize all
