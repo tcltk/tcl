@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.15 2005/05/21 15:10:27 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.16 2005/07/12 20:15:34 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1787,6 +1787,7 @@ MODULE_SCOPE ClientData         tclTimeClientData;
  * Variables denoting the Tcl object types defined in the core.
  */
 
+MODULE_SCOPE Tcl_ObjType tclBignumType;
 MODULE_SCOPE Tcl_ObjType tclBooleanType;
 MODULE_SCOPE Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE Tcl_ObjType tclByteCodeType;
@@ -1954,6 +1955,12 @@ MODULE_SCOPE int	TclParseBackslash _ANSI_ARGS_((CONST char *src,
 			    int numBytes, int *readPtr, char *dst));
 MODULE_SCOPE int	TclParseHex _ANSI_ARGS_((CONST char *src, int numBytes,
 			    Tcl_UniChar *resultPtr));
+MODULE_SCOPE int	TclParseNumber _ANSI_ARGS_((Tcl_Interp* interp,
+						    Tcl_Obj* objPtr,
+						    CONST char* type,
+						    CONST char* string,
+						    size_t length,
+						    CONST char** endPtrPtr ));
 MODULE_SCOPE void	TclParseInit _ANSI_ARGS_ ((Tcl_Interp *interp,
 			    CONST char *string, int numBytes,
 			    Tcl_Parse *parsePtr));
@@ -2737,6 +2744,8 @@ MODULE_SCOPE void* TclBNAlloc( size_t nBytes );
 MODULE_SCOPE void* TclBNRealloc( void* oldBlock, size_t newNBytes );
 MODULE_SCOPE void TclBNFree( void* block );
 MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
+MODULE_SCOPE void TclBNInitBignumFromWideUInt(mp_int* bignum,
+					      Tcl_WideUInt initVal);
 
 
 /*

@@ -1,3 +1,20 @@
+2005-07-12  Kevin Kenny  <kennykb@acm.org>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd):
+	* generic/tclInt.h:
+	* generic/tclObj.c (Tcl_GetDoubleFromObj, SetDoubleFromAny,
+	                    Tcl_GetIntFromObj, SetIntOrWideFromAny):
+	* generic/tclStrToD.c (TclParseNumber, etc.):
+	* tclTomMathInterface.c (TclBNInitBignumFromWideUInt):
+	* tests/obj.test (obj-1.1, obj-2.2, obj-3.1, obj-3.2):
+	
+	Initial attempt at an implementation of TIP #249, comprising
+	a unified parser and modifications to the Tcl_Get*FromObj
+	routines to use it.  Further integration of the parser is
+	necessary and planned.
+	
 2005-05-20  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclParseExpr.c:       Corrected parser to recognize all
