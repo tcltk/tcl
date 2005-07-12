@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.13 2005/05/21 15:10:27 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.14 2005/07/12 20:37:00 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2191,91 +2191,6 @@ TclNeedSpace(start, end)
 	    }
     }
     return 1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFormatInt --
- *
- *	This procedure formats an integer into a sequence of decimal digit
- *	characters in a buffer. If the integer is negative, a minus sign is
- *	inserted at the start of the buffer. A null character is inserted at
- *	the end of the formatted characters. It is the caller's
- *	responsibility to ensure that enough storage is available. This
- *	procedure has the effect of sprintf(buffer, "%d", n) but is faster.
- *
- * Results:
- *	An integer representing the number of characters formatted, not
- *	including the terminating \0.
- *
- * Side effects:
- *	The formatted characters are written into the storage pointer to
- *	by the "buffer" argument.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclFormatInt(buffer, n)
-    char *buffer;		/* Points to the storage into which the
-				 * formatted characters are written. */
-    long n;			/* The integer to format. */
-{
-    long intVal;
-    int i;
-    int numFormatted, j;
-    char *digits = "0123456789";
-
-    /*
-     * Check first whether "n" is zero.
-     */
-
-    if (n == 0) {
-	buffer[0] = '0';
-	buffer[1] = 0;
-	return 1;
-    }
-
-    /*
-     * Check whether "n" is the maximum negative value. This is
-     * -2^(m-1) for an m-bit word, and has no positive equivalent;
-     * negating it produces the same value.
-     */
-
-    if (n == -n) {
-	sprintf(buffer, "%ld", n);
-	return strlen(buffer);
-    }
-
-    /*
-     * Generate the characters of the result backwards in the buffer.
-     */
-
-    intVal = (n < 0? -n : n);
-    i = 0;
-    buffer[0] = '\0';
-    do {
-	i++;
-	buffer[i] = digits[intVal % 10];
-	intVal = intVal/10;
-    } while (intVal > 0);
-    if (n < 0) {
-	i++;
-	buffer[i] = '-';
-    }
-    numFormatted = i;
-
-    /*
-     * Now reverse the characters.
-     */
-
-    for (j = 0;  j < i;  j++, i--) {
-	char tmp = buffer[i];
-	buffer[i] = buffer[j];
-	buffer[j] = tmp;
-    }
-    return numFormatted;
 }
 
 /*

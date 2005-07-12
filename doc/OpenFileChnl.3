@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.29.2.1 2005/04/10 23:14:42 kennykb Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.29.2.2 2005/07/12 20:36:15 kennykb Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_TruncateChannel, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -98,6 +98,11 @@ Tcl_WideInt
 .sp
 Tcl_WideInt
 \fBTcl_Tell\fR(\fIchannel\fR)
+.sp
+.VS 8.5
+int
+\fBTcl_TruncateChannel\fR(\fIchannel, length\fR)
+.VE 8.5
 .sp
 int
 \fBTcl_GetChannelOption\fR(\fIinterp, channel, optionName, optionValue\fR)
@@ -196,6 +201,8 @@ given by \fIseekMode\fR.  May be either positive or negative.
 Relative to which point to seek; used with \fIoffset\fR to calculate the new
 access point for the channel. Legal values are \fBSEEK_SET\fR,
 \fBSEEK_CUR\fR, and \fBSEEK_END\fR.
+.AP Tcl_WideInt length in
+The (non-negative) length to truncate the channel the channel to.
 .AP "const char" *optionName in
 The name of an option applicable to this channel, such as \fB\-blocking\fR.
 May have any of the values accepted by the \fBfconfigure\fR command.
@@ -591,6 +598,14 @@ After an error, the access point may or may not have been moved.
 .PP
 \fBTcl_Tell\fR returns the current access point for a channel. The returned
 value is \-1 if the channel does not support seeking.
+
+.SH TCL_TRUNCATECHANNEL
+.PP
+.VS 8.5
+\fBTcl_TruncateChannel\fR truncates the file underlying \fIchannel\fR
+to a given \fIlength\fR of bytes. It returns \fBTCL_OK\fR if the
+operation succeeded, and \fBTCL_ERROR\fR otherwise.
+.VE 8.5
 
 .SH TCL_GETCHANNELOPTION
 .PP

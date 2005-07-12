@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.37 2004/11/15 21:47:23 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.37.2.1 2005/07/12 20:37:12 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2204,7 +2204,40 @@ test trace-33.1 {variable match with remove variable} {
     llength [trace info variable x]
 } 0
 
-test trace-34.1 {527164: Keep -errorinfo of traces} -setup {
+test trace-34.1 {Bug 1201035} {
+    set ::x [list]
+    proc foo {} {lappend ::x foo}
+    proc bar args {
+        lappend ::x $args
+        trace remove execution foo leavestep bar
+        trace remove execution foo enterstep bar
+        trace add execution foo leavestep bar
+        trace add execution foo enterstep bar
+        lappend ::x done
+    }
+    trace add execution foo leavestep bar
+    trace add execution foo enterstep bar
+    foo
+    set ::x
+} {{{lappend ::x foo} enterstep} done foo}
+
+test trace-34.2 {Bug 1224585} {
+    proc foo {} {}
+    proc bar args {trace remove execution foo leave soom}
+    trace add execution foo leave bar
+    trace add execution foo leave soom
+    foo
+} {}
+
+test trace-34.3 {Bug 1224585} {
+    proc foo {} {set x {}}
+    proc bar args {trace remove execution foo enterstep soom}
+    trace add execution foo enterstep soom
+    trace add execution foo enterstep bar
+    foo
+} {}
+
+test trace-35.1 {527164: Keep -errorinfo of traces} -setup {
     unset -nocomplain x y
 } -body {
     trace add variable x write {error foo;#}

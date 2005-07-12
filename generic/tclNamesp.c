@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.6 2005/05/21 15:10:27 kennykb Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.7 2005/07/12 20:36:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -242,6 +242,9 @@ static int		NamespaceOriginCmd _ANSI_ARGS_((
 static int		NamespaceParentCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
+static int		NamespacePathCmd _ANSI_ARGS_((
+			    ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 static int		NamespaceQualifiersCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -270,6 +273,9 @@ static void		FreeEnsembleCmdRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		DupEnsembleCmdRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
 static void		StringOfEnsembleCmdRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+static void		UnlinkNsPath _ANSI_ARGS_((Namespace *nsPtr));
+static void		SetNsPath _ANSI_ARGS_((Namespace *nsPtr,
+			    int pathLength, Tcl_Namespace *pathAry[]));
 
 /*
  * This structure defines a Tcl object type that contains a
@@ -293,7 +299,7 @@ Tcl_ObjType tclNsNameType = {
  * the real command that implements it.
  */
 
-Tcl_ObjType tclEnsembleCmdType = {
+static Tcl_ObjType ensembleCmdType = {
     "ensembleCommand",		/* the type's name */
     FreeEnsembleCmdRep,		/* freeIntRepProc */
     DupEnsembleCmdRep,		/* dupIntRepProc */
@@ -844,6 +850,9 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     nsPtr->compiledVarResProc = NULL;
     nsPtr->exportLookupEpoch = 0;
     nsPtr->ensembles = NULL;
+    nsPtr->commandPathLength = 0;
+    nsPtr->commandPathArray = NULL;
+    nsPtr->commandPathSourceList = NULL;
 
     if (parentPtr != NULL) {
 	entryPtr = Tcl_CreateHashEntry(&parentPtr->childTable, simpleName,
@@ -1063,6 +1072,22 @@ TclTeardownNamespace(nsPtr)
 	}
     }
     nsPtr->parentPtr = NULL;
+
+    /*
+     * Delete the namespace path if one is installed.
+     */
+
+    if (nsPtr->commandPathLength != 0) {
+	UnlinkNsPath(nsPtr);
+	nsPtr->commandPathLength = 0;
+    }
+    if (nsPtr->commandPathSourceList != NULL) {
+	NamespacePathEntry *nsPathPtr = nsPtr->commandPathSourceList;
+	do {
+	    nsPathPtr->nsPtr = NULL;
+	    nsPathPtr = nsPathPtr->nextPtr;
+	} while (nsPathPtr != NULL);
+    }
 
     /*
      * Delete all the child namespaces.
@@ -1614,6 +1639,15 @@ DoImport(interp, nsPtr, hPtr, cmdName, pattern, importNsPtr, allowOverwrite)
 	refPtr->nextPtr = cmdPtr->importRefPtr;
 	cmdPtr->importRefPtr = refPtr;
     } else {
+	Command *overwrite = (Command *) Tcl_GetHashValue(found);
+	if (overwrite->deleteProc == DeleteImportedCmd) {
+	    ImportedCmdData *dataPtr =
+		    (ImportedCmdData *) overwrite->objClientData;
+	    if (dataPtr->realCmdPtr == (Command *) Tcl_GetHashValue(hPtr)) {
+		/* Repeated import of same command -- acceptable */
+		return TCL_OK;
+	    }
+	}
 	Tcl_AppendResult(interp, "can't import command \"", cmdName,
 		"\": already exists", (char *) NULL);
 	return TCL_ERROR;
@@ -2309,15 +2343,11 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 				  * ignored. */
 {
     Interp *iPtr = (Interp*)interp;
-
-    ResolverScheme *resPtr;
-    Namespace *nsPtr[2], *cxtNsPtr;
-    CONST char *simpleName;
+    Namespace *cxtNsPtr;
     register Tcl_HashEntry *entryPtr;
     register Command *cmdPtr;
-    register int search;
+    CONST char *simpleName;
     int result;
-    Tcl_Command cmd;
 
     /*
      * If this namespace has a command resolver, then give it first
@@ -2326,7 +2356,7 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
      * procedures may return a Tcl_Command value, they may signal
      * to continue onward, or they may signal an error.
      */
-    if ((flags & TCL_GLOBAL_ONLY) != 0) {
+    if (flags & TCL_GLOBAL_ONLY) {
 	cxtNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     } else if (contextNsPtr != NULL) {
 	cxtNsPtr = (Namespace *) contextNsPtr;
@@ -2335,7 +2365,8 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
     }
 
     if (cxtNsPtr->cmdResProc != NULL || iPtr->resolverPtr != NULL) {
-	resPtr = iPtr->resolverPtr;
+	ResolverScheme *resPtr = iPtr->resolverPtr;
+	Tcl_Command cmd;
 
 	if (cxtNsPtr->cmdResProc) {
 	    result = (*cxtNsPtr->cmdResProc)(interp, name,
@@ -2363,33 +2394,90 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
      * Find the namespace(s) that contain the command.
      */
 
-    TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
-	    flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
-
-    /*
-     * Look for the command in the command table of its namespace.
-     * Be sure to check both possible search paths: from the specified
-     * namespace context and from the global namespace.
-     */
-
     cmdPtr = NULL;
-    for (search = 0;  (search < 2) && (cmdPtr == NULL);  search++) {
-	if ((nsPtr[search] != NULL) && (simpleName != NULL)) {
-	    entryPtr = Tcl_FindHashEntry(&nsPtr[search]->cmdTable,
-		    simpleName);
+    if (cxtNsPtr->commandPathLength!=0 && strncmp(name, "::", 2)) {
+	int i;
+	Namespace *pathNsPtr, *realNsPtr, *dummyNsPtr;
+
+	(void) TclGetNamespaceForQualName(interp, name, cxtNsPtr,
+		TCL_NAMESPACE_ONLY, &realNsPtr, &dummyNsPtr, &dummyNsPtr,
+		&simpleName);
+	if (realNsPtr != NULL && simpleName != NULL) {
+	    entryPtr = Tcl_FindHashEntry(&realNsPtr->cmdTable, simpleName);
 	    if (entryPtr != NULL) {
 		cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
 	    }
 	}
+
+	/*
+	 * Next, check along the path.
+	 */
+
+	for (i=0 ; i<cxtNsPtr->commandPathLength && cmdPtr==NULL ; i++) {
+	    pathNsPtr = cxtNsPtr->commandPathArray[i].nsPtr;
+	    if (pathNsPtr == NULL) {
+		continue;
+	    }
+	    (void) TclGetNamespaceForQualName(interp, name, pathNsPtr,
+		    TCL_NAMESPACE_ONLY, &realNsPtr, &dummyNsPtr, &dummyNsPtr,
+		    &simpleName);
+	    if (realNsPtr != NULL && simpleName != NULL) {
+		entryPtr = Tcl_FindHashEntry(&realNsPtr->cmdTable, simpleName);
+		if (entryPtr != NULL) {
+		    cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+		}
+	    }
+	}
+
+	/*
+	 * If we've still not found the command, look in the global
+	 * namespace as a last resort.
+	 */
+
+	if (cmdPtr == NULL) {
+	    (void) TclGetNamespaceForQualName(interp, name, NULL,
+		    TCL_GLOBAL_ONLY, &realNsPtr, &dummyNsPtr, &dummyNsPtr,
+		    &simpleName);
+	    if (realNsPtr != NULL && simpleName != NULL) {
+		entryPtr = Tcl_FindHashEntry(&realNsPtr->cmdTable, simpleName);
+		if (entryPtr != NULL) {
+		    cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+		}
+	    }
+	}
+    } else {
+	Namespace *nsPtr[2];
+	register int search;
+
+	TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
+		flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
+
+	/*
+	 * Look for the command in the command table of its namespace.
+	 * Be sure to check both possible search paths: from the
+	 * specified namespace context and from the global namespace.
+	 */
+
+	for (search = 0;  (search < 2) && (cmdPtr == NULL);  search++) {
+	    if ((nsPtr[search] != NULL) && (simpleName != NULL)) {
+		entryPtr = Tcl_FindHashEntry(&nsPtr[search]->cmdTable,
+			simpleName);
+		if (entryPtr != NULL) {
+		    cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+		}
+	    }
+	}
     }
+
     if (cmdPtr != NULL) {
 	return (Tcl_Command) cmdPtr;
-    } else if (flags & TCL_LEAVE_ERR_MSG) {
+    }
+
+    if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "unknown command \"", name,
 		"\"", (char *) NULL);
     }
-
     return (Tcl_Command) NULL;
 }
 
@@ -2628,6 +2716,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
 	    hPtr = Tcl_FindHashEntry(&shadowNsPtr->cmdTable, cmdName);
 	    if (hPtr != NULL) {
 		nsPtr->cmdRefEpoch++;
+		TclInvalidateNsPath(nsPtr);
 
 		/* 
 		 * If the shadowed command was compiled to bytecodes, we
@@ -2831,13 +2920,13 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
     static CONST char *subCmds[] = {
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
-	"inscope", "origin", "parent", "qualifiers",
+	"inscope", "origin", "parent", "path", "qualifiers",
 	"tail", "which", (char *) NULL
     };
     enum NSSubCmdIdx {
 	NSChildrenIdx, NSCodeIdx, NSCurrentIdx, NSDeleteIdx, NSEnsembleIdx,
 	NSEvalIdx, NSExistsIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
-	NSInscopeIdx, NSOriginIdx, NSParentIdx, NSQualifiersIdx,
+	NSInscopeIdx, NSOriginIdx, NSParentIdx, NSPathIdx, NSQualifiersIdx,
 	NSTailIdx, NSWhichIdx
     };
     int index, result;
@@ -2896,6 +2985,9 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
 	break;
     case NSParentIdx:
 	result = NamespaceParentCmd(clientData, interp, objc, objv);
+	break;
+    case NSPathIdx:
+	result = NamespacePathCmd(clientData, interp, objc, objv);
 	break;
     case NSQualifiersIdx:
 	result = NamespaceQualifiersCmd(clientData, interp, objc, objv);
@@ -3901,6 +3993,245 @@ NamespaceParentCmd(dummy, interp, objc, objv)
 		nsPtr->parentPtr->fullName, -1));
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NamespacePathCmd --
+ *
+ *	Invoked to implement the "namespace path" command that reads
+ *	and writes the current namespace's command resolution path.
+ *	Has one optional argument: if present, it is a list of named
+ *	namespaces to set the path to, and if absent, the current path
+ *	should be returned. Handles the following syntax:
+ *
+ *	    namespace path ?nsList?
+ *
+ * Results:
+ *	Returns TCL_OK if successful, and TCL_ERROR if anything goes
+ *	wrong (most notably if the namespace list contains the name of
+ *	something other than a namespace). In the successful-exit
+ *	case, may set the interpreter result to the list of names of
+ *	the namespaces on the current namespace's path.
+ *
+ * Side effects:
+ *	May update the namespace path (triggering a recomputing of all
+ *	command names that depend on the namespace for resolution).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NamespacePathCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    int i, nsObjc, result = TCL_ERROR;
+    Tcl_Obj **nsObjv;
+    Tcl_Namespace **namespaceList = NULL;
+    Tcl_Namespace *staticNs[4];
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?pathList?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * If no path is given, return the current path.
+     */
+
+    if (objc == 2) {
+	/*
+	 * Not a very fast way to compute this, but easy to get right.
+	 */
+	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+	    if (nsPtr->commandPathArray[i].nsPtr != NULL) {
+		Tcl_AppendElement(interp,
+			nsPtr->commandPathArray[i].nsPtr->fullName);
+	    }
+	}
+	return TCL_OK;
+    }
+
+    /*
+     * There is a path given, so parse it into an array of namespace
+     * pointers.
+     */
+
+    if (Tcl_ListObjGetElements(interp, objv[2], &nsObjc, &nsObjv) != TCL_OK) {
+	goto badNamespace;
+    }
+    if (nsObjc != 0) {
+	if (nsObjc > 4) {
+	    namespaceList = (Tcl_Namespace **)
+		    ckalloc(sizeof(Tcl_Namespace *) * nsObjc);
+	} else {
+	    namespaceList = staticNs;
+	}
+
+	for (i=0 ; i<nsObjc ; i++) {
+	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
+		    &namespaceList[i]) != TCL_OK) {
+		goto badNamespace;
+	    }
+	    if (namespaceList[i] == NULL) {
+		Tcl_AppendResult(interp, "unknown namespace \"",
+			TclGetString(nsObjv[i]), "\"", NULL);
+		goto badNamespace;
+	    }
+	}
+    }
+
+    /*
+     * Now we have the list of valid namespaces, install it as the
+     * path.
+     */
+
+    SetNsPath(nsPtr, nsObjc, namespaceList);
+
+    result = TCL_OK;
+  badNamespace:
+    if (namespaceList != NULL && namespaceList != staticNs) {
+	ckfree((char *) namespaceList);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetNsPath --
+ *
+ *	Sets the namespace command name resolution path to the given
+ *	list of namespaces. If the list is empty (of zero length) the
+ *	path is set to empty and the default old-style behaviour of
+ *	command name resolution is used.
+ *
+ * Results:
+ *	nothing
+ *
+ * Side effects:
+ *	Invalidates the command name resolution caches for any command
+ *	resolved in the given namespace.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* EXPOSE ME? */
+static void
+SetNsPath(nsPtr, pathLength, pathAry)
+    Namespace *nsPtr;		/* Namespace whose path is to be set. */
+    int pathLength;		/* Length of pathAry */
+    Tcl_Namespace *pathAry[];	/* Array of namespaces that are the path. */
+{
+    NamespacePathEntry *tmpPathArray;
+    int i;
+
+    if (pathLength != 0) {
+	tmpPathArray = (NamespacePathEntry *)
+		ckalloc(sizeof(NamespacePathEntry) * pathLength);
+	for (i=0 ; i<pathLength ; i++) {
+	    tmpPathArray[i].nsPtr = (Namespace *) pathAry[i];
+	    tmpPathArray[i].creatorNsPtr = nsPtr;
+	    tmpPathArray[i].prevPtr = NULL;
+	    tmpPathArray[i].nextPtr =
+		    tmpPathArray[i].nsPtr->commandPathSourceList;
+	    if (tmpPathArray[i].nextPtr != NULL) {
+		tmpPathArray[i].nextPtr->prevPtr = &tmpPathArray[i];
+	    }
+	    tmpPathArray[i].nsPtr->commandPathSourceList = &tmpPathArray[i];
+	}
+	if (nsPtr->commandPathLength != 0) {
+	    UnlinkNsPath(nsPtr);
+	}
+	nsPtr->commandPathArray = tmpPathArray;
+    } else {
+	if (nsPtr->commandPathLength != 0) {
+	    UnlinkNsPath(nsPtr);
+	}
+    }
+
+    nsPtr->commandPathLength = pathLength;
+    nsPtr->cmdRefEpoch++;
+    nsPtr->resolverEpoch++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UnlinkNsPath --
+ *
+ *	Delete the given namespace's command name resolution path. Only
+ *	call if the path is non-empty. Caller must reset the counter
+ *	containing the path size.
+ *
+ * Results:
+ *	nothing
+ *
+ * Side effects:
+ *	Deletes the array of path entries and unlinks those path entries
+ *	from the target namespace's list of interested namespaces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UnlinkNsPath(nsPtr)
+    Namespace *nsPtr;
+{
+    int i;
+    for (i=0 ; i<nsPtr->commandPathLength ; i++) {
+	NamespacePathEntry *nsPathPtr = &nsPtr->commandPathArray[i];
+	if (nsPathPtr->prevPtr != NULL) {
+	    nsPathPtr->prevPtr->nextPtr = nsPathPtr->nextPtr;
+	}
+	if (nsPathPtr->nextPtr != NULL) {
+	    nsPathPtr->nextPtr->prevPtr = nsPathPtr->prevPtr;
+	}
+	if (nsPathPtr->nsPtr != NULL) {
+	    if (nsPathPtr->nsPtr->commandPathSourceList == nsPathPtr) {
+		nsPathPtr->nsPtr->commandPathSourceList = nsPathPtr->nextPtr;
+	    }
+	}
+    }
+    ckfree((char *) nsPtr->commandPathArray);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInvalidateNsPath --
+ *
+ *	Invalidate the name resolution caches for all names looked up
+ *	in namespaces whose name path includes the given namespace.
+ *
+ * Results:
+ *	nothing
+ *
+ * Side effects:
+ *	Increments the command reference epoch in each namespace whose
+ *	path includes the given namespace. This causes any cached
+ *	resolved names whose root cacheing context starts at that
+ *	namespace to be recomputed the next time they are used.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclInvalidateNsPath(nsPtr)
+    Namespace *nsPtr;
+{
+    NamespacePathEntry *nsPathPtr = nsPtr->commandPathSourceList;
+    while (nsPathPtr != NULL) {
+	if (nsPathPtr->nsPtr != NULL) {
+	    nsPathPtr->creatorNsPtr->cmdRefEpoch++;
+	}
+	nsPathPtr = nsPathPtr->nextPtr;
+    }
 }
 
 /*
@@ -5534,7 +5865,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	 * subcommand.
 	 */
 
-	if (objv[1]->typePtr == &tclEnsembleCmdType) {
+	if (objv[1]->typePtr == &ensembleCmdType) {
 	    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)
 		    objv[1]->internalRep.otherValuePtr;
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
@@ -5830,7 +6161,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
     register EnsembleCmdRep *ensembleCmd;
     int length;
 
-    if (objPtr->typePtr == &tclEnsembleCmdType) {
+    if (objPtr->typePtr == &ensembleCmdType) {
 	ensembleCmd = (EnsembleCmdRep *) objPtr->internalRep.otherValuePtr;
 	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
 	ensembleCmd->nsPtr->refCount--;
@@ -5847,7 +6178,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
 	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.otherValuePtr = (VOID *) ensembleCmd;
-	objPtr->typePtr = &tclEnsembleCmdType;
+	objPtr->typePtr = &ensembleCmdType;
     }
 
     /*
@@ -6274,7 +6605,7 @@ DupEnsembleCmdRep(objPtr, copyPtr)
 	    ckalloc(sizeof(EnsembleCmdRep));
     int length = strlen(ensembleCmd->fullSubcmdName);
 
-    copyPtr->typePtr = &tclEnsembleCmdType;
+    copyPtr->typePtr = &ensembleCmdType;
     copyPtr->internalRep.otherValuePtr = (VOID *) ensembleCopy;
     ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;

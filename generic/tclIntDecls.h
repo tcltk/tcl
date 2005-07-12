@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.5 2005/05/21 15:10:27 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.6 2005/07/12 20:36:54 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -170,11 +170,7 @@ EXTERN int		TclFindElement _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp * iPtr, 
 				CONST char * procName));
 #endif
-#ifndef TclFormatInt_TCL_DECLARED
-#define TclFormatInt_TCL_DECLARED
-/* 24 */
-EXTERN int		TclFormatInt _ANSI_ARGS_((char * buffer, long n));
-#endif
+/* Slot 24 is reserved */
 #ifndef TclFreePackageInfo_TCL_DECLARED
 #define TclFreePackageInfo_TCL_DECLARED
 /* 25 */
@@ -1200,7 +1196,7 @@ typedef struct TclIntStubs {
     void *reserved21;
     int (*tclFindElement) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * listStr, int listLength, CONST char ** elementPtr, CONST char ** nextPtr, int * sizePtr, int * bracePtr)); /* 22 */
     Proc * (*tclFindProc) _ANSI_ARGS_((Interp * iPtr, CONST char * procName)); /* 23 */
-    int (*tclFormatInt) _ANSI_ARGS_((char * buffer, long n)); /* 24 */
+    void *reserved24;
     void (*tclFreePackageInfo) _ANSI_ARGS_((Interp * iPtr)); /* 25 */
     void *reserved26;
     void *reserved27;
@@ -1507,10 +1503,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclFindProc \
 	(tclIntStubsPtr->tclFindProc) /* 23 */
 #endif
-#ifndef TclFormatInt
-#define TclFormatInt \
-	(tclIntStubsPtr->tclFormatInt) /* 24 */
-#endif
+/* Slot 24 is reserved */
 #ifndef TclFreePackageInfo
 #define TclFreePackageInfo \
 	(tclIntStubsPtr->tclFreePackageInfo) /* 25 */

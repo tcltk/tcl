@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.78.2.5 2005/05/05 17:55:51 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.78.2.6 2005/07/12 20:36:24 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -213,6 +213,7 @@ InstructionDesc tclInstructionTable[] = {
     {"pushReturnCode",	  1,   +1,         0,   {OPERAND_NONE}},
 	/* Push interpreter's return code (e.g. TCL_OK or TCL_ERROR) as
 	 * a new object onto the stack. */
+
     {"streq",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Str Equal:	push (stknext eq stktop) */
     {"strneq",		  1,   -1,         0,   {OPERAND_NONE}},
@@ -225,12 +226,14 @@ InstructionDesc tclInstructionTable[] = {
 	/* Str Index:	push (strindex stknext stktop) */
     {"strmatch",	  2,   -1,         1,   {OPERAND_INT1}},
 	/* Str Match:	push (strmatch stknext stktop) opnd == nocase */
+
     {"list",		  5,   INT_MIN,    1,   {OPERAND_UINT4}},
 	/* List:	push (stk1 stk2 ... stktop) */
     {"listIndex",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* List Index:	push (listindex stknext stktop) */
     {"listLength",	  1,   0,          0,   {OPERAND_NONE}},
 	/* List Len:	push (listlength stktop) */
+
     {"appendScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Append scalar variable at op1<=255 in frame; value is stktop */
     {"appendScalar4",	  5,   0,          1,   {OPERAND_UINT4}},
@@ -255,10 +258,11 @@ InstructionDesc tclInstructionTable[] = {
 	/* Lappend array element; value is stktop, then elem, array names */
     {"lappendStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Lappend general variable; value is stktop, then unparsed name */
+
     {"lindexMulti",	  5,   INT_MIN,    1,   {OPERAND_UINT4}},
-        /* Lindex with generalized args, operand is number of stacked objs 
-	 * used: (operand-1) entries from stktop are the indices; then list 
-	 * to process. */
+        /* Lindex with generalized args, operand is number of stacked objs
+	 * used: (operand-1) entries from stktop are the indices; then list to
+	 * process. */
     {"over",		  5,   +1,         1,   {OPERAND_UINT4}},
         /* Duplicate the arg-th element from top of stack (TOS=0) */
     {"lsetList",          1,   -2,         0,   {OPERAND_NONE}},
@@ -269,37 +273,44 @@ InstructionDesc tclInstructionTable[] = {
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
+
     {"return",		  9,   -1,         2,   {OPERAND_INT4, OPERAND_UINT4}},
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
+
     {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
 	/* Binary exponentiation operator: push (stknext ** stktop) */
-     /* 
-      * NOTE: the stack effects of expandStkTop and invokeExpanded
-      * are wrong - but it cannot be done right at compile time, the stack
-      * effect is only known at run time. The value for invokeExpanded
-      * is estimated better at compile time.
-      * See the comments further down in this file, where INST_INVOKE_EXPANDED 
-      * is emitted.
-      */
-     {"expandStart",       1,    0,          0,   {OPERAND_NONE}},
-         /* Start of command with {expand}ed arguments */
-     {"expandStkTop",      5,    0,          1,   {OPERAND_INT4}},
-         /* Expand the list at stacktop: push its elements on the stack */
-     {"invokeExpanded",    1,    0,          0,   {OPERAND_NONE}},
-         /* Invoke the command marked by the last 'expandStart' */
+
+    /* 
+     * NOTE: the stack effects of expandStkTop and invokeExpanded
+     * are wrong - but it cannot be done right at compile time, the stack
+     * effect is only known at run time. The value for invokeExpanded
+     * is estimated better at compile time.
+     * See the comments further down in this file, where INST_INVOKE_EXPANDED 
+     * is emitted.
+     */
+    {"expandStart",       1,    0,          0,   {OPERAND_NONE}},
+	/* Start of command with {expand}ed arguments */
+    {"expandStkTop",      5,    0,          1,   {OPERAND_INT4}},
+	/* Expand the list at stacktop: push its elements on the stack */
+    {"invokeExpanded",    1,    0,          0,   {OPERAND_NONE}},
+	/* Invoke the command marked by the last 'expandStart' */
+
     {"listIndexImm",	  5,	0,	   1,	{OPERAND_IDX4}},
 	/* List Index:	push (lindex stktop op4) */
     {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* List Range:	push (lrange stktop op4 op4) */
-
-    {"startCommand",      5,    0,         1,   {OPERAND_UINT4}},
+    {"startCommand",	  5,	0,	   1,	{OPERAND_UINT4}},
         /* Start of bytecoded command: op is the length of the cmd's code */ 
 
     {"listIn",		  1,	-1,	   0,	{OPERAND_NONE}},
 	/* List containment: push [lsearch stktop stknext]>=0) */
     {"listNotIn",	  1,	-1,	   0,	{OPERAND_NONE}},
 	/* List negated containment: push [lsearch stktop stknext]<0) */
+
+    {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}},
+	/* Push the interpreter's return option dictionary as an object on the
+	 * stack. */
     {0}
 };
 

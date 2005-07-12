@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.53.2.1 2005/02/02 15:54:04 kennykb Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.53.2.2 2005/07/12 20:37:35 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -201,7 +201,6 @@ static DWORD WINAPI	PipeReaderThread(LPVOID arg);
 static void		PipeSetupProc(ClientData clientData, int flags);
 static void		PipeWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
-static void		ProcExitHandler(ClientData clientData);
 static int		TempFileName(WCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 
@@ -263,7 +262,6 @@ PipeInit()
 	if (!initialized) {
 	    initialized = 1;
 	    procList = NULL;
-	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
 	Tcl_MutexUnlock(&pipeMutex);
     }
@@ -304,7 +302,7 @@ PipeExitHandler(
 /*
  *----------------------------------------------------------------------
  *
- * ProcExitHandler --
+ * TclpFinalizePipes --
  *
  *	This function is called to cleanup the process list before
  *	Tcl is unloaded.
@@ -318,9 +316,8 @@ PipeExitHandler(
  *----------------------------------------------------------------------
  */
 
-static void
-ProcExitHandler(
-    ClientData clientData)	/* Old window proc */
+void
+TclpFinalizePipes()
 {
     Tcl_MutexLock(&pipeMutex);
     initialized = 0;
@@ -2071,8 +2068,13 @@ PipeClose2Proc(
 	Tcl_ReapDetachedProcs();
 
 	if (pipePtr->errorFile) {
-	    TclpCloseFile(pipePtr->errorFile);
+	    if (TclpCloseFile(pipePtr->errorFile) != 0) {
+		if ( errorCode == 0 ) {
+		    errorCode = errno;
+		}
+	    }
 	}
+	result = 0;
     } else {
 	/*
 	 * Wrap the error file into a channel and give it to the cleanup

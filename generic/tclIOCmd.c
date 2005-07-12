@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.22.2.1 2005/05/05 17:56:03 kennykb Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.22.2.2 2005/07/12 20:36:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -305,10 +305,18 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *resultPtr;
 
     if ((objc != 2) && (objc != 3)) {
-	argerror:
+	Interp *iPtr;
+
+      argerror:
+	iPtr = (Interp *) interp;
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?numChars?");
-	Tcl_AppendResult(interp, " or \"", Tcl_GetString(objv[0]),
-		" ?-nonewline? channelId\"", (char *) NULL);
+	/*
+	 * Do not append directly; that makes ensembles using this
+	 * command as a subcommand produce the wrong message.
+	 */
+	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channelId");
+	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
@@ -1537,4 +1545,77 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     }
 
     return TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChanTruncateObjCmd --
+ *
+ *	This procedure is invoked to process the "chan truncate" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Truncates a channel (or rather a file underlying a channel).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclChanTruncateObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    Tcl_Channel chan;
+    int mode;
+    Tcl_WideInt length;
+    char *chanName;
+
+    if ((objc < 2) || (objc > 3)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?length?");
+	return TCL_ERROR;
+    }
+    chanName = TclGetString(objv[1]);
+    chan = Tcl_GetChannel(interp, chanName, &mode);
+    if (chan == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (objc == 3) {
+	/*
+	 * User is supplying an explicit length.
+	 */
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &length) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (length < 0) {
+	    Tcl_AppendResult(interp,
+		    "cannot truncate to negative length of file", NULL);
+	    return TCL_ERROR;
+	}
+    } else {
+	/*
+	 * User wants to truncate to the current file position.
+	 */
+	length = Tcl_Tell(chan);
+	if (length == Tcl_WideAsLong(-1)) {
+	    Tcl_AppendResult(interp,
+		    "could not determine current location in \"", chanName,
+		    "\": ", Tcl_PosixError(interp), NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    if (Tcl_TruncateChannel(chan, length) != TCL_OK) {
+	Tcl_AppendResult(interp, "error during truncate on \"", chanName,
+		"\": ", Tcl_PosixError(interp), (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
 }

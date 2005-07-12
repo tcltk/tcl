@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.19 2004/10/27 17:56:22 kennykb Exp $
+# RCS: @(#) $Id: format.test,v 1.19.2.1 2005/07/12 20:37:10 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -364,6 +364,10 @@ test format-10.2 {"h" format specifier} {nonPortable} {
 test format-10.3 {"h" format specifier} {nonPortable} {
     format %hd 0x10000
 } 0
+test format-10.4 {"h" format specifier} {
+    # Bug 1154163: This is minimal behaviour for %hx specifier!
+    format %hx 1
+} 1
 
 test format-11.1 {XPG3 %$n specifiers} {
     format {%2$d %1$d} 4 5

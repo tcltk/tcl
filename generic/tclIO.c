@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.81.2.4 2005/05/10 16:11:51 kennykb Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81.2.5 2005/07/12 20:36:49 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -270,6 +270,7 @@ TclFinalizeIOSubsystem()
 	    statePtr->flags |= CHANNEL_DEAD;
 	}
     }
+    TclpFinalizePipes();
 }
 
 /*
@@ -5777,6 +5778,77 @@ Tcl_TellOld(chan)
 /*
  *---------------------------------------------------------------------------
  *
+ * Tcl_TruncateChannel --
+ *
+ *	Truncate a channel to the given length.
+ *
+ * Results:
+ *	TCL_OK on success, TCL_ERROR if the operation failed (e.g. is
+ *	not supported by the type of channel, or the underlying OS
+ *	operation failed in some way).
+ *
+ * Side effects:
+ *	Seeks the channel to the current location. Sets errno on OS
+ *	error.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+Tcl_TruncateChannel(chan, length)
+    Tcl_Channel chan;
+    Tcl_WideInt length;
+{
+    Channel *chanPtr = (Channel *) chan;
+    Tcl_DriverTruncateProc *truncateProc =
+	    Tcl_ChannelTruncateProc(chanPtr->typePtr);
+    int result;
+
+    if (truncateProc == NULL) {
+	/*
+	 * Feature not supported and it's not emulatable. Pretend it's
+	 * returned an EINVAL, a very generic error!
+	 */
+	Tcl_SetErrno(EINVAL);
+	return TCL_ERROR;
+    }
+
+    if (!(chanPtr->state->flags & TCL_WRITABLE)) {
+	/*
+	 * We require that the file was opened of writing. Do that
+	 * check now so that we only flush if we think we're going to
+	 * succeed.
+	 */
+	Tcl_SetErrno(EINVAL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Seek first to force a total flush of all pending buffers and
+     * ditch any pre-read input data.
+     */
+
+    if (Tcl_Seek(chan, 0, SEEK_CUR) == Tcl_LongAsWide(-1)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * We're all flushed to disk now and we also don't have any
+     * unfortunate input baggage around either; can truncate with
+     * impunity.
+     */
+
+    result = truncateProc(chanPtr->instanceData, length);
+    if (result != 0) {
+	Tcl_SetErrno(result);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * CheckChannelErrors --
  *
  *	See if the channel is in an ready state and can perform the
@@ -9362,6 +9434,34 @@ Tcl_ChannelThreadActionProc(chanTypePtr)
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
 	return chanTypePtr->threadActionProc;
+    } else {
+	return NULL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelTruncateProc --
+ *
+ *      TIP #208 (subsection relating to truncation, based on TIP #206).
+ *	Return the Tcl_DriverTruncateProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverTruncateProc *
+Tcl_ChannelTruncateProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
+	return chanTypePtr->truncateProc;
     } else {
 	return NULL;
     }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.54.2.3 2005/05/07 19:18:13 kennykb Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.54.2.4 2005/07/12 20:36:30 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -946,10 +946,25 @@ Tcl_Finalize()
 	TclFinalizeDoubleConversion();
 	
 	/*
+	 * There have been several bugs in the past that cause
+	 * exit handlers to be established during Tcl_Finalize
+	 * processing.  Such exit handlers leave malloc'ed memory,
+	 * and Tcl_FinalizeThreadAlloc or Tcl_FinalizeMemorySubsystem
+	 * will result in a corrupted heap.  The result can be a
+	 * mysterious crash on process exit.  Check here that
+	 * nobody's done this.
+	 */
+
+	if ( firstExitPtr != NULL ) {
+	    Tcl_Panic( "exit handlers were created during Tcl_Finalize" );
+	}
+
+	/*
 	 * There shouldn't be any malloc'ed memory after this.
 	 */
+	TclFinalizePreserve();
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-  TclFinalizeThreadAlloc();
+	TclFinalizeThreadAlloc();
 #endif
 	TclFinalizeMemorySubsystem();
 	inFinalize = 0;

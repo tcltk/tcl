@@ -282,6 +282,9 @@
 /* Is Tcl built as a framework? */
 #undef TCL_FRAMEWORK
 
+/* Can this platform load code from memory? */
+#undef TCL_LOAD_FROM_MEMORY
+
 /* Is memory debugging enabled? */
 #undef TCL_MEM_DEBUG
 

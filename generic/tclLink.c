@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.6.1 2005/07/12 20:36:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -236,8 +236,8 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     Link *linkPtr = (Link *) clientData;
     int changed, valueLength;
     CONST char *value;
-    char **pp, *result;
-    Tcl_Obj *objPtr, *valueObj;
+    char **pp;
+    Tcl_Obj *valueObj;
 
     /*
      * If the variable is being unset, then just re-create it (with a
@@ -321,56 +321,43 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	return "internal error: linked variable couldn't be read";
     }
 
-    objPtr = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(objPtr);
-    Tcl_ResetResult(interp);
-    result = NULL;
-
     switch (linkPtr->type) {
     case TCL_LINK_INT:
-	if (Tcl_GetIntFromObj(interp, valueObj, &linkPtr->lastValue.i)
+	if (Tcl_GetIntFromObj(NULL, valueObj, &linkPtr->lastValue.i)
 		!= TCL_OK) {
-	    Tcl_SetObjResult(interp, objPtr);
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    result = "variable must have integer value";
-	    goto end;
+	    return "variable must have integer value";
 	}
 	*(int *)(linkPtr->addr) = linkPtr->lastValue.i;
 	break;
 
     case TCL_LINK_WIDE_INT:
-	if (Tcl_GetWideIntFromObj(interp, valueObj, &linkPtr->lastValue.w)
+	if (Tcl_GetWideIntFromObj(NULL, valueObj, &linkPtr->lastValue.w)
 		!= TCL_OK) {
-	    Tcl_SetObjResult(interp, objPtr);
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    result = "variable must have integer value";
-	    goto end;
+	    return "variable must have integer value";
 	}
 	*(Tcl_WideInt *)(linkPtr->addr) = linkPtr->lastValue.w;
 	break;
 
     case TCL_LINK_DOUBLE:
-	if (Tcl_GetDoubleFromObj(interp, valueObj, &linkPtr->lastValue.d)
+	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d)
 		!= TCL_OK) {
-	    Tcl_SetObjResult(interp, objPtr);
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    result = "variable must have real value";
-	    goto end;
+	    return "variable must have real value";
 	}
 	*(double *)(linkPtr->addr) = linkPtr->lastValue.d;
 	break;
 
     case TCL_LINK_BOOLEAN:
-	if (Tcl_GetBooleanFromObj(interp, valueObj, &linkPtr->lastValue.i)
+	if (Tcl_GetBooleanFromObj(NULL, valueObj, &linkPtr->lastValue.i)
 	    != TCL_OK) {
-	    Tcl_SetObjResult(interp, objPtr);
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    result = "variable must have boolean value";
-	    goto end;
+	    return "variable must have boolean value";
 	}
 	*(int *)(linkPtr->addr) = linkPtr->lastValue.i;
 	break;
@@ -389,9 +376,7 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     default:
 	return "internal error: bad linked variable type";
     }
-    end:
-    Tcl_DecrRefCount(objPtr);
-    return result;
+    return NULL;
 }
 
 /*

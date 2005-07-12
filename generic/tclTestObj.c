@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.6.3 2005/01/21 18:35:22 kennykb Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.6.4 2005/07/12 20:36:59 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -144,7 +144,6 @@ TestbignumobjCmd( clientData, interp, objc, objv )
     int objc;			/* Argument count */
     Tcl_Obj* CONST objv[];	/* Argument vector */
 {
-
     const char * subcmds[] = {
 	"set",      "get",      "mult10",      "div10", 
 	NULL
@@ -153,132 +152,125 @@ TestbignumobjCmd( clientData, interp, objc, objv )
 	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10
     };
 
-    int index;
-    int varIndex;
+    int index, varIndex;
     char* string;
     mp_int bignumValue, newValue;
 
-    if ( objc < 3 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "option ?arg?..." );
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?...");
 	return TCL_ERROR;
     }
-    if ( Tcl_GetIndexFromObj( interp, objv[1], subcmds, "option", 0, &index )
-	 != TCL_OK ) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
+	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    string = Tcl_GetString( objv[ 2 ] );
-    if ( GetVariableIndex( interp, string, &varIndex ) != TCL_OK ) {
+    string = Tcl_GetString(objv[2]);
+    if (GetVariableIndex(interp, string, &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    switch ( index )
-	{
-	case BIGNUM_SET:
-	    if ( objc != 4 ) {
-		Tcl_WrongNumArgs( interp, 2, objv, "var value" );
-	    }
-	    string = Tcl_GetString( objv[3] );
-	    if ( mp_init( &bignumValue ) != MP_OKAY ) {
-		Tcl_SetObjResult( interp, 
-				  Tcl_NewStringObj( "error in mp_init", -1 ) );
-		return TCL_ERROR;
-	    }
-	    if ( mp_read_radix( &bignumValue, string, 10 )
-		 != MP_OKAY ) {
-		mp_clear( &bignumValue );
-		Tcl_SetObjResult( interp,
-				  Tcl_NewStringObj( "error in mp_read_radix",
-						    -1 ) );
-		return TCL_ERROR;
-	    }
-
-	    /*
-             * If the object currently bound to the variable with index
-             * varIndex has ref count 1 (i.e. the object is unshared) we can
-             * modify that object directly.  Otherwise, if RC>1 (i.e. the
-             * object is shared), we must create a new object to modify/set and
-             * decrement the old formerly-shared object's ref count. This is
-             * "copy on write".
-	     */
-
-	    if ((varPtr[varIndex] != NULL)
-		&& !Tcl_IsShared(varPtr[varIndex])) {
-		Tcl_SetBignumObj(varPtr[varIndex], &bignumValue );
-	    } else {
-		SetVarToObj(varIndex, Tcl_NewBignumObj(&bignumValue));
-	    }
-	    break;
-	    
-	case BIGNUM_GET:
-	    if ( objc != 3 ) {
-		Tcl_WrongNumArgs( interp, 2, objv, "varIndex" );
-		return TCL_ERROR;
-	    }
-	    if ( CheckIfVarUnset( interp, varIndex ) ) {
-		return TCL_ERROR;
-	    }
-	    break;
-
-	case BIGNUM_MULT10:
-	    if ( objc != 3 ) {
-		Tcl_WrongNumArgs( interp, 2, objv, "varIndex" );
-		return TCL_ERROR;
-	    }
-	    if ( CheckIfVarUnset( interp, varIndex ) ) {
-		return TCL_ERROR;
-	    }
-	    if ( Tcl_GetBignumFromObj( interp, varPtr[varIndex],
-				       &bignumValue )  != TCL_OK ) {
-		return TCL_ERROR;
-	    }
-	    if ( mp_init( &newValue ) != MP_OKAY 
-		 || ( mp_mul_d( &bignumValue, 10, &newValue ) != MP_OKAY ) ) {
-		mp_clear( &bignumValue );
-		mp_clear( &newValue );
-		Tcl_SetObjResult( interp,
-				  Tcl_NewStringObj( "error in mp_mul_d",
-						    -1 ) );
-		return TCL_ERROR;
-	    }
-	    mp_clear( &bignumValue );
-	    if ( !Tcl_IsShared( varPtr[varIndex] ) ) {
-		Tcl_SetBignumObj( varPtr[varIndex], &newValue );
-	    } else {
-		SetVarToObj( varIndex, Tcl_NewBignumObj( &newValue ) );
-	    }
-	    break;
-
-	case BIGNUM_DIV10:
-	    if ( objc != 3 ) {
-		Tcl_WrongNumArgs( interp, 2, objv, "varIndex" );
-		return TCL_ERROR;
-	    }
-	    if ( CheckIfVarUnset( interp, varIndex ) ) {
-		return TCL_ERROR;
-	    }
-	    if ( Tcl_GetBignumFromObj( interp, varPtr[varIndex],
-				       &bignumValue )  != TCL_OK ) {
-		return TCL_ERROR;
-	    }
-	    if ( mp_init( &newValue ) != MP_OKAY 
-		 || ( mp_div_d( &bignumValue, 10, &newValue, NULL )
-		      != MP_OKAY ) ) {
-		mp_clear( &bignumValue );
-		mp_clear( &newValue );
-		Tcl_SetObjResult( interp,
-				  Tcl_NewStringObj( "error in mp_div_d",
-						    -1 ) );
-		return TCL_ERROR;
-	    }
-	    mp_clear( &bignumValue );
-	    if ( !Tcl_IsShared( varPtr[varIndex] ) ) {
-		Tcl_SetBignumObj( varPtr[varIndex], &newValue );
-	    } else {
-		SetVarToObj( varIndex, Tcl_NewBignumObj( &newValue ) );
-	    }
+    switch (index) {
+    case BIGNUM_SET:
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "var value");
+	    return TCL_ERROR;
+	}
+	string = Tcl_GetString(objv[3]);
+	if (mp_init(&bignumValue) != MP_OKAY) {
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("error in mp_init", -1));
+	    return TCL_ERROR;
+	}
+	if (mp_read_radix(&bignumValue, string, 10) != MP_OKAY) {
+	    mp_clear(&bignumValue);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("error in mp_read_radix", -1));
+	    return TCL_ERROR;
 	}
 
-    Tcl_SetObjResult( interp, varPtr[varIndex] );
+	/*
+	 * If the object currently bound to the variable with index
+	 * varIndex has ref count 1 (i.e. the object is unshared) we can
+	 * modify that object directly.  Otherwise, if RC>1 (i.e. the
+	 * object is shared), we must create a new object to modify/set and
+	 * decrement the old formerly-shared object's ref count. This is
+	 * "copy on write".
+	 */
+
+	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
+	    Tcl_SetBignumObj(varPtr[varIndex], &bignumValue);
+	} else {
+	    SetVarToObj(varIndex, Tcl_NewBignumObj(&bignumValue));
+	}
+	break;
+	    
+    case BIGNUM_GET:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
+	    return TCL_ERROR;
+	}
+	if (CheckIfVarUnset(interp, varIndex)) {
+	    return TCL_ERROR;
+	}
+	break;
+
+    case BIGNUM_MULT10:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
+	    return TCL_ERROR;
+	}
+	if (CheckIfVarUnset(interp, varIndex)) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBignumFromObj(interp, varPtr[varIndex],
+		&bignumValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (mp_init(&newValue) != MP_OKAY 
+		|| (mp_mul_d(&bignumValue, 10, &newValue) != MP_OKAY)) {
+	    mp_clear(&bignumValue);
+	    mp_clear(&newValue);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("error in mp_mul_d", -1));
+	    return TCL_ERROR;
+	}
+	mp_clear(&bignumValue);
+	if (!Tcl_IsShared(varPtr[varIndex])) {
+	    Tcl_SetBignumObj(varPtr[varIndex], &newValue);
+	} else {
+	    SetVarToObj(varIndex, Tcl_NewBignumObj(&newValue));
+	}
+	break;
+
+    case BIGNUM_DIV10:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
+	    return TCL_ERROR;
+	}
+	if (CheckIfVarUnset(interp, varIndex)) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBignumFromObj(interp, varPtr[varIndex],
+		&bignumValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (mp_init(&newValue) != MP_OKAY 
+		|| (mp_div_d(&bignumValue, 10, &newValue, NULL) != MP_OKAY)) {
+	    mp_clear(&bignumValue);
+	    mp_clear(&newValue);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("error in mp_div_d", -1));
+	    return TCL_ERROR;
+	}
+	mp_clear(&bignumValue);
+	if (!Tcl_IsShared(varPtr[varIndex])) {
+	    Tcl_SetBignumObj(varPtr[varIndex], &newValue);
+	} else {
+	    SetVarToObj(varIndex, Tcl_NewBignumObj(&newValue));
+	}
+    }
+
+    Tcl_SetObjResult(interp, varPtr[varIndex]);
     return TCL_OK;
 }
 

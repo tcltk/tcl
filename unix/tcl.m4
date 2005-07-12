@@ -27,7 +27,10 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
     if test x"${no_tcl}" = x ; then
 	# we reset no_tcl in case something fails here
 	no_tcl=true
-	AC_ARG_WITH(tcl, [  --with-tcl              directory containing tcl configuration (tclConfig.sh)], with_tclconfig=${withval})
+	AC_ARG_WITH(tcl,
+	    AC_HELP_STRING([--with-tcl],
+		[directory containing tcl configuration (tclConfig.sh)]),
+	    with_tclconfig=${withval})
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -138,7 +141,10 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
     if test x"${no_tk}" = x ; then
 	# we reset no_tk in case something fails here
 	no_tk=true
-	AC_ARG_WITH(tk, [  --with-tk               directory containing tk configuration (tkConfig.sh)], with_tkconfig=${withval})
+	AC_ARG_WITH(tk,
+	    AC_HELP_STRING([--with-tk],
+		[directory containing tk configuration (tkConfig.sh)]),
+	    with_tkconfig=${withval})
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -345,7 +351,8 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 AC_DEFUN(SC_ENABLE_SHARED, [
     AC_MSG_CHECKING([how to build libraries])
     AC_ARG_ENABLE(shared,
-	[  --enable-shared         build and link with shared libraries [--enable-shared]],
+	AC_HELP_STRING([--enable-shared],
+	    [build and link with shared libraries (default: on)]),
 	[tcl_ok=$enableval], [tcl_ok=yes])
 
     if test "${enable_shared+set}" = set; then
@@ -385,7 +392,8 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 AC_DEFUN(SC_ENABLE_FRAMEWORK, [
     AC_MSG_CHECKING([how to package libraries])
     AC_ARG_ENABLE(framework,
-	[  --enable-framework      package shared libraries in MacOSX frameworks [--disable-framework]],
+	AC_HELP_STRING([--enable-framework],
+	    [package shared libraries in MacOSX frameworks (default: off)]),
 	[tcl_ok=$enableval], [tcl_ok=no])
 
     if test "${enable_framework+set}" = set; then
@@ -437,7 +445,9 @@ AC_DEFUN(SC_ENABLE_FRAMEWORK, [
 
 AC_DEFUN(SC_ENABLE_THREADS, [
     AC_MSG_CHECKING(for building with threads)
-    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
+    AC_ARG_ENABLE(threads,
+	AC_HELP_STRING([--enable-threads],
+	    [build with threads (default: off)]),
 	[tcl_ok=$enableval], [tcl_ok=no])
 
     if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
@@ -573,7 +583,10 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 
 AC_DEFUN(SC_ENABLE_SYMBOLS, [
     AC_MSG_CHECKING([for build with symbols])
-    AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
+    AC_ARG_ENABLE(symbols,
+	AC_HELP_STRING([--enable-symbols],
+	    [build with debugging symbols (default: off)]),
+	[tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
     DBGX=""
     if test "$tcl_ok" = "no"; then
@@ -590,20 +603,22 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     fi
     AC_SUBST(CFLAGS_DEFAULT)
     AC_SUBST(LDFLAGS_DEFAULT)
+    ### FIXME: Surely TCL_CFG_DEBUG should be set to whether we're debugging?
     AC_DEFINE(TCL_CFG_DEBUG, 1, [Is debugging enabled?])
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
 	AC_DEFINE(TCL_MEM_DEBUG, 1, [Is memory debugging enabled?])
     fi
 
-    if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
-	AC_DEFINE(TCL_COMPILE_DEBUG, 1, [Is bytecode debugging enabled?])
-	AC_DEFINE(TCL_COMPILE_STATS, 1, [Are bytecode statistics enabled?])
-    fi
+    ifelse($1,bccdebug,dnl Only enable 'compile' for the Tcl core itself
+	if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
+	    AC_DEFINE(TCL_COMPILE_DEBUG, 1, [Is bytecode debugging enabled?])
+	    AC_DEFINE(TCL_COMPILE_STATS, 1, [Are bytecode statistics enabled?])
+	fi)
 
     if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
 	if test "$tcl_ok" = "all"; then
-	    AC_MSG_RESULT([enabled symbols mem compile debugging])
+	    AC_MSG_RESULT([enabled symbols mem ]ifelse($1,bccdebug,[compile ])[debugging])
 	else
 	    AC_MSG_RESULT([enabled $tcl_ok debugging])
 	fi
@@ -631,8 +646,8 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 
 AC_DEFUN(SC_ENABLE_LANGINFO, [
     AC_ARG_ENABLE(langinfo,
-	[  --enable-langinfo	  use nl_langinfo if possible to determine
-			  encoding at startup, otherwise use old heuristic],
+	AC_HELP_STRING([--enable-langinfo],
+	    [use nl_langinfo if possible to determine encoding at startup, otherwise use old heuristic (default: on)]),
 	[langinfo_ok=$enableval], [langinfo_ok=yes])
 
     HAVE_LANGINFO=0
@@ -681,44 +696,50 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 #			according to the user's selection.
 #
 #--------------------------------------------------------------------
+
 AC_DEFUN(SC_CONFIG_MANPAGES, [
+    AC_MSG_CHECKING([whether to use symlinks for manpages])
+    AC_ARG_ENABLE(man-symlinks,
+	AC_HELP_STRING([--enable-man-symlinks],
+	    [use symlinks for the manpages (default: off)]),
+	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
+	enableval="no")
+    AC_MSG_RESULT([$enableval])
 
-	AC_MSG_CHECKING([whether to use symlinks for manpages])
-	AC_ARG_ENABLE(man-symlinks,
-		AC_HELP_STRING([--enable-man-symlinks],
-			[use symlinks for the manpages]),
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
-		enableval="no")
-	AC_MSG_RESULT([$enableval])
+    AC_MSG_CHECKING([whether to compress the manpages])
+    AC_ARG_ENABLE(man-compression,
+	AC_HELP_STRING([--enable-man-compression=PROG],
+	    [compress the manpages with PROG (default: off)]),
+	[case $enableval in
+	    yes) AC_MSG_ERROR([missing argument to --enable-man-compression]);;
+	    no)  ;;
+	    *)   MAN_FLAGS="$MAN_FLAGS --compress $enableval";;
+	esac],
+	enableval="no")
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" != "no"; then
+	AC_MSG_CHECKING([for compressed file suffix])
+	touch TeST
+	$enableval TeST
+	Z=`ls TeST* | sed 's/^....//'`
+	rm -f TeST*
+	MAN_FLAGS="$MAN_FLAGS --extension $Z"
+	AC_MSG_RESULT([$Z])
+    fi
 
-	AC_MSG_CHECKING([whether to compress the manpages])
-	AC_ARG_ENABLE(man-compression,
-		AC_HELP_STRING([--enable-man-compression=PROG],
-			[compress the manpages with PROG]),
-		test "$enableval" = "yes" && AC_MSG_ERROR([missing argument to --enable-man-compression])
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --compress $enableval",
-		enableval="no")
-	AC_MSG_RESULT([$enableval])
-	if test "$enableval" != "no"; then
-		AC_MSG_CHECKING([for compressed file suffix])
-		touch TeST
-		$enableval TeST
-		Z=`ls TeST* | sed 's/^....//'`
-		rm -f TeST*
-		MAN_FLAGS="$MAN_FLAGS --extension $Z"
-		AC_MSG_RESULT([$Z])
-	fi
+    AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
+    AC_ARG_ENABLE(man-suffix,
+	AC_HELP_STRING([--enable-man-suffix=STRING],
+	    [use STRING as a suffix to manpage file names (default: no, AC_PACKAGE_NAME if enabled without specifying STRING)]),
+	[case $enableval in
+	    yes) enableval="AC_PACKAGE_NAME";;
+	    no)  ;;
+	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
+	esac],
+	enableval="no")
+    AC_MSG_RESULT([$enableval])
 
-	AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
-	AC_ARG_ENABLE(man-suffix,
-		AC_HELP_STRING([--enable-man-suffix=STRING],
-			  [use STRING as a suffix to manpage file names (default: AC_PACKAGE_NAME)]),
-		test "$enableval" = "yes" && enableval="AC_PACKAGE_NAME"
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --suffix $enableval",
-		enableval="no")
-	AC_MSG_RESULT([$enableval])
-
-	AC_SUBST(MAN_FLAGS)
+    AC_SUBST(MAN_FLAGS)
 ])
 
 #--------------------------------------------------------------------
@@ -822,7 +843,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # Step 0.a: Enable 64 bit support?
 
     AC_MSG_CHECKING([if 64bit support is requested])
-    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)],,enableval="no")
+    AC_ARG_ENABLE(64bit,
+	AC_HELP_STRING([--enable-64bit],
+	    [enable 64bit support (default: off)]),
+	,enableval="no")
 
     if test "$enableval" = "yes"; then
 	do64bit=yes
@@ -834,7 +858,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # Step 0.b: Enable Solaris 64 bit VIS support?
 
     AC_MSG_CHECKING([if 64bit Sparc VIS support is requested])
-    AC_ARG_ENABLE(64bit-vis,[  --enable-64bit-vis      enable 64bit Sparc VIS support],,enableval="no")
+    AC_ARG_ENABLE(64bit-vis,
+	AC_HELP_STRING([--enable-64bit-vis],
+	    [enable 64bit Sparc VIS support (default: off)]),
+	,enableval="no")
 
     if test "$enableval" = "yes"; then
 	# Force 64bit on with VIS
@@ -1398,7 +1425,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind"
+	    LDFLAGS="$LDFLAGS -prebind -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
 	        hold_ldflags=$LDFLAGS
 	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
@@ -1412,10 +1439,10 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
 	    PLAT_OBJS='${MAC_OSX_OBJS}'
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
-	    TCL_SHLIB_LD_EXTRAS='-compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
-	    TK_SHLIB_LD_EXTRAS=' -compatibility_version ${VERSION} -current_version ${VERSION} -install_name ${DYLIB_INSTALL_DIR}/${TK_LIB_FILE}  -seg1addr 0xb000000 -unexported_symbols_list $$(f=$(TCL_STUB_LIB_FILE).E && nm -gjp $(TCL_BIN_DIR)/$(TCL_STUB_LIB_FILE) | tail +3 > $$f && echo $$f)'
             AC_MSG_CHECKING([whether to use CoreFoundation])
-            AC_ARG_ENABLE(corefoundation, [  --enable-corefoundation use CoreFoundation API [--enable-corefoundation]],
+            AC_ARG_ENABLE(corefoundation,
+		AC_HELP_STRING([--enable-corefoundation],
+		    [use CoreFoundation API on MacOSX (default: yes)]),
                 [tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
             AC_MSG_RESULT([$tcl_corefoundation])
             if test $tcl_corefoundation = yes; then
@@ -1439,6 +1466,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8",
 		[Are we to override what our default encoding is?])
 	    AC_DEFINE(MODULE_SCOPE, __private_extern__, [Linker support for module scope symbols])
+	    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1, [Can this platform load code from memory?])
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)
@@ -1819,7 +1847,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 
     # Step 5: disable dynamic loading if requested via a command-line switch.
 
-    AC_ARG_ENABLE(load, [  --disable-load          disallow dynamic loading and "load" command],
+    AC_ARG_ENABLE(load,
+	AC_HELP_STRING([--disable-load],
+	    [disallow dynamic loading and "load" command (default: enabled)]),
 	[tcl_ok=$enableval], [tcl_ok=yes])
     if test "$tcl_ok" = "no"; then
 	DL_OBJS=""
@@ -2259,6 +2289,7 @@ AC_DEFUN(SC_PATH_X, [
 	XLIBSW=-lX11
     fi
 ])
+
 #--------------------------------------------------------------------
 # SC_BLOCKING_STYLE
 #
@@ -2671,7 +2702,10 @@ AC_DEFUN(SC_TCL_64BIT_FLAGS, [
 #--------------------------------------------------------------------
 
 AC_DEFUN(SC_TCL_CFG_ENCODING, [
-    AC_ARG_WITH(encoding, [  --with-encoding              encoding for configuration values], with_tcencoding=${withval})
+    AC_ARG_WITH(encoding,
+	AC_HELP_STRING([--with-encoding],
+	    [encoding for configuration values (default: iso8859-1)]),
+	with_tcencoding=${withval})
 
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}",

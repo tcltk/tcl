@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.107.2.5 2005/05/05 17:55:53 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.107.2.6 2005/07/12 20:36:25 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3484,6 +3484,18 @@ EXTERN void		Tcl_SetBignumObj _ANSI_ARGS_((Tcl_Obj* obj,
 EXTERN int		Tcl_GetBignumFromObj _ANSI_ARGS_((Tcl_Interp* interp, 
 				Tcl_Obj* obj, mp_int* value));
 #endif
+#ifndef Tcl_TruncateChannel_TCL_DECLARED
+#define Tcl_TruncateChannel_TCL_DECLARED
+/* 559 */
+EXTERN int		Tcl_TruncateChannel _ANSI_ARGS_((Tcl_Channel chan, 
+				Tcl_WideInt length));
+#endif
+#ifndef Tcl_ChannelTruncateProc_TCL_DECLARED
+#define Tcl_ChannelTruncateProc_TCL_DECLARED
+/* 560 */
+EXTERN Tcl_DriverTruncateProc * Tcl_ChannelTruncateProc _ANSI_ARGS_((
+				Tcl_ChannelType * chanTypePtr));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4084,6 +4096,8 @@ typedef struct TclStubs {
     Tcl_Obj* (*tcl_DbNewBignumObj) _ANSI_ARGS_((mp_int* value, CONST char* file, int line)); /* 556 */
     void (*tcl_SetBignumObj) _ANSI_ARGS_((Tcl_Obj* obj, mp_int* value)); /* 557 */
     int (*tcl_GetBignumFromObj) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)); /* 558 */
+    int (*tcl_TruncateChannel) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt length)); /* 559 */
+    Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 560 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6359,6 +6373,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetBignumFromObj
 #define Tcl_GetBignumFromObj \
 	(tclStubsPtr->tcl_GetBignumFromObj) /* 558 */
+#endif
+#ifndef Tcl_TruncateChannel
+#define Tcl_TruncateChannel \
+	(tclStubsPtr->tcl_TruncateChannel) /* 559 */
+#endif
+#ifndef Tcl_ChannelTruncateProc
+#define Tcl_ChannelTruncateProc \
+	(tclStubsPtr->tcl_ChannelTruncateProc) /* 560 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.43 2004/10/29 15:39:10 dkf Exp $
+# RCS: @(#) $Id: namespace.test,v 1.43.2.1 2005/07/12 20:37:12 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -244,7 +244,7 @@ test namespace-9.4 {Tcl_Import, simple import} {
 } {cmd1: 123}
 test namespace-9.5 {Tcl_Import, can't redefine cmd unless allowOverwrite!=0} {
     list [catch {namespace eval test_ns_import {namespace import ::test_ns_export::*}} msg] $msg
-} {1 {can't import command "cmd1": already exists}}
+} {0 {}}
 test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {
     namespace eval test_ns_import {
         namespace import -force ::test_ns_export::*
@@ -838,7 +838,7 @@ test namespace-20.1 {Tcl_NamespaceObjCmd, bad subcommand} {
 } {1 {wrong # args: should be "namespace subcommand ?arg ...?"}}
 test namespace-20.2 {Tcl_NamespaceObjCmd, bad subcommand} {
     list [catch {namespace wombat {}} msg] $msg
-} {1 {bad option "wombat": must be children, code, current, delete, ensemble, eval, exists, export, forget, import, inscope, origin, parent, qualifiers, tail, or which}}
+} {1 {bad option "wombat": must be children, code, current, delete, ensemble, eval, exists, export, forget, import, inscope, origin, parent, path, qualifiers, tail, or which}}
 test namespace-20.3 {Tcl_NamespaceObjCmd, abbreviations are okay} {
     namespace ch :: test_ns_*
 } {}
@@ -945,7 +945,7 @@ test namespace-25.1 {NamespaceEvalCmd, bad args} {
 } {1 {wrong # args: should be "namespace eval name arg ?arg...?"}}
 test namespace-25.2 {NamespaceEvalCmd, bad args} {
     list [catch {namespace test_ns_1} msg] $msg
-} {1 {bad option "test_ns_1": must be children, code, current, delete, ensemble, eval, exists, export, forget, import, inscope, origin, parent, qualifiers, tail, or which}}
+} {1 {bad option "test_ns_1": must be children, code, current, delete, ensemble, eval, exists, export, forget, import, inscope, origin, parent, path, qualifiers, tail, or which}}
 catch {unset v}
 test namespace-25.3 {NamespaceEvalCmd, new namespace} {
     set v 123
@@ -1924,6 +1924,19 @@ test namespace-49.1 {ensemble subcommand caching} -body {
     rename c {}
     rename x {}
 }
+test namespace-49.2 {strange delete crash} -body {
+    namespace eval foo {namespace ensemble create -command ::bar}
+    trace add command ::bar delete DeleteTrace
+    proc DeleteTrace {old new op} {
+	trace remove command ::bar delete DeleteTrace
+	rename $old ""
+	# This next line caused a bus error in [Bug 1220058]
+	namespace delete foo
+    }
+    rename ::bar ""
+} -result "" -cleanup {
+    rename DeleteTrace ""
+}
 
 test namespace-50.1 {ensembles affect proc arguments error messages} -body {
     namespace ens cre -command a -map {b {bb foo}}
@@ -1954,6 +1967,389 @@ test namespace-50.4 {chained ensembles affect error messages} -body {
     a b d
 } -returnCodes error -result "wrong # args: should be \"a b\"" -cleanup {
     rename a {}
+}
+
+test namespace-51.1 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    proc pathtestA {} {
+		::return [pathtestB],[pathtestC],[pathtestD],[namespace path]
+	    }
+	    proc pathtestC {} {
+		::return 2
+	    }
+	}
+	proc pathtestB {} {
+	    return 1
+	}
+	proc pathtestC {} {
+	    return 1
+	}
+	namespace path ::test_ns_1
+    }
+    proc ::pathtestB {} {
+	return global
+    }
+    proc ::pathtestD {} {
+	return global
+    }
+    test_ns_1::test_ns_2::pathtestA
+} -result "global,2,global," -cleanup {
+    namespace delete ::test_ns_1
+    catch {rename ::pathtestB {}}
+    catch {rename ::pathtestD {}}
+}
+test namespace-51.2 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    namespace path ::test_ns_1
+	    proc pathtestA {} {
+		::return [pathtestB],[pathtestC],[pathtestD],[namespace path]
+	    }
+	    proc pathtestC {} {
+		::return 2
+	    }
+	}
+	proc pathtestB {} {
+	    return 1
+	}
+	proc pathtestC {} {
+	    return 1
+	}
+    }
+    proc ::pathtestB {} {
+	return global
+    }
+    proc ::pathtestD {} {
+	return global
+    }
+    ::test_ns_1::test_ns_2::pathtestA
+} -result "1,2,global,::test_ns_1" -cleanup {
+    namespace delete ::test_ns_1
+    catch {rename ::pathtestB {}}
+    catch {rename ::pathtestD {}}
+}
+test namespace-51.3 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    proc pathtestA {} {
+		::return [pathtestB],[pathtestC],[pathtestD],[namespace path]
+	    }
+	    proc pathtestC {} {
+		::return 2
+	    }
+	}
+	proc pathtestB {} {
+	    return 1
+	}
+	proc pathtestC {} {
+	    return 1
+	}
+    }
+    proc ::pathtestB {} {
+	return global
+    }
+    proc ::pathtestD {} {
+	return global
+    }
+    set result [::test_ns_1::test_ns_2::pathtestA]
+    namespace eval ::test_ns_1::test_ns_2 {
+	namespace path ::test_ns_1
+    }
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+    rename ::test_ns_1::pathtestB {}
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+} -result "global,2,global, 1,2,global,::test_ns_1 global,2,global,::test_ns_1" -cleanup {
+    namespace delete ::test_ns_1
+    catch {rename ::pathtestB {}}
+    catch {rename ::pathtestD {}}
+}
+test namespace-51.4 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    proc pathtestA {} {
+		::return [pathtestB],[pathtestC],[pathtestD],[namespace path]
+	    }
+	    proc pathtestC {} {
+		::return 2
+	    }
+	}
+	proc pathtestB {} {
+	    return 1
+	}
+	proc pathtestC {} {
+	    return 1
+	}
+    }
+    proc ::pathtestB {} {
+	return global
+    }
+    proc ::pathtestD {} {
+	return global
+    }
+    set result [::test_ns_1::test_ns_2::pathtestA]
+    namespace eval ::test_ns_1::test_ns_2 {
+	namespace path ::test_ns_1
+    }
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+    namespace eval ::test_ns_1::test_ns_2 {
+	namespace path {}
+    }
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+} -result "global,2,global, 1,2,global,::test_ns_1 global,2,global," -cleanup {
+    namespace delete ::test_ns_1
+    catch {rename ::pathtestB {}}
+    catch {rename ::pathtestD {}}
+}
+test namespace-51.5 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    proc pathtestA {} {
+		::return [pathtestB],[pathtestC],[pathtestD],[namespace path]
+	    }
+	    proc pathtestC {} {
+		::return 2
+	    }
+	    namespace path ::test_ns_1
+	}
+	proc pathtestB {} {
+	    return 1
+	}
+	proc pathtestC {} {
+	    return 1
+	}
+	proc pathtestD {} {
+	    return 1
+	}
+    }
+    proc ::pathtestB {} {
+	return global
+    }
+    proc ::pathtestD {} {
+	return global
+    }
+    set result [::test_ns_1::test_ns_2::pathtestA]
+    namespace eval ::test_ns_1::test_ns_2 {
+	namespace path {:: ::test_ns_1}
+    }
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+    rename ::test_ns_1::test_ns_2::pathtestC {}
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+} -result "1,2,1,::test_ns_1 {global,2,global,:: ::test_ns_1} {global,1,global,:: ::test_ns_1}" -cleanup {
+    namespace delete ::test_ns_1
+    catch {rename ::pathtestB {}}
+    catch {rename ::pathtestD {}}
+}
+test namespace-51.6 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    proc pathtestA {} {
+		::return [pathtestB],[pathtestC],[pathtestD],[namespace path]
+	    }
+	    proc pathtestC {} {
+		::return 2
+	    }
+	    namespace path ::test_ns_1
+	}
+	proc pathtestB {} {
+	    return 1
+	}
+	proc pathtestC {} {
+	    return 1
+	}
+	proc pathtestD {} {
+	    return 1
+	}
+    }
+    proc ::pathtestB {} {
+	return global
+    }
+    proc ::pathtestD {} {
+	return global
+    }
+    set result [::test_ns_1::test_ns_2::pathtestA]
+    namespace eval ::test_ns_1::test_ns_2 {
+	namespace path {:: ::test_ns_1}
+    }
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+    rename ::test_ns_1::test_ns_2::pathtestC {}
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+    proc ::pathtestC {} {
+	return global
+    }
+    lappend result [::test_ns_1::test_ns_2::pathtestA]
+} -result "1,2,1,::test_ns_1 {global,2,global,:: ::test_ns_1} {global,1,global,:: ::test_ns_1} {global,global,global,:: ::test_ns_1}" -cleanup {
+    namespace delete ::test_ns_1
+    catch {rename ::pathtestB {}}
+    catch {rename ::pathtestD {}}
+}
+test namespace-51.7 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+    }
+    namespace eval ::test_ns_2 {
+	namespace path ::test_ns_1
+	proc getpath {} {namespace path}
+    }
+    list [::test_ns_2::getpath] [namespace delete ::test_ns_1] [::test_ns_2::getpath]
+} -result {::test_ns_1 {} {}} -cleanup {
+    catch {namespace delete ::test_ns_1}
+    namespace delete ::test_ns_2
+}
+test namespace-51.8 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+    }
+    namespace eval ::test_ns_2 {
+    }
+    namespace eval ::test_ns_3 {
+    }
+    namespace eval ::test_ns_4 {
+	namespace path {::test_ns_1 ::test_ns_2 ::test_ns_3}
+	proc getpath {} {namespace path}
+    }
+    list [::test_ns_4::getpath] [namespace delete ::test_ns_2] [::test_ns_4::getpath]
+} -result {{::test_ns_1 ::test_ns_2 ::test_ns_3} {} {::test_ns_1 ::test_ns_3}} -cleanup {
+    catch {namespace delete ::test_ns_1}
+    catch {namespace delete ::test_ns_2}
+    catch {namespace delete ::test_ns_3}
+    catch {namespace delete ::test_ns_4}
+}
+test namespace-51.9 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+    }
+    namespace eval ::test_ns_2 {
+    }
+    namespace eval ::test_ns_3 {
+    }
+    namespace eval ::test_ns_4 {
+	namespace path {::test_ns_1 ::test_ns_2 ::test_ns_3}
+	proc getpath {} {namespace path}
+    }
+    list [::test_ns_4::getpath] [namespace delete ::test_ns_2] [namespace eval ::test_ns_2 {}] [::test_ns_4::getpath]
+} -result {{::test_ns_1 ::test_ns_2 ::test_ns_3} {} {} {::test_ns_1 ::test_ns_3}} -cleanup {
+    catch {namespace delete ::test_ns_1}
+    catch {namespace delete ::test_ns_2}
+    catch {namespace delete ::test_ns_3}
+    catch {namespace delete ::test_ns_4}
+}
+test namespace-51.10 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	namespace path does::not::exist
+    }
+} -returnCodes error -result {unknown namespace "does::not::exist"} -cleanup {
+    catch {namespace delete ::test_ns_1}
+}
+test namespace-51.11 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	proc foo {} {return 1}
+    }
+    namespace eval ::test_ns_2 {
+	proc foo {} {return 2}
+    }
+    namespace eval ::test_ns_3 {
+	namespace path ::test_ns_1
+    }
+    namespace eval ::test_ns_4 {
+	namespace path {::test_ns_3 ::test_ns_2}
+	foo
+    }
+} -result 2 -cleanup {
+    catch {namespace delete ::test_ns_1}
+    catch {namespace delete ::test_ns_2}
+    catch {namespace delete ::test_ns_3}
+    catch {namespace delete ::test_ns_4}
+}
+test namespace-51.12 {name resolution path control} -body {
+    namespace eval ::test_ns_1 {
+	proc foo {} {return 1}
+    }
+    namespace eval ::test_ns_2 {
+	proc foo {} {return 2}
+    }
+    namespace eval ::test_ns_3 {
+	namespace path ::test_ns_1
+    }
+    namespace eval ::test_ns_4 {
+	namespace path {::test_ns_3 ::test_ns_2}
+	list [foo] [namespace delete ::test_ns_3] [foo]
+    }
+} -result {2 {} 2} -cleanup {
+    catch {namespace delete ::test_ns_1}
+    catch {namespace delete ::test_ns_2}
+    catch {namespace delete ::test_ns_3}
+    catch {namespace delete ::test_ns_4}
+}
+# Fails right now due to unrelated bug...
+test namespace-51.13 {name resolution path control} -constraints knownBug -body {
+    set ::result {}
+    namespace eval ::test_ns_1 {
+	proc foo {} {lappend ::result 1}
+    }
+    namespace eval ::test_ns_2 {
+	proc foo {} {lappend ::result 2}
+	trace add command foo delete {namespace eval ::test_ns_3 foo;#}
+    }
+    namespace eval ::test_ns_3 {
+	proc foo {} {
+	    lappend ::result 3
+	    namespace delete [namespace current]
+	    ::test_ns_4::bar
+	}
+    }
+    namespace eval ::test_ns_4 {
+	namespace path {::test_ns_2 ::test_ns_3 ::test_ns_1}
+	proc bar {} {
+	    list [foo] [namespace delete ::test_ns_2] [foo]
+	}
+	bar
+    }
+    # Should the result be "2 {} {2 3 1 1}" instead?
+} -result {2 {} {2 3 2 1}} -cleanup {
+    catch {namespace delete ::test_ns_1}
+    catch {namespace delete ::test_ns_2}
+    catch {namespace delete ::test_ns_3}
+    catch {namespace delete ::test_ns_4}
+}
+test namespace-51.14 {name resolution path control} -body {
+    proc foo0 {} {}
+    namespace eval ::test_ns_1 {
+	proc foo1 {} {}
+    }
+    namespace eval ::test_ns_2 {
+	proc foo2 {} {}
+    }
+    namespace eval ::test_ns_3 {
+	variable result {}
+	lappend result [info commands foo*]
+	namespace path {::test_ns_1 ::test_ns_2}
+	lappend result [info commands foo*]
+	proc foo2 {} {}
+	lappend result [info commands foo*]
+	rename foo2 {}
+	lappend result [info commands foo*]
+	namespace delete ::test_ns_1
+	lappend result [info commands foo*]
+    }
+} -result {foo0 {foo1 foo2 foo0} {foo2 foo1 foo0} {foo1 foo2 foo0} {foo2 foo0}} -cleanup {
+    catch {namespace delete ::test_ns_1}
+    catch {namespace delete ::test_ns_2}
+    catch {namespace delete ::test_ns_3}
+}
+test namespace-51.15 {namespace resolution path control} -body {
+    namespace eval ::test_ns_2 {
+	proc foo {} {return 2}
+    }
+    namespace eval ::test_ns_1 {
+	namespace eval test_ns_2 {
+	    proc foo {} {return 1_2}
+	}
+	namespace eval test_ns_3 {
+	    namespace path ::test_ns_1
+	    test_ns_2::foo
+	}
+    }
+} -result 1_2 -cleanup {
+    namespace delete ::test_ns_1
+    namespace delete ::test_ns_2
 }
 
 # cleanup

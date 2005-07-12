@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.7 2005/07/12 20:15:31 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.8 2005/07/12 20:36:21 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     endOfForLoop:
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv, 
-	  "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+	    "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
 	goto optionError;
     }
     objc -= i;
@@ -206,7 +206,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     if (about) {
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
 	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
-optionError:
+	  optionError:
 	    if (startIndex) {
 		Tcl_DecrRefCount(startIndex);
 	    }
@@ -518,15 +518,15 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    endOfForLoop:
+  endOfForLoop:
     if (objc-idx < 3 || objc-idx > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? exp string subSpec ?varName?");
-optionError:
-	    if (startIndex) {
-		Tcl_DecrRefCount(startIndex);
-	    }
-	    return TCL_ERROR;
+      optionError:
+	if (startIndex) {
+	  Tcl_DecrRefCount(startIndex);
+	}
+	return TCL_ERROR;
     }
 
     objc -= idx;
@@ -2113,7 +2113,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objc < 5 || objc > 6) {
 	        Tcl_WrongNumArgs(interp, 2, objv,
-				 "string first last ?string?");
+			"string first last ?string?");
 		return TCL_ERROR;
 	    }
 
@@ -2487,7 +2487,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, result, splitObjs, numMatchesSaved;
+    int i, j, index, mode, foundmode, result, splitObjs, numMatchesSaved, noCase;
     char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
@@ -2498,17 +2498,22 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      * parser as well.
      */
     static CONST char *options[] = {
-	"-exact", "-glob", "-indexvar", "-matchvar", "-regexp", "--", 
-	NULL
+	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
+	"--", NULL
     };
     enum options {
-	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_REGEXP, OPT_LAST
+	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
+	OPT_LAST
     };
+    typedef int (*strCmpFn_t) _ANSI_ARGS_((const char *, const char *));
+    strCmpFn_t strCmpFn = strcmp;
 
     mode = OPT_EXACT;
+    foundmode = 0;
     indexVarObj = NULL;
     matchVarObj = NULL;
     numMatchesSaved = 0;
+    noCase = 0;
     for (i = 1; i < objc; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
@@ -2547,7 +2552,22 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    }
 	    matchVarObj = objv[i];
 	    numMatchesSaved = -1;
+	} else if (index == OPT_NOCASE) {
+	    strCmpFn = strcasecmp;
+	    noCase = 1;
 	} else {
+	    if ( foundmode ) {
+		/* Mode already set via -exact, -glob, or -regexp */
+		Tcl_AppendResult(interp,
+			"bad option \"",
+			TclGetString(objv[i]),
+			"\": ",
+			options[mode],
+			" option already found",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	    foundmode = 1;
 	    mode = index;
 	}
     }
@@ -2685,18 +2705,19 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	} else {
 	    switch (mode) {
 	    case OPT_EXACT:
-		if (strcmp(TclGetString(stringObj), pattern) == 0) {
+		if (strCmpFn(TclGetString(stringObj), pattern) == 0) {
 		    goto matchFound;
 		}
 		break;
 	    case OPT_GLOB:
-		if (Tcl_StringMatch(TclGetString(stringObj), pattern)) {
+		if (Tcl_StringCaseMatch(TclGetString(stringObj), pattern,
+			noCase)) {
 		    goto matchFound;
 		}
 		break;
 	    case OPT_REGEXP:
 		regExpr = Tcl_GetRegExpFromObj(interp, objv[i],
-			TCL_REG_ADVANCED);
+			TCL_REG_ADVANCED | (noCase ? TCL_REG_NOCASE : 0));
 		if (regExpr == NULL) {
 		    return TCL_ERROR;
 		} else {
@@ -2856,11 +2877,11 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Tcl_Obj *objPtr;
+    Tcl_Obj *objs[4];
     register int i, result;
     int count;
     double totalMicroSec;
     Tcl_Time start, stop;
-    char buf[100];
 
     if (objc == 2) {
 	count = 1;
@@ -2887,9 +2908,16 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     
     totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
 		      + ( stop.usec - start.usec ) );
-    sprintf(buf, "%.0f microseconds per iteration",
-	((count <= 0) ? 0 : totalMicroSec/count));
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+    if (count <= 1) {
+	/* Use int obj since we know time is not fractional [Bug 1202178] */
+	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
+    } else {
+	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
+    }
+    objs[1] = Tcl_NewStringObj("microseconds", -1);
+    objs[2] = Tcl_NewStringObj("per", -1);
+    objs[3] = Tcl_NewStringObj("iteration", -1);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
     return TCL_OK;
 }
 

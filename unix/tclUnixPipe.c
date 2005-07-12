@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.26.2.1 2005/02/02 15:54:01 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.26.2.2 2005/07/12 20:37:31 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1247,3 +1247,24 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizePipes --
+ *
+ *	Cleans up the pipe subsystem from Tcl_FinalizeThread
+ *
+ * Results:
+ *	None.
+ *
+ * This procedure carries out no operation on Unix.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFinalizePipes()
+{
+}
+

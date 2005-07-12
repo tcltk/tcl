@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.72.2.1 2005/03/15 20:24:03 kennykb Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.72.2.2 2005/07/12 20:37:34 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2284,7 +2284,7 @@ TclpFilesystemPathType(pathPtr)
 {
 #define VOL_BUF_SIZE 32
     int found;
-    char volType[VOL_BUF_SIZE];
+    WCHAR volType[VOL_BUF_SIZE];
     char* firstSeparator;
     CONST char *path;
     
@@ -2313,7 +2313,7 @@ TclpFilesystemPathType(pathPtr)
 	Tcl_DString ds;
 	Tcl_Obj *objPtr;
 	
-	Tcl_WinTCharToUtf(volType, -1, &ds);
+	Tcl_WinTCharToUtf((CONST char *)volType, -1, &ds);
 	objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
 	Tcl_DStringFree(&ds);
 	return objPtr;

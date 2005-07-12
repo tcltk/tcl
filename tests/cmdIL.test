@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.23.2.1 2005/05/05 17:56:14 kennykb Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.23.2.2 2005/07/12 20:37:06 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -23,7 +23,7 @@ test cmdIL-1.1 {Tcl_LsortObjCmd procedure} {
 } {1 {wrong # args: should be "lsort ?options? list"}}
 test cmdIL-1.2 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort -foo {1 3 2 5}} msg] $msg
-} {1 {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -real, or -unique}}
+} {1 {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, or -unique}}
 test cmdIL-1.3 {Tcl_LsortObjCmd procedure, default options} {
     lsort {d e c b a \{ d35 d300}
 } {a b c d d300 d35 e \{}
@@ -383,6 +383,12 @@ test cmdIL-4.32 {DictionaryCompare procedure, chars between Z and a in ASCII} {
 test cmdIL-4.33 {DictionaryCompare procedure, chars between Z and a in ASCII} {
     lsort -dictionary [list AA ! c CC `]
 } [list ! ` AA c CC]
+test cmdIL-4.34 {SortCompare procedure, -ascii option with -nocase option} {
+    lsort -ascii -nocase {d e c b a d35 d300 100 20}
+} {100 20 a b c d d300 d35 e}
+test cmdIL-4.35 {SortCompare procedure, -ascii option with -nocase option} {
+    lsort -ascii -nocase {d E c B a D35 d300 100 20}
+} {100 20 a B c d d300 D35 E}
 
 test cmdIL-5.1 {lsort with list style index} {
     lsort -ascii -decreasing -index {0 1} {

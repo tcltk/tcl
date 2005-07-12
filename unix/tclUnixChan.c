@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.53.2.3 2005/05/21 15:10:30 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.53.2.4 2005/07/12 20:37:30 kennykb Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -241,8 +241,10 @@ static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 #ifdef DEPRECATED
 static void             FileThreadActionProc _ANSI_ARGS_ ((
-			   ClientData instanceData, int action));
+			    ClientData instanceData, int action));
 #endif
+static int		FileTruncateProc _ANSI_ARGS_ ((ClientData instanceData,
+			    Tcl_WideInt length));
 static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -325,6 +327,7 @@ static Tcl_ChannelType fileChannelType = {
 #else
     NULL,
 #endif
+    FileTruncateProc,		/* truncate proc. */
 };
 
 #ifdef SUPPORTS_TTY
@@ -354,6 +357,7 @@ static Tcl_ChannelType ttyChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
+    NULL,			/* truncate proc. */
 };
 #endif	/* SUPPORTS_TTY */
 
@@ -379,6 +383,7 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
+    NULL,			/* truncate proc. */
 };
 
 
@@ -3318,3 +3323,45 @@ FileThreadActionProc (instanceData, action)
     }
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileTruncateProc --
+ *
+ *	Truncates a file to a given length.
+ *
+ * Results:
+ *	0 if the operation succeeded, and -1 if it failed (in which
+ *	case *errorCodePtr will be set to errno).
+ *
+ * Side effects:
+ *	The underlying file is potentially truncated. This can have a
+ *	wide variety of side effects, including moving file pointers
+ *	that point at places later in the file than the truncate
+ *	point.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+FileTruncateProc(instanceData, length)
+    ClientData instanceData;
+    Tcl_WideInt length;
+{
+    FileState *fsPtr = (FileState *) instanceData;
+    int result;
+
+#ifdef HAVE_TYPE_OFF64_T
+    /*
+     * We assume this goes with the type for now...
+     */
+    result = ftruncate64(fsPtr->fd, (off64_t) length);
+#else
+    result = ftruncate(fsPtr->fd, (off_t) length);
+#endif
+    if (result) {
+	return errno;
+    }
+    return 0;
+}

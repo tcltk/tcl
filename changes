@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.92.2.1 2004/12/08 18:24:35 kennykb Exp $
+RCS: @(#) $Id: changes,v 1.92.2.2 2005/07/12 20:36:11 kennykb Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6349,3 +6349,147 @@ Doc improvements [759545,926590,935853,1017072,1018486,1022527,1027849,
 Test suite expansion [1036649,1001997,etc.]
 
 --- Released 8.5a2, December 7, 2004 --- See ChangeLog for details ---
+
+2004-12-13 (bug fix)[1083082] encoding memory leaks (ade,porter)
+
+2004-12-13 (bug fix)[1082349] restored C++ extension support (porter)
+
+2004-12-14 (bug fix)[1081541] workaround automake-ism "$U" (porter)
+
+2004-12-15 (new feature) CallFrames on execution, not C, stack (sofer)
+
+2004-12-16 (bug fix)[1085023] [interp limit] support in [vwait], etc. (fellows)
+
+2004-12-29 (bug fix)[1090413] make [clock scan 0030] work (morian,kenny)
+
+2004-12-29 (bug fix)[1092789] make [clock scan 10000] work (porter,kenny)
+
+2004-12-29 (platform support)[1092952,1091967] MSVC7, gcc OPT compiles (hobbs)
+
+2005-01-06 (performance)[1020491] [http::mapReply] (fellows)
+=> http 2.5.1
+
+2005-01-09 (bug fix)[1095909] stopped use of readdir_r (english)
+
+2005-01-10 (enhancement)[1081595] stopped use of TCL_DBGX (english)
+
+2005-01-17 (bug fix)[1100542] [glob] of Windows shares (schar,darley)
+
+2005-01-19 (new feature)[TIP 235] C API for ensembles (fellows)
+
+2005-01-21 (new feature)[TIP 233] virtual time (kupries)
+
+2005-01-25 (bug fix)[1101670] [auto_reset] update for [namespace] (porter)
+***POTENTIAL INCOMPATIBILITY***
+May cause re-[source]-ing of files that have not anticipated that before.
+
+2005-01-27 (new feature)[TIP 218] Tcl_Channel API update for threads (kupries)
+
+2005-01-27 (bug fix)[1109484] Tcl_Expr* updates for Tcl_WideInt (hobbs)
+
+2005-01-28 (platform support)[1021871] Solaris gcc 64-bit support (hobbs)
+
+2005-02-10 (bug fix)[1119369] Tcl_EvalObjEx: avoid shimmer loss of List intrep
+(sofer,macdonald)
+
+2005-02-11 (platform support) correct gcc builds for AIX-4+, HP-UX-11 (hobbs)
+
+2005-02-24 (bug fix)[1119798] prevent [source $directory] (porter,mpettigr)
+=> tcltest 2.2.8
+
+2005-03-10 (bug fix)[1153871] bad ClientData cast (porter,victorovich)
+
+2005-03-15 (platform support) OpenBSD ports patch (thoyts)
+
+2005-03-18 (bug fix)[1115904] restore recursion limit in direct eval (porter)
+
+2005-03-24 (bug fix) stop conflict between Tcltest and Thread packages (porter)
+
+2005-03-29 (platform support) allow msys builds without cygwin (hobbs)
+
+2005-04-01 (internal change)[1158008]  internal rep of "list" Tcl_Obj's
+now uses a refcounted struct (sofer)
+***POTENTIAL INCOMPATIBILITY***
+For any code that goes poking into the internals of "list" Tcl_Obj's
+
+2005-04-05 (performance)[1174551] Tcl_DecrRefCount of Tcl_Obj "chains" (sofer)
+
+2005-04-08 (performance)[1077262] better Tcl_Encoding cache lifetimes (porter)
+
+2005-04-10 (bug fix)[1180368] [interp invokehidden] mem leak (kenny,porter)
+
+2005-04-12 (performance)[1177363] startup encoding file scan (porter)
+
+2005-04-12 (performance)[1182459] [clock format] (kenny)
+
+2005-04-13 (bug fix) min buffer size dropped from 10 to 1 byte (gravereaux)
+
+2005-04-16 (bug fix)[1178445] fix memory waste at thread exit (vasiljevic)
+
+2004-04-16 (bug fix)[1084111] [array names] memory leak (ade,sofer)
+
+2005-04-19 (bug fix)[1185933] [clock] init clobbered global vars (ring,kenny)
+
+2005-04-19 (new feature) [::tcl::unsupported::EncodingDirs] - unsupported
+command to set search path for encoding files (porter)
+
+2005-04-20 (bug fix)[1090869] Tcl_GetInt accept 0x80000000, 64-bit
+(porter,singh)
+
+2005-04-22 (bug fix)[1187123] [string is boolean] respect EIAS (porter)
+
+2005-04-25 (enhancement) update to tzdata2005i (kenny)
+
+2005-04-25 (platform support) builds on Mac OS X 10.1 (steffen)
+
+2005-04-27 (new feature)[TIP 183] [open $f {... BINARY ...}] (porter)
+
+2005-04-29 (new feature)[TIP 176] simple index arithmetic (porter)
+
+2005-05-06 (platform support) x86_64 Solarix cc and Solaris 10 builds (hobbs)
+
+2005-05-10 (bug fix)[1198892] [expr {i**0}] error (kaitschu,markus)
+
+2005-05-10 (new feature)[TIP 132] floating-point conversion to string (kenny)
+***POTENTIAL INCOMPATIBILITY***
+For scripts that rely on (tcl_precision==12) number formatting
+
+2005-05-10 (new feature)[TIP 232] math functions as commands (kenny)
+***POTENTIAL INCOMPATIBILITY***
+Tcl_GetMathFuncInfo functioning is reduced; routine is now deprecated
+
+2005-05-13 (feature removed) TCL_NO_MATH compiler directive (porter)
+
+2005-05-14 (platform support) Mac OSX: configurable CoreFoundation API
+(steffen)
+
+2005-05-14 (platform support) Mac OSX: use realpath when threadsafe (steffen)
+
+2005-05-17 (feature removed) Tcl_ObjType's "list", "procbody", "index",
+"ensembleCommand", "localVarName", "levelReference, "boolean" are no
+longer registered (porter)
+***POTENTIAL INCOMPATIBILITY***
+For any callers of Tcl_GetObjType on those strings
+
+2005-05-20 (bug fix)[1201589] boolean literal prefix in expressions (porter)
+
+2005-05-24 (platform support) Darwin build support merged into unix (steffen)
+
+2005-05-24 (new feature)[1202209] Mac OSX: support [load] of .bundle binaries
+Can support [load] from memory as well (steffen)
+
+2005-05-24 (new feature)[1202178] [time] returns non-integer result (steffen)
+
+2005-05-25 (new feature)[TIP 182] [expr {bool(...)}] (mistachkin,porter)
+
+2005-05-30 (new feature)[TIP 229] [namespace path] (fellows)
+
+2005-05-31 (bug fix)[1082283] Unix: notifier thread now joinable (vasiljevic)
+
+2005-06-01 (new feature)[TIP 241] -nocase: lsort, lsearch, switch (mistachkin)
+
+2005-06-01 (bug fix)[1209759] "return TCL_RETURN;" could cause panic (porter)
+
+Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
+
+--- Released 8.5a3, June 4, 2004 --- See ChangeLog for details ---

@@ -1,9 +1,10 @@
 ########################################################################################################
 #
-# Makefile to build Tcl on Mac OS X packaged as a Framework
-#	uses standard unix build system in tcl/unix
+# Makefile wrapper to build tcl on Mac OS X in a way compatible with the tk/macosx Xcode buildsystem
+#	uses the standard unix build system in tcl/unix (which can be used directly instead of this
+#	if you are not using the tk/macosx projects).
 #
-# RCS: @(#) $Id: Makefile,v 1.18.2.1 2005/05/21 15:10:27 kennykb Exp $
+# RCS: @(#) $Id: Makefile,v 1.18.2.2 2005/07/12 20:37:06 kennykb Exp $
 #
 ########################################################################################################
 
@@ -21,17 +22,13 @@ EXTRA_CONFIGURE_ARGS 	?=
 EXTRA_MAKE_ARGS		?= 
 
 INSTALL_PATH		?= /Library/Frameworks
-PREFIX			?= /usr
+PREFIX			?= /usr/local
 BINDIR			?= ${PREFIX}/bin
+LIBDIR			?= ${INSTALL_PATH}
 MANDIR			?= ${PREFIX}/man
 
 # set to non-empty value to install manpages in addition to html help:
 INSTALL_MANPAGES 	?= 
-
-TCL_PACKAGE_PATH	?= "~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl \
-			    ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks \
-			    /System/Library/Frameworks"
-TCL_MODULE_PATH		?= "~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl"
 
 #-------------------------------------------------------------------------------------------------------
 # meta targets
@@ -49,7 +46,7 @@ install-%:		action := install-
 
 embedded		:= ${styles:%=embedded-%}
 embedded		: embedded-deploy
-install-embedded	:= $(embedded:%=install-%)
+install-embedded	:= ${embedded:%=install-%}
 install-embedded	: install-embedded-deploy
 
 clean			:= ${styles:%=clean-%}
@@ -68,15 +65,17 @@ targets			:= $(foreach v,${meta},${$v})
 #-------------------------------------------------------------------------------------------------------
 # build styles
 
+BUILD_STYLE		=
+CONFIGURE_ARGS		=
+OBJ_DIR			= ${OBJROOT}/${BUILD_STYLE}
+
 develop_make_args	:= BUILD_STYLE=Development CONFIGURE_ARGS=--enable-symbols
-deploy_make_args	:= BUILD_STYLE=Deployment \
-			   MAKE_ARGS=INSTALL_PROGRAM="'$$\$${INSTALL} $$\$${INSTALL_STRIP_PROGRAM}'" \
-			   MAKE_ARGS+=INSTALL_LIBRARY="'$$\$${INSTALL} $$\$${INSTALL_STRIP_LIBRARY}'" \
-			   MAKE_ARGS+=MEM_DEBUG_FLAGS="-DNDEBUG"
+deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install-strip \
+			   GENERIC_FLAGS=-DNDEBUG
 embedded_make_args	:= EMBEDDED_BUILD=1
 install_make_args	:= INSTALL_BUILD=1
 
-$(targets): 
+${targets}: 
 	${MAKE} ${action}${PROJECT} \
 	$(foreach s,${styles} embedded install,$(if $(findstring $s,$@),${${s}_make_args}))
 
@@ -87,148 +86,105 @@ PROJECT			:= tcl
 PRODUCT_NAME		:= Tcl
 
 UNIX_DIR		:= ${CURDIR}/../unix
-GENERIC_DIR		:= ${CURDIR}/../generic
+VERSION			:= $(shell awk -F= '/^TCL_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.in)
+TCLSH			:= tclsh${VERSION}
 
-PRODUCT_VERSION		:= $(shell eval $$(grep '^TCL_VERSION=' ${UNIX_DIR}/configure.in); \
-				echo "$${TCL_VERSION}")
-PRODUCT_LONGVERSION	:= $(shell eval $$(grep '^TCL_PATCH_LEVEL=' ${UNIX_DIR}/configure.in); \
-				echo "${PRODUCT_VERSION}$${TCL_PATCH_LEVEL}")
-YEAR                    := $(shell date +%Y)
+BUILD_TARGET		:= tclsh tcltest
+INSTALL_TARGET		:= install
 
-TARGETS			:= tclsh tcltest
-TCLSH			:= tclsh${PRODUCT_VERSION}
-TCL_EXE			?= ${SYMROOT}/${TCLSH}
-
-DYLIB_INSTALL_PATH	?= ${INSTALL_PATH}
-
-LIBDIR			:= ${INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${PRODUCT_VERSION}
-DYLIB_INSTALL_DIR	:= ${DYLIB_INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${PRODUCT_VERSION}
-INCLUDEDIR		:= ${LIBDIR}/Headers
-PRIVATEINCLUDEDIR	:= ${LIBDIR}/PrivateHeaders
-SCRIPTDIR		:= ${LIBDIR}/Resources/Scripts
-DOCDIR			:= ${LIBDIR}/Resources/Documentation/Reference
-INFOPLIST		:= ${LIBDIR}/Resources/Info.plist
-
-BUILD_STYLE		=
-OBJ_DIR			= ${OBJROOT}/${BUILD_STYLE}
-
-${PROJECT}:		override INSTALL_ROOT = ${OBJ_DIR}/
-
-MAKE_VARS		:= INSTALL_ROOT TCL_PACKAGE_PATH TCL_MODULE_PATH DYLIB_INSTALL_DIR
-MAKE_ARGS_V		= $(foreach v,${MAKE_VARS},$v=${$v})
+override GENERIC_FLAGS	:= ${GENERIC_FLAGS} -DTCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
 export CPPROG		:= cp -p
+
+INSTALL_TARGETS		= install-binaries install-libraries
+ifeq (${EMBEDDED_BUILD},)
+INSTALL_TARGETS		+= install-private-headers
+endif
+ifeq (${INSTALL_BUILD}_${EMBEDDED_BUILD}_${BUILD_STYLE},1__Deployment)
+INSTALL_TARGETS		+= html-tcl
+ifneq (${INSTALL_MANPAGES},)
+INSTALL_TARGETS		+= install-doc
+endif
+endif
+
+MAKE_VARS		:= INSTALL_ROOT INSTALL_TARGETS VERSION GENERIC_FLAGS
+MAKE_ARGS_V		= $(foreach v,${MAKE_VARS},$v='${$v}')
+
+build-${PROJECT}:	target = ${TARGET}
+install-${PROJECT}:	target = ${INSTALL_TARGET}
+clean-${PROJECT} distclean-${PROJECT} test-${PROJECT}: \
+			target = $*
+
+DO_MAKE			= +${MAKE} -C ${OBJ_DIR} ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
 
 #-------------------------------------------------------------------------------------------------------
 # build rules
 
-${PROJECT}: install-${PROJECT}
+${PROJECT}:
+	${MAKE} install-${PROJECT} INSTALL_ROOT=${OBJ_DIR}/
 
 ${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure
 	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && ${UNIX_DIR}/configure -C \
 	--prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} \
-	--includedir=${INCLUDEDIR} --mandir=${MANDIR} --enable-threads \
-	--enable-framework ${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}
-	cd ${OBJ_DIR} && mkdir -p ${PRODUCT_NAME}.framework && \
-	ln -fs ../${PRODUCT_NAME} ${PRODUCT_NAME}.framework/${PRODUCT_NAME}
+	--mandir=${MANDIR} --enable-threads --enable-framework \
+	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}
 
 build-${PROJECT}: ${OBJ_DIR}/Makefile
-	${MAKE} -C ${OBJ_DIR} ${TARGETS} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
+	${DO_MAKE}
 # symolic link hackery to trick
 # 'make install INSTALL_ROOT=${OBJ_DIR}'
 # into building Tcl.framework and tclsh in ${SYMROOT}
-	cd ${OBJ_DIR}; mkdir -p $(dir ./${INSTALL_PATH}) $(dir ./${BINDIR}) ${SYMROOT}; \
-	rm -f ./${INSTALL_PATH}; ln -fs ${SYMROOT} ./${INSTALL_PATH}; \
-	rm -f ./${BINDIR}; ln -fs ${SYMROOT} ./${BINDIR}; \
-	ln -fs ${OBJ_DIR}/tcltest ${SYMROOT}
-
-clean-${PROJECT}:
-	${MAKE} -C ${OBJ_DIR} clean ${EXTRA_MAKE_ARGS}
-
-distclean-${PROJECT}:
-	${MAKE} -C ${OBJ_DIR} distclean ${EXTRA_MAKE_ARGS}
-	rm -rf ${OBJ_DIR} ${PRODUCT_NAME}.framework tclsh${PRODUCT_VERSION} tcltest
-	
-test-${PROJECT}: build-${PROJECT}
-	${MAKE} -C ${OBJ_DIR} test ${EXTRA_MAKE_ARGS}
+	@cd ${OBJ_DIR} && mkdir -p $(dir ./${LIBDIR}) $(dir ./${BINDIR}) ${SYMROOT} && \
+	rm -f ./${LIBDIR} ./${BINDIR} && ln -fs ${SYMROOT} ./${LIBDIR} && \
+	ln -fs ${SYMROOT} ./${BINDIR} && ln -fs ${OBJ_DIR}/tcltest ${SYMROOT}
 
 install-${PROJECT}: build-${PROJECT}
-# install to ${INSTALL_ROOT} with optional stripping
-	${MAKE} -C ${OBJ_DIR} install-binaries install-libraries install-private-headers \
-	SCRIPT_INSTALL_DIR=${INSTALL_ROOT}${SCRIPTDIR} \
-	PRIVATE_INCLUDE_INSTALL_DIR=${INSTALL_ROOT}${PRIVATEINCLUDEDIR} \
-	${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
-ifeq (${BUILD_STYLE},Development)
-# keep copy of debug library around, so that
-# Deployment build can be installed on top
-# of Development build without overwriting
-# the debug library
-	cd ${INSTALL_ROOT}${LIBDIR} && ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"
+ifeq (${EMBEDDED_BUILD}_${INSTALL_ROOT},1_)
+	@echo "Cannot install-embedded with empty INSTALL_ROOT !" && false
 endif
-# fixup Framework structure
-	cd ${INSTALL_ROOT}${LIBDIR}/.. && \
-	rm -f Current && ln -fs ${PRODUCT_VERSION} Current && \
-	cd .. && ln -fs Versions/Current/* . && \
-	ln -fs Versions/${PRODUCT_VERSION}/lib*stub* .
+ifeq (${EMBEDDED_BUILD},1)
+	@rm -rf "${INSTALL_ROOT}/${LIBDIR}/Tcl.framework"
+endif
+	${DO_MAKE}
 ifeq (${INSTALL_BUILD},1)
 ifeq (${EMBEDDED_BUILD},1)
 # if we are embedding frameworks, don't install tclsh
-	rm -f "${INSTALL_ROOT}${BINDIR}/${TCLSH}"
-	-rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&-
+	@rm -f "${INSTALL_ROOT}${BINDIR}/${TCLSH}" && \
+	rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&- || true
 else
 # redo prebinding
-	cd ${INSTALL_ROOT}/; \
-	if [ ! -d usr/lib ]; then mkdir -p usr; ln -fs /usr/lib usr/; RM_USRLIB=1; fi; \
-	if [ ! -d System ]; then ln -fs /System .; RM_SYSTEM=1; fi; \
+	@cd ${INSTALL_ROOT}/ && \
+	if [ ! -d usr/lib ]; then mkdir -p usr && ln -fs /usr/lib usr/ && RM_USRLIB=1; fi; \
+	if [ ! -d System ]; then ln -fs /System . && RM_SYSTEM=1; fi; \
+	redo_prebinding -r . "./${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}/${PRODUCT_NAME}"; \
 	redo_prebinding -r . "./${BINDIR}/${TCLSH}"; \
 	if [ -n "$${RM_USRLIB:-}" ]; then rm -f usr/lib; rmdir -p usr 2>&-; fi; \
 	if [ -n "$${RM_SYSTEM:-}" ]; then rm -f System; fi
 # install tclsh symbolic link
-	ln -fs ${TCLSH} ${INSTALL_ROOT}${BINDIR}/tclsh
-ifeq (${BUILD_STYLE},Deployment)
-ifneq (${INSTALL_MANPAGES},)
-# install manpages
-	${MAKE} -C ${OBJ_DIR} install-doc ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
-endif
-# build html documentation
-	export DYLD_FRAMEWORK_PATH=${SYMROOT} && \
-	${MAKE} -C ${OBJ_DIR} html-tcl ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS} \
-	DISTDIR=${INSTALL_ROOT}${DOCDIR} TCL_EXE=${TCL_EXE} && \
-	cd ${INSTALL_ROOT}${DOCDIR} && ln -fs contents.htm html/${PRODUCT_NAME}TOC.html && \
-	rm -fr "${PRODUCT_NAME}" && mv -f html "${PRODUCT_NAME}"
+	@ln -fs ${TCLSH} ${INSTALL_ROOT}${BINDIR}/tclsh
 endif
 endif
+ifeq (${BUILD_STYLE}_${EMBEDDED_BUILD},Development_)
+# keep copy of debug library around, so that
+# Deployment build can be installed on top
+# of Development build without overwriting
+# the debug library
+	@cd ${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION} && \
+	ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"
 endif
-# write Info.plist file
-	@printf > ${INSTALL_ROOT}${INFOPLIST} '\
-	<?xml version="1.0" encoding="UTF-8"?>\n\
-	<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"\
-	"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n\
-	<plist version="1.0">\n\
-	<dict>\n\
-		<key>CFBundleDevelopmentRegion</key>\n\
-		<string>English</string>\n\
-		<key>CFBundleExecutable</key>\n\
-		<string>Tcl</string>\n\
-		<key>CFBundleGetInfoString</key>\n\
-		<string>Tcl Library ${PRODUCT_VERSION}, Copyright © ${YEAR} Tcl Core Team.\n\
-	MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright\
-	© 2001-2002, Apple Computer, Inc.</string>\n\
-		<key>CFBundleIdentifier</key>\n\
-		<string>com.tcltk.tcllibrary</string>\n\
-		<key>CFBundleInfoDictionaryVersion</key>\n\
-		<string>6.0</string>\n\
-		<key>CFBundleName</key>\n\
-		<string>Tcl Library ${PRODUCT_VERSION}</string>\n\
-		<key>CFBundlePackageType</key>\n\
-		<string>FMWK</string>\n\
-		<key>CFBundleShortVersionString</key>\n\
-		<string>${PRODUCT_LONGVERSION}</string>\n\
-		<key>CFBundleSignature</key>\n\
-		<string>Tcl </string>\n\
-		<key>CFBundleVersion</key>\n\
-		<string>${PRODUCT_LONGVERSION}</string>\n\
-	</dict>\n\
-	</plist>\n'
+
+clean-${PROJECT}: %-${PROJECT}:
+	${DO_MAKE}
+	rm -rf ${SYMROOT}/{${PRODUCT_NAME}.framework,${TCLSH},tcltest}
+	rm -f ${OBJ_DIR}{${LIBDIR},${BINDIR}} && \
+	rmdir -p ${OBJ_DIR}$(dir ${LIBDIR}) 2>&- || true && \
+	rmdir -p ${OBJ_DIR}$(dir ${BINDIR}) 2>&- || true
+
+distclean-${PROJECT}: %-${PROJECT}: clean-${PROJECT}
+	${DO_MAKE}
+	rm -rf ${OBJ_DIR}
+	
+test-${PROJECT}: %-${PROJECT}: build-${PROJECT}
+	${DO_MAKE}
 
 #-------------------------------------------------------------------------------------------------------
 
