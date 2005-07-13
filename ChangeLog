@@ -1,3 +1,11 @@
+2005-07-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixSock.c:	Use a ProcessGlobalValue to store the
+	* win/tclWinSock.c:	value returned by Tcl_GetHostName()
+	([info hostname]).  Also re-order initialization of the value
+	on Windows to favor GetComputerName() over gethostname() as
+	a source of the information.
+
 2005-07-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/lsearch.n: Clarify documentation of -exact option; wording was
