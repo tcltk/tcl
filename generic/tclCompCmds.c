@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.75 2005/06/20 23:10:23 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.76 2005/07/13 20:33:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -72,7 +72,7 @@
  * Macro to get the offset to the next instruction to be issued. The ANSI C
  * "prototype" for this macro is:
  *
- * static int	TokenAfter(CompileEnv *envPtr);
+ * static int	CurrentOffset(CompileEnv *envPtr);
  */
 
 #define CurrentOffset(envPtr) \
