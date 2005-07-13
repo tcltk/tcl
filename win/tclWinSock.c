@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.46 2005/05/10 18:35:41 kennykb Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.47 2005/07/13 20:01:02 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -28,13 +28,15 @@
  */
 
 static int initialized = 0;
-
-static int  hostnameInitialized = 0;
-static char hostname[255];	/* This buffer should be big enough for
-                                 * hostname plus domain name. */
-
 TCL_DECLARE_MUTEX(socketMutex)
 
+/*
+ * The following variable holds the network name of this host.
+ */
+
+static TclInitProcessGlobalValueProc    InitializeHostName;
+static ProcessGlobalValue hostName =
+	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
 /*
  * Mingw, Cygwin and OpenWatcom may not have LPFN_* typedefs.
@@ -598,7 +600,6 @@ SocketExitHandler(clientData)
 	winSock.hModule = NULL;
     }
     initialized = 0;
-    hostnameInitialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
 
@@ -2520,12 +2521,11 @@ SocketProc(hwnd, message, wParam, lParam)
  *	Returns the name of the local host.
  *
  * Results:
- *	A string containing the network name for this machine, or
- *	an empty string if we can't figure out the name.  The caller 
- *	must not modify or free this string.
+ *	A string containing the network name for this machine.
+ *	The caller must not modify or free this string.
  *
  * Side effects:
- *	None.
+ *	Caches the name to return for future calls.
  *
  *----------------------------------------------------------------------
  */
@@ -2533,49 +2533,58 @@ SocketProc(hwnd, message, wParam, lParam)
 CONST char *
 Tcl_GetHostName()
 {
-    DWORD length;
+    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitializeHostName --
+ *
+ *      This routine sets the process global value of the name of
+ *      the local host on which the process is running.
+ *
+ * Results:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+InitializeHostName(valuePtr, lengthPtr, encodingPtr)
+    char **valuePtr;
+    int *lengthPtr;
+    Tcl_Encoding *encodingPtr;
+{
     WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD length = sizeof(wbuf) / sizeof(WCHAR);
+    Tcl_DString ds;
 
-    Tcl_MutexLock(&socketMutex);
-    InitSockets();
-
-    if (hostnameInitialized) {
-	Tcl_MutexUnlock(&socketMutex);
-        return hostname;
-    }
-    Tcl_MutexUnlock(&socketMutex);
-	
-    if (TclpHasSockets(NULL) == TCL_OK) {
-	/*
-	 * INTL: bug
-	 */
-
-	if (winSock.gethostname(hostname, sizeof(hostname)) == 0) {
-	    Tcl_MutexLock(&socketMutex);
-	    hostnameInitialized = 1;
-	    Tcl_MutexUnlock(&socketMutex);
-	    return hostname;
-	}
-    }
-    Tcl_MutexLock(&socketMutex);
-    length = sizeof(hostname);
     if ((*tclWinProcs->getComputerNameProc)(wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
-
-	Tcl_DString ds;
-
-	lstrcpynA(hostname, Tcl_WinTCharToUtf((TCHAR *) wbuf, -1, &ds),
-		sizeof(hostname));
-	Tcl_DStringFree(&ds);
-	Tcl_UtfToLower(hostname);
-    } else {
-	hostname[0] = '\0';
+	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *) wbuf, -1, &ds));
+    } else if (TclpHasSockets(NULL) == TCL_OK) {
+	/*
+	 * Buffer length of 255 copied slavishly from previous version
+	 * of this routine.  Presumably there's a more "correct" macro
+	 * value for a properly sized buffer for a gethostname() call.
+	 * Maintainers are welcome to supply it.
+	 */
+	Tcl_DStringInit(&ds);
+	Tcl_DStringSetLength(&ds, 255);
+	if (winSock.gethostname(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds))
+		== 0) {
+	    Tcl_DStringSetLength(&ds, 0);
+	}
     }
-    hostnameInitialized = 1;
-    Tcl_MutexUnlock(&socketMutex);
-    return hostname;
+    *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
+    *lengthPtr = Tcl_DStringLength(&ds);
+    *valuePtr = ckalloc((unsigned int) (*lengthPtr)+1);
+    memcpy((VOID *) *valuePtr, (VOID *) Tcl_DStringValue(&ds),
+	    (size_t)(*lengthPtr)+1);
+    Tcl_DStringFree(&ds);
 }
 
 /*
