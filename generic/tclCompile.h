@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.57 2005/07/14 10:50:26 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.58 2005/07/14 12:12:39 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -565,7 +565,7 @@ typedef enum InstOperandType {
     OPERAND_INT4,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
     OPERAND_UINT4,		/* Four byte unsigned integer. */
-    OPERAND_IDX4		/* Four byte signed index (actually an
+    OPERAND_IDX4,		/* Four byte signed index (actually an
 				 * integer, but displayed differently.) */
     OPERAND_LVT1,		/* One byte unsigned index into the local
 				 * variable table. */
