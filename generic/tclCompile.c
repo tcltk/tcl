@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.88 2005/07/14 10:50:25 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.89 2005/07/14 13:41:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -336,8 +336,8 @@ static int		SetByteCodeFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 
 /*
- * The structure below defines the bytecode Tcl object type by
- * means of procedures that can be invoked by generic object code.
+ * The structure below defines the bytecode Tcl object type by means of
+ * procedures that can be invoked by generic object code.
  */
 
 Tcl_ObjType tclByteCodeType = {
@@ -939,8 +939,8 @@ TclCompileScript(interp, script, numBytes, envPtr)
     }
 
     /*
-     * Each iteration through the following loop compiles the next
-     * command from the script.
+     * Each iteration through the following loop compiles the next command
+     * from the script.
      */
 
     p = script;
@@ -1482,8 +1482,8 @@ TclCompileCmdWord(interp, tokenPtr, count, envPtr)
 {
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
 	/*
-	 * Handle the common case: if there is a single text token,
-	 * compile it into an inline sequence of instructions.
+	 * Handle the common case: if there is a single text token, compile it
+	 * into an inline sequence of instructions.
 	 */
 
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
@@ -1803,7 +1803,7 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	localVar = procPtr->numCompiledLocals;
 	localPtr = (CompiledLocal *) ckalloc((unsigned)
 		(sizeof(CompiledLocal) - sizeof(localPtr->name)
-		+ nameBytes+1));
+		+ nameBytes + 1));
 	if (procPtr->firstLocalPtr == NULL) {
 	    procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	} else {
@@ -1853,8 +1853,9 @@ TclExpandCodeArray(envArgPtr)
     void *envArgPtr;		/* Points to the CompileEnv whose code array
 				 * must be enlarged. */
 {
-    CompileEnv *envPtr = (CompileEnv*) envArgPtr;	/* Points to the CompileEnv whose code array
-							 * must be enlarged. */
+    CompileEnv *envPtr = (CompileEnv*) envArgPtr;
+				/* The CompileEnv containing the code array to
+				 * be doubled in size. */
 
     /*
      * envPtr->codeNext is equal to envPtr->codeEnd. The currently defined
@@ -2478,7 +2479,7 @@ void
 TclRegisterAuxDataType(typePtr)
     AuxDataType *typePtr;	/* Information about object type; storage must
 				 * be statically allocated (must live
-				 * forever). */
+				 * forever; will not be deallocated). */
 {
     register Tcl_HashEntry *hPtr;
     int new;
@@ -3213,8 +3214,8 @@ TclPrintInstruction(codePtr, pc)
  *
  * TclPrintObject --
  *
- *	This procedure prints up to a specified number of characters from
- *	the argument Tcl object's string representation to a specified file.
+ *	This procedure prints up to a specified number of characters from the
+ *	argument Tcl object's string representation to a specified file.
  *
  * Results:
  *	None.
