@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.56 2005/06/20 21:27:12 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.57 2005/07/14 10:50:26 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -567,6 +567,10 @@ typedef enum InstOperandType {
     OPERAND_UINT4,		/* Four byte unsigned integer. */
     OPERAND_IDX4		/* Four byte signed index (actually an
 				 * integer, but displayed differently.) */
+    OPERAND_LVT1,		/* One byte unsigned index into the local
+				 * variable table. */
+    OPERAND_LVT4		/* Four byte unsigned index into the local
+				 * variable table. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -801,6 +805,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 #define LITERAL_ON_HEAP    0x01
 #define LITERAL_NS_SCOPE   0x02
+
 /*
  * Form of TclRegisterLiteral with onHeap == 0. In that case, it is safe to
  * cast away CONSTness, and it is cleanest to do that here, all in one place.
