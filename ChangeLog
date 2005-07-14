@@ -1,3 +1,10 @@
+2005-07-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompile.c: Update to follow style guidelines.
+	(TclPrintInstruction): Reorganize to do better printing out of
+	bytecode with far fewer "special hacks" for particular opcodes.
+	* generic/tclCompile.h: Requires two new opcode types.
+
 2005-07-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/tclUnixSock.c:	Use a ProcessGlobalValue to store the
