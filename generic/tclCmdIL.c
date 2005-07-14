@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.76 2005/06/01 11:00:34 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.77 2005/07/14 12:17:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -796,7 +796,7 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
 	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    Tcl_HashTable *tablePtr;
+	    Tcl_HashTable *tablePtr = NULL;	/* Quell warning */
 
 	    for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 		Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
