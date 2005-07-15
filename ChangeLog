@@ -1,3 +1,16 @@
+2005-07-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (TclClockLocaltimeObjCmd,ThreadSafeLocalTime):
+	* library/clock.tcl (GuessWindowsTimeZone, ClearCaches):
+	* tests/clock.test (clock-49.1, clock-49.2):
+	Handle correctly the case where localtime() returns NULL to
+	report a conversion error.  Also handle the case where the Windows
+	registry contains timezone values that can be mapped to a tzdata
+	file name but the corresponding file does not exist or is
+	corrupted, by falling back on a Posix timezone string instead;
+	this last case will avoid calls to localtime() in starpacks on
+	Windows. [Bug 1237907]
+	
 2005-07-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCompile.c: Update to follow style guidelines.
