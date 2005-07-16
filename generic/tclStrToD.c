@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.6 2005/07/05 11:37:02 dkf Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.7 2005/07/16 21:29:23 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -675,6 +675,8 @@ RefineResult(double approxResult, /* Approximate result of conversion. */
      */
 
     if (mp_cmp_mag(&twoMd, &twoMv) == MP_LT) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
 	return approxResult;
     }
 

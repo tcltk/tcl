@@ -1,3 +1,8 @@
+2005-07-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (RefineResult):  Plugged a stupid memory
+	leak in RefineResult (called from Tcl_StrToD).  [Tk Bug 1227781]
+	
 2005-07-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (TclClockLocaltimeObjCmd,ThreadSafeLocalTime):
