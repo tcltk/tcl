@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.64 2005/07/17 21:17:30 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.65 2005/07/17 21:46:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1554,8 +1554,8 @@ StoreStatData(interp, varName, statPtr)
      * cast might fail when there isn't a real arithmentic 'long long' type...
      */
 
-    STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
     STORE_ARY("dev",	Tcl_NewLongObj((long)statPtr->st_dev));
+    STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
     STORE_ARY("nlink",	Tcl_NewLongObj((long)statPtr->st_nlink));
     STORE_ARY("uid",	Tcl_NewLongObj((long)statPtr->st_uid));
     STORE_ARY("gid",	Tcl_NewLongObj((long)statPtr->st_gid));
