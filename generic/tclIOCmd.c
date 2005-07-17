@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.29 2005/07/17 21:54:32 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.30 2005/07/17 22:06:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1395,9 +1395,10 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	host = Tcl_GetString(objv[a]);
 	a++;
     } else {
-	Interp *iPtr = (Interp *) interp;
+	Interp *iPtr;
 
     wrongNumArgs:
+	iPtr = (Interp *) interp;
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-myaddr addr? ?-myport myport? ?-async? host port");
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
