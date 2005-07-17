@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.79 2005/07/15 15:53:52 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.80 2005/07/17 21:17:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -459,7 +459,7 @@ Tcl_PushCallFrame(interp, callFramePtr, namespacePtr, isProcCallFrame)
     } else {
 	framePtr->level = 1;
     }
-    framePtr->procPtr = NULL; 	   /* no called procedure */
+    framePtr->procPtr = NULL;	   /* no called procedure */
     framePtr->varTablePtr = NULL;  /* and no local variables */
     framePtr->numCompiledLocals = 0;
     framePtr->compiledLocals = NULL;
@@ -741,18 +741,17 @@ ErrorInfoRead(clientData, interp, name1, name2, flags)
 
 Tcl_Namespace *
 Tcl_CreateNamespace(interp, name, clientData, deleteProc)
-    Tcl_Interp *interp;		    /* Interpreter in which a new namespace is
-				     * being created. Also used for error
-				     * reporting. */
-    CONST char *name;		    /* Name for the new namespace. May be a
-				     * qualified name with names of ancestor
-				     * namespaces separated by "::"s. */
-    ClientData clientData;	    /* One-word value to store with
-				     * namespace. */
+    Tcl_Interp *interp;		/* Interpreter in which a new namespace is
+				 * being created. Also used for error
+				 * reporting. */
+    CONST char *name;		/* Name for the new namespace. May be a
+				 * qualified name with names of ancestor
+				 * namespaces separated by "::"s. */
+    ClientData clientData;	/* One-word value to store with namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
-    				    /* Function called to delete client data
-				     * when the namespace is deleted. NULL if
-				     * no function should be called. */
+				/* Function called to delete client data when
+				 * the namespace is deleted.  NULL if no
+				 * function should be called. */
 {
     Interp *iPtr = (Interp *) interp;
     register Namespace *nsPtr, *ancestorPtr;
@@ -807,7 +806,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 
 	if (Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL) {
 	    Tcl_AppendResult(interp, "can't create namespace \"", name,
-    	    	    "\": already exists", (char *) NULL);
+		    "\": already exists", (char *) NULL);
 	    return NULL;
 	}
     }
@@ -924,18 +923,19 @@ Tcl_DeleteNamespace(namespacePtr)
     Tcl_HashEntry *entryPtr;
 
     /*
-     * If the namespace has associated ensemble commands, delete them
-     * first.  This leaves the actual contents of the namespace alone
-     * (unless they are linked ensemble commands, of course.)  Note
-     * that this code is actually reentrant so command delete traces
-     * won't purturb things badly.
+     * If the namespace has associated ensemble commands, delete them first.
+     * This leaves the actual contents of the namespace alone (unless they are
+     * linked ensemble commands, of course.)  Note that this code is actually
+     * reentrant so command delete traces won't purturb things badly.
      */
 
     while (nsPtr->ensembles != NULL) {
+	EnsembleConfig *ensemblePtr = (EnsembleConfig *) nsPtr->ensembles;
+
 	/*
 	 * Splice out and link to indicate that we've already been killed.
 	 */
-	EnsembleConfig *ensemblePtr = (EnsembleConfig *) nsPtr->ensembles;
+
 	nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
 	ensemblePtr->next = ensemblePtr;
 	Tcl_DeleteCommandFromToken(nsPtr->interp, ensemblePtr->token);
@@ -1353,12 +1353,12 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 
 int
 Tcl_AppendExportList(interp, namespacePtr, objPtr)
-    Tcl_Interp *interp;		 /* Interpreter used for error reporting. */
-    Tcl_Namespace *namespacePtr; /* Points to the namespace whose export
-				  * pattern list is appended onto objPtr.
-				  * NULL for the current namespace. */
-    Tcl_Obj *objPtr;		 /* Points to the Tcl object onto which the
-				  * export pattern list is appended. */
+    Tcl_Interp *interp;		/* Interpreter used for error reporting. */
+    Tcl_Namespace *namespacePtr;/* Points to the namespace whose export
+				 * pattern list is appended onto objPtr. NULL
+				 * for the current namespace. */
+    Tcl_Obj *objPtr;		/* Points to the Tcl object onto which the
+				 * export pattern list is appended. */
 {
     Namespace *nsPtr;
     int i, result;
@@ -1415,18 +1415,18 @@ Tcl_AppendExportList(interp, namespacePtr, objPtr)
 
 int
 Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
-    Tcl_Interp *interp;		 /* Current interpreter. */
-    Tcl_Namespace *namespacePtr; /* Points to the namespace into which the
-				  * commands are to be imported. NULL for the
-				  * current namespace. */
-    CONST char *pattern;	 /* String pattern indicating which commands
-				  * to import. This pattern should be
-				  * qualified by the name of the namespace
-				  * from which to import the command(s). */
-    int allowOverwrite;		 /* If nonzero, allow existing commands to be
-				  * overwritten by imported commands. If 0,
-				  * return an error if an imported cmd
-				  * conflicts with an existing one. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    Tcl_Namespace *namespacePtr;/* Points to the namespace into which the
+				 * commands are to be imported. NULL for the
+				 * current namespace. */
+    CONST char *pattern;	/* String pattern indicating which commands to
+				 * import. This pattern should be qualified by
+				 * the name of the namespace from which to
+				 * import the command(s). */
+    int allowOverwrite;		/* If nonzero, allow existing commands to be
+				 * overwritten by imported commands. If 0,
+				 * return an error if an imported cmd
+				 * conflicts with an existing one. */
 {
     Namespace *nsPtr, *importNsPtr, *dummyPtr;
     CONST char *simplePattern;
@@ -1445,8 +1445,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 
     /*
      * First, invoke the "auto_import" command with the pattern being
-     * imported.  This command is part of the Tcl library.  It looks for
-     * imported commands in autoloaded libraries and loads them in.  That way,
+     * imported. This command is part of the Tcl library. It looks for
+     * imported commands in autoloaded libraries and loads them in. That way,
      * they will be found when we try to create links below.
      *
      * Note that we don't just call Tcl_EvalObjv() directly because we do not
@@ -1529,6 +1529,25 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoImport --
+ *
+ *	Import a particular command from one namespace into another. Helper
+ *	for Tcl_Import().
+ *
+ * Results:
+ *	Standard Tcl result code. If TCL_ERROR, appends an error message to
+ *	the interpreter result.
+ *
+ * Side effects:
+ *	A new command is created in the target namespace unless this is a
+ *	reimport of exactly the same command as before.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 DoImport(interp, nsPtr, hPtr, cmdName, pattern, importNsPtr, allowOverwrite)
@@ -1648,19 +1667,19 @@ DoImport(interp, nsPtr, hPtr, cmdName, pattern, importNsPtr, allowOverwrite)
  *
  *	Deletes commands previously imported into the namespace indicated.
  *	The by namespacePtr, or the current namespace of interp, when
- *	namespacePtr is NULL.  The pattern controls which imported commands
- *	are deleted. A simple pattern, one without namespace separators,
- *	matches the current command names of imported commands in the
- *	namespace. Matching imported commands are deleted. A qualified pattern
- *	is interpreted as deletion selection on the basis of where the command
- *	is imported from. The original command and "first link" command for
- *	each imported command are determined, and they are matched against the
- *	pattern.  A match leads to deletion of the imported command.
+ *	namespacePtr is NULL. The pattern controls which imported commands are
+ *	deleted. A simple pattern, one without namespace separators, matches
+ *	the current command names of imported commands in the namespace.
+ *	Matching imported commands are deleted. A qualified pattern is
+ *	interpreted as deletion selection on the basis of where the command is
+ *	imported from. The original command and "first link" command for each
+ *	imported command are determined, and they are matched against the
+ *	pattern. A match leads to deletion of the imported command.
  *
  * Results:
- * 	Returns TCL_ERROR and records an error message in the interp result if
- * 	a namespace qualified pattern refers to a namespace that does not
- * 	exist. Otherwise, returns TCL_OK.
+ *	Returns TCL_ERROR and records an error message in the interp result if
+ *	a namespace qualified pattern refers to a namespace that does not
+ *	exist. Otherwise, returns TCL_OK.
  *
  * Side effects:
  *	May delete commands.
@@ -1670,12 +1689,12 @@ DoImport(interp, nsPtr, hPtr, cmdName, pattern, importNsPtr, allowOverwrite)
 
 int
 Tcl_ForgetImport(interp, namespacePtr, pattern)
-    Tcl_Interp *interp;		 /* Current interpreter. */
-    Tcl_Namespace *namespacePtr; /* Points to the namespace from which
-				  * previously imported commands should be
-				  * removed. NULL for current namespace. */
-    CONST char *pattern;	 /* String pattern indicating which imported
-				  * commands to remove. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    Tcl_Namespace *namespacePtr;/* Points to the namespace from which
+				 * previously imported commands should be
+				 * removed. NULL for current namespace. */
+    CONST char *pattern;	/* String pattern indicating which imported
+				 * commands to remove. */
 {
     Namespace *nsPtr, *sourceNsPtr, *dummyPtr;
     CONST char *simplePattern;
@@ -1989,43 +2008,41 @@ DeleteImportedCmd(clientData)
 int
 TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	nsPtrPtr, altNsPtrPtr, actualCxtPtrPtr, simpleNamePtr)
-    Tcl_Interp *interp;		 /* Interpreter in which to find the namespace
-				  * containing qualName. */
-    CONST char *qualName;	 /* A namespace-qualified name of an command,
-				  * variable, or namespace. */
-    Namespace *cxtNsPtr;	 /* The namespace in which to start the search
-				  * for qualName's namespace. If NULL start
-				  * from the current namespace.  Ignored if
-				  * TCL_GLOBAL_ONLY is set. */
-    int flags;			 /* Flags controlling the search: an OR'd
-				  * combination of TCL_GLOBAL_ONLY,
-				  * TCL_NAMESPACE_ONLY,
-				  * TCL_CREATE_NS_IF_UNKNOWN, and
-				  * TCL_FIND_ONLY_NS. */
-    Namespace **nsPtrPtr;	 /* Address where function stores a pointer to
-				  * containing namespace if qualName is found
-				  * starting from *cxtNsPtr or, if
-				  * TCL_GLOBAL_ONLY is set, if qualName is
-				  * found in the global :: namespace. NULL is
-				  * stored otherwise. */
-    Namespace **altNsPtrPtr;	 /* Address where function stores a pointer to
-				  * containing namespace if qualName is found
-				  * starting from the global :: namespace.
-				  * NULL is stored if qualName isn't found
-				  * starting from :: or if the
-				  * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				  * TCL_CREATE_NS_IF_UNKNOWN, TCL_FIND_ONLY_NS
-				  * flag is set. */
-    Namespace **actualCxtPtrPtr; /* Address where function stores a pointer to
-				  * the actual namespace from which the search
-				  * started. This is either cxtNsPtr, the ::
-				  * namespace if TCL_GLOBAL_ONLY was
-				  * specified, or the current namespace if
-				  * cxtNsPtr was NULL. */
-    CONST char **simpleNamePtr;	 /* Address where function stores the simple
-				  * name at end of the qualName, or NULL if
-				  * qualName is "::" or the flag
-				  * TCL_FIND_ONLY_NS was specified. */
+    Tcl_Interp *interp;		/* Interpreter in which to find the namespace
+				 * containing qualName. */
+    CONST char *qualName;	/* A namespace-qualified name of an command,
+				 * variable, or namespace. */
+    Namespace *cxtNsPtr;	/* The namespace in which to start the search
+				 * for qualName's namespace. If NULL start
+				 * from the current namespace. Ignored if
+				 * TCL_GLOBAL_ONLY is set. */
+    int flags;			/* Flags controlling the search: an OR'd
+				 * combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, TCL_FIND_ONLY_NS, and
+				 * TCL_CREATE_NS_IF_UNKNOWN. */
+    Namespace **nsPtrPtr;	/* Address where function stores a pointer to
+				 * containing namespace if qualName is found
+				 * starting from *cxtNsPtr or, if
+				 * TCL_GLOBAL_ONLY is set, if qualName is
+				 * found in the global :: namespace. NULL is
+				 * stored otherwise. */
+    Namespace **altNsPtrPtr;	/* Address where function stores a pointer to
+				 * containing namespace if qualName is found
+				 * starting from the global :: namespace.
+				 * NULL is stored if qualName isn't found
+				 * starting from :: or if the TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, TCL_FIND_ONLY_NS,
+				 * TCL_CREATE_NS_IF_UNKNOWN flag is set. */
+    Namespace **actualCxtPtrPtr;/* Address where function stores a pointer to
+				 * the actual namespace from which the search
+				 * started. This is either cxtNsPtr, the ::
+				 * namespace if TCL_GLOBAL_ONLY was specified,
+				 * or the current namespace if cxtNsPtr was
+				 * NULL. */
+    CONST char **simpleNamePtr; /* Address where function stores the simple
+				 * name at end of the qualName, or NULL if
+				 * qualName is "::" or the flag
+				 * TCL_FIND_ONLY_NS was specified. */
 {
     Interp *iPtr = (Interp *) interp;
     Namespace *nsPtr = cxtNsPtr;
@@ -2222,7 +2239,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	nsPtr = NULL;
     }
 
-    *nsPtrPtr    = nsPtr;
+    *nsPtrPtr = nsPtr;
     *altNsPtrPtr = altNsPtr;
     Tcl_DStringFree(&buffer);
     return TCL_OK;
@@ -2248,21 +2265,21 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
 Tcl_Namespace *
 Tcl_FindNamespace(interp, name, contextNsPtr, flags)
-    Tcl_Interp *interp;		 /* The interpreter in which to find the
-				  * namespace. */
-    CONST char *name;		 /* Namespace name. If it starts with "::",
-				  * will be looked up in global namespace.
-				  * Else, looked up first in contextNsPtr
-				  * (current namespace if contextNsPtr is
-				  * NULL), then in global namespace. */
-    Tcl_Namespace *contextNsPtr; /* Ignored if TCL_GLOBAL_ONLY flag is set or
-				  * if the name starts with "::". Otherwise,
-				  * points to namespace in which to resolve
-				  * name; if NULL, look up name in the current
-				  * namespace. */
-    register int flags;		 /* Flags controlling namespace lookup: an
-				  * OR'd combination of TCL_GLOBAL_ONLY and
-				  * TCL_LEAVE_ERR_MSG flags. */
+    Tcl_Interp *interp;		/* The interpreter in which to find the
+				 * namespace. */
+    CONST char *name;		/* Namespace name. If it starts with "::",
+				 * will be looked up in global namespace.
+				 * Else, looked up first in contextNsPtr
+				 * (current namespace if contextNsPtr is
+				 * NULL), then in global namespace. */
+    Tcl_Namespace *contextNsPtr;/* Ignored if TCL_GLOBAL_ONLY flag is set or
+				 * if the name starts with "::". Otherwise,
+				 * points to namespace in which to resolve
+				 * name; if NULL, look up name in the current
+				 * namespace. */
+    register int flags;		/* Flags controlling namespace lookup: an OR'd
+				 * combination of TCL_GLOBAL_ONLY and
+				 * TCL_LEAVE_ERR_MSG flags. */
 {
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     CONST char *dummy;
@@ -2280,8 +2297,8 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 	return (Tcl_Namespace *) nsPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "unknown namespace \"", name,
-		"\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown namespace \"", name, "\"",
+		(char *) NULL);
     }
     return NULL;
 }
@@ -2307,25 +2324,25 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 
 Tcl_Command
 Tcl_FindCommand(interp, name, contextNsPtr, flags)
-    Tcl_Interp *interp;		 /* The interpreter in which to find the
-				  * command and to report errors. */
-    CONST char *name;		 /* Command's name. If it starts with "::",
-				  * will be looked up in global namespace.
-				  * Else, looked up first in contextNsPtr
-				  * (current namespace if contextNsPtr is
-				  * NULL), then in global namespace. */
-    Tcl_Namespace *contextNsPtr; /* Ignored if TCL_GLOBAL_ONLY flag set.
-				  * Otherwise, points to namespace in which to
-				  * resolve name. If NULL, look up name in the
-				  * current namespace. */
-    int flags;			 /* An OR'd combination of flags:
-				  * TCL_GLOBAL_ONLY (look up name only in
-				  * global namespace), TCL_NAMESPACE_ONLY
-				  * (look up only in contextNsPtr, or the
-				  * current namespace if contextNsPtr is
-				  * NULL), and TCL_LEAVE_ERR_MSG. If both
-				  * TCL_GLOBAL_ONLY and TCL_NAMESPACE_ONLY are
-				  * given, TCL_GLOBAL_ONLY is ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to find the
+				 * command and to report errors. */
+    CONST char *name;		/* Command's name. If it starts with "::",
+				 * will be looked up in global namespace.
+				 * Else, looked up first in contextNsPtr
+				 * (current namespace if contextNsPtr is
+				 * NULL), then in global namespace. */
+    Tcl_Namespace *contextNsPtr;/* Ignored if TCL_GLOBAL_ONLY flag set.
+				 * Otherwise, points to namespace in which to
+				 * resolve name. If NULL, look up name in the
+				 * current namespace. */
+    int flags;			/* An OR'd combination of flags:
+				 * TCL_GLOBAL_ONLY (look up name only in
+				 * global namespace), TCL_NAMESPACE_ONLY (look
+				 * up only in contextNsPtr, or the current
+				 * namespace if contextNsPtr is NULL), and
+				 * TCL_LEAVE_ERR_MSG. If both TCL_GLOBAL_ONLY
+				 * and TCL_NAMESPACE_ONLY are given,
+				 * TCL_GLOBAL_ONLY is ignored. */
 {
     Interp *iPtr = (Interp*)interp;
     Namespace *cxtNsPtr;
@@ -2490,25 +2507,25 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 
 Tcl_Var
 Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
-    Tcl_Interp *interp;		 /* The interpreter in which to find the
-				  * variable. */
-    CONST char *name;		 /* Variable's name. If it starts with "::",
-				  * will be looked up in global namespace.
-				  * Else, looked up first in contextNsPtr
-				  * (current namespace if contextNsPtr is
-				  * NULL), then in global namespace. */
-    Tcl_Namespace *contextNsPtr; /* Ignored if TCL_GLOBAL_ONLY flag set.
-				  * Otherwise, points to namespace in which to
-				  * resolve name. If NULL, look up name in the
-				  * current namespace. */
-    int flags;			 /* An OR'd combination of flags:
-				  * TCL_GLOBAL_ONLY (look up name only in
-				  * global namespace), TCL_NAMESPACE_ONLY
-				  * (look up only in contextNsPtr, or the
-				  * current namespace if contextNsPtr is
-				  * NULL), and TCL_LEAVE_ERR_MSG. If both
-				  * TCL_GLOBAL_ONLY and TCL_NAMESPACE_ONLY are
-				  * given, TCL_GLOBAL_ONLY is ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to find the
+				 * variable. */
+    CONST char *name;		/* Variable's name. If it starts with "::",
+				 * will be looked up in global namespace.
+				 * Else, looked up first in contextNsPtr
+				 * (current namespace if contextNsPtr is
+				 * NULL), then in global namespace. */
+    Tcl_Namespace *contextNsPtr;/* Ignored if TCL_GLOBAL_ONLY flag set.
+				 * Otherwise, points to namespace in which to
+				 * resolve name. If NULL, look up name in the
+				 * current namespace. */
+    int flags;			/* An OR'd combination of flags:
+				 * TCL_GLOBAL_ONLY (look up name only in
+				 * global namespace), TCL_NAMESPACE_ONLY (look
+				 * up only in contextNsPtr, or the current
+				 * namespace if contextNsPtr is NULL), and
+				 * TCL_LEAVE_ERR_MSG. If both TCL_GLOBAL_ONLY
+				 * and TCL_NAMESPACE_ONLY are given,
+				 * TCL_GLOBAL_ONLY is ignored. */
 {
     Interp *iPtr = (Interp*)interp;
     ResolverScheme *resPtr;
@@ -2585,8 +2602,8 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
 	return (Tcl_Var) varPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "unknown variable \"", name,
-		"\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown variable \"", name, "\"",
+		(char *) NULL);
     }
     return (Tcl_Var) NULL;
 }
@@ -2600,10 +2617,10 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
  *	command references that the new command may invalidate. Consider the
  *	following cases that could happen when you add a command "foo" to a
  *	namespace "b":
- *	   1. It could shadow a command named "foo" at the global scope.  If
+ *	   1. It could shadow a command named "foo" at the global scope. If
  *	      it does, all command references in the namespace "b" are
  *	      suspect.
- *	   2. Suppose the namespace "b" resides in a namespace "a".  Then to
+ *	   2. Suppose the namespace "b" resides in a namespace "a". Then to
  *	      "a" the new command "b::foo" could shadow another command
  *	      "b::foo" in the global namespace. If so, then all command
  *	      references in "a" * are suspect.
@@ -3385,8 +3402,8 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Make the specified namespace the current namespace and evaluate
-     * the command(s).
+     * Make the specified namespace the current namespace and evaluate the
+     * command(s).
      */
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
@@ -3397,7 +3414,8 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     framePtr->objc = objc;
-    framePtr->objv = objv;	/* ref counts do not need to be incremented here */
+    framePtr->objv = objv;	/* Reference counts do not need to be
+				 * incremented here. */
 
     if (objc == 4) {
 	result = Tcl_EvalObjEx(interp, objv[3], 0);
@@ -3439,9 +3457,9 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
  *
  * NamespaceExistsCmd --
  *
- *	Invoked to implement the "namespace exists" command that returns
- *	true if the given namespace currently exists, and false otherwise.
- *	Handles the following syntax:
+ *	Invoked to implement the "namespace exists" command that returns true
+ *	if the given namespace currently exists, and false otherwise.  Handles
+ *	the following syntax:
  *
  *	    namespace exists name
  *
@@ -3449,8 +3467,8 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
  *	Returns TCL_OK if successful, and TCL_ERROR if anything goes wrong.
  *
  * Side effects:
- *	Returns a result in the interpreter's result object. If anything
- *	goes wrong, the result is an error message.
+ *	Returns a result in the interpreter's result object. If anything goes
+ *	wrong, the result is an error message.
  *
  *----------------------------------------------------------------------
  */
@@ -3738,11 +3756,11 @@ NamespaceImportCmd(dummy, interp, objc, objv)
  *	arguments after the first onto the end as proper list elements.  For
  *	example,
  *
- *	    namespace inscope ::foo a b c d
+ *	    namespace inscope ::foo {a b} c d e
  *
  *	is equivalent to
  *
- *	    namespace eval ::foo [concat a [list b c d]]
+ *	    namespace eval ::foo [concat {a b} [list c d e]]
  *
  *	This lappend semantics is important because many callback scripts are
  *	actually prefixes.
@@ -4287,11 +4305,11 @@ NamespaceQualifiersCmd(dummy, interp, objc, objv)
  *	Invoked to implement the "namespace tail" command that returns the
  *	trailing name at the end of a string with "::" namespace qualifiers.
  *	These qualifiers are namespace names separated by "::"s. For example,
- *	for "::foo::p" this command returns "p", and for "::" it returns
- *	"". This command is the complement of the "namespace qualifiers"
- *	command. Note that this command does not check whether the "namespace"
- *	names are, in fact, the names of currently defined namespaces. Handles
- *	the following syntax:
+ *	for "::foo::p" this command returns "p", and for "::" it returns "".
+ *	This command is the complement of the "namespace qualifiers" command.
+ *	Note that this command does not check whether the "namespace" names
+ *	are, in fact, the names of currently defined namespaces. Handles the
+ *	following syntax:
  *
  *	    namespace tail string
  *
@@ -4365,7 +4383,7 @@ NamespaceTailCmd(dummy, interp, objc, objv)
 
 static int
 NamespaceWhichCmd(dummy, interp, objc, objv)
-     ClientData dummy;			/* Not used. */
+    ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
@@ -4390,6 +4408,7 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
 	    /*
 	     * Preserve old style of error message!
 	     */
+
 	    Tcl_ResetResult(interp);
 	    goto badArgs;
 	}
@@ -4399,6 +4418,7 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
     switch (lookupType) {
     case 0: {			/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
+
 	if (cmd != (Tcl_Command) NULL) {
 	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
 	}
@@ -4407,6 +4427,7 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
     case 1: {			/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
+
 	if (var != (Tcl_Var) NULL) {
 	    Tcl_GetVariableFullName(interp, var, resultPtr);
 	}
@@ -4876,6 +4897,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	/*
 	 * Tricky! Rely on the object result not being shared!
 	 */
+
 	Tcl_GetCommandFullName(interp, token, Tcl_GetObjResult(interp));
 	return TCL_OK;
     }
@@ -5006,10 +5028,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    Tcl_DictSearch search;
 	    Tcl_Obj *listObj;
 	    int done, len, allocatedMapFlag = 0;
-	    /*
-	     * Defaults
-	     */
-	    Tcl_Obj *subcmdObj, *mapObj, *unknownObj;
+	    Tcl_Obj *subcmdObj, *mapObj, *unknownObj;	/* Defaults */
 	    int permitPrefix, flags;
 
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &subcmdObj);
@@ -5048,9 +5067,11 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 		    continue;
 		case CONF_MAP: {
 		    Tcl_Obj *patchedDict = NULL, *subcmdObj;
+
 		    /*
 		     * Verify that the map is sensible.
 		     */
+
 		    if (Tcl_DictObjFirst(interp, objv[1], &search,
 			    &subcmdObj, &listObj, &done) != TCL_OK) {
 			if (allocatedMapFlag) {
@@ -5708,14 +5729,12 @@ Tcl_GetEnsembleNamespace(interp, token, namespacePtrPtr)
 
 Tcl_Command
 Tcl_FindEnsemble(interp, cmdNameObj, flags)
-    Tcl_Interp *interp;			/* Where to do the lookup, and where
-					 * to write the errors if
-					 * TCL_LEAVE_ERR_MSG is set in the
-					 * flags. */
-    Tcl_Obj *cmdNameObj;		/* Name of command to look up. */
-    int flags;				/* Either 0 or TCL_LEAVE_ERR_MSG;
-					 * other flags are probably not
-					 * useful. */
+    Tcl_Interp *interp;		/* Where to do the lookup, and where to write
+				 * the errors if TCL_LEAVE_ERR_MSG is set in
+				 * the flags. */
+    Tcl_Obj *cmdNameObj;	/* Name of command to look up. */
+    int flags;			/* Either 0 or TCL_LEAVE_ERR_MSG; other flags
+				 * are probably not useful. */
 {
     Command *cmdPtr;
 
@@ -5724,6 +5743,7 @@ Tcl_FindEnsemble(interp, cmdNameObj, flags)
     if (cmdPtr == NULL) {
 	return NULL;
     }
+
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	/*
 	 * Reuse existing infrastructure for following import link chains
@@ -5740,6 +5760,7 @@ Tcl_FindEnsemble(interp, cmdNameObj, flags)
 	    return NULL;
 	}
     }
+
     return (Tcl_Command) cmdPtr;
 }
 
@@ -5805,23 +5826,21 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];
 {
     EnsembleConfig *ensemblePtr = (EnsembleConfig *) clientData;
-					/* The ensemble itself. */
-    Tcl_Obj **tempObjv;			/* Space used to construct the list of
-					 * arguments to pass to the command
-					 * that implements the ensemble
-					 * subcommand. */
-    int result;				/* The result of the subcommand
-					 * execution. */
-    Tcl_Obj *prefixObj;			/* An object containing the prefix
-					 * words of the command that
-					 * implements the subcommand. */
-    Tcl_HashEntry *hPtr;		/* Used for efficient lookup of fully
-					 * specified but not yet cached
-					 * command names. */
-    Tcl_Obj **prefixObjv;		/* The list of objects to substitute
-					 * in as the target command prefix. */
-    int prefixObjc;			/* Size of prefixObjv of course! */
-    int reparseCount = 0;		/* Number of reparses. */
+				/* The ensemble itself. */
+    Tcl_Obj **tempObjv;		/* Space used to construct the list of
+				 * arguments to pass to the command that
+				 * implements the ensemble subcommand. */
+    int result;			/* The result of the subcommand execution. */
+    Tcl_Obj *prefixObj;		/* An object containing the prefix words of
+				 * the command that implements the
+				 * subcommand. */
+    Tcl_HashEntry *hPtr;	/* Used for efficient lookup of fully
+				 * specified but not yet cached command
+				 * names. */
+    Tcl_Obj **prefixObjv;	/* The list of objects to substitute in as the
+				 * target command prefix. */
+    int prefixObjc;		/* Size of prefixObjv of course! */
+    int reparseCount = 0;	/* Number of reparses. */
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?argument ...?");
@@ -5885,6 +5904,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	/*
 	 * Can't find and we are prohibited from using unambiguous prefixes.
 	 */
+
 	goto unknownOrAmbiguousSubcommand;
     } else {
 	/*
@@ -5893,10 +5913,10 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	 * matches.
 	 */
 
-	char *subcmdName;		/* Name of the subcommand, or unique
-					 * prefix of it (will be an error for
-					 * a non-unique prefix). */
-	char *fullName = NULL;		/* Full name of the subcommand. */
+	char *subcmdName;	/* Name of the subcommand, or unique prefix of
+				 * it (will be an error for a non-unique
+				 * prefix). */
+	char *fullName = NULL;	/* Full name of the subcommand. */
 	int stringLength, i;
 	int tableLength = ensemblePtr->subcommandTable.numEntries;
 
@@ -5914,6 +5934,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		     * our subcommand is an ambiguous prefix of (at least) two
 		     * exported subcommands, which is an error case.
 		     */
+
 		    goto unknownOrAmbiguousSubcommand;
 		}
 		fullName = ensemblePtr->subcommandArrayPtr[i];
@@ -5923,6 +5944,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		 * searching because we have gone past anything that could
 		 * possibly match.
 		 */
+
 		break;
 	    }
 	}
@@ -5930,6 +5952,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	    /*
 	     * The subcommand is not a prefix of anything, so bail out!
 	     */
+
 	    goto unknownOrAmbiguousSubcommand;
 	}
 	hPtr = Tcl_FindHashEntry(&ensemblePtr->subcommandTable, fullName);
@@ -6069,6 +6092,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		    break;
 		default: {
 		    char buf[TCL_INTEGER_SPACE];
+
 		    sprintf(buf, "%d", result);
 		    Tcl_AppendResult(interp, buf, NULL);
 		}
@@ -6095,7 +6119,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 
     Tcl_ResetResult(interp);
     if (ensemblePtr->subcommandTable.numEntries == 0) {
-	Tcl_AppendResult(interp, "unknown subcommand \"", TclGetString(objv[1]),
+	Tcl_AppendResult(interp, "unknown subcommand \"",TclGetString(objv[1]),
 		"\": namespace ", ensemblePtr->nsPtr->fullName,
 		" does not export any commands", NULL);
 	return TCL_ERROR;
@@ -6159,6 +6183,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
 	 * Kill the old internal rep, and replace it with a brand new one of
 	 * our own.
 	 */
+
 	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.otherValuePtr = (VOID *) ensembleCmd;
@@ -6296,9 +6321,9 @@ static void
 BuildEnsembleConfig(ensemblePtr)
     EnsembleConfig *ensemblePtr;
 {
-    Tcl_HashSearch search;		/* Used for scanning the set of
-					 * commands in the namespace that
-					 * backs up this ensemble. */
+    Tcl_HashSearch search;	/* Used for scanning the set of commands in
+				 * the namespace that backs up this
+				 * ensemble. */
     int i, j, isNew;
     Tcl_HashTable *hash = &ensemblePtr->subcommandTable;
     Tcl_HashEntry *hPtr;
@@ -6307,6 +6332,7 @@ BuildEnsembleConfig(ensemblePtr)
 	/*
 	 * Remove pre-existing table.
 	 */
+
 	Tcl_HashSearch search;
 
 	ckfree((char *)ensemblePtr->subcommandArrayPtr);
@@ -6630,3 +6656,11 @@ StringOfEnsembleCmdRep(objPtr)
     objPtr->bytes = ckalloc((unsigned) length+1);
     memcpy(objPtr->bytes, ensembleCmd->fullSubcmdName, (unsigned) length+1);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
