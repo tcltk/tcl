@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.120 2005/07/17 21:17:42 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.121 2005/07/17 22:04:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1597,7 +1597,7 @@ TclGetOpenModeEx(interp, modeString, seekFlagPtr, binaryPtr)
     if (Tcl_SplitList(interp, modeString, &modeArgc, &modeArgv) != TCL_OK) {
 	if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AddErrorInfo(interp,
-		    "\n	   while processing open access modes \"");
+		    "\n    while processing open access modes \"");
 	    Tcl_AddErrorInfo(interp, modeString);
 	    Tcl_AddErrorInfo(interp, "\"");
 	}
