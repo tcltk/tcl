@@ -6,8 +6,8 @@
  * Copyright (c) 1991-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * SCCS:  @(#) tclUnixThrd.c 1.18 98/02/19 14:24:12
  */
@@ -19,30 +19,29 @@
 #include "pthread.h"
 
 typedef struct ThreadSpecificData {
-    char	    	nabuf[16];
+    char nabuf[16];
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
 
 /*
- * masterLock is used to serialize creation of mutexes, condition
- * variables, and thread local storage.
- * This is the only place that can count on the ability to statically
- * initialize the mutex.
+ * masterLock is used to serialize creation of mutexes, condition variables,
+ * and thread local storage. This is the only place that can count on the
+ * ability to statically initialize the mutex.
  */
 
 static pthread_mutex_t masterLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
- * initLock is used to serialize initialization and finalization
- * of Tcl.  It cannot use any dyamically allocated storage.
+ * initLock is used to serialize initialization and finalization of Tcl. It
+ * cannot use any dyamically allocated storage.
  */
 
 static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
- * allocLock is used by Tcl's version of malloc for synchronization.
- * For obvious reasons, cannot use any dyamically allocated storage.
+ * allocLock is used by Tcl's version of malloc for synchronization. For
+ * obvious reasons, cannot use any dyamically allocated storage.
  */
 
 static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
@@ -66,8 +65,8 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
  *	This procedure creates a new thread.
  *
  * Results:
- *	TCL_OK if the thread could be created.  The thread ID is
- *	returned in a parameter.
+ *	TCL_OK if the thread could be created. The thread ID is returned in a
+ *	parameter.
  *
  * Side effects:
  *	A new thread is created.
@@ -81,8 +80,8 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
     int stackSize;			/* Size of stack for the new thread */
-    int flags;				/* Flags controlling behaviour of
-					 * the new thread */
+    int flags;				/* Flags controlling behaviour of the
+					 * new thread. */
 {
 #ifdef TCL_THREADS
     pthread_attr_t attr;
@@ -94,14 +93,14 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
     if (stackSize != TCL_THREAD_STACK_DEFAULT) {
-        pthread_attr_setstacksize(&attr, (size_t) stackSize);
+	pthread_attr_setstacksize(&attr, (size_t) stackSize);
 #ifdef TCL_THREAD_STACK_MIN
     } else {
-        /*
-	 * Certain systems define a thread stack size that by default is
-	 * too small for many operations.  The user has the option of
-	 * defining TCL_THREAD_STACK_MIN to a value large enough to work
-	 * for their needs.  This would look like (for 128K min stack):
+	/*
+	 * Certain systems define a thread stack size that by default is too
+	 * small for many operations. The user has the option of defining
+	 * TCL_THREAD_STACK_MIN to a value large enough to work for their
+	 * needs. This would look like (for 128K min stack):
 	 *    make MEM_DEBUG_FLAGS=-DTCL_THREAD_STACK_MIN=131072L
 	 *
 	 * This solution is not optimal, as we should allow the user to
@@ -109,7 +108,7 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 	 * down, and that would still leave the main thread at the default.
 	 */
 
-        size_t size;
+	size_t size;
 	result = pthread_attr_getstacksize(&attr, &size);
 	if (!result && (size < TCL_THREAD_STACK_MIN)) {
 	    pthread_attr_setstacksize(&attr, (size_t) TCL_THREAD_STACK_MIN);
@@ -118,7 +117,7 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     }
 #endif
     if (! (flags & TCL_THREAD_JOINABLE)) {
-        pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
+	pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
     }
 
 
@@ -149,18 +148,17 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
  *	TCL_OK if the wait was successful, TCL_ERROR else.
  *
  * Side effects:
- *	The result area is set to the exit code of the thread we
- *	waited upon.
+ *	The result area is set to the exit code of the thread we waited upon.
  *
  *----------------------------------------------------------------------
  */
 
 int
 Tcl_JoinThread(threadId, state)
-    Tcl_ThreadId threadId; /* Id of the thread to wait upon */
-    int*     state;        /* Reference to the storage the result
-			    * of the thread we wait upon will be
-			    * written into. */
+    Tcl_ThreadId threadId;	/* Id of the thread to wait upon. */
+    int *state;			/* Reference to the storage the result of the
+				 * thread we wait upon will be written
+				 * into. */
 {
 #ifdef TCL_THREADS
     int result;
@@ -237,10 +235,10 @@ TclpThreadGetStackSize()
     return (int) stackSize;
 #else
     /*
-     * Cannot determine the real stack size of this thread.  The
-     * caller might want to try looking at the process accounting
-     * limits instead.
+     * Cannot determine the real stack size of this thread. The caller might
+     * want to try looking at the process accounting limits instead.
      */
+
     return 0;
 #endif
 }
@@ -279,9 +277,9 @@ Tcl_GetCurrentThread()
  * TclpInitLock
  *
  *	This procedure is used to grab a lock that serializes initialization
- *	and finalization of Tcl.  On some platforms this may also initialize
- *	the mutex used to serialize creation of more mutexes and thread
- *	local storage keys.
+ *	and finalization of Tcl. On some platforms this may also initialize
+ *	the mutex used to serialize creation of more mutexes and thread local
+ *	storage keys.
  *
  * Results:
  *	None.
@@ -305,15 +303,15 @@ TclpInitLock()
  *
  * TclpFinalizeLock
  *
- *	This procedure is used to destroy all private resources used in
- *	this file.
+ *	This procedure is used to destroy all private resources used in this
+ *	file.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Destroys everything private.  TclpInitLock must be held
- *	entering this function.
+ *	Destroys everything private. TclpInitLock must be held entering this
+ *	function.
  *
  *----------------------------------------------------------------------
  */
@@ -324,9 +322,10 @@ TclFinalizeLock ()
 #ifdef TCL_THREADS
     /*
      * You do not need to destroy mutexes that were created with the
-     * PTHREAD_MUTEX_INITIALIZER macro.  These mutexes do not need
-     * any destruction: masterLock, allocLock, and initLock.
+     * PTHREAD_MUTEX_INITIALIZER macro. These mutexes do not need any
+     * destruction: masterLock, allocLock, and initLock.
      */
+
     pthread_mutex_unlock(&initLock);
 #endif
 }
@@ -336,8 +335,8 @@ TclFinalizeLock ()
  *
  * TclpInitUnlock
  *
- *	This procedure is used to release a lock that serializes initialization
- *	and finalization of Tcl.
+ *	This procedure is used to release a lock that serializes
+ *	initialization and finalization of Tcl.
  *
  * Results:
  *	None.
@@ -361,13 +360,12 @@ TclpInitUnlock()
  *
  * TclpMasterLock
  *
- *	This procedure is used to grab a lock that serializes creation
- *	and finalization of serialization objects.  This interface is
- *	only needed in finalization; it is hidden during
- *	creation of the objects.
+ *	This procedure is used to grab a lock that serializes creation and
+ *	finalization of serialization objects. This interface is only needed
+ *	in finalization; it is hidden during creation of the objects.
  *
- *	This lock must be different than the initLock because the
- *	initLock is held during creation of syncronization objects.
+ *	This lock must be different than the initLock because the initLock is
+ *	held during creation of syncronization objects.
  *
  * Results:
  *	None.
@@ -392,8 +390,8 @@ TclpMasterLock()
  *
  * TclpMasterUnlock
  *
- *	This procedure is used to release a lock that serializes creation
- *	and finalization of synchronization objects.
+ *	This procedure is used to release a lock that serializes creation and
+ *	finalization of synchronization objects.
  *
  * Results:
  *	None.
@@ -418,13 +416,13 @@ TclpMasterUnlock()
  *
  * Tcl_GetAllocMutex
  *
- *	This procedure returns a pointer to a statically initialized
- *	mutex for use by the memory allocator.  The alloctor must
- *	use this lock, because all other locks are allocated...
+ *	This procedure returns a pointer to a statically initialized mutex for
+ *	use by the memory allocator. The alloctor must use this lock, because
+ *	all other locks are allocated...
  *
  * Results:
- *	A pointer to a mutex that is suitable for passing to
- *	Tcl_MutexLock and Tcl_MutexUnlock.
+ *	A pointer to a mutex that is suitable for passing to Tcl_MutexLock and
+ *	Tcl_MutexUnlock.
  *
  * Side effects:
  *	None.
@@ -449,18 +447,18 @@ Tcl_GetAllocMutex()
  *
  * Tcl_MutexLock --
  *
- *	This procedure is invoked to lock a mutex.  This procedure
- *	handles initializing the mutex, if necessary.  The caller
- *	can rely on the fact that Tcl_Mutex is an opaque pointer.
- *	This routine will change that pointer from NULL after first use.
+ *	This procedure is invoked to lock a mutex. This procedure handles
+ *	initializing the mutex, if necessary. The caller can rely on the fact
+ *	that Tcl_Mutex is an opaque pointer. This routine will change that
+ *	pointer from NULL after first use.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	May block the current thread.  The mutex is aquired when
- *	this returns.  Will allocate memory for a pthread_mutex_t
- *	and initialize this the first time this Tcl_Mutex is used.
+ *	May block the current thread. The mutex is aquired when this returns.
+ *	Will allocate memory for a pthread_mutex_t and initialize this the
+ *	first time this Tcl_Mutex is used.
  *
  *----------------------------------------------------------------------
  */
@@ -494,8 +492,8 @@ Tcl_MutexLock(mutexPtr)
  *
  * Tcl_MutexUnlock --
  *
- *	This procedure is invoked to unlock a mutex.  The mutex must
- *	have been locked by Tcl_MutexLock.
+ *	This procedure is invoked to unlock a mutex. The mutex must have been
+ *	locked by Tcl_MutexLock.
  *
  * Results:
  *	None.
@@ -520,8 +518,8 @@ Tcl_MutexUnlock(mutexPtr)
  *
  * TclpFinalizeMutex --
  *
- *	This procedure is invoked to clean up one mutex.  This is only
- *	safe to call at the end of time.
+ *	This procedure is invoked to clean up one mutex. This is only safe to
+ *	call at the end of time.
  *
  *	This assumes the Master Lock is held.
  *
@@ -540,7 +538,7 @@ TclpFinalizeMutex(mutexPtr)
 {
     pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
     if (pmutexPtr != NULL) {
-        pthread_mutex_destroy(pmutexPtr);
+	pthread_mutex_destroy(pmutexPtr);
 	ckfree((char *)pmutexPtr);
 	*mutexPtr = NULL;
     }
@@ -552,22 +550,21 @@ TclpFinalizeMutex(mutexPtr)
  *
  * TclpThreadDataKeyInit --
  *
- *	This procedure initializes a thread specific data block key.
- *	Each thread has table of pointers to thread specific data.
- *	all threads agree on which table entry is used by each module.
- *	this is remembered in a "data key", that is just an index into
- *	this table.  To allow self initialization, the interface
- *	passes a pointer to this key and the first thread to use
- *	the key fills in the pointer to the key.  The key should be
- *	a process-wide static.
+ *	This procedure initializes a thread specific data block key. Each
+ *	thread has table of pointers to thread specific data. All threads
+ *	agree on which table entry is used by each module. This is remembered
+ *	in a "data key", that is just an index into this table. To allow self
+ *	initialization, the interface passes a pointer to this key and the
+ *	first thread to use the key fills in the pointer to the key. The key
+ *	should be a process-wide static.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Will allocate memory the first time this process calls for
- *	this key.  In this case it modifies its argument
- *	to hold the pointer to information about the key.
+ *	Will allocate memory the first time this process calls for this key.
+ *	In this case it modifies its argument to hold the pointer to
+ *	information about the key.
  *
  *----------------------------------------------------------------------
  */
@@ -581,7 +578,7 @@ TclpThreadDataKeyInit(keyPtr)
 
     MASTER_LOCK;
     if (*keyPtr == NULL) {
-	pkeyPtr = (pthread_key_t *)ckalloc(sizeof(pthread_key_t));
+	pkeyPtr = (pthread_key_t *) ckalloc(sizeof(pthread_key_t));
 	pthread_key_create(pkeyPtr, NULL);
 	*keyPtr = (Tcl_ThreadDataKey)pkeyPtr;
 	TclRememberDataKey(keyPtr);
@@ -597,8 +594,8 @@ TclpThreadDataKeyInit(keyPtr)
  *	This procedure returns a pointer to a block of thread local storage.
  *
  * Results:
- *	A thread-specific pointer to the data structure, or NULL
- *	if the memory has not been assigned to this key for this thread.
+ *	A thread-specific pointer to the data structure, or NULL if the memory
+ *	has not been assigned to this key for this thread.
  *
  * Side effects:
  *	None.
@@ -608,8 +605,8 @@ TclpThreadDataKeyInit(keyPtr)
 
 VOID *
 TclpThreadDataKeyGet(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (pthread_key_t **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
 {
     pthread_key_t *pkeyPtr = *(pthread_key_t **)keyPtr;
     if (pkeyPtr == NULL) {
@@ -631,16 +628,16 @@ TclpThreadDataKeyGet(keyPtr)
  *	None.
  *
  * Side effects:
- *	Sets up the thread so future calls to TclpThreadDataKeyGet with
- *	this key will return the data pointer.
+ *	Sets up the thread so future calls to TclpThreadDataKeyGet with this
+ *	key will return the data pointer.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclpThreadDataKeySet(keyPtr, data)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (pthread_key_t **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
     VOID *data;			/* Thread local storage */
 {
     pthread_key_t *pkeyPtr = *(pthread_key_t **)keyPtr;
@@ -652,8 +649,8 @@ TclpThreadDataKeySet(keyPtr, data)
  *
  * TclpFinalizeThreadData --
  *
- *	This procedure cleans up the thread-local storage.  This is
- *	called once for each thread.
+ *	This procedure cleans up the thread-local storage. This is called once
+ *	for each thread.
  *
  * Results:
  *	None.
@@ -686,9 +683,9 @@ TclpFinalizeThreadData(keyPtr)
  *
  * TclpFinalizeThreadDataKey --
  *
- *	This procedure is invoked to clean up one key.  This is a
- *	process-wide storage identifier.  The thread finalization code
- *	cleans up the thread local storage itself.
+ *	This procedure is invoked to clean up one key. This is a process-wide
+ *	storage identifier. The thread finalization code cleans up the thread
+ *	local storage itself.
  *
  *	This assumes the master lock is held.
  *
@@ -720,9 +717,9 @@ TclpFinalizeThreadDataKey(keyPtr)
  *
  * Tcl_ConditionWait --
  *
- *	This procedure is invoked to wait on a condition variable.
- *	The mutex is automically released as part of the wait, and
- *	automatically grabbed when the condition is signaled.
+ *	This procedure is invoked to wait on a condition variable. The mutex
+ *	is automically released as part of the wait, and automatically grabbed
+ *	when the condition is signaled.
  *
  *	The mutex must be held when this procedure is called.
  *
@@ -730,9 +727,9 @@ TclpFinalizeThreadDataKey(keyPtr)
  *	None.
  *
  * Side effects:
- *	May block the current thread.  The mutex is aquired when
- *	this returns.  Will allocate memory for a pthread_mutex_t
- *	and initialize this the first time this Tcl_Mutex is used.
+ *	May block the current thread. The mutex is aquired when this returns.
+ *	Will allocate memory for a pthread_mutex_t and initialize this the
+ *	first time this Tcl_Mutex is used.
  *
  *----------------------------------------------------------------------
  */
@@ -751,8 +748,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 	MASTER_LOCK;
 
 	/* 
-	 * Double check inside mutex to avoid race,
-	 * then initialize condition variable if necessary.
+	 * Double check inside mutex to avoid race, then initialize condition
+	 * variable if necessary.
 	 */
 
 	if (*condPtr == NULL) {
@@ -790,8 +787,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
  *
  *	This procedure is invoked to signal a condition variable.
  *
- *	The mutex must be held during this call to avoid races,
- *	but this interface does not enforce that.
+ *	The mutex must be held during this call to avoid races, but this
+ *	interface does not enforce that.
  *
  * Results:
  *	None.
@@ -822,8 +819,8 @@ Tcl_ConditionNotify(condPtr)
  *
  * TclpFinalizeCondition --
  *
- *	This procedure is invoked to clean up a condition variable.
- *	This is only safe to call at the end of time.
+ *	This procedure is invoked to clean up a condition variable. This is
+ *	only safe to call at the end of time.
  *
  *	This assumes the Master Lock is held.
  *
@@ -854,8 +851,8 @@ TclpFinalizeCondition(condPtr)
  *
  * TclpReaddir, TclpLocaltime, TclpGmtime, TclpInetNtoa --
  *
- *	These procedures replace core C versions to be used in a
- *	threaded environment.
+ *	These procedures replace core C versions to be used in a threaded
+ *	environment.
  *
  * Results:
  *	See documentation of C functions.
@@ -864,8 +861,9 @@ TclpFinalizeCondition(condPtr)
  *	See documentation of C functions.
  *
  * Notes:
- * 	TclpReaddir is no longer used by the core (see 1095909),
- * 	but it appears in the internal stubs table (see #589526).
+ *	TclpReaddir is no longer used by the core (see 1095909), but it
+ *	appears in the internal stubs table (see #589526).
+ *
  *----------------------------------------------------------------------
  */
 
@@ -881,8 +879,8 @@ TclpInetNtoa(struct in_addr addr)
 #ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     union {
-    	unsigned long l;
-    	unsigned char b[4];
+	unsigned long l;
+	unsigned char b[4];
     } u;
     
     u.l = (unsigned long) addr.s_addr;
@@ -892,17 +890,18 @@ TclpInetNtoa(struct in_addr addr)
     return inet_ntoa(addr);
 #endif
 }
-
+
 #ifdef TCL_THREADS
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
+
 #ifdef USE_THREAD_ALLOC
 static volatile int initialized = 0;
 static pthread_key_t	key;
 
 typedef struct allocMutex {
-    Tcl_Mutex       tlock;
+    Tcl_Mutex tlock;
     pthread_mutex_t plock;
 } allocMutex;
 
@@ -925,7 +924,9 @@ TclpFreeAllocMutex(mutex)
     Tcl_Mutex *mutex; /* The alloc mutex to free. */
 {
     allocMutex* lockPtr = (allocMutex*) mutex;
-    if (!lockPtr) return;
+    if (!lockPtr) {
+	return;
+    }
     pthread_mutex_destroy(&lockPtr->plock);
     free(lockPtr);
 }
@@ -934,17 +935,20 @@ void TclpFreeAllocCache(ptr)
     void *ptr;
 {
     if (ptr != NULL) {
-        /*
-         * Called by the pthread lib when a thread exits
-         */
-        TclFreeAllocCache(ptr);
+	/*
+	 * Called by the pthread lib when a thread exits
+	 */
+
+	TclFreeAllocCache(ptr);
+
     } else if (initialized) {
-        /*
-         * Called by us in TclFinalizeThreadAlloc() during
-         * the library finalization initiated from Tcl_Finalize()
-         */
-        pthread_key_delete(key);
-        initialized = 0;
+	/*
+	 * Called by us in TclFinalizeThreadAlloc() during the library
+	 * finalization initiated from Tcl_Finalize()
+	 */
+
+	pthread_key_delete(key);
+	initialized = 0;
     }
 }
 
@@ -967,6 +971,13 @@ TclpSetAllocCache(void *arg)
 {
     pthread_setspecific(key, arg);
 }
-
 #endif /* USE_THREAD_ALLOC */
 #endif /* TCL_THREADS */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
