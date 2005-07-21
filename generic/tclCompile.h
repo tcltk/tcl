@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.58 2005/07/14 12:12:39 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.59 2005/07/21 21:49:04 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -518,7 +518,7 @@ typedef struct ByteCode {
 
 /* TIP#90 - 'return' command. */
 
-#define INST_RETURN			98
+#define INST_RETURN_IMM			98
 
 /* TIP#123 - exponentiation operator. */
 
@@ -544,9 +544,26 @@ typedef struct ByteCode {
 #define INST_LIST_NOT_IN		107
 
 #define INST_PUSH_RETURN_OPTIONS	108
+#define INST_RETURN_STK			109
+
+/*
+ * Dictionary (TIP#111) related commands.
+ */
+
+#define INST_DICT_GET			110
+#define INST_DICT_SET			111
+#define INST_DICT_UNSET			112
+#define INST_DICT_INCR_IMM		113
+#define INST_DICT_APPEND		114
+#define INST_DICT_LAPPEND		115
+#define INST_DICT_FIRST			116
+#define INST_DICT_NEXT			117
+#define INST_DICT_DONE			118
+#define INST_DICT_UPDATE_START		119
+#define INST_DICT_UPDATE_END		120
 
 /* The last opcode */
-#define LAST_INST_OPCODE		108
+#define LAST_INST_OPCODE		120
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
