@@ -1,3 +1,12 @@
+2005-07-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictCmd): First run at a compiler 
+	* generic/tclExecute.c (TclExecuteByteCode): for dictionaries.
+	Also added an instruction to support 'finally'-like clauses, exposed
+	more of the dict guts to the rest of the core, and defined a few
+	tests to exercise more obscure parts of the compiler's operation that
+	were bugs during development.
+
 2005-07-21  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/ldAout.tcl (***REMOVED***):	Removed support for ancient
