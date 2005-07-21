@@ -1,3 +1,16 @@
+2005-07-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/ldAout.tcl (***REMOVED***):	Removed support for ancient
+	* unix/configure:			BSD's, IRIX 4, RISCos and
+	* unix/Makefile.in:			Ultrix.  Removed two files
+	* unix/tcl.m4:				whose code is used only on
+	* unix/tclLoadAout.c (***REMOVED***):	those antique platforms.
+
+	***POTENTIAL INCOMPATIBILITY*** if anyone actually uses those
+	platforms; it is to be noted though, that an error in the
+	installer has actually not caused a necessary file to be installed
+	on those platforms in several releases, and nobody's complained.
+	
 2005-07-16  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (RefineResult):  Plugged a stupid memory
