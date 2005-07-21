@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.25 2005/07/21 14:38:49 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.26 2005/07/21 16:58:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -503,7 +503,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
     if (iPtr->ensembleRewrite.sourceObjs != NULL) {
 	int toSkip = iPtr->ensembleRewrite.numInsertedObjs;
 	int toPrint = iPtr->ensembleRewrite.numRemovedObjs;
-	Tcl_Obj *origObjv = iPtr->ensembleRewrite.sourceObjs;
+	Tcl_Obj * CONST *origObjv = iPtr->ensembleRewrite.sourceObjs;
 
 	/*
 	 * We only know how to do rewriting if all the replaced objects are
