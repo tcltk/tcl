@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.119 2005/07/05 18:15:58 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.120 2005/07/21 21:50:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -309,6 +309,7 @@ TclIntStubs tclIntStubs = {
     TclBN_mp_init, /* 222 */
     TclBN_mp_read_radix, /* 223 */
     TclGetPlatform, /* 224 */
+    TclTraceDictPath, /* 225 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
