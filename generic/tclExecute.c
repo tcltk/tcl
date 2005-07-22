@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.196 2005/07/21 21:49:05 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.197 2005/07/22 23:56:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4866,9 +4866,7 @@ TclExecuteByteCode(interp, codePtr)
 	    result = Tcl_DictObjPutKeyList(interp, dictPtr, opnd, tosPtr-opnd,
 		    *tosPtr);
 	    break;
-	case INST_DICT_INCR_IMM: {
-	    long value;
-
+	case INST_DICT_INCR_IMM:
 	    cleanup = 1;
 	    opnd = TclGetInt4AtPtr(pc+1);
 	    result = Tcl_DictObjGet(interp, dictPtr, *tosPtr, &valPtr);
@@ -4877,17 +4875,35 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    if (valPtr == NULL) {
 		Tcl_DictObjPut(NULL, dictPtr, *tosPtr, Tcl_NewLongObj(opnd));
+	    } else if (valPtr->typePtr == &tclWideIntType) {
+		Tcl_WideInt wvalue;
+
+		Tcl_GetWideIntFromObj(NULL, valPtr, &wvalue);
+		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			Tcl_NewWideIntObj(wvalue + opnd));
+	    } else if (valPtr->typePtr == &tclIntType) {
+		long value;
+
+		Tcl_GetLongFromObj(NULL, valPtr, &value);
+		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			Tcl_NewLongObj(value + opnd));
 	    } else {
-#warning non-long incrementing broken
-		result = Tcl_GetLongFromObj(interp, valPtr, &value);
+		long value;
+		Tcl_WideInt wvalue;
+
+		REQUIRE_WIDE_OR_INT(result, valPtr, value, wvalue);
 		if (result != TCL_OK) {
 		    break;
 		}
-		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
-			Tcl_NewLongObj(value + opnd));
+		if (valPtr->typePtr == &tclWideIntType) {
+		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			    Tcl_NewWideIntObj(wvalue + opnd));
+		} else {
+		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			    Tcl_NewLongObj(value + opnd));
+		}
 	    }
 	    break;
-	}
 	case INST_DICT_UNSET:
 	    cleanup = opnd;
 	    result = Tcl_DictObjRemoveKeyList(interp, dictPtr, opnd,
