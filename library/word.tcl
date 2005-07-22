@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: word.tcl,v 1.7 2002/11/01 00:28:51 andreas_kupries Exp $
+# RCS: @(#) $Id: word.tcl,v 1.7.2.1 2005/07/22 21:59:41 dgp Exp $
 
 # The following variables are used to determine which characters are
 # interpreted as white space.  
 
-if {[string equal $::tcl_platform(platform) "windows"]} {
+if {$::tcl_platform(platform) eq "windows"} {
     # Windows style - any but a unicode space char
     set tcl_wordchars "\\S"
     set tcl_nonwordchars "\\s"
@@ -58,7 +58,7 @@ proc tcl_wordBreakAfter {str start} {
 
 proc tcl_wordBreakBefore {str start} {
     global tcl_nonwordchars tcl_wordchars
-    if {[string equal $start end]} {
+    if {$start eq "end"} {
 	set start [string length $str]
     }
     if {[regexp -indices "^.*($tcl_wordchars$tcl_nonwordchars|$tcl_nonwordchars$tcl_wordchars)" [string range $str 0 $start] result]} {
@@ -120,7 +120,7 @@ proc tcl_startOfNextWord {str start} {
 
 proc tcl_startOfPreviousWord {str start} {
     global tcl_nonwordchars tcl_wordchars
-    if {[string equal $start end]} {
+    if {$start eq "end"} {
 	set start [string length $str]
     }
     if {[regexp -indices \
