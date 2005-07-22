@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# RCS: @(#) $Id: history.tcl,v 1.5 2001/05/17 08:18:56 hobbs Exp $
+# RCS: @(#) $Id: history.tcl,v 1.5.14.1 2005/07/22 21:59:40 dgp Exp $
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #
@@ -168,14 +168,14 @@ proc history {args} {
     variable history
 
     # Do not add empty commands to the history
-    if {[string trim $command] == ""} {
+    if {[string trim $command] eq ""} {
 	return ""
     }
 
     set i [incr history(nextid)]
     set history($i) $command
     set j [incr history(oldest)]
-    if {[info exists history($j)]} {unset history($j)}
+    unset -nocomplain history($j)
     if {[string match e* $exec]} {
 	return [uplevel #0 $command]
     } else {
@@ -198,13 +198,13 @@ proc history {args} {
 
  proc tcl::HistKeep {{limit {}}} {
     variable history
-    if {[string length $limit] == 0} {
+    if {$limit eq ""} {
 	return $history(keep)
     } else {
 	set oldold $history(oldest)
 	set history(oldest) [expr {$history(nextid) - $limit}]
 	for {} {$oldold <= $history(oldest)} {incr oldold} {
-	    if {[info exists history($oldold)]} {unset history($oldold)}
+	    unset -nocomplain history($oldold)
 	}
 	set history(keep) $limit
     }
@@ -246,7 +246,7 @@ proc history {args} {
 
  proc tcl::HistInfo {{num {}}} {
     variable history
-    if {$num == {}} {
+    if {$num eq ""} {
 	set num [expr {$history(keep) + 1}]
     }
     set result {}
@@ -256,8 +256,7 @@ proc history {args} {
 	if {![info exists history($i)]} {
 	    continue
 	}
-	set cmd [string trimright $history($i) \ \n]
-	regsub -all \n $cmd "\n\t" cmd
+	set cmd [string map [list \n \n\t] [string trimright $history($i) \ \n]]
 	append result $newline[format "%6d  %s" $i $cmd]
 	set newline \n
     }
@@ -281,7 +280,7 @@ proc history {args} {
 
  proc tcl::HistRedo {{event -1}} {
     variable history
-    if {[string length $event] == 0} {
+    if {$event eq ""} {
 	set event -1
     }
     set i [HistIndex $event]
