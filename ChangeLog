@@ -1,4 +1,13 @@
-2005-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
+2005-07-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl:	Updates to the Tcl script library to make
+	* library/history.tcl:	use of Tcl 8.4 features.  Forward port of
+	* library/init.tcl:	appropriate portions of [Patch 1237755].
+	* library/package.tcl:
+	* library/safe.tcl:
+	* library/word.tcl:
+
+2005-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/string.test: Add string is tests for
 	functionality that was not tested.
