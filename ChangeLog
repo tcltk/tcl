@@ -1,3 +1,10 @@
+2005-07-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/string.test: Add string is tests for
+	functionality that was not tested.
+	* win/README: Update msys + mingw URL.
+	Remove old Cygwin + mingw info.
+
 2005-07-23  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_DICT_*): stop 2 compiler
