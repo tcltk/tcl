@@ -680,18 +680,17 @@ AC_DEFUN(SC_WITH_TCL, [
     AC_SUBST(TCL_BIN_DIR)
 ])
 
-# FIXME : SC_PROG_TCLSH should really look for the installed tclsh and
-# not the build version. If we want to use the build version in the
-# tk script, it is better to hardcode that!
-
 #------------------------------------------------------------------------
 # SC_PROG_TCLSH
-#	Locate a tclsh shell in the following directories:
-#		${exec_prefix}/bin
-#		${prefix}/bin
-#		${TCL_BIN_DIR}
-#		${TCL_BIN_DIR}/../bin
-#		${PATH}
+#	Locate a tclsh shell installed on the system path. This macro
+#	will only find a Tcl shell that already exists on the system.
+#	It will not find a Tcl shell in the Tcl build directory or
+#	a Tcl shell that has been installed from the Tcl build directory.
+#	If a Tcl shell can't be located on the PATH, then TCLSH_PROG will
+#	be set to "". Extensions should take care not to create Makefile
+#	rules that are run by default and depend on TCLSH_PROG. An
+#	extension can't assume that an executable Tcl shell exists at
+#	build time.
 #
 # Arguments
 #	none
@@ -705,7 +704,7 @@ AC_DEFUN(SC_PROG_TCLSH, [
     AC_MSG_CHECKING([for tclsh])
 
     AC_CACHE_VAL(ac_cv_path_tclsh, [
-	search_path=`echo ${exec_prefix}/bin:${prefix}/bin:${TCL_BIN_DIR}:${TCL_BIN_DIR}/../bin:${PATH} | sed -e 's/:/ /g'`
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
 	for dir in $search_path ; do
 	    for j in `ls -r $dir/tclsh[[8-9]]*.exe 2> /dev/null` \
 		    `ls -r $dir/tclsh* 2> /dev/null` ; do
@@ -722,13 +721,35 @@ AC_DEFUN(SC_PROG_TCLSH, [
     if test -f "$ac_cv_path_tclsh" ; then
 	TCLSH_PROG="$ac_cv_path_tclsh"
 	AC_MSG_RESULT($TCLSH_PROG)
-    elif test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
-	# One-tree build.
-	ac_cv_path_tclsh="$TCL_BIN_DIR/tclsh"
-	TCLSH_PROG="$ac_cv_path_tclsh"
-	AC_MSG_RESULT($TCLSH_PROG)
     else
-	AC_MSG_ERROR(No tclsh found in PATH:  $search_path)
+	# It is not an error if an installed version of Tcl can't be located.
+	TCLSH_PROG=""
+	AC_MSG_RESULT([No tclsh found on PATH])
     fi
     AC_SUBST(TCLSH_PROG)
 ])
+
+#------------------------------------------------------------------------
+# SC_BUILD_TCLSH
+#	Determine the fully qualified path name of the tclsh executable
+#	in the Tcl build directory. This macro will correctly determine
+#	the name of the tclsh executable even if tclsh has not yet
+#	been built in the build directory. The build tclsh must be used
+#	when running tests from an extension build directory. It is not
+#	correct to use the TCLSH_PROG in cases like this.
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		BUILD_TCLSH
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_BUILD_TCLSH, [
+    AC_MSG_CHECKING([for tclsh in Tcl build directory])
+    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${TCL_DBGX}${EXEEXT}
+    AC_MSG_RESULT($BUILD_TCLSH)
+    AC_SUBST(BUILD_TCLSH)
+])
+
