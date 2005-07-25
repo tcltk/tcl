@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.47 2005/07/24 22:56:47 dkf Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.48 2005/07/25 13:29:42 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -33,11 +33,11 @@ static int		GetWinFileAttributes(Tcl_Interp *interp, int objIndex,
 static int		GetWinFileLongName(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
 static int		GetWinFileShortName(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr));
+			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
 static int		SetWinFileAttributes(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
 static int		CannotSetAttribute(Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj *attributePtr));
+			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
 
 /*
  * Constants and variables necessary for file attributes subcommand.
