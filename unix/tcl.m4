@@ -307,6 +307,79 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 ])
 
 #------------------------------------------------------------------------
+# SC_PROG_TCLSH
+#	Locate a tclsh shell installed on the system path. This macro
+#	will only find a Tcl shell that already exists on the system.
+#	It will not find a Tcl shell in the Tcl build directory or
+#	a Tcl shell that has been installed from the Tcl build directory.
+#	If a Tcl shell can't be located on the PATH, then TCLSH_PROG will
+#	be set to "". Extensions should take care not to create Makefile
+#	rules that are run by default and depend on TCLSH_PROG. An
+#	extension can't assume that an executable Tcl shell exists at
+#	build time.
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		TCLSH_PROG
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_PROG_TCLSH, [
+    AC_MSG_CHECKING([for tclsh])
+
+    AC_CACHE_VAL(ac_cv_path_tclsh, [
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/tclsh[[8-9]]* 2> /dev/null` \
+		    `ls -r $dir/tclsh* 2> /dev/null` ; do
+		if test x"$ac_cv_path_tclsh" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_tclsh=$j
+			break
+		    fi
+		fi
+	    done
+	done
+    ])
+
+    if test -f "$ac_cv_path_tclsh" ; then
+	TCLSH_PROG="$ac_cv_path_tclsh"
+	AC_MSG_RESULT($TCLSH_PROG)
+    else
+	# It is not an error if an installed version of Tcl can't be located.
+	TCLSH_PROG=""
+	AC_MSG_RESULT([No tclsh found on PATH])
+    fi
+    AC_SUBST(TCLSH_PROG)
+])
+
+#------------------------------------------------------------------------
+# SC_BUILD_TCLSH
+#	Determine the fully qualified path name of the tclsh executable
+#	in the Tcl build directory. This macro will correctly determine
+#	the name of the tclsh executable even if tclsh has not yet
+#	been built in the build directory. The build tclsh must be used
+#	when running tests from an extension build directory. It is not
+#	correct to use the TCLSH_PROG in cases like this.
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		BUILD_TCLSH
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_BUILD_TCLSH, [
+    AC_MSG_CHECKING([for tclsh in Tcl build directory])
+    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh
+    AC_MSG_RESULT($BUILD_TCLSH)
+    AC_SUBST(BUILD_TCLSH)
+])
+
+#------------------------------------------------------------------------
 # SC_ENABLE_SHARED --
 #
 #	Allows the building of shared libraries
