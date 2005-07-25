@@ -1,3 +1,17 @@
+2005-07-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_PROG_TCLSH, SC_BUILD_TCLSH):
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_PROG_TCLSH, SC_BUILD_TCLSH):
+	Split confused search for tclsh on PATH and
+	build and install locations into two macros.
+	SC_PROG_TCLSH searches just the PATH.
+	SC_BUILD_TCLSH determines the name of the tclsh
+	executable in the Tcl build directory.
+	[Tcl bug 1160114]
+	[Tcl patch 1244153]
+
 2005-07-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl:	Updates to the Tcl script library to make
