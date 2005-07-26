@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.39 2005/07/26 16:21:31 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.40 2005/07/26 16:24:35 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2240,7 +2240,7 @@ test trace-34.3 {Bug 1224585} {
 test trace-34.4 {Bug 1047286} {
     variable x notrace
     proc callback {old - -} {
-        variable x "$old exists" [namespace which -command $old]"
+        variable x "$old exists: [namespace which -command $old]"
     }
     namespace eval ::foo {proc bar {} {}}
     trace add command ::foo::bar delete [namespace code callback]
