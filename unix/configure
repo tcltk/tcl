@@ -13691,6 +13691,13 @@ else
     TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
+# If a system share directory like /usr/local/share already exists, then add
+# it to the package search path.
+
+if test -d "${prefix}/share" ; then
+    TCL_PACKAGE_PATH="${TCL_PACKAGE_PATH} ${prefix}/share"
+fi
+
 #--------------------------------------------------------------------
 #       The statements below define various symbols relating to Tcl
 #       stub support.
