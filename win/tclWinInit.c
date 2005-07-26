@@ -7,7 +7,10 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.6 2004/12/09 23:01:38 dgp Exp $
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ *
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.7 2005/07/26 04:12:35 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,8 +28,8 @@
 /*
  * The following declaration is a workaround for some Microsoft brain damage.
  * The SYSTEM_INFO structure is different in various releases, even though the
- * layout is the same.  So we overlay our own structure on top of it so we
- * can access the interesting slots in a uniform way.
+ * layout is the same. So we overlay our own structure on top of it so we can
+ * access the interesting slots in a uniform way.
  */
 
 typedef struct {
@@ -39,40 +42,40 @@ typedef struct {
  */
 
 #ifndef PROCESSOR_ARCHITECTURE_INTEL
-#define PROCESSOR_ARCHITECTURE_INTEL 0
+#define PROCESSOR_ARCHITECTURE_INTEL		0
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_MIPS
-#define PROCESSOR_ARCHITECTURE_MIPS  1
+#define PROCESSOR_ARCHITECTURE_MIPS		1
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_ALPHA
-#define PROCESSOR_ARCHITECTURE_ALPHA 2
+#define PROCESSOR_ARCHITECTURE_ALPHA		2
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_PPC
-#define PROCESSOR_ARCHITECTURE_PPC   3
+#define PROCESSOR_ARCHITECTURE_PPC		3
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_SHX
-#define PROCESSOR_ARCHITECTURE_SHX   4
+#define PROCESSOR_ARCHITECTURE_SHX		4
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_ARM
-#define PROCESSOR_ARCHITECTURE_ARM   5
+#define PROCESSOR_ARCHITECTURE_ARM		5
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_IA64
-#define PROCESSOR_ARCHITECTURE_IA64  6
+#define PROCESSOR_ARCHITECTURE_IA64		6
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_ALPHA64
-#define PROCESSOR_ARCHITECTURE_ALPHA64 7
+#define PROCESSOR_ARCHITECTURE_ALPHA64		7
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_MSIL
-#define PROCESSOR_ARCHITECTURE_MSIL  8
+#define PROCESSOR_ARCHITECTURE_MSIL		8
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_AMD64
-#define PROCESSOR_ARCHITECTURE_AMD64 9
+#define PROCESSOR_ARCHITECTURE_AMD64		9
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_IA32_ON_WIN64
-#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64 10
+#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64	10
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
-#define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF
+#define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
 #endif
 
 /*
@@ -95,6 +98,7 @@ static char* processors[NUMPROCESSORS] = {
 /*
  * The default directory in which the init.tcl file is expected to be found.
  */
+
 static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
 static ProcessGlobalValue defaultLibraryDir =
 	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
@@ -127,14 +131,13 @@ TclpInitPlatform()
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
     /*
-     * The following code stops Windows 3.X and Windows NT 3.51 from 
-     * automatically putting up Sharing Violation dialogs, e.g, when 
-     * someone tries to access a file that is locked or a drive with no 
-     * disk in it.  Tcl already returns the appropriate error to the 
-     * caller, and they can decide to put up their own dialog in response 
-     * to that failure.  
+     * The following code stops Windows 3.X and Windows NT 3.51 from
+     * automatically putting up Sharing Violation dialogs, e.g, when someone
+     * tries to access a file that is locked or a drive with no disk in it.
+     * Tcl already returns the appropriate error to the caller, and they can
+     * decide to put up their own dialog in response to that failure.
      *
-     * Under 95 and NT 4.0, this is a NOOP because the system doesn't 
+     * Under 95 and NT 4.0, this is a NOOP because the system doesn't
      * automatically put up dialogs when the above operations fail.
      */
 
@@ -142,9 +145,9 @@ TclpInitPlatform()
 
 #ifdef STATIC_BUILD
     /*
-     * If we are in a statically linked executable, then we need to
-     * explicitly initialize the Windows function tables here since
-     * DllMain() will not be invoked.
+     * If we are in a statically linked executable, then we need to explicitly
+     * initialize the Windows function tables here since DllMain() will not be
+     * invoked.
      */
 
     TclWinInit(GetModuleHandle(NULL));
@@ -156,15 +159,14 @@ TclpInitPlatform()
  *
  * TclpInitLibraryPath --
  *
- *      This is the fallback routine that sets the library path
- *      if the application has not set one by the first time
- *      it is needed.
+ *	This is the fallback routine that sets the library path if the
+ *	application has not set one by the first time it is needed.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      Sets the library path to an initial value.  
+ *	Sets the library path to an initial value.  
  *
  *-------------------------------------------------------------------------
  */  
@@ -183,7 +185,7 @@ TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
     pathPtr = Tcl_NewObj();
 
     /*
-     * Initialize the substring used when locating the script library.  The
+     * Initialize the substring used when locating the script library. The
      * installLib variable computes the script library path relative to the
      * installed DLL.
      */
@@ -191,10 +193,10 @@ TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
 
     /*
-     * Look for the library relative to the TCL_LIBRARY env variable.
-     * If the last dirname in the TCL_LIBRARY path does not match the
-     * last dirname in the installLib variable, use the last dir name
-     * of installLib in addition to the orginal TCL_LIBRARY path.
+     * Look for the library relative to the TCL_LIBRARY env variable. If the
+     * last dirname in the TCL_LIBRARY path does not match the last dirname in
+     * the installLib variable, use the last dir name of installLib in
+     * addition to the orginal TCL_LIBRARY path.
      */
 
     AppendEnvironment(pathPtr, installLib);
@@ -202,6 +204,7 @@ TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
     /*
      * Look for the library in its default location.
      */
+
     Tcl_ListObjAppendElement(NULL, pathPtr,
 	    TclGetProcessGlobalValue(&defaultLibraryDir));
 
@@ -217,9 +220,9 @@ TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
  *
  * AppendEnvironment --
  *
- *	Append the value of the TCL_LIBRARY environment variable onto the
- *	path pointer.  If the env variable points to another version of
- *	tcl (e.g. "tcl7.6") also append the path to this version (e.g.,
+ *	Append the value of the TCL_LIBRARY environment variable onto the path
+ *	pointer. If the env variable points to another version of tcl (e.g.
+ *	"tcl7.6") also append the path to this version (e.g.,
  *	"tcl7.6/../tcl8.2")
  *
  * Results:
@@ -245,10 +248,10 @@ AppendEnvironment(
     char *shortlib;
 
     /*
-     * The shortlib value needs to be the tail component of the
-     * lib path. For example, "lib/tcl8.4" -> "tcl8.4" while
-     * "usr/share/tcl8.5" -> "tcl8.5".
+     * The shortlib value needs to be the tail component of the lib path. For
+     * example, "lib/tcl8.4" -> "tcl8.4" while "usr/share/tcl8.5" -> "tcl8.5".
      */
+
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
 	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
@@ -263,8 +266,8 @@ AppendEnvironment(
     }
 
     /*
-     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
-     * that this is a unicode string.
+     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++ that
+     * this is a unicode string.
      */
 
     if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
@@ -282,18 +285,18 @@ AppendEnvironment(
 	Tcl_SplitPath(buf, &pathc, &pathv);
 
 	/* 
-	 * The lstrcmpi() will work even if pathv[pathc - 1] is random
-	 * UTF-8 chars because I know shortlib is ascii.
+	 * The lstrcmpi() will work even if pathv[pathc-1] is random UTF-8
+	 * chars because I know shortlib is ascii.
 	 */
 
 	if ((pathc > 0) && (lstrcmpiA(shortlib, pathv[pathc - 1]) != 0)) {
 	    CONST char *str;
+
 	    /*
-	     * TCL_LIBRARY is set but refers to a different tcl
-	     * installation than the current version.  Try fiddling with the
-	     * specified directory to make it refer to this installation by
-	     * removing the old "tclX.Y" and substituting the current
-	     * version string.
+	     * TCL_LIBRARY is set but refers to a different tcl installation
+	     * than the current version. Try fiddling with the specified
+	     * directory to make it refer to this installation by removing the
+	     * old "tclX.Y" and substituting the current version string.
 	     */
 
 	    pathv[pathc - 1] = shortlib;
@@ -314,8 +317,8 @@ AppendEnvironment(
  *
  * InitializeDefaultLibraryDir --
  *
- *	Locate the Tcl script library default location relative to
- *	the location of the Tcl DLL.
+ *	Locate the Tcl script library default location relative to the
+ *	location of the Tcl DLL.
  *
  * Results:
  *	None.
@@ -342,13 +345,15 @@ InitializeDefaultLibraryDir(valuePtr, lengthPtr, encodingPtr)
     } else {
 	ToUtf(wName, name);
     }
-	end = strrchr(name, '\\');
-	*end = '\0';
-	p = strrchr(name, '\\');
-	if (p != NULL) {
-	    end = p;
-	}
-	*end = '\\';
+
+    end = strrchr(name, '\\');
+    *end = '\0';
+    p = strrchr(name, '\\');
+    if (p != NULL) {
+	end = p;
+    }
+    *end = '\\';
+
     TclWinNoBackslash(name);
     sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
     *lengthPtr = strlen(name);
@@ -394,10 +399,10 @@ ToUtf(
  *
  * TclWinEncodingsCleanup --
  *
- *	Reset information to its original state in finalization to
- *	allow for reinitialization to be possible.  This must not
- *	be called until after the filesystem has been finalised, or
- *	exit crashes may occur when using virtual filesystems.
+ *	Reset information to its original state in finalization to allow for
+ *	reinitialization to be possible. This must not be called until after
+ *	the filesystem has been finalised, or exit crashes may occur when
+ *	using virtual filesystems.
  *
  * Results:
  *	None.
@@ -419,21 +424,21 @@ TclWinEncodingsCleanup()
  *
  * TclpSetInitialEncodings --
  *
- *	Based on the locale, determine the encoding of the operating
- *	system and the default encoding for newly opened files.
+ *	Based on the locale, determine the encoding of the operating system
+ *	and the default encoding for newly opened files.
  *
- *	Called at process initialization time, and part way through
- *	startup, we verify that the initial encodings were correctly
- *	setup.  Depending on Tcl's environment, there may not have been
- *	enough information first time through (above).
+ *	Called at process initialization time, and part way through startup,
+ *	we verify that the initial encodings were correctly setup. Depending
+ *	on Tcl's environment, there may not have been enough information first
+ *	time through (above).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The Tcl library path is converted from native encoding to UTF-8,
- *	on the first call, and the encodings may be changed on first or
- *	second call.
+ *	The Tcl library path is converted from native encoding to UTF-8, on
+ *	the first call, and the encodings may be changed on first or second
+ *	call.
  *
  *---------------------------------------------------------------------------
  */
@@ -453,6 +458,7 @@ void
 TclpSetInterfaces()
 {
     int platformId, useWide;
+
     platformId = TclWinGetPlatformId();
     useWide = ((platformId == VER_PLATFORM_WIN32_NT)
 	    || (platformId == VER_PLATFORM_WIN32_CE));
@@ -473,9 +479,8 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
  *
  * TclpSetVariables --
  *
- *	Performs platform-specific interpreter initialization related to
- *	the tcl_platform and env variables, and other platform-specific
- *	things.
+ *	Performs platform-specific interpreter initialization related to the
+ *	tcl_platform and env variables, and other platform-specific things.
  *
  * Results:
  *	None.
@@ -528,10 +533,11 @@ TclpSetVariables(interp)
 
 #ifdef _DEBUG
     /*
-     * The existence of the "debug" element of the tcl_platform array indicates
-     * that this particular Tcl shell has been compiled with debug information.
-     * Using "info exists tcl_platform(debug)" a Tcl script can direct the 
-     * interpreter to load debug versions of DLLs with the load command.
+     * The existence of the "debug" element of the tcl_platform array
+     * indicates that this particular Tcl shell has been compiled with debug
+     * information. Using "info exists tcl_platform(debug)" a Tcl script can
+     * direct the interpreter to load debug versions of DLLs with the load
+     * command.
      */
 
     Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
@@ -583,15 +589,14 @@ TclpSetVariables(interp)
  *
  * TclpFindVariable --
  *
- *	Locate the entry in environ for a given name.  On Unix this 
- *	routine is case sensetive, on Windows this matches mioxed case.
+ *	Locate the entry in environ for a given name. On Unix this routine is
+ *	case sensetive, on Windows this matches mioxed case.
  *
  * Results:
- *	The return value is the index in environ of an entry with the
- *	name "name", or -1 if there is no such entry.   The integer at
- *	*lengthPtr is filled in with the length of name (if a matching
- *	entry is found) or the length of the environ array (if no matching
- *	entry is found).
+ *	The return value is the index in environ of an entry with the name
+ *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
+ *	filled in with the length of name (if a matching entry is found) or
+ *	the length of the environ array (if no matching entry is found).
  *
  * Side effects:
  *	None.
@@ -614,8 +619,7 @@ TclpFindVariable(name, lengthPtr)
     Tcl_DString envString;
 
     /*
-     * Convert the name to all upper case for the case insensitive
-     * comparison.
+     * Convert the name to all upper case for the case insensitive comparison.
      */
 
     length = strlen(name);
@@ -626,9 +630,9 @@ TclpFindVariable(name, lengthPtr)
     Tcl_DStringInit(&envString);
     for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
 	/*
-	 * Chop the env string off after the equal sign, then Convert
-	 * the name to all upper case, so we do not have to convert
-	 * all the characters after the equal sign.
+	 * Chop the env string off after the equal sign, then Convert the name
+	 * to all upper case, so we do not have to convert all the characters
+	 * after the equal sign.
 	 */
 
 	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
@@ -656,8 +660,16 @@ TclpFindVariable(name, lengthPtr)
 
     *lengthPtr = i;
 
-    done:
+  done:
     Tcl_DStringFree(&envString);
     ckfree(nameUpper);
     return result;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

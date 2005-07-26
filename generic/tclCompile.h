@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.14 2005/06/22 21:12:10 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.15 2005/07/26 04:11:54 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -518,7 +518,7 @@ typedef struct ByteCode {
 
 /* TIP#90 - 'return' command. */
 
-#define INST_RETURN			98
+#define INST_RETURN_IMM			98
 
 /* TIP#123 - exponentiation operator. */
 
@@ -544,9 +544,26 @@ typedef struct ByteCode {
 #define INST_LIST_NOT_IN		107
 
 #define INST_PUSH_RETURN_OPTIONS	108
+#define INST_RETURN_STK			109
+
+/*
+ * Dictionary (TIP#111) related commands.
+ */
+
+#define INST_DICT_GET			110
+#define INST_DICT_SET			111
+#define INST_DICT_UNSET			112
+#define INST_DICT_INCR_IMM		113
+#define INST_DICT_APPEND		114
+#define INST_DICT_LAPPEND		115
+#define INST_DICT_FIRST			116
+#define INST_DICT_NEXT			117
+#define INST_DICT_DONE			118
+#define INST_DICT_UPDATE_START		119
+#define INST_DICT_UPDATE_END		120
 
 /* The last opcode */
-#define LAST_INST_OPCODE		108
+#define LAST_INST_OPCODE		120
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -565,8 +582,12 @@ typedef enum InstOperandType {
     OPERAND_INT4,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
     OPERAND_UINT4,		/* Four byte unsigned integer. */
-    OPERAND_IDX4		/* Four byte signed index (actually an
+    OPERAND_IDX4,		/* Four byte signed index (actually an
 				 * integer, but displayed differently.) */
+    OPERAND_LVT1,		/* One byte unsigned index into the local
+				 * variable table. */
+    OPERAND_LVT4		/* Four byte unsigned index into the local
+				 * variable table. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -803,6 +824,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 #define LITERAL_ON_HEAP    0x01
 #define LITERAL_NS_SCOPE   0x02
+
 /*
  * Form of TclRegisterLiteral with onHeap == 0. In that case, it is safe to
  * cast away CONSTness, and it is cleanest to do that here, all in one place.

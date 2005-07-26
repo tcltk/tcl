@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.11 2005/06/22 21:12:46 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.12 2005/07/26 04:12:26 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -244,7 +244,7 @@ test namespace-9.4 {Tcl_Import, simple import} {
 } {cmd1: 123}
 test namespace-9.5 {Tcl_Import, can't redefine cmd unless allowOverwrite!=0} {
     list [catch {namespace eval test_ns_import {namespace import ::test_ns_export::*}} msg] $msg
-} {1 {can't import command "cmd1": already exists}}
+} {0 {}}
 test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {
     namespace eval test_ns_import {
         namespace import -force ::test_ns_export::*

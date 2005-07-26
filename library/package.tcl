@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.23.4.5 2004/09/08 23:02:52 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.23.4.6 2005/07/26 04:12:22 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -31,8 +31,8 @@ namespace eval tcl::Pkg {}
 
 proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
     global tcl_platform
-    if {![string length $ext]} {set ext [info sharedlibextension]}
-    if {[string equal $tcl_platform(platform) "windows"]} {
+    if {$ext eq ""} {set ext [info sharedlibextension]}
+    if {$tcl_platform(platform) eq "windows"} {
         return [string equal -nocase [file extension $fileName] $ext]
     } else {
         # Some unices add trailing numbers after the .so, so
@@ -40,7 +40,7 @@ proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
         set root $fileName
         while {1} {
             set currExt [file extension $root]
-            if {[string equal $currExt $ext]} {
+            if {$currExt eq $ext} {
                 return 1
             } 
 
@@ -135,7 +135,7 @@ proc pkg_mkIndex {args} {
     }
 
     if {[catch {
-	    glob -directory $dir -tails -types {r f} {expand}$patternList
+	    glob -directory $dir -tails -types {r f} -- {expand}$patternList
     } fileList o]} {
 	return -options $o $fileList
     }
@@ -145,7 +145,7 @@ proc pkg_mkIndex {args} {
 	# interpreter, and get a list of the new commands and packages
 	# that are defined.
 
-	if {[string equal $file pkgIndex.tcl]} {
+	if {$file eq "pkgIndex.tcl"} {
 	    continue
 	}
 
@@ -154,7 +154,7 @@ proc pkg_mkIndex {args} {
 	# Load into the child any packages currently loaded in the parent
 	# interpreter that match the -load pattern.
 
-	if {[string length $loadPat]} {
+	if {$loadPat ne ""} {
 	    if {$doVerbose} {
 		tclLog "currently loaded packages: '[info loaded]'"
 		tclLog "trying to load all packages matching $loadPat"
@@ -180,7 +180,7 @@ proc pkg_mkIndex {args} {
 	    } elseif {$doVerbose} {
 		tclLog "loaded [lindex $pkg 0] [lindex $pkg 1]"
 	    }
-	    if {[string equal [lindex $pkg 1] "Tk"]} {
+	    if {[lindex $pkg 1] eq "Tk"} {
 		# Withdraw . if Tk was loaded, to avoid showing a window.
 		$c eval [list wm withdraw .]
 	    }
@@ -263,7 +263,7 @@ proc pkg_mkIndex {args} {
 		    set ::tcl::namespaces($::tcl::x) 1
 		}
 		foreach ::tcl::x [package names] {
-		    if {[string compare [package provide $::tcl::x] ""]} {
+		    if {[package provide $::tcl::x] ne ""} {
 			set ::tcl::packages($::tcl::x) 1
 		    }
 		}
@@ -311,7 +311,7 @@ proc pkg_mkIndex {args} {
 			    set ::tcl::newCmds($::tcl::x) 1
 			}
 			foreach ::tcl::x $::tcl::origCmds {
-			    catch {unset ::tcl::newCmds($::tcl::x)}
+			    unset -nocomplain ::tcl::newCmds($::tcl::x)
 			}
 			foreach ::tcl::x [array names ::tcl::newCmds] {
 			    # determine which namespace a command comes from
@@ -324,7 +324,7 @@ proc pkg_mkIndex {args} {
 			    set ::tcl::abs \
 				    [lindex [auto_qualify $::tcl::abs ::] 0]
 			    
-			    if {[string compare $::tcl::x $::tcl::abs]} {
+			    if {$::tcl::x ne $::tcl::abs} {
 				# Name changed during qualification
 				
 				set ::tcl::newCmds($::tcl::abs) 1
@@ -338,7 +338,7 @@ proc pkg_mkIndex {args} {
 		# a version provided, then record it
 
 		foreach ::tcl::x [package names] {
-		    if {[string compare [package provide $::tcl::x] ""] \
+		    if {[package provide $::tcl::x] ne ""
 			    && ![info exists ::tcl::packages($::tcl::x)]} {
 			lappend ::tcl::newPkgs \
 			    [list $::tcl::x [package provide $::tcl::x]]
@@ -437,7 +437,7 @@ proc tclPkgSetup {dir pkg version files} {
 	set f [lindex $fileInfo 0]
 	set type [lindex $fileInfo 1]
 	foreach cmd [lindex $fileInfo 2] {
-	    if {[string equal $type "load"]} {
+	    if {$type eq "load"} {
 		set auto_index($cmd) [list load [file join $dir $f] $pkg]
 	    } else {
 		set auto_index($cmd) [list source [file join $dir $f]]

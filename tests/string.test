@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.8 2005/05/16 19:23:19 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.9 2005/07/26 04:12:26 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1421,6 +1421,54 @@ test string-23.0 {string is boolean, Bug 1187123} testindexobj {
     catch {testindexobj $x foo bar soom}
     string is boolean $x
 } 0
+
+test string-23.1 {string is command with empty string} {
+    set s ""
+    list \
+        [string is alnum $s] \
+        [string is alpha $s] \
+        [string is ascii $s] \
+        [string is control $s] \
+        [string is boolean $s] \
+        [string is digit $s] \
+        [string is double $s] \
+        [string is false $s] \
+        [string is graph $s] \
+        [string is integer $s] \
+        [string is lower $s] \
+        [string is print $s] \
+        [string is punct $s] \
+        [string is space $s] \
+        [string is true $s] \
+        [string is upper $s] \
+        [string is wordchar $s] \
+        [string is xdigit $s] \
+
+} {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
+
+test string-23.2 {string is command with empty string} {
+    set s ""
+    list \
+        [string is alnum -strict $s] \
+        [string is alpha -strict $s] \
+        [string is ascii -strict $s] \
+        [string is control -strict $s] \
+        [string is boolean -strict $s] \
+        [string is digit -strict $s] \
+        [string is double -strict $s] \
+        [string is false -strict $s] \
+        [string is graph -strict $s] \
+        [string is integer -strict $s] \
+        [string is lower -strict $s] \
+        [string is print -strict $s] \
+        [string is punct -strict $s] \
+        [string is space -strict $s] \
+        [string is true -strict $s] \
+        [string is upper -strict $s] \
+        [string is wordchar -strict $s] \
+        [string is xdigit -strict $s] \
+
+} {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
 
 # cleanup
 ::tcltest::cleanupTests

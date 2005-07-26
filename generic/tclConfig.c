@@ -1,4 +1,4 @@
-/* 
+/*
  * tclConfig.c --
  *
  *	This file provides the facilities which allow Tcl and other packages
@@ -6,10 +6,10 @@
  *
  * Copyright (c) 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.3.2.4 2005/04/07 17:32:04 dgp Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.3.2.5 2005/07/26 04:11:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -19,13 +19,12 @@
 /*
  * Internal structure to hold embedded configuration information.
  *
- * Our structure is a two-level dictionary associated with the
- * 'interp'. The first level is keyed with the package name and maps
- * to the dictionary for that package. The package dictionary is keyed
- * with metadata keys and maps to the metadata value for that
- * key. This is package specific. The metadata values are in UTF8,
- * converted from the external representation given to us by the
- * caller.
+ * Our structure is a two-level dictionary associated with the 'interp'. The
+ * first level is keyed with the package name and maps to the dictionary for
+ * that package. The package dictionary is keyed with metadata keys and maps
+ * to the metadata value for that key. This is package specific. The metadata
+ * values are in UTF-8, converted from the external representation given to us
+ * by the caller.
  */
 
 #define ASSOC_KEY "tclPackageAboutDict"
@@ -34,26 +33,20 @@
  * Static functions in this file:
  */
 
-static int
-QueryConfigObjCmd _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST * objv));
-
-static void
-QueryConfigDelete _ANSI_ARGS_((ClientData clientData));
-
-static Tcl_Obj*
-GetConfigDict _ANSI_ARGS_((Tcl_Interp* interp));
-
-static void
-ConfigDictDeleteProc _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp));
+static int		QueryConfigObjCmd _ANSI_ARGS_((ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    struct Tcl_Obj * CONST * objv));
+static void		QueryConfigDelete _ANSI_ARGS_((ClientData clientData));
+static Tcl_Obj *	GetConfigDict _ANSI_ARGS_((Tcl_Interp* interp));
+static void		ConfigDictDeleteProc _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp));
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_RegisterConfig --
  *
- *	See TIP#59 for details on what this procedure does.
+ *	See TIP#59 for details on what this function does.
  *
  * Results:
  *	None.
@@ -65,110 +58,108 @@ ConfigDictDeleteProc _ANSI_ARGS_((ClientData clientData,
  */
 
 void
-Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
-     Tcl_Interp* interp;            /* Interpreter the configuration
-				     * command is registered in. */
-     CONST char* pkgName;           /* Name of the package registering
-				     * the embedded configuration. ASCII,
-				     * thus in UTF-8 too. */
-     Tcl_Config* configuration;     /* Embedded configuration */
-     CONST char* valEncoding;       /* Name of the encoding used to
-				     * store the configuration values,
-				     * ASCII, thus UTF-8 */
+Tcl_RegisterConfig(interp, pkgName, configuration, valEncoding)
+    Tcl_Interp *interp;		/* Interpreter the configuration command is
+				 * registered in. */
+    CONST char *pkgName;	/* Name of the package registering the
+				 * embedded configuration. ASCII, thus in
+				 * UTF-8 too. */
+    Tcl_Config *configuration;	/* Embedded configuration. */
+    CONST char *valEncoding;	/* Name of the encoding used to store the
+				 * configuration values, ASCII, thus UTF-8. */
 {
-    Tcl_Encoding venc = Tcl_GetEncoding (NULL, valEncoding);
-    Tcl_Obj*     pDB  = GetConfigDict (interp);
-    Tcl_Obj*     pkg  = Tcl_NewStringObj (pkgName, -1);
-    Tcl_Obj*     pkgDict;
-    Tcl_DString  cmdName;
-    Tcl_Config*  cfg;
-    int          res;
+    Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
+    Tcl_Obj *pDB  = GetConfigDict(interp);
+    Tcl_Obj *pkg  = Tcl_NewStringObj(pkgName, -1);
+    Tcl_Obj *pkgDict;
+    Tcl_DString cmdName;
+    Tcl_Config *cfg;
+    int res;
 
     /*
-     * Phase I: Adding the provided information to the internal
-     * database of package meta data.
+     * Phase I: Adding the provided information to the internal database of
+     * package meta data.
      *
-     * Phase II: Create a command for querying this database, specific
-     * to the package registerting its configuration. This is the
-     * approved interface in TIP 59. In the future a more general
-     * interface should be done, as followup to TIP 59. Simply because
-     * our database is now general across packages, and not a
-     * structure tied to one package.
+     * Phase II: Create a command for querying this database, specific to the
+     * package registerting its configuration. This is the approved interface
+     * in TIP 59. In the future a more general interface should be done, as
+     * followup to TIP 59. Simply because our database is now general across
+     * packages, and not a structure tied to one package.
+     *
+     * Note, the created command will have a reference through its clientdata.
      */
 
-    /* Note, the created command will have a reference through its clientdata */
-    Tcl_IncrRefCount (pkg);
+    Tcl_IncrRefCount(pkg);
 
-    /* Retrieve package specific configuration ... */
+    /*
+     * Retrieve package specific configuration...
+     */
 
-    res = Tcl_DictObjGet (interp, pDB, pkg, &pkgDict);
+    res = Tcl_DictObjGet(interp, pDB, pkg, &pkgDict);
     if ((TCL_OK != res) || (pkgDict == NULL)) {
-        pkgDict = Tcl_NewDictObj ();
-    } else if (Tcl_IsShared (pkgDict)) {
-        pkgDict = Tcl_DuplicateObj (pkgDict);
+        pkgDict = Tcl_NewDictObj();
+    } else if (Tcl_IsShared(pkgDict)) {
+        pkgDict = Tcl_DuplicateObj(pkgDict);
     }
 
-    /* Extend the package configuration ... */
+    /*
+     * Extend the package configuration...
+     */
 
-    for (cfg = configuration;
-	 (cfg->key != (CONST char*) NULL) && (cfg->key [0] != '\0') ;
-	 cfg++) {
-
+    for (cfg=configuration ; (cfg->key!=NULL) && (cfg->key[0]!='\0') ; cfg++) {
         Tcl_DString conv;
-	CONST char* convValue = Tcl_ExternalToUtfDString (venc, cfg->value, -1, &conv);
+	CONST char *convValue =
+		Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
 
 	/*
 	 * We know that the keys are in ASCII/UTF-8, so for them is no
 	 * conversion required.
 	 */
 
-	Tcl_DictObjPut (interp, pkgDict,
-			Tcl_NewStringObj (cfg->key, -1),
-			Tcl_NewStringObj (convValue, -1));
-	Tcl_DStringFree (&conv);
+	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+		Tcl_NewStringObj(convValue, -1));
+	Tcl_DStringFree(&conv);
     }
 
-    /* Write the changes back into the overall database */
+    /*
+     * Write the changes back into the overall database.
+     */
 
-    Tcl_DictObjPut (interp, pDB, pkg, pkgDict);
+    Tcl_DictObjPut(interp, pDB, pkg, pkgDict);
 
     /*
      * Now create the interface command for retrieval of the package
      * information.
      */
 
-    Tcl_DStringInit   (&cmdName);
-    Tcl_DStringAppend (&cmdName, "::",          -1);   
-    Tcl_DStringAppend (&cmdName, pkgName,       -1);   
+    Tcl_DStringInit(&cmdName);
+    Tcl_DStringAppend(&cmdName, "::", -1);
+    Tcl_DStringAppend(&cmdName, pkgName, -1);
 
-    /* The incomplete command name is the name of the namespace to
-     * place it in.
+    /*
+     * The incomplete command name is the name of the namespace to place it
+     * in.
      */
 
-    if ((Tcl_Namespace*) NULL == Tcl_FindNamespace(interp,
-		Tcl_DStringValue (&cmdName), NULL, TCL_GLOBAL_ONLY)) {
-
-	if ((Tcl_Namespace*) NULL == Tcl_CreateNamespace (interp,
-			  Tcl_DStringValue (&cmdName), (ClientData) NULL,
-			  (Tcl_NamespaceDeleteProc *) NULL)) {
-
-	    Tcl_Panic ("%s.\n%s %s", Tcl_GetStringResult(interp),
+    if (Tcl_FindNamespace(interp, Tcl_DStringValue(&cmdName), NULL,
+	    TCL_GLOBAL_ONLY) == NULL) {
+	if (Tcl_CreateNamespace(interp, Tcl_DStringValue(&cmdName),
+		(ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL) == NULL) {
+	    Tcl_Panic("%s.\n%s %s", Tcl_GetStringResult(interp),
 		    "Tcl_RegisterConfig: Unable to create namespace for",
 		    "package configuration.");
 	}
     }
 
-    Tcl_DStringAppend (&cmdName, "::pkgconfig", -1);   
+    Tcl_DStringAppend(&cmdName, "::pkgconfig", -1);
 
-    if ((Tcl_Command) NULL == Tcl_CreateObjCommand (interp,
-		    Tcl_DStringValue (&cmdName), QueryConfigObjCmd,
-		    (ClientData) pkg, QueryConfigDelete)) {
-
-        Tcl_Panic ("%s %s", "Tcl_RegisterConfig: Unable to create query",
+    if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
+	    QueryConfigObjCmd, (ClientData) pkg, QueryConfigDelete) == NULL) {
+        Tcl_Panic("%s %s", "Tcl_RegisterConfig: Unable to create query",
 		"command for package configuration");
     }
 
-    Tcl_DStringFree (&cmdName);
+    Tcl_DStringFree(&cmdName);
 }
 
 /*
@@ -190,16 +181,14 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
 
 static int
 QueryConfigObjCmd(clientData, interp, objc, objv)
-     ClientData clientData;
-     Tcl_Interp *interp;
-     int objc;
-     struct Tcl_Obj * CONST *objv;
+    ClientData clientData;
+    Tcl_Interp *interp;
+    int objc;
+    struct Tcl_Obj * CONST *objv;
 {
-    Tcl_Obj *pkgName = (Tcl_Obj*) clientData;
+    Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    Tcl_DictSearch s;
-    int n, i, res, done, index;
-    Tcl_Obj *key, **vals;
+    int n, i, res, index;
 
     static CONST char *subcmdStrings[] = {
 	"get", "list", NULL
@@ -212,15 +201,19 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?argument?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings,
-	   "subcommand", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings, "subcommand", 0,
+	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     pDB = GetConfigDict(interp);
     res = Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict);
     if (res!=TCL_OK || pkgDict==NULL) {
-        /* Maybe a Tcl_Panic is better, because the package data has to be present */
+        /*
+	 * Maybe a Tcl_Panic is better, because the package data has to be
+	 * present.
+	 */
+
         Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	return TCL_ERROR;
     }
@@ -249,16 +242,19 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
 
 	Tcl_DictObjSize(interp, pkgDict, &n);
 	listPtr = Tcl_NewListObj(n, NULL);
-	
+
 	if (!listPtr) {
 	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("insufficient memory to create list", -1));
+		    Tcl_NewStringObj("insufficient memory to create list",-1));
 	    return TCL_ERROR;
 	}
-	
+
 	if (n) {
-	    List *listRepPtr =
-		(List *) listPtr->internalRep.twoPtrValue.ptr1;
+	    List *listRepPtr = (List *)
+		    listPtr->internalRep.twoPtrValue.ptr1;
+	    Tcl_DictSearch s;
+	    Tcl_Obj *key, **vals;
+	    int done;
 
 	    listRepPtr->elemCount = n;
 	    vals = &listRepPtr->elements;
@@ -285,7 +281,7 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
  *
  * QueryConfigDelete --
  *
- *	Command delete procedure. Cleans up after the configuration query
+ *	Command delete function. Cleans up after the configuration query
  *	command when it is deleted by the user or during finalization.
  *
  * Results:
@@ -298,11 +294,11 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
  */
 
 static void
-QueryConfigDelete (clientData)
-     ClientData clientData;
+QueryConfigDelete(clientData)
+    ClientData clientData;
 {
-    Tcl_Obj*          pkgName = (Tcl_Obj*) clientData;
-    Tcl_DecrRefCount (pkgName);
+    Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
+    Tcl_DecrRefCount(pkgName);
 }
 
 /*
@@ -322,19 +318,19 @@ QueryConfigDelete (clientData)
  *-------------------------------------------------------------------------
  */
 
-static Tcl_Obj*
-GetConfigDict (interp)
-     Tcl_Interp* interp;
+static Tcl_Obj *
+GetConfigDict(interp)
+    Tcl_Interp *interp;
 {
-  Tcl_Obj* pDB = Tcl_GetAssocData (interp, ASSOC_KEY, NULL);
+    Tcl_Obj *pDB = Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
-  if (pDB == (Tcl_Obj*) NULL) {
-      pDB = Tcl_NewDictObj ();
-      Tcl_IncrRefCount (pDB);
-      Tcl_SetAssocData (interp, ASSOC_KEY, ConfigDictDeleteProc, pDB);
-  }
+    if (pDB == (Tcl_Obj *) NULL) {
+	pDB = Tcl_NewDictObj();
+	Tcl_IncrRefCount(pDB);
+	Tcl_SetAssocData(interp, ASSOC_KEY, ConfigDictDeleteProc, pDB);
+    }
 
-  return pDB;
+    return pDB;
 }
 
 /*
@@ -342,10 +338,10 @@ GetConfigDict (interp)
  *
  * ConfigDictDeleteProc --
  *
- *	This procedure is associated with the "Package About dict" assoc data
- *	for an interpreter;  it is invoked when the interpreter is
- *	deleted in order to free the information assoicated with any
- *	pending error reports.
+ *	This function is associated with the "Package About dict" assoc data
+ *	for an interpreter; it is invoked when the interpreter is deleted in
+ *	order to free the information assoicated with any pending error
+ *	reports.
  *
  * Results:
  *	None.
@@ -361,6 +357,14 @@ ConfigDictDeleteProc(clientData, interp)
     ClientData clientData;	/* Pointer to Tcl_Obj. */
     Tcl_Interp *interp;		/* Interpreter being deleted. */
 {
-    Tcl_Obj* pDB = (Tcl_Obj*) clientData;
-    Tcl_DecrRefCount (pDB);
+    Tcl_Obj *pDB = (Tcl_Obj *) clientData;
+    Tcl_DecrRefCount(pDB);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

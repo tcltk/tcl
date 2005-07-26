@@ -1,6 +1,6 @@
 Tcl 8.5 for Windows
 
-RCS: @(#) $Id: README,v 1.31.2.1 2004/09/08 23:03:27 dgp Exp $
+RCS: @(#) $Id: README,v 1.31.2.2 2005/07/26 04:12:34 dgp Exp $
 
 1. Introduction
 ---------------
@@ -30,7 +30,7 @@ In order to compile Tcl for Windows, you need the following:
 
 	Msys + Mingw
 
-	http://prdownloads.sourceforge.net/tcl/msys_mingw6.zip
+	http://prdownloads.sourceforge.net/tcl/msys_mingw7.zip
 
 	This Msys + Mingw download is the minimal environment
 	needed to build Tcl/Tk under Windows. It includes a
@@ -40,17 +40,6 @@ In order to compile Tcl for Windows, you need the following:
 	into a directory. The README.TXT file describes how
 	to launch the msys shell, you then run the configure
 	script in the tcl/win directory.
-
-	or
-
-	Cygwin 1.1 or newer (See http://sources.redhat.com/cygwin)
-
-	Mingw 2.0 (http://prdownloads.sourceforge.net/mingw/MinGW-2.0.0-3.exe)
-
-	Extract the contents of the archive file into /usr/local/mingw
-	and place /usr/local/mingw/bin at the front of your PATH env var
-	before running the configure script in the tcl/win directory.
-
 
 In practice, this release is built with Visual C++ 6.0 and the TEA
 Makefile.

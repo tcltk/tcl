@@ -7,12 +7,12 @@
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2004 Donal K. Fellows.
+ * Copyright (c) 2004-2005 by Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.10 2005/06/22 21:12:08 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.11 2005/07/26 04:11:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -72,11 +72,31 @@
  * Macro to get the offset to the next instruction to be issued. The ANSI C
  * "prototype" for this macro is:
  *
- * static int	TokenAfter(CompileEnv *envPtr);
+ * static int	CurrentOffset(CompileEnv *envPtr);
  */
 
 #define CurrentOffset(envPtr) \
     ((envPtr)->codeNext - (envPtr)->codeStart)
+
+/*
+ * static int	DeclareExceptionRange(CompileEnv *envPtr, int type);
+ * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
+ * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
+ * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
+ */
+
+#define DeclareExceptionRange(envPtr, type) \
+    (((envPtr)->exceptDepth++), \
+    ((envPtr)->maxExceptDepth = \
+	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)), \
+    (TclCreateExceptRange((type), (envPtr))))
+#define ExceptionRangeStarts(envPtr, index) \
+    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr))
+#define ExceptionRangeEnds(envPtr, index) \
+    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes = \
+	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset)
+#define ExceptionRangeTarget(envPtr, index, targetType) \
+    ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -266,7 +286,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     CONST char *name;
-    int resultIndex, optsIndex, nameChars, range, startOffset;
+    int resultIndex, optsIndex, nameChars, range;
     int savedStackDepth = envPtr->currStackDepth;
 
     /*
@@ -330,10 +350,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * start of the catch body: the subcommand it controls.
      */
 
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
     TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 
     /*
@@ -346,17 +363,16 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      */
 
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	startOffset = CurrentOffset(envPtr);
+	ExceptionRangeStarts(envPtr, range);
 	CompileBody(envPtr, cmdTokenPtr, interp);
+	ExceptionRangeEnds(envPtr, range);
     } else {
 	TclCompileTokens(interp, cmdTokenPtr+1,
 		cmdTokenPtr->numComponents, envPtr);
-	startOffset = CurrentOffset(envPtr);
+	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(INST_EVAL_STK, envPtr);
+	ExceptionRangeEnds(envPtr, range);
     }
-    envPtr->exceptArrayPtr[range].codeOffset = startOffset;
-    envPtr->exceptArrayPtr[range].numCodeBytes =
-	    CurrentOffset(envPtr) - startOffset;
 
     /*
      * The "no errors" epilogue code: store the body's result into the
@@ -401,7 +417,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      */
 
     envPtr->currStackDepth = savedStackDepth;
-    envPtr->exceptArrayPtr[range].catchOffset = CurrentOffset(envPtr);
+    ExceptionRangeTarget(envPtr, range, catchOffset);
     if (resultIndex != -1) {
 	if (optsIndex != -1) {
 	    TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
@@ -479,6 +495,515 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
 
     TclEmitOpcode(INST_CONTINUE, envPtr);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileDictCmd --
+ *
+ *	Procedure called to compile the "dict" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "dict" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileDictCmd(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int numWords, size, i;
+    const char *cmd;
+    Proc *procPtr = envPtr->procPtr;
+
+    /*
+     * There must be at least one argument after the command.
+     */
+
+    if (parsePtr->numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    numWords = parsePtr->numWords-2;
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * The following commands are in fairly common use and are possibly worth
+     * bytecoding:
+     *     dict append
+     *     dict create	[*]
+     *     dict exists	[*]
+     *     dict for
+     *     dict get	[*]
+     *     dict incr
+     *     dict keys	[*]
+     *     dict lappend
+     *     dict set
+     *     dict unset
+     * In practice, those that are pure-value operators (marked with [*]) can
+     * probably be left alone (except perhaps [dict get] which is very very
+     * common) and [dict update] should be considered instead (really big
+     * win!)
+     */
+
+    size = tokenPtr[1].size;
+    cmd = tokenPtr[1].start;
+    if (size==3 && strncmp(cmd, "set", 3)==0) {
+	Tcl_Token *varTokenPtr;
+	int dictVarIndex, nameChars;
+	const char *name;
+
+	if (numWords < 3 || procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	varTokenPtr = TokenAfter(tokenPtr);
+	tokenPtr = TokenAfter(varTokenPtr);
+	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	name = varTokenPtr[1].start;
+	nameChars = varTokenPtr[1].size;
+	if (!TclIsLocalScalar(name, nameChars)) {
+	    return TCL_ERROR;
+	}
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
+		procPtr);
+	for (i=1 ; i<numWords ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp);
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+	TclEmitInstInt4( INST_DICT_SET, numWords-2,		envPtr);
+	TclEmitInt4(	 dictVarIndex,				envPtr);
+	return TCL_OK;
+    } else if (size==4 && strncmp(cmd, "incr", 4)==0) {
+	Tcl_Token *varTokenPtr, *keyTokenPtr, *incrTokenPtr = NULL;
+	int dictVarIndex, nameChars, incrAmount = 1;
+	const char *name;
+
+	if (numWords < 2 || numWords > 3 || procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	varTokenPtr = TokenAfter(tokenPtr);
+	keyTokenPtr = TokenAfter(varTokenPtr);
+	if (numWords == 3) {
+	    const char *word;
+	    int numBytes, code;
+	    Tcl_Obj *intObj;
+
+	    incrTokenPtr = TokenAfter(keyTokenPtr);
+	    if (incrTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+		return TCL_ERROR;
+	    }
+	    word = incrTokenPtr[1].start;
+	    numBytes = incrTokenPtr[1].size;
+
+	    /*
+	     * Note there is a danger that modifying the string could have
+	     * undesirable side effects.  In this case, TclLooksLikeInt has no
+	     * dependencies on shared strings so we should be safe.
+	     */
+
+	    if (!TclLooksLikeInt(word, numBytes)) {
+		return TCL_ERROR;
+	    }
+
+	    /*
+	     * Now try to really parse the number.
+	     */
+
+	    intObj = Tcl_NewStringObj(word, numBytes);
+	    Tcl_IncrRefCount(intObj);
+	    code = Tcl_GetIntFromObj(NULL, intObj, &incrAmount);
+	    Tcl_DecrRefCount(intObj);
+	    if (code != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	name = varTokenPtr[1].start;
+	nameChars = varTokenPtr[1].size;
+	if (!TclIsLocalScalar(name, nameChars)) {
+	    return TCL_ERROR;
+	}
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
+		procPtr);
+	CompileWord(envPtr, keyTokenPtr, interp);
+	TclEmitInstInt4( INST_DICT_INCR_IMM, incrAmount,	envPtr);
+	TclEmitInt4(	 dictVarIndex,				envPtr);
+	return TCL_OK;
+    } else if (size==3 && strncmp(cmd, "get", 3)==0) {
+	/*
+	 * Only compile this because we need INST_DICT_GET anyway.
+	 */
+	if (numWords < 2) {
+	    return TCL_ERROR;
+	}
+	for (i=0 ; i<numWords ; i++) {
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	}
+	TclEmitInstInt4(INST_DICT_GET, numWords-1, envPtr);
+	return TCL_OK;
+    } else if (size==3 && strncmp(cmd, "for", 3)==0) {
+	Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
+	int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
+	int infoIndex, jumpDisplacement, bodyTargetOffset, doneTargetOffset;
+	int endTargetOffset;
+	const char **argv;
+	Tcl_DString buffer;
+	int savedStackDepth = envPtr->currStackDepth;
+
+	if (numWords != 3 || procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+
+	varsTokenPtr = TokenAfter(tokenPtr);
+	dictTokenPtr = TokenAfter(varsTokenPtr);
+	bodyTokenPtr = TokenAfter(dictTokenPtr);
+	if (varsTokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
+		bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Check we've got a pair of variables and that they are local
+	 * variables. Then extract their indices in the LVT.
+	 */
+
+	Tcl_DStringInit(&buffer);
+	Tcl_DStringAppend(&buffer, varsTokenPtr[1].start,
+		varsTokenPtr[1].size);
+	if (Tcl_SplitList(NULL, Tcl_DStringValue(&buffer), &numWords,
+		&argv) != TCL_OK) {
+	    Tcl_DStringFree(&buffer);
+	    return TCL_ERROR;
+	}
+	Tcl_DStringFree(&buffer);
+	if (numWords != 2) {
+	    ckfree((char *) argv);
+	    return TCL_ERROR;
+	}
+	nameChars = strlen(argv[0]);
+	if (!TclIsLocalScalar(argv[0], nameChars)) {
+	    ckfree((char *) argv);
+	    return TCL_ERROR;
+	}
+	keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, VAR_SCALAR,
+		procPtr);
+	nameChars = strlen(argv[1]);
+	if (!TclIsLocalScalar(argv[1], nameChars)) {
+	    ckfree((char *) argv);
+	    return TCL_ERROR;
+	}
+	valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, VAR_SCALAR,
+		procPtr);
+	ckfree((char *) argv);
+
+	/*
+	 * Allocate a temporary variable to store the iterator reference. The
+	 * variable will contain a Tcl_DictSearch reference which will be
+	 * allocated by INST_DICT_FIRST and disposed when the variable is
+	 * unset (at which point it should also have been finished with).
+	 */
+
+	infoIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR, procPtr);
+
+	/*
+	 * Preparation complete; issue instructions. Note that this code
+	 * issues fixed-sized jumps. That simplifies things a lot!
+	 *
+	 * First up, get the dictionary and start the iteration. No catching
+	 * of errors at this point.
+	 */
+
+	CompileWord(envPtr, dictTokenPtr, interp);
+	TclEmitInstInt4( INST_DICT_FIRST, infoIndex,		envPtr);
+	doneTargetOffset = CurrentOffset(envPtr);
+	TclEmitInstInt4( INST_JUMP_TRUE4, 0,			envPtr);
+
+	/*
+	 * Now we catch errors from here on so that we can finalize the search
+	 * started by Tcl_DictObjFirst above.
+	 */
+
+	catchRange = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+	TclEmitInstInt4( INST_BEGIN_CATCH4, catchRange,		envPtr);
+	ExceptionRangeStarts(envPtr, catchRange);
+
+	/*
+	 * Inside the iteration, write the loop variables.
+	 */
+
+	bodyTargetOffset = CurrentOffset(envPtr);
+	TclEmitInstInt4( INST_STORE_SCALAR4, keyVarIndex,	envPtr);
+	TclEmitOpcode(   INST_POP,				envPtr);
+	TclEmitInstInt4( INST_STORE_SCALAR4, valueVarIndex,	envPtr);
+	TclEmitOpcode(   INST_POP,				envPtr);
+
+	/*
+	 * Set up the loop exception targets.
+	 */
+
+	loopRange = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
+	ExceptionRangeStarts(envPtr, loopRange);
+
+	/*
+	 * Compile the loop body itself. It should be stack-neutral.
+	 */
+
+	CompileBody(envPtr, bodyTokenPtr, interp);
+	envPtr->currStackDepth = savedStackDepth + 1;
+	TclEmitOpcode(   INST_POP,				envPtr);
+	envPtr->currStackDepth = savedStackDepth;
+
+	/*
+	 * Both exception target ranges (error and loop) end here.
+	 */
+
+	ExceptionRangeEnds(envPtr, loopRange);
+	ExceptionRangeEnds(envPtr, catchRange);
+
+	/*
+	 * Continue (or just normally process) by getting the next pair of
+	 * items from the dictionary and jumping back to the code to write
+	 * them into variables if there is another pair.
+	 */
+
+	ExceptionRangeTarget(envPtr, loopRange, continueOffset);
+	TclEmitInstInt4( INST_DICT_NEXT, infoIndex,		envPtr);
+	jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
+	TclEmitInstInt4( INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
+
+	/*
+	 * Otherwise we're done (the jump after the DICT_FIRST points here)
+	 * and we need to pop the bogus key/value pair (pushed to keep stack
+	 * calculations easy!)
+	 */
+
+	jumpDisplacement = CurrentOffset(envPtr) - doneTargetOffset;
+	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
+		envPtr->codeStart + doneTargetOffset);
+	TclEmitOpcode(   INST_POP,				envPtr);
+	TclEmitOpcode(   INST_POP,				envPtr);
+
+	/*
+	 * Now do the final cleanup for the no-error case (this is where we
+	 * break out of the loop to) by force-terminating the iteration (if
+	 * not already terminated), ditching the exception info and jumping to
+	 * the last instruction for this command. In theory, this could be
+	 * done using the "finally" clause (next generated) but this is
+	 * faster.
+	 */
+
+	ExceptionRangeTarget(envPtr, loopRange, breakOffset);
+	TclEmitInstInt4( INST_DICT_DONE, infoIndex,		envPtr);
+	TclEmitOpcode(	 INST_END_CATCH,			envPtr);
+	endTargetOffset = CurrentOffset(envPtr);
+	TclEmitInstInt4( INST_JUMP4, 0,				envPtr);
+
+	/*
+	 * Error handler "finally" clause, which force-terminates the
+	 * iteration and rethrows the error.
+	 */
+
+	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
+	TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,		envPtr);
+	TclEmitOpcode(   INST_PUSH_RESULT,			envPtr);
+	TclEmitInstInt4( INST_DICT_DONE, infoIndex,		envPtr);
+	TclEmitOpcode(   INST_END_CATCH,			envPtr);
+	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
+
+	/*
+	 * Final stage of the command (normal case) is that we push an empty
+	 * object. This is done last to promote peephole optimization when
+	 * it's dropped immediately.
+	 */
+
+	jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
+	TclUpdateInstInt4AtPc(INST_JUMP4, jumpDisplacement,
+		envPtr->codeStart + endTargetOffset);
+	PushLiteral(envPtr, "", 0);
+	envPtr->exceptDepth -= 2;
+	return TCL_OK;
+    } else if (size==6 && strncmp(cmd, "update", 6)==0) {
+	const char *name;
+	int nameChars, dictIndex, keyTmpIndex, numVars, range;
+	Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr;
+	Tcl_DString localVarsLiteral;
+
+	/*
+	 * Parse the command. Expect the following:
+	 *   dict update <lit(eral)> <any> <lit> ?<any> <lit> ...? <lit>
+	 */
+
+	if (numWords < 4 || numWords & 1 || procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	numVars = numWords/2 - 1;
+	dictVarTokenPtr = TokenAfter(tokenPtr);
+	if (dictVarTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	name = dictVarTokenPtr[1].start;
+	nameChars = dictVarTokenPtr[1].size;
+	if (!TclIsLocalScalar(name, nameChars)) {
+	    return TCL_ERROR;
+	}
+	dictIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
+		procPtr);
+
+	Tcl_DStringInit(&localVarsLiteral);
+	keyTokenPtrs = (Tcl_Token **) ckalloc(sizeof(Tcl_Token*) * numVars);
+	tokenPtr = TokenAfter(dictVarTokenPtr);
+	for (i=0 ; i<numVars ; i++) {
+	    keyTokenPtrs[i] = tokenPtr;
+	    tokenPtr = TokenAfter(tokenPtr);
+	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+		Tcl_DStringFree(&localVarsLiteral);
+		ckfree((char *) keyTokenPtrs);
+		return TCL_ERROR;
+	    }
+	    name = tokenPtr[1].start;
+	    nameChars = tokenPtr[1].size;
+	    if (!TclIsLocalScalar(name, nameChars)) {
+		Tcl_DStringFree(&localVarsLiteral);
+		ckfree((char *) keyTokenPtrs);
+		return TCL_ERROR;
+	    } else {
+		int localVar = TclFindCompiledLocal(name, nameChars, 1,
+			VAR_SCALAR, procPtr);
+		char buf[12];
+
+		sprintf(buf, "%d", localVar);
+		Tcl_DStringAppendElement(&localVarsLiteral, buf);
+	    }
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    Tcl_DStringFree(&localVarsLiteral);
+	    ckfree((char *) keyTokenPtrs);
+	    return TCL_ERROR;
+	}
+	bodyTokenPtr = tokenPtr;
+
+	keyTmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR, procPtr);
+
+	for (i=0 ; i<numVars ; i++) {
+	    CompileWord(envPtr, keyTokenPtrs[i], interp);
+	}
+	TclEmitInstInt4( INST_LIST, numVars,			envPtr);
+	TclEmitInstInt4( INST_STORE_SCALAR4, keyTmpIndex,	envPtr);
+	PushLiteral(envPtr, Tcl_DStringValue(&localVarsLiteral),
+		Tcl_DStringLength(&localVarsLiteral));
+	TclEmitInstInt4( INST_DICT_UPDATE_START, dictIndex,	envPtr);
+
+	range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+	TclEmitInstInt4( INST_BEGIN_CATCH4, range,		envPtr);
+
+	ExceptionRangeStarts(envPtr, range);
+	CompileBody(envPtr, bodyTokenPtr, interp);
+	ExceptionRangeEnds(envPtr, range);
+
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,		envPtr);
+	TclEmitOpcode(   INST_PUSH_RESULT,			envPtr);
+	TclEmitOpcode(   INST_END_CATCH,			envPtr);
+	envPtr->exceptDepth--;
+
+	TclEmitInstInt4( INST_LOAD_SCALAR4, keyTmpIndex,	envPtr);
+	PushLiteral(envPtr, Tcl_DStringValue(&localVarsLiteral),
+		Tcl_DStringLength(&localVarsLiteral));
+	/*
+	 * Any literal would do, but this one is handy...
+	 */
+	TclEmitInstInt4( INST_STORE_SCALAR4, keyTmpIndex,	envPtr);
+	TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,	envPtr);
+
+	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
+
+	Tcl_DStringFree(&localVarsLiteral);
+	ckfree((char *) keyTokenPtrs);
+	return TCL_OK;
+    } else if (size==6 && strncmp(cmd, "append", 6) == 0) {
+	Tcl_Token *varTokenPtr;
+	int dictVarIndex, nameChars;
+	const char *name;
+
+	/*
+	 * Arbirary safe limit; anyone exceeding it should stop worrying about
+	 * speed quite so much. ;-)
+	 */
+	if (numWords < 3 || numWords > 100 || procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	varTokenPtr = TokenAfter(tokenPtr);
+	tokenPtr = TokenAfter(varTokenPtr);
+	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	name = varTokenPtr[1].start;
+	nameChars = varTokenPtr[1].size;
+	if (!TclIsLocalScalar(name, nameChars)) {
+	    return TCL_ERROR;
+	}
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
+		procPtr);
+	for (i=1 ; i<numWords ; i++) {
+	    CompileWord(envPtr, tokenPtr, interp);
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+	if (numWords > 3) {
+	    TclEmitInstInt1( INST_CONCAT1, numWords-2,		envPtr);
+	}
+	TclEmitInstInt4( INST_DICT_APPEND, dictVarIndex,	envPtr);
+	return TCL_OK;
+    } else if (size==7 && strncmp(cmd, "lappend", 7) == 0) {
+	Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
+	int dictVarIndex, nameChars;
+	const char *name;
+
+	if (numWords != 3 || procPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	varTokenPtr = TokenAfter(tokenPtr);
+	keyTokenPtr = TokenAfter(varTokenPtr);
+	valueTokenPtr = TokenAfter(keyTokenPtr);
+	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_ERROR;
+	}
+	name = varTokenPtr[1].start;
+	nameChars = varTokenPtr[1].size;
+	if (!TclIsLocalScalar(name, nameChars)) {
+	    return TCL_ERROR;
+	}
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
+		procPtr);
+	CompileWord(envPtr, keyTokenPtr, interp);
+	CompileWord(envPtr, valueTokenPtr, interp);
+	TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex,	envPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * Something we do not know how to compile.
+     */
+    return TCL_ERROR;
 }
 
 /*
@@ -581,10 +1106,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * has a -1 continueOffset).
      */
 
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    bodyRange = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 
     /*
@@ -612,12 +1134,10 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Compile the loop body.
      */
 
-    bodyCodeOffset = CurrentOffset(envPtr);
-
+    bodyCodeOffset = ExceptionRangeStarts(envPtr, bodyRange);
     CompileBody(envPtr, bodyTokenPtr, interp);
+    ExceptionRangeEnds(envPtr, bodyRange);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[bodyRange].numCodeBytes =
-	    CurrentOffset(envPtr) - bodyCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
 
 
@@ -625,13 +1145,11 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Compile the "next" subcommand.
      */
 
-    nextCodeOffset = CurrentOffset(envPtr);
-
     envPtr->currStackDepth = savedStackDepth;
+    nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
     CompileBody(envPtr, nextTokenPtr, interp);
+    ExceptionRangeEnds(envPtr, nextRange);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[nextRange].numCodeBytes =
-	    CurrentOffset(envPtr) - nextCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
     envPtr->currStackDepth = savedStackDepth;
 
@@ -661,7 +1179,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Set the loop's offsets and break target.
+     * Fix the starting points of the exception ranges (may have moved due to
+     * jump type modification) and set where the exceptions target.
      */
 
     envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
@@ -669,9 +1188,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 
     envPtr->exceptArrayPtr[nextRange].codeOffset = nextCodeOffset;
 
-    envPtr->exceptArrayPtr[bodyRange].breakOffset =
-	    envPtr->exceptArrayPtr[nextRange].breakOffset =
-	    CurrentOffset(envPtr);
+    ExceptionRangeTarget(envPtr, bodyRange, breakOffset);
+    ExceptionRangeTarget(envPtr, nextRange, breakOffset);
 
     /*
      * The for command's result is an empty string.
@@ -777,14 +1295,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Set the exception stack depth.
-     */
-
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-
-    /*
      * Break up each var list and set the varcList and varvList arrays. Don't
      * compile the foreach inline if any var name needs substitutions or isn't
      * a scalar, or if any var list needs substitutions.
@@ -879,10 +1389,14 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     infoIndex = TclCreateAuxData((ClientData) infoPtr, &tclForeachInfoType, envPtr);
 
     /*
-     * Evaluate then store each value list in the associated temporary.
+     * Create an exception record to handle [break] and [continue].
      */
 
-    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    range = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
+
+    /*
+     * Evaluate then store each value list in the associated temporary.
+     */
 
     loopIndex = 0;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
@@ -914,7 +1428,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * to terminate the loop.
      */
 
-    envPtr->exceptArrayPtr[range].continueOffset = CurrentOffset(envPtr);
+    ExceptionRangeTarget(envPtr, range, continueOffset);
     TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex, envPtr);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
 
@@ -922,11 +1436,10 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Inline compile the loop body.
      */
 
-    envPtr->exceptArrayPtr[range].codeOffset = CurrentOffset(envPtr);
+    ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
+    ExceptionRangeEnds(envPtr, range);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[range].numCodeBytes =
-	    CurrentOffset(envPtr) - envPtr->exceptArrayPtr[range].codeOffset;
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
@@ -974,7 +1487,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Set the loop's break target.
      */
 
-    envPtr->exceptArrayPtr[range].breakOffset = CurrentOffset(envPtr);
+    ExceptionRangeTarget(envPtr, range, breakOffset);
 
     /*
      * The foreach command's result is an empty string.
@@ -2309,6 +2822,31 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
     int objc;
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
 
+    /*
+     * Check for special case which can always be compiled:
+     *	    return -options <opts> <msg>
+     * Unlike the normal [return] compilation, this version does everything at
+     * runtime so it can handle arbitrary words and not just literals. Note
+     * that if INST_RETURN_STK wasn't already needed for something else
+     * ('finally' clause processing) this piece of code would not be present.
+     */
+
+    if ((numWords == 4) && (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
+	    && (wordTokenPtr[1].size == 8)
+	    && (strncmp(wordTokenPtr[1].start, "-options", 8) == 0)) {
+	Tcl_Token *optsTokenPtr = TokenAfter(wordTokenPtr);
+	Tcl_Token *msgTokenPtr = TokenAfter(optsTokenPtr);
+
+	CompileWord(envPtr, optsTokenPtr, interp);
+	CompileWord(envPtr, msgTokenPtr, interp);
+	TclEmitOpcode(INST_RETURN_STK, envPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * Allocate some working space if needed
+     */
+
     if (numOptionWords > NUM_STATIC_OBJS) {
 	objv = (Tcl_Obj **) ckalloc(numOptionWords * sizeof(Tcl_Obj *));
     } else {
@@ -2398,11 +2936,11 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 
     /*
      * Could not use the optimization, so we push the return options dict, and
-     * emit the INST_RETURN instruction with code and level as operands.
+     * emit the INST_RETURN_IMM instruction with code and level as operands.
      */
 
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
-    TclEmitInstInt4(INST_RETURN, code, envPtr);
+    TclEmitInstInt4(INST_RETURN_IMM, code, envPtr);
     TclEmitInt4(level, envPtr);
     return TCL_OK;
 }
@@ -3318,10 +3856,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * implement break and continue.
      */
 
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    range = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
 
     /*
      * Jump to the evaluation of the condition. This code uses the "loop
@@ -3348,11 +3883,10 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * Compile the loop body.
      */
 
-    bodyCodeOffset = CurrentOffset(envPtr);
+    bodyCodeOffset = ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
+    ExceptionRangeEnds(envPtr, range);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[range].numCodeBytes =
-	    CurrentOffset(envPtr) - bodyCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
@@ -3393,7 +3927,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
     envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
     envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
-    envPtr->exceptArrayPtr[range].breakOffset = CurrentOffset(envPtr);
+    ExceptionRangeTarget(envPtr, range, breakOffset);
 
     /*
      * The while command's result is an empty string.

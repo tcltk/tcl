@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.28 2005/07/05 15:09:08 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.29 2005/07/26 04:11:57 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1711,6 +1711,33 @@ typedef struct List {
     }
 
 /*
+ * Flag values for TclTraceDictPath().
+ *
+ * DICT_PATH_READ indicates that all entries on the path must exist
+ * but no updates will be needed.
+ *
+ * DICT_PATH_UPDATE indicates that we are going to be doing an update
+ * at the tip of the path, so duplication of shared objects should be
+ * done along the way.
+ *
+ * DICT_PATH_EXISTS indicates that we are performing an existance test
+ * and a lookup failure should therefore not be an error.  If (and
+ * only if) this flag is set, TclTraceDictPath() will return the special
+ * value DICT_PATH_NON_EXISTENT if the path is not traceable.
+ *
+ * DICT_PATH_CREATE (which also requires the DICT_PATH_UPDATE bit to
+ * be set) indicates that we are to create non-existant dictionaries
+ * on the path.
+ */
+
+#define DICT_PATH_READ   0
+#define DICT_PATH_UPDATE 1
+#define DICT_PATH_EXISTS 2
+#define DICT_PATH_CREATE 5
+
+#define DICT_PATH_NON_EXISTENT ((Tcl_Obj *) (void *) 1)
+
+/*
  *----------------------------------------------------------------
  * Data structures related to the filesystem internals
  *----------------------------------------------------------------
@@ -1724,6 +1751,7 @@ typedef struct List {
  * virtual filesystem interfaces, more efficiency in 'path' manipulation
  * and usage, and cleaner filesystem code internally.
  */
+
 #define TCL_FILESYSTEM_VERSION_2	((Tcl_FSVersion) 0x2)
 typedef ClientData (TclFSGetCwdProc2) _ANSI_ARGS_((ClientData clientData));
 
@@ -2534,6 +2562,8 @@ MODULE_SCOPE int	TclCompileCatchCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 MODULE_SCOPE int	TclCompileContinueCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+MODULE_SCOPE int	TclCompileDictCmd _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 MODULE_SCOPE int	TclCompileExprCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 MODULE_SCOPE int	TclCompileForCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2962,6 +2992,18 @@ MODULE_SCOPE void TclBNInitBignumFromLong( mp_int* bignum, long initVal );
  */
 
 #define TclMatchIsTrivial(pattern) strpbrk((pattern), "*[]]?\\") == NULL
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to write the string rep of a long
+ * integer to a character buffer.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclFormatInt _ANSI_ARGS_((char *buf, long n));
+ *----------------------------------------------------------------
+ */
+
+#define TclFormatInt(buf, n) sprintf((buf), "%ld", (long)(n))
 
 /*
  *----------------------------------------------------------------

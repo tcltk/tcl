@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.10 2004/12/09 23:00:30 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.11 2005/07/26 04:11:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -166,6 +166,14 @@ TclClockLocaltimeObjCmd( ClientData clientData,
     }
     TzsetIfNecessary();
     timeVal = ThreadSafeLocalTime( &tock );
+    if ( timeVal == NULL ) {
+	Tcl_SetObjResult(interp, 
+			 Tcl_NewStringObj("localtime failed (clock "
+					  "value may be too large/"
+					  "small to represent)", -1));
+	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", (char*) NULL);
+	return TCL_ERROR;
+    }
 
     /* Package the results */
 
@@ -210,12 +218,19 @@ ThreadSafeLocalTime(timePtr)
 
     struct tm *tmPtr = (struct tm *)
 	    Tcl_GetThreadData(&tmKey, (int) sizeof(struct tm));
+    struct tm *sysTmPtr;
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
     Tcl_MutexLock(&clockMutex);
-    memcpy((VOID *) tmPtr, (VOID *) localtime(timePtr), sizeof(struct tm));
-    Tcl_MutexUnlock(&clockMutex);
+    sysTmPtr = localtime(timePtr);
+    if ( sysTmPtr == NULL ) {
+	Tcl_MutexUnlock( &clockMutex );
+	return NULL;
+    } else {
+	memcpy((VOID *) tmPtr, (VOID *) localtime(timePtr), sizeof(struct tm));
+	Tcl_MutexUnlock(&clockMutex);
+    }
 #endif    
     return tmPtr;
 }

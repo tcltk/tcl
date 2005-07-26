@@ -1,61 +1,58 @@
 /* 
  * tclPipe.c --
  *
- *	This file contains the generic portion of the command channel
- *	driver as well as various utility routines used in managing
- *	subprocesses.
+ *	This file contains the generic portion of the command channel driver
+ *	as well as various utility routines used in managing subprocesses.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.3 2004/10/28 18:47:00 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.4 2005/07/26 04:12:19 dgp Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * A linked list of the following structures is used to keep track
- * of child processes that have been detached but haven't exited
- * yet, so we can make sure that they're properly "reaped" (officially
- * waited for) and don't lie around as zombies cluttering the
- * system.
+ * A linked list of the following structures is used to keep track of child
+ * processes that have been detached but haven't exited yet, so we can make
+ * sure that they're properly "reaped" (officially waited for) and don't lie
+ * around as zombies cluttering the system.
  */
 
 typedef struct Detached {
-    Tcl_Pid pid;			/* Id of process that's been detached
-					 * but isn't known to have exited. */
-    struct Detached *nextPtr;		/* Next in list of all detached
-					 * processes. */
+    Tcl_Pid pid;		/* Id of process that's been detached but
+				 * isn't known to have exited. */
+    struct Detached *nextPtr;	/* Next in list of all detached processes. */
 } Detached;
 
-static Detached *detList = NULL;	/* List of all detached proceses. */
-TCL_DECLARE_MUTEX(pipeMutex)		/* Guard access to detList. */
+static Detached *detList = NULL;/* List of all detached proceses. */
+TCL_DECLARE_MUTEX(pipeMutex)	/* Guard access to detList. */
 
 /*
- * Declarations for local procedures defined in this file:
+ * Declarations for local functions defined in this file:
  */
 
-static TclFile	FileForRedirect _ANSI_ARGS_((Tcl_Interp *interp,
-	            CONST char *spec, int atOk, CONST char *arg, 
-		    CONST char *nextArg, int flags, int *skipPtr,
-		    int *closePtr, int *releasePtr));
+static TclFile		FileForRedirect _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *spec, int atOk, CONST char *arg, 
+			    CONST char *nextArg, int flags, int *skipPtr,
+			    int *closePtr, int *releasePtr));
 
 /*
  *----------------------------------------------------------------------
  *
  * FileForRedirect --
  *
- *	This procedure does much of the work of parsing redirection
- *	operators.  It handles "@" if specified and allowed, and a file
- *	name, and opens the file if necessary.
+ *	This function does much of the work of parsing redirection operators.
+ *	It handles "@" if specified and allowed, and a file name, and opens
+ *	the file if necessary.
  *
  * Results:
- *	The return value is the descriptor number for the file.  If an
- *	error occurs then NULL is returned and an error message is left
- *	in the interp's result.  Several arguments are side-effected; see
- *	the argument list below for details.
+ *	The return value is the descriptor number for the file. If an error
+ *	occurs then NULL is returned and an error message is left in the
+ *	interp's result. Several arguments are side-effected; see the argument
+ *	list below for details.
  *
  * Side effects:
  *	None.
@@ -67,22 +64,22 @@ static TclFile
 FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
 	releasePtr)
     Tcl_Interp *interp;		/* Intepreter to use for error reporting. */
-    CONST char *spec;		/* Points to character just after
-				 * redirection character. */
-    int atOK;			/* Non-zero means that '@' notation can be 
+    CONST char *spec;		/* Points to character just after redirection
+				 * character. */
+    int atOK;			/* Non-zero means that '@' notation can be
 				 * used to specify a channel, zero means that
 				 * it isn't. */
-    CONST char *arg;		/* Pointer to entire argument containing 
-				 * spec:  used for error reporting. */
-    CONST char *nextArg;	/* Next argument in argc/argv array, if needed 
-				 * for file name or channel name.  May be 
+    CONST char *arg;		/* Pointer to entire argument containing spec:
+				 * used for error reporting. */
+    CONST char *nextArg;	/* Next argument in argc/argv array, if needed
+				 * for file name or channel name. May be
 				 * NULL. */
-    int flags;			/* Flags to use for opening file or to 
-				 * specify mode for channel. */
-    int *skipPtr;		/* Filled with 1 if redirection target was
-				 * in spec, 2 if it was in nextArg. */
-    int *closePtr;		/* Filled with one if the caller should 
-				 * close the file when done with it, zero
+    int flags;			/* Flags to use for opening file or to specify
+				 * mode for channel. */
+    int *skipPtr;		/* Filled with 1 if redirection target was in
+				 * spec, 2 if it was in nextArg. */
+    int *closePtr;		/* Filled with one if the caller should close
+				 * the file when done with it, zero
 				 * otherwise. */
     int *releasePtr;
 {
@@ -113,11 +110,9 @@ FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
         }
 	*releasePtr = 1;
 	if (writing) {
-
 	    /*
-	     * Be sure to flush output to the file, so that anything
-	     * written by the child appears after stuff we've already
-	     * written.
+	     * Be sure to flush output to the file, so that anything written
+	     * by the child appears after stuff we've already written.
 	     */
 
             Tcl_Flush(chan);
@@ -150,7 +145,7 @@ FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
     }
     return file;
 
-    badLastArg:
+  badLastArg:
     Tcl_AppendResult(interp, "can't specify \"", arg,
 	    "\" as last word in command", (char *) NULL);
     return NULL;
@@ -161,10 +156,9 @@ FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
  *
  * Tcl_DetachPids --
  *
- *	This procedure is called to indicate that one or more child
- *	processes have been placed in background and will never be
- *	waited for;  they should eventually be reaped by
- *	Tcl_ReapDetachedProcs.
+ *	This function is called to indicate that one or more child processes
+ *	have been placed in background and will never be waited for; they
+ *	should eventually be reaped by Tcl_ReapDetachedProcs.
  *
  * Results:
  *	None.
@@ -177,8 +171,8 @@ FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
 
 void
 Tcl_DetachPids(numPids, pidPtr)
-    int numPids;		/* Number of pids to detach:  gives size
-				 * of array pointed to by pidPtr. */
+    int numPids;		/* Number of pids to detach: gives size of
+				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr;		/* Array of pids to detach. */
 {
     register Detached *detPtr;
@@ -200,17 +194,16 @@ Tcl_DetachPids(numPids, pidPtr)
  *
  * Tcl_ReapDetachedProcs --
  *
- *	This procedure checks to see if any detached processes have
- *	exited and, if so, it "reaps" them by officially waiting on
- *	them.  It should be called "occasionally" to make sure that
- *	all detached processes are eventually reaped.
+ *	This function checks to see if any detached processes have exited and,
+ *	if so, it "reaps" them by officially waiting on them. It should be
+ *	called "occasionally" to make sure that all detached processes are
+ *	eventually reaped.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Processes are waited on, so that they can be reaped by the
- *	system.
+ *	Processes are waited on, so that they can be reaped by the system.
  *
  *----------------------------------------------------------------------
  */
@@ -248,19 +241,19 @@ Tcl_ReapDetachedProcs()
  *
  * TclCleanupChildren --
  *
- *	This is a utility procedure used to wait for child processes
- *	to exit, record information about abnormal exits, and then
- *	collect any stderr output generated by them.
+ *	This is a utility function used to wait for child processes to exit,
+ *	record information about abnormal exits, and then collect any stderr
+ *	output generated by them.
  *
  * Results:
- *	The return value is a standard Tcl result.  If anything at
- *	weird happened with the child processes, TCL_ERROR is returned
- *	and a message is left in the interp's result.
+ *	The return value is a standard Tcl result. If anything at weird
+ *	happened with the child processes, TCL_ERROR is returned and a message
+ *	is left in the interp's result.
  *
  * Side effects:
- *	If the last character of the interp's result is a newline, then it
- *	is removed unless keepNewline is non-zero.  File errorId gets
- *	closed, and pidPtr is freed back to the storage allocator.
+ *	If the last character of the interp's result is a newline, then it is
+ *	removed unless keepNewline is non-zero. File errorId gets closed, and
+ *	pidPtr is freed back to the storage allocator.
  *
  *----------------------------------------------------------------------
  */
@@ -271,7 +264,7 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
     int numPids;		/* Number of entries in pidPtr array. */
     Tcl_Pid *pidPtr;		/* Array of process ids of children. */
     Tcl_Channel errorChan;	/* Channel for file containing stderr output
-				 * from pipeline.  NULL means there isn't any
+				 * from pipeline. NULL means there isn't any
 				 * stderr output. */
 {
     int result = TCL_OK;
@@ -284,11 +277,11 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
     abnormalExit = 0;
     for (i = 0; i < numPids; i++) {
 	/*
-	 * We need to get the resolved pid before we wait on it as
-	 * the windows implimentation of Tcl_WaitPid deletes the
-	 * information such that any following calls to TclpGetPid
-	 * fail.
+	 * We need to get the resolved pid before we wait on it as the windows
+	 * implimentation of Tcl_WaitPid deletes the information such that any
+	 * following calls to TclpGetPid fail.
 	 */
+
 	resolvedPid = TclpGetPid(pidPtr[i]);
         pid = Tcl_WaitPid(pidPtr[i], (int *) &waitStatus, 0);
 	if (pid == (Tcl_Pid) -1) {
@@ -297,9 +290,9 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
                 msg = Tcl_PosixError(interp);
                 if (errno == ECHILD) {
 		    /*
-                     * This changeup in message suggested by Mark Diekhans
-                     * to remind people that ECHILD errors can occur on
-                     * some systems if SIGCHLD isn't in its default state.
+                     * This changeup in message suggested by Mark Diekhans to
+                     * remind people that ECHILD errors can occur on some
+                     * systems if SIGCHLD isn't in its default state.
                      */
 
                     msg =
@@ -312,10 +305,10 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
 	}
 
 	/*
-	 * Create error messages for unusual process exits.  An
-	 * extra newline gets appended to each error message, but
-	 * it gets removed below (in the same fashion that an
-	 * extra newline in the command's output is removed).
+	 * Create error messages for unusual process exits. An extra newline
+	 * gets appended to each error message, but it gets removed below (in
+	 * the same fashion that an extra newline in the command's output is
+	 * removed).
 	 */
 
 	if (!WIFEXITED(waitStatus) || (WEXITSTATUS(waitStatus) != 0)) {
@@ -363,14 +356,12 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
     }
 
     /*
-     * Read the standard error file.  If there's anything there,
-     * then return an error and add the file's contents to the result
-     * string.
+     * Read the standard error file. If there's anything there, then return an
+     * error and add the file's contents to the result string.
      */
 
     anyErrorInfo = 0;
     if (errorChan != NULL) {
-
 	/*
 	 * Make sure we start at the beginning of the file.
 	 */
@@ -400,8 +391,8 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
     }
 
     /*
-     * If a child exited abnormally but didn't output any error information
-     * at all, generate an error message here.
+     * If a child exited abnormally but didn't output any error information at
+     * all, generate an error message here.
      */
 
     if ((abnormalExit != 0) && (anyErrorInfo == 0) && (interp != NULL)) {
@@ -416,25 +407,23 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
  *
  * TclCreatePipeline --
  *
- *	Given an argc/argv array, instantiate a pipeline of processes
- *	as described by the argv.
+ *	Given an argc/argv array, instantiate a pipeline of processes as
+ *	described by the argv.
  *
- *	This procedure is unofficially exported for use by BLT.
+ *	This function is unofficially exported for use by BLT.
  *
  * Results:
- *	The return value is a count of the number of new processes
- *	created, or -1 if an error occurred while creating the pipeline.
- *	*pidArrayPtr is filled in with the address of a dynamically
- *	allocated array giving the ids of all of the processes.  It
- *	is up to the caller to free this array when it isn't needed
- *	anymore.  If inPipePtr is non-NULL, *inPipePtr is filled in
- *	with the file id for the input pipe for the pipeline (if any):
- *	the caller must eventually close this file.  If outPipePtr
- *	isn't NULL, then *outPipePtr is filled in with the file id
- *	for the output pipe from the pipeline:  the caller must close
- *	this file.  If errFilePtr isn't NULL, then *errFilePtr is filled
- *	with a file id that may be used to read error output after the
- *	pipeline completes.
+ *	The return value is a count of the number of new processes created, or
+ *	-1 if an error occurred while creating the pipeline. *pidArrayPtr is
+ *	filled in with the address of a dynamically allocated array giving the
+ *	ids of all of the processes. It is up to the caller to free this array
+ *	when it isn't needed anymore. If inPipePtr is non-NULL, *inPipePtr is
+ *	filled in with the file id for the input pipe for the pipeline (if
+ *	any): the caller must eventually close this file. If outPipePtr isn't
+ *	NULL, then *outPipePtr is filled in with the file id for the output
+ *	pipe from the pipeline: the caller must close this file. If errFilePtr
+ *	isn't NULL, then *errFilePtr is filled with a file id that may be used
+ *	to read error output after the pipeline completes.
  *
  * Side effects:
  *	Processes and pipes are created.
@@ -448,62 +437,62 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
     int argc;			/* Number of entries in argv. */
     CONST char **argv;		/* Array of strings describing commands in
-				 * pipeline plus I/O redirection with <,
-				 * <<,  >, etc.  Argv[argc] must be NULL. */
+				 * pipeline plus I/O redirection with <, <<,
+				 * >, etc. Argv[argc] must be NULL. */
     Tcl_Pid **pidArrayPtr;	/* Word at *pidArrayPtr gets filled in with
-				 * address of array of pids for processes
-				 * in pipeline (first pid is first process
-				 * in pipeline). */
+				 * address of array of pids for processes in
+				 * pipeline (first pid is first process in
+				 * pipeline). */
     TclFile *inPipePtr;		/* If non-NULL, input to the pipeline comes
 				 * from a pipe (unless overridden by
-				 * redirection in the command).  The file
-				 * id with which to write to this pipe is
-				 * stored at *inPipePtr.  NULL means command
-				 * specified its own input source. */
-    TclFile *outPipePtr;	/* If non-NULL, output to the pipeline goes
-				 * to a pipe, unless overriden by redirection
-				 * in the command.  The file id with which to
-				 * read frome this pipe is stored at
-				 * *outPipePtr.  NULL means command specified
-				 * its own output sink. */
+				 * redirection in the command). The file id
+				 * with which to write to this pipe is stored
+				 * at *inPipePtr. NULL means command specified
+				 * its own input source. */
+    TclFile *outPipePtr;	/* If non-NULL, output to the pipeline goes to
+				 * a pipe, unless overriden by redirection in
+				 * the command. The file id with which to read
+				 * frome this pipe is stored at *outPipePtr.
+				 * NULL means command specified its own output
+				 * sink. */
     TclFile *errFilePtr;	/* If non-NULL, all stderr output from the
 				 * pipeline will go to a temporary file
-				 * created here, and a descriptor to read
-				 * the file will be left at *errFilePtr.
-				 * The file will be removed already, so
-				 * closing this descriptor will be the end
-				 * of the file.  If this is NULL, then
-				 * all stderr output goes to our stderr.
-				 * If the pipeline specifies redirection
-				 * then the file will still be created
-				 * but it will never get any data. */
+				 * created here, and a descriptor to read the
+				 * file will be left at *errFilePtr. The file
+				 * will be removed already, so closing this
+				 * descriptor will be the end of the file. If
+				 * this is NULL, then all stderr output goes
+				 * to our stderr. If the pipeline specifies
+				 * redirection then the file will still be
+				 * created but it will never get any data. */
 {
-    Tcl_Pid *pidPtr = NULL;	/* Points to malloc-ed array holding all
-				 * the pids of child processes. */
-    int numPids;		/* Actual number of processes that exist
-				 * at *pidPtr right now. */
-    int cmdCount;		/* Count of number of distinct commands
-				 * found in argc/argv. */
-    CONST char *inputLiteral = NULL;	/* If non-null, then this points to a
-				 * string containing input data (specified
-				 * via <<) to be piped to the first process
-				 * in the pipeline. */
+    Tcl_Pid *pidPtr = NULL;	/* Points to malloc-ed array holding all the
+				 * pids of child processes. */
+    int numPids;		/* Actual number of processes that exist at
+				 * *pidPtr right now. */
+    int cmdCount;		/* Count of number of distinct commands found
+				 * in argc/argv. */
+    CONST char *inputLiteral = NULL;
+				/* If non-null, then this points to a string
+				 * containing input data (specified via <<) to
+				 * be piped to the first process in the
+				 * pipeline. */
     TclFile inputFile = NULL;	/* If != NULL, gives file to use as input for
 				 * first process in pipeline (specified via <
 				 * or <@). */
-    int inputClose = 0;		/* If non-zero, then inputFile should be 
+    int inputClose = 0;		/* If non-zero, then inputFile should be
     				 * closed when cleaning up. */
     int inputRelease = 0;
     TclFile outputFile = NULL;	/* Writable file for output from last command
-				 * in pipeline (could be file or pipe).  NULL
+				 * in pipeline (could be file or pipe). NULL
 				 * means use stdout. */
-    int outputClose = 0;	/* If non-zero, then outputFile should be 
+    int outputClose = 0;	/* If non-zero, then outputFile should be
     				 * closed when cleaning up. */
     int outputRelease = 0;
     TclFile errorFile = NULL;	/* Writable file for error output from all
-				 * commands in pipeline.  NULL means use
+				 * commands in pipeline. NULL means use
 				 * stderr. */
-    int errorClose = 0;		/* If non-zero, then errorFile should be 
+    int errorClose = 0;		/* If non-zero, then errorFile should be
     				 * closed when cleaning up. */
     int errorRelease = 0;
     CONST char *p;
@@ -531,16 +520,16 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     numPids = 0;
 
     /*
-     * First, scan through all the arguments to figure out the structure
-     * of the pipeline.  Process all of the input and output redirection
-     * arguments and remove them from the argument list in the pipeline.
-     * Count the number of distinct processes (it's the number of "|"
-     * arguments plus one) but don't remove the "|" arguments because 
-     * they'll be used in the second pass to seperate the individual 
-     * child processes.  Cannot start the child processes in this pass 
-     * because the redirection symbols may appear anywhere in the 
-     * command line -- e.g., the '<' that specifies the input to the 
-     * entire pipe may appear at the very end of the argument list.
+     * First, scan through all the arguments to figure out the structure of
+     * the pipeline. Process all of the input and output redirection arguments
+     * and remove them from the argument list in the pipeline. Count the
+     * number of distinct processes (it's the number of "|" arguments plus
+     * one) but don't remove the "|" arguments because they'll be used in the
+     * second pass to seperate the individual child processes. Cannot start
+     * the child processes in this pass because the redirection symbols may
+     * appear anywhere in the command line - e.g., the '<' that specifies the
+     * input to the entire pipe may appear at the very end of the argument
+     * list.
      */
 
     lastBar = -1;
@@ -556,8 +545,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    }
 	    if (*p == '\0') {
 		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
-		    Tcl_SetResult(interp,
-			    "illegal use of | or |& in command",
+		    Tcl_SetResult(interp, "illegal use of | or |& in command",
 			    TCL_STATIC);
 		    goto error;
 		}
@@ -590,8 +578,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		}
 	    } else {
 		inputLiteral = NULL;
-		inputFile = FileForRedirect(interp, p, 1, argv[i], 
-			argv[i + 1], O_RDONLY, &skip, &inputClose, &inputRelease);
+		inputFile = FileForRedirect(interp, p, 1, argv[i], argv[i+1],
+			O_RDONLY, &skip, &inputClose, &inputRelease);
 		if (inputFile == NULL) {
 		    goto error;
 		}
@@ -616,8 +604,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    }
 
 	    /*
-	     * Close the old output file, but only if the error file is
-	     * not also using it.
+	     * Close the old output file, but only if the error file is not
+	     * also using it.
 	     */
 
 	    if (outputClose != 0) {
@@ -636,8 +624,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		    TclpReleaseFile(outputFile);
 		}
 	    }
-	    outputFile = FileForRedirect(interp, p, atOK, argv[i], 
-		    argv[i + 1], flags, &skip, &outputClose, &outputRelease);
+	    outputFile = FileForRedirect(interp, p, atOK, argv[i], argv[i+1],
+		    flags, &skip, &outputClose, &outputRelease);
 	    if (outputFile == NULL) {
 		goto error;
 	    }
@@ -677,10 +665,11 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    if (atOK && p[0] == '@' && p[1] == '1' && p[2] == '\0') {
 		/*
 		 * Special case handling of 2>@1 to redirect stderr to the
-		 * exec/open output pipe as well.  This is meant for the end
-		 * of the command string, otherwise use |& between commands.
+		 * exec/open output pipe as well. This is meant for the end of
+		 * the command string, otherwise use |& between commands.
 		 */
-		if (i != argc - 1) {
+
+		if (i != argc-1) {
 		    Tcl_AppendResult(interp, "must specify \"", argv[i],
 			    "\" as last word in command", (char *) NULL);
 		    goto error;
@@ -690,7 +679,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		skip = 1;
 	    } else {
 		errorFile = FileForRedirect(interp, p, atOK, argv[i], 
-			argv[i + 1], flags, &skip, &errorClose, &errorRelease);
+			argv[i+1], flags, &skip, &errorClose, &errorRelease);
 		if (errorFile == NULL) {
 		    goto error;
 		}
@@ -711,9 +700,10 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	if (inputLiteral != NULL) {
 	    /*
 	     * The input for the first process is immediate data coming from
-	     * Tcl.  Create a temporary file for it and put the data into the
+	     * Tcl. Create a temporary file for it and put the data into the
 	     * file.
 	     */
+
 	    inputFile = TclpCreateTempFile(inputLiteral);
 	    if (inputFile == NULL) {
 		Tcl_AppendResult(interp,
@@ -724,8 +714,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    inputClose = 1;
 	} else if (inPipePtr != NULL) {
 	    /*
-	     * The input for the first process in the pipeline is to
-	     * come from a pipe that can be written from by the caller.
+	     * The input for the first process in the pipeline is to come from
+	     * a pipe that can be written from by the caller.
 	     */
 
 	    if (TclpCreatePipe(&inputFile, inPipePtr) == 0) {
@@ -753,8 +743,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     if (outputFile == NULL) {
 	if (outPipePtr != NULL) {
 	    /*
-	     * Output from the last process in the pipeline is to go to a
-	     * pipe that can be read by the caller.
+	     * Output from the last process in the pipeline is to go to a pipe
+	     * that can be read by the caller.
 	     */
 
 	    if (TclpCreatePipe(outPipePtr, &outputFile) == 0) {
@@ -782,16 +772,17 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     if (errorFile == NULL) {
 	if (errorToOutput == 2) {
 	    /*
-	     * Handle 2>@1 special case at end of cmd line
+	     * Handle 2>@1 special case at end of cmd line.
 	     */
+
 	    errorFile = outputFile;
 	} else if (errFilePtr != NULL) {
 	    /*
 	     * Set up the standard error output sink for the pipeline, if
-	     * requested.  Use a temporary file which is opened, then deleted.
+	     * requested. Use a temporary file which is opened, then deleted.
 	     * Could potentially just use pipe, but if it filled up it could
-	     * cause the pipeline to deadlock:  we'd be waiting for processes
-	     * to complete before reading stderr, and processes couldn't 
+	     * cause the pipeline to deadlock: we'd be waiting for processes
+	     * to complete before reading stderr, and processes couldn't
 	     * complete because stderr was backed up.
 	     */
 
@@ -819,8 +810,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     }
 	
     /*
-     * Scan through the argc array, creating a process for each
-     * group of arguments between the "|" characters.
+     * Scan through the argc array, creating a process for each group of
+     * arguments between the "|" characters.
      */
 
     Tcl_ReapDetachedProcs();
@@ -861,7 +852,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 
 	/*
 	 * If this is the last segment, use the specified outputFile.
-	 * Otherwise create an intermediate pipe.  pipeIn will become the
+	 * Otherwise create an intermediate pipe. pipeIn will become the
 	 * curInFile for the next segment of the pipe.
 	 */
 
@@ -900,8 +891,8 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	numPids++;
 
 	/*
-	 * Close off our copies of file descriptors that were set up for
-	 * this child, then set up the input for the next child.
+	 * Close off our copies of file descriptors that were set up for this
+	 * child, then set up the input for the next child.
 	 */
 
 	if ((curInFile != NULL) && (curInFile != inputFile)) {
@@ -919,10 +910,10 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     *pidArrayPtr = pidPtr;
 
     /*
-     * All done.  Cleanup open files lying around and then return.
+     * All done. Cleanup open files lying around and then return.
      */
 
-cleanup:
+  cleanup:
     Tcl_DStringFree(&execBuffer);
 
     if (inputClose) {
@@ -943,12 +934,12 @@ cleanup:
     return numPids;
 
     /*
-     * An error occurred.  There could have been extra files open, such
-     * as pipes between children.  Clean them all up.  Detach any child
-     * processes that have been created.
+     * An error occurred. There could have been extra files open, such as
+     * pipes between children. Clean them all up. Detach any child processes
+     * that have been created.
      */
 
-error:
+  error:
     if (pipeIn != NULL) {
 	TclpCloseFile(pipeIn);
     }
@@ -987,28 +978,26 @@ error:
  *
  * Tcl_OpenCommandChannel --
  *
- *	Opens an I/O channel to one or more subprocesses specified
- *	by argc and argv.  The flags argument determines the
- *	disposition of the stdio handles.  If the TCL_STDIN flag is
- *	set then the standard input for the first subprocess will
- *	be tied to the channel:  writing to the channel will provide
- *	input to the subprocess.  If TCL_STDIN is not set, then
- *	standard input for the first subprocess will be the same as
- *	this application's standard input.  If TCL_STDOUT is set then
- *	standard output from the last subprocess can be read from the
- *	channel;  otherwise it goes to this application's standard
- *	output.  If TCL_STDERR is set, standard error output for all
- *	subprocesses is returned to the channel and results in an error
- *	when the channel is closed;  otherwise it goes to this
- *	application's standard error.  If TCL_ENFORCE_MODE is not set,
- *	then argc and argv can redirect the stdio handles to override
- *	TCL_STDIN, TCL_STDOUT, and TCL_STDERR;  if it is set, then it 
- *	is an error for argc and argv to override stdio channels for
- *	which TCL_STDIN, TCL_STDOUT, and TCL_STDERR have been set.
+ *	Opens an I/O channel to one or more subprocesses specified by argc and
+ *	argv. The flags argument determines the disposition of the stdio
+ *	handles. If the TCL_STDIN flag is set then the standard input for the
+ *	first subprocess will be tied to the channel: writing to the channel
+ *	will provide input to the subprocess. If TCL_STDIN is not set, then
+ *	standard input for the first subprocess will be the same as this
+ *	application's standard input. If TCL_STDOUT is set then standard
+ *	output from the last subprocess can be read from the channel;
+ *	otherwise it goes to this application's standard output. If TCL_STDERR
+ *	is set, standard error output for all subprocesses is returned to the
+ *	channel and results in an error when the channel is closed; otherwise
+ *	it goes to this application's standard error. If TCL_ENFORCE_MODE is
+ *	not set, then argc and argv can redirect the stdio handles to override
+ *	TCL_STDIN, TCL_STDOUT, and TCL_STDERR; if it is set, then it is an
+ *	error for argc and argv to override stdio channels for which
+ *	TCL_STDIN, TCL_STDOUT, and TCL_STDERR have been set.
  *
  * Results:
- *	A new command channel, or NULL on failure with an error
- *	message left in interp.
+ *	A new command channel, or NULL on failure with an error message left
+ *	in interp.
  *
  * Side effects:
  *	Creates processes, opens pipes.
@@ -1018,8 +1007,8 @@ error:
 
 Tcl_Channel
 Tcl_OpenCommandChannel(interp, argc, argv, flags)
-    Tcl_Interp *interp;		/* Interpreter for error reporting. Can
-                                 * NOT be NULL. */
+    Tcl_Interp *interp;		/* Interpreter for error reporting. Can NOT be
+                                 * NULL. */
     int argc;			/* How many arguments. */
     CONST char **argv;		/* Array of arguments for command pipe. */
     int flags;			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
@@ -1045,8 +1034,8 @@ Tcl_OpenCommandChannel(interp, argc, argv, flags)
     }
 
     /*
-     * Verify that the pipes that were created satisfy the
-     * readable/writable constraints. 
+     * Verify that the pipes that were created satisfy the readable/writable
+     * constraints.
      */
 
     if (flags & TCL_ENFORCE_MODE) {
@@ -1072,7 +1061,7 @@ Tcl_OpenCommandChannel(interp, argc, argv, flags)
     }
     return channel;
 
-error:
+  error:
     if (numPids > 0) {
 	Tcl_DetachPids(numPids, pidPtr);
 	ckfree((char *) pidPtr);
@@ -1088,3 +1077,11 @@ error:
     }
     return NULL;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

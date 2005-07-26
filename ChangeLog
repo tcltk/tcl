@@ -1,3 +1,139 @@
+2005-07-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_PROG_TCLSH, SC_BUILD_TCLSH):
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_PROG_TCLSH, SC_BUILD_TCLSH):
+	Split confused search for tclsh on PATH and
+	build and install locations into two macros.
+	SC_PROG_TCLSH searches just the PATH.
+	SC_BUILD_TCLSH determines the name of the tclsh
+	executable in the Tcl build directory.
+	[Tcl bug 1160114]
+	[Tcl patch 1244153]
+
+2005-07-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl:	Updates to the Tcl script library to make
+	* library/history.tcl:	use of Tcl 8.4 features.  Forward port of
+	* library/init.tcl:	appropriate portions of [Patch 1237755].
+	* library/package.tcl:
+	* library/safe.tcl:
+	* library/word.tcl:
+
+2005-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/string.test: Add string is tests for
+	functionality that was not tested.
+	* win/README: Update msys + mingw URL.
+	Remove old Cygwin + mingw info.
+
+2005-07-23  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_DICT_*): stop 2 compiler
+	warnings for uninitialised variables. 
+
+2005-07-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TEBC:INST_DICT_INCR_IMM): Fix the
+	incrementor to work correctly with wide values.
+
+2005-07-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictCmd): First run at a compiler 
+	* generic/tclExecute.c (TclExecuteByteCode): for dictionaries.
+	Also added an instruction to support 'finally'-like clauses, exposed
+	more of the dict guts to the rest of the core, and defined a few
+	tests to exercise more obscure parts of the compiler's operation that
+	were bugs during development.
+
+2005-07-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/ldAout.tcl (***REMOVED***):	Removed support for ancient
+	* unix/configure:			BSD's, IRIX 4, RISCos and
+	* unix/Makefile.in:			Ultrix.  Removed two files
+	* unix/tcl.m4:				whose code is used only on
+	* unix/tclLoadAout.c (***REMOVED***):	those antique platforms.
+
+	***POTENTIAL INCOMPATIBILITY*** if anyone actually uses those
+	platforms; it is to be noted though, that an error in the
+	installer has actually not caused a necessary file to be installed
+	on those platforms in several releases, and nobody's complained.
+	
+2005-07-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (RefineResult):  Plugged a stupid memory
+	leak in RefineResult (called from Tcl_StrToD).  [Tk Bug 1227781]
+	
+2005-07-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (TclClockLocaltimeObjCmd,ThreadSafeLocalTime):
+	* library/clock.tcl (GuessWindowsTimeZone, ClearCaches):
+	* tests/clock.test (clock-49.1, clock-49.2):
+	Handle correctly the case where localtime() returns NULL to
+	report a conversion error.  Also handle the case where the Windows
+	registry contains timezone values that can be mapped to a tzdata
+	file name but the corresponding file does not exist or is
+	corrupted, by falling back on a Posix timezone string instead;
+	this last case will avoid calls to localtime() in starpacks on
+	Windows. [Bug 1237907]
+	
+2005-07-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompile.c: Update to follow style guidelines.
+	(TclPrintInstruction): Reorganize to do better printing out of
+	bytecode with far fewer "special hacks" for particular opcodes.
+	* generic/tclCompile.h: Requires two new opcode types.
+
+2005-07-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixSock.c:	Use a ProcessGlobalValue to store the
+	* win/tclWinSock.c:	value returned by Tcl_GetHostName()
+	([info hostname]).  Also re-order initialization of the value
+	on Windows to favor GetComputerName() over gethostname() as
+	a source of the information.
+
+2005-07-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/lsearch.n: Clarify documentation of -exact option; wording was
+	open to misinterpretation by non-English speakers.
+
+2005-07-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c: General style cleanup.
+
+2005-07-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Reimplement long and wide
+	type integer division and modulus operations so that the smallest and
+	largest integer values are handled properly.  The divide operation is
+	more efficient since it no longer does a modulus or negation and only
+	checks for a remainder when the quotient will be a negative number.
+	The modulus operation is now a bit more complex because of a number of
+	special cases dealing with the smallest and largest integers.
+	* tests/expr.test: Add test cases for division and modulus operations
+	on the smallest and largest integer values for 32 and 64 bit types.
+	[Patch 1230205]
+
+2005-07-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLink.c:	Simplified LinkTraceProc [Bug 1208108].
+
+2005-07-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Purged use of TCLTESTARGS [RFE 1161550].
+
+	* generic/tclUtil.c:	Converted TclFormatInt() into a macro.
+	* generic/tclInt.decls:	[RFE 1194015]
+	* generic/tclInt.h:
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclNamesp.c:	Allow for [namespace import] of a command
+	* tests/namespace.test:	over a previous [namespace import] of itself
+	without throwing an error.  [RFE 1230597]
+
 2005-07-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictForCmd, DictFilterCmd): Interlocking of
@@ -13,23 +149,22 @@
 
 2005-06-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* generic/tclExecute.c (TclExecuteByteCode): When parsing an
-	integer operand for a unary minus expression operator, check for a
-	wide integer that is actually LONG_MIN. If found, convert it back
-	to a long int type.
-	* tests/expr.test: Add constraint for 32bit long int type and
-	64bit wide int type. Add tests that parse the smallest/largest
-	long int and wide int values.
+	* generic/tclExecute.c (TclExecuteByteCode): When parsing an integer
+	operand for a unary minus expression operator, check for a wide
+	integer that is actually LONG_MIN. If found, convert it back to a long
+	int type.
+	* tests/expr.test: Add constraint for 32bit long int type and 64bit
+	wide int type. Add tests that parse the smallest/largest long int and
+	wide int values.
 
 2004-06-24  Kevin Kenny  <kennykb@acm.org>
 	
 	* generic/tclEvent.c (Tcl_Finalize):
 	* generic/tclInt.h:
 	* generic/tclPreserve.c (TclFinalizePreserve): Changed the
-	finalization logic so that Tcl_Preserve finalizes after exit
-	handlers run; a lot of code called from Tk's exit handlers
-	presumes tha Tcl_Preserve will still work even from an exit
-	handler.
+	finalization logic so that Tcl_Preserve finalizes after exit handlers
+	run; a lot of code called from Tk's exit handlers presumes that
+	Tcl_Preserve will still work even from an exit handler.
 	
 2005-06-24  Don Porter  <dgp@users.sourceforge.net>
 
@@ -38,10 +173,10 @@
 
 2005-06-23  Kevin Kenny  <kennykb@acm.org>
 
-	* win/tclWinChan.c: More rewriting of __asm__ blocks that
-	* win/tclWinFCmd.c: implement SEH in GCC, because mingw's
-	gcc 3.4.2 is not as forgiving of violations committed by
-	the old code and caused panics. [Bug #1225957]
+	* win/tclWinChan.c: More rewriting of __asm__ blocks that implement
+	* win/tclWinFCmd.c: SEH in GCC, because mingw's gcc 3.4.2 is not as
+	forgiving of violations committed by the old code and caused panics.
+	[Bug #1225957]
 	
 2005-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -60,27 +195,25 @@
 	* generic/tclIO.c (TclFinalizeIOSubsystem): shutdown of the pipe
 	* unix/tclUnixPipe.c (TclFinalizePipes):    management until after
 	* win/tclWinPipe.c (TclFinalizePipes):      all channels have been
-	    closed, in order to avoid a situation where the Windows
-	    PipeCloseProc2 would re-establish the exit handler after
-	    exit handlers had already run, corrupting the heap.
-	    [Bug #1225727]
+	closed, in order to avoid a situation where the Windows PipeCloseProc2
+	would re-establish the exit handler after exit handlers had already
+	run, corrupting the heap. [Bug #1225727]
 	Also corrected a potential read of uninitialized memory in
 	PipeClose2Proc [Bug #1225044]
 	
 2005-06-21  Andreas Kupries <andreask@activestate.com>
 
-	* generic/tclInt.h: Followup to change made on 2005-06-18 by
-	  Daniel Steffen. There are compilers (*) who error out on the
-	  redefinition of WORDS_BIGENDIAN. We have to undef the previous
-	  definition (on the command line) first to make this
-	  acceptable. (*): AIX native.
+	* generic/tclInt.h: Followup to change made on 2005-06-18 by Daniel
+	Steffen. There are compilers (*) who error out on the redefinition of
+	WORDS_BIGENDIAN. We have to undef the previous definition (on the
+	command line) first to make this acceptable. (*): AIX native.
 
 2005-06-21  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclFileName.c: Changed [file split] and [file join]
-	to treat Windows drive letters similarly to ~ syntax and make
-	sure that they appear with "./" in front when they are in
-	intermediate components of the path. [Bug 1194458]
+	* generic/tclFileName.c: Changed [file split] and [file join] to treat
+	Windows drive letters similarly to ~ syntax and make sure that they
+	appear with "./" in front when they are in intermediate components of
+	the path. [Bug 1194458]
 	* tests/fileName.test: Added test for the above bug.
 	
 2005-06-21  Don Porter  <dgp@users.sourceforge.net>
@@ -93,10 +226,9 @@
 
 2005-06-21  Donal K. Fellows  <dkf@users.sf.net>
 
-	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Only enable the 'compile'
-	special debugging feature when requested in configure.in; removes
-	irrelevant junk from the configure files of extensions that use
-	Tcl's tcl.m4.
+	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Only enable the 'compile' special
+	debugging feature when requested in configure.in; removes irrelevant
+	junk from the configure files of extensions that use Tcl's tcl.m4.
 
 2005-06-20  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -111,8 +243,8 @@
 2005-06-20  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Generate an error if a mode
-	argument like -exact is passed more than once to the switch
-	command. The previous implementation silently accepted invalid switch
+	argument like -exact is passed more than once to the switch command.
+	The previous implementation silently accepted invalid switch
 	invocations like [switch -exact -glob $str ...].
 	* tests/for.test: Check some error cases when invoking continue and
 	break inside a for loop next script.
@@ -228,12 +360,11 @@
 
 2005-06-06  Kevin B. Kenny  <kennykb@acm.org>
 
-	* win/tclWin32Dll.c: Corrected another buglet in the assembly
-	code for stack probing on Win32/gcc. [Bug #1213678]
+	* win/tclWin32Dll.c: Corrected another buglet in the assembly code for
+	stack probing on Win32/gcc. [Bug #1213678]
 	* generic/tclObj,c: Added missing 'static' on definition of
-	UpdateStringOfBignum, and removed a 'switch' on a 'long long'
-	operand (which HP-UX native 'cc' seems unable to handle).
-	[Bug #1215775]
+	UpdateStringOfBignum, and removed a 'switch' on a 'long long' operand
+	(which HP-UX native 'cc' seems unable to handle). [Bug #1215775]
 	
 2005-06-04  Jeff Hobbs  <jeffh@ActiveState.com>
 

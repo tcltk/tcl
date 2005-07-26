@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.10 2005/06/22 21:12:44 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.11 2005/07/26 04:12:22 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -114,9 +114,9 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 			    if {![info exists env($u)]} {
 				set env($u) $env($p)
 			    }
-			    trace variable env($p) w \
+			    trace add variable env($p) write \
 				    [namespace code [list EnvTraceProc $p]]
-			    trace variable env($u) w \
+			    trace add variable env($u) write \
 				    [namespace code [list EnvTraceProc $p]]
 			}
 		    }
@@ -177,7 +177,7 @@ if {[interp issafe]} {
 
 # Conditionalize for presence of exec.
 
-if {[llength [info commands exec]] == 0} {
+if {[namespace which -command exec] eq ""} {
 
     # Some machines do not have exec. Also, on all
     # platforms, safe interpreters do not have exec.
@@ -188,7 +188,7 @@ if {[llength [info commands exec]] == 0} {
 # Define a log command (which can be overwitten to log errors
 # differently, specially when stderr is not available)
 
-if {[llength [info commands tclLog]] == 0} {
+if {[namespace which -command tclLog] eq ""} {
     proc tclLog {string} {
 	catch {puts stderr $string}
     }
@@ -235,7 +235,7 @@ proc unknown args {
 
     catch {set savedErrorInfo $::errorInfo}
     catch {set savedErrorCode $::errorCode}
-    set name [lindex $args 0]
+    set name $cmd
     if {![info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.
@@ -323,9 +323,9 @@ proc unknown args {
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
-	    if {$new != ""} {
+	    if {$new ne ""} {
 		set redir ""
-		if {[info commands console] eq ""} {
+		if {[namespace which -command console] eq ""} {
 		    set redir ">&@stdout <@stdin"
 		}
 		return [uplevel 1 exec $redir $new [lrange $args 1 end]]
@@ -333,9 +333,9 @@ proc unknown args {
 	}
 	if {$name eq "!!"} {
 	    set newcmd [history event]
-	} elseif {[regexp {^!(.+)$} $name dummy event]} {
+	} elseif {[regexp {^!(.+)$} $name -> event]} {
 	    set newcmd [history event $event]
-	} elseif {[regexp {^\^([^^]*)\^([^^]*)\^?$} $name dummy old new]} {
+	} elseif {[regexp {^\^([^^]*)\^([^^]*)\^?$} $name -> old new]} {
 	    set newcmd [history event -1]
 	    catch {regsub -all -- $old $newcmd $new newcmd}
 	}
@@ -354,11 +354,19 @@ proc unknown args {
 		    "\n    (expanding command prefix \"$name\" in unknown)"
 	    return -options $opts $msg
 	}
+	# Handle empty $name separately due to strangeness in [string first]
+	if {$name eq ""} {
+	    if {[llength $candidates] != 1} {
+		return -code error "empty command name \"\""
+	    }
+	    # It's not really possible to reach here.
+	    return [uplevel 1 [lreplace $args 0 0 [lindex $candidates 0]]]
+	}
 	# Filter out bogus matches when $name contained
 	# a glob-special char [Bug 946952]
 	set cmds [list]
 	foreach x $candidates {
-	    if {[string range $x 0 [expr [string length $name]-1]] eq $name} {
+	    if {[string first $name $x] == 0} {
 		lappend cmds $x
 	    }
 	}
@@ -366,12 +374,7 @@ proc unknown args {
 	    return [uplevel 1 [lreplace $args 0 0 [lindex $cmds 0]]]
 	}
 	if {[llength $cmds]} {
-	    if {$name eq ""} {
-		return -code error "empty command name \"\""
-	    } else {
-		return -code error \
-			"ambiguous command name \"$name\": [lsort $cmds]"
-	    }
+	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
     return -code error "invalid command name \"$name\""
@@ -392,7 +395,7 @@ proc unknown args {
 proc auto_load {cmd {namespace {}}} {
     global auto_index auto_path
 
-    if {[string length $namespace] == 0} {
+    if {$namespace eq ""} {
 	set namespace [uplevel 1 [list ::namespace current]]
     }
     set nameList [auto_qualify $cmd $namespace]
@@ -480,7 +483,7 @@ proc auto_load_index {} {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
 		}
 	    } msg opts]
-	    if {$f != ""} {
+	    if {$f ne ""} {
 		close $f
 	    }
 	    if {$error} {
@@ -519,13 +522,13 @@ proc auto_qualify {cmd namespace} {
     # with the following form :
     # ( inputCmd, inputNameSpace) -> output
 
-    if {[regexp {^::(.*)$} $cmd x tail]} {
+    if {[string match ::* $cmd]} {
 	if {$n > 1} {
 	    # ( ::foo::bar , * ) -> ::foo::bar
 	    return [list $cmd]
 	} else {
 	    # ( ::global , * ) -> global
-	    return [list $tail]
+	    return [list [string range $cmd 2 end]]
 	}
     }
     
@@ -735,7 +738,7 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     if {[file exists $dest]} {
-	if {$nsrc == $ndest} {
+	if {$nsrc eq $ndest} {
 	    return -code error "error $action \"$src\" to\
 	      \"$dest\": trying to rename a volume or move a directory\
 	      into itself"
@@ -755,10 +758,10 @@ proc tcl::CopyDirectory {action src dest} {
 	    # can be returned in various combinations.  Anyway,
 	    # if any other file is returned, we must signal an error.
 	    set existing [glob -nocomplain -directory $dest * .*]
-	    eval [list lappend existing] \
-	      [glob -nocomplain -directory $dest -type hidden * .*]
+	    lappend existing {expand}[glob -nocomplain -directory $dest \
+		    -type hidden * .*]
 	    foreach s $existing {
-		if {([file tail $s] != ".") && ([file tail $s] != "..")} {
+		if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
 		    return -code error "error $action \"$src\" to\
 		      \"$dest\": file already exists"
 		}
@@ -768,7 +771,7 @@ proc tcl::CopyDirectory {action src dest} {
 	if {[string first $nsrc $ndest] != -1} {
 	    set srclen [expr {[llength [file split $nsrc]] -1}]
 	    set ndest [lindex [file split $ndest] $srclen]
-	    if {$ndest == [file tail $nsrc]} {
+	    if {$ndest eq [file tail $nsrc]} {
 		return -code error "error $action \"$src\" to\
 		  \"$dest\": trying to rename a volume or move a directory\
 		  into itself"
@@ -786,7 +789,7 @@ proc tcl::CopyDirectory {action src dest} {
       [glob -nocomplain -directory $src -types hidden *]]
 
     foreach s [lsort -unique $filelist] {
-	if {([file tail $s] != ".") && ([file tail $s] != "..")} {
+	if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
 	    file copy -force $s [file join $dest [file tail $s]]
 	}
     }

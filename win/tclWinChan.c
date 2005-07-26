@@ -1,15 +1,15 @@
 /*
  * tclWinChan.c
  *
- *	Channel drivers for Windows channels based on files, command
- *	pipes and TCP sockets.
+ *	Channel drivers for Windows channels based on files, command pipes and
+ *	TCP sockets.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.8 2005/07/05 15:09:29 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.9 2005/07/26 04:12:34 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -42,7 +42,7 @@ typedef struct FileInfo {
     HANDLE handle;		/* Input/output file. */
     struct FileInfo *nextPtr;	/* Pointer to next registered file. */
     int dirty;			/* Boolean flag. Set if the OS may have data
-				 * pending on the channel */
+				 * pending on the channel. */
 } FileInfo;
 
 typedef struct ThreadSpecificData {
@@ -56,16 +56,16 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 /*
- * The following structure is what is added to the Tcl event queue when
- * file events are generated.
+ * The following structure is what is added to the Tcl event queue when file
+ * events are generated.
  */
 
 typedef struct FileEvent {
-    Tcl_Event header;		/* Information that is standard for
-				 * all events. */
-    FileInfo *infoPtr;		/* Pointer to file info structure.  Note
-				 * that we still have to verify that the
-				 * file exists before dereferencing this
+    Tcl_Event header;		/* Information that is standard for all
+				 * events. */
+    FileInfo *infoPtr;		/* Pointer to file info structure. Note that
+				 * we still have to verify that the file
+				 * exists before dereferencing this
 				 * pointer. */
 } FileEvent;
 
@@ -73,35 +73,29 @@ typedef struct FileEvent {
  * Static routines for this file:
  */
 
-static int		FileBlockProc _ANSI_ARGS_((ClientData instanceData,
-			    int mode));
-static void		FileChannelExitHandler _ANSI_ARGS_((
-			    ClientData clientData));
-static void		FileCheckProc _ANSI_ARGS_((ClientData clientData,
-			    int flags));
-static int		FileCloseProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp));
-static int		FileEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
-			    int flags));
-static int		FileGetHandleProc _ANSI_ARGS_((ClientData instanceData,
-			    int direction, ClientData *handlePtr));
-static ThreadSpecificData *FileInit _ANSI_ARGS_((void));
-static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toRead, int *errorCode));
-static int		FileOutputProc _ANSI_ARGS_((ClientData instanceData,
-			    CONST char *buf, int toWrite, int *errorCode));
-static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
-			    long offset, int mode, int *errorCode));
-static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode));
-static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
-			    int flags));
-static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
-		            int mask));
-static void             FileThreadActionProc _ANSI_ARGS_ ((
-			   ClientData instanceData, int action));
-static int		FileTruncateProc _ANSI_ARGS_ ((
-			   ClientData instanceData, Tcl_WideInt length));
+static int		FileBlockProc(ClientData instanceData, int mode);
+static void		FileChannelExitHandler(ClientData clientData);
+static void		FileCheckProc(ClientData clientData, int flags);
+static int		FileCloseProc(ClientData instanceData,
+			    Tcl_Interp *interp);
+static int		FileEventProc(Tcl_Event *evPtr, int flags);
+static int		FileGetHandleProc(ClientData instanceData,
+			    int direction, ClientData *handlePtr);
+static ThreadSpecificData *FileInit(void);
+static int		FileInputProc(ClientData instanceData, char *buf,
+			    int toRead, int *errorCode);
+static int		FileOutputProc(ClientData instanceData,
+			    CONST char *buf, int toWrite, int *errorCode);
+static int		FileSeekProc(ClientData instanceData, long offset,
+			    int mode, int *errorCode);
+static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode);
+static void		FileSetupProc(ClientData clientData, int flags);
+static void		FileWatchProc(ClientData instanceData, int mask);
+static void		FileThreadActionProc(ClientData instanceData,
+			    int action);
+static int		FileTruncateProc(ClientData instanceData,
+			    Tcl_WideInt length);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -128,23 +122,20 @@ static Tcl_ChannelType fileChannelType = {
 };
 
 #ifdef HAVE_NO_SEH
-
 /*
- * Unlike Borland and Microsoft, we don't register exception handlers
- * by pushing registration records onto the runtime stack.  Instead, we
- * register them by creating an EXCEPTION_REGISTRATION within the activation
- * record.
+ * Unlike Borland and Microsoft, we don't register exception handlers by
+ * pushing registration records onto the runtime stack. Instead, we register
+ * them by creating an EXCEPTION_REGISTRATION within the activation record.
  */
 
 typedef struct EXCEPTION_REGISTRATION {
     struct EXCEPTION_REGISTRATION* link;
-    EXCEPTION_DISPOSITION (*handler)( struct _EXCEPTION_RECORD*, void*,
-				      struct _CONTEXT*, void* );
+    EXCEPTION_DISPOSITION (*handler)(
+	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
     void* ebp;
     void* esp;
     int status;
 } EXCEPTION_REGISTRATION;
-
 #endif
 
 /*
@@ -183,8 +174,8 @@ FileInit()
  *
  * FileChannelExitHandler --
  *
- *	This function is called to cleanup the channel driver before
- *	Tcl is unloaded.
+ *	This function is called to cleanup the channel driver before Tcl is
+ *	unloaded.
  *
  * Results:
  *	None.
@@ -207,8 +198,8 @@ FileChannelExitHandler(clientData)
  *
  * FileSetupProc --
  *
- *	This procedure is invoked before Tcl_DoOneEvent blocks waiting
- *	for an event.
+ *	This function is invoked before Tcl_DoOneEvent blocks waiting for an
+ *	event.
  *
  * Results:
  *	None.
@@ -221,9 +212,8 @@ FileChannelExitHandler(clientData)
 
 void
 FileSetupProc(data, flags)
-    ClientData data;			/* Not used. */
-    int flags;				/* Event flags as passed to
-					 * Tcl_DoOneEvent. */
+    ClientData data;		/* Not used. */
+    int flags;			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
@@ -234,7 +224,7 @@ FileSetupProc(data, flags)
     }
 
     /*
-     * Check to see if there is a ready file.  If so, poll.
+     * Check to see if there is a ready file. If so, poll.
      */
 
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
@@ -251,8 +241,8 @@ FileSetupProc(data, flags)
  *
  * FileCheckProc --
  *
- *	This procedure is called by Tcl_DoOneEvent to check the file
- *	event source for events.
+ *	This function is called by Tcl_DoOneEvent to check the file event
+ *	source for events.
  *
  * Results:
  *	None.
@@ -265,9 +255,8 @@ FileSetupProc(data, flags)
 
 static void
 FileCheckProc(data, flags)
-    ClientData data;			/* Not used. */
-    int flags;				/* Event flags as passed to
-					 * Tcl_DoOneEvent. */
+    ClientData data;		/* Not used. */
+    int flags;			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileEvent *evPtr;
     FileInfo *infoPtr;
@@ -278,9 +267,8 @@ FileCheckProc(data, flags)
     }
 
     /*
-     * Queue events for any ready files that don't already have events
-     * queued (caused by persistent states that won't generate WinSock
-     * events).
+     * Queue events for any ready files that don't already have events queued
+     * (caused by persistent states that won't generate WinSock events).
      */
 
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
@@ -300,15 +288,15 @@ FileCheckProc(data, flags)
  *
  * FileEventProc --
  *
- *	This function is invoked by Tcl_ServiceEvent when a file event
- *	reaches the front of the event queue.  This procedure invokes
- *	Tcl_NotifyChannel on the file.
+ *	This function is invoked by Tcl_ServiceEvent when a file event reaches
+ *	the front of the event queue. This function invokes Tcl_NotifyChannel
+ *	on the file.
  *
  * Results:
- *	Returns 1 if the event was handled, meaning it should be removed
- *	from the queue.  Returns 0 if the event was not handled, meaning
- *	it should stay on the queue.  The only time the event isn't
- *	handled is if the TCL_FILE_EVENTS flag bit isn't set.
+ *	Returns 1 if the event was handled, meaning it should be removed from
+ *	the queue. Returns 0 if the event was not handled, meaning it should
+ *	stay on the queue. The only time the event isn't handled is if the
+ *	TCL_FILE_EVENTS flag bit isn't set.
  *
  * Side effects:
  *	Whatever the notifier callback does.
@@ -318,9 +306,9 @@ FileCheckProc(data, flags)
 
 static int
 FileEventProc(evPtr, flags)
-    Tcl_Event *evPtr;			/* Event to service. */
-    int flags;				/* Flags that indicate what events to
-					 * handle, such as TCL_FILE_EVENTS. */
+    Tcl_Event *evPtr;		/* Event to service. */
+    int flags;			/* Flags that indicate what events to handle,
+				 * such as TCL_FILE_EVENTS. */
 {
     FileEvent *fileEvPtr = (FileEvent *)evPtr;
     FileInfo *infoPtr;
@@ -332,9 +320,9 @@ FileEventProc(evPtr, flags)
 
     /*
      * Search through the list of watched files for the one whose handle
-     * matches the event.  We do this rather than simply dereferencing
-     * the handle in the event so that files can be deleted while the
-     * event is in the queue.
+     * matches the event. We do this rather than simply dereferencing the
+     * handle in the event so that files can be deleted while the event is in
+     * the queue.
      */
 
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
@@ -366,9 +354,9 @@ FileEventProc(evPtr, flags)
 
 static int
 FileBlockProc(instanceData, mode)
-    ClientData instanceData;		/* Instance data for channel. */
-    int mode;				/* TCL_MODE_BLOCKING or
-					 * TCL_MODE_NONBLOCKING. */
+    ClientData instanceData;	/* Instance data for channel. */
+    int mode;			/* TCL_MODE_BLOCKING or
+				 * TCL_MODE_NONBLOCKING. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
 
@@ -405,8 +393,8 @@ FileBlockProc(instanceData, mode)
 
 static int
 FileCloseProc(instanceData, interp)
-    ClientData instanceData;		/* Pointer to FileInfo structure. */
-    Tcl_Interp *interp;			/* Not used. */
+    ClientData instanceData;	/* Pointer to FileInfo structure. */
+    Tcl_Interp *interp;		/* Not used. */
 {
     FileInfo *fileInfoPtr = (FileInfo *) instanceData;
     FileInfo *infoPtr;
@@ -420,9 +408,9 @@ FileCloseProc(instanceData, interp)
     FileWatchProc(instanceData, 0);
 
     /*
-     * Don't close the Win32 handle if the handle is a standard channel
-     * during the thread exit process.  Otherwise, one thread may kill
-     * the stdio of another.
+     * Don't close the Win32 handle if the handle is a standard channel during
+     * the thread exit process. Otherwise, one thread may kill the stdio of
+     * another.
      */
 
     if (!TclInThreadExit()
@@ -438,19 +426,21 @@ FileCloseProc(instanceData, interp)
     /*
      * See if this FileInfo* is still on the thread local list.
      */
+
     tsdPtr = TCL_TSD_INIT(&dataKey);
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL; 
+    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr == fileInfoPtr) {
-            /*
-             * This channel exists on the thread local list. It should
-             * have been removed by an earlier Threadaction call,
-             * but do that now since just deallocating fileInfoPtr would
-             * leave an deallocated pointer on the thread local list.
-             */
+	    /*
+	     * This channel exists on the thread local list. It should have
+	     * been removed by an earlier Threadaction call, but do that now
+	     * since just deallocating fileInfoPtr would leave an deallocated
+	     * pointer on the thread local list.
+	     */
+
 	    FileThreadActionProc(fileInfoPtr,TCL_CHANNEL_THREAD_REMOVE);
-            break;
-        }
+	    break;
+	}
     }
     ckfree((char *)fileInfoPtr);
     return errorCode;
@@ -464,22 +454,22 @@ FileCloseProc(instanceData, interp)
  *	Seeks on a file-based channel. Returns the new position.
  *
  * Results:
- *	-1 if failed, the new position if successful. If failed, it
- *	also sets *errorCodePtr to the error code.
+ *	-1 if failed, the new position if successful. If failed, it also sets
+ *	*errorCodePtr to the error code.
  *
  * Side effects:
- *	Moves the location at which the channel will be accessed in
- *	future operations.
+ *	Moves the location at which the channel will be accessed in future
+ *	operations.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;		/* File state. */
-    long offset;			/* Offset to seek to. */
-    int mode;				/* Relative to where should we seek? */
-    int *errorCodePtr;			/* To store error code. */
+    ClientData instanceData;	/* File state. */
+    long offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? */
+    int *errorCodePtr;		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
@@ -497,6 +487,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     /*
      * Save our current place in case we need to roll-back the seek.
      */
+
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
     if (oldPos == INVALID_SET_FILE_POINTER) {
@@ -524,6 +515,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     /*
      * Check for expressability in our return type, and roll-back otherwise.
      */
+
     if (newPosHigh != 0) {
 	*errorCodePtr = EOVERFLOW;
 	SetFilePointer(infoPtr->handle, oldPos, &oldPosHigh, FILE_BEGIN);
@@ -540,22 +532,22 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
  *	Seeks on a file-based channel. Returns the new position.
  *
  * Results:
- *	-1 if failed, the new position if successful. If failed, it
- *	also sets *errorCodePtr to the error code.
+ *	-1 if failed, the new position if successful. If failed, it also sets
+ *	*errorCodePtr to the error code.
  *
  * Side effects:
- *	Moves the location at which the channel will be accessed in
- *	future operations.
+ *	Moves the location at which the channel will be accessed in future
+ *	operations.
  *
  *----------------------------------------------------------------------
  */
 
 static Tcl_WideInt
 FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;		/* File state. */
-    Tcl_WideInt offset;			/* Offset to seek to. */
-    int mode;				/* Relative to where should we seek? */
-    int *errorCodePtr;			/* To store error code. */
+    ClientData instanceData;	/* File state. */
+    Tcl_WideInt offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? */
+    int *errorCodePtr;		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
@@ -603,8 +595,8 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
 
 static int
 FileTruncateProc(instanceData, length)
-    ClientData instanceData;		/* File state. */
-    Tcl_WideInt length;			/* Length to truncate at. */
+    ClientData instanceData;	/* File state. */
+    Tcl_WideInt length;		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
@@ -612,6 +604,7 @@ FileTruncateProc(instanceData, length)
     /*
      * Save where we were...
      */
+
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
     if (oldPos == INVALID_SET_FILE_POINTER) {
@@ -625,6 +618,7 @@ FileTruncateProc(instanceData, length)
     /*
      * Move to where we want to truncate
      */
+
     newPosHigh = Tcl_WideAsLong(length >> 32);
     newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
 	    &newPosHigh, FILE_BEGIN);
@@ -637,21 +631,21 @@ FileTruncateProc(instanceData, length)
     }
 
     /*
-     * Perform the truncation (unlike POSIX ftruncate(), we needed to
-     * move to the location to truncate at first).
+     * Perform the truncation (unlike POSIX ftruncate(), we needed to move to
+     * the location to truncate at first).
      */
+
     if (!SetEndOfFile(infoPtr->handle)) {
 	TclWinConvertError(GetLastError());
 	return errno;
     }
 
     /*
-     * Move back. If this last step fails, we don't care; it's just a
-     * "best effort" attempt to restore our file pointer to where it
-     * was.
+     * Move back. If this last step fails, we don't care; it's just a "best
+     * effort" attempt to restore our file pointer to where it was.
      */
-    SetFilePointer(infoPtr->handle, oldPos, &oldPosHigh, FILE_BEGIN);
 
+    SetFilePointer(infoPtr->handle, oldPos, &oldPosHigh, FILE_BEGIN);
     return 0;
 }
 
@@ -660,8 +654,8 @@ FileTruncateProc(instanceData, length)
  *
  * FileInputProc --
  *
- *	Reads input from the IO channel into the buffer given. Returns
- *	count of how many bytes were actually read, and an error indication.
+ *	Reads input from the IO channel into the buffer given. Returns count
+ *	of how many bytes were actually read, and an error indication.
  *
  * Results:
  *	A count of how many bytes were read is returned and an error
@@ -675,10 +669,10 @@ FileTruncateProc(instanceData, length)
 
 static int
 FileInputProc(instanceData, buf, bufSize, errorCode)
-    ClientData instanceData;		/* File state. */
-    char *buf;				/* Where to store data read. */
-    int bufSize;			/* Num bytes available in buffer. */
-    int *errorCode;			/* Where to store error code. */
+    ClientData instanceData;	/* File state. */
+    char *buf;			/* Where to store data read. */
+    int bufSize;		/* Num bytes available in buffer. */
+    int *errorCode;		/* Where to store error code. */
 {
     FileInfo *infoPtr;
     DWORD bytesRead;
@@ -687,11 +681,11 @@ FileInputProc(instanceData, buf, bufSize, errorCode)
     infoPtr = (FileInfo *) instanceData;
 
     /*
-     * Note that we will block on reads from a console buffer until a
-     * full line has been entered.  The only way I know of to get
-     * around this is to write a console driver.  We should probably
-     * do this at some point, but for now, we just block.  The same
-     * problem exists for files being read over the network.
+     * Note that we will block on reads from a console buffer until a full
+     * line has been entered. The only way I know of to get around this is to
+     * write a console driver. We should probably do this at some point, but
+     * for now, we just block. The same problem exists for files being read
+     * over the network.
      */
 
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
@@ -712,12 +706,12 @@ FileInputProc(instanceData, buf, bufSize, errorCode)
  *
  * FileOutputProc --
  *
- *	Writes the given output on the IO channel. Returns count of how
- *	many characters were actually written, and an error indication.
+ *	Writes the given output on the IO channel. Returns count of how many
+ *	characters were actually written, and an error indication.
  *
  * Results:
- *	A count of how many characters were written is returned and an
- *	error indication is returned in an output argument.
+ *	A count of how many characters were written is returned and an error
+ *	indication is returned in an output argument.
  *
  * Side effects:
  *	Writes output on the actual channel.
@@ -727,10 +721,10 @@ FileInputProc(instanceData, buf, bufSize, errorCode)
 
 static int
 FileOutputProc(instanceData, buf, toWrite, errorCode)
-    ClientData instanceData;		/* File state. */
-    CONST char *buf;			/* The data buffer. */
-    int toWrite;			/* How many bytes to write? */
-    int *errorCode;			/* Where to store error code. */
+    ClientData instanceData;	/* File state. */
+    CONST char *buf;		/* The data buffer. */
+    int toWrite;		/* How many bytes to write? */
+    int *errorCode;		/* Where to store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD bytesWritten;
@@ -761,8 +755,7 @@ FileOutputProc(instanceData, buf, toWrite, errorCode)
  *
  * FileWatchProc --
  *
- *	Called by the notifier to set up to watch for events on this
- *	channel.
+ *	Called by the notifier to set up to watch for events on this channel.
  *
  * Results:
  *	None.
@@ -775,17 +768,17 @@ FileOutputProc(instanceData, buf, toWrite, errorCode)
 
 static void
 FileWatchProc(instanceData, mask)
-    ClientData instanceData;		/* File state. */
-    int mask;				/* What events to watch for; OR-ed
-					 * combination of TCL_READABLE,
-					 * TCL_WRITABLE and TCL_EXCEPTION. */
+    ClientData instanceData;	/* File state. */
+    int mask;			/* What events to watch for; OR-ed combination
+				 * of TCL_READABLE, TCL_WRITABLE and
+				 * TCL_EXCEPTION. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     Tcl_Time blockTime = { 0, 0 };
 
     /*
-     * Since the file is always ready for events, we set the block time
-     * to zero so we will poll.
+     * Since the file is always ready for events, we set the block time to
+     * zero so we will poll.
      */
 
     infoPtr->watchMask = mask & infoPtr->validMask;
@@ -799,12 +792,12 @@ FileWatchProc(instanceData, mask)
  *
  * FileGetHandleProc --
  *
- *	Called from Tcl_GetChannelHandle to retrieve OS handles from
- *	a file based channel.
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from a file
+ *	based channel.
  *
  * Results:
- *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if
- *	there is no handle for the specified direction.
+ *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if there is no
+ *	handle for the specified direction.
  *
  * Side effects:
  *	None.
@@ -814,9 +807,9 @@ FileWatchProc(instanceData, mask)
 
 static int
 FileGetHandleProc(instanceData, direction, handlePtr)
-    ClientData instanceData;		/* The file state. */
-    int direction;			/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr;		/* Where to store the handle.  */
+    ClientData instanceData;	/* The file state. */
+    int direction;		/* TCL_READABLE or TCL_WRITABLE */
+    ClientData *handlePtr;	/* Where to store the handle.  */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
 
@@ -836,25 +829,24 @@ FileGetHandleProc(instanceData, direction, handlePtr)
  *	Open an File based channel on Unix systems.
  *
  * Results:
- *	The new channel or NULL. If NULL, the output argument
- *	errorCodePtr is set to a POSIX error.
+ *	The new channel or NULL. If NULL, the output argument errorCodePtr is
+ *	set to a POSIX error.
  *
  * Side effects:
- *	May open the channel and may cause creation of a file on the
- *	file system.
+ *	May open the channel and may cause creation of a file on the file
+ *	system.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Channel
 TclpOpenFileChannel(interp, pathPtr, mode, permissions)
-    Tcl_Interp *interp;			/* Interpreter for error reporting;
-					 * can be NULL. */
-    Tcl_Obj *pathPtr;			/* Name of file to open. */
-    int mode;				/* POSIX mode. */
-    int permissions;			/* If the open involves creating a
-					 * file, with what modes to create
-					 * it? */
+    Tcl_Interp *interp;		/* Interpreter for error reporting; can be
+				 * NULL. */
+    Tcl_Obj *pathPtr;		/* Name of file to open. */
+    int mode;			/* POSIX mode. */
+    int permissions;		/* If the open involves creating a file, with
+				 * what modes to create it? */
 {
     Tcl_Channel channel = 0;
     int channelPermissions;
@@ -939,7 +931,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
      * Now we get to create the file.
      */
 
-    handle = (*tclWinProcs->createFileProc)(nativeName, accessMode, 
+    handle = (*tclWinProcs->createFileProc)(nativeName, accessMode,
 	    shareMode, NULL, createMode, flags, (HANDLE) NULL);
 
     if (handle == INVALID_HANDLE_VALUE) {
@@ -959,9 +951,9 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
     type = GetFileType(handle);
 
     /*
-     * If the file is a character device, we need to try to figure out
-     * whether it is a serial port, a console, or something else.  We
-     * test for the console case first because this is more common.
+     * If the file is a character device, we need to try to figure out whether
+     * it is a serial port, a console, or something else. We test for the
+     * console case first because this is more common.
      */
 
     if (type == FILE_TYPE_CHAR) {
@@ -982,9 +974,10 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
     switch (type) {
     case FILE_TYPE_SERIAL:
 	/*
-	 * Reopen channel for OVERLAPPED operation
-	 * Normally this shouldn't fail, because the channel exists
+	 * Reopen channel for OVERLAPPED operation. Normally this shouldn't
+	 * fail, because the channel exists.
 	 */
+
 	handle = TclWinSerialReopen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
@@ -1020,8 +1013,8 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 
     default:
 	/*
-	 * The handle is of an unknown type, probably /dev/nul equivalent
-	 * or possibly a closed handle.
+	 * The handle is of an unknown type, probably /dev/nul equivalent or
+	 * possibly a closed handle.
 	 */
 
 	channel = NULL;
@@ -1038,8 +1031,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
  *
  * Tcl_MakeFileChannel --
  *
- *	Creates a Tcl_Channel from an existing platform specific file
- *	handle.
+ *	Creates a Tcl_Channel from an existing platform specific file handle.
  *
  * Results:
  *	The Tcl_Channel created around the preexisting file.
@@ -1052,10 +1044,9 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 
 Tcl_Channel
 Tcl_MakeFileChannel(rawHandle, mode)
-    ClientData rawHandle;		/* OS level handle */
-    int mode;				/* ORed combination of TCL_READABLE
-					 * and TCL_WRITABLE to indicate file
-					 * mode. */
+    ClientData rawHandle;	/* OS level handle */
+    int mode;			/* ORed combination of TCL_READABLE and
+				 * TCL_WRITABLE to indicate file mode. */
 {
 #ifdef HAVE_NO_SEH
     EXCEPTION_REGISTRATION registration;
@@ -1079,9 +1070,9 @@ Tcl_MakeFileChannel(rawHandle, mode)
     type = GetFileType(handle);
 
     /*
-     * If the file is a character device, we need to try to figure out
-     * whether it is a serial port, a console, or something else.  We
-     * test for the console case first because this is more common.
+     * If the file is a character device, we need to try to figure out whether
+     * it is a serial port, a console, or something else. We test for the
+     * console case first because this is more common.
      */
 
     if (type == FILE_TYPE_CHAR) {
@@ -1122,10 +1113,10 @@ Tcl_MakeFileChannel(rawHandle, mode)
     case FILE_TYPE_UNKNOWN:
     default:
 	/*
-	 * The handle is of an unknown type.  Test the validity of this OS
-	 * handle by duplicating it, then closing the dupe.  The Win32 API
+	 * The handle is of an unknown type. Test the validity of this OS
+	 * handle by duplicating it, then closing the dupe. The Win32 API
 	 * doesn't provide an IsValidHandle() function, so we have to emulate
-	 * it here.  This test will not work on a console handle reliably,
+	 * it here. This test will not work on a console handle reliably,
 	 * which is why we can't test every handle that comes into this
 	 * function in this way.
 	 */
@@ -1156,12 +1147,11 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 #else
 	/*
-	 * Don't have SEH available, do things the hard way.
-	 * Note that this needs to be one block of asm, to avoid stack
-	 * imbalance; also, it is illegal for one asm block to contain 
-	 * a jump to another.
+	 * Don't have SEH available, do things the hard way. Note that this
+	 * needs to be one block of asm, to avoid stack imbalance; also, it is
+	 * illegal for one asm block to contain a jump to another.
 	 */
-	
+
 	__asm__ __volatile__ (
 
 	    /*
@@ -1171,9 +1161,10 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	    "movl       %[dupedHandle], %%ebx"          "\n\t"
 
 	    /*
-	     * Construct an EXCEPTION_REGISTRATION to protect the
-	     * call to CloseHandle
+	     * Construct an EXCEPTION_REGISTRATION to protect the call to
+	     * CloseHandle.
 	     */
+
 	    "leal       %[registration], %%edx"         "\n\t"
 	    "movl       %%fs:0,         %%eax"          "\n\t"
 	    "movl       %%eax,          0x0(%%edx)"     "\n\t" /* link */
@@ -1182,45 +1173,49 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	    "movl       %%ebp,          0x8(%%edx)"     "\n\t" /* ebp */
 	    "movl       %%esp,          0xc(%%edx)"     "\n\t" /* esp */
 	    "movl       $0,             0x10(%%edx)"    "\n\t" /* status */
-	
-	    /* Link the EXCEPTION_REGISTRATION on the chain */
-	    
+
+	    /*
+	     * Link the EXCEPTION_REGISTRATION on the chain.
+	     */
+
 	    "movl       %%edx,          %%fs:0"         "\n\t"
-	    
-	    /* Call CloseHandle( dupedHandle ) */
-	    
+
+	    /*
+	     * Call CloseHandle(dupedHandle).
+	     */
+
 	    "pushl      %%ebx"                          "\n\t"
 	    "call       _CloseHandle@4"                 "\n\t"
-	    
-	    /* 
-	     * Come here on normal exit.  Recover the EXCEPTION_REGISTRATION
+
+	    /*
+	     * Come here on normal exit. Recover the EXCEPTION_REGISTRATION
 	     * and put a TRUE status return into it.
 	     */
-	    
+
 	    "movl       %%fs:0,         %%edx"          "\n\t"
 	    "movl	$1,		%%eax"		"\n\t"
 	    "movl       %%eax,          0x10(%%edx)"    "\n\t"
 	    "jmp        2f"                             "\n"
-	    
+
 	    /*
-	     * Come here on an exception.  Recover the EXCEPTION_REGISTRATION
+	     * Come here on an exception. Recover the EXCEPTION_REGISTRATION
 	     */
-	    
+
 	    "1:"                                        "\t"
 	    "movl       %%fs:0,         %%edx"          "\n\t"
 	    "movl       0x8(%%edx),     %%edx"          "\n\t"
-	    
-	    /* 
-	     * Come here however we exited.  Restore context from the
+
+	    /*
+	     * Come here however we exited. Restore context from the
 	     * EXCEPTION_REGISTRATION in case the stack is unbalanced.
 	     */
-	    
+
 	    "2:"                                        "\t"
 	    "movl       0xc(%%edx),     %%esp"          "\n\t"
 	    "movl       0x8(%%edx),     %%ebp"          "\n\t"
 	    "movl       0x0(%%edx),     %%eax"          "\n\t"
 	    "movl       %%eax,          %%fs:0"         "\n\t"
-	    
+
 	    :
 	    /* No outputs */
 	    :
@@ -1236,9 +1231,9 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	    return NULL;
 	}
 
-	/* Fall through, the handle is valid. */
-
 	/*
+	 * Fall through, the handle is valid.
+	 *
 	 * Create the undefined channel, anyways, because we know the handle
 	 * is valid to something.
 	 */
@@ -1260,16 +1255,15 @@ Tcl_MakeFileChannel(rawHandle, mode)
  *	Returns the specified default standard channel, or NULL.
  *
  * Side effects:
- *	May cause the creation of a standard channel and the underlying
- *	file.
+ *	May cause the creation of a standard channel and the underlying file.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Channel
 TclpGetDefaultStdChannel(type)
-    int type;				/* One of TCL_STDIN, TCL_STDOUT, or
-					 * TCL_STDERR. */
+    int type;			/* One of TCL_STDIN, TCL_STDOUT, or
+				 * TCL_STDERR. */
 {
     Tcl_Channel channel;
     HANDLE handle;
@@ -1334,31 +1328,30 @@ TclpGetDefaultStdChannel(type)
  *
  * TclWinOpenFileChannel --
  *
- *	Constructs a File channel for the specified standard OS handle.
- *	This is a helper function to break up the construction of
- *	channels into File, Console, or Serial.
+ *	Constructs a File channel for the specified standard OS handle. This
+ *	is a helper function to break up the construction of channels into
+ *	File, Console, or Serial.
  *
  * Results:
  *	Returns the new channel, or NULL.
  *
  * Side effects:
- *	May open the channel and may cause creation of a file on the
- *	file system.
+ *	May open the channel and may cause creation of a file on the file
+ *	system.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Channel
 TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
-    HANDLE handle;			/* Win32 HANDLE to swallow */
-    char *channelName;			/* Buffer to receive channel name */
-    int permissions;			/* OR'ed combination of TCL_READABLE,
-					 * TCL_WRITABLE, or TCL_EXCEPTION,
-					 * indicating which operations are
-					 * valid on the file. */
-    int appendMode;			/* OR'ed combination of bits indicating
-					 * what additional configuration of the
-					 * channel is present. */
+    HANDLE handle;		/* Win32 HANDLE to swallow */
+    char *channelName;		/* Buffer to receive channel name */
+    int permissions;		/* OR'ed combination of TCL_READABLE,
+				 * TCL_WRITABLE, or TCL_EXCEPTION, indicating
+				 * which operations are valid on the file. */
+    int appendMode;		/* OR'ed combination of bits indicating what
+				 * additional configuration of the channel is
+				 * present. */
 {
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = FileInit();
@@ -1375,10 +1368,13 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
     }
 
     infoPtr = (FileInfo *) ckalloc((unsigned) sizeof(FileInfo));
-    /* TIP #218. Removed the code inserting the new structure
-     * into the global list. This is now handled in the thread
-     * action callbacks, and only there.
+
+    /*
+     * TIP #218. Removed the code inserting the new structure into the global
+     * list. This is now handled in the thread action callbacks, and only
+     * there.
      */
+
     infoPtr->nextPtr = NULL;
     infoPtr->validMask = permissions;
     infoPtr->watchMask = 0;
@@ -1391,8 +1387,8 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
 	    (ClientData) infoPtr, permissions);
 
     /*
-     * Files have default translation of AUTO and ^Z eof char, which
-     * means that a ^Z will be accepted as EOF when reading.
+     * Files have default translation of AUTO and ^Z eof char, which means
+     * that a ^Z will be accepted as EOF when reading.
      */
 
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
@@ -1406,30 +1402,29 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
  *
  * TclWinFlushDirtyChannels --
  *
- *	Flush all dirty channels to disk, so that requesting the
- *	size of any file returns the correct value.
+ *	Flush all dirty channels to disk, so that requesting the size of any
+ *	file returns the correct value.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Information is actually written to disk now, rather than
- *	later.  Don't call this too often, or there will be a
- *	performance hit (i.e. only call when we need to ask for
- *	the size of a file).
+ *	Information is actually written to disk now, rather than later. Don't
+ *	call this too often, or there will be a performance hit (i.e. only
+ *	call when we need to ask for the size of a file).
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclWinFlushDirtyChannels ()
+TclWinFlushDirtyChannels()
 {
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = FileInit();
 
     /*
-     * Flush all channels which are dirty, i.e. may have data pending
-     * in the OS
+     * Flush all channels which are dirty, i.e. may have data pending in the
+     * OS.
      */
 
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
@@ -1458,33 +1453,33 @@ TclWinFlushDirtyChannels ()
  */
 
 static void
-FileThreadActionProc (instanceData, action)
-     ClientData instanceData;
-     int action;
+FileThreadActionProc(instanceData, action)
+    ClientData instanceData;
+    int action;
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileInfo *infoPtr = (FileInfo *) instanceData;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {
-        infoPtr->nextPtr = tsdPtr->firstFilePtr;
+	infoPtr->nextPtr = tsdPtr->firstFilePtr;
 	tsdPtr->firstFilePtr = infoPtr;
     } else {
-        FileInfo **nextPtrPtr;
+	FileInfo **nextPtrPtr;
 	int removed = 0;
 
 	for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-	     nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == infoPtr) {
-	        (*nextPtrPtr) = infoPtr->nextPtr;
+		(*nextPtrPtr) = infoPtr->nextPtr;
 		removed = 1;
 		break;
 	    }
 	}
 
 	/*
-	 * This could happen if the channel was created in one thread
-	 * and then moved to another without updating the thread
-	 * local data in each thread.
+	 * This could happen if the channel was created in one thread and then
+	 * moved to another without updating the thread local data in each
+	 * thread.
 	 */
 
 	if (!removed) {
@@ -1492,3 +1487,11 @@ FileThreadActionProc (instanceData, action)
 	}
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

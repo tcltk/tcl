@@ -1,14 +1,14 @@
-/* 
+/*
  * tclIOSock.c --
  *
  *	Common routines used by all socket based channel types.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.7.4.1 2004/04/09 20:58:15 dgp Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.7.4.2 2005/07/26 04:11:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -18,14 +18,13 @@
  *
  * TclSockGetPort --
  *
- *	Maps from a string, which could be a service name, to a port.
- *	Used by socket creation code to get port numbers and resolve
- *	registered service names to port numbers.
+ *	Maps from a string, which could be a service name, to a port. Used by
+ *	socket creation code to get port numbers and resolve registered
+ *	service names to port numbers.
  *
  * Results:
- *	A standard Tcl result.  On success, the port number is returned
- *	in portPtr. On failure, an error message is left in the interp's
- *	result.
+ *	A standard Tcl result. On success, the port number is returned in
+ *	portPtr. On failure, an error message is left in the interp's result.
  *
  * Side effects:
  *	None.
@@ -48,7 +47,7 @@ TclSockGetPort(interp, string, proto, portPtr)
 	/*
 	 * Don't bother translating 'proto' to native.
 	 */
-	 
+
 	native = Tcl_UtfToExternalDString(NULL, string, -1, &ds);
 	sp = getservbyname(native, proto);		/* INTL: Native. */
 	Tcl_DStringFree(&ds);
@@ -61,8 +60,8 @@ TclSockGetPort(interp, string, proto, portPtr)
 	return TCL_ERROR;
     }
     if (*portPtr > 0xFFFF) {
-        Tcl_AppendResult(interp, "couldn't open socket: port number too high",
-                (char *) NULL);
+	Tcl_AppendResult(interp, "couldn't open socket: port number too high",
+		(char *) NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -106,3 +105,11 @@ TclSockMinimumBuffers(sock, size)
     }
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

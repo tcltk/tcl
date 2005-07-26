@@ -328,6 +328,79 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 ])
 
 #------------------------------------------------------------------------
+# SC_PROG_TCLSH
+#	Locate a tclsh shell installed on the system path. This macro
+#	will only find a Tcl shell that already exists on the system.
+#	It will not find a Tcl shell in the Tcl build directory or
+#	a Tcl shell that has been installed from the Tcl build directory.
+#	If a Tcl shell can't be located on the PATH, then TCLSH_PROG will
+#	be set to "". Extensions should take care not to create Makefile
+#	rules that are run by default and depend on TCLSH_PROG. An
+#	extension can't assume that an executable Tcl shell exists at
+#	build time.
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		TCLSH_PROG
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_PROG_TCLSH, [
+    AC_MSG_CHECKING([for tclsh])
+
+    AC_CACHE_VAL(ac_cv_path_tclsh, [
+	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+	for dir in $search_path ; do
+	    for j in `ls -r $dir/tclsh[[8-9]]* 2> /dev/null` \
+		    `ls -r $dir/tclsh* 2> /dev/null` ; do
+		if test x"$ac_cv_path_tclsh" = x ; then
+		    if test -f "$j" ; then
+			ac_cv_path_tclsh=$j
+			break
+		    fi
+		fi
+	    done
+	done
+    ])
+
+    if test -f "$ac_cv_path_tclsh" ; then
+	TCLSH_PROG="$ac_cv_path_tclsh"
+	AC_MSG_RESULT($TCLSH_PROG)
+    else
+	# It is not an error if an installed version of Tcl can't be located.
+	TCLSH_PROG=""
+	AC_MSG_RESULT([No tclsh found on PATH])
+    fi
+    AC_SUBST(TCLSH_PROG)
+])
+
+#------------------------------------------------------------------------
+# SC_BUILD_TCLSH
+#	Determine the fully qualified path name of the tclsh executable
+#	in the Tcl build directory. This macro will correctly determine
+#	the name of the tclsh executable even if tclsh has not yet
+#	been built in the build directory. The build tclsh must be used
+#	when running tests from an extension build directory. It is not
+#	correct to use the TCLSH_PROG in cases like this.
+#
+# Arguments
+#	none
+#
+# Results
+#	Subst's the following values:
+#		BUILD_TCLSH
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_BUILD_TCLSH, [
+    AC_MSG_CHECKING([for tclsh in Tcl build directory])
+    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh
+    AC_MSG_RESULT($BUILD_TCLSH)
+    AC_SUBST(BUILD_TCLSH)
+])
+
+#------------------------------------------------------------------------
 # SC_ENABLE_SHARED --
 #
 #	Allows the building of shared libraries
@@ -1135,18 +1208,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 		LD_LIBRARY_PATH_VAR="SHLIB_PATH"
 	    fi
 	    ;;
-	IRIX-4.*)
-	    SHLIB_CFLAGS="-G 0"
-	    SHLIB_SUFFIX=".a"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
-	    SHLIB_LD_LIBS='${LIBS}'
-	    DL_OBJS="tclLoadAout.o"
-	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -Wl,-D,08000000"
-	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    SHARED_LIB_SUFFIX='${VERSION}.a'
-	    ;;
 	IRIX-5.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -shared -rdata_shared"
@@ -1296,88 +1357,59 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	NetBSD-*|FreeBSD-[[1-2]].*)
-	    # Not available on all versions:  check for include file.
-	    AC_CHECK_HEADER(dlfcn.h, [
-		# NetBSD/SPARC needs -fPIC, -fpic will not do.
-		SHLIB_CFLAGS="-fPIC"
-		SHLIB_LD="ld -Bshareable -x"
-		SHLIB_LD_LIBS=""
-		SHLIB_SUFFIX=".so"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS=""
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
-		AC_MSG_CHECKING(for ELF)
-		AC_EGREP_CPP(yes, [
+	    # NetBSD/SPARC needs -fPIC, -fpic will not do.
+	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_LD="ld -Bshareable -x"
+	    SHLIB_LD_LIBS=""
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
+	    AC_MSG_CHECKING(for ELF)
+	    AC_EGREP_CPP(yes, [
 #ifdef __ELF__
 	yes
 #endif
-		],
-		    AC_MSG_RESULT(yes)
-		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so',
-		    AC_MSG_RESULT(no)
-		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
-		)
-	    ], [
-		SHLIB_CFLAGS=""
-		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
-		SHLIB_LD_LIBS='${LIBS}'
-		SHLIB_SUFFIX=".a"
-		DL_OBJS="tclLoadAout.o"
-		DL_LIBS=""
-		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    ])
+	    ],
+		AC_MSG_RESULT(yes)
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so',
+		AC_MSG_RESULT(no)
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+	    )
 
-	    # FreeBSD doesn't handle version numbers with dots.
+	    # Ancient FreeBSD doesn't handle version numbers with dots.
 
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	OpenBSD-*)
-	    case `arch -s` in
-	    m88k|vax)
-		SHLIB_CFLAGS=""
-		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
-		SHLIB_LD_LIBS='${LIBS}'
-		SHLIB_SUFFIX=".a"
-		DL_OBJS="tclLoadAout.o"
-		DL_LIBS=""
-		LDFLAGS=""
-		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-		;;
+	    # OpenBSD/SPARC[64] needs -fPIC, -fpic will not do.
+	    case `machine` in
+	    sparc|sparc64)
+		SHLIB_CFLAGS="-fPIC";;
 	    *)
-		# OpenBSD/SPARC[64] needs -fPIC, -fpic will not do.
-		case `machine` in
-		sparc|sparc64)
-		    SHLIB_CFLAGS="-fPIC";;
-	        *)
-		    SHLIB_CFLAGS="-fpic";;
-	        esac
-		SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
-		SHLIB_LD_LIBS=""
-		SHLIB_SUFFIX=".so"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS=""
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
-		AC_MSG_CHECKING(for ELF)
-		AC_EGREP_CPP(yes, [
+		SHLIB_CFLAGS="-fpic";;
+	    esac
+	    SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
+	    SHLIB_LD_LIBS=""
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+	    AC_MSG_CHECKING(for ELF)
+	    AC_EGREP_CPP(yes, [
 #ifdef __ELF__
 	yes
 #endif
-	        ],
-		    AC_MSG_RESULT(yes)
-		    [ LDFLAGS=-Wl,-export-dynamic ],
-		    AC_MSG_RESULT(no)
-		    LDFLAGS=""
-	        )
-		;;
-	    esac
+	    ],
+		AC_MSG_RESULT(yes)
+		[ LDFLAGS=-Wl,-export-dynamic ],
+		AC_MSG_RESULT(no)
+		LDFLAGS=""
+	    )
 
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
@@ -1563,17 +1595,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	RISCos-*)
-	    SHLIB_CFLAGS="-G 0"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
-	    SHLIB_LD_LIBS='${LIBS}'
-	    SHLIB_SUFFIX=".a"
-	    DL_OBJS="tclLoadAout.o"
-	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -Wl,-D,08000000"
-	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    ;;
 	SCO_SV-3.2*)
 	    # Note, dlopen is available only on SCO 3.2.5 and greater. However,
 	    # this test works, since "uname -s" was non-standard in 3.2.4 and
@@ -1723,20 +1744,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 	    fi
 	    ;;
-	ULTRIX-4.*)
-	    SHLIB_CFLAGS="-G 0"
-	    SHLIB_SUFFIX=".a"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
-	    SHLIB_LD_LIBS='${LIBS}'
-	    DL_OBJS="tclLoadAout.o"
-	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -Wl,-D,08000000"
-	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    if test "$GCC" != "yes" ; then
-		CFLAGS="$CFLAGS -DHAVE_TZSET -std1"
-	    fi
-	    ;;
 	UNIX_SV* | UnixWare-5*)
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD="cc -G"
@@ -1765,87 +1772,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	AC_DEFINE(TCL_CFG_DO64BIT, 1, [Is this a 64-bit build?])
     fi
 
-    # Step 4: If pseudo-static linking is in use (see K. B. Kenny, "Dynamic
-    # Loading for Tcl -- What Became of It?".  Proc. 2nd Tcl/Tk Workshop,
-    # New Orleans, LA, Computerized Processes Unlimited, 1994), then we need
-    # to determine which of several header files defines the a.out file
-    # format (a.out.h, sys/exec.h, or sys/exec_aout.h).  At present, we
-    # support only a file format that is more or less version-7-compatible. 
-    # In particular,
-    #	- a.out files must begin with `struct exec'.
-    #	- the N_TXTOFF on the `struct exec' must compute the seek address
-    #	  of the text segment
-    #	- The `struct exec' must contain a_magic, a_text, a_data, a_bss
-    #	  and a_entry fields.
-    # The following compilation should succeed if and only if either sys/exec.h
-    # or a.out.h is usable for the purpose.
-    #
-    # Note that the modified COFF format used on MIPS Ultrix 4.x is usable; the
-    # `struct exec' includes a second header that contains information that
-    # duplicates the v7 fields that are needed.
-
-    if test "x$DL_OBJS" = "xtclLoadAout.o" ; then
-	AC_MSG_CHECKING(sys/exec.h)
-	AC_TRY_COMPILE([#include <sys/exec.h>],[
-	    struct exec foo;
-	    unsigned long seek;
-	    int flag;
-#if defined(__mips) || defined(mips)
-	    seek = N_TXTOFF (foo.ex_f, foo.ex_o);
-#else
-	    seek = N_TXTOFF (foo);
-#endif
-	    flag = (foo.a_magic == OMAGIC);
-	    return foo.a_text + foo.a_data + foo.a_bss + foo.a_entry;
-    ], tcl_ok=usable, tcl_ok=unusable)
-	AC_MSG_RESULT($tcl_ok)
-	if test $tcl_ok = usable; then
-	    AC_DEFINE(USE_SYS_EXEC_H, 1,
-		[Should we use <sys/exec.h> when doing dynamic loading?])
-	else
-	    AC_MSG_CHECKING(a.out.h)
-	    AC_TRY_COMPILE([#include <a.out.h>],[
-		struct exec foo;
-		unsigned long seek;
-		int flag;
-#if defined(__mips) || defined(mips)
-		seek = N_TXTOFF (foo.ex_f, foo.ex_o);
-#else
-		seek = N_TXTOFF (foo);
-#endif
-		flag = (foo.a_magic == OMAGIC);
-		return foo.a_text + foo.a_data + foo.a_bss + foo.a_entry;
-	    ], tcl_ok=usable, tcl_ok=unusable)
-	    AC_MSG_RESULT($tcl_ok)
-	    if test $tcl_ok = usable; then
-		AC_DEFINE(USE_A_OUT_H, 1,
-		    [Should we use <a.out.h> when doing dynamic loading?])
-	    else
-		AC_MSG_CHECKING(sys/exec_aout.h)
-		AC_TRY_COMPILE([#include <sys/exec_aout.h>],[
-		    struct exec foo;
-		    unsigned long seek;
-		    int flag;
-#if defined(__mips) || defined(mips)
-		    seek = N_TXTOFF (foo.ex_f, foo.ex_o);
-#else
-		    seek = N_TXTOFF (foo);
-#endif
-		    flag = (foo.a_midmag == OMAGIC);
-		    return foo.a_text + foo.a_data + foo.a_bss + foo.a_entry;
-		], tcl_ok=usable, tcl_ok=unusable)
-		AC_MSG_RESULT($tcl_ok)
-		if test $tcl_ok = usable; then
-		    AC_DEFINE(USE_SYS_EXEC_AOUT_H, 1,
-			[Should we use <sys/exec_aout.h> when doing dynamic loading?])
-		else
-		    DL_OBJS=""
-		fi
-	    fi
-	fi
-    fi
-
-    # Step 5: disable dynamic loading if requested via a command-line switch.
+    # Step 4: disable dynamic loading if requested via a command-line switch.
 
     AC_ARG_ENABLE(load,
 	AC_HELP_STRING([--disable-load],

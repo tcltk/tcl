@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.7 2004/12/09 23:01:10 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.8 2005/07/26 04:12:26 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -201,17 +201,13 @@ test socket-1.1 {arg parsing for socket command} {socket} {
 } {1 {no argument given for -server option}}
 test socket-1.2 {arg parsing for socket command} {socket} {
     list [catch {socket -server foo} msg] $msg
-} {1 {wrong # args: should be either:
-socket ?-myaddr addr? ?-myport myport? ?-async? host port
-socket -server command ?-myaddr addr? port}}
+} {1 {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}}
 test socket-1.3 {arg parsing for socket command} {socket} {
     list [catch {socket -myaddr} msg] $msg
 } {1 {no argument given for -myaddr option}}
 test socket-1.4 {arg parsing for socket command} {socket} {
     list [catch {socket -myaddr 127.0.0.1} msg] $msg
-} {1 {wrong # args: should be either:
-socket ?-myaddr addr? ?-myport myport? ?-async? host port
-socket -server command ?-myaddr addr? port}}
+} {1 {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}}
 test socket-1.5 {arg parsing for socket command} {socket} {
     list [catch {socket -myport} msg] $msg
 } {1 {no argument given for -myport option}}
@@ -220,9 +216,7 @@ test socket-1.6 {arg parsing for socket command} {socket} {
 } {1 {expected integer but got "xxxx"}}
 test socket-1.7 {arg parsing for socket command} {socket} {
     list [catch {socket -myport 2522} msg] $msg
-} {1 {wrong # args: should be either:
-socket ?-myaddr addr? ?-myport myport? ?-async? host port
-socket -server command ?-myaddr addr? port}}
+} {1 {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}}
 test socket-1.8 {arg parsing for socket command} {socket} {
     list [catch {socket -froboz} msg] $msg
 } {1 {bad option "-froboz": must be -async, -myaddr, -myport, or -server}}
@@ -231,14 +225,10 @@ test socket-1.9 {arg parsing for socket command} {socket} {
 } {1 {Option -myport is not valid for servers}}
 test socket-1.10 {arg parsing for socket command} {socket} {
     list [catch {socket host 2528 -junk} msg] $msg
-} {1 {wrong # args: should be either:
-socket ?-myaddr addr? ?-myport myport? ?-async? host port
-socket -server command ?-myaddr addr? port}}
+} {1 {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}}
 test socket-1.11 {arg parsing for socket command} {socket} {
     list [catch {socket -server callback 2520 --} msg] $msg
-} {1 {wrong # args: should be either:
-socket ?-myaddr addr? ?-myport myport? ?-async? host port
-socket -server command ?-myaddr addr? port}}
+} {1 {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}}
 test socket-1.12 {arg parsing for socket command} {socket} {
     list [catch {socket foo badport} msg] $msg
 } {1 {expected integer but got "badport"}}

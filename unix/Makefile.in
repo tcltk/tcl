@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.19 2005/06/22 21:12:47 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.20 2005/07/26 04:12:30 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -502,7 +502,6 @@ NOTIFY_SRCS = \
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
-	$(UNIX_DIR)/tclLoadAout.c \
 	$(UNIX_DIR)/tclLoadDl.c \
 	$(UNIX_DIR)/tclLoadDl2.c \
 	$(UNIX_DIR)/tclLoadDld.c \
@@ -580,7 +579,7 @@ tcltest-real:
 test: tcltest
 	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./tcltest $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) $(TCLTESTARGS)
+	./tcltest $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
@@ -619,7 +618,7 @@ ddd: tclsh
 valgrind: tclsh tcltest
 	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	valgrind --num-callers=8 --leak-resolution=high -v --leak-check=yes --show-reachable=yes $(VALGRINDARGS) ./tcltest $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS) $(TCLTESTARGS)
+	valgrind --num-callers=8 --leak-resolution=high -v --leak-check=yes --show-reachable=yes $(VALGRINDARGS) ./tcltest $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
 
 # The following target outputs the name of the top-level source directory
 # for Tcl (it is used by Tk's configure script, for example).  The
@@ -1027,9 +1026,6 @@ tclLoad.o: $(GENERIC_DIR)/tclLoad.c
 
 tclLoadAix.o: $(UNIX_DIR)/tclLoadAix.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadAix.c
-
-tclLoadAout.o: $(UNIX_DIR)/tclLoadAout.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadAout.c
 
 tclLoadDl.o: $(UNIX_DIR)/tclLoadDl.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDl.c

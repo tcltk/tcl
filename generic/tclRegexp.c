@@ -1,16 +1,16 @@
-/* 
+/*
  * tclRegexp.c --
  *
- *	This file contains the public interfaces to the Tcl regular
- *	expression mechanism.
+ *	This file contains the public interfaces to the Tcl regular expression
+ *	mechanism.
  *
  * Copyright (c) 1998 by Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.3 2005/05/04 17:35:31 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.4 2005/07/26 04:12:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -18,8 +18,8 @@
 
 /*
  *----------------------------------------------------------------------
- * The routines in this file use Henry Spencer's regular expression
- * package contained in the following additional source files:
+ * The routines in this file use Henry Spencer's regular expression package
+ * contained in the following additional source files:
  *
  *	regc_color.c	regc_cvec.c	regc_lex.c
  *	regc_nfa.c	regcomp.c	regcustom.h
@@ -28,23 +28,23 @@
  *	regfronts.c	regguts.h
  *
  * Copyright (c) 1998 Henry Spencer.  All rights reserved.
- * 
+ *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
- * Corporation, none of whom are responsible for the results.  The author
- * thanks all of them. 
- * 
+ * Corporation, none of whom are responsible for the results. The author
+ * thanks all of them.
+ *
  * Redistribution and use in source and binary forms -- with or without
  * modification -- are permitted for any purpose, provided that
  * redistributions in source form retain this entire copyright notice and
  * indicate the origin and nature of any modifications.
- * 
- * I'd appreciate being given credit for this package in the documentation
- * of software which uses it, but that is not a requirement.
- * 
+ *
+ * I'd appreciate being given credit for this package in the documentation of
+ * software which uses it, but that is not a requirement.
+ *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
  * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
@@ -68,15 +68,14 @@
 
 typedef struct ThreadSpecificData {
     int initialized;		/* Set to 1 when the module is initialized. */
-    char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled
-				 * regular expression patterns.	 NULL
-				 * means that this slot isn't used.
-				 * Malloc-ed. */
+    char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled regular
+				 * expression patterns. NULL means that this
+				 * slot isn't used. Malloc-ed. */
     int patLengths[NUM_REGEXPS];/* Number of non-null characters in
-				 * corresponding entry in patterns.
-				 * -1 means entry isn't used. */
+				 * corresponding entry in patterns. -1 means
+				 * entry isn't used. */
     struct TclRegexp *regexps[NUM_REGEXPS];
-				/* Compiled forms of above strings.  Also
+				/* Compiled forms of above strings. Also
 				 * malloc-ed, or NULL if not in use yet. */
 } ThreadSpecificData;
 
@@ -100,8 +99,8 @@ static int		SetRegexpFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 
 /*
- * The regular expression Tcl object type.  This serves as a cache
- * of the compiled form of the regular expression.
+ * The regular expression Tcl object type. This serves as a cache of the
+ * compiled form of the regular expression.
  */
 
 Tcl_ObjType tclRegexpType = {
@@ -111,24 +110,22 @@ Tcl_ObjType tclRegexpType = {
     NULL,				/* updateStringProc */
     SetRegexpFromAny			/* setFromAnyProc */
 };
-
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_RegExpCompile --
  *
- *	Compile a regular expression into a form suitable for fast
- *	matching.  This procedure is DEPRECATED in favor of the
- *	object version of the command.
+ *	Compile a regular expression into a form suitable for fast matching.
+ *	This function is DEPRECATED in favor of the object version of the
+ *	command.
  *
  * Results:
- *	The return value is a pointer to the compiled form of string,
- *	suitable for passing to Tcl_RegExpExec.  This compiled form
- *	is only valid up until the next call to this procedure, so
- *	don't keep these around for a long time!  If an error occurred
- *	while compiling the pattern, then NULL is returned and an error
- *	message is left in the interp's result.
+ *	The return value is a pointer to the compiled form of string, suitable
+ *	for passing to Tcl_RegExpExec. This compiled form is only valid up
+ *	until the next call to this function, so don't keep these around for a
+ *	long time! If an error occurred while compiling the pattern, then NULL
+ *	is returned and an error message is left in the interp's result.
  *
  * Side effects:
  *	Updates the cache of compiled regexps.
@@ -138,10 +135,10 @@ Tcl_ObjType tclRegexpType = {
 
 Tcl_RegExp
 Tcl_RegExpCompile(interp, pattern)
-    Tcl_Interp *interp;		/* For use in error reporting and
-				 * to access the interp regexp cache. */
-    CONST char *pattern;		/* String for which to produce
-				 * compiled regular expression. */
+    Tcl_Interp *interp;		/* For use in error reporting and to access
+				 * the interp regexp cache. */
+    CONST char *pattern;	/* String for which to produce compiled
+				 * regular expression. */
 {
     return (Tcl_RegExp) CompileRegexp(interp, pattern, (int) strlen(pattern),
 	    REG_ADVANCED);
@@ -152,15 +149,14 @@ Tcl_RegExpCompile(interp, pattern)
  *
  * Tcl_RegExpExec --
  *
- *	Execute the regular expression matcher using a compiled form
- *	of a regular expression and save information about any match
- *	that is found.
+ *	Execute the regular expression matcher using a compiled form of a
+ *	regular expression and save information about any match that is found.
  *
  * Results:
- *	If an error occurs during the matching operation then -1
- *	is returned and the interp's result contains an error message.
- *	Otherwise the return value is 1 if a matching range is
- *	found and 0 if there is no matching range.
+ *	If an error occurs during the matching operation then -1 is returned
+ *	and the interp's result contains an error message. Otherwise the
+ *	return value is 1 if a matching range is found and 0 if there is no
+ *	matching range.
  *
  * Side effects:
  *	None.
@@ -171,13 +167,13 @@ Tcl_RegExpCompile(interp, pattern)
 int
 Tcl_RegExpExec(interp, re, text, start)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    Tcl_RegExp re;		/* Compiled regular expression;  must have
-				 * been returned by previous call to
+    Tcl_RegExp re;		/* Compiled regular expression; must have been
+				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
     CONST char *text;		/* Text against which to match re. */
-    CONST char *start;		/* If text is part of a larger string,
-				 * this identifies beginning of larger
-				 * string, so that "^" won't match. */
+    CONST char *start;		/* If text is part of a larger string, this
+				 * identifies beginning of larger string, so
+				 * that "^" won't match. */
 {
     int flags, result, numChars;
     TclRegexp *regexp = (TclRegexp *)re;
@@ -185,8 +181,8 @@ Tcl_RegExpExec(interp, re, text, start)
     CONST Tcl_UniChar *ustr;
 
     /*
-     * If the starting point is offset from the beginning of the buffer,
-     * then we need to tell the regexp engine not to match "^".
+     * If the starting point is offset from the beginning of the buffer, then
+     * we need to tell the regexp engine not to match "^".
      */
 
     if (text > start) {
@@ -209,8 +205,8 @@ Tcl_RegExpExec(interp, re, text, start)
     Tcl_DStringInit(&ds);
     ustr = Tcl_UtfToUniCharDString(text, -1, &ds);
     numChars = Tcl_DStringLength(&ds) / sizeof(Tcl_UniChar);
-    result = RegExpExecUniChar(interp, re, ustr, numChars,
-	    -1 /* nmatches */, flags);
+    result = RegExpExecUniChar(interp, re, ustr, numChars, -1 /* nmatches */,
+	    flags);
     Tcl_DStringFree(&ds);
 
     return result;
@@ -226,7 +222,7 @@ Tcl_RegExpExec(interp, re, text, start)
  *
  * Results:
  *	The variables at *startPtr and *endPtr are modified to hold the
- *	addresses of the endpoints of the range given by index.  If the
+ *	addresses of the endpoints of the range given by index. If the
  *	specified range doesn't exist then NULLs are returned.
  *
  * Side effects:
@@ -237,15 +233,15 @@ Tcl_RegExpExec(interp, re, text, start)
 
 void
 Tcl_RegExpRange(re, index, startPtr, endPtr)
-    Tcl_RegExp re;		/* Compiled regular expression that has
-				 * been passed to Tcl_RegExpExec. */
-    int index;			/* 0 means give the range of the entire
-				 * match, > 0 means give the range of
-				 * a matching subrange. */
+    Tcl_RegExp re;		/* Compiled regular expression that has been
+				 * passed to Tcl_RegExpExec. */
+    int index;			/* 0 means give the range of the entire match,
+				 * > 0 means give the range of a matching
+				 * subrange. */
     CONST char **startPtr;	/* Store address of first character in
-				 * (sub-) range here. */
+				 * (sub-)range here. */
     CONST char **endPtr;	/* Store address of character just after last
-				 * in (sub-) range here. */
+				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     CONST char *string;
@@ -271,14 +267,13 @@ Tcl_RegExpRange(re, index, startPtr, endPtr)
  * RegExpExecUniChar --
  *
  *	Execute the regular expression matcher using a compiled form of a
- *	regular expression and save information about any match that is
- *	found.
+ *	regular expression and save information about any match that is found.
  *
  * Results:
- *	If an error occurs during the matching operation then -1 is
- *	returned and an error message is left in interp's result.
- *	Otherwise the return value is 1 if a matching range was found or
- *	0 if there was no matching range.
+ *	If an error occurs during the matching operation then -1 is returned
+ *	and an error message is left in interp's result. Otherwise the return
+ *	value is 1 if a matching range was found or 0 if there was no matching
+ *	range.
  *
  * Side effects:
  *	None.
@@ -289,14 +284,14 @@ Tcl_RegExpRange(re, index, startPtr, endPtr)
 static int
 RegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    Tcl_RegExp re;		/* Compiled regular expression; returned by
-				 * a previous call to Tcl_GetRegExpFromObj */
+    Tcl_RegExp re;		/* Compiled regular expression; returned by a
+				 * previous call to Tcl_GetRegExpFromObj */
     CONST Tcl_UniChar *wString;	/* String against which to match re. */
-    int numChars;		/* Length of Tcl_UniChar string (must
-				 * be >= 0). */
+    int numChars;		/* Length of Tcl_UniChar string (must be
+				 * >=0). */
     int nmatches;		/* How many subexpression matches (counting
-				 * the whole match as subexpression 0) are
-				 * of interest.  -1 means "don't know". */
+				 * the whole match as subexpression 0) are of
+				 * interest. -1 means "don't know". */
     int flags;			/* Regular expression flags. */
 {
     int status;
@@ -339,8 +334,8 @@ RegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
  *
  * Results:
  *	The variables at *startPtr and *endPtr are modified to hold the
- *	offsets of the endpoints of the range given by index.  If the
- *	specified range doesn't exist then -1s are supplied.
+ *	offsets of the endpoints of the range given by index. If the specified
+ *	range doesn't exist then -1s are supplied.
  *
  * Side effects:
  *	None.
@@ -350,16 +345,16 @@ RegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
 
 void
 TclRegExpRangeUniChar(re, index, startPtr, endPtr)
-    Tcl_RegExp re;		/* Compiled regular expression that has
-				 * been passed to Tcl_RegExpExec. */
-    int index;			/* 0 means give the range of the entire
-				 * match, > 0 means give the range of
-				 * a matching subrange, -1 means the
-				 * range of the rm_extend field. */
+    Tcl_RegExp re;		/* Compiled regular expression that has been
+				 * passed to Tcl_RegExpExec. */
+    int index;			/* 0 means give the range of the entire match,
+				 * > 0 means give the range of a matching
+				 * subrange, -1 means the range of the
+				 * rm_extend field. */
     int *startPtr;		/* Store address of first character in
-				 * (sub-) range here. */
+				 * (sub-)range here. */
     int *endPtr;		/* Store address of character just after last
-				 * in (sub-) range here. */
+				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
@@ -383,10 +378,9 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
  *	See if a string matches a regular expression.
  *
  * Results:
- *	If an error occurs during the matching operation then -1
- *	is returned and the interp's result contains an error message.
- *	Otherwise the return value is 1 if "text" matches "pattern"
- *	and 0 otherwise.
+ *	If an error occurs during the matching operation then -1 is returned
+ *	and the interp's result contains an error message. Otherwise the
+ *	return value is 1 if "text" matches "pattern" and 0 otherwise.
  *
  * Side effects:
  *	None.
@@ -417,10 +411,9 @@ Tcl_RegExpMatch(interp, text, pattern)
  *	Execute a precompiled regexp against the given object.
  *
  * Results:
- *	If an error occurs during the matching operation then -1
- *	is returned and the interp's result contains an error message.
- *	Otherwise the return value is 1 if "string" matches "pattern"
- *	and 0 otherwise.
+ *	If an error occurs during the matching operation then -1 is returned
+ *	and the interp's result contains an error message. Otherwise the
+ *	return value is 1 if "string" matches "pattern" and 0 otherwise.
  *
  * Side effects:
  *	Converts the object to a Unicode object.
@@ -431,15 +424,15 @@ Tcl_RegExpMatch(interp, text, pattern)
 int
 Tcl_RegExpExecObj(interp, re, textObj, offset, nmatches, flags)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    Tcl_RegExp re;		/* Compiled regular expression;  must have
-				 * been returned by previous call to
+    Tcl_RegExp re;		/* Compiled regular expression; must have been
+				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
     Tcl_Obj *textObj;		/* Text against which to match re. */
     int offset;			/* Character index that marks where matching
 				 * should begin. */
     int nmatches;		/* How many subexpression matches (counting
-				 * the whole match as subexpression 0) are
-				 * of interest.  -1 means all of them. */
+				 * the whole match as subexpression 0) are of
+				 * interest. -1 means all of them. */
     int flags;			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -460,7 +453,7 @@ Tcl_RegExpExecObj(interp, re, textObj, offset, nmatches, flags)
     }
     udata += offset;
     length -= offset;
-    
+
     return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
 }
 
@@ -472,10 +465,9 @@ Tcl_RegExpExecObj(interp, re, textObj, offset, nmatches, flags)
  *	See if an object matches a regular expression.
  *
  * Results:
- *	If an error occurs during the matching operation then -1
- *	is returned and the interp's result contains an error message.
- *	Otherwise the return value is 1 if "text" matches "pattern"
- *	and 0 otherwise.
+ *	If an error occurs during the matching operation then -1 is returned
+ *	and the interp's result contains an error message. Otherwise the
+ *	return value is 1 if "text" matches "pattern" and 0 otherwise.
  *
  * Side effects:
  *	Changes the internal rep of the pattern and string objects.
@@ -520,7 +512,7 @@ Tcl_RegExpMatchObj(interp, textObj, patternObj)
 void
 Tcl_RegExpGetInfo(regexp, infoPtr)
     Tcl_RegExp regexp;		/* Pattern from which to get subexpressions. */
-    Tcl_RegExpInfo *infoPtr;	/* Match information is stored here.  */
+    Tcl_RegExpInfo *infoPtr;	/* Match information is stored here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) regexp;
 
@@ -534,14 +526,14 @@ Tcl_RegExpGetInfo(regexp, infoPtr)
  *
  * Tcl_GetRegExpFromObj --
  *
- *	Compile a regular expression into a form suitable for fast
- *	matching.  This procedure caches the result in a Tcl_Obj.
+ *	Compile a regular expression into a form suitable for fast matching.
+ *	This function caches the result in a Tcl_Obj.
  *
  * Results:
- *	The return value is a pointer to the compiled form of string,
- *	suitable for passing to Tcl_RegExpExec.  If an error occurred
- *	while compiling the pattern, then NULL is returned and an error
- *	message is left in the interp's result.
+ *	The return value is a pointer to the compiled form of string, suitable
+ *	for passing to Tcl_RegExpExec. If an error occurred while compiling
+ *	the pattern, then NULL is returned and an error message is left in the
+ *	interp's result.
  *
  * Side effects:
  *	Updates the native rep of the Tcl_Obj.
@@ -554,7 +546,7 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
     Tcl_Interp *interp;		/* For use in error reporting, and to access
 				 * the interp regexp cache. */
     Tcl_Obj *objPtr;		/* Object whose string rep contains regular
-				 * expression pattern.  Internal rep will be
+				 * expression pattern. Internal rep will be
 				 * changed to compiled form of this regular
 				 * expression. */
     int flags;			/* Regular expression compilation flags. */
@@ -564,9 +556,10 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
     char *pattern;
 
     /*
-     * This is OK because we only actually interpret this value
-     * properly as a TclRegexp* when the type is tclRegexpType.
+     * This is OK because we only actually interpret this value properly as a
+     * TclRegexp* when the type is tclRegexpType.
      */
+
     regexpPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
     if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
@@ -579,7 +572,7 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
 
 	/*
 	 * Add a reference to the regexp so it will persist even if it is
-	 * pushed out of the current thread's regexp cache.  This reference
+	 * pushed out of the current thread's regexp cache. This reference
 	 * will be removed when the object's internal rep is freed.
 	 */
 
@@ -604,10 +597,10 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
  *	Return information about a compiled regular expression.
  *
  * Results:
- *	The return value is -1 for failure, 0 for success, although at
- *	the moment there's nothing that could fail.  On success, a list
- *	is left in the interp's result:  first element is the subexpression
- *	count, second is a list of re_info bit names.
+ *	The return value is -1 for failure, 0 for success, although at the
+ *	moment there's nothing that could fail. On success, a list is left in
+ *	the interp's result: first element is the subexpression count, second
+ *	is a list of re_info bit names.
  *
  * Side effects:
  *	None.
@@ -651,9 +644,10 @@ TclRegAbout(interp, re)
     Tcl_AppendElement(interp, buf);
 
     /*
-     * Must count bits before generating list, because we must know
-     * whether {} are needed before we start appending names.
+     * Must count bits before generating list, because we must know whether {}
+     * are needed before we start appending names.
      */
+
     n = 0;
     for (inf = infonames; inf->bit != 0; inf++) {
 	if (regexpPtr->re.re_info&inf->bit) {
@@ -711,7 +705,6 @@ TclRegError(interp, msg, status)
     (VOID) TclReError(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -750,8 +743,8 @@ FreeRegexpInternalRep(objPtr)
  *
  * DupRegexpInternalRep --
  *
- *	We copy the reference to the compiled regexp and bump its
- *	reference count.
+ *	We copy the reference to the compiled regexp and bump its reference
+ *	count.
  *
  * Results:
  *	None.
@@ -768,6 +761,7 @@ DupRegexpInternalRep(srcPtr, copyPtr)
     Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) srcPtr->internalRep.otherValuePtr;
+
     regexpPtr->refCount++;
     copyPtr->internalRep.otherValuePtr = srcPtr->internalRep.otherValuePtr;
     copyPtr->typePtr = &tclRegexpType;
@@ -809,19 +803,19 @@ SetRegexpFromAny(interp, objPtr)
  *
  * CompileRegexp --
  *
- *	Attempt to compile the given regexp pattern.  If the compiled
- *	regular expression can be found in the per-thread cache, it
- *	will be used instead of compiling a new copy.
+ *	Attempt to compile the given regexp pattern. If the compiled regular
+ *	expression can be found in the per-thread cache, it will be used
+ *	instead of compiling a new copy.
  *
  * Results:
- *	The return value is a pointer to a newly allocated TclRegexp
- *	that represents the compiled pattern, or NULL if the pattern
- *	could not be compiled.  If NULL is returned, an error message is
- *	left in the interp's result.
+ *	The return value is a pointer to a newly allocated TclRegexp that
+ *	represents the compiled pattern, or NULL if the pattern could not be
+ *	compiled. If NULL is returned, an error message is left in the
+ *	interp's result.
  *
  * Side effects:
- *	The thread-local regexp cache is updated and a new TclRegexp may
- *	be allocated.
+ *	The thread-local regexp cache is updated and a new TclRegexp may be
+ *	allocated.
  *
  *----------------------------------------------------------------------
  */
@@ -839,7 +833,7 @@ CompileRegexp(interp, string, length, flags)
     Tcl_DString stringBuf;
     int status, i;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
- 
+
     if (!tsdPtr->initialized) {
 	tsdPtr->initialized = 1;
 	Tcl_CreateThreadExitHandler(FinalizeRegexp, NULL);
@@ -847,14 +841,14 @@ CompileRegexp(interp, string, length, flags)
 
     /*
      * This routine maintains a second-level regular expression cache in
-     * addition to the per-object regexp cache.  The per-thread cache is needed
+     * addition to the per-object regexp cache. The per-thread cache is needed
      * to handle the case where for various reasons the object is lost between
      * invocations of the regexp command, but the literal pattern is the same.
      */
 
     /*
-     * Check the per-thread compiled regexp cache.  We can only reuse
-     * a regexp if it has the same pattern and the same flags.
+     * Check the per-thread compiled regexp cache. We can only reuse a regexp
+     * if it has the same pattern and the same flags.
      */
 
     for (i = 0; (i < NUM_REGEXPS) && (tsdPtr->patterns[i] != NULL); i++) {
@@ -862,8 +856,8 @@ CompileRegexp(interp, string, length, flags)
 		&& (tsdPtr->regexps[i]->flags == flags)
 		&& (strcmp(string, tsdPtr->patterns[i]) == 0)) {
 	    /*
-	     * Move the matched pattern to the first slot in the
-	     * cache and shift the other patterns down one position.
+	     * Move the matched pattern to the first slot in the cache and
+	     * shift the other patterns down one position.
 	     */
 
 	    if (i != 0) {
@@ -888,7 +882,7 @@ CompileRegexp(interp, string, length, flags)
     /*
      * This is a new expression, so compile it and add it to the cache.
      */
-    
+
     regexpPtr = (TclRegexp *) ckalloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
@@ -926,8 +920,8 @@ CompileRegexp(interp, string, length, flags)
     }
 
     /*
-     * Allocate enough space for all of the subexpressions, plus one
-     * extra for the entire pattern.
+     * Allocate enough space for all of the subexpressions, plus one extra for
+     * the entire pattern.
      */
 
     regexpPtr->matches = (regmatch_t *) ckalloc(
@@ -1024,3 +1018,11 @@ FinalizeRegexp(clientData)
 	ckfree(tsdPtr->patterns[i]);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

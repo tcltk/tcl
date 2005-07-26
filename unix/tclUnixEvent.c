@@ -5,10 +5,10 @@
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.2 2005/01/24 21:45:34 dgp Exp $
+ * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.3 2005/07/26 04:12:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -37,10 +37,9 @@ Tcl_Sleep(ms)
     Tcl_Time before, after, vdelay;
 
     /*
-     * The only trick here is that select appears to return early
-     * under some conditions, so we have to check to make sure that
-     * the right amount of time really has elapsed.  If it's too
-     * early, go back to sleep again.
+     * The only trick here is that select appears to return early under some
+     * conditions, so we have to check to make sure that the right amount of
+     * time really has elapsed.  If it's too early, go back to sleep again.
      */
 
     Tcl_GetTime(&before);
@@ -52,7 +51,9 @@ Tcl_Sleep(ms)
 	after.sec += 1;
     }
     while (1) {
-        /* TIP #233: Scale from virtual time to real-time for select */
+	/*
+	 * TIP #233: Scale from virtual time to real-time for select.
+	 */
 
 	vdelay.sec  = after.sec  - before.sec;
 	vdelay.usec = after.usec - before.usec;
@@ -70,8 +71,8 @@ Tcl_Sleep(ms)
 	delay.tv_usec = vdelay.usec;
 
 	/*
-	 * Special note:  must convert delay.tv_sec to int before comparing
-	 * to zero, since delay.tv_usec is unsigned on some platforms.
+	 * Special note: must convert delay.tv_sec to int before comparing to
+	 * zero, since delay.tv_usec is unsigned on some platforms.
 	 */
 
 	if ((((int) delay.tv_sec) < 0)
@@ -83,3 +84,11 @@ Tcl_Sleep(ms)
 	Tcl_GetTime(&before);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

@@ -1,24 +1,23 @@
 /* 
  * tclThread.c --
  *
- *	This file implements   Platform independent thread operations.
- *	Most of the real work is done in the platform dependent files.
+ *	This file implements Platform independent thread operations. Most of
+ *	the real work is done in the platform dependent files.
  *
  * Copyright (c) 1998 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6.4.4 2005/02/24 19:53:33 dgp Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.6.4.5 2005/07/26 04:12:20 dgp Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * There are three classes of synchronization objects:
- * mutexes, thread data keys, and condition variables.
- * The following are used to record the memory used for these
- * objects so they can be finalized.
+ * There are three classes of synchronization objects: mutexes, thread data
+ * keys, and condition variables. The following are used to record the memory
+ * used for these objects so they can be finalized.
  *
  * These statics are guarded by the mutex in the caller of
  * TclRememberThreadData, e.g., TclpThreadDataKeyInit
@@ -35,7 +34,7 @@ static SyncObjRecord mutexRecord = {0, 0, NULL};
 static SyncObjRecord condRecord = {0, 0, NULL};
 
 /*
- * Prototypes of functions used only in this file
+ * Prototypes of functions used only in this file.
  */
  
 static void		RememberSyncObject _ANSI_ARGS_((char *objPtr,
@@ -45,9 +44,10 @@ static void		ForgetSyncObject _ANSI_ARGS_((char *objPtr,
 
 /* 
  * Several functions are #defined to nothing in tcl.h if TCL_THREADS is not
- * specified.  Here we undo that so the procedures are defined in the
- * stubs table.
+ * specified. Here we undo that so the functions are defined in the stubs
+ * table.
  */
+
 #ifndef TCL_THREADS
 #undef Tcl_MutexLock
 #undef Tcl_MutexUnlock
@@ -63,15 +63,15 @@ static void		ForgetSyncObject _ANSI_ARGS_((char *objPtr,
  *
  * Tcl_GetThreadData --
  *
- *	This procedure allocates and initializes a chunk of thread
- *	local storage.
+ *	This function allocates and initializes a chunk of thread local
+ *	storage.
  *
  * Results:
  *	A thread-specific pointer to the data structure.
  *
  * Side effects:
- *	Will allocate memory the first time this thread calls for
- *	this chunk of storage.
+ *	Will allocate memory the first time this thread calls for this chunk
+ *	of storage.
  *
  *----------------------------------------------------------------------
  */
@@ -131,11 +131,11 @@ Tcl_GetThreadData(keyPtr, size)
  *
  * TclThreadDataKeyGet --
  *
- *	This procedure returns a pointer to a block of thread local storage.
+ *	This function returns a pointer to a block of thread local storage.
  *
  * Results:
- *	A thread-specific pointer to the data structure, or NULL
- *	if the memory has not been assigned to this key for this thread.
+ *	A thread-specific pointer to the data structure, or NULL if the memory
+ *	has not been assigned to this key for this thread.
  *
  * Side effects:
  *	None.
@@ -145,8 +145,8 @@ Tcl_GetThreadData(keyPtr, size)
 
 VOID *
 TclThreadDataKeyGet(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (pthread_key_t **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
 {
 #ifdef TCL_THREADS
 #ifdef USE_THREAD_STORAGE
@@ -166,7 +166,7 @@ TclThreadDataKeyGet(keyPtr)
  *
  * TclThreadDataKeySet --
  *
- *	This procedure sets a thread local storage pointer.
+ *	This function sets a thread local storage pointer.
  *
  * Results:
  *	None.
@@ -179,11 +179,12 @@ TclThreadDataKeyGet(keyPtr)
 
 void
 TclThreadDataKeySet(keyPtr, data)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (pthread_key_t **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
     VOID *data;			/* Thread local storage */
 {
 #ifdef TCL_THREADS
+
     if (*keyPtr == NULL) {
 #ifdef USE_THREAD_STORAGE
 	TclThreadStorageDataKeyInit(keyPtr);
@@ -191,13 +192,15 @@ TclThreadDataKeySet(keyPtr, data)
 	TclpThreadDataKeyInit(keyPtr);
 #endif /* USE_THREAD_STORAGE */
     }
+
 #ifdef USE_THREAD_STORAGE
     TclThreadStorageDataKeySet(keyPtr, data);
 #else
     TclpThreadDataKeySet(keyPtr, data);
 #endif /* USE_THREAD_STORAGE */
+
 #else /* TCL_THREADS */
-    *keyPtr = (Tcl_ThreadDataKey)data;
+    *keyPtr = (Tcl_ThreadDataKey) data;
 #endif /* TCL_THREADS */
 }
 
@@ -206,8 +209,8 @@ TclThreadDataKeySet(keyPtr, data)
  *
  * RememberSyncObject
  *
- *      Keep a list of (mutexes/condition variable/data key)
- *	used during finalization.
+ *	Keep a list of (mutexes/condition variable/data key) used during
+ *	finalization.
  *
  * Results:
  *	None.
@@ -227,18 +230,18 @@ RememberSyncObject(objPtr, recPtr)
     int i, j;
 
     /*
-     * Save the pointer to the allocated object so it can be finalized.
-     * Grow the list of pointers if necessary, copying only non-NULL
-     * pointers to the new list.
+     * Save the pointer to the allocated object so it can be finalized. Grow
+     * the list of pointers if necessary, copying only non-NULL pointers to
+     * the new list.
      */
 
     if (recPtr->num >= recPtr->max) {
 	recPtr->max += 8;
 	newList = (char **)ckalloc(recPtr->max * sizeof(char *));
 	for (i=0,j=0 ; i<recPtr->num ; i++) {
-            if (recPtr->list[i] != NULL) {
+	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
-            }
+	    }
 	}
 	if (recPtr->list != NULL) {
 	    ckfree((char *)recPtr->list);
@@ -255,7 +258,7 @@ RememberSyncObject(objPtr, recPtr)
  *
  * ForgetSyncObject
  *
- *      Remove a single object from the list.
+ *	Remove a single object from the list.
  *
  * Results:
  *	None.
@@ -286,7 +289,7 @@ ForgetSyncObject(objPtr, recPtr)
  *
  * TclRememberMutex
  *
- *      Keep a list of mutexes used during finalization.
+ *	Keep a list of mutexes used during finalization.
  *
  * Results:
  *	None.
@@ -309,8 +312,8 @@ TclRememberMutex(mutexPtr)
  *
  * Tcl_MutexFinalize --
  *
- *      Finalize a single mutex and remove it from the
- *	list of remembered objects.
+ *	Finalize a single mutex and remove it from the list of remembered
+ *	objects.
  *
  * Results:
  *	None.
@@ -336,7 +339,7 @@ Tcl_MutexFinalize(mutexPtr)
  *
  * TclRememberDataKey
  *
- *      Keep a list of thread data keys used during finalization.
+ *	Keep a list of thread data keys used during finalization.
  *
  * Results:
  *	None.
@@ -359,7 +362,7 @@ TclRememberDataKey(keyPtr)
  *
  * TclRememberCondition
  *
- *      Keep a list of condition variables used during finalization.
+ *	Keep a list of condition variables used during finalization.
  *
  * Results:
  *	None.
@@ -382,8 +385,8 @@ TclRememberCondition(condPtr)
  *
  * Tcl_ConditionFinalize --
  *
- *      Finalize a single condition variable and remove it from the
- *	list of remembered objects.
+ *	Finalize a single condition variable and remove it from the list of
+ *	remembered objects.
  *
  * Results:
  *	None.
@@ -409,8 +412,8 @@ Tcl_ConditionFinalize(condPtr)
  *
  * TclFinalizeThreadData --
  *
- *	This procedure cleans up the thread-local storage.  This is
- *	called once for each thread.
+ *	This function cleans up the thread-local storage. This is called once
+ *	for each thread.
  *
  * Results:
  *	None.
@@ -425,11 +428,11 @@ void
 TclFinalizeThreadData()
 {
     int i;
-    Tcl_ThreadDataKey *keyPtr;
 
     TclpMasterLock();
     for (i=0 ; i<keyRecord.num ; i++) {
-	keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
+	Tcl_ThreadDataKey *keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
+
 #ifdef TCL_THREADS
 #ifdef USE_THREAD_STORAGE
 	TclFinalizeThreadStorageData(keyPtr);
@@ -451,8 +454,8 @@ TclFinalizeThreadData()
  *
  * TclFinalizeSynchronization --
  *
- *      This procedure cleans up all synchronization objects:
- *      mutexes, condition variables, and thread-local storage.
+ *	This function cleans up all synchronization objects: mutexes,
+ *	condition variables, and thread-local storage.
  *
  * Results:
  *	None.
@@ -539,9 +542,9 @@ TclFinalizeSynchronization()
  *
  * Tcl_ExitThread --
  *
- *	This procedure is called to terminate the current thread.
- *	This should be used by extensions that create threads with
- *	additional interpreters in them.
+ *	This function is called to terminate the current thread. This should
+ *	be used by extensions that create threads with additional interpreters
+ *	in them.
  *
  * Results:
  *	None.
@@ -569,10 +572,9 @@ Tcl_ExitThread(status)
  *
  * Tcl_ConditionWait, et al. --
  *
- *	These noop procedures are provided so the stub table does
- *	not have to be conditionalized for threads.  The real
- *	implementations of these functions live in the platform
- *	specific files.
+ *	These noop functions are provided so the stub table does not have to
+ *	be conditionalized for threads. The real implementations of these
+ *	functions live in the platform specific files.
  *
  * Results:
  *	None.
@@ -613,3 +615,11 @@ Tcl_MutexUnlock(mutexPtr)
 {
 }
 #endif /* !TCL_THREADS */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

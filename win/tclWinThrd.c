@@ -1,4 +1,4 @@
-/* 
+/*
  * tclWinThread.c --
  *
  *	This file implements the Windows-specific thread operations.
@@ -6,10 +6,10 @@
  * Copyright (c) 1998 by Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.7 2005/06/02 04:18:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.8 2005/07/26 04:12:36 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -19,8 +19,8 @@
 #include <sys/stat.h>
 
 /*
- * This is the master lock used to serialize access to other
- * serialization data structures.
+ * This is the master lock used to serialize access to other serialization
+ * data structures.
  */
 
 static CRITICAL_SECTION masterLock;
@@ -37,8 +37,8 @@ static int init = 0;
 static CRITICAL_SECTION initLock;
 
 /*
- * allocLock is used by Tcl's version of malloc for synchronization.
- * For obvious reasons, cannot use any dyamically allocated storage.
+ * allocLock is used by Tcl's version of malloc for synchronization. For
+ * obvious reasons, cannot use any dyamically allocated storage.
  */
 
 #ifdef TCL_THREADS
@@ -51,24 +51,23 @@ static int allocOnce = 0;
 
 /*
  * The joinLock serializes Create- and ExitThread. This is necessary to
- * prevent a race where a new joinable thread exits before the creating
- * thread had the time to create the necessary data structures in the
- * emulation layer.
+ * prevent a race where a new joinable thread exits before the creating thread
+ * had the time to create the necessary data structures in the emulation
+ * layer.
  */
 
 static CRITICAL_SECTION joinLock;
 
 /*
- * Condition variables are implemented with a combination of a 
- * per-thread Windows Event and a per-condition waiting queue.
- * The idea is that each thread has its own Event that it waits
- * on when it is doing a ConditionWait; it uses the same event for
- * all condition variables because it only waits on one at a time.
- * Each condition variable has a queue of waiting threads, and a 
- * mutex used to serialize access to this queue.
+ * Condition variables are implemented with a combination of a per-thread
+ * Windows Event and a per-condition waiting queue. The idea is that each
+ * thread has its own Event that it waits on when it is doing a ConditionWait;
+ * it uses the same event for all condition variables because it only waits on
+ * one at a time. Each condition variable has a queue of waiting threads, and
+ * a mutex used to serialize access to this queue.
  *
- * Special thanks to David Nichols and
- * Jim Davidson for advice on the Condition Variable implementation.
+ * Special thanks to David Nichols and Jim Davidson for advice on the
+ * Condition Variable implementation.
  */
 
 /*
@@ -89,12 +88,12 @@ static Tcl_ThreadDataKey dataKey;
 
 /*
  * State bits for the thread.
- * WIN_THREAD_UNINIT		Uninitialized.  Must be zero because
- *				of the way ThreadSpecificData is created.
+ * WIN_THREAD_UNINIT		Uninitialized. Must be zero because of the way
+ *				ThreadSpecificData is created.
  * WIN_THREAD_RUNNING		Running, not waiting.
  * WIN_THREAD_BLOCKED		Waiting, or trying to wait.
  * WIN_THREAD_DEAD		Dying - no per-thread event anymore.
- */ 
+ */
 
 #define WIN_THREAD_UNINIT	0x0
 #define WIN_THREAD_RUNNING	0x1
@@ -102,12 +101,13 @@ static Tcl_ThreadDataKey dataKey;
 #define WIN_THREAD_DEAD		0x4
 
 /*
- * The per condition queue pointers and the
- * Mutex used to serialize access to the queue.
+ * The per condition queue pointers and the Mutex used to serialize access to
+ * the queue.
  */
 
 typedef struct WinCondition {
-    CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the condition */
+    CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
+				 * condition. */
     struct ThreadSpecificData *firstPtr;	/* Queue pointers */
     struct ThreadSpecificData *lastPtr;
 } WinCondition;
@@ -115,15 +115,16 @@ typedef struct WinCondition {
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
+
 #ifdef USE_THREAD_ALLOC
 static int once;
 static DWORD tlsKey;
 
 typedef struct allocMutex {
-    Tcl_Mutex        tlock;
+    Tcl_Mutex	     tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
-#endif
+#endif /* USE_THREAD_ALLOC */
 
 /*
  *----------------------------------------------------------------------
@@ -133,8 +134,8 @@ typedef struct allocMutex {
  *	This procedure creates a new thread.
  *
  * Results:
- *	TCL_OK if the thread could be created.  The thread ID is
- *	returned in a parameter.
+ *	TCL_OK if the thread could be created. The thread ID is returned in a
+ *	parameter.
  *
  * Side effects:
  *	A new thread is created.
@@ -144,12 +145,12 @@ typedef struct allocMutex {
 
 int
 TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
-    Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
-    Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
-    ClientData clientData;		/* The one argument to Main() */
-    int stackSize;			/* Size of stack for the new thread */
-    int flags;				/* Flags controlling behaviour of
-					 * the new thread */
+    Tcl_ThreadId *idPtr;		/* Return, the ID of the thread. */
+    Tcl_ThreadCreateProc proc;		/* Main() function of the thread. */
+    ClientData clientData;		/* The one argument to Main(). */
+    int stackSize;			/* Size of stack for the new thread. */
+    int flags;				/* Flags controlling behaviour of the
+					 * new thread. */
 {
     HANDLE tHandle;
 
@@ -157,7 +158,7 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize, proc,
-	clientData, 0, (unsigned *)idPtr);
+	    clientData, 0, (unsigned *)idPtr);
 #else
     tHandle = CreateThread(NULL, (DWORD) stackSize,
 	    (LPTHREAD_START_ROUTINE) proc, (LPVOID) clientData,
@@ -165,11 +166,11 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 #endif
 
     if (tHandle == NULL) {
-        LeaveCriticalSection(&joinLock);
+	LeaveCriticalSection(&joinLock);
 	return TCL_ERROR;
     } else {
-        if (flags & TCL_THREAD_JOINABLE) {
-	    TclRememberJoinableThread (*idPtr);
+	if (flags & TCL_THREAD_JOINABLE) {
+	    TclRememberJoinableThread(*idPtr);
 	}
 
 	/*
@@ -202,12 +203,11 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 
 int
 Tcl_JoinThread(threadId, result)
-    Tcl_ThreadId threadId; /* Id of the thread to wait upon */
-    int*     result;       /* Reference to the storage the result
-			    * of the thread we wait upon will be
-			    * written into. */
+    Tcl_ThreadId threadId;	/* Id of the thread to wait upon */
+    int *result;		/* Reference to the storage the result of the
+				 * thread we wait upon will be written into. */
 {
-    return TclJoinThread (threadId, result);
+    return TclJoinThread(threadId, result);
 }
 
 /*
@@ -231,7 +231,7 @@ TclpThreadExit(status)
     int status;
 {
     EnterCriticalSection(&joinLock);
-    TclSignalExitThread (Tcl_GetCurrentThread (), status);
+    TclSignalExitThread(Tcl_GetCurrentThread(), status);
     LeaveCriticalSection(&joinLock);
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
@@ -260,7 +260,7 @@ TclpThreadExit(status)
 Tcl_ThreadId
 Tcl_GetCurrentThread()
 {
-    return (Tcl_ThreadId)GetCurrentThreadId();
+    return (Tcl_ThreadId) GetCurrentThreadId();
 }
 
 /*
@@ -269,9 +269,9 @@ Tcl_GetCurrentThread()
  * TclpInitLock
  *
  *	This procedure is used to grab a lock that serializes initialization
- *	and finalization of Tcl.  On some platforms this may also initialize
- *	the mutex used to serialize creation of more mutexes and thread
- *	local storage keys.
+ *	and finalization of Tcl. On some platforms this may also initialize
+ *	the mutex used to serialize creation of more mutexes and thread local
+ *	storage keys.
  *
  * Results:
  *	None.
@@ -287,11 +287,12 @@ TclpInitLock()
 {
     if (!init) {
 	/*
-	 * There is a fundamental race here that is solved by creating
-	 * the first Tcl interpreter in a single threaded environment.
-	 * Once the interpreter has been created, it is safe to create
-	 * more threads that create interpreters in parallel.
+	 * There is a fundamental race here that is solved by creating the
+	 * first Tcl interpreter in a single threaded environment. Once the
+	 * interpreter has been created, it is safe to create more threads
+	 * that create interpreters in parallel.
 	 */
+
 	init = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
@@ -305,8 +306,8 @@ TclpInitLock()
  *
  * TclpInitUnlock
  *
- *	This procedure is used to release a lock that serializes initialization
- *	and finalization of Tcl.
+ *	This procedure is used to release a lock that serializes
+ *	initialization and finalization of Tcl.
  *
  * Results:
  *	None.
@@ -328,11 +329,11 @@ TclpInitUnlock()
  *
  * TclpMasterLock
  *
- *	This procedure is used to grab a lock that serializes creation
- *	of mutexes, condition variables, and thread local storage keys.
+ *	This procedure is used to grab a lock that serializes creation of
+ *	mutexes, condition variables, and thread local storage keys.
  *
- *	This lock must be different than the initLock because the
- *	initLock is held during creation of syncronization objects.
+ *	This lock must be different than the initLock because the initLock is
+ *	held during creation of syncronization objects.
  *
  * Results:
  *	None.
@@ -348,11 +349,12 @@ TclpMasterLock()
 {
     if (!init) {
 	/*
-	 * There is a fundamental race here that is solved by creating
-	 * the first Tcl interpreter in a single threaded environment.
-	 * Once the interpreter has been created, it is safe to create
-	 * more threads that create interpreters in parallel.
+	 * There is a fundamental race here that is solved by creating the
+	 * first Tcl interpreter in a single threaded environment. Once the
+	 * interpreter has been created, it is safe to create more threads
+	 * that create interpreters in parallel.
 	 */
+
 	init = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
@@ -366,8 +368,8 @@ TclpMasterLock()
  *
  * TclpMasterUnlock
  *
- *	This procedure is used to release a lock that serializes creation
- *	and deletion of synchronization objects.
+ *	This procedure is used to release a lock that serializes creation and
+ *	deletion of synchronization objects.
  *
  * Results:
  *	None.
@@ -389,13 +391,13 @@ TclpMasterUnlock()
  *
  * Tcl_GetAllocMutex
  *
- *	This procedure returns a pointer to a statically initialized
- *	mutex for use by the memory allocator.  The alloctor must
- *	use this lock, because all other locks are allocated...
+ *	This procedure returns a pointer to a statically initialized mutex for
+ *	use by the memory allocator. The alloctor must use this lock, because
+ *	all other locks are allocated...
  *
  * Results:
- *	A pointer to a mutex that is suitable for passing to
- *	Tcl_MutexLock and Tcl_MutexUnlock.
+ *	A pointer to a mutex that is suitable for passing to Tcl_MutexLock and
+ *	Tcl_MutexUnlock.
  *
  * Side effects:
  *	None.
@@ -422,35 +424,45 @@ Tcl_GetAllocMutex()
  *
  * TclpFinalizeLock
  *
- *	This procedure is used to destroy all private resources used in
- *	this file.
+ *	This procedure is used to destroy all private resources used in this
+ *	file.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Destroys everything private.  TclpInitLock must be held
- *	entering this function.
+ *	Destroys everything private. TclpInitLock must be held entering this
+ *	function.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclFinalizeLock ()
+TclFinalizeLock()
 {
     MASTER_LOCK;
     DeleteCriticalSection(&joinLock);
-    /* Destroy the critical section that we are holding! */
+
+    /*
+     * Destroy the critical section that we are holding!
+     */
+
     DeleteCriticalSection(&masterLock);
     init = 0;
+
 #ifdef TCL_THREADS
     if (allocOnce) {
 	DeleteCriticalSection(&allocLock);
 	allocOnce = 0;
     }
 #endif
+
     LeaveCriticalSection(&initLock);
-    /* Destroy the critical section that we were holding. */
+
+    /*
+     * Destroy the critical section that we were holding.
+     */
+
     DeleteCriticalSection(&initLock);
 }
 
@@ -458,23 +470,20 @@ TclFinalizeLock ()
 
 /* locally used prototype */
 static void FinalizeConditionEvent(ClientData data);
-
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_MutexLock --
  *
- *	This procedure is invoked to lock a mutex.  This is a self 
- *	initializing mutex that is automatically finalized during
- *	Tcl_Finalize.
+ *	This procedure is invoked to lock a mutex. This is a self initializing
+ *	mutex that is automatically finalized during Tcl_Finalize.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	May block the current thread.  The mutex is aquired when
- *	this returns.
+ *	May block the current thread. The mutex is aquired when this returns.
  *
  *----------------------------------------------------------------------
  */
@@ -487,12 +496,12 @@ Tcl_MutexLock(mutexPtr)
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 
-	/* 
+	/*
 	 * Double inside master lock check to avoid a race.
 	 */
 
 	if (*mutexPtr == NULL) {
-	    csPtr = (CRITICAL_SECTION *)ckalloc(sizeof(CRITICAL_SECTION));
+	    csPtr = (CRITICAL_SECTION *) ckalloc(sizeof(CRITICAL_SECTION));
 	    InitializeCriticalSection(csPtr);
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
@@ -532,8 +541,8 @@ Tcl_MutexUnlock(mutexPtr)
  *
  * TclpFinalizeMutex --
  *
- *	This procedure is invoked to clean up one mutex.  This is only
- *	safe to call at the end of time.
+ *	This procedure is invoked to clean up one mutex. This is only safe to
+ *	call at the end of time.
  *
  * Results:
  *	None.
@@ -561,30 +570,29 @@ TclpFinalizeMutex(mutexPtr)
  *
  * TclpThreadDataKeyInit --
  *
- *	This procedure initializes a thread specific data block key.
- *	Each thread has table of pointers to thread specific data.
- *	all threads agree on which table entry is used by each module.
- *	this is remembered in a "data key", that is just an index into
- *	this table.  To allow self initialization, the interface
- *	passes a pointer to this key and the first thread to use
- *	the key fills in the pointer to the key.  The key should be
- *	a process-wide static.
+ *	This procedure initializes a thread specific data block key. Each
+ *	thread has table of pointers to thread specific data. All threads
+ *	agree on which table entry is used by each module. This is remembered
+ *	in a "data key", that is just an index into this table. To allow self
+ *	initialization, the interface passes a pointer to this key and the
+ *	first thread to use the key fills in the pointer to the key. The key
+ *	should be a process-wide static.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Will allocate memory the first time this process calls for
- *	this key.  In this case it modifies its argument
- *	to hold the pointer to information about the key.
+ *	Will allocate memory the first time this process calls for this key.
+ *	In this case it modifies its argument to hold the pointer to
+ *	information about the key.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclpThreadDataKeyInit(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (DWORD **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (DWORD **) */
 {
     DWORD *indexPtr;
     DWORD newKey;
@@ -593,11 +601,12 @@ TclpThreadDataKeyInit(keyPtr)
     if (*keyPtr == NULL) {
 	indexPtr = (DWORD *)ckalloc(sizeof(DWORD));
 	newKey = TlsAlloc();
-        if (newKey != TLS_OUT_OF_INDEXES) {
-            *indexPtr = newKey;
-        } else {
-            Tcl_Panic("TlsAlloc failed from TclpThreadDataKeyInit!"); /* this should be a fatal error */
-        }
+	if (newKey == TLS_OUT_OF_INDEXES) {
+	    Tcl_Panic("TlsAlloc failed from TclpThreadDataKeyInit!");
+	    /* This should have been a fatal error. */
+	}
+
+	*indexPtr = newKey;
 	*keyPtr = (Tcl_ThreadDataKey)indexPtr;
 	TclRememberDataKey(keyPtr);
     }
@@ -612,8 +621,8 @@ TclpThreadDataKeyInit(keyPtr)
  *	This procedure returns a pointer to a block of thread local storage.
  *
  * Results:
- *	A thread-specific pointer to the data structure, or NULL
- *	if the memory has not been assigned to this key for this thread.
+ *	A thread-specific pointer to the data structure, or NULL if the memory
+ *	has not been assigned to this key for this thread.
  *
  * Side effects:
  *	None.
@@ -623,20 +632,20 @@ TclpThreadDataKeyInit(keyPtr)
 
 VOID *
 TclpThreadDataKeyGet(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (DWORD **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (DWORD **) */
 {
     DWORD *indexPtr = *(DWORD **)keyPtr;
     LPVOID result;
+
     if (indexPtr == NULL) {
 	return NULL;
-    } else {
-        result = TlsGetValue(*indexPtr);
-        if ((result == NULL) && (GetLastError() != NO_ERROR)) {
-            Tcl_Panic("TlsGetValue failed from TclpThreadDataKeyGet!");
-        }
-	return result;
     }
+    result = TlsGetValue(*indexPtr);
+    if ((result == NULL) && (GetLastError() != NO_ERROR)) {
+	Tcl_Panic("TlsGetValue failed from TclpThreadDataKeyGet!");
+    }
+    return result;
 }
 
 /*
@@ -650,23 +659,24 @@ TclpThreadDataKeyGet(keyPtr)
  *	None.
  *
  * Side effects:
- *	Sets up the thread so future calls to TclpThreadDataKeyGet with
- *	this key will return the data pointer.
+ *	Sets up the thread so future calls to TclpThreadDataKeyGet with this
+ *	key will return the data pointer.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclpThreadDataKeySet(keyPtr, data)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
-				 * really (pthread_key_t **) */
-    VOID *data;			/* Thread local storage */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
+    VOID *data;			/* Thread local storage. */
 {
     DWORD *indexPtr = *(DWORD **)keyPtr;
     BOOL success;
+
     success = TlsSetValue(*indexPtr, (void *)data);
     if (!success) {
-        Tcl_Panic("TlsSetValue failed from TclpThreadDataKeySet!");
+	Tcl_Panic("TlsSetValue failed from TclpThreadDataKeySet!");
     }
 }
 
@@ -675,8 +685,8 @@ TclpThreadDataKeySet(keyPtr, data)
  *
  * TclpFinalizeThreadData --
  *
- *	This procedure cleans up the thread-local storage.  This is
- *	called once for each thread.
+ *	This procedure cleans up the thread-local storage. This is called once
+ *	for each thread.
  *
  * Results:
  *	None.
@@ -697,23 +707,23 @@ TclpFinalizeThreadData(keyPtr)
 
     if (*keyPtr != NULL) {
 	indexPtr = *(DWORD **)keyPtr;
-	result = (VOID *)TlsGetValue(*indexPtr);
+	result = (VOID *) TlsGetValue(*indexPtr);
+
 	if (result != NULL) {
 #if defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
-        if (indexPtr == &tlsKey) {
-            TclpFreeAllocCache(result);
-            return;
-        }
-#endif
+	    if (indexPtr == &tlsKey) {
+		TclpFreeAllocCache(result);
+		return;
+	    }
+#endif /* USE_THREAD_ALLOC && !TCL_MEM_DEBUG */
+
 	    ckfree((char *)result);
 	    success = TlsSetValue(*indexPtr, (void *)NULL);
-            if (!success) {
-                Tcl_Panic("TlsSetValue failed from TclpFinalizeThreadData!");
-            }
-	} else {
-            if (GetLastError() != NO_ERROR) {
-                Tcl_Panic("TlsGetValue failed from TclpFinalizeThreadData!");
-            }
+	    if (!success) {
+		Tcl_Panic("TlsSetValue failed from TclpFinalizeThreadData!");
+	    }
+	} else if (GetLastError() != NO_ERROR) {
+	    Tcl_Panic("TlsGetValue failed from TclpFinalizeThreadData!");
 	}
     }
 }
@@ -723,9 +733,9 @@ TclpFinalizeThreadData(keyPtr)
  *
  * TclpFinalizeThreadDataKey --
  *
- *	This procedure is invoked to clean up one key.  This is a
- *	process-wide storage identifier.  The thread finalization code
- *	cleans up the thread local storage itself.
+ *	This procedure is invoked to clean up one key. This is a process-wide
+ *	storage identifier. The thread finalization code cleans up the thread
+ *	local storage itself.
  *
  *	This assumes the master lock is held.
  *
@@ -747,9 +757,9 @@ TclpFinalizeThreadDataKey(keyPtr)
     if (*keyPtr != NULL) {
 	indexPtr = *(DWORD **)keyPtr;
 	success = TlsFree(*indexPtr);
-        if (!success) {
-            Tcl_Panic("TlsFree failed from TclpFinalizeThreadDataKey!");
-        }
+	if (!success) {
+	    Tcl_Panic("TlsFree failed from TclpFinalizeThreadDataKey!");
+	}
 	ckfree((char *)indexPtr);
 	*keyPtr = NULL;
     }
@@ -760,9 +770,9 @@ TclpFinalizeThreadDataKey(keyPtr)
  *
  * Tcl_ConditionWait --
  *
- *	This procedure is invoked to wait on a condition variable.
- *	The mutex is atomically released as part of the wait, and
- *	automatically grabbed when the condition is signaled.
+ *	This procedure is invoked to wait on a condition variable. The mutex
+ *	is atomically released as part of the wait, and automatically grabbed
+ *	when the condition is signaled.
  *
  *	The mutex must be held when this procedure is called.
  *
@@ -770,9 +780,9 @@ TclpFinalizeThreadDataKey(keyPtr)
  *	None.
  *
  * Side effects:
- *	May block the current thread.  The mutex is aquired when
- *	this returns.  Will allocate memory for a HANDLE
- *	and initialize this the first time this Tcl_Condition is used.
+ *	May block the current thread. The mutex is aquired when this returns.
+ *	Will allocate memory for a HANDLE and initialize this the first time
+ *	this Tcl_Condition is used.
  *
  *----------------------------------------------------------------------
  */
@@ -799,21 +809,20 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     }
 
     /*
-     * Self initialize the two parts of the condition.
-     * The per-condition and per-thread parts need to be
-     * handled independently.
+     * Self initialize the two parts of the condition. The per-condition and
+     * per-thread parts need to be handled independently.
      */
 
     if (tsdPtr->flags == WIN_THREAD_UNINIT) {
 	MASTER_LOCK;
 
-	/* 
+	/*
 	 * Create the per-thread event and queue pointers.
 	 */
 
 	if (tsdPtr->flags == WIN_THREAD_UNINIT) {
 	    tsdPtr->condEvent = CreateEvent(NULL, TRUE /* manual reset */,
-			FALSE /* non signaled */, NULL);
+		    FALSE /* non signaled */, NULL);
 	    tsdPtr->nextPtr = NULL;
 	    tsdPtr->prevPtr = NULL;
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
@@ -823,13 +832,12 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 
 	if (doExit) {
 	    /*
-	     * Create a per-thread exit handler to clean up the condEvent.
-	     * We must be careful to do this outside the Master Lock
-	     * because Tcl_CreateThreadExitHandler uses its own
-	     * ThreadSpecificData, and initializing that may drop
-	     * back into the Master Lock.
+	     * Create a per-thread exit handler to clean up the condEvent. We
+	     * must be careful to do this outside the Master Lock because
+	     * Tcl_CreateThreadExitHandler uses its own ThreadSpecificData,
+	     * and initializing that may drop back into the Master Lock.
 	     */
-	    
+
 	    Tcl_CreateThreadExitHandler(FinalizeConditionEvent,
 		    (ClientData) tsdPtr);
 	}
@@ -861,8 +869,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     }
 
     /*
-     * Queue the thread on the condition, using
-     * the per-condition lock for serialization.
+     * Queue the thread on the condition, using the per-condition lock for
+     * serialization.
      */
 
     tsdPtr->flags = WIN_THREAD_BLOCKED;
@@ -871,22 +879,22 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     tsdPtr->prevPtr = winCondPtr->lastPtr;		/* A: */
     winCondPtr->lastPtr = tsdPtr;
     if (tsdPtr->prevPtr != NULL) {
-        tsdPtr->prevPtr->nextPtr = tsdPtr;
+	tsdPtr->prevPtr->nextPtr = tsdPtr;
     }
     if (winCondPtr->firstPtr == NULL) {
-        winCondPtr->firstPtr = tsdPtr;
+	winCondPtr->firstPtr = tsdPtr;
     }
 
     /*
      * Unlock the caller's mutex and wait for the condition, or a timeout.
-     * There is a minor issue here in that we don't count down the
-     * timeout if we get notified, but another thread grabs the condition
-     * before we do.  In that race condition we'll wait again for the
-     * full timeout.  Timed waits are dubious anyway.  Either you have
-     * the locking protocol wrong and are masking a deadlock,
-     * or you are using conditions to pause your thread.
+     * There is a minor issue here in that we don't count down the timeout if
+     * we get notified, but another thread grabs the condition before we do.
+     * In that race condition we'll wait again for the full timeout. Timed
+     * waits are dubious anyway. Either you have the locking protocol wrong
+     * and are masking a deadlock, or you are using conditions to pause your
+     * thread.
      */
-    
+
     LeaveCriticalSection(csPtr);
     timeout = 0;
     while (!timeout && (tsdPtr->flags & WIN_THREAD_BLOCKED)) {
@@ -899,32 +907,32 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     }
 
     /*
-     * Be careful on timeouts because the signal might arrive right around
-     * the time limit and someone else could have taken us off the queue.
+     * Be careful on timeouts because the signal might arrive right around the
+     * time limit and someone else could have taken us off the queue.
      */
-    
+
     if (timeout) {
 	if (tsdPtr->flags & WIN_THREAD_RUNNING) {
 	    timeout = 0;
 	} else {
 	    /*
-	     * When dequeuing, we can leave the tsdPtr->nextPtr
-	     * and tsdPtr->prevPtr with dangling pointers because
-	     * they are reinitialilzed w/out reading them when the
-	     * thread is enqueued later.
+	     * When dequeuing, we can leave the tsdPtr->nextPtr and
+	     * tsdPtr->prevPtr with dangling pointers because they are
+	     * reinitialilzed w/out reading them when the thread is enqueued
+	     * later.
 	     */
 
-            if (winCondPtr->firstPtr == tsdPtr) {
-                winCondPtr->firstPtr = tsdPtr->nextPtr;
-            } else {
-                tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
-            }
-            if (winCondPtr->lastPtr == tsdPtr) {
-                winCondPtr->lastPtr = tsdPtr->prevPtr;
-            } else {
-                tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
-            }
-            tsdPtr->flags = WIN_THREAD_RUNNING;
+	    if (winCondPtr->firstPtr == tsdPtr) {
+		winCondPtr->firstPtr = tsdPtr->nextPtr;
+	    } else {
+		tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
+	    }
+	    if (winCondPtr->lastPtr == tsdPtr) {
+		winCondPtr->lastPtr = tsdPtr->prevPtr;
+	    } else {
+		tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
+	    }
+	    tsdPtr->flags = WIN_THREAD_RUNNING;
 	}
     }
 
@@ -939,8 +947,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
  *
  *	This procedure is invoked to signal a condition variable.
  *
- *	The mutex must be held during this call to avoid races,
- *	but this interface does not enforce that.
+ *	The mutex must be held during this call to avoid races, but this
+ *	interface does not enforce that.
  *
  * Results:
  *	None.
@@ -961,9 +969,9 @@ Tcl_ConditionNotify(condPtr)
 	winCondPtr = *((WinCondition **)condPtr);
 
 	/*
-	 * Loop through all the threads waiting on the condition
-	 * and notify them (i.e., broadcast semantics).  The queue
-	 * manipulation is guarded by the per-condition coordinating mutex.
+	 * Loop through all the threads waiting on the condition and notify
+	 * them (i.e., broadcast semantics). The queue manipulation is guarded
+	 * by the per-condition coordinating mutex.
 	 */
 
 	EnterCriticalSection(&winCondPtr->condLock);
@@ -981,7 +989,7 @@ Tcl_ConditionNotify(condPtr)
 	LeaveCriticalSection(&winCondPtr->condLock);
     } else {
 	/*
-	 * Noone has used the condition variable, so there are no waiters.
+	 * No-one has used the condition variable, so there are no waiters.
 	 */
     }
 }
@@ -991,9 +999,9 @@ Tcl_ConditionNotify(condPtr)
  *
  * FinalizeConditionEvent --
  *
- *	This procedure is invoked to clean up the per-thread
- *	event used to implement condition waiting.
- *	This is only safe to call at the end of time.
+ *	This procedure is invoked to clean up the per-thread event used to
+ *	implement condition waiting. This is only safe to call at the end of
+ *	time.
  *
  * Results:
  *	None.
@@ -1008,7 +1016,7 @@ static void
 FinalizeConditionEvent(data)
     ClientData data;
 {
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)data;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) data;
     tsdPtr->flags = WIN_THREAD_DEAD;
     CloseHandle(tsdPtr->condEvent);
 }
@@ -1018,8 +1026,8 @@ FinalizeConditionEvent(data)
  *
  * TclpFinalizeCondition --
  *
- *	This procedure is invoked to clean up a condition variable.
- *	This is only safe to call at the end of time.
+ *	This procedure is invoked to clean up a condition variable. This is
+ *	only safe to call at the end of time.
  *
  *	This assumes the Master Lock is held.
  *
@@ -1039,10 +1047,10 @@ TclpFinalizeCondition(condPtr)
     WinCondition *winCondPtr = *(WinCondition **)condPtr;
 
     /*
-     * Note - this is called long after the thread-local storage is
-     * reclaimed.  The per-thread condition waiting event is
-     * reclaimed earlier in a per-thread exit handler, which is
-     * called before thread local storage is reclaimed.
+     * Note - this is called long after the thread-local storage is reclaimed.
+     * The per-thread condition waiting event is reclaimed earlier in a
+     * per-thread exit handler, which is called before thread local storage is
+     * reclaimed.
      */
 
     if (winCondPtr != NULL) {
@@ -1075,8 +1083,11 @@ void
 TclpFreeAllocMutex(mutex)
     Tcl_Mutex *mutex; /* The alloc mutex to free. */
 {
-    allocMutex* lockPtr = (allocMutex*) mutex;
-    if (!lockPtr) return;
+    allocMutex *lockPtr = (allocMutex *) mutex;
+
+    if (!lockPtr) {
+	return;
+    }
     DeleteCriticalSection(&lockPtr->wlock);
     free(lockPtr);
 }
@@ -1088,10 +1099,10 @@ TclpGetAllocCache(void)
 
     if (!once) {
 	/*
-	 * We need to make sure that TclpFreeAllocCache is called
-	 * on each thread that calls this, but only on threads that
-	 * call this.
+	 * We need to make sure that TclpFreeAllocCache is called on each
+	 * thread that calls this, but only on threads that call this.
 	 */
+
 	tlsKey = TlsAlloc();
 	once = 1;
 	if (tlsKey == TLS_OUT_OF_INDEXES) {
@@ -1101,7 +1112,7 @@ TclpGetAllocCache(void)
 
     result = TlsGetValue(tlsKey);
     if ((result == NULL) && (GetLastError() != NO_ERROR)) {
-        Tcl_Panic("TlsGetValue failed from TclpGetAllocCache!");
+	Tcl_Panic("TlsGetValue failed from TclpGetAllocCache!");
     }
     return result;
 }
@@ -1112,7 +1123,7 @@ TclpSetAllocCache(void *ptr)
     BOOL success;
     success = TlsSetValue(tlsKey, ptr);
     if (!success) {
-        Tcl_Panic("TlsSetValue failed from TclpSetAllocCache!");
+	Tcl_Panic("TlsSetValue failed from TclpSetAllocCache!");
     }
 }
 
@@ -1122,28 +1133,38 @@ TclpFreeAllocCache(void *ptr)
     BOOL success;
 
     if (ptr != NULL) {
-        /*
-         * Called by us in TclpFinalizeThreadData when a thread exits
-         * and destroys the tsd key which stores allocator caches.
-         */
-        TclFreeAllocCache(ptr);
-        success = TlsSetValue(tlsKey, NULL);
-        if (!success) {
-            panic("TlsSetValue failed from TclpFreeAllocCache!");
-        }
-    } else if (once) { 
-        /*
-         * Called by us in TclFinalizeThreadAlloc() during
-         * the library finalization initiated from Tcl_Finalize()
-         */   
-        success = TlsFree(tlsKey);
-        if (!success) {
-            Tcl_Panic("TlsFree failed from TclpFreeAllocCache!");
-        }
-        once = 0; /* reset for next time. */
+	/*
+	 * Called by us in TclpFinalizeThreadData when a thread exits and
+	 * destroys the tsd key which stores allocator caches.
+	 */
+
+	TclFreeAllocCache(ptr);
+	success = TlsSetValue(tlsKey, NULL);
+	if (!success) {
+	    panic("TlsSetValue failed from TclpFreeAllocCache!");
+	}
+    } else if (once) {
+	/*
+	 * Called by us in TclFinalizeThreadAlloc() during the library
+	 * finalization initiated from Tcl_Finalize()
+	 */
+
+	success = TlsFree(tlsKey);
+	if (!success) {
+	    Tcl_Panic("TlsFree failed from TclpFreeAllocCache!");
+	}
+	once = 0; /* reset for next time. */
     }
 
 }
 
 #endif /* USE_THREAD_ALLOC */
 #endif /* TCL_THREADS */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
