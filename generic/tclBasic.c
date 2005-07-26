@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.16 2005/06/21 17:19:40 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.17 2005/07/26 17:05:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -648,19 +648,16 @@ Tcl_CallWhenDeleted(interp, proc, clientData)
     ClientData clientData;	/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
-    static int assocDataCounter = 0;
-#ifdef TCL_THREADS
-    static Tcl_Mutex assocMutex;
-#endif
+    static Tcl_ThreadDataKey assocDataCounterKey;
+    int *assocDataCounterPtr =
+	    Tcl_GetThreadData(&assocDataCounterKey, (int)sizeof(int));
     int new;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = (AssocData *) ckalloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    Tcl_MutexLock(&assocMutex);
-    sprintf(buffer, "Assoc Data Key #%d", assocDataCounter);
-    assocDataCounter++;
-    Tcl_MutexUnlock(&assocMutex);
+    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == (Tcl_HashTable *) NULL) {
         iPtr->assocData = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
