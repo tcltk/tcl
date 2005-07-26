@@ -1,3 +1,9 @@
+2005-07-26  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclNamesp.c (TclTeardownNamespace):   Re-ordering so that
+        * tests/trace.test (trace-34.4):        command delete traces fire
+        while the command still exists.  [Bug 1047286]
+
 2005-07-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
