@@ -1,3 +1,12 @@
+2005-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/configure.in: Check for a $prefix/share
+	directory and add it the the package if found.
+	This will check for Tcl packages in /usr/local/share
+	when Tcl is configured with the default dist install.
+	[patch 1231015]
+
 2005-07-26  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclBasic.c (Tcl_CallWhenDeleted):     Converted to use
