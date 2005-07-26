@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.2.2 2004/11/16 10:07:00 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.2.3 2005/07/26 21:39:22 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -110,9 +110,8 @@ applications needs.
 .TP
 \fBerrorCode\fR
 After an error has occurred, this variable will be set to hold
-additional information about the error in a form that is easy
-to process with programs.
-\fBerrorCode\fR consists of a Tcl list with one or more elements.
+a list value representing additional information about the error
+in a form that is easy to process with programs.
 The first element of the list identifies a general class of
 errors, and determines the format of the rest of the list.
 The following formats for \fBerrorCode\fR are used by the

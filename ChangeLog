@@ -9,6 +9,8 @@
 
 2005-07-26  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tclvars.n:	Improved $errorCode documentation. [RFE 776921]
+
 	* generic/tclBasic.c (Tcl_CallWhenDeleted):	Converted to use
 	per-thread counter, rather than a process global one that required
 	mutex protection.  [RFE 1077194]
