@@ -1,5 +1,11 @@
 2005-07-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/expr.test:	Consolidated equivalent constraints into
+	* tests/fileName.test:	single definitions and (more precise) names:
+	* tests/get.test:	longis32bit, 32bit, !intsAre64bit => longIs32bit
+	* tests/listObj.test:	empty => emptyTest; winOnly => win
+	* tests/obj.test:	intsAre64bit => longIs64bit
+
 	* library/init.tcl ([unknown]):	Corrected return code handling
 	in the portions of [unknown] that expand incomplete commands
 	during interactive operations.  [Bug 1214462].
