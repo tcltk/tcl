@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.16 2005/05/18 15:43:38 dgp Exp $
+# RCS: @(#) $Id: obj.test,v 1.17 2005/07/27 18:12:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -40,7 +40,7 @@ foreach {MIN_INT  MAX_INT}  [int_range]  break
 foreach {MIN_WIDE MAX_WIDE} [wide_range] break
 
 testConstraint testobj [llength [info commands testobj]]
-testConstraint 32bit   [expr {$MAX_INT == 0x7fffffff}]
+testConstraint longIs32bit	[expr {int(0x80000000) < 0}]
 testConstraint wideBiggerThanInt [expr {$MAX_WIDE > wide($MAX_INT)}]
 
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
@@ -620,31 +620,31 @@ test obj-32.1 {freeing very large object trees} {
     unset x
 } {}
 
-test obj-33.1 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.1 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x 0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {1 2147483648}
-test obj-33.2 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.2 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x 0xffff; append x ffff
     list [string is integer $x] [expr { wide($x) }]
 } {1 4294967295}
-test obj-33.3 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.3 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x 0x10000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {0 4294967296}
-test obj-33.4 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.4 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x -0x8000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {1 -2147483648}
-test obj-33.5 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.5 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x -0x8000; append x 0001
     list [string is integer $x] [expr { wide($x) }]
 } {1 -2147483649}
-test obj-33.6 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.6 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x -0xffff; append x ffff
     list [string is integer $x] [expr { wide($x) }]
 } {1 -4294967295}
-test obj-33.7 {integer overflow on input} {32bit wideBiggerThanInt} {
+test obj-33.7 {integer overflow on input} {longIs32bit wideBiggerThanInt} {
     set x -0x10000; append x 0000
     list [string is integer $x] [expr { wide($x) }]
 } {0 -4294967296}
