@@ -1,10 +1,20 @@
 2005-07-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclUtil.c:	Converted the $::tcl_precision value to be
+	kept per-thread to prevent different threads from stomping on each
+	others' formatting prescriptions.
+
+	***POTENTIAL INCOMPATIBILITY*** Multi-threaded programs that set
+	the value of ::tcl_precision will now have to set it in each thread.
+
 	* tests/expr.test:	Consolidated equivalent constraints into
 	* tests/fileName.test:	single definitions and (more precise) names:
 	* tests/get.test:	longis32bit, 32bit, !intsAre64bit => longIs32bit
 	* tests/listObj.test:	empty => emptyTest; winOnly => win
 	* tests/obj.test:	intsAre64bit => longIs64bit
+	Also updated some "nonPortable" tests to use constraints that mark
+	precisely what about them isn't portable, so the tests can run where
+	they work.
 
 	* library/init.tcl ([unknown]):	Corrected return code handling
 	in the portions of [unknown] that expand incomplete commands
