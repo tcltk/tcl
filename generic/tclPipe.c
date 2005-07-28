@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.2.1 2004/07/02 23:37:31 hobbs Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.2.2 2005/07/28 15:27:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -605,7 +605,13 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    if (*p == '>') {
 		p++;
 		atOK = 0;
-		flags = O_WRONLY | O_CREAT;
+
+		/*
+		 * Note that the O_APPEND flag only has an effect on POSIX
+		 * platforms. On Windows, we just have to carry on regardless.
+		 */
+
+		flags = O_WRONLY | O_CREAT | O_APPEND;
 	    }
 	    if (*p == '&') {
 		if (errorClose != 0) {

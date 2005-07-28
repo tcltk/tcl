@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.2.4 2005/06/22 19:36:35 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.2.5 2005/07/28 15:27:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -156,7 +156,7 @@ TclpOpenFile(fname, mode)
 	 * so we can append to any data already in the file.
 	 */
 
-	if (mode & O_WRONLY) {
+	if ((mode & O_WRONLY) && !(mode & O_APPEND)) {
 	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
 	}
 
