@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.58 2005/07/24 22:56:49 dkf Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.59 2005/07/28 10:55:37 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -665,7 +665,7 @@ TclpOpenFile(path, mode)
      * Seek to the end of file if we are writing.
      */
 
-    if (mode & O_WRONLY) {
+    if (mode & (O_WRONLY|O_APPEND)) {
 	SetFilePointer(handle, 0, NULL, FILE_END);
     }
 
