@@ -1,3 +1,12 @@
+2005-07-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclPipe.c (TclCreatePipeline): Arrange for POSIX systems to
+	* unix/tclUnixPipe.c (TclpOpenFile):	 use the O_APPEND flag for
+	* tests/exec.test (exec-19.1):		 files opened in a pipeline
+	like ">>this".  Note that Windows cannot support such access; there is
+	no equivalent flag on the handle that can be set at the kernel-call
+	level. The test is unix-specific in every way. [Bug 1245953]
+
 2005-07-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
