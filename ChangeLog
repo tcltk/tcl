@@ -1,3 +1,17 @@
+2005-07-28  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/compExpr-old.test:	Still more conversion of "nonPortable"
+	* tests/error.test:		tests into tests with constraints that
+	* tests/expr-old.test:		describe the limits of their
+	* tests/expr.test:		portability.  Also more consolidation
+	* tests/fileName.test:		of constraint synonyms.
+	* tests/format.test:		wideis64bit, 64bitInts => wideIs64bit
+	* tests/get.test:		wideIntegerUnparsed => wideIs32bit
+	* tests/load.test:		wideIntExpressions => wideBiggerThanInt
+	* tests/obj.test:
+	* tests/parseExpr.test:		Dropped "roundOffBug" constraint that
+	* tests/string.test:		protected from buggy sprintf.  
+
 2005-07-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclPipe.c (TclCreatePipeline): Arrange for POSIX systems to
