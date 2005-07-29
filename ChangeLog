@@ -1,3 +1,7 @@
+2005-07-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/README: Update link to msys_mingw8.zip.
+
 2005-07-28  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/compExpr-old.test:	Still more conversion of "nonPortable"
