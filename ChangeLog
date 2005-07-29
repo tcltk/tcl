@@ -1,3 +1,8 @@
+2005-07-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (InfoGlobalsCmd): Even in high-speed mode,
+	still have to take care with non-existant variables. [Bug 1247135]
+
 2005-07-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Update link to msys_mingw8.zip.
