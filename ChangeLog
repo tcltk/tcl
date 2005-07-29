@@ -1,3 +1,9 @@
+2005-07-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/README: Update link to msys_mingw8.zip.
+	Remove old Cygwin + Mingw info, people should
+	just build with the msys + mingw configuration.
+
 2005-07-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure, unix/tcl.m4: defined TCL_LOAD_FROM_MEMORY on
