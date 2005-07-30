@@ -1,3 +1,11 @@
+2005-07-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure, unix/tcl.m4: revert 2005-07-28 change.
+	
+	* unix/tclLoadDyld.c (TclpDlopen, TclpLoadMemory): workarounds
+	for bugs/changes in behaviour in Mac OS X 10.4 Tiger, sync
+	formatting changes from HEAD.
+
 2005-07-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (InfoGlobalsCmd): Even in high-speed mode,
