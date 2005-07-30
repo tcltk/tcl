@@ -1454,9 +1454,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(MAC_OSX_TCL)
 	    AC_DEFINE(USE_VFORK)
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8")
-	    if test "$SHARED_BUILD" = "1" ; then
-		AC_DEFINE(TCL_LOAD_FROM_MEMORY)
-	    fi
+	    AC_DEFINE(TCL_LOAD_FROM_MEMORY)
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)
