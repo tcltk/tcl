@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: load.test,v 1.13 2004/06/19 00:42:35 dgp Exp $
+# RCS: @(#) $Id: load.test,v 1.13.2.1 2005/08/02 18:16:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -129,8 +129,10 @@ test load-5.1 {file name not specified and no static package: pick default} \
 
 # On some platforms, like SunOS 4.1.3, these tests can't be run because
 # they cause the process to exit.
+#
+# As of 2005, such ancient broken systems no longer matter.
 
-test load-6.1 {errors loading file} [list $dll $loaded nonPortable] {
+test load-6.1 {errors loading file} [list $dll $loaded] {
     catch {load foo foo}
 } {1}
 

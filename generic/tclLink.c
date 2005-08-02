@@ -1,55 +1,53 @@
 /* 
  * tclLink.c --
  *
- *	This file implements linked variables (a C variable that is
- *	tied to a Tcl variable).  The idea of linked variables was
- *	first suggested by Andreas Stolcke and this implementation is
- *	based heavily on a prototype implementation provided by
- *	him.
+ *	This file implements linked variables (a C variable that is tied to a
+ *	Tcl variable).  The idea of linked variables was first suggested by
+ *	Andreas Stolcke and this implementation is based heavily on a
+ *	prototype implementation provided by him.
  *
  * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.6.1 2005/07/12 20:36:56 kennykb Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.6.2 2005/08/02 18:15:59 dgp Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * For each linked variable there is a data structure of the following
- * type, which describes the link and is the clientData for the trace
- * set on the Tcl variable.
+ * For each linked variable there is a data structure of the following type,
+ * which describes the link and is the clientData for the trace set on the Tcl
+ * variable.
  */
 
 typedef struct Link {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
-    Tcl_Obj *varName;		/* Name of variable (must be global).  This
-				 * is needed during trace callbacks, since
-				 * the actual variable may be aliased at
-				 * that time via upvar. */
+    Tcl_Obj *varName;		/* Name of variable (must be global).  This is
+				 * needed during trace callbacks, since the
+				 * actual variable may be aliased at that time
+				 * via upvar. */
     char *addr;			/* Location of C variable. */
     int type;			/* Type of link (TCL_LINK_INT, etc.). */
     union {
 	int i;
 	double d;
 	Tcl_WideInt w;
-    } lastValue;		/* Last known value of C variable;  used to
+    } lastValue;		/* Last known value of C variable; used to
 				 * avoid string conversions. */
-    int flags;			/* Miscellaneous one-bit values;  see below
-				 * for definitions. */
+    int flags;			/* Miscellaneous one-bit values; see below for
+				 * definitions. */
 } Link;
 
 /*
  * Definitions for flag bits:
  * LINK_READ_ONLY -		1 means errors should be generated if Tcl
  *				script attempts to write variable.
- * LINK_BEING_UPDATED -		1 means that a call to Tcl_UpdateLinkedVar
- *				is in progress for this variable, so
- *				trace callbacks on the variable should
- *				be ignored.
+ * LINK_BEING_UPDATED -		1 means that a call to Tcl_UpdateLinkedVar is
+ *				in progress for this variable, so trace
+ *				callbacks on the variable should be ignored.
  */
 
 #define LINK_READ_ONLY		1
@@ -69,18 +67,17 @@ static Tcl_Obj *	ObjValue _ANSI_ARGS_((Link *linkPtr));
  *
  * Tcl_LinkVar --
  *
- *	Link a C variable to a Tcl variable so that changes to either
- *	one causes the other to change.
+ *	Link a C variable to a Tcl variable so that changes to either one
+ *	causes the other to change.
  *
  * Results:
- *	The return value is TCL_OK if everything went well or TCL_ERROR
- *	if an error occurred (the interp's result is also set after
- *	errors).
+ *	The return value is TCL_OK if everything went well or TCL_ERROR if an
+ *	error occurred (the interp's result is also set after errors).
  *
  * Side effects:
- *	The value at *addr is linked to the Tcl variable "varName",
- *	using "type" to convert between string values for Tcl and
- *	binary values for *addr.
+ *	The value at *addr is linked to the Tcl variable "varName", using
+ *	"type" to convert between string values for Tcl and binary values for
+ *	*addr.
  *
  *----------------------------------------------------------------------
  */
@@ -89,11 +86,11 @@ int
 Tcl_LinkVar(interp, varName, addr, type)
     Tcl_Interp *interp;		/* Interpreter in which varName exists. */
     CONST char *varName;	/* Name of a global variable in interp. */
-    char *addr;			/* Address of a C variable to be linked
-				 * to varName. */
-    int type;			/* Type of C variable: TCL_LINK_INT, etc. 
-				 * Also may have TCL_LINK_READ_ONLY
-				 * OR'ed in. */
+    char *addr;			/* Address of a C variable to be linked to
+				 * varName. */
+    int type;			/* Type of C variable: TCL_LINK_INT, etc.
+				 * Also may have TCL_LINK_READ_ONLY OR'ed
+				 * in. */
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
@@ -139,16 +136,16 @@ Tcl_LinkVar(interp, varName, addr, type)
  *	None.
  *
  * Side effects:
- *	If "varName" was previously linked to a C variable, the link
- *	is broken to make the variable independent.  If there was no
- *	previous link for "varName" then nothing happens.
+ *	If "varName" was previously linked to a C variable, the link is broken
+ *	to make the variable independent.  If there was no previous link for
+ *	"varName" then nothing happens.
  *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_UnlinkVar(interp, varName)
-    Tcl_Interp *interp;		/* Interpreter containing variable to unlink. */
+    Tcl_Interp *interp;		/* Interpreter containing variable to unlink */
     CONST char *varName;	/* Global variable in interp to unlink. */
 {
     Link *linkPtr;
@@ -170,16 +167,16 @@ Tcl_UnlinkVar(interp, varName)
  *
  * Tcl_UpdateLinkedVar --
  *
- *	This procedure is invoked after a linked variable has been
- *	changed by C code.  It updates the Tcl variable so that
- *	traces on the variable will trigger.
+ *	This procedure is invoked after a linked variable has been changed by
+ *	C code.  It updates the Tcl variable so that traces on the variable
+ *	will trigger.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The Tcl variable "varName" is updated from its C value,
- *	causing traces on the variable to trigger.
+ *	The Tcl variable "varName" is updated from its C value, causing traces
+ *	on the variable to trigger.
  *
  *----------------------------------------------------------------------
  */
@@ -209,18 +206,18 @@ Tcl_UpdateLinkedVar(interp, varName)
  *
  * LinkTraceProc --
  *
- *	This procedure is invoked when a linked Tcl variable is read,
- *	written, or unset from Tcl.  It's responsible for keeping the
- *	C variable in sync with the Tcl variable.
+ *	This procedure is invoked when a linked Tcl variable is read, written,
+ *	or unset from Tcl. It's responsible for keeping the C variable in sync
+ *	with the Tcl variable.
  *
  * Results:
- *	If all goes well, NULL is returned; otherwise an error message
- *	is returned.
+ *	If all goes well, NULL is returned; otherwise an error message is
+ *	returned.
  *
  * Side effects:
- *	The C variable may be updated to make it consistent with the
- *	Tcl variable, or the Tcl variable may be overwritten to reject
- *	a modification.
+ *	The C variable may be updated to make it consistent with the Tcl
+ *	variable, or the Tcl variable may be overwritten to reject a
+ *	modification.
  *
  *----------------------------------------------------------------------
  */
@@ -240,8 +237,8 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     Tcl_Obj *valueObj;
 
     /*
-     * If the variable is being unset, then just re-create it (with a
-     * trace) unless the whole interpreter is going away.
+     * If the variable is being unset, then just re-create it (with a trace)
+     * unless the whole interpreter is going away.
      */
 
     if (flags & TCL_TRACE_UNSETS) {
@@ -259,10 +256,9 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     }
 
     /*
-     * If we were invoked because of a call to Tcl_UpdateLinkedVar, then
-     * don't do anything at all.  In particular, we don't want to get
-     * upset that the variable is being modified, even if it is
-     * supposed to be read-only.
+     * If we were invoked because of a call to Tcl_UpdateLinkedVar, then don't
+     * do anything at all.  In particular, we don't want to get upset that the
+     * variable is being modified, even if it is supposed to be read-only.
      */
 
     if (linkPtr->flags & LINK_BEING_UPDATED) {
@@ -270,8 +266,8 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     }
 
     /*
-     * For read accesses, update the Tcl variable if the C variable
-     * has changed since the last time we updated the Tcl variable.
+     * For read accesses, update the Tcl variable if the C variable has
+     * changed since the last time we updated the Tcl variable.
      */
 
     if (flags & TCL_TRACE_READS) {
@@ -301,11 +297,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 
     /*
      * For writes, first make sure that the variable is writable.  Then
-     * convert the Tcl value to C if possible.  If the variable isn't
-     * writable or can't be converted, then restore the varaible's old
-     * value and return an error.  Another tricky thing: we have to save
-     * and restore the interpreter's result, since the variable access
-     * could occur when the result has been partially set.
+     * convert the Tcl value to C if possible.  If the variable isn't writable
+     * or can't be converted, then restore the varaible's old value and return
+     * an error.  Another tricky thing: we have to save and restore the
+     * interpreter's result, since the variable access could occur when the
+     * result has been partially set.
      */
 
     if (linkPtr->flags & LINK_READ_ONLY) {
@@ -384,12 +380,12 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
  *
  * ObjValue --
  *
- *	Converts the value of a C variable to a Tcl_Obj* for use in a
- *	Tcl variable to which it is linked.
+ *	Converts the value of a C variable to a Tcl_Obj* for use in a Tcl
+ *	variable to which it is linked.
  *
  * Results:
- *	The return value is a pointer to a Tcl_Obj that represents
- *	the value of the C variable given by linkPtr.
+ *	The return value is a pointer to a Tcl_Obj that represents the value
+ *	of the C variable given by linkPtr.
  *
  * Side effects:
  *	None.
@@ -424,10 +420,18 @@ ObjValue(linkPtr)
 	return Tcl_NewStringObj(p, -1);
 
     /*
-     * This code only gets executed if the link type is unknown
-     * (shouldn't ever happen).
+     * This code only gets executed if the link type is unknown (shouldn't
+     * ever happen).
      */
     default:
 	return Tcl_NewStringObj("??", 2);
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

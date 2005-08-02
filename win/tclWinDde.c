@@ -1,16 +1,15 @@
 /*
  * tclWinDde.c --
  *
- *	This file provides procedures that implement the "send"
- *	command, allowing commands to be passed from interpreter
- *	to interpreter.
+ *	This file provides functions that implement the "send" command,
+ *	allowing commands to be passed from interpreter to interpreter.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.26 2004/11/30 18:40:33 kennykb Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.26.2.1 2005/08/02 18:17:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -19,11 +18,10 @@
 #include <tchar.h>
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Dde_Init declaration is in the source file itself, which is only
- * accessed when we are building a library. DO NOT MOVE BEFORE ANY
- * #include LINES. ONLY USE EXTERN TO INDICATE EXPORTED FUNCTIONS FROM
- * NOW ON.
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the Dde_Init
+ * declaration is in the source file itself, which is only accessed when we
+ * are building a library. DO NOT MOVE BEFORE ANY #include LINES. ONLY USE
+ * EXTERN TO INDICATE EXPORTED FUNCTIONS FROM NOW ON.
  */
 
 #undef TCL_STORAGE_CLASS
@@ -65,22 +63,22 @@ typedef struct DdeEnumServices {
 
 typedef struct ThreadSpecificData {
     Conversation *currentConversations;
-				/* A list of conversations currently
-				 * being processed. */
+				/* A list of conversations currently being
+				 * processed. */
     RegisteredInterp *interpListPtr;
-				/* List of all interpreters registered
-				 * in the current process. */
+				/* List of all interpreters registered in the
+				 * current process. */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
 /*
- * The following variables cannot be placed in thread-local storage.
- * The Mutex ddeMutex guards access to the ddeInstance.
+ * The following variables cannot be placed in thread-local storage. The Mutex
+ * ddeMutex guards access to the ddeInstance.
  */
 
 static HSZ ddeServiceGlobal = 0;
-static DWORD ddeInstance;       /* The application instance handle given
-				 * to us by DdeInitialize. */
+static DWORD ddeInstance;	/* The application instance handle given to us
+				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
 #define TCL_DDE_VERSION		"1.3.1"
@@ -91,7 +89,7 @@ static int ddeIsServer = 0;
 TCL_DECLARE_MUTEX(ddeMutex)
 
 /*
- * Forward declarations for procedures defined later in this file.
+ * Forward declarations for functions defined later in this file.
  */
 
 static LRESULT CALLBACK	    DdeClientWindowProc _ANSI_ARGS_((
@@ -102,7 +100,7 @@ static int		    DdeCreateClient _ANSI_ARGS_((
 static BOOL CALLBACK	    DdeEnumWindowsCallback _ANSI_ARGS_((
 				HWND hwndTarget, LPARAM lParam));
 static void		    DdeExitProc _ANSI_ARGS_((ClientData clientData));
-static int                  DdeGetServicesList _ANSI_ARGS_((Tcl_Interp *interp,
+static int		    DdeGetServicesList _ANSI_ARGS_((Tcl_Interp *interp,
 				char *serviceName, char *topicName));
 static HDDEDATA CALLBACK    DdeServerProc _ANSI_ARGS_((UINT uType,
 				UINT uFmt, HCONV hConv, HSZ ddeTopic,
@@ -129,7 +127,7 @@ EXTERN int		    Dde_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
  *
  * Dde_Init --
  *
- *	This procedure initializes the dde command.
+ *	This function initializes the dde command.
  *
  * Results:
  *	A standard Tcl result.
@@ -161,7 +159,7 @@ Dde_Init(interp)
  *
  * Dde_SafeInit --
  *
- *	This procedure initializes the dde command within a safe interp
+ *	This function initializes the dde command within a safe interp
  *
  * Results:
  *	A standard Tcl result.
@@ -206,9 +204,9 @@ Initialize(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
-     * See if the application is already registered; if so, remove its
-     * current name from the registry. The deletion of the command
-     * will take care of disposing of this entry.
+     * See if the application is already registered; if so, remove its current
+     * name from the registry. The deletion of the command will take care of
+     * disposing of this entry.
      */
 
     if (tsdPtr->interpListPtr != NULL) {
@@ -216,8 +214,8 @@ Initialize(void)
     }
 
     /*
-     * Make sure that the DDE server is there. This is done only once,
-     * add an exit handler tear it down.
+     * Make sure that the DDE server is there. This is done only once, add an
+     * exit handler tear it down.
      */
 
     if (ddeInstance == 0) {
@@ -251,22 +249,22 @@ Initialize(void)
  *
  * DdeSetServerName --
  *
- *	This procedure is called to associate an ASCII name with a Dde
- *	server.  If the interpreter has already been named, the
- *	name replaces the old one.
+ *	This function is called to associate an ASCII name with a Dde server.
+ *	If the interpreter has already been named, the name replaces the old
+ *	one.
  *
  * Results:
- *	The return value is the name actually given to the interp.
- *	This will normally be the same as name, but if name was already
- *	in use for a Dde Server then a name of the form "name #2" will
- *	be chosen,  with a high enough number to make the name unique.
+ *	The return value is the name actually given to the interp. This will
+ *	normally be the same as name, but if name was already in use for a Dde
+ *	Server then a name of the form "name #2" will be chosen, with a high
+ *	enough number to make the name unique.
  *
  * Side effects:
- *	Registration info is saved, thereby allowing the "send" command
- *	to be used later to invoke commands in the application.  In
- *	addition, the "send" command is created in the application's
- *	interpreter.  The registration will be removed automatically
- *	if the interpreter is deleted or the "send" command is removed.
+ *	Registration info is saved, thereby allowing the "send" command to be
+ *	used later to invoke commands in the application. In addition, the
+ *	"send" command is created in the application's interpreter. The
+ *	registration will be removed automatically if the interpreter is
+ *	deleted or the "send" command is removed.
  *
  *----------------------------------------------------------------------
  */
@@ -275,7 +273,7 @@ static char *
 DdeSetServerName(interp, name, exactName, handlerPtr)
     Tcl_Interp *interp;
     char *name;			/* The name that will be used to refer to the
-				 * interpreter in later "send" commands.  Must
+				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
     int exactName;		/* Should we make a unique name? 0 = unique */
     Tcl_Obj *handlerPtr;	/* Name of the optional proc/command to handle
@@ -290,9 +288,9 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
-     * See if the application is already registered; if so, remove its
-     * current name from the registry. The deletion of the command
-     * will take care of disposing of this entry.
+     * See if the application is already registered; if so, remove its current
+     * name from the registry. The deletion of the command will take care of
+     * disposing of this entry.
      */
 
     for (riPtr = tsdPtr->interpListPtr, prevPtr = NULL; riPtr != NULL;
@@ -307,8 +305,8 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
 		break;
 	    } else {
 		/*
-		 * the name was NULL, so the caller is asking for
-		 * the name of the current interp.
+		 * The name was NULL, so the caller is asking for the name of
+		 * the current interp.
 		 */
 
 		return riPtr->name;
@@ -318,18 +316,18 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
 
     if (name == NULL) {
 	/*
-	 * the name was NULL, so the caller is asking for
-	 * the name of the current interp, but it doesn't
-	 * have a name.
+	 * The name was NULL, so the caller is asking for the name of the
+	 * current interp, but it doesn't have a name.
 	 */
 
 	return "";
     }
 
     /*
-     * Get the list of currently registered Tcl interpreters by calling
-     * the internal implementation of the 'dde services' command.
+     * Get the list of currently registered Tcl interpreters by calling the
+     * internal implementation of the 'dde services' command.
      */
+
     Tcl_DStringInit(&dString);
     actualName = name;
 
@@ -348,10 +346,9 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
 	}
 
 	/*
-	 * Pick a name to use for the application.  Use "name" if it's not
-	 * already in use.  Otherwise add a suffix such as " #2", trying
-	 * larger and larger numbers until we eventually find one that is
-	 * unique.
+	 * Pick a name to use for the application. Use "name" if it's not
+	 * already in use. Otherwise add a suffix such as " #2", trying larger
+	 * and larger numbers until we eventually find one that is unique.
 	 */
 
 	offset = lastSuffix = 0;
@@ -370,7 +367,10 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
 		sprintf(Tcl_DStringValue(&dString) + offset, "%d", suffix);
 	    }
 
-	    /* see if the name is already in use, if so increment suffix */
+	    /*
+	     * See if the name is already in use, if so increment suffix.
+	     */
+
 	    for (n = 0; n < srvCount; ++n) {
 		Tcl_Obj* namePtr;
 
@@ -410,8 +410,9 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
     Tcl_DStringFree(&dString);
 
     /*
-     * re-initialize with the new name
+     * Re-initialize with the new name.
      */
+
     Initialize();
 
     return riPtr->name;
@@ -454,7 +455,7 @@ DdeGetRegistrationPtr(interp)
  *
  * DeleteProc
  *
- *	This procedure is called when the command "dde" is destroyed.
+ *	This function is called when the command "dde" is destroyed.
  *
  * Results:
  *	none
@@ -467,8 +468,8 @@ DdeGetRegistrationPtr(interp)
 
 static void
 DeleteProc(clientData)
-    ClientData clientData;	/* The interp we are deleting passed
-				 * as ClientData. */
+    ClientData clientData;	/* The interp we are deleting passed as
+				 * ClientData. */
 {
     RegisteredInterp *riPtr = (RegisteredInterp *) clientData;
     RegisteredInterp *searchPtr, *prevPtr;
@@ -501,21 +502,20 @@ DeleteProc(clientData)
  *
  * ExecuteRemoteObject --
  *
- *	Takes the package delivered by DDE and executes it in the
- *	server's interpreter.
+ *	Takes the package delivered by DDE and executes it in the server's
+ *	interpreter.
  *
  * Results:
- *	A list Tcl_Obj * that describes what happened. The first
- *	element is the numerical return code (TCL_ERROR, etc.).  The
- *	second element is the result of the script. If the return
- *	result was TCL_ERROR, then the third element will be the value
- *	of the global "errorCode", and the fourth will be the value of
- *	the global "errorInfo".  The return result will have a
- *	refCount of 0.
+ *	A list Tcl_Obj * that describes what happened. The first element is
+ *	the numerical return code (TCL_ERROR, etc.). The second element is the
+ *	result of the script. If the return result was TCL_ERROR, then the
+ *	third element will be the value of the global "errorCode", and the
+ *	fourth will be the value of the global "errorInfo". The return result
+ *	will have a refCount of 0.
  *
  * Side effects:
- *	A Tcl script is run, which can cause all kinds of other things
- *	to happen.
+ *	A Tcl script is run, which can cause all kinds of other things to
+ *	happen.
  *
  *----------------------------------------------------------------------
  */
@@ -536,7 +536,10 @@ ExecuteRemoteObject(riPtr, ddeObjectPtr)
     }
 
     if (riPtr->handlerPtr != NULL) {
-	/* add the dde request data to the handler proc list */
+	/*
+	 * Add the dde request data to the handler proc list.
+	 */
+
 	Tcl_Obj *cmdPtr = Tcl_DuplicateObj(riPtr->handlerPtr);
 
 	result = Tcl_ListObjAppendElement(riPtr->interp, cmdPtr, ddeObjectPtr);
@@ -576,16 +579,16 @@ ExecuteRemoteObject(riPtr, ddeObjectPtr)
  *
  * DdeServerProc --
  *
- *	Handles all transactions for this server. Can handle execute,
- *	request, and connect protocols. Dde will call this routine
- *	when a client attempts to run a dde command using this server.
+ *	Handles all transactions for this server. Can handle execute, request,
+ *	and connect protocols. Dde will call this routine when a client
+ *	attempts to run a dde command using this server.
  *
  * Results:
  *	A DDE Handle with the result of the dde command.
  *
  * Side effects:
- *	Depending on which command is executed, arbitrary Tcl scripts
- *	can be run.
+ *	Depending on which command is executed, arbitrary Tcl scripts can be
+ *	run.
  *
  *----------------------------------------------------------------------
  */
@@ -614,10 +617,9 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
 
     switch(uType) {
     case XTYP_CONNECT:
-
 	/*
-	 * Dde is trying to initialize a conversation with us. Check
-	 * and make sure we have a valid topic.
+	 * Dde is trying to initialize a conversation with us. Check and make
+	 * sure we have a valid topic.
 	 */
 
 	len = DdeQueryString(ddeInstance, ddeTopic, NULL, 0, 0);
@@ -639,12 +641,10 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
 	return (HDDEDATA) FALSE;
 
     case XTYP_CONNECT_CONFIRM:
-
 	/*
-	 * Dde has decided that we can connect, so it gives us a
-	 * conversation handle. We need to keep track of it
-	 * so we know which execution result to return in an
-	 * XTYP_REQUEST.
+	 * Dde has decided that we can connect, so it gives us a conversation
+	 * handle. We need to keep track of it so we know which execution
+	 * result to return in an XTYP_REQUEST.
 	 */
 
 	len = DdeQueryString(ddeInstance, ddeTopic, NULL, 0, 0);
@@ -669,7 +669,6 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
 	return (HDDEDATA) TRUE;
 
     case XTYP_DISCONNECT:
-
 	/*
 	 * The client has disconnected from our server. Forget this
 	 * conversation.
@@ -694,11 +693,10 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
 	return (HDDEDATA) TRUE;
 
     case XTYP_REQUEST:
-
 	/*
-	 * This could be either a request for a value of a Tcl variable,
-	 * or it could be the send command requesting the results of the
-	 * last execute.
+	 * This could be either a request for a value of a Tcl variable, or it
+	 * could be the send command requesting the results of the last
+	 * execute.
 	 */
 
 	if (uFmt != CF_TEXT) {
@@ -750,11 +748,9 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
 	return ddeReturn;
 
     case XTYP_EXECUTE: {
-
 	/*
-	 * Execute this script. The results will be saved into
-	 * a list object which will be retreived later. See
-	 * ExecuteRemoteObject.
+	 * Execute this script. The results will be saved into a list object
+	 * which will be retreived later. See ExecuteRemoteObject.
 	 */
 
 	Tcl_Obj *returnPackagePtr;
@@ -801,7 +797,6 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
     }
 
     case XTYP_WILDCONNECT: {
-
 	/*
 	 * Dde wants a list of services and topics that we support.
 	 */
@@ -870,8 +865,8 @@ DdeExitProc(clientData)
  *
  * MakeDdeConnection --
  *
- *	This procedure is a utility used to connect to a DDE server
- *	when given a server name and a topic name.
+ *	This function is a utility used to connect to a DDE server when given
+ *	a server name and a topic name.
  *
  * Results:
  *	A standard Tcl result.
@@ -915,12 +910,11 @@ MakeDdeConnection(interp, name, ddeConvPtr)
  *
  * DdeGetServicesList --
  *
- *	This procedure obtains the list of DDE services.
+ *	This function obtains the list of DDE services.
  *
- *	The functions between here and this procedure are all involved
- *	with handling the DDE callbacks for this.  They are:
- *	DdeCreateClient, DdeClientWindowProc, DdeServicesOnAck, and
- *	DdeEnumWindowsCallback
+ *	The functions between here and this function are all involved with
+ *	handling the DDE callbacks for this. They are: DdeCreateClient,
+ *	DdeClientWindowProc, DdeServicesOnAck, and DdeEnumWindowsCallback
  *
  * Results:
  *	A standard Tcl result.
@@ -945,7 +939,10 @@ DdeCreateClient(es)
     wc.lpszClassName = szDdeClientClassName;
     wc.cbWndExtra = sizeof(struct DdeEnumServices *);
 
-    /* register and create the callback window */
+    /*
+     * Register and create the callback window.
+     */
+
     RegisterClassEx(&wc);
     es->hwnd = CreateWindowEx(0, szDdeClientClassName, szDdeClientWindowName,
 	    WS_POPUP, 0, 0, 0, 0, NULL, NULL, NULL, (LPVOID)es);
@@ -1030,11 +1027,14 @@ DdeServicesOnAck(hwnd, wParam, lParam)
 	}
     }
 
-    /* tell the server we are no longer interested */
+    /*
+     * Tell the server we are no longer interested.
+     */
+
     PostMessage(hwndRemote, WM_DDE_TERMINATE, (WPARAM)hwnd, 0L);
     return 0L;
 }
-
+
 static BOOL CALLBACK
 DdeEnumWindowsCallback(hwndTarget, lParam)
     HWND hwndTarget;
@@ -1048,7 +1048,7 @@ DdeEnumWindowsCallback(hwndTarget, lParam)
 	    &dwResult);
     return TRUE;
 }
-
+
 static int
 DdeGetServicesList(interp, serviceName, topicName)
     Tcl_Interp *interp;
@@ -1083,8 +1083,8 @@ DdeGetServicesList(interp, serviceName, topicName)
  *
  * SetDdeError --
  *
- *	Sets the interp result to a cogent error message describing
- *	the last DDE error.
+ *	Sets the interp result to a cogent error message describing the last
+ *	DDE error.
  *
  * Results:
  *	None.
@@ -1125,8 +1125,8 @@ SetDdeError(interp)
  *
  * Tcl_DdeObjCmd --
  *
- *	This procedure is invoked to process the "dde" Tcl command.
- *	See the user documentation for details on what it does.
+ *	This function is invoked to process the "dde" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -1196,9 +1196,10 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	    if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
 		    "option", 0, (int *) &argIndex) != TCL_OK) {
 		/*
-		 * If it is the last argument, it might be a server
-		 * name instead of a bad argument.
+		 * If it is the last argument, it might be a server name
+		 * instead of a bad argument.
 		 */
+
 		if (i != objc-1) {
 		    return TCL_ERROR;
 		}
@@ -1208,8 +1209,9 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	    if (argIndex == DDE_SERVERNAME_EXACT) {
 		exact = 1;
 	    } else if (argIndex == DDE_SERVERNAME_HANDLER) {
-		if ((objc - i) == 1) { /* return current handler */
+		if ((objc - i) == 1) {	/* return current handler */
 		    RegisteredInterp *riPtr = DdeGetRegistrationPtr(interp);
+
 		    if (riPtr && riPtr->handlerPtr) {
 			Tcl_SetObjResult(interp, riPtr->handlerPtr);
 		    } else {
@@ -1271,7 +1273,11 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 		break;
 	    }
 	}
-	/* otherwise ... */
+
+	/*
+	 * Otherwise ...
+	 */
+
 	Tcl_WrongNumArgs(interp, 2, objv,
 		"?-binary? serviceName topicName value");
 	return TCL_ERROR;
@@ -1284,11 +1290,12 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	break;
     case DDE_EVAL:
 	if (objc < 4) {
-	  wrongDdeEvalArgs:
+	wrongDdeEvalArgs:
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-async? serviceName args");
 	    return TCL_ERROR;
 	} else {
 	    int dummy;
+
 	    firstArg = 2;
 	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeExecOptions, "option", 0,
 		    &dummy) == TCL_OK) {
@@ -1382,6 +1389,7 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
     }
     case DDE_REQUEST: {
 	char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
+
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("cannot request value of null data", -1));
@@ -1483,13 +1491,12 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	((Tcl_Obj **) objv) += (async + 3);
 
 	/*
-	 * See if the target interpreter is local.  If so, execute
-	 * the command directly without going through the DDE server.
-	 * Don't exchange objects between interps.  The target interp could
-	 * compile an object, producing a bytecode structure that refers to
-	 * other objects owned by the target interp.  If the target interp
-	 * is then deleted, the bytecode structure would be referring to
-	 * deallocated objects.
+	 * See if the target interpreter is local. If so, execute the command
+	 * directly without going through the DDE server. Don't exchange
+	 * objects between interps. The target interp could compile an object,
+	 * producing a bytecode structure that refers to other objects owned
+	 * by the target interp. If the target interp is then deleted, the
+	 * bytecode structure would be referring to deallocated objects.
 	 */
 
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
@@ -1503,8 +1510,8 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	    Tcl_Interp *sendInterp;
 
 	    /*
-	     * This command is to a local interp. No need to go through
-	     * the server.
+	     * This command is to a local interp. No need to go through the
+	     * server.
 	     */
 
 	    Tcl_Preserve((ClientData) riPtr);
@@ -1512,11 +1519,11 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	    Tcl_Preserve((ClientData) sendInterp);
 
 	    /*
-	     * Don't exchange objects between interps.  The target interp
-	     * would compile an object, producing a bytecode structure that
-	     * refers to other objects owned by the target interp.  If the
-	     * target interp is then deleted, the bytecode structure would
-	     * be referring to deallocated objects.
+	     * Don't exchange objects between interps. The target interp would
+	     * compile an object, producing a bytecode structure that refers
+	     * to other objects owned by the target interp. If the target
+	     * interp is then deleted, the bytecode structure would be
+	     * referring to deallocated objects.
 	     */
 
 	    if (Tcl_IsSafe(riPtr->interp) && riPtr->handlerPtr == NULL) {
@@ -1554,9 +1561,8 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	    if (interp != sendInterp) {
 		if (result == TCL_ERROR) {
 		    /*
-		     * An error occurred, so transfer error information
-		     * from the destination interpreter back to our
-		     * interpreter.
+		     * An error occurred, so transfer error information from
+		     * the destination interpreter back to our interpreter.
 		     */
 
 		    Tcl_ResetResult(interp);
@@ -1579,12 +1585,12 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	    Tcl_Release((ClientData) sendInterp);
 	} else {
 	    /*
-	     * This is a non-local request. Send the script to the server
-	     * and poll it for a result.
+	     * This is a non-local request. Send the script to the server and
+	     * poll it for a result.
 	     */
 
 	    if (MakeDdeConnection(interp, serviceName, &hConv) != TCL_OK) {
-	      invalidServerResponse:
+	    invalidServerResponse:
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("invalid data returned from server",
 			-1));
@@ -1625,12 +1631,12 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 		Tcl_Obj *resultPtr;
 
 		/*
-		 * The return handle has a two or four element list in
-		 * it. The first element is the return code (TCL_OK,
-		 * TCL_ERROR, etc.). The second is the result of the
-		 * script. If the return code is TCL_ERROR, then the third
-		 * element is the value of the variable "errorCode", and
-		 * the fourth is the value of the variable "errorInfo".
+		 * The return handle has a two or four element list in it. The
+		 * first element is the return code (TCL_OK, TCL_ERROR, etc.).
+		 * The second is the result of the script. If the return code
+		 * is TCL_ERROR, then the third element is the value of the
+		 * variable "errorCode", and the fourth is the value of the
+		 * variable "errorInfo".
 		 */
 
 		resultPtr = Tcl_NewObj();
@@ -1692,11 +1698,13 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
     }
     return result;
 }
-
+
 /*
  * Local variables:
  * mode: c
  * indent-tabs-mode: t
  * tab-width: 8
+ * c-basic-offset: 4
+ * fill-column: 78
  * End:
  */

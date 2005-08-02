@@ -6,11 +6,13 @@
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2002-2005 by Miguel Sofer.
+ * Copyright (c) 2005 by Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.14 2005/07/12 20:36:30 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.15 2005/08/02 18:15:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -349,6 +351,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
     }
 #endif /* TCL_WIDE_INT_IS_LONG */
+
+static Tcl_ObjType dictIteratorType = {
+    "dictIterator",
+    NULL, NULL, NULL, NULL
+};
 
 /*
  * Declarations for local procedures to this file:
@@ -1258,11 +1265,13 @@ TclExecuteByteCode(interp, codePtr)
     }
 
     switch (*pc) {
-    case INST_RETURN: {
+    case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
 	int level = TclGetUInt4AtPtr(pc+5);
-	Tcl_Obj *returnOpts = POP_OBJECT();
+	Tcl_Obj *returnOpts;
 
+	TRACE(("%u %u => ", code, level));
+	returnOpts = POP_OBJECT();
 	result = TclProcessReturn(interp, code, level, returnOpts);
 	Tcl_DecrRefCount(returnOpts);
 	if (result != TCL_OK) {
@@ -1270,8 +1279,24 @@ TclExecuteByteCode(interp, codePtr)
 	    cleanup = 1;
 	    goto processExceptionReturn;
 	}
+	TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+		O2S(objResultPtr)));
 	NEXT_INST_F(9, 0, 0);
     }
+
+    case INST_RETURN_STK:
+	TRACE(("=> "));
+	objResultPtr = POP_OBJECT();
+	result = Tcl_SetReturnOptions(interp, POP_OBJECT());
+	if (result != TCL_OK) {
+	    Tcl_SetObjResult(interp, objResultPtr);
+	    Tcl_DecrRefCount(objResultPtr);
+	    cleanup = 0;
+	    goto processExceptionReturn;
+	}
+	TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+		O2S(objResultPtr)));
+	NEXT_INST_F(1, 0, -1);
 
     case INST_DONE:
 	if (tosPtr <= eePtr->stackPtr + initStackTop) {
@@ -4763,6 +4788,519 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
+    {
+	int opnd, opnd2, allocateDict;
+	Tcl_Obj *dictPtr, *valPtr;
+	Var *varPtr;
+	char *part1;
+
+    case INST_DICT_GET:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u => ", opnd));
+	dictPtr = *(tosPtr - opnd);
+	if (opnd > 1) {
+	    dictPtr = TclTraceDictPath(interp, dictPtr, opnd-1,
+		    tosPtr - (opnd-1), DICT_PATH_READ);
+	    if (dictPtr == NULL) {
+		TRACE_WITH_OBJ((
+			"%u => ERROR tracing dictionary path into \"%s\": ",
+			opnd, O2S(*(tosPtr - opnd))),
+			Tcl_GetObjResult(interp));
+		result = TCL_ERROR;
+		cleanup = opnd + 1;
+		goto checkForCatch;
+	    }
+	}
+	result = Tcl_DictObjGet(interp, dictPtr, *tosPtr, &objResultPtr);
+	if (result != TCL_OK) {
+	    TRACE_WITH_OBJ((
+		    "%u => ERROR reading leaf dictionary key \"%s\": ",
+			opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
+	    cleanup = opnd + 1;
+	    goto checkForCatch;
+	}
+	if (objResultPtr == NULL) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "key \"", TclGetString(*tosPtr),
+		    "\" not known in dictionary", NULL);
+	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
+	    result = TCL_ERROR;
+	    cleanup = opnd + 1;
+	    goto checkForCatch;
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(5, opnd+1, 1);
+
+    case INST_DICT_SET:
+    case INST_DICT_UNSET:
+    case INST_DICT_INCR_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd2 = TclGetUInt4AtPtr(pc+5);
+
+	varPtr = &(compiledLocals[opnd2]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u %u => ", opnd, opnd2));
+	if (TclIsVarDirectReadable(varPtr)) {
+	    dictPtr = varPtr->value.objPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL, 0);
+	    CACHE_STACK_INFO();
+	}
+	if (dictPtr == NULL) {
+	    TclNewObj(dictPtr);
+	    allocateDict = 1;
+	} else {
+	    allocateDict = Tcl_IsShared(dictPtr);
+	    if (allocateDict) {
+		dictPtr = Tcl_DuplicateObj(dictPtr);
+	    }
+	}
+
+	switch (*pc) {
+	case INST_DICT_SET:
+	    cleanup = opnd + 1;
+	    result = Tcl_DictObjPutKeyList(interp, dictPtr, opnd, tosPtr-opnd,
+		    *tosPtr);
+	    break;
+	case INST_DICT_INCR_IMM:
+	    cleanup = 1;
+	    opnd = TclGetInt4AtPtr(pc+1);
+	    result = Tcl_DictObjGet(interp, dictPtr, *tosPtr, &valPtr);
+	    if (result != TCL_OK) {
+		break;
+	    }
+	    if (valPtr == NULL) {
+		Tcl_DictObjPut(NULL, dictPtr, *tosPtr, Tcl_NewLongObj(opnd));
+	    } else if (valPtr->typePtr == &tclWideIntType) {
+		Tcl_WideInt wvalue;
+
+		Tcl_GetWideIntFromObj(NULL, valPtr, &wvalue);
+		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			Tcl_NewWideIntObj(wvalue + opnd));
+	    } else if (valPtr->typePtr == &tclIntType) {
+		long value;
+
+		Tcl_GetLongFromObj(NULL, valPtr, &value);
+		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			Tcl_NewLongObj(value + opnd));
+	    } else {
+		long value = 0; /* stop compiler warning */
+		Tcl_WideInt wvalue;
+
+		REQUIRE_WIDE_OR_INT(result, valPtr, value, wvalue);
+		if (result != TCL_OK) {
+		    break;
+		}
+		if (valPtr->typePtr == &tclWideIntType) {
+		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			    Tcl_NewWideIntObj(wvalue + opnd));
+		} else {
+		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
+			    Tcl_NewLongObj(value + opnd));
+		}
+	    }
+	    break;
+	case INST_DICT_UNSET:
+	    cleanup = opnd;
+	    result = Tcl_DictObjRemoveKeyList(interp, dictPtr, opnd,
+		    tosPtr - (opnd-1));
+	    break;
+	default:
+	    cleanup = 0; /* stop compiler warning */
+	    Tcl_Panic("Should not happen!");
+	}
+
+	if (result != TCL_OK) {
+	    if (allocateDict) {
+		Tcl_DecrRefCount(dictPtr);
+	    }
+	    TRACE_WITH_OBJ(("%u %u => ERROR updating dictionary: ",opnd,opnd2),
+		    Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+
+	if (TclIsVarDirectWritable(varPtr)) {
+	    if (allocateDict) {
+		Tcl_Obj *oldValuePtr = varPtr->value.objPtr;
+
+		Tcl_IncrRefCount(dictPtr);
+		if (oldValuePtr != NULL) {
+		    Tcl_DecrRefCount(oldValuePtr);
+		} else {
+		    TclSetVarScalar(varPtr);
+		    TclClearVarUndefined(varPtr);
+		}
+		varPtr->value.objPtr = dictPtr;
+	    }
+	    objResultPtr = dictPtr;
+	} else {
+	    Tcl_IncrRefCount(dictPtr);
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    Tcl_DecrRefCount(dictPtr);
+	    if (objResultPtr == NULL) {
+		TRACE_APPEND(("ERROR: %.30s\n",O2S(Tcl_GetObjResult(interp))));
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+#ifndef TCL_COMPILE_DEBUG
+	if (*(pc+9) == INST_POP) {
+	    NEXT_INST_V(10, cleanup, 0);
+	}
+#endif
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(9, cleanup, 1);
+
+    case INST_DICT_APPEND:
+    case INST_DICT_LAPPEND:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	cleanup = 2;
+
+	varPtr = &(compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u => ", opnd));
+	if (TclIsVarDirectReadable(varPtr)) {
+	    dictPtr = varPtr->value.objPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL, 0);
+	    CACHE_STACK_INFO();
+	}
+	if (dictPtr == NULL) {
+	    TclNewObj(dictPtr);
+	    allocateDict = 1;
+	} else {
+	    allocateDict = Tcl_IsShared(dictPtr);
+	    if (allocateDict) {
+		dictPtr = Tcl_DuplicateObj(dictPtr);
+	    }
+	}
+
+	result = Tcl_DictObjGet(interp, dictPtr, *(tosPtr - 1), &valPtr);
+	if (result != TCL_OK) {
+	    if (allocateDict) {
+		Tcl_DecrRefCount(dictPtr);
+	    }
+	    goto checkForCatch;
+	}
+
+	/*
+	 * Note that a non-existent key results in a NULL valPtr, which is a
+	 * case handled separately below. What we *can* say at this point is
+	 * that the write-back will always succeed.
+	 */
+
+	switch (*pc) {
+	case INST_DICT_APPEND:
+	    if (valPtr == NULL) {
+		valPtr = *tosPtr;
+	    } else {
+		if (Tcl_IsShared(valPtr)) {
+		    valPtr = Tcl_DuplicateObj(valPtr);
+		}
+		Tcl_AppendObjToObj(valPtr, *tosPtr);
+	    }
+	    break;
+	case INST_DICT_LAPPEND:
+	    /*
+	     * More complex because list-append can fail.
+	     */
+	    if (valPtr == NULL) {
+		valPtr = Tcl_NewListObj(1, tosPtr);
+	    } else if (Tcl_IsShared(valPtr)) {
+		Tcl_Obj *dupPtr = Tcl_DuplicateObj(valPtr);
+
+		result = Tcl_ListObjAppendElement(interp, dupPtr, *tosPtr);
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(dupPtr);
+		    if (allocateDict) {
+			Tcl_DecrRefCount(dictPtr);
+		    }
+		    goto checkForCatch;
+		}
+	    } else {
+		result = Tcl_ListObjAppendElement(interp, valPtr, *tosPtr);
+		if (result != TCL_OK) {
+		    if (allocateDict) {
+			Tcl_DecrRefCount(dictPtr);
+		    }
+		    goto checkForCatch;
+		}
+	    }
+	    break;
+	default:
+	    Tcl_Panic("Should not happen!");
+	}
+
+	Tcl_DictObjPut(NULL, dictPtr, *(tosPtr - 1), valPtr);
+
+	if (TclIsVarDirectWritable(varPtr)) {
+	    if (allocateDict) {
+		Tcl_Obj *oldValuePtr = varPtr->value.objPtr;
+
+		Tcl_IncrRefCount(dictPtr);
+		if (oldValuePtr != NULL) {
+		    Tcl_DecrRefCount(oldValuePtr);
+		} else {
+		    TclSetVarScalar(varPtr);
+		    TclClearVarUndefined(varPtr);
+		}
+		varPtr->value.objPtr = dictPtr;
+	    }
+	    objResultPtr = dictPtr;
+	} else {
+	    Tcl_IncrRefCount(dictPtr);
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    Tcl_DecrRefCount(dictPtr);
+	    if (objResultPtr == NULL) {
+		TRACE_APPEND(("ERROR: %.30s\n",O2S(Tcl_GetObjResult(interp))));
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+#ifndef TCL_COMPILE_DEBUG
+	if (*(pc+9) == INST_POP) {
+	    NEXT_INST_F(6, 2, 0);
+	}
+#endif
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(5, 2, 1);
+    }
+
+    {
+	int opnd, done;
+	Tcl_Obj *statePtr, *dictPtr, *keyPtr, *valuePtr, *emptyPtr;
+	Var *varPtr;
+	Tcl_DictSearch *searchPtr;
+
+    case INST_DICT_FIRST:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u => ", opnd));
+	dictPtr = POP_OBJECT();
+	searchPtr = (Tcl_DictSearch *) ckalloc(sizeof(Tcl_DictSearch));
+	result = Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
+		&valuePtr, &done);
+	Tcl_DecrRefCount(dictPtr);
+	if (result != TCL_OK) {
+	    ckfree((char *) searchPtr);
+	    cleanup = 0;
+	    goto checkForCatch;
+	}
+	TclNewObj(statePtr);
+	statePtr->typePtr = &dictIteratorType;
+	statePtr->internalRep.otherValuePtr = (void *) searchPtr;
+	varPtr = compiledLocals + opnd;
+	if (varPtr->value.objPtr == NULL) {
+	    TclSetVarScalar(compiledLocals + opnd);
+	    TclClearVarUndefined(compiledLocals + opnd);
+	} else if (varPtr->value.objPtr->typePtr == &dictIteratorType) {
+	    Tcl_Panic("mis-issued dictFirst!");
+	} else {
+	    Tcl_DecrRefCount(varPtr->value.objPtr);
+	}
+	varPtr->value.objPtr = statePtr;
+	Tcl_IncrRefCount(statePtr);
+	goto pushDictIteratorResult;
+
+    case INST_DICT_NEXT:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u => ", opnd));
+	statePtr = compiledLocals[opnd].value.objPtr;
+	if (statePtr == NULL || statePtr->typePtr != &dictIteratorType) {
+	    Tcl_Panic("mis-issued dictNext!");
+	}
+	searchPtr = (Tcl_DictSearch *) statePtr->internalRep.otherValuePtr;
+	Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
+    pushDictIteratorResult:
+	if (done) {
+	    TclNewObj(emptyPtr);
+	    PUSH_OBJECT(emptyPtr);
+	    PUSH_OBJECT(emptyPtr);
+	} else {
+	    PUSH_OBJECT(valuePtr);
+	    PUSH_OBJECT(keyPtr);
+	}
+	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
+		O2S(*(tosPtr-1)), O2S(*tosPtr), done));
+	objResultPtr = Tcl_NewBooleanObj(done);
+	NEXT_INST_F(5, 0, 1);
+
+    case INST_DICT_DONE:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u => ", opnd));
+	statePtr = compiledLocals[opnd].value.objPtr;
+	if (statePtr == NULL) {
+	    Tcl_Panic("mis-issued dictDone!");
+	}
+	if (statePtr->typePtr == &dictIteratorType) {
+	    searchPtr = (Tcl_DictSearch *) statePtr->internalRep.otherValuePtr;
+	    Tcl_DictObjDone(searchPtr);
+	    ckfree((char *) searchPtr);
+	}
+	/*
+	 * Set the internal variable to an empty object to signify
+	 * that we don't hold an iterator.
+	 */
+	Tcl_DecrRefCount(statePtr);
+	TclNewObj(emptyPtr);
+	compiledLocals[opnd].value.objPtr = emptyPtr;
+	Tcl_IncrRefCount(emptyPtr);
+	NEXT_INST_F(5, 0, 0);
+    }
+
+    {
+	int opnd, i, length, length2, allocdict;
+	Tcl_Obj **keyPtrPtr, **varIdxPtrPtr, *dictPtr;
+	Var *varPtr;
+	char *part1;
+
+    case INST_DICT_UPDATE_START:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	varPtr = &(compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u => ", opnd));
+	if (TclIsVarDirectReadable(varPtr)) {
+	    dictPtr = varPtr->value.objPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL,
+		    TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    if (dictPtr == NULL) {
+		goto dictUpdateStartFailed;
+	    }
+	}
+	if (Tcl_ListObjGetElements(interp, *(tosPtr - 1), &length,
+			&keyPtrPtr) != TCL_OK ||
+		Tcl_ListObjGetElements(interp, *tosPtr, &length2,
+			&varIdxPtrPtr) != TCL_OK) {
+	    goto dictUpdateStartFailed;
+	}
+	if (length != length2) {
+	    Tcl_Panic("dictUpdateStart argument length mismatch");
+	}
+	for (i=0 ; i<length ; i++) {
+	    Tcl_Obj *valPtr;
+	    int varIdx;
+
+	    if (Tcl_DictObjGet(interp, dictPtr, keyPtrPtr[i],
+		    &valPtr) != TCL_OK) {
+		goto dictUpdateStartFailed;
+	    }
+	    Tcl_GetIntFromObj(NULL, varIdxPtrPtr[i], &varIdx);
+	    varPtr = &(compiledLocals[varIdx]);
+	    part1 = varPtr->name;
+	    while (TclIsVarLink(varPtr)) {
+		varPtr = varPtr->value.linkPtr;
+	    }
+	    DECACHE_STACK_INFO();
+	    if (valPtr == NULL) {
+		Tcl_UnsetVar(interp, part1, 0);
+	    } else if (TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
+		    valPtr, TCL_LEAVE_ERR_MSG) == NULL) {
+		CACHE_STACK_INFO();
+	    dictUpdateStartFailed:
+		cleanup = 2;
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	    CACHE_STACK_INFO();
+	}
+	NEXT_INST_F(5, 2, 0);
+
+    case INST_DICT_UPDATE_END:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	varPtr = &(compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u => ", opnd));
+	if (TclIsVarDirectReadable(varPtr)) {
+	    dictPtr = varPtr->value.objPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL, 0);
+	    CACHE_STACK_INFO();
+	}
+	if (dictPtr == NULL) {
+	    NEXT_INST_F(5, 2, 0);
+	}
+	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK ||
+		Tcl_ListObjGetElements(interp, *(tosPtr - 1), &length,
+			&keyPtrPtr) != TCL_OK ||
+		Tcl_ListObjGetElements(interp, *tosPtr, &length2,
+			&varIdxPtrPtr) != TCL_OK) {
+	    cleanup = 2;
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	}
+	allocdict = Tcl_IsShared(dictPtr);
+	if (allocdict) {
+	    dictPtr = Tcl_DuplicateObj(dictPtr);
+	}	
+	for (i=0 ; i<length ; i++) {
+	    Tcl_Obj *valPtr;
+	    int varIdx;
+	    Var *var2Ptr;
+	    char *part1a;
+
+	    Tcl_GetIntFromObj(NULL, varIdxPtrPtr[i], &varIdx);
+	    var2Ptr = &(compiledLocals[varIdx]);
+	    part1a = var2Ptr->name;
+	    while (TclIsVarLink(var2Ptr)) {
+		var2Ptr = var2Ptr->value.linkPtr;
+	    }
+	    if (TclIsVarDirectReadable(var2Ptr)) {
+		valPtr = var2Ptr->value.objPtr;
+	    } else {
+		DECACHE_STACK_INFO();
+		valPtr = TclPtrGetVar(interp, var2Ptr, NULL, part1a, NULL, 0);
+		CACHE_STACK_INFO();
+	    }
+	    if (valPtr == NULL) {
+		Tcl_DictObjRemove(interp, dictPtr, keyPtrPtr[i]);
+	    } else {
+		Tcl_DictObjPut(interp, dictPtr, keyPtrPtr[i], valPtr);
+	    }
+	}
+	if (TclIsVarDirectWritable(varPtr)) {
+	    Tcl_IncrRefCount(dictPtr);
+	    Tcl_DecrRefCount(varPtr->value.objPtr);
+	    varPtr->value.objPtr = dictPtr;
+	} else {
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    if (objResultPtr == NULL) {
+		if (allocdict) {
+		    Tcl_DecrRefCount(dictPtr);
+		}
+		cleanup = 2;
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+	NEXT_INST_F(5, 2, 0);
+    }
+
     default:
 	Tcl_Panic("TclExecuteByteCode: unrecognized opCode %u", *pc);
     } /* end of switch on opCode */
@@ -4912,7 +5450,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	while ((expandNestList != NULL) && ((catchTop == initCatchTop) ||
 		((ptrdiff_t) eePtr->stackPtr[catchTop] <=
-			(ptrdiff_t) expandNestList->internalRep.twoPtrValue.ptr1))) {
+		(ptrdiff_t) expandNestList->internalRep.twoPtrValue.ptr1))) {
 	    Tcl_Obj *objPtr = expandNestList->internalRep.twoPtrValue.ptr2;
 	    TclDecrRefCount(expandNestList);
 	    expandNestList = objPtr;

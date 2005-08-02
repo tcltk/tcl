@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.12 2004/10/19 22:20:05 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.12.2.1 2005/08/02 18:16:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -306,6 +306,17 @@ test dict-11.15 {dict incr command: write failure} {
     catch {unset dictVar}
     set result
 } {1 {can't set "dictVar": variable is array}}
+test dict-11.16 {dict incr command: compilation} {
+    proc dicttest {} {
+	set v {a 0 b 0 c 0}
+	dict incr v a
+	dict incr v b 1
+	dict incr v c 2
+	dict incr v d 3
+	list [dict get $v a] [dict get $v b] [dict get $v c] [dict get $v d]
+    }
+    dicttest
+} {1 1 2 3}
 
 test dict-12.1 {dict lappend command} {
     set dictv {a a}
@@ -511,6 +522,17 @@ test dict-14.15 {dict for command: keys are unique and iterated over once only} 
     catch {unset accum}
     set result
 } {a1 a2 b1 b2 bar foo : a, b, c, d, foo, bar,}
+test dict-14.16 {dict for command in compilation context} {
+    proc dicttest {} {
+	set res {x x x x x x}
+	dict for {k v} {a 0 b 1 c 2 d 3 e 4 f 5} {
+	    lset res $v $k
+	    continue
+	}
+	return $res
+    }
+    dicttest
+} {a b c d e f}
 # There's probably a lot more tests to add here.  Really ought to use
 # a coverage tool for this job...
 
@@ -968,6 +990,19 @@ test dict-21.12 {dict update command} {
     }
     getOrder $a b d f
 } {b c d e f g 3}
+test dict-21.13 {dict update command: compilation} {
+    proc dicttest {d} {
+	while 1 {
+	    dict update d a alpha b beta {
+		set beta $alpha
+		unset alpha
+		break
+	    }
+	}
+	return $d
+    }
+    getOrder [dicttest {a 1 c 2}] b c
+} {b 1 c 2 2}
 
 test dict-22.1 {dict with command} -body {
     dict with

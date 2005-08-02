@@ -1,17 +1,17 @@
-/* 
+/*
  * tclUtil.c --
  *
- *	This file contains utility procedures that are used by many Tcl
+ *	This file contains utility functions that are used by many Tcl
  *	commands.
  *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.14 2005/07/12 20:37:00 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.15 2005/08/02 18:16:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -45,71 +45,65 @@
 static ProcessGlobalValue executableName = {0, 0, NULL, NULL, NULL, NULL, NULL};
 
 /*
- * The following values are used in the flags returned by Tcl_ScanElement
- * and used by Tcl_ConvertElement.  The values TCL_DONT_USE_BRACES and
- * TCL_DONT_QUOTE_HASH are defined in tcl.h; make sure neither value
- * overlaps with any of the values below.  
+ * The following values are used in the flags returned by Tcl_ScanElement and
+ * used by Tcl_ConvertElement. The values TCL_DONT_USE_BRACES and
+ * TCL_DONT_QUOTE_HASH are defined in tcl.h; make sure neither value overlaps
+ * with any of the values below.
  *
  * TCL_DONT_USE_BRACES -	1 means the string mustn't be enclosed in
- *				braces (e.g. it contains unmatched braces,
- *				or ends in a backslash character, or user
- *				just doesn't want braces);  handle all
- *				special characters by adding backslashes.
+ *				braces (e.g. it contains unmatched braces, or
+ *				ends in a backslash character, or user just
+ *				doesn't want braces); handle all special
+ *				characters by adding backslashes.
  * USE_BRACES -			1 means the string contains a special
  *				character that can be handled simply by
  *				enclosing the entire argument in braces.
- * BRACES_UNMATCHED -		1 means that braces aren't properly matched
- *				in the argument.
- * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading
- * 				hash character ('#') should *not* be quoted.
- * 				This is appropriate when the caller can
- * 				guarantee the element is not the first element
- * 				of a list, so [eval] cannot mis-parse the
- * 				element as a comment.
+ * BRACES_UNMATCHED -		1 means that braces aren't properly matched in
+ *				the argument.
+ * TCL_DONT_QUOTE_HASH -	1 means the caller insists that a leading hash
+ * 				character ('#') should *not* be quoted. This
+ * 				is appropriate when the caller can guarantee
+ * 				the element is not the first element of a
+ * 				list, so [eval] cannot mis-parse the element
+ * 				as a comment.
  */
 
 #define USE_BRACES		2
 #define BRACES_UNMATCHED	4
 
 /*
- * The following values determine the precision used when converting
- * floating-point values to strings.  This information is linked to all
- * of the tcl_precision variables in all interpreters via the procedure
- * TclPrecTraceProc.
+ * The following key is used by Tcl_PrintDouble and TclPrecTraceProc to
+ * access the precision to be used for double formatting.
  */
 
-static int precision = 0;	/* Precision of floating point conversions,
-				 * in the range 0-17 inclusive. */
-
-TCL_DECLARE_MUTEX(precisionMutex)
+static Tcl_ThreadDataKey precisionKey;
 
 /*
- * Prototypes for procedures defined later in this file.
+ * Prototypes for functions defined later in this file.
  */
 
 static void		ClearHash _ANSI_ARGS_((Tcl_HashTable *tablePtr));
 static void		FreeProcessGlobalValue _ANSI_ARGS_((
 			    ClientData clientData));
-static void		FreeThreadHash _ANSI_ARGS_ ((ClientData clientData));
-static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_ ((Tcl_ThreadDataKey *keyPtr));
+static void		FreeThreadHash _ANSI_ARGS_((ClientData clientData));
+static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_((Tcl_ThreadDataKey *keyPtr));
 static int		SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
-					    Tcl_Obj* objPtr));
+			    Tcl_Obj* objPtr));
 static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
 
 /*
- * The following is the Tcl object type definition for an object
- * that represents a list index in the form, "end-offset".  It is
- * used as a performance optimization in TclGetIntForIndex.  The
- * internal rep is an integer, so no memory management is required
- * for it.
+ * The following is the Tcl object type definition for an object that
+ * represents a list index in the form, "end-offset". It is used as a
+ * performance optimization in TclGetIntForIndex. The internal rep is an
+ * integer, so no memory management is required for it.
  */
 
 Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     (Tcl_FreeInternalRepProc*) NULL,    /* freeIntRepProc */
-    (Tcl_DupInternalRepProc*) NULL,     /* dupIntRepProc */
+    (Tcl_DupInternalRepProc*) NULL,	/* dupIntRepProc */
     UpdateStringOfEndOffset,		/* updateStringProc */
-    SetEndOffsetFromAny    
+    SetEndOffsetFromAny
 };
 
 
@@ -118,28 +112,28 @@ Tcl_ObjType tclEndOffsetType = {
  *
  * TclFindElement --
  *
- *	Given a pointer into a Tcl list, locate the first (or next)
- *	element in the list.
+ *	Given a pointer into a Tcl list, locate the first (or next) element in
+ *	the list.
  *
  * Results:
- *	The return value is normally TCL_OK, which means that the
- *	element was successfully located.  If TCL_ERROR is returned
- *	it means that list didn't have proper list structure;
- *	the interp's result contains a more detailed error message.
+ *	The return value is normally TCL_OK, which means that the element was
+ *	successfully located. If TCL_ERROR is returned it means that list
+ *	didn't have proper list structure; the interp's result contains a more
+ *	detailed error message.
  *
  *	If TCL_OK is returned, then *elementPtr will be set to point to the
  *	first element of list, and *nextPtr will be set to point to the
  *	character just after any white space following the last character
- *	that's part of the element. If this is the last argument in the
- *	list, then *nextPtr will point just after the last character in the
- *	list (i.e., at the character at list+listLength). If sizePtr is
- *	non-NULL, *sizePtr is filled in with the number of characters in the
- *	element.  If the element is in braces, then *elementPtr will point
- *	to the character after the opening brace and *sizePtr will not
- *	include either of the braces. If there isn't an element in the list,
- *	*sizePtr will be zero, and both *elementPtr and *termPtr will point
- *	just after the last character in the list. Note: this procedure does
- *	NOT collapse backslash sequences.
+ *	that's part of the element. If this is the last argument in the list,
+ *	then *nextPtr will point just after the last character in the list
+ *	(i.e., at the character at list+listLength). If sizePtr is non-NULL,
+ *	*sizePtr is filled in with the number of characters in the element. If
+ *	the element is in braces, then *elementPtr will point to the character
+ *	after the opening brace and *sizePtr will not include either of the
+ *	braces. If there isn't an element in the list, *sizePtr will be zero,
+ *	and both *elementPtr and *termPtr will point just after the last
+ *	character in the list. Note: this function does NOT collapse backslash
+ *	sequences.
  *
  * Side effects:
  *	None.
@@ -149,10 +143,10 @@ Tcl_ObjType tclEndOffsetType = {
 
 int
 TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
-	       bracePtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. 
-				 * If NULL, then no error message is left
-				 * after errors. */
+	bracePtr)
+    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
     CONST char *list;		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
@@ -164,9 +158,8 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 				 * argument (next arg or end of list). */
     int *sizePtr;		/* If non-zero, fill in with size of
 				 * element. */
-    int *bracePtr;		/* If non-zero, fill in with non-zero/zero
-				 * to indicate that arg was/wasn't
-				 * in braces. */
+    int *bracePtr;		/* If non-zero, fill in with non-zero/zero to
+				 * indicate that arg was/wasn't in braces. */
 {
     CONST char *p = list;
     CONST char *elemStart;	/* Points to first byte of first element. */
@@ -176,11 +169,11 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
     int size = 0;		/* lint. */
     int numChars;
     CONST char *p2;
-    
+
     /*
-     * Skim off leading white space and check for an opening brace or
-     * quote. We treat embedded NULLs in the list as bytes belonging to
-     * a list element.
+     * Skim off leading white space and check for an opening brace or quote.
+     * We treat embedded NULLs in the list as bytes belonging to a list
+     * element.
      */
 
     limit = (list + listLength);
@@ -210,122 +203,119 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 
     while (p < limit) {
 	switch (*p) {
-
 	    /*
 	     * Open brace: don't treat specially unless the element is in
 	     * braces. In this case, keep a nesting count.
 	     */
 
-	    case '{':
-		if (openBraces != 0) {
-		    openBraces++;
-		}
-		break;
+	case '{':
+	    if (openBraces != 0) {
+		openBraces++;
+	    }
+	    break;
 
 	    /*
 	     * Close brace: if element is in braces, keep nesting count and
 	     * quit when the last close brace is seen.
 	     */
 
-	    case '}':
-		if (openBraces > 1) {
-		    openBraces--;
-		} else if (openBraces == 1) {
-		    size = (p - elemStart);
-		    p++;
-		    if ((p >= limit)
-			    || isspace(UCHAR(*p))) { /* INTL: ISO space. */
-			goto done;
-		    }
-
-		    /*
-		     * Garbage after the closing brace; return an error.
-		     */
-		    
-		    if (interp != NULL) {
-			char buf[100];
-			
-			p2 = p;
-			while ((p2 < limit)
-				&& (!isspace(UCHAR(*p2))) /* INTL: ISO space. */
-			        && (p2 < p+20)) {
-			    p2++;
-			}
-			sprintf(buf,
-				"list element in braces followed by \"%.*s\" instead of space",
-				(int) (p2-p), p);
-			Tcl_SetResult(interp, buf, TCL_VOLATILE);
-		    }
-		    return TCL_ERROR;
+	case '}':
+	    if (openBraces > 1) {
+		openBraces--;
+	    } else if (openBraces == 1) {
+		size = (p - elemStart);
+		p++;
+		if ((p >= limit)
+			|| isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+		    goto done;
 		}
-		break;
+
+		/*
+		 * Garbage after the closing brace; return an error.
+		 */
+
+		if (interp != NULL) {
+		    char buf[100];
+
+		    p2 = p;
+		    while ((p2 < limit)
+			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space. */
+			    && (p2 < p+20)) {
+			p2++;
+		    }
+		    sprintf(buf,
+			    "list element in braces followed by \"%.*s\" instead of space",
+			    (int) (p2-p), p);
+		    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+		}
+		return TCL_ERROR;
+	    }
+	    break;
 
 	    /*
-	     * Backslash:  skip over everything up to the end of the
-	     * backslash sequence.
+	     * Backslash: skip over everything up to the end of the backslash
+	     * sequence.
 	     */
 
-	    case '\\': {
-		Tcl_UtfBackslash(p, &numChars, NULL);
-		p += (numChars - 1);
-		break;
-	    }
+	case '\\':
+	    Tcl_UtfBackslash(p, &numChars, NULL);
+	    p += (numChars - 1);
+	    break;
 
 	    /*
 	     * Space: ignore if element is in braces or quotes; otherwise
 	     * terminate element.
 	     */
 
-	    case ' ':
-	    case '\f':
-	    case '\n':
-	    case '\r':
-	    case '\t':
-	    case '\v':
-		if ((openBraces == 0) && !inQuotes) {
-		    size = (p - elemStart);
-		    goto done;
-		}
-		break;
+	case ' ':
+	case '\f':
+	case '\n':
+	case '\r':
+	case '\t':
+	case '\v':
+	    if ((openBraces == 0) && !inQuotes) {
+		size = (p - elemStart);
+		goto done;
+	    }
+	    break;
 
 	    /*
 	     * Double-quote: if element is in quotes then terminate it.
 	     */
 
-	    case '"':
-		if (inQuotes) {
-		    size = (p - elemStart);
-		    p++;
-		    if ((p >= limit)
-			    || isspace(UCHAR(*p))) { /* INTL: ISO space */
-			goto done;
-		    }
-
-		    /*
-		     * Garbage after the closing quote; return an error.
-		     */
-		    
-		    if (interp != NULL) {
-			char buf[100];
-			
-			p2 = p;
-			while ((p2 < limit)
-				&& (!isspace(UCHAR(*p2))) /* INTL: ISO space */
-				 && (p2 < p+20)) {
-			    p2++;
-			}
-			sprintf(buf,
-				"list element in quotes followed by \"%.*s\" %s",
-				(int) (p2-p), p, "instead of space");
-			Tcl_SetResult(interp, buf, TCL_VOLATILE);
-		    }
-		    return TCL_ERROR;
+	case '"':
+	    if (inQuotes) {
+		size = (p - elemStart);
+		p++;
+		if ((p >= limit)
+			|| isspace(UCHAR(*p))) {	/* INTL: ISO space */
+		    goto done;
 		}
-		break;
+
+		/*
+		 * Garbage after the closing quote; return an error.
+		 */
+
+		if (interp != NULL) {
+		    char buf[100];
+
+		    p2 = p;
+		    while ((p2 < limit)
+			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space */
+			    && (p2 < p+20)) {
+			p2++;
+		    }
+		    sprintf(buf,
+			    "list element in quotes followed by \"%.*s\" %s",
+			    (int) (p2-p), p, "instead of space");
+		    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+		}
+		return TCL_ERROR;
+	    }
+	    break;
 	}
 	p++;
     }
-
 
     /*
      * End of list: terminate element.
@@ -348,7 +338,7 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 	size = (p - elemStart);
     }
 
-    done:
+  done:
     while ((p < limit) && (isspace(UCHAR(*p)))) { /* INTL: ISO space. */
 	p++;
     }
@@ -368,11 +358,11 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
  *	Copy a string and eliminate any backslashes that aren't in braces.
  *
  * Results:
- *	Count characters get copied from src to	dst. Along the way, if
+ *	Count characters get copied from src to dst. Along the way, if
  *	backslash sequences are found outside braces, the backslashes are
- *	eliminated in the copy. After scanning count chars from source, a
- *	null character is placed at the end of dst.  Returns the number
- *	of characters that got copied.
+ *	eliminated in the copy. After scanning count chars from source, a null
+ *	character is placed at the end of dst. Returns the number of
+ *	characters that got copied.
  *
  * Side effects:
  *	None.
@@ -416,21 +406,19 @@ TclCopyAndCollapse(count, src, dst)
  *	Splits a list up into its constituent fields.
  *
  * Results
- *	The return value is normally TCL_OK, which means that
- *	the list was successfully split up.  If TCL_ERROR is
- *	returned, it means that "list" didn't have proper list
- *	structure;  the interp's result will contain a more detailed
- *	error message.
+ *	The return value is normally TCL_OK, which means that the list was
+ *	successfully split up. If TCL_ERROR is returned, it means that "list"
+ *	didn't have proper list structure; the interp's result will contain a
+ *	more detailed error message.
  *
- *	*argvPtr will be filled in with the address of an array
- *	whose elements point to the elements of list, in order.
- *	*argcPtr will get filled in with the number of valid elements
- *	in the array.  A single block of memory is dynamically allocated
- *	to hold both the argv array and a copy of the list (with
- *	backslashes and braces removed in the standard way).
- *	The caller must eventually free this memory by calling free()
- *	on *argvPtr.  Note:  *argvPtr and *argcPtr are only modified
- *	if the procedure returns normally.
+ *	*argvPtr will be filled in with the address of an array whose elements
+ *	point to the elements of list, in order. *argcPtr will get filled in
+ *	with the number of valid elements in the array. A single block of
+ *	memory is dynamically allocated to hold both the argv array and a copy
+ *	of the list (with backslashes and braces removed in the standard way).
+ *	The caller must eventually free this memory by calling free() on
+ *	*argvPtr. Note: *argvPtr and *argcPtr are only modified if the
+ *	function returns normally.
  *
  * Side effects:
  *	Memory is allocated.
@@ -440,13 +428,13 @@ TclCopyAndCollapse(count, src, dst)
 
 int
 Tcl_SplitList(interp, list, argcPtr, argvPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. 
-				 * If NULL, no error message is left. */
+    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+				 * NULL, no error message is left. */
     CONST char *list;		/* Pointer to string with list structure. */
-    int *argcPtr;		/* Pointer to location to fill in with
-				 * the number of elements in the list. */
-    CONST char ***argvPtr;	/* Pointer to place to store pointer to
-				 * array of pointers to list elements. */
+    int *argcPtr;		/* Pointer to location to fill in with the
+				 * number of elements in the list. */
+    CONST char ***argvPtr;	/* Pointer to place to store pointer to array
+				 * of pointers to list elements. */
 {
     CONST char **argv;
     CONST char *l;
@@ -455,10 +443,10 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
     CONST char *element;
 
     /*
-     * Figure out how much space to allocate.  There must be enough
-     * space for both the array of pointers and also for a copy of
-     * the list.  To estimate the number of pointers needed, count
-     * the number of space characters in the list.
+     * Figure out how much space to allocate. There must be enough space for
+     * both the array of pointers and also for a copy of the list. To estimate
+     * the number of pointers needed, count the number of space characters in
+     * the list.
      */
 
     for (size = 1, l = list; *l != 0; l++) {
@@ -473,7 +461,7 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	CONST char *prevList = list;
-	
+
 	result = TclFindElement(interp, list, length, &element,
 				&list, &elSize, &brace);
 	length -= (list - prevList);
@@ -515,17 +503,15 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
  *
  * Tcl_ScanElement --
  *
- *	This procedure is a companion procedure to Tcl_ConvertElement.
- *	It scans a string to see what needs to be done to it (e.g. add
- *	backslashes or enclosing braces) to make the string into a
- *	valid Tcl list element.
+ *	This function is a companion function to Tcl_ConvertElement. It scans
+ *	a string to see what needs to be done to it (e.g. add backslashes or
+ *	enclosing braces) to make the string into a valid Tcl list element.
  *
  * Results:
- *	The return value is an overestimate of the number of characters
- *	that will be needed by Tcl_ConvertElement to produce a valid
- *	list element from string.  The word at *flagPtr is filled in
- *	with a value needed by Tcl_ConvertElement when doing the actual
- *	conversion.
+ *	The return value is an overestimate of the number of characters that
+ *	will be needed by Tcl_ConvertElement to produce a valid list element
+ *	from string. The word at *flagPtr is filled in with a value needed by
+ *	Tcl_ConvertElement when doing the actual conversion.
  *
  * Side effects:
  *	None.
@@ -547,19 +533,17 @@ Tcl_ScanElement(string, flagPtr)
  *
  * Tcl_ScanCountedElement --
  *
- *	This procedure is a companion procedure to
- *	Tcl_ConvertCountedElement.  It scans a string to see what
- *	needs to be done to it (e.g. add backslashes or enclosing
- *	braces) to make the string into a valid Tcl list element.
- *	If length is -1, then the string is scanned up to the first
- *	null byte.
+ *	This function is a companion function to Tcl_ConvertCountedElement. It
+ *	scans a string to see what needs to be done to it (e.g. add
+ *	backslashes or enclosing braces) to make the string into a valid Tcl
+ *	list element. If length is -1, then the string is scanned up to the
+ *	first null byte.
  *
  * Results:
- *	The return value is an overestimate of the number of characters
- *	that will be needed by Tcl_ConvertCountedElement to produce a
- *	valid list element from string.  The word at *flagPtr is
- *	filled in with a value needed by Tcl_ConvertCountedElement
- *	when doing the actual conversion.
+ *	The return value is an overestimate of the number of characters that
+ *	will be needed by Tcl_ConvertCountedElement to produce a valid list
+ *	element from string. The word at *flagPtr is filled in with a value
+ *	needed by Tcl_ConvertCountedElement when doing the actual conversion.
  *
  * Side effects:
  *	None.
@@ -578,44 +562,44 @@ Tcl_ScanCountedElement(string, length, flagPtr)
     register CONST char *p, *lastChar;
 
     /*
-     * This procedure and Tcl_ConvertElement together do two things:
+     * This function and Tcl_ConvertElement together do two things:
      *
-     * 1. They produce a proper list, one that will yield back the
-     * argument strings when evaluated or when disassembled with
-     * Tcl_SplitList.  This is the most important thing.
-     * 
-     * 2. They try to produce legible output, which means minimizing the
-     * use of backslashes (using braces instead).  However, there are
-     * some situations where backslashes must be used (e.g. an element
-     * like "{abc": the leading brace will have to be backslashed.
-     * For each element, one of three things must be done:
+     * 1. They produce a proper list, one that will yield back the argument
+     *	  strings when evaluated or when disassembled with Tcl_SplitList. This
+     *	  is the most important thing.
      *
-     * (a) Use the element as-is (it doesn't contain any special
-     * characters).  This is the most desirable option.
+     * 2. They try to produce legible output, which means minimizing the use
+     *	  of backslashes (using braces instead). However, there are some
+     *	  situations where backslashes must be used (e.g. an element like
+     *	  "{abc": the leading brace will have to be backslashed. For each
+     *	  element, one of three things must be done:
      *
-     * (b) Enclose the element in braces, but leave the contents alone.
-     * This happens if the element contains embedded space, or if it
-     * contains characters with special interpretation ($, [, ;, or \),
-     * or if it starts with a brace or double-quote, or if there are
-     * no characters in the element.
+     * 	  (a) Use the element as-is (it doesn't contain any special
+     *	      characters). This is the most desirable option.
      *
-     * (c) Don't enclose the element in braces, but add backslashes to
-     * prevent special interpretation of special characters.  This is a
-     * last resort used when the argument would normally fall under case
-     * (b) but contains unmatched braces.  It also occurs if the last
-     * character of the argument is a backslash or if the element contains
-     * a backslash followed by newline.
+     *	  (b) Enclose the element in braces, but leave the contents alone.
+     *	      This happens if the element contains embedded space, or if it
+     *	      contains characters with special interpretation ($, [, ;, or \),
+     *	      or if it starts with a brace or double-quote, or if there are no
+     *	      characters in the element.
      *
-     * The procedure figures out how many bytes will be needed to store
-     * the result (actually, it overestimates). It also collects information
-     * about the element in the form of a flags word.
+     *	  (c) Don't enclose the element in braces, but add backslashes to
+     *	      prevent special interpretation of special characters. This is a
+     *	      last resort used when the argument would normally fall under
+     *	      case (b) but contains unmatched braces. It also occurs if the
+     *	      last character of the argument is a backslash or if the element
+     *	      contains a backslash followed by newline.
      *
-     * Note: list elements produced by this procedure and
+     * The function figures out how many bytes will be needed to store the
+     * result (actually, it overestimates). It also collects information about
+     * the element in the form of a flags word.
+     *
+     * Note: list elements produced by this function and
      * Tcl_ConvertCountedElement must have the property that they can be
-     * enclosing in curly braces to make sub-lists.  This means, for
-     * example, that we must not leave unmatched curly braces in the
-     * resulting list element.  This property is necessary in order for
-     * procedures like Tcl_DStringStartSublist to work.
+     * enclosing in curly braces to make sub-lists. This means, for example,
+     * that we must not leave unmatched curly braces in the resulting list
+     * element. This property is necessary in order for functions like
+     * Tcl_DStringStartSublist to work.
      */
 
     nestingLevel = 0;
@@ -631,39 +615,39 @@ Tcl_ScanCountedElement(string, length, flagPtr)
     if ((p == lastChar) || (*p == '{') || (*p == '"')) {
 	flags |= USE_BRACES;
     }
-    for ( ; p < lastChar; p++) {
+    for (; p < lastChar; p++) {
 	switch (*p) {
-	    case '{':
-		nestingLevel++;
-		break;
-	    case '}':
-		nestingLevel--;
-		if (nestingLevel < 0) {
-		    flags |= TCL_DONT_USE_BRACES|BRACES_UNMATCHED;
-		}
-		break;
-	    case '[':
-	    case '$':
-	    case ';':
-	    case ' ':
-	    case '\f':
-	    case '\n':
-	    case '\r':
-	    case '\t':
-	    case '\v':
-		flags |= USE_BRACES;
-		break;
-	    case '\\':
-		if ((p+1 == lastChar) || (p[1] == '\n')) {
-		    flags = TCL_DONT_USE_BRACES | BRACES_UNMATCHED;
-		} else {
-		    int size;
+	case '{':
+	    nestingLevel++;
+	    break;
+	case '}':
+	    nestingLevel--;
+	    if (nestingLevel < 0) {
+		flags |= TCL_DONT_USE_BRACES|BRACES_UNMATCHED;
+	    }
+	    break;
+	case '[':
+	case '$':
+	case ';':
+	case ' ':
+	case '\f':
+	case '\n':
+	case '\r':
+	case '\t':
+	case '\v':
+	    flags |= USE_BRACES;
+	    break;
+	case '\\':
+	    if ((p+1 == lastChar) || (p[1] == '\n')) {
+		flags = TCL_DONT_USE_BRACES | BRACES_UNMATCHED;
+	    } else {
+		int size;
 
-		    Tcl_UtfBackslash(p, &size, NULL);
-		    p += size-1;
-		    flags |= USE_BRACES;
-		}
-		break;
+		Tcl_UtfBackslash(p, &size, NULL);
+		p += size-1;
+		flags |= USE_BRACES;
+	    }
+	    break;
 	}
     }
     if (nestingLevel != 0) {
@@ -672,8 +656,8 @@ Tcl_ScanCountedElement(string, length, flagPtr)
     *flagPtr = flags;
 
     /*
-     * Allow enough space to backslash every character plus leave
-     * two spaces for braces.
+     * Allow enough space to backslash every character plus leave two spaces
+     * for braces.
      */
 
     return 2*(p-string) + 2;
@@ -684,16 +668,15 @@ Tcl_ScanCountedElement(string, length, flagPtr)
  *
  * Tcl_ConvertElement --
  *
- *	This is a companion procedure to Tcl_ScanElement.  Given
- *	the information produced by Tcl_ScanElement, this procedure
- *	converts a string to a list element equal to that string.
+ *	This is a companion function to Tcl_ScanElement. Given the information
+ *	produced by Tcl_ScanElement, this function converts a string to a list
+ *	element equal to that string.
  *
  * Results:
- *	Information is copied to *dst in the form of a list element
- *	identical to src (i.e. if Tcl_SplitList is applied to dst it
- *	will produce a string identical to src).  The return value is
- *	a count of the number of characters copied (not including the
- *	terminating NULL character).
+ *	Information is copied to *dst in the form of a list element identical
+ *	to src (i.e. if Tcl_SplitList is applied to dst it will produce a
+ *	string identical to src). The return value is a count of the number of
+ *	characters copied (not including the terminating NULL character).
  *
  * Side effects:
  *	None.
@@ -715,17 +698,15 @@ Tcl_ConvertElement(src, dst, flags)
  *
  * Tcl_ConvertCountedElement --
  *
- *	This is a companion procedure to Tcl_ScanCountedElement.  Given
- *	the information produced by Tcl_ScanCountedElement, this
- *	procedure converts a string to a list element equal to that
- *	string.
+ *	This is a companion function to Tcl_ScanCountedElement. Given the
+ *	information produced by Tcl_ScanCountedElement, this function converts
+ *	a string to a list element equal to that string.
  *
  * Results:
- *	Information is copied to *dst in the form of a list element
- *	identical to src (i.e. if Tcl_SplitList is applied to dst it
- *	will produce a string identical to src).  The return value is
- *	a count of the number of characters copied (not including the
- *	terminating NULL character).
+ *	Information is copied to *dst in the form of a list element identical
+ *	to src (i.e. if Tcl_SplitList is applied to dst it will produce a
+ *	string identical to src). The return value is a count of the number of
+ *	characters copied (not including the terminating NULL character).
  *
  * Side effects:
  *	None.
@@ -744,8 +725,8 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
     register CONST char *lastChar;
 
     /*
-     * See the comment block at the beginning of the Tcl_ScanElement
-     * code for details of how this works.
+     * See the comment block at the beginning of the Tcl_ScanElement code for
+     * details of how this works.
      */
 
     if (src && length == -1) {
@@ -764,7 +745,7 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
     if ((flags & USE_BRACES) && !(flags & TCL_DONT_USE_BRACES)) {
 	*p = '{';
 	p++;
-	for ( ; src != lastChar; src++, p++) {
+	for (; src != lastChar; src++, p++) {
 	    *p = *src;
 	}
 	*p = '}';
@@ -772,10 +753,10 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
     } else {
 	if (*src == '{') {
 	    /*
-	     * Can't have a leading brace unless the whole element is
-	     * enclosed in braces.  Add a backslash before the brace.
-	     * Furthermore, this may destroy the balance between open
-	     * and close braces, so set BRACES_UNMATCHED.
+	     * Can't have a leading brace unless the whole element is enclosed
+	     * in braces. Add a backslash before the brace. Furthermore, this
+	     * may destroy the balance between open and close braces, so set
+	     * BRACES_UNMATCHED.
 	     */
 
 	    p[0] = '\\';
@@ -785,9 +766,8 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 	    flags |= BRACES_UNMATCHED;
 	} else if ((*src == '#') && !(flags & TCL_DONT_QUOTE_HASH)) {
 	    /*
-	     * Leading '#' could be seen by [eval] as the start of
-	     * a comment, if on the first element of a list, so
-	     * quote it.
+	     * Leading '#' could be seen by [eval] as the start of a comment,
+	     * if on the first element of a list, so quote it.
 	     */
 
 	    p[0] = '\\';
@@ -797,62 +777,62 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 	}
 	for (; src != lastChar; src++) {
 	    switch (*src) {
-		case ']':
-		case '[':
-		case '$':
-		case ';':
-		case ' ':
-		case '\\':
-		case '"':
-		    *p = '\\';
-		    p++;
-		    break;
-		case '{':
-		case '}':
-		    /*
-		     * It may not seem necessary to backslash braces, but
-		     * it is.  The reason for this is that the resulting
-		     * list element may actually be an element of a sub-list
-		     * enclosed in braces (e.g. if Tcl_DStringStartSublist
-		     * has been invoked), so there may be a brace mismatch
-		     * if the braces aren't backslashed.
-		     */
+	    case ']':
+	    case '[':
+	    case '$':
+	    case ';':
+	    case ' ':
+	    case '\\':
+	    case '"':
+		*p = '\\';
+		p++;
+		break;
+	    case '{':
+	    case '}':
+		/*
+		 * It may not seem necessary to backslash braces, but it is.
+		 * The reason for this is that the resulting list element may
+		 * actually be an element of a sub-list enclosed in braces
+		 * (e.g. if Tcl_DStringStartSublist has been invoked), so
+		 * there may be a brace mismatch if the braces aren't
+		 * backslashed.
+		 */
 
-		    if (flags & BRACES_UNMATCHED) {
-			*p = '\\';
-			p++;
-		    }
-		    break;
-		case '\f':
+		if (flags & BRACES_UNMATCHED) {
 		    *p = '\\';
 		    p++;
-		    *p = 'f';
-		    p++;
-		    continue;
-		case '\n':
-		    *p = '\\';
-		    p++;
-		    *p = 'n';
-		    p++;
-		    continue;
-		case '\r':
-		    *p = '\\';
-		    p++;
-		    *p = 'r';
-		    p++;
-		    continue;
-		case '\t':
-		    *p = '\\';
-		    p++;
-		    *p = 't';
-		    p++;
-		    continue;
-		case '\v':
-		    *p = '\\';
-		    p++;
-		    *p = 'v';
-		    p++;
-		    continue;
+		}
+		break;
+	    case '\f':
+		*p = '\\';
+		p++;
+		*p = 'f';
+		p++;
+		continue;
+	    case '\n':
+		*p = '\\';
+		p++;
+		*p = 'n';
+		p++;
+		continue;
+	    case '\r':
+		*p = '\\';
+		p++;
+		*p = 'r';
+		p++;
+		continue;
+	    case '\t':
+		*p = '\\';
+		p++;
+		*p = 't';
+		p++;
+		continue;
+	    case '\v':
+		*p = '\\';
+		p++;
+		*p = 'v';
+		p++;
+		continue;
 	    }
 	    *p = *src;
 	    p++;
@@ -867,15 +847,14 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
  *
  * Tcl_Merge --
  *
- *	Given a collection of strings, merge them together into a
- *	single string that has proper Tcl list structured (i.e.
- *	Tcl_SplitList may be used to retrieve strings equal to the
- *	original elements, and Tcl_Eval will parse the string back
- *	into its original elements).
+ *	Given a collection of strings, merge them together into a single
+ *	string that has proper Tcl list structured (i.e. Tcl_SplitList may be
+ *	used to retrieve strings equal to the original elements, and Tcl_Eval
+ *	will parse the string back into its original elements).
  *
  * Results:
- *	The return value is the address of a dynamically-allocated
- *	string containing the merged list.
+ *	The return value is the address of a dynamically-allocated string
+ *	containing the merged list.
  *
  * Side effects:
  *	None.
@@ -916,7 +895,7 @@ Tcl_Merge(argc, argv)
     result = (char *) ckalloc((unsigned) numChars);
     dst = result;
     for (i = 0; i < argc; i++) {
-	numChars = Tcl_ConvertElement(argv[i], dst, 
+	numChars = Tcl_ConvertElement(argv[i], dst,
 		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH) );
 	dst += numChars;
 	*dst = ' ';
@@ -942,10 +921,10 @@ Tcl_Merge(argc, argv)
  *	Figure out how to handle a backslash sequence.
  *
  * Results:
- *	The return value is the character that should be substituted
- *	in place of the backslash sequence that starts at src.  If
- *	readPtr isn't NULL then it is filled in with a count of the
- *	number of characters in the backslash sequence.
+ *	The return value is the character that should be substituted in place
+ *	of the backslash sequence that starts at src. If readPtr isn't NULL
+ *	then it is filled in with a count of the number of characters in the
+ *	backslash sequence.
  *
  * Side effects:
  *	None.
@@ -955,10 +934,10 @@ Tcl_Merge(argc, argv)
 
 char
 Tcl_Backslash(src, readPtr)
-    CONST char *src;		/* Points to the backslash character of
-				 * a backslash sequence. */
-    int *readPtr;		/* Fill in with number of characters read
-				 * from src, unless NULL. */
+    CONST char *src;		/* Points to the backslash character of a
+				 * backslash sequence. */
+    int *readPtr;		/* Fill in with number of characters read from
+				 * src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
     Tcl_UniChar ch;
@@ -976,13 +955,13 @@ Tcl_Backslash(src, readPtr)
  *	Concatenate a set of strings into a single large string.
  *
  * Results:
- *	The return value is dynamically-allocated string containing
- *	a concatenation of all the strings in argv, with spaces between
- *	the original argv elements.
+ *	The return value is dynamically-allocated string containing a
+ *	concatenation of all the strings in argv, with spaces between the
+ *	original argv elements.
  *
  * Side effects:
- *	Memory is allocated for the result;  the caller is responsible
- *	for freeing the memory.
+ *	Memory is allocated for the result; the caller is responsible for
+ *	freeing the memory.
  *
  *----------------------------------------------------------------------
  */
@@ -1009,9 +988,8 @@ Tcl_Concat(argc, argv)
 	int length;
 
 	/*
-	 * Clip white space off the front and back of the string
-	 * to generate a neater result, and ignore any empty
-	 * elements.
+	 * Clip white space off the front and back of the string to generate a
+	 * neater result, and ignore any empty elements.
 	 */
 
 	element = argv[i];
@@ -1022,7 +1000,7 @@ Tcl_Concat(argc, argv)
 		(length > 0)
 		&& (isspace(UCHAR(element[length-1]))) /* INTL: ISO space. */
 		&& ((length < 2) || (element[length-2] != '\\'));
-	        length--) {
+		length--) {
 	    /* Null loop body. */
 	}
 	if (length == 0) {
@@ -1050,8 +1028,8 @@ Tcl_Concat(argc, argv)
  *	object with spaces between the original strings.
  *
  * Results:
- *	The return value is a new string object containing a concatenation
- *	of the strings in objv. Its ref count is zero.
+ *	The return value is a new string object containing a concatenation of
+ *	the strings in objv. Its ref count is zero.
  *
  * Side effects:
  *	A new object is created.
@@ -1071,13 +1049,13 @@ Tcl_ConcatObj(objc, objv)
     Tcl_Obj *objPtr;
 
     /*
-     * Check first to see if all the items are of list type.  If so,
-     * we will concat them together as lists, and return a list object.
-     * This is only valid when the lists have no current string
-     * representation, since we don't know what the original type was.
-     * An original string rep may have lost some whitespace info when
-     * converted which could be important.
+     * Check first to see if all the items are of list type. If so, we will
+     * concat them together as lists, and return a list object. This is only
+     * valid when the lists have no current string representation, since we
+     * don't know what the original type was. An original string rep may have
+     * lost some whitespace info when converted which could be important.
      */
+
     for (i = 0;  i < objc;  i++) {
 	objPtr = objv[i];
 	if ((objPtr->typePtr != &tclListType) || (objPtr->bytes != NULL)) {
@@ -1091,16 +1069,21 @@ Tcl_ConcatObj(objc, objv)
 	objPtr = Tcl_NewListObj(0, NULL);
 	for (i = 0;  i < objc;  i++) {
 	    /*
-	     * Tcl_ListObjAppendList could be used here, but this saves
-	     * us a bit of type checking (since we've already done it)
-	     * Use of INT_MAX tells us to always put the new stuff on
-	     * the end.  It will be set right in Tcl_ListObjReplace.
+	     * Tcl_ListObjAppendList could be used here, but this saves us a
+	     * bit of type checking (since we've already done it). Use of
+	     * INT_MAX tells us to always put the new stuff on the end. It
+	     * will be set right in Tcl_ListObjReplace.
 	     */
 	    Tcl_ListObjGetElements(NULL, objv[i], &listc, &listv);
 	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, listc, listv);
 	}
 	return objPtr;
     }
+
+    /*
+     * Something cannot be determined to be safe, so build the concatenation
+     * the slow way, using the string representations.
+     */
 
     allocSize = 0;
     for (i = 0;  i < objc;  i++) {
@@ -1115,17 +1098,17 @@ Tcl_ConcatObj(objc, objv)
     }
 
     /*
-     * Allocate storage for the concatenated result. Note that allocSize
-     * is one more than the total number of characters, and so includes
-     * room for the terminating NULL byte.
+     * Allocate storage for the concatenated result. Note that allocSize is
+     * one more than the total number of characters, and so includes room for
+     * the terminating NULL byte.
      */
-    
+
     concatStr = (char *) ckalloc((unsigned) allocSize);
 
     /*
      * Now concatenate the elements. Clip white space off the front and back
-     * to generate a neater result, and ignore any empty elements. Also put
-     * a null byte at the end.
+     * to generate a neater result, and ignore any empty elements. Also put a
+     * null byte at the end.
      */
 
     finalSize = 0;
@@ -1133,19 +1116,19 @@ Tcl_ConcatObj(objc, objv)
 	*concatStr = '\0';
     } else {
 	p = concatStr;
-        for (i = 0;  i < objc;  i++) {
+	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
 	    element = Tcl_GetStringFromObj(objPtr, &elemLength);
 	    while ((elemLength > 0) && (UCHAR(*element) < 127)
 		    && isspace(UCHAR(*element))) { /* INTL: ISO C space. */
-	         element++;
-		 elemLength--;
+		element++;
+		elemLength--;
 	    }
 
 	    /*
-	     * Trim trailing white space.  But, be careful not to trim
-	     * a space character if it is preceded by a backslash: in
-	     * this case it could be significant.
+	     * Trim trailing white space. But, be careful not to trim a space
+	     * character if it is preceded by a backslash: in this case it
+	     * could be significant.
 	     */
 
 	    while ((elemLength > 0) && (UCHAR(element[elemLength-1]) < 127)
@@ -1154,22 +1137,22 @@ Tcl_ConcatObj(objc, objv)
 		elemLength--;
 	    }
 	    if (elemLength == 0) {
-	         continue;	/* nothing left of this element */
+		continue;	/* nothing left of this element */
 	    }
 	    memcpy((VOID *) p, (VOID *) element, (size_t) elemLength);
 	    p += elemLength;
 	    *p = ' ';
 	    p++;
 	    finalSize += (elemLength + 1);
-        }
-        if (p != concatStr) {
+	}
+	if (p != concatStr) {
 	    p[-1] = 0;
 	    finalSize -= 1;	/* we overwrote the final ' ' */
-        } else {
+	} else {
 	    *p = 0;
-        }
+	}
     }
-    
+
     TclNewObj(objPtr);
     objPtr->bytes  = concatStr;
     objPtr->length = finalSize;
@@ -1184,10 +1167,9 @@ Tcl_ConcatObj(objc, objv)
  *	See if a particular string matches a particular pattern.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and
- *	0 otherwise.  The matching operation permits the following
- *	special characters in the pattern: *?\[] (see the manual
- *	entry for details on what these mean).
+ *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	matching operation permits the following special characters in the
+ *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
  * Side effects:
  *	None.
@@ -1209,14 +1191,13 @@ Tcl_StringMatch(str, pattern)
  *
  * Tcl_StringCaseMatch --
  *
- *	See if a particular string matches a particular pattern.
- *	Allows case insensitivity.
+ *	See if a particular string matches a particular pattern. Allows case
+ *	insensitivity.
  *
  * Results:
- *	The return value is 1 if string matches pattern, and
- *	0 otherwise.  The matching operation permits the following
- *	special characters in the pattern: *?\[] (see the manual
- *	entry for details on what these mean).
+ *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	matching operation permits the following special characters in the
+ *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
  * Side effects:
  *	None.
@@ -1234,16 +1215,16 @@ Tcl_StringCaseMatch(str, pattern, nocase)
     int p, charLen;
     CONST char *pstart = pattern;
     Tcl_UniChar ch1, ch2;
-    
+
     while (1) {
 	p = *pattern;
-	
+
 	/*
-	 * See if we're at the end of both the pattern and the string.  If
-	 * so, we succeeded.  If we're at the end of the pattern but not at
-	 * the end of the string, we failed.
+	 * See if we're at the end of both the pattern and the string. If so,
+	 * we succeeded. If we're at the end of the pattern but not at the end
+	 * of the string, we failed.
 	 */
-	
+
 	if (p == '\0') {
 	    return (*str == '\0');
 	}
@@ -1252,24 +1233,27 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 	}
 
 	/*
-	 * Check for a "*" as the next pattern character.  It matches
-	 * any substring.  We handle this by calling ourselves
-	 * recursively for each postfix of string, until either we
-	 * match or we reach the end of the string.
+	 * Check for a "*" as the next pattern character. It matches any
+	 * substring. We handle this by calling ourselves recursively for each
+	 * postfix of string, until either we match or we reach the end of the
+	 * string.
 	 */
-	
+
 	if (p == '*') {
 	    /*
 	     * Skip all successive *'s in the pattern
 	     */
+
 	    while (*(++pattern) == '*') {}
 	    p = *pattern;
 	    if (p == '\0') {
 		return 1;
 	    }
+
 	    /*
 	     * This is a special case optimization for single-byte utf.
 	     */
+
 	    if (UCHAR(*pattern) < 0x80) {
 		ch2 = (Tcl_UniChar)
 		    (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
@@ -1278,6 +1262,7 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 		if (nocase) {
 		    ch2 = Tcl_UniCharToLower(ch2);
 		}
+
 	    }
 	    while (1) {
 		/*
@@ -1285,6 +1270,7 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 		 * quickly if the next char in the pattern isn't a special
 		 * character
 		 */
+
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*str) {
@@ -1297,9 +1283,10 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 		    } else {
 			/*
 			 * There's no point in trying to make this code
-			 * shorter, as the number of bytes you want to
-			 * compare each time is non-constant.
+			 * shorter, as the number of bytes you want to compare
+			 * each time is non-constant.
 			 */
+
 			while (*str) {
 			    charLen = TclUtfToUniChar(str, &ch1);
 			    if (ch2 == ch1) {
@@ -1320,8 +1307,8 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 	}
 
 	/*
-	 * Check for a "?" as the next pattern character.  It matches
-	 * any single character.
+	 * Check for a "?" as the next pattern character. It matches any
+	 * single character.
 	 */
 
 	if (p == '?') {
@@ -1331,9 +1318,9 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 	}
 
 	/*
-	 * Check for a "[" as the next pattern character.  It is followed
-	 * by a list of characters that are acceptable, or by a range
-	 * (two characters separated by "-").
+	 * Check for a "[" as the next pattern character. It is followed by a
+	 * list of characters that are acceptable, or by a range (two
+	 * characters separated by "-").
 	 */
 
 	if (p == '[') {
@@ -1404,8 +1391,8 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 	}
 
 	/*
-	 * If the next pattern character is '\', just strip off the '\'
-	 * so we do exact matching on the character that follows.
+	 * If the next pattern character is '\', just strip off the '\' so we
+	 * do exact matching on the character that follows.
 	 */
 
 	if (p == '\\') {
@@ -1416,8 +1403,8 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 	}
 
 	/*
-	 * There's no special character.  Just make sure that the next
-	 * bytes of each string match.
+	 * There's no special character. Just make sure that the next bytes of
+	 * each string match.
 	 */
 
 	str  += TclUtfToUniChar(str, &ch1);
@@ -1437,9 +1424,9 @@ Tcl_StringCaseMatch(str, pattern, nocase)
  *
  * Tcl_DStringInit --
  *
- *	Initializes a dynamic string, discarding any previous contents
- *	of the string (Tcl_DStringFree should have been called already
- *	if the dynamic string was previously in use).
+ *	Initializes a dynamic string, discarding any previous contents of the
+ *	string (Tcl_DStringFree should have been called already if the dynamic
+ *	string was previously in use).
  *
  * Results:
  *	None.
@@ -1471,9 +1458,9 @@ Tcl_DStringInit(dsPtr)
  *	The return value is a pointer to the dynamic string's new value.
  *
  * Side effects:
- *	Length bytes from "bytes" (or all of "bytes" if length is less
- *	than zero) are added to the current value of the string. Memory
- *	gets reallocated if needed to accomodate the string's new size.
+ *	Length bytes from "bytes" (or all of "bytes" if length is less than
+ *	zero) are added to the current value of the string. Memory gets
+ *	reallocated if needed to accomodate the string's new size.
  *
  *----------------------------------------------------------------------
  */
@@ -1481,11 +1468,11 @@ Tcl_DStringInit(dsPtr)
 char *
 Tcl_DStringAppend(dsPtr, bytes, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *bytes;		/* String to append.  If length is -1 then
-				 * this must be null-terminated. */
-    int length;			/* Number of bytes from "bytes" to
-				 * append.  If < 0, then append all of bytes,
-				 * up to null at end. */
+    CONST char *bytes;		/* String to append. If length is -1 then this
+				 * must be null-terminated. */
+    int length;			/* Number of bytes from "bytes" to append. If
+				 * < 0, then append all of bytes, up to null
+				 * at end. */
 {
     int newSize;
     char *dst;
@@ -1497,9 +1484,9 @@ Tcl_DStringAppend(dsPtr, bytes, length)
     newSize = length + dsPtr->length;
 
     /*
-     * Allocate a larger buffer for the string if the current one isn't
-     * large enough. Allocate extra space in the new buffer so that there
-     * will be room to grow before we have to allocate again.
+     * Allocate a larger buffer for the string if the current one isn't large
+     * enough. Allocate extra space in the new buffer so that there will be
+     * room to grow before we have to allocate again.
      */
 
     if (newSize >= dsPtr->spaceAvl) {
@@ -1518,8 +1505,7 @@ Tcl_DStringAppend(dsPtr, bytes, length)
     }
 
     /*
-     * Copy the new string into the buffer at the end of the old
-     * one.
+     * Copy the new string into the buffer at the end of the old one.
      */
 
     for (dst = dsPtr->string + dsPtr->length, end = bytes+length;
@@ -1542,9 +1528,9 @@ Tcl_DStringAppend(dsPtr, bytes, length)
  *	The return value is a pointer to the dynamic string's new value.
  *
  * Side effects:
- *	String is reformatted as a list element and added to the current
- *	value of the string.  Memory gets reallocated if needed to
- *	accomodate the string's new size.
+ *	String is reformatted as a list element and added to the current value
+ *	of the string. Memory gets reallocated if needed to accomodate the
+ *	string's new size.
  *
  *----------------------------------------------------------------------
  */
@@ -1552,7 +1538,7 @@ Tcl_DStringAppend(dsPtr, bytes, length)
 char *
 Tcl_DStringAppendElement(dsPtr, element)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *element;	/* String to append.  Must be
+    CONST char *element;	/* String to append. Must be
 				 * null-terminated. */
 {
     int newSize, flags, strSize;
@@ -1563,12 +1549,11 @@ Tcl_DStringAppendElement(dsPtr, element)
 	+ dsPtr->length + 1;
 
     /*
-     * Allocate a larger buffer for the string if the current one isn't
-     * large enough.  Allocate extra space in the new buffer so that there
-     * will be room to grow before we have to allocate again.
-     * SPECIAL NOTE: must use memcpy, not strcpy, to copy the string
-     * to a larger buffer, since there may be embedded NULLs in the
-     * string in some cases.
+     * Allocate a larger buffer for the string if the current one isn't large
+     * enough. Allocate extra space in the new buffer so that there will be
+     * room to grow before we have to allocate again. SPECIAL NOTE: must use
+     * memcpy, not strcpy, to copy the string to a larger buffer, since there
+     * may be embedded NULLs in the string in some cases.
      */
 
     if (newSize >= dsPtr->spaceAvl) {
@@ -1587,8 +1572,8 @@ Tcl_DStringAppendElement(dsPtr, element)
     }
 
     /*
-     * Convert the new string to a list element and copy it into the
-     * buffer at the end, with a space, if needed.
+     * Convert the new string to a list element and copy it into the buffer at
+     * the end, with a space, if needed.
      */
 
     dst = dsPtr->string + dsPtr->length;
@@ -1596,11 +1581,13 @@ Tcl_DStringAppendElement(dsPtr, element)
 	*dst = ' ';
 	dst++;
 	dsPtr->length++;
+
 	/*
-	 * If we need a space to separate this element from preceding
-	 * stuff, then this element will not lead a list, and need not
-	 * have it's leading '#' quoted.
+	 * If we need a space to separate this element from preceding stuff,
+	 * then this element will not lead a list, and need not have it's
+	 * leading '#' quoted.
 	 */
+
 	flags |= TCL_DONT_QUOTE_HASH;
     }
     dsPtr->length += Tcl_ConvertCountedElement(element, strSize, dst, flags);
@@ -1612,17 +1599,16 @@ Tcl_DStringAppendElement(dsPtr, element)
  *
  * Tcl_DStringSetLength --
  *
- *	Change the length of a dynamic string.  This can cause the
- *	string to either grow or shrink, depending on the value of
- *	length.
+ *	Change the length of a dynamic string. This can cause the string to
+ *	either grow or shrink, depending on the value of length.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The length of dsPtr is changed to length and a null byte is
- *	stored at that position in the string.  If length is larger
- *	than the space allocated for dsPtr, then a panic occurs.
+ *	The length of dsPtr is changed to length and a null byte is stored at
+ *	that position in the string. If length is larger than the space
+ *	allocated for dsPtr, then a panic occurs.
  *
  *----------------------------------------------------------------------
  */
@@ -1639,15 +1625,15 @@ Tcl_DStringSetLength(dsPtr, length)
     }
     if (length >= dsPtr->spaceAvl) {
 	/*
-	 * There are two interesting cases here.  In the first case, the user
-	 * may be trying to allocate a large buffer of a specific size.  It
+	 * There are two interesting cases here. In the first case, the user
+	 * may be trying to allocate a large buffer of a specific size. It
 	 * would be wasteful to overallocate that buffer, so we just allocate
-	 * enough for the requested size plus the trailing null byte.  In the
+	 * enough for the requested size plus the trailing null byte. In the
 	 * second case, we are growing the buffer incrementally, so we need
-	 * behavior similar to Tcl_DStringAppend.  The requested length will
-	 * usually be a small delta above the current spaceAvl, so we'll end up
-	 * doubling the old size.  This won't grow the buffer quite as quickly,
-	 * but it should be close enough.
+	 * behavior similar to Tcl_DStringAppend. The requested length will
+	 * usually be a small delta above the current spaceAvl, so we'll end
+	 * up doubling the old size. This won't grow the buffer quite as
+	 * quickly, but it should be close enough.
 	 */
 
 	newsize = dsPtr->spaceAvl * 2;
@@ -1677,17 +1663,18 @@ Tcl_DStringSetLength(dsPtr, length)
  *
  * Tcl_DStringFree --
  *
- *	Frees up any memory allocated for the dynamic string and
- *	reinitializes the string to an empty state.
+ *	Frees up any memory allocated for the dynamic string and reinitializes
+ *	the string to an empty state.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The previous contents of the dynamic string are lost, and
- *	the new value is an empty string.
+ *	The previous contents of the dynamic string are lost, and the new
+ *	value is an empty string.
  *
- *---------------------------------------------------------------------- */
+ *----------------------------------------------------------------------
+ */
 
 void
 Tcl_DStringFree(dsPtr)
@@ -1707,17 +1694,16 @@ Tcl_DStringFree(dsPtr)
  *
  * Tcl_DStringResult --
  *
- *	This procedure moves the value of a dynamic string into an
- *	interpreter as its string result. Afterwards, the dynamic string
- *	is reset to an empty string.
+ *	This function moves the value of a dynamic string into an interpreter
+ *	as its string result. Afterwards, the dynamic string is reset to an
+ *	empty string.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The string is "moved" to interp's result, and any existing
- *	string result for interp is freed. dsPtr is reinitialized to
- *	an empty string.
+ *	The string is "moved" to interp's result, and any existing string
+ *	result for interp is freed. dsPtr is reinitialized to an empty string.
  *
  *----------------------------------------------------------------------
  */
@@ -1729,7 +1715,7 @@ Tcl_DStringResult(interp, dsPtr)
 				 * result of interp. */
 {
     Tcl_ResetResult(interp);
-    
+
     if (dsPtr->string != dsPtr->staticSpace) {
 	interp->result = dsPtr->string;
 	interp->freeProc = TCL_DYNAMIC;
@@ -1739,7 +1725,7 @@ Tcl_DStringResult(interp, dsPtr)
     } else {
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
     }
-    
+
     dsPtr->string = dsPtr->staticSpace;
     dsPtr->length = 0;
     dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
@@ -1751,14 +1737,14 @@ Tcl_DStringResult(interp, dsPtr)
  *
  * Tcl_DStringGetResult --
  *
- *	This procedure moves an interpreter's result into a dynamic string.
+ *	This function moves an interpreter's result into a dynamic string.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The interpreter's string result is cleared, and the previous
- *	contents of dsPtr are freed.
+ *	The interpreter's string result is cleared, and the previous contents
+ *	of dsPtr are freed.
  *
  *	If the string result is empty, the object result is moved to the
  *	string result, then the object result is reset.
@@ -1769,18 +1755,18 @@ Tcl_DStringResult(interp, dsPtr)
 void
 Tcl_DStringGetResult(interp, dsPtr)
     Tcl_Interp *interp;		/* Interpreter whose result is to be reset. */
-    Tcl_DString *dsPtr;		/* Dynamic string that is to become the
-				 * result of interp. */
+    Tcl_DString *dsPtr;		/* Dynamic string that is to become the result
+				 * of interp. */
 {
     Interp *iPtr = (Interp *) interp;
-    
+
     if (dsPtr->string != dsPtr->staticSpace) {
 	ckfree(dsPtr->string);
     }
 
     /*
-     * If the string result is empty, move the object result to the
-     * string result, then reset the object result.
+     * If the string result is empty, move the object result to the string
+     * result, then reset the object result.
      */
 
     (void) Tcl_GetStringResult(interp);
@@ -1807,7 +1793,7 @@ Tcl_DStringGetResult(interp, dsPtr)
 	}
 	strcpy(dsPtr->string, iPtr->result);
     }
-    
+
     iPtr->result = iPtr->resultSpace;
     iPtr->resultSpace[0] = 0;
 }
@@ -1817,9 +1803,9 @@ Tcl_DStringGetResult(interp, dsPtr)
  *
  * Tcl_DStringStartSublist --
  *
- *	This procedure adds the necessary information to a dynamic
- *	string (e.g. " {" to start a sublist.  Future element
- *	appends will be in the sublist rather than the main list.
+ *	This function adds the necessary information to a dynamic string
+ *	(e.g. " {") to start a sublist. Future element appends will be in the
+ *	sublist rather than the main list.
  *
  * Results:
  *	None.
@@ -1832,7 +1818,7 @@ Tcl_DStringGetResult(interp, dsPtr)
 
 void
 Tcl_DStringStartSublist(dsPtr)
-    Tcl_DString *dsPtr;			/* Dynamic string. */
+    Tcl_DString *dsPtr;		/* Dynamic string. */
 {
     if (TclNeedSpace(dsPtr->string, dsPtr->string + dsPtr->length)) {
 	Tcl_DStringAppend(dsPtr, " {", -1);
@@ -1846,10 +1832,9 @@ Tcl_DStringStartSublist(dsPtr)
  *
  * Tcl_DStringEndSublist --
  *
- *	This procedure adds the necessary characters to a dynamic
- *	string to end a sublist (e.g. "}").  Future element appends
- *	will be in the enclosing (sub)list rather than the current
- *	sublist.
+ *	This function adds the necessary characters to a dynamic string to end
+ *	a sublist (e.g. "}"). Future element appends will be in the enclosing
+ *	(sub)list rather than the current sublist.
  *
  * Results:
  *	None.
@@ -1862,7 +1847,7 @@ Tcl_DStringStartSublist(dsPtr)
 
 void
 Tcl_DStringEndSublist(dsPtr)
-    Tcl_DString *dsPtr;			/* Dynamic string. */
+    Tcl_DString *dsPtr;		/* Dynamic string. */
 {
     Tcl_DStringAppend(dsPtr, "}", -1);
 }
@@ -1872,14 +1857,14 @@ Tcl_DStringEndSublist(dsPtr)
  *
  * Tcl_PrintDouble --
  *
- *	Given a floating-point value, this procedure converts it to
- *	an ASCII string using.
+ *	Given a floating-point value, this function converts it to an ASCII
+ *	string using.
  *
  * Results:
- *	The ASCII equivalent of "value" is written at "dst".  It is
- *	written using the current precision, and it is guaranteed to
- *	contain a decimal point or exponent, so that it looks like
- *	a floating-point value and not an integer.
+ *	The ASCII equivalent of "value" is written at "dst". It is written
+ *	using the current precision, and it is guaranteed to contain a decimal
+ *	point or exponent, so that it looks like a floating-point value and
+ *	not an integer.
  *
  * Side effects:
  *	None.
@@ -1889,84 +1874,86 @@ Tcl_DStringEndSublist(dsPtr)
 
 void
 Tcl_PrintDouble(interp, value, dst)
-    Tcl_Interp *interp;			/* Interpreter whose tcl_precision
-					 * variable used to be used to control
-					 * printing.  It's ignored now. */
-    double value;			/* Value to print as string. */
-    char *dst;				/* Where to store converted value;
-					 * must have at least TCL_DOUBLE_SPACE
-					 * characters. */
+    Tcl_Interp *interp;		/* Interpreter whose tcl_precision variable
+				 * used to be used to control printing. It's
+				 * ignored now. */
+    double value;		/* Value to print as string. */
+    char *dst;			/* Where to store converted value; must have
+				 * at least TCL_DOUBLE_SPACE characters. */
 {
     char *p, c;
-    int prec;
     int exp;
     int signum;
     char buffer[TCL_DOUBLE_SPACE];
     Tcl_UniChar ch;
 
-    Tcl_MutexLock(&precisionMutex);
-    prec = precision;
-    Tcl_MutexUnlock(&precisionMutex);
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
 
     /*
-     * If prec == 0, then use TclDoubleDigits to develop a decimal
+     * If *precisionPtr == 0, then use TclDoubleDigits to develop a decimal
      * significand and exponent, then format it in E or F format as
-     * appropriate.  If prec != 0, use the native sprintf and then
+     * appropriate.  If *precisionPtr != 0, use the native sprintf and then
      * add a trailing ".0" if there is no decimal point in the rep.
      */
 
-    if ( prec == 0 ) {
+    if ( *precisionPtr == 0 ) {
+	/*
+	 * Handle NaN.
+	 */
 
-	/* Handle NaN */
-
-	if ( IS_NAN( value ) ) {
-	    TclFormatNaN( value, dst );
+	if (IS_NAN(value)) {
+	    TclFormatNaN(value, dst);
 	    return;
 	}
 
-	/* Handle infinities */
+	/*
+	 * Handle infinities.
+	 */
 
-	if ( IS_INF( value ) ) {
-	    if ( value < 0 ) {
-		strcpy( dst, "-Inf" );
+	if (IS_INF(value)) {
+	    if (value < 0) {
+		strcpy(dst, "-Inf");
 	    } else {
-		strcpy( dst, "Inf" );
+		strcpy(dst, "Inf");
 	    }
 	    return;
 	}
 
-	/* Ordinary (normal and denormal) values */
+	/*
+	 * Ordinary (normal and denormal) values.
+	 */
 
-	exp = TclDoubleDigits( buffer, value, &signum );
-	if ( signum ) {
+	exp = TclDoubleDigits(buffer, value, &signum);
+	if (signum) {
 	    *dst++ = '-';
 	}
-	prec = strlen( buffer );
 	p = buffer;
-	if ( exp < -3 || exp > 17 ) {
-
-	    /* E format for numbers < 1e-3 or >= 1e17 */
+	if (exp < -3 || exp > 17) {
+	    /*
+	     * E format for numbers < 1e-3 or >= 1e17.
+	     */
 
 	    *dst++ = *p++;
 	    c = *p;
-	    if ( c != '\0' ) {
+	    if (c != '\0') {
 		*dst++ = '.';
-		while ( c != '\0' ) {
+		while (c != '\0') {
 		    *dst++ = c;
 		    c = *++p;
 		}
 	    }
-	    sprintf( dst, "e%+d", exp-1 );
+	    sprintf(dst, "e%+d", exp-1);
 	} else {
+	    /*
+	     * F format for others.
+	     */
 
-	    /* F format for others */
-
-	    if ( exp <= 0 ) {
+	    if (exp <= 0) {
 		*dst++ = '0';
 	    }
 	    c = *p;
-	    while ( exp-- > 0 ) {
-		if ( c != '\0' ) {
+	    while (exp-- > 0) {
+		if (c != '\0') {
 		    *dst++ = c;
 		    c = *++p;
 		} else {
@@ -1974,13 +1961,13 @@ Tcl_PrintDouble(interp, value, dst)
 		}
 	    }
 	    *dst++ = '.';
-	    if ( c == '\0' ) {
+	    if (c == '\0') {
 		*dst++ = '0';
 	    } else {
-		while ( ++exp < 0 ) {
+		while (++exp < 0) {
 		    *dst++ = '0';
 		}
-		while ( c != '\0' ) {
+		while (c != '\0') {
 		    *dst++ = c;
 		    c = *++p;
 		}
@@ -1989,18 +1976,19 @@ Tcl_PrintDouble(interp, value, dst)
 	}
 
     } else {
+	/*
+	 * tcl_precision is supplied, pass it to the native sprintf.
+	 */
 
-	/* tcl_precision is supplied, pass it to the native sprintf */
+	sprintf(dst, "%.*g", *precisionPtr, value);
 
-	sprintf( dst, "%.*g", prec, value );
-	
 	/*
 	 * If the ASCII result looks like an integer, add ".0" so that it
-	 * doesn't look like an integer anymore.  This prevents floating-point
-	 * values from being converted to integers unintentionally.
-	 * Check for ASCII specifically to speed up the function.
+	 * doesn't look like an integer anymore. This prevents floating-point
+	 * values from being converted to integers unintentionally.  Check for
+	 * ASCII specifically to speed up the function.
 	 */
-	
+
 	for (p = dst; *p != 0; ) {
 	    if (UCHAR(*p) < 0x80) {
 		c = *p++;
@@ -2024,17 +2012,17 @@ Tcl_PrintDouble(interp, value, dst)
  *
  * TclPrecTraceProc --
  *
- *	This procedure is invoked whenever the variable "tcl_precision"
- *	is written.
+ *	This function is invoked whenever the variable "tcl_precision" is
+ *	written.
  *
  * Results:
- *	Returns NULL if all went well, or an error message if the
- *	new value for the variable doesn't make sense.
+ *	Returns NULL if all went well, or an error message if the new value
+ *	for the variable doesn't make sense.
  *
  * Side effects:
- *	If the new value doesn't make sense then this procedure
- *	undoes the effect of the variable modification.  Otherwise
- *	it modifies the format string that's used by Tcl_PrintDouble.
+ *	If the new value doesn't make sense then this function undoes the
+ *	effect of the variable modification. Otherwise it modifies the format
+ *	string that's used by Tcl_PrintDouble.
  *
  *----------------------------------------------------------------------
  */
@@ -2050,6 +2038,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 {
     Tcl_Obj* value;
     int prec;
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
 
     /*
      * If the variable is unset, then recreate the trace.
@@ -2065,45 +2054,34 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     }
 
     /*
-     * When the variable is read, reset its value from our shared
-     * value.  This is needed in case the variable was modified in
-     * some other interpreter so that this interpreter's value is
-     * out of date.
+     * When the variable is read, reset its value from our shared value. This
+     * is needed in case the variable was modified in some other interpreter
+     * so that this interpreter's value is out of date.
      */
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_MutexLock(&precisionMutex);
-	Tcl_SetVar2Ex( interp, name1, name2, Tcl_NewIntObj( precision ),
-		       flags & TCL_GLOBAL_ONLY );
-	Tcl_MutexUnlock(&precisionMutex);
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
+		flags & TCL_GLOBAL_ONLY);
 	return (char *) NULL;
     }
 
     /*
-     * The variable is being written.  Check the new value and disallow
-     * it if it isn't reasonable or if this is a safe interpreter (we
-     * don't want safe interpreters messing up the precision of other
-     * interpreters).
+     * The variable is being written. Check the new value and disallow it if
+     * it isn't reasonable or if this is a safe interpreter (we don't want
+     * safe interpreters messing up the precision of other interpreters).
      */
 
     if (Tcl_IsSafe(interp)) {
-	Tcl_MutexLock(&precisionMutex);
-	Tcl_SetVar2Ex( interp, name1, name2, Tcl_NewIntObj( precision ),
-		       flags & TCL_GLOBAL_ONLY );
-	Tcl_MutexUnlock(&precisionMutex);
 	return "can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
-    if ( value == NULL
-	 || Tcl_GetIntFromObj( (Tcl_Interp*) NULL, value, &prec ) != TCL_OK
-	 || prec < 0
-	 || prec > TCL_MAX_PREC	) {
+    if (value == NULL
+	    || Tcl_GetIntFromObj((Tcl_Interp*) NULL, value, &prec) != TCL_OK
+	    || prec < 0 || prec > TCL_MAX_PREC) {
 	return "improper value for precision";
     }
-    Tcl_MutexLock( &precisionMutex );
-    precision = prec;
-    Tcl_MutexUnlock(&precisionMutex);
+    *precisionPtr = prec;
     return (char *) NULL;
 }
 
@@ -2112,9 +2090,8 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
  *
  * TclNeedSpace --
  *
- *	This procedure checks to see whether it is appropriate to
- *	add a space before appending a new list element to an
- *	existing string.
+ *	This function checks to see whether it is appropriate to add a space
+ *	before appending a new list element to an existing string.
  *
  * Results:
  *	The return value is 1 if a space is appropriate, 0 otherwise.
@@ -2128,22 +2105,23 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 int
 TclNeedSpace(start, end)
     CONST char *start;		/* First character in string. */
-    CONST char *end;		/* End of string (place where space will
-				 * be added, if appropriate). */
+    CONST char *end;		/* End of string (place where space will be
+				 * added, if appropriate). */
 {
     /*
-     * A space is needed unless either
+     * A space is needed unless either:
      * (a) we're at the start of the string, or
      */
+
     if (end == start) {
 	return 0;
     }
 
     /*
-     * (b) we're at the start of a nested list-element, quoted with an
-     *     open curly brace; we can be nested arbitrarily deep, so long
-     *     as the first curly brace starts an element, so backtrack over
-     *     open curly braces that are trailing characters of the string; and
+     * (b) we're at the start of a nested list-element, quoted with an open
+     *	   curly brace; we can be nested arbitrarily deep, so long as the
+     *	   first curly brace starts an element, so backtrack over open curly
+     *	   braces that are trailing characters of the string; and
      */
 
     end = Tcl_UtfPrev(end, start);
@@ -2156,39 +2134,39 @@ TclNeedSpace(start, end)
 
     /*
      * (c) the trailing character of the string is already a list-element
-     *     separator (according to TclFindElement); that is, one of these
-     *     characters:
-     *     	\u0009	\t	TAB
-     *     	\u000A	\n	NEWLINE
-     *     	\u000B	\v	VERTICAL TAB
-     *     	\u000C	\f	FORM FEED
-     *     	\u000D	\r	CARRIAGE RETURN
-     *     	\u0020		SPACE
-     *     with the condition that the penultimate character is not a
-     *     backslash.
+     *	   separator (according to TclFindElement); that is, one of these
+     *	   characters:
+     *		\u0009	\t	TAB
+     *		\u000A	\n	NEWLINE
+     *		\u000B	\v	VERTICAL TAB
+     *		\u000C	\f	FORM FEED
+     *		\u000D	\r	CARRIAGE RETURN
+     *		\u0020		SPACE
+     *	   with the condition that the penultimate character is not a
+     *	   backslash.
      */
 
     if (*end > 0x20) {
 	/*
-	 * Performance tweak.  All ASCII spaces are <= 0x20. So get
-	 * a quick answer for most characters before comparing against
-	 * all spaces in the switch below.
+	 * Performance tweak. All ASCII spaces are <= 0x20. So get a quick
+	 * answer for most characters before comparing against all spaces in
+	 * the switch below.
 	 *
-	 * NOTE: Remove this if other Unicode spaces ever get accepted
-	 * as list-element separators.
+	 * NOTE: Remove this if other Unicode spaces ever get accepted as
+	 * list-element separators.
 	 */
 	return 1;
     }
     switch (*end) {
-	case ' ':
-        case '\t':
-        case '\n':
-        case '\r':
-        case '\v':
-        case '\f':
-	    if ((end == start) || (end[-1] != '\\')) {
-		return 0;
-	    }
+    case ' ':
+    case '\t':
+    case '\n':
+    case '\r':
+    case '\v':
+    case '\f':
+	if ((end == start) || (end[-1] != '\\')) {
+	    return 0;
+	}
     }
     return 1;
 }
@@ -2198,15 +2176,15 @@ TclNeedSpace(start, end)
  *
  * TclLooksLikeInt --
  *
- *	This procedure decides whether the leading characters of a
- *	string look like an integer or something else (such as a
- *	floating-point number or string).
+ *	This function decides whether the leading characters of a string look
+ *	like an integer or something else (such as a floating-point number or
+ *	string).
  *
  * Results:
- *	The return value is 1 if the leading characters of p look
- *	like a valid Tcl integer.  If they look like a floating-point
- *	number (e.g. "e01" or "2.4"), or if they don't look like a
- *	number at all, then 0 is returned.
+ *	The return value is 1 if the leading characters of p look like a valid
+ *	Tcl integer. If they look like a floating-point number (e.g. "e01" or
+ *	"2.4"), or if they don't look like a number at all, then 0 is
+ *	returned.
  *
  * Side effects:
  *	None.
@@ -2217,10 +2195,9 @@ TclNeedSpace(start, end)
 int
 TclLooksLikeInt(bytes, length)
     register CONST char *bytes;	/* Points to first byte of the string. */
-    int length;			/* Number of bytes in the string. If < 0
-				 * bytes up to the first null byte are
-				 * considered (if they may appear in an 
-				 * integer). */
+    int length;			/* Number of bytes in the string. If < 0 bytes
+				 * up to the first null byte are considered
+				 * (if they may appear in an integer). */
 {
     register CONST char *p;
 
@@ -2229,7 +2206,7 @@ TclLooksLikeInt(bytes, length)
     }
 
     if (length < 0) {
-        length = (bytes? strlen(bytes) : 0);
+	length = (bytes? strlen(bytes) : 0);
     }
 
     p = bytes;
@@ -2237,10 +2214,11 @@ TclLooksLikeInt(bytes, length)
 	length--; p++;
     }
     if (length == 0) {
-        return 0;
+	return 0;
     }
     if ((*p == '+') || (*p == '-')) {
-        p++; length--;
+	p++;
+	length--;
     }
 
     return (0 != TclParseInteger(p, length));
@@ -2251,33 +2229,32 @@ TclLooksLikeInt(bytes, length)
  *
  * TclGetIntForIndex --
  *
- *	This procedure returns an integer corresponding to the list index
- *	held in a Tcl object. The Tcl object's value is expected to be
- *	in the format integer([+-]integer)? or the format end([+-]integer)?. 
+ *	This function returns an integer corresponding to the list index held
+ *	in a Tcl object. The Tcl object's value is expected to be in the
+ *	format integer([+-]integer)? or the format end([+-]integer)?.
  *
  * Results:
  *	The return value is normally TCL_OK, which means that the index was
- *	successfully stored into the location referenced by "indexPtr".  If
- *	the Tcl object referenced by "objPtr" has the value "end", the
- *	value stored is "endValue". If "objPtr"s values is not of one
- *	of the expected formats, TCL_ERROR is returned and, if
- *	"interp" is non-NULL, an error message is left in the interpreter's
- *	result object.
+ *	successfully stored into the location referenced by "indexPtr". If the
+ *	Tcl object referenced by "objPtr" has the value "end", the value
+ *	stored is "endValue". If "objPtr"s values is not of one of the
+ *	expected formats, TCL_ERROR is returned and, if "interp" is non-NULL,
+ *	an error message is left in the interpreter's result object.
  *
  * Side effects:
- *	The object referenced by "objPtr" might be converted to an
- *	integer, wide integer, or end-based-index object.
+ *	The object referenced by "objPtr" might be converted to an integer,
+ *	wide integer, or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
 
 int
 TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. 
-				 * If NULL, then no error message is left
-				 * after errors. */
-    Tcl_Obj *objPtr;		/* Points to an object containing either
-				 * "end" or an integer. */
+    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
+    Tcl_Obj *objPtr;		/* Points to an object containing either "end"
+				 * or an integer. */
     int endValue;		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
     int *indexPtr;		/* Location filled in with an integer
@@ -2289,8 +2266,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 
     if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
 	/*
-	 * If the object is already an offset from the end of the
-	 * list, or can be converted to one, use it.
+	 * If the object is already an offset from the end of the list, or can
+	 * be converted to one, use it.
 	 */
 
 	*indexPtr = endValue + objPtr->internalRep.longValue;
@@ -2304,7 +2281,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	    length--; p++;
 	}
 	if (length == 0) {
-            goto parseError;
+	    goto parseError;
 	}
 	if ((*p == '+') || (*p == '-')) {
 	    p++; length--;
@@ -2340,14 +2317,16 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	 * Report a parse error.
 	 */
 
-parseError:
+    parseError:
 	if (interp != NULL) {
 	    char *bytes = Tcl_GetString(objPtr);
+
 	    /*
-	     * The result might not be empty; this resets it which
-	     * should be both a cheap operation, and of little problem
-	     * because this is an error-generation path anyway.
+	     * The result might not be empty; this resets it which should be
+	     * both a cheap operation, and of little problem because this is
+	     * an error-generation path anyway.
 	     */
+
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
 		    "\": must be integer?[+-]integer? or end?[+-]integer?",
@@ -2360,7 +2339,7 @@ parseError:
 
 	return TCL_ERROR;
     }
-	    
+
     return TCL_OK;
 }
 
@@ -2378,9 +2357,8 @@ parseError:
  * Side effects:
  *	Stores a valid string in the object's string rep.
  *
- * This procedure does NOT free any earlier string rep.  If it is
- * called on an object that already has a valid string rep, it will
- * leak memory.
+ * This function does NOT free any earlier string rep. If it is called on an
+ * object that already has a valid string rep, it will leak memory.
  *
  *----------------------------------------------------------------------
  */
@@ -2408,35 +2386,39 @@ UpdateStringOfEndOffset(objPtr)
  *
  * SetEndOffsetFromAny --
  *
- *	Look for a string of the form "end[+-]offset" and convert it
- *	to an internal representation holding the offset.
+ *	Look for a string of the form "end[+-]offset" and convert it to an
+ *	internal representation holding the offset.
  *
  * Results:
  *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
  *
  * Side effects:
- *	If interp is not NULL, stores an error message in the
- *	interpreter result.
+ *	If interp is not NULL, stores an error message in the interpreter
+ *	result.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 SetEndOffsetFromAny(interp, objPtr)
-     Tcl_Interp* interp;	/* Tcl interpreter or NULL */
-     Tcl_Obj* objPtr;		/* Pointer to the object to parse */
+    Tcl_Interp *interp;		/* Tcl interpreter or NULL */
+    Tcl_Obj* objPtr;		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
     register char* bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
-    /* If it's already the right type, we're fine. */
+    /*
+     * If it's already the right type, we're fine.
+     */
 
     if (objPtr->typePtr == &tclEndOffsetType) {
 	return TCL_OK;
     }
 
-    /* Check for a string rep of the right form. */
+    /*
+     * Check for a string rep of the right form.
+     */
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
@@ -2449,15 +2431,18 @@ SetEndOffsetFromAny(interp, objPtr)
 	return TCL_ERROR;
     }
 
-    /* Convert the string rep */
+    /*
+     * Convert the string rep.
+     */
 
     if (length <= 3) {
 	offset = 0;
     } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
 	/*
-	 * This is our limited string expression evaluator.  Pass everything
+	 * This is our limited string expression evaluator. Pass everything
 	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
+
 	if (isspace(UCHAR(bytes[4]))) {
 	    return TCL_ERROR;
 	}
@@ -2469,8 +2454,9 @@ SetEndOffsetFromAny(interp, objPtr)
 	}
     } else {
 	/*
-	 * Conversion failed.  Report the error.
+	 * Conversion failed. Report the error.
 	 */
+
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
@@ -2480,8 +2466,8 @@ SetEndOffsetFromAny(interp, objPtr)
     }
 
     /*
-     * The conversion succeeded. Free the old internal rep and set
-     * the new one.
+     * The conversion succeeded. Free the old internal rep and set the new
+     * one.
      */
 
     TclFreeIntRep(objPtr);
@@ -2489,15 +2475,15 @@ SetEndOffsetFromAny(interp, objPtr)
     objPtr->typePtr = &tclEndOffsetType;
 
     return TCL_OK;
-}    
+}
 
 /*
  *----------------------------------------------------------------------
  *
  * TclCheckBadOctal --
  *
- *	This procedure checks for a bad octal value and appends a
- *	meaningful error to the interp's result.
+ *	This function checks for a bad octal value and appends a meaningful
+ *	error to the interp's result.
  *
  * Results:
  *	1 if the argument was a bad octal, else 0.
@@ -2510,16 +2496,16 @@ SetEndOffsetFromAny(interp, objPtr)
 
 int
 TclCheckBadOctal(interp, value)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. 
-				 * If NULL, then no error message is left
-				 * after errors. */
+    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
     CONST char *value;		/* String to check. */
 {
     register CONST char *p = value;
 
     /*
-     * A frequent mistake is invalid octal values due to an unwanted
-     * leading zero. Try to generate a meaningful error message.
+     * A frequent mistake is invalid octal values due to an unwanted leading
+     * zero. Try to generate a meaningful error message.
      */
 
     while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
@@ -2536,11 +2522,14 @@ TclCheckBadOctal(interp, value)
 	    p++;
 	}
 	if (*p == '\0') {
-	    /* Reached end of string */
+	    /*
+	     * Reached end of string.
+	     */
+
 	    if (interp != NULL) {
 		/*
-		 * Don't reset the result here because we want this result
-		 * to be added to an existing error message as extra info.
+		 * Don't reset the result here because we want this result to
+		 * be added to an existing error message as extra info.
 		 */
 		Tcl_AppendResult(interp, " (looks like invalid octal number)",
 			(char *) NULL);
@@ -2555,6 +2544,7 @@ TclCheckBadOctal(interp, value)
  *----------------------------------------------------------------------
  *
  * ClearHash --
+ *
  *      Remove all the entries in the hash table *tablePtr.
  *
  *----------------------------------------------------------------------
@@ -2580,16 +2570,15 @@ ClearHash(tablePtr)
  *
  * GetThreadHash --
  *
- *	Get a thread-specific (Tcl_HashTable *) associated with a
- *	thread data key.
+ *	Get a thread-specific (Tcl_HashTable *) associated with a thread data
+ *	key.
  *
  * Results:
- *	The Tcl_HashTable * corresponding to *keyPtr.  
+ *	The Tcl_HashTable * corresponding to *keyPtr.
  *
  * Side effects:
- *	The first call on a keyPtr in each thread creates a new
- *	Tcl_HashTable, and registers a thread exit handler to
- *	dispose of it.
+ *	The first call on a keyPtr in each thread creates a new Tcl_HashTable,
+ *	and registers a thread exit handler to dispose of it.
  *
  *----------------------------------------------------------------------
  */
@@ -2612,8 +2601,9 @@ GetThreadHash(keyPtr)
  *----------------------------------------------------------------------
  *
  * FreeThreadHash --
- *	Thread exit handler used by GetThreadHash to dispose
- *	of a thread hash table.
+ *
+ *	Thread exit handler used by GetThreadHash to dispose of a thread hash
+ *	table.
  *
  * Side effects:
  *	Frees a Tcl_HashTable.
@@ -2623,7 +2613,7 @@ GetThreadHash(keyPtr)
 
 static void
 FreeThreadHash(clientData)
-    ClientData clientData; 
+    ClientData clientData;
 {
     Tcl_HashTable *tablePtr = (Tcl_HashTable *) clientData;
     ClearHash(tablePtr);
@@ -2635,15 +2625,16 @@ FreeThreadHash(clientData)
  *----------------------------------------------------------------------
  *
  * FreeProcessGlobalValue --
- *	Exit handler used by Tcl(Set|Get)ProcessGlobalValue to cleanup
- *	a ProcessGlobalValue at exit.
+ *
+ *	Exit handler used by Tcl(Set|Get)ProcessGlobalValue to cleanup a
+ *	ProcessGlobalValue at exit.
  *
  *----------------------------------------------------------------------
  */
 
 static void
 FreeProcessGlobalValue(clientData)
-    ClientData clientData; 
+    ClientData clientData;
 {
     ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *) clientData;
     pgvPtr->epoch++;
@@ -2662,11 +2653,12 @@ FreeProcessGlobalValue(clientData)
  *
  * TclSetProcessGlobalValue --
  *
- *	Utility routine to set a global value shared by all threads in
- *	the process while keeping a thread-local copy as well.
+ *	Utility routine to set a global value shared by all threads in the
+ *	process while keeping a thread-local copy as well.
  *
  *----------------------------------------------------------------------
  */
+
 void
 TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
     ProcessGlobalValue *pgvPtr;
@@ -2679,7 +2671,11 @@ TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
     int dummy;
 
     Tcl_MutexLock(&pgvPtr->mutex);
-    /* Fill the global string value */
+
+    /*
+     * Fill the global string value.
+     */
+
     pgvPtr->epoch++;
     if (NULL != pgvPtr->value) {
 	ckfree(pgvPtr->value);
@@ -2695,10 +2691,11 @@ TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
     pgvPtr->encoding = encoding;
 
     /*
-     * Fill the local thread copy directly with the Tcl_Obj
-     * value to avoid loss of the intrep.  Increment newValue
-     * refCount early to handle case where we set a PGV to itself.
+     * Fill the local thread copy directly with the Tcl_Obj value to avoid
+     * loss of the intrep. Increment newValue refCount early to handle case
+     * where we set a PGV to itself.
      */
+
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
@@ -2732,12 +2729,12 @@ TclGetProcessGlobalValue(pgvPtr)
 
     if (pgvPtr->encoding) {
 	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
-	if (pgvPtr->encoding != current) {
 
+	if (pgvPtr->encoding != current) {
 	    /*
-	     * The system encoding has changed since the master
-	     * string value was saved.  Convert the master value
-	     * to be based on the new system encoding.  
+	     * The system encoding has changed since the master string value
+	     * was saved. Convert the master value to be based on the new
+	     * system encoding.
 	     */
 
 	    Tcl_DString native, newValue;
@@ -2753,7 +2750,7 @@ TclGetProcessGlobalValue(pgvPtr)
 	    ckfree(pgvPtr->value);
 	    pgvPtr->value = ckalloc((unsigned int)
 		    Tcl_DStringLength(&newValue) + 1);
-	    memcpy((VOID *) pgvPtr->value, (VOID *) Tcl_DStringValue(&newValue),
+	    memcpy((VOID*) pgvPtr->value, (VOID*) Tcl_DStringValue(&newValue),
 		    (size_t) Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
@@ -2768,12 +2765,19 @@ TclGetProcessGlobalValue(pgvPtr)
     if (NULL == hPtr) {
 	int dummy;
 
-	/* No cache for the current epoch - must be a new one */
-	/* First, clear the cacheMap, as anything in it must
-	 * refer to some expired epoch.*/
+	/*
+	 * No cache for the current epoch - must be a new one.
+	 *
+	 * First, clear the cacheMap, as anything in it must refer to some
+	 * expired epoch.
+	 */
+
 	ClearHash(cacheMap);
 
-	/* If no thread has set the shared value, call the initializer */
+	/*
+	 * If no thread has set the shared value, call the initializer.
+	 */
+
 	Tcl_MutexLock(&pgvPtr->mutex);
 	if ((NULL == pgvPtr->value) && (pgvPtr->proc)) {
 	    pgvPtr->epoch++;
@@ -2785,7 +2789,10 @@ TclGetProcessGlobalValue(pgvPtr)
 	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
 	}
 
-	/* Store a copy of the shared value in our epoch-indexed cache */
+	/*
+	 * Store a copy of the shared value in our epoch-indexed cache.
+	 */
+
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
 	hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
@@ -2800,9 +2807,8 @@ TclGetProcessGlobalValue(pgvPtr)
  *
  * TclSetObjNameOfExecutable --
  *
- *	This procedure stores the absolute pathname of
- *	the executable file (normally as computed by
- *	TclpFindExecutable).
+ *	This function stores the absolute pathname of the executable file
+ *	(normally as computed by TclpFindExecutable).
  *
  * Results:
  * 	None.
@@ -2826,15 +2832,14 @@ TclSetObjNameOfExecutable(name, encoding)
  *
  * TclGetObjNameOfExecutable --
  *
- *	This procedure retrieves the absolute pathname of the
- *	application in which the Tcl library is running, usually
- *	as previously stored by TclpFindExecutable().
- *	This procedure call is the C API equivalent to the
- *	"info nameofexecutable" command.
+ *	This function retrieves the absolute pathname of the application in
+ *	which the Tcl library is running, usually as previously stored by
+ *	TclpFindExecutable(). This function call is the C API equivalent to
+ *	the "info nameofexecutable" command.
  *
  * Results:
- *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if
- *	the pathname of the application is unknown.
+ *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if the
+ *	pathname of the application is unknown.
  *
  * Side effects:
  * 	None.
@@ -2853,17 +2858,15 @@ TclGetObjNameOfExecutable()
  *
  * Tcl_GetNameOfExecutable --
  *
- *	This procedure retrieves the absolute pathname of the
- *	application in which the Tcl library is running, and
- *	returns it in string form.
+ *	This function retrieves the absolute pathname of the application in
+ *	which the Tcl library is running, and returns it in string form.
  *
- * 	The returned string belongs to Tcl and should be copied
- * 	if the caller plans to keep it, to guard against it
- * 	becoming invalid.
+ * 	The returned string belongs to Tcl and should be copied if the caller
+ * 	plans to keep it, to guard against it becoming invalid.
  *
  * Results:
- *	A pointer to the internal string or NULL if the internal full
- *	path name has not been computed or unknown.
+ *	A pointer to the internal string or NULL if the internal full path
+ *	name has not been computed or unknown.
  *
  * Side effects:
  * 	None.
@@ -2888,16 +2891,15 @@ Tcl_GetNameOfExecutable()
  *
  * TclpGetTime --
  *
- *	Deprecated synonym for Tcl_GetTime.
+ *	Deprecated synonym for Tcl_GetTime. This function is provided for the
+ *	benefit of extensions written before Tcl_GetTime was exported from the
+ *	library.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	Stores current time in the buffer designated by "timePtr"
- *
- * This procedure is provided for the benefit of extensions written
- * before Tcl_GetTime was exported from the library.
  *
  *----------------------------------------------------------------------
  */
@@ -2914,14 +2916,14 @@ TclpGetTime(timePtr)
  *
  * TclGetPlatform --
  *
- *      This is a kludge that allows the test library to get access
- *      the internal tclPlatform variable.
+ *	This is a kludge that allows the test library to get access the
+ *	internal tclPlatform variable.
  *
  * Results:
- *      Returns a pointer to the tclPlatform variable.
+ *	Returns a pointer to the tclPlatform variable.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -2931,3 +2933,11 @@ TclGetPlatform()
 {
     return &tclPlatform;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

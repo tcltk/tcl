@@ -11,10 +11,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.29.2.1 2005/07/12 20:37:11 kennykb Exp $
+# RCS: @(#) $Id: info.test,v 1.29.2.2 2005/08/02 18:16:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -292,6 +292,19 @@ test info-8.4 {info globals option: may have leading namespace qualifiers} {
     set x 0
     list [info globals x] [info globals :x] [info globals ::x] [info globals :::x] [info globals ::::x]
 } {x {} x x x}
+test info-8.5 {info globals option: only return existing global variables} {
+    -setup {
+	catch {unset ::NO_SUCH_VAR}
+	proc evalInProc script {eval $script}
+    }
+    -body {
+	evalInProc {global NO_SUCH_VAR; info globals NO_SUCH_VAR}
+    }
+    -cleanup {
+	rename evalInProc {}
+    }
+    -result {}
+}
 
 test info-9.1 {info level option} {
     info level

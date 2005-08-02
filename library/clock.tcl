@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.12.2.2 2005/04/25 21:37:23 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.12.2.3 2005/08/02 18:16:14 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3356,6 +3356,7 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
 
     variable WinZoneInfo
     variable NoRegistry
+    variable TimeZoneBad
 
     if { [info exists NoRegistry] } {
 	return :localtime
@@ -3389,9 +3390,20 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
 	return :localtime
     }
 
-    # Make up a Posix time zone specifier if we can't find one
+    # Make up a Posix time zone specifier if we can't find one.
+    # Check here that the tzdata file exists, in case we're running
+    # in an environment (e.g. starpack) where tzdata is incomplete.
+    # (Bug 1237907)
 
-    if { ! [dict exists $WinZoneInfo $data] } {
+    if { [dict exists $WinZoneInfo $data] } {
+	set tzname [dict get $WinZoneInfo $data]
+	if { ! [dict exists $TimeZoneBad $tzname] } {
+	    dict set TimeZoneBad $tzname [catch {SetupTimeZone $tzname}]
+	}
+    } else {
+	set tzname {}
+    }
+    if { $tzname eq {} || [dict get $TimeZoneBad $tzname] } {
 	foreach {
 	    bias stdBias dstBias
 	    stdYear stdMonth stdDayOfWeek stdDayOfMonth
@@ -3404,24 +3416,29 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
 	if { $stdDelta <= 0 } {
 	    set stdSignum +
 	    set stdDelta [expr { - $stdDelta }]
+	    set dispStdSignum -
 	} else {
 	    set stdSignum -
+	    set dispStdSignum +
 	}
 	set hh [::format %02d [expr { $stdDelta / 3600 }]]
 	set mm [::format %02d [expr { ($stdDelta / 60 ) % 60 }]]
 	set ss [::format %02d [expr { $stdDelta % 60 }]]
-	append tzname < $stdSignum $hh $mm > $stdSignum $hh : $mm : $ss
+	set tzname {}
+	append tzname < $dispStdSignum $hh $mm > $stdSignum $hh : $mm : $ss
 	if { $stdMonth >= 0 } {
 	    if { $dstDelta <= 0 } {
 		set dstSignum +
 		set dstDelta [expr { - $dstDelta }]
+		set dispDstSignum -
 	    } else {
 		set dstSignum -
+		set dispDstSignum +
 	    }
 	    set hh [::format %02d [expr { $dstDelta / 3600 }]]
 	    set mm [::format %02d [expr { ($dstDelta / 60 ) % 60 }]]
 	    set ss [::format %02d [expr { $dstDelta % 60 }]]
-	    append tzname < $dstSignum $hh $mm > $dstSignum $hh : $mm : $ss
+	    append tzname < $dispDstSignum $hh $mm > $dstSignum $hh : $mm : $ss
 	    if { $dstYear == 0 } {
 		append tzname ,M $dstMonth . $dstDayOfMonth . $dstDayOfWeek
 	    } else {
@@ -5052,7 +5069,7 @@ proc ::tcl::clock::ClearCaches {} {
     variable LocaleNumeralCache
     variable McLoaded
     variable CachedSystemTimeZone
-    variable TZData
+    variable TimeZoneBad
 
     foreach p [info procs [namespace current]::scanproc'*] {
 	rename $p {}
@@ -5061,6 +5078,7 @@ proc ::tcl::clock::ClearCaches {} {
     set LocaleNumeralCache {}
     set McLoaded {}
     catch {unset CachedSystemTimeZone}
+    set TimeZoneBad {}
     InitTZData
 
 }

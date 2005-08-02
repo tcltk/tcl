@@ -1,26 +1,26 @@
-/* 
+/*
  * tclLoadDld.c --
  *
- *	This procedure provides a version of the TclLoadFile that
- *	works with the "dld_link" and "dld_get_func" library procedures
- *	for dynamic loading.  It has been tested on Linux 1.1.95 and
- *	dld-3.2.7.  This file probably isn't needed anymore, since it
- *	makes more sense to use "dl_open" etc.
+ *	This procedure provides a version of the TclLoadFile that works with
+ *	the "dld_link" and "dld_get_func" library procedures for dynamic
+ *	loading. It has been tested on Linux 1.1.95 and dld-3.2.7. This file
+ *	probably isn't needed anymore, since it makes more sense to use
+ *	"dl_open" etc.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.12 2002/10/10 12:25:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.12.6.1 2005/08/02 18:16:54 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "dld.h"
 
 /*
- * In some systems, like SunOS 4.1.3, the RTLD_NOW flag isn't defined
- * and this argument to dlopen must always be 1.
+ * In some systems, like SunOS 4.1.3, the RTLD_NOW flag isn't defined and this
+ * argument to dlopen must always be 1.
  */
 
 #ifndef RTLD_NOW
@@ -32,12 +32,12 @@
  *
  * TclpDlopen --
  *
- *	Dynamically loads a binary code file into memory and returns
- *	a handle to the new code.
+ *	Dynamically loads a binary code file into memory and returns a handle
+ *	to the new code.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs, an error
- *	message is left in the interp's result.
+ *	A standard Tcl completion code.  If an error occurs, an error message
+ *	is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
@@ -51,21 +51,21 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
     Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
-				 * file which will be passed back to 
+				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;	
+    Tcl_FSUnloadFileProc **unloadProcPtr;
 				/* Filled with address of Tcl_FSUnloadFileProc
-				 * function which should be used for
-				 * this file. */
+				 * function which should be used for this
+				 * file. */
 {
     static int firstTime = 1;
     int returnCode;
     char *fileName;
     CONST char *native;
-    
+
     /*
-     *  The dld package needs to know the pathname to the tcl binary.
-     *  If that's not known, return an error.
+     *  The dld package needs to know the pathname to the tcl binary.  If
+     *  that's not known, return an error.
      */
 
     if (firstTime) {
@@ -87,14 +87,15 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 
     fileName = Tcl_GetString(pathPtr);
 
-    /* 
-     * First try the full path the user gave us.  This is particularly
-     * important if the cwd is inside a vfs, and we are trying to load
-     * using a relative path.
+    /*
+     * First try the full path the user gave us. This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load using a
+     * relative path.
      */
+
     native = Tcl_FSGetNativePath(pathPtr);
     returnCode = dld_link(native);
-    
+
     if (returnCode != 0) {
 	Tcl_DString ds;
 	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
@@ -103,9 +104,8 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     }
 
     if (returnCode != 0) {
-	Tcl_AppendResult(interp, "couldn't load file \"", 
-			 fileName, "\": ", 
-			 dld_strerror(returnCode), (char *) NULL);
+	Tcl_AppendResult(interp, "couldn't load file \"", fileName, "\": ",
+		dld_strerror(returnCode), (char *) NULL);
 	return TCL_ERROR;
     }
     *loadHandle = (Tcl_LoadHandle) strcpy(
@@ -119,18 +119,19 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
  *
  * TclpFindSymbol --
  *
- *	Looks up a symbol, by name, through a handle associated with
- *	a previously loaded piece of code (shared library).
+ *	Looks up a symbol, by name, through a handle associated with a
+ *	previously loaded piece of code (shared library).
  *
  * Results:
- *	Returns a pointer to the function associated with 'symbol' if
- *	it is found.  Otherwise returns NULL and may leave an error
- *	message in the interp's result.
+ *	Returns a pointer to the function associated with 'symbol' if it is
+ *	found. Otherwise returns NULL and may leave an error message in the
+ *	interp's result.
  *
  *----------------------------------------------------------------------
  */
+
 Tcl_PackageInitProc*
-TclpFindSymbol(interp, loadHandle, symbol) 
+TclpFindSymbol(interp, loadHandle, symbol)
     Tcl_Interp *interp;
     Tcl_LoadHandle loadHandle;
     CONST char *symbol;
@@ -143,9 +144,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
  *
  * TclpUnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory.
- *	Code pointers in the formerly loaded file are no longer valid
- *	after calling this function.
+ *	Unloads a dynamically loaded binary code file from memory. Code
+ *	pointers in the formerly loaded file are no longer valid after calling
+ *	this function.
  *
  * Results:
  *	None.
@@ -158,10 +159,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
 
 void
 TclpUnloadFile(loadHandle)
-    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
-				 * to TclpDlopen().  The loadHandle is 
-				 * a token that represents the loaded 
-				 * file. */
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call to
+				 * TclpDlopen().  The loadHandle is a token
+				 * that represents the loaded file. */
 {
     char *fileName;
 
@@ -175,14 +175,14 @@ TclpUnloadFile(loadHandle)
  *
  * TclGuessPackageName --
  *
- *	If the "load" command is invoked without providing a package
- *	name, this procedure is invoked to try to figure it out.
+ *	If the "load" command is invoked without providing a package name,
+ *	this procedure is invoked to try to figure it out.
  *
  * Results:
- *	Always returns 0 to indicate that we couldn't figure out a
- *	package name;  generic code will then try to guess the package
- *	from the file name.  A return value of 1 would have meant that
- *	we figured out the package name and put it in bufPtr.
+ *	Always returns 0 to indicate that we couldn't figure out a package
+ *	name; generic code will then try to guess the package from the file
+ *	name. A return value of 1 would have meant that we figured out the
+ *	package name and put it in bufPtr.
  *
  * Side effects:
  *	None.
@@ -194,8 +194,16 @@ int
 TclGuessPackageName(fileName, bufPtr)
     CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
-    Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
-				 * package name to this if possible. */
+    Tcl_DString *bufPtr;	/* Initialized empty dstring. Append package
+				 * name to this if possible. */
 {
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

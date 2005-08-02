@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.12 2004/09/30 23:06:49 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.12.2.1 2005/08/02 18:16:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -68,10 +68,14 @@ test error-1.7 {simple errors from commands} {
     set b
 } {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
 
-test error-1.8 {simple errors from commands} {nonPortable} {
+test error-1.8 {simple errors from commands} {
     # This test is non-portable: it generates a memory fault on
     # machines like DEC Alphas (infinite recursion overflows
     # stack?)
+    #
+    # That claims sounds like a bug to be fixed rather than a portability
+    # problem.  Anyhow, I believe it's out of date (bug's been fixed) so
+    # this test is re-enabled.
 
     proc p {} {
         uplevel 1 catch p error

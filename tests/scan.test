@@ -11,14 +11,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.15.2.1 2005/03/02 21:25:25 kennykb Exp $
+# RCS: @(#) $Id: scan.test,v 1.15.2.2 2005/08/02 18:16:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-::tcltest::testConstraint 64bitInts [expr {0x80000000 > 0}]
+::tcltest::testConstraint wideIs64bit \
+	[expr {(0x80000000 > 0) && (0x8000000000000000 < 0)}]
 
 test scan-1.1 {BuildCharSet, CharInSet} {
     list [scan foo {%[^o]} x] $x
@@ -417,7 +418,7 @@ test scan-5.11 {integer scanning} {nonPortable} {
     list [scan "4294967280 4294967280" "%u %d" a b] $a \
 	    [expr {$b == -16 || $b == 0x7fffffff}]
 } {2 4294967280 1}
-test scan-5.12 {integer scanning} {64bitInts} {
+test scan-5.12 {integer scanning} {wideIs64bit} {
     set a {}; set b {}; set c {}
     list [scan "7810179016327718216,6c63546f6c6c6548,661432506755433062510" \
 	    %ld,%lx,%lo a b c] $a $b $c

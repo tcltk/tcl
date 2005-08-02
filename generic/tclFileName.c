@@ -1,16 +1,16 @@
 /*
  * tclFileName.c --
  *
- *	This file contains routines for converting file names betwen
- *	native and network form.
+ *	This file contains routines for converting file names betwen native
+ *	and network form.
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.60.2.7 2005/07/12 20:36:48 kennykb Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.60.2.8 2005/08/02 18:15:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -18,8 +18,8 @@
 #include "tclFileSystem.h" /* For TclGetPathType() */
 
 /*
- * The following variable is set in the TclPlatformInit call to one
- * of: TCL_PLATFORM_UNIX or TCL_PLATFORM_WINDOWS.
+ * The following variable is set in the TclPlatformInit call to one of:
+ * TCL_PLATFORM_UNIX or TCL_PLATFORM_WINDOWS.
  */
 
 TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
@@ -36,25 +36,23 @@ static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
 static int		SkipToChar _ANSI_ARGS_((char **stringPtr, int match));
 static Tcl_Obj*		SplitWinPath _ANSI_ARGS_((CONST char *path));
 static Tcl_Obj*		SplitUnixPath _ANSI_ARGS_((CONST char *path));
-static int              DoGlob _ANSI_ARGS_((Tcl_Interp *interp,
+static int		DoGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *resultPtr, char *separators,
 			    Tcl_Obj *pathPtr, int flags, char *pattern,
 			    Tcl_GlobTypeData *types));
-
 
 /*
  *----------------------------------------------------------------------
  *
  * ExtractWinRoot --
  *
- *	Matches the root portion of a Windows path and appends it
- *	to the specified Tcl_DString.
+ *	Matches the root portion of a Windows path and appends it to the
+ *	specified Tcl_DString.
  *
  * Results:
- *	Returns the position in the path immediately after the root
- *	including any trailing slashes.
- *	Appends a cleaned up version of the root to the Tcl_DString
- *	at the specified offest.
+ *	Returns the position in the path immediately after the root including
+ *	any trailing slashes.  Appends a cleaned up version of the root to the
+ *	Tcl_DString at the specified offest.
  *
  * Side effects:
  *	Modifies the specified Tcl_DString.
@@ -71,9 +69,13 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
     Tcl_PathType *typePtr;	/* Where to store pathType result */
 {
     if (path[0] == '/' || path[0] == '\\') {
-	/* Might be a UNC or Vol-Relative path */
+	/*
+	 * Might be a UNC or Vol-Relative path.
+	 */
+
 	CONST char *host, *share, *tail;
 	int hlen, slen;
+
 	if (path[1] != '/' && path[1] != '\\') {
 	    Tcl_DStringSetLength(resultPtr, offset);
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
@@ -82,7 +84,10 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	}
 	host = &path[2];
 
-	/* Skip separators */
+	/*
+	 * Skip separators.
+	 */
+
 	while (host[0] == '/' || host[0] == '\\') {
 	    host++;
 	}
@@ -94,17 +99,15 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	}
 	if (host[hlen] == 0 || host[hlen+1] == 0) {
 	    /*
-	     * The path given is simply of the form
-	     * '/foo', '//foo', '/////foo' or the same
-	     * with backslashes.  If there is exactly
-	     * one leading '/' the path is volume relative
-	     * (see filename man page).  If there are more
-	     * than one, we are simply assuming they
-	     * are superfluous and we trim them away.
-	     * (An alternative interpretation would
-	     * be that it is a host name, but we have
+	     * The path given is simply of the form '/foo', '//foo',
+	     * '/////foo' or the same with backslashes.  If there is exactly
+	     * one leading '/' the path is volume relative (see filename man
+	     * page).  If there are more than one, we are simply assuming they
+	     * are superfluous and we trim them away.  (An alternative
+	     * interpretation would be that it is a host name, but we have
 	     * been documented that that is not the case).
 	     */
+
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    Tcl_DStringAppend(resultPtr, "/", 1);
 	    return &path[2];
@@ -112,7 +115,10 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	Tcl_DStringSetLength(resultPtr, offset);
 	share = &host[hlen];
 
-	/* Skip separators */
+	/*
+	 * Skip separators.
+	 */
+
 	while (share[0] == '/' || share[0] == '\\') {
 	    share++;
 	}
@@ -129,7 +135,10 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 
 	tail = &share[slen];
 
-	/* Skip separators */
+	/*
+	 * Skip separators.
+	 */
+
 	while (tail[0] == '/' || tail[0] == '\\') {
 	    tail++;
 	}
@@ -137,7 +146,10 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	*typePtr = TCL_PATH_ABSOLUTE;
 	return tail;
     } else if (*path && path[1] == ':') {
-	/* Might be a drive sep */
+	/*
+	 * Might be a drive separator.
+	 */
+
 	Tcl_DStringSetLength(resultPtr, offset);
 
 	if (path[2] != '/' && path[2] != '\\') {
@@ -147,7 +159,10 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	} else {
 	    char *tail = (char*)&path[3];
 
-	    /* Skip separators */
+	    /*
+	     * Skip separators.
+	     */
+
 	    while (*tail && (tail[0] == '/' || tail[0] == '\\')) {
 		tail++;
 	    }
@@ -160,50 +175,78 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	}
     } else {
 	int abs = 0;
-	if ((path[0] == 'c' || path[0] == 'C') 
-	    && (path[1] == 'o' || path[1] == 'O')) {
+
+	/*
+	 * Check for Windows devices.
+	 */
+
+	if ((path[0] == 'c' || path[0] == 'C')
+		&& (path[1] == 'o' || path[1] == 'O')) {
 	    if ((path[2] == 'm' || path[2] == 'M')
-		&& path[3] >= '1' && path[3] <= '4') {
-		/* May have match for 'com[1-4]:?', which is a serial port */
+		    && path[3] >= '1' && path[3] <= '4') {
+		/*
+		 * May have match for 'com[1-4]:?', which is a serial port.
+		 */
+
 		if (path[4] == '\0') {
 		    abs = 4;
 		} else if (path [4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
+
 	    } else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
-		/* Have match for 'con' */
+		/*
+		 * Have match for 'con'.
+		 */
+
 		abs = 3;
 	    }
+
 	} else if ((path[0] == 'l' || path[0] == 'L')
-		   && (path[1] == 'p' || path[1] == 'P')
-		   && (path[2] == 't' || path[2] == 'T')) {
+		&& (path[1] == 'p' || path[1] == 'P')
+		&& (path[2] == 't' || path[2] == 'T')) {
 	    if (path[3] >= '1' && path[3] <= '3') {
-		/* May have match for 'lpt[1-3]:?' */
+		/*
+		 * May have match for 'lpt[1-3]:?'
+		 */
+
 		if (path[4] == '\0') {
 		    abs = 4;
 		} else if (path [4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 	    }
+
 	} else if ((path[0] == 'p' || path[0] == 'P')
-		   && (path[1] == 'r' || path[1] == 'R')
-		   && (path[2] == 'n' || path[2] == 'N')
-		   && path[3] == '\0') {
-	    /* Have match for 'prn' */
+		&& (path[1] == 'r' || path[1] == 'R')
+		&& (path[2] == 'n' || path[2] == 'N')
+		&& path[3] == '\0') {
+	    /*
+	     * Have match for 'prn'.
+	     */
 	    abs = 3;
+
 	} else if ((path[0] == 'n' || path[0] == 'N')
-		   && (path[1] == 'u' || path[1] == 'U')
-		   && (path[2] == 'l' || path[2] == 'L')
-		   && path[3] == '\0') {
-	    /* Have match for 'nul' */
+		&& (path[1] == 'u' || path[1] == 'U')
+		&& (path[2] == 'l' || path[2] == 'L')
+		&& path[3] == '\0') {
+	    /*
+	     * Have match for 'nul'.
+	     */
+
 	    abs = 3;
+
 	} else if ((path[0] == 'a' || path[0] == 'A')
-		   && (path[1] == 'u' || path[1] == 'U')
-		   && (path[2] == 'x' || path[2] == 'X')
-		   && path[3] == '\0') {
-	    /* Have match for 'aux' */
+		&& (path[1] == 'u' || path[1] == 'U')
+		&& (path[2] == 'x' || path[2] == 'X')
+		&& path[3] == '\0') {
+	    /*
+	     * Have match for 'aux'.
+	     */
+
 	    abs = 3;
 	}
+
 	if (abs != 0) {
 	    *typePtr = TCL_PATH_ABSOLUTE;
 	    Tcl_DStringSetLength(resultPtr, offset);
@@ -211,7 +254,11 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	    return path + abs;
 	}
     }
-    /* Anything else is treated as relative */
+
+    /*
+     * Anything else is treated as relative.
+     */
+
     *typePtr = TCL_PATH_RELATIVE;
     return path;
 }
@@ -221,12 +268,12 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
  *
  * Tcl_GetPathType --
  *
- *	Determines whether a given path is relative to the current
- *	directory, relative to the current volume, or absolute.
+ *	Determines whether a given path is relative to the current directory,
+ *	relative to the current volume, or absolute.
  *
- *	The objectified Tcl_FSGetPathType should be used in
- *	preference to this function (as you can see below, this
- *	is just a wrapper around that other function).
+ *	The objectified Tcl_FSGetPathType should be used in preference to this
+ *	function (as you can see below, this is just a wrapper around that
+ *	other function).
  *
  * Results:
  *	Returns one of TCL_PATH_ABSOLUTE, TCL_PATH_RELATIVE, or
@@ -244,6 +291,7 @@ Tcl_GetPathType(path)
 {
     Tcl_PathType type;
     Tcl_Obj *tempObj = Tcl_NewStringObj(path,-1);
+
     Tcl_IncrRefCount(tempObj);
     type = Tcl_FSGetPathType(tempObj);
     Tcl_DecrRefCount(tempObj);
@@ -255,18 +303,18 @@ Tcl_GetPathType(path)
  *
  * TclpGetNativePathType --
  *
- *	Determines whether a given path is relative to the current
- *	directory, relative to the current volume, or absolute, but
- *	ONLY FOR THE NATIVE FILESYSTEM. This function is called from
- *	tclIOUtil.c (but needs to be here due to its dependence on
- *	static variables/functions in this file).  The exported
- *	function Tcl_FSGetPathType should be used by extensions.
+ *	Determines whether a given path is relative to the current directory,
+ *	relative to the current volume, or absolute, but ONLY FOR THE NATIVE
+ *	FILESYSTEM. This function is called from tclIOUtil.c (but needs to be
+ *	here due to its dependence on static variables/functions in this
+ *	file).  The exported function Tcl_FSGetPathType should be used by
+ *	extensions.
  *
- *	Note that '~' paths are always considered TCL_PATH_ABSOLUTE,
- *	even though expanding the '~' could lead to any possible
- *	path type.  This function should therefore be considered a
- *	low-level, string-manipulation function only -- it doesn't
- *	actually do any expansion in making its determination.
+ *	Note that '~' paths are always considered TCL_PATH_ABSOLUTE, even
+ *	though expanding the '~' could lead to any possible path type.  This
+ *	function should therefore be considered a low-level, string
+ *	manipulation function only -- it doesn't actually do any expansion in
+ *	making its determination.
  *
  * Results:
  *	Returns one of TCL_PATH_ABSOLUTE, TCL_PATH_RELATIVE, or
@@ -280,9 +328,9 @@ Tcl_GetPathType(path)
 
 Tcl_PathType
 TclpGetNativePathType(pathPtr, driveNameLengthPtr, driveNameRef)
-    Tcl_Obj *pathPtr;         /* Native path of interest */
-    int *driveNameLengthPtr;  /* Returns length of drive, if non-NULL
-                               * and path was absolute */
+    Tcl_Obj *pathPtr;		/* Native path of interest */
+    int *driveNameLengthPtr;	/* Returns length of drive, if non-NULL and
+				 * path was absolute */
     Tcl_Obj **driveNameRef;
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
@@ -291,9 +339,10 @@ TclpGetNativePathType(pathPtr, driveNameLengthPtr, driveNameRef)
 
     if (path[0] == '~') {
 	/*
-	 * This case is common to all platforms.
-	 * Paths that begin with ~ are absolute.
+	 * This case is common to all platforms.  Paths that begin with ~ are
+	 * absolute.
 	 */
+
 	if (driveNameLengthPtr != NULL) {
 	    char *end = path + 1;
 	    while ((*end != '\0') && (*end != '/')) {
@@ -325,9 +374,9 @@ TclpGetNativePathType(pathPtr, driveNameLengthPtr, driveNameRef)
 	    if (path[0] == '/') {
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX code
-		     * was used
+		     * We need this addition in case the QNX code was used.
 		     */
+
 		    *driveNameLengthPtr = (1 + path - origPath);
 		}
 	    } else {
@@ -362,18 +411,17 @@ TclpGetNativePathType(pathPtr, driveNameLengthPtr, driveNameRef)
  *
  * TclpNativeSplitPath --
  *
- *      This function takes the given Tcl_Obj, which should be a valid
- *      path, and returns a Tcl List object containing each segment
- *      of that path as an element.
+ *	This function takes the given Tcl_Obj, which should be a valid path,
+ *	and returns a Tcl List object containing each segment of that path as
+ *	an element.
  *
- *      Note this function currently calls the older Split(Plat)Path
- *      functions, which require more memory allocation than is
- *      desirable.
+ *	Note this function currently calls the older Split(Plat)Path
+ *	functions, which require more memory allocation than is desirable.
  *
  * Results:
- *      Returns list object with refCount of zero.  If the passed in
- *      lenPtr is non-NULL, we use it to return the number of elements
- *      in the returned list.
+ *	Returns list object with refCount of zero.  If the passed in lenPtr is
+ *	non-NULL, we use it to return the number of elements in the returned
+ *	list.
  *
  * Side effects:
  *	None.
@@ -417,20 +465,19 @@ TclpNativeSplitPath(pathPtr, lenPtr)
  *
  * Tcl_SplitPath --
  *
- *	Split a path into a list of path components.  The first element
- *	of the list will have the same path type as the original path.
+ *	Split a path into a list of path components.  The first element of the
+ *	list will have the same path type as the original path.
  *
  * Results:
- *	Returns a standard Tcl result.  The interpreter result contains
- *	a list of path components.
- *	*argvPtr will be filled in with the address of an array
- *	whose elements point to the elements of path, in order.
- *	*argcPtr will get filled in with the number of valid elements
- *	in the array.  A single block of memory is dynamically allocated
- *	to hold both the argv array and a copy of the path elements.
- *	The caller must eventually free this memory by calling ckfree()
- *	on *argvPtr.  Note:  *argvPtr and *argcPtr are only modified
- *	if the procedure returns normally.
+ *	Returns a standard Tcl result.  The interpreter result contains a list
+ *	of path components.  *argvPtr will be filled in with the address of an
+ *	array whose elements point to the elements of path, in order.
+ *	*argcPtr will get filled in with the number of valid elements in the
+ *	array.  A single block of memory is dynamically allocated to hold both
+ *	the argv array and a copy of the path elements.  The caller must
+ *	eventually free this memory by calling ckfree() on *argvPtr.  Note:
+ *	*argvPtr and *argcPtr are only modified if the procedure returns
+ *	normally.
  *
  * Side effects:
  *	Allocates memory.
@@ -441,8 +488,8 @@ TclpNativeSplitPath(pathPtr, lenPtr)
 void
 Tcl_SplitPath(path, argcPtr, argvPtr)
     CONST char *path;		/* Pointer to string containing a path. */
-    int *argcPtr;		/* Pointer to location to fill in with
-				 * the number of elements in the path. */
+    int *argcPtr;		/* Pointer to location to fill in with the
+				 * number of elements in the path. */
     CONST char ***argvPtr;	/* Pointer to place to store pointer to array
 				 * of pointers to path elements. */
 {
@@ -461,7 +508,9 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
     Tcl_IncrRefCount(resultPtr);
     Tcl_DecrRefCount(tmpPtr);
 
-    /* Calculate space required for the result */
+    /*
+     * Calculate space required for the result.
+     */
 
     size = 1;
     for (i = 0; i < *argcPtr; i++) {
@@ -471,16 +520,16 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
     }
 
     /*
-     * Allocate a buffer large enough to hold the contents of all of
-     * the list plus the argv pointers and the terminating NULL pointer.
+     * Allocate a buffer large enough to hold the contents of all of the list
+     * plus the argv pointers and the terminating NULL pointer.
      */
 
     *argvPtr = (CONST char **) ckalloc((unsigned)
 	    ((((*argcPtr) + 1) * sizeof(char *)) + size));
 
     /*
-     * Position p after the last argv pointer and copy the contents of
-     * the list in, piece by piece.
+     * Position p after the last argv pointer and copy the contents of the
+     * list in, piece by piece.
      */
 
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
@@ -515,8 +564,8 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
  *
  * SplitUnixPath --
  *
- *	This routine is used by Tcl_(FS)SplitPath to handle splitting
- *	Unix paths.
+ *	This routine is used by Tcl_(FS)SplitPath to handle splitting Unix
+ *	paths.
  *
  * Results:
  *	Returns a newly allocated Tcl list object.
@@ -586,15 +635,14 @@ SplitUnixPath(path)
     }
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
  * SplitWinPath --
  *
- *	This routine is used by Tcl_(FS)SplitPath to handle splitting
- *	Windows paths.
+ *	This routine is used by Tcl_(FS)SplitPath to handle splitting Windows
+ *	paths.
  *
  * Results:
  *	Returns a newly allocated Tcl list object.
@@ -629,9 +677,9 @@ SplitWinPath(path)
     Tcl_DStringFree(&buf);
 
     /*
-     * Split on slashes.  Embedded elements that start with tilde 
-     * or a drive letter will be prefixed with "./" so they are not 
-     * affected by tilde substitution.
+     * Split on slashes.  Embedded elements that start with tilde or a drive
+     * letter will be prefixed with "./" so they are not affected by tilde
+     * substitution.
      */
 
     do {
@@ -663,18 +711,17 @@ SplitWinPath(path)
  *
  * Tcl_FSJoinToPath --
  *
- *      This function takes the given object, which should usually be a
- *      valid path or NULL, and joins onto it the array of paths
- *      segments given.
+ *	This function takes the given object, which should usually be a valid
+ *	path or NULL, and joins onto it the array of paths segments given.
  *
- *      The objects in the array given will temporarily have their
- *      refCount increased by one, and then decreased by one when this
- *      function exits (which means if they had zero refCount when we
- *      were called, they will be freed).
+ *	The objects in the array given will temporarily have their refCount
+ *	increased by one, and then decreased by one when this function exits
+ *	(which means if they had zero refCount when we were called, they will
+ *	be freed).
  *
  * Results:
- *      Returns object owned by the caller (which should increment its
- *      refCount) - typically an object with refCount of zero.
+ *	Returns object owned by the caller (which should increment its
+ *	refCount) - typically an object with refCount of zero.
  *
  * Side effects:
  *	None.
@@ -682,11 +729,11 @@ SplitWinPath(path)
  *---------------------------------------------------------------------------
  */
 
-Tcl_Obj*
+Tcl_Obj *
 Tcl_FSJoinToPath(pathPtr, objc, objv)
-    Tcl_Obj *pathPtr;      /* Valid path or NULL. */
-    int objc;              /* Number of array elements to join */
-    Tcl_Obj *CONST objv[]; /* Path elements to join. */
+    Tcl_Obj *pathPtr;		/* Valid path or NULL. */
+    int objc;			/* Number of array elements to join */
+    Tcl_Obj *CONST objv[];	/* Path elements to join. */
 {
     int i;
     Tcl_Obj *lobj, *ret;
@@ -701,14 +748,15 @@ Tcl_FSJoinToPath(pathPtr, objc, objv)
 	Tcl_ListObjAppendElement(NULL, lobj, objv[i]);
     }
     ret = Tcl_FSJoinPath(lobj, -1);
+
     /*
-     * It is possible that 'ret' is just a member of the list and is
-     * therefore going to be freed here.  Therefore we must adjust the
-     * refCount manually.  (It would be better if we changed the
-     * documentation of this function and Tcl_FSJoinPath so that
-     * the returned object already has a refCount for the caller,
-     * hence avoiding these subtleties (and code ugliness)).
+     * It is possible that 'ret' is just a member of the list and is therefore
+     * going to be freed here. Therefore we must adjust the refCount manually.
+     * (It would be better if we changed the documentation of this function
+     * and Tcl_FSJoinPath so that the returned object already has a refCount
+     * for the caller, hence avoiding these subtleties (and code ugliness)).
      */
+
     Tcl_IncrRefCount(ret);
     Tcl_DecrRefCount(lobj);
     ret->refCount--;
@@ -720,10 +768,10 @@ Tcl_FSJoinToPath(pathPtr, objc, objv)
  *
  * TclpNativeJoinPath --
  *
- *      'prefix' is absolute, 'joining' is relative to prefix.
+ *	'prefix' is absolute, 'joining' is relative to prefix.
  *
  * Results:
- *      modifies prefix
+ *	modifies prefix
  *
  * Side effects:
  *	None.
@@ -734,7 +782,7 @@ Tcl_FSJoinToPath(pathPtr, objc, objv)
 void
 TclpNativeJoinPath(prefix, joining)
     Tcl_Obj *prefix;
-    char* joining;
+    char *joining;
 {
     int length, needsSep;
     char *dest, *p, *start;
@@ -742,18 +790,16 @@ TclpNativeJoinPath(prefix, joining)
     start = Tcl_GetStringFromObj(prefix, &length);
 
     /*
-     * Remove the ./ from tilde prefixed elements, and drive-letter
-     * prefixed elements on Windows, unless it is the first component.
+     * Remove the ./ from tilde prefixed elements, and drive-letter prefixed
+     * elements on Windows, unless it is the first component.
      */
 
     p = joining;
 
     if (length != 0) {
-	if ((p[0] == '.') && (p[1] == '/')
-	    && ((p[2] == '~')
-		|| ((tclPlatform == TCL_PLATFORM_WINDOWS)
-		    && isalpha(UCHAR(p[2]))
-		    && (p[3] == ':')))) {
+	if ((p[0] == '.') && (p[1] == '/') && ((p[2] == '~')
+		|| (tclPlatform==TCL_PLATFORM_WINDOWS && isalpha(UCHAR(p[2]))
+		&& (p[3] == ':')))) {
 	    p += 2;
 	}
     }
@@ -774,8 +820,7 @@ TclpNativeJoinPath(prefix, joining)
 	needsSep = 0;
 
 	/*
-	 * Append the element, eliminating duplicate and trailing
-	 * slashes.
+	 * Append the element, eliminating duplicate and trailing slashes.
 	 */
 
 	Tcl_SetObjLength(prefix, length + (int) strlen(p));
@@ -811,8 +856,7 @@ TclpNativeJoinPath(prefix, joining)
 	needsSep = 0;
 
 	/*
-	 * Append the element, eliminating duplicate and
-	 * trailing slashes.
+	 * Append the element, eliminating duplicate and trailing slashes.
 	 */
 
 	Tcl_SetObjLength(prefix, length + (int) strlen(p));
@@ -842,14 +886,13 @@ TclpNativeJoinPath(prefix, joining)
  *
  * Tcl_JoinPath --
  *
- *	Combine a list of paths in a platform specific manner.  The
- *	function 'Tcl_FSJoinPath' should be used in preference where
- *	possible.
+ *	Combine a list of paths in a platform specific manner.  The function
+ *	'Tcl_FSJoinPath' should be used in preference where possible.
  *
  * Results:
- *	Appends the joined path to the end of the specified
- *	Tcl_DString returning a pointer to the resulting string.  Note
- *	that the Tcl_DString must already be initialized.
+ *	Appends the joined path to the end of the specified Tcl_DString
+ *	returning a pointer to the resulting string.  Note that the
+ *	Tcl_DString must already be initialized.
  *
  * Side effects:
  *	Modifies the Tcl_DString.
@@ -868,24 +911,36 @@ Tcl_JoinPath(argc, argv, resultPtr)
     Tcl_Obj *resultObj;
     char *resultStr;
 
-    /* Build the list of paths */
+    /*
+     * Build the list of paths.
+     */
+
     for (i = 0; i < argc; i++) {
-        Tcl_ListObjAppendElement(NULL, listObj,
+	Tcl_ListObjAppendElement(NULL, listObj,
 		Tcl_NewStringObj(argv[i], -1));
     }
 
-    /* Ask the objectified code to join the paths */
+    /*
+     * Ask the objectified code to join the paths.
+     */
+
     Tcl_IncrRefCount(listObj);
     resultObj = Tcl_FSJoinPath(listObj, argc);
     Tcl_IncrRefCount(resultObj);
     Tcl_DecrRefCount(listObj);
 
-    /* Store the result */
+    /*
+     * Store the result.
+     */
+
     resultStr = Tcl_GetStringFromObj(resultObj, &len);
     Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
 
-    /* Return a pointer to the result */
+    /*
+     * Return a pointer to the result.
+     */
+
     return Tcl_DStringValue(resultPtr);
 }
 
@@ -895,19 +950,19 @@ Tcl_JoinPath(argc, argv, resultPtr)
  * Tcl_TranslateFileName --
  *
  *	Converts a file name into a form usable by the native system
- *	interfaces.  If the name starts with a tilde, it will produce a
- *	name where the tilde and following characters have been replaced
- *	by the home directory location for the named user.
+ *	interfaces.  If the name starts with a tilde, it will produce a name
+ *	where the tilde and following characters have been replaced by the
+ *	home directory location for the named user.
  *
  * Results:
- *	The return value is a pointer to a string containing the name
- *	after tilde substitution.  If there was no tilde substitution,
- *	the return value is a pointer to a copy of the original string.
- *	If there was an error in processing the name, then an error
- *	message is left in the interp's result (if interp was not NULL)
- *	and the return value is NULL.  Space for the return value is
- *	allocated in bufferPtr; the caller must call Tcl_DStringFree()
- *	to free the space if the return value was not NULL.
+ *	The return value is a pointer to a string containing the name after
+ *	tilde substitution. If there was no tilde substitution, the return
+ *	value is a pointer to a copy of the original string. If there was an
+ *	error in processing the name, then an error message is left in the
+ *	interp's result (if interp was not NULL) and the return value is NULL.
+ *	Space for the return value is allocated in bufferPtr; the caller must
+ *	call Tcl_DStringFree() to free the space if the return value was not
+ *	NULL.
  *
  * Side effects:
  *	None.
@@ -917,14 +972,14 @@ Tcl_JoinPath(argc, argv, resultPtr)
 
 char *
 Tcl_TranslateFileName(interp, name, bufferPtr)
-    Tcl_Interp *interp;		/* Interpreter in which to store error
-				 * message (if necessary). */
+    Tcl_Interp *interp;		/* Interpreter in which to store error message
+				 * (if necessary). */
     CONST char *name;		/* File name, which may begin with "~" (to
 				 * indicate current user's home directory) or
 				 * "~<user>" (to indicate any user's home
 				 * directory). */
-    Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
-				 * with name after tilde substitution. */
+    Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled with
+				 * name after tilde substitution. */
 {
     Tcl_Obj *path = Tcl_NewStringObj(name, -1);
     Tcl_Obj *transPtr;
@@ -942,8 +997,8 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_DecrRefCount(transPtr);
 
     /*
-     * Convert forward slashes to backslashes in Windows paths because
-     * some system interfaces don't accept forward slashes.
+     * Convert forward slashes to backslashes in Windows paths because some
+     * system interfaces don't accept forward slashes.
      */
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
@@ -954,6 +1009,7 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
 	    }
 	}
     }
+
     return Tcl_DStringValue(bufferPtr);
 }
 
@@ -962,8 +1018,8 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
  *
  * TclGetExtension --
  *
- *	This function returns a pointer to the beginning of the
- *	extension part of a file name.
+ *	This function returns a pointer to the beginning of the extension part
+ *	of a file name.
  *
  * Results:
  *	Returns a pointer into name which indicates where the extension
@@ -1025,11 +1081,10 @@ TclGetExtension(name)
  *
  * Results:
  *	The result is a pointer to a static string containing the home
- *	directory in native format.  If there was an error in processing
- *	the substitution, then an error message is left in the interp's
- *	result and the return value is NULL.  On success, the results
- *	are appended to resultPtr, and the contents of resultPtr are
- *	returned.
+ *	directory in native format. If there was an error in processing the
+ *	substitution, then an error message is left in the interp's result and
+ *	the return value is NULL. On success, the results are appended to
+ *	resultPtr, and the contents of resultPtr are returned.
  *
  * Side effects:
  *	Information may be left in resultPtr.
@@ -1039,12 +1094,12 @@ TclGetExtension(name)
 
 static CONST char *
 DoTildeSubst(interp, user, resultPtr)
-    Tcl_Interp *interp;		/* Interpreter in which to store error
-				 * message (if necessary). */
+    Tcl_Interp *interp;		/* Interpreter in which to store error message
+				 * (if necessary). */
     CONST char *user;		/* Name of user whose home directory should be
 				 * substituted, or "" for current user. */
-    Tcl_DString *resultPtr;	/* Initialized DString filled with name
-				 * after tilde substitution. */
+    Tcl_DString *resultPtr;	/* Initialized DString filled with name after
+				 * tilde substitution. */
 {
     CONST char *dir;
 
@@ -1078,8 +1133,8 @@ DoTildeSubst(interp, user, resultPtr)
  *
  * Tcl_GlobObjCmd --
  *
- *	This procedure is invoked to process the "glob" Tcl command.
- *	See the user documentation for details on what it does.
+ *	This procedure is invoked to process the "glob" Tcl command.  See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -1124,19 +1179,22 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    string = Tcl_GetStringFromObj(objv[i], &length);
 	    if (string[0] == '-') {
 		/*
-		 * It looks like the command contains an option so signal
-		 * an error
+		 * It looks like the command contains an option so signal an
+		 * error.
 		 */
+
 		return TCL_ERROR;
 	    } else {
 		/*
-		 * This clearly isn't an option; assume it's the first
-		 * glob pattern.  We must clear the error
+		 * This clearly isn't an option; assume it's the first glob
+		 * pattern.  We must clear the error.
 		 */
+
 		Tcl_ResetResult(interp);
 		break;
 	    }
 	}
+
 	switch (index) {
 	case GLOB_NOCOMPLAIN:			/* -nocomplain */
 	    globFlags |= TCL_GLOBMODE_NO_COMPLAIN;
@@ -1195,13 +1253,14 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    goto endOfForLoop;
 	}
     }
+
   endOfForLoop:
     if (objc - i < 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?switches? name ?name ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?switches? name ?name ...?");
 	return TCL_ERROR;
     }
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
-	Tcl_AppendResult(interp, 
+	Tcl_AppendResult(interp,
 		"\"-tails\" must be used with either ",
 		"\"-directory\" or \"-path\"", NULL);
 	return TCL_ERROR;
@@ -1216,6 +1275,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	separators = "/\\:";
 	break;
     }
+
     if (dir == PATH_GENERAL) {
 	int pathlength;
 	char *last;
@@ -1224,46 +1284,60 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	/*
 	 * Find the last path separator in the path
 	 */
+
 	last = first + pathlength;
 	for (; last != first; last--) {
 	    if (strchr(separators, *(last-1)) != NULL) {
 		break;
 	    }
 	}
+
 	if (last == first + pathlength) {
-	    /* It's really a directory */
+	    /*
+	     * It's really a directory.
+	     */
+
 	    dir = PATH_DIR;
+
 	} else {
 	    Tcl_DString pref;
 	    char *search, *find;
 	    Tcl_DStringInit(&pref);
 	    if (last == first) {
 		/*
-		 * The whole thing is a prefix.  This means we must
-		 * remove any 'tails' flag too, since it is irrelevant
-		 * now (the same effect will happen without it), but in
-		 * particular its use in TclGlob requires a non-NULL
-		 * pathOrDir.
+		 * The whole thing is a prefix.  This means we must remove any
+		 * 'tails' flag too, since it is irrelevant now (the same
+		 * effect will happen without it), but in particular its use
+		 * in TclGlob requires a non-NULL pathOrDir.
 		 */
+
 		Tcl_DStringAppend(&pref, first, -1);
 		globFlags &= ~TCL_GLOBMODE_TAILS;
 		pathOrDir = NULL;
 	    } else {
-		/* Have to split off the end */
+		/*
+		 * Have to split off the end.
+		 */
+
 		Tcl_DStringAppend(&pref, last, first+pathlength-last);
 		pathOrDir = Tcl_NewStringObj(first, last-first-1);
+
 		/*
-		 * We must ensure that we haven't cut off too much,
-		 * and turned a valid path like '/' or 'C:/' into
-		 * an incorrect path like '' or 'C:'.  The way we
-		 * do this is to add a separator if there are none
-		 * presently in the prefix.
+		 * We must ensure that we haven't cut off too much, and turned
+		 * a valid path like '/' or 'C:/' into an incorrect path like
+		 * '' or 'C:'.  The way we do this is to add a separator if
+		 * there are none presently in the prefix.
 		 */
+
 		if (strpbrk(Tcl_GetString(pathOrDir), "\\/") == NULL) {
 		    Tcl_AppendToObj(pathOrDir, last-1, 1);
 		}
 	    }
-	    /* Need to quote 'prefix' */
+
+	    /*
+	     * Need to quote 'prefix'.
+	     */
+
 	    Tcl_DStringInit(&prefix);
 	    search = Tcl_DStringValue(&pref);
 	    while ((find = (strpbrk(search, "\\[]*?{}"))) != NULL) {
@@ -1288,19 +1362,22 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 
     if (typePtr != NULL) {
 	/*
-	 * The rest of the possible type arguments (except 'd') are
-	 * platform specific.  We don't complain when they are used
-	 * on an incompatible platform.
+	 * The rest of the possible type arguments (except 'd') are platform
+	 * specific.  We don't complain when they are used on an incompatible
+	 * platform.
 	 */
+
 	Tcl_ListObjLength(interp, typePtr, &length);
 	globTypes = (Tcl_GlobTypeData*) ckalloc(sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
 	globTypes->macCreator = NULL;
+
 	while (--length >= 0) {
 	    int len;
 	    char *str;
+
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
 	    str = Tcl_GetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
@@ -1342,15 +1419,21 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		default:
 		    goto badTypesArg;
 		}
+
 	    } else if (len == 4) {
-		/* This is assumed to be a MacOS file type */
+		/*
+		 * This is assumed to be a MacOS file type.
+		 */
+
 		if (globTypes->macType != NULL) {
 		    goto badMacTypesArg;
 		}
 		globTypes->macType = look;
 		Tcl_IncrRefCount(look);
+
 	    } else {
 		Tcl_Obj* item;
+
 		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK) &&
 			(len == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
@@ -1375,12 +1458,13 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 			}
 		    }
 		}
+
 		/*
-		 * Error cases.  We reset
-		 * the 'join' flag to zero, since we haven't yet
-		 * made use of it.
+		 * Error cases.  We reset the 'join' flag to zero, since we
+		 * haven't yet made use of it.
 		 */
-	      badTypesArg:
+
+	    badTypesArg:
 		TclNewObj(resultPtr);
 		Tcl_AppendToObj(resultPtr, "bad argument to \"-types\": ", -1);
 		Tcl_AppendObjToObj(resultPtr, look);
@@ -1388,7 +1472,8 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		result = TCL_ERROR;
 		join = 0;
 		goto endOfGlob;
-	      badMacTypesArg:
+
+	    badMacTypesArg:
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"only one MacOS type or creator argument"
 			" to \"-types\" allowed", -1));
@@ -1400,14 +1485,15 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Now we perform the actual glob below.  This may involve joining
-     * together the pattern arguments, dealing with particular file types
-     * etc.  We use a 'goto' to ensure we free any memory allocated along
-     * the way.
+     * Now we perform the actual glob below. This may involve joining together
+     * the pattern arguments, dealing with particular file types etc. We use a
+     * 'goto' to ensure we free any memory allocated along the way.
      */
+
     objc -= i;
     objv += i;
     result = TCL_OK;
+
     if (join) {
 	if (dir != PATH_GENERAL) {
 	    Tcl_DStringInit(&prefix);
@@ -1419,48 +1505,52 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
 	}
-	if (TclGlob(interp, Tcl_DStringValue(&prefix), pathOrDir,
-		globFlags, globTypes) != TCL_OK) {
+	if (TclGlob(interp, Tcl_DStringValue(&prefix), pathOrDir, globFlags,
+		globTypes) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto endOfGlob;
 	}
-    } else {
-	if (dir == PATH_GENERAL) {
-	    Tcl_DString str;
-	    for (i = 0; i < objc; i++) {
-		Tcl_DStringInit(&str);
-		if (dir == PATH_GENERAL) {
-		    Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
-			    Tcl_DStringLength(&prefix));
-		}
-		string = Tcl_GetStringFromObj(objv[i], &length);
-		Tcl_DStringAppend(&str, string, length);
-		if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir,
-			globFlags, globTypes) != TCL_OK) {
-		    result = TCL_ERROR;
-		    Tcl_DStringFree(&str);
-		    goto endOfGlob;
-		}
+    } else if (dir == PATH_GENERAL) {
+	Tcl_DString str;
+
+	for (i = 0; i < objc; i++) {
+	    Tcl_DStringInit(&str);
+	    if (dir == PATH_GENERAL) {
+		Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
+			Tcl_DStringLength(&prefix));
 	    }
-	    Tcl_DStringFree(&str);
-	} else {
-	    for (i = 0; i < objc; i++) {
-		string = Tcl_GetString(objv[i]);
-		if (TclGlob(interp, string, pathOrDir,
-			globFlags, globTypes) != TCL_OK) {
-		    result = TCL_ERROR;
-		    goto endOfGlob;
-		}
+	    string = Tcl_GetStringFromObj(objv[i], &length);
+	    Tcl_DStringAppend(&str, string, length);
+	    if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir, globFlags,
+		    globTypes) != TCL_OK) {
+		result = TCL_ERROR;
+		Tcl_DStringFree(&str);
+		goto endOfGlob;
+	    }
+	}
+	Tcl_DStringFree(&str);
+    } else {
+	for (i = 0; i < objc; i++) {
+	    string = Tcl_GetString(objv[i]);
+	    if (TclGlob(interp, string, pathOrDir, globFlags,
+		    globTypes) != TCL_OK) {
+		result = TCL_ERROR;
+		goto endOfGlob;
 	    }
 	}
     }
+
     if ((globFlags & TCL_GLOBMODE_NO_COMPLAIN) == 0) {
 	if (Tcl_ListObjLength(interp, Tcl_GetObjResult(interp),
 		&length) != TCL_OK) {
-	    /* This should never happen.  Maybe we should be more dramatic */
+	    /*
+	     * This should never happen.  Maybe we should be more dramatic.
+	     */
+
 	    result = TCL_ERROR;
 	    goto endOfGlob;
 	}
+
 	if (length == 0) {
 	    Tcl_AppendResult(interp, "no files matched glob pattern",
 		    (join || (objc == 1)) ? " \"" : "s \"", (char *) NULL);
@@ -1479,6 +1569,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    result = TCL_ERROR;
 	}
     }
+
   endOfGlob:
     if (join || (dir == PATH_GENERAL)) {
 	Tcl_DStringFree(&prefix);
@@ -1503,28 +1594,26 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
  *
  * TclGlob --
  *
- *	This procedure prepares arguments for the DoGlob call.
- *	It sets the separator string based on the platform, performs
- *      tilde substitution, and calls DoGlob.
+ *	This procedure prepares arguments for the DoGlob call.  It sets the
+ *	separator string based on the platform, performs * tilde substitution,
+ *	and calls DoGlob.
  *
- *      The interpreter's result, on entry to this function, must
- *      be a valid Tcl list (e.g. it could be empty), since we will
- *      lappend any new results to that list.  If it is not a valid
- *      list, this function will fail to do anything very meaningful.
+ *	The interpreter's result, on entry to this function, must be a valid
+ *	Tcl list (e.g. it could be empty), since we will lappend any new
+ *	results to that list.  If it is not a valid list, this function will
+ *	fail to do anything very meaningful.
  *
- *      Note that if globFlags contains 'TCL_GLOBMODE_TAILS' then
- *      pathPrefix cannot be NULL (it is only allowed with -dir or
- *      -path).
+ *	Note that if globFlags contains 'TCL_GLOBMODE_TAILS' then pathPrefix
+ *	cannot be NULL (it is only allowed with -dir or -path).
  *
  * Results:
- *	The return value is a standard Tcl result indicating whether
- *	an error occurred in globbing.  After a normal return the
- *	result in interp (set by DoGlob) holds all of the file names
- *	given by the pattern and pathPrefix arguments.  After an
- *	error the result in interp will hold an error message, unless
- *	the 'TCL_GLOBMODE_NO_COMPLAIN' flag was given, in which case
- *	an error results in a TCL_OK return leaving the interpreter's
- *	result unmodified.
+ *	The return value is a standard Tcl result indicating whether an error
+ *	occurred in globbing.  After a normal return the result in interp (set
+ *	by DoGlob) holds all of the file names given by the pattern and
+ *	pathPrefix arguments.  After an error the result in interp will hold
+ *	an error message, unless the 'TCL_GLOBMODE_NO_COMPLAIN' flag was
+ *	given, in which case an error results in a TCL_OK return leaving the
+ *	interpreter's result unmodified.
  *
  * Side effects:
  *	The 'pattern' is written to.
@@ -1535,15 +1624,15 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	/* ARGSUSED */
 int
 TclGlob(interp, pattern, pathPrefix, globFlags, types)
-    Tcl_Interp *interp;		/* Interpreter for returning error message
-				 * or appending list of matching file names. */
-    char *pattern;		/* Glob pattern to match. Must not refer
-				 * to a static string. */
+    Tcl_Interp *interp;		/* Interpreter for returning error message or
+				 * appending list of matching file names. */
+    char *pattern;		/* Glob pattern to match. Must not refer to a
+				 * static string. */
     Tcl_Obj *pathPrefix;	/* Path prefix to glob pattern, if non-null,
-                        	 * which is considered literally. */
+				 * which is considered literally. */
     int globFlags;		/* Stores or'ed combination of flags */
-    Tcl_GlobTypeData *types;	/* Struct containing acceptable types.
-				 * May be NULL. */
+    Tcl_GlobTypeData *types;	/* Struct containing acceptable types.  May be
+				 * NULL. */
 {
     char *separators;
     CONST char *head;
@@ -1567,15 +1656,16 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	Tcl_DStringInit(&buffer);
 
 	start = pattern;
+
 	/*
 	 * Perform tilde substitution, if needed.
 	 */
 
 	if (start[0] == '~') {
-
 	    /*
 	     * Find the first path separator after the tilde.
 	     */
+
 	    for (tail = start; *tail != '\0'; tail++) {
 		if (*tail == '\\') {
 		    if (strchr(separators, tail[1]) != NULL) {
@@ -1594,8 +1684,8 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	    *tail = '\0';
 	    if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
 		/*
-		 * We will ignore any error message here, and we
-		 * don't want to mess up the interpreter's result.
+		 * We will ignore any error message here, and we don't want to
+		 * mess up the interpreter's result.
 		 */
 		head = DoTildeSubst(NULL, start+1, &buffer);
 	    } else {
@@ -1613,7 +1703,7 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 		Tcl_DStringAppend(&buffer, head, -1);
 	    }
 	    pathPrefix = Tcl_NewStringObj(Tcl_DStringValue(&buffer),
-					  Tcl_DStringLength(&buffer));
+		    Tcl_DStringLength(&buffer));
 	    Tcl_IncrRefCount(pathPrefix);
 	    globFlags |= TCL_GLOBMODE_DIR;
 	    if (c != '\0') {
@@ -1630,13 +1720,12 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 
     /*
      * Handling empty path prefixes with glob patterns like 'C:' or
-     * 'c:////////' is a pain on Windows if we leave it too late, since
-     * these aren't really patterns at all!  We therefore check the head
-     * of the pattern now for such cases, if we don't have an unquoted
-     * prefix yet.
+     * 'c:////////' is a pain on Windows if we leave it too late, since these
+     * aren't really patterns at all!  We therefore check the head of the
+     * pattern now for such cases, if we don't have an unquoted prefix yet.
      *
-     * Similarly on Unix with '/' at the head of the pattern -- it
-     * just indicates the root volume, so we treat it as such.
+     * Similarly on Unix with '/' at the head of the pattern -- it just
+     * indicates the root volume, so we treat it as such.
      */
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
@@ -1666,20 +1755,21 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	    Tcl_IncrRefCount(pathPrefix);
 	} else if (pathPrefix == NULL && (tail[0] == '/'
 		|| (tail[0] == '\\' && tail[1] == '\\'))) {
-            int driveNameLen;
-            Tcl_Obj *driveName;
-            Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
-            Tcl_IncrRefCount(temp);
+	    int driveNameLen;
+	    Tcl_Obj *driveName;
+	    Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
+	    Tcl_IncrRefCount(temp);
 
-            switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
+	    switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
 	    case TCL_PATH_VOLUME_RELATIVE: {
 		/*
-		 * Volume relative path which is equivalent to a path in
-		 * the root of the cwd's volume.  We will actually return
+		 * Volume relative path which is equivalent to a path in the
+		 * root of the cwd's volume.  We will actually return
 		 * non-volume-relative paths here. i.e. 'glob /foo*' will
-		 * return 'C:/foobar'.  This is much the same as globbing
-		 * for a path with '\\' will return one with '/' on Windows.
+		 * return 'C:/foobar'.  This is much the same as globbing for
+		 * a path with '\\' will return one with '/' on Windows.
 		 */
+
 		Tcl_Obj *cwd = Tcl_FSGetCwd(interp);
 
 		if (cwd == NULL) {
@@ -1702,24 +1792,27 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	    }
 	    case TCL_PATH_ABSOLUTE:
 		/*
-		 * Absolute, possibly network path //Machine/Share.
-		 * Use that as the path prefix (it already has a
-		 * refCount).
+		 * Absolute, possibly network path //Machine/Share. Use that
+		 * as the path prefix (it already has a refCount).
 		 */
+
 		pathPrefix = driveName;
 		tail += driveNameLen;
 		break;
 	    case TCL_PATH_RELATIVE:
 		/* Do nothing */
 		break;
-            }
-            Tcl_DecrRefCount(temp);
+	    }
+	    Tcl_DecrRefCount(temp);
 	}
+
 	/*
-	 * ':' no longer needed as a separator. It is only relevant
-	 * to the beginning of the path.
+	 * ':' no longer needed as a separator. It is only relevant to the
+	 * beginning of the path.
 	 */
+
 	separators = "/\\";
+
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
 	if (pathPrefix == NULL && tail[0] == '/') {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
@@ -1729,8 +1822,8 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
     }
 
     /*
-     * Finally if we still haven't managed to generate a path
-     * prefix, check if the path starts with a current volume.
+     * Finally if we still haven't managed to generate a path prefix, check if
+     * the path starts with a current volume.
      */
 
     if (pathPrefix == NULL) {
@@ -1744,10 +1837,10 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
     }
 
     /*
-     * To process a [glob] invokation, this function may be called
-     * multiple times. Each time, the previously discovered filenames
-     * are in the interpreter result. We stash that away here so the
-     * result is free for error messsages.
+     * To process a [glob] invokation, this function may be called multiple
+     * times. Each time, the previously discovered filenames are in the
+     * interpreter result. We stash that away here so the result is free for
+     * error messsages.
      */
 
     savedResultObj = Tcl_GetObjResult(interp);
@@ -1756,8 +1849,8 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
     TclNewObj(filenamesObj);
 
     /*
-     * Now we do the actual globbing, adding filenames as we go to
-     * buffer in filenamesObj
+     * Now we do the actual globbing, adding filenames as we go to buffer in
+     * filenamesObj
      */
 
     if (*tail == '\0' && pathPrefix != NULL) {
@@ -1787,13 +1880,12 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
     }
 
     /*
-     * If we only want the tails, we must strip off the prefix now.
-     * It may seem more efficient to pass the tails flag down into
-     * DoGlob, Tcl_FSMatchInDirectory, but those functions are
-     * continually adjusting the prefix as the various pieces of
-     * the pattern are assimilated, so that would add a lot of
-     * complexity to the code.  This way is a little slower (when
-     * the -tails flag is given), but much simpler to code.
+     * If we only want the tails, we must strip off the prefix now.  It may
+     * seem more efficient to pass the tails flag down into DoGlob,
+     * Tcl_FSMatchInDirectory, but those functions are continually adjusting
+     * the prefix as the various pieces of the pattern are assimilated, so
+     * that would add a lot of complexity to the code.  This way is a little
+     * slower (when the -tails flag is given), but much simpler to code.
      *
      * We do it by rewriting the result list in-place.
      */
@@ -1803,21 +1895,21 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	Tcl_Obj **objv;
 	int prefixLen;
 
-	/* If this length has never been set, set it here */
+	/*
+	 * If this length has never been set, set it here.
+	 */
+
 	CONST char *pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
-	if (prefixLen > 0 
-	  && (strchr(separators, pre[prefixLen-1]) == NULL)) {
-	      
-	    /* 
-	     * If we're on Windows and the prefix is a volume
-	     * relative one like 'C:', then there won't be
-	     * a path separator in between, so no need to
-	     * skip it here.
+	if (prefixLen > 0
+		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
+	    /*
+	     * If we're on Windows and the prefix is a volume relative one
+	     * like 'C:', then there won't be a path separator in between, so
+	     * no need to skip it here.
 	     */
-	    
-	    if ((tclPlatform != TCL_PLATFORM_WINDOWS) 
-		|| (prefixLen != 2) 
-		|| (pre[1] != ':')) {
+
+	    if ((tclPlatform != TCL_PLATFORM_WINDOWS) || (prefixLen != 2)
+		    || (pre[1] != ':')) {
 		prefixLen++;
 	    }
 	}
@@ -1836,18 +1928,16 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 		    elems[0] = Tcl_NewStringObj("/", 1);
 		}
 	    } else {
-		elems[0] = Tcl_NewStringObj(oldStr + prefixLen,
-			len - prefixLen);
+		elems[0] = Tcl_NewStringObj(oldStr+prefixLen, len-prefixLen);
 	    }
 	    Tcl_ListObjReplace(interp, filenamesObj, i, 1, 1, elems);
 	}
     }
 
     /*
-     * Now we have a list of discovered filenames in filenamesObj and
-     * a list of previously discovered (saved earlier from the
-     * interpreter result) in savedResultObj. Merge them and put them
-     * back in the interpreter result.
+     * Now we have a list of discovered filenames in filenamesObj and a list
+     * of previously discovered (saved earlier from the interpreter result) in
+     * savedResultObj. Merge them and put them back in the interpreter result.
      */
 
     if (Tcl_IsShared(savedResultObj)) {
@@ -1871,14 +1961,13 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
  *
  * SkipToChar --
  *
- *	This function traverses a glob pattern looking for the next
- *	unquoted occurance of the specified character at the same braces
- *	nesting level.
+ *	This function traverses a glob pattern looking for the next unquoted
+ *	occurance of the specified character at the same braces nesting level.
  *
  * Results:
- *	Updates stringPtr to point to the matching character, or to
- *	the end of the string if nothing matched.  The return value
- *	is 1 if a match was found at the top level, otherwise it is 0.
+ *	Updates stringPtr to point to the matching character, or to the end of
+ *	the string if nothing matched.  The return value is 1 if a match was
+ *	found at the top level, otherwise it is 0.
  *
  * Side effects:
  *	None.
@@ -1923,22 +2012,21 @@ SkipToChar(stringPtr, match)
  *
  * DoGlob --
  *
- *	This recursive procedure forms the heart of the globbing code.
- *	It performs a depth-first traversal of the tree given by the
- *	path name to be globbed and the pattern.  The directory and
- *	remainder are assumed to be native format paths.  The prefix
- *	contained in 'pathPtr' is either a directory or path from which
- *	to start the search (or NULL).  If pathPtr is NULL, then the
- *	pattern must not start with an absolute path specification
- *	(that case should be handled by moving the absolute path
+ *	This recursive procedure forms the heart of the globbing code. It
+ *	performs a depth-first traversal of the tree given by the path name to
+ *	be globbed and the pattern. The directory and remainder are assumed to
+ *	be native format paths. The prefix contained in 'pathPtr' is either a
+ *	directory or path from which to start the search (or NULL). If pathPtr
+ *	is NULL, then the pattern must not start with an absolute path
+ *	specification (that case should be handled by moving the absolute path
  *	prefix into pathPtr before calling DoGlob).
  *
  * Results:
- *	The return value is a standard Tcl result indicating whether
- *	an error occurred in globbing.  After a normal return the
- *	result in interp will be set to hold all of the file names
- *	given by the dir and remaining arguments.  After an error the
- *	result in interp will hold an error message.
+ *	The return value is a standard Tcl result indicating whether an error
+ *	occurred in globbing.  After a normal return the result in interp will
+ *	be set to hold all of the file names given by the dir and remaining
+ *	arguments.  After an error the result in interp will hold an error
+ *	message.
  *
  * Side effects:
  *	None.
@@ -1954,14 +2042,13 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 				 * resulting filenames. Caller allocates and
 				 * deallocates; DoGlob must not touch the
 				 * refCount of this object. */
-    char *separators;		/* String containing separator characters
-				 * that should be used to identify globbing
+    char *separators;		/* String containing separator characters that
+				 * should be used to identify globbing
 				 * boundaries. */
-    Tcl_Obj *pathPtr;	        /* Completely expanded prefix. */
-    int flags;                  /* If non-zero then pathPtr is a
-                                 * directory */
-    char *pattern;		/* The pattern to match against.
-				 * Must not be a pointer to a static string. */
+    Tcl_Obj *pathPtr;		/* Completely expanded prefix. */
+    int flags;			/* If non-zero then pathPtr is a directory */
+    char *pattern;		/* The pattern to match against.  Must not be
+				 * a pointer to a static string. */
     Tcl_GlobTypeData *types;	/* List object containing list of acceptable
 				 * types. May be NULL. */
 {
@@ -1971,8 +2058,8 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     Tcl_Obj *joinedPtr;
 
     /*
-     * Consume any leading directory separators, leaving pattern pointing
-     * just past the last initial separator.
+     * Consume any leading directory separators, leaving pattern pointing just
+     * past the last initial separator.
      */
 
     count = 0;
@@ -1982,10 +2069,11 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	    /*
 	     * If the first character is escaped, either we have a directory
 	     * separator, or we have any other character.  In the latter case
-	     * the rest is a pattern, and we must break from the loop.
-	     * This is particularly important on Windows where '\' is both
-	     * the escaping character and a directory separator.
+	     * the rest is a pattern, and we must break from the loop.  This
+	     * is particularly important on Windows where '\' is both the
+	     * escaping character and a directory separator.
 	     */
+
 	    if (strchr(separators, pattern[1]) != NULL) {
 		pattern++;
 	    } else {
@@ -1998,22 +2086,23 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     }
 
     /*
-     * This block of code is not exercised by the Tcl test suite as of
-     * Tcl 8.5a0.  Simplifications to the calling paths suggest it may
-     * not be necessary any more, since path separators are handled
-     * elsewhere.  It is left in place in case new bugs are reported
+     * This block of code is not exercised by the Tcl test suite as of Tcl
+     * 8.5a0.  Simplifications to the calling paths suggest it may not be
+     * necessary any more, since path separators are handled elsewhere.  It is
+     * left in place in case new bugs are reported
      */
 
 #if 0 /* PROBABLY_OBSOLETE */
     /*
      * Deal with path separators.
      */
+
     if (pathPtr == NULL) {
 	/*
-	 * Length used to be the length of the prefix, and lastChar
-	 * the lastChar of the prefix.  But, none of this is used
-	 * any more.
+	 * Length used to be the length of the prefix, and lastChar the
+	 * lastChar of the prefix.  But, none of this is used any more.
 	 */
+
 	int length = 0;
 	char lastChar = 0;
 
@@ -2021,9 +2110,9 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	case TCL_PLATFORM_WINDOWS:
 	    /*
 	     * If this is a drive relative path, add the colon and the
-	     * trailing slash if needed.  Otherwise add the slash if
-	     * this is the first absolute element, or a later relative
-	     * element.  Add an extra slash if this is a UNC path.
+	     * trailing slash if needed.  Otherwise add the slash if this is
+	     * the first absolute element, or a later relative element.  Add
+	     * an extra slash if this is a UNC path.
 	     */
 
 	    if (*name == ':') {
@@ -2043,8 +2132,8 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	    break;
 	case TCL_PLATFORM_UNIX:
 	    /*
-	     * Add a separator if this is the first absolute element, or
-	     * a later relative element.
+	     * Add a separator if this is the first absolute element, or a
+	     * later relative element.
 	     */
 
 	    if ((*pattern != '\0') && (((length > 0)
@@ -2058,8 +2147,8 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 #endif /* PROBABLY_OBSOLETE */
 
     /*
-     * Look for the first matching pair of braces or the first
-     * directory separator that is not inside a pair of braces.
+     * Look for the first matching pair of braces or the first directory
+     * separator that is not inside a pair of braces.
      */
 
     openBrace = closeBrace = NULL;
@@ -2067,26 +2156,37 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     for (p = pattern; *p != '\0'; p++) {
 	if (quoted) {
 	    quoted = 0;
+
 	} else if (*p == '\\') {
 	    quoted = 1;
 	    if (strchr(separators, p[1]) != NULL) {
-		/* Quoted directory separator. */
+		/*
+		 * Quoted directory separator.
+		 */
 		break;
 	    }
+
 	} else if (strchr(separators, *p) != NULL) {
-	    /* Unquoted directory separator. */
+	    /*
+	     * Unquoted directory separator.
+	     */
 	    break;
+
 	} else if (*p == '{') {
 	    openBrace = p;
 	    p++;
 	    if (SkipToChar(&p, '}')) {
-		/* Balanced braces. */
+		/*
+		 * Balanced braces.
+		 */
+
 		closeBrace = p;
 		break;
 	    }
 	    Tcl_SetResult(interp, "unmatched open-brace in file name",
 		    TCL_STATIC);
 	    return TCL_ERROR;
+
 	} else if (*p == '}') {
 	    Tcl_SetResult(interp, "unmatched close-brace in file name",
 		    TCL_STATIC);
@@ -2105,9 +2205,9 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	Tcl_DStringInit(&newName);
 
 	/*
-	 * For each element within in the outermost pair of braces,
-	 * append the element and the remainder to the fixed portion
-	 * before the first brace and recursively call DoGlob.
+	 * For each element within in the outermost pair of braces, append the
+	 * element and the remainder to the fixed portion before the first
+	 * brace and recursively call DoGlob.
 	 */
 
 	Tcl_DStringAppend(&newName, pattern, openBrace-pattern);
@@ -2132,27 +2232,27 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     }
 
     /*
-     * At this point, there are no more brace substitutions to perform on
-     * this path component.  The variable p is pointing at a quoted or
-     * unquoted directory separator or the end of the string.  So we need
-     * to check for special globbing characters in the current pattern.
-     * We avoid modifying pattern if p is pointing at the end of the string.
+     * At this point, there are no more brace substitutions to perform on this
+     * path component. The variable p is pointing at a quoted or unquoted
+     * directory separator or the end of the string. So we need to check for
+     * special globbing characters in the current pattern. We avoid modifying
+     * pattern if p is pointing at the end of the string.
      *
      * If we find any globbing characters, then we must call
-     * Tcl_FSMatchInDirectory.  If we're at the end of the string, then
-     * that's all we need to do.  If we're not at the end of the
-     * string, then we must recurse, so we do that below.
+     * Tcl_FSMatchInDirectory. If we're at the end of the string, then that's
+     * all we need to do. If we're not at the end of the string, then we must
+     * recurse, so we do that below.
      *
-     * Alternatively, if there are no globbing characters then again
-     * there are two cases.  If we're at the end of the string, we just
-     * need to check for the given path's existence and type.  If we're
-     * not at the end of the string, we recurse.
+     * Alternatively, if there are no globbing characters then again there are
+     * two cases. If we're at the end of the string, we just need to check for
+     * the given path's existence and type. If we're not at the end of the
+     * string, we recurse.
      */
 
     if (*p != '\0') {
 	/*
-	 * Note that we are modifying the string in place.  This won't work
-	 * if the string is a static.
+	 * Note that we are modifying the string in place. This won't work if
+	 * the string is a static.
 	 */
 
 	char savedChar = *p;
@@ -2165,10 +2265,9 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 
     if (firstSpecialChar != NULL) {
 	/*
-	 * Look for matching files in the given directory.  The
-	 * implementation of this function is filesystem specific.  For
-	 * each file that matches, it will add the match onto the
-	 * resultPtr given.
+	 * Look for matching files in the given directory. The implementation
+	 * of this function is filesystem specific. For each file that
+	 * matches, it will add the match onto the resultPtr given.
 	 */
 
 	static Tcl_GlobTypeData dirOnly = {
@@ -2183,7 +2282,7 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	}
 
 	/*
-	 * We do the recursion ourselves.  This makes implementing
+	 * We do the recursion ourselves. This makes implementing
 	 * Tcl_FSMatchInDirectory for each filesystem much easier.
 	 */
 
@@ -2215,13 +2314,13 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	/*
 	 * This is the code path reached by a command like 'glob foo'.
 	 *
-	 * There are no more wildcards in the pattern and no more
-	 * unprocessed characters in the pattern, so now we can construct
-	 * the path, and pass it to Tcl_FSMatchInDirectory with an
-	 * empty pattern to verify the existence of the file and check
-	 * it is of the correct type (if a 'types' flag it given -- if
-	 * no such flag was given, we could just use 'Tcl_FSLStat', but
-	 * for simplicity we keep to a common approach).
+	 * There are no more wildcards in the pattern and no more unprocessed
+	 * characters in the pattern, so now we can construct the path, and
+	 * pass it to Tcl_FSMatchInDirectory with an empty pattern to verify
+	 * the existence of the file and check it is of the correct type (if a
+	 * 'types' flag it given -- if no such flag was given, we could just
+	 * use 'Tcl_FSLStat', but for simplicity we keep to a common
+	 * approach).
 	 */
 
 	int length;
@@ -2246,6 +2345,7 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 		    Tcl_DStringAppend(&append, ".", 1);
 		}
 	    }
+
 #if defined(__CYGWIN__) && defined(__WIN32__)
 	    {
 		extern int cygwin_conv_to_win32_path(CONST char *, char *);
@@ -2257,6 +2357,7 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	    }
 #endif /* __CYGWIN__ && __WIN32__ */
 	    break;
+
 	case TCL_PLATFORM_UNIX:
 	    if (length == 0 && (Tcl_DStringLength(&append) == 0)) {
 		if ((*name == '\\' && name[1] == '/') || (*name == '/')) {
@@ -2267,7 +2368,11 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	    }
 	    break;
 	}
-	/* Common for all platforms */
+
+	/*
+	 * Common for all platforms.
+	 */
+
 	if (pathPtr == NULL) {
 	    joinedPtr = Tcl_NewStringObj(Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));
@@ -2277,9 +2382,13 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	} else {
 	    joinedPtr = Tcl_DuplicateObj(pathPtr);
 	    if (strchr(separators, Tcl_DStringValue(&append)[0]) == NULL) {
-		/* The current prefix must end in a separator */
+		/*
+		 * The current prefix must end in a separator.
+		 */
+
 		int len;
 		CONST char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+
 		if (strchr(separators, joined[len-1]) == NULL) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}
@@ -2305,16 +2414,17 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     } else {
 	joinedPtr = Tcl_DuplicateObj(pathPtr);
 	if (strchr(separators, pattern[0]) == NULL) {
-	    /* 
-	     * The current prefix must end in a separator, unless
-	     * this is a volume-relative path.  In particular
-	     * globbing in Windows shares, when not using -dir
-	     * or -path, e.g. 'glob [file join //machine/share/subdir *]'
- 	     * requires adding a separator here.  This behaviour
- 	     * is not currently tested for in the test suite.
+	    /*
+	     * The current prefix must end in a separator, unless this is a
+	     * volume-relative path.  In particular globbing in Windows
+	     * shares, when not using -dir or -path, e.g. 'glob [file join
+	     * //machine/share/subdir *]' requires adding a separator here.
+	     * This behaviour is not currently tested for in the test suite.
 	     */
+
 	    int len;
 	    CONST char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+
 	    if (strchr(separators, joined[len-1]) == NULL) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
@@ -2336,16 +2446,16 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
  *
  * Tcl_AllocStatBuf --
  *
- *     This procedure allocates a Tcl_StatBuf on the heap.  It exists
- *     so that extensions may be used unchanged on systems where
- *     largefile support is optional.
+ *	This procedure allocates a Tcl_StatBuf on the heap.  It exists so that
+ *	extensions may be used unchanged on systems where largefile support is
+ *	optional.
  *
  * Results:
- *     A pointer to a Tcl_StatBuf which may be deallocated by being
- *     passed to ckfree().
+ *	A pointer to a Tcl_StatBuf which may be deallocated by being passed to
+ *	ckfree().
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *---------------------------------------------------------------------------
  */
@@ -2354,3 +2464,11 @@ Tcl_StatBuf *
 Tcl_AllocStatBuf() {
     return (Tcl_StatBuf *) ckalloc(sizeof(Tcl_StatBuf));
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

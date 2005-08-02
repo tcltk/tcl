@@ -1,26 +1,27 @@
-/* 
+/*
  * tclUnixChan.c
  *
- *	Common channel driver for Unix channels based on files, command
- *	pipes and TCP sockets.
+ *	Common channel driver for Unix channels based on files, command pipes
+ *	and TCP sockets.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.53.2.4 2005/07/12 20:37:30 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.53.2.5 2005/08/02 18:16:55 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
 /*
- * sys/ioctl.h has already been included by tclPort.h.	Including termios.h
- * or termio.h causes a bunch of warning messages because some duplicate
- * (but not contradictory) #defines exist in termios.h and/or termio.h
+ * sys/ioctl.h has already been included by tclPort.h. Including termios.h or
+ * termio.h causes a bunch of warning messages because some duplicate (but not
+ * contradictory) #defines exist in termios.h and/or termio.h
  */
+
 #undef NL0
 #undef NL1
 #undef CR0
@@ -63,16 +64,17 @@
 #   define SETIOSTATE(fd, statePtr)	tcsetattr((fd), TCSADRAIN, (statePtr))
 #   define GETCONTROL(fd, intPtr)	ioctl((fd), TIOCMGET, (intPtr))
 #   define SETCONTROL(fd, intPtr)	ioctl((fd), TIOCMSET, (intPtr))
+
     /*
      * TIP #35 introduced a different on exit flush/close behavior that
-     * doesn't work correctly with standard channels on all systems.
-     * The problem is tcflush throws away waiting channel data.	 This may
-     * be necessary for true serial channels that may block, but isn't
-     * correct in the standard case.  This might be replaced with tcdrain
-     * instead, but that can block.  For now, we revert to making this do
-     * nothing, and TtyOutputProc being the same old FileOutputProc.
-     * -- hobbs [Bug #525783]
+     * doesn't work correctly with standard channels on all systems. The
+     * problem is tcflush throws away waiting channel data. This may be
+     * necessary for true serial channels that may block, but isn't correct in
+     * the standard case. This might be replaced with tcdrain instead, but
+     * that can block. For now, we revert to making this do nothing, and
+     * TtyOutputProc being the same old FileOutputProc. - hobbs [Bug #525783]
      */
+
 #   define BAD_TIP35_FLUSH 0
 #   if BAD_TIP35_FLUSH
 #	define TTYFLUSH(fd)		tcflush((fd), TCIOFLUSH);
@@ -88,10 +90,12 @@
 #	define GETWRITEQUEUE(fd, int)	ioctl((fd), TIOCOUTQ, &(int))
 #   endif /* TIOCOUTQ */
 #   if defined(TIOCSBRK) && defined(TIOCCBRK)
+
 /*
- * Can't use ?: operator below because that messes up types on either
- * Linux or Solaris (the two are mutually exclusive!)
+ * Can't use ?: operator below because that messes up types on either Linux or
+ * Solaris (the two are mutually exclusive!)
  */
+
 #	define SETBREAK(fd, flag) \
 		if (flag) {				\
 		    ioctl((fd), TIOCSBRK, NULL);	\
@@ -143,17 +147,17 @@ typedef struct FileState {
  */
 
 typedef struct TtyState {
-    FileState fs;		/* Per-instance state of the file
-				 * descriptor.	Must be the first field. */
-    int stateUpdated;		/* Flag to say if the state has been
-				 * modified and needs resetting. */
-    IOSTATE savedState;		/* Initial state of device.  Used to reset
+    FileState fs;		/* Per-instance state of the file descriptor.
+				 * Must be the first field. */
+    int stateUpdated;		/* Flag to say if the state has been modified
+				 * and needs resetting. */
+    IOSTATE savedState;		/* Initial state of device. Used to reset
 				 * state when device closed. */
 } TtyState;
 
 /*
- * The following structure is used to set or get the serial port
- * attributes in a platform-independant manner.
+ * The following structure is used to set or get the serial port attributes in
+ * a platform-independant manner.
  */
 
 typedef struct TtyAttrs {
@@ -166,10 +170,10 @@ typedef struct TtyAttrs {
 #endif	/* !SUPPORTS_TTY */
 
 #define UNSUPPORTED_OPTION(detail) \
-	if (interp) {							\
-	    Tcl_AppendResult(interp, (detail),				\
-		    " not supported for this platform", (char *) NULL); \
-	}
+    if (interp) {							\
+	Tcl_AppendResult(interp, (detail),				\
+	    " not supported for this platform", (char *) NULL);		\
+    }
 
 /*
  * This structure describes per-instance state of a tcp based channel.
@@ -178,8 +182,8 @@ typedef struct TtyAttrs {
 typedef struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
     int fd;			/* The socket itself. */
-    int flags;			/* ORed combination of the bitfields
-				 * defined below. */
+    int flags;			/* ORed combination of the bitfields defined
+				 * below. */
     Tcl_TcpAcceptProc *acceptProc;
 				/* Proc to call on accept. */
     ClientData acceptProcData;	/* The data for the accept proc. */
@@ -194,10 +198,10 @@ typedef struct TcpState {
 #define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
 
 /*
- * The following defines the maximum length of the listen queue. This is
- * the number of outstanding yet-to-be-serviced requests for a connection
- * on a server socket, more than this number of outstanding requests and
- * the connection request will fail.
+ * The following defines the maximum length of the listen queue. This is the
+ * number of outstanding yet-to-be-serviced requests for a connection on a
+ * server socket, more than this number of outstanding requests and the
+ * connection request will fail.
  */
 
 #ifndef SOMAXCONN
@@ -210,8 +214,8 @@ typedef struct TcpState {
 #endif /* SOMAXCONN < 100 */
 
 /*
- * The following defines how much buffer space the kernel should maintain
- * for a socket.
+ * The following defines how much buffer space the kernel should maintain for
+ * a socket.
  */
 
 #define SOCKET_BUFSIZE	4096
@@ -240,7 +244,7 @@ static int		FileOutputProc _ANSI_ARGS_((
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 #ifdef DEPRECATED
-static void             FileThreadActionProc _ANSI_ARGS_ ((
+static void		FileThreadActionProc _ANSI_ARGS_ ((
 			    ClientData instanceData, int action));
 #endif
 static int		FileTruncateProc _ANSI_ARGS_ ((ClientData instanceData,
@@ -292,7 +296,7 @@ static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
 static void		TtySetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
 static int		TtySetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, CONST char *optionName, 
+			    Tcl_Interp *interp, CONST char *optionName,
 			    CONST char *value));
 #endif	/* SUPPORTS_TTY */
 static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
@@ -323,7 +327,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* wide seek proc. */
 #ifdef DEPRECATED
-    FileThreadActionProc,       /* thread actions */
+    FileThreadActionProc,	/* thread actions */
 #else
     NULL,
 #endif
@@ -385,15 +389,14 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,			/* thread action proc. */
     NULL,			/* truncate proc. */
 };
-
 
 /*
  *----------------------------------------------------------------------
  *
  * FileBlockModeProc --
  *
- *	Helper procedure to set blocking and nonblocking modes on a
- *	file based channel. Invoked by generic IO level code.
+ *	Helper function to set blocking and nonblocking modes on a file based
+ *	channel. Invoked by generic IO level code.
  *
  * Results:
  *	0 if successful, errno when failed.
@@ -407,10 +410,10 @@ static Tcl_ChannelType tcpChannelType = {
 	/* ARGSUSED */
 static int
 FileBlockModeProc(instanceData, mode)
-    ClientData instanceData;		/* File state. */
-    int mode;				/* The mode to set. Can be one of
-					 * TCL_MODE_BLOCKING or
-					 * TCL_MODE_NONBLOCKING. */
+    ClientData instanceData;	/* File state. */
+    int mode;			/* The mode to set. Can be one of
+				 * TCL_MODE_BLOCKING or
+				 * TCL_MODE_NONBLOCKING. */
 {
     FileState *fsPtr = (FileState *) instanceData;
     int curStatus;
@@ -444,8 +447,8 @@ FileBlockModeProc(instanceData, mode)
  *
  * FileInputProc --
  *
- *	This procedure is invoked from the generic IO level to read
- *	input from a file based channel.
+ *	This function is invoked from the generic IO level to read input from
+ *	a file based channel.
  *
  * Results:
  *	The number of bytes read is returned or -1 on error. An output
@@ -459,15 +462,15 @@ FileBlockModeProc(instanceData, mode)
 
 static int
 FileInputProc(instanceData, buf, toRead, errorCodePtr)
-    ClientData instanceData;		/* File state. */
-    char *buf;				/* Where to store data read. */
-    int toRead;				/* How much space is available
-					 * in the buffer? */
-    int *errorCodePtr;			/* Where to store error code. */
+    ClientData instanceData;	/* File state. */
+    char *buf;			/* Where to store data read. */
+    int toRead;			/* How much space is available in the
+				 * buffer? */
+    int *errorCodePtr;		/* Where to store error code. */
 {
     FileState *fsPtr = (FileState *) instanceData;
-    int bytesRead;			/* How many bytes were actually
-					 * read from the input device? */
+    int bytesRead;		/* How many bytes were actually read from the
+				 * input device? */
 
     *errorCodePtr = 0;
 
@@ -491,13 +494,12 @@ FileInputProc(instanceData, buf, toRead, errorCodePtr)
  *
  * FileOutputProc--
  *
- *	This procedure is invoked from the generic IO level to write
- *	output to a file channel.
+ *	This function is invoked from the generic IO level to write output to
+ *	a file channel.
  *
  * Results:
- *	The number of bytes written is returned or -1 on error. An
- *	output argument contains a POSIX error code if an error occurred,
- *	or zero.
+ *	The number of bytes written is returned or -1 on error. An output
+ *	argument contains a POSIX error code if an error occurred, or zero.
  *
  * Side effects:
  *	Writes output on the output device of the channel.
@@ -507,10 +509,10 @@ FileInputProc(instanceData, buf, toRead, errorCodePtr)
 
 static int
 FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
-    ClientData instanceData;		/* File state. */
-    CONST char *buf;			/* The data buffer. */
-    int toWrite;			/* How many bytes to write? */
-    int *errorCodePtr;			/* Where to store error code. */
+    ClientData instanceData;	/* File state. */
+    CONST char *buf;		/* The data buffer. */
+    int toWrite;		/* How many bytes to write? */
+    int *errorCodePtr;		/* Where to store error code. */
 {
     FileState *fsPtr = (FileState *) instanceData;
     int written;
@@ -519,9 +521,8 @@ FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
 
     if (toWrite == 0) {
 	/*
-	 * SF Tcl Bug 465765.
-	 * Do not try to write nothing into a file. STREAM based
-	 * implementations will considers this as EOF (if there is a
+	 * SF Tcl Bug 465765. Do not try to write nothing into a file. STREAM
+	 * based implementations will considers this as EOF (if there is a
 	 * pipe behind the file).
 	 */
 
@@ -540,7 +541,7 @@ FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
  *
  * FileCloseProc --
  *
- *	This procedure is called from the generic IO level to perform
+ *	This function is called from the generic IO level to perform
  *	channel-type-specific cleanup when a file based channel is closed.
  *
  * Results:
@@ -581,8 +582,8 @@ FileCloseProc(instanceData, interp)
  *
  * FileSeekProc --
  *
- *	This procedure is called by the generic IO level to move the
- *	access point in a file based channel.
+ *	This function is called by the generic IO level to move the access
+ *	point in a file based channel.
  *
  * Results:
  *	-1 if failed, the new position if successful. An output
@@ -610,20 +611,23 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     /*
      * Save our current place in case we need to roll-back the seek.
      */
+
     oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
     if (oldLoc == Tcl_LongAsWide(-1)) {
 	/*
 	 * Bad things are happening.  Error out...
 	 */
+
 	*errorCodePtr = errno;
 	return -1;
     }
- 
+
     newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
- 
+
     /*
      * Check for expressability in our return type, and roll-back otherwise.
      */
+
     if (newLoc > Tcl_LongAsWide(INT_MAX)) {
 	*errorCodePtr = EOVERFLOW;
 	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
@@ -639,9 +643,9 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
  *
  * FileWideSeekProc --
  *
- *	This procedure is called by the generic IO level to move the
- *	access point in a file based channel, with offsets expressed
- *	as wide integers.
+ *	This function is called by the generic IO level to move the access
+ *	point in a file based channel, with offsets expressed as wide
+ *	integers.
  *
  * Results:
  *	-1 if failed, the new position if successful. An output
@@ -719,12 +723,12 @@ FileWatchProc(instanceData, mask)
  *
  * FileGetHandleProc --
  *
- *	Called from Tcl_GetChannelHandle to retrieve OS handles from
- *	a file based channel.
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from a file
+ *	based channel.
  *
  * Results:
- *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if
- *	there is no handle for the specified direction. 
+ *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if there is no
+ *	handle for the specified direction.
  *
  * Side effects:
  *	None.
@@ -748,14 +752,14 @@ FileGetHandleProc(instanceData, direction, handlePtr)
     }
 }
 
-#ifdef SUPPORTS_TTY 
+#ifdef SUPPORTS_TTY
 
 /*
  *----------------------------------------------------------------------
  *
  * TtyCloseProc --
  *
- *	This procedure is called from the generic IO level to perform
+ *	This function is called from the generic IO level to perform
  *	channel-type-specific cleanup when a tty based channel is closed.
  *
  * Results:
@@ -774,24 +778,26 @@ TtyCloseProc(instanceData, interp)
 #if BAD_TIP35_FLUSH
     TtyState *ttyPtr = (TtyState *) instanceData;
 #endif /* BAD_TIP35_FLUSH */
+
 #ifdef TTYFLUSH
     TTYFLUSH(ttyPtr->fs.fd);
 #endif /* TTYFLUSH */
+
 #if 0
     /*
-     * TIP#35 agreed to remove the unsave so that TCL could be used as a 
-     * simple stty. 
-     * It would be cleaner to remove all the stuff related to 
+     * TIP#35 agreed to remove the unsave so that TCL could be used as a
+     * simple stty. It would be cleaner to remove all the stuff related to
      *	  TtyState.stateUpdated
      *	  TtyState.savedState
-     * Then the structure TtyState would be the same as FileState.
-     * IMO this cleanup could better be done for the final 8.4 release
-     * after nobody complained about the missing unsave. -- schroedter
+     * Then the structure TtyState would be the same as FileState. IMO this
+     * cleanup could better be done for the final 8.4 release after nobody
+     * complained about the missing unsave. - schroedter
      */
     if (ttyPtr->stateUpdated) {
 	SETIOSTATE(ttyPtr->fs.fd, &ttyPtr->savedState);
     }
 #endif
+
     return FileCloseProc(instanceData, interp);
 }
 
@@ -800,17 +806,16 @@ TtyCloseProc(instanceData, interp)
  *
  * TtyOutputProc--
  *
- *	This procedure is invoked from the generic IO level to write
- *	output to a TTY channel.
+ *	This function is invoked from the generic IO level to write output to
+ *	a TTY channel.
  *
  * Results:
- *	The number of bytes written is returned or -1 on error. An
- *	output argument contains a POSIX error code if an error occurred,
- *	or zero.
+ *	The number of bytes written is returned or -1 on error. An output
+ *	argument contains a POSIX error code if an error occurred, or zero.
  *
  * Side effects:
- *	Writes output on the output device of the channel
- *	if the channel is not designated to be closed.
+ *	Writes output on the output device of the channel if the channel is
+ *	not designated to be closed.
  *
  *----------------------------------------------------------------------
  */
@@ -818,16 +823,17 @@ TtyCloseProc(instanceData, interp)
 #if BAD_TIP35_FLUSH
 static int
 TtyOutputProc(instanceData, buf, toWrite, errorCodePtr)
-    ClientData instanceData;		/* File state. */
-    CONST char *buf;			/* The data buffer. */
-    int toWrite;			/* How many bytes to write? */
-    int *errorCodePtr;			/* Where to store error code. */
+    ClientData instanceData;	/* File state. */
+    CONST char *buf;		/* The data buffer. */
+    int toWrite;		/* How many bytes to write? */
+    int *errorCodePtr;		/* Where to store error code. */
 {
     if (TclInExit()) {
 	/*
-	 * Do not write data during Tcl exit.
-	 * Serial port may block preventing Tcl from exit.
+	 * Do not write data during Tcl exit.  Serial port may block
+	 * preventing Tcl from exit.
 	 */
+
 	return toWrite;
     } else {
 	return FileOutputProc(instanceData, buf, toWrite, errorCodePtr);
@@ -841,10 +847,11 @@ TtyOutputProc(instanceData, buf, toWrite, errorCodePtr)
  *
  * TtyModemStatusStr --
  *
- *  Converts a RS232 modem status list of readable flags
+ *	Converts a RS232 modem status list of readable flags
  *
  *----------------------------------------------------------------------
  */
+
 static void
 TtyModemStatusStr(status, dsPtr)
     int status;		   /* RS232 modem status */
@@ -881,13 +888,13 @@ TtyModemStatusStr(status, dsPtr)
  *	interp is not NULL.
  *
  * Side effects:
- *	May modify an option on a device.
- *	Sets Error message if needed (by calling Tcl_BadChannelOption).
+ *	May modify an option on a device.  Sets Error message if needed (by
+ *	calling Tcl_BadChannelOption).
  *
  *----------------------------------------------------------------------
  */
 
-static int		
+static int
 TtySetOptionProc(instanceData, interp, optionName, value)
     ClientData instanceData;	/* File state. */
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
@@ -914,8 +921,9 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		&tty.stop) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
 	/*
-	 * system calls results should be checked there. -- dl
+	 * system calls results should be checked there. - dl
 	 */
 
 	TtySetAttributes(fsPtr->fd, &tty);
@@ -928,11 +936,12 @@ TtySetOptionProc(instanceData, interp, optionName, value)
     /*
      * Option -handshake none|xonxoff|rtscts|dtrdsr
      */
+
     if ((len > 1) && (strncmp(optionName, "-handshake", len) == 0)) {
 	/*
-	 * Reset all handshake options
-	 * DTR and RTS are ON by default
+	 * Reset all handshake options. DTR and RTS are ON by default.
 	 */
+
 	GETIOSTATE(fsPtr->fd, &iostate);
 	iostate.c_iflag &= ~(IXON | IXOFF | IXANY);
 #ifdef CRTSCTS
@@ -967,6 +976,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
     /*
      * Option -xchar {\x11 \x13}
      */
+
     if ((len > 1) && (strncmp(optionName, "-xchar", len) == 0)) {
 	GETIOSTATE(fsPtr->fd, &iostate);
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
@@ -992,6 +1002,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
     /*
      * Option -timeout msec
      */
+
     if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
 	int msec;
 
@@ -1008,6 +1019,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
     /*
      * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
      */
+
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 	int i;
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
@@ -1090,24 +1102,24 @@ TtySetOptionProc(instanceData, interp, optionName, value)
  *
  * TtyGetOptionProc --
  *
- *	Gets a mode associated with an IO channel. If the optionName arg
- *	is non NULL, retrieves the value of that option. If the optionName
- *	arg is NULL, retrieves a list of alternating option names and
- *	values for the given channel.
+ *	Gets a mode associated with an IO channel. If the optionName arg is
+ *	non NULL, retrieves the value of that option. If the optionName arg is
+ *	NULL, retrieves a list of alternating option names and values for the
+ *	given channel.
  *
  * Results:
- *	A standard Tcl result. Also sets the supplied DString to the
- *	string value of the option(s) returned.
+ *	A standard Tcl result. Also sets the supplied DString to the string
+ *	value of the option(s) returned.
  *
  * Side effects:
- *	The string returned by this function is in static storage and
- *	may be reused at any time subsequent to the call.
- *	Sets Error message if needed (by calling Tcl_BadChannelOption).
+ *	The string returned by this function is in static storage and may be
+ *	reused at any time subsequent to the call.  Sets Error message if
+ *	needed (by calling Tcl_BadChannelOption).
  *
  *----------------------------------------------------------------------
  */
 
-static int		
+static int
 TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;	/* File state. */
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
@@ -1139,6 +1151,7 @@ TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     /*
      * get option -xchar
      */
+
     if (len == 0) {
 	Tcl_DStringAppendElement(dsPtr, "-xchar");
 	Tcl_DStringStartSublist(dsPtr);
@@ -1159,9 +1172,10 @@ TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     /*
      * get option -queue
-     * option is readonly and returned by [fconfigure chan -queue]
-     * but not returned by unnamed [fconfigure chan]
+     * option is readonly and returned by [fconfigure chan -queue] but not
+     * returned by unnamed [fconfigure chan]
      */
+
     if ((len > 1) && (strncmp(optionName, "-queue", len) == 0)) {
 	int inQueue=0, outQueue=0;
 	int inBuffered, outBuffered;
@@ -1183,8 +1197,8 @@ TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     /*
      * get option -ttystatus
-     * option is readonly and returned by [fconfigure chan -ttystatus]
-     * but not returned by unnamed [fconfigure chan]
+     * option is readonly and returned by [fconfigure chan -ttystatus] but not
+     * returned by unnamed [fconfigure chan]
      */
     if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
 	int status;
@@ -1307,9 +1321,9 @@ static struct {int baud; unsigned long speed;} speeds[] = {
  *
  * TtyGetSpeed --
  *
- *	Given a baud rate, get the mask value that should be stored in
- *	the termios, termio, or sgttyb structure in order to select that
- *	baud rate.
+ *	Given a baud rate, get the mask value that should be stored in the
+ *	termios, termio, or sgttyb structure in order to select that baud
+ *	rate.
  *
  * Results:
  *	As above.
@@ -1331,8 +1345,8 @@ TtyGetSpeed(baud)
 
     /*
      * If the baud rate does not correspond to one of the known mask values,
-     * choose the mask value whose baud rate is closest to the specified
-     * baud rate.
+     * choose the mask value whose baud rate is closest to the specified baud
+     * rate.
      */
 
     for (i = 0; speeds[i].baud >= 0; i++) {
@@ -1353,8 +1367,8 @@ TtyGetSpeed(baud)
  *
  * TtyGetBaud --
  *
- *	Given a speed mask value from a termios, termio, or sgttyb
- *	structure, get the baus rate that corresponds to that mask value.
+ *	Given a speed mask value from a termios, termio, or sgttyb structure,
+ *	get the baus rate that corresponds to that mask value.
  *
  * Results:
  *	As above.  If the mask value was not recognized, 0 is returned.
@@ -1400,8 +1414,8 @@ TtyGetBaud(speed)
 
 static void
 TtyGetAttributes(fd, ttyPtr)
-    int fd;			/* Open file descriptor for serial port to
-				 * be queried. */
+    int fd;			/* Open file descriptor for serial port to be
+				 * queried. */
     TtyAttrs *ttyPtr;		/* Buffer filled with serial port
 				 * attributes. */
 {
@@ -1416,15 +1430,15 @@ TtyGetAttributes(fd, ttyPtr)
     parity = 'n';
 #ifdef PAREXT
     switch ((int) (iostate.c_cflag & (PARENB | PARODD | PAREXT))) {
-	case PARENB		      : parity = 'e'; break;
-	case PARENB | PARODD	      : parity = 'o'; break;
-	case PARENB |	       PAREXT : parity = 's'; break;
-	case PARENB | PARODD | PAREXT : parity = 'm'; break;
+    case PARENB			  : parity = 'e'; break;
+    case PARENB | PARODD	  : parity = 'o'; break;
+    case PARENB |	   PAREXT : parity = 's'; break;
+    case PARENB | PARODD | PAREXT : parity = 'm'; break;
     }
 #else /* !PAREXT */
     switch ((int) (iostate.c_cflag & (PARENB | PARODD))) {
-	case PARENB		      : parity = 'e'; break;
-	case PARENB | PARODD	      : parity = 'o'; break;
+    case PARENB		 : parity = 'e'; break;
+    case PARENB | PARODD : parity = 'o'; break;
     }
 #endif /* !PAREXT */
 
@@ -1439,10 +1453,10 @@ TtyGetAttributes(fd, ttyPtr)
 
     parity = 'n';
     switch (iostate.c_cflag & (PARENB | PARODD | PAREXT)) {
-	case PARENB		      : parity = 'e'; break;
-	case PARENB | PARODD	      : parity = 'o'; break;
-	case PARENB |	       PAREXT : parity = 's'; break;
-	case PARENB | PARODD | PAREXT : parity = 'm'; break;
+    case PARENB			  : parity = 'e'; break;
+    case PARENB | PARODD	  : parity = 'o'; break;
+    case PARENB |	   PAREXT : parity = 's'; break;
+    case PARENB | PARODD | PAREXT : parity = 'm'; break;
     }
 
     data = iostate.c_cflag & CSIZE;
@@ -1477,7 +1491,7 @@ TtyGetAttributes(fd, ttyPtr)
  *
  * TtySetAttributes --
  *
- *	Set the current attributes of the specified serial device. 
+ *	Set the current attributes of the specified serial device.
  *
  * Results:
  *	None.
@@ -1490,10 +1504,10 @@ TtyGetAttributes(fd, ttyPtr)
 
 static void
 TtySetAttributes(fd, ttyPtr)
-    int fd;			/* Open file descriptor for serial port to
-				 * be modified. */
-    TtyAttrs *ttyPtr;		/* Buffer containing new attributes for
-				 * serial port. */
+    int fd;			/* Open file descriptor for serial port to be
+				 * modified. */
+    TtyAttrs *ttyPtr;		/* Buffer containing new attributes for serial
+				 * port. */
 {
     IOSTATE iostate;
 
@@ -1583,13 +1597,13 @@ TtySetAttributes(fd, ttyPtr)
  *
  * TtyParseMode --
  *
- *	Parse the "-mode" argument to the fconfigure command.  The argument
- *	is of the form baud,parity,data,stop.
+ *	Parse the "-mode" argument to the fconfigure command. The argument is
+ *	of the form baud,parity,data,stop.
  *
  * Results:
- *	The return value is TCL_OK if the argument was successfully
- *	parsed, TCL_ERROR otherwise.  If TCL_ERROR is returned, an
- *	error message is left in the interp's result (if interp is non-NULL).
+ *	The return value is TCL_OK if the argument was successfully parsed,
+ *	TCL_ERROR otherwise. If TCL_ERROR is returned, an error message is
+ *	left in the interp's result (if interp is non-NULL).
  *
  * Side effects:
  *	None.
@@ -1619,11 +1633,12 @@ TtyParseMode(interp, mode, speedPtr, parityPtr, dataPtr, stopPtr)
 	}
 	return TCL_ERROR;
     }
+
     /*
-     * Only allow setting mark/space parity on platforms that support it
-     * Make sure to allow for the case where strchr is a macro.
-     * [Bug: 5089]
+     * Only allow setting mark/space parity on platforms that support it Make
+     * sure to allow for the case where strchr is a macro.  [Bug: 5089]
      */
+
     if (
 #if defined(PAREXT) || defined(USE_TERMIO)
 	strchr("noems", parity) == NULL
@@ -1664,29 +1679,28 @@ TtyParseMode(interp, mode, speedPtr, parityPtr, dataPtr, stopPtr)
  *
  * TtyInit --
  *
- *	Given file descriptor that refers to a serial port, 
- *	initialize the serial port to a set of sane values so that
- *	Tcl can talk to a device located on the serial port.
- *	Note that no initialization happens if the initialize flag
- *	is not set; this is necessary for the correct handling of
- *	UNIX console TTYs at startup.
+ *	Given file descriptor that refers to a serial port, initialize the
+ *	serial port to a set of sane values so that Tcl can talk to a device
+ *	located on the serial port.  Note that no initialization happens if
+ *	the initialize flag is not set; this is necessary for the correct
+ *	handling of UNIX console TTYs at startup.
  *
  * Results:
- *	A pointer to a FileState suitable for use with Tcl_CreateChannel
- *	and the ttyChannelType structure.
+ *	A pointer to a FileState suitable for use with Tcl_CreateChannel and
+ *	the ttyChannelType structure.
  *
  * Side effects:
- *	Serial device initialized to non-blocking raw mode, similar to
- *	sockets (if initialize flag is non-zero.)  All other modes can
- *	be simulated on top of this in Tcl.
+ *	Serial device initialized to non-blocking raw mode, similar to sockets
+ *	(if initialize flag is non-zero.)  All other modes can be simulated on
+ *	top of this in Tcl.
  *
  *---------------------------------------------------------------------------
  */
 
 static FileState *
 TtyInit(fd, initialize)
-    int fd;			/* Open file descriptor for serial port to
-				 * be initialized. */
+    int fd;			/* Open file descriptor for serial port to be
+				 * initialized. */
     int initialize;
 {
     TtyState *ttyPtr;
@@ -1724,9 +1738,9 @@ TtyInit(fd, initialize)
 #endif	/* USE_SGTTY */
 
 	/*
-	 * Only update if we're changing anything to avoid possible
-	 * blocking.
+	 * Only update if we're changing anything to avoid possible blocking.
 	 */
+
 	if (ttyPtr->stateUpdated) {
 	    SETIOSTATE(fd, &iostate);
 	}
@@ -1744,13 +1758,13 @@ TtyInit(fd, initialize)
  *	Open an file based channel on Unix systems.
  *
  * Results:
- *	The new channel or NULL. If NULL, the output argument
- *	errorCodePtr is set to a POSIX error and an error message is
- *	left in the interp's result if interp is not NULL.
+ *	The new channel or NULL. If NULL, the output argument errorCodePtr is
+ *	set to a POSIX error and an error message is left in the interp's
+ *	result if interp is not NULL.
  *
  * Side effects:
- *	May open the channel and may cause creation of a file on the
- *	file system.
+ *	May open the channel and may cause creation of a file on the file
+ *	system.
  *
  *----------------------------------------------------------------------
  */
@@ -1775,38 +1789,42 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 #endif /* SUPPORTS_TTY */
 
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
-	case O_RDONLY:
-	    channelPermissions = TCL_READABLE;
-	    break;
-	case O_WRONLY:
-	    channelPermissions = TCL_WRITABLE;
-	    break;
-	case O_RDWR:
-	    channelPermissions = (TCL_READABLE | TCL_WRITABLE);
-	    break;
-	default:
-	    /*
-	     * This may occurr if modeString was "", for example.
-	     */
-	    Tcl_Panic("TclpOpenFileChannel: invalid mode value");
-	    return NULL;
+    case O_RDONLY:
+	channelPermissions = TCL_READABLE;
+	break;
+    case O_WRONLY:
+	channelPermissions = TCL_WRITABLE;
+	break;
+    case O_RDWR:
+	channelPermissions = (TCL_READABLE | TCL_WRITABLE);
+	break;
+    default:
+	/*
+	 * This may occurr if modeString was "", for example.
+	 */
+
+	Tcl_Panic("TclpOpenFileChannel: invalid mode value");
+	return NULL;
     }
 
     native = Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
 	return NULL;
     }
+
 #ifdef DJGPP
-	mode |= O_BINARY;
-#endif		
+    mode |= O_BINARY;
+#endif
+
     fd = TclOSopen(native, mode, permissions);
+
 #ifdef SUPPORTS_TTY
     ctl_tty = (strcmp (native, "/dev/tty") == 0);
 #endif /* SUPPORTS_TTY */
 
     if (fd < 0) {
 	if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "couldn't open \"", 
+	    Tcl_AppendResult(interp, "couldn't open \"",
 		    Tcl_GetString(pathPtr), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
 	}
@@ -1825,17 +1843,17 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 #ifdef SUPPORTS_TTY
     if (!ctl_tty && isatty(fd)) {
 	/*
-	 * Initialize the serial port to a set of sane parameters.
-	 * Especially important if the remote device is set to echo and
-	 * the serial port driver was also set to echo -- as soon as a char
-	 * were sent to the serial port, the remote device would echo it,
-	 * then the serial driver would echo it back to the device, etc.
+	 * Initialize the serial port to a set of sane parameters.  Especially
+	 * important if the remote device is set to echo and the serial port
+	 * driver was also set to echo -- as soon as a char were sent to the
+	 * serial port, the remote device would echo it, then the serial
+	 * driver would echo it back to the device, etc.
 	 */
 
 	translation = "auto crlf";
 	channelTypePtr = &ttyChannelType;
 	fsPtr = TtyInit(fd, 1);
-    } else 
+    } else
 #endif	/* SUPPORTS_TTY */
     {
 	translation = NULL;
@@ -1845,13 +1863,16 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 
 #ifdef DEPRECATED
     if (channelTypePtr == &fileChannelType) {
-        /* TIP #218. Removed the code inserting the new structure
-	 * into the global list. This is now handled in the thread
-	 * action callbacks, and only there.
+	/*
+	 * TIP #218. Removed the code inserting the new structure into the
+	 * global list. This is now handled in the thread action callbacks,
+	 * and only there.
 	 */
-        fsPtr->nextPtr = NULL;
+
+	fsPtr->nextPtr = NULL;
     }
 #endif /* DEPRECATED */
+
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fd = fd;
 
@@ -1860,11 +1881,11 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 
     if (translation != NULL) {
 	/*
-	 * Gotcha.  Most modems need a "\r" at the end of the command
-	 * sequence.  If you just send "at\n", the modem will not respond
-	 * with "OK" because it never got a "\r" to actually invoke the
-	 * command.  So, by default, newlines are translated to "\r\n" on
-	 * output to avoid "bug" reports that the serial port isn't working.
+	 * Gotcha. Most modems need a "\r" at the end of the command sequence.
+	 * If you just send "at\n", the modem will not respond with "OK"
+	 * because it never got a "\r" to actually invoke the command. So, by
+	 * default, newlines are translated to "\r\n" on output to avoid "bug"
+	 * reports that the serial port isn't working.
 	 */
 
 	if (Tcl_SetChannelOption(interp, fsPtr->channel, "-translation",
@@ -1920,8 +1941,8 @@ Tcl_MakeFileChannel(handle, mode)
     } else
 #endif /* SUPPORTS_TTY */
     if (getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0
-            && sockaddrLen > 0
-            && sockaddr.sa_family == AF_INET) {
+	    && sockaddrLen > 0
+	    && sockaddr.sa_family == AF_INET) {
 	return MakeTcpClientChannelMode((ClientData) fd, mode);
     } else {
 	channelTypePtr = &fileChannelType;
@@ -1942,8 +1963,8 @@ Tcl_MakeFileChannel(handle, mode)
  *
  * TcpBlockModeProc --
  *
- *	This procedure is invoked by the generic IO level to set blocking
- *	and nonblocking mode on a TCP socket based channel.
+ *	This function is invoked by the generic IO level to set blocking and
+ *	nonblocking mode on a TCP socket based channel.
  *
  * Results:
  *	0 if successful, errno when failed.
@@ -1957,10 +1978,10 @@ Tcl_MakeFileChannel(handle, mode)
 	/* ARGSUSED */
 static int
 TcpBlockModeProc(instanceData, mode)
-    ClientData instanceData;		/* Socket state. */
-    int mode;				/* The mode to set. Can be one of
-					 * TCL_MODE_BLOCKING or
-					 * TCL_MODE_NONBLOCKING. */
+    ClientData instanceData;	/* Socket state. */
+    int mode;			/* The mode to set. Can be one of
+				 * TCL_MODE_BLOCKING or
+				 * TCL_MODE_NONBLOCKING. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
     int setting;
@@ -2001,8 +2022,8 @@ TcpBlockModeProc(instanceData, mode)
  *
  * WaitForConnect --
  *
- *	Waits for a connection on an asynchronously opened socket to
- *	be completed.
+ *	Waits for a connection on an asynchronously opened socket to be
+ *	completed.
  *
  * Results:
  *	None.
@@ -2023,8 +2044,8 @@ WaitForConnect(statePtr, errorCodePtr)
     int flags;			/* fcntl flags for the socket. */
 
     /*
-     * If an asynchronous connect is in progress, attempt to wait for it
-     * to complete before reading.
+     * If an asynchronous connect is in progress, attempt to wait for it to
+     * complete before reading.
      */
 
     if (statePtr->flags & TCP_ASYNC_CONNECT) {
@@ -2064,16 +2085,16 @@ WaitForConnect(statePtr, errorCodePtr)
  *
  * TcpInputProc --
  *
- *	This procedure is invoked by the generic IO level to read input
- *	from a TCP socket based channel.
+ *	This function is invoked by the generic IO level to read input from a
+ *	TCP socket based channel.
  *
- *	NOTE: We cannot share code with FilePipeInputProc because here
- *	we must use recv to obtain the input from the channel, not read.
+ *	NOTE: We cannot share code with FilePipeInputProc because here we must
+ *	use recv to obtain the input from the channel, not read.
  *
  * Results:
  *	The number of bytes read is returned or -1 on error. An output
- *	argument contains the POSIX error code on error, or zero if no
- *	error occurred.
+ *	argument contains the POSIX error code on error, or zero if no error
+ *	occurred.
  *
  * Side effects:
  *	Reads input from the input device of the channel.
@@ -2086,8 +2107,8 @@ static int
 TcpInputProc(instanceData, buf, bufSize, errorCodePtr)
     ClientData instanceData;		/* Socket state. */
     char *buf;				/* Where to store data read. */
-    int bufSize;			/* How much space is available
-					 * in the buffer? */
+    int bufSize;			/* How much space is available in the
+					 * buffer? */
     int *errorCodePtr;			/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
@@ -2118,15 +2139,15 @@ TcpInputProc(instanceData, buf, bufSize, errorCodePtr)
  *
  * TcpOutputProc --
  *
- *	This procedure is invoked by the generic IO level to write output
- *	to a TCP socket based channel.
+ *	This function is invoked by the generic IO level to write output to a
+ *	TCP socket based channel.
  *
- *	NOTE: We cannot share code with FilePipeOutputProc because here
- *	we must use send, not write, to get reliable error reporting.
+ *	NOTE: We cannot share code with FilePipeOutputProc because here we
+ *	must use send, not write, to get reliable error reporting.
  *
  * Results:
- *	The number of bytes written is returned. An output argument is
- *	set to a POSIX error code if an error occurred, or zero.
+ *	The number of bytes written is returned. An output argument is set to
+ *	a POSIX error code if an error occurred, or zero.
  *
  * Side effects:
  *	Writes output on the output device of the channel.
@@ -2163,9 +2184,9 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
  *
  * TcpCloseProc --
  *
- *	This procedure is invoked by the generic IO level to perform
- *	channel-type-specific cleanup when a TCP socket based channel
- *	is closed.
+ *	This function is invoked by the generic IO level to perform
+ *	channel-type-specific cleanup when a TCP socket based channel is
+ *	closed.
  *
  * Results:
  *	0 if successful, the value of errno if failed.
@@ -2186,12 +2207,11 @@ TcpCloseProc(instanceData, interp)
     int errorCode = 0;
 
     /*
-     * Delete a file handler that may be active for this socket if this
-     * is a server socket - the file handler was created automatically
-     * by Tcl as part of the mechanism to accept new client connections.
-     * Channel handlers are already deleted in the generic IO channel
-     * closing code that called this function, so we do not have to
-     * delete them here.
+     * Delete a file handler that may be active for this socket if this is a
+     * server socket - the file handler was created automatically by Tcl as
+     * part of the mechanism to accept new client connections. Channel
+     * handlers are already deleted in the generic IO channel closing code
+     * that called this function, so we do not have to delete them here.
      */
 
     Tcl_DeleteFileHandler(statePtr->fd);
@@ -2209,15 +2229,15 @@ TcpCloseProc(instanceData, interp)
  *
  * TcpGetOptionProc --
  *
- *	Computes an option value for a TCP socket based channel, or a
- *	list of all options and their values.
+ *	Computes an option value for a TCP socket based channel, or a list of
+ *	all options and their values.
  *
  *	Note: This code is based on code contributed by John Haxby.
  *
  * Results:
- *	A standard Tcl result. The value of the specified option or a
- *	list of all options and their values is returned in the
- *	supplied DString. Sets Error message if needed.
+ *	A standard Tcl result. The value of the specified option or a list of
+ *	all options and their values is returned in the supplied DString. Sets
+ *	Error message if needed.
  *
  * Side effects:
  *	None.
@@ -2229,12 +2249,11 @@ static int
 TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;	 /* Socket state. */
     Tcl_Interp *interp;		 /* For error reporting - can be NULL. */
-    CONST char *optionName;	 /* Name of the option to
-				  * retrieve the value for, or
-				  * NULL to get all options and
-				  * their values. */
-    Tcl_DString *dsPtr;		 /* Where to store the computed
-				  * value; initialized by caller. */
+    CONST char *optionName;	 /* Name of the option to retrieve the value
+				  * for, or NULL to get all options and their
+				  * values. */
+    Tcl_DString *dsPtr;		 /* Where to store the computed value;
+				  * initialized by caller. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
     struct sockaddr_in sockname;
@@ -2296,9 +2315,9 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 	} else {
 	    /*
 	     * getpeername failed - but if we were asked for all the options
-	     * (len==0), don't flag an error at that point because it could
-	     * be an fconfigure request on a server socket. (which have
-	     * no peer). same must be done on win&mac.
+	     * (len==0), don't flag an error at that point because it could be
+	     * an fconfigure request on a server socket (which have no peer).
+	     * Same must be done on win&mac.
 	     */
 
 	    if (len) {
@@ -2367,8 +2386,8 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
  *	None.
  *
  * Side effects:
- *	Sets up the notifier so that a future event on the channel will
- *	be seen by Tcl.
+ *	Sets up the notifier so that a future event on the channel will be
+ *	seen by Tcl.
  *
  *----------------------------------------------------------------------
  */
@@ -2404,12 +2423,12 @@ TcpWatchProc(instanceData, mask)
  *
  * TcpGetHandleProc --
  *
- *	Called from Tcl_GetChannelHandle to retrieve OS handles from inside
- *	a TCP socket based channel.
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from inside a
+ *	TCP socket based channel.
  *
  * Results:
- *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if
- *	there is no handle for the specified direction. 
+ *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if there is no
+ *	handle for the specified direction.
  *
  * Side effects:
  *	None.
@@ -2435,12 +2454,12 @@ TcpGetHandleProc(instanceData, direction, handlePtr)
  *
  * CreateSocket --
  *
- *	This function opens a new socket in client or server mode
- *	and initializes the TcpState structure.
+ *	This function opens a new socket in client or server mode and
+ *	initializes the TcpState structure.
  *
  * Results:
- *	Returns a new TcpState, or NULL with an error in the interp's
- *	result, if interp is not NULL.
+ *	Returns a new TcpState, or NULL with an error in the interp's result,
+ *	if interp is not NULL.
  *
  * Side effects:
  *	Opens a socket.
@@ -2452,10 +2471,10 @@ static TcpState *
 CreateSocket(interp, port, host, server, myaddr, myport, async)
     Tcl_Interp *interp;		/* For error reporting; can be NULL. */
     int port;			/* Port number to open. */
-    CONST char *host;		/* Name of host on which to open port.
-				 * NULL implies INADDR_ANY */
-    int server;			/* 1 if socket should be a server socket,
-				 * else 0 for a client socket. */
+    CONST char *host;		/* Name of host on which to open port.  NULL
+				 * implies INADDR_ANY */
+    int server;			/* 1 if socket should be a server socket, else
+				 * 0 for a client socket. */
     CONST char *myaddr;		/* Optional client-side address */
     int myport;			/* Optional client-side port */
     int async;			/* If nonzero and creating a client socket,
@@ -2483,8 +2502,8 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
     }
 
     /*
-     * Set the close-on-exec flag so that the socket will not get
-     * inherited by child processes.
+     * Set the close-on-exec flag so that the socket will not get inherited by
+     * child processes.
      */
 
     fcntl(sock, F_SETFD, FD_CLOEXEC);
@@ -2510,9 +2529,9 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 		sizeof(struct sockaddr));
 	if (status != -1) {
 	    status = listen(sock, SOMAXCONN);
-	} 
+	}
     } else {
-	if (myaddr != NULL || myport != 0) { 
+	if (myaddr != NULL || myport != 0) {
 	    curState = 1;
 	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		    (char *) &curState, sizeof(curState));
@@ -2525,9 +2544,9 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 
 	/*
 	 * Attempt to connect. The connect may fail at present with an
-	 * EINPROGRESS but at a later time it will complete. The caller
-	 * will set up a file handler on the socket if she is interested in
-	 * being informed when the connect completes.
+	 * EINPROGRESS but at a later time it will complete. The caller will
+	 * set up a file handler on the socket if she is interested in being
+	 * informed when the connect completes.
 	 */
 
 	if (async) {
@@ -2554,10 +2573,11 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 		/*
 		 * Here we are if the connect succeeds. In case of an
 		 * asynchronous connect we have to reset the channel to
-		 * blocking mode.  This appears to happen not very often,
-		 * but e.g. on a HP 9000/800 under HP-UX B.11.00 we enter
-		 * this stage. [Bug: 4388]
+		 * blocking mode.  This appears to happen not very often, but
+		 * e.g. on a HP 9000/800 under HP-UX B.11.00 we enter this
+		 * stage. [Bug: 4388]
 		 */
+
 		if (async) {
 #ifndef USE_FIONBIO
 		    origState = fcntl(sock, F_GETFL);
@@ -2572,7 +2592,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 	}
     }
 
-bindError:
+  bindError:
     if (status < 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "couldn't open socket: ",
@@ -2597,7 +2617,7 @@ bindError:
 
     return statePtr;
 
-addressError:
+  addressError:
     if (sock != -1) {
 	close(sock);
     }
@@ -2616,8 +2636,8 @@ addressError:
  *	This function initializes a sockaddr structure for a host and port.
  *
  * Results:
- *	1 if the host was valid, 0 if the host could not be converted to
- *	an IP address.
+ *	1 if the host was valid, 0 if the host could not be converted to an IP
+ *	address.
  *
  * Side effects:
  *	Fills in the *sockaddrPtr structure.
@@ -2679,10 +2699,10 @@ CreateSocketAddress(sockaddrPtr, host, port)
     }
 
     /*
-     * NOTE: On 64 bit machines the assignment below is rumored to not
-     * do the right thing. Please report errors related to this if you
-     * observe incorrect behavior on 64 bit machines such as DEC Alphas.
-     * Should we modify this code to do an explicit memcpy?
+     * NOTE: On 64 bit machines the assignment below is rumored to not do the
+     * right thing. Please report errors related to this if you observe
+     * incorrect behavior on 64 bit machines such as DEC Alphas.  Should we
+     * modify this code to do an explicit memcpy?
      */
 
     sockaddrPtr->sin_addr.s_addr = addr.s_addr;
@@ -2697,8 +2717,8 @@ CreateSocketAddress(sockaddrPtr, host, port)
  *	Opens a TCP client socket and creates a channel around it.
  *
  * Results:
- *	The channel or NULL if failed.	An error message is returned
- *	in the interpreter on failure.
+ *	The channel or NULL if failed. An error message is returned in the
+ *	interpreter on failure.
  *
  * Side effects:
  *	Opens a client socket and creates a new channel.
@@ -2819,9 +2839,8 @@ MakeTcpClientChannelMode(sock, mode)
  *	Opens a TCP server socket and creates a channel around it.
  *
  * Results:
- *	The channel or NULL if failed. If an error occurred, an
- *	error message is left in the interp's result if interp is
- *	not NULL.
+ *	The channel or NULL if failed. If an error occurred, an error message
+ *	is left in the interp's result if interp is not NULL.
  *
  * Side effects:
  *	Opens a server socket and creates a new channel.
@@ -2855,8 +2874,8 @@ Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
     statePtr->acceptProcData = acceptProcData;
 
     /*
-     * Set up the callback mechanism for accepting connections
-     * from new clients.
+     * Set up the callback mechanism for accepting connections from new
+     * clients.
      */
 
     Tcl_CreateFileHandler(statePtr->fd, TCL_READABLE, TcpAccept,
@@ -2877,8 +2896,8 @@ Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
  *	None.
  *
  * Side effects:
- *	Creates a new connection socket. Calls the registered callback
- *	for the connection acceptance mechanism.
+ *	Creates a new connection socket. Calls the registered callback for the
+ *	connection acceptance mechanism.
  *
  *----------------------------------------------------------------------
  */
@@ -2893,7 +2912,7 @@ TcpAccept(data, mask)
     int newsock;			/* The new client socket */
     TcpState *newSockState;		/* State for new socket. */
     struct sockaddr_in addr;		/* The remote address */
-    socklen_t len;				/* For accept interface */
+    socklen_t len;			/* For accept interface */
     char channelName[16 + TCL_INTEGER_SPACE];
 
     sockState = (TcpState *) data;
@@ -2905,8 +2924,8 @@ TcpAccept(data, mask)
     }
 
     /*
-     * Set close-on-exec flag to prevent the newly accepted socket from
-     * being inherited by child processes.
+     * Set close-on-exec flag to prevent the newly accepted socket from being
+     * inherited by child processes.
      */
 
     (void) fcntl(newsock, F_SETFD, FD_CLOEXEC);
@@ -2937,15 +2956,14 @@ TcpAccept(data, mask)
  *
  * TclpGetDefaultStdChannel --
  *
- *	Creates channels for standard input, standard output or standard
- *	error output if they do not already exist.
+ *	Creates channels for standard input, standard output or standard error
+ *	output if they do not already exist.
  *
  * Results:
  *	Returns the specified default standard channel, or NULL.
  *
  * Side effects:
- *	May cause the creation of a standard channel and the underlying
- *	file.
+ *	May cause the creation of a standard channel and the underlying file.
  *
  *----------------------------------------------------------------------
  */
@@ -2962,40 +2980,41 @@ TclpGetDefaultStdChannel(type)
     /*
      * Some #def's to make the code a little clearer!
      */
+
 #define ZERO_OFFSET	((Tcl_SeekOffset) 0)
 #define ERROR_OFFSET	((Tcl_SeekOffset) -1)
 
     switch (type) {
-	case TCL_STDIN:
-	    if ((TclOSseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
-		    && (errno == EBADF)) {
-		return (Tcl_Channel) NULL;
-	    }
-	    fd = 0;
-	    mode = TCL_READABLE;
-	    bufMode = "line";
-	    break;
-	case TCL_STDOUT:
-	    if ((TclOSseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
-		    && (errno == EBADF)) {
-		return (Tcl_Channel) NULL;
-	    }
-	    fd = 1;
-	    mode = TCL_WRITABLE;
-	    bufMode = "line";
-	    break;
-	case TCL_STDERR:
-	    if ((TclOSseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
-		    && (errno == EBADF)) {
-		return (Tcl_Channel) NULL;
-	    }
-	    fd = 2;
-	    mode = TCL_WRITABLE;
-	    bufMode = "none";
-	    break;
-	default:
-	    Tcl_Panic("TclGetDefaultStdChannel: Unexpected channel type");
-	    break;
+    case TCL_STDIN:
+	if ((TclOSseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+		&& (errno == EBADF)) {
+	    return (Tcl_Channel) NULL;
+	}
+	fd = 0;
+	mode = TCL_READABLE;
+	bufMode = "line";
+	break;
+    case TCL_STDOUT:
+	if ((TclOSseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+		&& (errno == EBADF)) {
+	    return (Tcl_Channel) NULL;
+	}
+	fd = 1;
+	mode = TCL_WRITABLE;
+	bufMode = "line";
+	break;
+    case TCL_STDERR:
+	if ((TclOSseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+		&& (errno == EBADF)) {
+	    return (Tcl_Channel) NULL;
+	}
+	fd = 2;
+	mode = TCL_WRITABLE;
+	bufMode = "none";
+	break;
+    default:
+	Tcl_Panic("TclGetDefaultStdChannel: Unexpected channel type");
+	break;
     }
 
 #undef ZERO_OFFSET
@@ -3024,16 +3043,16 @@ TclpGetDefaultStdChannel(type)
  *
  * Tcl_GetOpenFile --
  *
- *	Given a name of a channel registered in the given interpreter,
- *	returns a FILE * for it.
+ *	Given a name of a channel registered in the given interpreter, returns
+ *	a FILE * for it.
  *
  * Results:
  *	A standard Tcl result. If the channel is registered in the given
- *	interpreter and it is managed by the "file" channel driver, and
- *	it is open for the requested mode, then the output parameter
- *	filePtr is set to a FILE * for the underlying file. On error, the
- *	filePtr is not set, TCL_ERROR is returned and an error message is
- *	left in the interp's result.
+ *	interpreter and it is managed by the "file" channel driver, and it is
+ *	open for the requested mode, then the output parameter filePtr is set
+ *	to a FILE * for the underlying file. On error, the filePtr is not set,
+ *	TCL_ERROR is returned and an error message is left in the interp's
+ *	result.
  *
  * Side effects:
  *	May invoke fdopen to create the FILE * for the requested file.
@@ -3045,13 +3064,13 @@ int
 Tcl_GetOpenFile(interp, chanID, forWriting, checkUsage, filePtr)
     Tcl_Interp *interp;		/* Interpreter in which to find file. */
     CONST char *chanID;		/* String that identifies file. */
-    int forWriting;		/* 1 means the file is going to be used
-				 * for writing, 0 means for reading. */
-    int checkUsage;		/* 1 means verify that the file was opened
-				 * in a mode that allows the access specified
-				 * by "forWriting". Ignored, we always
-				 * check that the channel is open for the
-				 * requested mode. */
+    int forWriting;		/* 1 means the file is going to be used for
+				 * writing, 0 means for reading. */
+    int checkUsage;		/* 1 means verify that the file was opened in
+				 * a mode that allows the access specified by
+				 * "forWriting". Ignored, we always check that
+				 * the channel is open for the requested
+				 * mode. */
     ClientData *filePtr;	/* Store pointer to FILE structure here. */
 {
     Tcl_Channel chan;
@@ -3095,8 +3114,8 @@ Tcl_GetOpenFile(interp, chanID, forWriting, checkUsage, filePtr)
 
 	    /*
 	     * The call to fdopen below is probably dangerous, since it will
-	     * truncate an existing file if the file is being opened
-	     * for writing....
+	     * truncate an existing file if the file is being opened for
+	     * writing....
 	     */
 
 	    f = fdopen(fd, (forWriting ? "w" : "r"));
@@ -3112,7 +3131,7 @@ Tcl_GetOpenFile(interp, chanID, forWriting, checkUsage, filePtr)
 
     Tcl_AppendResult(interp, "\"", chanID,
 	    "\" cannot be used to get a FILE *", (char *) NULL);
-    return TCL_ERROR;	     
+    return TCL_ERROR;
 }
 
 /*
@@ -3120,18 +3139,17 @@ Tcl_GetOpenFile(interp, chanID, forWriting, checkUsage, filePtr)
  *
  * TclUnixWaitForFile --
  *
- *	This procedure waits synchronously for a file to become readable
- *	or writable, with an optional timeout.
+ *	This function waits synchronously for a file to become readable or
+ *	writable, with an optional timeout.
  *
  * Results:
  *	The return value is an OR'ed combination of TCL_READABLE,
- *	TCL_WRITABLE, and TCL_EXCEPTION, indicating the conditions
- *	that are present on file at the time of the return.  This
- *	procedure will not return until either "timeout" milliseconds
- *	have elapsed or at least one of the conditions given by mask
- *	has occurred for file (a return value of 0 means that a timeout
- *	occurred).  No normal events will be serviced during the
- *	execution of this procedure.
+ *	TCL_WRITABLE, and TCL_EXCEPTION, indicating the conditions that are
+ *	present on file at the time of the return. This function will not
+ *	return until either "timeout" milliseconds have elapsed or at least
+ *	one of the conditions given by mask has occurred for file (a return
+ *	value of 0 means that a timeout occurred).  No normal events will be
+ *	serviced during the execution of this function.
  *
  * Side effects:
  *	Time passes.
@@ -3145,11 +3163,11 @@ TclUnixWaitForFile(fd, mask, timeout)
     int mask;			/* What to wait for: OR'ed combination of
 				 * TCL_READABLE, TCL_WRITABLE, and
 				 * TCL_EXCEPTION. */
-    int timeout;		/* Maximum amount of time to wait for one
-				 * of the conditions in mask to occur, in
+    int timeout;		/* Maximum amount of time to wait for one of
+				 * the conditions in mask to occur, in
 				 * milliseconds.  A value of 0 means don't
-				 * wait at all, and a value of -1 means
-				 * wait forever. */
+				 * wait at all, and a value of -1 means wait
+				 * forever. */
 {
     Tcl_Time abortTime, now;
     struct timeval blockTime, *timeoutPtr;
@@ -3161,8 +3179,8 @@ TclUnixWaitForFile(fd, mask, timeout)
 				 * last call to select. */
 
     /*
-     * If there is a non-zero finite timeout, compute the time when
-     * we give up.
+     * If there is a non-zero finite timeout, compute the time when we give
+     * up.
      */
 
     if (timeout > 0) {
@@ -3194,8 +3212,8 @@ TclUnixWaitForFile(fd, mask, timeout)
     bit = 1 << (fd%(NBBY*sizeof(fd_mask)));
 
     /*
-     * Loop in a mini-event loop of our own, waiting for either the
-     * file to become ready or a timeout to occur.
+     * Loop in a mini-event loop of our own, waiting for either the file to
+     * become ready or a timeout to occur.
      */
 
     while (1) {
@@ -3230,7 +3248,10 @@ TclUnixWaitForFile(fd, mask, timeout)
 	 * Wait for the event or a timeout.
 	 */
 
-       /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+	/*
+	 * This is needed to satisfy GCC 3.3's strict aliasing rules.
+	 */
+
 	maskp[0] = &readyMasks[0];
 	maskp[1] = &readyMasks[MASK_SIZE];
 	maskp[2] = &readyMasks[2*MASK_SIZE];
@@ -3296,25 +3317,25 @@ FileThreadActionProc (instanceData, action)
     FileState *fsPtr = (FileState *) instanceData;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {
-        fsPtr->nextPtr       = tsdPtr->firstFilePtr;
+	fsPtr->nextPtr = tsdPtr->firstFilePtr;
 	tsdPtr->firstFilePtr = fsPtr;
     } else {
-        FileState **nextPtrPtr;
+	FileState **nextPtrPtr;
 	int removed = 0;
 
 	for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-	     nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == fsPtr) {
-	        (*nextPtrPtr) = fsPtr->nextPtr;
+		(*nextPtrPtr) = fsPtr->nextPtr;
 		removed = 1;
 		break;
 	    }
 	}
 
 	/*
-	 * This could happen if the channel was created in one
-	 * thread and then moved to another without updating
-	 * the thread local data in each thread.
+	 * This could happen if the channel was created in one thread and then
+	 * moved to another without updating the thread local data in each
+	 * thread.
 	 */
 
 	if (!removed) {
@@ -3332,14 +3353,13 @@ FileThreadActionProc (instanceData, action)
  *	Truncates a file to a given length.
  *
  * Results:
- *	0 if the operation succeeded, and -1 if it failed (in which
- *	case *errorCodePtr will be set to errno).
+ *	0 if the operation succeeded, and -1 if it failed (in which case
+ *	*errorCodePtr will be set to errno).
  *
  * Side effects:
- *	The underlying file is potentially truncated. This can have a
- *	wide variety of side effects, including moving file pointers
- *	that point at places later in the file than the truncate
- *	point.
+ *	The underlying file is potentially truncated. This can have a wide
+ *	variety of side effects, including moving file pointers that point at
+ *	places later in the file than the truncate point.
  *
  *----------------------------------------------------------------------
  */
@@ -3356,6 +3376,7 @@ FileTruncateProc(instanceData, length)
     /*
      * We assume this goes with the type for now...
      */
+
     result = ftruncate64(fsPtr->fd, (off64_t) length);
 #else
     result = ftruncate(fsPtr->fd, (off_t) length);
@@ -3365,3 +3386,11 @@ FileTruncateProc(instanceData, length)
     }
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

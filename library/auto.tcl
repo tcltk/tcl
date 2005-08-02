@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.21.2.2 2005/07/12 20:37:04 kennykb Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.21.2.3 2005/08/02 18:16:14 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -62,8 +62,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 
     # The C application may have hardwired a path, which we honor
 
-    set variableSet [info exists the_library]
-    if {$variableSet && $the_library ne ""} {
+    if {[info exists the_library] && $the_library ne ""} {
 	lappend dirs $the_library
     } else {
 
@@ -157,9 +156,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
             }
         }
     }
-    if {!$variableSet} {
-	unset the_library
-    }
+    unset -nocomplain the_library
     set msg "Can't find a usable $initScript in the following directories: \n"
     append msg "    $dirs\n\n"
     append msg "$errors\n\n"
@@ -215,7 +212,7 @@ proc auto_mkindex {dir args} {
     }
 
     auto_mkindex_parser::init
-    foreach file [glob {expand}$args] {
+    foreach file [glob -- {expand}$args] {
         if {[catch {auto_mkindex_parser::mkindex $file} msg opts] == 0} {
             append index $msg
         } else {
@@ -248,7 +245,7 @@ proc auto_mkindex_old {dir args} {
     if {[llength $args] == 0} {
 	set args *.tcl
     }
-    foreach file [glob {expand}$args] {
+    foreach file [glob -- {expand}$args] {
 	set f ""
 	set error [catch {
 	    set f [open $file]
@@ -444,11 +441,10 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
 
     set ns [namespace qualifiers $name]
     set tail [namespace tail $name]
-    if {[string equal $ns ""]} {
-        set fakeName "[namespace current]::_%@fake_$tail"
+    if {$ns eq ""} {
+        set fakeName [namespace current]::_%@fake_$tail
     } else {
-	set fakeName [string map {:: _} "_%@fake_$name"]
-        set fakeName "[namespace current]::$fakeName"
+        set fakeName [namespace current]::[string map {:: _} _%@fake_$name]
     }
     proc $fakeName $arglist $body
 
@@ -457,7 +453,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
     # we have to build procs with the fully qualified names, and
     # have the procs point to the aliases.
 
-    if {[string match "*::*" $name]} {
+    if {[string match *::* $name]} {
         set exportCmd [list _%@namespace export [namespace tail $name]]
         $parser eval [list _%@namespace eval $ns $exportCmd]
  
@@ -507,7 +503,7 @@ proc auto_mkindex_parser::fullname {name} {
         }
     }
 
-    if {[string equal [namespace qualifiers $name] ""]} {
+    if {[namespace qualifiers $name] eq ""} {
         set name [namespace tail $name]
     } elseif {![string match ::* $name]} {
         set name "::$name"
@@ -551,7 +547,7 @@ auto_mkindex_parser::command proc {name args} {
 
 auto_mkindex_parser::hook {
     if {![catch {package require tbcload}]} {
-	if {[llength [info commands tbcload::bcproc]] == 0} {
+	if {[namespace which -command tbcload::bcproc] eq ""} {
 	    auto_load tbcload::bcproc
 	}
 	load {} tbcload $auto_mkindex_parser::parser
@@ -602,7 +598,7 @@ auto_mkindex_parser::command namespace {op args} {
             variable parser
             variable imports
             foreach pattern $args {
-                if {[string compare $pattern "-force"]} {
+                if {$pattern ne "-force"} {
                     lappend imports $pattern
                 }
             }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.27.2.2 2005/07/12 20:36:29 kennykb Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.27.2.3 2005/08/02 18:15:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -18,33 +18,6 @@
  * Forward declaration.
  */
 struct Dict;
-
-/*
- * Flag values for TraceDictPath().
- *
- * DICT_PATH_READ indicates that all entries on the path must exist
- * but no updates will be needed.
- *
- * DICT_PATH_UPDATE indicates that we are going to be doing an update
- * at the tip of the path, so duplication of shared objects should be
- * done along the way.
- *
- * DICT_PATH_EXISTS indicates that we are performing an existance test
- * and a lookup failure should therefore not be an error.  If (and
- * only if) this flag is set, TraceDictPath() will return the special
- * value DICT_PATH_NON_EXISTENT if the path is not traceable.
- *
- * DICT_PATH_CREATE (which also requires the DICT_PATH_UPDATE bit to
- * be set) indicates that we are to create non-existant dictionaries
- * on the path.
- */
-
-#define DICT_PATH_READ   0
-#define DICT_PATH_UPDATE 1
-#define DICT_PATH_EXISTS 2
-#define DICT_PATH_CREATE 5
-
-#define DICT_PATH_NON_EXISTENT ((Tcl_Obj *) (void *) 1)
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -95,9 +68,6 @@ static void		FreeDictInternalRep _ANSI_ARGS_((Tcl_Obj *dictPtr));
 static void		InvalidateDictChain _ANSI_ARGS_((Tcl_Obj *dictObj));
 static int		SetDictFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
-static Tcl_Obj *	TraceDictPath _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *rootPtr, int keyc, Tcl_Obj *CONST keyv[],
-			    int flags));
 static void		UpdateStringOfDict _ANSI_ARGS_((Tcl_Obj *dictPtr));
 
 /*
@@ -588,7 +558,7 @@ SetDictFromAny(interp, objPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TraceDictPath --
+ * TclTraceDictPath --
  *
  *	Trace through a tree of dictionaries using the array of keys
  *	given. If the flags argument has the DICT_PATH_UPDATE flag is
@@ -619,8 +589,8 @@ SetDictFromAny(interp, objPtr)
  *----------------------------------------------------------------------
  */
 
-static Tcl_Obj *
-TraceDictPath(interp, dictPtr, keyc, keyv, flags)
+Tcl_Obj *
+TclTraceDictPath(interp, dictPtr, keyc, keyv, flags)
     Tcl_Interp *interp;
     Tcl_Obj *dictPtr, *CONST keyv[];
     int keyc, flags;
@@ -697,8 +667,8 @@ TraceDictPath(interp, dictPtr, keyc, keyv, flags)
  * InvalidateDictChain --
  *
  *	Go through a dictionary chain (built by an updating invokation
- *	of TraceDictPath) and invalidate the string representations of
- *	all the dictionaries on the chain.
+ *	of TclTraceDictPath) and invalidate the string representations
+ *	of all the dictionaries on the chain.
  *
  * Results:
  *	None
@@ -1135,7 +1105,7 @@ Tcl_DictObjPutKeyList(interp, dictPtr, keyc, keyv, valuePtr)
 	Tcl_Panic("Tcl_DictObjPutKeyList called with empty key list");
     }
 
-    dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, DICT_PATH_CREATE);
+    dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1,keyv, DICT_PATH_CREATE);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1191,7 +1161,7 @@ Tcl_DictObjRemoveKeyList(interp, dictPtr, keyc, keyv)
 	Tcl_Panic("Tcl_DictObjRemoveKeyList called with empty key list");
     }
 
-    dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, DICT_PATH_UPDATE);
+    dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1,keyv, DICT_PATH_UPDATE);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1426,7 +1396,7 @@ DictGetCmd(interp, objc, objv)
      * executes at least once.
      */
 
-    dictPtr = TraceDictPath(interp, objv[2], objc-4, objv+3, DICT_PATH_READ);
+    dictPtr = TclTraceDictPath(interp, objv[2], objc-4,objv+3, DICT_PATH_READ);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1815,7 +1785,8 @@ DictExistsCmd(interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    dictPtr = TraceDictPath(interp, objv[2], objc-4, objv+3, DICT_PATH_EXISTS);
+    dictPtr = TclTraceDictPath(interp, objv[2], objc-4, objv+3,
+	    DICT_PATH_EXISTS);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2879,7 +2850,7 @@ DictWithCmd(interp, objc, objv)
 	return TCL_ERROR;
     }
     if (objc > 4) {
-	dictPtr = TraceDictPath(interp, dictPtr, objc-4, objv+3,
+	dictPtr = TclTraceDictPath(interp, dictPtr, objc-4, objv+3,
 		DICT_PATH_READ);
 	if (dictPtr == NULL) {
 	    return TCL_ERROR;
@@ -2957,7 +2928,7 @@ DictWithCmd(interp, objc, objv)
 	 * on to update; it's just less than perfectly efficient (but
 	 * no memory should be leaked).
 	 */
-	leafPtr = TraceDictPath(interp, dictPtr, objc-4, objv+3,
+	leafPtr = TclTraceDictPath(interp, dictPtr, objc-4, objv+3,
 		DICT_PATH_EXISTS | DICT_PATH_UPDATE);
 	if (leafPtr == NULL) {
 	    TclDecrRefCount(keysPtr);

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.6 2005/07/12 20:36:53 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.7 2005/08/02 18:15:40 dgp Exp $
 
 library tcl
 
@@ -895,6 +895,12 @@ declare 223 generic {
 # for use in tclTest.c
 declare 224 generic {
     TclPlatformType *TclGetPlatform(void)
+}
+
+# 
+declare 225 generic {
+    Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
+	    int keyc, Tcl_Obj *CONST keyv[], int flags)
 }
 
 ##############################################################################

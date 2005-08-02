@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.99.2.6 2005/07/12 20:37:01 kennykb Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.99.2.7 2005/08/02 18:16:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -99,7 +99,7 @@ static Tcl_ObjType localVarNameType = {
 
 /*
  * Caching of namespace variables disabled: no simple way was found to avoid
- * interfering with the resolver's idea of variable existence.  A cached
+ * interfering with the resolver's idea of variable existence. A cached
  * varName may keep a variable's name in the namespace's hash table, which is
  * the resolver's criterion for existence (see test namespace-17.10).
  */
@@ -222,11 +222,11 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     /*
      * Parse part1 into array name and index.
      * Always check if part1 is an array element name and allow it only if
-     * part2 is not given.  (if one does not care about creating array
-     * elements that can't be used from tcl, and prefer slightly better
-     * performance, one can put the following in an if (part2 == NULL) { ... }
-     * block and remove the part2's test and error reporting or move that code
-     * in array set)
+     * part2 is not given. (If one does not care about creating array elements
+     * that can't be used from tcl, and prefer slightly better performance,
+     * one can put the following in an if (part2 == NULL) { ... } block and
+     * remove the part2's test and error reporting or move that code in array
+     * set.)
      */
 
     elName = part2;
@@ -456,7 +456,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 #endif
     }
 
-    doParse:
+  doParse:
     if (!parsed && (*(part1 + len1 - 1) == ')')) {
 	/*
 	 * part1Ptr is possibly an unparsed array element.
@@ -602,9 +602,9 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  * This flag bit should not interfere with TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
  * or TCL_LEAVE_ERR_MSG; it signals that the variable lookup is performed for
  * upvar (or similar) purposes, with slightly different rules:
- *   - Bug #696893 - variable is either proc-local or in the current
- *     namespace; never follow the second (global) resolution path
- *   - Bug #631741 - do not use special namespace or interp resolvers
+ *    - Bug #696893 - variable is either proc-local or in the current
+ *	namespace; never follow the second (global) resolution path
+ *    - Bug #631741 - do not use special namespace or interp resolvers
  *
  * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
  * (Bug #835020)
@@ -3249,10 +3249,11 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 	 * loop and return an error.
 	 */
 
-	for (i = 0;  i < elemLen;  i += 2) {
+	for (i=0 ; i<elemLen ; i+=2) {
 	    char *part2 = TclGetString(elemPtrs[i]);
 	    Var *elemVarPtr = TclLookupArrayElement(interp, varName,
 		    part2, TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr);
+
 	    if ((elemVarPtr == NULL) ||
 		    (TclPtrSetVar(interp, elemVarPtr, varPtr, varName, part2,
 		    elemPtrs[i+1], TCL_LEAVE_ERR_MSG) == NULL)) {
@@ -3409,8 +3410,8 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
 	 * LOOKUP_FOR_UPVAR to indicate the special resolution rules for upvar
 	 * purposes:
 	 *   - Bug #696893 - variable is either proc-local or in the current
-	 *     namespace; never follow the second (global) resolution path
-	 *   - Bug #631741 - do not use special namespace or interp resolvers
+	 *     namespace; never follow the second (global) resolution path.
+	 *   - Bug #631741 - do not use special namespace or interp resolvers.
 	 */
 
 	varPtr = TclLookupSimpleVar(interp, myName, (myFlags|LOOKUP_FOR_UPVAR),
@@ -4169,7 +4170,7 @@ TclDeleteVars(iPtr, tablePtr)
     }
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);  hPtr != NULL;
-	 hPtr = Tcl_NextHashEntry(&search)) {
+	    hPtr = Tcl_NextHashEntry(&search)) {
 	varPtr = (Var *) Tcl_GetHashValue(hPtr);
 
 	/*
@@ -4339,7 +4340,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
-		 activePtr = activePtr->nextPtr) {
+		    activePtr = activePtr->nextPtr) {
 		if (activePtr->varPtr == varPtr) {
 		    activePtr->nextTracePtr = NULL;
 		}
@@ -4422,11 +4423,12 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 		    /* leaveErrMsg */ 0);
 	    while (elPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = elPtr->tracePtr;
+
 		elPtr->tracePtr = tracePtr->nextPtr;
-		Tcl_EventuallyFree((ClientData) tracePtr,TCL_DYNAMIC);
+		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
-		 activePtr = activePtr->nextPtr) {
+		    activePtr = activePtr->nextPtr) {
 		if (activePtr->varPtr == elPtr) {
 		    activePtr->nextTracePtr = NULL;
 		}
@@ -4702,3 +4704,11 @@ UpdateParsedVarName(objPtr)
     *p++ = ')';
     *p   = '\0';
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

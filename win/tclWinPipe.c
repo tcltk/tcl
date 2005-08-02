@@ -1,15 +1,15 @@
-/* 
+/*
  * tclWinPipe.c --
  *
- *	This file implements the Windows-specific exec pipeline functions,
- *	the "pipe" channel driver, and the "pid" Tcl command.
+ *	This file implements the Windows-specific exec pipeline functions, the
+ *	"pipe" channel driver, and the "pid" Tcl command.
  *
  * Copyright (c) 1996-1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.53.2.2 2005/07/12 20:37:35 kennykb Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.53.2.3 2005/08/02 18:17:18 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -26,16 +26,16 @@
 static int initialized = 0;
 
 /*
- * The pipeMutex locks around access to the initialized and procList variables,
- * and it is used to protect background threads from being terminated while
- * they are using APIs that hold locks.
+ * The pipeMutex locks around access to the initialized and procList
+ * variables, and it is used to protect background threads from being
+ * terminated while they are using APIs that hold locks.
  */
 
 TCL_DECLARE_MUTEX(pipeMutex)
 
 /*
- * The following defines identify the various types of applications that 
- * run under windows.  There is special case code for the various types.
+ * The following defines identify the various types of applications that run
+ * under windows. There is special case code for the various types.
  */
 
 #define APPL_NONE	0
@@ -44,16 +44,16 @@ TCL_DECLARE_MUTEX(pipeMutex)
 #define APPL_WIN32	3
 
 /*
- * The following constants and structures are used to encapsulate the state
- * of various types of files used in a pipeline.
- * This used to have a 1 && 2 that supported Win32s.
+ * The following constants and structures are used to encapsulate the state of
+ * various types of files used in a pipeline. This used to have a 1 && 2 that
+ * supported Win32s.
  */
 
-#define WIN_FILE 3		/* Basic Win32 file. */
+#define WIN_FILE	3	/* Basic Win32 file. */
 
 /*
- * This structure encapsulates the common state associated with all file
- * types used in a pipeline.
+ * This structure encapsulates the common state associated with all file types
+ * used in a pipeline.
  */
 
 typedef struct WinFile {
@@ -112,66 +112,64 @@ typedef struct PipeInfo {
     HANDLE writeThread;		/* Handle to writer thread. */
     HANDLE readThread;		/* Handle to reader thread. */
     HANDLE writable;		/* Manual-reset event to signal when the
-				 * writer thread has finished waiting for
-				 * the current buffer to be written. */
+				 * writer thread has finished waiting for the
+				 * current buffer to be written. */
     HANDLE readable;		/* Manual-reset event to signal when the
 				 * reader thread has finished waiting for
 				 * input. */
     HANDLE startWriter;		/* Auto-reset event used by the main thread to
-				 * signal when the writer thread should attempt
-				 * to write to the pipe. */
+				 * signal when the writer thread should
+				 * attempt to write to the pipe. */
     HANDLE stopWriter;		/* Manual-reset event used to alert the reader
 				 * thread to fall-out and exit */
     HANDLE startReader;		/* Auto-reset event used by the main thread to
-				 * signal when the reader thread should attempt
-				 * to read from the pipe. */
+				 * signal when the reader thread should
+				 * attempt to read from the pipe. */
     HANDLE stopReader;		/* Manual-reset event used to alert the reader
 				 * thread to fall-out and exit */
     DWORD writeError;		/* An error caused by the last background
-				 * write.  Set to 0 if no error has been
-				 * detected.  This word is shared with the
+				 * write. Set to 0 if no error has been
+				 * detected. This word is shared with the
 				 * writer thread so access must be
 				 * synchronized with the writable object.
 				 */
-    char *writeBuf;		/* Current background output buffer.
-				 * Access is synchronized with the writable
-				 * object. */
-    int writeBufLen;		/* Size of write buffer.  Access is
-				 * synchronized with the writable
-				 * object. */
-    int toWrite;		/* Current amount to be written.  Access is
+    char *writeBuf;		/* Current background output buffer. Access is
+				 * synchronized with the writable object. */
+    int writeBufLen;		/* Size of write buffer. Access is
+				 * synchronized with the writable object. */
+    int toWrite;		/* Current amount to be written. Access is
 				 * synchronized with the writable object. */
     int readFlags;		/* Flags that are shared with the reader
-				 * thread.  Access is synchronized with the
+				 * thread. Access is synchronized with the
 				 * readable object.  */
     char extraByte;		/* Buffer for extra character consumed by
-				 * reader thread.  This byte is shared with
-				 * the reader thread so access must be
+				 * reader thread. This byte is shared with the
+				 * reader thread so access must be
 				 * synchronized with the readable object. */
 } PipeInfo;
 
 typedef struct ThreadSpecificData {
     /*
-     * The following pointer refers to the head of the list of pipes
-     * that are being watched for file events.
+     * The following pointer refers to the head of the list of pipes that are
+     * being watched for file events.
      */
-    
+
     PipeInfo *firstPipePtr;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
 
 /*
- * The following structure is what is added to the Tcl event queue when
- * pipe events are generated.
+ * The following structure is what is added to the Tcl event queue when pipe
+ * events are generated.
  */
 
 typedef struct PipeEvent {
-    Tcl_Event header;		/* Information that is standard for
-				 * all events. */
-    PipeInfo *infoPtr;		/* Pointer to pipe info structure.  Note
-				 * that we still have to verify that the
-				 * pipe exists before dereferencing this
+    Tcl_Event header;		/* Information that is standard for all
+				 * events. */
+    PipeInfo *infoPtr;		/* Pointer to pipe info structure. Note that
+				 * we still have to verify that the pipe
+				 * exists before dereferencing this
 				 * pointer. */
 } PipeEvent;
 
@@ -181,7 +179,7 @@ typedef struct PipeEvent {
 
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
-static void		BuildCommandLine(const char *executable, int argc, 
+static void		BuildCommandLine(const char *executable, int argc,
 			    CONST char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
@@ -203,13 +201,12 @@ static void		PipeWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	PipeWriterThread(LPVOID arg);
 static int		TempFileName(WCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
-
-static void             PipeThreadActionProc _ANSI_ARGS_ ((
-			   ClientData instanceData, int action));
+static void		PipeThreadActionProc(ClientData instanceData,
+			    int action);
 
 /*
- * This structure describes the channel type structure for command pipe
- * based IO.
+ * This structure describes the channel type structure for command pipe based
+ * I/O.
  */
 
 static Tcl_ChannelType pipeChannelType = {
@@ -227,8 +224,8 @@ static Tcl_ChannelType pipeChannelType = {
     PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
-    NULL,                       /* wide seek proc */
-    PipeThreadActionProc,       /* thread action proc */
+    NULL,			/* wide seek proc */
+    PipeThreadActionProc,	/* thread action proc */
 };
 
 /*
@@ -253,8 +250,8 @@ PipeInit()
     ThreadSpecificData *tsdPtr;
 
     /*
-     * Check the initialized flag first, then check again in the mutex.
-     * This is a speed enhancement.
+     * Check the initialized flag first, then check again in the mutex. This
+     * is a speed enhancement.
      */
 
     if (!initialized) {
@@ -280,8 +277,8 @@ PipeInit()
  *
  * PipeExitHandler --
  *
- *	This function is called to cleanup the pipe module before
- *	Tcl is unloaded.
+ *	This function is called to cleanup the pipe module before Tcl is
+ *	unloaded.
  *
  * Results:
  *	None.
@@ -304,8 +301,8 @@ PipeExitHandler(
  *
  * TclpFinalizePipes --
  *
- *	This function is called to cleanup the process list before
- *	Tcl is unloaded.
+ *	This function is called to cleanup the process list before Tcl is
+ *	unloaded.
  *
  * Results:
  *	None.
@@ -329,8 +326,8 @@ TclpFinalizePipes()
  *
  * PipeSetupProc --
  *
- *	This procedure is invoked before Tcl_DoOneEvent blocks waiting
- *	for an event.
+ *	This function is invoked before Tcl_DoOneEvent blocks waiting for an
+ *	event.
  *
  * Results:
  *	None.
@@ -355,12 +352,12 @@ PipeSetupProc(
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
     }
-    
+
     /*
      * Look to see if any events are already pending.  If they are, poll.
      */
 
-    for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL; 
+    for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
 	    filePtr = (WinFile*) infoPtr->writeFile;
@@ -385,8 +382,8 @@ PipeSetupProc(
  *
  * PipeCheckProc --
  *
- *	This procedure is called by Tcl_DoOneEvent to check the pipe
- *	event source for events. 
+ *	This function is called by Tcl_DoOneEvent to check the pipe event
+ *	source for events.
  *
  * Results:
  *	None.
@@ -411,18 +408,17 @@ PipeCheckProc(
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
     }
-    
+
     /*
-     * Queue events for any ready pipes that don't already have events
-     * queued.
+     * Queue events for any ready pipes that don't already have events queued.
      */
 
-    for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL; 
+    for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->flags & PIPE_PENDING) {
 	    continue;
 	}
-	
+
 	/*
 	 * Queue an event if the pipe is signaled for reading or writing.
 	 */
@@ -433,7 +429,7 @@ PipeCheckProc(
 		(WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
 	    needEvent = 1;
 	}
-	
+
 	filePtr = (WinFile*) infoPtr->readFile;
 	if ((infoPtr->watchMask & TCL_READABLE) &&
 		(WaitForRead(infoPtr, 0) >= 0)) {
@@ -455,8 +451,8 @@ PipeCheckProc(
  *
  * TclWinMakeFile --
  *
- *	This function constructs a new TclFile from a given data and
- *	type value.
+ *	This function constructs a new TclFile from a given data and type
+ *	value.
  *
  * Results:
  *	Returns a newly allocated WinFile as a TclFile.
@@ -485,15 +481,14 @@ TclWinMakeFile(
  *
  * TempFileName --
  *
- *	Gets a temporary file name and deals with the fact that the
- *	temporary file path provided by Windows may not actually exist
- *	if the TMP or TEMP environment variables refer to a 
- *	non-existent directory.
+ *	Gets a temporary file name and deals with the fact that the temporary
+ *	file path provided by Windows may not actually exist if the TMP or
+ *	TEMP environment variables refer to a non-existent directory.
  *
- * Results:    
- *	0 if error, non-zero otherwise.  If non-zero is returned, the
- *	name buffer will be filled with a name that can be used to 
- *	construct a temporary file.
+ * Results:
+ *	0 if error, non-zero otherwise. If non-zero is returned, the name
+ *	buffer will be filled with a name that can be used to construct a
+ *	temporary file.
  *
  * Side effects:
  *	None.
@@ -503,14 +498,14 @@ TclWinMakeFile(
 
 static int
 TempFileName(name)
-    WCHAR name[MAX_PATH];	/* Buffer in which name for temporary 
-				 * file gets stored. */
+    WCHAR name[MAX_PATH];	/* Buffer in which name for temporary file
+				 * gets stored. */
 {
     TCHAR *prefix;
 
     prefix = (tclWinProcs->useWide) ? (TCHAR *) L"TCL" : (TCHAR *) "TCL";
     if ((*tclWinProcs->getTempPathProc)(MAX_PATH, name) != 0) {
-	if ((*tclWinProcs->getTempFileNameProc)((TCHAR *) name, prefix, 0, 
+	if ((*tclWinProcs->getTempFileNameProc)((TCHAR *) name, prefix, 0,
 		name) != 0) {
 	    return 1;
 	}
@@ -522,7 +517,7 @@ TempFileName(name)
 	((char *) name)[0] = '.';
 	((char *) name)[1] = '\0';
     }
-    return (*tclWinProcs->getTempFileNameProc)((TCHAR *) name, prefix, 0, 
+    return (*tclWinProcs->getTempFileNameProc)((TCHAR *) name, prefix, 0,
 	    name);
 }
 
@@ -549,7 +544,7 @@ TclpMakeFile(channel, direction)
 {
     HANDLE handle;
 
-    if (Tcl_GetChannelHandle(channel, direction, 
+    if (Tcl_GetChannelHandle(channel, direction,
 	    (ClientData *) &handle) == TCL_OK) {
 	return TclWinMakeFile(handle);
     } else {
@@ -565,8 +560,8 @@ TclpMakeFile(channel, direction)
  *	This function opens files for use in a pipeline.
  *
  * Results:
- *	Returns a newly allocated TclFile structure containing the
- *	file handle.
+ *	Returns a newly allocated TclFile structure containing the file
+ *	handle.
  *
  * Side effects:
  *	None.
@@ -583,24 +578,24 @@ TclpOpenFile(path, mode)
     DWORD accessMode, createMode, shareMode, flags;
     Tcl_DString ds;
     CONST TCHAR *nativePath;
-    
+
     /*
      * Map the access bits to the NT access mode.
      */
 
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
-	case O_RDONLY:
-	    accessMode = GENERIC_READ;
-	    break;
-	case O_WRONLY:
-	    accessMode = GENERIC_WRITE;
-	    break;
-	case O_RDWR:
-	    accessMode = (GENERIC_READ | GENERIC_WRITE);
-	    break;
-	default:
-	    TclWinConvertError(ERROR_INVALID_FUNCTION);
-	    return NULL;
+    case O_RDONLY:
+	accessMode = GENERIC_READ;
+	break;
+    case O_WRONLY:
+	accessMode = GENERIC_WRITE;
+	break;
+    case O_RDWR:
+	accessMode = (GENERIC_READ | GENERIC_WRITE);
+	break;
+    default:
+	TclWinConvertError(ERROR_INVALID_FUNCTION);
+	return NULL;
     }
 
     /*
@@ -608,23 +603,23 @@ TclpOpenFile(path, mode)
      */
 
     switch (mode & (O_CREAT | O_EXCL | O_TRUNC)) {
-	case (O_CREAT | O_EXCL):
-	case (O_CREAT | O_EXCL | O_TRUNC):
-	    createMode = CREATE_NEW;
-	    break;
-	case (O_CREAT | O_TRUNC):
-	    createMode = CREATE_ALWAYS;
-	    break;
-	case O_CREAT:
-	    createMode = OPEN_ALWAYS;
-	    break;
-	case O_TRUNC:
-	case (O_TRUNC | O_EXCL):
-	    createMode = TRUNCATE_EXISTING;
-	    break;
-	default:
-	    createMode = OPEN_EXISTING;
-	    break;
+    case (O_CREAT | O_EXCL):
+    case (O_CREAT | O_EXCL | O_TRUNC):
+	createMode = CREATE_NEW;
+	break;
+    case (O_CREAT | O_TRUNC):
+	createMode = CREATE_ALWAYS;
+	break;
+    case O_CREAT:
+	createMode = OPEN_ALWAYS;
+	break;
+    case O_TRUNC:
+    case (O_TRUNC | O_EXCL):
+	createMode = TRUNCATE_EXISTING;
+	break;
+    default:
+	createMode = OPEN_EXISTING;
+	break;
     }
 
     nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
@@ -651,26 +646,26 @@ TclpOpenFile(path, mode)
      * Now we get to create the file.
      */
 
-    handle = (*tclWinProcs->createFileProc)(nativePath, accessMode, 
+    handle = (*tclWinProcs->createFileProc)(nativePath, accessMode,
 	    shareMode, NULL, createMode, flags, NULL);
     Tcl_DStringFree(&ds);
 
     if (handle == INVALID_HANDLE_VALUE) {
 	DWORD err;
-	
+
 	err = GetLastError();
 	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
 	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
 	}
-        TclWinConvertError(err);
-        return NULL;
+	TclWinConvertError(err);
+	return NULL;
     }
 
     /*
      * Seek to the end of file if we are writing.
      */
 
-    if (mode & O_WRONLY) {
+    if (mode & (O_WRONLY|O_APPEND)) {
 	SetFilePointer(handle, 0, NULL, FILE_END);
     }
 
@@ -682,9 +677,9 @@ TclpOpenFile(path, mode)
  *
  * TclpCreateTempFile --
  *
- *	This function opens a unique file with the property that it
- *	will be deleted when its file handle is closed.  The temporary
- *	file is created in the system temporary directory.
+ *	This function opens a unique file with the property that it will be
+ *	deleted when its file handle is closed. The temporary file is created
+ *	in the system temporary directory.
  *
  * Results:
  *	Returns a valid TclFile, or NULL on failure.
@@ -708,8 +703,8 @@ TclpCreateTempFile(contents)
 	return NULL;
     }
 
-    handle = (*tclWinProcs->createFileProc)((TCHAR *) name, 
-	    GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 
+    handle = (*tclWinProcs->createFileProc)((TCHAR *) name,
+	    GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 	    FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE, NULL);
     if (handle == INVALID_HANDLE_VALUE) {
 	goto error;
@@ -726,8 +721,9 @@ TclpCreateTempFile(contents)
 	/*
 	 * Convert the contents from UTF to native encoding
 	 */
+
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
-	
+
 	for (p = native; *p != '\0'; p++) {
 	    if (*p == '\n') {
 		length = p - native;
@@ -757,7 +753,10 @@ TclpCreateTempFile(contents)
     return TclWinMakeFile(handle);
 
   error:
-    /* Free the native representation of the contents if necessary */
+    /*
+     * Free the native representation of the contents if necessary.
+     */
+
     if (contents != NULL) {
 	Tcl_DStringFree(&dstring);
     }
@@ -784,7 +783,7 @@ TclpCreateTempFile(contents)
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj* 
+Tcl_Obj*
 TclpTempFileName()
 {
     WCHAR fileName[MAX_PATH];
@@ -801,23 +800,23 @@ TclpTempFileName()
  *
  * TclpCreatePipe --
  *
- *      Creates an anonymous pipe.
+ *	Creates an anonymous pipe.
  *
  * Results:
- *      Returns 1 on success, 0 on failure. 
+ *	Returns 1 on success, 0 on failure.
  *
  * Side effects:
- *      Creates a pipe.
+ *	Creates a pipe.
  *
  *----------------------------------------------------------------------
  */
 
 int
 TclpCreatePipe(
-    TclFile *readPipe,	/* Location to store file handle for
-				 * read side of pipe. */
-    TclFile *writePipe)	/* Location to store file handle for
-				 * write side of pipe. */
+    TclFile *readPipe,		/* Location to store file handle for read side
+				 * of pipe. */
+    TclFile *writePipe)		/* Location to store file handle for write
+				 * side of pipe. */
 {
     HANDLE readHandle, writeHandle;
 
@@ -836,7 +835,7 @@ TclpCreatePipe(
  *
  * TclpCloseFile --
  *
- *	Closes a pipeline file handle.  These handles are created by
+ *	Closes a pipeline file handle. These handles are created by
  *	TclpOpenFile, TclpCreatePipe, or TclpMakeFile.
  *
  * Results:
@@ -850,33 +849,33 @@ TclpCreatePipe(
 
 int
 TclpCloseFile(
-    TclFile file)	/* The file to close. */
+    TclFile file)		/* The file to close. */
 {
     WinFile *filePtr = (WinFile *) file;
 
     switch (filePtr->type) {
-	case WIN_FILE:
-	    /*
-	     * Don't close the Win32 handle if the handle is a standard channel
-	     * during the thread exit process.  Otherwise, one thread may kill
-	     * the stdio of another.
-	     */
+    case WIN_FILE:
+	/*
+	 * Don't close the Win32 handle if the handle is a standard channel
+	 * during the thread exit process. Otherwise, one thread may kill the
+	 * stdio of another.
+	 */
 
-	    if (!TclInThreadExit() 
-		    || ((GetStdHandle(STD_INPUT_HANDLE) != filePtr->handle)
-			    && (GetStdHandle(STD_OUTPUT_HANDLE) != filePtr->handle)
-			    && (GetStdHandle(STD_ERROR_HANDLE) != filePtr->handle))) {
-		if (filePtr->handle != NULL &&
-			CloseHandle(filePtr->handle) == FALSE) {
-		    TclWinConvertError(GetLastError());
-		    ckfree((char *) filePtr);
-		    return -1;
-		}
+	if (!TclInThreadExit()
+		|| ((GetStdHandle(STD_INPUT_HANDLE) != filePtr->handle)
+		    && (GetStdHandle(STD_OUTPUT_HANDLE) != filePtr->handle)
+		    && (GetStdHandle(STD_ERROR_HANDLE) != filePtr->handle))) {
+	    if (filePtr->handle != NULL &&
+		    CloseHandle(filePtr->handle) == FALSE) {
+		TclWinConvertError(GetLastError());
+		ckfree((char *) filePtr);
+		return -1;
 	    }
-	    break;
+	}
+	break;
 
-	default:
-	    Tcl_Panic("TclpCloseFile: unexpected file type");
+    default:
+	Tcl_Panic("TclpCloseFile: unexpected file type");
     }
 
     ckfree((char *) filePtr);
@@ -892,9 +891,9 @@ TclpCloseFile(
  *	child process.
  *
  * Results:
- *	Returns the process id for the child process.  If the pid was not 
- *	known by Tcl, either because the pid was not created by Tcl or the 
- *	child process has already been reaped, -1 is returned.
+ *	Returns the process id for the child process. If the pid was not known
+ *	by Tcl, either because the pid was not created by Tcl or the child
+ *	process has already been reaped, -1 is returned.
  *
  * Side effects:
  *	None.
@@ -926,25 +925,25 @@ TclpGetPid(
  *
  * TclpCreateProcess --
  *
- *	Create a child process that has the specified files as its 
- *	standard input, output, and error.  The child process runs
- *	asynchronously under Windows NT and Windows 9x, and runs
- *	with the same environment variables as the creating process.
+ *	Create a child process that has the specified files as its standard
+ *	input, output, and error. The child process runs asynchronously under
+ *	Windows NT and Windows 9x, and runs with the same environment
+ *	variables as the creating process.
  *
- *	The complete Windows search path is searched to find the specified 
- *	executable.  If an executable by the given name is not found, 
- *	automatically tries appending ".com", ".exe", and ".bat" to the 
+ *	The complete Windows search path is searched to find the specified
+ *	executable. If an executable by the given name is not found,
+ *	automatically tries appending ".com", ".exe", and ".bat" to the
  *	executable name.
  *
  * Results:
- *	The return value is TCL_ERROR and an error message is left in
- *	the interp's result if there was a problem creating the child 
- *	process.  Otherwise, the return value is TCL_OK and *pidPtr is
- *	filled with the process id of the child process.
- * 
+ *	The return value is TCL_ERROR and an error message is left in the
+ *	interp's result if there was a problem creating the child process.
+ *	Otherwise, the return value is TCL_OK and *pidPtr is filled with the
+ *	process id of the child process.
+ *
  * Side effects:
  *	A process is created.
- *	
+ *
  *----------------------------------------------------------------------
  */
 
@@ -955,27 +954,27 @@ TclpCreateProcess(
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
     int argc,			/* Number of arguments in following array. */
-    CONST char **argv,		/* Array of argument strings.  argv[0]
-				 * contains the name of the executable
-				 * converted to native format (using the
-				 * Tcl_TranslateFileName call).  Additional
+    CONST char **argv,		/* Array of argument strings. argv[0] contains
+				 * the name of the executable converted to
+				 * native format (using the
+				 * Tcl_TranslateFileName call). Additional
 				 * arguments have not been converted. */
-    TclFile inputFile,		/* If non-NULL, gives the file to use as
-				 * input for the child process.  If inputFile
-				 * file is not readable or is NULL, the child
-				 * will receive no standard input. */
-    TclFile outputFile,		/* If non-NULL, gives the file that
-				 * receives output from the child process.  If
+    TclFile inputFile,		/* If non-NULL, gives the file to use as input
+				 * for the child process. If inputFile file is
+				 * not readable or is NULL, the child will
+				 * receive no standard input. */
+    TclFile outputFile,		/* If non-NULL, gives the file that receives
+				 * output from the child process. If
 				 * outputFile file is not writeable or is
 				 * NULL, output from the child will be
 				 * discarded. */
-    TclFile errorFile,		/* If non-NULL, gives the file that
-				 * receives errors from the child process.  If
-				 * errorFile file is not writeable or is NULL,
-				 * errors from the child will be discarded.
-				 * errorFile may be the same as outputFile. */
-    Tcl_Pid *pidPtr)		/* If this procedure is successful, pidPtr
-				 * is filled with the process id of the child
+    TclFile errorFile,		/* If non-NULL, gives the file that receives
+				 * errors from the child process. If errorFile
+				 * file is not writeable or is NULL, errors
+				 * from the child will be discarded. errorFile
+				 * may be the same as outputFile. */
+    Tcl_Pid *pidPtr)		/* If this function is successful, pidPtr is
+				 * filled with the process id of the child
 				 * process. */
 {
     int result, applType, createFlags;
@@ -1000,13 +999,13 @@ TclpCreateProcess(
 
     /*
      * STARTF_USESTDHANDLES must be used to pass handles to child process.
-     * Using SetStdHandle() and/or dup2() only works when a console mode 
+     * Using SetStdHandle() and/or dup2() only works when a console mode
      * parent process is spawning an attached console mode child process.
      */
 
     ZeroMemory(&startInfo, sizeof(startInfo));
     startInfo.cb = sizeof(startInfo);
-    startInfo.dwFlags   = STARTF_USESTDHANDLES;
+    startInfo.dwFlags	= STARTF_USESTDHANDLES;
     startInfo.hStdInput	= INVALID_HANDLE_VALUE;
     startInfo.hStdOutput= INVALID_HANDLE_VALUE;
     startInfo.hStdError = INVALID_HANDLE_VALUE;
@@ -1016,8 +1015,8 @@ TclpCreateProcess(
     secAtts.bInheritHandle = TRUE;
 
     /*
-     * We have to check the type of each file, since we cannot duplicate 
-     * some file types.  
+     * We have to check the type of each file, since we cannot duplicate some
+     * file types.
      */
 
     inputHandle = INVALID_HANDLE_VALUE;
@@ -1043,23 +1042,22 @@ TclpCreateProcess(
     }
 
     /*
-     * Duplicate all the handles which will be passed off as stdin, stdout
-     * and stderr of the child process. The duplicate handles are set to
-     * be inheritable, so the child process can use them.
+     * Duplicate all the handles which will be passed off as stdin, stdout and
+     * stderr of the child process. The duplicate handles are set to be
+     * inheritable, so the child process can use them.
      */
 
     if (inputHandle == INVALID_HANDLE_VALUE) {
-	/* 
-	 * If handle was not set, stdin should return immediate EOF.
-	 * Under Windows95, some applications (both 16 and 32 bit!) 
-	 * cannot read from the NUL device; they read from console
-	 * instead.  When running tk, this is fatal because the child 
-	 * process would hang forever waiting for EOF from the unmapped 
-	 * console window used by the helper application.
+	/*
+	 * If handle was not set, stdin should return immediate EOF. Under
+	 * Windows95, some applications (both 16 and 32 bit!) cannot read from
+	 * the NUL device; they read from console instead. When running tk,
+	 * this is fatal because the child process would hang forever waiting
+	 * for EOF from the unmapped console window used by the helper
+	 * application.
 	 *
-	 * Fortunately, the helper application detects a closed pipe 
-	 * as an immediate EOF and can pass that information to the 
-	 * child process.
+	 * Fortunately, the helper application detects a closed pipe as an
+	 * immediate EOF and can pass that information to the child process.
 	 */
 
 	if (CreatePipe(&startInfo.hStdInput, &h, &secAtts, 0) != FALSE) {
@@ -1078,21 +1076,20 @@ TclpCreateProcess(
 
     if (outputHandle == INVALID_HANDLE_VALUE) {
 	/*
-	 * If handle was not set, output should be sent to an infinitely 
-	 * deep sink.  Under Windows 95, some 16 bit applications cannot
-	 * have stdout redirected to NUL; they send their output to
-	 * the console instead.  Some applications, like "more" or "dir /p", 
-	 * when outputting multiple pages to the console, also then try and
-	 * read from the console to go the next page.  When running tk, this
-	 * is fatal because the child process would hang forever waiting
-	 * for input from the unmapped console window used by the helper
-	 * application.
+	 * If handle was not set, output should be sent to an infinitely deep
+	 * sink. Under Windows 95, some 16 bit applications cannot have stdout
+	 * redirected to NUL; they send their output to the console instead.
+	 * Some applications, like "more" or "dir /p", when outputting
+	 * multiple pages to the console, also then try and read from the
+	 * console to go the next page. When running tk, this is fatal because
+	 * the child process would hang forever waiting for input from the
+	 * unmapped console window used by the helper application.
 	 *
-	 * Fortunately, the helper application will detect a closed pipe
-	 * as a sink.
+	 * Fortunately, the helper application will detect a closed pipe as a
+	 * sink.
 	 */
 
-	if ((TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS) 
+	if ((TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS)
 		&& (applType == APPL_DOS)) {
 	    if (CreatePipe(&h, &startInfo.hStdOutput, &secAtts, 0) != FALSE) {
 		CloseHandle(h);
@@ -1102,8 +1099,8 @@ TclpCreateProcess(
 		    &secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
     } else {
-	DuplicateHandle(hProcess, outputHandle, hProcess, &startInfo.hStdOutput, 
-		0, TRUE, DUPLICATE_SAME_ACCESS);
+	DuplicateHandle(hProcess, outputHandle, hProcess,
+		&startInfo.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdOutput == INVALID_HANDLE_VALUE) {
 	TclWinConvertError(GetLastError());
@@ -1114,35 +1111,34 @@ TclpCreateProcess(
 
     if (errorHandle == INVALID_HANDLE_VALUE) {
 	/*
-	 * If handle was not set, errors should be sent to an infinitely
-	 * deep sink.
+	 * If handle was not set, errors should be sent to an infinitely deep
+	 * sink.
 	 */
 
 	startInfo.hStdError = CreateFileA("NUL:", GENERIC_WRITE, 0,
 		&secAtts, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
-	DuplicateHandle(hProcess, errorHandle, hProcess, &startInfo.hStdError, 
+	DuplicateHandle(hProcess, errorHandle, hProcess, &startInfo.hStdError,
 		0, TRUE, DUPLICATE_SAME_ACCESS);
-    } 
+    }
     if (startInfo.hStdError == INVALID_HANDLE_VALUE) {
 	TclWinConvertError(GetLastError());
 	Tcl_AppendResult(interp, "couldn't duplicate error handle: ",
 		Tcl_PosixError(interp), (char *) NULL);
 	goto end;
     }
-    /* 
-     * If we do not have a console window, then we must run DOS and
-     * WIN32 console mode applications as detached processes. This tells
-     * the loader that the child application should not inherit the
-     * console, and that it should not create a new console window for
-     * the child application.  The child application should get its stdio 
-     * from the redirection handles provided by this application, and run
-     * in the background.
+
+    /*
+     * If we do not have a console window, then we must run DOS and WIN32
+     * console mode applications as detached processes. This tells the loader
+     * that the child application should not inherit the console, and that it
+     * should not create a new console window for the child application. The
+     * child application should get its stdio from the redirection handles
+     * provided by this application, and run in the background.
      *
-     * If we are starting a GUI process, they don't automatically get a 
+     * If we are starting a GUI process, they don't automatically get a
      * console, so it doesn't matter if they are started as foreground or
-     * detached processes.  The GUI window will still pop up to the
-     * foreground.
+     * detached processes. The GUI window will still pop up to the foreground.
      */
 
     if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
@@ -1150,11 +1146,11 @@ TclpCreateProcess(
 	    createFlags = 0;
 	} else if (applType == APPL_DOS) {
 	    /*
-	     * Under NT, 16-bit DOS applications will not run unless they
-	     * can be attached to a console.  If we are running without a
-	     * console, run the 16-bit program as an normal process inside
-	     * of a hidden console application, and then run that hidden
-	     * console as a detached process.
+	     * Under NT, 16-bit DOS applications will not run unless they can
+	     * be attached to a console. If we are running without a console,
+	     * run the 16-bit program as an normal process inside of a hidden
+	     * console application, and then run that hidden console as a
+	     * detached process.
 	     */
 
 	    startInfo.wShowWindow = SW_HIDE;
@@ -1163,41 +1159,41 @@ TclpCreateProcess(
 	    Tcl_DStringAppend(&cmdLine, "cmd.exe /c", -1);
 	} else {
 	    createFlags = DETACHED_PROCESS;
-	} 
+	}
     } else {
 	if (HasConsole()) {
 	    createFlags = 0;
 	} else {
 	    createFlags = DETACHED_PROCESS;
 	}
-	
+
 	if (applType == APPL_DOS) {
 	    /*
-	     * Under Windows 95, 16-bit DOS applications do not work well 
-	     * with pipes:
+	     * Under Windows 95, 16-bit DOS applications do not work well with
+	     * pipes:
 	     *
-	     * 1. EOF on a pipe between a detached 16-bit DOS application 
-	     * and another application is not seen at the other
-	     * end of the pipe, so the listening process blocks forever on 
-	     * reads.  This inablity to detect EOF happens when either a 
-	     * 16-bit app or the 32-bit app is the listener.  
+	     * 1. EOF on a pipe between a detached 16-bit DOS application and
+	     * another application is not seen at the other end of the pipe,
+	     * so the listening process blocks forever on reads. This inablity
+	     * to detect EOF happens when either a 16-bit app or the 32-bit
+	     * app is the listener.
 	     *
-	     * 2. If a 16-bit DOS application (detached or not) blocks when 
+	     * 2. If a 16-bit DOS application (detached or not) blocks when
 	     * writing to a pipe, it will never wake up again, and it
 	     * eventually brings the whole system down around it.
 	     *
-	     * The 16-bit application is run as a normal process inside
-	     * of a hidden helper console app, and this helper may be run
-	     * as a detached process.  If any of the stdio handles is
-	     * a pipe, the helper application accumulates information 
-	     * into temp files and forwards it to or from the DOS 
-	     * application as appropriate.  This means that DOS apps 
-	     * must receive EOF from a stdin pipe before they will actually
-	     * begin, and must finish generating stdout or stderr before 
-	     * the data will be sent to the next stage of the pipe.
+	     * The 16-bit application is run as a normal process inside of a
+	     * hidden helper console app, and this helper may be run as a
+	     * detached process. If any of the stdio handles is a pipe, the
+	     * helper application accumulates information into temp files and
+	     * forwards it to or from the DOS application as appropriate.
+	     * This means that DOS apps must receive EOF from a stdin pipe
+	     * before they will actually begin, and must finish generating
+	     * stdout or stderr before the data will be sent to the next stage
+	     * of the pipe.
 	     *
-	     * The helper app should be located in the same directory as
-	     * the tcl dll.
+	     * The helper app should be located in the same directory as the
+	     * tcl dll.
 	     */
 
 	    if (createFlags != 0) {
@@ -1211,13 +1207,14 @@ TclpCreateProcess(
 		int i, fileExists;
 		char *start,*end;
 		Tcl_DString pipeDll;
+
 		Tcl_DStringInit(&pipeDll);
 		Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
 		tclExePtr = TclGetObjNameOfExecutable();
 		start = Tcl_GetStringFromObj(tclExePtr, &i);
 		for (end = start + (i-1); end > start; end--) {
 		    if (*end == '/') {
-		        break;
+			break;
 		    }
 		}
 		if (*end != '/') {
@@ -1233,7 +1230,7 @@ TclpCreateProcess(
 		fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
 		if (!fileExists) {
 		    Tcl_Panic("Tcl pipe dll \"%s\" not found",
-		        Tcl_DStringValue(&pipeDll));
+			Tcl_DStringValue(&pipeDll));
 		}
 		Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
 		Tcl_DecrRefCount(tclExePtr);
@@ -1242,30 +1239,29 @@ TclpCreateProcess(
 	    }
 	}
     }
-    
+
     /*
      * cmdLine gets the full command line used to invoke the executable,
-     * including the name of the executable itself.  The command line
-     * arguments in argv[] are stored in cmdLine separated by spaces. 
-     * Special characters in individual arguments from argv[] must be 
-     * quoted when being stored in cmdLine.
+     * including the name of the executable itself. The command line arguments
+     * in argv[] are stored in cmdLine separated by spaces. Special characters
+     * in individual arguments from argv[] must be quoted when being stored in
+     * cmdLine.
      *
-     * When calling any application, bear in mind that arguments that 
-     * specify a path name are not converted.  If an argument contains 
-     * forward slashes as path separators, it may or may not be 
-     * recognized as a path name, depending on the program.  In general,
-     * most applications accept forward slashes only as option 
-     * delimiters and backslashes only as paths.
+     * When calling any application, bear in mind that arguments that specify
+     * a path name are not converted. If an argument contains forward slashes
+     * as path separators, it may or may not be recognized as a path name,
+     * depending on the program. In general, most applications accept forward
+     * slashes only as option delimiters and backslashes only as paths.
      *
-     * Additionally, when calling a 16-bit dos or windows application, 
-     * all path names must use the short, cryptic, path format (e.g., 
-     * using ab~1.def instead of "a b.default").  
+     * Additionally, when calling a 16-bit dos or windows application, all
+     * path names must use the short, cryptic, path format (e.g., using
+     * ab~1.def instead of "a b.default").
      */
 
     BuildCommandLine(execPath, argc, argv, &cmdLine);
 
-    if ((*tclWinProcs->createProcessProc)(NULL, 
-	    (TCHAR *) Tcl_DStringValue(&cmdLine), NULL, NULL, TRUE, 
+    if ((*tclWinProcs->createProcessProc)(NULL,
+	    (TCHAR *) Tcl_DStringValue(&cmdLine), NULL, NULL, TRUE,
 	    (DWORD) createFlags, NULL, NULL, &startInfo, &procInfo) == 0) {
 	TclWinConvertError(GetLastError());
 	Tcl_AppendResult(interp, "couldn't execute \"", argv[0],
@@ -1274,21 +1270,20 @@ TclpCreateProcess(
     }
 
     /*
-     * This wait is used to force the OS to give some time to the DOS
-     * process.
+     * This wait is used to force the OS to give some time to the DOS process.
      */
 
     if (applType == APPL_DOS) {
 	WaitForSingleObject(procInfo.hProcess, 50);
     }
 
-    /* 
-     * "When an application spawns a process repeatedly, a new thread 
-     * instance will be created for each process but the previous 
-     * instances may not be cleaned up.  This results in a significant 
-     * virtual memory loss each time the process is spawned.  If there 
-     * is a WaitForInputIdle() call between CreateProcess() and
-     * CloseHandle(), the problem does not occur." PSS ID Number: Q124121
+    /*
+     * "When an application spawns a process repeatedly, a new thread instance
+     * will be created for each process but the previous instances may not be
+     * cleaned up. This results in a significant virtual memory loss each time
+     * the process is spawned. If there is a WaitForInputIdle() call between
+     * CreateProcess() and CloseHandle(), the problem does not occur." PSS ID
+     * Number: Q124121
      */
 
     WaitForInputIdle(procInfo.hProcess, 5000);
@@ -1300,13 +1295,13 @@ TclpCreateProcess(
     }
     result = TCL_OK;
 
-    end:
+  end:
     Tcl_DStringFree(&cmdLine);
     if (startInfo.hStdInput != INVALID_HANDLE_VALUE) {
-        CloseHandle(startInfo.hStdInput);
+	CloseHandle(startInfo.hStdInput);
     }
     if (startInfo.hStdOutput != INVALID_HANDLE_VALUE) {
-        CloseHandle(startInfo.hStdOutput);
+	CloseHandle(startInfo.hStdOutput);
     }
     if (startInfo.hStdError != INVALID_HANDLE_VALUE) {
 	CloseHandle(startInfo.hStdError);
@@ -1320,8 +1315,7 @@ TclpCreateProcess(
  *
  * HasConsole --
  *
- *	Determines whether the current application is attached to a
- *	console.
+ *	Determines whether the current application is attached to a console.
  *
  * Results:
  *	Returns TRUE if this application has a console, else FALSE.
@@ -1336,15 +1330,15 @@ static BOOL
 HasConsole()
 {
     HANDLE handle;
-    
+
     handle = CreateFileA("CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE,
 	    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (handle != INVALID_HANDLE_VALUE) {
-        CloseHandle(handle);
+	CloseHandle(handle);
 	return TRUE;
     } else {
-        return FALSE;
+	return FALSE;
     }
 }
 
@@ -1354,29 +1348,28 @@ HasConsole()
  * ApplicationType --
  *
  *	Search for the specified program and identify if it refers to a DOS,
- *	Windows 3.X, or Win32 program.  Used to determine how to invoke 
- *	a program, or if it can even be invoked.
+ *	Windows 3.X, or Win32 program.	Used to determine how to invoke a
+ *	program, or if it can even be invoked.
  *
- *	It is possible to almost positively identify DOS and Windows 
- *	applications that contain the appropriate magic numbers.  However, 
- *	DOS .com files do not seem to contain a magic number; if the program 
- *	name ends with .com and could not be identified as a Windows .com
- *	file, it will be assumed to be a DOS application, even if it was
- *	just random data.  If the program name does not end with .com, no 
- *	such assumption is made.
+ *	It is possible to almost positively identify DOS and Windows
+ *	applications that contain the appropriate magic numbers. However, DOS
+ *	.com files do not seem to contain a magic number; if the program name
+ *	ends with .com and could not be identified as a Windows .com file, it
+ *	will be assumed to be a DOS application, even if it was just random
+ *	data. If the program name does not end with .com, no such assumption
+ *	is made.
  *
- *	The Win32 procedure GetBinaryType incorrectly identifies any 
- *	junk file that ends with .exe as a dos executable and some 
- *	executables that don't end with .exe as not executable.  Plus it 
- *	doesn't exist under win95, so I won't feel bad about reimplementing
- *	functionality.
+ *	The Win32 function GetBinaryType incorrectly identifies any junk file
+ *	that ends with .exe as a dos executable and some executables that
+ *	don't end with .exe as not executable. Plus it doesn't exist under
+ *	win95, so I won't feel bad about reimplementing functionality.
  *
  * Results:
- *	The return value is one of APPL_DOS, APPL_WIN3X, or APPL_WIN32
- *	if the filename referred to the corresponding application type.
- *	If the file name could not be found or did not refer to any known 
- *	application type, APPL_NONE is returned and an error message is 
- *	left in interp.  .bat files are identified as APPL_DOS.
+ *	The return value is one of APPL_DOS, APPL_WIN3X, or APPL_WIN32 if the
+ *	filename referred to the corresponding application type. If the file
+ *	name could not be found or did not refer to any known application
+ *	type, APPL_NONE is returned and an error message is left in interp.
+ *	.bat files are identified as APPL_DOS.
  *
  * Side effects:
  *	None.
@@ -1388,7 +1381,7 @@ static int
 ApplicationType(interp, originalName, fullName)
     Tcl_Interp *interp;		/* Interp, for error message. */
     const char *originalName;	/* Name of the application to find. */
-    char fullName[];		/* Filled with complete path to 
+    char fullName[];		/* Filled with complete path to
 				 * application. */
 {
     int applType, i, nameLen, found;
@@ -1403,17 +1396,17 @@ ApplicationType(interp, originalName, fullName)
     WCHAR nativeFullPath[MAX_PATH];
     static char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
-    /* Look for the program as an external program.  First try the name
-     * as it is, then try adding .com, .exe, and .bat, in that order, to
-     * the name, looking for an executable.
+    /*
+     * Look for the program as an external program. First try the name as it
+     * is, then try adding .com, .exe, and .bat, in that order, to the name,
+     * looking for an executable.
      *
-     * Using the raw SearchPath() procedure doesn't do quite what is 
-     * necessary.  If the name of the executable already contains a '.' 
-     * character, it will not try appending the specified extension when
-     * searching (in other words, SearchPath will not find the program 
-     * "a.b.exe" if the arguments specified "a.b" and ".exe").   
-     * So, first look for the file as it is named.  Then manually append 
-     * the extensions, looking for a match.  
+     * Using the raw SearchPath() function doesn't do quite what is necessary.
+     * If the name of the executable already contains a '.' character, it will
+     * not try appending the specified extension when searching (in other
+     * words, SearchPath will not find the program "a.b.exe" if the arguments
+     * specified "a.b" and ".exe"). So, first look for the file as it is
+     * named. Then manually append the extensions, looking for a match.
      */
 
     applType = APPL_NONE;
@@ -1424,9 +1417,9 @@ ApplicationType(interp, originalName, fullName)
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
 	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
-        nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf), 
+	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
-	found = (*tclWinProcs->searchPathProc)(NULL, nativeName, NULL, 
+	found = (*tclWinProcs->searchPathProc)(NULL, nativeName, NULL,
 		MAX_PATH, nativeFullPath, &rest);
 	Tcl_DStringFree(&ds);
 	if (found == 0) {
@@ -1434,8 +1427,8 @@ ApplicationType(interp, originalName, fullName)
 	}
 
 	/*
-	 * Ignore matches on directories or data files, return if identified
-	 * a known type.
+	 * Ignore matches on directories or data files, return if identified a
+	 * known type.
 	 */
 
 	attr = (*tclWinProcs->getFileAttributesProc)((TCHAR *) nativeFullPath);
@@ -1450,9 +1443,9 @@ ApplicationType(interp, originalName, fullName)
 	    applType = APPL_DOS;
 	    break;
 	}
-	
-	hFile = (*tclWinProcs->createFileProc)((TCHAR *) nativeFullPath, 
-		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 
+
+	hFile = (*tclWinProcs->createFileProc)((TCHAR *) nativeFullPath,
+		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 	    continue;
@@ -1461,12 +1454,12 @@ ApplicationType(interp, originalName, fullName)
 	header.e_magic = 0;
 	ReadFile(hFile, (void *) &header, sizeof(header), &read, NULL);
 	if (header.e_magic != IMAGE_DOS_SIGNATURE) {
-	    /* 
-	     * Doesn't have the magic number for relocatable executables.  If 
+	    /*
+	     * Doesn't have the magic number for relocatable executables. If
 	     * filename ends with .com, assume it's a DOS application anyhow.
 	     * Note that we didn't make this assumption at first, because some
 	     * supposed .com files are really 32-bit executables with all the
-	     * magic numbers and everything.  
+	     * magic numbers and everything.
 	     */
 
 	    CloseHandle(hFile);
@@ -1477,9 +1470,9 @@ ApplicationType(interp, originalName, fullName)
 	    continue;
 	}
 	if (header.e_lfarlc != sizeof(header)) {
-	    /* 
+	    /*
 	     * All Windows 3.X and Win32 and some DOS programs have this value
-	     * set here.  If it doesn't, assume that since it already had the 
+	     * set here. If it doesn't, assume that since it already had the
 	     * other magic number it was a DOS application.
 	     */
 
@@ -1488,7 +1481,7 @@ ApplicationType(interp, originalName, fullName)
 	    break;
 	}
 
-	/* 
+	/*
 	 * The DWORD at header.e_lfanew points to yet another magic number.
 	 */
 
@@ -1503,11 +1496,11 @@ ApplicationType(interp, originalName, fullName)
 	    applType = APPL_WIN32;
 	} else {
 	    /*
-	     * Strictly speaking, there should be a test that there
-	     * is an 'L' and 'E' at buf[0..1], to identify the type as 
-	     * DOS, but of course we ran into a DOS executable that 
-	     * _doesn't_ have the magic number -- specifically, one
-	     * compiled using the Lahey Fortran90 compiler.
+	     * Strictly speaking, there should be a test that there is an 'L'
+	     * and 'E' at buf[0..1], to identify the type as DOS, but of
+	     * course we ran into a DOS executable that _doesn't_ have the
+	     * magic number - specifically, one compiled using the Lahey
+	     * Fortran90 compiler.
 	     */
 
 	    applType = APPL_DOS;
@@ -1524,14 +1517,14 @@ ApplicationType(interp, originalName, fullName)
     }
 
     if ((applType == APPL_DOS) || (applType == APPL_WIN3X)) {
-	/* 
-	 * Replace long path name of executable with short path name for 
-	 * 16-bit applications.  Otherwise the application may not be able
-	 * to correctly parse its own command line to separate off the 
+	/*
+	 * Replace long path name of executable with short path name for
+	 * 16-bit applications. Otherwise the application may not be able to
+	 * correctly parse its own command line to separate off the
 	 * application name from the arguments.
 	 */
 
-	(*tclWinProcs->getShortPathNameProc)((TCHAR *) nativeFullPath, 
+	(*tclWinProcs->getShortPathNameProc)((TCHAR *) nativeFullPath,
 		nativeFullPath, MAX_PATH);
 	strcpy(fullName, Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
@@ -1539,15 +1532,15 @@ ApplicationType(interp, originalName, fullName)
     return applType;
 }
 
-/*    
+/*
  *----------------------------------------------------------------------
  *
  * BuildCommandLine --
  *
- *	The command line arguments are stored in linePtr separated
- *	by spaces, in a form that CreateProcess() understands.  Special 
- *	characters in individual arguments from argv[] must be quoted 
- *	when being stored in cmdLine.
+ *	The command line arguments are stored in linePtr separated by spaces,
+ *	in a form that CreateProcess() understands. Special characters in
+ *	individual arguments from argv[] must be quoted when being stored in
+ *	cmdLine.
  *
  * Results:
  *	None.
@@ -1560,8 +1553,8 @@ ApplicationType(interp, originalName, fullName)
 
 static void
 BuildCommandLine(
-    CONST char *executable,	/* Full path of executable (including 
-				 * extension).  Replacement for argv[0]. */
+    CONST char *executable,	/* Full path of executable (including
+				 * extension). Replacement for argv[0]. */
     int argc,			/* Number of arguments. */
     CONST char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
@@ -1574,8 +1567,7 @@ BuildCommandLine(
     Tcl_DStringInit(&ds);
 
     /*
-     * Prime the path.  Add a space separator if we were primed with
-     * something.
+     * Prime the path. Add a space separator if we were primed with something.
      */
 
     Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
@@ -1598,7 +1590,7 @@ BuildCommandLine(
 	    int count;
 	    Tcl_UniChar ch;
 	    for (start = arg; *start != '\0'; start += count) {
-	        count = Tcl_UtfToUniChar(start, &ch);
+		count = Tcl_UtfToUniChar(start, &ch);
 		if (Tcl_UniCharIsSpace(ch)) {	/* INTL: ISO space. */
 		    quote = 1;
 		    break;
@@ -1608,7 +1600,7 @@ BuildCommandLine(
 	if (quote) {
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
-	start = arg;	    
+	start = arg;
 	for (special = arg; ; ) {
 	    if ((*special == '\\') && (special[1] == '\\' ||
 		    special[1] == '"' || (quote && special[1] == '\0'))) {
@@ -1617,9 +1609,9 @@ BuildCommandLine(
 		while (1) {
 		    special++;
 		    if (*special == '"' || (quote && *special == '\0')) {
-			/* 
-			 * N backslashes followed a quote -> insert 
-			 * N * 2 + 1 backslashes then a quote.
+			/*
+			 * N backslashes followed a quote -> insert N * 2 + 1
+			 * backslashes then a quote.
 			 */
 
 			Tcl_DStringAppend(&ds, start,
@@ -1658,9 +1650,8 @@ BuildCommandLine(
  *
  * TclpCreateCommandChannel --
  *
- *	This function is called by Tcl_OpenCommandChannel to perform
- *	the platform specific channel initialization for a command
- *	channel.
+ *	This function is called by Tcl_OpenCommandChannel to perform the
+ *	platform specific channel initialization for a command channel.
  *
  * Results:
  *	Returns a new channel or NULL on failure.
@@ -1701,8 +1692,7 @@ TclpCreateCommandChannel(
     infoPtr->channel = (Tcl_Channel) NULL;
 
     /*
-     * Use one of the fds associated with the channel as the
-     * channel id.
+     * Use one of the fds associated with the channel as the channel id.
      */
 
     if (readFile) {
@@ -1729,8 +1719,8 @@ TclpCreateCommandChannel(
 	infoPtr->stopReader = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
 		infoPtr, 0, &id);
-	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
-        infoPtr->validMask |= TCL_READABLE;
+	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
+	infoPtr->validMask |= TCL_READABLE;
     } else {
 	infoPtr->readThread = 0;
     }
@@ -1744,26 +1734,25 @@ TclpCreateCommandChannel(
 	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 		infoPtr, 0, &id);
-	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
-        infoPtr->validMask |= TCL_WRITABLE;
+	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
+	infoPtr->validMask |= TCL_WRITABLE;
     }
 
     /*
-     * For backward compatibility with previous versions of Tcl, we
-     * use "file%d" as the base name for pipes even though it would
-     * be more natural to use "pipe%d".
-     * Use the pointer to keep the channel names unique, in case
-     * channels share handles (stdin/stdout).
+     * For backward compatibility with previous versions of Tcl, we use
+     * "file%d" as the base name for pipes even though it would be more
+     * natural to use "pipe%d". Use the pointer to keep the channel names
+     * unique, in case channels share handles (stdin/stdout).
      */
 
     wsprintfA(channelName, "file%lx", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
-            (ClientData) infoPtr, infoPtr->validMask);
+	    (ClientData) infoPtr, infoPtr->validMask);
 
     /*
      * Pipes have AUTO translation mode on Windows and ^Z eof char, which
-     * means that a ^Z will be appended to them at close. This is needed
-     * for Windows programs that expect a ^Z at EOF.
+     * means that a ^Z will be appended to them at close. This is needed for
+     * Windows programs that expect a ^Z at EOF.
      */
 
     Tcl_SetChannelOption((Tcl_Interp *) NULL, infoPtr->channel,
@@ -1778,8 +1767,8 @@ TclpCreateCommandChannel(
  *
  * TclGetAndDetachPids --
  *
- *	Stores a list of the command PIDs for a command channel in
- *	the interp's result.
+ *	Stores a list of the command PIDs for a command channel in the
+ *	interp's result.
  *
  * Results:
  *	None.
@@ -1806,18 +1795,18 @@ TclGetAndDetachPids(
 
     chanTypePtr = Tcl_GetChannelType(chan);
     if (chanTypePtr != &pipeChannelType) {
-        return;
+	return;
     }
 
     pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
     for (i = 0; i < pipePtr->numPids; i++) {
-        wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
-        Tcl_AppendElement(interp, buf);
-        Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
+	wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
+	Tcl_AppendElement(interp, buf);
+	Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
     }
     if (pipePtr->numPids > 0) {
-        ckfree((char *) pipePtr->pidPtr);
-        pipePtr->numPids = 0;
+	ckfree((char *) pipePtr->pidPtr);
+	pipePtr->numPids = 0;
     }
 }
 
@@ -1841,10 +1830,10 @@ static int
 PipeBlockModeProc(
     ClientData instanceData,	/* Instance data for channel. */
     int mode)			/* TCL_MODE_BLOCKING or
-                                 * TCL_MODE_NONBLOCKING. */
+				 * TCL_MODE_NONBLOCKING. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
-    
+
     /*
      * Pipes on Windows can not be switched between blocking and nonblocking,
      * hence we have to emulate the behavior. This is done in the input
@@ -1892,27 +1881,26 @@ PipeClose2Proc(
     errorCode = 0;
     result = 0;
 
-    if ((!flags || flags == TCL_CLOSE_READ)
-	    && (pipePtr->readFile != NULL)) {
+    if ((!flags || flags == TCL_CLOSE_READ) && (pipePtr->readFile != NULL)) {
 	/*
-	 * Clean up the background thread if necessary.  Note that this
-	 * must be done before we can close the file, since the 
-	 * thread may be blocking trying to read from the pipe.
+	 * Clean up the background thread if necessary. Note that this must be
+	 * done before we can close the file, since the thread may be blocking
+	 * trying to read from the pipe.
 	 */
 
 	if (pipePtr->readThread) {
 	    /*
-	     * The thread may already have closed on its own.  Check
-	     * its exit code.
+	     * The thread may already have closed on its own. Check its exit
+	     * code.
 	     */
 
 	    GetExitCodeThread(pipePtr->readThread, &exitCode);
 
 	    if (exitCode == STILL_ACTIVE) {
 		/*
-		 * Set the stop event so that if the reader thread is
-		 * blocked in PipeReaderThread on WaitForMultipleEvents,
-		 * it will exit cleanly.
+		 * Set the stop event so that if the reader thread is blocked
+		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
+		 * cleanly.
 		 */
 
 		SetEvent(pipePtr->stopReader);
@@ -1926,18 +1914,16 @@ PipeClose2Proc(
 			20) == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
-		     * become readable in ReadFile().  There isn't a
-		     * clean way to exit the thread from this condition.
-		     * We should terminate the child process instead to
-		     * get the reader thread to fall out of ReadFile with
-		     * a FALSE.  (below) is not the correct way to do
-		     * this, but will stay here until a better solution
-		     * is found.
+		     * become readable in ReadFile(). There isn't a clean way
+		     * to exit the thread from this condition. We should
+		     * terminate the child process instead to get the reader
+		     * thread to fall out of ReadFile with a FALSE. (below) is
+		     * not the correct way to do this, but will stay here
+		     * until a better solution is found.
 		     *
 		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of
-		     * Tcl_ThreadAlert because it won't be able to
-		     * release the notifier lock.
+		     * thread while it is in the middle of Tcl_ThreadAlert
+		     * because it won't be able to release the notifier lock.
 		     */
 
 		    Tcl_MutexLock(&pipeMutex);
@@ -1964,26 +1950,25 @@ PipeClose2Proc(
 	    && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 	    /*
-	     * Wait for the writer thread to finish the current buffer,
-	     * then terminate the thread and close the handles.  If the
-	     * channel is nonblocking, there should be no pending write
-	     * operations.
+	     * Wait for the writer thread to finish the current buffer, then
+	     * terminate the thread and close the handles. If the channel is
+	     * nonblocking, there should be no pending write operations.
 	     */
 
 	    WaitForSingleObject(pipePtr->writable, INFINITE);
 
 	    /*
-	     * The thread may already have closed on it's own.  Check
-	     * its exit code.
+	     * The thread may already have closed on it's own. Check its exit
+	     * code.
 	     */
 
 	    GetExitCodeThread(pipePtr->writeThread, &exitCode);
 
 	    if (exitCode == STILL_ACTIVE) {
 		/*
-		 * Set the stop event so that if the reader thread is
-		 * blocked in PipeReaderThread on WaitForMultipleEvents,
-		 * it will exit cleanly.
+		 * Set the stop event so that if the reader thread is blocked
+		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
+		 * cleanly.
 		 */
 
 		SetEvent(pipePtr->stopWriter);
@@ -1997,18 +1982,16 @@ PipeClose2Proc(
 			20) == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
-		     * consume input in WriteFile().  There isn't a clean
-		     * way to exit the thread from this condition.  We
-		     * should terminate the child process instead to get
-		     * the writer thread to fall out of WriteFile with a
-		     * FALSE.  (below) is not the correct way to do this,
-		     * but will stay here until a better solution is
-		     * found.
+		     * consume input in WriteFile(). There isn't a clean way
+		     * to exit the thread from this condition. We should
+		     * terminate the child process instead to get the writer
+		     * thread to fall out of WriteFile with a FALSE. (below)
+		     * is not the correct way to do this, but will stay here
+		     * until a better solution is found.
 		     *
 		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of
-		     * Tcl_ThreadAlert because it won't be able to
-		     * release the notifier lock.
+		     * thread while it is in the middle of Tcl_ThreadAlert
+		     * because it won't be able to release the notifier lock.
 		     */
 
 		    Tcl_MutexLock(&pipeMutex);
@@ -2059,9 +2042,9 @@ PipeClose2Proc(
 
     if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
 	/*
-	 * If the channel is non-blocking or Tcl is being cleaned up,
-	 * just detach the children PIDs, reap them (important if we are
-	 * in a dynamic load module), and discard the errorFile.
+	 * If the channel is non-blocking or Tcl is being cleaned up, just
+	 * detach the children PIDs, reap them (important if we are in a
+	 * dynamic load module), and discard the errorFile.
 	 */
 
 	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
@@ -2069,7 +2052,7 @@ PipeClose2Proc(
 
 	if (pipePtr->errorFile) {
 	    if (TclpCloseFile(pipePtr->errorFile) != 0) {
-		if ( errorCode == 0 ) {
+		if (errorCode == 0) {
 		    errorCode = errno;
 		}
 	    }
@@ -2117,8 +2100,8 @@ PipeClose2Proc(
  *
  * PipeInputProc --
  *
- *	Reads input from the IO channel into the buffer given. Returns
- *	count of how many bytes were actually read, and an error indication.
+ *	Reads input from the IO channel into the buffer given. Returns count
+ *	of how many bytes were actually read, and an error indication.
  *
  * Results:
  *	A count of how many bytes were read is returned and an error
@@ -2132,11 +2115,11 @@ PipeClose2Proc(
 
 static int
 PipeInputProc(
-    ClientData instanceData,		/* Pipe state. */
-    char *buf,				/* Where to store data read. */
-    int bufSize,			/* How much space is available
-                                         * in the buffer? */
-    int *errorCode)			/* Where to store error code. */
+    ClientData instanceData,	/* Pipe state. */
+    char *buf,			/* Where to store data read. */
+    int bufSize,		/* How much space is available in the
+				 * buffer? */
+    int *errorCode)		/* Where to store error code. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr = (WinFile*) infoPtr->readFile;
@@ -2161,8 +2144,8 @@ PipeInputProc(
 
     if (infoPtr->readFlags & PIPE_EXTRABYTE) {
 	/*
-	 * The reader thread consumed 1 byte as a side effect of
-	 * waiting so we need to move it into the buffer.
+	 * The reader thread consumed 1 byte as a side effect of waiting so we
+	 * need to move it into the buffer.
 	 */
 
 	*buf = infoPtr->extraByte;
@@ -2181,9 +2164,9 @@ PipeInputProc(
     }
 
     /*
-     * Attempt to read bufSize bytes.  The read will return immediately
-     * if there is any data available.  Otherwise it will block until
-     * at least one byte is available or an EOF occurs.
+     * Attempt to read bufSize bytes. The read will return immediately if
+     * there is any data available. Otherwise it will block until at least one
+     * byte is available or an EOF occurs.
      */
 
     if (ReadFile(filePtr->handle, (LPVOID) buf, (DWORD) bufSize, &count,
@@ -2211,12 +2194,12 @@ PipeInputProc(
  *
  * PipeOutputProc --
  *
- *	Writes the given output on the IO channel. Returns count of how
- *	many characters were actually written, and an error indication.
+ *	Writes the given output on the IO channel. Returns count of how many
+ *	characters were actually written, and an error indication.
  *
  * Results:
- *	A count of how many characters were written is returned and an
- *	error indication is returned in an output argument.
+ *	A count of how many characters were written is returned and an error
+ *	indication is returned in an output argument.
  *
  * Side effects:
  *	Writes output on the actual channel.
@@ -2226,27 +2209,27 @@ PipeInputProc(
 
 static int
 PipeOutputProc(
-    ClientData instanceData,		/* Pipe state. */
-    CONST char *buf,			/* The data buffer. */
-    int toWrite,			/* How many bytes to write? */
-    int *errorCode)			/* Where to store error code. */
+    ClientData instanceData,	/* Pipe state. */
+    CONST char *buf,		/* The data buffer. */
+    int toWrite,		/* How many bytes to write? */
+    int *errorCode)		/* Where to store error code. */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
     WinFile *filePtr = (WinFile*) infoPtr->writeFile;
     DWORD bytesWritten, timeout;
-    
+
     *errorCode = 0;
     timeout = (infoPtr->flags & PIPE_ASYNC) ? 0 : INFINITE;
     if (WaitForSingleObject(infoPtr->writable, timeout) == WAIT_TIMEOUT) {
 	/*
-	 * The writer thread is blocked waiting for a write to complete
-	 * and the channel is in non-blocking mode.
+	 * The writer thread is blocked waiting for a write to complete and
+	 * the channel is in non-blocking mode.
 	 */
 
 	errno = EAGAIN;
 	goto error;
     }
-    
+
     /*
      * Check for a background error on the last write.
      */
@@ -2259,8 +2242,8 @@ PipeOutputProc(
 
     if (infoPtr->flags & PIPE_ASYNC) {
 	/*
-	 * The pipe is non-blocking, so copy the data into the output
-	 * buffer and restart the writer thread.
+	 * The pipe is non-blocking, so copy the data into the output buffer
+	 * and restart the writer thread.
 	 */
 
 	if (toWrite > infoPtr->writeBufLen) {
@@ -2281,8 +2264,8 @@ PipeOutputProc(
 	bytesWritten = toWrite;
     } else {
 	/*
-	 * In the blocking case, just try to write the buffer directly.
-	 * This avoids an unnecessary copy.
+	 * In the blocking case, just try to write the buffer directly. This
+	 * avoids an unnecessary copy.
 	 */
 
 	if (WriteFile(filePtr->handle, (LPVOID) buf, (DWORD) toWrite,
@@ -2293,7 +2276,7 @@ PipeOutputProc(
     }
     return bytesWritten;
 
-    error:
+  error:
     *errorCode = errno;
     return -1;
 
@@ -2304,15 +2287,15 @@ PipeOutputProc(
  *
  * PipeEventProc --
  *
- *	This function is invoked by Tcl_ServiceEvent when a file event
- *	reaches the front of the event queue.  This procedure invokes
- *	Tcl_NotifyChannel on the pipe.
+ *	This function is invoked by Tcl_ServiceEvent when a file event reaches
+ *	the front of the event queue. This function invokes Tcl_NotifyChannel
+ *	on the pipe.
  *
  * Results:
- *	Returns 1 if the event was handled, meaning it should be removed
- *	from the queue.  Returns 0 if the event was not handled, meaning
- *	it should stay on the queue.  The only time the event isn't
- *	handled is if the TCL_FILE_EVENTS flag bit isn't set.
+ *	Returns 1 if the event was handled, meaning it should be removed from
+ *	the queue. Returns 0 if the event was not handled, meaning it should
+ *	stay on the queue. The only time the event isn't handled is if the
+ *	TCL_FILE_EVENTS flag bit isn't set.
  *
  * Side effects:
  *	Whatever the notifier callback does.
@@ -2338,9 +2321,9 @@ PipeEventProc(
 
     /*
      * Search through the list of watched pipes for the one whose handle
-     * matches the event.  We do this rather than simply dereferencing
-     * the handle in the event so that pipes can be deleted while the
-     * event is in the queue.
+     * matches the event. We do this rather than simply dereferencing the
+     * handle in the event so that pipes can be deleted while the event is in
+     * the queue.
      */
 
     for (infoPtr = tsdPtr->firstPipePtr; infoPtr != NULL;
@@ -2360,9 +2343,9 @@ PipeEventProc(
     }
 
     /*
-     * Check to see if the pipe is readable.  Note
-     * that we can't tell if a pipe is writable, so we always report it
-     * as being writable unless we have detected EOF.
+     * Check to see if the pipe is readable. Note that we can't tell if a pipe
+     * is writable, so we always report it as being writable unless we have
+     * detected EOF.
      */
 
     filePtr = (WinFile*) ((PipeInfo*)infoPtr)->writeFile;
@@ -2394,8 +2377,7 @@ PipeEventProc(
  *
  * PipeWatchProc --
  *
- *	Called by the notifier to set up to watch for events on this
- *	channel.
+ *	Called by the notifier to set up to watch for events on this channel.
  *
  * Results:
  *	None.
@@ -2408,10 +2390,10 @@ PipeEventProc(
 
 static void
 PipeWatchProc(
-    ClientData instanceData,		/* Pipe state. */
-    int mask)				/* What events to watch for, OR-ed
-                                         * combination of TCL_READABLE,
-                                         * TCL_WRITABLE and TCL_EXCEPTION. */
+    ClientData instanceData,	/* Pipe state. */
+    int mask)			/* What events to watch for, OR-ed combination
+				 * of TCL_READABLE, TCL_WRITABLE and
+				 * TCL_EXCEPTION. */
 {
     PipeInfo **nextPtrPtr, *ptr;
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
@@ -2419,9 +2401,8 @@ PipeWatchProc(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
-     * Since most of the work is handled by the background threads,
-     * we just need to update the watchMask and then force the notifier
-     * to poll once. 
+     * Since most of the work is handled by the background threads, we just
+     * need to update the watchMask and then force the notifier to poll once.
      */
 
     infoPtr->watchMask = mask & infoPtr->validMask;
@@ -2439,8 +2420,8 @@ PipeWatchProc(
 	     */
 
 	    for (nextPtrPtr = &(tsdPtr->firstPipePtr), ptr = *nextPtrPtr;
-		 ptr != NULL;
-		 nextPtrPtr = &ptr->nextPtr, ptr = *nextPtrPtr) {
+		    ptr != NULL;
+		    nextPtrPtr = &ptr->nextPtr, ptr = *nextPtrPtr) {
 		if (infoPtr == ptr) {
 		    *nextPtrPtr = ptr->nextPtr;
 		    break;
@@ -2455,12 +2436,12 @@ PipeWatchProc(
  *
  * PipeGetHandleProc --
  *
- *	Called from Tcl_GetChannelHandle to retrieve OS handles from
- *	inside a command pipeline based channel.
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from inside a
+ *	command pipeline based channel.
  *
  * Results:
- *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if
- *	there is no handle for the specified direction. 
+ *	Returns TCL_OK with the fd in handlePtr, or TCL_ERROR if there is no
+ *	handle for the specified direction.
  *
  * Side effects:
  *	None.
@@ -2475,7 +2456,7 @@ PipeGetHandleProc(
     ClientData *handlePtr)	/* Where to store the handle.  */
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
-    WinFile *filePtr; 
+    WinFile *filePtr;
 
     if (direction == TCL_READABLE && infoPtr->readFile) {
 	filePtr = (WinFile*) infoPtr->readFile;
@@ -2498,13 +2479,12 @@ PipeGetHandleProc(
  *	Emulates the waitpid system call.
  *
  * Results:
- *	Returns 0 if the process is still alive, -1 on an error, or
- *	the pid on a clean close.  
+ *	Returns 0 if the process is still alive, -1 on an error, or the pid on
+ *	a clean close.
  *
  * Side effects:
- *	Unless WNOHANG is set and the wait times out, the process
- *	information record will be deleted and the process handle
- *	will be closed.
+ *	Unless WNOHANG is set and the wait times out, the process information
+ *	record will be deleted and the process handle will be closed.
  *
  *----------------------------------------------------------------------
  */
@@ -2525,7 +2505,7 @@ Tcl_WaitPid(
     /*
      * If no pid is specified, do nothing.
      */
-    
+
     if (pid == 0) {
 	*statPtr = 0;
 	return 0;
@@ -2550,17 +2530,17 @@ Tcl_WaitPid(
      * If the pid is not one of the processes we know about (we started it)
      * then do nothing.
      */
-    		     
+
     if (infoPtr == NULL) {
-        *statPtr = 0;
+	*statPtr = 0;
 	return 0;
     }
 
     /*
-     * Officially "wait" for it to finish. We either poll (WNOHANG) or
-     * wait for an infinite amount of time.
+     * Officially "wait" for it to finish. We either poll (WNOHANG) or wait
+     * for an infinite amount of time.
      */
-    
+
     if (options & WNOHANG) {
 	flags = 0;
     } else {
@@ -2573,6 +2553,7 @@ Tcl_WaitPid(
 	    /*
 	     * Re-insert this infoPtr back on the list.
 	     */
+
 	    Tcl_MutexLock(&pipeMutex);
 	    infoPtr->nextPtr = procList;
 	    procList = infoPtr;
@@ -2589,64 +2570,65 @@ Tcl_WaitPid(
 	 */
 
 	switch (exitCode) {
-	    case EXCEPTION_FLT_DENORMAL_OPERAND:
-	    case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-	    case EXCEPTION_FLT_INEXACT_RESULT:
-	    case EXCEPTION_FLT_INVALID_OPERATION:
-	    case EXCEPTION_FLT_OVERFLOW:
-	    case EXCEPTION_FLT_STACK_CHECK:
-	    case EXCEPTION_FLT_UNDERFLOW:
-	    case EXCEPTION_INT_DIVIDE_BY_ZERO:
-	    case EXCEPTION_INT_OVERFLOW:
-		*statPtr = SIGFPE;
-		break;
+	case EXCEPTION_FLT_DENORMAL_OPERAND:
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+	case EXCEPTION_FLT_INEXACT_RESULT:
+	case EXCEPTION_FLT_INVALID_OPERATION:
+	case EXCEPTION_FLT_OVERFLOW:
+	case EXCEPTION_FLT_STACK_CHECK:
+	case EXCEPTION_FLT_UNDERFLOW:
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	case EXCEPTION_INT_OVERFLOW:
+	    *statPtr = SIGFPE;
+	    break;
 
-	    case EXCEPTION_PRIV_INSTRUCTION:
-	    case EXCEPTION_ILLEGAL_INSTRUCTION:
-		*statPtr = SIGILL;
-		break;
+	case EXCEPTION_PRIV_INSTRUCTION:
+	case EXCEPTION_ILLEGAL_INSTRUCTION:
+	    *statPtr = SIGILL;
+	    break;
 
-	    case EXCEPTION_ACCESS_VIOLATION:
-	    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-	    case EXCEPTION_STACK_OVERFLOW:
-	    case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-	    case EXCEPTION_INVALID_DISPOSITION:
-	    case EXCEPTION_GUARD_PAGE:
-	    case EXCEPTION_INVALID_HANDLE:
-		*statPtr = SIGSEGV;
-		break;
+	case EXCEPTION_ACCESS_VIOLATION:
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+	case EXCEPTION_STACK_OVERFLOW:
+	case EXCEPTION_NONCONTINUABLE_EXCEPTION:
+	case EXCEPTION_INVALID_DISPOSITION:
+	case EXCEPTION_GUARD_PAGE:
+	case EXCEPTION_INVALID_HANDLE:
+	    *statPtr = SIGSEGV;
+	    break;
 
-	    case EXCEPTION_DATATYPE_MISALIGNMENT:
-		*statPtr = SIGBUS;
-		break;
-	    
-	    case EXCEPTION_BREAKPOINT:
-	    case EXCEPTION_SINGLE_STEP:
-		*statPtr = SIGTRAP;
-		break;
+	case EXCEPTION_DATATYPE_MISALIGNMENT:
+	    *statPtr = SIGBUS;
+	    break;
 
-	    case CONTROL_C_EXIT:
-		*statPtr = SIGINT;
-		break;
+	case EXCEPTION_BREAKPOINT:
+	case EXCEPTION_SINGLE_STEP:
+	    *statPtr = SIGTRAP;
+	    break;
 
-	    default:
-		/*
-		 * Non-exceptional, normal, exit code.  Note that the
-		 * exit code is truncated to a signed short range
-		 * [-32768,32768) whether it fits into this range or not.
-		 *
-		 * BUG: Even though the exit code is a DWORD, it is
-		 * understood by convention to be a signed integer, yet
-		 * there isn't enough room to fit this into the POSIX
-		 * style waitstatus mask without truncating it.
-		 */
-		*statPtr = (((int)(short) exitCode << 8) & 0xffff00);
-		break;
+	case CONTROL_C_EXIT:
+	    *statPtr = SIGINT;
+	    break;
+
+	default:
+	    /*
+	     * Non-exceptional, normal, exit code. Note that the exit code is
+	     * truncated to a signed short range [-32768,32768) whether it
+	     * fits into this range or not.
+	     *
+	     * BUG: Even though the exit code is a DWORD, it is understood by
+	     * convention to be a signed integer, yet there isn't enough room
+	     * to fit this into the POSIX style waitstatus mask without
+	     * truncating it.
+	     */
+
+	    *statPtr = (((int)(short) exitCode << 8) & 0xffff00);
+	    break;
 	}
 	result = pid;
     } else {
 	errno = ECHILD;
-        *statPtr = ECHILD;
+	*statPtr = ECHILD;
 	result = (Tcl_Pid) -1;
     }
 
@@ -2665,23 +2647,23 @@ Tcl_WaitPid(
  *
  * TclWinAddProcess --
  *
- *     Add a process to the process list so that we can use
- *     Tcl_WaitPid on the process.
+ *	Add a process to the process list so that we can use Tcl_WaitPid on
+ *	the process.
  *
  * Results:
- *     None
+ *	None
  *
  * Side effects:
- *	Adds the specified process handle to the process list so
- *	Tcl_WaitPid knows about it.
+ *	Adds the specified process handle to the process list so Tcl_WaitPid
+ *	knows about it.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclWinAddProcess(hProcess, id)
-    HANDLE hProcess;           /* Handle to process */
-    DWORD id;                  /* Global process identifier */
+    HANDLE hProcess;		/* Handle to process */
+    DWORD id;			/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
 
@@ -2700,8 +2682,8 @@ TclWinAddProcess(hProcess, id)
  *
  * Tcl_PidObjCmd --
  *
- *	This procedure is invoked to process the "pid" Tcl command.
- *	See the user documentation for details on what it does.
+ *	This function is invoked to process the "pid" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -2735,9 +2717,9 @@ Tcl_PidObjCmd(
 	wsprintfA(buf, "%lu", (unsigned long) getpid());
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     } else {
-        chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
+	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
 		NULL);
-        if (chan == (Tcl_Channel) NULL) {
+	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
 	}
 	chanTypePtr = Tcl_GetChannelType(chan);
@@ -2745,9 +2727,9 @@ Tcl_PidObjCmd(
 	    return TCL_OK;
 	}
 
-        pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
+	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
 	resultPtr = Tcl_NewObj();
-        for (i = 0; i < pipePtr->numPids; i++) {
+	for (i = 0; i < pipePtr->numPids; i++) {
 	    wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
 		    Tcl_NewStringObj(buf, -1));
@@ -2762,20 +2744,19 @@ Tcl_PidObjCmd(
  *
  * WaitForRead --
  *
- *	Wait until some data is available, the pipe is at
- *	EOF or the reader thread is blocked waiting for data (if the
- *	channel is in non-blocking mode).
+ *	Wait until some data is available, the pipe is at EOF or the reader
+ *	thread is blocked waiting for data (if the channel is in non-blocking
+ *	mode).
  *
  * Results:
- *	Returns 1 if pipe is readable.  Returns 0 if there is no data
- *	on the pipe, but there is buffered data.  Returns -1 if an
- *	error occurred.  If an error occurred, the threads may not
- *	be synchronized.
+ *	Returns 1 if pipe is readable. Returns 0 if there is no data on the
+ *	pipe, but there is buffered data. Returns -1 if an error occurred. If
+ *	an error occurred, the threads may not be synchronized.
  *
  * Side effects:
- *	Updates the shared state flags and may consume 1 byte of data
- *	from the pipe.  If no error occurred, the reader thread is
- *	blocked waiting for a signal from the main thread.
+ *	Updates the shared state flags and may consume 1 byte of data from the
+ *	pipe. If no error occurred, the reader thread is blocked waiting for a
+ *	signal from the main thread.
  *
  *----------------------------------------------------------------------
  */
@@ -2783,8 +2764,8 @@ Tcl_PidObjCmd(
 static int
 WaitForRead(
     PipeInfo *infoPtr,		/* Pipe state. */
-    int blocking)		/* Indicates whether call should be
-				 * blocking or not. */
+    int blocking)		/* Indicates whether call should be blocking
+				 * or not. */
 {
     DWORD timeout, count;
     HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
@@ -2793,7 +2774,7 @@ WaitForRead(
 	/*
 	 * Synchronize with the reader thread.
 	 */
-       
+
 	timeout = blocking ? INFINITE : 0;
 	if (WaitForSingleObject(infoPtr->readable, timeout) == WAIT_TIMEOUT) {
 	    /*
@@ -2806,10 +2787,9 @@ WaitForRead(
 	}
 
 	/*
-	 * At this point, the two threads are synchronized, so it is safe
-	 * to access shared state.
+	 * At this point, the two threads are synchronized, so it is safe to
+	 * access shared state.
 	 */
-
 
 	/*
 	 * If the pipe has hit EOF, it is always readable.
@@ -2818,7 +2798,7 @@ WaitForRead(
 	if (infoPtr->readFlags & PIPE_EOF) {
 	    return 1;
 	}
-    
+
 	/*
 	 * Check to see if there is any data sitting in the pipe.
 	 */
@@ -2826,6 +2806,7 @@ WaitForRead(
 	if (PeekNamedPipe(handle, (LPVOID) NULL, (DWORD) 0,
 		(LPDWORD) NULL, &count, (LPDWORD) NULL) != TRUE) {
 	    TclWinConvertError(GetLastError());
+
 	    /*
 	     * Check to see if the peek failed because of EOF.
 	     */
@@ -2855,8 +2836,8 @@ WaitForRead(
 	}
 
 	/*
-	 * The pipe isn't readable, but there is some data sitting
-	 * in the buffer, so return immediately.
+	 * The pipe isn't readable, but there is some data sitting in the
+	 * buffer, so return immediately.
 	 */
 
 	if (infoPtr->readFlags & PIPE_EXTRABYTE) {
@@ -2864,10 +2845,9 @@ WaitForRead(
 	}
 
 	/*
-	 * There wasn't any data available, so reset the thread and
-	 * try again.
+	 * There wasn't any data available, so reset the thread and try again.
 	 */
-    
+
 	ResetEvent(infoPtr->readable);
 	SetEvent(infoPtr->startReader);
     }
@@ -2878,18 +2858,17 @@ WaitForRead(
  *
  * PipeReaderThread --
  *
- *	This function runs in a separate thread and waits for input
- *	to become available on a pipe.
+ *	This function runs in a separate thread and waits for input to become
+ *	available on a pipe.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Signals the main thread when input become available.  May
- *	cause the main thread to wake up by posting a message.  May
- *	consume one byte from the pipe for each wait operation.  Will
- *	cause a memory leak of ~4k, if forcefully terminated with
- *	TerminateThread().
+ *	Signals the main thread when input become available. May cause the
+ *	main thread to wake up by posting a message. May consume one byte from
+ *	the pipe for each wait operation. Will cause a memory leak of ~4k, if
+ *	forcefully terminated with TerminateThread().
  *
  *----------------------------------------------------------------------
  */
@@ -2909,33 +2888,33 @@ PipeReaderThread(LPVOID arg)
 
     while (!done) {
 	/*
-	 * Wait for the main thread to signal before attempting to wait
-	 * on the pipe becoming readable.
+	 * Wait for the main thread to signal before attempting to wait on the
+	 * pipe becoming readable.
 	 */
 
 	waitResult = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
 
 	if (waitResult != (WAIT_OBJECT_0 + 1)) {
 	    /*
-	     * The start event was not signaled.  It might be the stop event
-	     * or an error, so exit.
+	     * The start event was not signaled. It might be the stop event or
+	     * an error, so exit.
 	     */
 
 	    break;
 	}
 
 	/*
-	 * Try waiting for 0 bytes.  This will block until some data is
-	 * available on NT, but will return immediately on Win 95.  So,
-	 * if no data is available after the first read, we block until
-	 * we can read a single byte off of the pipe.
+	 * Try waiting for 0 bytes. This will block until some data is
+	 * available on NT, but will return immediately on Win 95. So, if no
+	 * data is available after the first read, we block until we can read
+	 * a single byte off of the pipe.
 	 */
 
 	if (ReadFile(handle, NULL, 0, &count, NULL) == FALSE ||
 		PeekNamedPipe(handle, NULL, 0, NULL, &count, NULL) == FALSE) {
 	    /*
-	     * The error is a result of an EOF condition, so set the
-	     * EOF bit before signalling the main thread.
+	     * The error is a result of an EOF condition, so set the EOF bit
+	     * before signalling the main thread.
 	     */
 
 	    err = GetLastError();
@@ -2949,8 +2928,8 @@ PipeReaderThread(LPVOID arg)
 	    if (ReadFile(handle, &(infoPtr->extraByte), 1, &count, NULL)
 		    != FALSE) {
 		/*
-		 * One byte was consumed as a side effect of waiting
-		 * for the pipe to become readable.
+		 * One byte was consumed as a side effect of waiting for the
+		 * pipe to become readable.
 		 */
 
 		infoPtr->readFlags |= PIPE_EXTRABYTE;
@@ -2970,23 +2949,27 @@ PipeReaderThread(LPVOID arg)
 	    }
 	}
 
-		
+
 	/*
-	 * Signal the main thread by signalling the readable event and
-	 * then waking up the notifier thread.
+	 * Signal the main thread by signalling the readable event and then
+	 * waking up the notifier thread.
 	 */
 
 	SetEvent(infoPtr->readable);
-	
+
 	/*
-	 * Alert the foreground thread.  Note that we need to treat this like
-	 * a critical section so the foreground thread does not terminate
-	 * this thread while we are holding a mutex in the notifier code.
+	 * Alert the foreground thread. Note that we need to treat this like a
+	 * critical section so the foreground thread does not terminate this
+	 * thread while we are holding a mutex in the notifier code.
 	 */
 
 	Tcl_MutexLock(&pipeMutex);
 	if (infoPtr->threadId != NULL) {
-	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    /*
+	     * TIP #218. When in flight ignore the event, no one will receive
+	     * it anyway.
+	     */
+
 	    Tcl_ThreadAlert(infoPtr->threadId);
 	}
 	Tcl_MutexUnlock(&pipeMutex);
@@ -3000,15 +2983,14 @@ PipeReaderThread(LPVOID arg)
  *
  * PipeWriterThread --
  *
- *	This function runs in a separate thread and writes data
- *	onto a pipe.
+ *	This function runs in a separate thread and writes data onto a pipe.
  *
  * Results:
  *	Always returns 0.
  *
  * Side effects:
- *	Signals the main thread when an output operation is completed.
- *	May cause the main thread to wake up by posting a message.  
+ *	Signals the main thread when an output operation is completed. May
+ *	cause the main thread to wake up by posting a message.
  *
  *----------------------------------------------------------------------
  */
@@ -3016,7 +2998,6 @@ PipeReaderThread(LPVOID arg)
 static DWORD WINAPI
 PipeWriterThread(LPVOID arg)
 {
-
     PipeInfo *infoPtr = (PipeInfo *)arg;
     HANDLE *handle = ((WinFile *) infoPtr->writeFile)->handle;
     DWORD count, toWrite;
@@ -3037,8 +3018,8 @@ PipeWriterThread(LPVOID arg)
 
 	if (waitResult != (WAIT_OBJECT_0 + 1)) {
 	    /*
-	     * The start event was not signaled.  It might be the stop event
-	     * or an error, so exit.
+	     * The start event was not signaled. It might be the stop event or
+	     * an error, so exit.
 	     */
 
 	    break;
@@ -3054,30 +3035,34 @@ PipeWriterThread(LPVOID arg)
 	while (toWrite > 0) {
 	    if (WriteFile(handle, buf, toWrite, &count, NULL) == FALSE) {
 		infoPtr->writeError = GetLastError();
-		done = 1; 
+		done = 1;
 		break;
 	    } else {
 		toWrite -= count;
 		buf += count;
 	    }
 	}
-	
+
 	/*
-	 * Signal the main thread by signalling the writable event and
-	 * then waking up the notifier thread.
+	 * Signal the main thread by signalling the writable event and then
+	 * waking up the notifier thread.
 	 */
 
 	SetEvent(infoPtr->writable);
 
 	/*
-	 * Alert the foreground thread.  Note that we need to treat this like
-	 * a critical section so the foreground thread does not terminate
-	 * this thread while we are holding a mutex in the notifier code.
+	 * Alert the foreground thread. Note that we need to treat this like a
+	 * critical section so the foreground thread does not terminate this
+	 * thread while we are holding a mutex in the notifier code.
 	 */
 
 	Tcl_MutexLock(&pipeMutex);
 	if (infoPtr->threadId != NULL) {
-	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    /*
+	     * TIP #218. When in flight ignore the event, no one will receive
+	     * it anyway.
+	     */
+
 	    Tcl_ThreadAlert(infoPtr->threadId);
 	}
 	Tcl_MutexUnlock(&pipeMutex);
@@ -3103,33 +3088,43 @@ PipeWriterThread(LPVOID arg)
  */
 
 static void
-PipeThreadActionProc (instanceData, action)
-     ClientData instanceData;
-     int action;
+PipeThreadActionProc(instanceData, action)
+    ClientData instanceData;
+    int action;
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
 
-    /* We do not access firstPipePtr in the thread structures. This is
-     * not for all pipes managed by the thread, but only those we are
-     * watching. Removal of the filevent handlers before transfer thus
-     * takes care of this structure.
+    /*
+     * We do not access firstPipePtr in the thread structures. This is not for
+     * all pipes managed by the thread, but only those we are watching.
+     * Removal of the filevent handlers before transfer thus takes care of
+     * this structure.
      */
 
     Tcl_MutexLock(&pipeMutex);
     if (action == TCL_CHANNEL_THREAD_INSERT) {
-        /* We can't copy the thread information from the channel when
-	 * the channel is created. At this time the channel back
-	 * pointer has not been set yet. However in that case the
-	 * threadId has already been set by TclpCreateCommandChannel
-	 * itself, so the structure is still good.
+	/*
+	 * We can't copy the thread information from the channel when the
+	 * channel is created. At this time the channel back pointer has not
+	 * been set yet. However in that case the threadId has already been
+	 * set by TclpCreateCommandChannel itself, so the structure is still
+	 * good.
 	 */
 
-        PipeInit ();
-        if (infoPtr->channel != NULL) {
-	    infoPtr->threadId = Tcl_GetChannelThread (infoPtr->channel);
+	PipeInit();
+	if (infoPtr->channel != NULL) {
+	    infoPtr->threadId = Tcl_GetChannelThread(infoPtr->channel);
 	}
     } else {
 	infoPtr->threadId = NULL;
     }
     Tcl_MutexUnlock(&pipeMutex);
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

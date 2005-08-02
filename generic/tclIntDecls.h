@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.6 2005/07/12 20:36:54 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.7 2005/08/02 18:15:42 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1157,6 +1157,13 @@ EXTERN int		TclBN_mp_read_radix _ANSI_ARGS_((mp_int * a,
 /* 224 */
 EXTERN TclPlatformType * TclGetPlatform _ANSI_ARGS_((void));
 #endif
+#ifndef TclTraceDictPath_TCL_DECLARED
+#define TclTraceDictPath_TCL_DECLARED
+/* 225 */
+EXTERN Tcl_Obj *	TclTraceDictPath _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * rootPtr, int keyc, 
+				Tcl_Obj *CONST keyv[], int flags));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1402,6 +1409,7 @@ typedef struct TclIntStubs {
     int (*tclBN_mp_init) _ANSI_ARGS_((mp_int * a)); /* 222 */
     int (*tclBN_mp_read_radix) _ANSI_ARGS_((mp_int * a, const char * str, int radix)); /* 223 */
     TclPlatformType * (*tclGetPlatform) _ANSI_ARGS_((void)); /* 224 */
+    Tcl_Obj * (*tclTraceDictPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * rootPtr, int keyc, Tcl_Obj *CONST keyv[], int flags)); /* 225 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2176,6 +2184,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclGetPlatform
 #define TclGetPlatform \
 	(tclIntStubsPtr->tclGetPlatform) /* 224 */
+#endif
+#ifndef TclTraceDictPath
+#define TclTraceDictPath \
+	(tclIntStubsPtr->tclTraceDictPath) /* 225 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

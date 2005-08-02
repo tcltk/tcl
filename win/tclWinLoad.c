@@ -1,16 +1,16 @@
-/* 
+/*
  * tclWinLoad.c --
  *
- *	This procedure provides a version of the TclLoadFile that
- *	works with the Windows "LoadLibrary" and "GetProcAddress"
- *	API for dynamic loading.
+ *	This function provides a version of the TclLoadFile that works with
+ *	the Windows "LoadLibrary" and "GetProcAddress" API for dynamic
+ *	loading.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.17 2003/09/08 20:12:07 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.17.2.1 2005/08/02 18:17:18 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -21,12 +21,12 @@
  *
  * TclpDlopen --
  *
- *	Dynamically loads a binary code file into memory and returns
- *	a handle to the new code.
+ *	Dynamically loads a binary code file into memory and returns a handle
+ *	to the new code.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs, an error
- *	message is left in the interp's result.
+ *	A standard Tcl completion code. If an error occurs, an error message
+ *	is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
@@ -40,87 +40,93 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
     Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
-				 * file which will be passed back to 
+				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;	
+    Tcl_FSUnloadFileProc **unloadProcPtr;
 				/* Filled with address of Tcl_FSUnloadFileProc
-				 * function which should be used for
-				 * this file. */
+				 * function which should be used for this
+				 * file. */
 {
     HINSTANCE handle;
     CONST TCHAR *nativeName;
 
-    /* 
-     * First try the full path the user gave us.  This is particularly
-     * important if the cwd is inside a vfs, and we are trying to load
-     * using a relative path.
+    /*
+     * First try the full path the user gave us. This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load using a
+     * relative path.
      */
+
     nativeName = Tcl_FSGetNativePath(pathPtr);
     handle = (*tclWinProcs->loadLibraryProc)(nativeName);
     if (handle == NULL) {
-	/* 
-	 * Let the OS loader examine the binary search path for
-	 * whatever string the user gave us which hopefully refers
-	 * to a file on the binary path
+	/*
+	 * Let the OS loader examine the binary search path for whatever
+	 * string the user gave us which hopefully refers to a file on the
+	 * binary path.
 	 */
+
 	Tcl_DString ds;
-        char *fileName = Tcl_GetString(pathPtr);
+	char *fileName = Tcl_GetString(pathPtr);
+
 	nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
 	handle = (*tclWinProcs->loadLibraryProc)(nativeName);
 	Tcl_DStringFree(&ds);
     }
 
     *loadHandle = (Tcl_LoadHandle) handle;
-    
+
     if (handle == NULL) {
 	DWORD lastError = GetLastError();
+
 #if 0
 	/*
-	 * It would be ideal if the FormatMessage stuff worked better,
-	 * but unfortunately it doesn't seem to want to...
+	 * It would be ideal if the FormatMessage stuff worked better, but
+	 * unfortunately it doesn't seem to want to...
 	 */
+
 	LPTSTR lpMsgBuf;
 	char *buf;
 	int size;
+
 	size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 		FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, lastError, 0,
 		(LPTSTR) &lpMsgBuf, 0, NULL);
 	buf = (char *) ckalloc((unsigned) TCL_INTEGER_SPACE + size + 1);
 	sprintf(buf, "%d %s", lastError, (char *)lpMsgBuf);
 #endif
+
 	Tcl_AppendResult(interp, "couldn't load library \"",
-			 Tcl_GetString(pathPtr), "\": ", (char *) NULL);
+		Tcl_GetString(pathPtr), "\": ", (char *) NULL);
+
 	/*
-	 * Check for possible DLL errors.  This doesn't work quite right,
-	 * because Windows seems to only return ERROR_MOD_NOT_FOUND for
-	 * just about any problem, but it's better than nothing.  It'd be
-	 * even better if there was a way to get what DLLs
+	 * Check for possible DLL errors. This doesn't work quite right,
+	 * because Windows seems to only return ERROR_MOD_NOT_FOUND for just
+	 * about any problem, but it's better than nothing. It'd be even
+	 * better if there was a way to get what DLLs
 	 */
+
 	switch (lastError) {
-	    case ERROR_MOD_NOT_FOUND:
-	    case ERROR_DLL_NOT_FOUND:
-		Tcl_AppendResult(interp, "this library or a dependent library",
-			" could not be found in library path",
-			(char *) NULL);
-		break;
-	    case ERROR_PROC_NOT_FOUND:
-		Tcl_AppendResult(interp, "A function specified in the import",
-			" table could not be resolved by the system.  Windows",
-			" is not telling which one, I'm sorry.",
-			(char *) NULL);
-		break;
-	    case ERROR_INVALID_DLL:
-		Tcl_AppendResult(interp, "this library or a dependent library",
-			" is damaged", (char *) NULL);
-		break;
-	    case ERROR_DLL_INIT_FAILED:
-		Tcl_AppendResult(interp, "the library initialization",
-			" routine failed", (char *) NULL);
-		break;
-	    default:
-		TclWinConvertError(lastError);
-		Tcl_AppendResult(interp, Tcl_PosixError(interp),
-			(char *) NULL);
+	case ERROR_MOD_NOT_FOUND:
+	case ERROR_DLL_NOT_FOUND:
+	    Tcl_AppendResult(interp, "this library or a dependent library",
+		    " could not be found in library path", (char *) NULL);
+	    break;
+	case ERROR_PROC_NOT_FOUND:
+	    Tcl_AppendResult(interp, "A function specified in the import",
+		    " table could not be resolved by the system.  Windows",
+		    " is not telling which one, I'm sorry.", (char *) NULL);
+	    break;
+	case ERROR_INVALID_DLL:
+	    Tcl_AppendResult(interp, "this library or a dependent library",
+		    " is damaged", (char *) NULL);
+	    break;
+	case ERROR_DLL_INIT_FAILED:
+	    Tcl_AppendResult(interp, "the library initialization",
+		    " routine failed", (char *) NULL);
+	    break;
+	default:
+	    TclWinConvertError(lastError);
+	    Tcl_AppendResult(interp, Tcl_PosixError(interp), (char *) NULL);
 	}
 	return TCL_ERROR;
     } else {
@@ -134,18 +140,19 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
  *
  * TclpFindSymbol --
  *
- *	Looks up a symbol, by name, through a handle associated with
- *	a previously loaded piece of code (shared library).
+ *	Looks up a symbol, by name, through a handle associated with a
+ *	previously loaded piece of code (shared library).
  *
  * Results:
- *	Returns a pointer to the function associated with 'symbol' if
- *	it is found.  Otherwise returns NULL and may leave an error
- *	message in the interp's result.
+ *	Returns a pointer to the function associated with 'symbol' if it is
+ *	found. Otherwise returns NULL and may leave an error message in the
+ *	interp's result.
  *
  *----------------------------------------------------------------------
  */
+
 Tcl_PackageInitProc*
-TclpFindSymbol(interp, loadHandle, symbol) 
+TclpFindSymbol(interp, loadHandle, symbol)
     Tcl_Interp *interp;
     Tcl_LoadHandle loadHandle;
     CONST char *symbol;
@@ -161,6 +168,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
     proc = (Tcl_PackageInitProc *) GetProcAddress(handle, symbol);
     if (proc == NULL) {
 	Tcl_DString ds;
+
 	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, "_", 1);
 	symbol = Tcl_DStringAppend(&ds, symbol, -1);
@@ -175,9 +183,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
  *
  * TclpUnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory.
- *	Code pointers in the formerly loaded file are no longer valid
- *	after calling this function.
+ *	Unloads a dynamically loaded binary code file from memory. Code
+ *	pointers in the formerly loaded file are no longer valid after calling
+ *	this function.
  *
  * Results:
  *	None.
@@ -190,10 +198,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
 
 void
 TclpUnloadFile(loadHandle)
-    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
-				 * to TclpDlopen().  The loadHandle is 
-				 * a token that represents the loaded 
-				 * file. */
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call to
+				 * TclpDlopen(). The loadHandle is a token
+				 * that represents the loaded file. */
 {
     HINSTANCE handle;
 
@@ -206,14 +213,14 @@ TclpUnloadFile(loadHandle)
  *
  * TclGuessPackageName --
  *
- *	If the "load" command is invoked without providing a package
- *	name, this procedure is invoked to try to figure it out.
+ *	If the "load" command is invoked without providing a package name,
+ *	this function is invoked to try to figure it out.
  *
  * Results:
- *	Always returns 0 to indicate that we couldn't figure out a
- *	package name;  generic code will then try to guess the package
- *	from the file name.  A return value of 1 would have meant that
- *	we figured out the package name and put it in bufPtr.
+ *	Always returns 0 to indicate that we couldn't figure out a package
+ *	name; generic code will then try to guess the package from the file
+ *	name. A return value of 1 would have meant that we figured out the
+ *	package name and put it in bufPtr.
  *
  * Side effects:
  *	None.
@@ -225,8 +232,16 @@ int
 TclGuessPackageName(fileName, bufPtr)
     CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
-    Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
-				 * package name to this if possible. */
+    Tcl_DString *bufPtr;	/* Initialized empty dstring. Append package
+				 * name to this if possible. */
 {
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

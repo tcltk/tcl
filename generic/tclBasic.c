@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.12 2005/07/12 20:36:18 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.13 2005/08/02 18:15:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -154,7 +154,7 @@ static CmdInfo builtInCmds[] = {
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	1},
     {"concat",		Tcl_ConcatObjCmd,	(CompileProc *) NULL,	1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	1},
-    {"dict",		Tcl_DictObjCmd,		(CompileProc *) NULL,	1},
+    {"dict",		Tcl_DictObjCmd,		TclCompileDictCmd,	1},
     {"encoding",	Tcl_EncodingObjCmd,	(CompileProc *) NULL,	0},
     {"error",		Tcl_ErrorObjCmd,	(CompileProc *) NULL,	1},
     {"eval",		Tcl_EvalObjCmd,		(CompileProc *) NULL,	1},
@@ -701,19 +701,16 @@ Tcl_CallWhenDeleted(interp, proc, clientData)
     ClientData clientData;	/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
-    static int assocDataCounter = 0;
-#ifdef TCL_THREADS
-    static Tcl_Mutex assocMutex;
-#endif
+    static Tcl_ThreadDataKey assocDataCounterKey;
+    int *assocDataCounterPtr =
+	    Tcl_GetThreadData(&assocDataCounterKey, (int)sizeof(int));
     int new;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = (AssocData *) ckalloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
 
-    Tcl_MutexLock(&assocMutex);
-    sprintf(buffer, "Assoc Data Key #%d", assocDataCounter);
-    assocDataCounter++;
-    Tcl_MutexUnlock(&assocMutex);
+    sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
+    (*assocDataCounterPtr)++;
 
     if (iPtr->assocData == (Tcl_HashTable *) NULL) {
 	iPtr->assocData = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
