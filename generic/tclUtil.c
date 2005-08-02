@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.15 2005/07/26 04:12:21 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.16 2005/08/02 16:38:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -72,16 +72,11 @@ static ProcessGlobalValue executableName = {0, 0, NULL, NULL, NULL, NULL, NULL};
 #define BRACES_UNMATCHED	4
 
 /*
- * The following values determine the precision used when converting
- * floating-point values to strings. This information is linked to all of the
- * tcl_precision variables in all interpreters via the function
- * TclPrecTraceProc.
+ * The following key is used by Tcl_PrintDouble and TclPrecTraceProc to
+ * access the precision to be used for double formatting.
  */
 
-static int precision = 0;	/* Precision of floating point conversions, in
-				 * the range 0-17 inclusive. */
-
-TCL_DECLARE_MUTEX(precisionMutex)
+static Tcl_ThreadDataKey precisionKey;
 
 /*
  * Prototypes for functions defined later in this file.
@@ -1887,24 +1882,21 @@ Tcl_PrintDouble(interp, value, dst)
 				 * at least TCL_DOUBLE_SPACE characters. */
 {
     char *p, c;
-    int prec;
     int exp;
     int signum;
     char buffer[TCL_DOUBLE_SPACE];
     Tcl_UniChar ch;
 
-    Tcl_MutexLock(&precisionMutex);
-    prec = precision;
-    Tcl_MutexUnlock(&precisionMutex);
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
 
     /*
-     * If prec == 0, then use TclDoubleDigits to develop a decimal significand
-     * and exponent, then format it in E or F format as appropriate. If prec
-     * != 0, use the native sprintf and then add a trailing ".0" if there is
-     * no decimal point in the rep.
+     * If *precisionPtr == 0, then use TclDoubleDigits to develop a decimal
+     * significand and exponent, then format it in E or F format as
+     * appropriate.  If *precisionPtr != 0, use the native sprintf and then
+     * add a trailing ".0" if there is no decimal point in the rep.
      */
 
-    if ( prec == 0 ) {
+    if ( *precisionPtr == 0 ) {
 	/*
 	 * Handle NaN.
 	 */
@@ -1935,7 +1927,6 @@ Tcl_PrintDouble(interp, value, dst)
 	if (signum) {
 	    *dst++ = '-';
 	}
-	prec = strlen(buffer);
 	p = buffer;
 	if (exp < -3 || exp > 17) {
 	    /*
@@ -1989,7 +1980,7 @@ Tcl_PrintDouble(interp, value, dst)
 	 * tcl_precision is supplied, pass it to the native sprintf.
 	 */
 
-	sprintf(dst, "%.*g", prec, value);
+	sprintf(dst, "%.*g", *precisionPtr, value);
 
 	/*
 	 * If the ASCII result looks like an integer, add ".0" so that it
@@ -2047,6 +2038,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 {
     Tcl_Obj* value;
     int prec;
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
 
     /*
      * If the variable is unset, then recreate the trace.
@@ -2069,10 +2061,8 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_MutexLock(&precisionMutex);
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(precision),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
-	Tcl_MutexUnlock(&precisionMutex);
 	return (char *) NULL;
     }
 
@@ -2083,10 +2073,6 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
      */
 
     if (Tcl_IsSafe(interp)) {
-	Tcl_MutexLock(&precisionMutex);
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(precision),
-		flags & TCL_GLOBAL_ONLY);
-	Tcl_MutexUnlock(&precisionMutex);
 	return "can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
@@ -2095,9 +2081,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 	    || prec < 0 || prec > TCL_MAX_PREC) {
 	return "improper value for precision";
     }
-    Tcl_MutexLock(&precisionMutex);
-    precision = prec;
-    Tcl_MutexUnlock(&precisionMutex);
+    *precisionPtr = prec;
     return (char *) NULL;
 }
 

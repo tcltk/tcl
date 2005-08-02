@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.16.4.4 2004/09/08 23:03:18 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.16.4.5 2005/08/02 16:38:17 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -599,6 +599,34 @@ test exec-18.1 { exec cat deals with weird file names} {exec tempNotWin} {
     removeFile $f
     set res
 } {0 contents}
+
+# Note that this test cannot be adapted to work on Windows; that platform has
+# no kernel support for an analog of O_APPEND.
+test exec-19.1 {exec >> uses O_APPEND} {
+    -constraints {exec unix}
+    -setup {
+	set tmpfile [makeFile {0} tmpfile.exec-19.1]
+    }
+    -body {
+	# Note that we have to allow for the current contents of the
+	# temporary file, which is why the result is 14 and not 12
+	exec /bin/sh -c \
+	    {for a in 1 2 3; do sleep 1; echo $a; done} >>$tmpfile &
+	exec /bin/sh -c \
+	    {for a in a b c; do sleep 1; echo $a; done} >>$tmpfile &
+	# The above two shell invokations take about 3 seconds to
+	# finish, so allow 5s (in case the machine is busy)
+	after 5000
+	# Check that no bytes have got lost through mixups with
+	# overlapping appends, which is only guaranteed to work when
+	# we set O_APPEND on the file descriptor in the [exec >>...]
+	file size $tmpfile
+    }
+    -cleanup {
+	removeFile $tmpfile
+    }
+    -result 14
+}
 
 # cleanup
 

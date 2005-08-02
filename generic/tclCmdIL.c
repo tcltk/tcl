@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.12 2005/07/26 04:11:52 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.13 2005/08/02 16:38:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1245,8 +1245,11 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
     if (pattern != NULL && TclMatchIsTrivial(pattern)) {
 	entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable, pattern);
 	if (entryPtr != NULL) {
-	    Tcl_ListObjAppendElement(interp, listPtr,
-		    Tcl_NewStringObj(pattern, -1));
+	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+	    if (!TclIsVarUndefined(varPtr)) {
+		Tcl_ListObjAppendElement(interp, listPtr,
+			Tcl_NewStringObj(pattern, -1));
+	    }
 	}
     } else {
 	for (entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
@@ -1585,26 +1588,45 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 	localPtr = localPtr->nextPtr;
     }
 
-    if (localVarTablePtr != NULL) {
-	if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	    if (Tcl_FindHashEntry(localVarTablePtr, pattern)) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(pattern,-1));
-	    }
-	    return;
-	}
-	for (entryPtr = Tcl_FirstHashEntry(localVarTablePtr, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_NextHashEntry(&search)) {
+    /*
+     * Do nothing if no local variables.
+     */
+
+    if (localVarTablePtr == NULL) {
+	return;
+    }
+
+    /*
+     * Check for the simple and fast case.
+     */
+
+    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
+	entryPtr = Tcl_FindHashEntry(localVarTablePtr, pattern);
+	if (entryPtr != NULL) {
 	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 	    if (!TclIsVarUndefined(varPtr)
 		    && (includeLinks || !TclIsVarLink(varPtr))) {
-		varName = Tcl_GetHashKey(localVarTablePtr, entryPtr);
-		if ((pattern == NULL)
-			|| Tcl_StringMatch(varName, pattern)) {
-		    Tcl_ListObjAppendElement(interp, listPtr,
-			    Tcl_NewStringObj(varName, -1));
-		}
+		Tcl_ListObjAppendElement(interp, listPtr,
+			Tcl_NewStringObj(pattern,-1));
+	    }
+	}
+	return;
+    }
+
+    /*
+     * Scan over and process all local variables.
+     */
+
+    for (entryPtr = Tcl_FirstHashEntry(localVarTablePtr, &search);
+	    entryPtr != NULL;
+	    entryPtr = Tcl_NextHashEntry(&search)) {
+	varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+	if (!TclIsVarUndefined(varPtr)
+		&& (includeLinks || !TclIsVarLink(varPtr))) {
+	    varName = Tcl_GetHashKey(localVarTablePtr, entryPtr);
+	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
+		Tcl_ListObjAppendElement(interp, listPtr,
+			Tcl_NewStringObj(varName, -1));
 	    }
 	}
     }

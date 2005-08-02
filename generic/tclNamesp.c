@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.18 2005/07/26 04:12:00 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.19 2005/08/02 16:38:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1055,6 +1055,23 @@ TclTeardownNamespace(nsPtr)
     Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
 
     /*
+     * Delete all commands in this namespace. Be careful when traversing the
+     * hash table: when each command is deleted, it removes itself from the
+     * command table.
+     *
+     * Don't optimize to Tcl_NextHashEntry() because of traces.
+     */
+
+    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+	    entryPtr != NULL;
+	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search)) {
+	cmd = (Tcl_Command) Tcl_GetHashValue(entryPtr);
+	Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr, cmd);
+    }
+    Tcl_DeleteHashTable(&nsPtr->cmdTable);
+    Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
+
+    /*
      * Remove the namespace from its parent's child hashtable.
      */
 
@@ -1100,23 +1117,6 @@ TclTeardownNamespace(nsPtr)
 	childNsPtr = (Tcl_Namespace *) Tcl_GetHashValue(entryPtr);
 	Tcl_DeleteNamespace(childNsPtr);
     }
-
-    /*
-     * Delete all commands in this namespace. Be careful when traversing the
-     * hash table: when each command is deleted, it removes itself from the
-     * command table.
-     *
-     * Don't optimize to Tcl_NextHashEntry() because of traces.
-     */
-
-    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	    entryPtr != NULL;
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search)) {
-	cmd = (Tcl_Command) Tcl_GetHashValue(entryPtr);
-	Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr, cmd);
-    }
-    Tcl_DeleteHashTable(&nsPtr->cmdTable);
-    Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
 
     /*
      * Free the namespace's export pattern array.

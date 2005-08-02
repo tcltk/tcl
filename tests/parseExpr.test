@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.10.4.4 2005/05/11 16:58:48 dgp Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.10.4.5 2005/08/02 16:38:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -25,7 +25,7 @@ testConstraint testexprparser [llength [info commands testexprparser]]
 # Some tests only work if wide integers (>32bit) are not found to be
 # integers at all.
 
-testConstraint wideIntegerUnparsed [expr {-1 == 0xffffffff}]
+testConstraint wideIs32bit [expr {0x80000000 < 0}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -93,7 +93,7 @@ test parseExpr-1.1 {Tcl_ParseExpr procedure, computing string length} testexprpa
 test parseExpr-1.2 {Tcl_ParseExpr procedure, computing string length} testexprparser {
     testexprparser "1  + 2" -1
 } {- {} 0 subexpr {1  + 2} 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
-test parseExpr-1.3 {Tcl_ParseExpr procedure, error getting initial lexeme} {testexprparser wideIntegerUnparsed} {
+test parseExpr-1.3 {Tcl_ParseExpr procedure, error getting initial lexeme} {testexprparser wideIs32bit} {
     list [catch {testexprparser {12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-1.4 {Tcl_ParseExpr procedure, error in conditional expression} \
@@ -119,7 +119,7 @@ test parseExpr-2.3 {ParseCondExpr procedure, next lexeme isn't "?"} testexprpars
 test parseExpr-2.4 {ParseCondExpr procedure, next lexeme is "?"} testexprparser {
     testexprparser {1+2 ? 3 : 4} -1
 } {- {} 0 subexpr {1+2 ? 3 : 4} 11 operator ? 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
-test parseExpr-2.5 {ParseCondExpr procedure, bad lexeme after "?"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-2.5 {ParseCondExpr procedure, bad lexeme after "?"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1+2 ? 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-2.6 {ParseCondExpr procedure, valid "then" subexpression} testexprparser {
@@ -156,7 +156,7 @@ test parseExpr-3.3 {ParseLorExpr procedure, next lexeme isn't "||"} testexprpars
 test parseExpr-3.4 {ParseLorExpr procedure, next lexeme is "||"} testexprparser {
     testexprparser {1&&2 || 3} -1
 } {- {} 0 subexpr {1&&2 || 3} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-3.5 {ParseLorExpr procedure, bad lexeme after "||"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-3.5 {ParseLorExpr procedure, bad lexeme after "||"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1&&2 || 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-3.6 {ParseLorExpr procedure, valid RHS subexpression} testexprparser {
@@ -182,7 +182,7 @@ test parseExpr-4.3 {ParseLandExpr procedure, next lexeme isn't "&&"} testexprpar
 test parseExpr-4.4 {ParseLandExpr procedure, next lexeme is "&&"} testexprparser {
     testexprparser {1|2 && 3} -1
 } {- {} 0 subexpr {1|2 && 3} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-4.5 {ParseLandExpr procedure, bad lexeme after "&&"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-4.5 {ParseLandExpr procedure, bad lexeme after "&&"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1|2 && 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-4.6 {ParseLandExpr procedure, valid RHS subexpression} testexprparser {
@@ -208,7 +208,7 @@ test parseExpr-5.3 {ParseBitOrExpr procedure, next lexeme isn't "|"} testexprpar
 test parseExpr-5.4 {ParseBitOrExpr procedure, next lexeme is "|"} testexprparser {
     testexprparser {1^2 | 3} -1
 } {- {} 0 subexpr {1^2 | 3} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-5.5 {ParseBitOrExpr procedure, bad lexeme after "|"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-5.5 {ParseBitOrExpr procedure, bad lexeme after "|"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1^2 | 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-5.6 {ParseBitOrExpr procedure, valid RHS subexpression} testexprparser {
@@ -234,7 +234,7 @@ test parseExpr-6.3 {ParseBitXorExpr procedure, next lexeme isn't "^"} testexprpa
 test parseExpr-6.4 {ParseBitXorExpr procedure, next lexeme is "^"} testexprparser {
     testexprparser {1&2 ^ 3} -1
 } {- {} 0 subexpr {1&2 ^ 3} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-6.5 {ParseBitXorExpr procedure, bad lexeme after "^"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-6.5 {ParseBitXorExpr procedure, bad lexeme after "^"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1&2 ^ 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-6.6 {ParseBitXorExpr procedure, valid RHS subexpression} testexprparser {
@@ -260,7 +260,7 @@ test parseExpr-7.3 {ParseBitAndExpr procedure, next lexeme isn't "&"} testexprpa
 test parseExpr-7.4 {ParseBitAndExpr procedure, next lexeme is "&"} testexprparser {
     testexprparser {1>2 & 3} -1
 } {- {} 0 subexpr {1>2 & 3} 9 operator & 0 subexpr 1>2 5 operator > 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-7.5 {ParseBitAndExpr procedure, bad lexeme after "&"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-7.5 {ParseBitAndExpr procedure, bad lexeme after "&"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1==2 & 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-7.6 {ParseBitAndExpr procedure, valid RHS subexpression} testexprparser {
@@ -289,7 +289,7 @@ test parseExpr-8.4 {ParseEqualityExpr procedure, next lexeme is "==" or "!="} te
 test parseExpr-8.5 {ParseEqualityExpr procedure, next lexeme is "==" or "!="} testexprparser {
     testexprparser {1<2 != 3} -1
 } {- {} 0 subexpr {1<2 != 3} 9 operator != 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-8.6 {ParseEqualityExpr procedure, bad lexeme after "==" or "!="} {testexprparser wideIntegerUnparsed} {
+test parseExpr-8.6 {ParseEqualityExpr procedure, bad lexeme after "==" or "!="} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1<2 == 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-8.7 {ParseEqualityExpr procedure, valid RHS subexpression} testexprparser {
@@ -324,7 +324,7 @@ test parseExpr-9.6 {ParseRelationalExpr procedure, next lexeme is relational op}
 test parseExpr-9.7 {ParseRelationalExpr procedure, next lexeme is relational op} testexprparser {
     testexprparser {1<<2 >= 3} -1
 } {- {} 0 subexpr {1<<2 >= 3} 9 operator >= 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-9.8 {ParseRelationalExpr procedure, bad lexeme after relational op} {testexprparser wideIntegerUnparsed} {
+test parseExpr-9.8 {ParseRelationalExpr procedure, bad lexeme after relational op} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1<<2 < 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-9.9 {ParseRelationalExpr procedure, valid RHS subexpression} testexprparser {
@@ -353,7 +353,7 @@ test parseExpr-10.4 {ParseShiftExpr procedure, next lexeme is "<<" or ">>"} test
 test parseExpr-10.5 {ParseShiftExpr procedure, next lexeme is "<<" or ">>"} testexprparser {
     testexprparser {1+2 >> 3} -1
 } {- {} 0 subexpr {1+2 >> 3} 9 operator >> 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-10.6 {ParseShiftExpr procedure, bad lexeme after "<<" or ">>"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-10.6 {ParseShiftExpr procedure, bad lexeme after "<<" or ">>"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1+2 << 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-10.7 {ParseShiftExpr procedure, valid RHS subexpression} testexprparser {
@@ -382,7 +382,7 @@ test parseExpr-11.4 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexpr
 test parseExpr-11.5 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexprparser {
     testexprparser {1*2 - 3} -1
 } {- {} 0 subexpr {1*2 - 3} 9 operator - 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-11.6 {ParseAddExpr procedure, bad lexeme after "+" or "-"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-11.6 {ParseAddExpr procedure, bad lexeme after "+" or "-"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1*2 + 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-11.7 {ParseAddExpr procedure, valid RHS subexpression} testexprparser {
@@ -411,7 +411,7 @@ test parseExpr-12.4 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexpr
 test parseExpr-12.5 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexprparser {
     testexprparser {1*2 - 3} -1
 } {- {} 0 subexpr {1*2 - 3} 9 operator - 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-12.6 {ParseAddExpr procedure, bad lexeme after "+" or "-"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-12.6 {ParseAddExpr procedure, bad lexeme after "+" or "-"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {1*2 + 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-12.7 {ParseAddExpr procedure, valid RHS subexpression} testexprparser {
@@ -426,7 +426,7 @@ test parseExpr-12.8 {ParseAddExpr procedure, error in RHS subexpression} \
 test parseExpr-13.1 {ParseMultiplyExpr procedure, valid LHS unary subexpr} testexprparser {
     testexprparser {+2 * 3} -1
 } {- {} 0 subexpr {+2 * 3} 7 operator * 0 subexpr +2 3 operator + 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-13.2 {ParseMultiplyExpr procedure, error in LHS unary subexpr} {testexprparser wideIntegerUnparsed} {
+test parseExpr-13.2 {ParseMultiplyExpr procedure, error in LHS unary subexpr} {testexprparser wideIs32bit} {
     list [catch {testexprparser {-12345678901234567890 * 3} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-13.3 {ParseMultiplyExpr procedure, next lexeme isn't "*", "/", or "%"} testexprparser {
@@ -441,7 +441,7 @@ test parseExpr-13.5 {ParseMultiplyExpr procedure, next lexeme is "*", "/", or "%
 test parseExpr-13.6 {ParseMultiplyExpr procedure, next lexeme is "*", "/", or "%"} testexprparser {
     testexprparser {+-456 % 3} -1
 } {- {} 0 subexpr {+-456 % 3} 9 operator % 0 subexpr +-456 5 operator + 0 subexpr -456 3 operator - 0 subexpr 456 1 text 456 0 subexpr 3 1 text 3 0 {}}
-test parseExpr-13.7 {ParseMultiplyExpr procedure, bad lexeme after "*", "/", or "%"} {testexprparser wideIntegerUnparsed} {
+test parseExpr-13.7 {ParseMultiplyExpr procedure, bad lexeme after "*", "/", or "%"} {testexprparser wideIs32bit} {
     list [catch {testexprparser {--++5 / 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-13.8 {ParseMultiplyExpr procedure, valid RHS subexpression} testexprparser {
@@ -465,7 +465,7 @@ test parseExpr-14.3 {ParseUnaryExpr procedure, first token is unary operator} te
 test parseExpr-14.4 {ParseUnaryExpr procedure, first token is unary operator} testexprparser {
     testexprparser {!2} -1
 } {- {} 0 subexpr !2 3 operator ! 0 subexpr 2 1 text 2 0 {}}
-test parseExpr-14.5 {ParseUnaryExpr procedure, error in lexeme after unary op} {testexprparser wideIntegerUnparsed} {
+test parseExpr-14.5 {ParseUnaryExpr procedure, error in lexeme after unary op} {testexprparser wideIs32bit} {
     list [catch {testexprparser {-12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-14.6 {ParseUnaryExpr procedure, simple unary expr after unary op} testexprparser {
@@ -486,14 +486,14 @@ test parseExpr-14.10 {ParseUnaryExpr procedure, first token is not unary op} tes
 test parseExpr-14.11 {ParseUnaryExpr procedure, not unary expr, complex primary expr} testexprparser {
     testexprparser {(1+2)} -1
 } {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
-test parseExpr-14.12 {ParseUnaryExpr procedure, not unary expr, error in primary expr} {testexprparser wideIntegerUnparsed} {
+test parseExpr-14.12 {ParseUnaryExpr procedure, not unary expr, error in primary expr} {testexprparser wideIs32bit} {
     list [catch {testexprparser {(12345678901234567890)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 
 test parseExpr-15.1 {ParsePrimaryExpr procedure, just parenthesized subexpr} testexprparser {
     testexprparser {({abc}/{def})} -1
 } {- {} 0 subexpr {{abc}/{def}} 5 operator / 0 subexpr {{abc}} 1 text abc 0 subexpr {{def}} 1 text def 0 {}}
-test parseExpr-15.2 {ParsePrimaryExpr procedure, bad lexeme after "("} {testexprparser wideIntegerUnparsed} {
+test parseExpr-15.2 {ParsePrimaryExpr procedure, bad lexeme after "("} {testexprparser wideIs32bit} {
     list [catch {testexprparser {(12345678901234567890)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-15.3 {ParsePrimaryExpr procedure, valid parenthesized subexpr} testexprparser {
@@ -557,7 +557,7 @@ test parseExpr-15.21 {ParsePrimaryExpr procedure, primary is braced string with 
 test parseExpr-15.22 {ParsePrimaryExpr procedure, primary is function call} testexprparser {
     testexprparser {foo(123)} -1
 } {- {} 0 subexpr foo(123) 3 operator foo 0 subexpr 123 1 text 123 0 {}}
-test parseExpr-15.23 {ParsePrimaryExpr procedure, bad lexeme after function name} {testexprparser wideIntegerUnparsed} {
+test parseExpr-15.23 {ParsePrimaryExpr procedure, bad lexeme after function name} {testexprparser wideIs32bit} {
     list [catch {testexprparser {foo 12345678901234567890 123)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-15.24 {ParsePrimaryExpr procedure, lexeme after function name isn't "("} \
@@ -565,7 +565,7 @@ test parseExpr-15.24 {ParsePrimaryExpr procedure, lexeme after function name isn
         list [catch {testexprparser {foo 27.4 123)} -1} msg] $msg
     } -match glob \
     -result {1 {syntax error in expression "foo 27.4 123)": * preceding $*}}
-test parseExpr-15.25 {ParsePrimaryExpr procedure, bad lexeme after "("} {testexprparser wideIntegerUnparsed} {
+test parseExpr-15.25 {ParsePrimaryExpr procedure, bad lexeme after "("} {testexprparser wideIs32bit} {
     list [catch {testexprparser {foo(12345678901234567890)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-15.26 {ParsePrimaryExpr procedure, function call, one arg} testexprparser {
@@ -580,13 +580,13 @@ test parseExpr-15.28 {ParsePrimaryExpr procedure, error in function arg} testexp
 test parseExpr-15.29 {ParsePrimaryExpr procedure, function call, comma after arg} testexprparser {
     testexprparser {foo(27-2, (-2*[foo]))} -1
 } {- {} 0 subexpr {foo(27-2, (-2*[foo]))} 15 operator foo 0 subexpr 27-2 5 operator - 0 subexpr 27 1 text 27 0 subexpr 2 1 text 2 0 subexpr {-2*[foo]} 7 operator * 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 subexpr {[foo]} 1 command {[foo]} 0 {}}
-test parseExpr-15.30 {ParsePrimaryExpr procedure, bad lexeme after comma} {testexprparser wideIntegerUnparsed} {
+test parseExpr-15.30 {ParsePrimaryExpr procedure, bad lexeme after comma} {testexprparser wideIs32bit} {
     list [catch {testexprparser {foo(123, 12345678901234567890)} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-15.31 {ParsePrimaryExpr procedure, lexeme not "," or ")" after arg} testexprparser {
     list [catch {testexprparser {foo(123 [foo])} -1} msg] $msg
 } {1 {syntax error in expression "foo(123 [foo])": missing close parenthesis at end of function call}}
-test parseExpr-15.32 {ParsePrimaryExpr procedure, bad lexeme after primary} {testexprparser wideIntegerUnparsed} {
+test parseExpr-15.32 {ParsePrimaryExpr procedure, bad lexeme after primary} {testexprparser wideIs32bit} {
     list [catch {testexprparser {123 12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-15.33 {ParsePrimaryExpr procedure, comma-specific message} testexprparser {
@@ -617,7 +617,7 @@ test parseExpr-16.3 {GetLexeme procedure, no lexeme after whitespace} testexprpa
 test parseExpr-16.4 {GetLexeme procedure, integer lexeme} testexprparser {
     testexprparser {000} -1
 } {- {} 0 subexpr 000 1 text 000 0 {}}
-test parseExpr-16.5 {GetLexeme procedure, integer lexeme too big} {testexprparser wideIntegerUnparsed} {
+test parseExpr-16.5 {GetLexeme procedure, integer lexeme too big} {testexprparser wideIs32bit} {
     list [catch {testexprparser {12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
 test parseExpr-16.6 {GetLexeme procedure, bad integer lexeme} -constraints testexprparser -body {
@@ -629,10 +629,10 @@ test parseExpr-16.7 {GetLexeme procedure, double lexeme} testexprparser {
 test parseExpr-16.8 {GetLexeme procedure, double lexeme} testexprparser {
     testexprparser {.123} -1
 } {- {} 0 subexpr .123 1 text .123 0 {}}
-test parseExpr-16.9 {GetLexeme procedure, double lexeme} {testexprparser nonPortable unix} {
+test parseExpr-16.9 {GetLexeme procedure, double lexeme} {testexprparser unix} {
     testexprparser {nan} -1
 } {- {} 0 subexpr nan 1 text nan 0 {}}
-test parseExpr-16.10 {GetLexeme procedure, double lexeme} {testexprparser nonPortable unix} {
+test parseExpr-16.10 {GetLexeme procedure, double lexeme} {testexprparser unix} {
     testexprparser {NaN} -1
 } {- {} 0 subexpr NaN 1 text NaN 0 {}}
 test parseExpr-16.11a {GetLexeme procedure, bad double lexeme too big} {testexprparser && !ieeeFloatingPoint} {

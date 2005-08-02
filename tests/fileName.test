@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.11 2005/06/22 21:12:45 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.12 2005/08/02 16:38:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -666,11 +666,11 @@ if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 
-test filename-10.23 {Tcl_TranslateFileName} {unix nonPortable} {
+test filename-10.23 {Tcl_TranslateFileName} {nonPortable} {
     # this test fails if ~ouster is not /home/ouster
     list [catch {testtranslatefilename ~ouster} msg] $msg
 } {0 /home/ouster}
-test filename-10.24 {Tcl_TranslateFileName} {unix nonPortable} {
+test filename-10.24 {Tcl_TranslateFileName} {nonPortable} {
     # this test fails if ~ouster is not /home/ouster
     list [catch {testtranslatefilename ~ouster/foo} msg] $msg
 } {0 /home/ouster/foo}
@@ -1519,7 +1519,7 @@ test filename-17.2 {windows specific glob with executable} {win} {
     set res
 } {abc.exe}
 
-test fileName-18.1 {windows - split ADS name correctly} {winOnly} {
+test fileName-18.1 {windows - split ADS name correctly} {win} {
     # bug 1194458
     set x [file split c:/c:d]
     set y [eval [linsert $x 0 file join]]

@@ -2,15 +2,17 @@
  * tclLoadDyld.c --
  *
  *	This procedure provides a version of the TclLoadFile that works with
- *	Apple's dyld dynamic loading. This file provided by Wilfredo Sanchez
- *	(wsanchez@apple.com). This works on Mac OS X.
+ *	Apple's dyld dynamic loading.
+ *	Original version of his file (now superseded long ago) provided by
+ *	Wilfredo Sanchez (wsanchez@apple.com).
  *
  * Copyright (c) 1995 Apple Computer, Inc.
+ * Copyright (c) 2005 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.4 2005/07/26 04:12:32 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.5 2005/08/02 16:38:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -121,9 +123,10 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 
     if (!dyldLibHeader) {
 	NSLinkEditErrors editError;
+	int errorNumber;
 	CONST char *name, *msg, *objFileImageErrMsg = NULL;
 
-	NSLinkEditError(&editError, &errno, &name, &msg);
+	NSLinkEditError(&editError, &errorNumber, &name, &msg);
 
 	if (editError == NSLinkEditFileAccessError) {
 	    /*
@@ -141,9 +144,10 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 		    | NSADDIMAGE_OPTION_RETURN_ON_ERROR);
 	    Tcl_DStringFree(&ds);
 	    if (!dyldLibHeader) {
-		NSLinkEditError(&editError, &errno, &name, &msg);
+		NSLinkEditError(&editError, &errorNumber, &name, &msg);
 	    }
-	} else if (editError==NSLinkEditFileFormatError && errno==EBADMACHO) {
+	} else if ((editError==NSLinkEditFileFormatError && errorNumber==EBADMACHO)
+		|| editError == NSLinkEditOtherError){
 	    /*
 	     * The requested file was found but was not of type MH_DYLIB,
 	     * attempt to load it as a MH_BUNDLE.
@@ -156,6 +160,9 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 
 	if (!dyldLibHeader && !dyldObjFileImage) {
 	    Tcl_AppendResult(interp, msg, (char *) NULL);
+	    if (msg && *msg) {
+		Tcl_AppendResult(interp, "\n", (char *) NULL);
+	    }
 	    if (objFileImageErrMsg) {
 		Tcl_AppendResult(interp,
 			"NSCreateObjectFileImageFromFile() error: ",
@@ -175,9 +182,10 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 
 	if (!module) {
 	    NSLinkEditErrors editError;
+	    int errorNumber;
 	    CONST char *name, *msg;
 
-	    NSLinkEditError(&editError, &errno, &name, &msg);
+	    NSLinkEditError(&editError, &errorNumber, &name, &msg);
 	    Tcl_AppendResult(interp, msg, (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -265,9 +273,10 @@ TclpFindSymbol(interp, loadHandle, symbol)
 
 	} else {
 	    NSLinkEditErrors editError;
+	    int errorNumber;
 	    CONST char *name, *msg;
 
-	    NSLinkEditError(&editError, &errno, &name, &msg);
+	    NSLinkEditError(&editError, &errorNumber, &name, &msg);
 	    Tcl_AppendResult(interp, msg, (char *) NULL);
 	}
     } else {
@@ -452,10 +461,22 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
      */
 
     if (codeSize >= 0) {
-	NSObjectFileImageReturnCode err;
+	NSObjectFileImageReturnCode err = NSObjectFileImageSuccess;
 
-	err = NSCreateObjectFileImageFromMemory(buffer, codeSize,
-		&dyldObjFileImage);
+#ifndef __LP64__
+	struct mach_header *mh = buffer;
+	if (codeSize < sizeof(struct mach_header) || mh->magic != MH_MAGIC
+#else
+	struct mach_header_64 *mh = buffer;
+	if (codeSize < sizeof(struct mach_header_64) || mh->magic != MH_MAGIC_64
+#endif
+		|| mh->filetype != MH_BUNDLE) {
+	    err = NSObjectFileImageInappropriateFile;
+	}
+	if (err == NSObjectFileImageSuccess) {
+	    err = NSCreateObjectFileImageFromMemory(buffer, codeSize,
+		    &dyldObjFileImage);
+	}
 	objFileImageErrMsg = DyldOFIErrorMsg(err);
     }
 
@@ -484,9 +505,10 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 
     if (!module) {
 	NSLinkEditErrors editError;
+	int errorNumber;
 	CONST char *name, *msg;
 
-	NSLinkEditError(&editError, &errno, &name, &msg);
+	NSLinkEditError(&editError, &errorNumber, &name, &msg);
 	Tcl_AppendResult(interp, msg, (char *) NULL);
 	return TCL_ERROR;
     }

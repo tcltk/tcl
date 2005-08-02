@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.17.2.6 2005/05/11 16:58:47 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.17.2.7 2005/08/02 16:38:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -252,12 +252,8 @@ test expr-old-4.25 {string operators} {expr {"abd" ne ""}} 1
 test expr-old-4.26 {string operators} {expr {"" ne ""}} 0
 test expr-old-4.27 {string operators} {expr {"longerstring" eq "shorter"}} 0
 test expr-old-4.28 {string operators} {expr {"longerstring" ne "shorter"}} 1
-
-# The following tests are non-portable because on some systems "+"
-# and "-" can be parsed as numbers.
-
-test expr-old-4.29 {string operators} {nonPortable} {expr {"0" == "+"}} 0
-test expr-old-4.30 {string operators} {nonPortable} {expr {"0" == "-"}} 0
+test expr-old-4.29 {string operators} {expr {"0" == "+"}} 0
+test expr-old-4.30 {string operators} {expr {"0" == "-"}} 0
 test expr-old-4.31 {string operators} {expr {1?"foo":"bar"}} foo
 test expr-old-4.32 {string operators} {expr {0?"foo":"bar"}} bar
 
@@ -788,17 +784,13 @@ test expr-old-32.24 {math functions in expressions} {
     format %.6g [expr abs(66)]
 } {66}
 
-# The following test is different for 32-bit versus 64-bit architectures.
+test expr-old-32.25a {math functions in expressions} {
+    list [catch {expr abs(0x8000000000000000)} msg] $msg
+} {1 {integer value too large to represent}}
 
-if {int(0x80000000) > 0} {
-    test expr-old-32.25a {math functions in expressions} {nonPortable} {
-	list [catch {expr abs(0x8000000000000000)} msg] $msg
-    } {1 {integer value too large to represent}}
-} else {
-    test expr-old-32.25b {math functions in expressions} {nonPortable} {
-	list [catch {expr abs(0x80000000)} msg] $msg
-    } {1 {integer value too large to represent}}
-}
+test expr-old-32.25b {math functions in expressions} {
+    expr abs(0x80000000)
+} 2147483648
 
 test expr-old-32.26 {math functions in expressions} {
     expr double(1)
@@ -929,9 +921,9 @@ test expr-old-34.8 {errors in math functions} -body {
 test expr-old-34.9 {errors in math functions} {
     list [catch {expr acos(-2.0)} msg] $msg $errorCode
 } {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}
-test expr-old-34.10 {errors in math functions} {nonPortable} {
-    list [catch {expr pow(-3, 1000001)} msg] $msg $errorCode
-} {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
+test expr-old-34.10 {errors in math functions} {
+    list [catch {expr pow(-3, 1000001)} msg] $msg
+} {0 -Inf}
 test expr-old-34.11a {errors in math functions} !ieeeFloatingPoint {
     list [catch {expr pow(3, 1000001)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
@@ -983,7 +975,7 @@ test expr-old-36.6 {ExprLooksLikeInt procedure} {
     set x {	-22}
     list [catch {expr {$x+1}} msg] $msg
 } {0 -21}
-test expr-old-36.7 {ExprLooksLikeInt procedure} {nonPortable unix} {
+test expr-old-36.7 {ExprLooksLikeInt procedure} {
     list [catch {expr nan} msg] $msg
 } {1 {domain error: argument not in valid range}}
 test expr-old-36.8 {ExprLooksLikeInt procedure} {
@@ -992,9 +984,9 @@ test expr-old-36.8 {ExprLooksLikeInt procedure} {
 test expr-old-36.9 {ExprLooksLikeInt procedure} {
     list [catch {expr 24E1} msg] $msg
 } {0 240.0}
-test expr-old-36.10 {ExprLooksLikeInt procedure} {nonPortable unix} {
-    list [catch {expr 78e} msg] $msg
-} {1 {syntax error in expression "78e"}}
+test expr-old-36.10 {ExprLooksLikeInt procedure} -body {
+    expr 78e
+} -returnCodes error -match glob -result {syntax error in expression "78e"*}
 
 # test for [Bug #542588]
 test expr-old-36.11 {ExprLooksLikeInt procedure} {

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.9 2005/07/26 04:12:26 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.10 2005/08/02 16:38:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -411,10 +411,12 @@ test string-6.37 {string is double, false on int overflow} {
     list [string is double -fail var [largest_int]0] $var
 } {0 -1}
 # string-6.38 removed, underflow on input is no longer an error.
-test string-6.39 {string is double, false} {nonPortable} {
+test string-6.39 {string is double, false} {
     # This test is non-portable because IRIX thinks 
     # that .e1 is a valid double - this is really a bug
     # on IRIX as .e1 should NOT be a valid double
+    #
+    # Portable now. Tcl 8.5 does its own double parsing.
 
     list [string is double -fail var .e1] $var
 } {0 0}
