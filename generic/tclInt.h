@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.16 2005/07/05 21:18:23 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.17 2005/08/03 22:23:42 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1653,7 +1653,6 @@ EXTERN int		TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[])) ;
 EXTERN void		TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
-EXTERN void		TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeCompilation _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeEncodingSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeEnvironment _ANSI_ARGS_((void));
@@ -1665,6 +1664,7 @@ EXTERN void		TclFinalizeLoad _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeLock _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeMemorySubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
+EXTERN void		TclFinalizeObjects _ANSI_ARGS_((void));
 EXTERN void		TclFinalizePreserve _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
