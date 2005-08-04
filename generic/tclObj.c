@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.19 2005/08/04 16:47:51 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.20 2005/08/04 21:27:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -174,6 +174,7 @@ Tcl_ThreadDataKey pendingObjDataKey;
  * Prototypes for procedures defined later in this file:
  */
 
+static int		ParseBoolean _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		SetBooleanFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static int		SetDoubleFromAny _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1287,18 +1288,7 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get boolean. */
     register int *boolPtr;	/* Place to store resulting boolean. */
 {
-    double d;
-    long l;
-
-    /*
-     * The flow through this routine is "optimized" to avoid the generation of
-     * string rep. for "pure" numeric values.  However, once the string rep is
-     * generated it's fairly inefficient at determining a string is *not* a
-     * valid boolean.  It has to scan the string as many as four times (ruling
-     * out "double", "long", "wideint", and "boolean" in turn) to figure out
-     * that an invalid boolean value is stored in objPtr->bytes.
-     */
-
+  tryAgain:
     if (objPtr->typePtr == &tclIntType) {
 	*boolPtr = (int) (objPtr->internalRep.longValue != 0);
 	return TCL_OK;
@@ -1307,71 +1297,45 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
 	*boolPtr = (int) objPtr->internalRep.longValue;
 	return TCL_OK;
     }
+    if (objPtr->typePtr == &tclDoubleType) {
+	/*
+	 * Caution: Don't be tempted to check directly for the "double"
+	 * Tcl_ObjType and then compare the intrep to 0.0. This isn't reliable
+	 * because a "double" Tcl_ObjType can hold the NaN value. Use the API
+	 * Tcl_GetDoubleFromObj, which does the checking and sets the proper
+	 * error message for us.
+	 */
+        double d;
+	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*boolPtr = (d != 0.0);
+	return TCL_OK;
+    }
+    if (objPtr->typePtr == &tclBignumType) {
+	*boolPtr = (int) ((objPtr->internalRep.bignumValue.misc & 0x7fff)!=0);
+	return TCL_OK;
+    }
+    /* TODO: The following one should be going away */
     if (objPtr->typePtr == &tclWideIntType) {
 	*boolPtr = (int) (objPtr->internalRep.wideValue != 0);
 	return TCL_OK;
     }
 
     /*
-     * Caution: Don't be tempted to check directly for the "double"
-     * Tcl_ObjType and then compare the intrep to 0.0. This isn't reliable
-     * because a "double" Tcl_ObjType can hold the NaN value. Use the API
-     * Tcl_GetDoubleFromObj, which does the checking for us.
+     * There's no cached numeric or boolean type, so try to parse the
+     * string value, first as one of the boolean strings...
      */
 
-    /*
-     * The following call retrieves a numeric value without generating the
-     * string rep of a double.
-     */
-
-    if (Tcl_GetDoubleFromObj(NULL, objPtr, &d) == TCL_OK) {
-	*boolPtr = (d != 0.0);
-
-	/*
-	 * Tcl_GetDoubleFromObj() will succeed on the strings "0" and "1", but
-	 * we'd rather keep those values around as a better objType for
-	 * boolean value.  Following call will shimmer appropriately.
-	 */
-
-	if (objPtr->bytes != NULL) {
-	    SetBooleanFromAny(NULL, objPtr);
-	}
-	return TCL_OK;
+    if (ParseBoolean(objPtr) == TCL_OK) {
+	goto tryAgain;
     }
 
-    /*
-     * Value didn't already have a numeric intrep, but perhaps we can generate
-     * one. Try a long value first...
-     */
+    /* ...then as any numeric value. */
 
-    if (Tcl_GetLongFromObj(NULL, objPtr, &l) == TCL_OK) {
-	*boolPtr = (l != 0);
-	return TCL_OK;
-    }
-#ifndef TCL_WIDE_INT_IS_LONG
-    else {
-	Tcl_WideInt w;
-
-	/*
-	 * ...then a wide.  Check in that order so that we don't promote
-	 * anything to wide unnecessarily.
-	 */
-
-	if (Tcl_GetWideIntFromObj(NULL, objPtr, &w) == TCL_OK) {
-	    *boolPtr = (w != 0);
-	    return TCL_OK;
-	}
-    }
-#endif
-
-    /*
-     * Finally, check for the string values like "yes" and generate error
-     * message for non-boolean values.
-     */
-
-    if (SetBooleanFromAny(interp, objPtr) == TCL_OK) {
-	*boolPtr = (int) objPtr->internalRep.longValue;
-	return TCL_OK;
+    if (TCL_OK ==
+	    TclParseNumber(interp, objPtr, "boolean value", NULL, -1, NULL)) {
+	goto tryAgain;
     }
     return TCL_ERROR;
 }
@@ -1401,9 +1365,6 @@ SetBooleanFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    char *str, lowerCase[6];
-    int i, newBool, length;
-
     /*
      * For some "pure" numeric Tcl_ObjTypes (no string rep), we can determine
      * whether a boolean conversion is possible without generating the string
@@ -1411,9 +1372,6 @@ SetBooleanFromAny(interp, objPtr)
      */
 
     if (objPtr->bytes == NULL) {
-	if (objPtr->typePtr == &tclDoubleType) {
-	    goto badBoolean;
-	}
 	if (objPtr->typePtr == &tclIntType) {
 	    switch (objPtr->internalRep.longValue) {
 	    case 0L: case 1L:
@@ -1421,26 +1379,51 @@ SetBooleanFromAny(interp, objPtr)
 	    }
 	    goto badBoolean;
 	}
-	if (objPtr->typePtr == &tclWideIntType) {
-	    Tcl_WideInt w = objPtr->internalRep.wideValue;
-	    if (w == 0 || w == 1) {
-		newBool = (int) w;
-		goto numericBoolean;
-	    } else {
-		goto badBoolean;
-	    }
+	/* Note special handling for bignum and wide is not here; they
+	 * will be forced through the string rep.  If the wide type goes
+	 * away, and the bignum type is limited to only those values that
+	 * need it (automatic narrowing), then this code will take care
+	 * of things efficiently:
+ 
+	 if (objPtr->typePtr == &tclBignumType) }
+	     goto badBoolean;
+	 }
+	
+	 * If wides stay around and if bignums can hold small values,
+	 * things will be more complex.
+	 */
+	if (objPtr->typePtr == &tclDoubleType) {
+	    goto badBoolean;
 	}
     }
 
-    /*
-     * Parse the string as a boolean. We use an implementation here that
-     * doesn't report errors in interp if interp is NULL.
-     */
+    if (ParseBoolean(objPtr) == TCL_OK) {
+	return TCL_OK;
+    }
 
-    str = Tcl_GetStringFromObj(objPtr, &length);
+  badBoolean:
+    if (interp != NULL) {
+	int length;
+	char *str = Tcl_GetStringFromObj(objPtr, &length);
+	Tcl_Obj *msg =
+		Tcl_NewStringObj("expected boolean value but got \"", -1);
+	TclAppendLimitedToObj(msg, str, length, 50, "");
+	Tcl_AppendToObj(msg, "\"", -1);
+	Tcl_SetObjResult(interp, msg);
+    }
+    return TCL_ERROR;
+}
+
+static int
+ParseBoolean(objPtr)
+    register Tcl_Obj *objPtr;	/* The object to parse/convert. */
+{
+    int i, length, newBool;
+    char lowerCase[6], *str = Tcl_GetStringFromObj(objPtr, &length);
+
     if ((length == 0) || (length > 5)) {
 	/* longest valid boolean string rep. is "false" */
-	goto badBoolean;
+	return TCL_ERROR;
     }
 
     switch (str[0]) {
@@ -1449,13 +1432,13 @@ SetBooleanFromAny(interp, objPtr)
 	    newBool = 0;
 	    goto numericBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     case '1':
 	if (length == 1) {
 	    newBool = 1;
 	    goto numericBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     }
 
     /*
@@ -1475,7 +1458,7 @@ SetBooleanFromAny(interp, objPtr)
 	    lowerCase[i] = c;
 	    break;
 	default:
-	    goto badBoolean;
+	    return TCL_ERROR;
 	}
     }
     lowerCase[length] = 0;
@@ -1488,28 +1471,28 @@ SetBooleanFromAny(interp, objPtr)
 	    newBool = 1;
 	    goto goodBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     case 'n':
 	if (strncmp(lowerCase, "no", (size_t) length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     case 't':
 	if (strncmp(lowerCase, "true", (size_t) length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     case 'f':
 	if (strncmp(lowerCase, "false", (size_t) length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     case 'o':
 	if (length < 2) {
-	    goto badBoolean;
+	    return TCL_ERROR;
 	}
 	if (strncmp(lowerCase, "on", (size_t) length) == 0) {
 	    newBool = 1;
@@ -1518,9 +1501,9 @@ SetBooleanFromAny(interp, objPtr)
 	    newBool = 0;
 	    goto goodBoolean;
 	}
-	goto badBoolean;
+	return TCL_ERROR;
     default:
-	goto badBoolean;
+	return TCL_ERROR;
     }
 
     /*
@@ -1534,17 +1517,6 @@ SetBooleanFromAny(interp, objPtr)
     objPtr->internalRep.longValue = newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
-
-  badBoolean:
-    if (interp != NULL) {
-	Tcl_Obj *msg =
-		Tcl_NewStringObj("expected boolean value but got \"", -1);
-	str = Tcl_GetStringFromObj(objPtr, &length);
-	TclAppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", -1);
-	Tcl_SetObjResult(interp, msg);
-    }
-    return TCL_ERROR;
 
   numericBoolean:
     TclFreeIntRep(objPtr);

@@ -2,6 +2,10 @@
 
 	[kennykb_numerics_branch] Updated from HEAD
 
+	* generic/tclObj.c:	Rewrote Tcl_GetBooleanFromObj() and supporting
+	routines to make use of TclParseNumber.  This reduces the potential
+	number of times a string value must be scanned.
+
 	* generic/tclObj.c:	Simplified routines that manage the typeTable.
 	Deleted the UpdateStringOfBoolean() routine, that can never be called.
 
