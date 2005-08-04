@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.92 2005/08/04 17:29:06 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.93 2005/08/04 19:56:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -502,7 +502,7 @@ Tcl_AppendAllObjTypes(interp, objPtr)
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int result, objc;
+    int objc;
     Tcl_Obj **objv;
 
     /* 
