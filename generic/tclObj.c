@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.11 2005/08/03 22:23:43 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.12 2005/08/04 15:55:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -331,26 +331,10 @@ Tcl_RegisterObjType(typePtr)
 				 * storage must be statically
 				 * allocated (must live forever). */
 {
-    register Tcl_HashEntry *hPtr;
     int new;
-
-    /*
-     * If there's already an object type with the given name, remove it.
-     */
     Tcl_MutexLock(&tableMutex);
-    hPtr = Tcl_FindHashEntry(&typeTable, typePtr->name);
-    if (hPtr != (Tcl_HashEntry *) NULL) {
-        Tcl_DeleteHashEntry(hPtr);
-    }
-
-    /*
-     * Now insert the new object type.
-     */
-
-    hPtr = Tcl_CreateHashEntry(&typeTable, typePtr->name, &new);
-    if (new) {
-	Tcl_SetHashValue(hPtr, typePtr);
-    }
+    Tcl_SetHashValue(
+	    Tcl_CreateHashEntry(&typeTable, typePtr->name, &new), typePtr);
     Tcl_MutexUnlock(&tableMutex);
 }
 
@@ -388,23 +372,27 @@ Tcl_AppendAllObjTypes(interp, objPtr)
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Tcl_ObjType *typePtr;
-    int result;
- 
+    int result, objc;
+    Tcl_Obj **objv;
+
     /*
-     * This code assumes that types names do not contain embedded NULLs.
+     * Get the test for a valid list out of the way first.
+     */
+
+    if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Type names are NUL-terminated, not counted strings.
+     * This code relies on that.
      */
 
     Tcl_MutexLock(&tableMutex);
     for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
 	    hPtr != NULL;  hPtr = Tcl_NextHashEntry(&search)) {
-        typePtr = (Tcl_ObjType *) Tcl_GetHashValue(hPtr);
-	result = Tcl_ListObjAppendElement(interp, objPtr,
-	        Tcl_NewStringObj(typePtr->name, -1));
-	if (result == TCL_ERROR) {
-	    Tcl_MutexUnlock(&tableMutex);
-	    return result;
-	}
+	Tcl_ListObjAppendElement(NULL, objPtr,
+	        Tcl_NewStringObj(Tcl_GetHashKey(&typeTable, hPtr), -1));
     }
     Tcl_MutexUnlock(&tableMutex);
     return TCL_OK;
@@ -433,17 +421,15 @@ Tcl_GetObjType(typeName)
     CONST char *typeName;	/* Name of Tcl object type to look up. */
 {
     register Tcl_HashEntry *hPtr;
-    Tcl_ObjType *typePtr;
+    Tcl_ObjType *typePtr = NULL;
 
     Tcl_MutexLock(&tableMutex);
     hPtr = Tcl_FindHashEntry(&typeTable, typeName);
     if (hPtr != (Tcl_HashEntry *) NULL) {
         typePtr = (Tcl_ObjType *) Tcl_GetHashValue(hPtr);
-	Tcl_MutexUnlock(&tableMutex);
-	return typePtr;
     }
     Tcl_MutexUnlock(&tableMutex);
-    return NULL;
+    return typePtr;
 }
 
 /*
@@ -631,7 +617,10 @@ TclAllocateFreeObjects()
      * This has been noted by Purify to be a potential leak.  The problem is
      * that Tcl, when not TCL_MEM_DEBUG compiled, keeps around all allocated
      * Tcl_Obj's, pointed to by tclFreeObjList, when freed instead of
-     * actually freeing the memory.  These never do get freed properly.
+     * actually freeing the memory.  TclFinalizeObjects() does not ckfree()
+     * this memory, but leaves it to Tcl's memory subsystem finalziation to
+     * release it.  Purify apparently can't figure that out, and fires a
+     * false alarm.
      */
 
     basePtr = (char *) ckalloc(bytesToAlloc);
@@ -889,7 +878,7 @@ Tcl_InvalidateStringRep(objPtr)
  * Tcl_NewBooleanObj --
  *
  *	This procedure is normally called when not debugging: i.e., when
- *	TCL_MEM_DEBUG is not defined. It creates a new boolean object and
+ *	TCL_MEM_DEBUG is not defined. It creates a new Tcl_Obj and
  *	initializes it from the argument boolean value. A nonzero
  *	"boolValue" is coerced to 1.
  *
