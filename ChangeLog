@@ -1,3 +1,11 @@
+2005-08-04  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIO.c (CloseChannel): Fixed comment nit, added
+	  apparently missing word to complete a sentence.
+
+	* generic/tclObj.c (Tcl_DbDecrRefCount): Fixed whitespace nit in
+	  panic message.
+
 2005-08-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c:	Simplified routines that manage the typeTable.
