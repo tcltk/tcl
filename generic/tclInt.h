@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.18 2005/08/02 18:15:41 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.19 2005/08/04 16:47:51 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1961,7 +1961,6 @@ MODULE_SCOPE int	TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[])) ;
 MODULE_SCOPE void	TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeAsync _ANSI_ARGS_((void));
-MODULE_SCOPE void	TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeCompilation _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeDoubleConversion _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem _ANSI_ARGS_((void));
@@ -1974,6 +1973,7 @@ MODULE_SCOPE void	TclFinalizeLoad _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeMemorySubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeNotifier _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFinalizeObjects _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizePreserve _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));

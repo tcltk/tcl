@@ -1,3 +1,17 @@
+2005-08-04  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch] Updated from HEAD
+
+	* generic/tclObj.c:	Simplified routines that manage the typeTable.
+	Deleted the UpdateStringOfBoolean() routine, that can never be called.
+
+2005-08-03  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclCompExpr.c:        Untangled some dependencies in the
+        * generic/tclEvent.c:           order of finalization routines.
+        * generic/tclInt.h:             [Bug 1251399]
+        * generic/tclObj.c:
+
 2005-08-02  Don Porter	<dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch] Updated from HEAD
