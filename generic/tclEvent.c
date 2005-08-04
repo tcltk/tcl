@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.14 2005/07/26 04:11:55 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.15 2005/08/04 16:47:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -874,7 +874,8 @@ Tcl_Finalize()
 	 * done after the exit handlers, because there are order dependencies.
 	 */
 
-	TclFinalizeCompExecEnv();
+	TclFinalizeCompilation();
+	TclFinalizeExecution();
 	TclFinalizeEnvironment();
 
 	/* 
@@ -883,6 +884,18 @@ Tcl_Finalize()
 	 */
 
 	TclFinalizeFilesystem();
+
+	/*
+	 * Undo all Tcl_ObjType registrations, and reset the master list
+	 * of free Tcl_Obj's.  After this returns, no more Tcl_Obj's should
+	 * be allocated or freed.  
+	 *
+	 * Note in particular that TclFinalizeObjects() must follow
+	 * TclFinalizeFilesystem() because TclFinalizeFilesystem free's
+	 * the Tcl_Obj that holds the path of the current working directory.
+	 */
+
+	TclFinalizeObjects();
 
 	/* 
 	 * We must be sure the encoding finalization doesn't need to examine
@@ -907,13 +920,6 @@ Tcl_Finalize()
 	 */
 
 	TclFinalizeThreadData();
-
-	/*
-	 * Free synchronization objects.  There really should only be one
-	 * thread alive at this moment.
-	 */
-
-	TclFinalizeSynchronization();
 
 	/*
 	 * We defer unloading of packages until very late to avoid memory
@@ -952,14 +958,23 @@ Tcl_Finalize()
 	    Tcl_Panic("exit handlers were created during Tcl_Finalize");
 	}
 
+	TclFinalizePreserve();
+
 	/*
-	 * There shouldn't be any malloc'ed memory after this.
+	 * Free synchronization objects.  There really should only be one
+	 * thread alive at this moment.
 	 */
 
-	TclFinalizePreserve();
+	TclFinalizeSynchronization();
+
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 	TclFinalizeThreadAlloc();
 #endif
+
+	/*
+	 * At this point, there should no longer be any ckalloc'ed memory.
+	 */
+
 	TclFinalizeMemorySubsystem();
 	inFinalize = 0;
     }

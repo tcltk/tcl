@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.8 2005/07/26 04:11:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.9 2005/08/04 16:47:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -288,8 +288,7 @@ TclCompileExpr(interp, script, numBytes, envPtr)
  * TclFinalizeCompilation --
  *
  *	Clean up the compilation environment so it can later be properly
- *	reinitialized. This procedure is called by TclFinalizeCompExecEnv() in
- *	tclObj.c, which in turn is called by Tcl_Finalize().
+ *	reinitialized. This procedure is called by Tcl_Finalize().
  *
  * Results:
  *	None.
