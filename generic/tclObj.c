@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.90 2005/08/04 15:55:12 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.91 2005/08/04 16:32:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -182,7 +182,6 @@ static int		SetIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static int		SetIntOrWideFromAny _ANSI_ARGS_((Tcl_Interp* interp,
 			    Tcl_Obj *objPtr));
-static void		UpdateStringOfBoolean _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
@@ -234,7 +233,7 @@ Tcl_ObjType tclBooleanType = {
     "boolean",				/* name */
     (Tcl_FreeInternalRepProc *) NULL,	/* freeIntRepProc */
     (Tcl_DupInternalRepProc *) NULL,	/* dupIntRepProc */
-    UpdateStringOfBoolean,		/* updateStringProc */
+    (Tcl_UpdateStringProc *) NULL,	/* updateStringProc */
     SetBooleanFromAny			/* setFromAnyProc */
 };
 
@@ -1550,37 +1549,6 @@ SetBooleanFromAny(interp, objPtr)
     objPtr->internalRep.longValue = newBool;
     objPtr->typePtr = &tclIntType;
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateStringOfBoolean --
- *
- *	Update the string representation for a boolean object.  Note: This
- *	procedure does not free an existing old string rep so storage will be
- *	lost if this has not already been done.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's string is set to a valid string that results from the
- *	boolean-to-string conversion.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfBoolean(objPtr)
-    register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
-{
-    char *s = ckalloc((unsigned) 2);
-
-    s[0] = (char) (objPtr->internalRep.longValue? '1' : '0');
-    s[1] = '\0';
-    objPtr->bytes = s;
-    objPtr->length = 1;
 }
 
 /*
