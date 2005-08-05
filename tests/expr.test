@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.17.2.4 2004/11/02 15:46:35 dkf Exp $
+# RCS: @(#) $Id: expr.test,v 1.17.2.5 2005/08/05 19:19:14 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -21,6 +21,7 @@ testConstraint registeredMathFuncs [expr {
     ([catch {expr T1()} msg] != 1) || ($msg ne {unknown math function "T1"})
 }]
 
+testConstraint wideIs64bit [expr {(0x80000000 > 0) && (0x8000000000000000 < 0)}]
 # procedures used below
 
 proc put_hello_char {c} {
@@ -821,6 +822,11 @@ test expr-24.6 {expr edge cases; shifting} nonPortable {expr int(5)<<63} 0
 test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<31} 10737418240
 test expr-24.8 {expr edge cases; shifting} nonPortable {expr wide(5)<<63} -9223372036854775808
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
+
+test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
+    expr {abs(int(-2147483648))}
+} 2147483648
+
 
 # cleanup
 if {[info exists a]} {
