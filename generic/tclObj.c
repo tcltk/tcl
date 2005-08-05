@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.20 2005/08/04 21:27:09 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.21 2005/08/05 14:04:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1686,43 +1686,39 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a double. */
     register double *dblPtr;	/* Place to store resulting double. */
 {
-    register int result;
-
-    if (objPtr->typePtr != &tclIntType
-	&& objPtr->typePtr != &tclWideIntType
-	&& objPtr->typePtr != &tclBignumType
-	&& objPtr->typePtr != &tclDoubleType) {
-	result = SetDoubleFromAny( interp, objPtr );
-	if (result != TCL_OK ) {
-	    return TCL_ERROR;
-	}
-    }
-    if (objPtr->typePtr == &tclIntType) {
-	*dblPtr = objPtr->internalRep.longValue;
-    } else if (objPtr->typePtr == &tclWideIntType) {
-	*dblPtr = (double) objPtr->internalRep.wideValue;
-    } else if (objPtr->typePtr == &tclDoubleType) {
-	if ( IS_NAN( objPtr->internalRep.doubleValue ) ) {
-	    if ( interp != NULL ) {
-		Tcl_SetObjResult
-		    ( interp,
-		      Tcl_NewStringObj( "floating point value is Not a Number",
-					-1 ) );
+  tryAgain:
+    if (objPtr->typePtr == &tclDoubleType) {
+	if (IS_NAN(objPtr->internalRep.doubleValue)) {
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"floating point value is Not a Number", -1));
 	    }
 	    return TCL_ERROR;
 	}
 	*dblPtr = (double) objPtr->internalRep.doubleValue;
-    } else if (objPtr->typePtr == &tclBignumType) {
+	return TCL_OK;
+    }
+    if (objPtr->typePtr == &tclIntType) {
+	*dblPtr = objPtr->internalRep.longValue;
+	return TCL_OK;
+    }
+    if (objPtr->typePtr == &tclBignumType) {
 	mp_int big;
 	UNPACK_BIGNUM( objPtr, big );
 	*dblPtr = TclBignumToDouble( &big );
-	/* TODO - Bad octal */
-    } else {
-	/* WHAT IS THIS? */
-	Tcl_Panic( "Bad type %s in Tcl_GetDoubleFromObj\n",
-		   objPtr->typePtr->name );
+	return TCL_OK;
     }
-    return TCL_OK;
+    /* TODO: This one should go away. */
+    if (objPtr->typePtr == &tclWideIntType) {
+	*dblPtr = (double) objPtr->internalRep.wideValue;
+	return TCL_OK;
+    }
+
+    if (SetDoubleFromAny(interp, objPtr) == TCL_OK) {
+	goto tryAgain;
+    }
+
+    return TCL_ERROR;
 }
 
 /*
