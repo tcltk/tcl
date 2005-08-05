@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.8 2005/05/24 04:20:12 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.9 2005/08/05 20:48:19 dkf Exp $
  */
 
 #if defined(HAVE_COREFOUNDATION)
@@ -81,6 +81,7 @@ typedef struct LocaleTable {
 static CONST LocaleTable localeTable[] = {
 #ifdef HAVE_LANGINFO
     {"gb2312-1980",	"gb2312"},
+    {"ansi-1251",	"cp1251"},		/* Solaris gets this wrong. */
 #ifdef __hpux
     {"SJIS",		"shiftjis"},
     {"eucjp",		"euc-jp"},
