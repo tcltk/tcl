@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.20 2005/05/10 20:17:43 kennykb Exp $
+# RCS: @(#) $Id: binary.test,v 1.21 2005/08/05 18:25:00 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1384,24 +1384,21 @@ test binary-39.5 {ScanNumber: sign extension} {
     list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 I5 arg1] $arg1
 } {1 {16843010 -2130640639 25297153 16876033 16843137}}
 
-test binary-40.1 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
-    catch {unset arg1}
-    list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
-} {1 -NaN}
-test binary-40.3 {ScanNumber: floating point overflow} {littleEndian win} {
-    catch {unset arg1}
-    set result [binary scan \xff\xff\xff\xff f1 arg1]
-    lappend result [regexp -nocase NaN $arg1]
-} {1 1}
-test binary-40.4 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
-    catch {unset arg1}
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
-} {1 -NaN}
-test binary-40.6 {ScanNumber: floating point overflow} {littleEndian win} {
-    catch {unset arg1}
-    set result [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1]
-    lappend result [regexp -nocase NaN $arg1]
-} {1 1}
+test binary-40.3 {ScanNumber: NaN} \
+    -body {
+	catch {unset arg1}
+	list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
+    } \
+    -match glob \
+    -result {1 -NaN*}
+
+test binary-40.4 {ScanNumber: NaN} \
+    -body {
+	catch {unset arg1}
+	list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d arg1] $arg1
+    } \
+    -match glob \
+    -result {1 -NaN*}
 
 test binary-41.1 {ScanNumber: word alignment} {
     catch {unset arg1; unset arg2}
