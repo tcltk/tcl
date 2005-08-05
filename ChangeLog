@@ -1,15 +1,21 @@
+2005-08-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixInit.c (localeTable): Solaris uses a non-standard
+	name for the cp1251 charset. Thanks to Victor Wagner for reporting
+	this. [Bug 1252475]
+
 2005-08-05  Kevin Kenny  <kennykb@users.sourceforge.net>
 
-	* win/makefile.vc: Removed unused file ldAout.tcl. 
+	* win/makefile.vc: Removed unused file ldAout.tcl.
 	* win/makefile.bc: [Bug #1244361]
 
 	* tests/binary.test: Cleaned up testing for scanning of NaN.
-	                     [Bug #1246264]
+			     [Bug #1246264]
 
 	* generic/tclBasic.c (ExprAbsFunc): Added code to handle the
 	* tests/expr.test (expr-38.1):      corner case of applying
 	'abs' to the smallest 32-bit integer. [Bug #1241572]
-        
+
 2005-08-04  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIO.c (CloseChannel): Fixed comment nit, added
@@ -25,10 +31,10 @@
 
 2005-08-03  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclCompExpr.c:        Untangled some dependencies in the
-        * generic/tclEvent.c:           order of finalization routines.
-        * generic/tclInt.h:             [Bug 1251399]
-        * generic/tclObj.c:
+	* generic/tclCompExpr.c:	Untangled some dependencies in the
+	* generic/tclEvent.c:		order of finalization routines.
+	* generic/tclInt.h:		[Bug 1251399]
+	* generic/tclObj.c:
 
 2005-07-30  Daniel Steffen  <das@users.sourceforge.net>
 
