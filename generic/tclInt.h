@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.243 2005/08/03 22:25:11 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.244 2005/08/05 23:56:29 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2171,6 +2171,16 @@ MODULE_SCOPE int	TclpLoadMemory _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_LoadHandle *loadHandle, 
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 #endif
+MODULE_SCOPE void	TclThreadStorageDataKeyInit(
+			    Tcl_ThreadDataKey *keyPtr);
+MODULE_SCOPE void *	TclThreadStorageDataKeyGet(Tcl_ThreadDataKey *keyPtr);
+MODULE_SCOPE void	TclThreadStorageDataKeySet(Tcl_ThreadDataKey *keyPtr,
+			    void *data);
+MODULE_SCOPE void	TclFinalizeThreadStorage(void);
+MODULE_SCOPE void	TclFinalizeThreadStorageData(
+			    Tcl_ThreadDataKey *keyPtr);
+MODULE_SCOPE void	TclFinalizeThreadStorageDataKey(
+			    Tcl_ThreadDataKey *keyPtr);
 
 /*
  *----------------------------------------------------------------

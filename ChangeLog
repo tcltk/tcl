@@ -1,3 +1,9 @@
+2005-08-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclThreadStorage.c: Stop exposing the guts of the thread
+	storage system through the internal stubs table. Client code
+	should always use the standard API.
+
 2005-08-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixInit.c (localeTable): Solaris uses a non-standard
