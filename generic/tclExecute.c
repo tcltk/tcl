@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.12 2005/04/05 16:40:11 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.13 2005/08/05 19:19:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -5077,13 +5077,23 @@ ExprAbsFunc(interp, eePtr, clientData)
 	if (i < 0) {
 	    iResult = -i;
 	    if (iResult < 0) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+#ifdef TCL_WIDE_INT_IS_LONG
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		result = TCL_ERROR;
 		goto done;
+#else 
+		/*
+		 * Special case: abs(MIN_INT) must promote to wide.
+		 */
+
+		PUSH_OBJECT( Tcl_NewWideIntObj(-(Tcl_WideInt) i) );
+		result = TCL_OK;
+		goto done;
+#endif
+
 	    }
 	} else {
 	    iResult = i;

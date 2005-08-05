@@ -1,3 +1,10 @@
+2005-08-05  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Fixed a corner case
+	* tests/expr.test (expr-38.1):               where applying abs to
+	MIN_INT failed to promote the result to a wide integer.
+	[Bug #1241572]
+	
 2005-08-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c:     Simplified routines that manage the typeTable.
