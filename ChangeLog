@@ -1,3 +1,8 @@
+2005-08-05  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* win/makefile.vc: Removed unused file ldAout.tcl. 
+	* win/makefile.bc: [Bug #1244361]
+	
 2005-08-04  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIO.c (CloseChannel): Fixed comment nit, added
