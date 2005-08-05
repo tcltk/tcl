@@ -1,3 +1,9 @@
+2005-08-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixInit.c (localeTable): Solaris uses a non-standard
+	name for the cp1251 charset. Thanks to Victor Wagner for reporting
+	this. [Bug 1252475]
+
 2005-08-05  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Fixed a corner case
