@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.42 2005/07/21 14:38:50 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.43 2005/08/08 23:20:11 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -572,7 +572,6 @@ TclPathPart(interp, pathPtr, portion)
 	    case TCL_PATH_EXTENSION:
 		return GetExtension(fsPathPtr->normPathPtr);
 	    case TCL_PATH_ROOT: {
-		/* Unimplemented */
 		CONST char *fileName, *extension;
 		int length;
 
@@ -606,6 +605,10 @@ TclPathPart(interp, pathPtr, portion)
 		    } else {
 			Tcl_SetObjLength(fsDupPtr->normPathPtr,
 				(int)(length - strlen(extension)));
+		    }
+		    if (root->bytes != NULL && root->length > 0) {
+			/* Have string rep as well */
+			root->length -= strlen(extension);
 		    }
 		    return root;
 		}
