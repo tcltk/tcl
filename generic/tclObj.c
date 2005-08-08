@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.21 2005/08/05 14:04:18 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.22 2005/08/08 19:23:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -505,7 +505,7 @@ Tcl_AppendAllObjTypes(interp, objPtr)
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int result, objc;
+    int objc;
     Tcl_Obj **objv;
 
     /* 
@@ -1288,55 +1288,46 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get boolean. */
     register int *boolPtr;	/* Place to store resulting boolean. */
 {
-  tryAgain:
-    if (objPtr->typePtr == &tclIntType) {
-	*boolPtr = (int) (objPtr->internalRep.longValue != 0);
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclBooleanType) {
-	*boolPtr = (int) objPtr->internalRep.longValue;
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclDoubleType) {
-	/*
-	 * Caution: Don't be tempted to check directly for the "double"
-	 * Tcl_ObjType and then compare the intrep to 0.0. This isn't reliable
-	 * because a "double" Tcl_ObjType can hold the NaN value. Use the API
-	 * Tcl_GetDoubleFromObj, which does the checking and sets the proper
-	 * error message for us.
-	 */
-        double d;
-	if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
-	    return TCL_ERROR;
+    do {
+	if (objPtr->typePtr == &tclIntType) {
+	    *boolPtr = (objPtr->internalRep.longValue != 0);
+	    return TCL_OK;
 	}
-	*boolPtr = (d != 0.0);
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclBignumType) {
-	*boolPtr = (int) ((objPtr->internalRep.bignumValue.misc & 0x7fff)!=0);
-	return TCL_OK;
-    }
-    /* TODO: The following one should be going away */
-    if (objPtr->typePtr == &tclWideIntType) {
-	*boolPtr = (int) (objPtr->internalRep.wideValue != 0);
-	return TCL_OK;
-    }
-
-    /*
-     * There's no cached numeric or boolean type, so try to parse the
-     * string value, first as one of the boolean strings...
-     */
-
-    if (ParseBoolean(objPtr) == TCL_OK) {
-	goto tryAgain;
-    }
-
-    /* ...then as any numeric value. */
-
-    if (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "boolean value", NULL, -1, NULL)) {
-	goto tryAgain;
-    }
+	if (objPtr->typePtr == &tclBooleanType) {
+	    *boolPtr = (int) objPtr->internalRep.longValue;
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclDoubleType) {
+	    /*
+	     * Caution: Don't be tempted to check directly for the "double"
+	     * Tcl_ObjType and then compare the intrep to 0.0. This isn't
+	     * reliable because a "double" Tcl_ObjType can hold the NaN value.
+	     * Use the API Tcl_GetDoubleFromObj, which does the checking and
+	     * sets the proper error message for us.
+	     */
+            double d;
+	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    *boolPtr = (d != 0.0);
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+#ifdef BIGNUM_AUTO_NARROW
+	    *boolPtr = 1;
+#else
+	    *boolPtr = ((objPtr->internalRep.bignumValue.misc & 0x7fff)!=0);
+#endif
+	    return TCL_OK;
+	}
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+	    *boolPtr = (objPtr->internalRep.wideValue != 0);
+	    return TCL_OK;
+	}
+#endif
+    } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
+	    TclParseNumber(interp, objPtr, "boolean value", NULL, -1, NULL)));
     return TCL_ERROR;
 }
 
@@ -1379,19 +1370,18 @@ SetBooleanFromAny(interp, objPtr)
 	    }
 	    goto badBoolean;
 	}
-	/* Note special handling for bignum and wide is not here; they
-	 * will be forced through the string rep.  If the wide type goes
-	 * away, and the bignum type is limited to only those values that
-	 * need it (automatic narrowing), then this code will take care
-	 * of things efficiently:
- 
-	 if (objPtr->typePtr == &tclBignumType) }
-	     goto badBoolean;
-	 }
-	
-	 * If wides stay around and if bignums can hold small values,
-	 * things will be more complex.
-	 */
+#ifdef BIGNUM_AUTO_NARROW
+	if (objPtr->typePtr == &tclBignumType) }
+	    goto badBoolean;
+	}
+#else
+	/* TODO: Consider tests to discover values 0 and 1 while preserving
+	 * pure bignum.  For now, pass through string rep. */
+#endif
+#ifndef NO_WIDE_TYPE
+	/* TODO: Consider tests to discover values 0 and 1 while preserving
+	 * pure wide.  For now, pass through string rep. */
+#endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    goto badBoolean;
 	}
@@ -1686,38 +1676,35 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a double. */
     register double *dblPtr;	/* Place to store resulting double. */
 {
-  tryAgain:
-    if (objPtr->typePtr == &tclDoubleType) {
-	if (IS_NAN(objPtr->internalRep.doubleValue)) {
+    do {
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (IS_NAN(objPtr->internalRep.doubleValue)) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"floating point value is Not a Number", -1));
 	    }
 	    return TCL_ERROR;
+	    }
+	    *dblPtr = (double) objPtr->internalRep.doubleValue;
+	    return TCL_OK;
 	}
-	*dblPtr = (double) objPtr->internalRep.doubleValue;
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclIntType) {
-	*dblPtr = objPtr->internalRep.longValue;
-	return TCL_OK;
-    }
-    if (objPtr->typePtr == &tclBignumType) {
-	mp_int big;
-	UNPACK_BIGNUM( objPtr, big );
-	*dblPtr = TclBignumToDouble( &big );
-	return TCL_OK;
-    }
-    /* TODO: This one should go away. */
-    if (objPtr->typePtr == &tclWideIntType) {
-	*dblPtr = (double) objPtr->internalRep.wideValue;
-	return TCL_OK;
-    }
-
-    if (SetDoubleFromAny(interp, objPtr) == TCL_OK) {
-	goto tryAgain;
-    }
-
+	if (objPtr->typePtr == &tclIntType) {
+	    *dblPtr = objPtr->internalRep.longValue;
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+	    mp_int big;
+	    UNPACK_BIGNUM( objPtr, big );
+	    *dblPtr = TclBignumToDouble( &big );
+	    return TCL_OK;
+	}
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+	    *dblPtr = (double) objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+#endif
+    } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
     return TCL_ERROR;
 }
 
