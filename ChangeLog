@@ -1,3 +1,8 @@
+2005-08-09  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix to [file rootname] bug in optimized
+	code path reported on comp.lang.tcl.
+
 2005-08-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclThreadStorage.c: Stop exposing the guts of the thread
