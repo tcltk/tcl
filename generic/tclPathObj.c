@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.43 2005/08/08 23:20:11 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.44 2005/08/09 04:17:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -609,6 +609,7 @@ TclPathPart(interp, pathPtr, portion)
 		    if (root->bytes != NULL && root->length > 0) {
 			/* Have string rep as well */
 			root->length -= strlen(extension);
+			root->bytes[root->length] = 0;
 		    }
 		    return root;
 		}
