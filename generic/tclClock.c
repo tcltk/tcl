@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.38 2005/07/15 22:32:23 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.39 2005/08/09 13:31:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -207,10 +207,8 @@ TclClockLocaltimeObjCmd( ClientData clientData,
 
 static struct tm *
 ThreadSafeLocalTime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds
-				 * since the local system's epoch
-				 */
-
+    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+				 * local system's epoch */
 {
     /*
      * Get a thread-local buffer to hold the returned time.
@@ -218,20 +216,21 @@ ThreadSafeLocalTime(timePtr)
 
     struct tm *tmPtr = (struct tm *)
 	    Tcl_GetThreadData(&tmKey, (int) sizeof(struct tm));
-    struct tm *sysTmPtr;
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
+    struct tm *sysTmPtr;
+
     Tcl_MutexLock(&clockMutex);
     sysTmPtr = localtime(timePtr);
-    if ( sysTmPtr == NULL ) {
-	Tcl_MutexUnlock( &clockMutex );
+    if (sysTmPtr == NULL) {
+	Tcl_MutexUnlock(&clockMutex);
 	return NULL;
     } else {
 	memcpy((VOID *) tmPtr, (VOID *) localtime(timePtr), sizeof(struct tm));
 	Tcl_MutexUnlock(&clockMutex);
     }
-#endif    
+#endif
     return tmPtr;
 }
 
