@@ -1,3 +1,16 @@
+2005-08-10  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclEvent.c (Tcl_Finalize): Pushed Tcl_FinalizeLoad and
+	Tcl_ResetFilesystem down after Tcl_FinalizeThreadAlloc because
+	we can't unload DLL's until after their TSD keys are finalized.
+	(Note that we'll still see aborts if an unloaded DLL has TSD -
+	that still needs to be fixed.
+
+	* tests/compExpr-old.test (compExpr-3.8): Made tests conditional on
+	* tests/expr.test (expr-3.8):             'unix' because they get
+	                                          stack overflows on Win32
+	                                          threaded builds,
+	
 2005-08-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to [file rootname] bug in optimized
