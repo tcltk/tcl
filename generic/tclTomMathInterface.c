@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.1.2.2 2005/07/12 20:15:36 kennykb Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.1.2.3 2005/08/10 18:21:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -169,14 +169,14 @@ TclBNInitBignumFromWideUInt(mp_int* a,
     mp_digit* p;
 
     /*
-     * Allocate enough memory to hold the largest possible long
+     * Allocate enough memory to hold the largest possible Tcl_WideUInt 
      */
 
     status = mp_init_size(a, ((CHAR_BIT * sizeof( Tcl_WideUInt )
 			       + DIGIT_BIT - 1)
 			      / DIGIT_BIT));
     if (status != MP_OKAY) {
-	Tcl_Panic( "initialization failure in TclBNInitBignumFromLong" );
+	Tcl_Panic( "initialization failure in TclBNInitBignumFromWideUInt" );
     }
     
     a->sign = MP_ZPOS;

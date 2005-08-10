@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.19 2005/08/04 16:47:51 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.20 2005/08/10 18:21:53 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2768,6 +2768,7 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
  *----------------------------------------------------------------
  */
 
+#ifndef NO_WIDE_TYPE
 #ifdef TCL_WIDE_INT_IS_LONG
 #    define TclGetWide(resultVar, objPtr) \
 	(resultVar) = (objPtr)->internalRep.longValue
@@ -2778,6 +2779,7 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 	(resultVar) = (objPtr)->internalRep.wideValue
 #    define TclGetLongFromWide(resultVar, objPtr) \
 	(resultVar) = Tcl_WideAsLong((objPtr)->internalRep.wideValue)
+#endif
 #endif
 
 /*
@@ -2915,11 +2917,13 @@ MODULE_SCOPE void TclBNInitBignumFromWideUInt(mp_int* bignum,
 #define TclSetBooleanObj(objPtr, b) \
     TclSetIntObj((objPtr), ((b)? 1 : 0));
 
+#ifndef NO_WIDE_TYPE
 #define TclSetWideIntObj(objPtr, w) \
     TclInvalidateStringRep(objPtr);\
     TclFreeIntRep(objPtr); \
     (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
     (objPtr)->typePtr = &tclWideIntType
+#endif
 
 #define TclSetDoubleObj(objPtr, d) \
     TclInvalidateStringRep(objPtr);\
@@ -2968,6 +2972,7 @@ MODULE_SCOPE void TclBNInitBignumFromWideUInt(mp_int* bignum,
 #define TclNewBooleanObj(objPtr, b) \
     TclNewIntObj((objPtr), ((b)? 1 : 0))
 
+#ifndef NO_WIDE_TYPE
 #define TclNewWideIntObj(objPtr, w) \
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
@@ -2975,6 +2980,7 @@ MODULE_SCOPE void TclBNInitBignumFromWideUInt(mp_int* bignum,
     (objPtr)->bytes = NULL; \
     (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
     (objPtr)->typePtr = &tclWideIntType
+#endif
 
 #define TclNewDoubleObj(objPtr, d) \
     TclIncrObjsAllocated(); \

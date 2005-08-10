@@ -1,3 +1,21 @@
+2005-08-10  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclTomMath.h:	Added mp_shrink, mp_to_unsigned_bin,
+	* unix/Makefile.in:	mp_to_unsigned_bin_n, and mp_unsigned_bin_size
+	* win/Makefile.in:	to routines from libtommath used by Tcl.
+	* win/makefile.vc:
+
+	* generic/tommath.h:	make gentommath_h
+
+	* generic/tclObj.c:	Substantial rewrite to make all number
+	parsing flow through TclParseNumber().  Also established the
+	NO_WIDE_TYPE and BIGNUM_AUTO_NARROW #ifdef's to help track the
+	assumptions of different portions of the code.
+
+	* generic/tclInt.h:	Added NO_WIDE_TYPE #ifdefs
+
 2005-08-08  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

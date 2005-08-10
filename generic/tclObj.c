@@ -12,12 +12,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.22 2005/08/08 19:23:40 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.23 2005/08/10 18:21:53 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
 #include <float.h>
+
+#define BIGNUM_AUTO_NARROW 1
 
 /*
  * Define test for NaN
@@ -181,23 +183,19 @@ static int		SetDoubleFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static int		SetIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
-static int		SetIntOrWideFromAny _ANSI_ARGS_((Tcl_Interp* interp,
-			    Tcl_Obj *objPtr));
 static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
 
+#ifndef NO_WIDE_TYPE
 #ifndef TCL_WIDE_INT_IS_LONG
 static void		UpdateStringOfWideInt _ANSI_ARGS_((Tcl_Obj *objPtr));
+#endif
 #endif
 
 static void		FreeBignum _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		DupBignum _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
 static void		UpdateStringOfBignum _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		SetBignumFromAny _ANSI_ARGS_((Tcl_Interp* interp,
-			    Tcl_Obj* objPtr));
 
 /*
  * Prototypes for the array hash key methods.
@@ -254,6 +252,7 @@ Tcl_ObjType tclIntType = {
     SetIntFromAny			/* setFromAnyProc */
 };
 
+#ifndef NO_WIDE_TYPE
 Tcl_ObjType tclWideIntType = {
     "wideInt",				/* name */
     (Tcl_FreeInternalRepProc *) NULL,	/* freeIntRepProc */
@@ -263,8 +262,9 @@ Tcl_ObjType tclWideIntType = {
 #else /* !TCL_WIDE_INT_IS_LONG */
     UpdateStringOfWideInt,		/* updateStringProc */
 #endif /* TCL_WIDE_INT_IS_LONG */
-    SetWideIntFromAny			/* setFromAnyProc */
+    NULL				/* setFromAnyProc */
 };
+#endif
 
 
 
@@ -273,7 +273,7 @@ Tcl_ObjType tclBignumType = {
     FreeBignum,				/* freeIntRepProc */
     DupBignum,				/* dupIntRepProc */
     UpdateStringOfBignum,		/* updateStringProc */
-    SetBignumFromAny			/* setFromAnyProc */
+    NULL				/* setFromAnyProc */
 };
 
 /*
@@ -378,8 +378,6 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclEndOffsetType);
     Tcl_RegisterObjType(&tclIntType);
-    Tcl_RegisterObjType(&tclWideIntType);
-    Tcl_RegisterObjType(&tclBignumType);
     Tcl_RegisterObjType(&tclStringType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
@@ -874,7 +872,7 @@ TclFreeObj(objPtr)
 	    typePtr->freeIntRepProc(objPtr);
 	    ObjDeletionUnlock(context);
 	}
-	Tcl_InvalidateStringRep(objPtr);
+	TclInvalidateStringRep(objPtr);
 
 	Tcl_MutexLock(&tclObjMutex);
 	ckfree((char *) objPtr);
@@ -1371,7 +1369,7 @@ SetBooleanFromAny(interp, objPtr)
 	    goto badBoolean;
 	}
 #ifdef BIGNUM_AUTO_NARROW
-	if (objPtr->typePtr == &tclBignumType) }
+	if (objPtr->typePtr == &tclBignumType) {
 	    goto badBoolean;
 	}
 #else
@@ -1889,36 +1887,12 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a int. */
     register int *intPtr;	/* Place to store resulting int. */
 {
-    int result;
-    Tcl_WideInt w = 0;
+    long l;
 
-    /*
-     * If the object isn't already an integer of any width, try to convert it
-     * to one.
-     */
-
-    if (objPtr->typePtr != &tclIntType && objPtr->typePtr != &tclWideIntType) {
-	result = SetIntOrWideFromAny(interp, objPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
+    if (Tcl_GetLongFromObj(interp, objPtr, &l) != TCL_OK) {
+	return TCL_ERROR;
     }
-
-    /*
-     * Object should now be either int or wide. Get its value.
-     */
-
-#ifndef TCL_WIDE_INT_IS_LONG
-    if (objPtr->typePtr == &tclWideIntType) {
-	w = objPtr->internalRep.wideValue;
-    } else
-#endif
-    {
-	w = Tcl_LongAsWide(objPtr->internalRep.longValue);
-    }
-
-    if ((LLONG_MAX > UINT_MAX)
-	    && ((w > UINT_MAX) || (w < -(Tcl_WideInt)UINT_MAX))) {
+    if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < -(long)UINT_MAX))) {
 	if (interp != NULL) {
 	    CONST char *s
 		= "integer value too large to represent as non-long integer";
@@ -1927,7 +1901,7 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
 	}
 	return TCL_ERROR;
     }
-    *intPtr = (int)w;
+    *intPtr = (int)l;
     return TCL_OK;
 }
 
@@ -1952,75 +1926,8 @@ SetIntFromAny(interp, objPtr)
     Tcl_Interp* interp;		/* Tcl interpreter */
     Tcl_Obj* objPtr;		/* Pointer to the object to convert */
 {
-    int result;
-
-    result = SetIntOrWideFromAny(interp, objPtr);
-    if (result != TCL_OK) {
-	return result;
-    }
-    if (objPtr->typePtr != &tclIntType) {
-	if (interp != NULL) {
-	    CONST char *s = "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
-	}
-	return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetIntOrWideFromAny --
- *
- *	Attempt to generate an integer internal form for the Tcl object
- *	"objPtr".
- *
- * Results:
- *	The return value is a standard object Tcl result. If an error occurs
- *	during conversion, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- * Side effects:
- *	If no error occurs, an int is stored as "objPtr"s internal
- *	representation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetIntOrWideFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr;	/* The object to convert. */
-{
-
-    Tcl_Obj* msg;
-
-    int status = TclParseNumber( interp, objPtr, "integer", NULL, -1, NULL );
-    if ( status != TCL_OK ) {
-	return TCL_ERROR;
-    }
-    if ( objPtr->typePtr == &tclBignumType ) {
-	if ( interp != NULL ) {
-	    msg = Tcl_NewStringObj( "integer value too large to represent",
-				    -1 );
-	    Tcl_SetObjResult( interp, msg );
-	}
-	return TCL_ERROR;
-    }
-    if ( objPtr->typePtr != &tclIntType
-	 && objPtr->typePtr != &tclWideIntType ) {
-	if ( interp != NULL ) {
-	    msg = Tcl_NewStringObj( "expected integer but got \"", -1 );
-	    TclAppendLimitedToObj( msg, Tcl_GetStringFromObj(objPtr, NULL), 
-				   -1, 50, "" );
-	    Tcl_AppendToObj( msg, "\"", -1 );
-	    Tcl_SetObjResult( interp, msg );
-	}
-	return TCL_ERROR;
-    }
-    return TCL_OK;
+    long l;
+    return Tcl_GetLongFromObj(interp, objPtr, &l);
 }
 
 /*
@@ -2237,142 +2144,83 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a long. */
     register long *longPtr;	/* Place to store resulting long. */
 {
-    register int result;
-
-    if (objPtr->typePtr != &tclIntType
-	    && objPtr->typePtr != &tclWideIntType) {
-	result = SetIntOrWideFromAny(interp, objPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
-    }
-
-#ifndef TCL_WIDE_INT_IS_LONG
-    if (objPtr->typePtr == &tclWideIntType) {
-	/*
-	 * If the object is already a wide integer, don't convert it.  This
-	 * code allows for any integer in the range -ULONG_MAX to ULONG_MAX to
-	 * be converted to a long, ignoring overflow.  The rule preserves
-	 * existing semantics for conversion of integers on input, but avoids
-	 * inadvertent demotion of wide integers to 32-bit ones in the
-	 * internal rep.
-	 */
-
-	Tcl_WideInt w = objPtr->internalRep.wideValue;
-	if (w >= -(Tcl_WideInt)(ULONG_MAX)
-		&& w <= (Tcl_WideInt)(ULONG_MAX)) {
-	    *longPtr = Tcl_WideAsLong(w);
+    do {
+	if (objPtr->typePtr == &tclIntType) {
+	    *longPtr = objPtr->internalRep.longValue;
 	    return TCL_OK;
-	} else {
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
+	}
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+#ifdef TCL_WIDE_INT_IS_LONG
+	    *longPtr = objPtr->internalRep.longValue;
+	    return TCL_OK;
+#else
+	    /*
+	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
+	     * converted to a long, ignoring overflow.  The rule preserves
+	     * existing semantics for conversion of integers on input, but
+	     * avoids inadvertent demotion of wide integers to 32-bit ones
+	     * in the internal rep.
+	     */
+
+	    Tcl_WideInt w = objPtr->internalRep.wideValue;
+	    if (w >= -(Tcl_WideInt)(ULONG_MAX)
+		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
+		*longPtr = Tcl_WideAsLong(w);
+		return TCL_OK;
+	    }
+	    goto tooLarge;
+#endif
+	}
+#endif
+        if (objPtr->typePtr == &tclDoubleType) {
+            if (interp != NULL) {
+		Tcl_Obj* msg = 
+			Tcl_NewStringObj("expected integer but got \"", -1);
+		Tcl_AppendObjToObj(msg, objPtr);
+		Tcl_AppendToObj(msg, "\"", -1);
+		Tcl_SetObjResult(interp, msg);
 	    }
 	    return TCL_ERROR;
 	}
-    }
-#endif
-
-    *longPtr = objPtr->internalRep.longValue;
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetWideIntFromAny --
- *
- *	Attempt to generate an integer internal form for the Tcl object
- *	"objPtr".
- *
- * Results:
- *	The return value is a standard object Tcl result. If an error occurs
- *	during conversion, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- * Side effects:
- *	If no error occurs, an int is stored as "objPtr"s internal
- *	representation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetWideIntFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr;	/* The object to convert. */
-{
-#ifndef TCL_WIDE_INT_IS_LONG
-    char *string, *end;
-    int length;
-    register char *p;
-    Tcl_WideInt newWide;
-
-    /*
-     * Get the string representation. Make it up-to-date if necessary.
-     */
-
-    p = string = Tcl_GetStringFromObj(objPtr, &length);
-
-    /*
-     * Now parse "objPtr"s string as an int. We use an implementation here
-     * that doesn't report errors in interp if interp is NULL. Note: use
-     * strtoull instead of strtoll for integer conversions to allow full-size
-     * unsigned numbers.
-     */
-
-    errno = 0;
-    newWide = strtoull(p, &end, 0);
-    if (end == p) {
-	badInteger:
-	if (interp != NULL) {
-	    Tcl_Obj *msg =
-		    Tcl_NewStringObj("expected integer but got \"", -1);
-	    TclAppendLimitedToObj(msg, string, length, 50, "");
-	    Tcl_AppendToObj(msg, "\"", -1);
-	    Tcl_SetObjResult(interp, msg);
-	    TclCheckBadOctal(interp, string);
+        if (objPtr->typePtr == &tclBignumType) {
+	    /* Must check for those bignum values that can fit in 
+	     * a long, even when auto-narrowing is enabled.  Only those
+	     * values in the signed long range get auto-narrowed to
+	     * tclIntType, while all the values in the unsigned long
+	     * range will fit in a long. */
+	    mp_int big;
+	    UNPACK_BIGNUM(objPtr, big);
+	    if (big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+		    / DIGIT_BIT) {
+		unsigned long value = 0, numBytes = sizeof(long);
+		long scratch;
+		unsigned char *bytes = (unsigned char *)&scratch;
+		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		    while (numBytes-- > 0) {
+			value = (value << CHAR_BIT) | *bytes++;
+		    }
+		    if (big.sign) {
+			*longPtr = - (long) value;
+		    } else {
+			*longPtr = (long) value;
+		    }
+		    return TCL_OK;
+		}
+	    }
+	tooLarge:
+	    if (interp != NULL) {
+		char *s = "integer value too large to represent";
+		Tcl_Obj* msg = Tcl_NewStringObj(s, -1);
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+	    }
+	    return TCL_ERROR;
 	}
-	return TCL_ERROR;
-    }
-
-    /*
-     * Make sure that the string has no garbage after the end of the int.
-     */
-
-    while ((end < (string+length))
-	    && isspace(UCHAR(*end))) { /* INTL: ISO space. */
-	end++;
-    }
-    if (end != (string+length)) {
-	goto badInteger;
-    }
-
-    if (errno == ERANGE) {
-	if (interp != NULL) {
-	    CONST char *s = "integer value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
-	}
-	return TCL_ERROR;
-    }
-    /*
-     * The conversion to int succeeded. Free the old internalRep before
-     * setting the new one. We do this as late as possible to allow the
-     * conversion code, in particular Tcl_GetStringFromObj, to use that old
-     * internalRep.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.wideValue = newWide;
-#else
-    if (TCL_ERROR == SetIntFromAny(interp, objPtr)) {
-	return TCL_ERROR;
-    }
-#endif
-    objPtr->typePtr = &tclWideIntType;
-    return TCL_OK;
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL)==TCL_OK);
+    return TCL_ERROR;
 }
+#ifndef NO_WIDE_TYPE
 
 /*
  *----------------------------------------------------------------------
@@ -2416,6 +2264,7 @@ UpdateStringOfWideInt(objPtr)
     objPtr->length = len;
 }
 #endif /* TCL_WIDE_INT_IS_LONG */
+#endif /* !NO_WIDE_TYPE */
 
 /*
  *----------------------------------------------------------------------
@@ -2462,7 +2311,12 @@ Tcl_NewWideIntObj(wideValue)
 {
     register Tcl_Obj *objPtr;
 
+#ifndef NO_WIDE_TYPE
     TclNewWideIntObj(objPtr, wideValue);
+#else
+    TclNewObj(objPtr)
+    Tcl_SetWideIntObj(objPtr, wideValue);
+#endif
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2514,10 +2368,7 @@ Tcl_DbNewWideIntObj(wideValue, file, line)
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.wideValue = wideValue;
-    objPtr->typePtr = &tclWideIntType;
+    Tcl_SetWideIntObj(objPtr, wideValue);
     return objPtr;
 }
 
@@ -2565,7 +2416,23 @@ Tcl_SetWideIntObj(objPtr, wideValue)
 	Tcl_Panic("Tcl_SetWideIntObj called with shared object");
     }
 
+#ifndef NO_WIDE_TYPE
     TclSetWideIntObj(objPtr, wideValue);
+#else
+    if ((wideValue >= (Tcl_WideInt) LONG_MIN)
+	    && (wideValue <= (Tcl_WideInt) LONG_MAX)) {
+	TclSetLongObj(objPtr, (long) wideValue);
+    } else {
+	mp_int big;
+	if (wideValue < 0) {
+	    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)(-wideValue));
+	    big.sign = MP_NEG;
+	} else {
+	    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)(wideValue));
+	}
+	Tcl_SetBignumObj(objPtr, &big);
+    }
+#endif
 }
 
 /*
@@ -2595,17 +2462,60 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
     register Tcl_Obj *objPtr;	/* Object from which to get a wide int. */
     register Tcl_WideInt *wideIntPtr; /* Place to store resulting long. */
 {
-    register int result;
-
-    if (objPtr->typePtr == &tclWideIntType) {
-	*wideIntPtr = objPtr->internalRep.wideValue;
-	return TCL_OK;
-    }
-    result = SetWideIntFromAny(interp, objPtr);
-    if (result == TCL_OK) {
-	*wideIntPtr = objPtr->internalRep.wideValue;
-    }
-    return result;
+    do {
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+	    *wideIntPtr = objPtr->internalRep.wideValue;
+	    return TCL_OK;
+	}
+#endif
+	if (objPtr->typePtr == &tclIntType) {
+	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.longValue;
+	    return TCL_OK;
+	}
+        if (objPtr->typePtr == &tclDoubleType) {
+            if (interp != NULL) {
+		Tcl_Obj* msg = 
+			Tcl_NewStringObj("expected integer but got \"", -1);
+		Tcl_AppendObjToObj(msg, objPtr);
+		Tcl_AppendToObj(msg, "\"", -1);
+		Tcl_SetObjResult(interp, msg);
+	    }
+	    return TCL_ERROR;
+	}
+        if (objPtr->typePtr == &tclBignumType) {
+	    /* Must check for those bignum values that can fit in 
+	     * a Tcl_WideInt, even when auto-narrowing is enabled. */
+	    mp_int big;
+	    UNPACK_BIGNUM(objPtr, big);
+	    if (big.used <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1)
+		    / DIGIT_BIT) {
+		Tcl_WideUInt value = 0;
+		unsigned long numBytes = sizeof(Tcl_WideInt);
+		Tcl_WideInt scratch;
+		unsigned char *bytes = (unsigned char *)&scratch;
+		if (mp_to_unsigned_bin_n(&big, bytes, &numBytes) == MP_OKAY) {
+		    while (numBytes-- > 0) {
+			value = (value << CHAR_BIT) | *bytes++;
+		    }
+		    if (big.sign) {
+			*wideIntPtr = - (Tcl_WideInt) value;
+		    } else {
+			*wideIntPtr = (Tcl_WideInt) value;
+		    }
+		    return TCL_OK;
+		}
+	    }
+	    if (interp != NULL) {
+		char *s = "integer value too large to represent";
+		Tcl_Obj* msg = Tcl_NewStringObj(s, -1);
+		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *)NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL)==TCL_OK);
+    return TCL_ERROR;
 }
 
 /*
@@ -2659,129 +2569,7 @@ DupBignum(srcPtr, copyPtr)
     if (mp_init_copy(&bignumCopy, &bignumVal) != MP_OKAY) {
 	Tcl_Panic("initialization failure in DupBignum");
     }
-    PACK_BIGNUM(bignumVal, copyPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetBignumFromAny --
- *
- *	This procedure interprets a Tcl_Obj as a bignum and sets the internal
- *	representation accordingly.
- *
- * Results:
- *	Returns a standard Tcl status.  If conversion fails, an error message
- *	is left in the interpreter result.
- *
- * Side effects:
- *	The bignum internal representation is packed into the object.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetBignumFromAny(interp, objPtr)
-    Tcl_Interp* interp;
-    Tcl_Obj* objPtr;
-{
-    CONST char* stringVal;
-    CONST char* p;
-    int length;
-    int signum = MP_ZPOS;
-    int radix = 10;
-    int status;
-    mp_int bignumVal;
-
-    if (objPtr->typePtr == &tclIntType) {
-
-	/*
-	 * If the number already contains an integer, simply widen it to a
-	 * bignum.
-	 */
-
-	TclBNInitBignumFromLong(&bignumVal, objPtr->internalRep.longValue);
-    } else {
-
-	/*
-	 * The number doesn't contain an integer. Convert its string rep to a
-	 * bignum, handling 0XXX and 0xXXX notation
-	 */
-
-	stringVal = Tcl_GetStringFromObj(objPtr, &length);
-	p = stringVal;
-
-	/*
-	 * Pull off the signum
-	 */
-
-	if (*p == '+') {
-	    ++p;
-	} else if (*p == '-') {
-	    ++p;
-	    signum = MP_NEG;
-	}
-
-	/*
-	 * Handle octal and hexadecimal
-	 */
-
-	if (*p == '0') {
-	    ++p;
-	    if (*p == 'x' || *p == 'X') {
-		++p;
-		radix = 16;
-	    } else {
-		--p;
-		radix = 8;
-	    }
-	}
-
-	/* Convert the value */
-
-	if (mp_init(&bignumVal) != MP_OKAY) {
-	    Tcl_Panic("initialization failure in SetBignumFromAny");
-	}
-	status = mp_read_radix(&bignumVal, p, radix);
-	switch (status) {
-	case MP_MEM:
-	    Tcl_Panic("out of memory in SetBignumFromAny");
-	case MP_OKAY:
-	    break;
-	default:
-	    if (interp != NULL) {
-		Tcl_Obj* msg = Tcl_NewStringObj(
-			"expected integer but got \"", -1);
-		TclAppendLimitedToObj(msg, stringVal, length, 50, "");
-		Tcl_AppendToObj(msg, "\"", -1);
-		Tcl_SetObjResult(interp, msg);
-		TclCheckBadOctal(interp, stringVal);
-	    }
-	    mp_clear(&bignumVal);
-	    return TCL_ERROR;
-	}
-
-	/* Conversion to bignum succeeded.  Make sure that everything fits. */
-
-	if (bignumVal.alloc > 0x7fff) {
-	    Tcl_Obj* msg =
-		   Tcl_NewStringObj("integer value too large to represent",-1);
-	    Tcl_SetObjResult(interp, msg);
-	    mp_clear(&bignumVal);
-	    return TCL_ERROR;
-	}
-    }
-
-    /*
-     * Conversion succeeded. Clean up the old internal rep and store the new
-     * one.
-     */
-
-    TclFreeIntRep(objPtr);
-    bignumVal.sign = signum;
-    PACK_BIGNUM(bignumVal, objPtr);
-    objPtr->typePtr = &tclBignumType;
-    return TCL_OK;
+    PACK_BIGNUM(bignumCopy, copyPtr);
 }
 
 /*
@@ -2814,6 +2602,23 @@ UpdateStringOfBignum(Tcl_Obj* objPtr)
     status = mp_radix_size(&bignumVal, 10, &size);
     if (status != MP_OKAY) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
+    }
+    if (size == 3
+#ifndef BIGNUM_AUTO_NARROW
+	    && bignumVal.used > 1
+#endif
+	    ) {
+	/*
+	 * mp_radix_size() returns 3 when more than INT_MAX bytes would
+	 * be needed to hold the string rep (because mp_radix_size
+	 * ignores integer overflow issues).  When we know the string
+	 * rep will be more than 3, we can conclude the string rep would
+	 * overflow our string length limits.
+	 *
+	 * Note that so long as we enforce our bignums to the size that
+	 * fits in a packed bignum, this branch will never be taken.
+	 */
+	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
     stringVal = Tcl_Alloc((size_t) size);
     status = mp_toradix_n(&bignumVal, stringVal, 10, size);
@@ -2852,16 +2657,8 @@ Tcl_Obj *
 Tcl_NewBignumObj(mp_int* bignumValue)
 {
     Tcl_Obj* objPtr;
-
     TclNewObj(objPtr);
-    PACK_BIGNUM(*bignumValue, objPtr);
-    objPtr->typePtr=&tclBignumType;
-    objPtr->bytes = NULL;
-
-    /* Clear with mp_init; mp_clear would overwrite the digit array. */
-
-    mp_init(bignumValue);
-
+    Tcl_SetBignumObj(objPtr, bignumValue);
     return objPtr;
 }
 #endif
@@ -2891,15 +2688,7 @@ Tcl_DbNewBignumObj(mp_int* bignumValue, CONST char* file, int line)
     Tcl_Obj* objPtr;
 
     TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-    PACK_BIGNUM(*bignumValue, objPtr);
-    objPtr->typePtr = &tclBignumType;
-    objPtr->bytes = NULL;
-
-    /* Clear with mp_init; mp_clear would overwrite the digit array. */
-
-    mp_init(bignumValue);
-
+    Tcl_SetBignumObj(objPtr, bignumValue);
     return objPtr;
 }
 #else
@@ -2941,16 +2730,41 @@ Tcl_GetBignumFromObj(
     Tcl_Obj* objPtr,		/* Object to read */
     mp_int* bignumValue)	/* Returned bignum value. */
 {
-    mp_int temp;
-
-    if (objPtr->typePtr != &tclBignumType) {
-	if (SetBignumFromAny(interp, objPtr) != TCL_OK) {
+    do {
+	if (objPtr->typePtr == &tclBignumType) {
+	    mp_int temp;
+	    UNPACK_BIGNUM(objPtr, temp);
+	    mp_init_copy(bignumValue, &temp);
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclIntType) {
+	    TclBNInitBignumFromLong(bignumValue, objPtr->internalRep.longValue);
+	    return TCL_OK;
+	}
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+	    Tcl_WideInt w = objPtr->internalRep.wideValue;
+	    if (w < 0) {
+		TclBNInitBignumFromWideUInt(bignumValue, (Tcl_WideUInt)(-w));
+		bignumValue->sign = MP_NEG;
+	    } else {
+		TclBNInitBignumFromWideUInt(bignumValue, (Tcl_WideUInt)w);
+	    }
+	    return TCL_OK;
+	}
+#endif
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (interp != NULL) {
+		Tcl_Obj* msg =
+			Tcl_NewStringObj("expected integer but got \"", -1);
+		Tcl_AppendObjToObj(msg, objPtr);
+		Tcl_AppendToObj(msg, "\"", -1);
+		Tcl_SetObjResult(interp, msg);
+	    }
 	    return TCL_ERROR;
 	}
-    }
-    UNPACK_BIGNUM(objPtr, temp);
-    mp_init_copy(bignumValue, &temp);
-    return TCL_OK;
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL)==TCL_OK);
+    return TCL_ERROR;
 }
 
 /*
@@ -2978,10 +2792,41 @@ Tcl_SetBignumObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetBignumObj called with shared object");
     }
+    if (bignumValue->used > 0x7fff) {
+	Tcl_Panic("Tcl_SetBignumObj: too large for packed bignum");
+    }
+    if (bignumValue->alloc > 0x7fff) {
+	mp_shrink(bignumValue);
+    }
+#ifdef BIGNUM_AUTO_NARROW
+    if (bignumValue->used
+	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	unsigned long value = 0, numBytes = sizeof(long);
+	long scratch;
+	unsigned char *bytes = (unsigned char *)&scratch;
+	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+	    goto outOfRange;
+	}
+	while (numBytes-- > 0) {
+	    value = (value << CHAR_BIT) | *bytes++;
+	}
+	if (value > (((~(unsigned long)0) >> 1) + bignumValue->sign)) {
+	    goto outOfRange;
+	}
+	if (bignumValue->sign) {
+	    TclSetLongObj(objPtr, -(long)value);
+	} else {
+	    TclSetLongObj(objPtr, (long)value);
+	}
+	mp_clear(bignumValue);
+	return;
+    }
+  outOfRange:
+#endif
+    TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &tclBignumType;
     PACK_BIGNUM(*bignumValue, objPtr);
-    Tcl_InvalidateStringRep(objPtr);
 
     /* Clear the value with mp_init; mp_clear overwrites the digit array. */
 

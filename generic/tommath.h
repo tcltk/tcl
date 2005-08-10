@@ -452,6 +452,15 @@ TOMMATH_STORAGE_CLASS int mp_reduce_2k_setup(mp_int *a, mp_digit *d);
 /* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
 TOMMATH_STORAGE_CLASS int mp_reduce_2k(mp_int *a, mp_int *n, mp_digit d);
 
+/* returns true if a can be reduced with mp_reduce_2k_l */
+TOMMATH_STORAGE_CLASS int mp_reduce_is_2k_l(mp_int *a);
+
+/* determines k value for 2k reduction */
+TOMMATH_STORAGE_CLASS int mp_reduce_2k_setup_l(mp_int *a, mp_int *d);
+
+/* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
+TOMMATH_STORAGE_CLASS int mp_reduce_2k_l(mp_int *a, mp_int *n, mp_int *d);
+
 /* d = a**b (mod c) */
 TOMMATH_STORAGE_CLASS int mp_exptmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
@@ -534,10 +543,12 @@ TOMMATH_STORAGE_CLASS int mp_count_bits(mp_int *a);
 TOMMATH_STORAGE_CLASS int mp_unsigned_bin_size(mp_int *a);
 TOMMATH_STORAGE_CLASS int mp_read_unsigned_bin(mp_int *a, unsigned char *b, int c);
 TOMMATH_STORAGE_CLASS int mp_to_unsigned_bin(mp_int *a, unsigned char *b);
+TOMMATH_STORAGE_CLASS int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
 
 TOMMATH_STORAGE_CLASS int mp_signed_bin_size(mp_int *a);
 TOMMATH_STORAGE_CLASS int mp_read_signed_bin(mp_int *a, unsigned char *b, int c);
 TOMMATH_STORAGE_CLASS int mp_to_signed_bin(mp_int *a, unsigned char *b);
+TOMMATH_STORAGE_CLASS int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
 
 TOMMATH_STORAGE_CLASS int mp_read_radix(mp_int *a, const char *str, int radix);
 TOMMATH_STORAGE_CLASS int mp_toradix(mp_int *a, char *str, int radix);
@@ -577,7 +588,7 @@ TOMMATH_STORAGE_CLASS int fast_mp_invmod(mp_int *a, mp_int *b, mp_int *c);
 TOMMATH_STORAGE_CLASS int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c);
 TOMMATH_STORAGE_CLASS int fast_mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
 TOMMATH_STORAGE_CLASS int mp_exptmod_fast(mp_int *G, mp_int *X, mp_int *P, mp_int *Y, int mode);
-TOMMATH_STORAGE_CLASS int s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y);
+TOMMATH_STORAGE_CLASS int s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int mode);
 TOMMATH_STORAGE_CLASS void bn_reverse(unsigned char *s, int len);
 
 extern const char *mp_s_rmap;

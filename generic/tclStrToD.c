@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.17 2005/08/02 18:16:08 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.18 2005/08/10 18:21:53 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -299,10 +299,8 @@ TclParseNumber( Tcl_Interp* interp,
 				 * in an acceptable number */
     size_t acceptLen;		/* Number of characters following that point */
     int status = TCL_OK;	/* Status to return to caller */
-    char c;			/* Last character scanned */
     char d;			/* Last hexadecimal digit scanned */
-    int shift;			/* Amount to shift when accumulating binary */
-    Tcl_WideInt w;		/* Final wide value to return */
+    int shift = 0;		/* Amount to shift when accumulating binary */
 
     /* 
      * Initialize string to start of the object's string rep if
@@ -318,11 +316,7 @@ TclParseNumber( Tcl_Interp* interp,
     acceptPoint = p;
     acceptLen = len;
     while ( 1 ) {
-	if ( len == 0 ) {
-	    c = '\0';
-	} else {
-	    c = *p;
-	}
+	char c = len ? *p : '\0';
 	switch (state) {
 
 	case INITIAL:
@@ -411,8 +405,15 @@ TclParseNumber( Tcl_Interp* interp,
 					       significandOverflow);
 		    
 		    if (!octalSignificandOverflow) {
-			if (octalSignificandWide
-			    > (~(Tcl_WideUInt)0 >> shift)) {
+			/*
+			 * Shifting by more bits than are in the value being
+			 * shifted is at least de facto nonportable.  Check
+			 * for too large shifts first.
+			 */
+			if ((octalSignificandWide != 0) 
+				&& ((shift >= CHAR_BIT*sizeof(Tcl_WideUInt)) 
+				|| (octalSignificandWide 
+				> (~(Tcl_WideUInt)0 >> shift)))) {
 			    octalSignificandOverflow = 1;
 			    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 							octalSignificandWide);
@@ -502,7 +503,14 @@ TclParseNumber( Tcl_Interp* interp,
 	    if (objPtr != NULL) {
 		shift = 4 * (numTrailZeros + 1);
 		if (!significandOverflow) {
-		    if (significandWide > (~(Tcl_WideUInt)0 >> shift)) {
+		    /*
+		     * Shifting by more bits than are in the value being
+		     * shifted is at least de facto nonportable.  Check
+		     * for too large shifts first.
+		     */
+		    if (significandWide != 0 
+			    && (shift >= CHAR_BIT*sizeof(Tcl_WideUInt)
+			    || significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
 			TclBNInitBignumFromWideUInt(&significandBig,
 						    significandWide);
@@ -823,8 +831,10 @@ TclParseNumber( Tcl_Interp* interp,
 	    /* Returning a hex integer.  Final scaling step */
 	    if (!significandOverflow) {
 		shift = 4 * numTrailZeros;
-		if (significandWide
-		    > (((~(Tcl_WideUInt)0) >> 1) + signum) >> shift ) {
+		if (significandWide !=0 
+			&& (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) 
+			|| significandWide 
+			> (((~(Tcl_WideUInt)0) >> 1) + signum) >> shift )) {
 		    significandOverflow = 1;
 		    TclBNInitBignumFromWideUInt(&significandBig,
 						significandWide);
@@ -843,8 +853,10 @@ TclParseNumber( Tcl_Interp* interp,
 	    /* Returning an octal integer.  Final scaling step */
 	    if (!octalSignificandOverflow) {
 		shift = 3 * numTrailZeros;
-		if (octalSignificandWide
-		    > (((~(Tcl_WideUInt)0) >> 1) + signum) >> shift ) {
+		if (octalSignificandWide != 0
+			&& (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) 
+			|| octalSignificandWide 
+			> (((~(Tcl_WideUInt)0) >> 1) + signum) >> shift )) {
 		    octalSignificandOverflow = 1;
 		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 						octalSignificandWide);
@@ -859,23 +871,34 @@ TclParseNumber( Tcl_Interp* interp,
 		}
 	    }
 	    if (!octalSignificandOverflow) {
-		if (signum) {
-		    w = -(Tcl_WideInt) octalSignificandWide;
+		if (octalSignificandWide > 
+			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
+		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
+						octalSignificandWide);
+		    octalSignificandOverflow = 1;
 		} else {
-		    w = (Tcl_WideInt) octalSignificandWide;
-		}
-#ifndef TCL_WIDE_INT_IS_LONG
-		if (w < LONG_MIN || w > LONG_MAX) {
-		    objPtr->typePtr = &tclWideIntType;
-		    objPtr->internalRep.wideValue = w;
-		} else {
-#endif
 		    objPtr->typePtr = &tclIntType;
-		    objPtr->internalRep.longValue = (long)w;
-#ifndef TCL_WIDE_INT_IS_LONG
+		    if (signum) {
+			objPtr->internalRep.longValue =
+				- (long) octalSignificandWide;
+		    } else {
+			objPtr->internalRep.longValue =
+				(long) octalSignificandWide;
+		    }
 		}
-#endif
-	    } else {
+	    }
+	    if (octalSignificandOverflow) {
+		if (octalSignificandBig.used > 0x7fff) {
+		    Tcl_Panic("TclParseNumber: too large for packed bignum");
+		}
+		if (octalSignificandBig.alloc > 0x7fff) {
+		    mp_shrink(&octalSignificandBig);
+		}
+		if (signum) {
+		    octalSignificandBig.sign = MP_NEG;
+		} else {
+		    octalSignificandBig.sign = MP_ZPOS;
+		}
 		objPtr->typePtr = &tclBignumType;
 		PACK_BIGNUM(octalSignificandBig,objPtr);
 		octalSignificandOverflow = 0;
@@ -897,27 +920,38 @@ TclParseNumber( Tcl_Interp* interp,
 	    }
 	  returnInteger:
 	    if (!significandOverflow) {
-		if (signum) {
-		    w = -(Tcl_WideInt) significandWide;
+		if (significandWide > 
+			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
+		    TclBNInitBignumFromWideUInt(&significandBig,
+						significandWide);
+		    significandOverflow = 1;
 		} else {
-		    w = (Tcl_WideInt) significandWide;
-		}
-#ifndef TCL_WIDE_INT_IS_LONG
-		if (w < LONG_MIN || w > LONG_MAX) {
-		    objPtr->typePtr = &tclWideIntType;
-		    objPtr->internalRep.wideValue = w;
-		} else {
-#endif
 		    objPtr->typePtr = &tclIntType;
-		    objPtr->internalRep.longValue = (long)w;
-#ifndef TCL_WIDE_INT_IS_LONG
+		    if (signum) {
+			objPtr->internalRep.longValue =
+				- (long) significandWide;
+		    } else {
+			objPtr->internalRep.longValue =
+				(long) significandWide;
+		    }
 		}
-#endif
-	    } else {
+	    }
+	    if (significandOverflow) {
+		if (significandBig.used > 0x7fff) {
+		    Tcl_Panic("TclParseNumber: too large for packed bignum");
+		}
+		if (significandBig.alloc > 0x7fff) {
+		    mp_shrink(&significandBig);
+		}
+		if (signum) {
+		    significandBig.sign = MP_NEG;
+		} else {
+		    significandBig.sign = MP_ZPOS;
+		}
 		objPtr->typePtr = &tclBignumType;
 		PACK_BIGNUM(significandBig,objPtr);
 		significandOverflow = 0;
-	    }		
+	    }
 	    break;
 
 	case FRACTION:
@@ -1001,7 +1035,6 @@ TclParseNumber( Tcl_Interp* interp,
 	mp_clear(&significandBig);
     }
     return status;
-    
 }
 
 /*

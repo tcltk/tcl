@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMath.h,v 1.1.2.1 2005/01/20 19:13:54 kennykb Exp $
+ * RCS: @(#) $Id: tclTomMath.h,v 1.1.2.2 2005/08/10 18:21:53 dgp Exp $
  */
 
 #ifndef TCLTOMMATH_H
@@ -98,9 +98,13 @@ void* TclBNCalloc( size_t, size_t );
 #define mp_radix_size TclBN_mp_radix_size
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
+#define mp_shrink TclBN_mp_shrink
 #define mp_sub TclBN_mp_sub
+#define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
+#define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
 #define mp_toradix_n TclBN_mp_toradix_n
+#define mp_unsigned_bin_size TclBN_mp_unsigned_bin_size
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
