@@ -342,9 +342,6 @@
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
 
-/* Use the generic thread storage subsystem? */
-#undef USE_THREAD_STORAGE
-
 /* Should we use vfork() instead of fork()? */
 #undef USE_VFORK
 
