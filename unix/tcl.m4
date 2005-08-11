@@ -535,10 +535,6 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	# allocator that significantly reduces lock contention
 	AC_DEFINE(USE_THREAD_ALLOC, 1,
 	    [Do we want to use the threaded memory allocator?])
-	# USE_THREAD_STORAGE tells us to use the new generic thread 
-	# storage subsystem. 
-	AC_DEFINE(USE_THREAD_STORAGE, 1,
-	    [Use the generic thread storage subsystem?])
 	AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
 	if test "`uname -s`" = "SunOS" ; then
 	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS, 1,
