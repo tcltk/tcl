@@ -12,11 +12,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.15 2005/08/02 18:15:24 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.16 2005/08/11 16:29:24 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tommath.h"
 
 #include <math.h>
 #include <float.h>
@@ -321,7 +322,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(longVar) = Tcl_WideAsLong(wideVar);				\
     }
 #define IS_INTEGER_TYPE(typePtr)					\
-	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType)
+	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType || (typePtr) == &tclBignumType)
 #define IS_NUMERIC_TYPE(typePtr)					\
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
 
@@ -4512,6 +4513,10 @@ TclExecuteByteCode(interp, codePtr)
 		    } else if (tPtr == &tclWideIntType) {
 			TclGetWide(w,valuePtr);
 			TclNewWideIntObj(objResultPtr, w);
+		    } else if (tPtr == &tclBignumType) {
+			mp_int big;
+			Tcl_GetBignumFromObj(NULL, valuePtr, &big);
+			objResultPtr = Tcl_NewBignumObj(&big);
 		    } else {
 			d = valuePtr->internalRep.doubleValue;
 			TclNewDoubleObj(objResultPtr, d);

@@ -13,13 +13,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.13 2005/08/02 18:15:10 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.14 2005/08/11 16:29:23 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 #include <float.h>
 #include <math.h>
+#include "tommath.h"
 
 /*
  * The following structure defines the client data for a math function
@@ -5068,74 +5069,66 @@ ExprAbsFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
-    register Tcl_Obj *valuePtr;
-    long i, iResult;
-    double d, dResult;
-    Tcl_Obj* oResult;
+    double d;
+    mp_int big;
+    Tcl_Obj *valuePtr = objv[1];
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    valuePtr = objv[1];
 
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+    /* TODO - an Tcl_GetNumberFromObj call might be more useful ? */
+    if (Tcl_GetDoubleFromObj(NULL, valuePtr, &d) == TCL_ERROR) {
+	/* TODO - decide what the right error message, etc. */
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("non-numeric argument", -1));
 	return TCL_ERROR;
+    }
+    if (d >= 0.0) {
+	/* Non-negative values are their own absolute value */
+	Tcl_SetObjResult(interp, valuePtr);
+	return TCL_OK;
     }
 
     /*
-     * Derive the absolute value according to the arg type.
+     * To take the absolute value of a negative value, take care to
+     * keep the same data type, fixed vs. floating point, and to
+     * promote to wider type if needed.
      */
-    if (valuePtr->typePtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-	if (i < 0) {
-	    iResult = -i;
-	    if (iResult < 0) {
-		/* FIXME: This should promote to wide! */
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent", (char *) NULL);
-		return TCL_ERROR;
-	    }
-	} else {
-	    iResult = i;
-	}	    
-	TclNewLongObj(oResult, iResult);
-	Tcl_SetObjResult(interp, oResult);
-    } else if (valuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wResult, w;
-	TclGetWide(w,valuePtr);
-	if (w < (Tcl_WideInt)0) {
-	    wResult = -w;
-	    if (wResult < 0) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"integer value too large to represent", -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-			"integer value too large to represent", (char *) NULL);
-		return TCL_ERROR;
-	    }
-	} else {
-	    wResult = w;
-	}	    
-	TclNewWideIntObj(oResult, wResult);
-	Tcl_SetObjResult(interp, oResult);
-    } else {
-	d = valuePtr->internalRep.doubleValue;
-	if (d < 0.0) {
-	    dResult = -d;
-	} else {
-	    dResult = d;
-	}
-	if (IS_NAN(dResult)) {
-	    TclExprFloatError(interp, dResult);
-	    return TCL_ERROR;
-	}
-	TclNewDoubleObj(oResult, dResult);
-	Tcl_SetObjResult(interp, oResult);
-    }
 
-    return TCL_OK;
+    if (valuePtr->typePtr == &tclDoubleType) {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
+	return TCL_OK;
+    }
+    if (valuePtr->typePtr == &tclIntType) {
+	long l = - valuePtr->internalRep.longValue;
+	if (l < 0) {
+	    TclBNInitBignumFromLong(&big, l);
+	    goto promotion;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(l));
+	return TCL_OK;
+    }
+#ifndef NO_WIDE_TYPE
+    if (valuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt w;
+	TclGetWide(w, valuePtr);
+	w = -w;
+	if (w < 0) {
+	    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)w);
+	    goto promotion;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w));
+	return TCL_OK;
+    }
+#endif
+    if (valuePtr->typePtr == &tclBignumType) {
+	Tcl_GetBignumFromObj(NULL, valuePtr, &big);
+    promotion:
+	big.sign = MP_ZPOS;
+	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+	return TCL_OK;
+    }
 }
 
 static int

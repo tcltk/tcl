@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.18 2005/08/10 18:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.19 2005/08/11 16:29:24 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -873,6 +873,22 @@ TclParseNumber( Tcl_Interp* interp,
 	    if (!octalSignificandOverflow) {
 		if (octalSignificandWide > 
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
+#ifndef TCL_WIDE_INT_IS_LONG
+#ifndef NO_WIDE_TYPE
+		    if (octalSignificandWide 
+			    <= (((~(Tcl_WideUInt)0) >> 1) + signum)) {
+			objPtr->typePtr = &tclWideIntType;
+			if (signum) {
+			    objPtr->internalRep.wideValue =
+				    - (Tcl_WideInt) octalSignificandWide;
+			} else {
+			    objPtr->internalRep.wideValue =
+				    (Tcl_WideInt) octalSignificandWide;
+			}
+			break;
+		    }
+#endif
+#endif
 		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 						octalSignificandWide);
 		    octalSignificandOverflow = 1;
@@ -922,6 +938,22 @@ TclParseNumber( Tcl_Interp* interp,
 	    if (!significandOverflow) {
 		if (significandWide > 
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
+#ifndef TCL_WIDE_INT_IS_LONG
+#ifndef NO_WIDE_TYPE
+		    if (significandWide 
+			    <= (((~(Tcl_WideUInt)0) >> 1) + signum)) {
+			objPtr->typePtr = &tclWideIntType;
+			if (signum) {
+			    objPtr->internalRep.wideValue =
+				    - (Tcl_WideInt) significandWide;
+			} else {
+			    objPtr->internalRep.wideValue =
+				    (Tcl_WideInt) significandWide;
+			}
+			break;
+		    }
+#endif
+#endif
 		    TclBNInitBignumFromWideUInt(&significandBig,
 						significandWide);
 		    significandOverflow = 1;

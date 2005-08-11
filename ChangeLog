@@ -1,3 +1,17 @@
+2005-08-11  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclStrToD.c:	Restored conditional generation of
+	tclWideIntType values by TclParseNumber so that Tcl's not
+	completely broken while bignum calculation support is incomplete.
+	The NO_WIDE_TYPE macro can be used to disable this.
+
+	* generic/tclBasic.c (ExprAbsFunc):	First pass making [expr abs(.)]
+	bignum-aware.
+
+	* generic/tclExecute.c:	Made INST_TRY_CVT_TO_NUMERIC bignum aware.
+
 2005-08-10  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]
