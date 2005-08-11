@@ -2,6 +2,11 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclExecute.c:	Rewrite of INST_LAND/INST_LOR to take
+	advantage of loss of "pure double" issues.  Merged INST_UPLUS
+	with INST_TRY_CVT_TO_NUMERIC and updated to use improved rules
+	for impure "double"s as well.
+
 	* generic/tclStrToD.c:	Restored conditional generation of
 	tclWideIntType values by TclParseNumber so that Tcl's not
 	completely broken while bignum calculation support is incomplete.
@@ -9,8 +14,6 @@
 
 	* generic/tclBasic.c (ExprAbsFunc):	First pass making [expr abs(.)]
 	bignum-aware.
-
-	* generic/tclExecute.c:	Made INST_TRY_CVT_TO_NUMERIC bignum aware.
 
 2005-08-10  Don Porter  <dgp@users.sourceforge.net>
 

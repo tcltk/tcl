@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.16 2005/08/11 16:29:24 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.17 2005/08/11 21:48:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2515,17 +2515,15 @@ TclExecuteByteCode(interp, codePtr)
 	 * performed.
 	 */
 
-	int i1, i2, length;
-	int iResult;
-	char *s;
-	Tcl_ObjType *t1Ptr, *t2Ptr;
-	Tcl_Obj *valuePtr, *value2Ptr;
+	int i1, i2, iResult;
+	Tcl_Obj *value2Ptr = *tosPtr;
+	Tcl_Obj *valuePtr  = *(tosPtr - 1);
+#if 0
 	Tcl_WideInt w;
-
-	value2Ptr = *tosPtr;
-	valuePtr  = *(tosPtr - 1);
-	t1Ptr = valuePtr->typePtr;
-	t2Ptr = value2Ptr->typePtr;
+	char *s;
+	int length;
+	Tcl_ObjType *t1Ptr = valuePtr->typePtr;
+	Tcl_ObjType *t2Ptr = value2Ptr->typePtr;
 
 	if (t1Ptr == &tclIntType) {
 	    i1 = (valuePtr->internalRep.longValue != 0);
@@ -2555,7 +2553,17 @@ TclExecuteByteCode(interp, codePtr)
 		goto checkForCatch;
 	    }
 	}
+#else
+	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &i1);
+	if (result != TCL_OK) {
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
+		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+#endif
 
+#if 0
 	if (t2Ptr == &tclIntType) {
 	    i2 = (value2Ptr->internalRep.longValue != 0);
 	} else if (t2Ptr == &tclWideIntType) {
@@ -2584,6 +2592,15 @@ TclExecuteByteCode(interp, codePtr)
 		goto checkForCatch;
 	    }
 	}
+#else
+	result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
+	if (result != TCL_OK) {
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
+		    (value2Ptr->typePtr? valuewPtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    goto checkForCatch;
+	}
+#endif
 
 	/*
 	 * Reuse the valuePtr object already on stack if possible.
@@ -2594,6 +2611,7 @@ TclExecuteByteCode(interp, codePtr)
 	} else {
 	    iResult = (i1 && i2);
 	}
+#if 0
 	if (Tcl_IsShared(valuePtr)) {
 	    TclNewLongObj(objResultPtr, iResult);
 	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
@@ -2603,6 +2621,10 @@ TclExecuteByteCode(interp, codePtr)
 	    TclSetLongObj(valuePtr, iResult);
 	    NEXT_INST_F(1, 1, 0);
 	}
+#endif
+	TclNewBooleanObj(objResultPtr, iResult);
+	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
+	NEXT_INST_F(1, 2, 1);
     }
 
     /*
@@ -4178,6 +4200,7 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
+#if 0
     case INST_UPLUS: {
 	/*
 	 * Operand must be numeric.
@@ -4248,6 +4271,7 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 0, 0);
 	}
     }
+#endif
 
     case INST_UMINUS:
     case INST_LNOT: {
@@ -4442,19 +4466,20 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_FUNC1 found");
     }
 
+    case INST_UPLUS:
     case INST_TRY_CVT_TO_NUMERIC: {
 	/*
-	 * Try to convert the topmost stack object to an int or double object.
-	 * This is done in order to support Tcl's policy of interpreting
-	 * operands if at all possible as first integers, else floating-point
-	 * numbers.
+	 * Try to convert the topmost stack object to numeric object.
+	 * This is done in order to support [expr]'s policy of interpreting
+	 * operands if at all possible as numbers first, then strings.
 	 */
 
 	double d;
+	Tcl_Obj *valuePtr;
+#if 0
 	char *s;
 	Tcl_ObjType *tPtr;
 	int converted, needNew, length;
-	Tcl_Obj *valuePtr;
 	long i;
 	Tcl_WideInt w;
 
@@ -4549,6 +4574,64 @@ TclExecuteByteCode(interp, codePtr)
 	} else {
 	    NEXT_INST_F(1, 0, 0);
 	}
+#else
+	valuePtr = *tosPtr;
+	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
+	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
+	    /* Value is now numeric (including NaN) */
+	    if ((*pc == INST_TRY_CVT_TO_NUMERIC) && (result != TCL_OK)) {
+		/* Numeric conversion of NaN -> error */
+		CONST char *s = "domain error: argument not in valid range";
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+		Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
+		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
+			O2S(objResultPtr)));
+		goto checkForCatch;
+	    }
+	    /*
+	     * Ensure that the numeric value has a string rep the same as
+	     * the formatted version of its internal rep. This is used, e.g.,
+	     * to make sure that "expr {0001}" yields "1", not "0001".
+	     * We implement this by _discarding_ the string rep since we
+	     * know it will be regenerated, if needed later, by formatting
+	     * the internal rep's value. 
+	     */
+	    if (valuePtr->bytes == NULL) {
+		TRACE(("\"%.20s\" => numeric, same Tcl_Obj\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 0, 0);
+	    }
+	    if (Tcl_IsShared(valuePtr)) {
+		/*
+		 * Here we do some surgery within the Tcl_Obj internals.
+		 * We want to copy the intrep, but not the string, so we
+		 * temporarily hide the string so we do not copy it.
+		 */
+		char *savedString = valuePtr->bytes;
+		valuePtr->bytes = NULL;
+		objResultPtr = Tcl_DuplicateObj(valuePtr);
+		valuePtr->bytes = savedString;
+		TRACE(("\"%.20s\" => numeric, new Tcl_Obj\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 1, 1);
+	    }
+	    TclInvalidateStringRep(valuePtr);
+	    result = TCL_OK;
+	    TRACE(("\"%.20s\" => numeric, same Tcl_Obj\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+	/* Non-numeric argument... */
+	if (*pc == INST_UPLUS) {
+	    /* ... +$NonNumeric => raise an error */
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", s,
+		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	} else {
+	    /* ... TryConvertToNumeric($NonNumeric) is acceptable */
+	    TRACE(("\"%.20s\" => not numeric\n", O2S(valuePtr)));
+	    result = TCL_OK;
+	    NEXT_INST_F(1, 0, 0);
+	}
+#endif
     }
 
     case INST_BREAK:
