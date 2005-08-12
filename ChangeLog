@@ -1,3 +1,11 @@
+2005-08-12  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclExecute.c:	Simplify doCondJump.  Use eePtr->constants
+	as result of INST_DICT_NEXT, INST_LAND, and INST_LOR.  Separate
+	INST_LNOT from INST_UMINUS and simplify.
+
 2005-08-11  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

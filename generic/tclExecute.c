@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.17 2005/08/11 21:48:37 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.18 2005/08/12 18:29:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2453,6 +2453,7 @@ TclExecuteByteCode(interp, codePtr)
     doCondJump:
 	valuePtr = *tosPtr;
 
+#if 0
 	if (valuePtr->typePtr == &tclIntType) {
 	    b = (valuePtr->internalRep.longValue != 0);
 	} else if (valuePtr->typePtr == &tclDoubleType) {
@@ -2479,9 +2480,18 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    b = b1;
 	}
-#ifndef TCL_COMPILE_DEBUG
-	NEXT_INST_F(jmpOffset[b], 1, 0);
 #else
+	/* TODO - check claim that taking address of b harms performance */
+	result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
+	if (result != TCL_OK) {
+	    TRACE_WITH_OBJ(("%d => ERROR: ", jmpOffset[
+		    ((*pc == INST_JUMP_FALSE1) || (*pc == INST_JUMP_FALSE4))
+		    ? 0 : 1]), Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+#endif
+
+#ifdef TCL_COMPILE_DEBUG
 	if (b) {
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		TRACE(("%d => %.20s true, new pc %u\n", jmpOffset[1], O2S(valuePtr),
@@ -2489,7 +2499,6 @@ TclExecuteByteCode(interp, codePtr)
 	    } else {
 		TRACE(("%d => %.20s true\n", jmpOffset[0], O2S(valuePtr)));
 	    }
-	    NEXT_INST_F(jmpOffset[1], 1, 0);
 	} else {
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		TRACE(("%d => %.20s false\n", jmpOffset[0], O2S(valuePtr)));
@@ -2497,9 +2506,9 @@ TclExecuteByteCode(interp, codePtr)
 		TRACE(("%d => %.20s false, new pc %u\n", jmpOffset[0], O2S(valuePtr),
 			(unsigned int)(pc + jmpOffset[1] - codePtr->codeStart)));
 	    }
-	    NEXT_INST_F(jmpOffset[0], 1, 0);
 	}
 #endif
+	NEXT_INST_F(jmpOffset[b], 1, 0);
     }
 
     /*
@@ -2622,7 +2631,7 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 1, 0);
 	}
 #endif
-	TclNewBooleanObj(objResultPtr, iResult);
+	objResultPtr = eePtr->constants[iResult];
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 	NEXT_INST_F(1, 2, 1);
     }
@@ -4273,18 +4282,30 @@ TclExecuteByteCode(interp, codePtr)
     }
 #endif
 
-    case INST_UMINUS:
     case INST_LNOT: {
+	int b;
+	Tcl_Obj *valuePtr = *tosPtr;
+
+	/* TODO - check claim that taking address of b harms performance */
+	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &b);
+	if (result != TCL_OK) {
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
+		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+	objResultPtr = eePtr->constants[!b];
+	NEXT_INST_F(1, 1, 1);
+    }
+
+    case INST_UMINUS: {
 	/*
-	 * The operand must be numeric or a boolean string as accepted by
-	 * Tcl_GetBooleanFromObj(). If the operand object is unshared modify
-	 * it directly, otherwise create a copy to modify: this is "copy on
-	 * write".  Free any old string representation since it is now
-	 * invalid.
+	 * The operand must be numeric.  If the operand object is unshared
+	 * modify it directly, otherwise create a copy to modify: this is
+	 * "copy on write".  
 	 */
 
 	double d;
-	int boolvar;
 	long i;
 	int negate_value = 1;
 	Tcl_WideInt w;
@@ -4319,7 +4340,6 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		if ((result == TCL_OK) &&
-			(*pc == INST_UMINUS) &&
 			(valuePtr->typePtr == &tclWideIntType) &&
 			(w == -Tcl_LongAsWide(LONG_MIN))) {
 		    valuePtr->typePtr = &tclIntType;
@@ -4328,10 +4348,6 @@ TclExecuteByteCode(interp, codePtr)
 		}
 	    } else {
 		result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
-	    }
-	    if (result == TCL_ERROR && *pc == INST_LNOT) {
-		result = Tcl_GetBooleanFromObj(NULL, valuePtr, &boolvar);
-		i = (long)boolvar; /* i is long, not int! */
 	    }
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", s,
@@ -4342,65 +4358,46 @@ TclExecuteByteCode(interp, codePtr)
 	    tPtr = valuePtr->typePtr;
 	}
 
-	if (*pc == INST_UMINUS) {
-	    if (Tcl_IsShared(valuePtr)) {
-		/*
-		 * Create a new object.
-		 */
-		if (tPtr == &tclIntType) {
-		    i = valuePtr->internalRep.longValue;
-		    if (negate_value) {
-			i = -i;
-		    }
-		    TclNewLongObj(objResultPtr, i);
-		    TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
-		} else if (tPtr == &tclWideIntType) {
-		    TclGetWide(w,valuePtr);
-		    TclNewWideIntObj(objResultPtr, -w);
-		    TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
-		} else {
-		    d = valuePtr->internalRep.doubleValue;
-		    TclNewDoubleObj(objResultPtr, -d);
-		    TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
+	if (Tcl_IsShared(valuePtr)) {
+	    /* Create a new object. */
+	    if (tPtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+		if (negate_value) {
+		    i = -i;
 		}
-		NEXT_INST_F(1, 1, 1);
-	    } else {
-		/*
-		 * valuePtr is unshared. Modify it directly.
-		 */
-		if (tPtr == &tclIntType) {
-		    i = valuePtr->internalRep.longValue;
-		    if (negate_value) {
-			i = -i;
-		    }
-		    TclSetLongObj(valuePtr, i);
-		    TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
-		} else if (tPtr == &tclWideIntType) {
-		    TclGetWide(w,valuePtr);
-		    TclSetWideIntObj(valuePtr, -w);
-		    TRACE_WITH_OBJ((LLD" => ", w), valuePtr);
-		} else {
-		    d = valuePtr->internalRep.doubleValue;
-		    TclSetDoubleObj(valuePtr, -d);
-		    TRACE_WITH_OBJ(("%.6g => ", d), valuePtr);
-		}
-		NEXT_INST_F(1, 0, 0);
-	    }
-	} else { /* *pc == INST_UMINUS */
-	    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
-		i = !valuePtr->internalRep.longValue;
+		TclNewLongObj(objResultPtr, i);
 		TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 	    } else if (tPtr == &tclWideIntType) {
 		TclGetWide(w,valuePtr);
-		i = (w == W0);
+		TclNewWideIntObj(objResultPtr, -w);
 		TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 	    } else {
-		i = (valuePtr->internalRep.doubleValue == 0.0);
+		d = valuePtr->internalRep.doubleValue;
+		TclNewDoubleObj(objResultPtr, -d);
 		TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
 	    }
-	    objResultPtr = eePtr->constants[i];
 	    NEXT_INST_F(1, 1, 1);
 	}
+	/*
+	 * valuePtr is unshared. Modify it directly.
+	 */
+	if (tPtr == &tclIntType) {
+	    i = valuePtr->internalRep.longValue;
+	    if (negate_value) {
+		i = -i;
+	    }
+	    TclSetLongObj(valuePtr, i);
+	    TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
+	} else if (tPtr == &tclWideIntType) {
+	    TclGetWide(w,valuePtr);
+	    TclSetWideIntObj(valuePtr, -w);
+	    TRACE_WITH_OBJ((LLD" => ", w), valuePtr);
+	} else {
+	    d = valuePtr->internalRep.doubleValue;
+	    TclSetDoubleObj(valuePtr, -d);
+	    TRACE_WITH_OBJ(("%.6g => ", d), valuePtr);
+	}
+	NEXT_INST_F(1, 0, 0);
     }
 
     case INST_BITNOT: {
@@ -5223,7 +5220,7 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
 		O2S(*(tosPtr-1)), O2S(*tosPtr), done));
-	objResultPtr = Tcl_NewBooleanObj(done);
+	objResultPtr = eePtr->constants[done];
 	NEXT_INST_F(5, 0, 1);
 
     case INST_DICT_DONE:
