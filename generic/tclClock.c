@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.39 2005/08/09 13:31:27 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.40 2005/08/12 23:55:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -319,8 +319,8 @@ TclClockMktimeObjCmd(  ClientData clientData,
     }
     toConvert.tm_sec = i;
     toConvert.tm_isdst = -1;
-    toConvert.tm_wday = 0;
-    toConvert.tm_yday = 0;
+    toConvert.tm_wday = -1;
+    toConvert.tm_yday = -1;
 
     /* Convert the time.  It is rumored that mktime is not thread
      * safe on some platforms. */
@@ -334,7 +334,9 @@ TclClockMktimeObjCmd(  ClientData clientData,
 
     /* Return the converted time, or an error if conversion fails */
 
-    if ( localErrno != 0 ) {
+    if ( localErrno != 0
+	 || ( convertedTime == -1
+	      && toConvert.tm_yday == -1 ) ) {
 	Tcl_SetObjResult
 	    ( interp,
 	      Tcl_NewStringObj( "time value too large/small to represent", 
