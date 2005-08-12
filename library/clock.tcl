@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.18 2005/08/12 23:55:28 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.19 2005/08/12 23:59:07 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -258,6 +258,7 @@ proc ::tcl::clock::Initialize {} {
     foreach path {
 	/usr/share/zoneinfo
 	/usr/share/lib/zoneinfo
+	/usr/lib/zoneinfo
 	/usr/local/etc/zoneinfo
 	C:/Progra~1/cygwin/usr/local/etc/zoneinfo
     } {
