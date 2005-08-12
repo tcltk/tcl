@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.17 2005/07/15 22:32:24 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.18 2005/08/12 23:55:28 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -2926,18 +2926,18 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     } elseif { ![catch {getenv TZ} result] } {
 	set timezone $result
+    } elseif { [info exists CachedSystemTimeZone] } {
+	set timezone $CachedSystemTimeZone
+    } elseif { $::tcl_platform(platform) eq {windows} } {
+	set timezone [GuessWindowsTimeZone]
+    } elseif { [file exists /etc/localtime]
+	       && ![catch {ReadZoneinfoFile \
+			       Tcl/Localtime /etc/localtime}] } {
+	set timezone :Tcl/Localtime
     } else {
-	if { [info exists CachedSystemTimeZone] } {
-	    set timezone $CachedSystemTimeZone
-	} else {
-	    if { $::tcl_platform(platform) eq {windows} } {
-		set timezone [GuessWindowsTimeZone]
-	    } else {
-		set timezone :localtime
-	    }
-	    set CachedSystemTimeZone $timezone
-	}
+	set timezone :localtime
     }
+    set CachedSystemTimeZone $timezone
     if { ![dict exists $TimeZoneBad $timezone] } {
 	dict set TimeZoneBad $timezone [catch {SetupTimeZone $timezone}]
     }
@@ -3314,7 +3314,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    # again with a time zone file - this time without a colon
 
 	    if { [catch { LoadTimeZoneFile $timezone }]
-		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
+		 && [catch { ZoneinfoFile $timezone } - opts] } {
 		dict unset opts -errorinfo
 		return -options $opts "time zone $timezone not found"
 	    }
@@ -3525,7 +3525,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 #	Loads a binary time zone information file in Olson format.
 #
 # Parameters:
-#	fileName - Path name of the file to load.
+#	fileName - Relative path name of the file to load.
 #
 # Results:
 #	Returns an empty result normally; returns an error if no
@@ -3538,8 +3538,6 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 
 proc ::tcl::clock::LoadZoneinfoFile { fileName } {
 
-    variable MINWIDE
-    variable TZData
     variable ZoneinfoPaths
 
     # Since an unsafe interp uses the [clock] command in the master,
@@ -3558,6 +3556,33 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
 	}
 	unset fname
     }
+    ReadZoneinfoFile $fileName $fname
+}
+
+#----------------------------------------------------------------------
+#
+# LoadZoneinfoFile --
+#
+#	Loads a binary time zone information file in Olson format.
+#
+# Parameters:
+#	fileName - Name of the time zone (relative path name of the
+#		   file).
+#	fname - Absolute path name of the file.
+#
+# Results:
+#	Returns an empty result normally; returns an error if no
+#	Olson file was found or the file was malformed in some way.
+#
+# Side effects:
+#	TZData(:fileName) contains the time zone data
+#
+#----------------------------------------------------------------------
+
+
+proc ReadZoneinfoFile {fileName fname} {
+    variable MINWIDE
+    variable TZData
     if { ![info exists fname] } {
 	return -code error "$fileName not found"
     }
@@ -3643,7 +3668,7 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     }
 
     set TZData(:$fileName) $r
-
+    return
 }
 
 #----------------------------------------------------------------------
