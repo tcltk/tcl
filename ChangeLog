@@ -1,3 +1,14 @@
+2004-08-12  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (MktimeObjCmd):
+	* library/clock.tcl (GetSystemTimeZone, LoadZoneinfoFile,
+	ReadZoneinfoFile):
+	* tests/clock.test (clock-50.1):
+	Added functionality to read /etc/localtime if it exists, so that
+	Tcl's time can track system time on Linux even if TZ is not set.
+	Changed ::tcl::clock::Mktime to check for failure, and added a
+	test case that mimics failure but is really success.
+	
 2004-08-11  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c:          Eliminated the USE_THREAD_STORAGE
