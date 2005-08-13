@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.23 2005/08/10 18:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.24 2005/08/13 20:19:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2805,13 +2805,13 @@ Tcl_SetBignumObj(
 	long scratch;
 	unsigned char *bytes = (unsigned char *)&scratch;
 	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
-	    goto outOfRange;
+	    goto tooLargeForLong;
 	}
 	while (numBytes-- > 0) {
 	    value = (value << CHAR_BIT) | *bytes++;
 	}
 	if (value > (((~(unsigned long)0) >> 1) + bignumValue->sign)) {
-	    goto outOfRange;
+	    goto tooLargeForLong;
 	}
 	if (bignumValue->sign) {
 	    TclSetLongObj(objPtr, -(long)value);
@@ -2821,7 +2821,35 @@ Tcl_SetBignumObj(
 	mp_clear(bignumValue);
 	return;
     }
-  outOfRange:
+  tooLargeForLong:
+#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
+    if (bignumValue->used
+	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
+	Tcl_WideUInt value = 0;
+	unsigned long numBytes = sizeof(Tcl_WideInt);
+	Tcl_WideInt scratch;
+	unsigned char *bytes = (unsigned char *)&scratch;
+	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
+	    goto tooLargeForWide;
+	}
+	while (numBytes-- > 0) {
+	    value = (value << CHAR_BIT) | *bytes++;
+	}
+	if (value > (((~(Tcl_WideUInt)0) >> 1) + bignumValue->sign)) {
+	    goto tooLargeForWide;
+	}
+	if (bignumValue->sign) {
+	    TclSetWideIntObj(objPtr, -(Tcl_WideInt)value);
+	} else {
+	    TclSetWideIntObj(objPtr, (Tcl_WideInt)value);
+	}
+	mp_clear(bignumValue);
+	return;
+    }
+  tooLargeForWide:
+#endif
+#endif
 #endif
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);

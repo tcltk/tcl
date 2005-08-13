@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.18 2005/08/12 18:29:00 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.19 2005/08/13 20:19:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -482,9 +482,9 @@ TclCreateExecEnv(interp)
     eePtr->tosPtr = stackPtr - 1;
     eePtr->endPtr = stackPtr + (TCL_STACK_INITIAL_SIZE - 2);
 
-    TclNewIntObj(eePtr->constants[0], 0);
+    TclNewBooleanObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewIntObj(eePtr->constants[1], 1);
+    TclNewBooleanObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
 
     Tcl_MutexLock(&execMutex);
@@ -754,24 +754,24 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
     string = Tcl_GetStringFromObj(objPtr, &length);
     if (length == 1) {
 	if (*string == '0') {
-	    TclNewLongObj(resultPtr, 0);
+	    TclNewBooleanObj(resultPtr, 0);
 	    Tcl_IncrRefCount(resultPtr);
 	    *resultPtrPtr = resultPtr;
 	    return TCL_OK;
 	} else if (*string == '1') {
-	    TclNewLongObj(resultPtr, 1);
+	    TclNewBooleanObj(resultPtr, 1);
 	    Tcl_IncrRefCount(resultPtr);
 	    *resultPtrPtr = resultPtr;
 	    return TCL_OK;
 	}
     } else if ((length == 2) && (*string == '!')) {
 	if (*(string+1) == '0') {
-	    TclNewLongObj(resultPtr, 1);
+	    TclNewBooleanObj(resultPtr, 1);
 	    Tcl_IncrRefCount(resultPtr);
 	    *resultPtrPtr = resultPtr;
 	    return TCL_OK;
 	} else if (*(string+1) == '1') {
-	    TclNewLongObj(resultPtr, 0);
+	    TclNewBooleanObj(resultPtr, 0);
 	    Tcl_IncrRefCount(resultPtr);
 	    *resultPtrPtr = resultPtr;
 	    return TCL_OK;
@@ -2431,6 +2431,8 @@ TclExecuteByteCode(interp, codePtr)
 	int b;
 	Tcl_Obj *valuePtr;
 
+/* TODO: consider rewrite so we don't compute the offset we're
+ * not going to take. */
     case INST_JUMP_FALSE4:
 	jmpOffset[0] = TclGetInt4AtPtr(pc+1);	/* FALSE offset */
 	jmpOffset[1] = 5;			/* TRUE  offset*/
@@ -2482,6 +2484,7 @@ TclExecuteByteCode(interp, codePtr)
 	}
 #else
 	/* TODO - check claim that taking address of b harms performance */
+	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
 	if (result != TCL_OK) {
 	    TRACE_WITH_OBJ(("%d => ERROR: ", jmpOffset[
@@ -2563,6 +2566,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
 #else
+	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &i1);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
@@ -2602,6 +2606,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
 #else
+	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
@@ -2995,6 +3000,8 @@ TclExecuteByteCode(interp, codePtr)
 
 	/*
 	 * Peep-hole optimisation: if you're about to jump, do jump from here.
+	 * We're saving the effort of pushing a boolean value only to pop it
+	 * for branching.
 	 */
 
 	pc++;
@@ -3010,7 +3017,7 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F((found ? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
 	}
 #endif
-	TclNewIntObj(objResultPtr, found);
+	objResultPtr = eePtr->constants[found];
 	NEXT_INST_F(0, 2, 1);
     }
 
@@ -3140,18 +3147,20 @@ TclExecuteByteCode(interp, codePtr)
 
 	/*
 	 * Make sure only -1,0,1 is returned
+	 * TODO: consider peephole opt.
 	 */
 	if (iResult == 0) {
 	    iResult = s1len - s2len;
 	}
 	if (iResult < 0) {
-	    iResult = -1;
-	} else if (iResult > 0) {
-	    iResult = 1;
+	    TclNewIntObj(objResultPtr, -1);
+	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), -1));
+	} else {
+	    objResultPtr = eePtr->constants[(iResult>0)];
+	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr),
+		(iResult > 0)));
 	}
 
-	TclNewIntObj(objResultPtr, iResult);
-	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 	NEXT_INST_F(1, 2, 1);
     }
 
@@ -3262,6 +3271,7 @@ TclExecuteByteCode(interp, codePtr)
 	/*
 	 * Reuse value2Ptr object already on stack if possible.  Adjustment is
 	 * 2 due to the nocase byte
+	 * TODO: consider peephole opt.
 	 */
 
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
@@ -4287,6 +4297,7 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Obj *valuePtr = *tosPtr;
 
 	/* TODO - check claim that taking address of b harms performance */
+	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &b);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
@@ -4294,6 +4305,7 @@ TclExecuteByteCode(interp, codePtr)
 	    IllegalExprOperandType(interp, pc, valuePtr);
 	    goto checkForCatch;
 	}
+	/* TODO: Consider peephole opt. */
 	objResultPtr = eePtr->constants[!b];
 	NEXT_INST_F(1, 1, 1);
     }
@@ -4306,11 +4318,13 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	double d;
+	Tcl_Obj *valuePtr;
+
+#if 0
 	long i;
 	int negate_value = 1;
 	Tcl_WideInt w;
 	Tcl_ObjType *tPtr;
-	Tcl_Obj *valuePtr;
 
 	valuePtr = *tosPtr;
 	tPtr = valuePtr->typePtr;
@@ -4357,7 +4371,6 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    tPtr = valuePtr->typePtr;
 	}
-
 	if (Tcl_IsShared(valuePtr)) {
 	    /* Create a new object. */
 	    if (tPtr == &tclIntType) {
@@ -4398,6 +4411,44 @@ TclExecuteByteCode(interp, codePtr)
 	    TRACE_WITH_OBJ(("%.6g => ", d), valuePtr);
 	}
 	NEXT_INST_F(1, 0, 0);
+#else
+	valuePtr = *tosPtr;
+	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
+	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
+	    /* Value is now numeric (including NaN) */
+	    if (result != TCL_OK) {
+	        /* Value is NaN : -NaN => NaN */
+		NEXT_INST_F(1, 0, 0);
+	    }
+	    if (valuePtr->typePtr == &tclDoubleType) {
+		if (Tcl_IsShared(valuePtr)) {
+		    TclNewDoubleObj(objResultPtr, -d);
+		    NEXT_INST_F(1, 1, 1);
+		}
+		TclSetDoubleObj(valuePtr, -d);
+		NEXT_INST_F(1, 0, 0);
+	    } else {
+		/* TODO: optimize use of narrower native integers */
+		mp_int big;
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big);
+		if (big.used != 0) {
+		    big.sign = !big.sign;
+		}
+		if (Tcl_IsShared(valuePtr)) {
+		    objResultPtr = Tcl_NewBignumObj(&big);
+		    NEXT_INST_F(1, 1, 1);
+		}
+		Tcl_SetBignumObj(valuePtr, &big);
+		NEXT_INST_F(1, 0, 0);
+	    }
+	} else {
+	    /* ... -$NonNumeric => raise an error */
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", s,
+		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+#endif
     }
 
     case INST_BITNOT: {
@@ -4864,7 +4915,7 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(1, 0, -1);
 
     case INST_PUSH_RETURN_CODE:
-	TclNewLongObj(objResultPtr, result);
+	TclNewIntObj(objResultPtr, result);
 	TRACE(("=> %u\n", result));
 	NEXT_INST_F(1, 0, 1);
 
@@ -5221,6 +5272,7 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
 		O2S(*(tosPtr-1)), O2S(*tosPtr), done));
 	objResultPtr = eePtr->constants[done];
+	/*TODO: consider opt like INST_FOREACH_STEP4 */
 	NEXT_INST_F(5, 0, 1);
 
     case INST_DICT_DONE:
@@ -5808,116 +5860,43 @@ IllegalExprOperandType(interp, pc, opndPtr)
     Tcl_Obj *opndPtr;		/* Points to the operand holding the value
 				 * with the illegal type. */
 {
+    Tcl_Obj *msg = Tcl_NewStringObj("can't use ", -1);
+    double d;
     unsigned char opCode = *pc;
     CONST char *operator = operatorStrings[opCode - INST_LOR];
     if (opCode == INST_EXPON) {
 	operator = "**";
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewObj());
-    if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {
-	Tcl_AppendResult(interp, "can't use empty string as operand of \"",
-		operator, "\"", (char *) NULL);
-    } else {
-	char *msg = "non-numeric string";
-	char *s, *p;
-	int length;
-	int looksLikeInt = 0;
+    /* TODO: Consider alternative that need not write to d */
+    Tcl_GetDoubleFromObj(NULL, opndPtr, &d);
 
-	s = Tcl_GetStringFromObj(opndPtr, &length);
-	p = s;
-	/*
-	 * strtod() isn't at all consistent about detecting Inf and NaN
-	 * between platforms.
-	 */
-	if (length == 3) {
-	    if ((s[0]=='n' || s[0]=='N') && (s[1]=='a' || s[1]=='A') &&
-		    (s[2]=='n' || s[2]=='N')) {
-		msg = "non-numeric floating-point value";
-		goto makeErrorMessage;
-	    }
-	    if ((s[0]=='i' || s[0]=='I') && (s[1]=='n' || s[1]=='N') &&
-		    (s[2]=='f' || s[2]=='F')) {
-		msg = "infinite floating-point value";
-		goto makeErrorMessage;
-	    }
-	}
-
-	/*
-	 * We cannot use TclLooksLikeInt here because it passes strings like
-	 * "10;" [Bug 587140]. We'll accept as "looking like ints" for the
-	 * present purposes any string that looks formally like a
-	 * (decimal|octal|hex) integer.
-	 */
-
-	while (length && isspace(UCHAR(*p))) {
-	    length--;
-	    p++;
-	}
-	if (length && ((*p == '+') || (*p == '-'))) {
-	    length--;
-	    p++;
-	}
-	if (length) {
-	    if ((*p == '0') && ((*(p+1) == 'x') || (*(p+1) == 'X'))) {
-		p += 2;
-		length -= 2;
-		looksLikeInt = ((length > 0) && isxdigit(UCHAR(*p)));
-		if (looksLikeInt) {
-		    length--;
-		    p++;
-		    while (length && isxdigit(UCHAR(*p))) {
-			length--;
-			p++;
-		    }
-		}
-	    } else {
-		looksLikeInt = (length && isdigit(UCHAR(*p)));
-		if (looksLikeInt) {
-		    length--;
-		    p++;
-		    while (length && isdigit(UCHAR(*p))) {
-			length--;
-			p++;
-		    }
-		}
-	    }
-	    while (length && isspace(UCHAR(*p))) {
-		length--;
-		p++;
-	    }
-	    looksLikeInt = !length;
-	}
-	if (looksLikeInt) {
-	    /*
-	     * If something that looks like an integer could not be converted,
-	     * then it *must* be a bad octal or too large to represent [Bug
-	     * 542588].
-	     */
-
-	    if (TclCheckBadOctal(NULL, s)) {
-		msg = "invalid octal number";
-	    } else {
-		msg = "integer value too large to represent";
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-		    "integer value too large to represent", (char *) NULL);
-	    }
+    if (opndPtr->typePtr == &tclDoubleType) {
+	if (IS_NAN(opndPtr->internalRep.doubleValue)) {
+	    Tcl_AppendToObj(msg, "non-numeric floating-point value", -1);
 	} else {
-	    /*
-	     * See if the operand can be interpreted as a double in order to
-	     * improve the error message.
-	     */
-
-	    double d;
-
-	    if (Tcl_GetDouble((Tcl_Interp *) NULL, s, &d) == TCL_OK) {
-		msg = "floating-point value";
-	    }
+	    Tcl_AppendToObj(msg, "floating-point value", -1);
 	}
-    makeErrorMessage:
-	Tcl_AppendResult(interp, "can't use ", msg, " as operand of \"",
-		operator, "\"", (char *) NULL);
+    } else if (opndPtr->typePtr == &tclIntType
+	    || opndPtr->typePtr == &tclWideIntType
+	    || opndPtr->typePtr == &tclBignumType) {
+	Tcl_AppendToObj(msg, "(big) integer", -1);
+    } else {
+        /* TODO: When to post "integer value too large to represent" ? */
+	int numBytes;
+	CONST char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
+	if (numBytes == 0) {
+	    Tcl_AppendToObj(msg, "empty string", -1);
+	} else if (TclCheckBadOctal(NULL, bytes)) {
+	    Tcl_AppendToObj(msg, "invalid octal number", -1);
+	} else {
+	    Tcl_AppendToObj(msg, "non-numeric string", -1);
+	}
     }
+    Tcl_AppendToObj(msg, " as operand of \"", -1);
+    Tcl_AppendToObj(msg, operator, -1);
+    Tcl_AppendToObj(msg, "\"", -1);
+    Tcl_SetObjResult(interp, msg);
 }
 
 /*

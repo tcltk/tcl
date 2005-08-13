@@ -1,3 +1,17 @@
+2005-08-13  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclObj.c:	Extended Bignum auto-narrowing to auto-narrow
+	to tclWideIntType when appropriate; this helps keep things working as
+	the bytecode execution code is migrated to supporting bignums.
+
+	* generic/tclExecute.c:	Major overhaul of IllegalExprOperandType.
+	Changed several TclNewFooObj() calls to more logically appropriate
+	ones.  Added several TODO comments marking opportunies for future
+	work.  Made more use of the eePtr->constants.  Made INST_UMINUS
+	bignum aware.
+
 2005-08-12  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]
