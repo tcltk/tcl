@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.20 2005/08/15 03:16:47 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.21 2005/08/15 16:56:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3098,6 +3098,7 @@ TclExecuteByteCode(interp, codePtr)
 	int s1len, s2len, iResult;
 	Tcl_Obj *valuePtr, *value2Ptr;
 
+    stringCompare:
 	value2Ptr = *tosPtr;
 	valuePtr = *(tosPtr - 1);
 
@@ -3154,6 +3155,30 @@ TclExecuteByteCode(interp, codePtr)
 	if (iResult == 0) {
 	    iResult = s1len - s2len;
 	}
+
+	if (*pc != INST_STR_CMP) {
+	    /* Take care of the opcodes that goto'ed into here */
+	    switch (*pc) {
+	    case INST_EQ:
+		iResult = (iResult == 0);
+		break;
+	    case INST_NEQ:
+		iResult = (iResult != 0);
+		break;
+	    case INST_LT:
+		iResult = (iResult < 0);
+		break;
+	    case INST_GT:
+		iResult = (iResult > 0);
+		break;
+	    case INST_LE:
+		iResult = (iResult <= 0);
+		break;
+	    case INST_GE:
+		iResult = (iResult >= 0);
+		break;
+	    }
+	} 
 	if (iResult < 0) {
 	    TclNewIntObj(objResultPtr, -1);
 	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), -1));
@@ -3292,17 +3317,20 @@ TclExecuteByteCode(interp, codePtr)
 	 * We will compute value op value2.
 	 */
 
-	Tcl_ObjType *t1Ptr, *t2Ptr;
-	char *s1 = NULL;	/* Init. avoids compiler warning. */
-	char *s2 = NULL;	/* Init. avoids compiler warning. */
-	long i2 = 0;		/* Init. avoids compiler warning. */
 	double d1 = 0.0;	/* Init. avoids compiler warning. */
 	double d2 = 0.0;	/* Init. avoids compiler warning. */
 	long iResult = 0;	/* Init. avoids compiler warning. */
 	Tcl_Obj *valuePtr, *value2Ptr;
-	int length;
-	Tcl_WideInt w;
+
+#if 0
 	long i;
+	Tcl_WideInt w;
+	int length;
+	char *s1 = NULL;	/* Init. avoids compiler warning. */
+	char *s2 = NULL;	/* Init. avoids compiler warning. */
+	long i2 = 0;		/* Init. avoids compiler warning. */
+	Tcl_ObjType *t1Ptr, *t2Ptr;
+
 
 	value2Ptr = *tosPtr;
 	valuePtr  = *(tosPtr - 1);
@@ -3532,6 +3560,96 @@ TclExecuteByteCode(interp, codePtr)
 	}
 
 	TRACE(("%.20s %.20s => %ld\n", O2S(valuePtr), O2S(value2Ptr), iResult));
+#else
+	int arg1Numeric, arg2Numeric;
+
+	valuePtr = *(tosPtr - 1);
+	arg1Numeric = (TCL_OK == Tcl_GetDoubleFromObj(NULL, valuePtr, &d1));
+	if (!arg1Numeric && (valuePtr->typePtr == &tclDoubleType)) {
+	    /* NaN first arg: NaN != to everything, other compares are false */
+	    iResult = (*pc == INST_NEQ);
+	    goto foundResult;
+	}
+	value2Ptr = *tosPtr;
+	if (valuePtr == value2Ptr) {
+	    switch (*pc) {
+	    case INST_EQ:
+	    case INST_LE:
+	    case INST_GE:
+		iResult = 1;
+		goto foundResult;
+	    case INST_NEQ:
+	    case INST_LT:
+	    case INST_GT:
+		iResult = 0;
+		goto foundResult;
+	    }
+	}
+	arg2Numeric = (TCL_OK == Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2));
+	if (!arg2Numeric && (value2Ptr->typePtr == &tclDoubleType)) {
+	    /* NaN 2nd arg: NaN != to everything, other compares are false */
+	    iResult = (*pc == INST_NEQ);
+	    goto foundResult;
+	}
+	if (!arg1Numeric || !arg2Numeric) {
+	    /* At least one non-numeric argument - compare as strings */
+	    goto stringCompare;
+	}
+	if (valuePtr->typePtr == &tclDoubleType
+	    || value2Ptr->typePtr == &tclDoubleType) {
+	    /* At least one double - compare as doubles */
+	    switch (*pc) {
+	    case INST_EQ:
+		iResult = d1 == d2;
+		break;
+	    case INST_NEQ:
+		iResult = d1 != d2;
+		break;
+	    case INST_LT:
+		iResult = d1 < d2;
+		break;
+	    case INST_GT:
+		iResult = d1 > d2;
+		break;
+	    case INST_LE:
+		iResult = d1 <= d2;
+		break;
+	    case INST_GE:
+		iResult = d1 >= d2;
+		break;
+	    }
+	} else {
+	    /* Compare as bignums */
+	    /* TODO: more efficient comparisons of narrow native integers */
+	    mp_int big1, big2;
+	    int compare;
+	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    compare = mp_cmp(&big1, &big2);
+	    mp_clear(&big1);
+	    mp_clear(&big2);
+	    switch (*pc) {
+	    case INST_EQ:
+		iResult = (compare == MP_EQ);
+		break;
+	    case INST_NEQ:
+		iResult = (compare != MP_EQ);
+		break;
+	    case INST_LT:
+		iResult = (compare == MP_LT);
+		break;
+	    case INST_GT:
+		iResult = (compare == MP_GT);
+		break;
+	    case INST_LE:
+		iResult = (compare != MP_GT);
+		break;
+	    case INST_GE:
+		iResult = (compare != MP_LT);
+		break;
+	    }
+	}
+#endif
 
 	/*
 	 * Peep-hole optimisation: if you're about to jump, do jump from here.

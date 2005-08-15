@@ -1,3 +1,10 @@
+2005-08-15  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclExecute.c:	Updated execution of comparison bytecodes
+	to be bignum-aware, routing string compares through INST_STR_CMP.
+
 2005-08-14  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]
