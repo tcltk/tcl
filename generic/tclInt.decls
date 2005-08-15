@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.8 2005/08/15 18:13:59 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.9 2005/08/15 20:46:02 dgp Exp $
 
 library tcl
 
@@ -553,9 +553,9 @@ declare 138 generic {
 #	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
 #	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
 #}
-declare 140 generic {
-    int TclLooksLikeInt(CONST char *bytes, int length)
-}
+#declare 140 generic {
+#    int TclLooksLikeInt(CONST char *bytes, int length)
+#}
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
     CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)

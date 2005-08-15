@@ -2,6 +2,16 @@
 
 	[kennykb_numerics_branch]	Updates from HEAD.
 
+
+	* generic/tclInt.decls: Deleted TclLooksLikeInt() and all callers.
+	* generic/tclUtil.c:
+	* generic/tclCompCmds.c:
+
+	* generic/tclBasic.c:	Rewrite of VerifyExprObjType().
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 	* generic/tclExecute.c:	Updated execution of comparison bytecodes
 	to be bignum-aware, routing string compares through INST_STR_CMP.
 

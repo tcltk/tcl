@@ -12,9 +12,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
 <<<<<<< tclIntDecls.h
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.8 2005/08/15 18:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.9 2005/08/15 20:46:02 dgp Exp $
 =======
- * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.8 2005/08/15 18:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75.2.9 2005/08/15 20:46:02 dgp Exp $
 >>>>>>> 1.83
  */
 
@@ -688,12 +688,7 @@ EXTERN CONST84_RETURN char * TclGetEnv _ANSI_ARGS_((CONST char * name,
 				Tcl_DString * valuePtr));
 #endif
 /* Slot 139 is reserved */
-#ifndef TclLooksLikeInt_TCL_DECLARED
-#define TclLooksLikeInt_TCL_DECLARED
-/* 140 */
-EXTERN int		TclLooksLikeInt _ANSI_ARGS_((CONST char * bytes, 
-				int length));
-#endif
+/* Slot 140 is reserved */
 #ifndef TclpGetCwd_TCL_DECLARED
 #define TclpGetCwd_TCL_DECLARED
 /* 141 */
@@ -1267,7 +1262,7 @@ typedef struct TclIntStubs {
     void *reserved137;
     CONST84_RETURN char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
     void *reserved139;
-    int (*tclLooksLikeInt) _ANSI_ARGS_((CONST char * bytes, int length)); /* 140 */
+    void *reserved140;
     CONST84_RETURN char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
     int (*tclSetByteCodeFromAny) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData)); /* 142 */
     int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
@@ -1806,10 +1801,7 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetEnv) /* 138 */
 #endif
 /* Slot 139 is reserved */
-#ifndef TclLooksLikeInt
-#define TclLooksLikeInt \
-	(tclIntStubsPtr->tclLooksLikeInt) /* 140 */
-#endif
+/* Slot 140 is reserved */
 #ifndef TclpGetCwd
 #define TclpGetCwd \
 	(tclIntStubsPtr->tclpGetCwd) /* 141 */

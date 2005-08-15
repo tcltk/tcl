@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.15 2005/08/02 18:16:11 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.16 2005/08/15 20:46:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2170,6 +2170,7 @@ TclNeedSpace(start, end)
     }
     return 1;
 }
+#if 0
 
 /*
  *----------------------------------------------------------------------
@@ -2223,6 +2224,7 @@ TclLooksLikeInt(bytes, length)
 
     return (0 != TclParseInteger(p, length));
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

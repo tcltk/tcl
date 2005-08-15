@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.2.6 2005/08/02 18:15:17 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.2.7 2005/08/15 20:46:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -611,6 +611,7 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
 	    word = incrTokenPtr[1].start;
 	    numBytes = incrTokenPtr[1].size;
 
+#if 0
 	    /*
 	     * Note there is a danger that modifying the string could have
 	     * undesirable side effects.  In this case, TclLooksLikeInt has no
@@ -620,6 +621,7 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
 	    if (!TclLooksLikeInt(word, numBytes)) {
 		return TCL_ERROR;
 	    }
+#endif
 
 	    /*
 	     * Now try to really parse the number.
@@ -1959,7 +1961,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    CONST char *word = incrTokenPtr[1].start;
 	    int numBytes = incrTokenPtr[1].size;
-
+#if 0
 	    /*
 	     * Note there is a danger that modifying the string could have
 	     * undesirable side effects.  In this case, TclLooksLikeInt has
@@ -1967,6 +1969,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	     */
 
 	    if (TclLooksLikeInt(word, numBytes)) {
+#endif
 		int code;
 		Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 		Tcl_IncrRefCount(intObj);
@@ -1976,7 +1979,9 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 			&& (-127 <= immValue) && (immValue <= 127)) {
 		    haveImmValue = 1;
 		}
+#if 0
 	    }
+#endif
 	    if (!haveImmValue) {
 		PushLiteral(envPtr, word, numBytes);
 	    }
@@ -2280,8 +2285,11 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
-	    TclLooksLikeInt(varTokenPtr[1].start, varTokenPtr[1].size)) {
+    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
+#if 0
+	    && TclLooksLikeInt(varTokenPtr[1].start, varTokenPtr[1].size)
+#endif
+	    ) {
 	Tcl_Obj *tmpObj;
 	int idx, result;
 

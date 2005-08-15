@@ -9,9 +9,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
 <<<<<<< tclStubInit.c
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.11 2005/08/15 18:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.12 2005/08/15 20:46:02 dgp Exp $
 =======
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.11 2005/08/15 18:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.12 2005/08/15 20:46:02 dgp Exp $
 >>>>>>> 1.121
  */
 
@@ -228,7 +228,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 137 */
     TclGetEnv, /* 138 */
     NULL, /* 139 */
-    TclLooksLikeInt, /* 140 */
+    NULL, /* 140 */
     TclpGetCwd, /* 141 */
     TclSetByteCodeFromAny, /* 142 */
     TclAddLiteralObj, /* 143 */

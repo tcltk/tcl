@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.14 2005/08/11 16:29:23 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.15 2005/08/15 20:46:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5529,6 +5529,7 @@ VerifyExprObjType(interp, objPtr)
 				 * function. */
     Tcl_Obj *objPtr;		/* Points to the object to type check. */
 {
+#if 0
     if (IS_NUMERIC_TYPE(objPtr->typePtr)) {
 	return TCL_OK;
     } else {
@@ -5556,6 +5557,24 @@ VerifyExprObjType(interp, objPtr)
 	}
 	return result;
     }
+#else
+    double d;
+
+    /* TODO: more efficient routine ? */
+    if (TCL_OK == Tcl_GetDoubleFromObj(NULL, objPtr, &d)) {
+	return TCL_OK;
+    }
+    if (objPtr->typePtr == &tclDoubleType) {
+	/* NaN is acceptable value */
+	return TCL_OK;
+    }
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"argument to math function didn't have numeric value", -1));
+	TclCheckBadOctal(interp, Tcl_GetString(objPtr));
+    }
+    return TCL_ERROR;
+#endif
 }
 
 /*
