@@ -1,3 +1,16 @@
+2005-08-14  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclExecute.c:	Updated execution of arithmetic bytecodes
+	to be bignum-aware, and to allow calculations on NaN to produce
+	a NaN result.  INST_UMINUS updated to call mp_neg.
+
+	* generic/tclTomMath.h:	Added mp_and, mp_expt_d, and mp_neg to
+	* unix/Makefile.in:	routines from libtommath used by Tcl.
+	* win/Makefile.in:
+	* win/makefile.vc:
+
 2005-08-13  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

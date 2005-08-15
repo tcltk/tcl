@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.13 2005/08/10 18:21:54 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.14 2005/08/15 03:16:48 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -314,16 +314,17 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclTomMathInterface.o
 
 TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
-	bn_fast_s_mp_sqr.o bn_mp_add.o \
+	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
         bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
         bn_mp_cmp.o bn_mp_cmp_mag.o bn_mp_copy.o bn_mp_count_bits.o \
         bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o \
-        bn_mp_exch.o bn_mp_grow.o bn_mp_init.o bn_mp_init_copy.o \
-        bn_mp_init_multi.o bn_mp_init_set.o \
+        bn_mp_exch.o bn_mp_expt_d.o bn_mp_grow.o bn_mp_init.o \
+	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_mp_karatsuba_mul.o \
 	bn_mp_karatsuba_sqr.o \
         bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
-        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_radix_size.o bn_mp_radix_smap.o \
+        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o \
+	bn_mp_radix_size.o bn_mp_radix_smap.o \
         bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sub.o bn_mp_sub_d.o \
         bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
@@ -436,6 +437,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_fast_s_mp_sqr.c \
 	$(TOMMATH_DIR)/bn_mp_add.c \
 	$(TOMMATH_DIR)/bn_mp_add_d.c \
+	$(TOMMATH_DIR)/bn_mp_and.c \
 	$(TOMMATH_DIR)/bn_mp_clamp.c \
 	$(TOMMATH_DIR)/bn_mp_clear.c \
 	$(TOMMATH_DIR)/bn_mp_clear_multi.c \
@@ -449,6 +451,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_div_2d.c \
 	$(TOMMATH_DIR)/bn_mp_div_3.c \
 	$(TOMMATH_DIR)/bn_mp_exch.c \
+	$(TOMMATH_DIR)/bn_mp_expt_d.c \
 	$(TOMMATH_DIR)/bn_mp_grow.c \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
@@ -464,6 +467,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_mul_2.c \
 	$(TOMMATH_DIR)/bn_mp_mul_2d.c \
 	$(TOMMATH_DIR)/bn_mp_mul_d.c \
+	$(TOMMATH_DIR)/bn_mp_neg.c \
 	$(TOMMATH_DIR)/bn_mp_radix_size.c \
 	$(TOMMATH_DIR)/bn_mp_radix_smap.c \
 	$(TOMMATH_DIR)/bn_mp_read_radix.c \
@@ -1195,6 +1199,9 @@ bn_mp_add.o: $(TOMMATH_DIR)/bn_mp_add.c
 bn_mp_add_d.o: $(TOMMATH_DIR)/bn_mp_add_d.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add_d.c
 
+bn_mp_and.o: $(TOMMATH_DIR)/bn_mp_and.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_and.c
+
 bn_mp_clamp.o: $(TOMMATH_DIR)/bn_mp_clamp.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clamp.c
 
@@ -1233,6 +1240,9 @@ bn_mp_div_3.o: $(TOMMATH_DIR)/bn_mp_div_3.c
 
 bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
+
+bn_mp_expt_d.o: $(TOMMATH_DIR)/bn_mp_expt_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d.c
 
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
@@ -1278,6 +1288,9 @@ bn_mp_mul_2d.o: $(TOMMATH_DIR)/bn_mp_mul_2d.c
 
 bn_mp_mul_d.o: $(TOMMATH_DIR)/bn_mp_mul_d.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_d.c
+
+bn_mp_neg.o: $(TOMMATH_DIR)/bn_mp_neg.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_neg.c
 
 bn_mp_radix_size.o: $(TOMMATH_DIR)/bn_mp_radix_size.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c

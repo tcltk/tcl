@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.84.2.8 2005/08/10 18:21:54 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84.2.9 2005/08/15 03:16:49 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -288,6 +288,7 @@ TOMMATH_OBJS = \
 	bn_fast_s_mp_sqr.${OBJEXT} \
 	bn_mp_add.${OBJEXT} \
 	bn_mp_add_d.${OBJEXT} \
+	bn_mp_and.${OBJEXT} \
 	bn_mp_clamp.${OBJEXT} \
 	bn_mp_clear.${OBJEXT} \
 	bn_mp_clear_multi.${OBJEXT} \
@@ -301,6 +302,7 @@ TOMMATH_OBJS = \
 	bn_mp_div_2d.${OBJEXT} \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
+	bn_mp_expt_d.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
@@ -316,6 +318,7 @@ TOMMATH_OBJS = \
 	bn_mp_mul_2.${OBJEXT} \
 	bn_mp_mul_2d.${OBJEXT} \
 	bn_mp_mul_d.${OBJEXT} \
+	bn_mp_neg.${OBJEXT} \
 	bn_mp_radix_size.${OBJEXT} \
 	bn_mp_radix_smap.${OBJEXT} \
 	bn_mp_read_radix.${OBJEXT} \
