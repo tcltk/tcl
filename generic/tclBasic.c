@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.32 2005/08/02 16:38:16 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.33 2005/08/15 17:23:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5153,12 +5153,20 @@ ExprAbsFunc(clientData, interp, objc, objv)
 	if (i < 0) {
 	    iResult = -i;
 	    if (iResult < 0) {
-		/* FIXME: This should promote to wide! */
+#ifdef TCL_WIDE_INT_IS_LONG
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
+#else 
+		/*
+		 * Special case: abs(MIN_INT) must promote to wide.
+		 */
+		TclNewWideIntObj(oResult, -(Tcl_WideInt) i);
+		Tcl_SetObjResult(interp, oResult);
+		return TCL_OK;
+#endif
 	    }
 	} else {
 	    iResult = i;

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.10 2005/07/26 04:12:33 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.11 2005/08/15 17:23:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -141,6 +141,7 @@ typedef struct LocaleTable {
 
 static CONST LocaleTable localeTable[] = {
 	    {"",		"iso8859-1"},
+		    {"ansi-1251",	"cp1251"},
 	    {"ansi_x3.4-1968",	"iso8859-1"},
     {"ascii",		"ascii"},
     {"big5",		"big5"},

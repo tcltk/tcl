@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.5 2004/09/08 23:03:28 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.6 2005/08/15 17:23:22 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -179,12 +179,6 @@ USE_THREAD_ALLOC = 1
 !else
 USE_THREAD_ALLOC = 0
 !endif
-!if [nmakehlp -f $(OPTS) "thrdstorage"]
-!message *** Doing thrdstorage
-USE_THREAD_STORAGE = 1
-!else
-USE_THREAD_STORAGE = 0
-!endif
 !if [nmakehlp -f $(OPTS) "unchecked"]
 !message *** Doing unchecked
 UNCHECKED = 1
@@ -328,9 +322,6 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
 !if $(USE_THREAD_ALLOC)
 OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
-!endif
-!if $(USE_THREAD_STORAGE)
-OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_STORAGE=1
 !endif
 !endif
 !if $(STATIC_BUILD)

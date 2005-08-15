@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.3 2004/12/09 23:00:28 dgp Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.4 2005/08/15 17:23:06 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
@@ -82,7 +82,7 @@ The \fBTcl_SetReturnOptions\fR and \fBTcl_GetReturnOptions\fR
 routines expose the same capabilities as the \fBreturn\fR and
 \fBcatch\fR commands, respectively, in the form of a C interface.
 .PP
-\fBTcl_GetObjResult\fR retrieves the dictionary of return options
+\fBTcl_GetReturnOptions\fR retrieves the dictionary of return options
 from an interpreter following a script evaluation.
 Routines such as \fBTcl_Eval\fR are called to evaluate a
 script in an interpreter.  These routines return an integer
@@ -91,7 +91,7 @@ both a result and a dictionary of return options generated
 by script evaluation.  Just as \fBTcl_GetObjResult\fR retrieves
 the result, \fBTcl_GetReturnOptions\fR retrieves the dictionary
 of return options.  The integer completion code should be
-passed as the \fIcode\fR argument to \fBTcl_GetObjResult\fR
+passed as the \fIcode\fR argument to \fBTcl_GetReturnOptions\fR
 so that all required options will be present in the dictionary.
 Specifically, a \fIcode\fR value of \fBTCL_ERROR\fR will
 ensure that entries for the keys \fB-errorinfo\fR,
@@ -201,7 +201,7 @@ via a call to \fBTcl_GetReturnOptions\fR) often makes up
 a useful part of the \fImessage\fR passed to \fBTcl_AddErrorInfo\fR.
 .PP
 \fBTcl_AddObjErrorInfo\fR is nearly identical
-to \fBTcl_AddObjErrorInfo\fR, except that it has an additional \fIlength\fR
+to \fBTcl_AddErrorInfo\fR, except that it has an additional \fIlength\fR
 argument.  This allows the \fImessage\fR string to contain 
 embedded null bytes.  This is essentially never a good idea.
 If the \fImessage\fR needs to contain the null character \fBU+0000\fR,
@@ -267,7 +267,7 @@ setting \fBerrorInfo\fR or \fBerrorCode\fR directly with
 \fBTcl_ObjSetVar2\fR.
 .PP
 If the procedure \fBTcl_ResetResult\fR is called,
-it clears all of the state of ther interpreter associated with
+it clears all of the state of the interpreter associated with
 script evaluation, including the entire return options dictionary.
 In particular, the \fB-errorinfo\fR and \fB-errorcode\fR options
 are reset.  
@@ -277,7 +277,7 @@ occurred after all.
 The global variables \fBerrorInfo\fR and
 \fBerrorCode\fR are not modified by \fBTcl_ResetResult\fR
 so they continue to hold a record of information about the
-more recent error seen in an interpreter.
+most recent error seen in an interpreter.
 
 .SH "SEE ALSO"
 Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_Interp, Tcl_ResetResult, Tcl_SetErrno

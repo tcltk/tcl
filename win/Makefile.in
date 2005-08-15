@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.11 2005/05/11 16:58:53 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.12 2005/08/15 17:23:22 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -719,7 +719,7 @@ clean: cleanhelp
 
 distclean: clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj
+		tcl.hpj config.status.lineno
 
 #
 # Regenerate the stubs files.

@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.13 2005/05/11 16:58:53 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.14 2005/08/15 17:23:22 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -986,7 +986,6 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\clock.tcl"    "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\tm.tcl"       "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)\"

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.8 2005/07/26 04:12:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.9 2005/08/15 17:23:22 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -587,7 +587,7 @@ DoCopyFile(
      * arguments is a char block device.
      */
 
-#ifndef HAVE_NO_SEHq
+#ifndef HAVE_NO_SEH
     __try {
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
 	    retval = TCL_OK;

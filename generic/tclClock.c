@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.11 2005/07/26 04:11:52 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.12 2005/08/15 17:23:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -207,10 +207,8 @@ TclClockLocaltimeObjCmd( ClientData clientData,
 
 static struct tm *
 ThreadSafeLocalTime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds
-				 * since the local system's epoch
-				 */
-
+    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+				 * local system's epoch */
 {
     /*
      * Get a thread-local buffer to hold the returned time.
@@ -218,20 +216,21 @@ ThreadSafeLocalTime(timePtr)
 
     struct tm *tmPtr = (struct tm *)
 	    Tcl_GetThreadData(&tmKey, (int) sizeof(struct tm));
-    struct tm *sysTmPtr;
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
+    struct tm *sysTmPtr;
+
     Tcl_MutexLock(&clockMutex);
     sysTmPtr = localtime(timePtr);
-    if ( sysTmPtr == NULL ) {
-	Tcl_MutexUnlock( &clockMutex );
+    if (sysTmPtr == NULL) {
+	Tcl_MutexUnlock(&clockMutex);
 	return NULL;
     } else {
 	memcpy((VOID *) tmPtr, (VOID *) localtime(timePtr), sizeof(struct tm));
 	Tcl_MutexUnlock(&clockMutex);
     }
-#endif    
+#endif
     return tmPtr;
 }
 
@@ -320,8 +319,8 @@ TclClockMktimeObjCmd(  ClientData clientData,
     }
     toConvert.tm_sec = i;
     toConvert.tm_isdst = -1;
-    toConvert.tm_wday = 0;
-    toConvert.tm_yday = 0;
+    toConvert.tm_wday = -1;
+    toConvert.tm_yday = -1;
 
     /* Convert the time.  It is rumored that mktime is not thread
      * safe on some platforms. */
@@ -335,7 +334,9 @@ TclClockMktimeObjCmd(  ClientData clientData,
 
     /* Return the converted time, or an error if conversion fails */
 
-    if ( localErrno != 0 ) {
+    if ( localErrno != 0
+	 || ( convertedTime == -1
+	      && toConvert.tm_yday == -1 ) ) {
 	Tcl_SetObjResult
 	    ( interp,
 	      Tcl_NewStringObj( "time value too large/small to represent", 

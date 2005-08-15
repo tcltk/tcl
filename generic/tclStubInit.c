@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.23 2005/07/26 04:12:20 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.24 2005/08/15 17:23:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -268,19 +268,19 @@ TclIntStubs tclIntStubs = {
     NULL, /* 181 */
     TclpLocaltime, /* 182 */
     TclpGmtime, /* 183 */
-    TclThreadStorageLockInit, /* 184 */
-    TclThreadStorageLock, /* 185 */
-    TclThreadStorageUnlock, /* 186 */
-    TclThreadStoragePrint, /* 187 */
-    TclThreadStorageGetHashTable, /* 188 */
-    TclThreadStorageInit, /* 189 */
-    TclThreadStorageDataKeyInit, /* 190 */
-    TclThreadStorageDataKeyGet, /* 191 */
-    TclThreadStorageDataKeySet, /* 192 */
-    TclFinalizeThreadStorageThread, /* 193 */
-    TclFinalizeThreadStorage, /* 194 */
-    TclFinalizeThreadStorageData, /* 195 */
-    TclFinalizeThreadStorageDataKey, /* 196 */
+    NULL, /* 184 */
+    NULL, /* 185 */
+    NULL, /* 186 */
+    NULL, /* 187 */
+    NULL, /* 188 */
+    NULL, /* 189 */
+    NULL, /* 190 */
+    NULL, /* 191 */
+    NULL, /* 192 */
+    NULL, /* 193 */
+    NULL, /* 194 */
+    NULL, /* 195 */
+    NULL, /* 196 */
     NULL, /* 197 */
     TclObjGetFrame, /* 198 */
     NULL, /* 199 */

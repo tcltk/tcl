@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.11 2005/07/26 04:12:22 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.12 2005/08/15 17:23:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35464,6 +35464,19 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	::tcl::clock::ClearCaches
     } \
     -result {<-0500>+05:00:00<-0400>+04:00:00,M4.1.0/02:00:00,M10.5.0/02:00:00 { 7:00:00 PM -0500} 1969}
+
+test clock-50.1 {format / scan -1 as a local time} {
+    if {[catch {
+	clock scan \
+	    [clock format -1 -format %Y%m%d%H%M%S -timezone :localtime] \
+	    -format %Y%m%d%H%M%S -timezone :localtime
+    } result]} {
+	if { [regexp "clock value too" $result] } {
+	    set result -1
+	}
+    }
+    set result
+} -1
 
 # cleanup
 

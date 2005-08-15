@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6.4.5 2005/07/26 04:12:20 dgp Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.6.4.6 2005/08/15 17:23:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -83,43 +83,22 @@ Tcl_GetThreadData(keyPtr, size)
 {
     VOID *result;
 #ifdef TCL_THREADS
-
-    /*
-     * See if this is the first thread to init this key.
-     */
-
-    if (*keyPtr == NULL) {
-#ifdef USE_THREAD_STORAGE
-	TclThreadStorageDataKeyInit(keyPtr);
-#else
-	TclpThreadDataKeyInit(keyPtr);
-#endif /* USE_THREAD_STORAGE */
-    }
-
     /*
      * Initialize the key for this thread.
      */
-#ifdef USE_THREAD_STORAGE
-    result = TclThreadStorageDataKeyGet(keyPtr);
-#else
     result = TclpThreadDataKeyGet(keyPtr);
-#endif /* USE_THREAD_STORAGE */
 
     if (result == NULL) {
 	result  = (VOID *)ckalloc((size_t)size);
 	memset(result, 0, (size_t)size);
-#ifdef USE_THREAD_STORAGE
-	TclThreadStorageDataKeySet(keyPtr, result);
-#else
 	TclpThreadDataKeySet(keyPtr, result);
-#endif /* USE_THREAD_STORAGE */
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
 	result = (VOID *)ckalloc((size_t)size);
 	memset((char *)result, 0, (size_t)size);
 	*keyPtr = (Tcl_ThreadDataKey)result;
-	TclRememberDataKey(keyPtr);
+	RememberSyncObject((char *)keyPtr, &keyRecord);
     }
     result = *(VOID **)keyPtr;
 #endif /* TCL_THREADS */
@@ -149,60 +128,13 @@ TclThreadDataKeyGet(keyPtr)
 				 * (pthread_key_t **) */
 {
 #ifdef TCL_THREADS
-#ifdef USE_THREAD_STORAGE
-    return (VOID *)TclThreadStorageDataKeyGet(keyPtr);
-#else
     return (VOID *)TclpThreadDataKeyGet(keyPtr);
-#endif /* USE_THREAD_STORAGE */
 #else /* TCL_THREADS */
     char *result = *(char **)keyPtr;
     return (VOID *)result;
 #endif /* TCL_THREADS */
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * TclThreadDataKeySet --
- *
- *	This function sets a thread local storage pointer.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The assigned value will be returned by TclpThreadDataKeyGet.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclThreadDataKeySet(keyPtr, data)
-    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk, really
-				 * (pthread_key_t **) */
-    VOID *data;			/* Thread local storage */
-{
-#ifdef TCL_THREADS
-
-    if (*keyPtr == NULL) {
-#ifdef USE_THREAD_STORAGE
-	TclThreadStorageDataKeyInit(keyPtr);
-#else
-	TclpThreadDataKeyInit(keyPtr);
-#endif /* USE_THREAD_STORAGE */
-    }
-
-#ifdef USE_THREAD_STORAGE
-    TclThreadStorageDataKeySet(keyPtr, data);
-#else
-    TclpThreadDataKeySet(keyPtr, data);
-#endif /* USE_THREAD_STORAGE */
-
-#else /* TCL_THREADS */
-    *keyPtr = (Tcl_ThreadDataKey) data;
-#endif /* TCL_THREADS */
-}
 
 /*
  *----------------------------------------------------------------------
@@ -337,29 +269,6 @@ Tcl_MutexFinalize(mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclRememberDataKey
- *
- *	Keep a list of thread data keys used during finalization.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Add to the key list.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclRememberDataKey(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;
-{
-    RememberSyncObject((char *)keyPtr, &keyRecord);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclRememberCondition
  *
  *	Keep a list of condition variables used during finalization.
@@ -427,26 +336,7 @@ Tcl_ConditionFinalize(condPtr)
 void
 TclFinalizeThreadData()
 {
-    int i;
-
-    TclpMasterLock();
-    for (i=0 ; i<keyRecord.num ; i++) {
-	Tcl_ThreadDataKey *keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
-
-#ifdef TCL_THREADS
-#ifdef USE_THREAD_STORAGE
-	TclFinalizeThreadStorageData(keyPtr);
-#else
-	TclpFinalizeThreadData(keyPtr);
-#endif /* USE_THREAD_STORAGE */
-#else /* TCL_THREADS */
-	if (*keyPtr != NULL) {
-	    ckfree((char *)*keyPtr);
-	    *keyPtr = NULL;
-	}
-#endif /* TCL_THREADS */
-    }
-    TclpMasterUnlock();
+    TclpFinalizeThreadDataThread();
 }
 
 /*
@@ -470,19 +360,23 @@ void
 TclFinalizeSynchronization()
 {
 #ifdef TCL_THREADS
+    void* blockPtr;
     Tcl_ThreadDataKey *keyPtr;
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
     int i;
 
     TclpMasterLock();
+
+    /* 
+     * If we're running unthreaded, the TSD blocks are simply stored
+     * inside their thread data keys.  Free them here.
+     */
+
     for (i=0 ; i<keyRecord.num ; i++) {
 	keyPtr = (Tcl_ThreadDataKey *)keyRecord.list[i];
-#ifdef USE_THREAD_STORAGE
-	TclFinalizeThreadStorageDataKey(keyPtr);
-#else
-	TclpFinalizeThreadDataKey(keyPtr);
-#endif /* USE_THREAD_STORAGE */
+	blockPtr = (void*) *keyPtr;
+	ckfree(blockPtr);
     }
     if (keyRecord.list != NULL) {
 	ckfree((char *)keyRecord.list);
@@ -492,12 +386,10 @@ TclFinalizeSynchronization()
     keyRecord.num = 0;
 
     /*
-     * Call platform specific thread storage master cleanup.
+     * Call thread storage master cleanup.
      */
 
-#ifdef USE_THREAD_STORAGE
     TclFinalizeThreadStorage();
-#endif /* USE_THREAD_STORAGE */
 
     for (i=0 ; i<mutexRecord.num ; i++) {
 	mutexPtr = (Tcl_Mutex *)mutexRecord.list[i];
