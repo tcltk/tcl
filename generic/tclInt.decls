@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.7 2005/08/02 18:15:40 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.8 2005/08/15 18:13:59 dgp Exp $
 
 library tcl
 
@@ -756,45 +756,48 @@ declare 183 generic {
 
 # For the new "Thread Storage" subsystem.
 
-declare 184 generic {
-     void TclThreadStorageLockInit(void)     
-}
-declare 185 generic {
-     void TclThreadStorageLock(void)     
-}
-declare 186 generic {
-     void TclThreadStorageUnlock(void)     
-}
-declare 187 generic {
-     void TclThreadStoragePrint(FILE *outFile, int flags)     
-}
-declare 188 generic {
-     Tcl_HashTable *TclThreadStorageGetHashTable(Tcl_ThreadId id)     
-}
-declare 189 generic {
-     Tcl_HashTable *TclThreadStorageInit(Tcl_ThreadId id, void *reserved)     
-}
-declare 190 generic {
-     void TclThreadStorageDataKeyInit(Tcl_ThreadDataKey *keyPtr)     
-}
-declare 191 generic {
-     void *TclThreadStorageDataKeyGet(Tcl_ThreadDataKey *keyPtr)     
-}
-declare 192 generic {
-     void TclThreadStorageDataKeySet(Tcl_ThreadDataKey *keyPtr, void *data)     
-}
-declare 193 generic {
-     void TclFinalizeThreadStorageThread(Tcl_ThreadId id)     
-}
-declare 194 generic {
-     void TclFinalizeThreadStorage(void)     
-}
-declare 195 generic {
-     void TclFinalizeThreadStorageData(Tcl_ThreadDataKey *keyPtr)     
-}
-declare 196 generic {
-     void TclFinalizeThreadStorageDataKey(Tcl_ThreadDataKey *keyPtr)
-}
+### REMOVED on grounds it should never have been exposed. All these
+### functions are now either static in tclThreadStorage.c or
+### MODULE_SCOPE.
+# declare 184 generic {
+#      void TclThreadStorageLockInit(void)
+# }
+# declare 185 generic {
+#      void TclThreadStorageLock(void)
+# }
+# declare 186 generic {
+#      void TclThreadStorageUnlock(void)
+# }
+# declare 187 generic {
+#      void TclThreadStoragePrint(FILE *outFile, int flags)
+# }
+# declare 188 generic {
+#      Tcl_HashTable *TclThreadStorageGetHashTable(Tcl_ThreadId id)
+# }
+# declare 189 generic {
+#      Tcl_HashTable *TclThreadStorageInit(Tcl_ThreadId id, void *reserved)
+# }
+# declare 190 generic {
+#      void TclThreadStorageDataKeyInit(Tcl_ThreadDataKey *keyPtr)
+# }
+# declare 191 generic {
+#      void *TclThreadStorageDataKeyGet(Tcl_ThreadDataKey *keyPtr)
+# }
+# declare 192 generic {
+#      void TclThreadStorageDataKeySet(Tcl_ThreadDataKey *keyPtr, void *data)
+# }
+# declare 193 generic {
+#      void TclFinalizeThreadStorageThread(Tcl_ThreadId id)
+# }
+# declare 194 generic {
+#      void TclFinalizeThreadStorage(void)
+# }
+# declare 195 generic {
+#      void TclFinalizeThreadStorageData(Tcl_ThreadDataKey *keyPtr)
+# }
+# declare 196 generic {
+#      void TclFinalizeThreadStorageDataKey(Tcl_ThreadDataKey *keyPtr)
+# }
 
 #
 # Added in tcl8.5a5 for compiler/executor experimentation.

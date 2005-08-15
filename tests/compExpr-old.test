@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr-old.test,v 1.11.2.3 2005/08/02 18:16:23 dgp Exp $
+# RCS: @(#) $Id: compExpr-old.test,v 1.11.2.4 2005/08/15 18:14:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -221,7 +221,8 @@ test compExpr-old-3.6 {CompileCondExpr: error compiling false arm} {
 test compExpr-old-3.7 {CompileCondExpr: long arms & nested cond exprs} {
     hello_world
 } {Hello world}
-test compExpr-old-3.8 {CompileCondExpr: long arms & nested cond exprs} {
+test compExpr-old-3.8 {CompileCondExpr: long arms & nested cond exprs} unix {
+    # Fails with a stack overflow on threaded Windows builds
     do_twelve_days
 } 2358
 

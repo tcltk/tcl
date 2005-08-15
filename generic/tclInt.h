@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.20 2005/08/10 18:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.21 2005/08/15 18:13:59 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2068,15 +2068,11 @@ MODULE_SCOPE void	TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));
 MODULE_SCOPE void	TclpFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutexPtr));
 MODULE_SCOPE void	TclpFinalizePipes _ANSI_ARGS_((void));
-MODULE_SCOPE void	TclpFinalizeThreadData _ANSI_ARGS_((
-			    Tcl_ThreadDataKey *keyPtr));
 MODULE_SCOPE int	TclpThreadCreate _ANSI_ARGS_((
 			    Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc proc,
 			    ClientData clientData,
 			    int stackSize, int flags));
-MODULE_SCOPE void	TclpFinalizeThreadDataKey _ANSI_ARGS_((
-			    Tcl_ThreadDataKey *keyPtr));
 MODULE_SCOPE int	TclpFindVariable _ANSI_ARGS_((CONST char *name,
 			    int *lengthPtr));
 MODULE_SCOPE void	TclpInitLibraryPath _ANSI_ARGS_((char **valuePtr,
@@ -2128,16 +2124,12 @@ MODULE_SCOPE void	TclpUnloadFile _ANSI_ARGS_((
 			    Tcl_LoadHandle loadHandle));
 MODULE_SCOPE VOID *	TclpThreadDataKeyGet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
-MODULE_SCOPE void	TclpThreadDataKeyInit _ANSI_ARGS_((
-			    Tcl_ThreadDataKey *keyPtr));
 MODULE_SCOPE void	TclpThreadDataKeySet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr, VOID *data));
 MODULE_SCOPE void	TclpThreadExit _ANSI_ARGS_((int status));
 MODULE_SCOPE int	TclpThreadGetStackSize _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclRememberCondition _ANSI_ARGS_((
 			    Tcl_Condition *mutex));
-MODULE_SCOPE void	TclRememberDataKey _ANSI_ARGS_((
-			    Tcl_ThreadDataKey *mutex));
 MODULE_SCOPE VOID	TclRememberJoinableThread _ANSI_ARGS_((
 			    Tcl_ThreadId id));
 MODULE_SCOPE void	TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
@@ -2178,6 +2170,9 @@ MODULE_SCOPE int	TclpLoadMemory _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_LoadHandle *loadHandle, 
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 #endif
+MODULE_SCOPE void	TclInitThreadStorage(void);
+MODULE_SCOPE void	TclpFinalizeThreadDataThread(void);
+MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 
 /*
  *----------------------------------------------------------------
