@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.12 2005/08/03 22:23:42 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28.2.13 2005/08/16 15:23:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -884,24 +884,6 @@ Tcl_Finalize()
 	Tcl_SetPanicProc(NULL);
 
 	/*
-	 * We defer unloading of packages until very late 
-	 * to avoid memory access issues.  Both exit callbacks and
-	 * synchronization variables may be stored in packages.
-	 * 
-	 * Note that TclFinalizeLoad unloads packages in the reverse
-	 * of the order they were loaded in (i.e. last to be loaded
-	 * is the first to be unloaded).  This can be important for
-	 * correct unloading when dependencies exist.
-	 * 
-	 * Once load has been finalized, we will have deleted any
-	 * temporary copies of shared libraries and can therefore
-	 * reset the filesystem to its original state.
-	 */
-
-	TclFinalizeLoad();
-	TclResetFilesystem();
-	
-	/*
 	 * There have been several bugs in the past that cause
 	 * exit handlers to be established during Tcl_Finalize
 	 * processing.  Such exit handlers leave malloc'ed memory,
@@ -930,6 +912,24 @@ Tcl_Finalize()
 	TclFinalizeThreadAlloc();
 #endif
 
+	/*
+	 * We defer unloading of packages until very late 
+	 * to avoid memory access issues.  Both exit callbacks and
+	 * synchronization variables may be stored in packages.
+	 * 
+	 * Note that TclFinalizeLoad unloads packages in the reverse
+	 * of the order they were loaded in (i.e. last to be loaded
+	 * is the first to be unloaded).  This can be important for
+	 * correct unloading when dependencies exist.
+	 * 
+	 * Once load has been finalized, we will have deleted any
+	 * temporary copies of shared libraries and can therefore
+	 * reset the filesystem to its original state.
+	 */
+
+	TclFinalizeLoad();
+	TclResetFilesystem();
+	
 	/*
 	 * At this point, there should no longer be any ckalloc'ed memory.
 	 */
