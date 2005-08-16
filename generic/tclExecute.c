@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.21 2005/08/15 16:56:49 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.22 2005/08/16 04:26:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -145,6 +145,8 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * Macros for testing floating-point values for certain special cases. Test
  * for not-a-number by comparing a value against itself; test for infinity by
  * comparing against the largest floating-point value.
+ *
+ * TODO: Eliminate these ?
  */
 
 #ifdef _MSC_VER
@@ -296,6 +298,8 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  *
  * GET_WIDE_OR_INT is the same as REQUIRE_WIDE_OR_INT except it never
  * generates an error message.
+ * 
+ * TODO: Eliminate
  */
 #define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
     (resultVar) = Tcl_GetWideIntFromObj(interp, (objPtr), &(wideVar));	\
@@ -305,6 +309,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(objPtr)->internalRep.longValue = (longVar)			\
 		= Tcl_WideAsLong(wideVar);				\
     }
+#if 0
 #define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
     (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
 	    &(wideVar));						\
@@ -314,8 +319,10 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(objPtr)->internalRep.longValue = (longVar)			\
 		= Tcl_WideAsLong(wideVar);				\
     }
+#endif
 /*
  * Combined with REQUIRE_WIDE_OR_INT, this gets a long value from an obj.
+ * TODO: Eliminate
  */
 #define FORCE_LONG(objPtr, longVar, wideVar)				\
     if ((objPtr)->typePtr == &tclWideIntType) {				\
@@ -323,8 +330,10 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     }
 #define IS_INTEGER_TYPE(typePtr)					\
 	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType || (typePtr) == &tclBignumType)
+#if 0
 #define IS_NUMERIC_TYPE(typePtr)					\
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
+#endif
 
 #define W0	Tcl_LongAsWide(0)
 /*
@@ -332,6 +341,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 #define LLD				"%" TCL_LL_MODIFIER "d"
 
+#if 0
 #ifndef TCL_WIDE_INT_IS_LONG
 /*
  * Extract a double value from a general numeric object.
@@ -352,6 +362,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
     }
 #endif /* TCL_WIDE_INT_IS_LONG */
+#endif
 
 static Tcl_ObjType dictIteratorType = {
     "dictIterator",
@@ -2969,6 +2980,7 @@ TclExecuteByteCode(interp, codePtr)
 	value2Ptr = *tosPtr;
 	valuePtr = *(tosPtr - 1);
 
+	/* TODO: Consider more efficient tests than strcmp() */
 	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 	result = Tcl_ListObjLength(interp, value2Ptr, &llen);
 	if (result != TCL_OK) {
@@ -3032,6 +3044,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_STR_NEQ: {
 	/*
 	 * String (in)equality check
+	 * TODO: Consider merging into INST_STR_CMP
 	 */
 	int iResult;
 	Tcl_Obj *valuePtr, *value2Ptr;
@@ -4618,6 +4631,7 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(1, 1, 1);
     }
 
+    case INST_BITNOT:
     case INST_UMINUS: {
 	/*
 	 * The operand must be numeric.  If the operand object is unshared
@@ -4725,10 +4739,20 @@ TclExecuteByteCode(interp, codePtr)
 	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
 	    /* Value is now numeric (including NaN) */
 	    if (result != TCL_OK) {
-	        /* Value is NaN : -NaN => NaN */
+	        /* Value is NaN */
+		if (*pc == INST_BITNOT) {
+		    /* ~NaN => error; arg must be an integer */
+		    goto error;
+		}
+		/* -NaN => NaN */
 		NEXT_INST_F(1, 0, 0);
 	    }
 	    if (valuePtr->typePtr == &tclDoubleType) {
+		if (*pc == INST_BITNOT) {
+		    /* ~ arg must be an integer */
+		    result = TCL_ERROR;
+		    goto error;
+		}
 		if (Tcl_IsShared(valuePtr)) {
 		    TclNewDoubleObj(objResultPtr, -d);
 		    NEXT_INST_F(1, 1, 1);
@@ -4740,6 +4764,13 @@ TclExecuteByteCode(interp, codePtr)
 		mp_int big;
 		Tcl_GetBignumFromObj(NULL, valuePtr, &big);
 		mp_neg(&big, &big);
+		if (*pc == INST_BITNOT) {
+		    /* ~a = - a - 1 */
+		    mp_int bigOne;
+		    Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		    mp_sub(&big, &bigOne, &big);
+		    mp_clear(&bigOne);
+		}
 		if (Tcl_IsShared(valuePtr)) {
 		    objResultPtr = Tcl_NewBignumObj(&big);
 		    NEXT_INST_F(1, 1, 1);
@@ -4747,16 +4778,17 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_SetBignumObj(valuePtr, &big);
 		NEXT_INST_F(1, 0, 0);
 	    }
-	} else {
-	    /* ... -$NonNumeric => raise an error */
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", s,
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    IllegalExprOperandType(interp, pc, valuePtr);
-	    goto checkForCatch;
 	}
+	/* ... -$NonNumeric => raise an error */
+    error:
+	TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
+		(valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	IllegalExprOperandType(interp, pc, valuePtr);
+	goto checkForCatch;
 #endif
     }
 
+#if 0
     case INST_BITNOT: {
 	/*
 	 * The operand must be an integer. If the operand object is unshared
@@ -4811,6 +4843,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
     }
+#endif
 
     case INST_CALL_BUILTIN_FUNC1: {
 	Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
@@ -6172,6 +6205,7 @@ IllegalExprOperandType(interp, pc, opndPtr)
 {
     Tcl_Obj *msg = Tcl_NewStringObj("can't use ", -1);
     double d;
+    int isNumeric;
     unsigned char opCode = *pc;
     CONST char *operator = operatorStrings[opCode - INST_LOR];
     if (opCode == INST_EXPON) {
@@ -6179,17 +6213,15 @@ IllegalExprOperandType(interp, pc, opndPtr)
     }
 
     /* TODO: Consider alternative that need not write to d */
-    Tcl_GetDoubleFromObj(NULL, opndPtr, &d);
+    isNumeric = (Tcl_GetDoubleFromObj(NULL, opndPtr, &d) == TCL_OK);
 
     if (opndPtr->typePtr == &tclDoubleType) {
-	if (IS_NAN(opndPtr->internalRep.doubleValue)) {
-	    Tcl_AppendToObj(msg, "non-numeric floating-point value", -1);
-	} else {
-	    Tcl_AppendToObj(msg, "floating-point value", -1);
+	if (!isNumeric) {
+	    Tcl_AppendToObj(msg, "non-numeric ", -1);
 	}
-    } else if (opndPtr->typePtr == &tclIntType
-	    || opndPtr->typePtr == &tclWideIntType
-	    || opndPtr->typePtr == &tclBignumType) {
+	Tcl_AppendToObj(msg, "floating-point value", -1);
+    } else if (isNumeric) {
+	/* TODO: check callers, might be able to eliminate this */
 	Tcl_AppendToObj(msg, "(big) integer", -1);
     } else {
         /* TODO: When to post "integer value too large to represent" ? */

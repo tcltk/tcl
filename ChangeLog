@@ -2,8 +2,12 @@
 
 	[kennykb_numerics_branch]	Updates from HEAD.
 
+	* generic/tclExecute.c:	More revisions to IllegalExprOperandType.
+	Merged INST_BITNOT with INST_UMINUS and make it bignum-aware
+	according to the rule: ~a = -a - 1.  Disabled unused code and
+	noted more TODOs.
 
-	* generic/tclInt.decls: Deleted TclLooksLikeInt() and all callers.
+	* generic/tclInt.decls: Disabled TclLooksLikeInt() and all callers.
 	* generic/tclUtil.c:
 	* generic/tclCompCmds.c:
 

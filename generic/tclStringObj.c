@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.35.2.2 2005/08/02 18:16:08 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.35.2.3 2005/08/16 04:26:40 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -380,6 +380,8 @@ Tcl_GetCharLength(objPtr)
 	 * string to count continuous ascii characters before resorting to the
 	 * Tcl_NumUtfChars call. This is a long form of:
 	 stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes,objPtr->length);
+	 *
+	 * TODO: Consider macro-izing this.
 	 */
 
 	while (i && (*str < 0xC0)) {
