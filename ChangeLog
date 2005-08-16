@@ -1,3 +1,10 @@
+2005-08-16  Kevin Kenny <kennykb@acm.org>
+
+	* generic/tclEvent.c (Tcl_Finalize): Pushed Tcl_FinalizeLoad and
+	Tcl_ResetFilesystem down after Tcl_FinalizeThreadAlloc because
+	unloading DLLs can't happen while they still own TSD keys.
+	(This is a backport of changes made in the HEAD on 2005-08-10.)
+	
 2005-08-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixInit.c (localeTable): Solaris uses a non-standard
