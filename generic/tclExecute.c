@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.22 2005/08/16 04:26:40 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.23 2005/08/16 16:55:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3686,12 +3686,183 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(0, 2, 1);
     }
 
-    case INST_MOD:
-    case INST_LSHIFT:
-    case INST_RSHIFT:
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND: {
+	Tcl_Obj *valuePtr, *value2Ptr;
+	mp_int big1, big2, bigResult;
+	mp_int *Pos, *Neg, *Other;
+	int numPos = 0;
+
+	value2Ptr = *tosPtr;
+	valuePtr  = *(tosPtr - 1);
+	result = Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	if (result != TCL_OK) {
+	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
+		    O2S(value2Ptr), (valuePtr->typePtr?
+		    valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+	result = Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	if (result != TCL_OK) {
+	    mp_clear(&big1);
+	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
+		    O2S(value2Ptr), (value2Ptr->typePtr?
+		    value2Ptr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    goto checkForCatch;
+	}
+	if (big1.sign == MP_ZPOS) {
+	    numPos++;
+	    Pos = &big1;
+	    if (big2.sign == MP_ZPOS) {
+		numPos++;
+		Other = &big2;
+	    } else {
+		Neg = &big2;
+	    }
+	} else {
+	    Neg = &big1;
+	    if (big2.sign == MP_ZPOS) {
+		numPos++;
+		Pos = &big2;
+	    } else {
+		Other = &big2;
+	    }
+	}
+	mp_init(&bigResult);
+	switch (*pc) {
+	case INST_BITAND:
+	    switch (numPos) {
+	    case 2:
+		/* Both arguments positive, base case */
+		mp_and(Pos, Other, &bigResult);
+		break;
+	    case 1: {
+		/* One arg positive; one negative
+		 * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1)) */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_neg(Neg, Neg);
+		mp_sub(Neg, &bigOne, Neg);
+		mp_clear(&bigOne);
+		mp_xor(Pos, Neg, &bigResult);
+		mp_and(Pos, &bigResult, &bigResult);
+		break;
+	    }
+	    case 0: {
+		/* Both arguments negative 
+		 * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1 */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_neg(Neg, Neg);
+		mp_sub(Neg, &bigOne, Neg);
+		mp_neg(Other, Other);
+		mp_sub(Other, &bigOne, Other);
+		mp_or(Neg, Other, &bigResult);
+		mp_neg(&bigResult, &bigResult);
+		mp_sub(&bigResult, &bigOne, &bigResult);
+		mp_clear(&bigOne);
+		break;
+	    }
+	    }
+	    break;
+	case INST_BITOR:
+	    switch (numPos) {
+	    case 2:
+		/* Both arguments positive, base case */
+		mp_or(Pos, Other, &bigResult);
+		break;
+	    case 1: {
+		/* One arg positive; one negative
+		 * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1 */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_neg(Neg, Neg);
+		mp_sub(Neg, &bigOne, Neg);
+		mp_xor(Pos, Neg, &bigResult);
+		mp_and(Neg, &bigResult, &bigResult);
+		mp_neg(&bigResult, &bigResult);
+		mp_sub(&bigResult, &bigOne, &bigResult);
+		mp_clear(&bigOne);
+		break;
+	    }
+	    case 0: {
+		/* Both arguments negative 
+		 * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1 */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_neg(Neg, Neg);
+		mp_sub(Neg, &bigOne, Neg);
+		mp_neg(Other, Other);
+		mp_sub(Other, &bigOne, Other);
+		mp_and(Neg, Other, &bigResult);
+		mp_neg(&bigResult, &bigResult);
+		mp_sub(&bigResult, &bigOne, &bigResult);
+		mp_clear(&bigOne);
+		break;
+	    }
+	    }
+	    break;
+	case INST_BITXOR:
+	    switch (numPos) {
+	    case 2:
+		/* Both arguments positive, base case */
+		mp_xor(Pos, Other, &bigResult);
+		break;
+	    case 1: {
+		/* One arg positive; one negative
+		 * P^N = ~(P^~N) = -(P^(-N-1))-1
+		 */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_neg(Neg, Neg);
+		mp_sub(Neg, &bigOne, Neg);
+		mp_xor(Pos, Neg, &bigResult);
+		mp_neg(&bigResult, &bigResult);
+		mp_sub(&bigResult, &bigOne, &bigResult);
+		mp_clear(&bigOne);
+		break;
+	    }
+	    case 0: {
+		/* Both arguments negative 
+		 * a ^ b = (~a ^ ~b) = (-a-1^-b-1) */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_neg(Neg, Neg);
+		mp_sub(Neg, &bigOne, Neg);
+		mp_neg(Other, Other);
+		mp_sub(Other, &bigOne, Other);
+		mp_xor(Neg, Other, &bigResult);
+		mp_clear(&bigOne);
+		break;
+	    }
+	    }
+	    break;
+	}
+	mp_clear(&big1);
+	mp_clear(&big2);
+	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	if (Tcl_IsShared(valuePtr)) {
+	    objResultPtr = Tcl_NewBignumObj(&bigResult);
+	    TRACE(("%s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 2, 1);
+	}
+	Tcl_SetBignumObj(valuePtr, &bigResult);
+	TRACE(("%s\n", O2S(valuePtr)));
+	NEXT_INST_F(1, 1, 0);
+    }
+
+    case INST_MOD:
+    case INST_LSHIFT:
+    case INST_RSHIFT:
+#if 0
+    case INST_BITOR:
+    case INST_BITXOR:
+    case INST_BITAND: 
+#endif
+    {
 	/*
 	 * Only integers are allowed. We compute value op value2.
 	 */
@@ -3979,6 +4150,7 @@ TclExecuteByteCode(interp, codePtr)
 		iResult = ~iResult;
 	    }
 	    break;
+#if 0
 	case INST_BITOR:
 	    if (valuePtr->typePtr == &tclWideIntType
 		    || value2Ptr->typePtr == &tclWideIntType) {
@@ -4030,6 +4202,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    iResult = i & i2;
 	    break;
+#endif
 	}
 
 	/*
@@ -4530,11 +4703,14 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    mp_clear(&big1);
 	    mp_clear(&big2);
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_NewBignumObj(&bigResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
 	    }
 	    Tcl_SetBignumObj(valuePtr, &bigResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 1, 0);
 	}
 #endif

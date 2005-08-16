@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.135.2.6 2005/08/15 18:14:15 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.135.2.7 2005/08/16 16:55:18 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -371,6 +371,7 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_mp_mul_2d.obj \
 	$(TMP_DIR)\bn_mp_mul_d.obj \
 	$(TMP_DIR)\bn_mp_neg.obj \
+	$(TMP_DIR)\bn_mp_or.obj \
 	$(TMP_DIR)\bn_mp_radix_size.obj \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
@@ -386,6 +387,7 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_mp_toom_sqr.obj \
 	$(TMP_DIR)\bn_mp_toradix_n.obj \
 	$(TMP_DIR)\bn_mp_unsigned_bin_size.obj \
+	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
 	$(TMP_DIR)\bn_s_mp_mul_digs.obj \

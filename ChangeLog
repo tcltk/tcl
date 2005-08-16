@@ -1,7 +1,17 @@
+2005-08-16  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclExecute.c:	Made binary bitwise opcodes bignum-aware.
+
+	* generic/tclTomMath.h:	Added mp_or and mp_xor to routines from
+	* unix/Makefile.in:	libtommath used by Tcl.
+	* win/Makefile.in:
+	* win/makefile.vc:
+
 2005-08-15  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]	Updates from HEAD.
-
 	* generic/tclExecute.c:	More revisions to IllegalExprOperandType.
 	Merged INST_BITNOT with INST_UMINUS and make it bignum-aware
 	according to the rule: ~a = -a - 1.  Disabled unused code and

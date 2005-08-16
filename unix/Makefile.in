@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.14 2005/08/15 03:16:48 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.15 2005/08/16 16:55:18 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -323,13 +323,13 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_init_size.o bn_mp_karatsuba_mul.o \
 	bn_mp_karatsuba_sqr.o \
         bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
-        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o \
+        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
         bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sub.o bn_mp_sub_d.o \
         bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
 	bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix_n.o \
-	bn_mp_unsigned_bin_size.o bn_mp_zero.o bn_s_mp_add.o \
+	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
@@ -468,6 +468,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_mul_2d.c \
 	$(TOMMATH_DIR)/bn_mp_mul_d.c \
 	$(TOMMATH_DIR)/bn_mp_neg.c \
+	$(TOMMATH_DIR)/bn_mp_or.c \
 	$(TOMMATH_DIR)/bn_mp_radix_size.c \
 	$(TOMMATH_DIR)/bn_mp_radix_smap.c \
 	$(TOMMATH_DIR)/bn_mp_read_radix.c \
@@ -483,6 +484,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_toom_sqr.c \
 	$(TOMMATH_DIR)/bn_mp_toradix_n.c \
 	$(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c \
+	$(TOMMATH_DIR)/bn_mp_xor.c \
 	$(TOMMATH_DIR)/bn_mp_zero.c \
 	$(TOMMATH_DIR)/bn_s_mp_add.c \
 	$(TOMMATH_DIR)/bn_s_mp_mul_digs.c \
@@ -1292,6 +1294,9 @@ bn_mp_mul_d.o: $(TOMMATH_DIR)/bn_mp_mul_d.c
 bn_mp_neg.o: $(TOMMATH_DIR)/bn_mp_neg.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_neg.c
 
+bn_mp_or.o: $(TOMMATH_DIR)/bn_mp_or.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_or.c
+
 bn_mp_radix_size.o: $(TOMMATH_DIR)/bn_mp_radix_size.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c
 
@@ -1336,6 +1341,9 @@ bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c
 
 bn_mp_unsigned_bin_size.o: $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c
+
+bn_mp_xor.o: $(TOMMATH_DIR)/bn_mp_xor.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c
 
 bn_mp_zero.o: $(TOMMATH_DIR)/bn_mp_zero.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_zero.c
