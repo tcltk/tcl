@@ -1,3 +1,12 @@
+2004-08-17  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclEvent.c (Tcl_Finalize): Removed a copy-and-paste
+	accident that caused a (mostly harmless) double finalize of the
+	load and filesystem subsystems.  
+	* tests/clock.test: Eliminated the bad test clock-43.1, and split
+	clock-50.1 into two tests, with a more permissive check on the
+	error message for an out-of-range value.
+	
 2004-08-12  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (MktimeObjCmd):
