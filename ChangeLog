@@ -1,3 +1,8 @@
+2005-08-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclFCmd.c (TclFileMakeDirsCmd): fix to race condition in
+	file mkdir (backport from head 2005-06-13) [Bug 1217375]
+
 2005-08-16  Kevin Kenny <kennykb@acm.org>
 
 	* generic/tclEvent.c (Tcl_Finalize): Pushed Tcl_FinalizeLoad and
