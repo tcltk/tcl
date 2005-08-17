@@ -12,7 +12,8 @@
 	there was very poor test coverage in those areas.
 	* generic/tclParseExpr.c: Reworked parsing of numbers to call
 	TclParseNumber rather than trying to do things locally.
-	* generic/tclStrToD.c: Corrected a comment.
+	* generic/tclStrToD.c: Corrected a comment. Changed so that
+	*endPtrPtr does not include any trailing whitespace.
 	
 2005-08-17  Don Porter  <dgp@users.sourceforge.net>
 
