@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.16 2005/08/17 19:12:09 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.17 2005/08/17 19:34:23 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4278,8 +4278,10 @@ Tcl_ExprLongObj(interp, objPtr, ptr)
 	    Tcl_SetResult(interp, "integer value too large to represent",
 			  TCL_STATIC);
 	    result = TCL_ERROR;
+	} else if (d >= 0) {
+	    *ptr = (long)(unsigned long)d;
 	} else {
-	    *ptr = (long)d;
+	    *ptr = -(long)(unsigned long)-d;
 	}
     } else {
 	result = Tcl_GetLongFromObj(interp, resultPtr, ptr);
