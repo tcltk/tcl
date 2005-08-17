@@ -1,4 +1,9 @@
-2004-08-17  Kevin Kenny  <kennykb@acm.org>
+2005-08-17  George Peter Staplin <GeorgePS@XMission.com>
+
+	* generic/tclBasic.c eliminate a namespace clash caused by
+	BuiltinFuncTable not being static.
+
+2005-08-17  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c (Tcl_Finalize): Removed a copy-and-paste
 	accident that caused a (mostly harmless) double finalize of the
@@ -7,7 +12,7 @@
 	clock-50.1 into two tests, with a more permissive check on the
 	error message for an out-of-range value.
 	
-2004-08-12  Kevin Kenny  <kennykb@acm.org>
+2005-08-12  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (MktimeObjCmd):
 	* library/clock.tcl (GetSystemTimeZone, LoadZoneinfoFile,
@@ -18,7 +23,7 @@
 	Changed ::tcl::clock::Mktime to check for failure, and added a
 	test case that mimics failure but is really success.
 	
-2004-08-11  Kevin Kenny  <kennykb@acm.org>
+2005-08-11  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c:          Eliminated the USE_THREAD_STORAGE
 	* generic/tclInt.h:            option (which is on in every build
