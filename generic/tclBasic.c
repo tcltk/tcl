@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.165 2005/08/05 18:50:27 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.166 2005/08/17 23:48:33 georgeps Exp $
  */
 
 #include "tclInt.h"
@@ -245,7 +245,7 @@ typedef struct {
     Tcl_ObjCmdProc* objCmdProc;	/* Procedure that evaluates the function */
     ClientData clientData;	/* Client data for the procedure */
 } BuiltinFuncDef;
-BuiltinFuncDef BuiltinFuncTable[] = {
+static BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::abs",	ExprAbsFunc,	NULL 			},
     { "::tcl::mathfunc::acos",	ExprUnaryFunc,	(ClientData) acos 	},
     { "::tcl::mathfunc::asin",	ExprUnaryFunc,	(ClientData) asin 	},
