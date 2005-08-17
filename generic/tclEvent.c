@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.63 2005/08/11 22:06:47 kennykb Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.64 2005/08/17 21:27:41 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -954,24 +954,6 @@ Tcl_Finalize()
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 	TclFinalizeThreadAlloc();
 #endif
-	/*
-	 * We defer unloading of packages until very late to avoid memory
-	 * access issues.  Both exit callbacks and synchronization variables
-	 * may be stored in packages.
-	 * 
-	 * Note that TclFinalizeLoad unloads packages in the reverse of the
-	 * order they were loaded in (i.e. last to be loaded is the first to
-	 * be unloaded).  This can be important for correct unloading when
-	 * dependencies exist.
-	 * 
-	 * Once load has been finalized, we will have deleted any temporary
-	 * copies of shared libraries and can therefore reset the filesystem
-	 * to its original state.
-	 */
-
-	TclFinalizeLoad();
-	TclResetFilesystem();
-
 	/*
 	 * We defer unloading of packages until very late to avoid memory
 	 * access issues.  Both exit callbacks and synchronization variables
