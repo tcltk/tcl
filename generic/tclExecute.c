@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.24 2005/08/17 04:57:49 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.25 2005/08/17 15:45:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -374,6 +374,8 @@ static Tcl_ObjType dictIteratorType = {
 
 static int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    ByteCode *codePtr));
+static int		TclIncrObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *valuePtr, Tcl_Obj *incrPtr));
 #ifdef TCL_COMPILE_STATS
 static int		EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1039,6 +1041,50 @@ TclCompEvalObj(interp, objPtr)
     }
     iPtr->numLevels--;
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIncrObj --
+ *
+ *	Increment an integeral value in a Tcl_Obj by an integeral value
+ *	held in another Tcl_Obj.  Caller is responsible for making sure
+ *	we can update the first object.
+ *
+ * Results:
+ *	TCL_ERROR if either object is non-integer, and TCL_OK otherwise. On
+ *	error, an error message is left in the interpreter (if it is not NULL,
+ *	of course).
+ *
+ * Side effects:
+ *	valuePtr gets the new incrmented value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TclIncrObj(interp, valuePtr, incrPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *valuePtr;
+    Tcl_Obj *incrPtr;
+{
+    mp_int value, incr;
+
+    if (Tcl_IsShared(valuePtr)) {
+	Tcl_Panic("shared object passed to TclIncrObj");
+    }
+
+    if (Tcl_GetBignumFromObj(interp, valuePtr, &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(interp, incrPtr, &incr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    mp_add(&value, &incr, &value);
+    mp_clear(&incr);
+    Tcl_SetBignumObj(valuePtr, &value);
+    return TCL_OK;
 }
 
 /*
@@ -5529,6 +5575,7 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
+/* TODO: normalize "valPtr" to "valuePtr" */
     {
 	int opnd, opnd2, allocateDict;
 	Tcl_Obj *dictPtr, *valPtr;
@@ -5615,34 +5662,16 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    }
 	    if (valPtr == NULL) {
-		Tcl_DictObjPut(NULL, dictPtr, *tosPtr, Tcl_NewLongObj(opnd));
-	    } else if (valPtr->typePtr == &tclWideIntType) {
-		Tcl_WideInt wvalue;
-
-		Tcl_GetWideIntFromObj(NULL, valPtr, &wvalue);
-		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
-			Tcl_NewWideIntObj(wvalue + opnd));
-	    } else if (valPtr->typePtr == &tclIntType) {
-		long value;
-
-		Tcl_GetLongFromObj(NULL, valPtr, &value);
-		Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
-			Tcl_NewLongObj(value + opnd));
+		Tcl_DictObjPut(NULL, dictPtr, *tosPtr, Tcl_NewIntObj(opnd));
 	    } else {
-		long value = 0; /* stop compiler warning */
-		Tcl_WideInt wvalue;
-
-		REQUIRE_WIDE_OR_INT(result, valPtr, value, wvalue);
-		if (result != TCL_OK) {
-		    break;
+		Tcl_Obj *incrPtr = Tcl_NewIntObj(opnd);
+		Tcl_IncrRefCount(incrPtr);
+		if (Tcl_IsShared(valPtr)) {
+		    valPtr = Tcl_DuplicateObj(valPtr);
+		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr, valPtr);
 		}
-		if (valPtr->typePtr == &tclWideIntType) {
-		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
-			    Tcl_NewWideIntObj(wvalue + opnd));
-		} else {
-		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr,
-			    Tcl_NewLongObj(value + opnd));
-		}
+		result = TclIncrObj(interp, valPtr, incrPtr);
+		Tcl_DecrRefCount(incrPtr);
 	    }
 	    break;
 	case INST_DICT_UNSET:

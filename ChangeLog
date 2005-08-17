@@ -1,3 +1,11 @@
+2005-08-17  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclExecute.c:	New routine TclIncrObj to centralize the
+	increment operation needed in many places.  Updated
+	INST_DICT_INCR_IMM to make use of it.
+
 2005-08-16  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]
