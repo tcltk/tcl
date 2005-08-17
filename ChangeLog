@@ -1,3 +1,11 @@
+2005-08-17  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_Expr{Long,Double}{,Obj}): Updated to
+	* tests/expr-old.test:                              deal with
+	* tests/expr.test:                                  bignums (well, 
+	mostly).  Added test cases for Tcl_Expr* and Tcl_Expr*Obj because
+	there was very poor test coverage in those areas.
+	
 2005-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.22.2.6 2005/08/02 18:16:24 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.22.2.7 2005/08/17 19:12:10 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1018,6 +1018,7 @@ test expr-old-36.16 {ExprLooksLikeInt procedure} {
 } {1 {can't use integer value too large to represent as operand of "+"}}
 
 testConstraint testexprlong   [llength [info commands testexprlong]]
+testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
@@ -1028,6 +1029,92 @@ test expr-old-37.2 {Tcl_ExprLong handles wide ints gracefully} testexprlong {
     testexprlong wide(1)+2
 } {This is a result: 3}
 
+test expr-old-37.3 {Tcl_ExprLong on the empty string} {
+    testexprlong ""
+} {This is a result: 0}
+test expr-old-37.4 {Tcl_ExprLong coerces doubles} {
+    testexprlong 3+.14159
+} {This is a result: 3}
+test expr-old-37.5 {Tcl_ExprLong handles overflows} {
+    testexprlong 0x80000000
+} {This is a result: -2147483648}
+test expr-old-37.6 {Tcl_ExprLong handles overflows} {
+    testexprlong 0xffffffff
+} {This is a result: -1}
+test expr-old-37.7 {Tcl_ExprLong handles overflows} \
+    -match glob \
+    -body {
+	list [catch {testexprlong 0x100000000} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-old-37.8 {Tcl_ExprLong handles overflows} {
+    testexprlong -0x80000000
+} {This is a result: -2147483648}
+test expr-old-37.9 {Tcl_ExprLong handles overflows} {
+    testexprlong -0xffffffff
+} {This is a result: 1}
+test expr-old-37.10 {Tcl_ExprLong handles overflows} \
+    -match glob \
+    -body {
+	list [catch {testexprlong -0x100000000} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-old-37.11 {Tcl_ExprLong handles overflows} testexprlong {
+    testexprlong 2147483648.
+} {This is a result: -2147483648}
+test expr-old-37.12 {Tcl_ExprLong handles overflows} testexprlong {
+    testexprlong 4294967295.
+} {This is a result: -1}
+test expr-old-37.13 {Tcl_ExprLong handles overflows} \
+    -constraints testexprlong \
+    -match glob \
+    -body {
+	list [catch {testexprlong 4294967296.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-old-37.14 {Tcl_ExprLong handles overflows} testexprlong {
+    testexprlong -2147483648.
+} {This is a result: -2147483648}
+test expr-old-37.15 {Tcl_ExprLong handles overflows} testexprlong {
+    testexprlong -4294967295.
+} {This is a result: 1}
+test expr-old-37.16 {Tcl_ExprLong handles overflows} \
+    -constraints testexprlong \
+    -match glob \
+    -body {
+	list [catch {testexprlong 4294967296.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+
+test expr-old-37.17 {Check that Tcl_ExprDouble doesn't modify interpreter result if no error} testexprdouble {
+    testexprdouble 4.+1.
+} {This is a result: 5.0}
+#Check for [Bug 1109484]
+test expr-old-37.18 {Tcl_ExprDouble on the empty string} {
+    testexprdouble ""
+} {This is a result: 0.0}
+test expr-old-37.19 {Tcl_ExprDouble coerces wides} {
+    testexprdouble 1[string repeat 0 17]
+} {This is a result: 1e+17}
+test expr-old-37.20 {Tcl_ExprDouble coerces bignums} {
+    testexprdouble 1[string repeat 0 38]
+} {This is a result: 1e+38}
+test expr-old-37.21 {Tcl_ExprDouble handles overflows} {
+    testexprdouble 17976931348623157[string repeat 0 292].
+} {This is a result: 1.7976931348623157e+308}
+test expr-old-37.22 {Tcl_ExprDouble handles overflows that look like int} {
+    testexprdouble 17976931348623157[string repeat 0 292]
+} {This is a result: 1.7976931348623157e+308}
+test expr-old-37.23 {Tcl_ExprDouble handles overflows} {
+    testexprdouble 17976931348623165[string repeat 0 292].
+} {This is a result: Inf}
+test expr-old-37.22 {Tcl_ExprDouble handles overflows that look like int} {
+    testexprdouble 17976931348623165[string repeat 0 292]
+} {This is a result: Inf}
+test expr-old-37.23 {Tcl_ExprDouble and NaN} {
+    list [catch {testexprdouble 0.0/0.0} result] $result
+} {1 {floating point value is Not a Number}}
+    
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} testexprstring {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
@@ -1067,3 +1154,7 @@ if {(4195835.0 - (4195835.0/3145727.0)*3145727.0) == 256.0} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.15 2005/08/15 20:46:02 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.16 2005/08/17 19:12:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4166,62 +4166,15 @@ Tcl_ExprLong(interp, exprstring, ptr)
     long *ptr;			/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
-    Tcl_Obj *resultPtr;
-    int length = strlen(exprstring);
     int result = TCL_OK;
-
-    if (length > 0) {
-	exprPtr = Tcl_NewStringObj(exprstring, length);
-	Tcl_IncrRefCount(exprPtr);
-	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	if (result == TCL_OK) {
-	    /*
-	     * Store an integer based on the expression result.
-	     */
-
-	    if (resultPtr->typePtr == &tclIntType) {
-		*ptr = resultPtr->internalRep.longValue;
-	    } else if (resultPtr->typePtr == &tclDoubleType) {
-		*ptr = (long) resultPtr->internalRep.doubleValue;
-	    } else if (resultPtr->typePtr == &tclWideIntType) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		/*
-		 * See Tcl_GetIntFromObj for conversion comments.
-		 */
-		Tcl_WideInt w = resultPtr->internalRep.wideValue;
-		if ((w >= -(Tcl_WideInt)(ULONG_MAX))
-			&& (w <= (Tcl_WideInt)(ULONG_MAX))) {
-		    *ptr = Tcl_WideAsLong(w);
-		} else {
-		    Tcl_SetResult(interp,
-			    "integer value too large to represent as non-long integer",
-			    TCL_STATIC);
-		    result = TCL_ERROR;
-		}
-#else
-		*ptr = resultPtr->internalRep.longValue;
-#endif
-	    } else {
-		Tcl_SetResult(interp,
-			"expression didn't have numeric value", TCL_STATIC);
-		result = TCL_ERROR;
-	    }
-	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
-	} else {
-	    /*
-	     * Move the interpreter's object result to the string result, 
-	     * then reset the object result.
-	     */
-
-	    (void) Tcl_GetStringResult(interp);
-	}
-	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */	
-    } else {
-	/*
-	 * An empty string. Just set the result integer to 0.
-	 */
-
+    if (*exprstring == '\0') {
+	/* Legacy compatibility - return 0 for the zero-length string. */
 	*ptr = 0;
+    } else {
+	exprPtr = Tcl_NewStringObj(exprstring, -1);
+	Tcl_IncrRefCount(exprPtr);
+	result = Tcl_ExprLongObj(interp, exprPtr, ptr);
+	Tcl_DecrRefCount(exprPtr);
     }
     return result;
 }
@@ -4234,62 +4187,16 @@ Tcl_ExprDouble(interp, exprstring, ptr)
     double *ptr;		/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
-    Tcl_Obj *resultPtr;
-    int length = strlen(exprstring);
     int result = TCL_OK;
 
-    if (length > 0) {
-	exprPtr = Tcl_NewStringObj(exprstring, length);
-	Tcl_IncrRefCount(exprPtr);
-	result = Tcl_ExprObj(interp, exprPtr, &resultPtr);
-	if (result == TCL_OK) {
-	    /*
-	     * Store a double  based on the expression result.
-	     */
-
-	    if (resultPtr->typePtr == &tclIntType) {
-		*ptr = (double) resultPtr->internalRep.longValue;
-	    } else if (resultPtr->typePtr == &tclDoubleType) {
-		*ptr = resultPtr->internalRep.doubleValue;
-	    } else if (resultPtr->typePtr == &tclWideIntType) {
-#ifndef TCL_WIDE_INT_IS_LONG
-		/*
-		 * See Tcl_GetIntFromObj for conversion comments.
-		 */
-		Tcl_WideInt w = resultPtr->internalRep.wideValue;
-		if ((w >= -(Tcl_WideInt)(ULONG_MAX))
-			&& (w <= (Tcl_WideInt)(ULONG_MAX))) {
-		    *ptr = (double) Tcl_WideAsLong(w);
-		} else {
-		    Tcl_SetResult(interp,
-			    "integer value too large to represent as non-long integer",
-			    TCL_STATIC);
-		    result = TCL_ERROR;
-		}
-#else
-		*ptr = (double) resultPtr->internalRep.longValue;
-#endif
-	    } else {
-		Tcl_SetResult(interp,
-			"expression didn't have numeric value", TCL_STATIC);
-		result = TCL_ERROR;
-	    }
-	    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
-	} else {
-	    /*
-	     * Move the interpreter's object result to the string result, 
-	     * then reset the object result.
-	     */
-
-	    (void) Tcl_GetStringResult(interp);
-	}
-	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */
-    } else {
-	/*
-	 * An empty string. Just set the result double to 0.0.
-	 */
-
+    if (*exprstring == '\0') {
+	/* Legacy compatibility - return 0 for the zero-length string. */
 	*ptr = 0.0;
+    } else {
+	exprPtr = Tcl_NewStringObj(exprstring, -1);
+	Tcl_IncrRefCount(exprPtr);
+	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
+	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */
     }
     return result;
 }
@@ -4357,21 +4264,27 @@ Tcl_ExprLongObj(interp, objPtr, ptr)
 {
     Tcl_Obj *resultPtr;
     int result;
+    double d;
 
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
-    if (result == TCL_OK) {
-	if (resultPtr->typePtr == &tclIntType) {
-	    *ptr = resultPtr->internalRep.longValue;
-	} else if (resultPtr->typePtr == &tclDoubleType) {
-	    *ptr = (long) resultPtr->internalRep.doubleValue;
-	} else {
-	    result = Tcl_GetLongFromObj(interp, resultPtr, ptr);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
-	Tcl_DecrRefCount(resultPtr);  /* discard the result object */
+    if (result != TCL_OK) {
+	return TCL_ERROR;
     }
+    /* TODO - This could use a Tcl_GetNumberFromObj */
+    if (Tcl_GetDoubleFromObj(interp, resultPtr, &d) != TCL_OK) {
+	result = TCL_ERROR;
+    } else if (resultPtr->typePtr == &tclDoubleType) {
+	if (d < -(double) ULONG_MAX || d > (double) ULONG_MAX ) {
+	    Tcl_SetResult(interp, "integer value too large to represent",
+			  TCL_STATIC);
+	    result = TCL_ERROR;
+	} else {
+	    *ptr = (long)d;
+	}
+    } else {
+	result = Tcl_GetLongFromObj(interp, resultPtr, ptr);
+    }
+    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
     return result;
 }
 
@@ -4387,16 +4300,7 @@ Tcl_ExprDoubleObj(interp, objPtr, ptr)
 
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
     if (result == TCL_OK) {
-	if (resultPtr->typePtr == &tclIntType) {
-	    *ptr = (double) resultPtr->internalRep.longValue;
-	} else if (resultPtr->typePtr == &tclDoubleType) {
-	    *ptr = resultPtr->internalRep.doubleValue;
-	} else {
-	    result = Tcl_GetDoubleFromObj(interp, resultPtr, ptr);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
+	result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
 	Tcl_DecrRefCount(resultPtr);  /* discard the result object */
     }
     return result;
@@ -5129,6 +5033,8 @@ ExprAbsFunc(clientData, interp, objc, objv)
 	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	return TCL_OK;
     }
+    Tcl_Panic("in ExprAbsFunc: unknown numeric type.");
+    return TCL_ERROR;		/* lint */
 }
 
 static int

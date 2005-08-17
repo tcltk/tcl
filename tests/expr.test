@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.12 2005/08/15 18:14:01 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.13 2005/08/17 19:12:10 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6457,6 +6457,113 @@ test expr-37.14 {expr edge cases} {wideIs64bit} {
 test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
     expr {abs(-2147483648)}
 } 2147483648
+
+testConstraint testexprlongobj   [llength [info commands testexprlongobj]]
+testConstraint testexprdoubleobj [llength [info commands testexprdoubleobj]]
+
+test expr-39.1 {Check that Tcl_ExprLongObj doesn't modify interpreter result if no error} testexprlongobj {
+    testexprlongobj 4+1
+} {This is a result: 5}
+#Check for [Bug 1109484]
+test expr-39.2 {Tcl_ExprLongObj handles wide ints gracefully} testexprlongobj {
+    testexprlongobj wide(1)+2
+} {This is a result: 3}
+
+test expr-39.3 {Tcl_ExprLongObj on the empty string} \
+    -constraints testexprlongobj \
+    -body {
+	list [catch {testexprlongobj ""} result] $result
+    } \
+    -match glob \
+    -result {1 {syntax error*}}
+test expr-39.4 {Tcl_ExprLongObj coerces doubles} testexprlongobj {
+    testexprlongobj 3+.14159
+} {This is a result: 3}
+test expr-39.5 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj 0x80000000
+} {This is a result: -2147483648}
+test expr-39.6 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj 0xffffffff
+} {This is a result: -1}
+test expr-39.7 {Tcl_ExprLongObj handles overflows} \
+    -constraints testexprlongobj \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj 0x100000000} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj -0x80000000
+} {This is a result: -2147483648}
+test expr-39.9 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj -0xffffffff
+} {This is a result: 1}
+test expr-39.10 {Tcl_ExprLongObj handles overflows} \
+    -constraints testexprlongobj \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj -0x100000000} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-39.11 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj 2147483648.
+} {This is a result: -2147483648}
+test expr-39.12 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj 4294967295.
+} {This is a result: -1}
+test expr-39.13 {Tcl_ExprLongObj handles overflows} \
+    -constraints testexprlongobj \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj 4294967296.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj -2147483648.
+} {This is a result: -2147483648}
+test expr-39.15 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj -4294967295.
+} {This is a result: 1}
+test expr-39.16 {Tcl_ExprLongObj handles overflows} \
+    -constraints testexprlongobj \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj 4294967296.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+    
+test expr-39.17 {Check that Tcl_ExprDoubleObj doesn't modify interpreter result if no error} testexprdoubleobj {
+    testexprdoubleobj 4.+1.
+} {This is a result: 5.0}
+#Check for [Bug 1109484]
+test expr-39.18 {Tcl_ExprDoubleObj on the empty string} \
+    -constraints testexprdoubleobj \
+    -match glob \
+    -body {
+	list [catch {testexprdoubleobj ""} result] $result
+    } \
+    -result {1 {syntax error*}}
+test expr-39.19 {Tcl_ExprDoubleObj coerces wides} testexprdoubleobj {
+    testexprdoubleobj 1[string repeat 0 17]
+} {This is a result: 1e+17}
+test expr-39.20 {Tcl_ExprDoubleObj coerces bignums} testexprdoubleobj {
+    testexprdoubleobj 1[string repeat 0 38]
+} {This is a result: 1e+38}
+test expr-39.21 {Tcl_ExprDoubleObj handles overflows} testexprdoubleobj {
+    testexprdoubleobj 17976931348623157[string repeat 0 292].
+} {This is a result: 1.7976931348623157e+308}
+test expr-39.22 {Tcl_ExprDoubleObj handles overflows that look like int} testexprdoubleobj {
+    testexprdoubleobj 17976931348623157[string repeat 0 292]
+} {This is a result: 1.7976931348623157e+308}
+test expr-39.23 {Tcl_ExprDoubleObj handles overflows} testexprdoubleobj {
+    testexprdoubleobj 17976931348623165[string repeat 0 292].
+} {This is a result: Inf}
+test expr-39.22 {Tcl_ExprDoubleObj handles overflows that look like int} testexprdoubleobj {
+    testexprdoubleobj 17976931348623165[string repeat 0 292]
+} {This is a result: Inf}
+test expr-39.23 {Tcl_ExprDoubleObj and NaN} testexprdoubleobj {
+    list [catch {testexprdoubleobj 0.0/0.0} result] $result
+} {1 {floating point value is Not a Number}}
 
 # cleanup
 if {[info exists a]} {
