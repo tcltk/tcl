@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.17 2005/08/17 19:34:23 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.18 2005/08/17 20:49:54 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4908,6 +4908,7 @@ ExprUnaryFunc(clientData, interp, objc, objv)
 
 	/* Evaluate the function */
 
+	errno = 0;
 	dResult = (*func)(d);
 	if ((errno != 0) || IS_NAN(dResult)) {
 	    if (errno != ERANGE || (dResult != 0.0 && !IS_INF(dResult))) {
