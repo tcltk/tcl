@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.23 2005/08/16 16:55:18 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.24 2005/08/17 04:57:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -322,20 +322,19 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif
 /*
  * Combined with REQUIRE_WIDE_OR_INT, this gets a long value from an obj.
- * TODO: Eliminate
  */
+#if 0
 #define FORCE_LONG(objPtr, longVar, wideVar)				\
     if ((objPtr)->typePtr == &tclWideIntType) {				\
 	(longVar) = Tcl_WideAsLong(wideVar);				\
     }
 #define IS_INTEGER_TYPE(typePtr)					\
 	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType || (typePtr) == &tclBignumType)
-#if 0
 #define IS_NUMERIC_TYPE(typePtr)					\
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
-#endif
 
 #define W0	Tcl_LongAsWide(0)
+#endif
 /*
  * For tracing that uses wide values.
  */
@@ -3686,6 +3685,75 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(0, 2, 1);
     }
 
+    case INST_LSHIFT:
+    case INST_RSHIFT: {
+	Tcl_Obj *valuePtr, *value2Ptr;
+	mp_int big1, big2, bigResult;
+	int shift;
+
+	value2Ptr = *tosPtr;
+	valuePtr  = *(tosPtr - 1);
+	result = Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	if (result != TCL_OK) {
+	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
+		    O2S(value2Ptr), (valuePtr->typePtr?
+		    valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+	result = Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	if (result != TCL_OK) {
+	    mp_clear(&big1);
+	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
+		    O2S(value2Ptr), (value2Ptr->typePtr?
+		    value2Ptr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    goto checkForCatch;
+	}
+	if (big2.sign == MP_NEG) {
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("negative shift argument", -1));
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	}
+	mp_clear(&big2);
+	if (mp_iszero(&big1)) {
+	    /* Zero shifted any integral number of bits either way is zero */
+	    mp_clear(&big1);
+	    TRACE(("0 %s => 0\n", O2S(value2Ptr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+	result = Tcl_GetIntFromObj(NULL, value2Ptr, &shift);
+	if (result != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent", -1));
+	    goto checkForCatch;
+	}
+	mp_init(&bigResult);
+	if (*pc == INST_LSHIFT) {
+	    mp_mul_2d(&big1, shift, &bigResult);
+	} else {
+	    mp_div_2d(&big1, shift, &bigResult, NULL);
+	    if (mp_iszero(&bigResult) && big1.sign == MP_NEG) {
+		/* When right shifting a negative value, keep the sign bit */
+		/* TODO: consider direct SetLongObj to -1 */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_sub(&bigResult, &bigOne, &bigResult);
+	    }
+	}
+	mp_clear(&big1);
+	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	if (Tcl_IsShared(valuePtr)) {
+	    objResultPtr = Tcl_NewBignumObj(&bigResult);
+	    TRACE(("%s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 2, 1);
+	}
+	Tcl_SetBignumObj(valuePtr, &bigResult);
+	TRACE(("%s\n", O2S(valuePtr)));
+	NEXT_INST_F(1, 1, 0);
+    }
+
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND: {
@@ -3854,14 +3922,13 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(1, 1, 0);
     }
 
+#if 0
     case INST_MOD:
     case INST_LSHIFT:
     case INST_RSHIFT:
-#if 0
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND: 
-#endif
     {
 	/*
 	 * Only integers are allowed. We compute value op value2.
@@ -4150,7 +4217,6 @@ TclExecuteByteCode(interp, codePtr)
 		iResult = ~iResult;
 	    }
 	    break;
-#if 0
 	case INST_BITOR:
 	    if (valuePtr->typePtr == &tclWideIntType
 		    || value2Ptr->typePtr == &tclWideIntType) {
@@ -4202,7 +4268,6 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    iResult = i & i2;
 	    break;
-#endif
 	}
 
 	/*
@@ -4229,11 +4294,13 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 1, 0);
 	}
     }
+#endif
 
     case INST_ADD:
     case INST_SUB:
     case INST_MULT:
     case INST_DIV:
+    case INST_MOD:
     case INST_EXPON: {
 	/*
 	 * Operands must be numeric and ints get converted to floats if
@@ -4589,6 +4656,20 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		dResult = pow(d1, d2);
 		break;
+	    case INST_MOD:
+		if (valuePtr->typePtr == &tclDoubleType) {
+		    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
+			    O2S(value2Ptr), O2S(valuePtr), (valuePtr->typePtr?
+			    valuePtr->typePtr->name: "null")));
+		    IllegalExprOperandType(interp, pc, valuePtr);
+		} else {
+		    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
+			    O2S(value2Ptr), O2S(valuePtr), (value2Ptr->typePtr?
+			    value2Ptr->typePtr->name: "null")));
+		    IllegalExprOperandType(interp, pc, value2Ptr);
+		}
+		result = TCL_ERROR;
+		goto checkForCatch;
 	    }
 #if 0
 	    /*
@@ -4627,6 +4708,7 @@ TclExecuteByteCode(interp, codePtr)
 		mp_mul(&big1, &big2, &bigResult);
 		break;
 	    case INST_DIV:
+	    case INST_MOD:
 		if (mp_iszero(&big2)) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
 			    O2S(value2Ptr)));
@@ -4642,7 +4724,11 @@ TclExecuteByteCode(interp, codePtr)
 		    mp_int bigOne;
 		    Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		    mp_sub(&bigResult, &bigOne, &bigResult);
+		    mp_add(&bigRemainder, &big2, &bigRemainder);
 		    mp_clear(&bigOne);
+		}
+		if (*pc == INST_MOD) {
+		    mp_copy(&bigRemainder, &bigResult);
 		}
 		mp_clear(&bigRemainder);
 		break;

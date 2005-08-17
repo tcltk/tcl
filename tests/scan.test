@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.15.2.2 2005/08/02 18:16:43 dgp Exp $
+# RCS: @(#) $Id: scan.test,v 1.15.2.3 2005/08/17 04:57:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -341,9 +341,10 @@ test scan-4.61 {Tcl_ScanObjCmd, set errors} {
 # procedure that returns the range of integers
 
 proc int_range {} {
-    for { set MIN_INT 1 } { $MIN_INT > 0 } {} {
+    for { set MIN_INT 1 } { int($MIN_INT) > 0 } {} {
 	set MIN_INT [expr { $MIN_INT << 1 }]
     }
+    set MIN_INT [expr {int($MIN_INT)}]
     set MAX_INT [expr { ~ $MIN_INT }]
     return [list $MIN_INT $MAX_INT]
 }

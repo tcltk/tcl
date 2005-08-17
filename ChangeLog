@@ -2,6 +2,15 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclExecute.c:	Made bit shifting opcodes and INST_MOD
+	bignum-aware.
+
+	* tests/scan.test:	Making << bignum-aware means that repeated
+	* tests/string.test:	left shifting cannot turn a positive into
+	a negative.  Revised [int_range] and [largest_int] utility commands
+	in the test suite that relied on that happening.  Without revision
+	they became infinite loops.
+
 	* generic/tclExecute.c:	Made binary bitwise opcodes bignum-aware.
 
 	* generic/tclTomMath.h:	Added mp_or and mp_xor to routines from
