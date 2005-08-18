@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.22.2.9 2005/08/17 20:12:38 kennykb Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.22.2.10 2005/08/18 02:09:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1020,6 +1020,7 @@ test expr-old-36.16 {ExprLooksLikeInt procedure} {
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
+testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
     testexprlong 4+1
@@ -1029,44 +1030,46 @@ test expr-old-37.2 {Tcl_ExprLong handles wide ints gracefully} testexprlong {
     testexprlong wide(1)+2
 } {This is a result: 3}
 
-test expr-old-37.3 {Tcl_ExprLong on the empty string} {
+test expr-old-37.3 {Tcl_ExprLong on the empty string} testexprlong {
     testexprlong ""
 } {This is a result: 0}
-test expr-old-37.4 {Tcl_ExprLong coerces doubles} {
+test expr-old-37.4 {Tcl_ExprLong coerces doubles} testexprlong {
     testexprlong 3+.14159
 } {This is a result: 3}
-test expr-old-37.5 {Tcl_ExprLong handles overflows} {
+test expr-old-37.5 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
     testexprlong 0x80000000
 } {This is a result: -2147483648}
-test expr-old-37.6 {Tcl_ExprLong handles overflows} {
+test expr-old-37.6 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
     testexprlong 0xffffffff
 } {This is a result: -1}
 test expr-old-37.7 {Tcl_ExprLong handles overflows} \
+    -constraints {testexprlong longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlong 0x100000000} result] $result
     } \
     -result {1 {integer value too large to represent*}}
-test expr-old-37.8 {Tcl_ExprLong handles overflows} {
+test expr-old-37.8 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -0x80000000
 } {This is a result: -2147483648}
-test expr-old-37.9 {Tcl_ExprLong handles overflows} {
+test expr-old-37.9 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
     testexprlong -0xffffffff
 } {This is a result: 1}
 test expr-old-37.10 {Tcl_ExprLong handles overflows} \
+    -constraints {testexprlong longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlong -0x100000000} result] $result
     } \
     -result {1 {integer value too large to represent*}}
-test expr-old-37.11 {Tcl_ExprLong handles overflows} testexprlong {
+test expr-old-37.11 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit}  {
     testexprlong 2147483648.
 } {This is a result: -2147483648}
-test expr-old-37.12 {Tcl_ExprLong handles overflows} testexprlong {
+test expr-old-37.12 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
     testexprlong 4294967295.
 } {This is a result: -1}
 test expr-old-37.13 {Tcl_ExprLong handles overflows} \
-    -constraints testexprlong \
+    -constraints {testexprlong longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlong 4294967296.} result] $result
@@ -1075,11 +1078,11 @@ test expr-old-37.13 {Tcl_ExprLong handles overflows} \
 test expr-old-37.14 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -2147483648.
 } {This is a result: -2147483648}
-test expr-old-37.15 {Tcl_ExprLong handles overflows} testexprlong {
+test expr-old-37.15 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
     testexprlong -4294967295.
 } {This is a result: 1}
 test expr-old-37.16 {Tcl_ExprLong handles overflows} \
-    -constraints testexprlong \
+    -constraints {testexprlong longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlong 4294967296.} result] $result

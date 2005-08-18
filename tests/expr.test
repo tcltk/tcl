@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.15 2005/08/17 20:12:38 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.16 2005/08/18 02:09:05 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6479,14 +6479,14 @@ test expr-39.3 {Tcl_ExprLongObj on the empty string} \
 test expr-39.4 {Tcl_ExprLongObj coerces doubles} testexprlongobj {
     testexprlongobj 3+.14159
 } {This is a result: 3}
-test expr-39.5 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+test expr-39.5 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj 0x80000000
 } {This is a result: -2147483648}
-test expr-39.6 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+test expr-39.6 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj 0xffffffff
 } {This is a result: -1}
 test expr-39.7 {Tcl_ExprLongObj handles overflows} \
-    -constraints testexprlongobj \
+    -constraints {testexprlongobj longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlongobj 0x100000000} result] $result
@@ -6495,24 +6495,24 @@ test expr-39.7 {Tcl_ExprLongObj handles overflows} \
 test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -0x80000000
 } {This is a result: -2147483648}
-test expr-39.9 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+test expr-39.9 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj -0xffffffff
 } {This is a result: 1}
 test expr-39.10 {Tcl_ExprLongObj handles overflows} \
-    -constraints testexprlongobj \
+    -constraints {testexprlongobj longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlongobj -0x100000000} result] $result
     } \
     -result {1 {integer value too large to represent*}}
-test expr-39.11 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+test expr-39.11 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj 2147483648.
 } {This is a result: -2147483648}
-test expr-39.12 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+test expr-39.12 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj 4294967295.
 } {This is a result: -1}
 test expr-39.13 {Tcl_ExprLongObj handles overflows} \
-    -constraints testexprlongobj \
+    -constraints {testexprlongobj longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlongobj 4294967296.} result] $result
@@ -6521,11 +6521,11 @@ test expr-39.13 {Tcl_ExprLongObj handles overflows} \
 test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
     testexprlongobj -2147483648.
 } {This is a result: -2147483648}
-test expr-39.15 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+test expr-39.15 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
     testexprlongobj -4294967295.
 } {This is a result: 1}
 test expr-39.16 {Tcl_ExprLongObj handles overflows} \
-    -constraints testexprlongobj \
+    -constraints {testexprlongobj longIs32bit} \
     -match glob \
     -body {
 	list [catch {testexprlongobj 4294967296.} result] $result
