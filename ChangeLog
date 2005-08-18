@@ -1,3 +1,12 @@
+2005-08-18  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclDictObj.c:	DictIncrCmd rewrite to use TclIncrObj.
+
+	* generic/tclInt.h:	TclIncrObj static -> internal
+	* generic/tclExecute.c:
+
 2005-08-17  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

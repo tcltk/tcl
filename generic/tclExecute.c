@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.25 2005/08/17 15:45:13 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.26 2005/08/18 18:18:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -374,8 +374,6 @@ static Tcl_ObjType dictIteratorType = {
 
 static int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    ByteCode *codePtr));
-static int		TclIncrObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *valuePtr, Tcl_Obj *incrPtr));
 #ifdef TCL_COMPILE_STATS
 static int		EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1063,7 +1061,7 @@ TclCompEvalObj(interp, objPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+int
 TclIncrObj(interp, valuePtr, incrPtr)
     Tcl_Interp *interp;
     Tcl_Obj *valuePtr;
@@ -1079,6 +1077,7 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	return TCL_ERROR;
     }
     if (Tcl_GetBignumFromObj(interp, incrPtr, &incr) != TCL_OK) {
+	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	return TCL_ERROR;
     }
     mp_add(&value, &incr, &value);

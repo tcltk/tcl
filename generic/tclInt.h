@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.21 2005/08/15 18:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.22 2005/08/18 18:18:46 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1994,6 +1994,8 @@ MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue _ANSI_ARGS_ ((
 MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
+MODULE_SCOPE int	TclIncrObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *valuePtr, Tcl_Obj *incrPtr));
 MODULE_SCOPE void	TclInitAlloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitDbCkalloc _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitDoubleConversion _ANSI_ARGS_((void));
