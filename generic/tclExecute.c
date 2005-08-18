@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.26 2005/08/18 18:18:46 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.27 2005/08/18 21:19:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5670,6 +5670,9 @@ TclExecuteByteCode(interp, codePtr)
 		    Tcl_DictObjPut(NULL, dictPtr, *tosPtr, valPtr);
 		}
 		result = TclIncrObj(interp, valPtr, incrPtr);
+		if (result == TCL_OK) {
+		    Tcl_InvalidateStringRep(dictPtr);
+		}
 		Tcl_DecrRefCount(incrPtr);
 	    }
 	    break;

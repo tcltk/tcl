@@ -2,6 +2,9 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclExecute.c:		Fixed string rep invalidation bug in
+	* tests/dict.test (dict-11.17):	INST_DICT_INCR_IMM rewrite.
+
 	* generic/tclDictObj.c:	DictIncrCmd rewrite to use TclIncrObj.
 
 	* generic/tclInt.h:	TclIncrObj static -> internal
