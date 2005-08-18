@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.18 2005/08/17 20:49:54 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.19 2005/08/18 02:36:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4175,6 +4175,9 @@ Tcl_ExprLong(interp, exprstring, ptr)
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprLongObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
+	if (result != TCL_OK) {
+	    (void) Tcl_GetStringResult(interp);
+	}
     }
     return result;
 }
@@ -4197,6 +4200,9 @@ Tcl_ExprDouble(interp, exprstring, ptr)
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */
+	if (result != TCL_OK) {
+	    (void) Tcl_GetStringResult(interp);
+	}
     }
     return result;
 }
