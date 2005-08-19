@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.99.2.7 2005/08/02 18:16:12 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.99.2.8 2005/08/19 05:17:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1718,6 +1718,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     }
     return resultPtr;
 }
+#if 0
 
 /*
  *----------------------------------------------------------------------
@@ -1881,6 +1882,133 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
     return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
 	    varValuePtr, flags);
 }
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIncrObjVar2 --
+ *
+ *	Given a two-part variable name, which may refer either to a scalar
+ *	variable or an element of an array, increment the Tcl object value of
+ *	the variable by a specified Tcl_Obj increment value.
+ *
+ * Results:
+ *	Returns a pointer to the Tcl_Obj holding the new value of the
+ *	variable.  If the specified variable doesn't exist, or there is a
+ *	clash in array usage, or an error occurs while executing variable
+ *	traces, then NULL is returned and a message will be left in the
+ *	interpreter's result.
+ *
+ * Side effects:
+ *	The value of the given variable is incremented by the specified
+ *	amount. If either the array or the entry didn't exist then a new
+ *	variable is created. The ref count for the returned object is _not_
+ *	incremented to reflect the returned reference; if you want to keep a
+ *	reference to the object you must increment its ref count yourself.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclIncrObjVar2(interp, part1Ptr, part2Ptr, incrPtr, flags)
+    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+				 * be found. */
+    Tcl_Obj *part1Ptr;		/* Points to an object holding the name of an
+				 * array (if part2 is non-NULL) or the name of
+				 * a variable. */
+    Tcl_Obj *part2Ptr;		/* If non-null, points to an object holding
+				 * the name of an element in the array
+				 * part1Ptr. */
+    Tcl_Obj *incrPtr;		/* Amount to be added to variable. */
+    int flags;			/* Various flags that tell how to incr value:
+				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
+				 * TCL_LEAVE_ERR_MSG. */
+{
+    Var *varPtr, *arrayPtr;
+    char *part1, *part2;
+
+    part1 = TclGetString(part1Ptr);
+    part2 = ((part2Ptr == NULL)? NULL : TclGetString(part2Ptr));
+
+    varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
+	    0, 1, &arrayPtr);
+    if (varPtr == NULL) {
+	Tcl_AddObjErrorInfo(interp,
+		"\n    (reading value of variable to increment)", -1);
+	return NULL;
+    }
+    return TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1, part2,
+	    incrPtr, flags);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPtrIncrObjVar --
+ *
+ *	Given the pointers to a variable and possible containing array,
+ *	increment the Tcl object value of the variable by a Tcl_Obj increment.
+ *
+ * Results:
+ *	Returns a pointer to the Tcl_Obj holding the new value of the
+ *	variable.  If the specified variable doesn't exist, or there is a
+ *	clash in array usage, or an error occurs while executing variable
+ *	traces, then NULL is returned and a message will be left in the
+ *	interpreter's result.
+ *
+ * Side effects:
+ *	The value of the given variable is incremented by the specified
+ *	amount. If either the array or the entry didn't exist then a new
+ *	variable is created. The ref count for the returned object is _not_
+ *	incremented to reflect the returned reference; if you want to keep a
+ *	reference to the object you must increment its ref count yourself.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1, part2, incrPtr, flags)
+    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+				 * be found. */
+    Var *varPtr;
+    Var *arrayPtr;
+    CONST char *part1;		/* Points to an object holding the name of an
+				 * array (if part2 is non-NULL) or the name of
+				 * a variable. */
+    CONST char *part2;		/* If non-null, points to an object holding
+				 * the name of an element in the array
+				 * part1Ptr. */
+    Tcl_Obj *incrPtr;		/* Increment value */
+/* TODO: Which of these flag values really make sense? */
+    CONST int flags;		/* Various flags that tell how to incr value:
+				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
+				 * TCL_LEAVE_ERR_MSG. */
+{
+    register Tcl_Obj *varValuePtr, *newValuePtr = NULL;
+    int code;
+
+    varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags);
+    if (varValuePtr == NULL) {
+	Tcl_AddObjErrorInfo(interp,
+		"\n    (reading value of variable to increment)", -1);
+	return NULL;
+    }
+    if (Tcl_IsShared(varValuePtr)) {
+	varValuePtr = Tcl_DuplicateObj(varValuePtr);
+    }
+    code = TclIncrObj(interp, varValuePtr, incrPtr);
+    Tcl_IncrRefCount(varValuePtr);
+    if (code == TCL_OK) {
+	newValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
+		varValuePtr, flags);
+    }
+    Tcl_DecrRefCount(varValuePtr);
+    return newValuePtr;
+}
+#if 0
 
 /*
  *----------------------------------------------------------------------
@@ -2038,6 +2166,7 @@ TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
     return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
 	    varValuePtr, flags);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

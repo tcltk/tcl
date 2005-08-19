@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.27 2005/08/18 21:19:17 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.28 2005/08/19 05:17:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -289,6 +289,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
 
+#if 0
 /*
  * Macro to read a string containing either a wide or an int and decide which
  * it is while decoding it at the same time.  This enforces the policy that
@@ -299,7 +300,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * GET_WIDE_OR_INT is the same as REQUIRE_WIDE_OR_INT except it never
  * generates an error message.
  * 
- * TODO: Eliminate
  */
 #define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
     (resultVar) = Tcl_GetWideIntFromObj(interp, (objPtr), &(wideVar));	\
@@ -309,7 +309,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(objPtr)->internalRep.longValue = (longVar)			\
 		= Tcl_WideAsLong(wideVar);				\
     }
-#if 0
 #define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
     (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
 	    &(wideVar));						\
@@ -2274,10 +2273,13 @@ TclExecuteByteCode(interp, codePtr)
      */
 
     {
-	Tcl_Obj *objPtr;
-	int opnd, pcAdjustment, isWide;
-	long i;
+	Tcl_Obj *objPtr, *incrPtr;
+	int opnd, pcAdjustment;
+#if 0
+	int isWide;
 	Tcl_WideInt w;
+#endif
+	long i;
 	char *part1, *part2;
 	Var *varPtr, *arrayPtr;
 
@@ -2287,6 +2289,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR_STK:
     case INST_INCR_STK:
 	opnd = TclGetUInt1AtPtr(pc+1);
+#if 0
 	objPtr = *tosPtr;
 	if (objPtr->typePtr == &tclIntType) {
 	    i = objPtr->internalRep.longValue;
@@ -2308,6 +2311,10 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	tosPtr--;
 	TclDecrRefCount(objPtr);
+#else
+	incrPtr = *tosPtr;
+	tosPtr--;
+#endif
 	switch (*pc) {
 	case INST_INCR_SCALAR1:
 	    pcAdjustment = 2;
@@ -2324,7 +2331,12 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
 	i = TclGetInt1AtPtr(pc+1);
+#if 0
 	isWide = 0;
+#else
+	incrPtr = Tcl_NewIntObj(i);
+	Tcl_IncrRefCount(incrPtr);
+#endif
 	pcAdjustment = 2;
 
     doIncrStk:
@@ -2348,6 +2360,7 @@ TclExecuteByteCode(interp, codePtr)
 		    "\n    (reading value of variable to increment)", -1);
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    result = TCL_ERROR;
+	    Tcl_DecrRefCount(incrPtr);
 	    goto checkForCatch;
 	}
 	cleanup = ((part2 == NULL)? 1 : 2);
@@ -2356,7 +2369,12 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_ARRAY1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
+#if 0
 	isWide = 0;
+#else
+	incrPtr = Tcl_NewIntObj(i);
+	Tcl_IncrRefCount(incrPtr);
+#endif
 	pcAdjustment = 3;
 
     doIncrArray:
@@ -2372,6 +2390,7 @@ TclExecuteByteCode(interp, codePtr)
 	if (varPtr == NULL) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    result = TCL_ERROR;
+	    Tcl_DecrRefCount(incrPtr);
 	    goto checkForCatch;
 	}
 	cleanup = 1;
@@ -2380,7 +2399,12 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
+#if 0
 	isWide = 0;
+#else
+	incrPtr = Tcl_NewIntObj(i);
+	Tcl_IncrRefCount(incrPtr);
+#endif
 	pcAdjustment = 3;
 
     doIncrScalar:
@@ -2395,6 +2419,7 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE(("%u %ld => ", opnd, i));
 
     doIncrVar:
+#if 0
 	objPtr = varPtr->value.objPtr;
 	if (TclIsVarDirectReadable(varPtr)
 		&& ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
@@ -2443,12 +2468,22 @@ TclExecuteByteCode(interp, codePtr)
 		    part2, i, TCL_LEAVE_ERR_MSG);
 	}
 	CACHE_STACK_INFO();
+#else
+	/* TODO: Restore no trace optimization */
+	DECACHE_STACK_INFO();
+	objResultPtr = TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1, part2,
+		incrPtr, TCL_LEAVE_ERR_MSG);
+	CACHE_STACK_INFO();
+	Tcl_DecrRefCount(incrPtr);
+#endif
 	if (objResultPtr == NULL) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
+#if 0
     doneIncr:
+#endif
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #ifndef TCL_COMPILE_DEBUG
 	if (*(pc+pcAdjustment) == INST_POP) {
