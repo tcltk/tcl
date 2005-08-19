@@ -12,12 +12,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.23 2005/08/19 05:17:48 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.24 2005/08/19 21:55:21 dgp Exp $
  */
 
 #ifndef _TCLINT
 #define _TCLINT
 
+#define NO_WIDE_TYPE
 /*
  * Common include files needed by most of the Tcl source files are
  * included here, so that system-dependent personalizations for the
@@ -1890,7 +1891,9 @@ MODULE_SCOPE Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE Tcl_ObjType tclStringType;
 MODULE_SCOPE Tcl_ObjType tclArraySearchType;
 MODULE_SCOPE Tcl_ObjType tclNsNameType;
+#ifndef NO_WIDE_TYPE
 MODULE_SCOPE Tcl_ObjType tclWideIntType;
+#endif
 MODULE_SCOPE Tcl_ObjType tclRegexpType;
 
 /*
@@ -2766,6 +2769,7 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     }\
 
 
+#if 0
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to get a Tcl_WideInt value out of
@@ -2785,6 +2789,7 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 	(resultVar) = (objPtr)->internalRep.wideValue
 #    define TclGetLongFromWide(resultVar, objPtr) \
 	(resultVar) = Tcl_WideAsLong((objPtr)->internalRep.wideValue)
+#endif
 #endif
 #endif
 

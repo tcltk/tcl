@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.9 2005/08/02 18:15:14 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.10 2005/08/19 21:55:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1532,9 +1532,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_IS_DOUBLE: {
 	    char *stop;
 
+	    /* TODO */
 	    if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
+#ifndef NO_WIDE_TYPE
 		(objPtr->typePtr == &tclWideIntType) ||
+#endif
 		(objPtr->typePtr == &tclBignumType)) {
 		break;
 	    }

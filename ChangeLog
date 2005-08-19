@@ -2,6 +2,16 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclBasic.c:	Updated OldMathFuncProc and ExprAbsFunc to
+	do less invasion into numeric Tcl_Obj internals.  Made ExprDoubleFunc,
+	ExprIntFunc, ExprWideFunc, and ExprRoundFunc bignum-aware.  Revised
+	ExprSrandFunc error message.
+
+	* generic/tclProc.c:	Wrapped a few tclWideIntType uses in 
+	* generic/tclCmdMZ.c:	#ifndef NO_WIDE_TYPE.
+
+	* generic/tclInt.h:	#define'd NO_WIDE_TYPE.
+
 	* generic/tclVar.c:	Replaced TclPtrIncrVar and TclPtrIncrWideVar
 	* generic/tclInt.h:	with TclPtrIncrObjVar and replaced TclIncrVar2
 	* generic/tclInt.decls:	and TclIncrWideVar2 with TclIncrObjVar2.  New

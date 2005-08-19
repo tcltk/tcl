@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.19 2005/08/18 02:36:14 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.20 2005/08/19 21:55:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -75,6 +75,7 @@ static int	VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 static void	MathFuncWrongNumArgs _ANSI_ARGS_((Tcl_Interp* interp,
 		    int expected, int actual, Tcl_Obj *CONST *objv));
 
+#if 0
 #ifndef TCL_WIDE_INT_IS_LONG
 /*
  * Extract a double value from a general numeric object.
@@ -108,6 +109,7 @@ static void	MathFuncWrongNumArgs _ANSI_ARGS_((Tcl_Interp* interp,
 	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType)
 #define IS_NUMERIC_TYPE(typePtr)					\
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
+#endif
 
 /*
  * Macros for testing floating-point values for certain special cases. Test
@@ -2871,6 +2873,7 @@ OldMathFuncProc(clientData, interp, objc, objv)
 
     /* Convert arguments from Tcl_Obj's to Tcl_Value's */
 
+#if 0
     for (j = 1, k = 0; j < objc; ++j, ++k) {
 	valuePtr = objv[j];
 	if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
@@ -2921,6 +2924,75 @@ OldMathFuncProc(clientData, interp, objc, objv)
 	    }
 	}
     }
+#else
+    for (j = 1, k = 0; j < objc; ++j, ++k) {
+	Tcl_WideInt w;
+	valuePtr = objv[j];
+	if (TCL_OK != Tcl_GetDoubleFromObj(NULL, valuePtr, &d)) {
+	    /* Non-numeric argument */
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "argument to math function didn't have numeric value", -1));
+	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Copy the object's numeric value to the argument record,
+	 * converting it if necessary. 
+	 *
+	 * NOTE: no bignum support;  use the new mathfunc interface for that
+	 */
+
+	args[k].type = dataPtr->argTypes[k];
+	switch (args[k].type) {
+	case TCL_EITHER:
+	    if (Tcl_GetLongFromObj(NULL, valuePtr, &(args[k].intValue))
+		    == TCL_OK) {
+		args[k].type = TCL_INT;
+		break;
+	    }
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &(args[k].wideValue))
+		    == TCL_OK) {
+		args[k].type = TCL_WIDE_INT;
+		break;
+	    }
+	    args[k].type = TCL_DOUBLE;
+	    /* FALLTHROUGH */
+
+	case TCL_DOUBLE:
+	    args[k].doubleValue = d;
+	    break;
+	case TCL_INT:
+	    if (Tcl_GetLongFromObj(NULL, valuePtr, &(args[k].intValue))
+		    == TCL_OK) {
+		break;
+	    }
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &w) == TCL_OK) {
+		args[k].intValue = Tcl_WideAsLong(w);
+		break;
+	    }
+	    if (IS_INF(d)) {
+		/* Can't portably cast infinity to long */
+		return TCL_ERROR;
+	    }
+	    Tcl_ResetResult(interp);
+	    args[k].intValue = (long) d;
+	    break;
+	case TCL_WIDE_INT:
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &(args[k].wideValue))
+		    == TCL_OK) {
+		break;
+	    }
+	    if (IS_INF(d)) {
+		/* Can't portably cast infinity to wide */
+		return TCL_ERROR;
+	    }
+	    Tcl_ResetResult(interp);
+	    args[k].wideValue = Tcl_DoubleAsWide(d);
+	    break;
+	}
+    }
+#endif
 
     /* Call the function */
 
@@ -2935,7 +3007,7 @@ OldMathFuncProc(clientData, interp, objc, objv)
     if (funcResult.type == TCL_INT) {
 	TclNewLongObj(valuePtr, funcResult.intValue);
     } else if (funcResult.type == TCL_WIDE_INT) {
-	TclNewWideIntObj(valuePtr, funcResult.wideValue);
+	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
     } else {
 	d = funcResult.doubleValue;
 	if (IS_NAN(d) || IS_INF(d)) {
@@ -5007,43 +5079,17 @@ ExprAbsFunc(clientData, interp, objc, objv)
      * To take the absolute value of a negative value, take care to
      * keep the same data type, fixed vs. floating point, and to
      * promote to wider type if needed.
+     *
+     * TODO: efficient use of narrower ints.
      */
 
-    if (valuePtr->typePtr == &tclDoubleType) {
-	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
-	return TCL_OK;
-    }
-    if (valuePtr->typePtr == &tclIntType) {
-	long l = - valuePtr->internalRep.longValue;
-	if (l < 0) {
-	    TclBNInitBignumFromLong(&big, l);
-	    goto promotion;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(l));
-	return TCL_OK;
-    }
-#ifndef NO_WIDE_TYPE
-    if (valuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt w;
-	TclGetWide(w, valuePtr);
-	w = -w;
-	if (w < 0) {
-	    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)w);
-	    goto promotion;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w));
-	return TCL_OK;
-    }
-#endif
-    if (valuePtr->typePtr == &tclBignumType) {
-	Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-    promotion:
+    if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
 	big.sign = MP_ZPOS;
 	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-	return TCL_OK;
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
     }
-    Tcl_Panic("in ExprAbsFunc: unknown numeric type.");
-    return TCL_ERROR;		/* lint */
+    return TCL_OK;
 }
 
 static int
@@ -5075,8 +5121,9 @@ ExprDoubleFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
 {
-    Tcl_Obj* valuePtr;
     double dResult;
+#if 0
+    Tcl_Obj* valuePtr;
     Tcl_Obj* oResult;
 
     /*
@@ -5096,6 +5143,17 @@ ExprDoubleFunc(clientData, interp, objc, objv)
     }
 
     return TCL_ERROR;
+#else
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(dResult));
+    return TCL_OK;
+#endif
 }
 
 static int
@@ -5106,9 +5164,10 @@ ExprIntFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
 {
-    register Tcl_Obj *valuePtr;
     long iResult;
     double d;
+#if 0
+    register Tcl_Obj *valuePtr;
     Tcl_Obj* oResult;
 
     if (objc != 2) {
@@ -5147,6 +5206,42 @@ ExprIntFunc(clientData, interp, objc, objv)
 	}
     }
     return TCL_ERROR;
+#else
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	/* Non-numeric argument */
+	return TCL_ERROR;
+    }
+    if (Tcl_GetLongFromObj(NULL, objv[1], &iResult) != TCL_OK) {
+	mp_int big;
+	if (Tcl_GetBignumFromObj(NULL, objv[1], &big) != TCL_OK) {
+	    /* Argument is really a double; attempt conversion
+	     * For compatibility, impose limitation rules.
+	     * TODO: rethink this? */
+	    if ((d < (double) (long) LONG_MIN)
+		    || (d > (double) (long) LONG_MAX)) {
+		CONST char *s = "integer value too large to represent";
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		return TCL_ERROR;
+	    }
+	    iResult = (long) d;
+	} else {
+	    /* truncate the bignum; keep only bits in long range */
+	    Tcl_Obj *objPtr;
+	    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+	    objPtr = Tcl_NewBignumObj(&big);
+	    Tcl_IncrRefCount(objPtr);
+	    Tcl_GetLongFromObj(NULL, objPtr, &iResult);
+	    Tcl_DecrRefCount(objPtr);
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
+    return TCL_OK;
+#endif
 }
 
 static int
@@ -5157,10 +5252,10 @@ ExprWideFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
 {
-
-    register Tcl_Obj *valuePtr;
     Tcl_WideInt wResult;
     double d;
+#if 0
+    register Tcl_Obj *valuePtr;
     Tcl_Obj* oResult;
 
     if (objc != 2) {
@@ -5199,6 +5294,42 @@ ExprWideFunc(clientData, interp, objc, objv)
 	}
     }
     return TCL_ERROR;
+#else
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	/* Non-numeric argument */
+	return TCL_ERROR;
+    }
+    if (Tcl_GetWideIntFromObj(NULL, objv[1], &wResult) != TCL_OK) {
+	mp_int big;
+	if (Tcl_GetBignumFromObj(NULL, objv[1], &big) != TCL_OK) {
+	    /* Argument is really a double; attempt conversion
+	     * For compatibility, impose limitation rules.
+	     * TODO: rethink this? */
+	    if ((d < Tcl_WideAsDouble(LLONG_MIN))
+		    || (d > Tcl_WideAsDouble(LLONG_MAX))) {
+		CONST char *s = "integer value too large to represent";
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+		return TCL_ERROR;
+	    }
+	    wResult = (Tcl_WideInt) d;
+	} else {
+	    /* truncate the bignum; keep only bits in wide int range */
+	    Tcl_Obj *objPtr;
+	    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
+	    objPtr = Tcl_NewBignumObj(&big);
+	    Tcl_IncrRefCount(objPtr);
+	    Tcl_GetWideIntFromObj(NULL, objPtr, &wResult);
+	    Tcl_DecrRefCount(objPtr);
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
+    return TCL_OK;
+#endif
 }
 
 static int
@@ -5305,6 +5436,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
 {
     Tcl_Obj *valuePtr, *resPtr;
     double d, a, f;
+    mp_int big;
 
     /* Check the argument count. */
 
@@ -5316,6 +5448,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
 
     /* Coerce the argument to a number. Integers are already rounded. */
 
+#if 0
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -5325,6 +5458,18 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	return TCL_OK;
     }
     GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
+#else
+    if (Tcl_GetDoubleFromObj(interp, valuePtr, &d) != TCL_OK) {
+	/* Non-numeric */
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
+	/* Integers are already rounded */
+	mp_clear(&big);
+	Tcl_SetObjResult(interp, valuePtr);
+	return TCL_OK;
+    }
+#endif
 
     /* 
      * Round the number to the nearest integer.  I'd like to use rint()
@@ -5342,7 +5487,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	if (f >= (double) LONG_MIN && f <= (double) LONG_MAX) {
 	    TclNewLongObj(resPtr, (long) f);
 	} else {
-	    TclNewWideIntObj(resPtr, Tcl_DoubleAsWide(f));
+	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(f));
 	}
 	Tcl_SetObjResult(interp, resPtr);
 	return TCL_OK;
@@ -5387,12 +5532,13 @@ ExprSrandFunc(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetLongFromObj(NULL, valuePtr, &i) != TCL_OK) {
+    /* TODO: error message reform? */
+    if (Tcl_GetLongFromObj(interp, valuePtr, &i) != TCL_OK) {
 	/*
 	 * At this point, the only other possible type is double
-	 */
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"can't use floating-point value as argument to srand", -1));
+	 */
 	return TCL_ERROR;
     }
 

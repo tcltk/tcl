@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.28 2005/08/19 05:17:47 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.29 2005/08/19 21:55:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2271,6 +2271,8 @@ TclExecuteByteCode(interp, codePtr)
      * instructions set the value of some variables and then jump to somme
      * common execution code.
      */
+
+/*TODO: Consider more untangling here;  merge with LOAD and STORE ? */
 
     {
 	Tcl_Obj *objPtr, *incrPtr;

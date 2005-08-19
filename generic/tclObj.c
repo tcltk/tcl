@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.25 2005/08/15 18:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.26 2005/08/19 21:55:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2314,7 +2314,7 @@ Tcl_NewWideIntObj(wideValue)
 #ifndef NO_WIDE_TYPE
     TclNewWideIntObj(objPtr, wideValue);
 #else
-    TclNewObj(objPtr)
+    TclNewObj(objPtr);
     Tcl_SetWideIntObj(objPtr, wideValue);
 #endif
     return objPtr;
