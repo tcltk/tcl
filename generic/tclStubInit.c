@@ -9,9 +9,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
 <<<<<<< tclStubInit.c
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.13 2005/08/19 05:17:48 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.14 2005/08/22 03:49:41 dgp Exp $
 =======
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.13 2005/08/19 05:17:48 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.14 2005/08/22 03:49:41 dgp Exp $
 >>>>>>> 1.121
  */
 
@@ -99,7 +99,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 13 */
     TclDumpMemoryInfo, /* 14 */
     NULL, /* 15 */
-    TclExprFloatError, /* 16 */
+    NULL, /* 16 */
     NULL, /* 17 */
     NULL, /* 18 */
     NULL, /* 19 */

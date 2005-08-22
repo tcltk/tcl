@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.20 2005/08/19 21:55:20 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.21 2005/08/22 03:49:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -69,8 +69,11 @@ static int	ExprUnaryFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprWideFunc  _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
+#if 0
 static int	VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Obj *objPtr));
+#endif
+static void	ExprFloatError _ANSI_ARGS_((Tcl_Interp *interp, double value));
 
 static void	MathFuncWrongNumArgs _ANSI_ARGS_((Tcl_Interp* interp,
 		    int expected, int actual, Tcl_Obj *CONST *objv));
@@ -2861,7 +2864,10 @@ OldMathFuncProc(clientData, interp, objc, objv)
     Tcl_Value args[MAX_MATH_ARGS];
     Tcl_Value funcResult;
     int result;
-    int i, j, k;
+#if 0
+    int i;
+#endif
+    int j, k;
     double d;
 
     /* Check argument count */
@@ -2996,6 +3002,7 @@ OldMathFuncProc(clientData, interp, objc, objv)
 
     /* Call the function */
 
+    errno = 0;
     result = (*dataPtr->proc)(dataPtr->clientData, interp, args,
 	    &funcResult);
     if (result != TCL_OK) {
@@ -3011,7 +3018,7 @@ OldMathFuncProc(clientData, interp, objc, objv)
     } else {
 	d = funcResult.doubleValue;
 	if (IS_NAN(d) || IS_INF(d)) {
-	    TclExprFloatError(interp, d);
+	    ExprFloatError(interp, d);
 	    return TCL_ERROR;
 	}
 	TclNewDoubleObj(valuePtr, d);
@@ -4990,7 +4997,7 @@ ExprUnaryFunc(clientData, interp, objc, objv)
 	dResult = (*func)(d);
 	if ((errno != 0) || IS_NAN(dResult)) {
 	    if (errno != ERANGE || (dResult != 0.0 && !IS_INF(dResult))) {
-		TclExprFloatError(interp, dResult);
+		ExprFloatError(interp, dResult);
 		return TCL_ERROR;
 	    }
 	}
@@ -5033,7 +5040,7 @@ ExprBinaryFunc(clientData, interp, objc, objv)
 	dResult = (*func)(d1, d2);
 	if ((errno != 0) || IS_NAN(dResult)) {
 	    if (errno != ERANGE || (dResult != 0.0 && !IS_INF(dResult))) {
-		TclExprFloatError(interp, dResult);
+		ExprFloatError(interp, dResult);
 		return TCL_ERROR;
 	    }
 	}
@@ -5528,11 +5535,14 @@ ExprSrandFunc(clientData, interp, objc, objv)
     }
     valuePtr = objv[1];
 
+
+    /* TODO: error message reform? */
+#if 0
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
+#endif
 
-    /* TODO: error message reform? */
     if (Tcl_GetLongFromObj(interp, valuePtr, &i) != TCL_OK) {
 	/*
 	 * At this point, the only other possible type is double
@@ -5564,6 +5574,56 @@ ExprSrandFunc(clientData, interp, objc, objv)
 
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExprFloatError --
+ *
+ *	This procedure is called when an error occurs during a floating-point
+ *	operation. It reads errno and sets interp->objResultPtr accordingly.
+ *
+ * Results:
+ *	interp->objResultPtr is set to hold an error message.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ExprFloatError(interp, value)
+    Tcl_Interp *interp;         /* Where to store error message. */
+    double value;               /* Value returned after error; used to
+                                 * distinguish underflows from overflows. */
+{
+    CONST char *s;
+
+    if ((errno == EDOM) || IS_NAN(value)) {
+	s = "domain error: argument not in valid range";
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
+    } else if ((errno == ERANGE) || IS_INF(value)) {
+	if (value == 0.0) {
+	    s = "floating-point value too small to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *) NULL);
+	} else {
+	    s = "floating-point value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
+	}
+    } else {
+	char msg[64 + TCL_INTEGER_SPACE];
+
+	sprintf(msg, "unknown floating-point error, errno = %d", errno);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
+    }
+}
+
+
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -5637,6 +5697,7 @@ VerifyExprObjType(interp, objPtr)
     return TCL_ERROR;
 #endif
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.16 2005/08/15 20:46:02 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.17 2005/08/22 03:49:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -87,6 +87,8 @@ static void		FreeProcessGlobalValue _ANSI_ARGS_((
 			    ClientData clientData));
 static void		FreeThreadHash _ANSI_ARGS_((ClientData clientData));
 static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_((Tcl_ThreadDataKey *keyPtr));
+static int		ParseInteger _ANSI_ARGS_((CONST char *bytes,
+			    int numBytes));
 static int		SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
 			    Tcl_Obj* objPtr));
 static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
@@ -2229,6 +2231,60 @@ TclLooksLikeInt(bytes, length)
 /*
  *----------------------------------------------------------------------
  *
+ * ParseInteger --
+ *
+ *	Scans up to numBytes bytes starting at bytes, and checks whether the
+ *	leading bytes look like an integer's string representation.
+ *
+ * Results:
+ *	Returns 0 if the leading bytes do not look like an integer.
+ *	Otherwise, returns the number of bytes examined that look like an
+ *	integer.  This may be less than numBytes if the integer is only the
+ *	leading part of the string.     
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseInteger(bytes, numBytes)
+    CONST char *bytes;	/* The string to examine. */
+    int numBytes;	/* Max number of bytes to scan. */
+{
+    register CONST char *p = bytes;
+
+    /* Take care of introductory "0x". */
+    if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
+	int scanned;
+	Tcl_UniChar ch;
+
+	p += 2;
+	numBytes -= 2;
+	scanned = TclParseHex(p, numBytes, &ch);
+	if (scanned) {
+	    return scanned+2;
+	}
+
+	/* Recognize the 0 as valid integer, but x is left behind. */
+	return 1;
+    }
+    while (numBytes && isdigit(UCHAR(*p))) {            /* INTL: digit */
+	numBytes--; p++;
+    }
+    if (numBytes == 0) {
+	return (p - bytes);
+    }
+    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
+	return (p - bytes);
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclGetIntForIndex --
  *
  *	This function returns an integer corresponding to the list index held
@@ -2288,7 +2344,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	if ((*p == '+') || (*p == '-')) {
 	    p++; length--;
 	}
-	opIdx = TclParseInteger(p, length) + (int) (p-bytes);
+	opIdx = ParseInteger(p, length) + (int) (p-bytes);
 	if (opIdx) {
 	    int code, first, second;
 	    char savedOp = bytes[opIdx];

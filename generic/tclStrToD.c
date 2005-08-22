@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.21 2005/08/17 21:39:01 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.22 2005/08/22 03:49:40 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -29,6 +29,10 @@
 #include <ctype.h>
 #include <tommath.h>
 
+#if 0
+/* Hack is out of date.  tclInt.h unconditionally #include's errno.h
+ * (via tclPort.h).
+ */
 /*
  * The stuff below is a bit of a hack so that this file can be used in
  * environments that include no UNIX, i.e. no errno: just arrange to use the
@@ -42,6 +46,7 @@
 #ifdef NO_ERRNO_H
 extern int errno;			/* Use errno from tclExecute.c. */
 #   define ERANGE 34
+#endif
 #endif
 
 #if (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && (DBL_MAX_EXP == 1024)

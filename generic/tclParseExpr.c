@@ -12,25 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.10 2005/08/17 20:49:55 kennykb Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.11 2005/08/22 03:49:40 dgp Exp $
  */
 
 #include "tclInt.h"
-
-/*
- * The stuff below is a bit of a hack so that this file can be used in
- * environments that include no UNIX, i.e. no errno: just arrange to use the
- * errno from tclExecute.c here.
- */
-
-#ifdef TCL_GENERIC_ONLY
-#define NO_ERRNO_H
-#endif
-
-#ifdef NO_ERRNO_H
-extern int errno;			/* Use errno from tclExecute.c. */
-#define ERANGE 34
-#endif
 
 /*
  * Boolean variable that controls whether expression parse tracing is enabled.
@@ -1886,6 +1871,7 @@ GetLexeme(infoPtr)
     }
 }
 
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -1945,6 +1931,7 @@ TclParseInteger(string, numBytes)
     }
     return 0;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

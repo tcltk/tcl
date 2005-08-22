@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.29 2005/08/19 21:55:21 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.30 2005/08/22 03:49:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -49,6 +49,7 @@
 #   define NO_ERRNO_H
 #endif /* !TCL_GENERIC_ONLY */
 
+#if 0
 #ifdef NO_ERRNO_H
 int errno;
 #   define EDOM   33
@@ -69,6 +70,7 @@ int errno;
 #	define DBL_MAX 1.79769313486231570e+308
 #   endif /* MAXDOUBLE */
 #endif /* !DBL_MAX */
+#endif
 
 /*
  * A mask (should be 2**n-1) that is used to work out when the bytecode engine
@@ -141,12 +143,11 @@ long		tclObjsFreed   = 0;
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
 
+#if 0
 /*
  * Macros for testing floating-point values for certain special cases. Test
  * for not-a-number by comparing a value against itself; test for infinity by
  * comparing against the largest floating-point value.
- *
- * TODO: Eliminate these ?
  */
 
 #ifdef _MSC_VER
@@ -155,6 +156,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #else
 #define IS_NAN(f) ((f) != (f))
 #define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
+#endif
 #endif
 
 /*
@@ -333,13 +335,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
 
 #define W0	Tcl_LongAsWide(0)
-#endif
 /*
  * For tracing that uses wide values.
  */
 #define LLD				"%" TCL_LL_MODIFIER "d"
 
-#if 0
 #ifndef TCL_WIDE_INT_IS_LONG
 /*
  * Extract a double value from a general numeric object.
@@ -6791,6 +6791,7 @@ GetOpcodeName(pc)
 }
 #endif /* TCL_COMPILE_DEBUG */
 
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -6838,6 +6839,7 @@ TclExprFloatError(interp, value)
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
     }
 }
+#endif
 
 #ifdef TCL_COMPILE_STATS
 /*
