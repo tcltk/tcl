@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.22 2005/08/22 15:48:26 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.23 2005/08/22 20:50:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5189,7 +5189,9 @@ ExprEntierFunc(clientData, interp, objc, objv)
 	/* Non-numeric argument */
 	return TCL_ERROR;
     }
-    TclInitBignumFromDouble(d, &big);
+    if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
     return TCL_OK;
 }
@@ -5203,7 +5205,7 @@ ExprIntFunc(clientData, interp, objc, objv)
     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
 {
     long iResult;
-    double d;
+    Tcl_Obj *objPtr;
 #if 0
     register Tcl_Obj *valuePtr;
     Tcl_Obj* oResult;
@@ -5245,37 +5247,19 @@ ExprIntFunc(clientData, interp, objc, objv)
     }
     return TCL_ERROR;
 #else
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
+    if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	/* Non-numeric argument */
-	return TCL_ERROR;
-    }
-    if (Tcl_GetLongFromObj(NULL, objv[1], &iResult) != TCL_OK) {
+    objPtr = Tcl_GetObjResult(interp);
+    if (Tcl_GetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
+	/* truncate the bignum; keep only bits in wide int range */
 	mp_int big;
-	if (Tcl_GetBignumFromObj(NULL, objv[1], &big) != TCL_OK) {
-	    /* Argument is really a double; attempt conversion
-	     * For compatibility, impose limitation rules.
-	     * TODO: rethink this? */
-	    if ((d < (double) (long) LONG_MIN)
-		    || (d > (double) (long) LONG_MAX)) {
-		CONST char *s = "integer value too large to represent";
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
-		return TCL_ERROR;
-	    }
-	    iResult = (long) d;
-	} else {
-	    /* truncate the bignum; keep only bits in long range */
-	    Tcl_Obj *objPtr;
-	    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
-	    objPtr = Tcl_NewBignumObj(&big);
-	    Tcl_IncrRefCount(objPtr);
-	    Tcl_GetLongFromObj(NULL, objPtr, &iResult);
-	    Tcl_DecrRefCount(objPtr);
-	}
+	Tcl_GetBignumFromObj(NULL, objPtr, &big);
+	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+	objPtr = Tcl_NewBignumObj(&big);
+	Tcl_IncrRefCount(objPtr);
+	Tcl_GetLongFromObj(NULL, objPtr, &iResult);
+	Tcl_DecrRefCount(objPtr);
     }
     Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
     return TCL_OK;
@@ -5291,7 +5275,7 @@ ExprWideFunc(clientData, interp, objc, objv)
     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
 {
     Tcl_WideInt wResult;
-    double d;
+    Tcl_Obj *objPtr;
 #if 0
     register Tcl_Obj *valuePtr;
     Tcl_Obj* oResult;
@@ -5333,37 +5317,19 @@ ExprWideFunc(clientData, interp, objc, objv)
     }
     return TCL_ERROR;
 #else
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
+    if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	/* Non-numeric argument */
-	return TCL_ERROR;
-    }
-    if (Tcl_GetWideIntFromObj(NULL, objv[1], &wResult) != TCL_OK) {
+    objPtr = Tcl_GetObjResult(interp);
+    if (Tcl_GetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
+	/* truncate the bignum; keep only bits in wide int range */
 	mp_int big;
-	if (Tcl_GetBignumFromObj(NULL, objv[1], &big) != TCL_OK) {
-	    /* Argument is really a double; attempt conversion
-	     * For compatibility, impose limitation rules.
-	     * TODO: rethink this? */
-	    if ((d < Tcl_WideAsDouble(LLONG_MIN))
-		    || (d > Tcl_WideAsDouble(LLONG_MAX))) {
-		CONST char *s = "integer value too large to represent";
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
-		return TCL_ERROR;
-	    }
-	    wResult = (Tcl_WideInt) d;
-	} else {
-	    /* truncate the bignum; keep only bits in wide int range */
-	    Tcl_Obj *objPtr;
-	    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
-	    objPtr = Tcl_NewBignumObj(&big);
-	    Tcl_IncrRefCount(objPtr);
-	    Tcl_GetWideIntFromObj(NULL, objPtr, &wResult);
-	    Tcl_DecrRefCount(objPtr);
-	}
+	Tcl_GetBignumFromObj(NULL, objPtr, &big);
+	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
+	objPtr = Tcl_NewBignumObj(&big);
+	Tcl_IncrRefCount(objPtr);
+	Tcl_GetWideIntFromObj(NULL, objPtr, &wResult);
+	Tcl_DecrRefCount(objPtr);
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;

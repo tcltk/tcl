@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.25 2005/08/22 15:48:26 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.26 2005/08/22 20:50:26 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -992,9 +992,9 @@ TclParseNumber( Tcl_Interp* interp,
 	case sINF:
 	case sINFINITY:
 	    if ( signum ) {
-		objPtr->internalRep.doubleValue = HUGE_VAL;
+		objPtr->internalRep.doubleValue = - HUGE_VAL;
 	    } else {
-		objPtr->internalRep.doubleValue = -HUGE_VAL;
+		objPtr->internalRep.doubleValue = HUGE_VAL;
 	    }
 	    objPtr->typePtr = &tclDoubleType;
 	    break;
@@ -2702,12 +2702,23 @@ TclFinalizeDoubleConversion()
  *----------------------------------------------------------------------
  */
 
-void
-TclInitBignumFromDouble(double d,	/* Number to convert */
+int
+TclInitBignumFromDouble(Tcl_Interp *interp,	/* For error message */
+			double d,	/* Number to convert */
 			mp_int* b)	/* Place to store the result */
 {
     double fract;
     int expt;
+
+    /* Infinite values can't convert to bignum */
+    if ((d > DBL_MAX) || (d < -DBL_MAX)) {
+	if (interp != NULL) {
+	    char *s = "integer value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
+	}
+	return TCL_ERROR;
+    }
     fract = frexp(d,&expt);
     if (expt <= 0) {
 	mp_init(b);
@@ -2733,6 +2744,7 @@ TclInitBignumFromDouble(double d,	/* Number to convert */
 	    b->sign = MP_NEG;
 	}
     }
+    return TCL_OK;
 }
 
 /*

@@ -2,12 +2,21 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclInt.h:	New ACCEPT_NAN macro to mark code that supports
+	* generic/tclCmdAH.c:	or disables accepting of the NaN value at 
+	* generic/tclExecute.c:	various points.
+	* generic/tclLink.c:
+
+	* generic/tclStrToD.c:	Bug fix.  Parsing of +/- Infinity was reversed.
+
 	* generic/tclTestObj.c:	Disabled unused [testconvertobj] command.
 
-	* generic/tclBasic:	Added [expr {entier(.)}].
+	* generic/tclBasic:	Added [expr {entier(.)}].  Rewrote int(.)
+	and wide(.) to use the same guts, accepting all non-Inf doubles as
+	arguments.
 
 	* generic/tclInt.h:	New routine TclInitBignumFromDouble.
-	* generic/tclStrToD.c:
+	* generic/tclStrToD.c:	Modified to return code and write error message.
 
 	* generic/tclInt.h:	TCL_WIDE_INT_IS_LONG implies NO_WIDE_TYPE.
 	* generic/tclObj.c:	Removed now unnecessary tests of the

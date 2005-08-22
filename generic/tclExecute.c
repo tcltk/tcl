@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.30 2005/08/22 03:49:39 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.31 2005/08/22 20:50:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4678,11 +4678,13 @@ TclExecuteByteCode(interp, codePtr)
 	valuePtr = *(tosPtr - 1);
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d1);
 	if (result != TCL_OK) {
+#ifdef ACCEPT_NAN
 	    if (valuePtr->typePtr == &tclDoubleType) {
 		/* NaN first argument -> result is also NaN */
 		result = TCL_OK;
 		NEXT_INST_F(1, 1, 0);
 	    }
+#endif
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr), 
 		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
@@ -4691,12 +4693,14 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	result = Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2);
 	if (result != TCL_OK) {
+#ifdef ACCEPT_NAN
 	    if (value2Ptr->typePtr == &tclDoubleType) {
 		/* NaN second argument -> result is also NaN */
 		objResultPtr = value2Ptr;
 		result = TCL_OK;
 		NEXT_INST_F(1, 2, 1);
 	    }
+#endif
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 		    O2S(value2Ptr), O2S(valuePtr), 
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
@@ -5082,6 +5086,7 @@ TclExecuteByteCode(interp, codePtr)
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
 	    /* Value is now numeric (including NaN) */
+#ifdef ACCEPT_NAN
 	    if (result != TCL_OK) {
 	        /* Value is NaN */
 		if (*pc == INST_BITNOT) {
@@ -5091,6 +5096,7 @@ TclExecuteByteCode(interp, codePtr)
 		/* -NaN => NaN */
 		NEXT_INST_F(1, 0, 0);
 	    }
+#endif
 	    if (valuePtr->typePtr == &tclDoubleType) {
 		if (*pc == INST_BITNOT) {
 		    /* ~ arg must be an integer */
@@ -5310,7 +5316,7 @@ TclExecuteByteCode(interp, codePtr)
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
 	    /* Value is now numeric (including NaN) */
-#if 0
+#ifndef ACCEPT_NAN
 	    if ((*pc == INST_TRY_CVT_TO_NUMERIC) && (result != TCL_OK)) {
 		/* Numeric conversion of NaN -> error */
 		CONST char *s = "domain error: argument not in valid range";
