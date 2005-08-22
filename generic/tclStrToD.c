@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.23 2005/08/22 13:55:36 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.24 2005/08/22 14:21:02 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -859,7 +859,6 @@ TclParseNumber( Tcl_Interp* interp,
 	    if (!octalSignificandOverflow) {
 		if (octalSignificandWide > 
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
 #ifndef NO_WIDE_TYPE
 		    if (octalSignificandWide 
 			    <= (((~(Tcl_WideUInt)0) >> 1) + signum)) {
@@ -873,7 +872,6 @@ TclParseNumber( Tcl_Interp* interp,
 			}
 			break;
 		    }
-#endif
 #endif
 		    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 						octalSignificandWide);
@@ -917,7 +915,6 @@ TclParseNumber( Tcl_Interp* interp,
 	    if (!significandOverflow) {
 		if (significandWide > 
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef TCL_WIDE_INT_IS_LONG
 #ifndef NO_WIDE_TYPE
 		    if (significandWide 
 			    <= (((~(Tcl_WideUInt)0) >> 1) + signum)) {
@@ -931,7 +928,6 @@ TclParseNumber( Tcl_Interp* interp,
 			}
 			break;
 		    }
-#endif
 #endif
 		    TclBNInitBignumFromWideUInt(&significandBig,
 						significandWide);

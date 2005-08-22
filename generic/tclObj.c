@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.27 2005/08/22 13:55:36 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.28 2005/08/22 14:21:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -187,9 +187,7 @@ static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 #ifndef NO_WIDE_TYPE
-#ifndef TCL_WIDE_INT_IS_LONG
 static void		UpdateStringOfWideInt _ANSI_ARGS_((Tcl_Obj *objPtr));
-#endif
 #endif
 
 static void		FreeBignum _ANSI_ARGS_((Tcl_Obj *objPtr));
@@ -257,11 +255,7 @@ Tcl_ObjType tclWideIntType = {
     "wideInt",				/* name */
     (Tcl_FreeInternalRepProc *) NULL,	/* freeIntRepProc */
     (Tcl_DupInternalRepProc *) NULL,	/* dupIntRepProc */
-#ifdef TCL_WIDE_INT_IS_LONG
-    UpdateStringOfInt,			/* updateStringProc */
-#else /* !TCL_WIDE_INT_IS_LONG */
     UpdateStringOfWideInt,		/* updateStringProc */
-#endif /* TCL_WIDE_INT_IS_LONG */
     NULL				/* setFromAnyProc */
 };
 #endif
@@ -2151,10 +2145,6 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 	}
 #ifndef NO_WIDE_TYPE
 	if (objPtr->typePtr == &tclWideIntType) {
-#ifdef TCL_WIDE_INT_IS_LONG
-	    *longPtr = objPtr->internalRep.longValue;
-	    return TCL_OK;
-#else
 	    /*
 	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
 	     * converted to a long, ignoring overflow.  The rule preserves
@@ -2170,7 +2160,6 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 		return TCL_OK;
 	    }
 	    goto tooLarge;
-#endif
 	}
 #endif
         if (objPtr->typePtr == &tclDoubleType) {
@@ -2241,7 +2230,6 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_WIDE_INT_IS_LONG
 static void
 UpdateStringOfWideInt(objPtr)
     register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
@@ -2263,7 +2251,6 @@ UpdateStringOfWideInt(objPtr)
     memcpy(objPtr->bytes, buffer, len + 1);
     objPtr->length = len;
 }
-#endif /* TCL_WIDE_INT_IS_LONG */
 #endif /* !NO_WIDE_TYPE */
 
 /*
@@ -2817,7 +2804,6 @@ Tcl_SetBignumObj(
     }
   tooLargeForLong:
 #ifndef NO_WIDE_TYPE
-#ifndef TCL_WIDE_INT_IS_LONG
     if (bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
@@ -2842,7 +2828,6 @@ Tcl_SetBignumObj(
 	return;
     }
   tooLargeForWide:
-#endif
 #endif
 #endif
     TclInvalidateStringRep(objPtr);

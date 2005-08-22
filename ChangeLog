@@ -2,6 +2,10 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclInt.h:	TCL_WIDE_INT_IS_LONG implies NO_WIDE_TYPE.
+	* generic/tclObj.c:	Removed now unnecessary tests of the
+	* generic/tclStrToD.c:	TCL_WIDE_INT_IS_LONG definition.
+
 	* generic/tclInt.h:	New internal routine TclSetBignumIntRep
 	* generic/tclObj.c:	consolidates packing of bignum value into
 	* generic/tclStrToD.c:	a Tcl_Obj within one source code file.
