@@ -1,3 +1,29 @@
+2005-08-21  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclInt.h:		Moved TclParseInteger to tclUtil.c
+	* generic/tclParseExpr.c:	and made it static.
+	* generic/tclUtil.c:
+
+	* generic/tclInt.decls:	Moved TclExprFloatError to tclBasic.c and
+	* generic/tclBasic.c:	made it static.
+	* generic/tclExecute.c:
+
+	* generitc/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclExecute.c:	errno, IS_NAN, IS_INF, LLD no longer called in
+	this file; dropped/disabled support for them.
+
+	* generic/tclCompExpr.c:	errno no longer used in these files;
+	* generic/tclParseExpr.c:	dropped support "hack" for it.
+
+	* generic/tclStrToD.c:	Disabled out of date support "hack" for errno.
+
+	* generic/tclBasic.c:	Eliminated VerifyExprObjType.  Initialize
+	errno to zero in OldMathFuncProc.
+
 2005-08-19  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]
