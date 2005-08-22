@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.16 2005/08/18 02:09:05 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.17 2005/08/22 12:55:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -26,7 +26,8 @@ testConstraint testmathfunctions [expr {
 
 testConstraint longIs32bit [expr {int(0x80000000) < 0}]
 testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit [expr {(0x80000000 > 0) && (0x8000000000000000 < 0)}]
+testConstraint wideIs64bit \
+	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 
 # Big test for correct ordering of data in [expr]
 

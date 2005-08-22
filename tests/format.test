@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.19.2.2 2005/08/02 18:16:40 dgp Exp $
+# RCS: @(#) $Id: format.test,v 1.19.2.3 2005/08/22 12:55:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -504,7 +504,7 @@ for {set i 290} {$i < 400} {incr i} {
 }
 
 ::tcltest::testConstraint wideIs64bit \
-	[expr {(0x80000000 > 0) && (0x8000000000000000 < 0)}]
+	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 ::tcltest::testConstraint wideBiggerThanInt \
 	[expr {wide(0x80000000) != int(0x80000000)}]
 

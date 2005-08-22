@@ -1,3 +1,11 @@
+2005-08-22  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* tests/expr.test:	Corrected the wideIs64bit constraint.
+	* tests/format.test:
+	* tests/scan.test:
+
 2005-08-21  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

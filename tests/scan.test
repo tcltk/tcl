@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.15.2.3 2005/08/17 04:57:49 dgp Exp $
+# RCS: @(#) $Id: scan.test,v 1.15.2.4 2005/08/22 12:55:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -19,7 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 ::tcltest::testConstraint wideIs64bit \
-	[expr {(0x80000000 > 0) && (0x8000000000000000 < 0)}]
+	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 
 test scan-1.1 {BuildCharSet, CharInSet} {
     list [scan foo {%[^o]} x] $x
