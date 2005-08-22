@@ -2,6 +2,10 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclInt.h:	New internal routine TclSetBignumIntRep
+	* generic/tclObj.c:	consolidates packing of bignum value into
+	* generic/tclStrToD.c:	a Tcl_Obj within one source code file.
+
 	* tests/expr.test:	Corrected the wideIs64bit constraint.
 	* tests/format.test:
 	* tests/scan.test:

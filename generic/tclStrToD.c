@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.22 2005/08/22 03:49:40 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.23 2005/08/22 13:55:36 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -166,27 +166,6 @@ static double Pow10TimesFrExp _ANSI_ARGS_(( int exponent,
 					    int* machexp ));
 static double SafeLdExp _ANSI_ARGS_(( double fraction, int exponent ));
 
-/*
- * Macros to pack/unpack a bignum's fields in a Tcl_Obj internal rep
- */
-
-#define PACK_BIGNUM( bignum, objPtr ) \
-  do { \
-    (objPtr)->internalRep.bignumValue.digits = (void*) (bignum).dp; \
-    (objPtr)->internalRep.bignumValue.misc = ( \
-      ( (bignum).sign << 30 ) \
-      | ( (bignum).alloc << 15 ) \
-      | ( (bignum).used ) ); \
-  } while ( 0 )
-
-#define UNPACK_BIGNUM( objPtr, bignum ) \
-  do { \
-    (bignum).dp = (mp_digit*) (objPtr)->internalRep.bignumValue.digits; \
-    (bignum).sign = (objPtr)->internalRep.bignumValue.misc >> 30; \
-    (bignum).alloc = ( (objPtr)->internalRep.bignumValue.misc >> 15 ) \
-                     & 0x7fff; \
-    (bignum).used = (objPtr)->internalRep.bignumValue.misc & 0x7fff; \
-  } while ( 0 )
 
 /*
  *----------------------------------------------------------------------
@@ -911,19 +890,12 @@ TclParseNumber( Tcl_Interp* interp,
 		}
 	    }
 	    if (octalSignificandOverflow) {
-		if (octalSignificandBig.used > 0x7fff) {
-		    Tcl_Panic("TclParseNumber: too large for packed bignum");
-		}
-		if (octalSignificandBig.alloc > 0x7fff) {
-		    mp_shrink(&octalSignificandBig);
-		}
 		if (signum) {
 		    octalSignificandBig.sign = MP_NEG;
 		} else {
 		    octalSignificandBig.sign = MP_ZPOS;
 		}
-		objPtr->typePtr = &tclBignumType;
-		PACK_BIGNUM(octalSignificandBig,objPtr);
+		TclSetBignumIntRep(objPtr, &octalSignificandBig);
 		octalSignificandOverflow = 0;
 	    }		
 	    break;
@@ -976,19 +948,12 @@ TclParseNumber( Tcl_Interp* interp,
 		}
 	    }
 	    if (significandOverflow) {
-		if (significandBig.used > 0x7fff) {
-		    Tcl_Panic("TclParseNumber: too large for packed bignum");
-		}
-		if (significandBig.alloc > 0x7fff) {
-		    mp_shrink(&significandBig);
-		}
 		if (signum) {
 		    significandBig.sign = MP_NEG;
 		} else {
 		    significandBig.sign = MP_ZPOS;
 		}
-		objPtr->typePtr = &tclBignumType;
-		PACK_BIGNUM(significandBig,objPtr);
+		TclSetBignumIntRep(objPtr, &significandBig);
 		significandOverflow = 0;
 	    }
 	    break;

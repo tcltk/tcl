@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.25 2005/08/22 03:49:39 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.26 2005/08/22 13:55:36 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2147,6 +2147,8 @@ MODULE_SCOPE void	TclRemoveScriptLimitCallbacks _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 MODULE_SCOPE void	TclSetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix));
+MODULE_SCOPE void	TclSetBignumIntRep _ANSI_ARGS_((Tcl_Obj *objPtr,
+			    mp_int *bignumValue));
 MODULE_SCOPE void	TclSetProcessGlobalValue _ANSI_ARGS_ ((
 			    ProcessGlobalValue *pgvPtr, Tcl_Obj *newValue,
 			    Tcl_Encoding encoding));

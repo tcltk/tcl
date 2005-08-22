@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.26 2005/08/19 21:55:21 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.27 2005/08/22 13:55:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2792,12 +2792,6 @@ Tcl_SetBignumObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetBignumObj called with shared object");
     }
-    if (bignumValue->used > 0x7fff) {
-	Tcl_Panic("Tcl_SetBignumObj: too large for packed bignum");
-    }
-    if (bignumValue->alloc > 0x7fff) {
-	mp_shrink(bignumValue);
-    }
 #ifdef BIGNUM_AUTO_NARROW
     if (bignumValue->used
 	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
@@ -2853,6 +2847,20 @@ Tcl_SetBignumObj(
 #endif
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);
+    TclSetBignumIntRep(objPtr, bignumValue);
+}
+
+void
+TclSetBignumIntRep(objPtr, bignumValue)
+    Tcl_Obj *objPtr;
+    mp_int *bignumValue;
+{
+    if (bignumValue->used > 0x7fff) {
+	Tcl_Panic("TclSetBignumIntRep: too large for packed bignum");
+    }
+    if (bignumValue->alloc > 0x7fff) {
+	mp_shrink(bignumValue);
+    }
     objPtr->typePtr = &tclBignumType;
     PACK_BIGNUM(*bignumValue, objPtr);
 
