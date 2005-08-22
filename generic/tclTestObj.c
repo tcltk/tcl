@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.6.4 2005/07/12 20:36:59 kennykb Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.6.5 2005/08/22 16:11:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -45,9 +45,11 @@ static int		TestbignumobjCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestbooleanobjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+#if 0
 static int		TestconvertobjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+#endif
 static int		TestdoubleobjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -104,8 +106,10 @@ TclObjTest_Init(interp)
 			  (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+#if 0
     Tcl_CreateObjCommand(interp, "testconvertobj", TestconvertobjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+#endif
     Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
@@ -370,6 +374,7 @@ TestbooleanobjCmd(clientData, interp, objc, objv)
     return TCL_OK;
 }
 
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -423,6 +428,7 @@ TestconvertobjCmd(clientData, interp, objc, objv)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

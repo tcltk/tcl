@@ -2,6 +2,8 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclTestObj.c:	Disabled unused [testconvertobj] command.
+
 	* generic/tclBasic:	Added [expr {entier(.)}].
 
 	* generic/tclInt.h:	New routine TclInitBignumFromDouble.
