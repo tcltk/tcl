@@ -312,9 +312,6 @@
 /* Is getcwd Posix-compliant? */
 #undef USEGETWD
 
-/* Should we use <a.out.h> when doing dynamic loading? */
-#undef USE_A_OUT_H
-
 /* Do we need a special AIX hack for timezones? */
 #undef USE_DELTA_FOR_TZ
 
@@ -326,12 +323,6 @@
 
 /* Use the sgtty API for serial lines */
 #undef USE_SGTTY
-
-/* Should we use <sys/exec_aout.h> when doing dynamic loading? */
-#undef USE_SYS_EXEC_AOUT_H
-
-/* Should we use <sys/exec.h> when doing dynamic loading? */
-#undef USE_SYS_EXEC_H
 
 /* Use the termio API for serial lines */
 #undef USE_TERMIO
