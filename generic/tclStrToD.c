@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.24 2005/08/22 14:21:02 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.25 2005/08/22 15:48:26 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2681,6 +2681,57 @@ TclFinalizeDoubleConversion()
     Tcl_Free ((char*)pow10_wide);
     for ( i = 0; i < 9; ++i ) {
 	mp_clear( pow5 + i );
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitBignumFromDouble --
+ *
+ *	Extracts the integer part of a double and converts it to
+ *	an arbitrary precision integer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the bignum supplied, and stores the converted number
+ *      in it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclInitBignumFromDouble(double d,	/* Number to convert */
+			mp_int* b)	/* Place to store the result */
+{
+    double fract;
+    int expt;
+    fract = frexp(d,&expt);
+    if (expt <= 0) {
+	mp_init(b);
+	mp_zero(b);
+    } else {
+	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
+	int signum = 0;
+	int shift = expt - mantBits;
+	Tcl_WideUInt uw;
+	if (w < 0) {
+	    uw = (Tcl_WideUInt)-w;
+	    signum = 1;
+	} else {
+	    uw = w;
+	}
+	TclBNInitBignumFromWideUInt(b, uw);
+	if (shift < 0) {
+	    mp_div_2d(b, -shift, b, NULL);
+	} else if (shift > 0) {
+	    mp_mul_2d(b, shift, b);
+	}
+	if (signum) {
+	    b->sign = MP_NEG;
+	}
     }
 }
 

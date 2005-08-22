@@ -2,6 +2,11 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclBasic:	Added [expr {entier(.)}].
+
+	* generic/tclInt.h:	New routine TclInitBignumFromDouble.
+	* generic/tclStrToD.c:
+
 	* generic/tclInt.h:	TCL_WIDE_INT_IS_LONG implies NO_WIDE_TYPE.
 	* generic/tclObj.c:	Removed now unnecessary tests of the
 	* generic/tclStrToD.c:	TCL_WIDE_INT_IS_LONG definition.

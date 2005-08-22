@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.21 2005/08/22 03:49:38 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.22 2005/08/22 15:48:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -56,6 +56,8 @@ static int	ExprBinaryFunc _ANSI_ARGS_((ClientData clientData,
 static int	ExprBoolFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprDoubleFunc _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
+static int	ExprEntierFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprIntFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
@@ -262,6 +264,7 @@ BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::cos",	ExprUnaryFunc,	(ClientData) cos 	},
     { "::tcl::mathfunc::cosh",	ExprUnaryFunc,	(ClientData) cosh	},
     { "::tcl::mathfunc::double",ExprDoubleFunc,	NULL			},
+    { "::tcl::mathfunc::entier",ExprEntierFunc,	NULL			},
     { "::tcl::mathfunc::exp",	ExprUnaryFunc,	(ClientData) exp	},
     { "::tcl::mathfunc::floor",	ExprUnaryFunc,	(ClientData) floor 	},
     { "::tcl::mathfunc::fmod",	ExprBinaryFunc,	(ClientData) fmod	},
@@ -5161,6 +5164,34 @@ ExprDoubleFunc(clientData, interp, objc, objv)
     Tcl_SetObjResult(interp, Tcl_NewDoubleObj(dResult));
     return TCL_OK;
 #endif
+}
+
+static int
+ExprEntierFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    double d;
+    mp_int big;
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
+	mp_clear(&big);
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
+	/* Non-numeric argument */
+	return TCL_ERROR;
+    }
+    TclInitBignumFromDouble(d, &big);
+    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+    return TCL_OK;
 }
 
 static int
