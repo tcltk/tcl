@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.29 2005/08/22 20:50:26 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.30 2005/08/23 06:15:21 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -23,7 +23,7 @@
  */
 
 #define NO_WIDE_TYPE
-#undef ACCEPT_NAN
+#undef	ACCEPT_NAN
 
 /*
  * Common include files needed by most of the Tcl source files are
@@ -3036,6 +3036,23 @@ MODULE_SCOPE void TclBNInitBignumFromWideUInt(mp_int* bignum,
 #define TclNewStringObj(objPtr, s, len) \
     (objPtr) = Tcl_NewStringObj((s), (len))
 #endif /* TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to test for some special double values.
+ * The ANSI C "prototypes" for these macros are: 
+ *
+ * MODULE_SCOPE int	TclIsInfinite _ANSI_ARGS_((double d));
+ * MODULE_SCOPE int	TclIsNaN _ANSI_ARGS_((double d));
+ */
+
+#ifdef _MSC_VER
+#define TclIsInfinite(d)	( ! (_finite((d))) )
+#define TclIsNaN(d)		(_isnan((d)))
+#else
+#define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
+#define TclIsNaN(d)		((d) != (d))
+#endif
 
 #include "tclPort.h"
 #include "tclIntDecls.h"

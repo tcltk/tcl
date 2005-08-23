@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.26 2005/08/22 20:50:26 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.27 2005/08/23 06:15:21 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2711,7 +2711,7 @@ TclInitBignumFromDouble(Tcl_Interp *interp,	/* For error message */
     int expt;
 
     /* Infinite values can't convert to bignum */
-    if ((d > DBL_MAX) || (d < -DBL_MAX)) {
+    if (TclIsInfinite(d)) {
 	if (interp != NULL) {
 	    char *s = "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));

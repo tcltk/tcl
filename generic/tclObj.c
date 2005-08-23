@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.28 2005/08/22 14:21:02 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.29 2005/08/23 06:15:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -20,16 +20,6 @@
 #include <float.h>
 
 #define BIGNUM_AUTO_NARROW 1
-
-/*
- * Define test for NaN
- */
-
-#ifdef _MSC_VER
-#define IS_NAN(f) _isnan((f))
-#else
-#define IS_NAN(f) ((f) != (f))
-#endif
 
 /*
  * Table of all object types.
@@ -1670,12 +1660,12 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (IS_NAN(objPtr->internalRep.doubleValue)) {
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"floating point value is Not a Number", -1));
-	    }
-	    return TCL_ERROR;
+	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "floating point value is Not a Number", -1));
+		}
+		return TCL_ERROR;
 	    }
 	    *dblPtr = (double) objPtr->internalRep.doubleValue;
 	    return TCL_OK;
@@ -2197,7 +2187,9 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 		    return TCL_OK;
 		}
 	    }
+#ifndef NO_WIDE_TYPE
 	tooLarge:
+#endif
 	    if (interp != NULL) {
 		char *s = "integer value too large to represent";
 		Tcl_Obj* msg = Tcl_NewStringObj(s, -1);

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.31 2005/08/22 20:50:25 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.32 2005/08/23 06:15:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -55,21 +55,6 @@ int errno;
 #   define EDOM   33
 #   define ERANGE 34
 #endif
-
-/*
- * Need DBL_MAX for IS_INF() macro...
- */
-#ifndef DBL_MAX
-#   ifdef MAXDOUBLE
-#	define DBL_MAX MAXDOUBLE
-#   else /* !MAXDOUBLE */
-/*
- * This value is from the Solaris headers, but doubles seem to be the same
- * size everywhere.  Long doubles aren't, but we don't use those.
- */
-#	define DBL_MAX 1.79769313486231570e+308
-#   endif /* MAXDOUBLE */
-#endif /* !DBL_MAX */
 #endif
 
 /*
@@ -142,22 +127,6 @@ long		tclObjsFreed   = 0;
 #define TCL_MAX_SHARED_OBJ_STATS 5
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
-
-#if 0
-/*
- * Macros for testing floating-point values for certain special cases. Test
- * for not-a-number by comparing a value against itself; test for infinity by
- * comparing against the largest floating-point value.
- */
-
-#ifdef _MSC_VER
-#define IS_NAN(f) (_isnan((f)))
-#define IS_INF(f) ( ! (_finite((f))))
-#else
-#define IS_NAN(f) ((f) != (f))
-#define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
-#endif
-#endif
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser
@@ -4757,12 +4726,12 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-#if 0
+#ifndef ACCEPT_NAN
 	    /*
 	     * Check now for IEEE floating-point error.
 	     */
 
-	    if (IS_NAN(dResult)) {
+	    if (TclIsNaN(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
 			O2S(valuePtr), O2S(value2Ptr)));
 		TclExprFloatError(interp, dResult);
@@ -5319,11 +5288,9 @@ TclExecuteByteCode(interp, codePtr)
 #ifndef ACCEPT_NAN
 	    if ((*pc == INST_TRY_CVT_TO_NUMERIC) && (result != TCL_OK)) {
 		/* Numeric conversion of NaN -> error */
-		CONST char *s = "domain error: argument not in valid range";
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-		Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
 		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 			O2S(objResultPtr)));
+		TclExprFloatError(interp, valuePtr->internalRep.doubleValue);
 		goto checkForCatch;
 	    }
 #else
@@ -6797,7 +6764,7 @@ GetOpcodeName(pc)
 }
 #endif /* TCL_COMPILE_DEBUG */
 
-#if 0
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6823,11 +6790,11 @@ TclExprFloatError(interp, value)
 {
     CONST char *s;
 
-    if ((errno == EDOM) || IS_NAN(value)) {
+    if ((errno == EDOM) || TclIsNaN(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
-    } else if ((errno == ERANGE) || IS_INF(value)) {
+    } else if ((errno == ERANGE) || TclIsInfinite(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
@@ -6845,7 +6812,6 @@ TclExprFloatError(interp, value)
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
     }
 }
-#endif
 
 #ifdef TCL_COMPILE_STATS
 /*

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.23 2005/08/22 20:50:25 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.24 2005/08/23 06:15:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -40,6 +40,8 @@ typedef struct OldMathFuncData {
 
 static char *	CallCommandTraces _ANSI_ARGS_((Interp *iPtr, Command *cmdPtr,
 		    CONST char *oldName, CONST char* newName, int flags));
+static int	CheckDoubleResult _ANSI_ARGS_((Tcl_Interp *interp,
+		    double dResult));
 static void	DeleteInterpProc _ANSI_ARGS_((Tcl_Interp *interp));
 static void	ProcessUnexpectedResult _ANSI_ARGS_((Tcl_Interp *interp,
 		    int returnCode));
@@ -75,8 +77,6 @@ static int	ExprWideFunc  _ANSI_ARGS_((ClientData clientData,
 static int	VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Obj *objPtr));
 #endif
-static void	ExprFloatError _ANSI_ARGS_((Tcl_Interp *interp, double value));
-
 static void	MathFuncWrongNumArgs _ANSI_ARGS_((Tcl_Interp* interp,
 		    int expected, int actual, Tcl_Obj *CONST *objv));
 
@@ -114,20 +114,6 @@ static void	MathFuncWrongNumArgs _ANSI_ARGS_((Tcl_Interp* interp,
 	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType)
 #define IS_NUMERIC_TYPE(typePtr)					\
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
-#endif
-
-/*
- * Macros for testing floating-point values for certain special cases. Test
- * for not-a-number by comparing a value against itself; test for infinity
- * by comparing against the largest floating-point value.
- */
-
-#ifdef _MSC_VER
-#define IS_NAN(f) (_isnan((f)))
-#define IS_INF(f) (!(_finite((f))))
-#else
-#define IS_NAN(f) ((f) != (f))
-#define IS_INF(f) (((f) > DBL_MAX) || ((f) < -DBL_MAX))
 #endif
 
 extern TclStubs tclStubs;
@@ -2935,9 +2921,15 @@ OldMathFuncProc(clientData, interp, objc, objv)
     }
 #else
     for (j = 1, k = 0; j < objc; ++j, ++k) {
-	Tcl_WideInt w;
 	valuePtr = objv[j];
-	if (TCL_OK != Tcl_GetDoubleFromObj(NULL, valuePtr, &d)) {
+	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
+#ifdef ACCEPT_NAN
+	if ((result != TCL_OK) && (valuePtr->typePtr == &tclDoubleType)) {
+	    d = valuePtr->internalRep.doubleValue;
+	    result = TCL_OK;
+	}
+#endif
+	if (result != TCL_OK) {
 	    /* Non-numeric argument */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value", -1));
@@ -2972,32 +2964,20 @@ OldMathFuncProc(clientData, interp, objc, objv)
 	    args[k].doubleValue = d;
 	    break;
 	case TCL_INT:
-	    if (Tcl_GetLongFromObj(NULL, valuePtr, &(args[k].intValue))
-		    == TCL_OK) {
-		break;
-	    }
-	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &w) == TCL_OK) {
-		args[k].intValue = Tcl_WideAsLong(w);
-		break;
-	    }
-	    if (IS_INF(d)) {
-		/* Can't portably cast infinity to long */
+	    if (ExprIntFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    valuePtr = Tcl_GetObjResult(interp);
+	    Tcl_GetLongFromObj(NULL, valuePtr, &(args[k].intValue));
 	    Tcl_ResetResult(interp);
-	    args[k].intValue = (long) d;
 	    break;
 	case TCL_WIDE_INT:
-	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &(args[k].wideValue))
-		    == TCL_OK) {
-		break;
-	    }
-	    if (IS_INF(d)) {
-		/* Can't portably cast infinity to wide */
+	    if (ExprWideFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    valuePtr = Tcl_GetObjResult(interp);
+	    Tcl_GetWideIntFromObj(NULL, valuePtr, &(args[k].wideValue));
 	    Tcl_ResetResult(interp);
-	    args[k].wideValue = Tcl_DoubleAsWide(d);
 	    break;
 	}
     }
@@ -3019,16 +2999,10 @@ OldMathFuncProc(clientData, interp, objc, objv)
     } else if (funcResult.type == TCL_WIDE_INT) {
 	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
     } else {
-	d = funcResult.doubleValue;
-	if (IS_NAN(d) || IS_INF(d)) {
-	    ExprFloatError(interp, d);
-	    return TCL_ERROR;
-	}
-	TclNewDoubleObj(valuePtr, d);
+	return CheckDoubleResult(interp, funcResult.doubleValue);
     }
     Tcl_SetObjResult(interp, valuePtr);
     return TCL_OK;
-
 }
 
 /*
@@ -4390,7 +4364,19 @@ Tcl_ExprDoubleObj(interp, objPtr, ptr)
 
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
     if (result == TCL_OK) {
+#ifndef ACCEPT_NAN
 	result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
+#else
+	result = Tcl_GetDoubleFromObj( NULL, resultPtr, ptr );
+	if (result != TCL_OK) {
+	    if (resultPtr->typePtr == &tclDoubleType) {
+		*ptr = resultPtr->internalRep.doubleValue;
+		result = TCL_OK;
+	    } else {
+		Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
+	    }
+	}
+#endif
 	Tcl_DecrRefCount(resultPtr);  /* discard the result object */
     }
     return result;
@@ -4980,36 +4966,50 @@ ExprUnaryFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Actual parameter list */
 {
-    double d, dResult;
-    Tcl_Obj* oResult;
-
+    int code;
+    double d;
     double (*func) _ANSI_ARGS_((double)) =
 	    (double (*)_ANSI_ARGS_((double))) clientData;
 
-    /*
-     * Convert the function's argument to a double if necessary.
-     */ 
-
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
-    } else if (Tcl_GetDoubleFromObj(interp, objv[1], &d) == TCL_OK) {
-
-	/* Evaluate the function */
-
-	errno = 0;
-	dResult = (*func)(d);
-	if ((errno != 0) || IS_NAN(dResult)) {
-	    if (errno != ERANGE || (dResult != 0.0 && !IS_INF(dResult))) {
-		ExprFloatError(interp, dResult);
-		return TCL_ERROR;
-	    }
-	}
-	TclNewDoubleObj(oResult, dResult);
-	Tcl_SetObjResult(interp, oResult);
-	return TCL_OK;
+	return TCL_ERROR;
     }
+    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+#ifdef ACCEPT_NAN
+    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
+	d = objv[1]->internalRep.doubleValue;
+	Tcl_ResetResult(interp);
+	code = TCL_OK;
+    }
+#endif
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+    return CheckDoubleResult(interp, (*func)(d));
+}
 
-    return TCL_ERROR;
+static int
+CheckDoubleResult(interp, dResult)
+    Tcl_Interp *interp;
+    double dResult;
+{
+#ifndef ACCEPT_NAN
+    if (TclIsNaN(dResult)) {
+	TclExprFloatError(interp, dResult);
+	return TCL_ERROR;
+    }
+#endif
+    if ((errno == ERANGE) && ((dResult == 0.0) || TclIsInfinite(dResult))) {
+	/* When ERANGE signals under/overflow, just accept 0.0 or +/-Inf */
+    } else if (errno != 0) {
+	/* Report other errno values as errors */
+	TclExprFloatError(interp, dResult);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(dResult));
+    return TCL_OK;
 }
 
 static int
@@ -5022,38 +5022,39 @@ ExprBinaryFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
-    double d1, d2, dResult;
-    Tcl_Obj* oResult;
-
+    int code;
+    double d1, d2;
     double (*func) _ANSI_ARGS_((double, double)) =
 	    (double (*)_ANSI_ARGS_((double, double))) clientData;
 
-    /*
-     * Convert the function's two arguments to doubles if necessary.
-     */
-
     if (objc != 3) {
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
-    } else if (Tcl_GetDoubleFromObj(interp, objv[1], &d1) == TCL_OK
-	    && Tcl_GetDoubleFromObj(interp, objv[2], &d2) == TCL_OK) {
-
-	/* Evaluate the function */
-
-	errno = 0;
-	dResult = (*func)(d1, d2);
-	if ((errno != 0) || IS_NAN(dResult)) {
-	    if (errno != ERANGE || (dResult != 0.0 && !IS_INF(dResult))) {
-		ExprFloatError(interp, dResult);
-		return TCL_ERROR;
-	    }
-	}
-	TclNewDoubleObj(oResult, dResult);
-	Tcl_SetObjResult(interp, oResult);
-	return TCL_OK;
+	return TCL_ERROR;
+    } 
+    code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
+#ifdef ACCEPT_NAN
+    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
+	d1 = objv[1]->internalRep.doubleValue;
+	Tcl_ResetResult(interp);
+	code = TCL_OK;
     }
-
-    return TCL_ERROR;
-
+#endif
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
+#ifdef ACCEPT_NAN
+    if ((code != TCL_OK) && (objv[2]->typePtr == &tclDoubleType)) {
+	d2 = objv[2]->internalRep.doubleValue;
+	Tcl_ResetResult(interp);
+	code = TCL_OK;
+    }
+#endif
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    errno = 0;
+    return CheckDoubleResult(interp, (*func)(d1, d2));
 }
 
 static int
@@ -5075,6 +5076,12 @@ ExprAbsFunc(clientData, interp, objc, objv)
 
     /* TODO - an Tcl_GetNumberFromObj call might be more useful ? */
     if (Tcl_GetDoubleFromObj(NULL, valuePtr, &d) == TCL_ERROR) {
+#ifdef ACCEPT_NAN
+	if (valuePtr->typePtr == &tclDoubleType) {
+	    Tcl_SetObjResult(interp, valuePtr);
+	    return TCL_OK;
+	}
+#endif
 	/* TODO - decide what the right error message, etc. */
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("non-numeric argument", -1));
 	return TCL_ERROR;
@@ -5159,6 +5166,12 @@ ExprDoubleFunc(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
+#ifdef ACCEPT_NAN
+	if (objv[1]->typePtr == &tclDoubleType) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
+#endif
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewDoubleObj(dResult));
@@ -5570,55 +5583,6 @@ ExprSrandFunc(clientData, interp, objc, objv)
     return ExprRandFunc(clientData, interp, 1, objv);
 
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * ExprFloatError --
- *
- *	This procedure is called when an error occurs during a floating-point
- *	operation. It reads errno and sets interp->objResultPtr accordingly.
- *
- * Results:
- *	interp->objResultPtr is set to hold an error message.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ExprFloatError(interp, value)
-    Tcl_Interp *interp;         /* Where to store error message. */
-    double value;               /* Value returned after error; used to
-                                 * distinguish underflows from overflows. */
-{
-    CONST char *s;
-
-    if ((errno == EDOM) || IS_NAN(value)) {
-	s = "domain error: argument not in valid range";
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
-    } else if ((errno == ERANGE) || IS_INF(value)) {
-	if (value == 0.0) {
-	    s = "floating-point value too small to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *) NULL);
-	} else {
-	    s = "floating-point value too large to represent";
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
-	}
-    } else {
-	char msg[64 + TCL_INTEGER_SPACE];
-
-	sprintf(msg, "unknown floating-point error, errno = %d", errno);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
-    }
-}
-
 
 #if 0
 /*

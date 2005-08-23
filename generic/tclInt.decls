@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.84.2.11 2005/08/22 03:49:39 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.84.2.12 2005/08/23 06:15:21 dgp Exp $
 
 library tcl
 
@@ -87,9 +87,9 @@ declare 14 generic {
 #  declare 15 generic {
 #      void TclExpandParseValue(ParseValue *pvPtr, int needed)
 #  }
-#declare 16 generic {
-#    void TclExprFloatError(Tcl_Interp *interp, double value)
-#}
+declare 16 generic {
+    void TclExprFloatError(Tcl_Interp *interp, double value)
+}
 # Removed in 8.4
 #declare 17 generic {
 #    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
