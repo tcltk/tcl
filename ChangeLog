@@ -1,3 +1,24 @@
+2005-08-23  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd):
+	* generic/tclInt.h:
+	* generic/tclObj.c (Tcl_GetBooleanFromObj, SetDoubleFromAny,
+	Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_GetBignumFromObj):
+	* generic/tclParseExpr.c (GetLexeme):
+	* generic/tclScan.c (Tcl_ScanObjCmd):
+	* generic/tclStrToD.c (TclParseNumber):
+	* tests/binary.test (binary-62.1-65.7):
+	* tests/expr.test (expr-40.1-42.1):
+	* scan.test (scan-14.1,14.2):
+	Modified Tcl_ParseNumber to accept an argument to force
+	interpretation as decimal, and modified [scan] to use it.
+	Corrected a bug where Not a Number with hexadecimal information
+	bits returned consistently incorrect values. #ifdef-ed out
+	some code that is needed only for IBM hexadecimal floating point.
+	Fixed bugs in code to handle the corner cases of smallest and
+	largest significands.  Added test cases to improve test coverage
+	in generic/tclStrToD.c.	
+	
 2005-08-23  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

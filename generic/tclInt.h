@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.30 2005/08/23 06:15:21 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.31 2005/08/23 18:28:51 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1869,6 +1869,15 @@ typedef struct ProcessGlobalValue {
 } ProcessGlobalValue;
 
 /*
+ *----------------------------------------------------------------------
+ * Flags for TclParseNumber
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_PARSE_DECIMAL_ONLY 1
+				/* Leading zero doesn't denote octal or hex */
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
@@ -2071,7 +2080,8 @@ MODULE_SCOPE int	TclParseNumber _ANSI_ARGS_((Tcl_Interp* interp,
 						    CONST char* type,
 						    CONST char* string,
 						    size_t length,
-						    CONST char** endPtrPtr ));
+						    CONST char** endPtrPtr,
+						    int flags));
 MODULE_SCOPE void	TclParseInit _ANSI_ARGS_ ((Tcl_Interp *interp,
 			    CONST char *string, int numBytes,
 			    Tcl_Parse *parsePtr));

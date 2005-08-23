@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.29 2005/08/23 06:15:21 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.30 2005/08/23 18:28:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1309,7 +1309,8 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
 	}
 #endif
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "boolean value", NULL, -1, NULL)));
+	    TclParseNumber(interp, objPtr, "boolean value",
+			   NULL, -1, NULL, 0)));
     return TCL_ERROR;
 }
 
@@ -1716,7 +1717,7 @@ SetDoubleFromAny(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
     return TclParseNumber( interp, objPtr, "floating-point number",
-			   NULL, -1, NULL );
+			   NULL, -1, NULL, 0);
 }
 
 /*
@@ -2198,7 +2199,8 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL)==TCL_OK);
+    } while (TclParseNumber(interp, objPtr, "integer",
+			    NULL, -1, NULL, 0)==TCL_OK);
     return TCL_ERROR;
 }
 #ifndef NO_WIDE_TYPE
@@ -2493,7 +2495,8 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL)==TCL_OK);
+    } while (TclParseNumber(interp, objPtr, "integer",
+			    NULL, -1, NULL, 0)==TCL_OK);
     return TCL_ERROR;
 }
 
@@ -2742,7 +2745,8 @@ Tcl_GetBignumFromObj(
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL)==TCL_OK);
+    } while (TclParseNumber(interp, objPtr, "integer",
+			    NULL, -1, NULL, 0)==TCL_OK);
     return TCL_ERROR;
 }
 

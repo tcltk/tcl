@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.16.2.2 2005/08/02 18:16:08 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.16.2.3 2005/08/23 18:28:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1055,105 +1055,29 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	     * Scan a floating point number
 	     */
 
-	    if ((width == 0) || (width > sizeof(buf) - 1)) {
-		width = sizeof(buf) - 1;
-	    }
 	    flags &= ~SCAN_LONGER;
-	    flags |= SCAN_SIGNOK | SCAN_NODIGITS | SCAN_PTOK | SCAN_EXPOK;
-	    for (end = buf; width > 0; width--) {
-		switch (*string) {
-		case '0': case '1': case '2': case '3':
-		case '4': case '5': case '6': case '7':
-		case '8': case '9':
-		    flags &= ~(SCAN_SIGNOK | SCAN_NODIGITS);
-		    goto addToFloat;
-		case '+': case '-':
-		    if (flags & SCAN_SIGNOK) {
-			flags &= ~SCAN_SIGNOK;
-			goto addToFloat;
-		    }
-		    break;
-		case '.':
-		    if (flags & SCAN_PTOK) {
-			flags &= ~(SCAN_SIGNOK | SCAN_PTOK);
-			goto addToFloat;
-		    }
-		    break;
-		case 'e': case 'E':
-		    /*
-		     * An exponent is not allowed until there has been at
-		     * least one digit.
-		     */
-
-		    if ((flags & (SCAN_NODIGITS | SCAN_EXPOK)) == SCAN_EXPOK) {
-			flags = (flags & ~(SCAN_EXPOK|SCAN_PTOK))
-				| SCAN_SIGNOK | SCAN_NODIGITS;
-			goto addToFloat;
-		    }
-		    break;
-		}
-
-		/*
-		 * We got an illegal character so we are done accumulating.
-		 */
-
-		break;
-
-	    addToFloat:
-		/*
-		 * Add the character to the temporary buffer.
-		 */
-
-		*end++ = *string++;
-		if (*string == '\0') {
-		    break;
-		}
+	    objPtr = Tcl_NewObj();
+	    Tcl_IncrRefCount(objPtr);
+	    if (width == 0) {
+		width = -1;
 	    }
-
-	    /*
-	     * Check to see if we need to back up because we saw a trailing
-	     * 'e' or sign.
-	     */
-
-	    if (flags & SCAN_NODIGITS) {
-		if (flags & SCAN_EXPOK) {
-		    /*
-		     * There were no digits at all so scanning has failed and
-		     * we are done.
-		     */
-
-		    if (*string == '\0') {
-			underflow = 1;
-		    }
+	    if (TclParseNumber(NULL, objPtr, "", string, width, &end,
+			       TCL_PARSE_DECIMAL_ONLY) != TCL_OK) {
+		Tcl_DecrRefCount(objPtr);
+		goto done;
+	    } else if (flags & SCAN_SUPPRESS) {
+		Tcl_DecrRefCount(objPtr);
+		string = end;
+	    } else {
+		double dvalue;
+		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
+		    Tcl_DecrRefCount(objPtr);
 		    goto done;
 		}
-
-		/*
-		 * We got a bad exponent ('e' and maybe a sign).
-		 */
-
-		end--;
-		string--;
-		if (*end != 'e' && *end != 'E') {
-		    end--;
-		    string--;
-		}
-	    }
-
-	    /*
-	     * Scan the value from the temporary buffer.
-	     */
-
-	    if (!(flags & SCAN_SUPPRESS)) {
-		double dvalue;
-
-		*end = '\0';
-		dvalue = TclStrToD(buf, NULL);
-		objPtr = Tcl_NewDoubleObj(dvalue);
-		Tcl_IncrRefCount(objPtr);
+		Tcl_SetDoubleObj(objPtr, dvalue);
 		objs[objIndex++] = objPtr;
+		string = end;
 	    }
-	    break;
 	}
 	nconversions++;
     }

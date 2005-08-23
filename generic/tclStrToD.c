@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.28 2005/08/23 16:51:23 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.29 2005/08/23 18:28:51 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -114,7 +114,7 @@ static CONST double pow_10_2_n [] = {
     1.0e+256
 };
 
-/* Logarithm of the floating point radix. */
+ /* Logarithm of the floating point radix. */
 
 static int log2FLT_RADIX;
 
@@ -219,6 +219,10 @@ static double SafeLdExp _ANSI_ARGS_(( double fraction, int exponent ));
  * problems where a string that does not represent a number will
  * be recognized as one because it has a numeric internal representation.
  *
+ * When the 'flags' word includes TCL_PARSE_DECIMAL_ONLY, only decimal
+ * numbers are recognized; leading 0 has no special interpretation as
+ * octal and leading '0x' is forbidden.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -236,9 +240,10 @@ TclParseNumber( Tcl_Interp* interp,
 				 * scan, see above */
 		size_t length,	/* Maximum length of the string to scan,
 				 * see above. */
-		CONST char** endPtrPtr )
+		CONST char** endPtrPtr,
 				/* (Output) pointer to the end of the
 				 * scanned number, see above */
+		int flags)	/* Flags governing the parse */
 {
 
     enum State {
@@ -335,7 +340,11 @@ TclParseNumber( Tcl_Interp* interp,
 	     * digits, period, I, and N.
 	     */
 	    if (c == '0') {
-		state = ZERO;
+		if (flags & TCL_PARSE_DECIMAL_ONLY) {
+		    state = DECIMAL;
+		} else {
+		    state = ZERO;
+		}
 		break;
 	    } else if (isdigit(UCHAR(c))) {
 		significandWide = c - '0';
@@ -617,11 +626,7 @@ TclParseNumber( Tcl_Interp* interp,
 					       &significandBig, 
 					       significandOverflow);
 		}
-		if ( numSigDigs != 0 ) {
-		    numSigDigs += ( numTrailZeros + 1 );
-		} else {
-		    numSigDigs = 1;
-		}
+		numSigDigs += ( numTrailZeros + 1 );
 		numTrailZeros = 0;
 		state = DECIMAL;
 		break;
@@ -821,7 +826,7 @@ TclParseNumber( Tcl_Interp* interp,
 		} else if ( c >= 'A' && c <= 'F' ) {
 		    d = 10 + c - 'A';
 		}
-		significandWide = (significandWide << 4) + c;
+		significandWide = (significandWide << 4) + d;
 		state = sNANHEX;
 		break;
 	    }
@@ -1100,7 +1105,7 @@ TclParseNumber( Tcl_Interp* interp,
 	case sINF:
 	case sINFINITY:
 	    if ( signum ) {
-		objPtr->internalRep.doubleValue = - HUGE_VAL;
+		objPtr->internalRep.doubleValue = -HUGE_VAL;
 	    } else {
 		objPtr->internalRep.doubleValue = HUGE_VAL;
 	    }
@@ -2434,13 +2439,15 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
      */
 
     f = frexp(v, &e);
+#if FLT_RADIX > 2
     n = e % log2FLT_RADIX;
     if (n > 0) {
 	n -= log2FLT_RADIX;
 	e += 1;
+	f *= ldexp(1.0, n);
     }
-    f *= ldexp(1.0, n);
     e = (e - n) / log2FLT_RADIX;
+#endif
     if (f == 1.0) {
 	f = 1.0 / FLT_RADIX;
 	e += 1;
@@ -2514,7 +2521,7 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 	     * smaller exponent when going to e's predecessor.
 	     */
 
-	    rfac2 += bits + log2FLT_RADIX - 1;
+	    rfac2 += bits + log2FLT_RADIX + 1;
 	    sfac2 = 1 + log2FLT_RADIX;
 	    mplusfac2 = bits + log2FLT_RADIX;
 	    mminusfac2 = bits;

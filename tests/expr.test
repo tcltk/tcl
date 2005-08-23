@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.17 2005/08/22 12:55:10 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.18 2005/08/23 18:28:52 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6570,6 +6570,24 @@ test expr-39.25 {Tcl_ExprDoubleObj and NaN} \
     testexprdoubleobj&&ieeeFloatingPoint {
 	list [catch {testexprdoubleobj 0.0/0.0} result] $result
     } {1 {floating point value is Not a Number}}
+
+test expr-40.1 {large octal shift} {
+    expr 0100000000000000000000000000000000
+} [expr 0x1000000000000000000000000]
+test expr-40.2 {large octal shift} {
+    expr 0100000000000000000000000000000001
+} [expr 0x1000000000000000000000001]
+
+test expr-41.1 {exponent overflow} {
+    expr 1.0e2147483630
+} Inf
+test expr-41.2 {exponent underflow} {
+    expr 1.0e-2147483630
+} 0.0
+
+test expr-42.1 {denormals} ieeeFloatingPoint {
+    expr 7e-324
+} 5e-324
 
 # cleanup
 if {[info exists a]} {

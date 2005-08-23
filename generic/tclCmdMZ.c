@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.10 2005/08/19 21:55:21 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.11 2005/08/23 18:28:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1542,7 +1542,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    if (TclParseNumber( NULL, objPtr, NULL, NULL, -1, 
-		    (CONST char**) &stop ) != TCL_OK) {
+				(CONST char**) &stop, 0 ) != TCL_OK) {
 		result = 0;
 		failat = 0;
 	    } else {
