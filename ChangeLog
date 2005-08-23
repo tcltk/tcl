@@ -1,3 +1,10 @@
+2005-08-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure.in:
+	* win/configure: Regen.
+	* win/configure.in: Update minimum autoconf version
+	to 2.59.
+
 2005-08-22  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclConfig.h.in: autoheader-2.59.
