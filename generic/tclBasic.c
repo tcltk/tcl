@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.25 2005/08/23 16:51:23 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.26 2005/08/23 19:22:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5265,7 +5265,7 @@ ExprIntFunc(clientData, interp, objc, objv)
     }
     objPtr = Tcl_GetObjResult(interp);
     if (Tcl_GetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
-	/* truncate the bignum; keep only bits in wide int range */
+	/* truncate the bignum; keep only bits in long range */
 	mp_int big;
 	Tcl_GetBignumFromObj(NULL, objPtr, &big);
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
