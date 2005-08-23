@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.31 2005/08/23 18:28:51 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.32 2005/08/23 19:15:40 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2180,8 +2180,6 @@ MODULE_SCOPE void	TclSetProcessGlobalValue _ANSI_ARGS_ ((
 			    Tcl_Encoding encoding));
 MODULE_SCOPE VOID	TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
-MODULE_SCOPE double	TclStrToD _ANSI_ARGS_((CONST char* string,
-					       CONST char** endPtr));
 MODULE_SCOPE int	TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    int *tokensLeftPtr));

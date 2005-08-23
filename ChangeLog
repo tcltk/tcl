@@ -1,5 +1,7 @@
 2005-08-23  Kevin Kenny  <kennykb@users.sourceforge.net>
 
+	[kennykb_numerics_branch]
+	
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd):
 	* generic/tclInt.h:
 	* generic/tclObj.c (Tcl_GetBooleanFromObj, SetDoubleFromAny,
@@ -17,7 +19,10 @@
 	some code that is needed only for IBM hexadecimal floating point.
 	Fixed bugs in code to handle the corner cases of smallest and
 	largest significands.  Added test cases to improve test coverage
-	in generic/tclStrToD.c.	
+	in generic/tclStrToD.c.	Added test cases for 0b notation (TIP
+	#114).  Removed TclStrToD, and the static functions that it calls,
+	which are now dead code (TclParseNumber	now does all input 
+	floating-point conversions.)
 	
 2005-08-23  Don Porter  <dgp@users.sourceforge.net>
 
