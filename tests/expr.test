@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.20 2005/08/23 19:16:26 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.21 2005/08/23 19:51:24 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -55,6 +55,8 @@ proc testIEEE {} {
 		ieeeValues(+Infinity)
 	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
 		ieeeValues(NaN)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\xff d \
+		ieeeValues(-NaN)
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
@@ -77,6 +79,8 @@ proc testIEEE {} {
 		ieeeValues(+Infinity)
 	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
+	    binary scan \xff\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-NaN)
 	    set ieeeValues(littleEndian) 0
 	    return 1
 	}
@@ -6630,6 +6634,73 @@ test expr-43.12 {0b notation} {
 test expr-43.13 {0b notation} {
     expr 0b1[string repeat 0 63]1
 } 18446744073709551617
+
+test expr-44.1 {0o notation} {
+    expr 0o0
+} 0
+test expr-44.2 {0o notation} {
+    expr 0o1
+} 1
+test expr-44.3 {0o notation} {
+    expr 0o7
+} 7
+test expr-44.4 {0o notation} {
+    expr 0o10
+} 8
+test expr-44.5 {0o notation} {
+    expr 0o11
+} 9
+test expr-44.6 {0o notation} {
+    expr 0o100
+} 64
+test expr-44.7 {0o notation} {
+    expr 0o101
+} 65
+test expr-44.8 {0o notation} {
+    expr 0o1000
+} 512
+test expr-44.9 {0o notation} {
+    expr 0o1001
+} 513
+test expr-44.10 {0o notation} {
+    expr 0o1[string repeat 7 21]
+} 18446744073709551615
+test expr-44.11 {0o notation} {
+    expr 0o2[string repeat 0 21]
+} 18446744073709551616
+test expr-44.12 {0o notation} {
+    expr 0o2[string repeat 0 20]1
+} 18446744073709551617
+
+# TIP 237 again
+
+test expr-45.1 {entier} {
+    expr entier(0)
+} 0
+test expr-45.2 {entier} {
+    expr entier(0.5)
+} 0
+test expr-45.3 {entier} {
+    expr entier(1.0)
+} 1
+test expr-45.4 {entier} {
+    expr entier(1.5)
+} 1
+test expr-45.5 {entier} {
+    expr entier(2.0)
+} 2
+test expr-45.6 {entier} {
+    expr entier(1e+22)
+} 10000000000000000000000
+test expr-45.7 {entier} {
+    list [catch {expr entier(Inf)} result] $result
+} {1 {integer value too large to represent}}
+test expr-45.8 {entier} ieeeFloatingPoint {
+    list [catch {expr entier($ieeeValues(NaN))} result] $result
+} {1 {floating point value is Not a Number}}
+test expr-45.9 {entier} ieeeFloatingPoint {
+    list [catch {expr entier($ieeeValues(-NaN))} result] $result
+} {1 {floating point value is Not a Number}}
 
 # cleanup
 if {[info exists a]} {
