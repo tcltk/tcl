@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.32 2005/08/23 06:15:21 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.33 2005/08/23 22:14:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5053,7 +5053,11 @@ TclExecuteByteCode(interp, codePtr)
 #else
 	valuePtr = *tosPtr;
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
-	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
+	if ((result == TCL_OK) 
+#ifdef ACCEPT_NAN
+		|| valuePtr->typePtr == &tclDoubleType
+#endif
+		) {
 	    /* Value is now numeric (including NaN) */
 #ifdef ACCEPT_NAN
 	    if (result != TCL_OK) {

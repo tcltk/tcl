@@ -28,6 +28,8 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclExecute.c:	Bug fix: ACCEPT_NAN under INST_UMINUS.
+
 	* generic/tclStrToD.c:	New macros TIP_114_FORMATS and KILL_OCTAL to
 	configure acceptance of 0o and 0b numbers and rejection of "leading
 	zero as octal".
