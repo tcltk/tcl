@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.27 2005/08/23 06:15:21 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.28 2005/08/23 16:51:23 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -28,6 +28,9 @@
 #include <math.h>
 #include <ctype.h>
 #include <tommath.h>
+
+#define	TIP_114_FORMATS
+#undef	KILL_OCTAL
 
 #if 0
 /* Hack is out of date.  tclInt.h unconditionally #include's errno.h
@@ -240,6 +243,9 @@ TclParseNumber( Tcl_Interp* interp,
 
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X, 
+#ifdef TIP_114_FORMATS
+	ZERO_O, ZERO_B, BINARY,
+#endif
 	HEXADECIMAL, OCTAL, BAD_OCTAL, DECIMAL, 
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
@@ -285,6 +291,9 @@ TclParseNumber( Tcl_Interp* interp,
     int status = TCL_OK;	/* Status to return to caller */
     char d;			/* Last hexadecimal digit scanned */
     int shift = 0;		/* Amount to shift when accumulating binary */
+#ifdef TIP_114_FORMATS
+    int explicitOctal = 0;
+#endif
 
     /* 
      * Initialize string to start of the object's string rep if
@@ -362,6 +371,20 @@ TclParseNumber( Tcl_Interp* interp,
 		state = ZERO_X;
 		break;
 	    }
+#ifdef TIP_114_FORMATS 
+	    if (c == 'b' || c == 'B') {
+		state = ZERO_B;
+		break;
+	    }
+	    if (c == 'o' || c == 'O') {
+		explicitOctal = 1;
+		state = ZERO_O;
+		break;
+	    }
+#endif
+#ifdef KILL_OCTAL
+	    goto decimal;
+#endif
 	    /* FALLTHROUGH */
 
 	case OCTAL:
@@ -374,6 +397,10 @@ TclParseNumber( Tcl_Interp* interp,
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+#ifdef TIP_114_FORMATS
+	    /* FALLTHROUGH */
+	case ZERO_O:
+#endif
 	    if (c == '0') {
 		++numTrailZeros;
 		state = OCTAL;
@@ -425,6 +452,13 @@ TclParseNumber( Tcl_Interp* interp,
 	    /* FALLTHROUGH */
 
 	case BAD_OCTAL:
+#ifdef TIP_114_FORMATS
+	    if (explicitOctal) {
+		/* No forgiveness for bad digits in explicitly octal numbers */
+		goto endgame;
+	    }
+#endif
+#ifndef KILL_OCTAL
 	    /*
 	     * Scanned a number with a leading zero that contains an
 	     * 8, 9, radix point or E.  This is an invalid octal number,
@@ -458,6 +492,7 @@ TclParseNumber( Tcl_Interp* interp,
 		state = EXPONENT_START;
 		break;
 	    } 
+#endif
 	    goto endgame;
 
 	    /*
@@ -514,11 +549,58 @@ TclParseNumber( Tcl_Interp* interp,
 	    state = HEXADECIMAL;
 	    break;
 
+#ifdef TIP_114_FORMATS
+	case BINARY:
+	    acceptState = state;
+	    acceptPoint = p;
+	    acceptLen = len;
+	case ZERO_B:
+	    if (c == '0') {
+		++numTrailZeros;
+		state = BINARY;
+		break;
+	    } else if (c != '1') {
+		goto endgame;
+	    }
+	    if (objPtr != NULL) {
+		shift = numTrailZeros + 1;
+		if (!significandOverflow) {
+		    /*
+		     * Shifting by more bits than are in the value being
+		     * shifted is at least de facto nonportable.  Check
+		     * for too large shifts first.
+		     */
+		    if (significandWide != 0 
+			    && (shift >= CHAR_BIT*sizeof(Tcl_WideUInt)
+			    || significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			significandOverflow = 1;
+			TclBNInitBignumFromWideUInt(&significandBig,
+						    significandWide);
+		    }
+		}
+		if (!significandOverflow) {
+		    significandWide
+			= (significandWide << shift) + 1;
+		} else {
+		    mp_mul_2d(&significandBig, shift,
+			      &significandBig);
+		    mp_add_d(&significandBig, (mp_digit) 1,
+			     &significandBig);
+		}
+	    }
+	    numTrailZeros = 0;
+	    state = BINARY;
+	    break;
+#endif
+
 	case DECIMAL:
 	    /*
 	     * Scanned an optional + or - followed by a string of
 	     * decimal digits.
 	     */
+#ifdef KILL_OCTAL
+	decimal:
+#endif
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
@@ -798,6 +880,10 @@ TclParseNumber( Tcl_Interp* interp,
 	case SIGNUM:
 	case BAD_OCTAL:
 	case ZERO_X:
+#ifdef TIP_114_FORMATS
+	case ZERO_O:
+	case ZERO_B:
+#endif
 	case LEADING_RADIX_POINT:
 	case EXPONENT_START:
 	case EXPONENT_SIGNUM:
@@ -813,6 +899,28 @@ TclParseNumber( Tcl_Interp* interp,
 	case sNANHEX:
 	    panic("in TclParseNumber: bad acceptState, can't happen.");
 
+#ifdef TIP_114_FORMATS
+	case BINARY:
+	    if (!significandOverflow) {
+		shift = numTrailZeros;
+		if (significandWide !=0 
+			&& (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) 
+			|| significandWide 
+			> (((~(Tcl_WideUInt)0) >> 1) + signum) >> shift )) {
+		    significandOverflow = 1;
+		    TclBNInitBignumFromWideUInt(&significandBig,
+						significandWide);
+		}
+	    }
+	    if (shift) {
+		if ( !significandOverflow ) {
+		    significandWide <<= shift;
+		} else {
+		    mp_mul_2d( &significandBig, shift, &significandBig );
+		}
+	    }
+	    goto returnInteger;
+#endif
 	case HEXADECIMAL:
 	    /* Returning a hex integer.  Final scaling step */
 	    if (!significandOverflow) {

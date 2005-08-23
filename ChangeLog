@@ -2,6 +2,10 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclStrToD.c:	New macros TIP_114_FORMATS and KILL_OCTAL to
+	configure acceptance of 0o and 0b numbers and rejection of "leading
+	zero as octal".
+
 	* generic/tclBasic.c:	Re-used the guts of int(.) and wide(.) math
 	functions to perform conversions in OldMathFuncProc.
 
