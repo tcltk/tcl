@@ -1,3 +1,27 @@
+2005-08-23  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclBasic.c:	Re-used the guts of int(.) and wide(.) math
+	functions to perform conversions in OldMathFuncProc.
+
+	* generic/tclBasic.c:	Support for ACCEPT_NAN.
+	* generic/tclExecute.c:
+
+	* generic/tclInt.decls:	Restored TclExprFloatError to internal stubs
+	* generic/tclBasic.c:	table, and moved definition back to tclExecute.c
+	* generic/tclExecute.c:	from tclBasic.c to handle #undef ACCEPT_NAN.
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclInt.h:	New internal macros TclIsNaN and TclIsInfinite
+	* generic/tclBasic.c:	replace the IS_NAN and IS_INF macros scattered
+	* generic/tclExecute.c:	here and there.
+	* generic/tclObj.c:
+	* generic/tclStrToD.c:
+	* generic/tclUtil.c:
+
 2005-08-22  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb_numerics_branch]
