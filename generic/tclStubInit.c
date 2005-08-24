@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.121 2005/08/05 23:57:36 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.122 2005/08/24 17:56:23 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -984,6 +984,10 @@ TclStubs tclStubs = {
     Tcl_GetBignumFromObj, /* 558 */
     Tcl_TruncateChannel, /* 559 */
     Tcl_ChannelTruncateProc, /* 560 */
+    Tcl_SetChannelErrorInterp, /* 561 */
+    Tcl_GetChannelErrorInterp, /* 562 */
+    Tcl_SetChannelError, /* 563 */
+    Tcl_GetChannelError, /* 564 */
 };
 
 /* !END!: Do not edit above this line. */
