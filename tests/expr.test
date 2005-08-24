@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.21 2005/08/23 19:51:24 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.22 2005/08/24 18:56:32 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6696,10 +6696,10 @@ test expr-45.7 {entier} {
     list [catch {expr entier(Inf)} result] $result
 } {1 {integer value too large to represent}}
 test expr-45.8 {entier} ieeeFloatingPoint {
-    list [catch {expr entier($ieeeValues(NaN))} result] $result
+    list [catch {expr {entier($ieeeValues(NaN))}} result] $result
 } {1 {floating point value is Not a Number}}
 test expr-45.9 {entier} ieeeFloatingPoint {
-    list [catch {expr entier($ieeeValues(-NaN))} result] $result
+    list [catch {expr {entier($ieeeValues(-NaN))}} result] $result
 } {1 {floating point value is Not a Number}}
 
 # cleanup

@@ -1,21 +1,20 @@
 /*
  *----------------------------------------------------------------------
  *
- * tclStrToD.c --
+ * tclDouble.c --
  *
- *	This file contains a TclStrToD procedure that handles conversion of
- *	string to double, with correct rounding even where extended precision
- *	is needed to achieve that.  It also contains a TclDoubleDigits
- *	procedure that handles conversion of double to string (at least the
- *	significand), and several utility functions for interconverting
- *	'double' and the integer types.
+ *	This file contains a collection of procedures for managing
+ *	conversions to/from floating-point in Tcl.  They include
+ *	TclParseNumber, which parses numbers from strings; TclDoubleDigits,
+ *	which formats numbers into strings of digits, and procedures for
+ *	interconversion among 'double' and 'mp_int' types.
  *
  * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.32 2005/08/24 18:51:36 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.33 2005/08/24 18:56:32 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -29,37 +28,33 @@
 #include <ctype.h>
 #include <tommath.h>
 
+/*
+ * Define TIP_114_FORMATS to accept 0b and 0o for binary and octal strings.
+ * Define KILL_OCTAL as well as TIP_114_FORMATS to suppress interpretation
+ * of numbers with leading zero as octal. (Ceterum censeo: numeros octonarios
+ * delendos esse.)
+ */
+
 #define	TIP_114_FORMATS
 #undef	KILL_OCTAL
 
-#if 0
-/* Hack is out of date.  tclInt.h unconditionally #include's errno.h
- * (via tclPort.h).
- */
 /*
- * The stuff below is a bit of a hack so that this file can be used in
- * environments that include no UNIX, i.e. no errno: just arrange to use the
- * errno from tclExecute.c here.
+ * This code supports (at least hypothetically), IBM, Cray, VAX and
+ * IEEE-754 floating point; of these, only IEEE-754 can represent NaN.
+ * IEEE-754 can be uniquely determined by radix and by the widths of
+ * significand and exponent.
  */
-
-#ifdef TCL_GENERIC_ONLY
-#   define NO_ERRNO_H
-#endif
-
-#ifdef NO_ERRNO_H
-extern int errno;			/* Use errno from tclExecute.c. */
-#   define ERANGE 34
-#endif
-#endif
 
 #if (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && (DBL_MAX_EXP == 1024)
 #   define IEEE_FLOATING_POINT
 #endif
 
 /*
- * gcc on x86 needs access to rounding controls.  It is tempting to include
- * fpu_control.h, but that file exists only on Linux; it is missing on Cygwin
- * and MinGW. Most gcc-isms and ix86-isms are factored out here.
+ * gcc on x86 needs access to rounding controls, because of a questionable
+ * feature where it retains intermediate results as IEEE 'long double' values
+ * somewhat unpredictably.  It is tempting to include fpu_control.h, but
+ * that file exists only on Linux; it is missing on Cygwin and MinGW. Most 
+ * gcc-isms and ix86-isms are factored out here.
  */
 
 #if defined(__GNUC__) && defined(__i386)

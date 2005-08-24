@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.35 2005/08/24 18:03:11 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.36 2005/08/24 18:56:32 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2673,7 +2673,7 @@ TclExecuteByteCode(interp, codePtr)
 	result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
-		    (value2Ptr->typePtr? valuewPtr->typePtr->name : "null")));
+		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
 	    IllegalExprOperandType(interp, pc, value2Ptr);
 	    goto checkForCatch;
 	}
@@ -5137,6 +5137,7 @@ TclExecuteByteCode(interp, codePtr)
 		    goto error;
 		}
 		/* -NaN => NaN */
+		result = TCL_OK;
 		NEXT_INST_F(1, 0, 0);
 	    }
 #endif
@@ -5403,7 +5404,7 @@ TclExecuteByteCode(interp, codePtr)
 	/* Non-numeric argument... */
 	if (*pc == INST_UPLUS) {
 	    /* ... +$NonNumeric => raise an error */
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", s,
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    IllegalExprOperandType(interp, pc, valuePtr);
 	    goto checkForCatch;

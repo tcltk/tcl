@@ -1,6 +1,19 @@
+2005-08-24  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclExecute.c: Corrected some TRACE bugs that prevented
+	compilation with --enable-symbols=all.
+	* generic/tclStrToD.c: Revised commentary to prepare for a
+	renaming of the file, removed some dead code, and fixed a bug
+	where TclBignumToDouble failed on huge negative numbers.
+	* tests/binary.test (binary-65.*): Added missing 'ieeeFloatingPoint' to
+	large/small significand tests.
+	* tests/expr.test (expr-45.*) Added missing braces around expressions.
+	
 2005-08-24  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Bug fix: TclBignumToDouble return -Inf when
 	appropriate.  Removed declarations of removed routines.
@@ -11,7 +24,7 @@
 
 2005-08-23  Kevin Kenny  <kennykb@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 	
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd):
 	* generic/tclInt.h:
@@ -37,7 +50,7 @@
 	
 2005-08-23  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclStrToD.c:	Bug fix: set shift magnitude properly whether
 	we're expanding to mp_int type or not.
@@ -70,7 +83,7 @@
 
 2005-08-22  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclInt.h:	New ACCEPT_NAN macro to mark code that supports
 	* generic/tclCmdAH.c:	or disables accepting of the NaN value at 
@@ -102,7 +115,7 @@
 
 2005-08-21  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclInt.h:		Moved TclParseInteger to tclUtil.c
 	* generic/tclParseExpr.c:	and made it static.
@@ -128,7 +141,7 @@
 
 2005-08-19  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclBasic.c:	Updated OldMathFuncProc and ExprAbsFunc to
 	do less invasion into numeric Tcl_Obj internals.  Made ExprDoubleFunc,
@@ -153,7 +166,7 @@
 
 2005-08-18  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:		Fixed string rep invalidation bug in
 	* tests/dict.test (dict-11.17):	INST_DICT_INCR_IMM rewrite.
@@ -165,7 +178,7 @@
 
 2005-08-17  Kevin Kenny  <kennykb@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclBasic.c (Tcl_Expr{Long,Double}{,Obj}): Updated to
 	* generic/tclTest.c:                                deal with
@@ -182,7 +195,7 @@
 	
 2005-08-17  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	New routine TclIncrObj to centralize the
 	increment operation needed in many places.  Updated
@@ -190,7 +203,7 @@
 
 2005-08-16  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Made bit shifting opcodes and INST_MOD
 	bignum-aware.
@@ -210,7 +223,7 @@
 
 2005-08-15  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]	Updates from HEAD.
+	[kennykb-numerics-branch]	Updates from HEAD.
 	* generic/tclExecute.c:	More revisions to IllegalExprOperandType.
 	Merged INST_BITNOT with INST_UMINUS and make it bignum-aware
 	according to the rule: ~a = -a - 1.  Disabled unused code and
@@ -230,7 +243,7 @@
 
 2005-08-14  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Updated execution of arithmetic bytecodes
 	to be bignum-aware, and to allow calculations on NaN to produce
@@ -243,7 +256,7 @@
 
 2005-08-13  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclObj.c:	Extended Bignum auto-narrowing to auto-narrow
 	to tclWideIntType when appropriate; this helps keep things working as
@@ -257,7 +270,7 @@
 
 2005-08-12  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Simplify doCondJump.  Use eePtr->constants
 	as result of INST_DICT_NEXT, INST_LAND, and INST_LOR.  Separate
@@ -276,7 +289,7 @@
 	
 2005-08-11  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Rewrite of INST_LAND/INST_LOR to take
 	advantage of loss of "pure double" issues.  Merged INST_UPLUS
@@ -309,7 +322,7 @@
 	
 2005-08-10  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclTomMath.h:	Added mp_shrink, mp_to_unsigned_bin,
 	* unix/Makefile.in:	mp_to_unsigned_bin_n, and mp_unsigned_bin_size
@@ -345,7 +358,7 @@
 
 2005-08-08  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 
 	* generic/tclObj.c:	Replaced some goto's with loops and started
 	use of BIGNUM_AUTO_NARROW and NO_WIDE_TYPE.
@@ -358,7 +371,7 @@
 
 2005-08-05  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch]
+	[kennykb-numerics-branch]
 	* generic/tclObj.c:	Rewrote Tcl_GetDoubleFromObj().
 
 2005-08-05  Donal K. Fellows  <dkf@users.sf.net>
@@ -389,7 +402,7 @@
 
 2005-08-04  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch] Updated from HEAD
+	[kennykb-numerics-branch] Updated from HEAD
 
 	* generic/tclObj.c:	Rewrote Tcl_GetBooleanFromObj() and supporting
 	routines to make use of TclParseNumber.  This reduces the potential
@@ -407,7 +420,7 @@
 
 2005-08-02  Don Porter	<dgp@users.sourceforge.net>
 
-	[kennykb_numerics_branch] Updated from HEAD
+	[kennykb-numerics-branch] Updated from HEAD
 
 2005-07-30  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -584,7 +597,7 @@
 
 2005-07-12  Kevin Kenny  <kennykb@acm.org>
 
-	[kennykb_numerics_branch] Updated from HEAD
+	[kennykb-numerics-branch] Updated from HEAD
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd):
 	* generic/tclInt.h:
