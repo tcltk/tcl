@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.30 2005/08/23 19:15:41 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.31 2005/08/24 02:35:47 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -906,8 +906,8 @@ TclParseNumber( Tcl_Interp* interp,
 
 #ifdef TIP_114_FORMATS
 	case BINARY:
+	    shift = numTrailZeros;
 	    if (!significandOverflow) {
-		shift = numTrailZeros;
 		if (significandWide !=0 
 			&& (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) 
 			|| significandWide 
@@ -928,8 +928,8 @@ TclParseNumber( Tcl_Interp* interp,
 #endif
 	case HEXADECIMAL:
 	    /* Returning a hex integer.  Final scaling step */
+	    shift = 4 * numTrailZeros;
 	    if (!significandOverflow) {
-		shift = 4 * numTrailZeros;
 		if (significandWide !=0 
 			&& (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) 
 			|| significandWide 
@@ -950,8 +950,8 @@ TclParseNumber( Tcl_Interp* interp,
 
 	case OCTAL:
 	    /* Returning an octal integer.  Final scaling step */
+	    shift = 3 * numTrailZeros;
 	    if (!octalSignificandOverflow) {
-		shift = 3 * numTrailZeros;
 		if (octalSignificandWide != 0
 			&& (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) 
 			|| octalSignificandWide 
