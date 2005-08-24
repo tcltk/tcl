@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.31 2005/08/24 02:35:47 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.32 2005/08/24 18:51:36 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -160,9 +160,6 @@ static double MakeNaN _ANSI_ARGS_(( int signum, Tcl_WideUInt tag ));
 static double RefineApproximation _ANSI_ARGS_((double approx,
 					       mp_int* exactSignificand,
 					       int exponent));
-static double RefineResult _ANSI_ARGS_((double approx, CONST char* start,
-					int nDigits, long exponent));
-static double ParseNaN _ANSI_ARGS_(( int signum, CONST char** end ));
 static double BignumToBiasedFrExp _ANSI_ARGS_(( mp_int* big, int* machexp ));
 static double Pow10TimesFrExp _ANSI_ARGS_(( int exponent,
 					    double fraction,
@@ -2226,7 +2223,11 @@ TclBignumToDouble(mp_int *a)	/* Integer to convert. */
     bits = mp_count_bits(a);
     if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	errno = ERANGE;
-	return HUGE_VAL;
+	if (a->sign == MP_ZPOS) {
+	    return HUGE_VAL;
+	} else {
+	    return -HUGE_VAL;
+	}
     }
     shift = mantBits + 1 - bits;
     mp_init(&b);

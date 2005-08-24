@@ -2,6 +2,9 @@
 
 	[kennykb_numerics_branch]
 
+	* generic/tclExecute.c:	Bug fix: TclBignumToDouble return -Inf when
+	appropriate.  Removed declarations of removed routines.
+
 	* generic/tclExecute.c:	Revised the type promotion rules of the
 	comparison operators so that they form proper equivalence classes
 	over the set of numeric strings.
