@@ -1,3 +1,31 @@
+2005-08-24  Andreas Kupries <andreask@activestate.com>
+
+	TIP#219 IMPLEMENTATION
+
+	* doc/SetChanErr.3: ** New File **. Documentation of the new
+	  channel API functions.	
+	* generic/tcl.decls:  Stub declarations of the new channel API.
+	* generic/tclDecls.h: Regenerated
+	* generic/tclStubInit.c:
+
+	* tclIORChan.c: ** New File **. Implementation of the reflected
+	  channel.
+	* generic/tclInt.h: Integration of reflected channel and new error
+	* generic/tclIO.c:  propagation into the generic I/O core.
+	* generic/tclIOCmd.c:
+	* generic/tclIO.h:
+	* library/init.tcl:
+
+	* tests/io.test:    Extended testsuite.
+	* tests/ioCmd.test:
+	* tests/chan.test:
+	* generic/tclTest.c:
+	* generic/tclThreadTest.c:
+
+	* unix/Makefile.in: Integration into the build machinery.
+	* win/Makefile.in:
+	* win/Makefile.vc:
+
 2005-08-24  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (Tcl_DoubleDigits): Fixed the corner cases of
