@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.7 2005/07/16 21:29:23 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.8 2005/08/24 15:15:45 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -959,7 +959,7 @@ TclDoubleDigits(char * strPtr,	/* Buffer in which to store the result, must
 	     * smaller exponent when going to e's predecessor.
 	     */
 
-	    rfac2 += bits + log2FLT_RADIX - 1;
+	    rfac2 += bits + log2FLT_RADIX + 1;
 	    sfac2 = 1 + log2FLT_RADIX;
 	    mplusfac2 = bits + log2FLT_RADIX;
 	    mminusfac2 = bits;
