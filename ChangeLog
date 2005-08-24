@@ -15,6 +15,13 @@
 
 	[kennykb-numerics-branch]
 
+	* generic/tclBasic.c:	Revised implementation of the ceil(.) and
+	* generic/tclInt.h:	floor(.) math functions in light of the
+	* generic/tclStrToD.c:	revised comparison operators, so that it
+	is always true that ($x <= ceil($x)) and ($x >= floor($x)).  The	
+	simple approach of "convert to double and call ceil() or floor()"
+	could not guarantee that.
+
 	* generic/tclExecute.c:	Bug fix: TclBignumToDouble return -Inf when
 	appropriate.  Removed declarations of removed routines.
 

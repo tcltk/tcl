@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.26 2005/08/23 19:22:12 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.27 2005/08/24 21:49:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -57,9 +57,13 @@ static int	ExprBinaryFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprBoolFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
+static int	ExprCeilFunc _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprDoubleFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprEntierFunc _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
+static int	ExprFloorFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprIntFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
@@ -246,13 +250,13 @@ BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::atan",	ExprUnaryFunc,	(ClientData) atan 	},
     { "::tcl::mathfunc::atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
     { "::tcl::mathfunc::bool",	ExprBoolFunc,	NULL			},
-    { "::tcl::mathfunc::ceil",	ExprUnaryFunc,	(ClientData) ceil 	},
+    { "::tcl::mathfunc::ceil",	ExprCeilFunc,	NULL		 	},
     { "::tcl::mathfunc::cos",	ExprUnaryFunc,	(ClientData) cos 	},
     { "::tcl::mathfunc::cosh",	ExprUnaryFunc,	(ClientData) cosh	},
     { "::tcl::mathfunc::double",ExprDoubleFunc,	NULL			},
     { "::tcl::mathfunc::entier",ExprEntierFunc,	NULL			},
     { "::tcl::mathfunc::exp",	ExprUnaryFunc,	(ClientData) exp	},
-    { "::tcl::mathfunc::floor",	ExprUnaryFunc,	(ClientData) floor 	},
+    { "::tcl::mathfunc::floor",	ExprFloorFunc,	NULL		 	},
     { "::tcl::mathfunc::fmod",	ExprBinaryFunc,	(ClientData) fmod	},
     { "::tcl::mathfunc::hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
     { "::tcl::mathfunc::int",	ExprIntFunc,	NULL			},
@@ -4955,6 +4959,80 @@ Tcl_GetVersion(majorV, minorV, patchLevelV, type)
  *
  *----------------------------------------------------------------------
  */
+
+static int
+ExprCeilFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Contains the address of a procedure that
+				 * takes one double argument and returns a
+				 * double result. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+{
+    int code;
+    double d;
+    mp_int big;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+#ifdef ACCEPT_NAN
+    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+#endif
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(TclCeil(&big)));
+	mp_clear(&big);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(ceil(d)));
+    }
+    return TCL_OK;
+}
+
+static int
+ExprFloorFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Contains the address of a procedure that
+				 * takes one double argument and returns a
+				 * double result. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+{
+    int code;
+    double d;
+    mp_int big;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+#ifdef ACCEPT_NAN
+    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+#endif
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(TclFloor(&big)));
+	mp_clear(&big);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(floor(d)));
+    }
+    return TCL_OK;
+}
 
 static int
 ExprUnaryFunc(clientData, interp, objc, objv)

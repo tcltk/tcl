@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.33 2005/08/24 18:56:32 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.34 2005/08/24 21:49:23 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2261,6 +2261,83 @@ TclBignumToDouble(mp_int *a)	/* Integer to convert. */
     } else {
 	return -r;
     }
+}
+
+double
+TclCeil(mp_int *a)	/* Integer to convert. */
+{
+    double r = 0.0;
+    mp_int b;
+
+    mp_init(&b);
+    if (a->sign == MP_NEG) {
+	mp_neg(a, &b);
+	r = -TclFloor(&b);
+    } else {
+	int bits = mp_count_bits(a);
+
+	if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
+	    r = HUGE_VAL;
+	} else {
+	    int i, exact = 1, shift = mantBits - bits;
+
+	    if (shift > 0) {
+		mp_mul_2d(a, shift, &b);
+	    } else if (shift < 0) {
+		mp_int d;
+		mp_init(&d);
+		mp_div_2d(a, -shift, &b, &d);
+		exact = mp_iszero(&d);
+		mp_clear(&d);
+	    } else {
+		mp_copy(a, &b);
+	    }
+	    if (!exact) {
+		mp_add_d(&b, 1, &b);
+	    }
+	    for (i=b.used-1 ; i>=0 ; --i) {
+		r = ldexp(r, DIGIT_BIT) + b.dp[i];
+	    }
+	    r = ldexp(r, bits - mantBits);
+	}
+    }
+    mp_clear(&b);
+    return r;
+}
+
+double
+TclFloor(mp_int *a)	/* Integer to convert. */
+{
+    double r = 0.0;
+    mp_int b;
+
+    mp_init(&b);
+    if (a->sign == MP_NEG) {
+	mp_neg(a, &b);
+	r = -TclCeil(&b);
+    } else {
+	int bits = mp_count_bits(a);
+
+	if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
+	    r = DBL_MAX;
+	} else {
+	    int i, shift = mantBits - bits;
+
+	    if (shift > 0) {
+		mp_mul_2d(a, shift, &b);
+	    } else if (shift < 0) {
+		mp_div_2d(a, -shift, &b, NULL);
+	    } else {
+		mp_copy(a, &b);
+	    }
+	    for (i=b.used-1 ; i>=0 ; --i) {
+		r = ldexp(r, DIGIT_BIT) + b.dp[i];
+	    }
+	    r = ldexp(r, bits - mantBits);
+	}
+    }
+    mp_clear(&b);
+    return r;
 }
 
 /*

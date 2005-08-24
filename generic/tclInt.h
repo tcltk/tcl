@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.32 2005/08/23 19:15:40 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.33 2005/08/24 21:49:22 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1966,6 +1966,7 @@ MODULE_SCOPE void	TclAppendObjToErrorInfo _ANSI_ARGS_((
 MODULE_SCOPE int	TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 MODULE_SCOPE double     TclBignumToDouble _ANSI_ARGS_((mp_int* bignum));
+MODULE_SCOPE double	TclCeil _ANSI_ARGS_((mp_int* a));
 MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
@@ -2003,6 +2004,7 @@ MODULE_SCOPE void	TclFinalizeObjects _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizePreserve _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
+MODULE_SCOPE double	TclFloor _ANSI_ARGS_((mp_int* a));
 MODULE_SCOPE void	TclFormatNaN _ANSI_ARGS_((double value, char* buffer));
 MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr));
