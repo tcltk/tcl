@@ -1,3 +1,10 @@
+2005-08-24  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (Tcl_DoubleDigits): Fixed the corner cases of
+	* tests/binary.test (binary-65.*)         formatting floating
+	point numbers with the largest and smallest possible significands,
+	and added test cases for them.
+	
 2005-08-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure.in:
