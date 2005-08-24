@@ -1,3 +1,11 @@
+2005-08-24  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb_numerics_branch]
+
+	* generic/tclExecute.c:	Revised the type promotion rules of the
+	comparison operators so that they form proper equivalence classes
+	over the set of numeric strings.
+
 2005-08-23  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	[kennykb_numerics_branch]

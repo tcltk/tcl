@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.33 2005/08/23 22:14:30 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.34 2005/08/24 17:25:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3625,6 +3625,9 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE(("%.20s %.20s => %ld\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 #else
 	int arg1Numeric, arg2Numeric;
+	mp_int big1, big2;
+	int compare;
+	double dummy;
 
 	valuePtr = *(tosPtr - 1);
 	arg1Numeric = (TCL_OK == Tcl_GetDoubleFromObj(NULL, valuePtr, &d1));
@@ -3658,6 +3661,7 @@ TclExecuteByteCode(interp, codePtr)
 	    /* At least one non-numeric argument - compare as strings */
 	    goto stringCompare;
 	}
+#if 0
 	if (valuePtr->typePtr == &tclDoubleType
 	    || value2Ptr->typePtr == &tclDoubleType) {
 	    /* At least one double - compare as doubles */
@@ -3682,12 +3686,52 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    }
 	} else {
+#endif
+	if (valuePtr->typePtr == &tclDoubleType) {
+	    if (value2Ptr->typePtr == &tclDoubleType) {
+		/* Both args are double - compare as doubles */
+	    doubleCompare:
+		switch (*pc) {
+		case INST_EQ:
+		    iResult = d1 == d2;
+		    break;
+		case INST_NEQ:
+		    iResult = d1 != d2;
+		    break;
+		case INST_LT:
+		    iResult = d1 < d2;
+		    break;
+		case INST_GT:
+		    iResult = d1 > d2;
+		    break;
+		case INST_LE:
+		    iResult = d1 <= d2;
+		    break;
+		case INST_GE:
+		    iResult = d1 >= d2;
+		    break;
+		}
+		goto foundResult;
+	    }
+	    /* Convert first argument: double -> bignum */
+	    if (modf(d1, &dummy) != 0.0) {
+		goto doubleCompare;
+	    }
+	    TclInitBignumFromDouble(NULL, d1, &big1);
+	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	} else {
+	    if (value2Ptr->typePtr == &tclDoubleType) {
+		if (modf(d2, &dummy) != 0.0) {
+		    goto doubleCompare;
+		}
+		TclInitBignumFromDouble(NULL, d2, &big2);
+	    } else {
+		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    }
+	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	}
 	    /* Compare as bignums */
 	    /* TODO: more efficient comparisons of narrow native integers */
-	    mp_int big1, big2;
-	    int compare;
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    compare = mp_cmp(&big1, &big2);
 	    mp_clear(&big1);
 	    mp_clear(&big2);
@@ -3711,7 +3755,9 @@ TclExecuteByteCode(interp, codePtr)
 		iResult = (compare != MP_LT);
 		break;
 	    }
+#if 0
 	}
+#endif
 #endif
 
 	/*
