@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.86.2.5 2005/08/17 19:12:10 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.86.2.6 2005/08/25 15:46:31 dgp Exp $
  */
 
 #define TCL_TEST
@@ -120,6 +120,20 @@ typedef struct TestEvent {
     Tcl_Obj* command;		/* Command to evaluate when the event occurs */
     Tcl_Obj* tag;		/* Tag for this event used to delete it */
 } TestEvent;
+
+
+/*
+ * Simple detach/attach facility for testchannel cut|splice.
+ * Allow testing of channel transfer in core testsuite.
+ */
+
+typedef struct TestChannel {
+    Tcl_Channel         chan;    /* Detached channel */
+    struct TestChannel* nextPtr; /* Next in pool of detached channels */
+} TestChannel;
+
+static TestChannel* firstDetached;
+
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -5495,10 +5509,33 @@ TestChannelCmd(clientData, interp, argc, argv)
     chanPtr = (Channel *) NULL;
 
     if (argc > 2) {
-        chan = Tcl_GetChannel(interp, argv[2], &mode);
-        if (chan == (Tcl_Channel) NULL) {
-            return TCL_ERROR;
-        }
+        if ((cmdName[0] == 's') && (strncmp(cmdName, "splice", len) == 0)) {
+	    /* For splice access the pool of detached channels.
+	     * Locate channel, remove from the list.
+	     */
+
+	    TestChannel** nextPtrPtr;
+	    TestChannel*  curPtr;
+
+	    chan = (Tcl_Channel) NULL;
+	    for (nextPtrPtr = &firstDetached, curPtr = firstDetached;
+		 curPtr != NULL;
+		 nextPtrPtr = &(curPtr->nextPtr), curPtr = curPtr->nextPtr) {
+
+	        if (strcmp (argv[2], Tcl_GetChannelName (curPtr->chan)) == 0) {
+		    *nextPtrPtr    = curPtr->nextPtr;
+		    curPtr->nextPtr = NULL;
+		    chan = curPtr->chan;
+		    ckfree ((char*) curPtr);
+		    break;
+		}
+	    }
+	} else {
+	    chan = Tcl_GetChannel(interp, argv[2], &mode);
+	}
+	if (chan == (Tcl_Channel) NULL) {
+	    return TCL_ERROR;
+	}
         chanPtr		= (Channel *) chan;
 	statePtr	= chanPtr->state;
         chanPtr		= statePtr->topChanPtr;
@@ -5509,13 +5546,62 @@ TestChannelCmd(clientData, interp, argc, argv)
 	chan		= NULL;
     }
 
+    if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerror", len) == 0)) {
+
+	Tcl_Obj* msg = Tcl_NewStringObj (argv [3],-1);
+
+	Tcl_IncrRefCount (msg);
+	Tcl_SetChannelError (chan, msg);
+	Tcl_DecrRefCount (msg);
+
+	Tcl_GetChannelError (chan, &msg);
+	Tcl_SetObjResult (interp, msg);
+	Tcl_DecrRefCount (msg);
+	return TCL_OK;
+    }
+    if ((cmdName[0] == 's') && (strncmp(cmdName, "setchannelerrorinterp", len) == 0)) {
+
+	Tcl_Obj* msg = Tcl_NewStringObj (argv [3],-1);
+
+	Tcl_IncrRefCount (msg);
+	Tcl_SetChannelErrorInterp (interp, msg);
+	Tcl_DecrRefCount (msg);
+
+	Tcl_GetChannelErrorInterp (interp, &msg);
+	Tcl_SetObjResult (interp, msg);
+	Tcl_DecrRefCount (msg);
+	return TCL_OK;
+    }
+
+    /*
+     * "cut" is actually more a simplified detach facility as provided
+     * by the Thread package. Without the safeguards of a regular
+     * command (no checking that the command is truly cut'able, no
+     * mutexes for thread-safety). Its complementary command is
+     * "splice", see below.
+     */
+
     if ((cmdName[0] == 'c') && (strncmp(cmdName, "cut", len) == 0)) {
+        TestChannel* det;
+
         if (argc != 3) {
             Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
                     " cut channelName\"", (char *) NULL);
             return TCL_ERROR;
         }
+
+	Tcl_RegisterChannel((Tcl_Interp *) NULL, chan); /* prevent closing */
+	Tcl_UnregisterChannel(interp, chan);
+
         Tcl_CutChannel(chan);
+
+	/* Remember the channel in the pool of detached channels */
+
+	det = (TestChannel*) ckalloc (sizeof(TestChannel));
+	det->chan     = chan;
+	det->nextPtr  = firstDetached;
+	firstDetached = det;
+
         return TCL_OK;
     }
 
@@ -5769,6 +5855,14 @@ TestChannelCmd(clientData, interp, argc, argv)
         return TCL_OK;
     }
 
+    /*
+     * "splice" is actually more a simplified attach facility as
+     * provided by the Thread package. Without the safeguards of a
+     * regular command (no checking that the command is truly
+     * cut'able, no mutexes for thread-safety). Its complementary
+     * command is "cut", see above.
+     */
+
     if ((cmdName[0] == 's') && (strncmp(cmdName, "splice", len) == 0)) {
         if (argc != 3) {
             Tcl_AppendResult(interp, "channel name required", (char *) NULL);
@@ -5776,6 +5870,10 @@ TestChannelCmd(clientData, interp, argc, argv)
         }
 
         Tcl_SpliceChannel(chan);
+
+	Tcl_RegisterChannel(interp, chan);
+	Tcl_UnregisterChannel((Tcl_Interp *)NULL, chan);
+
         return TCL_OK;
     }
 
@@ -6815,3 +6913,11 @@ TestgetintCmd(dummy, interp, argc, argv)
 	return TCL_OK;
     }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

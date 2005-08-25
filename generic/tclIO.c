@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.81.2.7 2005/08/15 18:13:58 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81.2.8 2005/08/25 15:46:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -136,6 +136,7 @@ static int		WriteBytes _ANSI_ARGS_((Channel *chanPtr,
 			    CONST char *src, int srcLen));
 static int		WriteChars _ANSI_ARGS_((Channel *chanPtr,
 			    CONST char *src, int srcLen));
+static Tcl_Obj*         FixLevelCode _ANSI_ARGS_ ((Tcl_Obj* msg));
 
 /*
  *---------------------------------------------------------------------------
@@ -743,7 +744,7 @@ Tcl_RegisterChannel(interp, chan)
 	hPtr = Tcl_CreateHashEntry(hTblPtr, statePtr->channelName, &new);
 	if (new == 0) {
 	    if (chan == (Tcl_Channel) Tcl_GetHashValue(hPtr)) {
-		return;
+	        return;
 	    }
 
 	    Tcl_Panic("Tcl_RegisterChannel: duplicate channel names");
@@ -1182,6 +1183,10 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
     chanPtr->inQueueHead	= (ChannelBuffer *) NULL;
     chanPtr->inQueueTail	= (ChannelBuffer *) NULL;
 
+    /* TIP #219, Tcl Channel Reflection API */
+    statePtr->chanMsg           = NULL;
+    statePtr->unreportedMsg     = NULL;
+
     /*
      * Link the channel into the list of all channels; create an on-exit
      * handler if there is not one already, to close off all the channels in
@@ -1400,7 +1405,7 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
  *
  * Side effects:
  *	If TCL_ERROR is returned, the posix error code will be set with
- *	Tcl_SetErrno.
+ *	Tcl_SetErrno. May leave a message in interp result as well.
  *
  *----------------------------------------------------------------------
  */
@@ -1446,9 +1451,17 @@ Tcl_UnstackChannel(interp, chan)
 
 	    if (Tcl_Flush((Tcl_Channel) chanPtr) != TCL_OK) {
 		statePtr->csPtr = csPtr;
-		Tcl_AppendResult(interp, "could not flush channel \"",
-			Tcl_GetChannelName((Tcl_Channel) chanPtr), "\"",
-			(char *) NULL);
+		/* TIP #219, Tcl Channel Reflection API.
+		 * Move error messages put by the driver into the chan/ip
+		 * bypass area into the regular interpreter result. Fall back
+		 * to the regular message if nothing was found in the
+		 * bypasses.
+		 */
+		if (!TclChanCaughtErrorBypass (interp, chan)) {
+		    Tcl_AppendResult(interp, "could not flush channel \"",
+				     Tcl_GetChannelName((Tcl_Channel) chanPtr), "\"",
+				     (char *) NULL);
+		}
 		return TCL_ERROR;
 	    }
 
@@ -1517,6 +1530,11 @@ Tcl_UnstackChannel(interp, chan)
 
 	if (result != 0) {
 	    Tcl_SetErrno(result);
+	    /* TIP #219, Tcl Channel Reflection API.
+	     * Move error messages put by the driver into the chan/ip bypass
+	     * area into the regular interpreter result.
+	     */
+	    TclChanCaughtErrorBypass (interp, chan);
 	    return TCL_ERROR;
 	}
     } else {
@@ -1527,6 +1545,10 @@ Tcl_UnstackChannel(interp, chan)
 
 	if (statePtr->refCount <= 0) {
 	    if (Tcl_Close(interp, chan) != TCL_OK) {
+		/* TIP #219, Tcl Channel Reflection API.
+		 * "TclChanCaughtErrorBypass" is not required here, it was
+		 * done already by "Tcl_Close".
+		 */
 		return TCL_ERROR;
 	    }
 	}
@@ -1959,7 +1981,7 @@ CheckForDeadChannel(interp, statePtr)
  *
  * Results:
  *	0 if successful, else the error code that was returned by the channel
- *	type operation.
+ *	type operation. May leave a message in the interp result.
  *
  * Side effects:
  *	May produce output on a channel. May block indefinitely if the channel
@@ -2099,22 +2121,53 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
 	     */
 
 	    if (calledFromAsyncFlush) {
+		/* TIP #219, Tcl Channel Reflection API.
+		 * When defering the error copy a message from the bypass into
+		 * the unreported area. Or discard it if the new error is to be
+		 * ignored in favor of an earlier defered error.
+		 */
+
+	        Tcl_Obj* msg = statePtr->chanMsg;
+
 		if (statePtr->unreportedError == 0) {
 		    statePtr->unreportedError = errorCode;
+		    statePtr->unreportedMsg   = msg;
+		    if (msg != NULL) {
+		        Tcl_IncrRefCount (msg);
+		    }
+		} else {
+		    /* An old unreported error is kept, and this error
+		     * thrown away.
+		     */
+		    statePtr->chanMsg = NULL;
+		    if (msg != NULL) {
+		        Tcl_DecrRefCount (msg);
+		    }
 		}
 	    } else {
+		/* TIP #219, Tcl Channel Reflection API.
+		 * Move error messages put by the driver into the chan bypass
+		 * area into the regular interpreter result. Fall back to the
+		 * regular message if nothing was found in the bypasses.
+		 */
+
 		Tcl_SetErrno(errorCode);
 		if (interp != NULL) {
+		    if (!TclChanCaughtErrorBypass (interp, (Tcl_Channel) chanPtr)) {
+		        /*
+			 * Casting away CONST here is safe because the
+			 * TCL_VOLATILE flag guarantees CONST treatment
+			 * of the Posix error string.
+			 */
 
-		    /*
-		     * Casting away CONST here is safe because the
-		     * TCL_VOLATILE flag guarantees CONST treatment of the
-		     * Posix error string.
-		     */
-
-		    Tcl_SetResult(interp,
-			    (char *) Tcl_PosixError(interp), TCL_VOLATILE);
+		        Tcl_SetResult(interp,
+				(char *) Tcl_PosixError(interp),
+				TCL_VOLATILE);
+		    }
 		}
+		/* An unreportable bypassed message is kept, for the
+		 * caller of Tcl_Seek, Tcl_Write, etc.
+		 */
 	    }
 
 	    /*
@@ -2191,7 +2244,7 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
  *	TOP channel, including the data structure itself.
  *
  * Results:
- *	1 if the channel was stacked, 0 otherwise.
+ *	Error code from an unreported error or the driver close operation.
  *
  * Side effects:
  *	May close the actual channel, may free memory, may change the value of
@@ -2251,6 +2304,19 @@ CloseChannel(interp, chanPtr, errorCode)
 	(chanPtr->typePtr->outputProc) (chanPtr->instanceData, &c, 1, &dummy);
     }
 
+    /* TIP #219, Tcl Channel Reflection API.
+     * Move a leftover error message in the channel bypass into the
+     * interpreter bypass. Just clear it if there is no interpreter.
+     */
+
+    if (statePtr->chanMsg != NULL) {
+	if (interp != NULL) {
+	    Tcl_SetChannelErrorInterp (interp,statePtr->chanMsg);
+	}
+        Tcl_DecrRefCount (statePtr->chanMsg);
+	statePtr->chanMsg = NULL;
+    }
+
     /*
      * Remove this channel from of the list of all channels.
      */
@@ -2259,6 +2325,7 @@ CloseChannel(interp, chanPtr, errorCode)
 
     /*
      * Close and free the channel driver state.
+     * This may leave a TIP #219 error message in the interp.
      */
 
     if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
@@ -2293,6 +2360,17 @@ CloseChannel(interp, chanPtr, errorCode)
 
     if (statePtr->unreportedError != 0) {
 	errorCode = statePtr->unreportedError;
+
+	/* TIP #219, Tcl Channel Reflection API.
+	 * Move an error message found in the unreported area into the regular
+	 * bypass (interp). This kills any message in the channel bypass area.
+	 */
+
+	if (statePtr->chanMsg != NULL) {
+	    Tcl_DecrRefCount (statePtr->chanMsg);
+	    statePtr->chanMsg = NULL;
+	}
+        Tcl_SetChannelErrorInterp (interp,statePtr->unreportedMsg);
     }
     if (errorCode == 0) {
 	errorCode = result;
@@ -2500,6 +2578,7 @@ Tcl_Close(interp, chan)
     Channel *chanPtr;			/* The real IO channel. */
     ChannelState *statePtr;		/* State of real IO channel. */
     int result;				/* Of calling FlushChannel. */
+    int flushcode;
 
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_OK;
@@ -2543,6 +2622,19 @@ Tcl_Close(interp, chan)
 	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
 	WriteChars(chanPtr, "", 0);
+
+	/* TIP #219, Tcl Channel Reflection API.
+	 * Move an error message found in the channel bypass into the
+	 * interpreter bypass. Just clear it if there is no interpreter.
+	 */
+
+	if (statePtr->chanMsg != NULL) {
+	    if (interp != NULL) {
+		Tcl_SetChannelErrorInterp (interp,statePtr->chanMsg);
+	    }
+	    Tcl_DecrRefCount (statePtr->chanMsg);
+	    statePtr->chanMsg = NULL;
+	}
     }
 
     Tcl_ClearChannelHandlers(chan);
@@ -2588,7 +2680,25 @@ Tcl_Close(interp, chan)
      */
 
     statePtr->flags |= CHANNEL_CLOSED;
-    if ((FlushChannel(interp, chanPtr, 0) != 0) || (result != 0)) {
+
+    flushcode = FlushChannel(interp, chanPtr, 0);
+
+    /* TIP #219.
+     * Capture error messages put by the driver into the bypass area and put
+     * them into the regular interpreter result.
+     *
+     * Notes: Due to the assertion of CHANNEL_CLOSED in the flags
+     * "FlushChannel" has called "CloseChannel" and thus freed all the channel
+     * structures. We must not try to access "chan" anymore, hence the NULL
+     * argument in the call below. The only place which may still contain a
+     * message is the interpreter itself, and "CloseChannel" made sure to lift
+     * any channel message it generated into it.
+     */
+    if (TclChanCaughtErrorBypass (interp, NULL)) {
+	result = EINVAL;
+    }
+
+    if ((flushcode != 0) || (result != 0)) {
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -5831,6 +5941,16 @@ CheckChannelErrors(statePtr, flags)
     if (statePtr->unreportedError != 0) {
 	Tcl_SetErrno(statePtr->unreportedError);
 	statePtr->unreportedError = 0;
+
+	/* TIP #219, Tcl Channel Reflection API.
+	 * Move a defered error message back into the channel bypass.
+	 */
+
+	if (statePtr->chanMsg != NULL) {
+	    Tcl_DecrRefCount (statePtr->chanMsg);
+	}
+	statePtr->chanMsg       = statePtr->unreportedMsg;
+	statePtr->unreportedMsg = NULL;
 	return -1;
     }
 
@@ -7725,6 +7845,7 @@ CopyData(csPtr, mask)
 {
     Tcl_Interp *interp;
     Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL;
+    Tcl_Obj* msg = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
     int result = TCL_OK, size, total, sizeb;
@@ -7762,12 +7883,14 @@ CopyData(csPtr, mask)
 	 * Check for unreported background errors.
 	 */
 
-	if (inStatePtr->unreportedError != 0) {
+        Tcl_GetChannelError (inChan, &msg);
+	if ((inStatePtr->unreportedError != 0) || (msg != NULL)) {
 	    Tcl_SetErrno(inStatePtr->unreportedError);
 	    inStatePtr->unreportedError = 0;
 	    goto readError;
 	}
-	if (outStatePtr->unreportedError != 0) {
+        Tcl_GetChannelError (outChan, &msg);
+	if ((outStatePtr->unreportedError != 0) || (msg != NULL)) {
 	    Tcl_SetErrno(outStatePtr->unreportedError);
 	    outStatePtr->unreportedError = 0;
 	    goto writeError;
@@ -7794,8 +7917,15 @@ CopyData(csPtr, mask)
 	readError:
 	    TclNewObj(errObj);
 	    Tcl_AppendStringsToObj(errObj, "error reading \"",
-		    Tcl_GetChannelName(inChan), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+				   Tcl_GetChannelName(inChan), "\": ",
+				   (char *) NULL);
+	    if (msg != NULL) {
+	        Tcl_AppendObjToObj(errObj,msg);
+	    } else {
+	        Tcl_AppendStringsToObj(errObj,
+		       Tcl_PosixError(interp),
+		       (char *) NULL);
+	    }
 	    break;
 	} else if (underflow) {
 	    /*
@@ -7850,8 +7980,15 @@ CopyData(csPtr, mask)
 	writeError:
 	    TclNewObj(errObj);
 	    Tcl_AppendStringsToObj(errObj, "error writing \"",
-		    Tcl_GetChannelName(outChan), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+				   Tcl_GetChannelName(outChan), "\": ",
+				   (char *) NULL);
+	    if (msg != NULL) {
+	        Tcl_AppendObjToObj(errObj,msg);
+	    } else {
+	        Tcl_AppendStringsToObj(errObj,
+		       Tcl_PosixError(interp),
+		       (char *) NULL);
+	    }
 	    break;
 	}
 
@@ -8693,8 +8830,26 @@ SetBlockMode(interp, chanPtr, mode)
     result = StackSetBlockMode(chanPtr, mode);
     if (result != 0) {
 	if (interp != (Tcl_Interp *) NULL) {
-	    Tcl_AppendResult(interp, "error setting blocking mode: ",
-		    Tcl_PosixError(interp), (char *) NULL);
+	    /* TIP #219.
+	     * Move error messages put by the driver into the bypass area and
+	     * put them into the regular interpreter result. Fall back to the
+	     * regular message if nothing was found in the bypass.
+	     *
+	     * Note that we cannot have a message in the interpreter bypass
+	     * area, StackSetBlockMode is restricted to the channel bypass.
+	     * We still need the interp as the destination of the move.
+	     */
+	    if (!TclChanCaughtErrorBypass (interp, (Tcl_Channel) chanPtr)) {
+		Tcl_AppendResult(interp, "error setting blocking mode: ",
+				 Tcl_PosixError(interp), (char *) NULL);
+	    }
+	} else {
+	    /* TIP #219.
+	     * If we have no interpreter to put a bypass message into we have
+	     * to clear it, to prevent its propagation and use in other places
+	     * unrelated to the actual occurence of the problem.
+	     */
+	    Tcl_SetChannelError ((Tcl_Channel) chanPtr, NULL);
 	}
 	return TCL_ERROR;
     }
@@ -9371,6 +9526,270 @@ Tcl_ChannelThreadActionProc(chanTypePtr)
     } else {
 	return NULL;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetChannelErrorInterp --
+ *
+ *      TIP #219, Tcl Channel Reflection API.
+ *	Store an error message for the I/O system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Discards a previously stored message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetChannelErrorInterp (interp, msg)
+     Tcl_Interp* interp; /* Interp to store the data into. */
+     Tcl_Obj*    msg;    /* Error message to store. */
+{
+    Interp* iPtr = (Interp*) interp;
+
+    if (iPtr->chanMsg != NULL) {
+        Tcl_DecrRefCount (iPtr->chanMsg);
+	iPtr->chanMsg  = NULL;
+    }
+
+    if (msg != NULL) {
+        iPtr->chanMsg  = FixLevelCode (msg);
+	Tcl_IncrRefCount (iPtr->chanMsg);
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetChannelError --
+ *
+ *      TIP #219, Tcl Channel Reflection API.
+ *	Store an error message for the I/O system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Discards a previously stored message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetChannelError (chan, msg)
+     Tcl_Channel chan; /* Channel to store the data into. */
+     Tcl_Obj*    msg;  /* Error message to store. */
+{
+    ChannelState* statePtr = ((Channel*) chan)->state;
+
+    if (statePtr->chanMsg != NULL) {
+        Tcl_DecrRefCount (statePtr->chanMsg);
+	statePtr->chanMsg  = NULL;
+    }
+
+    if (msg != NULL) {
+        statePtr->chanMsg  = FixLevelCode (msg);
+	Tcl_IncrRefCount (statePtr->chanMsg);
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FixLevelCode --
+ *
+ *      TIP #219, Tcl Channel Reflection API.
+ *	Scans an error message for bad -code / -level
+ *	directives. Returns a modified copy with such
+ *	directives corrected, and the input if it had
+ *	no problems.
+ *
+ * Results:
+ *	A Tcl_Obj*
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj*
+FixLevelCode (msg)
+Tcl_Obj* msg;
+{
+    int       lc;
+    Tcl_Obj** lv;
+    int       explicitResult;
+    int       numOptions;
+    int       lcn;
+    Tcl_Obj** lvn;
+    int       res, i, j, val, lignore, cignore;
+    Tcl_Obj*  newlevel = NULL;
+    Tcl_Obj*  newcode  = NULL;
+
+    /* ASSERT msg != NULL */
+
+    /* Process the caught message.
+     *
+     * Syntax = (option value)... ?message?
+     *
+     * Bad syntax causes a panic. Because the other side uses
+     * Tcl_GetReturnOptions and list construction functions to marshall the
+     * information.
+     */
+
+    res = Tcl_ListObjGetElements (NULL, msg, &lc, &lv);
+    if (res != TCL_OK) {
+	Tcl_Panic ("Tcl_SetChannelError(Interp): Bad syntax of message");
+    }
+
+    explicitResult = (1 == (lc % 2));
+    numOptions     = lc - explicitResult;
+
+    /* No options, nothing to do.
+     */
+
+    if (numOptions == 0) {
+	return msg;
+    }
+
+    /* Check for -code x, x != 1|error, and -level x, x != 0 */
+
+    for (i = 0; i < numOptions; i += 2) {
+	if (0 == strcmp (Tcl_GetString (lv [i]), "-code")) {
+	    /* !"error", !integer, integer != 1 (numeric code for error) */
+
+	    res = Tcl_GetIntFromObj (NULL, lv [i+1], &val);
+	    if (((res == TCL_OK) && (val != 1)) ||
+		((res != TCL_OK) && (0 != strcmp (Tcl_GetString (lv [i+1]), "error")))) {
+		newcode = Tcl_NewIntObj (1);
+	    }
+	} else if (0 == strcmp (Tcl_GetString (lv [i]), "-level")) {
+	    /* !integer, integer != 0 */
+	    res = Tcl_GetIntFromObj (NULL, lv [i+1], &val);
+	    if ((res != TCL_OK) || (val != 0)) {
+		newlevel = Tcl_NewIntObj (0);
+	    }
+	}
+    }
+
+    /* -code, -level are either not present or ok. Nothing to do.
+     */
+
+    if (!newlevel && !newcode) {
+	return msg;
+    }
+
+    lcn = numOptions;
+    if (explicitResult) lcn ++;
+    if (newlevel)       lcn += 2;
+    if (newcode)        lcn += 2;
+
+    lvn = (Tcl_Obj**) ckalloc (lcn * sizeof (Tcl_Obj*));
+
+    /* New level/code information is spliced into the first occurence of
+     * -level, -code, further occurences are ignored. The options cannot be
+     * not present, we would not come here. Options which are ok are simply
+     * copied over.
+     */
+
+    lignore = cignore = 0;
+    for (i = 0, j = 0; i < numOptions; i += 2) {
+	if (0 == strcmp (Tcl_GetString (lv [i]), "-level")) {
+	    if (newlevel) {
+		lvn [j] = lv [i];   j++;
+		lvn [j] = newlevel; j++;
+		newlevel = NULL;
+		lignore = 1;
+		continue;
+	    } else if (lignore) {
+		continue;
+	    }
+	} else if (0 == strcmp (Tcl_GetString (lv [i]), "-code")) {
+	    if (newcode) {
+		lvn [j] = lv [i];  j++;
+		lvn [j] = newcode; j++;
+		newcode = NULL;
+		cignore = 1;
+		continue;
+	    } else if (cignore) {
+		continue;
+	    }
+	}
+	/* Keep everything else, possibly copied down */
+	lvn [j] = lv [i];   j++;
+	lvn [j] = lv [i+1]; j++;
+    }
+
+    if (explicitResult) {
+	lvn [j] = lv [i]; j++;
+    }
+
+    msg = Tcl_NewListObj (j, lvn);
+
+    ckfree ((char*) lvn);
+    return msg;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetChannelErrorInterp --
+ *
+ *      TIP #219, Tcl Channel Reflection API.
+ *	Return the message stored by the channel driver.
+ *
+ * Results:
+ *	Tcl error message object.
+ *
+ * Side effects:
+ *	Resets the stored data to NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void Tcl_GetChannelErrorInterp (interp, msg)
+     Tcl_Interp* interp; /* Interp to query. */
+     Tcl_Obj**   msg;    /* Place for error message. */
+{
+    Interp* iPtr = (Interp*) interp;
+
+    *msg = iPtr->chanMsg;
+    iPtr->chanMsg  = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetChannelError --
+ *
+ *      TIP #219, Tcl Channel Reflection API.
+ *	Return the message stored by the channel driver.
+ *
+ * Results:
+ *	Tcl error message object.
+ *
+ * Side effects:
+ *	Resets the stored data to NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void Tcl_GetChannelError (chan, msg)
+     Tcl_Channel chan; /* Channel to query. */
+     Tcl_Obj**   msg;  /* Place for error message. */
+{
+    ChannelState* statePtr = ((Channel*) chan)->state;
+
+    *msg = statePtr->chanMsg;
+    statePtr->chanMsg  = NULL;
 }
 
 /*

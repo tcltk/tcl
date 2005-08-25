@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.1 2005/04/10 23:14:57 kennykb Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.2 2005/08/25 15:46:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -478,6 +478,12 @@ NewTestThread(clientData)
     tsdPtr->interp = Tcl_CreateInterp();
     result = Tcl_Init(tsdPtr->interp);
     result = TclThread_Init(tsdPtr->interp);
+
+    /* This is part of the test facility.
+     * Initialize _ALL_ test commands for
+     * use by the new thread.
+     */
+    result = Tcltest_Init(tsdPtr->interp);
 
     /*
      * Update the list of threads.

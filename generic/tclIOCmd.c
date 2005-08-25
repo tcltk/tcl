@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.22.2.3 2005/08/02 18:15:32 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.22.2.4 2005/08/25 15:46:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -141,8 +141,15 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
     return TCL_OK;
 
   error:
-    Tcl_AppendResult(interp, "error writing \"", channelId, "\": ",
-	    Tcl_PosixError(interp), (char *) NULL);
+    /* TIP #219.
+     * Capture error messages put by the driver into the bypass area and put
+     * them into the regular interpreter result. Fall back to the regular
+     * message if nothing was found in the bypass.
+     */
+    if (!TclChanCaughtErrorBypass (interp, chan)) {
+	Tcl_AppendResult(interp, "error writing \"", channelId, "\": ",
+			 Tcl_PosixError(interp), (char *) NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -191,8 +198,15 @@ Tcl_FlushObjCmd(dummy, interp, objc, objv)
     }
 
     if (Tcl_Flush(chan) != TCL_OK) {
-	Tcl_AppendResult(interp, "error flushing \"", channelId, "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	/* TIP #219.
+	 * Capture error messages put by the driver into the bypass area and
+	 * put them into the regular interpreter result. Fall back to the
+	 * regular message if nothing was found in the bypass.
+	 */
+	if (!TclChanCaughtErrorBypass (interp, chan)) {
+	    Tcl_AppendResult(interp, "error flushing \"", channelId, "\": ",
+			     Tcl_PosixError(interp), (char *) NULL);
+	}
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -250,9 +264,17 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
     if (lineLen < 0) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "error reading \"", name, "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+
+	    /* TIP #219.
+	     * Capture error messages put by the driver into the bypass area
+	     * and put them into the regular interpreter result. Fall back to
+	     * the regular message if nothing was found in the bypass.
+	     */
+	    if (!TclChanCaughtErrorBypass (interp, chan)) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "error reading \"", name, "\": ",
+				 Tcl_PosixError(interp), (char *) NULL);
+	    }
 	    return TCL_ERROR;
 	}
 	lineLen = -1;
@@ -372,10 +394,17 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     Tcl_IncrRefCount(resultPtr);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead < 0) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "error reading \"", name, "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
-	Tcl_DecrRefCount(resultPtr);
+	/* TIP #219.
+	 * Capture error messages put by the driver into the bypass area and
+	 * put them into the regular interpreter result. Fall back to the
+	 * regular message if nothing was found in the bypass.
+	 */
+	if (!TclChanCaughtErrorBypass (interp, chan)) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "error reading \"", name, "\": ",
+			     Tcl_PosixError(interp), (char *) NULL);
+	    Tcl_DecrRefCount(resultPtr);
+	}
 	return TCL_ERROR;
     }
 
@@ -457,8 +486,16 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
 
     result = Tcl_Seek(chan, offset, mode);
     if (result == Tcl_LongAsWide(-1)) {
-	Tcl_AppendResult(interp, "error during seek on \"",
-		chanName, "\": ", Tcl_PosixError(interp), (char *) NULL);
+	/* TIP #219.
+	 * Capture error messages put by the driver into the bypass area and
+	 * put them into the regular interpreter result. Fall back to the
+	 * regular message if nothing was found in the bypass.
+	 */
+	if (!TclChanCaughtErrorBypass (interp, chan)) {
+	    Tcl_AppendResult(interp, "error during seek on \"",
+			     chanName, "\": ", Tcl_PosixError(interp),
+			     (char *) NULL);
+	}
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -491,6 +528,7 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
 {
     Tcl_Channel chan;			/* The channel to tell on. */
     char *chanName;
+    Tcl_WideInt newLoc;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
@@ -507,7 +545,18 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_Tell(chan)));
+
+    newLoc = Tcl_Tell(chan);
+
+    /* TIP #219.
+     * Capture error messages put by the driver into the bypass area and put
+     * them into the regular interpreter result.
+     */
+    if (TclChanCaughtErrorBypass (interp, chan)) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(newLoc));
     return TCL_OK;
 }
 
@@ -833,10 +882,17 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
 	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "error reading output from command: ",
-		    Tcl_PosixError(interp), (char *) NULL);
-	    Tcl_DecrRefCount(resultPtr);
+	    /* TIP #219.
+	     * Capture error messages put by the driver into the bypass area
+	     * and put them into the regular interpreter result. Fall back to
+	     * the regular message if nothing was found in the bypass.
+	     */
+	    if (!TclChanCaughtErrorBypass (interp, chan)) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "error reading output from command: ",
+				 Tcl_PosixError(interp), (char *) NULL);
+		Tcl_DecrRefCount(resultPtr);
+	    }
 	    return TCL_ERROR;
 	}
     }
@@ -1630,3 +1686,4 @@ TclChanTruncateObjCmd(dummy, interp, objc, objv)
  * fill-column: 78
  * End:
  */
+

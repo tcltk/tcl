@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.36 2005/08/24 18:56:32 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.37 2005/08/25 15:46:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3842,7 +3842,7 @@ TclExecuteByteCode(interp, codePtr)
 	    /* Zero shifted any integral number of bits either way is zero */
 	    mp_clear(&big1);
 	    TRACE(("0 %s => 0\n", O2S(value2Ptr)));
-	    NEXT_INST_F(1, 0, 0);
+	    NEXT_INST_F(1, 1, 0);
 	}
 	result = Tcl_GetIntFromObj(NULL, value2Ptr, &shift);
 	if (result != TCL_OK) {
@@ -5875,11 +5875,10 @@ TclExecuteByteCode(interp, codePtr)
 	    if (valPtr == NULL) {
 		valPtr = Tcl_NewListObj(1, tosPtr);
 	    } else if (Tcl_IsShared(valPtr)) {
-		Tcl_Obj *dupPtr = Tcl_DuplicateObj(valPtr);
-
-		result = Tcl_ListObjAppendElement(interp, dupPtr, *tosPtr);
+		valPtr = Tcl_DuplicateObj(valPtr);
+		result = Tcl_ListObjAppendElement(interp, valPtr, *tosPtr);
 		if (result != TCL_OK) {
-		    Tcl_DecrRefCount(dupPtr);
+		    Tcl_DecrRefCount(valPtr);
 		    if (allocateDict) {
 			Tcl_DecrRefCount(dictPtr);
 		    }

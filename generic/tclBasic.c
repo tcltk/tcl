@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.28 2005/08/25 14:58:07 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.29 2005/08/25 15:46:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -243,7 +243,7 @@ typedef struct {
     Tcl_ObjCmdProc* objCmdProc;	/* Procedure that evaluates the function */
     ClientData clientData;	/* Client data for the procedure */
 } BuiltinFuncDef;
-BuiltinFuncDef BuiltinFuncTable[] = {
+static BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::abs",	ExprAbsFunc,	NULL 			},
     { "::tcl::mathfunc::acos",	ExprUnaryFunc,	(ClientData) acos 	},
     { "::tcl::mathfunc::asin",	ExprUnaryFunc,	(ClientData) asin 	},
@@ -400,6 +400,9 @@ Tcl_CreateInterp()
 
     iPtr->execEnvPtr = TclCreateExecEnv(interp);
 
+    /* TIP #219, Tcl Channel Reflection API */
+    iPtr->chanMsg  = NULL;
+
     /*
      * Initialize the compilation and execution statistics kept for this
      * interpreter.
@@ -526,8 +529,17 @@ Tcl_CreateInterp()
     Tcl_CreateObjCommand(interp,	"::tcl::clock::Oldscan",
 	    TclClockOldscanObjCmd,	(ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL);
+    /* TIP #208 */
     Tcl_CreateObjCommand(interp, "::tcl::chan::Truncate",
 	    TclChanTruncateObjCmd, (ClientData) NULL,
+	    (Tcl_CmdDeleteProc*) NULL);
+    /* TIP #219 */
+    Tcl_CreateObjCommand(interp, "::tcl::chan::rCreate",
+	    TclChanCreateObjCmd, (ClientData) NULL,
+	    (Tcl_CmdDeleteProc*) NULL);
+
+    Tcl_CreateObjCommand(interp, "::tcl::chan::rPostevent",
+	    TclChanPostEventObjCmd, (ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL);
 
     /*
@@ -970,6 +982,15 @@ Tcl_DeleteInterp(interp)
 
     iPtr->flags |= DELETED;
     iPtr->compileEpoch++;
+
+    /* TIP #219, Tcl Channel Reflection API.
+     * Discard a leftover state.
+     */
+
+    if (iPtr->chanMsg != NULL) {
+        Tcl_DecrRefCount (iPtr->chanMsg);
+	iPtr->chanMsg = NULL;
+    }
 
     /*
      * Ensure that the interpreter is eventually deleted.

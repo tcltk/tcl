@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.33 2005/08/24 21:49:22 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.34 2005/08/25 15:46:31 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1530,6 +1530,15 @@ typedef struct Interp {
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
+    /* TIP #219 ... Global info for the I/O system ...
+     * Error message set by channel drivers, for the propagation of
+     * arbitrary Tcl errors. This information, if present (chanMsg not
+     * NULL), takes precedence over a posix error code returned by a
+     * channel operation.
+     */
+
+    Tcl_Obj* chanMsg;
+
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
@@ -1540,6 +1549,42 @@ typedef struct Interp {
 				 * statistics for this interpreter. */
 #endif /* TCL_COMPILE_STATS */	  
 } Interp;
+
+/*
+ * General list of interpreters. Doubly linked for easier
+ * removal of items deep in the list.
+ */
+
+typedef struct InterpList {
+   Interp* interpPtr;
+   struct InterpList* prevPtr;
+   struct InterpList* nextPtr;
+} InterpList;
+
+/*
+ * Macros for splicing into and out of doubly linked lists.
+ * They assume existence of struct items 'prevPtr' and 'nextPtr'.
+ *
+ * a = element to add or remove.
+ * b = list head.
+ *
+ * TclSpliceIn adds to the head of the list.
+ */
+
+#define TclSpliceIn(a,b)                       \
+    (a)->nextPtr = (b);                        \
+    if ((b) != NULL)                           \
+        (b)->prevPtr = (a);                    \
+    (a)->prevPtr = NULL, (b) = (a);
+
+#define TclSpliceOut(a,b)                      \
+    if ((a)->prevPtr != NULL)                  \
+        (a)->prevPtr->nextPtr = (a)->nextPtr;  \
+    else                                       \
+        (b) = (a)->nextPtr;                    \
+    if ((a)->nextPtr != NULL)                  \
+        (a)->nextPtr->prevPtr = (a)->prevPtr;
+
 
 /*
  * EvalFlag bits for Interp structures:
@@ -1969,6 +2014,12 @@ MODULE_SCOPE double     TclBignumToDouble _ANSI_ARGS_((mp_int* bignum));
 MODULE_SCOPE double	TclCeil _ANSI_ARGS_((mp_int* a));
 MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
+MODULE_SCOPE int        TclChanCreateObjCmd _ANSI_ARGS_((ClientData clientData,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int        TclChanPostEventObjCmd _ANSI_ARGS_((ClientData clientData,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int        TclChanCaughtErrorBypass _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Channel chan));
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp* interp, LiteralTable* tablePtr));
 MODULE_SCOPE int	TclDoubleDigits _ANSI_ARGS_((char* buf,

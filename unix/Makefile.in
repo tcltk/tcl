@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.15 2005/08/16 16:55:18 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.16 2005/08/25 15:47:07 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -302,7 +302,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclEncoding.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
-	tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
+	tclIORChan.o tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
@@ -390,6 +390,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclIOGT.c \
 	$(GENERIC_DIR)/tclIOSock.c \
 	$(GENERIC_DIR)/tclIOUtil.c \
+	$(GENERIC_DIR)/tclIORChan.c \
 	$(GENERIC_DIR)/tclLink.c \
 	$(GENERIC_DIR)/tclListObj.c \
 	$(GENERIC_DIR)/tclLiteral.c \
@@ -1019,6 +1020,9 @@ tclIOSock.o: $(GENERIC_DIR)/tclIOSock.c
 
 tclIOUtil.o: $(GENERIC_DIR)/tclIOUtil.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOUtil.c
+
+tclIORChan.o: $(GENERIC_DIR)/tclIORChan.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORChan.c
 
 tclLink.o: $(GENERIC_DIR)/tclLink.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLink.c
