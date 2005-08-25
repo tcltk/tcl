@@ -1,5 +1,9 @@
 2005-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclListObj.c (UpdateStringOfList): Stop uncontrolled and
+	unsafe crashes from happening when working with very large string
+	representations. [Bug 1267380]
+
 	* generic/tclExecute.c (TEBC:INST_DICT_LAPPEND): Stop dropping a
 	duplicated object on the floor, which was a memory leak (and a wrong
 	result too). Thanks to Andreas Kupries for reporting this.
