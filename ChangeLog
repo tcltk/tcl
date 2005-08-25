@@ -1,9 +1,15 @@
+2005-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TEBC:INST_DICT_LAPPEND): Stop dropping a
+	duplicated object on the floor, which was a memory leak (and a wrong
+	result too). Thanks to Andreas Kupries for reporting this.
+
 2005-08-24  Andreas Kupries <andreask@activestate.com>
 
 	TIP#219 IMPLEMENTATION
 
 	* doc/SetChanErr.3: ** New File **. Documentation of the new
-	  channel API functions.	
+	  channel API functions.
 	* generic/tcl.decls:  Stub declarations of the new channel API.
 	* generic/tclDecls.h: Regenerated
 	* generic/tclStubInit.c:
@@ -32,7 +38,7 @@
 	* tests/binary.test (binary-65.*)         formatting floating
 	point numbers with the largest and smallest possible significands,
 	and added test cases for them.
-	
+
 2005-08-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure.in:
@@ -56,11 +62,11 @@
 
 	* generic/tclEvent.c (Tcl_Finalize): Removed a copy-and-paste
 	accident that caused a (mostly harmless) double finalize of the
-	load and filesystem subsystems.  
+	load and filesystem subsystems.
 	* tests/clock.test: Eliminated the bad test clock-43.1, and split
 	clock-50.1 into two tests, with a more permissive check on the
 	error message for an out-of-range value.
-	
+
 2005-08-12  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (MktimeObjCmd):
@@ -71,7 +77,7 @@
 	Tcl's time can track system time on Linux even if TZ is not set.
 	Changed ::tcl::clock::Mktime to check for failure, and added a
 	test case that mimics failure but is really success.
-	
+
 2005-08-11  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c:          Eliminated the USE_THREAD_STORAGE
@@ -87,7 +93,7 @@
 	* win/rules.vc:                just a little bit cleaner.)
 	* win/tcl.m4:
 	* win/tclWinThrd.c:
-	
+
 2005-08-10  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c (Tcl_Finalize): Pushed Tcl_FinalizeLoad and
@@ -100,7 +106,7 @@
 	* tests/expr.test (expr-3.8):             'unix' because they get
 	                                          stack overflows on Win32
 	                                          threaded builds,
-	
+
 2005-08-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to [file rootname] bug in optimized
