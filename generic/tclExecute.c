@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.198 2005/07/23 01:32:04 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.199 2005/08/25 10:40:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5018,11 +5018,10 @@ TclExecuteByteCode(interp, codePtr)
 	    if (valPtr == NULL) {
 		valPtr = Tcl_NewListObj(1, tosPtr);
 	    } else if (Tcl_IsShared(valPtr)) {
-		Tcl_Obj *dupPtr = Tcl_DuplicateObj(valPtr);
-
-		result = Tcl_ListObjAppendElement(interp, dupPtr, *tosPtr);
+		valPtr = Tcl_DuplicateObj(valPtr);
+		result = Tcl_ListObjAppendElement(interp, valPtr, *tosPtr);
 		if (result != TCL_OK) {
-		    Tcl_DecrRefCount(dupPtr);
+		    Tcl_DecrRefCount(valPtr);
 		    if (allocateDict) {
 			Tcl_DecrRefCount(dictPtr);
 		    }
