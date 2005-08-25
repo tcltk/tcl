@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.4.1 2004/11/11 01:18:07 das Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.4.2 2005/08/25 22:27:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1623,6 +1623,12 @@ UpdateStringOfList(listPtr)
 	elem = Tcl_GetStringFromObj(listRepPtr->elements[i], &length);
 	listPtr->length += Tcl_ScanCountedElement(elem, length,
 		&flagPtr[i]) + 1;
+	/*
+	 * Check for continued sanity. [Bug 1267380]
+	 */
+	if (listPtr->length < 1) {
+	    Tcl_Panic("string representation size exceeds sane bounds");
+	}
     }
 
     /*
