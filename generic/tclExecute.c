@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.37 2005/08/25 15:46:30 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.38 2005/08/25 21:21:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3854,6 +3854,7 @@ TclExecuteByteCode(interp, codePtr)
 	if (*pc == INST_LSHIFT) {
 	    mp_mul_2d(&big1, shift, &bigResult);
 	} else {
+#if 0
 	    mp_div_2d(&big1, shift, &bigResult, NULL);
 	    if (mp_iszero(&bigResult) && big1.sign == MP_NEG) {
 		/* When right shifting a negative value, keep the sign bit */
@@ -3862,6 +3863,19 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_sub(&bigResult, &bigOne, &bigResult);
 	    }
+#else
+	    mp_int bigRemainder;
+	    mp_init(&bigRemainder);
+	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
+	    if (!mp_iszero(&bigRemainder) && (bigRemainder.sign == MP_NEG)) {
+		/* Convert to Tcl's integer division rules */
+		mp_int bigOne;
+		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
+		mp_sub(&bigResult, &bigOne, &bigResult);
+		mp_clear(&bigOne);
+	    }
+	    mp_clear(&bigRemainder);
+#endif
 	}
 	mp_clear(&big1);
 	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));

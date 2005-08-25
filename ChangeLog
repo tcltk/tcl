@@ -8,7 +8,10 @@
 
 	[kennykb-numerics-branch] Merge updates from HEAD
 
-	* generic/tclExecute.c:	Bug fix.  INST_*SHIFT* opcodes stack
+	* generic/tclExecute.c: Bug fix.  INST_RSHIFT: shift of negative
+	values produced incorrect results.
+
+	* generic/tclExecute.c:	Bug fix.  INST_*SHIFT opcodes stack
 	management. [expr 0<<6] should be 0, not 6.
 
 	* generic/tclBasic.c:	Extended the domain of round(.) to all
