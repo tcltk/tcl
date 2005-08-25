@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.27 2005/08/24 21:49:22 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.28 2005/08/25 14:58:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5529,9 +5529,13 @@ ExprRoundFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
-    Tcl_Obj *valuePtr, *resPtr;
-    double d, a, f;
+    Tcl_Obj *valuePtr;
+    double d, fractPart, intPart;
     mp_int big;
+#if 0
+    double a, f;
+    Tcl_Obj *resPtr;
+#endif
 
     /* Check the argument count. */
 
@@ -5553,18 +5557,6 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	return TCL_OK;
     }
     GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
-#else
-    if (Tcl_GetDoubleFromObj(interp, valuePtr, &d) != TCL_OK) {
-	/* Non-numeric */
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
-	/* Integers are already rounded */
-	mp_clear(&big);
-	Tcl_SetObjResult(interp, valuePtr);
-	return TCL_OK;
-    }
-#endif
 
     /* 
      * Round the number to the nearest integer.  I'd like to use rint()
@@ -5598,7 +5590,39 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	    "integer value too large to represent", (char *) NULL);
 
     return TCL_ERROR;
-
+#else
+    if (Tcl_GetDoubleFromObj(interp, valuePtr, &d) != TCL_OK) {
+	/* Non-numeric */
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
+	/* Integers are already rounded */
+	mp_clear(&big);
+	Tcl_SetObjResult(interp, valuePtr);
+	return TCL_OK;
+    }
+    fractPart = modf(d, &intPart);
+    if (fractPart == 0.0) {
+	if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (fractPart < 0.0) {
+	    if (fractPart < -0.5
+		    || (fractPart == -0.5 && fmod(intPart, 2.0) != 0.0)) {
+		mp_sub_d(&big, 1, &big);
+	    }
+	} else if (fractPart > 0.5
+		|| (fractPart == 0.5 && fmod(intPart, 2.0) != 0.0)) {
+	    mp_add_d(&big, 1, &big);
+	}
+    }
+    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+    return TCL_OK;
+#endif
 }
 
 static int
