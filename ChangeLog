@@ -1,3 +1,13 @@
+2005-08-26  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIO.c: Moved Tcl_{Cut,Splice}Channel to
+	  {Cut,Splice}Channel for internal use, and created new public
+	  functions for Tcl_{Cut,Splice}Channel which walk the whole stack
+	  of transformations and invoke the necessary thread actions.
+	  Added code to Tcl_(Un)StackChannel to properly invoke the thread
+	  actions when pushing and popping transformations on/from a
+	  channel.
+
 2005-08-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (NamespaceEnsembleCmd): Reset the result after
