@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.81 2005/07/26 16:21:31 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.82 2005/08/26 08:39:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4895,9 +4895,12 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
 
 	/*
-	 * Tricky! Rely on the object result not being shared!
+	 * Tricky! Must ensure that the result is not shared (command delete
+	 * traces could have corrupted the pristine object that we started
+	 * with). [Snit test rename-1.5]
 	 */
 
+	Tcl_ResetResult(interp);
 	Tcl_GetCommandFullName(interp, token, Tcl_GetObjResult(interp));
 	return TCL_OK;
     }
