@@ -1,3 +1,10 @@
+2005-08-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (NamespaceEnsembleCmd): Reset the result after
+	creating an ensemble to clear any result object sharing (potentially
+	caused by delete traces) so that we can safely return the name of the
+	ensemble. Previously, this caused crashes in Snit's test suite.
+
 2005-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclListObj.c (UpdateStringOfList): Stop uncontrolled and
