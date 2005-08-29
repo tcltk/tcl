@@ -353,7 +353,7 @@ proc ::tcl::tm::roots {paths} {
 	for {set n $minor} {$n >= 0} {incr n -1} {
 	    path add [file normalize [file join $p ${major}.${n}]]
 	}
-	path add [file normalize [file join $pa site-tcl]]
+	path add [file normalize [file join $p site-tcl]]
     }
     return
 }
