@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.13 2005/08/05 19:19:11 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.14 2005/08/29 16:37:42 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -5462,7 +5462,7 @@ ExprRoundFunc(interp, eePtr, clientData)
     Tcl_Obj **stackPtr;        /* Cached evaluation stack base pointer. */
     register int stackTop;	/* Cached top index of evaluation stack. */
     Tcl_Obj *valuePtr, *resPtr;
-    double d;
+    double d, f, i;
     int result;
 
     /*
@@ -5488,22 +5488,35 @@ ExprRoundFunc(interp, eePtr, clientData)
 	result = TCL_OK;
 	resPtr = valuePtr;
     } else {
+
+	/* 
+	 * Round the number to the nearest integer.  I'd like to use round(),
+	 * but it's C99 (or BSD), and not yet universal.
+	 */
+	
 	d = valuePtr->internalRep.doubleValue;
+	f = modf(d, &i);
 	if (d < 0.0) {
-	    if (d <= Tcl_WideAsDouble(LLONG_MIN)-0.5) {
+	    if (f <= -0.5) {
+		i += -1.0;
+	    }
+	    if (i <= Tcl_WideAsDouble(LLONG_MIN)) {
 		goto tooLarge;
-	    } else if (d <= (((double) (long) LONG_MIN) - 0.5)) {
-		resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(d - 0.5));
+	    } else if (d <= (double) LONG_MIN) {
+		resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
 	    } else {
-		resPtr = Tcl_NewLongObj((long) (d - 0.5));
+		resPtr = Tcl_NewLongObj((long) i);
 	    }			    
 	} else {
-	    if (d >= Tcl_WideAsDouble(LLONG_MAX)+0.5) {
+	    if (f >= 0.5) {
+		i += 1.0;
+	    }
+	    if (i >= Tcl_WideAsDouble(LLONG_MAX)) {
 		goto tooLarge;
-	    } else if (d >= (((double) LONG_MAX + 0.5))) {
-		resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(d + 0.5));
+	    } else if (i >= (double) LONG_MAX) {
+		resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
 	    } else {
-		resPtr = Tcl_NewLongObj((long) (d + 0.5));
+		resPtr = Tcl_NewLongObj((long) i);
 	    }
 	}
     }
