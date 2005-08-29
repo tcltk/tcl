@@ -1,3 +1,9 @@
+2005-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclBasic.c:	Restored round(.) to the Tcl 8.4 rules.
+
 2005-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TEBC:INST_DICT_LAPPEND): Stop dropping a
