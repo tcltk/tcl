@@ -1,3 +1,9 @@
+2005-08-29  Andreas Kupries <andreask@activestate.com>
+
+	* library/tm.tcl (::tcl::tm::roots): Accepted Don Porter's patch
+	  for [Tcl SF Bug 1189657]. Syncs the implementation to the
+	  specification (TIP #189).
+
 2005-08-29  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclBasic.c (ExprMathFunc): Restored "round away from
