@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.42 2005/08/29 16:21:58 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.43 2005/08/29 16:41:31 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6270,45 +6270,45 @@ test expr-39.9 {round() boundary case - 1/2 - 1 ulp} {
     set x 0.25
     set bit 0.125
     while 1 {
-	set newx [expr { $x + $bit }]
+	set newx [expr {$x + $bit}]
 	if { $newx == $x || $newx == 0.5 } break
 	set x $newx
 	set bit [expr { $bit / 2.0 }]
     }
-    expr round($x)
+    expr {round($x)}
 } 0
 test expr-39.10 {round() boundary case - 1/2 + 1 ulp} {
     set x 0.75
     set bit 0.125
     while 1 {
-	set newx [expr { $x - $bit }]
+	set newx [expr {$x - $bit}]
 	if { $newx == $x || $newx == 0.5 } break
 	set x $newx
 	set bit [expr { $bit / 2.0 }]
     }
-    expr round($x)
+    expr {round($x)}
 } 1
 test expr-39.11 {round() boundary case - -1/2 - 1 ulp} {
     set x -0.75
     set bit 0.125
     while 1 {
-	set newx [expr { $x + $bit }]
+	set newx [expr {$x + $bit}]
 	if { $newx == $x || $newx == -0.5 } break
 	set x $newx
 	set bit [expr { $bit / 2.0 }]
     }
-    expr round($x)
+    expr {round($x)}
 } -1
-test expr-39.10 {round() boundary case - -1/2 + 1 ulp} {
+test expr-39.12 {round() boundary case - -1/2 + 1 ulp} {
     set x -0.25
     set bit 0.125
     while 1 {
-	set newx [expr { $x - $bit }]
+	set newx [expr {$x - $bit}]
 	if { $newx == $x || $newx == -0.5 } break
 	set x $newx
 	set bit [expr { $bit / 2.0 }]
     }
-    expr round($x)
+    expr {round($x)}
 } 0
 
 # cleanup
