@@ -1,3 +1,11 @@
+2005-08-29  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c (ExprMathFunc): Restored "round away from
+	* tests/expr.test (expr-39.*):       zero" behaviour to the
+	                                     "round" function.  Added 
+	test cases for the behavior, including the awkward case of a
+	number whose fractional part is 1/2-1/2ulp. [Bug 1275043]
+	
 2005-08-26  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIO.c: Moved Tcl_{Cut,Splice}Channel to
