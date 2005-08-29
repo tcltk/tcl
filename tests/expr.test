@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.41 2005/08/29 16:18:59 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.42 2005/08/29 16:21:58 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6238,8 +6238,6 @@ test expr-37.14 {expr edge cases} {wideIs64bit} {
 test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
     expr {abs(-2147483648)}
 } 2147483648
-
-set tcl_precision 17
 
 test expr-39.1 {round() rounds to +-infinity} {
     expr round(0.5)
