@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.17.2.7 2005/08/29 16:38:36 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.17.2.8 2005/08/29 17:56:22 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -827,34 +827,34 @@ test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
     expr {abs(int(-2147483648))}
 } 2147483648
 
-test expr-39.1 {round() rounds to +-infinity} {
+test expr-46.1 {round() rounds to +-infinity} {
     expr round(0.5)
 } 1
-test expr-39.2 {round() rounds to +-infinity} {
+test expr-46.2 {round() rounds to +-infinity} {
     expr round(1.5)
 } 2
-test expr-39.3 {round() rounds to +-infinity} {
+test expr-46.3 {round() rounds to +-infinity} {
     expr round(-0.5)
 } -1
-test expr-39.4 {round() rounds to +-infinity} {
+test expr-46.4 {round() rounds to +-infinity} {
     expr round(-1.5)
 } -2
-test expr-39.5 {round() overflow} {
+test expr-46.5 {round() overflow} {
     list [catch {expr round(9.2233720368547758e+018)} result] $result
 } {1 {integer value too large to represent}}
-test expr-39.6 {round() overflow} {
+test expr-46.6 {round() overflow} {
     list [catch {expr round(-9.2233720368547758e+018)} result] $result
 } {1 {integer value too large to represent}}
-test expr-39.7 {round() bad value} {
+test expr-46.7 {round() bad value} {
     set x trash
     list [catch {expr {round($x)}} result] $result
 } {1 {argument to math function didn't have numeric value}}
-test expr-39.8 {round() already an integer} {
+test expr-46.8 {round() already an integer} {
     set x 123456789012
     incr x
     expr round($x)
 } 123456789013
-test expr-39.9 {round() boundary case - 1/2 - 1 ulp} {
+test expr-46.9 {round() boundary case - 1/2 - 1 ulp} {
     set x 0.25
     set bit 0.125
     while 1 {
@@ -865,7 +865,7 @@ test expr-39.9 {round() boundary case - 1/2 - 1 ulp} {
     }
     expr {round($x)}
 } 0
-test expr-39.10 {round() boundary case - 1/2 + 1 ulp} {
+test expr-46.10 {round() boundary case - 1/2 + 1 ulp} {
     set x 0.75
     set bit 0.125
     while 1 {
@@ -876,7 +876,7 @@ test expr-39.10 {round() boundary case - 1/2 + 1 ulp} {
     }
     expr {round($x)}
 } 1
-test expr-39.11 {round() boundary case - -1/2 - 1 ulp} {
+test expr-46.11 {round() boundary case - -1/2 - 1 ulp} {
     set x -0.75
     set bit 0.125
     while 1 {
@@ -887,7 +887,7 @@ test expr-39.11 {round() boundary case - -1/2 - 1 ulp} {
     }
     expr {round($x)}
 } -1
-test expr-39.12 {round() boundary case - -1/2 + 1 ulp} {
+test expr-46.12 {round() boundary case - -1/2 + 1 ulp} {
     set x -0.25
     set bit 0.125
     while 1 {
