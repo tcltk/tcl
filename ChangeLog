@@ -1,10 +1,39 @@
 2005-08-29  Don Porter  <dgp@users.sourceforge.net>
 
-	[kennykb-numerics-branch]
+	[kennykb-numerics-branch]	Merge updates from HEAD.
 
 	* generic/tclBasic.c:	Restored round(.) to the Tcl 8.4 rules.
 
+2005-08-29  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c (ExprMathFunc): Restored "round away from
+	* tests/expr.test (expr-46.*):       zero" behaviour to the
+	                                     "round" function.  Added 
+	test cases for the behavior, including the awkward case of a
+	number whose fractional part is 1/2-1/2ulp. [Bug 1275043]
+	
+2005-08-26  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIO.c: Moved Tcl_{Cut,Splice}Channel to
+	  {Cut,Splice}Channel for internal use, and created new public
+	  functions for Tcl_{Cut,Splice}Channel which walk the whole stack
+	  of transformations and invoke the necessary thread actions.
+	  Added code to Tcl_(Un)StackChannel to properly invoke the thread
+	  actions when pushing and popping transformations on/from a
+	  channel.
+
+2005-08-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (NamespaceEnsembleCmd): Reset the result after
+	creating an ensemble to clear any result object sharing (potentially
+	caused by delete traces) so that we can safely return the name of the
+	ensemble. Previously, this caused crashes in Snit's test suite.
+
 2005-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclListObj.c (UpdateStringOfList): Stop uncontrolled and
+	unsafe crashes from happening when working with very large string
+	representations. [Bug 1267380]
 
 	* generic/tclExecute.c (TEBC:INST_DICT_LAPPEND): Stop dropping a
 	duplicated object on the floor, which was a memory leak (and a wrong

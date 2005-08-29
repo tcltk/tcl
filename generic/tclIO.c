@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.81.2.8 2005/08/25 15:46:31 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81.2.9 2005/08/29 18:38:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -137,6 +137,11 @@ static int		WriteBytes _ANSI_ARGS_((Channel *chanPtr,
 static int		WriteChars _ANSI_ARGS_((Channel *chanPtr,
 			    CONST char *src, int srcLen));
 static Tcl_Obj*         FixLevelCode _ANSI_ARGS_ ((Tcl_Obj* msg));
+
+
+static void SpliceChannel _ANSI_ARGS_ ((Tcl_Channel chan));
+static void CutChannel    _ANSI_ARGS_ ((Tcl_Channel chan));
+
 
 /*
  *---------------------------------------------------------------------------
@@ -1205,7 +1210,7 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
      */
 
     statePtr->nextCSPtr = (ChannelState *) NULL;
-    Tcl_SpliceChannel ((Tcl_Channel) chanPtr);
+    SpliceChannel ((Tcl_Channel) chanPtr);
 
     /*
      * Install this channel in the first empty standard channel slot, if the
@@ -1268,9 +1273,10 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel *chanPtr, *prevChanPtr;
     ChannelState *statePtr;
+    Tcl_DriverThreadActionProc *threadActionProc;
 
     /*
-     * Find the given channel in the list of all channels.  If we don't find
+     * Find the given channel (prevChan) in the list of all channels.  If we don't find
      * it, then it was never registered correctly.
      *
      * This operation should occur at the top of a channel stack.
@@ -1389,6 +1395,22 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     prevChanPtr->upChanPtr	= chanPtr;
     statePtr->topChanPtr	= chanPtr;
 
+    /* TIP #218, Channel Thread Actions.
+     *
+     * We call the thread actions for the new channel directly. We _cannot_
+     * use SpliceChannel, because the (thread-)global list of all channels
+     * always contains the _ChannelState_ for a stack of channels, not the
+     * individual channels. And SpliceChannel would not only call the thread
+     * actions, but also add the shared ChannelState to this list a second
+     * time, mangling it.
+     */
+
+    threadActionProc = Tcl_ChannelThreadActionProc (chanPtr->typePtr);
+    if (threadActionProc != NULL) {
+	(*threadActionProc) (chanPtr->instanceData,
+			     TCL_CHANNEL_THREAD_INSERT);
+    }
+
     return (Tcl_Channel) chanPtr;
 }
 
@@ -1418,6 +1440,7 @@ Tcl_UnstackChannel(interp, chan)
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
     int result = 0;
+    Tcl_DriverThreadActionProc *threadActionProc;
 
     /*
      * This operation should occur at the top of a channel stack.
@@ -1499,6 +1522,23 @@ Tcl_UnstackChannel(interp, chan)
 	    DiscardInputQueued(statePtr, 0);
 	}
 
+	/* TIP #218, Channel Thread Actions.
+	 *
+	 * We call the thread actions for the new channel directly. We
+	 * _cannot_ use CutChannel, because the (thread-)global list of all
+	 * channels always contains the _ChannelState_ for a stack of
+	 * channels, not the individual channels. And SpliceChannel would not
+	 * only call the thread actions, but also remove the shared
+	 * ChannelState from this list despite there being more channels for
+	 * the state which are still active.
+	 */
+
+	threadActionProc = Tcl_ChannelThreadActionProc (chanPtr->typePtr);
+	if (threadActionProc != NULL) {
+	    (*threadActionProc) (chanPtr->instanceData,
+				 TCL_CHANNEL_THREAD_REMOVE);
+	}
+
 	statePtr->topChanPtr = downChanPtr;
 	downChanPtr->upChanPtr = (Channel *) NULL;
 
@@ -1552,6 +1592,12 @@ Tcl_UnstackChannel(interp, chan)
 		return TCL_ERROR;
 	    }
 	}
+
+	/* TIP #218, Channel Thread Actions.
+	 * Not required in this branch, this is done by Tcl_Close. If
+	 * Tcl_Close is not called then the ChannelState is still active in
+	 * the thread and no action has to be taken either.
+	 */
     }
 
     return TCL_OK;
@@ -2321,7 +2367,7 @@ CloseChannel(interp, chanPtr, errorCode)
      * Remove this channel from of the list of all channels.
      */
 
-    Tcl_CutChannel((Tcl_Channel) chanPtr);
+    CutChannel((Tcl_Channel) chanPtr);
 
     /*
      * Close and free the channel driver state.
@@ -2422,6 +2468,7 @@ CloseChannel(interp, chanPtr, errorCode)
  *----------------------------------------------------------------------
  *
  * Tcl_CutChannel --
+ * CutChannel --
  *
  *	Removes a channel from the (thread-)global list of all channels (in
  *	that thread).  This is actually the statePtr for the stack of channel.
@@ -2442,8 +2489,8 @@ CloseChannel(interp, chanPtr, errorCode)
  *----------------------------------------------------------------------
  */
 
-void
-Tcl_CutChannel(chan)
+static void
+CutChannel(chan)
     Tcl_Channel chan;			/* The channel being removed. Must
 					 * not be referenced in any
 					 * interpreter. */
@@ -2484,11 +2531,62 @@ Tcl_CutChannel(chan)
 		TCL_CHANNEL_THREAD_REMOVE);
     }
 }
+
+void
+Tcl_CutChannel(chan)
+    Tcl_Channel chan;			/* The channel being added. Must not
+					 * be referenced in any
+					 * interpreter. */
+{
+    Channel* chanPtr = ((Channel*) chan)->state->bottomChanPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    ChannelState *prevCSPtr;		/* Preceding channel state in list of
+					 * all states - used to splice a
+					 * channel out of the list on close. */
+    ChannelState *statePtr = chanPtr->state;
+					/* state of the channel stack. */
+    Tcl_DriverThreadActionProc *threadActionProc;
+
+    /*
+     * Remove this channel from of the list of all channels (in the current
+     * thread).
+     */
+
+    if (tsdPtr->firstCSPtr && (statePtr == tsdPtr->firstCSPtr)) {
+	tsdPtr->firstCSPtr = statePtr->nextCSPtr;
+    } else {
+	for (prevCSPtr = tsdPtr->firstCSPtr;
+		prevCSPtr && (prevCSPtr->nextCSPtr != statePtr);
+		prevCSPtr = prevCSPtr->nextCSPtr) {
+	    /* Empty loop body. */
+	}
+	if (prevCSPtr == (ChannelState *) NULL) {
+	    Tcl_Panic("FlushChannel: damaged channel list");
+	}
+	prevCSPtr->nextCSPtr = statePtr->nextCSPtr;
+    }
+
+    statePtr->nextCSPtr = (ChannelState *) NULL;
+
+    /* TIP #218, Channel Thread Actions
+     * For all transformations and the base channel.
+     */
+
+    while (chanPtr) {
+	threadActionProc = Tcl_ChannelThreadActionProc(chanPtr->typePtr);
+	if (threadActionProc != NULL) {
+	    (*threadActionProc) (chanPtr->instanceData,
+				 TCL_CHANNEL_THREAD_REMOVE);
+	}
+	chanPtr= chanPtr->upChanPtr;
+    }
+}
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_SpliceChannel --
+ * SpliceChannel --
  *
  *	Adds a channel to the (thread-)global list of all channels (in that
  *	thread). Expects that the field 'nextChanPtr' in the channel is set to
@@ -2510,8 +2608,8 @@ Tcl_CutChannel(chan)
  *----------------------------------------------------------------------
  */
 
-void
-Tcl_SpliceChannel(chan)
+static void
+SpliceChannel(chan)
     Tcl_Channel chan;			/* The channel being added. Must not
 					 * be referenced in any
 					 * interpreter. */
@@ -2521,7 +2619,7 @@ Tcl_SpliceChannel(chan)
     Tcl_DriverThreadActionProc *threadActionProc;
 
     if (statePtr->nextCSPtr != (ChannelState *) NULL) {
-	Tcl_Panic("Tcl_SpliceChannel: trying to add channel used in different list");
+	Tcl_Panic("SpliceChannel: trying to add channel used in different list");
     }
 
     statePtr->nextCSPtr = tsdPtr->firstCSPtr;
@@ -2540,6 +2638,46 @@ Tcl_SpliceChannel(chan)
     if (threadActionProc != NULL) {
 	(*threadActionProc) (Tcl_GetChannelInstanceData(chan),
 		TCL_CHANNEL_THREAD_INSERT);
+    }
+}
+
+void
+Tcl_SpliceChannel(chan)
+    Tcl_Channel chan;			/* The channel being added. Must not
+					 * be referenced in any
+					 * interpreter. */
+{
+    Channel             *chanPtr  = ((Channel*) chan)->state->bottomChanPtr;
+    ThreadSpecificData	*tsdPtr   = TCL_TSD_INIT(&dataKey);
+    ChannelState	*statePtr = chanPtr->state;
+    Tcl_DriverThreadActionProc *threadActionProc;
+
+    if (statePtr->nextCSPtr != (ChannelState *) NULL) {
+	Tcl_Panic("SpliceChannel: trying to add channel used in different list");
+    }
+
+    statePtr->nextCSPtr = tsdPtr->firstCSPtr;
+    tsdPtr->firstCSPtr = statePtr;
+
+    /*
+     * TIP #10. Mark the current thread as the new one managing this channel.
+     *		Note: 'Tcl_GetCurrentThread' returns sensible values even for
+     *		a non-threaded core.
+     */
+
+    statePtr->managingThread = Tcl_GetCurrentThread();
+
+    /* TIP #218, Channel Thread Actions
+     * For all transformations and the base channel.
+     */
+
+    while (chanPtr) {
+	threadActionProc = Tcl_ChannelThreadActionProc(chanPtr->typePtr);
+	if (threadActionProc != NULL) {
+	    (*threadActionProc) (chanPtr->instanceData,
+				 TCL_CHANNEL_THREAD_INSERT);
+	}
+	chanPtr= chanPtr->upChanPtr;
     }
 }
 

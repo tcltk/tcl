@@ -1,17 +1,16 @@
 /*
  * tclCmdAH.c --
  *
- *	This file contains the top-level command routines for most of
- *	the Tcl built-in commands whose names begin with the letters
- *	A to H.
+ *	This file contains the top-level command routines for most of the Tcl
+ *	built-in commands whose names begin with the letters A to H.
  *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.57.2.6 2005/08/22 20:50:25 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.57.2.7 2005/08/29 18:38:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,21 +20,20 @@
  * Prototypes for local procedures defined in this file:
  */
 
-static int		CheckAccess _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, int mode));
-static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, Tcl_FSStatProc *statProc,
-			    Tcl_StatBuf *statPtr));
-static char *		GetTypeFromMode _ANSI_ARGS_((int mode));
-static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *varName, Tcl_StatBuf *statPtr));
+static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    int mode);
+static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
+static char *		GetTypeFromMode(int mode);
+static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
+			    Tcl_StatBuf *statPtr);
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_BreakObjCmd --
  *
- *	This procedure is invoked to process the "break" Tcl command.  See the
+ *	This procedure is invoked to process the "break" Tcl command. See the
  *	user documentation for details on what it does.
  *
  *	With the bytecode compiler, this procedure is only called when a
@@ -54,10 +52,10 @@ static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
 	/* ARGSUSED */
 int
 Tcl_BreakObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -71,7 +69,7 @@ Tcl_BreakObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_CaseObjCmd --
  *
- *	This procedure is invoked to process the "case" Tcl command.  See the
+ *	This procedure is invoked to process the "case" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -291,7 +289,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_CdObjCmd --
  *
- *	This procedure is invoked to process the "cd" Tcl command.  See the
+ *	This procedure is invoked to process the "cd" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -377,7 +375,7 @@ Tcl_ConcatObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ContinueObjCmd --
  *
- *	This procedure is invoked to process the "continue" Tcl command.  See
+ *	This procedure is invoked to process the "continue" Tcl command. See
  *	the user documentation for details on what it does.
  *
  *	With the bytecode compiler, this procedure is only called when a
@@ -572,7 +570,7 @@ TclEncodingDirsObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ErrorObjCmd --
  *
- *	This procedure is invoked to process the "error" Tcl command.  See the
+ *	This procedure is invoked to process the "error" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -655,9 +653,10 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
-	 * between, then evaluate the result.  Tcl_EvalObjEx will delete the
+	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
 	 * object when it decrements its refcount after eval'ing it.
 	 */
+
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
@@ -675,7 +674,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ExitObjCmd --
  *
- *	This procedure is invoked to process the "exit" Tcl command.  See the
+ *	This procedure is invoked to process the "exit" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -760,7 +759,7 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
 
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_DecrRefCount(resultPtr);  /* done with the result object */
+	Tcl_DecrRefCount(resultPtr);	/* done with the result object */
     }
 
     return result;
@@ -836,10 +835,12 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     }
 
     switch ((enum options) index) {
-    case FCMD_ATIME: {
+    {
 	Tcl_StatBuf buf;
 	struct utimbuf tval;
 
+    case FCMD_ATIME:
+    case FCMD_MTIME:
 	if ((objc < 3) || (objc > 4)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name ?time?");
 	    return TCL_ERROR;
@@ -859,27 +860,35 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    tval.actime = newTime;
-	    tval.modtime = buf.st_mtime;
+	    if (index == FCMD_ATIME) {
+		tval.actime = newTime;
+		tval.modtime = buf.st_mtime;
+	    } else {	/* index == FCMD_MTIME */
+		tval.actime = buf.st_atime;
+		tval.modtime = newTime;
+	    }
+
 	    if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		Tcl_AppendResult(interp,
-			"could not set access time for file \"",
-			TclGetString(objv[2]), "\": ", Tcl_PosixError(interp),
-			(char *) NULL);
+		Tcl_AppendResult(interp, "could not set ",
+			(index == FCMD_ATIME ? "access" : "modification"),
+			" time for file \"", TclGetString(objv[2]), "\": ",
+			Tcl_PosixError(interp), (char *) NULL);
 		return TCL_ERROR;
 	    }
 
 	    /*
 	     * Do another stat to ensure that the we return the new recognized
-	     * atime - hopefully the same as the one we sent in.  However,
-	     * fs's like FAT don't even know what atime is.
+	     * atime - hopefully the same as the one we sent in. However, fs's
+	     * like FAT don't even know what atime is.
 	     */
 
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
+
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((long)
+		(index == FCMD_ATIME ? buf.st_atime : buf.st_mtime)));
 	return TCL_OK;
     }
     case FCMD_ATTRIBUTES:
@@ -935,10 +944,11 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
     }
-    case FCMD_ISDIRECTORY: {
+    {
 	int value;
 	Tcl_StatBuf buf;
 
+    case FCMD_ISDIRECTORY:
 	if (objc != 3) {
 	    goto only3Args;
 	}
@@ -948,17 +958,32 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	return TCL_OK;
-    }
-    case FCMD_ISFILE: {
-	int value;
-	Tcl_StatBuf buf;
-
+    case FCMD_ISFILE:
 	if (objc != 3) {
 	    goto only3Args;
 	}
 	value = 0;
 	if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 	    value = S_ISREG(buf.st_mode);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
+	return TCL_OK;
+    case FCMD_OWNED:
+	if (objc != 3) {
+	    goto only3Args;
+	}
+	value = 0;
+	if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
+	    /*
+	     * For Windows, there are no user ids associated with a file, so
+	     * we always return 1.
+	     */
+
+#if defined(__WIN32__)
+	    value = 1;
+#else
+	    value = (geteuid() == buf.st_uid);
+#endif
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	return TCL_OK;
@@ -1100,9 +1125,10 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	return TCL_OK;
     }
-    case FCMD_LSTAT: {
+    {
 	Tcl_StatBuf buf;
 
+    case FCMD_LSTAT:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name varName");
 	    return TCL_ERROR;
@@ -1111,51 +1137,34 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	return StoreStatData(interp, objv[3], &buf);
-    }
-    case FCMD_MTIME: {
-	Tcl_StatBuf buf;
-	struct utimbuf tval;
-
-	if ((objc < 3) || (objc > 4)) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name ?time?");
+    case FCMD_STAT:
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "name varName");
 	    return TCL_ERROR;
 	}
 	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (objc == 4) {
-	    /*
-	     * Need separate variable for reading longs from an object on
-	     * 64-bit platforms. [Bug #698146]
-	     */
-
-	    long newTime;
-
-	    if (Tcl_GetLongFromObj(interp, objv[3], &newTime) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-
-	    tval.actime = buf.st_atime;
-	    tval.modtime = newTime;
-	    if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		Tcl_AppendResult(interp,
-			"could not set modification time for file \"",
-			TclGetString(objv[2]), "\": ", Tcl_PosixError(interp),
-			(char *) NULL);
-		return TCL_ERROR;
-	    }
-
-	    /*
-	     * Do another stat to ensure that the we return the new recognized
-	     * atime - hopefully the same as the one we sent in. However, fs's
-	     * like FAT don't even know what atime is.
-	     */
-
-	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	return StoreStatData(interp, objv[3], &buf);
+    case FCMD_SIZE:
+	if (objc != 3) {
+	    goto only3Args;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
+	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp,
+		Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
+	return TCL_OK;
+    case FCMD_TYPE:
+	if (objc != 3) {
+	    goto only3Args;
+	}
+	if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		GetTypeFromMode((unsigned short) buf.st_mode), -1));
 	return TCL_OK;
     }
     case FCMD_MKDIR:
@@ -1194,29 +1203,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, fileName);
-	return TCL_OK;
-    }
-    case FCMD_OWNED: {
-	int value;
-	Tcl_StatBuf buf;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	value = 0;
-	if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
-	    /*
-	     * For Windows, there are no user ids associated with a file, so
-	     * we always return 1.
-	     */
-
-#if defined(__WIN32__)
-	    value = 1;
-#else
-	    value = (geteuid() == buf.st_uid);
-#endif
-	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	return TCL_OK;
     }
     case FCMD_PATHTYPE:
@@ -1308,19 +1294,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 	return TCL_OK;
-    case FCMD_SIZE: {
-	Tcl_StatBuf buf;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp,
-		Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
-	return TCL_OK;
-    }
     case FCMD_SPLIT: {
 	Tcl_Obj *res;
 
@@ -1339,18 +1312,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetObjResult(interp, res);
 	    return TCL_OK;
 	}
-    }
-    case FCMD_STAT: {
-	Tcl_StatBuf buf;
-
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
-	    return TCL_ERROR;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	return StoreStatData(interp, objv[3], &buf);
     }
     case FCMD_SYSTEM: {
 	Tcl_Obj* fsInfo;
@@ -1382,19 +1343,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
     }
-    case FCMD_TYPE: {
-	Tcl_StatBuf buf;
-
-	if (objc != 3) {
-	    goto only3Args;
-	}
-	if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		GetTypeFromMode((unsigned short) buf.st_mode), -1));
-	return TCL_OK;
-    }
     case FCMD_VOLUMES:
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -1423,7 +1371,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  *	available through the access() system call.
  *
  * Results:
- *	Always returns TCL_OK.  Sets interp's result to boolean true or false
+ *	Always returns TCL_OK. Sets interp's result to boolean true or false
  *	depending on whether the file has the specified attribute.
  *
  * Side effects:
@@ -1462,9 +1410,9 @@ CheckAccess(interp, pathPtr, mode)
  *
  * Results:
  *	The return value is TCL_OK if the specified file exists and can be
- *	stat'ed, TCL_ERROR otherwise.  If TCL_ERROR is returned, an error
- *	message is left in interp's result.  If TCL_OK is returned, *statPtr
- *	is filled with information about the specified file.
+ *	stat'ed, TCL_ERROR otherwise. If TCL_ERROR is returned, an error
+ *	message is left in interp's result. If TCL_OK is returned, *statPtr is
+ *	filled with information about the specified file.
  *
  * Side effects:
  *	None.
@@ -1474,7 +1422,7 @@ CheckAccess(interp, pathPtr, mode)
 
 static int
 GetStatBuf(interp, pathPtr, statProc, statPtr)
-    Tcl_Interp *interp;		/* Interp for error return.  May be NULL. */
+    Tcl_Interp *interp;		/* Interp for error return. May be NULL. */
     Tcl_Obj *pathPtr;		/* Path name to examine. */
     Tcl_FSStatProc *statProc;	/* Either stat() or lstat() depending on
 				 * desired behavior. */
@@ -1510,8 +1458,8 @@ GetStatBuf(interp, pathPtr, statProc, statPtr)
  *	associative array.
  *
  * Results:
- *	Returns a standard Tcl return value.  If an error occurs then a
- *	message is left in interp's result.
+ *	Returns a standard Tcl return value. If an error occurs then a message
+ *	is left in interp's result.
  *
  * Side effects:
  *	Elements of the associative array given by "varName" are modified.
@@ -1521,11 +1469,11 @@ GetStatBuf(interp, pathPtr, statProc, statPtr)
 
 static int
 StoreStatData(interp, varName, statPtr)
-    Tcl_Interp *interp;			/* Interpreter for error reports. */
-    Tcl_Obj *varName;			/* Name of associative array variable
-					 * in which to store stat results. */
-    Tcl_StatBuf *statPtr;		/* Pointer to buffer containing stat
-					 * data to store in varName. */
+    Tcl_Interp *interp;		/* Interpreter for error reports. */
+    Tcl_Obj *varName;		/* Name of associative array variable in which
+				 * to store stat results. */
+    Tcl_StatBuf *statPtr;	/* Pointer to buffer containing stat data to
+				 * store in varName. */
 {
     Tcl_Obj *field = Tcl_NewObj();
     Tcl_Obj *value;
@@ -1622,7 +1570,7 @@ GetTypeFromMode(mode)
  *
  * Tcl_ForObjCmd --
  *
- *	This procedure is invoked to process the "for" Tcl command.  See the
+ *	This procedure is invoked to process the "for" Tcl command. See the
  *	user documentation for details on what it does.
  *
  *	With the bytecode compiler, this procedure is only called when a
@@ -1642,10 +1590,10 @@ GetTypeFromMode(mode)
 	/* ARGSUSED */
 int
 Tcl_ForObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int result, value;
 
@@ -1664,7 +1612,7 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
     while (1) {
 	/*
 	 * We need to reset the result before passing it off to
-	 * Tcl_ExprBooleanObj.  Otherwise, any error message will be appended
+	 * Tcl_ExprBooleanObj. Otherwise, any error message will be appended
 	 * to the result of the last evaluation.
 	 */
 
@@ -1711,7 +1659,7 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
  * Tcl_ForeachObjCmd --
  *
  *	This object-based procedure is invoked to process the "foreach" Tcl
- *	command.  See the user documentation for details on what it does.
+ *	command. See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -1755,11 +1703,11 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     int argcListArray[STATIC_LIST_SIZE];
     Tcl_Obj **argvListArray[STATIC_LIST_SIZE];
 
-    int *index = indexArray;		   /* Array of value list indices */
-    int *varcList = varcListArray;	   /* # loop variables per list */
-    Tcl_Obj ***varvList = varvListArray;   /* Array of var name lists */
-    int *argcList = argcListArray;	   /* Array of value list sizes */
-    Tcl_Obj ***argvList = argvListArray;   /* Array of value lists */
+    int *index = indexArray;		/* Array of value list indices */
+    int *varcList = varcListArray;	/* # loop variables per list */
+    Tcl_Obj ***varvList = varvListArray;/* Array of var name lists */
+    int *argcList = argcListArray;	/* Array of value list sizes */
+    Tcl_Obj ***argvList = argvListArray;/* Array of value lists */
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1932,7 +1880,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_FormatObjCmd --
  *
- *	This procedure is invoked to process the "format" Tcl command.  See
+ *	This procedure is invoked to process the "format" Tcl command. See
  *	the user documentation for details on what it does.
  *
  * Results:
@@ -1976,13 +1924,13 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * doubleValue has the value to pass to
 				 * sprintf, according to the following
 				 * definitions: */
-#   define INT_VALUE 0
-#   define CHAR_VALUE 1
-#   define PTR_VALUE 2
-#   define DOUBLE_VALUE 3
-#   define STRING_VALUE 4
-#   define WIDE_VALUE 5
-#   define MAX_FLOAT_SIZE 320
+#define INT_VALUE	0
+#define CHAR_VALUE	1
+#define PTR_VALUE	2
+#define DOUBLE_VALUE	3
+#define STRING_VALUE	4
+#define WIDE_VALUE	5
+#define MAX_FLOAT_SIZE	320
 
     Tcl_Obj *resultPtr;		/* Where result is stored finally. */
     char staticBuf[MAX_FLOAT_SIZE + 1];
@@ -2003,8 +1951,8 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * seen. */
     int useShort;		/* Value to be printed is short (half word). */
     char *end;			/* Used to locate end of numerical fields. */
-    int stringLen = 0;		/* Length of string in characters rather
-				 * than bytes.  Used for %s substitution. */
+    int stringLen = 0;		/* Length of string in characters rather than
+				 * bytes. Used for %s substitution. */
     int gotMinus;		/* Non-zero indicates that a minus flag has
 				 * been seen in the current field. */
     int gotPrecision;		/* Non-zero indicates that a precision has
@@ -2014,13 +1962,13 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
     int useWide;		/* Value to be printed is Tcl_WideInt. */
 
     /*
-     * This procedure is a bit nasty.  The goal is to use sprintf to do most
-     * of the dirty work.  There are several problems:
+     * This procedure is a bit nasty. The goal is to use sprintf to do most of
+     * the dirty work. There are several problems:
      * 1. this procedure can't trust its arguments.
      * 2. we must be able to provide a large enough result area to hold
-     *	  whatever's generated.  This is hard to estimate.
+     *	  whatever's generated. This is hard to estimate.
      * 3. there's no way to move the arguments from objv to the call to
-     *	  sprintf in a reasonable way.  This is particularly nasty because
+     *	  sprintf in a reasonable way. This is particularly nasty because
      *	  some of the arguments may be two-word values (doubles and
      *	  wide-ints).
      * So, what happens here is to scan the format string one % group at a
@@ -2167,7 +2115,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    gotPrecision = 1;
 	}
 	if (isdigit(UCHAR(*format))) {		/* INTL: Tcl source. */
-	    precision = strtoul(format, &end, 10);  /* INTL: "C" locale. */
+	    precision = strtoul(format, &end, 10);	/* INTL: "C" locale. */
 	    format = end;
 	} else if (*format == '*') {
 	    if (objIndex >= objc) {
@@ -2191,7 +2139,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 
 	    /*
 	     * Only add a 'll' modifier for integer values as it makes some
-	     * libc's go into spasm otherwise.  [Bug #702622]
+	     * libc's go into spasm otherwise. [Bug #702622]
 	     */
 
 	    switch (format[1]) {
@@ -2247,7 +2195,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		 *
 		 * Do not add this if we're going to pass in a short (i.e. if
 		 * we've got an 'h' modifier already in the string); some libc
-		 * implementations of sprintf() do not like it at all.  [Bug
+		 * implementations of sprintf() do not like it at all. [Bug
 		 * 1154163]
 		 */
 
@@ -2263,7 +2211,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	case 's':
 	    /*
 	     * Compute the length of the string in characters and add any
-	     * additional space required by the field width.  All of the extra
+	     * additional space required by the field width. All of the extra
 	     * characters will be spaces, so one byte per character is
 	     * adequate.
 	     */

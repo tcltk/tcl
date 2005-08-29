@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.2 2005/08/25 15:46:31 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.3 2005/08/29 18:38:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -135,6 +135,12 @@ static void	ThreadFreeProc _ANSI_ARGS_((ClientData clientData));
 static int	ThreadDeleteEvent _ANSI_ARGS_((Tcl_Event *eventPtr,
 	ClientData clientData));
 static void	ThreadExitProc _ANSI_ARGS_((ClientData clientData));
+
+
+/* Forward declaration of function import from "tclTest.c".
+ */
+
+int Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 
 
 /*

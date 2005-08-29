@@ -1,8 +1,8 @@
-/* 
+/*
  * tclLink.c --
  *
  *	This file implements linked variables (a C variable that is tied to a
- *	Tcl variable).  The idea of linked variables was first suggested by
+ *	Tcl variable). The idea of linked variables was first suggested by
  *	Andreas Stolcke and this implementation is based heavily on a
  *	prototype implementation provided by him.
  *
@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.6.3 2005/08/22 20:50:26 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.6.4 2005/08/29 18:38:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -25,7 +25,7 @@
 
 typedef struct Link {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
-    Tcl_Obj *varName;		/* Name of variable (must be global).  This is
+    Tcl_Obj *varName;		/* Name of variable (must be global). This is
 				 * needed during trace callbacks, since the
 				 * actual variable may be aliased at that time
 				 * via upvar. */
@@ -57,10 +57,9 @@ typedef struct Link {
  * Forward references to procedures defined later in this file:
  */
 
-static char *		LinkTraceProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, CONST char *name1, 
-                            CONST char *name2, int flags));
-static Tcl_Obj *	ObjValue _ANSI_ARGS_((Link *linkPtr));
+static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
+			    CONST char *name1, CONST char *name2, int flags);
+static Tcl_Obj *	ObjValue(Link *linkPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -88,9 +87,8 @@ Tcl_LinkVar(interp, varName, addr, type)
     CONST char *varName;	/* Name of a global variable in interp. */
     char *addr;			/* Address of a C variable to be linked to
 				 * varName. */
-    int type;			/* Type of C variable: TCL_LINK_INT, etc.
-				 * Also may have TCL_LINK_READ_ONLY OR'ed
-				 * in. */
+    int type;			/* Type of C variable: TCL_LINK_INT, etc. Also
+				 * may have TCL_LINK_READ_ONLY OR'ed in. */
 {
     Tcl_Obj *objPtr;
     Link *linkPtr;
@@ -137,7 +135,7 @@ Tcl_LinkVar(interp, varName, addr, type)
  *
  * Side effects:
  *	If "varName" was previously linked to a C variable, the link is broken
- *	to make the variable independent.  If there was no previous link for
+ *	to make the variable independent. If there was no previous link for
  *	"varName" then nothing happens.
  *
  *----------------------------------------------------------------------
@@ -168,7 +166,7 @@ Tcl_UnlinkVar(interp, varName)
  * Tcl_UpdateLinkedVar --
  *
  *	This procedure is invoked after a linked variable has been changed by
- *	C code.  It updates the Tcl variable so that traces on the variable
+ *	C code. It updates the Tcl variable so that traces on the variable
  *	will trigger.
  *
  * Results:
@@ -257,7 +255,7 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 
     /*
      * If we were invoked because of a call to Tcl_UpdateLinkedVar, then don't
-     * do anything at all.  In particular, we don't want to get upset that the
+     * do anything at all. In particular, we don't want to get upset that the
      * variable is being modified, even if it is supposed to be read-only.
      */
 
@@ -296,12 +294,12 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     }
 
     /*
-     * For writes, first make sure that the variable is writable.  Then
-     * convert the Tcl value to C if possible.  If the variable isn't writable
-     * or can't be converted, then restore the varaible's old value and return
-     * an error.  Another tricky thing: we have to save and restore the
-     * interpreter's result, since the variable access could occur when the
-     * result has been partially set.
+     * For writes, first make sure that the variable is writable. Then convert
+     * the Tcl value to C if possible. If the variable isn't writable or can't
+     * be converted, then restore the varaible's old value and return an
+     * error. Another tricky thing: we have to save and restore the interp's
+     * result, since the variable access could occur when the result has been
+     * partially set.
      */
 
     if (linkPtr->flags & LINK_READ_ONLY) {
