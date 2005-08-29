@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.17.2.6 2005/08/29 16:37:45 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.17.2.7 2005/08/29 16:38:36 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -887,7 +887,7 @@ test expr-39.11 {round() boundary case - -1/2 - 1 ulp} {
     }
     expr {round($x)}
 } -1
-test expr-39.10 {round() boundary case - -1/2 + 1 ulp} {
+test expr-39.12 {round() boundary case - -1/2 + 1 ulp} {
     set x -0.25
     set bit 0.125
     while 1 {
