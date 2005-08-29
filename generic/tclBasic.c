@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.167 2005/08/24 17:56:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.168 2005/08/29 16:18:59 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -5425,7 +5425,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
     Tcl_Obj *valuePtr, *resPtr;
-    double d, a, f;
+    double d, i, f;
 
     /* Check the argument count. */
 
@@ -5448,31 +5448,43 @@ ExprRoundFunc(clientData, interp, objc, objv)
     GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
 
     /* 
-     * Round the number to the nearest integer.  I'd like to use rint()
-     * or nearbyint(), but they are far from universal.
+     * Round the number to the nearest integer.  I'd like to use round(),
+     * but it's C99 (or BSD), and not yet universal.
      */
 
-    a = fabs(d);
-    if (a < Tcl_WideAsDouble(LLONG_MAX) + 0.5) {
-	d = valuePtr->internalRep.doubleValue;
-	f = floor(d);
-	d -= f;
-	if (d > 0.5 || (d == 0.5 && fmod(f, 2.0) != 0.0)) {
-	    f = f + 1.0;
+    d = valuePtr->internalRep.doubleValue;
+    f = modf(d, &i);
+    if (d < 0.0) {
+	if (f <= -0.5) {
+	    i += -1.0;
 	}
-	if (f >= (double) LONG_MIN && f <= (double) LONG_MAX) {
-	    TclNewLongObj(resPtr, (long) f);
+	if (i <= Tcl_WideAsDouble(LLONG_MIN)) {
+	    goto tooLarge;
+	} else if (d <= (double) LONG_MIN) {
+	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
 	} else {
-	    TclNewWideIntObj(resPtr, Tcl_DoubleAsWide(f));
+	    resPtr = Tcl_NewLongObj((long) i);
+	}			    
+    } else {
+	if (f >= 0.5) {
+	    i += 1.0;
 	}
-	Tcl_SetObjResult(interp, resPtr);
-	return TCL_OK;
+	if (i >= Tcl_WideAsDouble(LLONG_MAX)) {
+	    goto tooLarge;
+	} else if (i >= (double) LONG_MAX) {
+	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
+	} else {
+	    resPtr = Tcl_NewLongObj((long) i);
+	}
     }
+    Tcl_SetObjResult(interp, resPtr);
+    return TCL_OK;
 
     /*
      * Error return: result cannot be represented as an integer.
      */
 
+  tooLarge:
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "integer value too large to represent", -1));
     Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
