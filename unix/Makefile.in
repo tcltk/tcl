@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.16 2005/08/25 15:47:07 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.17 2005/08/30 15:54:29 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -326,7 +326,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
         bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_neg.o bn_mp_or.o \
 	bn_mp_radix_size.o bn_mp_radix_smap.o \
         bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_shrink.o \
-	bn_mp_sqr.o bn_mp_sub.o bn_mp_sub_d.o \
+	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
         bn_mp_to_unsigned_bin.o bn_mp_to_unsigned_bin_n.o \
 	bn_mp_toom_mul.o bn_mp_toom_sqr.o bn_mp_toradix_n.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
@@ -477,6 +477,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_set.c \
 	$(TOMMATH_DIR)/bn_mp_shrink.c \
 	$(TOMMATH_DIR)/bn_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_sqrt.c \
 	$(TOMMATH_DIR)/bn_mp_sub.c \
 	$(TOMMATH_DIR)/bn_mp_sub_d.c \
 	$(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c \
@@ -1321,6 +1322,9 @@ bn_mp_shrink.o: $(TOMMATH_DIR)/bn_mp_shrink.c
 
 bn_mp_sqr.o: $(TOMMATH_DIR)/bn_mp_sqr.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqr.c
+
+bn_mp_sqrt.o: $(TOMMATH_DIR)/bn_mp_sqrt.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqrt.c
 
 bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub.c

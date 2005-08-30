@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.31 2005/08/29 18:38:45 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.32 2005/08/30 15:54:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -70,6 +70,8 @@ static int	ExprIntFunc _ANSI_ARGS_((ClientData clientData,
 static int	ExprRandFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprRoundFunc _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
+static int	ExprSqrtFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
 static int	ExprSrandFunc _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int argc, Tcl_Obj *CONST *objv));
@@ -267,7 +269,7 @@ static BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::round",	ExprRoundFunc,	NULL			},
     { "::tcl::mathfunc::sin",	ExprUnaryFunc,	(ClientData) sin 	},
     { "::tcl::mathfunc::sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
-    { "::tcl::mathfunc::sqrt",	ExprUnaryFunc,	(ClientData) sqrt 	},
+    { "::tcl::mathfunc::sqrt",	ExprSqrtFunc,	NULL		 	},
     { "::tcl::mathfunc::srand",	ExprSrandFunc,	NULL			},
     { "::tcl::mathfunc::tan",	ExprUnaryFunc,	(ClientData) tan 	},
     { "::tcl::mathfunc::tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
@@ -4983,9 +4985,7 @@ Tcl_GetVersion(majorV, minorV, patchLevelV, type)
 
 static int
 ExprCeilFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Contains the address of a procedure that
-				 * takes one double argument and returns a
-				 * double result. */
+    ClientData clientData;	/* Ignored */
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
     int objc;			/* Actual parameter count */
@@ -5020,9 +5020,7 @@ ExprCeilFunc(clientData, interp, objc, objv)
 
 static int
 ExprFloorFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Contains the address of a procedure that
-				 * takes one double argument and returns a
-				 * double result. */
+    ClientData clientData;	/* Ignored */
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
     int objc;			/* Actual parameter count */
@@ -5051,6 +5049,46 @@ ExprFloorFunc(clientData, interp, objc, objv)
 	mp_clear(&big);
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(floor(d)));
+    }
+    return TCL_OK;
+}
+
+static int
+ExprSqrtFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+{
+    int code;
+    double d;
+    mp_int big;
+
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+    code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
+#ifdef ACCEPT_NAN
+    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+#endif
+    if (code != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (d >= 0.0 && TclIsInfinite(d) 
+	    && Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
+	mp_int root;
+	mp_init(&root);
+	mp_sqrt(&big, &root);
+	mp_clear(&big);
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(TclBignumToDouble(&root)));
+	mp_clear(&root);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(sqrt(d)));
     }
     return TCL_OK;
 }

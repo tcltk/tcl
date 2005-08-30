@@ -1,3 +1,16 @@
+2005-08-30  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclTomMath.h:	Added mp_sqrt to routines from
+	* unix/Makefile.in:	libtommath used by Tcl.
+	* win/Makefile.in:
+	* win/makefile.vc:
+
+	* generic/tclBasic.c:	Extended sqrt(.) so that range covers
+	the entire double range, accepting as many bignums in the domain
+	as that will allow.
+
 2005-08-29  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]	Merge updates from HEAD.
