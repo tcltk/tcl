@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.31 2005/08/25 15:46:31 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.32 2005/08/30 19:20:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -145,22 +145,32 @@ Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    do { \
+    if ((bignum).used > 0x7fff) { \
+	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int)); \
+	*temp = bignum; \
+	(objPtr)->internalRep.bignumValue.digits = (void*) temp; \
+	(objPtr)->internalRep.bignumValue.misc = -1; \
+    } else { \
+	if ((bignum).alloc > 0x7fff) { \
+	    mp_shrink(&(bignum)); \
+	} \
 	(objPtr)->internalRep.bignumValue.digits = (void*) (bignum).dp; \
 	(objPtr)->internalRep.bignumValue.misc = ( \
 		((bignum).sign << 30) \
 		| ((bignum).alloc << 15) \
 		| ((bignum).used)); \
-    } while (0)
+    }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    do { \
+    if ((objPtr)->internalRep.bignumValue.misc == -1) { \
+	(bignum) = *((mp_int *) ((objPtr)->internalRep.bignumValue.digits)); \
+    } else { \
 	(bignum).dp = (mp_digit*) (objPtr)->internalRep.bignumValue.digits; \
 	(bignum).sign = (objPtr)->internalRep.bignumValue.misc >> 30; \
 	(bignum).alloc = \
 		((objPtr)->internalRep.bignumValue.misc >> 15) & 0x7fff; \
 	(bignum).used = (objPtr)->internalRep.bignumValue.misc & 0x7fff; \
-    } while (0)
+    }
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -2520,6 +2530,9 @@ FreeBignum(Tcl_Obj *objPtr)
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
+    if (objPtr->internalRep.bignumValue.misc < 0) {
+	ckfree((char *)objPtr->internalRep.bignumValue.digits);
+    }
 }
 
 /*
@@ -2836,12 +2849,6 @@ TclSetBignumIntRep(objPtr, bignumValue)
     Tcl_Obj *objPtr;
     mp_int *bignumValue;
 {
-    if (bignumValue->used > 0x7fff) {
-	Tcl_Panic("TclSetBignumIntRep: too large for packed bignum");
-    }
-    if (bignumValue->alloc > 0x7fff) {
-	mp_shrink(bignumValue);
-    }
     objPtr->typePtr = &tclBignumType;
     PACK_BIGNUM(*bignumValue, objPtr);
 

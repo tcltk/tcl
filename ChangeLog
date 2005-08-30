@@ -2,6 +2,10 @@
 
 	[kennykb-numerics-branch]
 
+	* generic/tclObj.c:	Extended bignum support to include bignums
+	so large they will not pack into a Tcl_Obj.  When they outgrow Tcl's
+	string rep length limits, a panic will result.
+
 	* generic/tclTomMath.h:	Added mp_sqrt to routines from
 	* unix/Makefile.in:	libtommath used by Tcl.
 	* win/Makefile.in:
