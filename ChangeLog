@@ -1,3 +1,12 @@
+2005-09-31  Vince Darley <vincentdarley@sourceforge.net>
+
+	* doc/FileSystem.3: 
+	* unix/tclUnixFile.c:
+	* windows/tclWinFile.c: clarify that Tcl_FSMatchInDirectory may
+	be called with a NULL interpreter, and fix the code so this is
+	allowed.  Tcl's core itself (tclEncoding.c:FillEncodingFileMap())
+	calls this with a NULL interpreter.
+
 2005-08-29  Andreas Kupries <andreask@activestate.com>
 
 	* library/tm.tcl (::tcl::tm::roots): Accepted Don Porter's patch
