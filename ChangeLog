@@ -2,6 +2,9 @@
 
 	[kennykb-numerics-branch]
 
+	* generic/tclObj.c:	TclParseNumber calls meant to parse an
+	integer value now pass the TCL_PARSE_INTEGER_ONLY flag.
+
 	* generic/tclScan.c:	Extended [scan] to accept the %lld,
 	%llo, %llx, and %lli formats.  Numeric scanning is now done
 	via TclParseNumber calls.

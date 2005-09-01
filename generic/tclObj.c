@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.32 2005/08/30 19:20:42 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.33 2005/09/01 16:27:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2209,8 +2209,8 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer",
-			    NULL, -1, NULL, 0)==TCL_OK);
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
 #ifndef NO_WIDE_TYPE
@@ -2505,8 +2505,8 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer",
-			    NULL, -1, NULL, 0)==TCL_OK);
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
 
@@ -2758,8 +2758,8 @@ Tcl_GetBignumFromObj(
 	    }
 	    return TCL_ERROR;
 	}
-    } while (TclParseNumber(interp, objPtr, "integer",
-			    NULL, -1, NULL, 0)==TCL_OK);
+    } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
+	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
 
