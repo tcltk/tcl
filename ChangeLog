@@ -1,3 +1,16 @@
+2005-09-01  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclScan.c:	Extended [scan] to accept the %lld,
+	%llo, %llx, and %lli formats.  Numeric scanning is now done
+	via TclParseNumber calls.
+
+	* generic/tclInt.h:	Extended TclParseNumber to accept new flag
+	* generic/tclStrToD.c:	values TCL_PARSE_INTEGER_ONLY,
+	TCL_PARSE_OCTAL_ONLY, and TCL_PARSE_HEXIDECIMAL_ONLY, to give caller
+	more control over the parsing rules.
+
 2005-08-30  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]
