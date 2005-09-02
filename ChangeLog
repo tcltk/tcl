@@ -1,3 +1,27 @@
+2005-09-01  Andreas Kupries <andreask@activestate.com>
+
+	* unix/tclUnixSock.c (InitializeHostName): Synchronized use of
+	  static modifier in declaration and definition of function.
+
+	* unix/tclUnixChan.c (FileTruncateProc): Synchronized use of
+	  static modifier in declaration and definition of function.
+
+	* generic/tclResult.c (ReleaseKeys): Synchronized use of static
+	  modifier in declaration and definition of function.
+
+	* generic/tclListObj.c (NewListIntRep): Synchronized use of static
+	  modifier in declaration and definition of function.
+
+	* generic/tclEncoding.c (InitializeEncodingSearchPath):
+	  Synchronized use of static modifier in declaration and
+	  definition of function.
+
+	* generic/tclEncoding.c (FillEncodingFileMap): Synchronized use of
+	  static modifier in declaration and definition of function.
+
+	* generic/tclIORChan.c (RcNewHandle): Synchronized use of static
+	  modifier in declaration and definition of function.
+
 2005-08-31  Vince Darley <vincentdarley@sourceforge.net>
 
 	* doc/FileSystem.3: 
