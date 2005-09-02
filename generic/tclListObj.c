@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.25 2005/08/25 21:48:41 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.26 2005/09/02 19:23:46 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -74,7 +74,7 @@ Tcl_ObjType tclListType = {
  *----------------------------------------------------------------------
  */
 
-List*
+static List*
 NewListIntRep(objc, objv)
     int objc;
     Tcl_Obj *CONST objv[];
