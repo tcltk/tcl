@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.35 2005/09/01 16:09:57 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.36 2005/09/02 17:42:24 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -37,6 +37,10 @@
 
 #define	TIP_114_FORMATS
 #undef	KILL_OCTAL
+
+#ifndef TIP_114_FORMATS
+#undef	KILL_OCTAL
+#endif
 
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and
@@ -378,7 +382,13 @@ TclParseNumber( Tcl_Interp* interp,
 		state = ZERO_X;
 		break;
 	    }
+	    if (flags & TCL_PARSE_HEXADECIMAL_ONLY) {
+		goto zerox;
+	    }
 #ifdef TIP_114_FORMATS 
+	    if (flags & TCL_PARSE_SCAN_PREFIXES) {
+		goto zeroo;
+	    }
 	    if (c == 'b' || c == 'B') {
 		state = ZERO_B;
 		break;
@@ -388,12 +398,9 @@ TclParseNumber( Tcl_Interp* interp,
 		state = ZERO_O;
 		break;
 	    }
-#endif
-	    if (flags & TCL_PARSE_HEXADECIMAL_ONLY) {
-		goto zerox;
-	    }
 #ifdef KILL_OCTAL
 	    goto decimal;
+#endif
 #endif
 	    /* FALLTHROUGH */
 

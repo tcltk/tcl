@@ -1,3 +1,14 @@
+2005-09-02  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclScan.c:	Bug fix: The %o, %x, %i formats of [scan]
+	must not accept any 0b or 0o prefixes.  [scan $s %o] must continue
+	to work even with KILL_OCTAL enabled.
+
+	* generic/tclInt.h:	Added TCL_PARSE_SCAN_PREFIXES to the flags
+	* generic/tclStrToD.c:	accepted by TclParseNumber.
+
 2005-09-01  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]

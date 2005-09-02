@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.16.2.4 2005/09/01 16:09:57 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.16.2.5 2005/09/02 17:42:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -764,6 +764,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    break;
 	case 'i':
 	    op = 'i';
+	    parseFlag = TCL_PARSE_SCAN_PREFIXES;
 #if 0
 	    base = 0;
 	    fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtol;
@@ -774,7 +775,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    break;
 	case 'o':
 	    op = 'i';
-	    parseFlag = TCL_PARSE_OCTAL_ONLY;
+	    parseFlag = TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
 #if 0
 	    base = 8;
 	    fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;

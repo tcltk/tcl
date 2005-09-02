@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.36 2005/09/01 16:09:56 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.37 2005/09/02 17:42:24 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1889,13 +1889,16 @@ typedef struct ProcessGlobalValue {
  *----------------------------------------------------------------------
  */
 
-#define TCL_PARSE_DECIMAL_ONLY 1
+#define TCL_PARSE_DECIMAL_ONLY		1
 				/* Leading zero doesn't denote octal or hex */
-#define TCL_PARSE_OCTAL_ONLY 2	/* Parse octal even without prefix */
-#define TCL_PARSE_HEXADECIMAL_ONLY 4
+#define TCL_PARSE_OCTAL_ONLY		2
+				/* Parse octal even without prefix */
+#define TCL_PARSE_HEXADECIMAL_ONLY	4
 				/* Parse hexadecimal even without prefix */
-#define TCL_PARSE_INTEGER_ONLY 8
+#define TCL_PARSE_INTEGER_ONLY		8
 				/* Disable floating point parsing */
+#define TCL_PARSE_SCAN_PREFIXES		16
+				/* Use [scan] rules dealing with 0? prefixes */
 
 /*
  *----------------------------------------------------------------
