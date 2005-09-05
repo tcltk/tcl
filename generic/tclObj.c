@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.94 2005/08/17 23:57:36 georgeps Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.95 2005/09/05 10:25:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,7 @@ static PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *CONST contextPtr = &pendingObjData
 #else
-Tcl_ThreadDataKey pendingObjDataKey;
+static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *CONST contextPtr = (PendingObjData *) \
 	    Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
