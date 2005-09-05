@@ -1,3 +1,8 @@
+2005-09-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclObj.c (pendingObjDataKey): Added missing 'static' to stop
+	symbol from leaking outside the Tcl library. [Bug 1263012]
+
 2005-09-01  Andreas Kupries <andreask@activestate.com>
 
 	* unix/tclUnixSock.c (InitializeHostName): Synchronized use of
