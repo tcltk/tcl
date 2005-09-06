@@ -1,3 +1,12 @@
+2005-09-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInt.h (List): Added flag to keep track of whether a list
+	* generic/tclListObj.c:    with a string rep is provably canonical.
+	* generic/tclUtil.c (Tcl_ConcatObj):  Do efficient concatenation and
+	* generic/tclBasic.c (Tcl_EvalObjEx): evaluation when the list is
+	canonical, and not just when the list is pure. This should make the
+	"pure list" hacking introduced in 8.3 much more robust.
+
 2005-09-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclObj.c (pendingObjDataKey): Added missing 'static' to stop

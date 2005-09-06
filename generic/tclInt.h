@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.247 2005/08/26 14:43:28 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.248 2005/09/06 14:40:11 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1712,6 +1712,10 @@ typedef struct List {
     int refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */
+    int canonicalFlag;		/* Set if the string representation was
+				 * derived from the list representation. May
+				 * be ignored if there is no string rep at
+				 * all.*/
     Tcl_Obj *elements;		/* First list element; the struct is grown to
 				 * accomodate all elements. */
 } List;
