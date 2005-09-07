@@ -1,3 +1,10 @@
+2005-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclUtf.c (Tcl_UniCharToUtf):  Corrected handling of negative
+        * tests/utf.test (utf-1.5):     Tcl_UniChar input value.  Incorrect
+        handling was producing byte sequences outside of Tcl's legal internal
+        encoding.  [Bug 1283976].
+
 2005-08-29  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclBasic.c (ExprMathFunc): Restored "round away from
