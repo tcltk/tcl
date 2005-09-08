@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: link.test,v 1.10 2005/09/08 13:50:58 dkf Exp $
+# RCS: @(#) $Id: link.test,v 1.11 2005/09/08 14:05:06 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -39,15 +39,24 @@ test link-1.2 {reading C variables from Tcl} {testlink} {
 
 test link-2.1 {writing C variables from Tcl} {testlink} {
     testlink delete
-    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbaadbeef 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     set int "00721"
     set real -10.5
     set bool true
     set string abcdef
     set wide 135135
-    concat [testlink get] $int $real $bool $string $wide
-} {465 -10.5 1 abcdef 135135 00721 -10.5 true abcdef 135135}
+    set char 79
+    set uchar 161
+    set short 8000
+    set ushort 40000
+    set uint 0xc001babe
+    set long 34543
+    set ulong 567890
+    set float 1.0987654321
+    set uwide 357357357357
+    concat [testlink get] | $int $real $bool $string $wide
+} {465 -10.5 1 abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 ? 357357357357 | 00721 -10.5 true abcdef 135135 79 161 8000 40000 -1073628482 34543 567890 ? 357357357357}
 test link-2.2 {writing bad values into variables} {testlink} {
     testlink delete
     testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
@@ -113,7 +122,7 @@ test link-4.2 {unsetting linked variables} {testlink} {
     set bool true
     set string newValue
     set wide 333555
-    testlink get
+    lrange [testlink get] 0 4
 } {102 16.0 1 newValue 333555}
 
 test link-5.1 {unlinking variables} {testlink} {
@@ -125,16 +134,25 @@ test link-5.1 {unlinking variables} {testlink} {
     set bool bogus
     set string 12345
     set wide 875421
+    set char skjdf
+    set uchar dslfjk
+    set short slkf
+    set ushort skrh
+    set uint sfdkfkh
+    set long srkjh
+    set ulong sjkg
+    set float dskjfbjfd
+    set uwide isdfsngs
     testlink get
-} {-6 -2.25 0 stringValue 13579}
+} {-6 -2.25 0 stringValue 13579 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234}
 test link-5.2 {unlinking variables} {testlink} {
     testlink delete
     testlink set -6 -2.25 0 stringValue 97531 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink delete
-    testlink set 25 14.7 7 - 999999 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
-    list $int $real $bool $string $wide
-} {-6 -2.25 0 stringValue 97531}
+    testlink set 25 14.7 7 - 999999 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
+    list $int $real $bool $string $wide $char $uchar $short $ushort $uint $long $ulong $float $uwide
+} {-6 -2.25 0 stringValue 97531 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234}
 
 test link-6.1 {errors in setting up link} {testlink} {
     testlink delete
@@ -228,7 +246,7 @@ test link-8.1 {Tcl_UpdateLinkedVar procedure} {testlink} {
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     trace var int w x
-    testlink update 32 4.0 3 abcd 113355
+    testlink update 32 4.0 3 abcd 113355 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
     trace vdelete int w x
     set x
 } {{int {} w} 32 -2.0 0 xyzzy 995511}
@@ -242,7 +260,7 @@ test link-8.2 {Tcl_UpdateLinkedVar procedure} {testlink} {
     testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink delete
     trace var int w x
-    testlink update 32 4.0 6 abcd 113355
+    testlink update 32 4.0 6 abcd 113355 65 251 30001 60001 0xbabebeef 12322 32124 3.125 12312312340
     trace vdelete int w x
     set x
 } {}
