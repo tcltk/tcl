@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.92 2005/08/24 17:56:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.93 2005/09/08 13:38:09 dkf Exp $
  */
 
 #define TCL_TEST
@@ -2560,6 +2560,17 @@ TestlinkCmd(dummy, interp, argc, argv)
     static double realVar = 1.23;
     static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
     static char *stringVar = NULL;
+
+    static char charVar = '@';
+    static unsigned char ucharVar = 130;
+    static short shortVar = 3000;
+    static unsigned short ushortVar = 60000;
+    static unsigned int uintVar = 0xbeeffeed;
+    static long longVar = 123456789L;
+    static unsigned long ulongVar = 3456789012;
+    static float floatVar = 4.5;
+    static Tcl_WideUInt uwideVar = (Tcl_WideUInt) Tcl_LongAsWide(123);
+
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
@@ -2567,14 +2578,17 @@ TestlinkCmd(dummy, interp, argc, argv)
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option ?arg arg arg arg arg?\"", (char *) NULL);
+		" option ?arg arg arg arg arg arg arg arg arg arg arg arg",
+		" arg arg?\"", (char *) NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	if (argc != 7) {
+	if (argc != 16) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 		argv[0], " ", argv[1],
-		" intRO realRO boolRO stringRO wideRO\"", (char *) NULL);
+		" intRO realRO boolRO stringRO wideRO charRO ucharRO shortRO",
+		" ushortRO uintRO longRO ulongRO floatRO uwideRO\"",
+		(char *) NULL);
 	    return TCL_ERROR;
 	}
 	if (created) {
@@ -2583,6 +2597,15 @@ TestlinkCmd(dummy, interp, argc, argv)
 	    Tcl_UnlinkVar(interp, "bool");
 	    Tcl_UnlinkVar(interp, "string");
 	    Tcl_UnlinkVar(interp, "wide");
+	    Tcl_UnlinkVar(interp, "char");
+	    Tcl_UnlinkVar(interp, "uchar");
+	    Tcl_UnlinkVar(interp, "short");
+	    Tcl_UnlinkVar(interp, "ushort");
+	    Tcl_UnlinkVar(interp, "uint");
+	    Tcl_UnlinkVar(interp, "long");
+	    Tcl_UnlinkVar(interp, "ulong");
+	    Tcl_UnlinkVar(interp, "float");
+	    Tcl_UnlinkVar(interp, "uwide");
 	}
 	created = 1;
 	if (Tcl_GetBoolean(interp, argv[2], &writable) != TCL_OK) {
@@ -2625,12 +2648,94 @@ TestlinkCmd(dummy, interp, argc, argv)
 			TCL_LINK_WIDE_INT | flag) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (Tcl_GetBoolean(interp, argv[7], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "char", (char *) &charVar,
+		TCL_LINK_CHAR | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[8], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "uchar", (char *) &ucharVar,
+		TCL_LINK_UCHAR | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[9], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "short", (char *) &shortVar,
+		TCL_LINK_SHORT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[10], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "ushort", (char *) &ushortVar,
+		TCL_LINK_USHORT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[11], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "uint", (char *) &uintVar,
+		TCL_LINK_UINT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[12], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "long", (char *) &longVar,
+		TCL_LINK_LONG | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[13], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "ulong", (char *) &ulongVar,
+		TCL_LINK_ULONG | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[14], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "float", (char *) &floatVar,
+		TCL_LINK_FLOAT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBoolean(interp, argv[15], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "uwide", (char *) &uwideVar,
+		TCL_LINK_WIDE_UINT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_UnlinkVar(interp, "int");
 	Tcl_UnlinkVar(interp, "real");
 	Tcl_UnlinkVar(interp, "bool");
 	Tcl_UnlinkVar(interp, "string");
 	Tcl_UnlinkVar(interp, "wide");
+	Tcl_UnlinkVar(interp, "char");
+	Tcl_UnlinkVar(interp, "uchar");
+	Tcl_UnlinkVar(interp, "short");
+	Tcl_UnlinkVar(interp, "ushort");
+	Tcl_UnlinkVar(interp, "uint");
+	Tcl_UnlinkVar(interp, "long");
+	Tcl_UnlinkVar(interp, "ulong");
+	Tcl_UnlinkVar(interp, "float");
+	Tcl_UnlinkVar(interp, "uwide");
 	created = 0;
     } else if (strcmp(argv[1], "get") == 0) {
 	TclFormatInt(buffer, intVar);
@@ -2646,11 +2751,36 @@ TestlinkCmd(dummy, interp, argc, argv)
 	tmp = Tcl_NewWideIntObj(wideVar);
 	Tcl_AppendElement(interp, Tcl_GetString(tmp));
 	Tcl_DecrRefCount(tmp);
+	TclFormatInt(buffer, (int) charVar);
+	Tcl_AppendElement(interp, buffer);
+	TclFormatInt(buffer, (int) ucharVar);
+	Tcl_AppendElement(interp, buffer);
+	TclFormatInt(buffer, (int) shortVar);
+	Tcl_AppendElement(interp, buffer);
+	TclFormatInt(buffer, (int) ushortVar);
+	Tcl_AppendElement(interp, buffer);
+	TclFormatInt(buffer, (int) uintVar);
+	Tcl_AppendElement(interp, buffer);
+	tmp = Tcl_NewLongObj(longVar);
+	Tcl_AppendElement(interp, Tcl_GetString(tmp));
+	Tcl_DecrRefCount(tmp);
+	tmp = Tcl_NewLongObj((long)ulongVar);
+	Tcl_AppendElement(interp, Tcl_GetString(tmp));
+	Tcl_DecrRefCount(tmp);
+	Tcl_PrintDouble((Tcl_Interp *) NULL, (double)floatVar, buffer);
+	Tcl_AppendElement(interp, buffer);
+	tmp = Tcl_NewWideIntObj((Tcl_WideInt)uwideVar);
+	Tcl_AppendElement(interp, Tcl_GetString(tmp));
+	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
-	if (argc != 7) {
+	int v;
+
+	if (argc != 16) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 		    argv[0], " ", argv[1],
-		    " intValue realValue boolValue stringValue wideValue\"",
+		    " intValue realValue boolValue stringValue wideValue",
+		    " charValue ucharValue shortValue ushortValue uintValue",
+		    " longValue ulongValue floatValue uwideValue\"",
 		    (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -2688,11 +2818,74 @@ TestlinkCmd(dummy, interp, argc, argv)
 	    }
 	    Tcl_DecrRefCount(tmp);
 	}
+	if (argv[7][0]) {
+	    if (Tcl_GetInt(interp, argv[7], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    charValue = (char) v;
+	}
+	if (argv[8][0]) {
+	    if (Tcl_GetInt(interp, argv[8], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ucharValue = (unsigned char) v;
+	}
+	if (argv[9][0]) {
+	    if (Tcl_GetInt(interp, argv[9], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    shortValue = (short) v;
+	}
+	if (argv[10][0]) {
+	    if (Tcl_GetInt(interp, argv[10], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ushortValue = (unsigned short) v;
+	}
+	if (argv[11][0]) {
+	    if (Tcl_GetInt(interp, argv[11], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    uintValue = (unsigned int) v;
+	}
+	if (argv[12][0]) {
+	    if (Tcl_GetInt(interp, argv[12], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    longValue = (long) v;
+	}
+	if (argv[13][0]) {
+	    if (Tcl_GetInt(interp, argv[13], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ulongValue = (unsigned long) v;
+	}
+	if (argv[14][0]) {
+	    double d;
+	    if (Tcl_GetDouble(interp, argv[14], &d) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    floatValue = (float) d;
+	}
+	if (argv[15][0]) {
+	    Tcl_WideInt w;
+	    tmp = Tcl_NewStringObj(argv[15], -1);
+	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
+		Tcl_DecrRefCount(tmp);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(tmp);
+	    uwideValue = (Tcl_WideUInt) w;
+	}
     } else if (strcmp(argv[1], "update") == 0) {
-	if (argc != 7) {
+	int v;
+
+	if (argc != 16) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 		    argv[0], " ", argv[1],
-		    "intValue realValue boolValue stringValue wideValue\"",
+		    " intValue realValue boolValue stringValue wideValue",
+		    " charValue ucharValue shortValue ushortValue uintValue",
+		    " longValue ulongValue floatValue uwideValue\"",
 		    (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -2734,6 +2927,74 @@ TestlinkCmd(dummy, interp, argc, argv)
 	    }
 	    Tcl_DecrRefCount(tmp);
 	    Tcl_UpdateLinkedVar(interp, "wide");
+	}
+	if (argv[7][0]) {
+	    if (Tcl_GetInt(interp, argv[7], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    charValue = (char) v;
+	    Tcl_UpdateLinkedVar(interp, "char");
+	}
+	if (argv[8][0]) {
+	    if (Tcl_GetInt(interp, argv[8], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ucharValue = (unsigned char) v;
+	    Tcl_UpdateLinkedVar(interp, "uchar");
+	}
+	if (argv[9][0]) {
+	    if (Tcl_GetInt(interp, argv[9], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    shortValue = (short) v;
+	    Tcl_UpdateLinkedVar(interp, "short");
+	}
+	if (argv[10][0]) {
+	    if (Tcl_GetInt(interp, argv[10], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ushortValue = (unsigned short) v;
+	    Tcl_UpdateLinkedVar(interp, "ushort");
+	}
+	if (argv[11][0]) {
+	    if (Tcl_GetInt(interp, argv[11], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    uintValue = (unsigned int) v;
+	    Tcl_UpdateLinkedVar(interp, "uint");
+	}
+	if (argv[12][0]) {
+	    if (Tcl_GetInt(interp, argv[12], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    longValue = (long) v;
+	    Tcl_UpdateLinkedVar(interp, "long");
+	}
+	if (argv[13][0]) {
+	    if (Tcl_GetInt(interp, argv[13], &v) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ulongValue = (unsigned long) v;
+	    Tcl_UpdateLinkedVar(interp, "ulong");
+	}
+	if (argv[14][0]) {
+	    double d;
+	    if (Tcl_GetDouble(interp, argv[14], &d) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    floatValue = (float) d;
+	    Tcl_UpdateLinkedVar(interp, "float");
+	}
+	if (argv[15][0]) {
+	    Tcl_WideInt w;
+	    tmp = Tcl_NewStringObj(argv[15], -1);
+	    if (Tcl_GetWideIntFromObj(interp, tmp, &w) != TCL_OK) {
+		Tcl_DecrRefCount(tmp);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(tmp);
+	    uwideValue = (Tcl_WideUInt) w;
+	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
