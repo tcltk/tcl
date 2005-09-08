@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: link.test,v 1.9 2005/09/08 13:46:54 dkf Exp $
+# RCS: @(#) $Id: link.test,v 1.10 2005/09/08 13:50:58 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -26,20 +26,20 @@ foreach i {int real bool string} {
 }
 test link-1.1 {reading C variables from Tcl} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 12341234
+    testlink set 43 1.23 4 - 12341234 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list $int $real $bool $string $wide
 } {43 1.23 1 NULL 12341234}
 test link-1.2 {reading C variables from Tcl} {testlink} {
     testlink delete
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-    testlink set -3 2 0 "A long string with spaces"  43214321
+    testlink set -3 2 0 "A long string with spaces"  43214321 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     list $int $real $bool $string $wide $int $real $bool $string $wide
 } {-3 2.0 0 {A long string with spaces} 43214321 -3 2.0 0 {A long string with spaces} 43214321}
 
 test link-2.1 {writing C variables from Tcl} {testlink} {
     testlink delete
-    testlink set 43 1.21 4 - 56785678
+    testlink set 43 1.21 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     set int "00721"
     set real -10.5
@@ -50,32 +50,32 @@ test link-2.1 {writing C variables from Tcl} {testlink} {
 } {465 -10.5 1 abcdef 135135 00721 -10.5 true abcdef 135135}
 test link-2.2 {writing bad values into variables} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 56785678
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set int 09a} msg] $msg $int
 } {1 {can't set "int": variable must have integer value} 43}
 test link-2.3 {writing bad values into variables} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 56785678
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set real 1.x3} msg] $msg $real
 } {1 {can't set "real": variable must have real value} 1.23}
 test link-2.4 {writing bad values into variables} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 56785678
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set bool gorp} msg] $msg $bool
 } {1 {can't set "bool": variable must have boolean value} 1}
 test link-2.5 {writing bad values into variables} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 56785678
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     list [catch {set wide gorp} msg] $msg $bool
 } {1 {can't set "wide": variable must have integer value} 1}
 
 test link-3.1 {read-only variables} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 56785678
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 0 1 1 0 0 0 0 0 0 0 0 0 0 0
     list [catch {set int 4} msg] $msg $int \
 	[catch {set real 10.6} msg] $msg $real \
@@ -85,7 +85,7 @@ test link-3.1 {read-only variables} {testlink} {
 } {1 {can't set "int": linked variable is read-only} 43 0 10.6 10.6 0 no no 1 {can't set "string": linked variable is read-only} NULL 1 {can't set "wide": linked variable is read-only} 56785678}
 test link-3.2 {read-only variables} {testlink} {
     testlink delete
-    testlink set 43 1.23 4 - 56785678
+    testlink set 43 1.23 4 - 56785678 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 0 0 1 1 0 0 0 0 0 0 0 0 0
     list [catch {set int 4} msg] $msg $int \
 	[catch {set real 10.6} msg] $msg $real \
@@ -96,7 +96,7 @@ test link-3.2 {read-only variables} {testlink} {
 
 test link-4.1 {unsetting linked variables} {testlink} {
     testlink delete
-    testlink set -6 -2.5 0 stringValue 13579
+    testlink set -6 -2.5 0 stringValue 13579 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     unset int real bool string wide
     list [catch {set int} msg] $msg [catch {set real} msg] $msg \
@@ -105,7 +105,7 @@ test link-4.1 {unsetting linked variables} {testlink} {
 } {0 -6 0 -2.5 0 0 0 stringValue 0 13579}
 test link-4.2 {unsetting linked variables} {testlink} {
     testlink delete
-    testlink set -6 -2.1 0 stringValue 97531
+    testlink set -6 -2.1 0 stringValue 97531 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     unset int real bool string wide
     set int 102
@@ -118,7 +118,7 @@ test link-4.2 {unsetting linked variables} {testlink} {
 
 test link-5.1 {unlinking variables} {testlink} {
     testlink delete
-    testlink set -6 -2.25 0 stringValue 13579
+    testlink set -6 -2.25 0 stringValue 13579 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink delete
     set int xx1
     set real qrst
@@ -129,10 +129,10 @@ test link-5.1 {unlinking variables} {testlink} {
 } {-6 -2.25 0 stringValue 13579}
 test link-5.2 {unlinking variables} {testlink} {
     testlink delete
-    testlink set -6 -2.25 0 stringValue 97531
+    testlink set -6 -2.25 0 stringValue 97531 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
     testlink delete
-    testlink set 25 14.7 7 - 999999
+    testlink set 25 14.7 7 - 999999 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     list $int $real $bool $string $wide
 } {-6 -2.25 0 stringValue 97531}
 
@@ -226,7 +226,7 @@ test link-8.1 {Tcl_UpdateLinkedVar procedure} {testlink} {
     }
     set x {}
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-    testlink set 14 -2.0 0 xyzzy 995511
+    testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     trace var int w x
     testlink update 32 4.0 3 abcd 113355
     trace vdelete int w x
@@ -239,7 +239,7 @@ test link-8.2 {Tcl_UpdateLinkedVar procedure} {testlink} {
     }
     set x {}
     testlink create 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-    testlink set 14 -2.0 0 xyzzy 995511
+    testlink set 14 -2.0 0 xyzzy 995511 64 250 30000 60000 0xbeefbabe 12321 32123 3.25 1231231234
     testlink delete
     trace var int w x
     testlink update 32 4.0 6 abcd 113355
