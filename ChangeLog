@@ -5,7 +5,8 @@
 	* generic/tclLink.c (LinkTraceProc,ObjValue): Added many new of C var
 	* generic/tcl.h:			      to link to, making it
 	* doc/LinkVar.3:			      easier to seamlessly
-	couple C code and Tcl scripts in an application. [Patch 1242844]
+	* generic/tclTest.c (TestlinkCmd):	      couple C code and Tcl
+	scripts in an application. [Patch 1242844]
 
 2005-09-07  Don Porter  <dgp@users.sourceforge.net>
 
