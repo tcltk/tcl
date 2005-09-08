@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.94 2005/09/08 13:40:08 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.95 2005/09/08 14:09:05 dkf Exp $
  */
 
 #define TCL_TEST
@@ -2560,7 +2560,6 @@ TestlinkCmd(dummy, interp, argc, argv)
     static double realVar = 1.23;
     static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
     static char *stringVar = NULL;
-
     static char charVar = '@';
     static unsigned char ucharVar = 130;
     static short shortVar = 3000;
@@ -2570,7 +2569,6 @@ TestlinkCmd(dummy, interp, argc, argv)
     static unsigned long ulongVar = 3456789012;
     static float floatVar = 4.5;
     static Tcl_WideUInt uwideVar = (Tcl_WideUInt) Tcl_LongAsWide(123);
-
     static int created = 0;
     char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
