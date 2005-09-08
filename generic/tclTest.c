@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.93 2005/09/08 13:38:09 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.94 2005/09/08 13:40:08 dkf Exp $
  */
 
 #define TCL_TEST
@@ -2822,50 +2822,50 @@ TestlinkCmd(dummy, interp, argc, argv)
 	    if (Tcl_GetInt(interp, argv[7], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    charValue = (char) v;
+	    charVar = (char) v;
 	}
 	if (argv[8][0]) {
 	    if (Tcl_GetInt(interp, argv[8], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    ucharValue = (unsigned char) v;
+	    ucharVar = (unsigned char) v;
 	}
 	if (argv[9][0]) {
 	    if (Tcl_GetInt(interp, argv[9], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    shortValue = (short) v;
+	    shortVar = (short) v;
 	}
 	if (argv[10][0]) {
 	    if (Tcl_GetInt(interp, argv[10], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    ushortValue = (unsigned short) v;
+	    ushortVar = (unsigned short) v;
 	}
 	if (argv[11][0]) {
 	    if (Tcl_GetInt(interp, argv[11], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    uintValue = (unsigned int) v;
+	    uintVar = (unsigned int) v;
 	}
 	if (argv[12][0]) {
 	    if (Tcl_GetInt(interp, argv[12], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    longValue = (long) v;
+	    longVar = (long) v;
 	}
 	if (argv[13][0]) {
 	    if (Tcl_GetInt(interp, argv[13], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    ulongValue = (unsigned long) v;
+	    ulongVar = (unsigned long) v;
 	}
 	if (argv[14][0]) {
 	    double d;
 	    if (Tcl_GetDouble(interp, argv[14], &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    floatValue = (float) d;
+	    floatVar = (float) d;
 	}
 	if (argv[15][0]) {
 	    Tcl_WideInt w;
@@ -2875,7 +2875,7 @@ TestlinkCmd(dummy, interp, argc, argv)
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideValue = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt) w;
 	}
     } else if (strcmp(argv[1], "update") == 0) {
 	int v;
@@ -2932,49 +2932,49 @@ TestlinkCmd(dummy, interp, argc, argv)
 	    if (Tcl_GetInt(interp, argv[7], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    charValue = (char) v;
+	    charVar = (char) v;
 	    Tcl_UpdateLinkedVar(interp, "char");
 	}
 	if (argv[8][0]) {
 	    if (Tcl_GetInt(interp, argv[8], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    ucharValue = (unsigned char) v;
+	    ucharVar = (unsigned char) v;
 	    Tcl_UpdateLinkedVar(interp, "uchar");
 	}
 	if (argv[9][0]) {
 	    if (Tcl_GetInt(interp, argv[9], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    shortValue = (short) v;
+	    shortVar = (short) v;
 	    Tcl_UpdateLinkedVar(interp, "short");
 	}
 	if (argv[10][0]) {
 	    if (Tcl_GetInt(interp, argv[10], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    ushortValue = (unsigned short) v;
+	    ushortVar = (unsigned short) v;
 	    Tcl_UpdateLinkedVar(interp, "ushort");
 	}
 	if (argv[11][0]) {
 	    if (Tcl_GetInt(interp, argv[11], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    uintValue = (unsigned int) v;
+	    uintVar = (unsigned int) v;
 	    Tcl_UpdateLinkedVar(interp, "uint");
 	}
 	if (argv[12][0]) {
 	    if (Tcl_GetInt(interp, argv[12], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    longValue = (long) v;
+	    longVar = (long) v;
 	    Tcl_UpdateLinkedVar(interp, "long");
 	}
 	if (argv[13][0]) {
 	    if (Tcl_GetInt(interp, argv[13], &v) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    ulongValue = (unsigned long) v;
+	    ulongVar = (unsigned long) v;
 	    Tcl_UpdateLinkedVar(interp, "ulong");
 	}
 	if (argv[14][0]) {
@@ -2982,7 +2982,7 @@ TestlinkCmd(dummy, interp, argc, argv)
 	    if (Tcl_GetDouble(interp, argv[14], &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    floatValue = (float) d;
+	    floatVar = (float) d;
 	    Tcl_UpdateLinkedVar(interp, "float");
 	}
 	if (argv[15][0]) {
@@ -2993,7 +2993,7 @@ TestlinkCmd(dummy, interp, argc, argv)
 		return TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(tmp);
-	    uwideValue = (Tcl_WideUInt) w;
+	    uwideVar = (Tcl_WideUInt) w;
 	    Tcl_UpdateLinkedVar(interp, "uwide");
 	}
     } else {
