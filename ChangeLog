@@ -5,6 +5,10 @@
 	
 2005-09-09  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInt.h:		New internal routine TclObjPrintf()
+	* generic/tclStringObj.c:	is similar to TclFormatObj() but
+	accepts arguments in non-Tcl_Obj format.
+
 	* generic/tclInt.h:		New internal routines TclFormatObj()
 	* generic/tclStringObj.c:	and TclAppendFormattedObjs() to offer
 	sprintf()-like means to append to Tcl_Obj.  Work in progress toward
