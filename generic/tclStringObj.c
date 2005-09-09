@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.35.2.4 2005/09/09 18:48:40 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.35.2.5 2005/09/09 19:27:15 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -2288,7 +2288,7 @@ ObjPrintfVA(interp, argList)
     va_list argList;
 {
     int code, objc;
-    Tcl_Obj **objv, *element, *list = Tcl_NewObj();
+    Tcl_Obj **objv, *list = Tcl_NewObj();
     CONST char *format, *p;
     Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
 
@@ -2333,9 +2333,6 @@ ObjPrintfVA(interp, argList)
 		seekingConversion = 0;
 		switch (size) {
 		case -1:
-		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
-			    (long int)va_arg(argList, short int)));
-		    break;
 		case 0:
 		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
 			    (long int)va_arg(argList, int)));
