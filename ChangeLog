@@ -1,3 +1,14 @@
+2005-09-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:		New internal routines TclFormatObj()
+	* generic/tclStringObj.c:	and TclAppendFormattedObjs() to offer
+	sprintf()-like means to append to Tcl_Obj.  Work in progress toward
+	[RFE 572392].
+
+	* generic/tclCmdAH.c:	Compiler directive NEW_FORMAT when #define'd
+	directs the [format] command to be implemented in terms of the new
+	TclAppendFormattedObjs() routine.
+
 2005-09-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	TIP#254 IMPLEMENTATION
