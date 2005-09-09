@@ -1,3 +1,10 @@
+2005-09-09  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIORChan.c (RcDecodeEventMask): Added missing type
+	  declaration for the parameter 'mask'. This fixes the [SF Tcl Bug
+	  1286256]. The other warning can be removed only by removing the
+	  panic/return code.
+
 2005-09-09  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclStringObj.c:  Added two missing casts to silence
