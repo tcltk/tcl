@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.39 2005/09/09 15:44:27 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.40 2005/09/09 17:19:19 kennykb Exp $ */
 
 #include "tclInt.h"
 
@@ -2061,7 +2061,7 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 		bytes = Tcl_GetString(pure);
 		length = numDigits;
 		while (numDigits--) {
-		    int digitOffset = bits % base;
+		    int digitOffset = (int) (bits % base);
 		    if (digitOffset > 9) {
 			bytes[numDigits] = 'a' + digitOffset - 10;
 		    } else {
@@ -2131,7 +2131,7 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 		length += precision;
 	    }
 	    /* Don't pass length modifiers ! */
-	    *p++ = ch;
+	    *p++ = (char) ch;
 	    *p = '\0';
 
 	    segment = Tcl_NewObj();

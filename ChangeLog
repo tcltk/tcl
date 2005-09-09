@@ -1,3 +1,8 @@
+2005-09-05  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclStringObj.c:  Added two missing casts to silence
+	messages from MSVC6.
+	
 2005-09-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:		New internal routines TclFormatObj()
