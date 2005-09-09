@@ -6,7 +6,7 @@
 # Copyright (c) 2004 by Donal K. Fellows.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tm.test,v 1.5 2004/11/05 09:21:46 dkf Exp $
+# RCS: @(#) $Id: tm.test,v 1.5.2.1 2005/09/09 18:48:40 dgp Exp $
 
 package require Tcl 8.5
 if {"::tcltest" ni [namespace children]} {
@@ -204,8 +204,8 @@ proc genpaths {base} {
     set base [file normalize $base]
     foreach {major minor} [split [info tclversion] .] break
     set results {}
-    lappend results [file join $base site-tcl]
     set base [file join $base tcl$major]
+    lappend results [file join $base site-tcl]
     for {set i 0} {$i <= $minor} {incr i} {
 	lappend results [file join $base ${major}.$i]
     }

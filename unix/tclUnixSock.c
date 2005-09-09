@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.9.2.2 2005/08/02 18:16:57 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.9.2.3 2005/09/09 18:48:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -36,7 +36,7 @@ static ProcessGlobalValue hostName =
  *----------------------------------------------------------------------
  */
 
-void
+static void
 InitializeHostName(valuePtr, lengthPtr, encodingPtr)
     char **valuePtr;
     int *lengthPtr;

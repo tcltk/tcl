@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.23.2.3 2005/08/02 18:16:07 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.23.2.4 2005/09/09 18:48:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1151,7 +1151,7 @@ GetKeys()
  *----------------------------------------------------------------------
  */
 
-void
+static void
 ReleaseKeys(clientData)
     ClientData clientData;
 {

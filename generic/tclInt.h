@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.37 2005/09/02 17:42:24 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.38 2005/09/09 18:48:40 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1727,6 +1727,10 @@ typedef struct List {
     int refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */
+    int canonicalFlag;		/* Set if the string representation was
+				 * derived from the list representation. May
+				 * be ignored if there is no string rep at
+				 * all.*/
     Tcl_Obj *elements;		/* First list element; the struct is grown to
 				 * accomodate all elements. */
 } List;
@@ -1981,6 +1985,9 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE int	TclAppendFormattedObjs(Tcl_Interp *interp,
+			    Tcl_Obj *appendObj, CONST char *format,
+			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void	TclAppendLimitedToObj(Tcl_Obj *objPtr,
 			    CONST char *bytes, int length, int limit,
 			    CONST char *ellipsis);
@@ -2031,6 +2038,7 @@ MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE double	TclFloor(mp_int* a);
 MODULE_SCOPE void	TclFormatNaN(double value, char* buffer);
+MODULE_SCOPE int	TclFormatObj TCL_VARARGS(Tcl_Interp *, arg1);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
@@ -2088,6 +2096,7 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
+MODULE_SCOPE int	TclObjPrintf TCL_VARARGS(Tcl_Interp *, arg1);
 MODULE_SCOPE int	TclParseBackslash(CONST char *src,
 			    int numBytes, int *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(CONST char *src, int numBytes,

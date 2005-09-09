@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.44.2.1 2005/08/02 18:16:56 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.44.2.2 2005/09/09 18:48:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -288,10 +288,12 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	d = opendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "couldn't read directory \"",
-		    Tcl_DStringValue(&dsOrig), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+	    if (interp != NULL) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "couldn't read directory \"",
+			Tcl_DStringValue(&dsOrig), "\": ",
+			Tcl_PosixError(interp), (char *) NULL);
+	    }
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_ERROR;
