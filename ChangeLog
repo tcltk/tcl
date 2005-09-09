@@ -1,4 +1,4 @@
-2005-09-05  Kevin Kenny  <kennykb@acm.org>
+2005-09-09  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclStringObj.c:  Added two missing casts to silence
 	messages from MSVC6.
