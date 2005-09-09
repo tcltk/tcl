@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.66 2005/08/26 13:26:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.67 2005/09/09 15:44:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1900,6 +1900,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
+#ifndef NEW_FORMAT
     char *format;		/* Used to read characters from the format
 				 * string. */
     int formatLen;		/* The length of the format string */
@@ -1932,7 +1933,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #define WIDE_VALUE	5
 #define MAX_FLOAT_SIZE	320
 
+#endif
     Tcl_Obj *resultPtr;		/* Where result is stored finally. */
+#ifndef NEW_FORMAT
     char staticBuf[MAX_FLOAT_SIZE + 1];
 				/* A static buffer to copy the format results
 				 * into */
@@ -1974,12 +1977,25 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
      * So, what happens here is to scan the format string one % group at a
      * time, making many individual calls to sprintf.
      */
+#endif
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg arg ...?");
 	return TCL_ERROR;
     }
 
+#ifdef NEW_FORMAT
+    resultPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(resultPtr);
+    if (TclAppendFormattedObjs(interp, resultPtr, Tcl_GetString(objv[1]),
+	    objc-2, objv+2) != TCL_OK) {
+	Tcl_DecrRefCount(resultPtr);
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, resultPtr);
+    Tcl_DecrRefCount(resultPtr);
+    return TCL_OK;
+#else
     format = Tcl_GetStringFromObj(objv[1], &formatLen);
     endPtr = format + formatLen;
     resultPtr = Tcl_NewObj();
@@ -2381,6 +2397,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
     }
     Tcl_DecrRefCount(resultPtr);
     return TCL_ERROR;
+#endif
 }
 
 /*
