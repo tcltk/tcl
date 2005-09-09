@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.248 2005/09/06 14:40:11 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.249 2005/09/09 15:44:27 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1950,6 +1950,9 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE int	TclAppendFormattedObjs(Tcl_Interp *interp,
+			    Tcl_Obj *appendObj, CONST char *format,
+			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void	TclAppendLimitedToObj(Tcl_Obj *objPtr,
 			    CONST char *bytes, int length, int limit,
 			    CONST char *ellipsis);
@@ -1998,6 +2001,7 @@ MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE void	TclFormatNaN(double value, char* buffer);
+MODULE_SCOPE int	TclFormatObj TCL_VARARGS(Tcl_Interp *, arg1);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
