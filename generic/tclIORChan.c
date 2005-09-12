@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.1.2.3 2005/09/09 18:48:40 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.1.2.4 2005/09/12 14:47:16 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1838,6 +1838,7 @@ RcEncodeEventMask (interp, objName, obj, mask)
 
 static Tcl_Obj*
 RcDecodeEventMask (mask)
+     int mask;
 {
     Tcl_Obj* evObj = Tcl_NewStringObj (((mask & RANDW) == RANDW) ?
 				       "read write" :
