@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.14 2005/07/26 04:12:32 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.15 2005/09/12 15:45:02 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3364,7 +3364,7 @@ FileThreadActionProc (instanceData, action)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 FileTruncateProc(instanceData, length)
     ClientData instanceData;
     Tcl_WideInt length;

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.13 2005/06/22 21:12:05 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.14 2005/09/12 15:40:28 dgp Exp $
 
 library tcl
 
@@ -2011,6 +2011,21 @@ declare 559 generic {
 declare 560 generic {
     Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
 	    Tcl_ChannelType *chanTypePtr)
+}
+
+# TIP#219 (Tcl Channel Reflection API) akupries
+
+declare 561 generic {
+    void Tcl_SetChannelErrorInterp (Tcl_Interp* interp, Tcl_Obj* msg)
+}
+declare 562 generic {
+    void Tcl_GetChannelErrorInterp (Tcl_Interp* interp, Tcl_Obj** msg)
+}
+declare 563 generic {
+    void Tcl_SetChannelError (Tcl_Channel chan, Tcl_Obj* msg)
+}
+declare 564 generic {
+    void Tcl_GetChannelError (Tcl_Channel chan, Tcl_Obj** msg)
 }
 
 ##############################################################################

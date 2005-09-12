@@ -1,3 +1,4 @@
+# -*- tcl -*-
 # Functionality covered: operation of all IO commands, and all procedures
 # defined in generic/tclIO.c.
 #
@@ -12,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.11 2005/04/29 22:40:44 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.12 2005/09/12 15:44:42 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -28,14 +29,14 @@ namespace eval ::tcl::test::io {
     namespace import ::tcltest::testConstraint
     namespace import ::tcltest::viewFile
 
-testConstraint testchannel [llength [info commands testchannel]]
-testConstraint exec [llength [info commands exec]]
-testConstraint openpipe 1
-testConstraint fileevent [llength [info commands fileevent]]
-testConstraint fcopy [llength [info commands fcopy]]
-testConstraint testfevent [llength [info commands testfevent]]
+testConstraint testchannel      [llength [info commands testchannel]]
+testConstraint exec             [llength [info commands exec]]
+testConstraint openpipe         1
+testConstraint fileevent        [llength [info commands fileevent]]
+testConstraint fcopy            [llength [info commands fcopy]]
+testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
-testConstraint testmainthread [llength [info commands testmainthread]]
+testConstraint testmainthread   [llength [info commands testmainthread]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -7110,6 +7111,266 @@ test io-61.1 {Reset eof state after changing the eof char} -setup {
 } -cleanup {
     removeFile eofchar
 } -result {77 = 23431}
+
+
+# Test the cutting and splicing of channels, this is incidentially the
+# attach/detach facility of package Thread, but __without any
+# safeguards__. It can also be used to emulate transfer of channels
+# between threads, and is used for that here.
+
+test io-70.0 {Cutting & Splicing channels} {testchannel} {
+    set f [makeFile {... dummy ...} cutsplice]
+    set c [open $f r]
+
+    set     res {}
+    lappend res [catch {seek $c 0 start}]
+    testchannel cut $c
+
+    lappend res [catch {seek $c 0 start}]
+    testchannel splice $c
+
+    lappend res [catch {seek $c 0 start}]
+    close $c
+
+    removeFile cutsplice
+
+    set res
+} {0 1 0}
+
+
+# Duplicate of code in "thread.test". Find a better way of doing this
+# without duplication. Maybe placement into a proc which transforms to
+# nop after the first call, and placement of its defintion in a
+# central location.
+
+testConstraint testthread [expr {[info commands testthread] != {}}]
+
+if {[testConstraint testthread]} {
+    testthread errorproc ThreadError
+
+    proc ThreadError {id info} {
+	global threadError
+	set threadError $info
+    }
+
+    proc ThreadNullError {id info} {
+	# ignore
+    }
+}
+
+test io-70.1 {Transfer channel} {testchannel testthread} {
+    set f [makeFile {... dummy ...} cutsplice]
+    set c [open $f r]
+
+    set     res {}
+    lappend res [catch {seek $c 0 start}]
+    testchannel cut $c
+    lappend res [catch {seek $c 0 start}]
+
+    set tid [testthread create]
+    testthread send $tid [list set c $c]
+    lappend res [testthread send $tid {
+	testchannel splice $c
+	set res [catch {seek $c 0 start}]
+	close $c
+	set res
+    }]
+
+    tcltest::threadReap
+    removeFile cutsplice
+
+    set res
+} {0 1 0}
+
+# ### ### ### ######### ######### #########
+
+foreach {n msg expected} {
+     0 {}                                 {}
+     1 {{message only}}                   {{message only}}
+     2 {-options x}                       {-options x}
+     3 {-options {x y} {the message}}     {-options {x y} {the message}}
+
+     4 {-code 1     -level 0 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+     5 {-code 0     -level 0 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+     6 {-code 1     -level 5 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+     7 {-code 0     -level 5 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+     8 {-code error -level 0 -f ba snarf} {-code error -level 0 -f ba snarf}
+     9 {-code ok    -level 0 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    10 {-code error -level 5 -f ba snarf} {-code error -level 0 -f ba snarf}
+    11 {-code ok    -level 5 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    12 {-code boss  -level 0 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    13 {-code boss  -level 5 -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    14 {-code 1     -level 0 -f ba}       {-code 1     -level 0 -f ba}
+    15 {-code 0     -level 0 -f ba}       {-code 1     -level 0 -f ba}
+    16 {-code 1     -level 5 -f ba}       {-code 1     -level 0 -f ba}
+    17 {-code 0     -level 5 -f ba}       {-code 1     -level 0 -f ba}
+    18 {-code error -level 0 -f ba}       {-code error -level 0 -f ba}
+    19 {-code ok    -level 0 -f ba}       {-code 1     -level 0 -f ba}
+    20 {-code error -level 5 -f ba}       {-code error -level 0 -f ba}
+    21 {-code ok    -level 5 -f ba}       {-code 1     -level 0 -f ba}
+    22 {-code boss  -level 0 -f ba}       {-code 1     -level 0 -f ba}
+    23 {-code boss  -level 5 -f ba}       {-code 1     -level 0 -f ba}
+    24 {-code 1     -level X -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    25 {-code 0     -level X -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    26 {-code error -level X -f ba snarf} {-code error -level 0 -f ba snarf}
+    27 {-code ok    -level X -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    28 {-code boss  -level X -f ba snarf} {-code 1     -level 0 -f ba snarf}
+    29 {-code 1     -level X -f ba}       {-code 1     -level 0 -f ba}
+    30 {-code 0     -level X -f ba}       {-code 1     -level 0 -f ba}
+    31 {-code error -level X -f ba}       {-code error -level 0 -f ba}
+    32 {-code ok    -level X -f ba}       {-code 1     -level 0 -f ba}
+    33 {-code boss  -level X -f ba}       {-code 1     -level 0 -f ba}
+
+    34 {-code 1 -code 1     -level 0 -f ba snarf} {-code 1 -code 1     -level 0 -f ba snarf}
+    35 {-code 1 -code 0     -level 0 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    36 {-code 1 -code 1     -level 5 -f ba snarf} {-code 1 -code 1     -level 0 -f ba snarf}
+    37 {-code 1 -code 0     -level 5 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    38 {-code 1 -code error -level 0 -f ba snarf} {-code 1 -code error -level 0 -f ba snarf}
+    39 {-code 1 -code ok    -level 0 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    40 {-code 1 -code error -level 5 -f ba snarf} {-code 1 -code error -level 0 -f ba snarf}
+    41 {-code 1 -code ok    -level 5 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    42 {-code 1 -code boss  -level 0 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    43 {-code 1 -code boss  -level 5 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    44 {-code 1 -code 1     -level 0 -f ba}       {-code 1 -code 1     -level 0 -f ba}
+    45 {-code 1 -code 0     -level 0 -f ba}       {-code 1             -level 0 -f ba}
+    46 {-code 1 -code 1     -level 5 -f ba}       {-code 1 -code 1     -level 0 -f ba}
+    47 {-code 1 -code 0     -level 5 -f ba}       {-code 1             -level 0 -f ba}
+    48 {-code 1 -code error -level 0 -f ba}       {-code 1 -code error -level 0 -f ba}
+    49 {-code 1 -code ok    -level 0 -f ba}       {-code 1             -level 0 -f ba}
+    50 {-code 1 -code error -level 5 -f ba}       {-code 1 -code error -level 0 -f ba}
+    51 {-code 1 -code ok    -level 5 -f ba}       {-code 1             -level 0 -f ba}
+    52 {-code 1 -code boss  -level 0 -f ba}       {-code 1             -level 0 -f ba}
+    53 {-code 1 -code boss  -level 5 -f ba}       {-code 1             -level 0 -f ba}
+    54 {-code 1 -code 1     -level X -f ba snarf} {-code 1 -code 1     -level 0 -f ba snarf}
+    55 {-code 1 -code 0     -level X -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    56 {-code 1 -code error -level X -f ba snarf} {-code 1 -code error -level 0 -f ba snarf}
+    57 {-code 1 -code ok    -level X -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    58 {-code 1 -code boss  -level X -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    59 {-code 1 -code 1     -level X -f ba}       {-code 1 -code 1     -level 0 -f ba}
+    60 {-code 1 -code 0     -level X -f ba}       {-code 1             -level 0 -f ba}
+    61 {-code 1 -code error -level X -f ba}       {-code 1 -code error -level 0 -f ba}
+    62 {-code 1 -code ok    -level X -f ba}       {-code 1             -level 0 -f ba}
+    63 {-code 1 -code boss  -level X -f ba}       {-code 1             -level 0 -f ba}
+
+    64 {-code 0 -code 1     -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    65 {-code 0 -code 0     -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    66 {-code 0 -code 1     -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    67 {-code 0 -code 0     -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    68 {-code 0 -code error -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    69 {-code 0 -code ok    -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    70 {-code 0 -code error -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    71 {-code 0 -code ok    -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    72 {-code 0 -code boss  -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    73 {-code 0 -code boss  -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    74 {-code 0 -code 1     -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    75 {-code 0 -code 0     -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    76 {-code 0 -code 1     -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    77 {-code 0 -code 0     -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    78 {-code 0 -code error -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    79 {-code 0 -code ok    -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    80 {-code 0 -code error -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    81 {-code 0 -code ok    -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    82 {-code 0 -code boss  -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    83 {-code 0 -code boss  -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    84 {-code 0 -code 1     -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    85 {-code 0 -code 0     -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    86 {-code 0 -code error -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    87 {-code 0 -code ok    -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    88 {-code 0 -code boss  -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    89 {-code 0 -code 1     -level X -f ba}       {-code 1 -level 0 -f ba}
+    90 {-code 0 -code 0     -level X -f ba}       {-code 1 -level 0 -f ba}
+    91 {-code 0 -code error -level X -f ba}       {-code 1 -level 0 -f ba}
+    92 {-code 0 -code ok    -level X -f ba}       {-code 1 -level 0 -f ba}
+    93 {-code 0 -code boss  -level X -f ba}       {-code 1 -level 0 -f ba}
+
+    94 {-code 1     -code 1 -level 0 -f ba snarf} {-code 1 -code 1     -level 0 -f ba snarf}
+    95 {-code 0     -code 1 -level 0 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    96 {-code 1     -code 1 -level 5 -f ba snarf} {-code 1 -code 1     -level 0 -f ba snarf}
+    97 {-code 0     -code 1 -level 5 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    98 {-code error -code 1 -level 0 -f ba snarf} {-code error -code 1 -level 0 -f ba snarf}
+    99 {-code ok    -code 1 -level 0 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    a0 {-code error -code 1 -level 5 -f ba snarf} {-code error -code 1 -level 0 -f ba snarf}
+    a1 {-code ok    -code 1 -level 5 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    a2 {-code boss  -code 1 -level 0 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    a3 {-code boss  -code 1 -level 5 -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    a4 {-code 1     -code 1 -level 0 -f ba}       {-code 1 -code 1     -level 0 -f ba}
+    a5 {-code 0     -code 1 -level 0 -f ba}       {-code 1             -level 0 -f ba}
+    a6 {-code 1     -code 1 -level 5 -f ba}       {-code 1 -code 1     -level 0 -f ba}
+    a7 {-code 0     -code 1 -level 5 -f ba}       {-code 1             -level 0 -f ba}
+    a8 {-code error -code 1 -level 0 -f ba}       {-code error -code 1 -level 0 -f ba}
+    a9 {-code ok    -code 1 -level 0 -f ba}       {-code 1             -level 0 -f ba}
+    b0 {-code error -code 1 -level 5 -f ba}       {-code error -code 1 -level 0 -f ba}
+    b1 {-code ok    -code 1 -level 5 -f ba}       {-code 1             -level 0 -f ba}
+    b2 {-code boss  -code 1 -level 0 -f ba}       {-code 1             -level 0 -f ba}
+    b3 {-code boss  -code 1 -level 5 -f ba}       {-code 1             -level 0 -f ba}
+    b4 {-code 1     -code 1 -level X -f ba snarf} {-code 1 -code 1     -level 0 -f ba snarf}
+    b5 {-code 0     -code 1 -level X -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    b6 {-code error -code 1 -level X -f ba snarf} {-code error -code 1 -level 0 -f ba snarf}
+    b7 {-code ok    -code 1 -level X -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    b8 {-code boss  -code 1 -level X -f ba snarf} {-code 1             -level 0 -f ba snarf}
+    b9 {-code 1     -code 1 -level X -f ba}       {-code 1 -code 1     -level 0 -f ba}
+    c0 {-code 0     -code 1 -level X -f ba}       {-code 1             -level 0 -f ba}
+    c1 {-code error -code 1 -level X -f ba}       {-code error -code 1 -level 0 -f ba}
+    c2 {-code ok    -code 1 -level X -f ba}       {-code 1             -level 0 -f ba}
+    c3 {-code boss  -code 1 -level X -f ba}       {-code 1             -level 0 -f ba}
+
+    c4 {-code 1     -code 0 -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    c5 {-code 0     -code 0 -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    c6 {-code 1     -code 0 -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    c7 {-code 0     -code 0 -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    c8 {-code error -code 0 -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    c9 {-code ok    -code 0 -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    d0 {-code error -code 0 -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    d1 {-code ok    -code 0 -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    d2 {-code boss  -code 0 -level 0 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    d3 {-code boss  -code 0 -level 5 -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    d4 {-code 1     -code 0 -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    d5 {-code 0     -code 0 -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    d6 {-code 1     -code 0 -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    d7 {-code 0     -code 0 -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    d8 {-code error -code 0 -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    d9 {-code ok    -code 0 -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    e0 {-code error -code 0 -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    e1 {-code ok    -code 0 -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    e2 {-code boss  -code 0 -level 0 -f ba}       {-code 1 -level 0 -f ba}
+    e3 {-code boss  -code 0 -level 5 -f ba}       {-code 1 -level 0 -f ba}
+    e4 {-code 1     -code 0 -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    e5 {-code 0     -code 0 -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    e6 {-code error -code 0 -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    e7 {-code ok    -code 0 -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    e8 {-code boss  -code 0 -level X -f ba snarf} {-code 1 -level 0 -f ba snarf}
+    e9 {-code 1     -code 0 -level X -f ba}       {-code 1 -level 0 -f ba}
+    f0 {-code 0     -code 0 -level X -f ba}       {-code 1 -level 0 -f ba}
+    f1 {-code error -code 0 -level X -f ba}       {-code 1 -level 0 -f ba}
+    f2 {-code ok    -code 0 -level X -f ba}       {-code 1 -level 0 -f ba}
+    f3 {-code boss  -code 0 -level X -f ba}       {-code 1 -level 0 -f ba}
+} {
+    test io-71.$n {Tcl_SetChannelError} {testchannel} {
+
+	set f [makeFile {... dummy ...} cutsplice]
+	set c [open $f r]
+
+	set res [testchannel setchannelerror $c [lrange $msg 0 end]]
+	close $c
+	removeFile cutsplice
+
+	set res
+    } [lrange $expected 0 end]
+
+    test io-72.$n {Tcl_SetChannelErrorInterp} {testchannel} {
+
+	set f [makeFile {... dummy ...} cutsplice]
+	set c [open $f r]
+
+	set res [testchannel setchannelerrorinterp $c [lrange $msg 0 end]]
+	close $c
+	removeFile cutsplice
+
+	set res
+    } [lrange $expected 0 end]
+}
+
+# ### ### ### ######### ######### #########
 
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script foo \

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.10 2005/07/26 04:11:54 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.11 2005/09/12 15:40:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -467,7 +467,7 @@ TclSetLibraryPath(path)
  *---------------------------------------------------------------------------
  */
 
-void
+static void
 FillEncodingFileMap()
 {
     int i, numDirs = 0;
@@ -3242,7 +3242,7 @@ unilen(src)
  *-------------------------------------------------------------------------
  */
 
-void
+static void
 InitializeEncodingSearchPath(valuePtr, lengthPtr, encodingPtr)
     char **valuePtr;
     int *lengthPtr;

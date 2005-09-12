@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.12 2005/08/15 17:23:22 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.13 2005/09/12 15:45:02 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -242,6 +242,7 @@ GENERIC_OBJS = \
 	tclIO.$(OBJEXT) \
 	tclIOCmd.$(OBJEXT) \
 	tclIOGT.$(OBJEXT) \
+	tclIORChan.$(OBJEXT) \
 	tclIOSock.$(OBJEXT) \
 	tclIOUtil.$(OBJEXT) \
 	tclLink.$(OBJEXT) \

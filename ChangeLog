@@ -1,4 +1,206 @@
-2004-08-12  Kevin Kenny  <kennykb@acm.org>
+2005-09-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (TclAppendFormattedObjs):	Bug fix:
+	make sure %ld formats force the collection of a wide value, when
+	the value could be a different long.
+
+2005-09-09  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIORChan.c (RcDecodeEventMask): Added missing type
+	  declaration for the parameter 'mask'. This fixes the [SF Tcl Bug
+	  1286256]. The other warning can be removed only by removing the
+	  panic/return code.
+
+2005-09-09  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclStringObj.c:  Added two missing casts to silence
+	messages from MSVC6.
+	
+2005-09-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:		New internal routine TclObjPrintf()
+	* generic/tclStringObj.c:	is similar to TclFormatObj() but
+	accepts arguments in non-Tcl_Obj format.
+
+	* generic/tclInt.h:		New internal routines TclFormatObj()
+	* generic/tclStringObj.c:	and TclAppendFormattedObjs() to offer
+	sprintf()-like means to append to Tcl_Obj.  Work in progress toward
+	[RFE 572392].
+
+	* generic/tclCmdAH.c:	Compiler directive NEW_FORMAT when #define'd
+	directs the [format] command to be implemented in terms of the new
+	TclAppendFormattedObjs() routine.
+
+2005-09-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	TIP#254 IMPLEMENTATION
+
+	* generic/tclLink.c (LinkTraceProc,ObjValue): Added many new of C var
+	* generic/tcl.h:			      to link to, making it
+	* doc/LinkVar.3:			      easier to seamlessly
+	* generic/tclTest.c (TestlinkCmd):	      couple C code and Tcl
+	* tests/link.test:			      scripts in an
+	application. [Patch 1242844]
+
+2005-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtf.c (Tcl_UniCharToUtf):	Corrected handling of negative
+	* tests/utf.test (utf-1.5):	Tcl_UniChar input value.  Incorrect
+	handling was producing byte sequences outside of Tcl's legal internal
+	encoding.  [Bug 1283976].
+
+2005-09-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInt.h (List): Added flag to keep track of whether a list
+	* generic/tclListObj.c:    with a string rep is provably canonical.
+	* generic/tclUtil.c (Tcl_ConcatObj):  Do efficient concatenation and
+	* generic/tclBasic.c (Tcl_EvalObjEx): evaluation when the list is
+	canonical, and not just when the list is pure. This should make the
+	"pure list" hacking introduced in 8.3 much more robust.
+
+2005-09-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclObj.c (pendingObjDataKey): Added missing 'static' to stop
+	symbol from leaking outside the Tcl library. [Bug 1263012]
+
+2005-09-01  Andreas Kupries <andreask@activestate.com>
+
+	* unix/tclUnixSock.c (InitializeHostName): Synchronized use of
+	  static modifier in declaration and definition of function.
+
+	* unix/tclUnixChan.c (FileTruncateProc): Synchronized use of
+	  static modifier in declaration and definition of function.
+
+	* generic/tclResult.c (ReleaseKeys): Synchronized use of static
+	  modifier in declaration and definition of function.
+
+	* generic/tclListObj.c (NewListIntRep): Synchronized use of static
+	  modifier in declaration and definition of function.
+
+	* generic/tclEncoding.c (InitializeEncodingSearchPath):
+	  Synchronized use of static modifier in declaration and
+	  definition of function.
+
+	* generic/tclEncoding.c (FillEncodingFileMap): Synchronized use of
+	  static modifier in declaration and definition of function.
+
+	* generic/tclIORChan.c (RcNewHandle): Synchronized use of static
+	  modifier in declaration and definition of function.
+
+2005-08-31  Vince Darley <vincentdarley@sourceforge.net>
+
+	* doc/FileSystem.3: 
+	* unix/tclUnixFile.c:
+	* windows/tclWinFile.c: clarify that Tcl_FSMatchInDirectory may
+	be called with a NULL interpreter, and fix the code so this is
+	allowed.  Tcl's core itself (tclEncoding.c:FillEncodingFileMap())
+	calls this with a NULL interpreter.
+
+2005-08-29  Andreas Kupries <andreask@activestate.com>
+
+	* library/tm.tcl (::tcl::tm::roots): Accepted Don Porter's patch
+	  for [Tcl SF Bug 1189657]. Syncs the implementation to the
+	  specification (TIP #189).
+
+2005-08-29  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c (ExprMathFunc): Restored "round away from
+	* tests/expr.test (expr-46.*):       zero" behaviour to the
+	                                     "round" function.  Added 
+	test cases for the behavior, including the awkward case of a
+	number whose fractional part is 1/2-1/2ulp. [Bug 1275043]
+	
+2005-08-26  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIO.c: Moved Tcl_{Cut,Splice}Channel to
+	  {Cut,Splice}Channel for internal use, and created new public
+	  functions for Tcl_{Cut,Splice}Channel which walk the whole stack
+	  of transformations and invoke the necessary thread actions.
+	  Added code to Tcl_(Un)StackChannel to properly invoke the thread
+	  actions when pushing and popping transformations on/from a
+	  channel.
+
+2005-08-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (NamespaceEnsembleCmd): Reset the result after
+	creating an ensemble to clear any result object sharing (potentially
+	caused by delete traces) so that we can safely return the name of the
+	ensemble. Previously, this caused crashes in Snit's test suite.
+
+2005-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclListObj.c (UpdateStringOfList): Stop uncontrolled and
+	unsafe crashes from happening when working with very large string
+	representations. [Bug 1267380]
+
+	* generic/tclExecute.c (TEBC:INST_DICT_LAPPEND): Stop dropping a
+	duplicated object on the floor, which was a memory leak (and a wrong
+	result too). Thanks to Andreas Kupries for reporting this.
+
+2005-08-24  Andreas Kupries <andreask@activestate.com>
+
+	TIP#219 IMPLEMENTATION
+
+	* doc/SetChanErr.3: ** New File **. Documentation of the new
+	  channel API functions.
+	* generic/tcl.decls:  Stub declarations of the new channel API.
+	* generic/tclDecls.h: Regenerated
+	* generic/tclStubInit.c:
+
+	* tclIORChan.c: ** New File **. Implementation of the reflected
+	  channel.
+	* generic/tclInt.h: Integration of reflected channel and new error
+	* generic/tclIO.c:  propagation into the generic I/O core.
+	* generic/tclIOCmd.c:
+	* generic/tclIO.h:
+	* library/init.tcl:
+
+	* tests/io.test:    Extended testsuite.
+	* tests/ioCmd.test:
+	* tests/chan.test:
+	* generic/tclTest.c:
+	* generic/tclThreadTest.c:
+
+	* unix/Makefile.in: Integration into the build machinery.
+	* win/Makefile.in:
+	* win/Makefile.vc:
+
+2005-08-24  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (Tcl_DoubleDigits): Fixed the corner cases of
+	* tests/binary.test (binary-65.*)         formatting floating
+	point numbers with the largest and smallest possible significands,
+	and added test cases for them.
+
+2005-08-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure.in:
+	* win/configure: Regen.
+	* win/configure.in: Update minimum autoconf version
+	to 2.59.
+
+2005-08-22  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclConfig.h.in: autoheader-2.59.
+
+2005-08-17  George Peter Staplin <GeorgePS@XMission.com>
+
+	* generic/tclBasic.c: eliminate a namespace clash caused by
+	BuiltinFuncTable not being static.
+
+	* generic/tclObj.c: fix a namespace clash caused by a missing
+	static for pendingObjData.
+
+2005-08-17  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclEvent.c (Tcl_Finalize): Removed a copy-and-paste
+	accident that caused a (mostly harmless) double finalize of the
+	load and filesystem subsystems.
+	* tests/clock.test: Eliminated the bad test clock-43.1, and split
+	clock-50.1 into two tests, with a more permissive check on the
+	error message for an out-of-range value.
+
+2005-08-12  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (MktimeObjCmd):
 	* library/clock.tcl (GetSystemTimeZone, LoadZoneinfoFile,
@@ -8,8 +210,8 @@
 	Tcl's time can track system time on Linux even if TZ is not set.
 	Changed ::tcl::clock::Mktime to check for failure, and added a
 	test case that mimics failure but is really success.
-	
-2004-08-11  Kevin Kenny  <kennykb@acm.org>
+
+2005-08-11  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c:          Eliminated the USE_THREAD_STORAGE
 	* generic/tclInt.h:            option (which is on in every build
@@ -24,7 +226,7 @@
 	* win/rules.vc:                just a little bit cleaner.)
 	* win/tcl.m4:
 	* win/tclWinThrd.c:
-	
+
 2005-08-10  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclEvent.c (Tcl_Finalize): Pushed Tcl_FinalizeLoad and
@@ -37,7 +239,7 @@
 	* tests/expr.test (expr-3.8):             'unix' because they get
 	                                          stack overflows on Win32
 	                                          threaded builds,
-	
+
 2005-08-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to [file rootname] bug in optimized

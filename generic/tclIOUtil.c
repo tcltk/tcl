@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.18 2005/07/26 04:11:57 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.19 2005/09/12 15:40:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1045,7 +1045,8 @@ Tcl_FSUnregister(fsPtr)
 
 int
 Tcl_FSMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
-    Tcl_Interp *interp;		/* Interpreter to receive error messages. */
+    Tcl_Interp *interp;		/* Interpreter to receive error 
+                       		 * messages, but may be NULL. */
     Tcl_Obj *resultPtr;		/* List object to receive results. */
     Tcl_Obj *pathPtr;		/* Contains path to directory to search. */
     CONST char *pattern;	/* Pattern to match against. */

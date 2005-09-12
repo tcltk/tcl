@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.13 2005/08/02 16:38:17 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.14 2005/09/12 15:40:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -29,10 +29,10 @@
  */
 
 typedef struct SortElement {
-    Tcl_Obj *objPtr;			/* Object being sorted. */
-    int count;				/* number of same elements in list */
-    struct SortElement *nextPtr;	/* Next element in the list, or NULL
-					 * for end of list. */
+    Tcl_Obj *objPtr;		/* Object being sorted. */
+    int count;			/* number of same elements in list */
+    struct SortElement *nextPtr;/* Next element in the list, or NULL for end
+				 * of list. */
 } SortElement;
 
 /*
@@ -40,9 +40,8 @@ typedef struct SortElement {
  * commands to facilitate the "-nocase" option.
  */
 
-typedef int (*SortStrCmpFn_t) _ANSI_ARGS_((const char *, const char *));
-typedef int (*SortMemCmpFn_t) _ANSI_ARGS_((const void *, const void *,
-			    size_t));
+typedef int (*SortStrCmpFn_t) (const char *, const char *);
+typedef int (*SortMemCmpFn_t) (const void *, const void *, size_t);
 
 /*
  * The "lsort" command needs to pass certain information down to the function
@@ -53,12 +52,12 @@ typedef int (*SortMemCmpFn_t) _ANSI_ARGS_((const void *, const void *,
 
 typedef struct SortInfo {
     int isIncreasing;		/* Nonzero means sort in increasing order. */
-    int sortMode;		/* The sort mode.  One of SORTMODE_* values
+    int sortMode;		/* The sort mode. One of SORTMODE_* values
 				 * defined below */
     SortStrCmpFn_t strCmpFn;	/* Basic string compare command (used with
 				 * ASCII mode). */
     Tcl_Obj *compareCmdPtr;	/* The Tcl comparison command when sortMode is
-				 * SORTMODE_COMMAND.  Pre-initialized to hold
+				 * SORTMODE_COMMAND. Pre-initialized to hold
 				 * base of command.*/
     int *indexv;		/* If the -index option was specified, this
 				 * holds the indexes contained in the list
@@ -70,7 +69,7 @@ typedef struct SortInfo {
     int singleIndex;		/* Static space for common index case. */
     Tcl_Interp *interp;		/* The interpreter in which the sort is being
 				 * done. */
-    int resultCode;		/* Completion code for the lsort command.  If
+    int resultCode;		/* Completion code for the lsort command. If
 				 * an error occurs during the sort this is
 				 * changed from TCL_OK to TCL_ERROR. */
 } SortInfo;
@@ -87,101 +86,77 @@ typedef struct SortInfo {
 #define SORTMODE_DICTIONARY	4
 
 /*
- * Magic values for the index field of the SortInfo structure.  Note that the
+ * Magic values for the index field of the SortInfo structure. Note that the
  * index "end-1" will be translated to SORTIDX_END-1, etc.
  */
 
-#define SORTIDX_NONE	-1		/* Not indexed; use whole value. */
-#define SORTIDX_END	-2		/* Indexed from end. */
+#define SORTIDX_NONE	-1	/* Not indexed; use whole value. */
+#define SORTIDX_END	-2	/* Indexed from end. */
 
 /*
  * Forward declarations for procedures defined in this file:
  */
 
-static void		AppendLocals _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *listPtr, CONST char *pattern,
-			    int includeLinks));
-static int		DictionaryCompare _ANSI_ARGS_((char *left,
-			    char *right));
-static int		InfoArgsCmd _ANSI_ARGS_((ClientData dummy,
+static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    CONST char *pattern, int includeLinks);
+static int		DictionaryCompare(char *left, char *right);
+static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoCmdCountCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoCommandsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoCompleteCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoDefaultCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoFunctionsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoGlobalsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoHostnameCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoLevelCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoLibraryCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoLoadedCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoNameOfExecutableCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoBodyCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoCmdCountCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoCommandsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoCompleteCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoDefaultCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoExistsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoFunctionsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoGlobalsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoHostnameCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoLevelCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoLibraryCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoLoadedCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoLocalsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoNameOfExecutableCmd _ANSI_ARGS_((
-			    ClientData dummy, Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoPatchLevelCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoProcsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoScriptCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoSharedlibCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoTclVersionCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		InfoVarsCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static SortElement *    MergeSort _ANSI_ARGS_((SortElement *headPt,
-			    SortInfo *infoPtr));
-static SortElement *    MergeLists _ANSI_ARGS_((SortElement *leftPtr,
-			    SortElement *rightPtr, SortInfo *infoPtr));
-static int		SortCompare _ANSI_ARGS_((Tcl_Obj *firstPtr,
-			    Tcl_Obj *second, SortInfo *infoPtr));
-static Tcl_Obj *	SelectObjFromSublist _ANSI_ARGS_((Tcl_Obj *firstPtr,
-			    SortInfo *infoPtr));
-
+			    Tcl_Obj *CONST objv[]);
+static int		InfoPatchLevelCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoProcsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoScriptCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		InfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static SortElement *    MergeSort(SortElement *headPt, SortInfo *infoPtr);
+static SortElement *    MergeLists(SortElement *leftPtr, SortElement *rightPtr,
+			    SortInfo *infoPtr);
+static int		SortCompare(Tcl_Obj *firstPtr, Tcl_Obj *second,
+			    SortInfo *infoPtr);
+static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
+			    SortInfo *infoPtr);
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_IfObjCmd --
  *
- *	This procedure is invoked to process the "if" Tcl command.  See the
+ *	This procedure is invoked to process the "if" Tcl command. See the
  *	user documentation for details on what it does.
  *
  *	With the bytecode compiler, this procedure is only called when a
@@ -214,7 +189,7 @@ Tcl_IfObjCmd(dummy, interp, objc, objv)
 	/*
 	 * At this point in the loop, objv and objc refer to an expression to
 	 * test, either for the main expression or an expression following an
-	 * "elseif".  The arguments after the expression must be "then"
+	 * "elseif". The arguments after the expression must be "then"
 	 * (optional) and a script to execute if the expression is true.
 	 */
 
@@ -251,7 +226,7 @@ Tcl_IfObjCmd(dummy, interp, objc, objv)
 	}
 
 	/*
-	 * The expression evaluated to false.  Skip the command, then see if
+	 * The expression evaluated to false. Skip the command, then see if
 	 * there is an "else" or "elseif" clause.
 	 */
 
@@ -271,8 +246,8 @@ Tcl_IfObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Couldn't find a "then" or "elseif" clause to execute.  Check now for an
-     * "else" clause.  We know that there's at least one more argument when we
+     * Couldn't find a "then" or "elseif" clause to execute. Check now for an
+     * "else" clause. We know that there's at least one more argument when we
      * get here.
      */
 
@@ -302,7 +277,7 @@ Tcl_IfObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_IncrObjCmd --
  *
- *	This procedure is invoked to process the "incr" Tcl command.  See the
+ *	This procedure is invoked to process the "incr" Tcl command. See the
  *	user documentation for details on what it does.
  *
  *	With the bytecode compiler, this procedure is only called when a
@@ -400,7 +375,7 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_InfoObjCmd --
  *
- *	This procedure is invoked to process the "info" Tcl command.  See the
+ *	This procedure is invoked to process the "info" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -635,7 +610,7 @@ InfoBodyCmd(dummy, interp, objc, objv)
     if (bodyPtr->bytes == NULL) {
 	/*
 	 * The string rep might not be valid if the procedure has never been
-	 * run before.  [Bug #545644]
+	 * run before. [Bug #545644]
 	 */
 
 	(void) Tcl_GetString(bodyPtr);
@@ -691,10 +666,10 @@ InfoCmdCountCmd(dummy, interp, objc, objv)
  * InfoCommandsCmd --
  *
  *	Called to implement the "info commands" command that returns the list
- *	of commands in the interpreter that match an optional pattern.  The
+ *	of commands in the interpreter that match an optional pattern. The
  *	pattern, if any, consists of an optional sequence of namespace names
  *	separated by "::" qualifiers, which is followed by a glob-style
- *	pattern that restricts which commands are returned.  Handles the
+ *	pattern that restricts which commands are returned. Handles the
  *	following syntax:
  *
  *	    info commands ?pattern?
@@ -722,9 +697,9 @@ InfoCommandsCmd(dummy, interp, objc, objv)
     Tcl_HashSearch search;
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
-    int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
+    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     Tcl_Command cmd;
     int i;
 
@@ -1718,10 +1693,10 @@ InfoPatchLevelCmd(dummy, interp, objc, objv)
  * InfoProcsCmd --
  *
  *	Called to implement the "info procs" command that returns the list of
- *	procedures in the interpreter that match an optional pattern.  The
+ *	procedures in the interpreter that match an optional pattern. The
  *	pattern, if any, consists of an optional sequence of namespace names
  *	separated by "::" qualifiers, which is followed by a glob-style
- *	pattern that restricts which commands are returned.  Handles the
+ *	pattern that restricts which commands are returned. Handles the
  *	following syntax:
  *
  *	    info procs ?pattern?
@@ -1749,9 +1724,9 @@ InfoProcsCmd(dummy, interp, objc, objv)
 #ifdef INFO_PROCS_SEARCH_GLOBAL_NS
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
 #endif
-    Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
-    int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
+    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
@@ -1842,7 +1817,7 @@ InfoProcsCmd(dummy, interp, objc, objv)
 			goto procOK;
 		    }
 		} else {
-		  procOK:
+		procOK:
 		    if (specificNsInPattern) {
 			elemObjPtr = Tcl_NewObj();
 			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
@@ -1868,7 +1843,7 @@ InfoProcsCmd(dummy, interp, objc, objv)
 	/*
 	 * If "info procs" worked like "info commands", returning the commands
 	 * also seen in the global namespace, then you would include this
-	 * code.  As this could break backwards compatibilty with 8.0-8.2, we
+	 * code. As this could break backwards compatibilty with 8.0-8.2, we
 	 * decided not to "fix" it in 8.3, leaving the behavior slightly
 	 * different.
 	 */
@@ -1918,7 +1893,7 @@ InfoProcsCmd(dummy, interp, objc, objv)
  *
  * Side effects:
  *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.  It may change the internal
+ *	error, the result is an error message. It may change the internal
  *	script filename.
  *
  *----------------------------------------------------------------------
@@ -2024,7 +1999,7 @@ InfoTclVersionCmd(dummy, interp, objc, objv)
     }
 
     version = Tcl_GetVar2Ex(interp, "tcl_version", NULL,
-	(TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG));
+	    (TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG));
     if (version != NULL) {
 	Tcl_SetObjResult(interp, version);
 	return TCL_OK;
@@ -2038,10 +2013,10 @@ InfoTclVersionCmd(dummy, interp, objc, objv)
  * InfoVarsCmd --
  *
  *	Called to implement the "info vars" command that returns the list of
- *	variables in the interpreter that match an optional pattern.  The
+ *	variables in the interpreter that match an optional pattern. The
  *	pattern, if any, consists of an optional sequence of namespace names
  *	separated by "::" qualifiers, which is followed by a glob-style
- *	pattern that restricts which variables are returned.  Handles the
+ *	pattern that restricts which variables are returned. Handles the
  *	following syntax:
  *
  *	    info vars ?pattern?
@@ -2071,9 +2046,9 @@ InfoVarsCmd(dummy, interp, objc, objv)
     Var *varPtr;
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
-    int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
+    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
 
     /*
      * Get the pattern and find the "effective namespace" in which to list
@@ -2101,7 +2076,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
 		&simplePattern);
 
-	if (nsPtr != NULL) {	/* we successfully found the pattern's ns */
+	if (nsPtr != NULL) {	/* We successfully found the pattern's ns */
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
@@ -2175,7 +2150,8 @@ InfoVarsCmd(dummy, interp, objc, objv)
 			    || Tcl_StringMatch(varName, simplePattern)) {
 			if (specificNsInPattern) {
 			    elemObjPtr = Tcl_NewObj();
-			    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,				    elemObjPtr);
+			    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
+				    elemObjPtr);
 			} else {
 			    elemObjPtr = Tcl_NewStringObj(varName, -1);
 			}
@@ -2228,7 +2204,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
  *
  * Tcl_JoinObjCmd --
  *
- *	This procedure is invoked to process the "join" Tcl command.  See the
+ *	This procedure is invoked to process the "join" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -2375,7 +2351,7 @@ Tcl_LassignObjCmd(dummy, interp, objc, objv)
      * Now place a list of any values left over into the interpreter result.
      *
      * First, figure out how many values were not assigned by getting the
-     * length of the list.  Note that I do not expect this operation to fail.
+     * length of the list. Note that I do not expect this operation to fail.
      */
 
     if (Tcl_ListObjGetElements(interp, objv[1],
@@ -2385,7 +2361,7 @@ Tcl_LassignObjCmd(dummy, interp, objc, objv)
 
     if (listObjc > objc-2) {
 	/*
-	 * OK, there were left-overs.  Make a list of them and slap that back
+	 * OK, there were left-overs. Make a list of them and slap that back
 	 * in the interpreter result.
 	 */
 
@@ -2431,7 +2407,7 @@ Tcl_LindexObjCmd(dummy, interp, objc, objv)
 
     /*
      * If objc==3, then objv[2] may be either a single index or a list of
-     * indices: go to TclLindexList to determine which.  If objc>=4, or
+     * indices: go to TclLindexList to determine which. If objc>=4, or
      * objc==2, then objv[2 .. objc-2] are all single indices and processed as
      * such in TclLindexFlat.
      */
@@ -2471,11 +2447,11 @@ Tcl_LindexObjCmd(dummy, interp, objc, objv)
  *
  * Notes:
  *	If objv[1] can be parsed as a list, TclLindexList handles extraction
- *	of the desired element locally.  Otherwise, it invokes TclLindexFlat
- *	to treat objv[1] as a scalar.
+ *	of the desired element locally. Otherwise, it invokes TclLindexFlat to
+ *	treat objv[1] as a scalar.
  *
  *	The reference count of the returned object includes one reference
- *	corresponding to the pointer returned.  Thus, the calling code will
+ *	corresponding to the pointer returned. Thus, the calling code will
  *	usually do something like:
  *		Tcl_SetObjResult(interp, result);
  *		Tcl_DecrRefCount(result);
@@ -2518,7 +2494,7 @@ TclLindexList(interp, listPtr, argPtr)
     if (Tcl_ListObjGetElements(NULL, argPtr, &indexCount, &indices) != TCL_OK){
 	/*
 	 * argPtr designates something that is neither an index nor a
-	 * well-formed list.  Report the error via TclLindexFlat.
+	 * well-formed list. Report the error via TclLindexFlat.
 	 */
 
 	return TclLindexFlat(interp, listPtr, 1, &argPtr);
@@ -2573,7 +2549,7 @@ TclLindexList(interp, listPtr, argPtr)
 	}
 
 	/*
-	 * Make sure listPtr still refers to a list object.  If it shared a
+	 * Make sure listPtr still refers to a list object. If it shared a
 	 * Tcl_Obj structure with the arguments, then it might have just been
 	 * converted to something else.
 	 */
@@ -2598,7 +2574,7 @@ TclLindexList(interp, listPtr, argPtr)
 
 	/*
 	 * The work we did above may have caused the internal rep of *argPtr
-	 * to change to something else.  Get it back.
+	 * to change to something else. Get it back.
 	 */
 
 	result = Tcl_ListObjGetElements(interp, argPtr, &indexCount, &indices);
@@ -2613,7 +2589,7 @@ TclLindexList(interp, listPtr, argPtr)
     }
 
     /*
-     * Return the last object extracted.  Its reference count will include the
+     * Return the last object extracted. Its reference count will include the
      * reference being returned.
      */
 
@@ -2636,7 +2612,7 @@ TclLindexList(interp, listPtr, argPtr)
  *
  * Notes:
  *	This procedure is called from either tclExecute.c or Tcl_LindexObjCmd
- *	whenever either is presented with objc==2 or objc>=4.  It is also
+ *	whenever either is presented with objc==2 or objc>=4. It is also
  *	called from TclLindexList for the objc==3 case once it is determined
  *	that objv[2] cannot be parsed as a list.
  *
@@ -2659,7 +2635,7 @@ TclLindexFlat(interp, listPtr, indexCount, indexArray)
     Tcl_Obj** elemPtrs;		/* Array of pointers to the elements of the
 				 * current list. */
     int index;			/* Parsed version of the current element of
-				 * indexArray.  */
+				 * indexArray. */
     Tcl_Obj* oldListPtr;	/* Temporary to hold listPtr so that its ref
 				 * count can be decremented. */
 
@@ -2707,9 +2683,9 @@ TclLindexFlat(interp, listPtr, indexCount, indexArray)
 	}
 
 	/*
-	 * Make sure listPtr still refers to a list object.  It might have
-	 * been converted to something else above if objv[1] overlaps with one
-	 * of the other parameters.
+	 * Make sure listPtr still refers to a list object. It might have been
+	 * converted to something else above if objv[1] overlaps with one of
+	 * the other parameters.
 	 */
 
 	if (listPtr->typePtr != &tclListType) {
@@ -2774,7 +2750,7 @@ Tcl_LinsertObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Get the index.  "end" is interpreted to be the index after the last
+     * Get the index. "end" is interpreted to be the index after the last
      * element, such that using it will cause any inserted elements to be
      * appended to the list.
      */
@@ -2829,7 +2805,7 @@ Tcl_LinsertObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ListObjCmd --
  *
- *	This procedure is invoked to process the "list" Tcl command.  See the
+ *	This procedure is invoked to process the "list" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -2866,7 +2842,7 @@ Tcl_ListObjCmd(dummy, interp, objc, objv)
  * Tcl_LlengthObjCmd --
  *
  *	This object-based procedure is invoked to process the "llength" Tcl
- *	command.  See the user documentation for details on what it does.
+ *	command. See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -2911,8 +2887,8 @@ Tcl_LlengthObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_LrangeObjCmd --
  *
- *	This procedure is invoked to process the "lrange" Tcl command.  See
- *	the user documentation for details on what it does.
+ *	This procedure is invoked to process the "lrange" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -3005,7 +2981,7 @@ Tcl_LrangeObjCmd(notUsed, interp, objc, objv)
  *
  * Tcl_LrepeatObjCmd --
  *
- *	This procedure is invoked to process the "lrepeat" Tcl command.  See
+ *	This procedure is invoked to process the "lrepeat" Tcl command. See
  *	the user documentation for details on what it does.
  *
  * Results:
@@ -3020,10 +2996,11 @@ Tcl_LrangeObjCmd(notUsed, interp, objc, objv)
 	/* ARGSUSED */
 int
 Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    register int objc;			/* Number of arguments. */
-    register Tcl_Obj *CONST objv[];	/* The argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    register int objc;		/* Number of arguments. */
+    register Tcl_Obj *CONST objv[];
+				/* The argument objects. */
 {
     int elementCount, i, result;
     Tcl_Obj *listPtr, **dataArray;
@@ -3066,7 +3043,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
     dataArray = &listRepPtr->elements;
 
     /*
-     * Set the elements.  Note that we handle the common degenerate case of a
+     * Set the elements. Note that we handle the common degenerate case of a
      * single value being repeated separately to permit the compiler as much
      * room as possible to optimize a loop that might be run a very large
      * number of times.
@@ -3135,7 +3112,7 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Get the first and last indexes.  "end" is interpreted to be the index
+     * Get the first and last indexes. "end" is interpreted to be the index
      * for the last element, such that using it will cause that element to be
      * included for deletion.
      */
@@ -3150,13 +3127,13 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
 	return result;
     }
 
-    if (first < 0)  {
+    if (first < 0) {
     	first = 0;
     }
 
     /*
      * Complain if the user asked for a start element that is greater than the
-     * list length.  This won't ever trigger for the "end*" case as that will
+     * list length. This won't ever trigger for the "end*" case as that will
      * be properly constrained by TclGetIntForIndex because we use listLen-1
      * (to allow for replacing the last elem).
      */
@@ -3213,7 +3190,7 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_LsearchObjCmd --
  *
- *	This procedure is invoked to process the "lsearch" Tcl command.  See
+ *	This procedure is invoked to process the "lsearch" Tcl command. See
  *	the user documentation for details on what it does.
  *
  * Results:
@@ -3364,9 +3341,9 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    i++;
 	    if (objv[i] == objv[objc - 2]) {
 		/*
-		 * Take copy to prevent shimmering problems.  Note that it
+		 * Take copy to prevent shimmering problems. Note that it
 		 * does not matter if the index obj is also a component of the
-		 * list being searched.  We only need to copy where the list
+		 * list being searched. We only need to copy where the list
 		 * and the index are one-and-the-same.
 		 */
 
@@ -3394,7 +3371,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 
 	    /*
 	     * Store the extracted indices for processing by sublist
-	     * extraction.  Note that we don't do this using objects because
+	     * extraction. Note that we don't do this using objects because
 	     * that has shimmering problems.
 	     */
 
@@ -3419,7 +3396,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    }
 
 	    /*
-	     * Fill the array by parsing each index.  We don't know whether
+	     * Fill the array by parsing each index. We don't know whether
 	     * their scale is sensible yet, but we at least perform the
 	     * syntactic check here.
 	     */
@@ -3556,7 +3533,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 
     if ((enum modes) mode == SORTED && !allMatches && !negatedMatch) {
 	/*
-	 * If the data is sorted, we can do a more intelligent search.  Note
+	 * If the data is sorted, we can do a more intelligent search. Note
 	 * that there is no point in being smart when -all was specified; in
 	 * that case, we have to look at all items anyway, and there is no
 	 * sense in doing this when the match sense is inverted.
@@ -3618,13 +3595,13 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    if (match == 0) {
 		/*
 		 * Normally, binary search is written to stop when it finds a
-		 * match.  If there are duplicates of an element in the list,
+		 * match. If there are duplicates of an element in the list,
 		 * our first match might not be the first occurance.
-		 * Consider:  0 0 0 1 1 1 2 2 2
+		 * Consider: 0 0 0 1 1 1 2 2 2
 		 *
 		 * To maintain consistancy with standard lsearch semantics, we
 		 * must find the leftmost occurance of the pattern in the
-		 * list. Thus we don't just stop searching here.  This
+		 * list. Thus we don't just stop searching here. This
 		 * variation means that a search always makes log n
 		 * comparisons (normal binary search might "get lucky" with an
 		 * early comparison).
@@ -3802,7 +3779,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	}
     } else if (index < 0) {
 	/*
-	 * Is this superfluous?  The result should be a blank object by
+	 * Is this superfluous? The result should be a blank object by
 	 * default...
 	 */
 
@@ -3826,7 +3803,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
  *
  * Tcl_LsetObjCmd --
  *
- *	This procedure is invoked to process the "lset" Tcl command.  See the
+ *	This procedure is invoked to process the "lset" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -3868,7 +3845,7 @@ Tcl_LsetObjCmd(clientData, interp, objc, objv)
     }
 
     /*
-     * Substitute the value in the value.  Return either the value or else an
+     * Substitute the value in the value. Return either the value or else an
      * unshared copy of it.
      */
 
@@ -3911,7 +3888,7 @@ Tcl_LsetObjCmd(clientData, interp, objc, objv)
  *
  * Tcl_LsortObjCmd --
  *
- *	This procedure is invoked to process the "lsort" Tcl command.  See the
+ *	This procedure is invoked to process the "lsort" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -4034,7 +4011,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	    }
 
 	    /*
-	     * Fill the array by parsing each index.  We don't know whether
+	     * Fill the array by parsing each index. We don't know whether
 	     * their scale is sensible yet, but we at least perform the
 	     * syntactic check here.
 	     */
@@ -4178,13 +4155,13 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
 static SortElement *
 MergeSort(headPtr, infoPtr)
-    SortElement *headPtr;		/* First element on the list. */
-    SortInfo *infoPtr;			/* Information needed by the
-					 * comparison operator. */
+    SortElement *headPtr;	/* First element on the list. */
+    SortInfo *infoPtr;		/* Information needed by the comparison
+				 * operator. */
 {
     /*
      * The subList array below holds pointers to temporary lists built during
-     * the merge sort.  Element i of the array holds a list of length 2**i.
+     * the merge sort. Element i of the array holds a list of length 2**i.
      */
 
 #   define NUM_LISTS 30
@@ -4234,12 +4211,10 @@ MergeSort(headPtr, infoPtr)
 
 static SortElement *
 MergeLists(leftPtr, rightPtr, infoPtr)
-    SortElement *leftPtr;		/* First list to be merged; may be
-					 * NULL. */
-    SortElement *rightPtr;		/* Second list to be merged; may be
-					 * NULL. */
-    SortInfo *infoPtr;			/* Information needed by the
-					 * comparison operator. */
+    SortElement *leftPtr;	/* First list to be merged; may be NULL. */
+    SortElement *rightPtr;	/* Second list to be merged; may be NULL. */
+    SortInfo *infoPtr;		/* Information needed by the comparison
+				 * operator. */
 {
     SortElement *headPtr;
     SortElement *tailPtr;
@@ -4297,7 +4272,7 @@ MergeLists(leftPtr, rightPtr, infoPtr)
  * Results:
  *	A negative results means the the first element comes before the
  *	second, and a positive results means that the second element should
- *	come first.  A result of zero means the two elements are equal and it
+ *	come first. A result of zero means the two elements are equal and it
  *	doesn't matter which comes first.
  *
  * Side effects:
@@ -4308,9 +4283,9 @@ MergeLists(leftPtr, rightPtr, infoPtr)
 
 static int
 SortCompare(objPtr1, objPtr2, infoPtr)
-    Tcl_Obj *objPtr1, *objPtr2;		/* Values to be compared. */
-    SortInfo *infoPtr;			/* Information passed from the
-					 * top-level "lsort" command. */
+    Tcl_Obj *objPtr1, *objPtr2;	/* Values to be compared. */
+    SortInfo *infoPtr;		/* Information passed from the top-level
+				 * "lsort" command. */
 {
     int order;
 
@@ -4372,7 +4347,7 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	paramObjv[0] = objPtr1;
 	paramObjv[1] = objPtr2;
 
-  	/*
+	/*
 	 * We made space in the command list for the two things to compare.
 	 * Replace them and evaluate the result.
 	 */
@@ -4380,12 +4355,12 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	Tcl_ListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
-   	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
+	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 
 	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
 
-  	if (infoPtr->resultCode != TCL_OK) {
+	if (infoPtr->resultCode != TCL_OK) {
 	    Tcl_AddErrorInfo(infoPtr->interp,
 		    "\n    (-compare command)");
 	    return order;
@@ -4416,16 +4391,16 @@ SortCompare(objPtr1, objPtr2, infoPtr)
  * DictionaryCompare
  *
  *	This function compares two strings as if they were being used in an
- *	index or card catalog.  The case of alphabetic characters is ignored,
- *	except to break ties.  Thus "B" comes before "b" but after "a".  Also,
- *	integers embedded in the strings compare in numerical order.  In other
+ *	index or card catalog. The case of alphabetic characters is ignored,
+ *	except to break ties. Thus "B" comes before "b" but after "a". Also,
+ *	integers embedded in the strings compare in numerical order. In other
  *	words, "x10y" comes after "x9y", not * before it as it would when
  *	using strcmp().
  *
  * Results:
  *	A negative result means that the first element comes before the
  *	second, and a positive result means that the second element should
- *	come first.  A result of zero means the two elements are equal and it
+ *	come first. A result of zero means the two elements are equal and it
  *	doesn't matter which comes first.
  *
  * Side effects:
@@ -4436,7 +4411,7 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 
 static int
 DictionaryCompare(left, right)
-    char *left, *right;			/* The strings to compare. */
+    char *left, *right;		/* The strings to compare. */
 {
     Tcl_UniChar uniLeft, uniRight, uniLeftLower, uniRightLower;
     int diff, zeros;
@@ -4446,8 +4421,8 @@ DictionaryCompare(left, right)
 	if (isdigit(UCHAR(*right))		/* INTL: digit */
 		&& isdigit(UCHAR(*left))) {	/* INTL: digit */
 	    /*
-	     * There are decimal numbers embedded in the two strings.  Compare
-	     * them as numbers, rather than strings.  If one number has more
+	     * There are decimal numbers embedded in the two strings. Compare
+	     * them as numbers, rather than strings. If one number has more
 	     * leading zeros than the other, the number with more leading
 	     * zeros sorts later, but only as a secondary choice.
 	     */
@@ -4467,7 +4442,7 @@ DictionaryCompare(left, right)
 
 	    /*
 	     * The code below compares the numbers in the two strings without
-	     * ever converting them to integers.  It does this by first
+	     * ever converting them to integers. It does this by first
 	     * comparing the lengths of the numbers and then comparing the
 	     * digit values.
 	     */
@@ -4501,7 +4476,7 @@ DictionaryCompare(left, right)
 	}
 
 	/*
-	 * Convert character to Unicode for comparison purposes.  If either
+	 * Convert character to Unicode for comparison purposes. If either
 	 * string is at the terminating null, do a byte-wise comparison and
 	 * bail out immediately.
 	 */
@@ -4512,7 +4487,7 @@ DictionaryCompare(left, right)
 
 	    /*
 	     * Convert both chars to lower for the comparison, because
-	     * dictionary sorts are case insensitve.  Covert to lower, not
+	     * dictionary sorts are case insensitve. Covert to lower, not
 	     * upper, so chars between Z and a will sort before A (where most
 	     * other interesting punctuations occur)
 	     */
@@ -4547,7 +4522,7 @@ DictionaryCompare(left, right)
  *
  * SelectObjFromSublist --
  *
- *	This procedure is invoked from lsearch and SortCompare.  It is used
+ *	This procedure is invoked from lsearch and SortCompare. It is used
  *	for implementing the -index option, for the lsort and lsearch
  *	commands.
  *
@@ -4567,10 +4542,9 @@ DictionaryCompare(left, right)
 
 static Tcl_Obj*
 SelectObjFromSublist(objPtr, infoPtr)
-    Tcl_Obj *objPtr;			/* Obj to select sublist from. */
-    SortInfo *infoPtr;			/* Information passed from the
-					 * top-level "lsearch" or "lsort"
-					 * command. */
+    Tcl_Obj *objPtr;		/* Obj to select sublist from. */
+    SortInfo *infoPtr;		/* Information passed from the top-level
+				 * "lsearch" or "lsort" command. */
 {
     int i;
 

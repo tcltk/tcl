@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.23 2005/08/15 17:23:07 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.24 2005/09/12 15:40:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -137,11 +137,11 @@ typedef struct PendingObjData {
  * Macro to set up the local reference to the deletion context.
  */
 #ifndef TCL_THREADS
-PendingObjData pendingObjData;
+static PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *CONST contextPtr = &pendingObjData
 #else
-Tcl_ThreadDataKey pendingObjDataKey;
+static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *CONST contextPtr = (PendingObjData *) \
 	    Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.5 2005/07/26 04:12:20 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.6 2005/09/12 15:40:30 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -52,6 +52,10 @@ static void		AppendUtfToUnicodeRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 static void		AppendUtfToUtfRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    CONST char *bytes, int numBytes));
 static void		FillUnicodeRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+static int		FormatObjVA _ANSI_ARGS_((Tcl_Interp *interp,
+			    va_list argList));
+static int		ObjPrintfVA _ANSI_ARGS_((Tcl_Interp *interp,
+			    va_list argList));
 static void		FreeStringInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		DupStringInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
@@ -1666,6 +1670,728 @@ Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
     objPtr = TCL_VARARGS_START(Tcl_Obj *,arg1,argList);
     Tcl_AppendStringsToObjVA(objPtr, argList);
     va_end(argList);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAppendFormattedObjs --
+ *
+ *	This function appends a list of Tcl_Obj's to a Tcl_Obj according
+ *	to the formatting instructions embedded in the format string.  The
+ *	formatting instructions are inspired by sprintf().  Returns TCL_OK
+ *	when successful.  If there's an error in the arguments, TCL_ERROR is
+ *	returned, and an error message is written to the interp, if non-NULL.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
+    Tcl_Interp *interp;
+    Tcl_Obj *baseObj;
+    CONST char *format;
+    int objc;
+    Tcl_Obj *CONST objv[];
+{
+    CONST char *span = format;
+    int numBytes = 0;
+    int objIndex = 0;
+    int gotXpg = 0, gotSequential = 0;
+    Tcl_Obj *appendObj = Tcl_NewObj();
+    CONST char *msg;
+    CONST char *mixedXPG = "cannot mix \"%\" and \"%n$\" conversion specifiers";
+    CONST char *badIndex[2] = {
+	"not enough arguments for all format specifiers",
+	"\"%n$\" argument index out of range"
+    };
+
+    if (Tcl_IsShared(baseObj)) {
+	Tcl_Panic("TclAppendFormattedObjs called with shared object");
+    }
+
+    Tcl_IncrRefCount(appendObj);
+    /* format string is NUL-terminated */
+    while (*format != '\0') {
+	char *end;
+	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
+	int width, gotPrecision, precision, useShort, useWide;
+	int newXpg, numChars, allocSegment = 0;
+	Tcl_Obj *segment;
+	Tcl_UniChar ch;
+	int step = Tcl_UtfToUniChar(format, &ch);
+
+	format += step;
+	if (ch != '%') {
+	    numBytes += step;
+	    continue;
+	}
+	if (numBytes) {
+	    Tcl_AppendToObj(appendObj, span, numBytes);
+	    numBytes = 0;
+	}
+
+	/* Saw a % : process the format specifier */
+	/* 0. %% : Escape format handling */
+
+	step = Tcl_UtfToUniChar(format, &ch);
+	if (ch == '%') {
+	    span = format;
+	    numBytes = step;
+	    format += step;
+	    continue;
+	}
+
+	/* 1. XPG3 position specifier */
+
+	newXpg = 0;
+	if (isdigit(UCHAR(ch))) {
+	    int position = strtoul(format, &end, 10);
+	    if (*end == '$') {
+		newXpg = 1;
+		objIndex = position - 1;
+		format = end + 1;
+		step = Tcl_UtfToUniChar(format, &ch);
+	    }
+	}
+	if (newXpg) {
+	    if (gotSequential) {
+		msg = mixedXPG;
+		goto errorMsg;
+	    }
+	    gotXpg = 1;
+	} else {
+	    if (gotXpg) {
+		msg = mixedXPG;
+		goto errorMsg;
+	    }
+	    gotSequential = 1;
+	}
+	if ((objIndex < 0) || (objIndex >= objc)) {
+	    msg = badIndex[gotXpg];
+	    goto errorMsg;
+	}
+
+	/* 2. Set of flags */
+
+	gotMinus = gotHash = gotZero = gotSpace = gotPlus = 0;
+	sawFlag = 1;
+	do {
+	    switch (ch) {
+	    case '-':
+		gotMinus = 1;
+		break;
+	    case '#':
+		gotHash = 1;
+		break;
+	    case '0':
+		gotZero = 1;
+		break;
+	    case ' ':
+		gotSpace = 1;
+		break;
+	    case '+':
+		gotPlus = 1;
+		break;
+	    default:
+		sawFlag = 0;
+	    }
+	    if (sawFlag) {
+		format += step;
+		step = Tcl_UtfToUniChar(format, &ch);
+	    }
+	} while (sawFlag);
+
+	/* 3. Minimum field width */
+
+	width = 0;
+	if (isdigit(UCHAR(ch))) {
+	    width = strtoul(format, &end, 10);
+	    format = end;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	} else if (ch == '*') {
+	    if (objIndex >= objc - 1) {
+		msg = badIndex[gotXpg];
+		goto errorMsg;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
+		goto error;
+	    }
+	    if (width < 0) {
+		width = -width;
+		gotMinus = 1;
+	    }
+	    objIndex++;
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	}
+
+	/* 4. Precision */
+
+	gotPrecision = precision = 0;
+	if (ch == '.') {
+	    gotPrecision = 1;
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	}
+	if (isdigit(UCHAR(ch))) {
+	    precision = strtoul(format, &end, 10);
+	    format = end;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	} else if (ch == '*') {
+	    if (objIndex >= objc - 1) {
+		msg = badIndex[gotXpg];
+		goto errorMsg;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[objIndex], &precision)
+		    != TCL_OK) {
+		goto error;
+	    }
+	    /* TODO: Check this truncation logic */
+	    if (precision < 0) {
+		precision = 0;
+	    }
+	    objIndex++;
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	}
+
+	/* 5. Length modifier */
+
+	useShort = useWide = 0;
+	if (ch == 'h') {
+	    useShort = 1;
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	} else if (ch == 'l') {
+#ifndef TCL_WIDE_INT_IS_LONG
+	    useWide = 1;
+#endif
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	}
+
+	format += step;
+	span = format;
+
+	/* 6. Conversion character */
+	segment = objv[objIndex];
+	if (ch == 'i') {
+	    ch = 'd';
+	}
+	switch (ch) {
+	case '\0':
+	    msg = "format string ended in middle of field specifier";
+	    goto errorMsg;
+	case 's': {
+	    numChars = Tcl_GetCharLength(segment);
+	    if (gotPrecision && (precision < numChars)) {
+		segment = Tcl_GetRange(segment, 0, precision - 1);
+		Tcl_IncrRefCount(segment);
+		allocSegment = 1;
+	    }
+	    break;
+	}
+	case 'c': {
+	    char buf[TCL_UTF_MAX];
+	    int code, length;
+	    if (Tcl_GetIntFromObj(interp, segment, &code) != TCL_OK) {
+		goto error;
+	    }
+	    length = Tcl_UniCharToUtf(code, buf);
+	    segment = Tcl_NewStringObj(buf, length);
+	    Tcl_IncrRefCount(segment);
+	    allocSegment = 1;
+	    break;
+	}
+	
+	case 'u':
+	case 'd':
+	case 'o':
+	case 'x':
+	case 'X': {
+	    short int s;
+	    long l;
+	    Tcl_WideInt w;
+	    int isNegative = 0;
+
+	    if (useWide) {
+		if (Tcl_GetWideIntFromObj(interp, segment, &w) != TCL_OK) {
+		    goto error;
+		}
+	    } else if (Tcl_GetLongFromObj(NULL, segment, &l) != TCL_OK) {
+		if (Tcl_GetWideIntFromObj(interp, segment, &w) != TCL_OK) {
+		    goto error;
+		}
+		l = Tcl_WideAsLong(w);
+	    }
+
+	    if (useShort) {
+		s = (short int) l;
+		isNegative = (s < (short int)0);
+	    } else if (useWide) {
+		isNegative = (w < (Tcl_WideInt)0);
+	    } else {
+		isNegative = (l < (long)0);
+	    }
+
+	    segment = Tcl_NewObj();
+	    allocSegment = 1;
+	    Tcl_IncrRefCount(segment);
+
+	    if (isNegative || gotPlus) {
+		if (ch == 'd') {
+		    if (isNegative) {
+			Tcl_AppendToObj(segment, "-", 1);
+		    } else {
+			Tcl_AppendToObj(segment, "+", 1);
+		    }
+		}
+	    }
+
+	    if (gotHash) {
+		switch (ch) {
+		case 'o':
+		    Tcl_AppendToObj(segment, "0", 1);
+		    precision--;
+		    break;
+		case 'x':
+		case 'X':
+		    Tcl_AppendToObj(segment, "0x", 2);
+		    break;
+		}
+	    }
+
+	    switch (ch) {
+	    case 'd': {
+		int length;
+		Tcl_Obj *pure;
+		CONST char *bytes;
+
+		if (isNegative) {
+		    if (useShort) {
+			pure = Tcl_NewIntObj((int)(-s));
+		    } else if (useWide) {
+			pure = Tcl_NewWideIntObj(-w);
+		    } else {
+			pure = Tcl_NewLongObj(-l);
+		    }
+		} else {
+		    if (useShort) {
+			pure = Tcl_NewIntObj((int)(s));
+		    } else if (useWide) {
+			pure = Tcl_NewWideIntObj(w);
+		    } else {
+			pure = Tcl_NewLongObj(l);
+		    }
+		}
+		Tcl_IncrRefCount(pure);
+		bytes = Tcl_GetStringFromObj(pure, &length);
+		/* Handle things like -INT_MIN == INT_MIN */
+		if (*bytes == '-') {
+		    length--; bytes++;
+		}
+		/* Canonical decimal string reps for integers are composed
+		 * entirely of one-byte encoded characters, so "length" is
+		 * the number of chars */
+		if (gotPrecision) {
+		    while (length < precision) {
+			Tcl_AppendToObj(segment, "0", 1);
+			length++;
+		    }
+		    gotZero = 0;
+		}
+		if (gotZero) {
+		    length += Tcl_GetCharLength(segment);
+		    while (length < width) {
+			Tcl_AppendToObj(segment, "0", 1);
+			length++;
+		    }
+		}
+		Tcl_AppendToObj(segment, bytes, -1);
+		Tcl_DecrRefCount(pure);
+		break;
+	    }
+		
+	    case 'u':
+	    case 'o':
+	    case 'x':
+	    case 'X': {
+		Tcl_WideUInt bits;
+		int length, numDigits = 0, base = 16;
+		Tcl_Obj *pure;
+		char *bytes;
+
+		if (ch == 'u') {
+		    base = 10;
+		}
+		if (ch == 'o') {
+		    base = 8;
+		}
+		if (useShort) {
+		    unsigned short int us = (unsigned short int) s;
+		    bits = (Tcl_WideUInt) us;
+		    while (us) {
+			numDigits++;
+			us /= base;
+		    }
+		} else if (useWide) {
+		    Tcl_WideUInt uw = (Tcl_WideUInt) w;
+		    bits = uw;
+		    while (uw) {
+			numDigits++;
+			uw /= base;
+		    }
+		} else {
+		    unsigned long int ul = (unsigned long int) l;
+		    bits = (Tcl_WideUInt) ul;
+		    while (ul) {
+			numDigits++;
+			ul /= base;
+		    }
+		}
+		/* Need to be sure zero becomes "0", not "" */
+		if ((numDigits == 0) && !((ch == 'o') && gotHash)) {
+		    numDigits = 1;
+		}
+		pure = Tcl_NewObj();
+		Tcl_SetObjLength(pure, numDigits);
+		bytes = Tcl_GetString(pure);
+		length = numDigits;
+		while (numDigits--) {
+		    int digitOffset = (int) (bits % base);
+		    if (digitOffset > 9) {
+			bytes[numDigits] = 'a' + digitOffset - 10;
+		    } else {
+			bytes[numDigits] = '0' + digitOffset;
+		    }
+		    bits /= base;
+		}
+		if (gotPrecision) {
+		    while (length < precision) {
+			Tcl_AppendToObj(segment, "0", 1);
+			length++;
+		    }
+		    gotZero = 0;
+		}
+		if (gotZero) {
+		    length += Tcl_GetCharLength(segment);
+		    while (length < width) {
+			Tcl_AppendToObj(segment, "0", 1);
+			length++;
+		    }
+		}
+		Tcl_AppendObjToObj(segment, pure);
+		Tcl_DecrRefCount(pure);
+		break;
+	    }
+
+	    }
+	    break;
+	}
+
+	case 'e':
+	case 'E':
+	case 'f':
+	case 'g':
+	case 'G': {
+#define MAX_FLOAT_SIZE 320
+	    char spec[2*TCL_INTEGER_SPACE + 9], *p = spec;
+	    double d;
+	    int length = MAX_FLOAT_SIZE;
+	    char *bytes;
+
+	    if (Tcl_GetDoubleFromObj(interp, segment, &d) != TCL_OK) {
+		goto error;
+	    }
+	    *p++ = '%';
+	    if (gotMinus) {
+		*p++ = '-';
+	    }
+	    if (gotHash) {
+		*p++ = '#';
+	    }
+	    if (gotZero) {
+		*p++ = '0';
+	    }
+	    if (gotSpace) {
+		*p++ = ' ';
+	    }
+	    if (gotPlus) {
+		*p++ = '+';
+	    }
+	    if (width) {
+		p += sprintf(p, "%d", width);
+	    }
+	    if (gotPrecision) {
+		*p++ = '.';
+		p += sprintf(p, "%d", precision);
+		length += precision;
+	    }
+	    /* Don't pass length modifiers ! */
+	    *p++ = (char) ch;
+	    *p = '\0';
+
+	    segment = Tcl_NewObj();
+	    allocSegment = 1;
+	    Tcl_SetObjLength(segment, length);
+	    bytes = Tcl_GetString(segment);
+	    Tcl_SetObjLength(segment, sprintf(bytes, spec, d));
+	    break;
+	}
+	default: {
+	    char buf[40];
+	    sprintf(buf, "bad field specifier \"%c\"", ch);
+	    msg = buf;
+	    goto errorMsg;
+	}
+	}
+
+	switch (ch) {
+	case 'E':
+	case 'G':
+	case 'X': {
+	    Tcl_SetObjLength(segment, Tcl_UtfToUpper(Tcl_GetString(segment)));
+	}
+	}
+
+	numChars = Tcl_GetCharLength(segment);
+	if (!gotMinus) {
+	    while (numChars < width) {
+		Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
+		numChars++;
+	    }
+	}
+	Tcl_AppendObjToObj(appendObj, segment);
+	if (allocSegment) {
+	    Tcl_DecrRefCount(segment);
+	}
+	while (numChars < width) {
+	    Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
+	    numChars++;
+	}
+
+	objIndex += gotSequential;
+    }
+    if (numBytes) {
+	Tcl_AppendToObj(appendObj, span, numBytes);
+	numBytes = 0;
+    }
+
+    Tcl_AppendObjToObj(baseObj, appendObj);
+    Tcl_DecrRefCount(appendObj);
+    return TCL_OK;
+
+  errorMsg:
+    if (interp != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
+    }
+  error:
+    Tcl_DecrRefCount(appendObj);
+    return TCL_ERROR;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * FormatObjVA --
+ *
+ *	Populate the Unicode internal rep with the Unicode form of its string
+ *	rep. The object must alread have a "String" internal rep.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reallocates the String internal rep.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+FormatObjVA(interp, argList)
+    Tcl_Interp *interp;
+    va_list argList;
+{
+    int code, objc;
+    Tcl_Obj **objv, *element, *list = Tcl_NewObj();
+    CONST char *format;
+    Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
+
+    if (objPtr == NULL) {
+	Tcl_Panic("TclFormatObj: no Tcl_Obj to append to");
+    }
+
+    format = va_arg(argList, CONST char *);
+    if (format == NULL) {
+	Tcl_Panic("TclFormatObj: no format string argument");
+    }
+
+    Tcl_IncrRefCount(list);
+    element = va_arg(argList, Tcl_Obj *);
+    while (element != NULL) {
+	Tcl_ListObjAppendElement(NULL, list, element);
+	element = va_arg(argList, Tcl_Obj *);
+    }
+    Tcl_ListObjGetElements(NULL, list, &objc, &objv);
+    code = TclAppendFormattedObjs(interp, objPtr, format, objc, objv);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclFormatObj --
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclFormatObj TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+{
+    va_list argList;
+    int result;
+    Tcl_Interp *interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    result = FormatObjVA(interp, argList);
+    va_end(argList);
+    return result;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ObjPrintfVA --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+ObjPrintfVA(interp, argList)
+    Tcl_Interp *interp;
+    va_list argList;
+{
+    int code, objc;
+    Tcl_Obj **objv, *list = Tcl_NewObj();
+    CONST char *format, *p;
+    Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
+
+    if (objPtr == NULL) {
+	Tcl_Panic("TclObjPrintf: no Tcl_Obj to append to");
+    }
+
+    p = format = va_arg(argList, CONST char *);
+    if (format == NULL) {
+	Tcl_Panic("TclObjPrintf: no format string argument");
+    }
+
+    Tcl_IncrRefCount(list);
+    while (*p != '\0') {
+	int size = 0;
+	int seekingConversion = 1;
+	if (*p++ != '%') {
+	    continue;
+	}
+	if (*p == '%') {
+	    p++;
+	    continue;
+	}
+	do {
+	    switch (*p) {
+
+	    case '\0':
+		seekingConversion = 0;
+		break;
+	    case 's':
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewStringObj(
+			va_arg(argList, char *), -1));
+		seekingConversion = 0;
+		break;
+	    case 'c':
+	    case 'i':
+	    case 'u':
+	    case 'd':
+	    case 'o':
+	    case 'x':
+	    case 'X':
+		seekingConversion = 0;
+		switch (size) {
+		case -1:
+		case 0:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
+			    (long int)va_arg(argList, int)));
+		    break;
+		case 1:
+		    Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(
+			    va_arg(argList, long int)));
+		    break;
+		}
+		break;
+	    case 'e':
+	    case 'E':
+	    case 'f':
+	    case 'g':
+	    case 'G':
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewDoubleObj(
+			va_arg(argList, double)));
+		seekingConversion = 0;
+		break;
+	    case 'l':
+		size = 1;
+		p++;
+		break;
+	    case 'h':
+		size = -1;
+	    default:
+		p++;
+	    }
+	} while (seekingConversion);
+    }
+    Tcl_ListObjGetElements(NULL, list, &objc, &objv);
+    code = TclAppendFormattedObjs(interp, objPtr, format, objc, objv);
+    Tcl_DecrRefCount(list);
+    return code;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclObjPrintf --
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclObjPrintf TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+{
+    va_list argList;
+    int result;
+    Tcl_Interp *interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    result = ObjPrintfVA(interp, argList);
+    va_end(argList);
+    return result;
 }
 
 /*

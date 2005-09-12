@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.14 2005/08/15 17:23:08 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.15 2005/09/12 15:44:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -440,15 +440,12 @@ test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test expr-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
 test expr-9.4 {CompileRelationalExpr: just shift expr} {expr {1<<3}} 8
-
 test expr-9.5a {CompileRelationalExpr: shift expr producing LONG_MIN} longIs64bit {
     expr {1<<63}
 } -9223372036854775808
-
 test expr-9.5b {CompileRelationalExpr: shift expr producing LONG_MIN} longIs32bit {
     expr {1<<31}
 } -2147483648
-
 test expr-9.6 {CompileRelationalExpr: error in shift expr} -body {
     catch {expr x>>3} msg
     set msg
@@ -1018,7 +1015,6 @@ test expr-23.33 {INST_EXPON: special cases} {expr {wide(2)**wide(-2)}} 0
 test expr-23.34 {INST_EXPON: special cases} {expr {2**0}} 1
 test expr-23.35 {INST_EXPON: special cases} {expr {wide(2)**0}} 1
 
-
 # Some compilers get this wrong; ensure that we work around it correctly
 test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
 test expr-24.2 {expr edge cases; shifting} {expr int(5)>>63} 0
@@ -1049,7 +1045,6 @@ test expr-26.7 {'ni' operator} {expr {"" ni ""}} 1
 
 foreach op {< <= == != > >=} {
     proc test$op {a b} [list expr "\$a $op \$b"]
-
 }
 
 test expr-27.1 {expr - correct ordering - not compiled} ieeeFloatingPoint {
@@ -1077,7 +1072,6 @@ test expr-27.1 {expr - correct ordering - not compiled} ieeeFloatingPoint {
     }
     set problems
 } {}
-
 test expr-27.2 {expr - correct ordering - compiled} ieeeFloatingPoint {
     set problems {}
     # Ordering should be: -Infinity < -Normal < Subnormal < -0
@@ -1103,7 +1097,6 @@ test expr-27.2 {expr - correct ordering - compiled} ieeeFloatingPoint {
     }
     set problems
 } {}
-
 test expr-27.3 {expr - NaN is unordered - not compiled} {
     set problems {}
     set names {
@@ -1123,7 +1116,6 @@ test expr-27.3 {expr - NaN is unordered - not compiled} {
     }
     set problems
 } {}
-
 test expr-27.4 {expr - NaN is unordered - compiled} {
     set problems {}
     set names {
@@ -5330,7 +5322,6 @@ test expr-31.15 {boolean conversion} -body {
     expr bool("fred")
 } -returnCodes error -match glob -result *
 
-
 test expr-32.1 {expr mod basics} {
     set mod_nums [list \
         {-3 1} {-3 2} {-3 3} {-3 4} {-3 5} \
@@ -5426,7 +5417,6 @@ test expr-33.1 {parse largest long value} {longIs32bit} {
         [expr {(2147483647 + 1) < 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
-
 test expr-33.2 {parse smallest long value} {longIs32bit} {
     set min_long_str -2147483648
     set min_long_hex "-0x80000000 "
@@ -5447,7 +5437,6 @@ test expr-33.2 {parse smallest long value} {longIs32bit} {
         [expr {(-2147483648 - 1) == 0x7FFFFFFF}] \
 
 } {-2147483648 -2147483648 -2147483648 -2147483648 1 1}
-
 test expr-33.3 {parse largest wide value} {wideIs64bit} {
     set max_wide_str 9223372036854775807
     set max_wide_hex "0x7FFFFFFFFFFFFFFF "
@@ -5465,7 +5454,6 @@ test expr-33.3 {parse largest wide value} {wideIs64bit} {
         [expr {(9223372036854775807 + 1) < 0}] \
 
 } {9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 1 1}
-
 test expr-33.4 {parse smallest wide value} {wideIs64bit} {
     set min_wide_str -9223372036854775808
     set min_wide_hex "-0x8000000000000000 "
@@ -5487,366 +5475,276 @@ test expr-33.4 {parse smallest wide value} {wideIs64bit} {
 
 } {-9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808 1 1}
 
-
 set min -2147483648
 set max 2147483647
 
 test expr-34.1 {expr edge cases} {longIs32bit} {
     expr {$min / $min}
 } {1}
-
 test expr-34.2 {expr edge cases} {longIs32bit} {
     expr {$min % $min}
 } {0}
-
 test expr-34.3 {expr edge cases} {longIs32bit} {
     expr {$min / ($min + 1)}
 } {1}
-
 test expr-34.4 {expr edge cases} {longIs32bit} {
     expr {$min % ($min + 1)}
 } {-1}
-
 test expr-34.5 {expr edge cases} {longIs32bit} {
     expr {$min / ($min + 2)}
 } {1}
-
 test expr-34.6 {expr edge cases} {longIs32bit} {
     expr {$min % ($min + 2)}
 } {-2}
-
 test expr-34.7 {expr edge cases} {longIs32bit} {
     expr {$min / ($min + 3)}
 } {1}
-
 test expr-34.8 {expr edge cases} {longIs32bit} {
     expr {$min % ($min + 3)}
 } {-3}
-
 test expr-34.9 {expr edge cases} {longIs32bit} {
     expr {$min / -3}
 } {715827882}
-
 test expr-34.10 {expr edge cases} {longIs32bit} {
     expr {$min % -3}
 } {-2}
-
 test expr-34.11 {expr edge cases} {longIs32bit} {
     expr {$min / -2}
 } {1073741824}
-
 test expr-34.12 {expr edge cases} {longIs32bit} {
     expr {$min % -2}
 } {0}
-
 test expr-34.13 {expr edge cases} {longIs32bit} {
     expr {$min / -1}
 } {-2147483648}
-
 test expr-34.14 {expr edge cases} {longIs32bit} {
     expr {$min % -1}
 } {0}
-
 test expr-34.15 {expr edge cases} {longIs32bit} {
     expr {$min * -1}
 } $min
-
 test expr-34.16 {expr edge cases} {longIs32bit} {
     expr {-$min}
 } $min
-
 test expr-34.17 {expr edge cases} {longIs32bit} {
     expr {$min / 1}
 } $min
-
 test expr-34.18 {expr edge cases} {longIs32bit} {
     expr {$min % 1}
 } {0}
-
 test expr-34.19 {expr edge cases} {longIs32bit} {
     expr {$min / 2}
 } {-1073741824}
-
 test expr-34.20 {expr edge cases} {longIs32bit} {
     expr {$min % 2}
 } {0}
-
 test expr-34.21 {expr edge cases} {longIs32bit} {
     expr {$min / 3}
 } {-715827883}
-
 test expr-34.22 {expr edge cases} {longIs32bit} {
     expr {$min % 3}
 } {1}
-
 test expr-34.23 {expr edge cases} {longIs32bit} {
     expr {$min / ($max - 3)}
 } {-2}
-
 test expr-34.24 {expr edge cases} {longIs32bit} {
     expr {$min % ($max - 3)}
 } {2147483640}
-
 test expr-34.25 {expr edge cases} {longIs32bit} {
     expr {$min / ($max - 2)}
 } {-2}
-
 test expr-34.26 {expr edge cases} {longIs32bit} {
     expr {$min % ($max - 2)}
 } {2147483642}
-
 test expr-34.27 {expr edge cases} {longIs32bit} {
     expr {$min / ($max - 1)}
 } {-2}
-
 test expr-34.28 {expr edge cases} {longIs32bit} {
     expr {$min % ($max - 1)}
 } {2147483644}
-
 test expr-34.29 {expr edge cases} {longIs32bit} {
     expr {$min / $max}
 } {-2}
-
 test expr-34.30 {expr edge cases} {longIs32bit} {
     expr {$min % $max}
 } {2147483646}
-
 test expr-34.31 {expr edge cases} {longIs32bit} {
     expr {$max / $max}
 } {1}
-
 test expr-34.32 {expr edge cases} {longIs32bit} {
     expr {$max % $max}
 } {0}
-
 test expr-34.33 {expr edge cases} {longIs32bit} {
     expr {$max / ($max - 1)}
 } {1}
-
 test expr-34.34 {expr edge cases} {longIs32bit} {
     expr {$max % ($max - 1)}
 } {1}
-
 test expr-34.35 {expr edge cases} {longIs32bit} {
     expr {$max / ($max - 2)}
 } {1}
-
 test expr-34.36 {expr edge cases} {longIs32bit} {
     expr {$max % ($max - 2)}
 } {2}
-
 test expr-34.37 {expr edge cases} {longIs32bit} {
     expr {$max / ($max - 3)}
 } {1}
-
 test expr-34.38 {expr edge cases} {longIs32bit} {
     expr {$max % ($max - 3)}
 } {3}
-
 test expr-34.39 {expr edge cases} {longIs32bit} {
     expr {$max / 3}
 } {715827882}
-
 test expr-34.40 {expr edge cases} {longIs32bit} {
     expr {$max % 3}
 } {1}
-
 test expr-34.41 {expr edge cases} {longIs32bit} {
     expr {$max / 2}
 } {1073741823}
-
 test expr-34.42 {expr edge cases} {longIs32bit} {
     expr {$max % 2}
 } {1}
-
 test expr-34.43 {expr edge cases} {longIs32bit} {
     expr {$max / 1}
 } $max
-
 test expr-34.44 {expr edge cases} {longIs32bit} {
     expr {$max % 1}
 } {0}
-
 test expr-34.45 {expr edge cases} {longIs32bit} {
     expr {$max / -1}
 } "-$max"
-
 test expr-34.46 {expr edge cases} {longIs32bit} {
     expr {$max % -1}
 } {0}
-
 test expr-34.47 {expr edge cases} {longIs32bit} {
     expr {$max / -2}
 } {-1073741824}
-
 test expr-34.48 {expr edge cases} {longIs32bit} {
     expr {$max % -2}
 } {-1}
-
 test expr-34.49 {expr edge cases} {longIs32bit} {
     expr {$max / -3}
 } {-715827883}
-
 test expr-34.50 {expr edge cases} {longIs32bit} {
     expr {$max % -3}
 } {-2}
-
 test expr-34.51 {expr edge cases} {longIs32bit} {
     expr {$max / ($min + 3)}
 } {-2}
-
 test expr-34.52 {expr edge cases} {longIs32bit} {
     expr {$max % ($min + 3)}
 } {-2147483643}
-
 test expr-34.53 {expr edge cases} {longIs32bit} {
     expr {$max / ($min + 2)}
 } {-2}
-
 test expr-34.54 {expr edge cases} {longIs32bit} {
     expr {$max % ($min + 2)}
 } {-2147483645}
-
 test expr-34.55 {expr edge cases} {longIs32bit} {
     expr {$max / ($min + 1)}
 } {-1}
-
 test expr-34.56 {expr edge cases} {longIs32bit} {
     expr {$max % ($min + 1)}
 } {0}
-
 test expr-34.57 {expr edge cases} {longIs32bit} {
     expr {$max / $min}
 } {-1}
-
 test expr-34.58 {expr edge cases} {longIs32bit} {
     expr {$max % $min}
 } {-1}
-
 test expr-34.59 {expr edge cases} {longIs32bit} {
     expr {($min + 1) / ($max - 1)}
 } {-2}
-
 test expr-34.60 {expr edge cases} {longIs32bit} {
     expr {($min + 1) % ($max - 1)}
 } {2147483645}
-
 test expr-34.61 {expr edge cases} {longIs32bit} {
     expr {($max - 1) / ($min + 1)}
 } {-1}
-
 test expr-34.62 {expr edge cases} {longIs32bit} {
     expr {($max - 1) % ($min + 1)}
 } {-1}
-
 test expr-34.63 {expr edge cases} {longIs32bit} {
     expr {($max - 1) / $min}
 } {-1}
-
 test expr-34.64 {expr edge cases} {longIs32bit} {
     expr {($max - 1) % $min}
 } {-2}
-
 test expr-34.65 {expr edge cases} {longIs32bit} {
     expr {($max - 2) / $min}
 } {-1}
-
 test expr-34.66 {expr edge cases} {longIs32bit} {
     expr {($max - 2) % $min}
 } {-3}
-
 test expr-34.67 {expr edge cases} {longIs32bit} {
     expr {($max - 3) / $min}
 } {-1}
-
 test expr-34.68 {expr edge cases} {longIs32bit} {
     expr {($max - 3) % $min}
 } {-4}
-
 test expr-34.69 {expr edge cases} {longIs32bit} {
     expr {-3 / $min}
 } {0}
-
 test expr-34.70 {expr edge cases} {longIs32bit} {
     expr {-3 % $min}
 } {-3}
-
 test expr-34.71 {expr edge cases} {longIs32bit} {
     expr {-2 / $min}
 } {0}
-
 test expr-34.72 {expr edge cases} {longIs32bit} {
     expr {-2 % $min}
 } {-2}
-
 test expr-34.73 {expr edge cases} {longIs32bit} {
     expr {-1 / $min}
 } {0}
-
 test expr-34.74 {expr edge cases} {longIs32bit} {
     expr {-1 % $min}
 } {-1}
-
 test expr-34.75 {expr edge cases} {longIs32bit} {
     expr {0 / $min}
 } {0}
-
 test expr-34.76 {expr edge cases} {longIs32bit} {
     expr {0 % $min}
 } {0}
-
 test expr-34.77 {expr edge cases} {longIs32bit} {
     expr {0 / ($min + 1)}
 } {0}
-
 test expr-34.78 {expr edge cases} {longIs32bit} {
     expr {0 % ($min + 1)}
 } {0}
-
 test expr-34.79 {expr edge cases} {longIs32bit} {
     expr {1 / $min}
 } {-1}
-
 test expr-34.80 {expr edge cases} {longIs32bit} {
     expr {1 % $min}
 } {-2147483647}
-
 test expr-34.81 {expr edge cases} {longIs32bit} {
     expr {1 / ($min + 1)}
 } {-1}
-
 test expr-34.82 {expr edge cases} {longIs32bit} {
     expr {1 % ($min + 1)}
 } {-2147483646}
-
 test expr-34.83 {expr edge cases} {longIs32bit} {
     expr {2 / $min}
 } {-1}
-
 test expr-34.84 {expr edge cases} {longIs32bit} {
     expr {2 % $min}
 } {-2147483646}
-
 test expr-34.85 {expr edge cases} {longIs32bit} {
     expr {2 / ($min + 1)}
 } {-1}
-
 test expr-34.86 {expr edge cases} {longIs32bit} {
     expr {2 % ($min + 1)}
 } {-2147483645}
-
 test expr-34.87 {expr edge cases} {longIs32bit} {
     expr {3 / $min}
 } {-1}
-
 test expr-34.88 {expr edge cases} {longIs32bit} {
     expr {3 % $min}
 } {-2147483645}
-
 test expr-34.89 {expr edge cases} {longIs32bit} {
     expr {3 / ($min + 1)}
 } {-1}
-
 test expr-34.90 {expr edge cases} {longIs32bit} {
     expr {3 % ($min + 1)}
 } {-2147483644}
@@ -5861,7 +5759,6 @@ test expr-35.1 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($divisor * $q) + $r}]
 } {1073741823 * 2 + 1 = 2147483647}
-
 test expr-35.2 {expr edge cases} {longIs32bit} {
     set dividend [expr {$max - 1}]
     set divisor 2
@@ -5869,7 +5766,6 @@ test expr-35.2 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1073741823 * 2 + 0 = 2147483646}
-
 test expr-35.3 {expr edge cases} {longIs32bit} {
     set dividend [expr {$max - 2}]
     set divisor 2
@@ -5877,7 +5773,6 @@ test expr-35.3 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1073741822 * 2 + 1 = 2147483645}
-
 test expr-35.4 {expr edge cases} {longIs32bit} {
     set dividend $max
     set divisor 3
@@ -5885,7 +5780,6 @@ test expr-35.4 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {715827882 * 3 + 1 = 2147483647}
-
 test expr-35.5 {expr edge cases} {longIs32bit} {
     set dividend [expr {$max - 1}]
     set divisor 3
@@ -5893,7 +5787,6 @@ test expr-35.5 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {715827882 * 3 + 0 = 2147483646}
-
 test expr-35.6 {expr edge cases} {longIs32bit} {
     set dividend [expr {$max - 2}]
     set divisor 3
@@ -5901,7 +5794,6 @@ test expr-35.6 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {715827881 * 3 + 2 = 2147483645}
-
 test expr-35.7 {expr edge cases} {longIs32bit} {
     set dividend $min
     set divisor 2
@@ -5909,7 +5801,6 @@ test expr-35.7 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-1073741824 * 2 + 0 = -2147483648}
-
 test expr-35.8 {expr edge cases} {longIs32bit} {
     set dividend [expr {$min + 1}]
     set divisor 2
@@ -5917,7 +5808,6 @@ test expr-35.8 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-1073741824 * 2 + 1 = -2147483647}
-
 test expr-35.9 {expr edge cases} {longIs32bit} {
     set dividend [expr {$min + 2}]
     set divisor 2
@@ -5925,7 +5815,6 @@ test expr-35.9 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-1073741823 * 2 + 0 = -2147483646}
-
 test expr-35.10 {expr edge cases} {longIs32bit} {
     # Two things could happen here. The multiplication
     # could overflow a 32 bit type, so that when
@@ -5939,7 +5828,6 @@ test expr-35.10 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-715827883 * 3 + 1 = -2147483648}
-
 test expr-35.11 {expr edge cases} {longIs32bit} {
     set dividend $min
     set divisor -3
@@ -5947,7 +5835,6 @@ test expr-35.11 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {715827882 * -3 + -2 = -2147483648}
-
 test expr-35.12 {expr edge cases} {longIs32bit} {
     set dividend $min
     set divisor $min
@@ -5955,7 +5842,6 @@ test expr-35.12 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1 * -2147483648 + 0 = -2147483648}
-
 test expr-35.13 {expr edge cases} {longIs32bit} {
     set dividend $min
     set divisor [expr {$min + 1}]
@@ -5963,7 +5849,6 @@ test expr-35.13 {expr edge cases} {longIs32bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1 * -2147483647 + -1 = -2147483648}
-
 test expr-35.14 {expr edge cases} {longIs32bit} {
     set dividend $min
     set divisor [expr {$min + 2}]
@@ -5980,363 +5865,273 @@ set max 9223372036854775807
 test expr-36.1 {expr edge cases} {wideIs64bit} {
     expr {$min / $min}
 } {1}
-
 test expr-36.2 {expr edge cases} {wideIs64bit} {
     expr {$min % $min}
 } {0}
-
 test expr-36.3 {expr edge cases} {wideIs64bit} {
     expr {$min / ($min + 1)}
 } {1}
-
 test expr-36.4 {expr edge cases} {wideIs64bit} {
     expr {$min % ($min + 1)}
 } {-1}
-
 test expr-36.5 {expr edge cases} {wideIs64bit} {
     expr {$min / ($min + 2)}
 } {1}
-
 test expr-36.6 {expr edge cases} {wideIs64bit} {
     expr {$min % ($min + 2)}
 } {-2}
-
 test expr-36.7 {expr edge cases} {wideIs64bit} {
     expr {$min / ($min + 3)}
 } {1}
-
 test expr-36.8 {expr edge cases} {wideIs64bit} {
     expr {$min % ($min + 3)}
 } {-3}
-
 test expr-36.9 {expr edge cases} {wideIs64bit} {
     expr {$min / -3}
 } {3074457345618258602}
-
 test expr-36.10 {expr edge cases} {wideIs64bit} {
     expr {$min % -3}
 } {-2}
-
 test expr-36.11 {expr edge cases} {wideIs64bit} {
     expr {$min / -2}
 } {4611686018427387904}
-
 test expr-36.12 {expr edge cases} {wideIs64bit} {
     expr {$min % -2}
 } {0}
-
 test expr-36.13 {expr edge cases} {wideIs64bit} {
     expr {$min / -1}
 } $min
-
 test expr-36.14 {expr edge cases} {wideIs64bit} {
     expr {$min % -1}
 } {0}
-
 test expr-36.15 {expr edge cases} {wideIs64bit} {
     expr {$min * -1}
 } $min
-
 test expr-36.16 {expr edge cases} {wideIs64bit} {
     expr {-$min}
 } $min
-
 test expr-36.17 {expr edge cases} {wideIs64bit} {
     expr {$min / 1}
 } $min
-
 test expr-36.18 {expr edge cases} {wideIs64bit} {
     expr {$min % 1}
 } {0}
-
 test expr-36.19 {expr edge cases} {wideIs64bit} {
     expr {$min / 2}
 } {-4611686018427387904}
-
 test expr-36.20 {expr edge cases} {wideIs64bit} {
     expr {$min % 2}
 } {0}
-
 test expr-36.21 {expr edge cases} {wideIs64bit} {
     expr {$min / 3}
 } {-3074457345618258603}
-
 test expr-36.22 {expr edge cases} {wideIs64bit} {
     expr {$min % 3}
 } {1}
-
 test expr-36.23 {expr edge cases} {wideIs64bit} {
     expr {$min / ($max - 3)}
 } {-2}
-
 test expr-36.24 {expr edge cases} {wideIs64bit} {
     expr {$min % ($max - 3)}
 } {9223372036854775800}
-
 test expr-36.25 {expr edge cases} {wideIs64bit} {
     expr {$min / ($max - 2)}
 } {-2}
-
 test expr-36.26 {expr edge cases} {wideIs64bit} {
     expr {$min % ($max - 2)}
 } {9223372036854775802}
-
 test expr-36.27 {expr edge cases} {wideIs64bit} {
     expr {$min / ($max - 1)}
 } {-2}
-
 test expr-36.28 {expr edge cases} {wideIs64bit} {
     expr {$min % ($max - 1)}
 } {9223372036854775804}
-
 test expr-36.29 {expr edge cases} {wideIs64bit} {
     expr {$min / $max}
 } {-2}
-
 test expr-36.30 {expr edge cases} {wideIs64bit} {
     expr {$min % $max}
 } {9223372036854775806}
-
 test expr-36.31 {expr edge cases} {wideIs64bit} {
     expr {$max / $max}
 } {1}
-
 test expr-36.32 {expr edge cases} {wideIs64bit} {
     expr {$max % $max}
 } {0}
-
 test expr-36.33 {expr edge cases} {wideIs64bit} {
     expr {$max / ($max - 1)}
 } {1}
-
 test expr-36.34 {expr edge cases} {wideIs64bit} {
     expr {$max % ($max - 1)}
 } {1}
-
 test expr-36.35 {expr edge cases} {wideIs64bit} {
     expr {$max / ($max - 2)}
 } {1}
-
 test expr-36.36 {expr edge cases} {wideIs64bit} {
     expr {$max % ($max - 2)}
 } {2}
-
 test expr-36.37 {expr edge cases} {wideIs64bit} {
     expr {$max / ($max - 3)}
 } {1}
-
 test expr-36.38 {expr edge cases} {wideIs64bit} {
     expr {$max % ($max - 3)}
 } {3}
-
 test expr-36.39 {expr edge cases} {wideIs64bit} {
     expr {$max / 3}
 } {3074457345618258602}
-
 test expr-36.40 {expr edge cases} {wideIs64bit} {
     expr {$max % 3}
 } {1}
-
 test expr-36.41 {expr edge cases} {wideIs64bit} {
     expr {$max / 2}
 } {4611686018427387903}
-
 test expr-36.42 {expr edge cases} {wideIs64bit} {
     expr {$max % 2}
 } {1}
-
 test expr-36.43 {expr edge cases} {wideIs64bit} {
     expr {$max / 1}
 } $max
-
 test expr-36.44 {expr edge cases} {wideIs64bit} {
     expr {$max % 1}
 } {0}
-
 test expr-36.45 {expr edge cases} {wideIs64bit} {
     expr {$max / -1}
 } "-$max"
-
 test expr-36.46 {expr edge cases} {wideIs64bit} {
     expr {$max % -1}
 } {0}
-
 test expr-36.47 {expr edge cases} {wideIs64bit} {
     expr {$max / -2}
 } {-4611686018427387904}
-
 test expr-36.48 {expr edge cases} {wideIs64bit} {
     expr {$max % -2}
 } {-1}
-
 test expr-36.49 {expr edge cases} {wideIs64bit} {
     expr {$max / -3}
 } {-3074457345618258603}
-
 test expr-36.50 {expr edge cases} {wideIs64bit} {
     expr {$max % -3}
 } {-2}
-
 test expr-36.51 {expr edge cases} {wideIs64bit} {
     expr {$max / ($min + 3)}
 } {-2}
-
 test expr-36.52 {expr edge cases} {wideIs64bit} {
     expr {$max % ($min + 3)}
 } {-9223372036854775803}
-
 test expr-36.53 {expr edge cases} {wideIs64bit} {
     expr {$max / ($min + 2)}
 } {-2}
-
 test expr-36.54 {expr edge cases} {wideIs64bit} {
     expr {$max % ($min + 2)}
 } {-9223372036854775805}
-
 test expr-36.55 {expr edge cases} {wideIs64bit} {
     expr {$max / ($min + 1)}
 } {-1}
-
 test expr-36.56 {expr edge cases} {wideIs64bit} {
     expr {$max % ($min + 1)}
 } {0}
-
 test expr-36.57 {expr edge cases} {wideIs64bit} {
     expr {$max / $min}
 } {-1}
-
 test expr-36.58 {expr edge cases} {wideIs64bit} {
     expr {$max % $min}
 } {-1}
-
 test expr-36.59 {expr edge cases} {wideIs64bit} {
     expr {($min + 1) / ($max - 1)}
 } {-2}
-
 test expr-36.60 {expr edge cases} {wideIs64bit} {
     expr {($min + 1) % ($max - 1)}
 } {9223372036854775805}
-
 test expr-36.61 {expr edge cases} {wideIs64bit} {
     expr {($max - 1) / ($min + 1)}
 } {-1}
-
 test expr-36.62 {expr edge cases} {wideIs64bit} {
     expr {($max - 1) % ($min + 1)}
 } {-1}
-
 test expr-36.63 {expr edge cases} {wideIs64bit} {
     expr {($max - 1) / $min}
 } {-1}
-
 test expr-36.64 {expr edge cases} {wideIs64bit} {
     expr {($max - 1) % $min}
 } {-2}
-
 test expr-36.65 {expr edge cases} {wideIs64bit} {
     expr {($max - 2) / $min}
 } {-1}
-
 test expr-36.66 {expr edge cases} {wideIs64bit} {
     expr {($max - 2) % $min}
 } {-3}
-
 test expr-36.67 {expr edge cases} {wideIs64bit} {
     expr {($max - 3) / $min}
 } {-1}
-
 test expr-36.68 {expr edge cases} {wideIs64bit} {
     expr {($max - 3) % $min}
 } {-4}
-
 test expr-36.69 {expr edge cases} {wideIs64bit} {
     expr {-3 / $min}
 } {0}
-
 test expr-36.70 {expr edge cases} {wideIs64bit} {
     expr {-3 % $min}
 } {-3}
-
 test expr-36.71 {expr edge cases} {wideIs64bit} {
     expr {-2 / $min}
 } {0}
-
 test expr-36.72 {expr edge cases} {wideIs64bit} {
     expr {-2 % $min}
 } {-2}
-
 test expr-36.73 {expr edge cases} {wideIs64bit} {
     expr {-1 / $min}
 } {0}
-
 test expr-36.74 {expr edge cases} {wideIs64bit} {
     expr {-1 % $min}
 } {-1}
-
 test expr-36.75 {expr edge cases} {wideIs64bit} {
     expr {0 / $min}
 } {0}
-
 test expr-36.76 {expr edge cases} {wideIs64bit} {
     expr {0 % $min}
 } {0}
-
 test expr-36.77 {expr edge cases} {wideIs64bit} {
     expr {0 / ($min + 1)}
 } {0}
-
 test expr-36.78 {expr edge cases} {wideIs64bit} {
     expr {0 % ($min + 1)}
 } {0}
-
 test expr-36.79 {expr edge cases} {wideIs64bit} {
     expr {1 / $min}
 } {-1}
-
 test expr-36.80 {expr edge cases} {wideIs64bit} {
     expr {1 % $min}
 } {-9223372036854775807}
-
 test expr-36.81 {expr edge cases} {wideIs64bit} {
     expr {1 / ($min + 1)}
 } {-1}
-
 test expr-36.82 {expr edge cases} {wideIs64bit} {
     expr {1 % ($min + 1)}
 } {-9223372036854775806}
-
 test expr-36.83 {expr edge cases} {wideIs64bit} {
     expr {2 / $min}
 } {-1}
-
 test expr-36.84 {expr edge cases} {wideIs64bit} {
     expr {2 % $min}
 } {-9223372036854775806}
-
 test expr-36.85 {expr edge cases} {wideIs64bit} {
     expr {2 / ($min + 1)}
 } {-1}
-
 test expr-36.86 {expr edge cases} {wideIs64bit} {
     expr {2 % ($min + 1)}
 } {-9223372036854775805}
-
 test expr-36.87 {expr edge cases} {wideIs64bit} {
     expr {3 / $min}
 } {-1}
-
 test expr-36.88 {expr edge cases} {wideIs64bit} {
     expr {3 % $min}
 } {-9223372036854775805}
-
 test expr-36.89 {expr edge cases} {wideIs64bit} {
     expr {3 / ($min + 1)}
 } {-1}
-
 test expr-36.90 {expr edge cases} {wideIs64bit} {
     expr {3 % ($min + 1)}
 } {-9223372036854775804}
-
 
 test expr-37.1 {expr edge cases} {wideIs64bit} {
     set dividend $max
@@ -6345,7 +6140,6 @@ test expr-37.1 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($divisor * $q) + $r}]
 } {4611686018427387903 * 2 + 1 = 9223372036854775807}
-
 test expr-37.2 {expr edge cases} {wideIs64bit} {
     set dividend [expr {$max - 1}]
     set divisor 2
@@ -6353,7 +6147,6 @@ test expr-37.2 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {4611686018427387903 * 2 + 0 = 9223372036854775806}
-
 test expr-37.3 {expr edge cases} {wideIs64bit} {
     set dividend [expr {$max - 2}]
     set divisor 2
@@ -6361,7 +6154,6 @@ test expr-37.3 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {4611686018427387902 * 2 + 1 = 9223372036854775805}
-
 test expr-37.4 {expr edge cases} {wideIs64bit} {
     set dividend $max
     set divisor 3
@@ -6369,7 +6161,6 @@ test expr-37.4 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {3074457345618258602 * 3 + 1 = 9223372036854775807}
-
 test expr-37.5 {expr edge cases} {wideIs64bit} {
     set dividend [expr {$max - 1}]
     set divisor 3
@@ -6377,7 +6168,6 @@ test expr-37.5 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {3074457345618258602 * 3 + 0 = 9223372036854775806}
-
 test expr-37.6 {expr edge cases} {wideIs64bit} {
     set dividend [expr {$max - 2}]
     set divisor 3
@@ -6385,7 +6175,6 @@ test expr-37.6 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {3074457345618258601 * 3 + 2 = 9223372036854775805}
-
 test expr-37.7 {expr edge cases} {wideIs64bit} {
     set dividend $min
     set divisor 2
@@ -6393,7 +6182,6 @@ test expr-37.7 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-4611686018427387904 * 2 + 0 = -9223372036854775808}
-
 test expr-37.8 {expr edge cases} {wideIs64bit} {
     set dividend [expr {$min + 1}]
     set divisor 2
@@ -6401,7 +6189,6 @@ test expr-37.8 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-4611686018427387904 * 2 + 1 = -9223372036854775807}
-
 test expr-37.9 {expr edge cases} {wideIs64bit} {
     set dividend [expr {$min + 2}]
     set divisor 2
@@ -6409,7 +6196,6 @@ test expr-37.9 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-4611686018427387903 * 2 + 0 = -9223372036854775806}
-
 test expr-37.10 {expr edge cases} {wideIs64bit} {
     # Multiplication overflows 64 bit type here,
     # so when the 1 is added it overflows
@@ -6420,7 +6206,6 @@ test expr-37.10 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {-3074457345618258603 * 3 + 1 = -9223372036854775808}
-
 test expr-37.11 {expr edge cases} {wideIs64bit} {
     set dividend $min
     set divisor -3
@@ -6428,7 +6213,6 @@ test expr-37.11 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {3074457345618258602 * -3 + -2 = -9223372036854775808}
-
 test expr-37.12 {expr edge cases} {wideIs64bit} {
     set dividend $min
     set divisor $min
@@ -6436,7 +6220,6 @@ test expr-37.12 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1 * -9223372036854775808 + 0 = -9223372036854775808}
-
 test expr-37.13 {expr edge cases} {wideIs64bit} {
     set dividend $min
     set divisor [expr {$min + 1}]
@@ -6444,7 +6227,6 @@ test expr-37.13 {expr edge cases} {wideIs64bit} {
     set r [expr {$dividend % $divisor}]
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1 * -9223372036854775807 + -1 = -9223372036854775808}
-
 test expr-37.14 {expr edge cases} {wideIs64bit} {
     set dividend $min
     set divisor [expr {$min + 2}]
@@ -6453,10 +6235,81 @@ test expr-37.14 {expr edge cases} {wideIs64bit} {
     list $q * $divisor + $r = [expr {($q * $divisor) + $r}]
 } {1 * -9223372036854775806 + -2 = -9223372036854775808}
 
-
 test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
     expr {abs(-2147483648)}
 } 2147483648
+
+test expr-46.1 {round() rounds to +-infinity} {
+    expr round(0.5)
+} 1
+test expr-46.2 {round() rounds to +-infinity} {
+    expr round(1.5)
+} 2
+test expr-46.3 {round() rounds to +-infinity} {
+    expr round(-0.5)
+} -1
+test expr-46.4 {round() rounds to +-infinity} {
+    expr round(-1.5)
+} -2
+test expr-46.5 {round() overflow} {
+    list [catch {expr round(9.2233720368547758e+018)} result] $result
+} {1 {integer value too large to represent}}
+test expr-46.6 {round() overflow} {
+    list [catch {expr round(-9.2233720368547758e+018)} result] $result
+} {1 {integer value too large to represent}}
+test expr-46.7 {round() bad value} {
+    set x trash
+    list [catch {expr {round($x)}} result] $result
+} {1 {argument to math function didn't have numeric value}}
+test expr-46.8 {round() already an integer} {
+    set x 123456789012
+    incr x
+    expr round($x)
+} 123456789013
+test expr-46.9 {round() boundary case - 1/2 - 1 ulp} {
+    set x 0.25
+    set bit 0.125
+    while 1 {
+	set newx [expr {$x + $bit}]
+	if { $newx == $x || $newx == 0.5 } break
+	set x $newx
+	set bit [expr { $bit / 2.0 }]
+    }
+    expr {round($x)}
+} 0
+test expr-46.10 {round() boundary case - 1/2 + 1 ulp} {
+    set x 0.75
+    set bit 0.125
+    while 1 {
+	set newx [expr {$x - $bit}]
+	if { $newx == $x || $newx == 0.5 } break
+	set x $newx
+	set bit [expr { $bit / 2.0 }]
+    }
+    expr {round($x)}
+} 1
+test expr-46.11 {round() boundary case - -1/2 - 1 ulp} {
+    set x -0.75
+    set bit 0.125
+    while 1 {
+	set newx [expr {$x + $bit}]
+	if { $newx == $x || $newx == -0.5 } break
+	set x $newx
+	set bit [expr { $bit / 2.0 }]
+    }
+    expr {round($x)}
+} -1
+test expr-46.12 {round() boundary case - -1/2 + 1 ulp} {
+    set x -0.25
+    set bit 0.125
+    while 1 {
+	set newx [expr {$x - $bit}]
+	if { $newx == $x || $newx == -0.5 } break
+	set x $newx
+	set bit [expr { $bit / 2.0 }]
+    }
+    expr {round($x)}
+} 0
 
 # cleanup
 if {[info exists a]} {

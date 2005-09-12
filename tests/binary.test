@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.8 2005/08/15 17:23:08 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.9 2005/09/12 15:44:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2077,6 +2077,102 @@ test binary-61.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} bigEndian {
     binary scan [binary format W [expr {wide(3) << 31}]] m x
     set x
 } 6442450944
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+
+testConstraint ieeeFloatingPoint [testIEEE]
+
+test binary-65.1 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fcfffffffffffff] q d
+    set d
+} 0.24999999999999997
+test binary-65.2 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fd0000000000000] q d
+    set d
+} 0.25
+test binary-65.3 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fdfffffffffffff] q d
+    set d
+} 0.49999999999999994
+test binary-65.4 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fe0000000000000] q d
+    set d
+} 0.5
+test binary-65.5 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x3fffffffffffffff] q d
+    set d
+} 1.9999999999999998
+test binary-65.6 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x4000000000000000] q d
+    set d
+} 2.0
+test binary-65.7 {smallest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x434fffffffffffff] q d
+    set d
+} 18014398509481982.0
+test binary-65.8 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x4350000000000000] q d
+    set d
+} 18014398509481984.0
+test binary-65.8 {largest significand} ieeeFloatingPoint {
+    binary scan [binary format w 0x4350000000000001] q d
+    set d
+} 18014398509481988.0
 
 
 # cleanup

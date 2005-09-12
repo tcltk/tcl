@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.14 2005/08/15 17:23:22 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.15 2005/09/12 15:45:02 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -284,6 +284,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclIOGT.obj \
 	$(TMP_DIR)\tclIOSock.obj \
 	$(TMP_DIR)\tclIOUtil.obj \
+	$(TMP_DIR)\tclIORChan.obj \
 	$(TMP_DIR)\tclLink.obj \
 	$(TMP_DIR)\tclListObj.obj \
 	$(TMP_DIR)\tclLiteral.obj \

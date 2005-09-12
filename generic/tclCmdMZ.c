@@ -2,8 +2,8 @@
  * tclCmdMZ.c --
  *
  *	This file contains the top-level command routines for most of the Tcl
- *	built-in commands whose names begin with the letters M to Z.  It
- *	contains only commands in the generic core (i.e.  those that don't
+ *	built-in commands whose names begin with the letters M to Z. It
+ *	contains only commands in the generic core (i.e. those that don't
  *	depend much upon UNIX facilities).
  *
  * Copyright (c) 1987-1993 The Regents of the University of California.
@@ -15,18 +15,18 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.19 2005/07/26 04:11:53 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.20 2005/09/12 15:40:28 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclRegexp.h"
-
+
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_PwdObjCmd --
  *
- *	This procedure is invoked to process the "pwd" Tcl command.  See the
+ *	This procedure is invoked to process the "pwd" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -41,10 +41,10 @@
 	/* ARGSUSED */
 int
 Tcl_PwdObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Obj *retVal;
 
@@ -67,7 +67,7 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_RegexpObjCmd --
  *
- *	This procedure is invoked to process the "regexp" Tcl command.  See
+ *	This procedure is invoked to process the "regexp" Tcl command. See
  *	the user documentation for details on what it does.
  *
  * Results:
@@ -82,10 +82,10 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
 	/* ARGSUSED */
 int
 Tcl_RegexpObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int i, indices, match, about, offset, all, doinline, numMatchesSaved;
     int cflags, eflags, stringLength;
@@ -103,13 +103,13 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
     };
 
-    indices	= 0;
-    about	= 0;
-    cflags	= TCL_REG_ADVANCED;
-    eflags	= 0;
-    offset	= 0;
-    all		= 0;
-    doinline	= 0;
+    indices = 0;
+    about = 0;
+    cflags = TCL_REG_ADVANCED;
+    eflags = 0;
+    offset = 0;
+    all = 0;
+    doinline = 0;
 
     for (i = 1; i < objc; i++) {
 	char *name;
@@ -172,7 +172,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	}
     }
 
-    endOfForLoop:
+  endOfForLoop:
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 	    "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
@@ -199,7 +199,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     if (about) {
 	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
 	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
-	  optionError:
+	optionError:
 	    if (startIndex) {
 		Tcl_DecrRefCount(startIndex);
 	    }
@@ -210,7 +210,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 
     /*
      * Get the length of the string that we are matching against so we can do
-     * the termination test for -all matches.  Do this before getting the
+     * the termination test for -all matches. Do this before getting the
      * regexp to avoid shimmering problems.
      */
 
@@ -260,8 +260,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 
     /*
      * The following loop is to handle multiple matches within the same source
-     * string; each iteration handles one match.  If "-all" hasn't been
-     * specified then the loop body only gets executed once.  We terminate the
+     * string; each iteration handles one match. If "-all" hasn't been
+     * specified then the loop body only gets executed once. We terminate the
      * loop when the starting offset is past the end of the string.
      */
 
@@ -269,8 +269,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr,
 		offset /* offset */, numMatchesSaved, eflags
 		| ((offset > 0 &&
-		   (Tcl_GetUniChar(objPtr,offset-1) != (Tcl_UniChar)'\n'))
-		   ? TCL_REG_NOTBOL : 0));
+		(Tcl_GetUniChar(objPtr,offset-1) != (Tcl_UniChar)'\n'))
+		? TCL_REG_NOTBOL : 0));
 
 	if (match < 0) {
 	    return TCL_ERROR;
@@ -323,12 +323,12 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 
 		/*
 		 * Only adjust the match area if there was a match for that
-		 * area.  (Scriptics Bug 4391/SF Bug #219232)
+		 * area. (Scriptics Bug 4391/SF Bug #219232)
 		 */
 
 		if (i <= info.nsubs && info.matches[i].start >= 0) {
 		    start = offset + info.matches[i].start;
-		    end   = offset + info.matches[i].end;
+		    end = offset + info.matches[i].end;
 
 		    /*
 		     * Adjust index so it refers to the last character in the
@@ -340,7 +340,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		    }
 		} else {
 		    start = -1;
-		    end   = -1;
+		    end = -1;
 		}
 
 		objs[0] = Tcl_NewLongObj(start);
@@ -382,8 +382,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	/*
 	 * Adjust the offset to the character just after the last one in the
 	 * matchVar and increment all to count how many times we are making a
-	 * match.  We always increment the offset by at least one to prevent
-	 * endless looping (as in the case: regexp -all {a*} a).  Otherwise,
+	 * match. We always increment the offset by at least one to prevent
+	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
 	 * when we match the NULL string at the end of the input string, we
 	 * will loop indefinately (because the length of the match is 0, so
 	 * offset never changes).
@@ -419,8 +419,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_RegsubObjCmd --
  *
- *	This procedure is invoked to process the "regsub" Tcl command.  See
- *	the user documentation for details on what it does.
+ *	This procedure is invoked to process the "regsub" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -434,10 +434,10 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	/* ARGSUSED */
 int
 Tcl_RegsubObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
     int start, end, subStart, subEnd, match;
@@ -542,28 +542,27 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
 	    && (strpbrk(TclGetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
 	/*
-	 * This is a simple one pair string map situation.  We make use of a
+	 * This is a simple one pair string map situation. We make use of a
 	 * slightly modified version of the one pair STR_MAP code.
 	 */
 
 	int slen, nocase;
-	int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar *, CONST Tcl_UniChar *,
-		unsigned long));
+	int (*strCmpFn)(CONST Tcl_UniChar*, CONST Tcl_UniChar*, unsigned long);
 	Tcl_UniChar *p, wsrclc;
 
 	numMatches = 0;
-	nocase     = (cflags & TCL_REG_NOCASE);
-	strCmpFn   = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
+	nocase = (cflags & TCL_REG_NOCASE);
+	strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
 
-	wsrc     = Tcl_GetUnicodeFromObj(objv[0], &slen);
-	wstring  = Tcl_GetUnicodeFromObj(objv[1], &wlen);
+	wsrc = Tcl_GetUnicodeFromObj(objv[0], &slen);
+	wstring = Tcl_GetUnicodeFromObj(objv[1], &wlen);
 	wsubspec = Tcl_GetUnicodeFromObj(objv[2], &wsublen);
-	wend     = wstring + wlen - (slen ? slen - 1 : 0);
-	result   = TCL_OK;
+	wend = wstring + wlen - (slen ? slen - 1 : 0);
+	result = TCL_OK;
 
 	if (slen == 0) {
 	    /*
-	     * regsub behavior for "" matches between each character.  'string
+	     * regsub behavior for "" matches between each character. 'string
 	     * map' skips the "" case.
 	     */
 
@@ -616,7 +615,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Make sure to avoid problems where the objects are shared.  This can
+     * Make sure to avoid problems where the objects are shared. This can
      * cause RegExpObj <> UnicodeObj shimmering that causes data corruption.
      * [Bug #461322]
      */
@@ -639,8 +638,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     /*
      * The following loop is to handle multiple matches within the same source
      * string; each iteration handles one match and its corresponding
-     * substitution.  If "-all" hasn't been specified then the loop body only
-     * gets executed once.  We must use 'offset <= wlen' in particular for the
+     * substitution. If "-all" hasn't been specified then the loop body only
+     * gets executed once. We must use 'offset <= wlen' in particular for the
      * case where the regexp pattern can match the empty string - this is
      * useful when doing, say, 'regsub -- ^ $str ...' when $str might be
      * empty.
@@ -656,8 +655,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
 		10 /* matches */, ((offset > 0 &&
-		   (wstring[offset-1] != (Tcl_UniChar)'\n'))
-		   ? TCL_REG_NOTBOL : 0));
+		(wstring[offset-1] != (Tcl_UniChar)'\n'))
+		? TCL_REG_NOTBOL : 0));
 
 	if (match < 0) {
 	    result = TCL_ERROR;
@@ -692,7 +691,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
 	/*
 	 * Append the subSpec argument to the variable, making appropriate
-	 * substitutions.  This code is a bit hairy because of the backslash
+	 * substitutions. This code is a bit hairy because of the backslash
 	 * conventions and because the code saves up ranges of characters in
 	 * subSpec to reduce the number of calls to Tcl_SetVar.
 	 */
@@ -779,7 +778,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      * result variable.
      */
 
-    regsubDone:
+  regsubDone:
     if (numMatches == 0) {
 	/*
 	 * On zero matches, just ignore the offset, since it shouldn't matter
@@ -812,7 +811,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
-    done:
+  done:
     if (objPtr && (objv[1] == objv[0])) {
 	Tcl_DecrRefCount(objPtr);
     }
@@ -830,8 +829,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_RenameObjCmd --
  *
- *	This procedure is invoked to process the "rename" Tcl command.  See
- *	the user documentation for details on what it does.
+ *	This procedure is invoked to process the "rename" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -915,8 +914,8 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_SourceObjCmd --
  *
- *	This procedure is invoked to process the "source" Tcl command.  See
- *	the user documentation for details on what it does.
+ *	This procedure is invoked to process the "source" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -966,7 +965,7 @@ Tcl_SourceObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_SplitObjCmd --
  *
- *	This procedure is invoked to process the "split" Tcl command.  See the
+ *	This procedure is invoked to process the "split" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -1019,7 +1018,7 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	 * Handle the special case of splitting on every character.
 	 *
 	 * Uses a hash table to ensure that each kind of character has only
-	 * one Tcl_Obj instance (multiply-referenced) in the final list.  This
+	 * one Tcl_Obj instance (multiply-referenced) in the final list. This
 	 * is a *major* win when splitting on a long string (especially in the
 	 * megabyte range!) - DKF
 	 */
@@ -1053,9 +1052,9 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	char *p;
 
 	/*
-	 * Handle the special case of splitting on a single character.  This
-	 * is only true for the one-char ASCII case, as one unicode char is >
-	 * 1 byte in length.
+	 * Handle the special case of splitting on a single character. This is
+	 * only true for the one-char ASCII case, as one unicode char is > 1
+	 * byte in length.
 	 */
 
 	while (*stringPtr && (p=strchr(stringPtr,(int)*splitChars)) != NULL) {
@@ -1071,7 +1070,7 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	Tcl_UniChar splitChar;
 
 	/*
-	 * Normal case: split on any of a given set of characters.  Discard
+	 * Normal case: split on any of a given set of characters. Discard
 	 * instances of the split characters.
 	 */
 
@@ -1102,14 +1101,14 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_StringObjCmd --
  *
- *	This procedure is invoked to process the "string" Tcl command.  See
- *	the user documentation for details on what it does.  Note that this
- *	command only functions correctly on properly formed Tcl UTF strings.
+ *	This procedure is invoked to process the "string" Tcl command. See the
+ *	user documentation for details on what it does. Note that this command
+ *	only functions correctly on properly formed Tcl UTF strings.
  *
- *	Note that the primary methods here (equal, compare, match, ...)  have
- *	bytecode equivalents.  You will find the code for those in
- *	tclExecute.c.  The code here will only be used in the non-bc case
- *	(like in an 'eval').
+ *	Note that the primary methods here (equal, compare, match, ...) have
+ *	bytecode equivalents. You will find the code for those in
+ *	tclExecute.c. The code here will only be used in the non-bc case (like
+ *	in an 'eval').
  *
  * Results:
  *	A standard Tcl result.
@@ -1149,7 +1148,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1169,8 +1168,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	 */
 
 	int i, match, length, nocase = 0, reqlength = -1;
-	typedef int (*strCmpFn_t) _ANSI_ARGS_((const char *, const char *,
-		unsigned int));
+	typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
 	strCmpFn_t strCmpFn;
 
 	if (objc < 4 || objc > 7) {
@@ -1220,7 +1218,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		objv[1]->typePtr == &tclByteArrayType) {
 	    /*
 	     * Use binary versions of comparisons since that won't cause undue
-	     * type conversions and it is much faster.  Only do this if we're
+	     * type conversions and it is much faster. Only do this if we're
 	     * case-sensitive (which is all that really makes sense with byte
 	     * arrays anyway, and we have no memcasecmp() for some
 	     * reason... :^)
@@ -1233,7 +1231,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		&& (objv[1]->typePtr == &tclStringType)) {
 	    /*
 	     * Do a unicode-specific comparison if both of the args are of
-	     * String type.  In benchmark testing this proved the most
+	     * String type. In benchmark testing this proved the most
 	     * efficient check between the unicode and string comparison
 	     * operations.
 	     */
@@ -1244,9 +1242,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    (nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
 	} else {
 	    /*
-	     * As a catch-all we will work with UTF-8.  We cannot use memcmp()
+	     * As a catch-all we will work with UTF-8. We cannot use memcmp()
 	     * as that is unsafe with any string containing NULL (\xC0\x80 in
-	     * Tcl's utf rep).  We can use the more efficient TclpUtfNcmp2 if
+	     * Tcl's utf rep). We can use the more efficient TclpUtfNcmp2 if
 	     * we are case-sensitive and no specific length was requested.
 	     */
 
@@ -1315,7 +1313,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	if (objc == 5) {
 	    /*
 	     * If a startIndex is specified, we will need to fast forward to
-	     * that point in the string before we think about a match
+	     * that point in the string before we think about a match.
 	     */
 
 	    if (TclGetIntForIndex(interp, objv[4], length2 - 1,
@@ -1326,7 +1324,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		goto str_first_done;
 	    } else if (start > 0) {
 		ustring2 += start;
-		length2  -= start;
+		length2 -= start;
 	    } else if (start < 0) {
 		/*
 		 * Invalid start index mapped to string start; Bug #423581
@@ -1373,7 +1371,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	/*
 	 * If we have a ByteArray object, avoid indexing in the Utf string
-	 * since the byte array contains one byte per character.  Otherwise,
+	 * since the byte array contains one byte per character. Otherwise,
 	 * use the Unicode string rep to get the index'th char.
 	 */
 
@@ -1418,7 +1416,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	 * The UniChar comparison function
 	 */
 
-	int (*chcomp)_ANSI_ARGS_((int)) = NULL;
+	int (*chcomp)(int) = NULL;
 	int i, failat = 0, result = 1, strict = 0;
 	Tcl_Obj *objPtr, *failVarObj = NULL;
 	Tcl_WideInt w;
@@ -1542,8 +1540,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	     *
 	     * The danger in this function is that "12345678901234567890" is
 	     * an acceptable 'double', but will later be interp'd as an int by
-	     * something like [expr].  Therefore, we check to see if it looks
-	     * like an int, and if so we do a range check on it.  If strtoul
+	     * something like [expr]. Therefore, we check to see if it looks
+	     * like an int, and if so we do a range check on it. If strtoul
 	     * gets to the end, we know we either received an acceptable int,
 	     * or over/underflow.
 	     */
@@ -1653,7 +1651,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    /*
-	     * Like STR_IS_DOUBLE, but we use strtoll.  Since
+	     * Like STR_IS_DOUBLE, but we use strtoll. Since
 	     * Tcl_GetWideIntFromObj already failed, we set result to 0.
 	     */
 
@@ -1767,7 +1765,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	}
 
 	if (length1 > 0) {
-	    for (; p >= ustring2;  p--) {
+	    for (; p >= ustring2; p--) {
 		/*
 		 * Scan backwards to find the first character.
 		 */
@@ -1813,8 +1811,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	int mapElemc, nocase = 0, mapWithDict = 0, copySource = 0;
 	Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
 	Tcl_UniChar *ustring1, *ustring2, *p, *end;
-	int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar *, CONST Tcl_UniChar *,
-		unsigned long));
+	int (*strCmpFn)(CONST Tcl_UniChar*, CONST Tcl_UniChar*, unsigned long);
 
 	if (objc < 4 || objc > 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-nocase? charMap string");
@@ -1846,7 +1843,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    /*
 	     * We know the type exactly, so all dict operations will succeed
-	     * for sure.  This shortens this code quite a bit.
+	     * for sure. This shortens this code quite a bit.
 	     */
 
 	    Tcl_DictObjSize(interp, objv[objc-2], &mapElemc);
@@ -1974,9 +1971,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int *mapLens;
 
 	    /*
-	     * Precompute pointers to the unicode string and length.  This
+	     * Precompute pointers to the unicode string and length. This
 	     * saves us repeated function calls later, significantly speeding
-	     * up the algorithm.  We only need the lowercase first char in the
+	     * up the algorithm. We only need the lowercase first char in the
 	     * nocase case.
 	     */
 
@@ -2001,7 +1998,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     */
 
 		    ustring2 = mapStrings[index];
-		    length2  = mapLens[index];
+		    length2 = mapLens[index];
 		    if ((length2 > 0) && ((*ustring1 == *ustring2) ||
 			    (nocase && (Tcl_UniCharToLower(*ustring1) ==
 				    u2lc[index/2]))) &&
@@ -2094,7 +2091,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	/*
 	 * If we have a ByteArray object, avoid indexing in the Utf string
-	 * since the byte array contains one byte per character.  Otherwise,
+	 * since the byte array contains one byte per character. Otherwise,
 	 * use the Unicode string rep to get the range.
 	 */
 
@@ -2151,16 +2148,18 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
 	    if (length1 > 0) {
 		/*
-		 * Only build up a string that has data.  Instead of building
+		 * Only build up a string that has data. Instead of building
 		 * it up with repeated appends, we just allocate the necessary
-		 * space once and copy the string value in.  Check for
-		 * overflow with back-division. [Bug #714106]
+		 * space once and copy the string value in. Check for overflow
+		 * with back-division. [Bug #714106]
 		 */
 
 		Tcl_Obj *resultPtr;
+
 		length2 = length1 * count;
 		if ((length2 / count) != length1) {
 		    char buf[TCL_INTEGER_SPACE+1];
+
 		    sprintf(buf, "%d", INT_MAX);
 		    Tcl_AppendResult(interp,
 			    "string size overflow, must be less than ",
@@ -2361,8 +2360,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    end = string1;
 
 	    /*
-	     * The outer loop iterates over the string.  The inner loop
-	     * iterates over the trim characters.  The loops terminate as soon
+	     * The outer loop iterates over the string. The inner loop
+	     * iterates over the trim characters. The loops terminate as soon
 	     * as a non-trim character is discovered and length1 marks the
 	     * last non-trim character.
 	     */
@@ -2468,9 +2467,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_SubstObjCmd --
  *
- *	This procedure is invoked to process the "subst" Tcl command.  See the
- *	user documentation for details on what it does.  This command relies
- *	on Tcl_SubstObj() for its implementation.
+ *	This procedure is invoked to process the "subst" Tcl command. See the
+ *	user documentation for details on what it does. This command relies on
+ *	Tcl_SubstObj() for its implementation.
  *
  * Results:
  *	A standard Tcl result.
@@ -2484,16 +2483,16 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	/* ARGSUSED */
 int
 Tcl_SubstObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];       	/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     static CONST char *substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", (char *) NULL
     };
     enum substOptions {
-	SUBST_NOBACKSLASHES,      SUBST_NOCOMMANDS,       SUBST_NOVARS
+	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS
     };
     Tcl_Obj *resultPtr;
     int optionIndex, flags, i;
@@ -2585,7 +2584,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
 	OPT_LAST
     };
-    typedef int (*strCmpFn_t) _ANSI_ARGS_((const char *, const char *));
+    typedef int (*strCmpFn_t)(const char *, const char *);
     strCmpFn_t strCmpFn = strcmp;
 
     mode = OPT_EXACT;
@@ -2730,7 +2729,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Complain if the last body is a continuation.  Note that this check
+     * Complain if the last body is a continuation. Note that this check
      * assumes that the list is non-empty!
      */
 
@@ -2754,7 +2753,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 
 	    /*
 	     * If either indexVarObj or matchVarObj are non-NULL, we're in
-	     * REGEXP mode but have reached the default clause anyway.  TIP#75
+	     * REGEXP mode but have reached the default clause anyway. TIP#75
 	     * specifies that we set the variables to empty lists (== empty
 	     * objects) in that case.
 	     */
@@ -2865,10 +2864,10 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 		Tcl_DecrRefCount(indicesObj);
 
 		/*
-		 * Careful!  Check to see if we have allocated the list of
+		 * Careful! Check to see if we have allocated the list of
 		 * matched strings; if so (but there was an error assigning
 		 * the indices list) we have a potential memory leak because
-		 * the match list has not been written to a variable.  Except
+		 * the match list has not been written to a variable. Except
 		 * that we'll clean that up right now.
 		 */
 
@@ -2906,6 +2905,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	     * This shouldn't happen since we've checked that the last body is
 	     * not a continuation...
 	     */
+
 	    Tcl_Panic("fall-out when searching for body to match pattern");
 	}
 	if (strcmp(TclGetString(objv[j]), "-") != 0) {
@@ -2922,6 +2922,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     if (result == TCL_ERROR) {
 	Tcl_Obj *msg = Tcl_NewStringObj("\n    (\"", -1);
 	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+
 	Tcl_IncrRefCount(msg);
 	Tcl_IncrRefCount(errorLine);
 	TclAppendLimitedToObj(msg, pattern, -1, 50, "");
@@ -2941,7 +2942,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
  * Tcl_TimeObjCmd --
  *
  *	This object-based procedure is invoked to process the "time" Tcl
- *	command.  See the user documentation for details on what it does.
+ *	command. See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -3021,62 +3022,62 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_WhileObjCmd --
  *
- *      This procedure is invoked to process the "while" Tcl command.  See the
- *      user documentation for details on what it does.
+ *	This procedure is invoked to process the "while" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  *	With the bytecode compiler, this procedure is only called when a
  *	command name is computed at runtime, and is "while" or the name to
  *	which "while" was renamed: e.g., "set z while; $z {$i<100} {}"
  *
  * Results:
- *      A standard Tcl result.
+ *	A standard Tcl result.
  *
  * Side effects:
- *      See the user documentation.
+ *	See the user documentation.
  *
  *----------------------------------------------------------------------
  */
 
-        /* ARGSUSED */
+	/* ARGSUSED */
 int
 Tcl_WhileObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;                   /* Not used. */
-    Tcl_Interp *interp;                 /* Current interpreter. */
-    int objc;                           /* Number of arguments. */
-    Tcl_Obj *CONST objv[];       	/* Argument objects. */
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int result, value;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     while (1) {
-        result = Tcl_ExprBooleanObj(interp, objv[1], &value);
-        if (result != TCL_OK) {
-            return result;
-        }
-        if (!value) {
-            break;
-        }
-        result = Tcl_EvalObjEx(interp, objv[2], 0);
-        if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
-            if (result == TCL_ERROR) {
-                char msg[32 + TCL_INTEGER_SPACE];
+	result = Tcl_ExprBooleanObj(interp, objv[1], &value);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	if (!value) {
+	    break;
+	}
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
+	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
+	    if (result == TCL_ERROR) {
+		char msg[32 + TCL_INTEGER_SPACE];
 
-                sprintf(msg, "\n    (\"while\" body line %d)",
-                        interp->errorLine);
-                Tcl_AddErrorInfo(interp, msg);
-            }
-            break;
-        }
+		sprintf(msg, "\n    (\"while\" body line %d)",
+			interp->errorLine);
+		Tcl_AddErrorInfo(interp, msg);
+	    }
+	    break;
+	}
     }
     if (result == TCL_BREAK) {
-        result = TCL_OK;
+	result = TCL_OK;
     }
     if (result == TCL_OK) {
-        Tcl_ResetResult(interp);
+	Tcl_ResetResult(interp);
     }
     return result;
 }
