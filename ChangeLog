@@ -1,3 +1,9 @@
+2005-09-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (TclAppendFormattedObjs):	Bug fix:
+	make sure %ld formats force the collection of a wide value, when
+	the value could be a different long.
+
 2005-09-09  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIORChan.c (RcDecodeEventMask): Added missing type
