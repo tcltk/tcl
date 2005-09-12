@@ -2,6 +2,9 @@
 
 	[kennykb-numerics-branch]	Merge updates from HEAD.
 
+	* generic/tclCmdAH.c:		Added support for the "ll" width	
+	* generic/tclStringObj.c:	specifier to [format].
+
 	* generic/tclStringObj.c (TclAppendFormattedObjs):	Bug fix:
 	make sure %ld formats force the collection of a wide value, when
 	the value could be a different long.

@@ -10,11 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.57.2.8 2005/09/09 18:48:40 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.57.2.9 2005/09/12 19:12:27 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
+
+#define NEW_FORMAT 1
 
 /*
  * Prototypes for local procedures defined in this file:
