@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.42 2005/09/09 19:24:32 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.43 2005/09/12 14:31:15 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -1921,13 +1921,15 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	    Tcl_WideInt w;
 	    int isNegative = 0;
 
-	    if (Tcl_GetLongFromObj(NULL, segment, &l) != TCL_OK) {
+	    if (useWide) {
+		if (Tcl_GetWideIntFromObj(interp, segment, &w) != TCL_OK) {
+		    goto error;
+		}
+	    } else if (Tcl_GetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(interp, segment, &w) != TCL_OK) {
 		    goto error;
 		}
 		l = Tcl_WideAsLong(w);
-	    } else if (useWide) {
-		w = Tcl_LongAsWide(l);
 	    }
 
 	    if (useShort) {
