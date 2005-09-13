@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.30 2005/09/02 19:23:46 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.31 2005/09/13 21:23:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -663,12 +663,11 @@ Tcl_AppendResultVA(interp, argList)
  */
 
 void
-Tcl_AppendResult TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+Tcl_AppendResult(Tcl_Interp *interp, ...)
 {
-    Tcl_Interp *interp;
     va_list argList;
 
-    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    va_start(argList, interp);
     Tcl_AppendResultVA(interp, argList);
     va_end(argList);
 }
@@ -1030,11 +1029,9 @@ Tcl_SetErrorCodeVA(interp, argList)
  *----------------------------------------------------------------------
  */
 
-	/* VARARGS2 */
 void
-Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 {
-    Tcl_Interp *interp;
     va_list argList;
 
     /*
@@ -1042,7 +1039,7 @@ Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
      * errorCode field as list elements.
      */
 
-    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    va_start(argList, interp);
     Tcl_SetErrorCodeVA(interp, argList);
     va_end(argList);
 }

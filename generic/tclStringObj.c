@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.43 2005/09/12 14:31:15 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.44 2005/09/13 21:23:51 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -1662,12 +1662,11 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
  */
 
 void
-Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
+Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 {
-    register Tcl_Obj *objPtr;
     va_list argList;
 
-    objPtr = TCL_VARARGS_START(Tcl_Obj *,arg1,argList);
+    va_start(argList, objPtr);
     Tcl_AppendStringsToObjVA(objPtr, argList);
     va_end(argList);
 }
@@ -2260,11 +2259,12 @@ FormatObjVA(interp, argList)
  */
 
 int
-TclFormatObj TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+TclFormatObj(Tcl_Interp *interp, ...)
 {
     va_list argList;
     int result;
-    Tcl_Interp *interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+
+    va_start(argList, interp);
     result = FormatObjVA(interp, argList);
     va_end(argList);
     return result;
@@ -2384,11 +2384,12 @@ ObjPrintfVA(interp, argList)
  */
 
 int
-TclObjPrintf TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+TclObjPrintf(Tcl_Interp *interp, ...)
 {
     va_list argList;
     int result;
-    Tcl_Interp *interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+
+    va_start(argList, interp);
     result = ObjPrintfVA(interp, argList);
     va_end(argList);
     return result;

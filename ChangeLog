@@ -1,3 +1,21 @@
+2005-09-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Explicitly standardized on the use of stdarg.h
+	* generic/tclBasic.c:	conventions for functions with variable number
+	* generic/tclInt.h:	of arguments.  Support for varargs.h has been
+	* generic/tclPanic.c:	implicitly gone for some time now.  All
+	* generic/tclResult.c:	TCL_VARARGS* macros purged from Tcl sources,
+	* generic/tclStringObj.c:	leaving only some deprecated #define's
+	* tools/genStubs.tcl:	in tcl.h for the sake of older extensions.
+
+	* generic/tclDecls.h:	make genstubs
+
+	* doc/AddErrInfo.3:	Replaced all documented requirement for use
+	* doc/Eval.3:		of TCL_VARARGS_START() with requirement for
+	* doc/Panic.3:		use of va_start().
+	* doc/SetResult.3:
+	* doc/StringObj.3:
+
 2005-09-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (TclAppendFormattedObjs):	Bug fix:
