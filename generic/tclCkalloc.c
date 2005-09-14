@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.23 2005/07/19 22:45:35 dkf Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.24 2005/09/14 21:32:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -843,14 +843,13 @@ MemoryCmd(clientData, interp, argc, argv)
 	return TCL_OK;
     }
     if (strcmp(argv[1],"info") == 0) {
-	char buf[400];
-	sprintf(buf, "%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n",
+	TclObjPrintf(NULL, Tcl_GetObjResult(interp),
+		"%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
 		"current bytes allocated", current_bytes_malloced,
 		"maximum packets allocated", maximum_malloc_packets,
 		"maximum bytes allocated", maximum_bytes_malloced);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 	return TCL_OK;
     }
     if (strcmp(argv[1],"init") == 0) {
