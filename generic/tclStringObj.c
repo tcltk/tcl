@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.44 2005/09/13 21:23:51 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.45 2005/09/14 03:46:50 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -53,8 +53,10 @@ static void		AppendUtfToUtfRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    CONST char *bytes, int numBytes));
 static void		FillUnicodeRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		FormatObjVA _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, CONST char *format,
 			    va_list argList));
 static int		ObjPrintfVA _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, CONST char *format,
 			    va_list argList));
 static void		FreeStringInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		DupStringInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
@@ -2214,23 +2216,13 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
  */
 
 static int
-FormatObjVA(interp, argList)
-    Tcl_Interp *interp;
-    va_list argList;
+FormatObjVA(Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    CONST char *format,
+    va_list argList)
 {
     int code, objc;
     Tcl_Obj **objv, *element, *list = Tcl_NewObj();
-    CONST char *format;
-    Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
-
-    if (objPtr == NULL) {
-	Tcl_Panic("TclFormatObj: no Tcl_Obj to append to");
-    }
-
-    format = va_arg(argList, CONST char *);
-    if (format == NULL) {
-	Tcl_Panic("TclFormatObj: no format string argument");
-    }
 
     Tcl_IncrRefCount(list);
     element = va_arg(argList, Tcl_Obj *);
@@ -2259,13 +2251,13 @@ FormatObjVA(interp, argList)
  */
 
 int
-TclFormatObj(Tcl_Interp *interp, ...)
+TclFormatObj(Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, ...)
 {
     va_list argList;
     int result;
 
-    va_start(argList, interp);
-    result = FormatObjVA(interp, argList);
+    va_start(argList, format);
+    result = FormatObjVA(interp, objPtr, format, argList);
     va_end(argList);
     return result;
 }
@@ -2283,24 +2275,17 @@ TclFormatObj(Tcl_Interp *interp, ...)
  */
 
 static int
-ObjPrintfVA(interp, argList)
-    Tcl_Interp *interp;
-    va_list argList;
+ObjPrintfVA(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    CONST char *format,
+    va_list argList)
 {
     int code, objc;
     Tcl_Obj **objv, *list = Tcl_NewObj();
-    CONST char *format, *p;
-    Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
+    CONST char *p;
 
-    if (objPtr == NULL) {
-	Tcl_Panic("TclObjPrintf: no Tcl_Obj to append to");
-    }
-
-    p = format = va_arg(argList, CONST char *);
-    if (format == NULL) {
-	Tcl_Panic("TclObjPrintf: no format string argument");
-    }
-
+    p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
 	int size = 0;
@@ -2384,15 +2369,45 @@ ObjPrintfVA(interp, argList)
  */
 
 int
-TclObjPrintf(Tcl_Interp *interp, ...)
+TclObjPrintf(Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, ...)
 {
     va_list argList;
     int result;
 
-    va_start(argList, interp);
-    result = ObjPrintfVA(interp, argList);
+    va_start(argList, format);
+    result = ObjPrintfVA(interp, objPtr, format, argList);
     va_end(argList);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFormatToErrorInfo --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFormatToErrorInfo(Tcl_Interp *interp, CONST char *format, ...)
+{
+    int code;
+    va_list argList;
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    va_start(argList, format);
+    code = ObjPrintfVA(interp, objPtr, format, argList);
+    va_end(argList);
+    if (code != TCL_OK) {
+        return code;
+    }
+    TclAppendObjToErrorInfo(interp, objPtr);
+    Tcl_DecrRefCount(objPtr);
+    return TCL_OK;
 }
 
 /*

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.170 2005/09/13 21:23:51 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.171 2005/09/14 03:46:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3769,22 +3769,9 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 		    code = Tcl_ListObjLength(interp,
 			    objv[objectsUsed], &numElements);
 		    if (code == TCL_ERROR) {
-			/*
-			 * Attempt to expand a non-list.
-			 */
-
-			Tcl_Obj *msg;
-			Tcl_Obj *wordNum;
-
-			msg = Tcl_NewStringObj("\n    (expanding word ", -1);
-			TclNewIntObj(wordNum, objectsUsed);
-			Tcl_IncrRefCount(wordNum);
-			Tcl_IncrRefCount(msg);
-			Tcl_AppendObjToObj(msg, wordNum);
-			Tcl_DecrRefCount(wordNum);
-			Tcl_AppendToObj(msg, ")", -1);
-			TclAppendObjToErrorInfo(interp, msg);
-			Tcl_DecrRefCount(msg);
+			/* Attempt to expand a non-list. */
+			TclFormatToErrorInfo(interp,
+				"\n    (expanding word %d)", objectsUsed);
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			goto error;
 		    }
