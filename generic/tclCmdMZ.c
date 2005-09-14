@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.128 2005/08/26 13:26:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.129 2005/09/14 17:13:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2566,6 +2566,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int i,j, index, mode, foundmode, result, splitObjs, numMatchesSaved, noCase;
+    int patternLength;
     char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
@@ -2745,7 +2746,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	 * See if the pattern matches the string.
 	 */
 
-	pattern = TclGetString(objv[i]);
+	pattern = Tcl_GetStringFromObj(objv[i], &patternLength);
 
 	if ((i == objc - 2) && (*pattern == 'd')
 		&& (strcmp(pattern, "default") == 0)) {
@@ -2920,18 +2921,11 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      */
 
     if (result == TCL_ERROR) {
-	Tcl_Obj *msg = Tcl_NewStringObj("\n    (\"", -1);
-	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-
-	Tcl_IncrRefCount(msg);
-	Tcl_IncrRefCount(errorLine);
-	TclAppendLimitedToObj(msg, pattern, -1, 50, "");
-	Tcl_AppendToObj(msg,"\" arm line ", -1);
-	Tcl_AppendObjToObj(msg, errorLine);
-	Tcl_DecrRefCount(errorLine);
-	Tcl_AppendToObj(msg,")", -1);
-	TclAppendObjToErrorInfo(interp, msg);
-	Tcl_DecrRefCount(msg);
+	int limit = 50;
+	int overflow = (patternLength > limit);
+	TclFormatToErrorInfo(interp, "\n    (\"%.*s%s\" arm line %d)",
+		(overflow ? limit : patternLength), pattern,
+		(overflow ? "..." : ""), interp->errorLine);
     }
     return result;
 }

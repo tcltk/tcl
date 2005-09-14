@@ -1,5 +1,19 @@
 2005-09-13  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Bug fixes: ObjPrintfVA needed to
+	support "*" fields and needed to interpret precision limits on
+	%s conversions as a number of bytes, not Tcl_UniChars, to take
+	from the (char *) argument.
+
+	* generic/tclBasic.c:	Updated several callers to use
+	* generic/tclCmdMZ.c:	TclFormatToErrorInfo().
+	* generic/tclIOUtil.c:
+
+	* library/init.tcl:	Keep [unknown] in sync with errorInfo
+	formatting rules.
+
+2005-09-13  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclBasic.c:	First caller of TclFormatToErrorInfo.
 
 	* generic/tclInt.h:		Using stdarg.h conventions, add more
