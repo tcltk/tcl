@@ -8,6 +8,8 @@
 	* generic/tclBasic.c:	Updated several callers to use
 	* generic/tclCmdMZ.c:	TclFormatToErrorInfo().
 	* generic/tclIOUtil.c:
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
 
 	* library/init.tcl:	Keep [unknown] in sync with errorInfo
 	formatting rules.
