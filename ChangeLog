@@ -2,12 +2,18 @@
 
 	* generic/tclStringObj.c:	Bug fixes: ObjPrintfVA needed to
 	support "*" fields and needed to interpret precision limits on
-	%s conversions as a number of bytes, not Tcl_UniChars, to take
-	from the (char *) argument.
+	%s conversions as a maximum number of bytes, not Tcl_UniChars, to
+	take from the (char *) argument.
 
 	* generic/tclBasic.c:	Updated several callers to use
-	* generic/tclCmdMZ.c:	TclFormatToErrorInfo().
-	* generic/tclIOUtil.c:
+	* generic/tclCkalloc.c: TclFormatToErrorInfo() and/or
+	* generic/tclCmdAH.c:	TclObjPrintf().
+	* generic/tclCmdIL.c:	
+	* generic/tclCmdMZ.c:	
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclIORChan.c:	
+	* generic/tclIOUtil.c:	
 	* generic/tclNamesp.c:
 	* generic/tclProc.c:
 

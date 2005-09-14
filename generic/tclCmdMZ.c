@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.129 2005/09/14 17:13:18 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.130 2005/09/14 21:32:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2158,12 +2158,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		length2 = length1 * count;
 		if ((length2 / count) != length1) {
-		    char buf[TCL_INTEGER_SPACE+1];
-
-		    sprintf(buf, "%d", INT_MAX);
-		    Tcl_AppendResult(interp,
-			    "string size overflow, must be less than ",
-			    buf, (char *) NULL);
+		    TclObjPrintf(NULL, Tcl_GetObjResult(interp),
+			    "string size overflow, must be less than %d",
+			    INT_MAX);
 		    return TCL_ERROR;
 		}
 
@@ -3058,11 +3055,8 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
-		char msg[32 + TCL_INTEGER_SPACE];
-
-		sprintf(msg, "\n    (\"while\" body line %d)",
+		TclFormatToErrorInfo(interp, "\n    (\"while\" body line %d)",
 			interp->errorLine);
-		Tcl_AddErrorInfo(interp, msg);
 	    }
 	    break;
 	}
