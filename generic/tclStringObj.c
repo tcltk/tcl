@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.45 2005/09/14 03:46:50 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.46 2005/09/14 17:13:18 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -2284,12 +2284,14 @@ ObjPrintfVA(
     int code, objc;
     Tcl_Obj **objv, *list = Tcl_NewObj();
     CONST char *p;
+    char *end;
 
     p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
-	int size = 0;
-	int seekingConversion = 1;
+	int size = 0, seekingConversion = 1, gotPrecision = 0;
+	int lastNum = -1, numBytes = -1;
+
 	if (*p++ != '%') {
 	    continue;
 	}
@@ -2304,9 +2306,18 @@ ObjPrintfVA(
 		seekingConversion = 0;
 		break;
 	    case 's':
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewStringObj(
-			va_arg(argList, char *), -1));
 		seekingConversion = 0;
+		if (gotPrecision) {
+		    numBytes = lastNum;
+		}
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewStringObj(
+			va_arg(argList, char *), numBytes));
+		/* We took no more than numBytes bytes from the (char *).
+		 * In turn, [format] will take no more than numBytes
+		 * characters from the Tcl_Obj.  Since numBytes characters
+		 * must be no less than numBytes bytes, the character limit
+		 * will have no effect and we can just pass it through.
+		 */
 		break;
 	    case 'c':
 	    case 'i':
@@ -2337,6 +2348,21 @@ ObjPrintfVA(
 			va_arg(argList, double)));
 		seekingConversion = 0;
 		break;
+	    case '*':
+		lastNum = (int)va_arg(argList, int);
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		p++;
+		break;
+	    case '0': case '1': case '2': case '3': case '4':
+	    case '5': case '6': case '7': case '8': case '9':
+		lastNum = (int) strtoul(p, &end, 10);
+		p = end;
+		break;
+	    case '.':
+		gotPrecision = 1;
+		p++;
+		break;
+	    /* TODO: support for wide (and bignum?) arguments */
 	    case 'l':
 		size = 1;
 		p++;
