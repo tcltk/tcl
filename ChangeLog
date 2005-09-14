@@ -1,5 +1,11 @@
 2005-09-13  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	First caller of TclFormatToErrorInfo.
+
+	* generic/tclInt.h:		Using stdarg.h conventions, add more
+	* generic/tclStringObj.c:	fixed arguments to TclFormatObj() and
+	TclObjPrintf().  Added new routine TclFormatToErrorInfo().
+
 	* generic/tcl.h:	Explicitly standardized on the use of stdarg.h
 	* generic/tclBasic.c:	conventions for functions with variable number
 	* generic/tclInt.h:	of arguments.  Support for varargs.h has been
