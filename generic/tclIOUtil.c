@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.122 2005/08/31 15:12:18 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.123 2005/09/14 17:13:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1812,19 +1812,13 @@ Tcl_FSEvalFileEx(interp, pathPtr, encodingName)
 	/*
 	 * Record information telling where the error occurred.
 	 */
-
-	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-	Tcl_Obj *msg = Tcl_NewStringObj("\n    (file \"", -1);
 	CONST char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	Tcl_IncrRefCount(msg);
-	Tcl_IncrRefCount(errorLine);
-	TclAppendLimitedToObj(msg, pathString, length, 150, "");
-	Tcl_AppendToObj(msg, "\" line ", -1);
-	Tcl_AppendObjToObj(msg, errorLine);
-	Tcl_DecrRefCount(errorLine);
-	Tcl_AppendToObj(msg, ")", -1);
-	TclAppendObjToErrorInfo(interp, msg);
-	Tcl_DecrRefCount(msg);
+	int limit = 150;
+	int overflow = (length > limit);
+
+	TclFormatToErrorInfo(interp, "\n    (file \"%.*s%s\" line %d)",
+		(overflow ? limit : length), pathString,
+		(overflow ? "..." : ""), interp->errorLine);
     }
 
   end:

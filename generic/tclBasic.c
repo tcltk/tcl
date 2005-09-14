@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.171 2005/09/14 03:46:50 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.172 2005/09/14 17:13:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3540,7 +3540,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
 {
     register CONST char *p;
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *message;
+    int overflow, limit = 150;
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
@@ -3562,16 +3562,11 @@ Tcl_LogCommandInfo(interp, script, command, length)
 	}
     }
 
-    if (iPtr->errorInfo == NULL) {
-	message = Tcl_NewStringObj("\n    while executing\n\"", -1);
-    } else {
-	message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
-    }
-    Tcl_IncrRefCount(message);
-    TclAppendLimitedToObj(message, command, length, 153, NULL);
-    Tcl_AppendToObj(message, "\"", -1);
-    TclAppendObjToErrorInfo(interp, message);
-    Tcl_DecrRefCount(message);
+    overflow = (length > limit);
+    TclFormatToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
+	    ((iPtr->errorInfo == NULL)
+	    ? "while executing" : "invoked from within"),
+	    (overflow ? limit : length), command, (overflow ? "..." : ""));
 }
 
 /*
