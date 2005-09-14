@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.78 2005/07/21 14:38:50 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.79 2005/09/14 18:35:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1488,19 +1488,14 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 
  	if (result != TCL_OK) {
  	    if (result == TCL_ERROR) {
-		Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-		Tcl_Obj *message =
-			Tcl_NewStringObj("\n    (compiling ", -1);
+		int length = strlen(procName);
+		int limit = 50;
+		int overflow = (length > limit);
 
-		Tcl_IncrRefCount(message);
-		Tcl_AppendStringsToObj(message, description, " \"", NULL);
-		TclAppendLimitedToObj(message, procName, -1, 50, NULL);
-		Tcl_AppendToObj(message, "\", line ", -1);
-		Tcl_AppendObjToObj(message, errorLine);
-		Tcl_DecrRefCount(errorLine);
-		Tcl_AppendToObj(message, ")", -1);
- 		TclAppendObjToErrorInfo(interp, message);
-		Tcl_DecrRefCount(message);
+		TclFormatToErrorInfo(interp,
+			"\n    (compiling %s \"%.*s%s\", line %d)",
+			description, (overflow ? limit : length), procName,
+			(overflow ? "..." : ""), interp->errorLine);
 	    }
  	    return result;
  	}
@@ -1546,7 +1541,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *message, *errorLine;
+    int overflow, limit = 60;
 
     if (returnCode == TCL_OK) {
 	return TCL_OK;
@@ -1563,16 +1558,10 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 		((returnCode == TCL_BREAK) ? "break" : "continue"),
 		"\" outside of a loop", NULL);
     }
-    errorLine = Tcl_NewIntObj(interp->errorLine);
-    message = Tcl_NewStringObj("\n    (procedure \"", -1);
-    Tcl_IncrRefCount(message);
-    TclAppendLimitedToObj(message, procName, nameLen, 60, NULL);
-    Tcl_AppendToObj(message, "\" line ", -1);
-    Tcl_AppendObjToObj(message, errorLine);
-    Tcl_DecrRefCount(errorLine);
-    Tcl_AppendToObj(message, ")", -1);
-    TclAppendObjToErrorInfo(interp, message);
-    Tcl_DecrRefCount(message);
+    overflow = (nameLen > limit);
+    TclFormatToErrorInfo(interp, "\n    (procedure \"%.*s%s\" line %d)",
+	    (overflow ? limit : nameLen), procName,
+	    (overflow ? "..." : ""), interp->errorLine);
     return TCL_ERROR;
 }
 
