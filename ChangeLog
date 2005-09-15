@@ -1,5 +1,8 @@
 2005-09-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c (TclAppendFormattedObjs):	Revision
+	to eliminate one round of string copying.
+
 	* generic/tclBasic.c:	More callers of TclObjPrintf and
 	* generic/tclCkalloc.c:	TclFormatToErrorInfo.
 	* generic/tclCmdMZ.c:
