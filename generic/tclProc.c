@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.15 2005/07/26 04:12:19 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.16 2005/09/15 20:30:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -337,11 +337,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
     if (precompiled) {
 	if (numArgs > procPtr->numArgs) {
-	    char buf[40 + TCL_INTEGER_SPACE + TCL_INTEGER_SPACE];
-	    sprintf(buf, "%d entries, precompiled header expects %d",
-		    numArgs, procPtr->numArgs);
-	    Tcl_AppendResult(interp, "procedure \"", procName,
-		    "\": arg list contains ", buf, NULL);
+	    Tcl_Obj *objPtr = Tcl_NewObj();
+	    TclObjPrintf(NULL, objPtr,
+		    "procedure \"%s\": arg list contains %d entries, "
+		    "precompiled header expects %d", procName, numArgs,
+		    procPtr->numArgs);
+	    Tcl_SetObjResult(interp, objPtr);
 	    goto procError;
 	}
 	localPtr = procPtr->firstLocalPtr;
@@ -428,12 +429,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 			    != (VAR_SCALAR | VAR_ARGUMENT))
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
-		char buf[40 + TCL_INTEGER_SPACE];
-
+		Tcl_Obj *objPtr = Tcl_NewObj();
+		TclObjPrintf(NULL, objPtr,
+			"procedure \"%s\": formal parameter %d is "
+			"inconsistent with precompiled body", procName, i);
+		Tcl_SetObjResult(interp, objPtr);
 		ckfree((char *) fieldValues);
-		sprintf(buf, "%d is inconsistent with precompiled body", i);
-		Tcl_AppendResult(interp, "procedure \"", procName,
-			"\": formal parameter ", buf, (char *) NULL);
 		goto procError;
 	    }
 
@@ -447,10 +448,13 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 			&tmpLength);
 		if ((valueLength != tmpLength) ||
 			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
-		    Tcl_AppendResult(interp, "procedure \"", procName,
-			    "\": formal parameter \"", fieldValues[0],
-			    "\" has default value inconsistent with ",
-			    "precompiled body", (char *) NULL);
+		    Tcl_Obj *objPtr = Tcl_NewObj();
+
+		    TclObjPrintf(NULL, objPtr,
+			    "procedure \"%s\": formal parameter \"%s\" has "
+			    "default value inconsistent with precompiled body",
+			    procName, fieldValues[0]);
+		    Tcl_SetObjResult(interp, objPtr);
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
@@ -810,9 +814,8 @@ Tcl_UplevelObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-	char msg[32 + TCL_INTEGER_SPACE];
-	sprintf(msg, "\n    (\"uplevel\" body line %d)", interp->errorLine);
-	Tcl_AddObjErrorInfo(interp, msg, -1);
+	TclFormatToErrorInfo(interp, "\n    (\"uplevel\" body line %d)",
+		interp->errorLine);
     }
 
     /*
@@ -1488,19 +1491,14 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 
  	if (result != TCL_OK) {
  	    if (result == TCL_ERROR) {
-		Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-		Tcl_Obj *message =
-			Tcl_NewStringObj("\n    (compiling ", -1);
+		int length = strlen(procName);
+		int limit = 50;
+		int overflow = (length > limit);
 
-		Tcl_IncrRefCount(message);
-		Tcl_AppendStringsToObj(message, description, " \"", NULL);
-		TclAppendLimitedToObj(message, procName, -1, 50, NULL);
-		Tcl_AppendToObj(message, "\", line ", -1);
-		Tcl_AppendObjToObj(message, errorLine);
-		Tcl_DecrRefCount(errorLine);
-		Tcl_AppendToObj(message, ")", -1);
- 		TclAppendObjToErrorInfo(interp, message);
-		Tcl_DecrRefCount(message);
+		TclFormatToErrorInfo(interp,
+			"\n    (compiling %s \"%.*s%s\", line %d)",
+			description, (overflow ? limit : length), procName,
+			(overflow ? "..." : ""), interp->errorLine);
 	    }
  	    return result;
  	}
@@ -1546,7 +1544,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *message, *errorLine;
+    int overflow, limit = 60;
 
     if (returnCode == TCL_OK) {
 	return TCL_OK;
@@ -1563,16 +1561,10 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 		((returnCode == TCL_BREAK) ? "break" : "continue"),
 		"\" outside of a loop", NULL);
     }
-    errorLine = Tcl_NewIntObj(interp->errorLine);
-    message = Tcl_NewStringObj("\n    (procedure \"", -1);
-    Tcl_IncrRefCount(message);
-    TclAppendLimitedToObj(message, procName, nameLen, 60, NULL);
-    Tcl_AppendToObj(message, "\" line ", -1);
-    Tcl_AppendObjToObj(message, errorLine);
-    Tcl_DecrRefCount(errorLine);
-    Tcl_AppendToObj(message, ")", -1);
-    TclAppendObjToErrorInfo(interp, message);
-    Tcl_DecrRefCount(message);
+    overflow = (nameLen > limit);
+    TclFormatToErrorInfo(interp, "\n    (procedure \"%.*s%s\" line %d)",
+	    (overflow ? limit : nameLen), procName,
+	    (overflow ? "..." : ""), interp->errorLine);
     return TCL_ERROR;
 }
 

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.2 2005/09/12 15:40:29 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.3 2005/09/15 20:30:00 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1723,16 +1723,12 @@ RcGetOption (clientData, interp, optionName, dsPtr)
     if ((listc % 2) == 1) {
         /* Odd number of elements is wrong.
 	 */
-
-        char buf [20];
-
-	sprintf (buf, "%d", listc);
-	Tcl_ResetResult  (interp);
-	Tcl_AppendResult (interp,
-			  "Expected list with even number of elements, got ",
-			  buf, (listc == 1 ? " element" : " elements"),
-			  " instead", (char*) NULL);
-
+	Tcl_Obj *objPtr = Tcl_NewObj();
+	Tcl_ResetResult(interp);
+	TclObjPrintf(NULL, objPtr, "Expected list with even number of "
+		"elements, got %d element%s instead", listc, 
+		(listc == 1 ? "" : "s"));
+	Tcl_SetObjResult(interp, objPtr);
 	Tcl_DecrRefCount (resObj); /* Remove reference we held from the invoke */
 	return TCL_ERROR;
     }
@@ -1965,21 +1961,19 @@ RcNewHandle ()
 #endif
     static unsigned long rcCounter = 0;
 
-    char     channelName [50];
-    Tcl_Obj* res = Tcl_NewStringObj ("rc", -1);
+    Tcl_Obj* res = Tcl_NewObj ();
 
 #ifdef TCL_THREADS
     Tcl_MutexLock (&rcCounterMutex);
 #endif
 
-    sprintf (channelName, "%lu", (unsigned long) rcCounter);
+    TclObjPrintf(NULL, res, "rc%lu", rcCounter);
     rcCounter ++;
 
 #ifdef TCL_THREADS
     Tcl_MutexUnlock (&rcCounterMutex);
 #endif
 
-    Tcl_AppendStringsToObj (res, channelName, (char*) NULL);
     return res;
 }
 

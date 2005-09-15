@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.34 2005/09/12 15:40:28 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.35 2005/09/15 20:30:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3614,7 +3614,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
 {
     register CONST char *p;
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *message;
+    int overflow, limit = 150;
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
@@ -3636,16 +3636,11 @@ Tcl_LogCommandInfo(interp, script, command, length)
 	}
     }
 
-    if (iPtr->errorInfo == NULL) {
-	message = Tcl_NewStringObj("\n    while executing\n\"", -1);
-    } else {
-	message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
-    }
-    Tcl_IncrRefCount(message);
-    TclAppendLimitedToObj(message, command, length, 153, NULL);
-    Tcl_AppendToObj(message, "\"", -1);
-    TclAppendObjToErrorInfo(interp, message);
-    Tcl_DecrRefCount(message);
+    overflow = (length > limit);
+    TclFormatToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
+	    ((iPtr->errorInfo == NULL)
+	    ? "while executing" : "invoked from within"),
+	    (overflow ? limit : length), command, (overflow ? "..." : ""));
 }
 
 /*
@@ -3833,16 +3828,8 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
 		code = Tcl_ListObjLength(interp, objv[objc], &numElements);
 		if (code == TCL_ERROR) {
 		    /* Attempt to expand a non-list */
-		    Tcl_Obj *msg = 
-			    Tcl_NewStringObj("\n    (expanding word ", -1);
-		    Tcl_Obj *wordNum = Tcl_NewIntObj(objc);
-		    Tcl_IncrRefCount(wordNum);
-		    Tcl_IncrRefCount(msg);
-		    Tcl_AppendObjToObj(msg, wordNum);
-		    Tcl_DecrRefCount(wordNum);
-		    Tcl_AppendToObj(msg, ")", -1);
-		    TclAppendObjToErrorInfo(interp, msg);
-		    Tcl_DecrRefCount(msg);
+		    TclFormatToErrorInfo(interp,
+			    "\n    (expanding word %d)", objc);
 		    objc++;
 		    goto error;
 		}
@@ -4215,10 +4202,9 @@ ProcessUnexpectedResult(interp, returnCode)
 	Tcl_AppendResult(interp,
 		"invoked \"continue\" outside of a loop", (char *) NULL);
     } else {
-	char buf[30 + TCL_INTEGER_SPACE];
-
-	sprintf(buf, "command returned bad code: %d", returnCode);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_Obj *objPtr = Tcl_NewObj();
+	TclObjPrintf(NULL, objPtr, "command returned bad code: %d", returnCode);
+	Tcl_SetObjResult(interp, objPtr);
     }
 }
 
@@ -4898,15 +4884,14 @@ Tcl_VarEvalVA(interp, argList)
  *
  *----------------------------------------------------------------------
  */
-	/* VARARGS2 */ /* ARGSUSED */
+	/* ARGSUSED */
 int
-Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+Tcl_VarEval(Tcl_Interp *interp, ...)
 {
-    Tcl_Interp *interp;
     va_list argList;
     int result;
 
-    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    va_start(argList, interp);
     result = Tcl_VarEvalVA(interp, argList);
     va_end(argList);
 

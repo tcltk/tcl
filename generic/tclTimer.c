@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.9 2005/07/26 04:12:20 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.10 2005/09/15 20:30:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -781,6 +781,7 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
     static CONST char *afterSubCmds[] = {
 	"cancel", "idle", "info", (char *) NULL
     };
+    Tcl_Obj *objPtr;
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
@@ -848,8 +849,9 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
 		(ClientData) afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
-	sprintf(buf, "after#%d", afterPtr->id);
-	Tcl_AppendResult(interp, buf, (char *) NULL);
+	objPtr = Tcl_NewObj();
+	TclObjPrintf(NULL, objPtr, "after#%d", afterPtr->id);
+	Tcl_SetObjResult(interp, objPtr);
 	return TCL_OK;
     }
 
@@ -926,8 +928,9 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_DoWhenIdle(AfterProc, (ClientData) afterPtr);
-	sprintf(buf, "after#%d", afterPtr->id);
-	Tcl_AppendResult(interp, buf, (char *) NULL);
+	objPtr = Tcl_NewObj();
+	TclObjPrintf(NULL, objPtr, "after#%d", afterPtr->id);
+	Tcl_SetObjResult(interp, objPtr);
 	break;
     case AFTER_INFO: {
 	Tcl_Obj *resultListPtr;

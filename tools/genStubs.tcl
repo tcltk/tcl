@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.2 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.3 2005/09/15 20:30:08 dgp Exp $
 
 package require Tcl 8
 
@@ -371,7 +371,7 @@ proc genStubs::makeDecl {name decl index} {
 	}
 	TCL_VARARGS {
 	    set arg [lindex $args 1]
-	    append line "TCL_VARARGS([lindex $arg 0],[lindex $arg 1])"
+	    append line "([lindex $arg 0][lindex $arg 1], ...)"
 	}
 	default {
 	    set sep "("
@@ -464,13 +464,13 @@ proc genStubs::makeStub {name decl index} {
 
     if {![string compare $arg1 "TCL_VARARGS"]} {
 	lassign [lindex $args 1] type argName 
-	append text " TCL_VARARGS_DEF($type,$argName)\n\{\n"
+	append text " ($type$argName, ...)\n\{\n"
 	append text "    " $type " var;\n    va_list argList;\n"
 	if {[string compare $rtype "void"]} {
 	    append text "    " $rtype " resultValue;\n"
 	}
-	append text "\n    var = (" $type ") TCL_VARARGS_START(" \
-		$type "," $argName ",argList);\n\n    "
+	append text "\n    var = (" $type ") (va_start(argList, " \
+		$argName "), " $argName ");\n\n    "
 	if {[string compare $rtype "void"]} {
 	    append text "resultValue = "
 	}
@@ -533,7 +533,7 @@ proc genStubs::makeSlot {name decl index} {
 	}
 	TCL_VARARGS {
 	    set arg [lindex $args 1]
-	    append text "TCL_VARARGS([lindex $arg 0],[lindex $arg 1])"
+	    append text "([lindex $arg 0][lindex $arg 1], ...)"
 	}
 	default {
 	    set sep "("

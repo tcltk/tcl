@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.20 2005/09/12 15:40:30 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.21 2005/09/15 20:30:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3403,17 +3403,14 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     }
 
     if (result == TCL_ERROR) {
-	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-	Tcl_Obj *msg = Tcl_NewStringObj("\n    (in namespace eval \"", -1);
-	Tcl_IncrRefCount(errorLine);
-	Tcl_IncrRefCount(msg);
-	TclAppendLimitedToObj(msg, namespacePtr->fullName, -1, 200, "");
-	Tcl_AppendToObj(msg, "\" script line ", -1);
-	Tcl_AppendObjToObj(msg, errorLine);
-	Tcl_DecrRefCount(errorLine);
-	Tcl_AppendToObj(msg, ")", -1);
-	TclAppendObjToErrorInfo(interp, msg);
-	Tcl_DecrRefCount(msg);
+	int length = strlen(namespacePtr->fullName);
+	int limit = 200;
+	int overflow = (length > limit);
+
+	TclFormatToErrorInfo(interp,
+		"\n    (in namespace eval \"%.*s%s\" script line %d)",
+		(overflow ? limit : length), namespacePtr->fullName,
+		(overflow ? "..." : ""), interp->errorLine);
     }
 
     /*
@@ -3816,18 +3813,14 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
     }
 
     if (result == TCL_ERROR) {
-	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-	Tcl_Obj *msg = Tcl_NewStringObj("\n    (in namespace inscope \"", -1);
+	int length = strlen(namespacePtr->fullName);
+	int limit = 200;
+	int overflow = (length > limit);
 
-	Tcl_IncrRefCount(errorLine);
-	Tcl_IncrRefCount(msg);
-	TclAppendLimitedToObj(msg, namespacePtr->fullName, -1, 200, "");
-	Tcl_AppendToObj(msg, "\" script line ", -1);
-	Tcl_AppendObjToObj(msg, errorLine);
-	Tcl_DecrRefCount(errorLine);
-	Tcl_AppendToObj(msg, ")", -1);
-	TclAppendObjToErrorInfo(interp, msg);
-	Tcl_DecrRefCount(msg);
+	TclFormatToErrorInfo(interp,
+		"\n    (in namespace inscope \"%.*s%s\" script line %d)",
+		(overflow ? limit : length), namespacePtr->fullName,
+		(overflow ? "..." : ""), interp->errorLine);
     }
 
     /*

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.7.4.3 2005/05/04 17:35:19 dgp Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.7.4.4 2005/09/15 20:29:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -53,7 +53,7 @@ Address of procedure to call to release storage at
 \fBTCL_VOLATILE\fR.
 .AP va_list argList in
 An argument list which must have been initialized using
-\fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
+\fBva_start\fR, and cleared using \fBva_end\fR.
 .BE
 
 .SH DESCRIPTION

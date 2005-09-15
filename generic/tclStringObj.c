@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.6 2005/09/12 15:40:30 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.7 2005/09/15 20:30:00 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -53,8 +53,10 @@ static void		AppendUtfToUtfRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    CONST char *bytes, int numBytes));
 static void		FillUnicodeRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		FormatObjVA _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, CONST char *format,
 			    va_list argList));
 static int		ObjPrintfVA _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, CONST char *format,
 			    va_list argList));
 static void		FreeStringInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		DupStringInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
@@ -1662,12 +1664,11 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
  */
 
 void
-Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
+Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 {
-    register Tcl_Obj *objPtr;
     va_list argList;
 
-    objPtr = TCL_VARARGS_START(Tcl_Obj *,arg1,argList);
+    va_start(argList, objPtr);
     Tcl_AppendStringsToObjVA(objPtr, argList);
     va_end(argList);
 }
@@ -1693,9 +1694,9 @@ Tcl_AppendStringsToObj TCL_VARARGS_DEF(Tcl_Obj *,arg1)
  */
 
 int
-TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
+TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
     Tcl_Interp *interp;
-    Tcl_Obj *baseObj;
+    Tcl_Obj *appendObj;
     CONST char *format;
     int objc;
     Tcl_Obj *CONST objv[];
@@ -1704,7 +1705,7 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
     int numBytes = 0;
     int objIndex = 0;
     int gotXpg = 0, gotSequential = 0;
-    Tcl_Obj *appendObj = Tcl_NewObj();
+    int originalLength;
     CONST char *msg;
     CONST char *mixedXPG = "cannot mix \"%\" and \"%n$\" conversion specifiers";
     CONST char *badIndex[2] = {
@@ -1712,11 +1713,11 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	"\"%n$\" argument index out of range"
     };
 
-    if (Tcl_IsShared(baseObj)) {
+    if (Tcl_IsShared(appendObj)) {
 	Tcl_Panic("TclAppendFormattedObjs called with shared object");
     }
+    Tcl_GetStringFromObj(appendObj, &originalLength);
 
-    Tcl_IncrRefCount(appendObj);
     /* format string is NUL-terminated */
     while (*format != '\0') {
 	char *end;
@@ -2184,8 +2185,6 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	numBytes = 0;
     }
 
-    Tcl_AppendObjToObj(baseObj, appendObj);
-    Tcl_DecrRefCount(appendObj);
     return TCL_OK;
 
   errorMsg:
@@ -2193,7 +2192,7 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
     }
   error:
-    Tcl_DecrRefCount(appendObj);
+    Tcl_SetObjLength(appendObj, originalLength);
     return TCL_ERROR;
 }
 
@@ -2215,23 +2214,13 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
  */
 
 static int
-FormatObjVA(interp, argList)
-    Tcl_Interp *interp;
-    va_list argList;
+FormatObjVA(Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    CONST char *format,
+    va_list argList)
 {
     int code, objc;
     Tcl_Obj **objv, *element, *list = Tcl_NewObj();
-    CONST char *format;
-    Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
-
-    if (objPtr == NULL) {
-	Tcl_Panic("TclFormatObj: no Tcl_Obj to append to");
-    }
-
-    format = va_arg(argList, CONST char *);
-    if (format == NULL) {
-	Tcl_Panic("TclFormatObj: no format string argument");
-    }
 
     Tcl_IncrRefCount(list);
     element = va_arg(argList, Tcl_Obj *);
@@ -2260,12 +2249,13 @@ FormatObjVA(interp, argList)
  */
 
 int
-TclFormatObj TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+TclFormatObj(Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, ...)
 {
     va_list argList;
     int result;
-    Tcl_Interp *interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    result = FormatObjVA(interp, argList);
+
+    va_start(argList, format);
+    result = FormatObjVA(interp, objPtr, format, argList);
     va_end(argList);
     return result;
 }
@@ -2283,28 +2273,23 @@ TclFormatObj TCL_VARARGS_DEF(Tcl_Interp *,arg1)
  */
 
 static int
-ObjPrintfVA(interp, argList)
-    Tcl_Interp *interp;
-    va_list argList;
+ObjPrintfVA(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    CONST char *format,
+    va_list argList)
 {
     int code, objc;
     Tcl_Obj **objv, *list = Tcl_NewObj();
-    CONST char *format, *p;
-    Tcl_Obj *objPtr = va_arg(argList, Tcl_Obj *);
+    CONST char *p;
+    char *end;
 
-    if (objPtr == NULL) {
-	Tcl_Panic("TclObjPrintf: no Tcl_Obj to append to");
-    }
-
-    p = format = va_arg(argList, CONST char *);
-    if (format == NULL) {
-	Tcl_Panic("TclObjPrintf: no format string argument");
-    }
-
+    p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
-	int size = 0;
-	int seekingConversion = 1;
+	int size = 0, seekingConversion = 1, gotPrecision = 0;
+	int lastNum = -1, numBytes = -1;
+
 	if (*p++ != '%') {
 	    continue;
 	}
@@ -2318,11 +2303,27 @@ ObjPrintfVA(interp, argList)
 	    case '\0':
 		seekingConversion = 0;
 		break;
-	    case 's':
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewStringObj(
-			va_arg(argList, char *), -1));
+	    case 's': {
+		char *bytes = va_arg(argList, char *);
 		seekingConversion = 0;
+		if (gotPrecision) {
+		    char *end = bytes + lastNum;
+		    char *q = bytes;
+		    while ((q < end) && (*q != '\0')) {
+			q++;
+		    }
+		    numBytes = (int)(q - bytes);
+		}
+		Tcl_ListObjAppendElement(NULL, list,
+			Tcl_NewStringObj(bytes , numBytes));
+		/* We took no more than numBytes bytes from the (char *).
+		 * In turn, [format] will take no more than numBytes
+		 * characters from the Tcl_Obj.  Since numBytes characters
+		 * must be no less than numBytes bytes, the character limit
+		 * will have no effect and we can just pass it through.
+		 */
 		break;
+	    }
 	    case 'c':
 	    case 'i':
 	    case 'u':
@@ -2352,6 +2353,21 @@ ObjPrintfVA(interp, argList)
 			va_arg(argList, double)));
 		seekingConversion = 0;
 		break;
+	    case '*':
+		lastNum = (int)va_arg(argList, int);
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		p++;
+		break;
+	    case '0': case '1': case '2': case '3': case '4':
+	    case '5': case '6': case '7': case '8': case '9':
+		lastNum = (int) strtoul(p, &end, 10);
+		p = end;
+		break;
+	    case '.':
+		gotPrecision = 1;
+		p++;
+		break;
+	    /* TODO: support for wide (and bignum?) arguments */
 	    case 'l':
 		size = 1;
 		p++;
@@ -2384,14 +2400,45 @@ ObjPrintfVA(interp, argList)
  */
 
 int
-TclObjPrintf TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+TclObjPrintf(Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, ...)
 {
     va_list argList;
     int result;
-    Tcl_Interp *interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    result = ObjPrintfVA(interp, argList);
+
+    va_start(argList, format);
+    result = ObjPrintfVA(interp, objPtr, format, argList);
     va_end(argList);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFormatToErrorInfo --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFormatToErrorInfo(Tcl_Interp *interp, CONST char *format, ...)
+{
+    int code;
+    va_list argList;
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    va_start(argList, format);
+    code = ObjPrintfVA(interp, objPtr, format, argList);
+    va_end(argList);
+    if (code != TCL_OK) {
+        return code;
+    }
+    TclAppendObjToErrorInfo(interp, objPtr);
+    Tcl_DecrRefCount(objPtr);
+    return TCL_OK;
 }
 
 /*

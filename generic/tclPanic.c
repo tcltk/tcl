@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.4.14.2 2005/07/26 04:12:01 dgp Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.4.14.3 2005/09/15 20:30:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -120,14 +120,13 @@ Tcl_PanicVA(format, argList)
  *----------------------------------------------------------------------
  */
 
-	/* VARARGS ARGSUSED */
+	/* ARGSUSED */
 void
-Tcl_Panic TCL_VARARGS_DEF(CONST char *,arg1)
+Tcl_Panic(CONST char *format, ...)
 {
     va_list argList;
-    CONST char *format;
 
-    format = TCL_VARARGS_START(CONST char *,arg1,argList);
+    va_start(argList, format);
     Tcl_PanicVA(format, argList);
     va_end (argList);
 }
