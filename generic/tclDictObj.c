@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.13 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.14 2005/09/15 20:37:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2474,7 +2474,6 @@ DictFilterCmd(interp, objc, objv)
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
     char *pattern;
-    char msg[32 + TCL_INTEGER_SPACE];
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "dictionary filterType ...");
