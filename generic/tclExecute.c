@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.200 2005/09/14 21:32:17 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.201 2005/09/15 16:40:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6094,11 +6094,12 @@ TclExprFloatError(interp, value)
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
 	}
     } else {
-	Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
+	Tcl_Obj *objPtr = Tcl_NewObj();
 	TclObjPrintf(NULL, objPtr,
 		"unknown floating-point error, errno = %d", errno);
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", 
 		Tcl_GetString(objPtr), (char *) NULL);
+	Tcl_SetObjResult(interp, objPtr);
     }
 }
 

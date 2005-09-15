@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.79 2005/09/14 18:35:56 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.80 2005/09/15 16:40:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -337,11 +337,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
     if (precompiled) {
 	if (numArgs > procPtr->numArgs) {
-	    char buf[40 + TCL_INTEGER_SPACE + TCL_INTEGER_SPACE];
-	    sprintf(buf, "%d entries, precompiled header expects %d",
-		    numArgs, procPtr->numArgs);
-	    Tcl_AppendResult(interp, "procedure \"", procName,
-		    "\": arg list contains ", buf, NULL);
+	    Tcl_Obj *objPtr = Tcl_NewObj();
+	    TclObjPrintf(NULL, objPtr,
+		    "procedure \"%s\": arg list contains %d entries, "
+		    "precompiled header expects %d", procName, numArgs,
+		    procPtr->numArgs);
+	    Tcl_SetObjResult(interp, objPtr);
 	    goto procError;
 	}
 	localPtr = procPtr->firstLocalPtr;
@@ -428,12 +429,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 			    != (VAR_SCALAR | VAR_ARGUMENT))
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
-		char buf[40 + TCL_INTEGER_SPACE];
-
+		Tcl_Obj *objPtr = Tcl_NewObj();
+		TclObjPrintf(NULL, objPtr,
+			"procedure \"%s\": formal parameter %d is "
+			"inconsistent with precompiled body", procName, i);
+		Tcl_SetObjResult(interp, objPtr);
 		ckfree((char *) fieldValues);
-		sprintf(buf, "%d is inconsistent with precompiled body", i);
-		Tcl_AppendResult(interp, "procedure \"", procName,
-			"\": formal parameter ", buf, (char *) NULL);
 		goto procError;
 	    }
 
@@ -447,10 +448,13 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 			&tmpLength);
 		if ((valueLength != tmpLength) ||
 			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
-		    Tcl_AppendResult(interp, "procedure \"", procName,
-			    "\": formal parameter \"", fieldValues[0],
-			    "\" has default value inconsistent with ",
-			    "precompiled body", (char *) NULL);
+		    Tcl_Obj *objPtr = Tcl_NewObj();
+
+		    TclObjPrintf(NULL, objPtr,
+			    "procedure \"%s\": formal parameter \"%s\" has "
+			    "default value inconsistent with precompiled body",
+			    procName, fieldValues[0]);
+		    Tcl_SetObjResult(interp, objPtr);
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
@@ -810,9 +814,8 @@ Tcl_UplevelObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-	char msg[32 + TCL_INTEGER_SPACE];
-	sprintf(msg, "\n    (\"uplevel\" body line %d)", interp->errorLine);
-	Tcl_AddObjErrorInfo(interp, msg, -1);
+	TclFormatToErrorInfo(interp, "\n    (\"uplevel\" body line %d)",
+		interp->errorLine);
     }
 
     /*
