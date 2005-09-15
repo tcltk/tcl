@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.12 2005/08/29 18:38:45 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.13 2005/09/15 20:58:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2126,12 +2126,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		length2 = length1 * count;
 		if ((length2 / count) != length1) {
-		    char buf[TCL_INTEGER_SPACE+1];
-
-		    sprintf(buf, "%d", INT_MAX);
-		    Tcl_AppendResult(interp,
-			    "string size overflow, must be less than ",
-			    buf, (char *) NULL);
+		    resultPtr = Tcl_NewObj();
+		    TclObjPrintf(NULL, resultPtr,
+			    "string size overflow, must be less than %d",
+			    INT_MAX);
+		    Tcl_SetObjResult(interp, resultPtr);
 		    return TCL_ERROR;
 		}
 
@@ -2534,6 +2533,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int i,j, index, mode, foundmode, result, splitObjs, numMatchesSaved, noCase;
+    int patternLength;
     char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
@@ -2713,7 +2713,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	 * See if the pattern matches the string.
 	 */
 
-	pattern = TclGetString(objv[i]);
+	pattern = Tcl_GetStringFromObj(objv[i], &patternLength);
 
 	if ((i == objc - 2) && (*pattern == 'd')
 		&& (strcmp(pattern, "default") == 0)) {
@@ -2888,18 +2888,11 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      */
 
     if (result == TCL_ERROR) {
-	Tcl_Obj *msg = Tcl_NewStringObj("\n    (\"", -1);
-	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
-
-	Tcl_IncrRefCount(msg);
-	Tcl_IncrRefCount(errorLine);
-	TclAppendLimitedToObj(msg, pattern, -1, 50, "");
-	Tcl_AppendToObj(msg,"\" arm line ", -1);
-	Tcl_AppendObjToObj(msg, errorLine);
-	Tcl_DecrRefCount(errorLine);
-	Tcl_AppendToObj(msg,")", -1);
-	TclAppendObjToErrorInfo(interp, msg);
-	Tcl_DecrRefCount(msg);
+	int limit = 50;
+	int overflow = (patternLength > limit);
+	TclFormatToErrorInfo(interp, "\n    (\"%.*s%s\" arm line %d)",
+		(overflow ? limit : patternLength), pattern,
+		(overflow ? "..." : ""), interp->errorLine);
     }
     return result;
 }
@@ -3032,11 +3025,8 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
-		char msg[32 + TCL_INTEGER_SPACE];
-
-		sprintf(msg, "\n    (\"while\" body line %d)",
+		TclFormatToErrorInfo(interp, "\n    (\"while\" body line %d)",
 			interp->errorLine);
-		Tcl_AddErrorInfo(interp, msg);
 	    }
 	    break;
 	}

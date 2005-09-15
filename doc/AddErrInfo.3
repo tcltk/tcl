@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.13.2.1 2005/08/15 18:13:58 dgp Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.13.2.2 2005/09/15 20:58:38 dgp Exp $
 '\" 
 .so man.macros
-.TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
+.TH Tcl_AddErrorInfo 3 8.5 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
 Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
@@ -66,7 +66,7 @@ String to record as one element of the \fB-errorcode\fR return option.
 Last \fIelement\fR argument must be NULL.
 .AP va_list argList in
 An argument list which must have been initialized using
-\fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
+\fBva_start\fR, and cleared using \fBva_end\fR.
 .AP "const char" *script in
 Pointer to first character in script containing command (must be <= command)
 .AP "const char" *command in

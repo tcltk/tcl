@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.70.2.8 2005/08/29 18:38:45 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.70.2.9 2005/09/15 20:58:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3419,16 +3419,11 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		if (TclGetIntForIndex(interp, indices[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
-		    char buffer[TCL_INTEGER_SPACE];
-
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
 		    }
-		    sprintf(buffer, "%d", j);
-		    Tcl_AddErrorInfo(interp,
-			    "\n    (-index option item number ");
-		    Tcl_AddErrorInfo(interp, buffer);
-		    Tcl_AddErrorInfo(interp, ")");
+		    TclFormatToErrorInfo(interp,
+			    "\n    (-index option item number %d)", j);
 		    return TCL_ERROR;
 		}
 	    }
@@ -4034,16 +4029,11 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		if (TclGetIntForIndex(interp, indices[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
-		    char buffer[TCL_INTEGER_SPACE];
-
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
 		    }
-		    sprintf(buffer, "%d", j);
-		    Tcl_AddErrorInfo(interp,
-			    "\n    (-index option item number ");
-		    Tcl_AddErrorInfo(interp, buffer);
-		    Tcl_AddErrorInfo(interp, ")");
+		    TclFormatToErrorInfo(interp,
+			    "\n    (-index option item number %d)", j);
 		    return TCL_ERROR;
 		}
 	    }

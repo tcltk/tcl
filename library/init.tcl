@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.69.2.5 2005/08/25 15:46:31 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.69.2.6 2005/09/15 20:58:40 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -272,8 +272,8 @@ proc unknown args {
 		set errorInfo [dict get $opts -errorinfo]
 		set errorCode [dict get $opts -errorcode]
 		set cinfo $args
-		if {[string bytelength $cinfo] > 153} {
-		    set cinfo [string range $cinfo 0 152]
+		if {[string bytelength $cinfo] > 150} {
+		    set cinfo [string range $cinfo 0 150]
 		    while {[string bytelength $cinfo] > 150} {
 			set cinfo [string range $cinfo 0 end-1]
 		    }

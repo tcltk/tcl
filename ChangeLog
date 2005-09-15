@@ -1,3 +1,74 @@
+2005-09-15  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]	Merge updates from HEAD.
+
+	* generic/tclStringObj.c (TclAppendFormattedObjs):	Revision
+	to eliminate one round of string copying.
+
+	* generic/tclBasic.c:	More callers of TclObjPrintf and
+	* generic/tclCkalloc.c:	TclFormatToErrorInfo.
+	* generic/tclCmdMZ.c:
+	* generic/tclExecute.c:
+	* generic/tclIORChan.c:
+	* generic/tclMain.c:
+	* generic/tclProc.c:
+	* generic/tclTimer.c:
+	* generic/tclUtil.c:
+	* unix/tclUnixFCmd.c
+
+	* unix/configure:	autoconf-2.59
+
+2005-09-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tcl.m4 (SC_TCL_EARLY_FLAGS): Added extra hack to allow Tcl
+	to transparently open large files on RHEL 3. [Bug 1287638]
+
+2005-09-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Bug fixes: ObjPrintfVA needed to
+	support "*" fields and needed to interpret precision limits on
+	%s conversions as a maximum number of bytes, not Tcl_UniChars, to
+	take from the (char *) argument.
+
+	* generic/tclBasic.c:	Updated several callers to use
+	* generic/tclCkalloc.c: TclFormatToErrorInfo() and/or
+	* generic/tclCmdAH.c:	TclObjPrintf().
+	* generic/tclCmdIL.c:	
+	* generic/tclCmdMZ.c:	
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclIORChan.c:	
+	* generic/tclIOUtil.c:	
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
+
+	* library/init.tcl:	Keep [unknown] in sync with errorInfo
+	formatting rules.
+
+2005-09-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	First caller of TclFormatToErrorInfo.
+
+	* generic/tclInt.h:		Using stdarg.h conventions, add more
+	* generic/tclStringObj.c:	fixed arguments to TclFormatObj() and
+	TclObjPrintf().  Added new routine TclFormatToErrorInfo().
+
+	* generic/tcl.h:	Explicitly standardized on the use of stdarg.h
+	* generic/tclBasic.c:	conventions for functions with variable number
+	* generic/tclInt.h:	of arguments.  Support for varargs.h has been
+	* generic/tclPanic.c:	implicitly gone for some time now.  All
+	* generic/tclResult.c:	TCL_VARARGS* macros purged from Tcl sources,
+	* generic/tclStringObj.c:	leaving only some deprecated #define's
+	* tools/genStubs.tcl:	in tcl.h for the sake of older extensions.
+
+	* generic/tclDecls.h:	make genstubs
+
+	* doc/AddErrInfo.3:	Replaced all documented requirement for use
+	* doc/Eval.3:		of TCL_VARARGS_START() with requirement for
+	* doc/Panic.3:		use of va_start().
+	* doc/SetResult.3:
+	* doc/StringObj.3:
+
 2005-09-12  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]	Merge updates from HEAD.

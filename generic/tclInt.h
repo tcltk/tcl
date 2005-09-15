@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.38 2005/09/09 18:48:40 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.39 2005/09/15 20:58:39 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2038,7 +2038,10 @@ MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE double	TclFloor(mp_int* a);
 MODULE_SCOPE void	TclFormatNaN(double value, char* buffer);
-MODULE_SCOPE int	TclFormatObj TCL_VARARGS(Tcl_Interp *, arg1);
+MODULE_SCOPE int	TclFormatObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    CONST char *format, ...);
+MODULE_SCOPE int	TclFormatToErrorInfo(Tcl_Interp *interp,
+			    CONST char *format, ...);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
@@ -2096,7 +2099,8 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
-MODULE_SCOPE int	TclObjPrintf TCL_VARARGS(Tcl_Interp *, arg1);
+MODULE_SCOPE int	TclObjPrintf(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    CONST char *format, ...);
 MODULE_SCOPE int	TclParseBackslash(CONST char *src,
 			    int numBytes, int *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(CONST char *src, int numBytes,
@@ -2160,7 +2164,7 @@ MODULE_SCOPE Tcl_Obj*	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
-MODULE_SCOPE void	TclpPanic TCL_VARARGS(CONST char *, format);
+MODULE_SCOPE void	TclpPanic(CONST char *format, ...);
 MODULE_SCOPE char *	TclpReadlink(CONST char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpReleaseFile(TclFile file);

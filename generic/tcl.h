@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.191.2.9 2005/09/09 18:48:40 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.191.2.10 2005/09/15 20:58:39 dgp Exp $
  */
 
 #ifndef _TCL
@@ -153,26 +153,20 @@ extern "C" {
 #include <stdio.h>
 
 /*
- * Definitions that allow Tcl functions with variable numbers of arguments to
- * be used with either varargs.h or stdarg.h. TCL_VARARGS is used in function
- * prototypes. TCL_VARARGS_DEF is used to declare the arguments in a function
- * definiton: it takes the type and name of the first argument and supplies
- * the appropriate argument declaration string for use in the function
- * definition. TCL_VARARGS_START initializes the va_list data structure and
- * returns the first argument.
+ * Support for functions with a variable number of arguments.
+ *
+ * The following TCL_VARARGS* macros are to support old extensions
+ * written for older versions of Tcl where the macros permitted
+ * support for the varargs.h system as well as stdarg.h .  
+ *
+ * New code should just directly be written to use stdarg.h conventions.
  */
 
-#if !defined(NO_STDARG)
-#   include <stdarg.h>
-#   define TCL_VARARGS(type, name) (type name, ...)
-#   define TCL_VARARGS_DEF(type, name) (type name, ...)
-#   define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#else
-#   include <varargs.h>
-#   define TCL_VARARGS(type, name) ()
-#   define TCL_VARARGS_DEF(type, name) (va_alist)
-#   define TCL_VARARGS_START(type, name, list) \
-	(va_start(list), va_arg(list, type))
+#include <stdarg.h>
+#ifndef TCL_NO_DEPRECATED
+#    define TCL_VARARGS(type, name) (type name, ...)
+#    define TCL_VARARGS_DEF(type, name) (type name, ...)
+#    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
 #endif
 
 /*
@@ -694,7 +688,7 @@ typedef int (Tcl_ObjCmdProc) _ANSI_ARGS_((ClientData clientData,
 typedef int (Tcl_PackageInitProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef int (Tcl_PackageUnloadProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	int flags));
-typedef void (Tcl_PanicProc) _ANSI_ARGS_(TCL_VARARGS(CONST char *, format));
+typedef void (Tcl_PanicProc) _ANSI_ARGS_((CONST char *format, ...));
 typedef void (Tcl_TcpAcceptProc) _ANSI_ARGS_((ClientData callbackData,
 	Tcl_Channel chan, char *address, int port));
 typedef void (Tcl_TimerProc) _ANSI_ARGS_((ClientData clientData));
