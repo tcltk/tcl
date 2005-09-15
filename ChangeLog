@@ -3,6 +3,8 @@
 	* unix/tcl.m4 (SC_TCL_EARLY_FLAGS): Added extra hack to allow Tcl
 	to transparently open large files on RHEL 3. [Bug 1287638]
 
+	* unix/configure:	autoconf-2.13
+
 2005-09-07  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclUtf.c (Tcl_UniCharToUtf):	Corrected handling of negative
