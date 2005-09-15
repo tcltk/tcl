@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.173 2005/09/14 21:32:17 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.174 2005/09/15 16:40:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4156,8 +4156,9 @@ ProcessUnexpectedResult(interp, returnCode)
 	Tcl_AppendResult(interp,
 		"invoked \"continue\" outside of a loop", (char *) NULL);
     } else {
-	TclObjPrintf(NULL, Tcl_GetObjResult(interp),
-		"command returned bad code: %d", returnCode);
+	Tcl_Obj *objPtr = Tcl_NewObj();
+	TclObjPrintf(NULL, objPtr, "command returned bad code: %d", returnCode);
+	Tcl_SetObjResult(interp, objPtr);
     }
 }
 

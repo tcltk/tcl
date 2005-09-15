@@ -1,9 +1,24 @@
+2005-09-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	More callers of TclObjPrintf and
+	* generic/tclCkalloc.c:	TclFormatToErrorInfo.
+	* generic/tclCmdMZ.c:
+	* generic/tclExecute.c:
+	* generic/tclIORChan.c:
+	* generic/tclMain.c:
+	* generic/tclProc.c:
+	* generic/tclTimer.c:
+	* generic/tclUtil.c:
+	* unix/tclUnixFCmd.c
+
+	* unix/configure:	autoconf-2.59
+
 2005-09-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tcl.m4 (SC_TCL_EARLY_FLAGS): Added extra hack to allow Tcl
 	to transparently open large files on RHEL 3. [Bug 1287638]
 
-2005-09-13  Don Porter  <dgp@users.sourceforge.net>
+2005-09-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Bug fixes: ObjPrintfVA needed to
 	support "*" fields and needed to interpret precision limits on
