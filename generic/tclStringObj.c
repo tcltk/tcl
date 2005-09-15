@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.47 2005/09/14 21:32:17 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.48 2005/09/15 16:58:24 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -1694,9 +1694,9 @@ Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
  */
 
 int
-TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
+TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
     Tcl_Interp *interp;
-    Tcl_Obj *baseObj;
+    Tcl_Obj *appendObj;
     CONST char *format;
     int objc;
     Tcl_Obj *CONST objv[];
@@ -1705,7 +1705,7 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
     int numBytes = 0;
     int objIndex = 0;
     int gotXpg = 0, gotSequential = 0;
-    Tcl_Obj *appendObj = Tcl_NewObj();
+    int originalLength;
     CONST char *msg;
     CONST char *mixedXPG = "cannot mix \"%\" and \"%n$\" conversion specifiers";
     CONST char *badIndex[2] = {
@@ -1713,11 +1713,11 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	"\"%n$\" argument index out of range"
     };
 
-    if (Tcl_IsShared(baseObj)) {
+    if (Tcl_IsShared(appendObj)) {
 	Tcl_Panic("TclAppendFormattedObjs called with shared object");
     }
+    Tcl_GetStringFromObj(appendObj, &originalLength);
 
-    Tcl_IncrRefCount(appendObj);
     /* format string is NUL-terminated */
     while (*format != '\0') {
 	char *end;
@@ -2185,8 +2185,6 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	numBytes = 0;
     }
 
-    Tcl_AppendObjToObj(baseObj, appendObj);
-    Tcl_DecrRefCount(appendObj);
     return TCL_OK;
 
   errorMsg:
@@ -2194,7 +2192,7 @@ TclAppendFormattedObjs(interp, baseObj, format, objc, objv)
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
     }
   error:
-    Tcl_DecrRefCount(appendObj);
+    Tcl_SetObjLength(appendObj, originalLength);
     return TCL_ERROR;
 }
 
