@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.44 2005/07/20 23:16:00 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.45 2005/09/15 16:40:03 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -1286,7 +1286,6 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj **attributePtrPtr;	    /* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
-    char returnString[7];
     int result;
 
     result = TclpObjStat(fileName, &statBuf);
@@ -1300,9 +1299,9 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
 	return TCL_ERROR;
     }
 
-    sprintf(returnString, "%0#5lo", (long) (statBuf.st_mode & 0x00007FFF));
-
-    *attributePtrPtr = Tcl_NewStringObj(returnString, -1);
+    *attributePtrPtr = Tcl_NewObj();
+    TclObjPrintf(NULL, *attributePtrPtr, "%0#5lo",
+	    (long) (statBuf.st_mode & 0x00007FFF));
 
     return TCL_OK;
 }

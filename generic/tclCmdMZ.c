@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.130 2005/09/14 21:32:17 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.131 2005/09/15 16:40:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2158,9 +2158,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		length2 = length1 * count;
 		if ((length2 / count) != length1) {
-		    TclObjPrintf(NULL, Tcl_GetObjResult(interp),
+		    resultPtr = Tcl_NewObj();
+		    TclObjPrintf(NULL, resultPtr,
 			    "string size overflow, must be less than %d",
 			    INT_MAX);
+		    Tcl_SetObjResult(interp, resultPtr);
 		    return TCL_ERROR;
 		}
 

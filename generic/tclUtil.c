@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.64 2005/09/06 14:40:11 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.65 2005/09/15 16:40:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -235,18 +235,17 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 		 */
 
 		if (interp != NULL) {
-		    char buf[100];
-
+		    Tcl_Obj *objPtr = Tcl_NewObj();
 		    p2 = p;
 		    while ((p2 < limit)
 			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space. */
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    sprintf(buf,
-			    "list element in braces followed by \"%.*s\" instead of space",
-			    (int) (p2-p), p);
-		    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+		    TclObjPrintf(NULL, objPtr,
+			    "list element in braces followed by \"%.*s\" "
+			    "instead of space", (int) (p2-p), p);
+		    Tcl_SetObjResult(interp, objPtr);
 		}
 		return TCL_ERROR;
 	    }
@@ -297,18 +296,17 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 		 */
 
 		if (interp != NULL) {
-		    char buf[100];
-
+		    Tcl_Obj *objPtr = Tcl_NewObj();
 		    p2 = p;
 		    while ((p2 < limit)
 			    && (!isspace(UCHAR(*p2)))	/* INTL: ISO space */
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    sprintf(buf,
-			    "list element in quotes followed by \"%.*s\" %s",
-			    (int) (p2-p), p, "instead of space");
-		    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+		    TclObjPrintf(NULL, objPtr,
+			    "list element in quotes followed by \"%.*s\" "
+			    "instead of space", (int) (p2-p), p);
+		    Tcl_SetObjResult(interp, objPtr);
 		}
 		return TCL_ERROR;
 	    }
