@@ -1,3 +1,8 @@
+2005-09-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tcl.m4 (SC_TCL_EARLY_FLAGS): Added extra hack to allow Tcl
+	to transparently open large files on RHEL 3. [Bug 1287638]
+
 2005-09-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Bug fixes: ObjPrintfVA needed to
