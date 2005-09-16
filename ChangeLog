@@ -1,3 +1,15 @@
+2005-09-16  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclTomMath.h:	Added mp_cmp_d to routines from
+	* unix/Makefile.in:	libtommath used by Tcl.
+	* win/Makefile.in:
+	* win/makefile.vc:
+
+	* generic/tclExecute.c:	Dropped all creation of "bigOne" values
+	and just use tommath routines that accept the value "1" directly.
+
 2005-09-15  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]	Merge updates from HEAD.

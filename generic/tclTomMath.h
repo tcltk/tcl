@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMath.h,v 1.1.2.5 2005/08/30 15:54:29 dgp Exp $
+ * RCS: @(#) $Id: tclTomMath.h,v 1.1.2.6 2005/09/16 15:35:54 dgp Exp $
  */
 
 #ifndef TCLTOMMATH_H
@@ -75,6 +75,7 @@ void* TclBNCalloc( size_t, size_t );
 #define mp_clear TclBN_mp_clear
 #define mp_clear_multi TclBN_mp_clear_multi
 #define mp_cmp TclBN_mp_cmp
+#define mp_cmp_d TclBN_mp_cmp_d
 #define mp_cmp_mag TclBN_mp_cmp_mag
 #define mp_copy TclBN_mp_copy
 #define mp_count_bits TclBN_mp_count_bits

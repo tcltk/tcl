@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.39 2005/09/15 20:58:39 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.40 2005/09/16 15:35:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3854,28 +3854,14 @@ TclExecuteByteCode(interp, codePtr)
 	if (*pc == INST_LSHIFT) {
 	    mp_mul_2d(&big1, shift, &bigResult);
 	} else {
-#if 0
-	    mp_div_2d(&big1, shift, &bigResult, NULL);
-	    if (mp_iszero(&bigResult) && big1.sign == MP_NEG) {
-		/* When right shifting a negative value, keep the sign bit */
-		/* TODO: consider direct SetLongObj to -1 */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
-		mp_sub(&bigResult, &bigOne, &bigResult);
-	    }
-#else
 	    mp_int bigRemainder;
 	    mp_init(&bigRemainder);
 	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
 	    if (!mp_iszero(&bigRemainder) && (bigRemainder.sign == MP_NEG)) {
 		/* Convert to Tcl's integer division rules */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
-		mp_sub(&bigResult, &bigOne, &bigResult);
-		mp_clear(&bigOne);
+		mp_sub_d(&bigResult, 1, &bigResult);
 	    }
 	    mp_clear(&bigRemainder);
-#endif
 	}
 	mp_clear(&big1);
 	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -3945,11 +3931,8 @@ TclExecuteByteCode(interp, codePtr)
 	    case 1: {
 		/* One arg positive; one negative
 		 * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1)) */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_neg(Neg, Neg);
-		mp_sub(Neg, &bigOne, Neg);
-		mp_clear(&bigOne);
+		mp_sub_d(Neg, 1, Neg);
 		mp_xor(Pos, Neg, &bigResult);
 		mp_and(Pos, &bigResult, &bigResult);
 		break;
@@ -3957,16 +3940,13 @@ TclExecuteByteCode(interp, codePtr)
 	    case 0: {
 		/* Both arguments negative 
 		 * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1 */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_neg(Neg, Neg);
-		mp_sub(Neg, &bigOne, Neg);
+		mp_sub_d(Neg, 1, Neg);
 		mp_neg(Other, Other);
-		mp_sub(Other, &bigOne, Other);
+		mp_sub_d(Other, 1, Other);
 		mp_or(Neg, Other, &bigResult);
 		mp_neg(&bigResult, &bigResult);
-		mp_sub(&bigResult, &bigOne, &bigResult);
-		mp_clear(&bigOne);
+		mp_sub_d(&bigResult, 1, &bigResult);
 		break;
 	    }
 	    }
@@ -3980,30 +3960,24 @@ TclExecuteByteCode(interp, codePtr)
 	    case 1: {
 		/* One arg positive; one negative
 		 * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1 */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_neg(Neg, Neg);
-		mp_sub(Neg, &bigOne, Neg);
+		mp_sub_d(Neg, 1, Neg);
 		mp_xor(Pos, Neg, &bigResult);
 		mp_and(Neg, &bigResult, &bigResult);
 		mp_neg(&bigResult, &bigResult);
-		mp_sub(&bigResult, &bigOne, &bigResult);
-		mp_clear(&bigOne);
+		mp_sub_d(&bigResult, 1, &bigResult);
 		break;
 	    }
 	    case 0: {
 		/* Both arguments negative 
 		 * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1 */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_neg(Neg, Neg);
-		mp_sub(Neg, &bigOne, Neg);
+		mp_sub_d(Neg, 1, Neg);
 		mp_neg(Other, Other);
-		mp_sub(Other, &bigOne, Other);
+		mp_sub_d(Other, 1, Other);
 		mp_and(Neg, Other, &bigResult);
 		mp_neg(&bigResult, &bigResult);
-		mp_sub(&bigResult, &bigOne, &bigResult);
-		mp_clear(&bigOne);
+		mp_sub_d(&bigResult, 1, &bigResult);
 		break;
 	    }
 	    }
@@ -4018,27 +3992,21 @@ TclExecuteByteCode(interp, codePtr)
 		/* One arg positive; one negative
 		 * P^N = ~(P^~N) = -(P^(-N-1))-1
 		 */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_neg(Neg, Neg);
-		mp_sub(Neg, &bigOne, Neg);
+		mp_sub_d(Neg, 1, Neg);
 		mp_xor(Pos, Neg, &bigResult);
 		mp_neg(&bigResult, &bigResult);
-		mp_sub(&bigResult, &bigOne, &bigResult);
-		mp_clear(&bigOne);
+		mp_sub_d(&bigResult, 1, &bigResult);
 		break;
 	    }
 	    case 0: {
 		/* Both arguments negative 
 		 * a ^ b = (~a ^ ~b) = (-a-1^-b-1) */
-		mp_int bigOne;
-		Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
 		mp_neg(Neg, Neg);
-		mp_sub(Neg, &bigOne, Neg);
+		mp_sub_d(Neg, 1, Neg);
 		mp_neg(Other, Other);
-		mp_sub(Other, &bigOne, Other);
+		mp_sub_d(Other, 1, Other);
 		mp_xor(Neg, Other, &bigResult);
-		mp_clear(&bigOne);
 		break;
 	    }
 	    }
@@ -4860,11 +4828,8 @@ TclExecuteByteCode(interp, codePtr)
 		if (!mp_iszero(&bigRemainder) 
 			&& (bigRemainder.sign != big2.sign)) {
 		    /* Convert to Tcl's integer division rules */
-		    mp_int bigOne;
-		    Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
-		    mp_sub(&bigResult, &bigOne, &bigResult);
+		    mp_sub_d(&bigResult, 1, &bigResult);
 		    mp_add(&bigRemainder, &big2, &bigRemainder);
-		    mp_clear(&bigOne);
 		}
 		if (*pc == INST_MOD) {
 		    mp_copy(&bigRemainder, &bigResult);
@@ -4894,24 +4859,26 @@ TclExecuteByteCode(interp, codePtr)
 		    NEXT_INST_F(1, 2, 1);
 		}
 		if (big2.sign == MP_NEG) {
-		    mp_int bigOne;
-		    Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
-		    if (mp_cmp_mag(&big1, &bigOne) == MP_GT) {
+		    switch (mp_cmp_d(&big1, 1)) {
+		    case MP_GT:
 			objResultPtr = eePtr->constants[0];
-		    } else if (big1.sign == MP_ZPOS) {
+			break;
+		    case MP_EQ:
 			objResultPtr = eePtr->constants[1];
-		    } else {
-			mp_int bigBit;
-			mp_init(&bigBit);
-			mp_and(&big2, &bigOne, &bigBit);
-			if (mp_iszero(&bigBit)) {
+			break;
+		    case MP_LT:
+			mp_add_d(&big1, 1, &big1);
+			if (mp_cmp_d(&big1, 0) == MP_LT) {
+			    objResultPtr = eePtr->constants[0];
+			    break;
+			}
+			mp_mod_2d(&big2, 1, &big2);
+			if (mp_iszero(&big2)) {
 			    objResultPtr = eePtr->constants[1];
 			} else {
 			    TclNewIntObj(objResultPtr, -1);
 			}
-			mp_clear(&bigBit);
 		    }
-		    mp_clear(&bigOne);
 		    mp_clear(&big1);
 		    mp_clear(&big2);
 		    NEXT_INST_F(1, 2, 1);
@@ -5174,10 +5141,7 @@ TclExecuteByteCode(interp, codePtr)
 		mp_neg(&big, &big);
 		if (*pc == INST_BITNOT) {
 		    /* ~a = - a - 1 */
-		    mp_int bigOne;
-		    Tcl_GetBignumFromObj(NULL, eePtr->constants[1], &bigOne);
-		    mp_sub(&big, &bigOne, &big);
-		    mp_clear(&bigOne);
+		    mp_sub_d(&big, 1, &big);
 		}
 		if (Tcl_IsShared(valuePtr)) {
 		    objResultPtr = Tcl_NewBignumObj(&big);

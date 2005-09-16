@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.135.2.9 2005/08/30 15:54:29 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.135.2.10 2005/09/16 15:35:54 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -346,6 +346,7 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_mp_clear.obj \
 	$(TMP_DIR)\bn_mp_clear_multi.obj \
 	$(TMP_DIR)\bn_mp_cmp.obj \
+	$(TMP_DIR)\bn_mp_cmp_d.obj \
 	$(TMP_DIR)\bn_mp_cmp_mag.obj \
 	$(TMP_DIR)\bn_mp_copy.obj \
 	$(TMP_DIR)\bn_mp_count_bits.obj \

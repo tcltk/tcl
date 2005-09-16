@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.17 2005/08/30 15:54:29 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.18 2005/09/16 15:35:54 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -316,8 +316,9 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
         bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
-        bn_mp_cmp.o bn_mp_cmp_mag.o bn_mp_copy.o bn_mp_count_bits.o \
-        bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o \
+        bn_mp_cmp.o bn_mp_cmp_d.o bn_mp_cmp_mag.o bn_mp_copy.o \
+	bn_mp_count_bits.o bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o \
+	bn_mp_div_2d.o bn_mp_div_3.o \
         bn_mp_exch.o bn_mp_expt_d.o bn_mp_grow.o bn_mp_init.o \
 	bn_mp_init_copy.o bn_mp_init_multi.o bn_mp_init_set.o \
 	bn_mp_init_size.o bn_mp_karatsuba_mul.o \
@@ -443,6 +444,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_clear.c \
 	$(TOMMATH_DIR)/bn_mp_clear_multi.c \
 	$(TOMMATH_DIR)/bn_mp_cmp.c \
+	$(TOMMATH_DIR)/bn_mp_cmp_d.c \
 	$(TOMMATH_DIR)/bn_mp_cmp_mag.c \
 	$(TOMMATH_DIR)/bn_mp_copy.c \
 	$(TOMMATH_DIR)/bn_mp_count_bits.c \
@@ -1220,6 +1222,9 @@ bn_mp_clear_multi.o: $(TOMMATH_DIR)/bn_mp_clear_multi.c
 
 bn_mp_cmp.o: $(TOMMATH_DIR)/bn_mp_cmp.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp.c
+
+bn_mp_cmp_d.o: $(TOMMATH_DIR)/bn_mp_cmp_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_d.c
 
 bn_mp_cmp_mag.o: $(TOMMATH_DIR)/bn_mp_cmp_mag.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_mag.c
