@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.1.2.3 2005/08/10 18:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.1.2.4 2005/09/16 19:29:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -140,6 +140,36 @@ TclBNInitBignumFromLong( mp_int* a, long initVal )
     }
     a->used = p - a->dp;
     
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBNInitBignumFromWideInt --
+ *
+ *	Allocate and initialize a 'bignum' from a Tcl_WideInt
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The 'bignum' is constructed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+extern void
+TclBNInitBignumFromWideInt(mp_int* a, 
+				/* Bignum to initialize */
+			    Tcl_WideInt v)
+				/* Initial value */
+{
+    if (v < (Tcl_WideInt)0) {
+	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)(-v));
+	mp_neg(a, a);
+    } else {
+	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
+    }
 }
 
 /*

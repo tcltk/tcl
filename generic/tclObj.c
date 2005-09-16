@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.34 2005/09/09 18:48:40 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.35 2005/09/16 19:29:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2415,12 +2415,7 @@ Tcl_SetWideIntObj(objPtr, wideValue)
 	TclSetLongObj(objPtr, (long) wideValue);
     } else {
 	mp_int big;
-	if (wideValue < 0) {
-	    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)(-wideValue));
-	    big.sign = MP_NEG;
-	} else {
-	    TclBNInitBignumFromWideUInt(&big, (Tcl_WideUInt)(wideValue));
-	}
+	TclBNInitBignumFromWideInt(&big, wideValue);
 	Tcl_SetBignumObj(objPtr, &big);
     }
 #endif
@@ -2738,13 +2733,8 @@ Tcl_GetBignumFromObj(
 	}
 #ifndef NO_WIDE_TYPE
 	if (objPtr->typePtr == &tclWideIntType) {
-	    Tcl_WideInt w = objPtr->internalRep.wideValue;
-	    if (w < 0) {
-		TclBNInitBignumFromWideUInt(bignumValue, (Tcl_WideUInt)(-w));
-		bignumValue->sign = MP_NEG;
-	    } else {
-		TclBNInitBignumFromWideUInt(bignumValue, (Tcl_WideUInt)w);
-	    }
+	    TclBNInitBignumFromWideInt(bignumValue, 
+		    objPtr->internalRep.wideValue)
 	    return TCL_OK;
 	}
 #endif

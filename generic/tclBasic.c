@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.34 2005/09/15 20:58:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.35 2005/09/16 19:29:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5242,7 +5242,7 @@ ExprAbsFunc(clientData, interp, objc, objv)
      */
 
     if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
-	big.sign = MP_ZPOS;
+	mp_neg(&big, &big);
 	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));

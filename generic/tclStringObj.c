@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.35.2.9 2005/09/15 20:58:40 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.35.2.10 2005/09/16 19:29:02 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1940,7 +1940,7 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-		isNegative = (big.sign == MP_NEG);
+		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
 	    } else if (useWide) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;

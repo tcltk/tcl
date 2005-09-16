@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.36 2005/09/02 17:42:24 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.37 2005/09/16 19:29:02 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1018,9 +1018,7 @@ TclParseNumber( Tcl_Interp* interp,
 	    }
 	    if (octalSignificandOverflow) {
 		if (signum) {
-		    octalSignificandBig.sign = MP_NEG;
-		} else {
-		    octalSignificandBig.sign = MP_ZPOS;
+		    mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
 		TclSetBignumIntRep(objPtr, &octalSignificandBig);
 		octalSignificandOverflow = 0;
@@ -1074,9 +1072,7 @@ TclParseNumber( Tcl_Interp* interp,
 	    }
 	    if (significandOverflow) {
 		if (signum) {
-		    significandBig.sign = MP_NEG;
-		} else {
-		    significandBig.sign = MP_ZPOS;
+		    mp_neg(&significandBig, &significandBig);
 		}
 		TclSetBignumIntRep(objPtr, &significandBig);
 		significandOverflow = 0;
@@ -2188,23 +2184,12 @@ TclInitBignumFromDouble(Tcl_Interp *interp,	/* For error message */
 	mp_zero(b);
     } else {
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
-	int signum = 0;
 	int shift = expt - mantBits;
-	Tcl_WideUInt uw;
-	if (w < 0) {
-	    uw = (Tcl_WideUInt)-w;
-	    signum = 1;
-	} else {
-	    uw = w;
-	}
-	TclBNInitBignumFromWideUInt(b, uw);
+	TclBNInitBignumFromWideInt(b, w);
 	if (shift < 0) {
 	    mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
 	    mp_mul_2d(b, shift, b);
-	}
-	if (signum) {
-	    b->sign = MP_NEG;
 	}
     }
     return TCL_OK;
@@ -2294,7 +2279,7 @@ TclCeil(mp_int *a)	/* Integer to convert. */
     mp_int b;
 
     mp_init(&b);
-    if (a->sign == MP_NEG) {
+    if (mp_cmp_d(a, 0) == MP_LT) {
 	mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
@@ -2336,7 +2321,7 @@ TclFloor(mp_int *a)	/* Integer to convert. */
     mp_int b;
 
     mp_init(&b);
-    if (a->sign == MP_NEG) {
+    if (mp_cmp_d(a, 0) == MP_LT) {
 	mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {

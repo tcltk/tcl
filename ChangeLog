@@ -2,6 +2,16 @@
 
 	[kennykb-numerics-branch]
 
+	* generic/tclInt.h:		Added TclBNInitBigNumFromWideInt()
+	* generic/tclTomMathInterface.c:	so that every caller isn't
+	required to duplicate the sign logic to use the unsigned interface.
+
+	* generic/tclBasic.c:	Reduce the number of places where Tcl
+	* generic/tclExecute.c:	intrudes into the internal format details
+	* generic/tclObj.c:	of the mp_int struct.
+	* generic/tclStrToD.c:
+	* generic/tcLStringObj.c:
+
 	* generic/tclTomMath.h:	Added mp_cmp_d to routines from
 	* unix/Makefile.in:	libtommath used by Tcl.
 	* win/Makefile.in:
