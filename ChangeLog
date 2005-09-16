@@ -7,6 +7,12 @@
 	* win/Makefile.in:
 	* win/makefile.vc:
 
+	* libtommath/bn_mp_add_d.c:	Bug fix.  For mp_add_d(&a, d, &c),
+	when &a has the value -d, then the value &c computed should be zero,
+	but mp_add_d was producing an inconsistent zero value with a sign
+	field of MP_NEG, something like a value of -0, which other routines
+	in libtommath can't handle.
+
 	* generic/tclExecute.c:	Dropped all creation of "bigOne" values
 	and just use tommath routines that accept the value "1" directly.
 
