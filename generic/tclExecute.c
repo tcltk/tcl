@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.41 2005/09/16 19:29:02 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.42 2005/09/20 14:11:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1041,7 +1041,7 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
-    if (Tcl_GetBignumFromObj(interp, valuePtr, &value) != TCL_OK) {
+    if (Tcl_GetBignumAndClearObj(interp, valuePtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_GetBignumFromObj(interp, incrPtr, &incr) != TCL_OK) {

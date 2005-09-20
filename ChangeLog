@@ -1,3 +1,16 @@
+2005-09-20  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+	
+	* generic/tclExecute.c:	Revise TclIncrObj() to call
+	Tcl_GetBignumAndClearObj.
+
+	* generic/tcl.decls:	Add Tcl_GetBignumAndClearObj.
+	* generic/tclObj.c:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2005-09-16  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]

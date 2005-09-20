@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.35 2005/09/16 19:29:02 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.36 2005/09/20 14:11:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -194,6 +194,8 @@ static void		FreeBignum _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		DupBignum _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
 static void		UpdateStringOfBignum _ANSI_ARGS_((Tcl_Obj *objPtr));
+static int		GetBignumFromObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, int copy, mp_int *bignumValue));
 
 /*
  * Prototypes for the array hash key methods.
@@ -2692,10 +2694,11 @@ Tcl_DbNewBignumObj(mp_int* bignumValue, CONST char* file, int line)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBignumFromObj --
+ * GetBignumFromObj --
  *
  *	This procedure retrieves a 'bignum' value from a Tcl object,
- *	converting the object if necessary.
+ *	converting the object if necessary.  Either copies or transfers
+ * 	the mp_int value depending on the copy flag value passed in.
  *
  * Results:
  *	Returns TCL_OK if the conversion is successful, TCL_ERROR otherwise.
@@ -2706,25 +2709,34 @@ Tcl_DbNewBignumObj(mp_int* bignumValue, CONST char* file, int line)
  *	argument is not NULL, an error message is stored in the interpreter
  *	result.
  *
- *	It is expected that the caller will NOT have invoked mp_init on the
- *	bignum value before passing it in. The raw value of the object is
- *	returned, and Tcl owns that memory, so the caller should NOT invoke
- *	mp_clear afterwards.
- *
  *----------------------------------------------------------------------
  */
 
 int
-Tcl_GetBignumFromObj(
+GetBignumFromObj(
     Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj* objPtr,		/* Object to read */
+    int copy,			/* Whether to copy the returned bignum value */
     mp_int* bignumValue)	/* Returned bignum value. */
 {
     do {
 	if (objPtr->typePtr == &tclBignumType) {
-	    mp_int temp;
-	    UNPACK_BIGNUM(objPtr, temp);
-	    mp_init_copy(bignumValue, &temp);
+	    if (copy) {
+		mp_int temp;
+		UNPACK_BIGNUM(objPtr, temp);
+		mp_init_copy(bignumValue, &temp);
+	    } else {
+		if (Tcl_IsShared(objPtr)) {
+		    Tcl_Panic("Tcl_GetBignumAndClearObj called on shared Tcl_Obj");
+		}
+		UNPACK_BIGNUM(objPtr, *bignumValue);
+		objPtr->internalRep.bignumValue.digits = NULL;
+		objPtr->internalRep.bignumValue.misc = 0;
+		objPtr->typePtr = NULL;
+		if (objPtr->bytes == NULL) {
+		    TclInitStringRep(objPtr, NULL, 0);
+		}
+	    }
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
@@ -2751,6 +2763,76 @@ Tcl_GetBignumFromObj(
     } while (TclParseNumber(interp, objPtr, "integer", NULL, -1, NULL,
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetBignumFromObj --
+ *
+ *	This procedure retrieves a 'bignum' value from a Tcl object,
+ *	converting the object if necessary.
+ *
+ * Results:
+ *	Returns TCL_OK if the conversion is successful, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	A copy of bignum is stored in *bignumValue, which is expected to be
+ *	uninitialized or cleared.  If conversion fails, an the 'interp'
+ *	argument is not NULL, an error message is stored in the interpreter
+ *	result.
+ *
+ *	It is expected that the caller will NOT have invoked mp_init on the
+ *	bignum value before passing it in.  Tcl will initialize the mp_int
+ *	as it sets the value.  The value is a copy of the value in objPtr,
+ *	so it becomes the responsibility of the caller to call mp_clear on
+ *	it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetBignumFromObj(
+    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Obj* objPtr,		/* Object to read */
+    mp_int* bignumValue)	/* Returned bignum value. */
+{
+    return GetBignumFromObj(interp, objPtr, 1, bignumValue);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetBignumAndClearObj --
+ *
+ *	This procedure retrieves a 'bignum' value from a Tcl object,
+ *	converting the object if necessary.
+ *
+ * Results:
+ *	Returns TCL_OK if the conversion is successful, TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	A copy of bignum is stored in *bignumValue, which is expected to be
+ *	uninitialized or cleared.  If conversion fails, an the 'interp'
+ *	argument is not NULL, an error message is stored in the interpreter
+ *	result.
+ *
+ *	It is expected that the caller will NOT have invoked mp_init on the
+ *	bignum value before passing it in.  Tcl will initialize the mp_int
+ *	as it sets the value.  The value is transferred from the internals
+ *	of objPtr to the caller, passing responsibility of the caller to
+ *	call mp_clear on it.  The objPtr is cleared to hold an empty value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetBignumAndClearObj(
+    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Obj* objPtr,		/* Object to read */
+    mp_int* bignumValue)	/* Returned bignum value. */
+{
+    return GetBignumFromObj(interp, objPtr, 0, bignumValue);
 }
 
 /*

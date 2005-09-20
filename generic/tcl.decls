@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105.2.8 2005/08/25 15:46:30 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105.2.9 2005/09/20 14:11:51 dgp Exp $
 
 library tcl
 
@@ -2003,28 +2003,31 @@ declare 557 generic {
 declare 558 generic {
     int Tcl_GetBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
+declare 559 generic {
+    int Tcl_GetBignumAndClearObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
+}
 
 # TIP #208:
-declare 559 generic {
+declare 560 generic {
     int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
 }
-declare 560 generic {
+declare 561 generic {
     Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
 	    Tcl_ChannelType *chanTypePtr)
 }
 
 # TIP#219 (Tcl Channel Reflection API) akupries
 
-declare 561 generic {
+declare 562 generic {
     void Tcl_SetChannelErrorInterp (Tcl_Interp* interp, Tcl_Obj* msg)
 }
-declare 562 generic {
+declare 563 generic {
     void Tcl_GetChannelErrorInterp (Tcl_Interp* interp, Tcl_Obj** msg)
 }
-declare 563 generic {
+declare 564 generic {
     void Tcl_SetChannelError (Tcl_Channel chan, Tcl_Obj* msg)
 }
-declare 564 generic {
+declare 565 generic {
     void Tcl_GetChannelError (Tcl_Channel chan, Tcl_Obj** msg)
 }
 
