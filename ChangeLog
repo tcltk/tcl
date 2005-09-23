@@ -2,6 +2,10 @@
 
 	[kennykb-numerics-branch]
 
+	* unix/Makefile.in:	Added -DMP_PREC=4 switch to all compiles so
+	* win/Makefile.in:	that minimum memory requirements of mp_int's
+	* win/makefile.vc:	will not be quite so large.  [Bug 1299153].
+
 	* generic/tclStrToD.c:	Fixed memory leak.  [Bug 1299803].
 	* generic/tclObj.c:	
 
