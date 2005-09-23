@@ -2,19 +2,8 @@
 
 	[kennykb-numerics-branch]
 
-	* generic/tclStrToD.c:	Memory leak.  Comment in TclSetBignumIntRep
-	* generic/tclObj.c:	indicates that mp_init() is called on the
-	bignumValue argument to clear it, while keeping the digits array
-	transferred to the interp of the Tcl_Obj.  The implication is that
-	callers of TclSetBignumIntRep() (and their callers) need not call
-	mp_clear(), but can imagine they've transferred ownership of an
-	mp_int value to Tcl.  However, mp_init() doesn't merely re-initialize
-	the fields of an mp_int to hold the value zero.  It also allocates
-	a fresh dp array of minimum size governed by MP_PREC.  Without a
-	corresponding mp_clear() call somewhere, these dp arrays are leaked.
-	Added some mp_clear() calls to fix the leak, but better fix strategies
-	should still be pursued.  Perhaps the best approach is to just
-	invade the mp_int struct and do the necessary surgery ourselves.
+	* generic/tclStrToD.c:	Fixed memory leak.  [Bug 1299803].
+	* generic/tclObj.c:	
 
 2005-09-20  Don Porter  <dgp@users.sourceforge.net>
 
