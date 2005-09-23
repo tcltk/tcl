@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.37 2005/09/16 19:29:02 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.38 2005/09/23 04:03:43 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1021,7 +1021,6 @@ TclParseNumber( Tcl_Interp* interp,
 		    mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
 		TclSetBignumIntRep(objPtr, &octalSignificandBig);
-		octalSignificandOverflow = 0;
 	    }		
 	    break;
 
@@ -1075,7 +1074,6 @@ TclParseNumber( Tcl_Interp* interp,
 		    mp_neg(&significandBig, &significandBig);
 		}
 		TclSetBignumIntRep(objPtr, &significandBig);
-		significandOverflow = 0;
 	    }
 	    break;
 
