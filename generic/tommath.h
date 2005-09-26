@@ -30,10 +30,13 @@
 
 #include <tommath_class.h>
 
-#undef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
-#undef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
+#ifndef MIN
+   #define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+
+#ifndef MAX
+   #define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,7 +134,7 @@ extern "C" {
    #else
       /* prototypes for our heap functions */
       extern void *XMALLOC(size_t n);
-      extern void *REALLOC(void *p, size_t n);
+      extern void *XREALLOC(void *p, size_t n);
       extern void *XCALLOC(size_t n, size_t s);
       extern void XFREE(void *p);
    #endif
@@ -166,7 +169,6 @@ extern "C" {
 /* Primality generation flags */
 #define LTM_PRIME_BBS      0x0001 /* BBS style prime */
 #define LTM_PRIME_SAFE     0x0002 /* Safe prime (p-1)/2 == prime */
-#define LTM_PRIME_2MSB_OFF 0x0004 /* force 2nd MSB to 0 */
 #define LTM_PRIME_2MSB_ON  0x0008 /* force 2nd MSB to 1 */
 
 typedef int           mp_err;
@@ -183,7 +185,7 @@ extern int KARATSUBA_MUL_CUTOFF,
 /* default precision */
 #ifndef MP_PREC
    #ifndef MP_LOW_MEM
-      #define MP_PREC                 64     /* default digits of precision */
+      #define MP_PREC                 32     /* default digits of precision */
    #else
       #define MP_PREC                 8      /* default digits of precision */
    #endif   
@@ -452,6 +454,15 @@ TOMMATH_STORAGE_CLASS int mp_reduce_2k_setup(mp_int *a, mp_digit *d);
 /* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
 TOMMATH_STORAGE_CLASS int mp_reduce_2k(mp_int *a, mp_int *n, mp_digit d);
 
+/* returns true if a can be reduced with mp_reduce_2k_l */
+TOMMATH_STORAGE_CLASS int mp_reduce_is_2k_l(mp_int *a);
+
+/* determines k value for 2k reduction */
+TOMMATH_STORAGE_CLASS int mp_reduce_2k_setup_l(mp_int *a, mp_int *d);
+
+/* reduces a modulo b where b is of the form 2**p - k [0 <= a] */
+TOMMATH_STORAGE_CLASS int mp_reduce_2k_l(mp_int *a, mp_int *n, mp_int *d);
+
 /* d = a**b (mod c) */
 TOMMATH_STORAGE_CLASS int mp_exptmod(mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
@@ -532,12 +543,14 @@ TOMMATH_STORAGE_CLASS int mp_prime_random_ex(mp_int *a, int t, int size, int fla
 TOMMATH_STORAGE_CLASS int mp_count_bits(mp_int *a);
 
 TOMMATH_STORAGE_CLASS int mp_unsigned_bin_size(mp_int *a);
-TOMMATH_STORAGE_CLASS int mp_read_unsigned_bin(mp_int *a, unsigned char *b, int c);
+TOMMATH_STORAGE_CLASS int mp_read_unsigned_bin(mp_int *a, const unsigned char *b, int c);
 TOMMATH_STORAGE_CLASS int mp_to_unsigned_bin(mp_int *a, unsigned char *b);
+TOMMATH_STORAGE_CLASS int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
 
 TOMMATH_STORAGE_CLASS int mp_signed_bin_size(mp_int *a);
-TOMMATH_STORAGE_CLASS int mp_read_signed_bin(mp_int *a, unsigned char *b, int c);
-TOMMATH_STORAGE_CLASS int mp_to_signed_bin(mp_int *a, unsigned char *b);
+TOMMATH_STORAGE_CLASS int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c);
+TOMMATH_STORAGE_CLASS int mp_to_signed_bin(mp_int *a,  unsigned char *b);
+TOMMATH_STORAGE_CLASS int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
 
 TOMMATH_STORAGE_CLASS int mp_read_radix(mp_int *a, const char *str, int radix);
 TOMMATH_STORAGE_CLASS int mp_toradix(mp_int *a, char *str, int radix);
@@ -577,7 +590,7 @@ TOMMATH_STORAGE_CLASS int fast_mp_invmod(mp_int *a, mp_int *b, mp_int *c);
 TOMMATH_STORAGE_CLASS int mp_invmod_slow (mp_int * a, mp_int * b, mp_int * c);
 TOMMATH_STORAGE_CLASS int fast_mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
 TOMMATH_STORAGE_CLASS int mp_exptmod_fast(mp_int *G, mp_int *X, mp_int *P, mp_int *Y, int mode);
-TOMMATH_STORAGE_CLASS int s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y);
+TOMMATH_STORAGE_CLASS int s_mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y, int mode);
 TOMMATH_STORAGE_CLASS void bn_reverse(unsigned char *s, int len);
 
 extern const char *mp_s_rmap;
@@ -588,4 +601,8 @@ extern const char *mp_s_rmap;
 
 #endif
 
+
+/* $Source: /root/tcl/repos-to-convert/tcl/generic/tommath.h,v $ */
+/* $Revision: 1.2.2.3 $ */
+/* $Date: 2005/09/26 20:51:08 $ */
 

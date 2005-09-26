@@ -1,3 +1,16 @@
+2005-09-26  Kevin Kenny  <kennykb@acm.org>
+
+	* libtommath/:                   Updated to release 0.36.
+	* generic/tommath.h:             Regenerated.
+	* generic/tclTomMathInterface.h: Added ten missing aliases for
+	                                 mp_* functions to avoid namespace
+	                                 pollution in Tcl's exported 
+	                                 symbols. [Bug 1263012]
+	
+2005-09-15  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/ParseCmd.3: copy/paste fix [Bug 1292427]
+
 2005-09-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (TclAppendFormattedObjs):	Revision
