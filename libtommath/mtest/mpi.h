@@ -6,7 +6,7 @@
 
     Arbitrary precision integer arithmetic library
 
-    $Id: mpi.h,v 1.1.1.1 2005/01/19 22:41:29 kennykb Exp $
+    $Id: mpi.h,v 1.1.1.2 2005/09/26 16:32:17 kennykb Exp $
  */
 
 #ifndef _H_MPI_
@@ -225,3 +225,7 @@ int    mp_char2value(char ch, int r);
 const  char  *mp_strerror(mp_err ec);
 
 #endif /* end _H_MPI_ */
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi.h,v $ */
+/* $Revision: 1.1.1.2 $ */
+/* $Date: 2005/09/26 16:32:17 $ */

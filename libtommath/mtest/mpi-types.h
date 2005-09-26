@@ -14,3 +14,7 @@ typedef int                mp_err;
 #define DIGIT_FMT          "%04X"
 #define RADIX              (MP_DIGIT_MAX+1)
 
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/mtest/mpi-types.h,v $ */
+/* $Revision: 1.1.1.2 $ */
+/* $Date: 2005/09/26 16:32:17 $ */
