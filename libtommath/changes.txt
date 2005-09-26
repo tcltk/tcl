@@ -1,3 +1,15 @@
+August 1st, 2005
+v0.36  -- LTM_PRIME_2MSB_ON was fixed and the "OFF" flag was removed.
+       -- [Peter LaDow] found a typo in the XREALLOC macro
+       -- [Peter LaDow] pointed out that mp_read_(un)signed_bin should have "const" on the input
+       -- Ported LTC patch to fix the prime_random_ex() function to get the bitsize correct [and the maskOR flags]
+       -- Kevin Kenny pointed out a stray //
+       -- David Hulton pointed out a typo in the textbook [mp_montgomery_setup() pseudo-code]
+       -- Neal Hamilton (Elliptic Semiconductor) pointed out that my Karatsuba notation was backwards and that I could use 
+          unsigned operations in the routine.  
+       -- Paul Schmidt pointed out a linking error in mp_exptmod() when BN_S_MP_EXPTMOD_C is undefined (and another for read_radix)
+       -- Updated makefiles to be way more flexible
+
 March 12th, 2005
 v0.35  -- Stupid XOR function missing line again... oops.
        -- Fixed bug in invmod not handling negative inputs correctly [Wolfgang Ehrhardt]

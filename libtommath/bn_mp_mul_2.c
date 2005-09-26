@@ -76,3 +76,7 @@ int mp_mul_2(mp_int * a, mp_int * b)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mul_2.c,v $ */
+/* $Revision: 1.1.1.2 $ */
+/* $Date: 2005/09/26 16:31:56 $ */
