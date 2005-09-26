@@ -42,3 +42,7 @@ mp_mod (mp_int * a, mp_int * b, mp_int * c)
   return res;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mod.c,v $ */
+/* $Revision: 1.1.1.2 $ */
+/* $Date: 2005/09/26 16:31:56 $ */
