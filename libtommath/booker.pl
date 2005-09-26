@@ -89,6 +89,9 @@ while (<IN>) {
       
       $inline = 0;
       while (<SRC>) {
+      next if ($_ =~ /\$Source/);
+      next if ($_ =~ /\$Revision/);
+      next if ($_ =~ /\$Date/);
          $text[$line++] = $_;
          ++$inline;
          chomp($_);
