@@ -16,8 +16,7 @@
  */
 
 /* d = a * b (mod c) */
-int
-mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
+int mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
   int     res;
   mp_int  t;
@@ -35,3 +34,7 @@ mp_mulmod (mp_int * a, mp_int * b, mp_int * c, mp_int * d)
   return res;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mulmod.c,v $ */
+/* $Revision: 1.1.1.2 $ */
+/* $Date: 2005/09/26 16:31:56 $ */
