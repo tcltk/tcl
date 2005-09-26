@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMath.h,v 1.1.2.6 2005/09/16 15:35:54 dgp Exp $
+ * RCS: @(#) $Id: tclTomMath.h,v 1.1.2.7 2005/09/26 20:16:53 kennykb Exp $
  */
 
 #ifndef TCLTOMMATH_H
@@ -69,7 +69,9 @@ void* TclBNCalloc( size_t, size_t );
 
 #define bn_reverse TclBN_reverse
 #define fast_s_mp_mul_digs TclBN_fast_s_mp_mul_digs
+#define fast_s_mp_sqr TclBN_fast_s_mp_sqr
 #define mp_add TclBN_mp_add
+#define mp_add_d TclBN_mp_add_d
 #define mp_and TclBN_mp_and
 #define mp_clamp TclBN_mp_clamp
 #define mp_clear TclBN_mp_clear
@@ -90,9 +92,12 @@ void* TclBNCalloc( size_t, size_t );
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
 #define mp_init_multi TclBN_mp_init_multi
+#define mp_init_set TclBN_mp_init_set
 #define mp_init_size TclBN_mp_init_size
 #define mp_karatsuba_mul TclBN_mp_karatsuba_mul
+#define mp_karatsuba_sqr TclBN_mp_karatsuba_sqr
 #define mp_lshd TclBN_mp_lshd
+#define mp_mod TclBN_mp_mod
 #define mp_mod_2d TclBN_mp_mod_2d
 #define mp_mul TclBN_mp_mul
 #define mp_mul_2 TclBN_mp_mul_2
@@ -104,17 +109,22 @@ void* TclBNCalloc( size_t, size_t );
 #define mp_read_radix TclBN_mp_read_radix
 #define mp_rshd TclBN_mp_rshd
 #define mp_shrink TclBN_mp_shrink
+#define mp_set TclBN_mp_set
+#define mp_sqr TclBN_mp_sqr
 #define mp_sqrt TclBN_mp_sqrt
 #define mp_sub TclBN_mp_sub
+#define mp_sub_d TclBN_mp_sub_d
 #define mp_to_unsigned_bin TclBN_mp_to_unsigned_bin
 #define mp_to_unsigned_bin_n TclBN_mp_to_unsigned_bin_n
 #define mp_toom_mul TclBN_mp_toom_mul
+#define mp_toom_sqr TclBN_mp_toom_sqr
 #define mp_toradix_n TclBN_mp_toradix_n
 #define mp_unsigned_bin_size TclBN_mp_unsigned_bin_size
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
 #define s_mp_mul_digs TclBN_s_mp_mul_digs
+#define s_mp_sqr TclBN_s_mp_sqr
 #define s_mp_sub TclBN_s_mp_sub
 
 #endif

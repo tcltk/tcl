@@ -83,3 +83,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_read_radix.c,v $ */
+/* $Revision: 1.1.1.1.2.3 $ */
+/* $Date: 2005/09/26 20:16:53 $ */

@@ -14,7 +14,6 @@
  *
  * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
  */
-
 #ifdef MP_LOW_MEM
    #define TAB_SIZE 32
 #else
@@ -247,3 +246,7 @@ LBL_M:
   return err;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_s_mp_exptmod.c,v $ */
+/* $Revision: 1.1.1.1.2.2 $ */
+/* $Date: 2005/09/26 20:16:54 $ */

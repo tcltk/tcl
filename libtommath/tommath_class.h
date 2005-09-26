@@ -687,6 +687,7 @@
 #if defined(BN_MP_READ_RADIX_C)
    #define BN_MP_ZERO_C
    #define BN_MP_S_RMAP_C
+   #define BN_MP_RADIX_SMAP_C
    #define BN_MP_MUL_D_C
    #define BN_MP_ADD_D_C
    #define BN_MP_ISZERO_C
@@ -992,3 +993,7 @@
 #else
 #define LTM_LAST
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath_class.h,v $ */
+/* $Revision: 1.1.1.1.2.2 $ */
+/* $Date: 2005/09/26 20:16:54 $ */

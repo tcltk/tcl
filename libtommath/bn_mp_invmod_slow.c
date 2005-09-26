@@ -169,3 +169,7 @@ LBL_ERR:mp_clear_multi (&x, &y, &u, &v, &A, &B, &C, &D, NULL);
   return res;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_invmod_slow.c,v $ */
+/* $Revision: 1.1.1.1.2.2 $ */
+/* $Date: 2005/09/26 20:16:53 $ */

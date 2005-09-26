@@ -55,3 +55,7 @@ ERR:
 }
 
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_reduce_2k.c,v $ */
+/* $Revision: 1.1.1.1.2.2 $ */
+/* $Date: 2005/09/26 20:16:53 $ */

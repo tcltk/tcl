@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.38 2005/09/23 04:03:43 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.39 2005/09/26 20:16:53 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -159,6 +159,8 @@ static double MakeNaN _ANSI_ARGS_(( int signum, Tcl_WideUInt tag ));
 static double RefineApproximation _ANSI_ARGS_((double approx,
 					       mp_int* exactSignificand,
 					       int exponent));
+static double AbsoluteValue(double v, int* signum);
+static int GetIntegerTimesPower(double v, mp_int* r, int* e);
 static double BignumToBiasedFrExp _ANSI_ARGS_(( mp_int* big, int* machexp ));
 static double Pow10TimesFrExp _ANSI_ARGS_(( int exponent,
 					    double fraction,
@@ -1713,12 +1715,13 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 				 * Should handle -0 correctly on the
 				 * IEEE architecture. */
 {
-    double f;			/* Significand of v. */
     int e;			/* Power of FLT_RADIX that satisfies
 				 * v = f * FLT_RADIX**e */
     int lowOK, highOK;
     mp_int r;			/* Scaled significand. */
     mp_int s;			/* Divisor such that v = r / s */
+    int smallestSig;		/* Flag == 1 iff v's significand is
+				 * the smallest that can be represented. */
     mp_int mplus;		/* Scaled epsilon: (r + 2* mplus) == v(+)
 				 * where v(+) is the floating point successor
 				 * of v. */
@@ -1732,38 +1735,12 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
     int sfac5 = 0;
     int mplusfac2 = 0;
     int mminusfac2 = 0;
-    double a;
     char c;
     int i, k, n;
 
-    /*
-     * Take the absolute value of the number, and report the number's sign.
-     * Take special steps to preserve signed zeroes in IEEE floating point.
-     * (We can't use fpclassify, because that's a C9x feature and we still
-     * have to build on C89 compilers.)
-     */
+    /* Split the number into absolute value and signum. */
 
-#ifndef IEEE_FLOATING_POINT
-    if (v >= 0.0) {
-	*signum = 0;
-    } else {
-	*signum = 1;
-	v = -v;
-    }
-#else
-    union {
-	Tcl_WideUInt iv;
-	double dv;
-    } bitwhack;
-    bitwhack.dv = v;
-    if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
-	*signum = 1;
-	bitwhack.iv &= ~((Tcl_WideUInt) 1 << 63);
-	v = bitwhack.dv;
-    } else {
-	*signum = 0;
-    }
-#endif
+    v = AbsoluteValue(v, signum);
 
     /*
      * Handle zero specially.
@@ -1775,62 +1752,14 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 	return 1;
     }
 
-    /*
-     * Develop f and e such that v = f * FLT_RADIX**e, with
-     * 1.0/FLT_RADIX <= f < 1.
+    /* 
+     * Find a large integer r, and integer e, such that 
+     *         v = r * FLT_RADIX**e
+     * and r is as small as possible.  Also determine whether the
+     * significand is the smallest possible.
      */
 
-    f = frexp(v, &e);
-#if FLT_RADIX > 2
-    n = e % log2FLT_RADIX;
-    if (n > 0) {
-	n -= log2FLT_RADIX;
-	e += 1;
-	f *= ldexp(1.0, n);
-    }
-    e = (e - n) / log2FLT_RADIX;
-#endif
-    if (f == 1.0) {
-	f = 1.0 / FLT_RADIX;
-	e += 1;
-    }
-
-    /*
-     * If the original number was denormalized, adjust e and f to be denormal
-     * as well.
-     */
-
-    if (e < DBL_MIN_EXP) {
-	n = mantBits + (e - DBL_MIN_EXP)*log2FLT_RADIX;
-	f = ldexp(f, (e - DBL_MIN_EXP)*log2FLT_RADIX);
-	e = DBL_MIN_EXP;
-	n = (n + DIGIT_BIT - 1) / DIGIT_BIT;
-    } else {
-	n = mantDIGIT;
-    }
-
-    /*
-     * Now extract the base-2**DIGIT_BIT digits of f into a multi-precision
-     * integer r. Preserve the invariant v = r * 2**rfac2 * FLT_RADIX**e by
-     * adjusting e.
-     */
-
-    a = f;
-    n = mantDIGIT;
-    mp_init_size(&r, n);
-    r.used = n;
-    r.sign = MP_ZPOS;
-    i = (mantBits % DIGIT_BIT);
-    if (i == 0) {
-	i = DIGIT_BIT;
-    }
-    while (n > 0) {
-	a *= ldexp(1.0, i);
-	i = DIGIT_BIT;
-	r.dp[--n] = (mp_digit) a;
-	a -= (mp_digit) a;
-    }
-    e -= DBL_MANT_DIG;
+    smallestSig = GetIntegerTimesPower(v, &r, &e);
 
     lowOK = highOK = (mp_iseven(&r));
 
@@ -1847,12 +1776,12 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
     if (e >= 0) {
 	int bits = e * log2FLT_RADIX;
 
-	if (f != 1.0/FLT_RADIX) {
+	if (!smallestSig) {
 	    /*
 	     * Normal case, m+ and m- are both FLT_RADIX**e
 	     */
 
-	    rfac2 += bits + 1;
+	    rfac2 = bits + 1;
 	    sfac2 = 1;
 	    mplusfac2 = bits;
 	    mminusfac2 = bits;
@@ -1863,7 +1792,7 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 	     * smaller exponent when going to e's predecessor.
 	     */
 
-	    rfac2 += bits + log2FLT_RADIX + 1;
+	    rfac2 = bits + log2FLT_RADIX + 1;
 	    sfac2 = 1 + log2FLT_RADIX;
 	    mplusfac2 = bits + log2FLT_RADIX;
 	    mminusfac2 = bits;
@@ -1873,13 +1802,13 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 	 * v has digits after the binary point
 	 */
 
-	if (e <= DBL_MIN_EXP-DBL_MANT_DIG || f != 1.0/FLT_RADIX) {
+	if (e <= DBL_MIN_EXP-DBL_MANT_DIG || !smallestSig) {
 	    /*
 	     * Either f isn't the smallest significand or e is the smallest
 	     * exponent.  mplus and mminus will both be 1.
 	     */
 
-	    rfac2 += 1;
+	    rfac2 = 1;
 	    sfac2 = 1 - e * log2FLT_RADIX;
 	    mplusfac2 = 0;
 	    mminusfac2 = 0;
@@ -1890,7 +1819,7 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 	     * fact that v's predecessor has a smaller exponent.
 	     */
 
-	    rfac2 += 1 + log2FLT_RADIX;
+	    rfac2 = 1 + log2FLT_RADIX;
 	    sfac2 = 1 + log2FLT_RADIX * (1 - e);
 	    mplusfac2 = FLT_RADIX;
 	    mminusfac2 = 0;
@@ -2016,6 +1945,148 @@ TclDoubleDigits( char * string,	/* Buffer in which to store the result,
 
     mp_clear_multi(&r, &s, &mplus, &mminus, &temp, NULL);
     return k;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AbsoluteValue --
+ *
+ *	Splits a 'double' into its absolute value and sign.
+ *
+ * Results:
+ *	Returns the absolute value.
+ *
+ * Side effects:
+ *	Stores the signum in '*signum'.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static double
+AbsoluteValue (double v,	/* Number to split */
+	       int* signum)	/* (Output) Sign of the number 1=-, 0=+ */
+{
+    /*
+     * Take the absolute value of the number, and report the number's sign.
+     * Take special steps to preserve signed zeroes in IEEE floating point.
+     * (We can't use fpclassify, because that's a C9x feature and we still
+     * have to build on C89 compilers.)
+     */
+
+#ifndef IEEE_FLOATING_POINT
+    if (v >= 0.0) {
+	*signum = 0;
+    } else {
+	*signum = 1;
+	v = -v;
+    }
+#else
+    union {
+	Tcl_WideUInt iv;
+	double dv;
+    } bitwhack;
+    bitwhack.dv = v;
+    if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
+	*signum = 1;
+	bitwhack.iv &= ~((Tcl_WideUInt) 1 << 63);
+	v = bitwhack.dv;
+    } else {
+	*signum = 0;
+    }
+#endif
+    return v;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetIntegerTimesPower --
+ *
+ *	Converts a floating point number to an exact integer times a
+ *	power of the floating point radix.
+ *
+ * Results:
+ *	Returns 1 if it converted the smallest significand, 0 otherwise.
+ *
+ * Side effects:
+ *	Initializes the integer value (does not just assign it),
+ *	and stores the exponent.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetIntegerTimesPower(double v,	/* Value to convert */
+		     mp_int* rPtr,
+				/* (Output) Integer value */
+		     int* ePtr)	/* (Output) Power of FLT_RADIX by which
+				 * r must be multiplied to yield v*/
+{
+
+    double a;
+    double f;
+    int e;
+    int i;
+    int n;
+
+    /*
+     * Develop f and e such that v = f * FLT_RADIX**e, with
+     * 1.0/FLT_RADIX <= f < 1.
+     */
+
+    f = frexp(v, &e);
+#if FLT_RADIX > 2
+    n = e % log2FLT_RADIX;
+    if (n > 0) {
+	n -= log2FLT_RADIX;
+	e += 1;
+	f *= ldexp(1.0, n);
+    }
+    e = (e - n) / log2FLT_RADIX;
+#endif
+    if (f == 1.0) {
+	f = 1.0 / FLT_RADIX;
+	e += 1;
+    }
+
+    /*
+     * If the original number was denormalized, adjust e and f to be denormal
+     * as well.
+     */
+
+    if (e < DBL_MIN_EXP) {
+	n = mantBits + (e - DBL_MIN_EXP)*log2FLT_RADIX;
+	f = ldexp(f, (e - DBL_MIN_EXP)*log2FLT_RADIX);
+	e = DBL_MIN_EXP;
+	n = (n + DIGIT_BIT - 1) / DIGIT_BIT;
+    } else {
+	n = mantDIGIT;
+    }
+
+    /*
+     * Now extract the base-2**DIGIT_BIT digits of f into a multi-precision
+     * integer r. Preserve the invariant v = r * 2**rfac2 * FLT_RADIX**e by
+     * adjusting e.
+     */
+
+    a = f;
+    n = mantDIGIT;
+    mp_init_size(rPtr, n);
+    rPtr->used = n;
+    rPtr->sign = MP_ZPOS;
+    i = (mantBits % DIGIT_BIT);
+    if (i == 0) {
+	i = DIGIT_BIT;
+    }
+    while (n > 0) {
+	a *= ldexp(1.0, i);
+	i = DIGIT_BIT;
+	rPtr->dp[--n] = (mp_digit) a;
+	a -= (mp_digit) a;
+    }
+    *ePtr = e - DBL_MANT_DIG;
+    return (f == 1.0 / FLT_RADIX);
 }
 
 /*

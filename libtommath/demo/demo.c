@@ -389,8 +389,8 @@ printf("compare no compare!\n"); exit(EXIT_FAILURE); }
       sub_d_n = 0;
 
    /* force KARA and TOOM to enable despite cutoffs */
-   KARATSUBA_SQR_CUTOFF = KARATSUBA_MUL_CUTOFF = 110;
-   TOOM_SQR_CUTOFF = TOOM_MUL_CUTOFF = 150;
+   KARATSUBA_SQR_CUTOFF = KARATSUBA_MUL_CUTOFF = 8;
+   TOOM_SQR_CUTOFF = TOOM_MUL_CUTOFF = 16;
 
    for (;;) {
       /* randomly clear and re-init one variable, this has the affect of triming the alloc space */
@@ -734,3 +734,7 @@ printf("compare no compare!\n"); exit(EXIT_FAILURE); }
    }
    return 0;
 }
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/demo/demo.c,v $ */
+/* $Revision: 1.1.1.1.2.2 $ */
+/* $Date: 2005/09/26 20:16:54 $ */

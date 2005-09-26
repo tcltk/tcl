@@ -11,10 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.3 2005/08/29 18:38:45 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.17.2.4 2005/09/26 20:16:53 kennykb Exp $
  */
 
 #include "tclInt.h"
+
+extern int Tcltest_Init( Tcl_Interp* );
 
 #ifdef TCL_THREADS
 /*
