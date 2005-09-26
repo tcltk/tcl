@@ -66,7 +66,7 @@ QUALCOMM Australia \\
 }
 }
 \maketitle
-This text has been placed in the public domain.  This text corresponds to the v0.35 release of the 
+This text has been placed in the public domain.  This text corresponds to the v0.36 release of the 
 LibTomMath project.
 
 \begin{alltt}
@@ -2775,26 +2775,25 @@ general purpose multiplication.  Given two polynomial basis representations $f(x
 light algebra \cite{KARAP} that the following polynomial is equivalent to multiplication of the two integers the polynomials represent.
 
 \begin{equation}
-f(x) \cdot g(x) = acx^2 + ((a - b)(c - d) - (ac + bd))x + bd
+f(x) \cdot g(x) = acx^2 + ((a + b)(c + d) - (ac + bd))x + bd
 \end{equation}
 
 Using the observation that $ac$ and $bd$ could be re-used only three half sized multiplications would be required to produce the product.  Applying
 this algorithm recursively, the work factor becomes $O(n^{lg(3)})$ which is substantially better than the work factor $O(n^2)$ of the Comba technique.  It turns 
 out what Karatsuba did not know or at least did not publish was that this is simply polynomial basis multiplication with the points 
-$\zeta_0$, $\zeta_{\infty}$ and $-\zeta_{-1}$.  Consider the resultant system of equations.
+$\zeta_0$, $\zeta_{\infty}$ and $\zeta_{1}$.  Consider the resultant system of equations.
 
 \begin{center}
 \begin{tabular}{rcrcrcrc}
 $\zeta_{0}$ &      $=$ &  &  &  & & $w_0$ \\
-$-\zeta_{-1}$ &    $=$ & $-w_2$ & $+$ & $w_1$ & $-$ & $w_0$ \\
+$\zeta_{1}$ &      $=$ & $w_2$ & $+$ & $w_1$ & $+$ & $w_0$ \\
 $\zeta_{\infty}$ & $=$ & $w_2$ &  & &  & \\
 \end{tabular}
 \end{center}
 
 By adding the first and last equation to the equation in the middle the term $w_1$ can be isolated and all three coefficients solved for.  The simplicity
 of this system of equations has made Karatsuba fairly popular.  In fact the cutoff point is often fairly low\footnote{With LibTomMath 0.18 it is 70 and 109 digits for the Intel P4 and AMD Athlon respectively.}
-making it an ideal algorithm to speed up certain public key cryptosystems such as RSA and Diffie-Hellman.  It is worth noting that the point 
-$\zeta_1$ could be substituted for $-\zeta_{-1}$.  In this case the first and third row are subtracted instead of added to the second row.  
+making it an ideal algorithm to speed up certain public key cryptosystems such as RSA and Diffie-Hellman.  
 
 \newpage\begin{figure}[!here]
 \begin{small}
@@ -2817,13 +2816,13 @@ Split the input.  e.g. $a = x1 \cdot \beta^B + x0$ \\
 Calculate the three products. \\
 8.  $x0y0 \leftarrow x0 \cdot y0$ (\textit{mp\_mul}) \\
 9.  $x1y1 \leftarrow x1 \cdot y1$ \\
-10.  $t1 \leftarrow x1 - x0$ (\textit{mp\_sub}) \\
-11.  $x0 \leftarrow y1 - y0$ \\
+10.  $t1 \leftarrow x1 + x0$ (\textit{mp\_add}) \\
+11.  $x0 \leftarrow y1 + y0$ \\
 12.  $t1 \leftarrow t1 \cdot x0$ \\
 \\
 Calculate the middle term. \\
 13.  $x0 \leftarrow x0y0 + x1y1$ \\
-14.  $t1 \leftarrow x0 - t1$ \\
+14.  $t1 \leftarrow t1 - x0$ (\textit{s\_mp\_sub}) \\
 \\
 Calculate the final product. \\
 15.  $t1 \leftarrow t1 \cdot \beta^B$ (\textit{mp\_lshd}) \\
@@ -2850,7 +2849,7 @@ smallest input \textbf{used} count.  After the radix point is chosen the inputs 
 compute the lower halves.  Step 6 and 7 computer the upper halves.  
 
 After the halves have been computed the three intermediate half-size products must be computed.  Step 8 and 9 compute the trivial products
-$x0 \cdot y0$ and $x1 \cdot y1$.  The mp\_int $x0$ is used as a temporary variable after $x1 - x0$ has been computed.  By using $x0$ instead
+$x0 \cdot y0$ and $x1 \cdot y1$.  The mp\_int $x0$ is used as a temporary variable after $x1 + x0$ has been computed.  By using $x0$ instead
 of an additional temporary variable, the algorithm can avoid an addition memory allocation operation.
 
 The remaining steps 13 through 18 compute the Karatsuba polynomial through a variety of digit shifting and addition operations.
@@ -3246,10 +3245,10 @@ Let $h(x) = \left ( f(x) \right )^2$ represent the square of the polynomial.  Th
 number with the following equation.
 
 \begin{equation}
-h(x) = a^2x^2 + \left (a^2 + b^2 - (a - b)^2 \right )x + b^2
+h(x) = a^2x^2 + \left ((a + b)^2 - (a^2 + b^2) \right )x + b^2
 \end{equation}
 
-Upon closer inspection this equation only requires the calculation of three half-sized squares: $a^2$, $b^2$ and $(a - b)^2$.  As in 
+Upon closer inspection this equation only requires the calculation of three half-sized squares: $a^2$, $b^2$ and $(a + b)^2$.  As in 
 Karatsuba multiplication, this algorithm can be applied recursively on the input and will achieve an asymptotic running time of 
 $O \left ( n^{lg(3)} \right )$.
 
@@ -3281,12 +3280,12 @@ Split the input.  e.g. $a = x1\beta^B + x0$ \\
 Calculate the three squares. \\
 6.  $x0x0 \leftarrow x0^2$ (\textit{mp\_sqr}) \\
 7.  $x1x1 \leftarrow x1^2$ \\
-8.  $t1 \leftarrow x1 - x0$ (\textit{mp\_sub}) \\
+8.  $t1 \leftarrow x1 + x0$ (\textit{s\_mp\_add}) \\
 9.  $t1 \leftarrow t1^2$ \\
 \\
 Compute the middle term. \\
 10.  $t2 \leftarrow x0x0 + x1x1$ (\textit{s\_mp\_add}) \\
-11.  $t1 \leftarrow t2 - t1$ \\
+11.  $t1 \leftarrow t1 - t2$ \\
 \\
 Compute final product. \\
 12.  $t1 \leftarrow t1\beta^B$ (\textit{mp\_lshd}) \\
@@ -3309,7 +3308,7 @@ The radix point for squaring is simply placed exactly in the middle of the digit
 placed just below the middle.  Step 3, 4 and 5 compute the two halves required using $B$
 as the radix point.  The first two squares in steps 6 and 7 are rather straightforward while the last square is of a more compact form.
 
-By expanding $\left (x1 - x0 \right )^2$, the $x1^2$ and $x0^2$ terms in the middle disappear, that is $x1^2 + x0^2 - (x1 - x0)^2 = 2 \cdot x0 \cdot x1$.
+By expanding $\left (x1 + x0 \right )^2$, the $x1^2$ and $x0^2$ terms in the middle disappear, that is $(x0 - x1)^2 - (x1^2 + x0^2)  = 2 \cdot x0 \cdot x1$.
 Now if $5n$ single precision additions and a squaring of $n$-digits is faster than multiplying two $n$-digit numbers and doubling then
 this method is faster.  Assuming no further recursions occur, the difference can be estimated with the following inequality.
 
@@ -4035,7 +4034,7 @@ To calculate the variable $\rho$ a relatively simple algorithm will be required.
 \hline \\
 1.  $b \leftarrow n_0$ \\
 2.  If $b$ is even return(\textit{MP\_VAL}) \\
-3.  $x \leftarrow ((b + 2) \mbox{ AND } 4) << 1) + b$ \\
+3.  $x \leftarrow (((b + 2) \mbox{ AND } 4) << 1) + b$ \\
 4.  for $k$ from 0 to $\lceil lg(lg(\beta)) \rceil - 2$ do \\
 \hspace{3mm}4.1  $x \leftarrow x \cdot (2 - bx)$ \\
 5.  $\rho \leftarrow \beta - x \mbox{ (mod }\beta\mbox{)}$ \\
