@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.2.2 2003/12/17 18:38:28 das Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.2.3 2005/09/27 15:44:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -53,6 +53,8 @@ static void		DupByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr));
 static int		FormatNumber _ANSI_ARGS_((Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr));
+static void		CopyNumber _ANSI_ARGS_((CONST VOID *from, VOID *to,
+			    unsigned int length));
 static void		FreeByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		GetFormatSpec _ANSI_ARGS_((char **formatPtr,
 			    char *cmdPtr, int *countPtr));
@@ -1461,7 +1463,11 @@ FormatNumber(interp, type, src, cursorPtr)
 	    return TCL_ERROR;
 	}
 	if (type == 'd') {
-	    memcpy((VOID *) *cursorPtr, (VOID *) &dvalue, sizeof(double));
+	    /*
+	     * Can't just memcpy() here. [Bug 1116542]
+	     */
+
+	    CopyNumber(&dvalue, *cursorPtr, sizeof(double));
 	    *cursorPtr += sizeof(double);
 	} else {
 	    float fvalue;
@@ -1536,6 +1542,16 @@ FormatNumber(interp, type, src, cursorPtr)
 	}
 	return TCL_OK;
     }
+}
+
+/* Ugly workaround for old and broken compiler! */
+static void
+CopyNumber(from, to, length)
+    CONST VOID *from;
+    VOID *to;
+    unsigned int length;
+{
+    memcpy(to, from, length);
 }
 
 /*

@@ -1,3 +1,9 @@
+2005-09-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBinary.c (FormatNumber): Factorize out copying of
+	double values to a helper to work around ugly broken compiler
+	problems. [Bug 1116542]
+
 2005-09-15  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/ParseCmd.3: copy/paste fix [Bug 1292427]
