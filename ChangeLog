@@ -1,3 +1,12 @@
+2005-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tcl.h:	Changed name of the new Tcl_Obj intrep field
+	* generic/tclObj.c:	from "bignumValue" to "ptrAndLongRep" as
+	* generic/tclProc.c:	described in TIP 237, and more suitable for
+	other more general uses.
+
 2005-09-26  Kevin Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merge updates from HEAD.

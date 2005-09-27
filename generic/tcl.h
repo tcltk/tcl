@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.191.2.10 2005/09/15 20:58:39 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.191.2.11 2005/09/27 18:42:54 dgp Exp $
  */
 
 #ifndef _TCL
@@ -770,10 +770,10 @@ typedef struct Tcl_Obj {
 	} twoPtrValue;
 	struct {		/*   - internal rep as a wide int, tightly
 				 *     packed fields */
-	    VOID *digits;	/* Pointer to digits */
-	    unsigned long misc;	/* Alloc, used, and signum packed into a
+	    VOID *ptr;		/* Pointer to digits */
+	    unsigned long value;/* Alloc, used, and signum packed into a
 				 * single word */
-	} bignumValue;
+	} ptrAndLongRep;
     } internalRep;
 } Tcl_Obj;
 

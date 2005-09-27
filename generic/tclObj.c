@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.38 2005/09/23 16:13:14 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.39 2005/09/27 18:42:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -148,28 +148,26 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     if ((bignum).used > 0x7fff) { \
 	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int)); \
 	*temp = bignum; \
-	(objPtr)->internalRep.bignumValue.digits = (void*) temp; \
-	(objPtr)->internalRep.bignumValue.misc = -1; \
+	(objPtr)->internalRep.ptrAndLongRep.ptr = (void*) temp; \
+	(objPtr)->internalRep.ptrAndLongRep.value = -1; \
     } else { \
 	if ((bignum).alloc > 0x7fff) { \
 	    mp_shrink(&(bignum)); \
 	} \
-	(objPtr)->internalRep.bignumValue.digits = (void*) (bignum).dp; \
-	(objPtr)->internalRep.bignumValue.misc = ( \
-		((bignum).sign << 30) \
-		| ((bignum).alloc << 15) \
-		| ((bignum).used)); \
+	(objPtr)->internalRep.ptrAndLongRep.ptr = (void*) (bignum).dp; \
+	(objPtr)->internalRep.ptrAndLongRep.value = ( ((bignum).sign << 30) \
+		| ((bignum).alloc << 15) | ((bignum).used)); \
     }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.bignumValue.misc == -1) { \
-	(bignum) = *((mp_int *) ((objPtr)->internalRep.bignumValue.digits)); \
+    if ((objPtr)->internalRep.ptrAndLongRep.value == -1) { \
+	(bignum) = *((mp_int *) ((objPtr)->internalRep.ptrAndLongRep.ptr)); \
     } else { \
-	(bignum).dp = (mp_digit*) (objPtr)->internalRep.bignumValue.digits; \
-	(bignum).sign = (objPtr)->internalRep.bignumValue.misc >> 30; \
+	(bignum).dp = (mp_digit*) (objPtr)->internalRep.ptrAndLongRep.ptr; \
+	(bignum).sign = (objPtr)->internalRep.ptrAndLongRep.value >> 30; \
 	(bignum).alloc = \
-		((objPtr)->internalRep.bignumValue.misc >> 15) & 0x7fff; \
-	(bignum).used = (objPtr)->internalRep.bignumValue.misc & 0x7fff; \
+		((objPtr)->internalRep.ptrAndLongRep.value >> 15) & 0x7fff; \
+	(bignum).used = (objPtr)->internalRep.ptrAndLongRep.value & 0x7fff; \
     }
 
 /*
@@ -1310,7 +1308,7 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
 #ifdef BIGNUM_AUTO_NARROW
 	    *boolPtr = 1;
 #else
-	    *boolPtr = ((objPtr->internalRep.bignumValue.misc & 0x7fff)!=0);
+	    *boolPtr = ((objPtr->internalRep.ptrAndLongRep.value & 0x7fff)!=0);
 #endif
 	    return TCL_OK;
 	}
@@ -2527,8 +2525,8 @@ FreeBignum(Tcl_Obj *objPtr)
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if (objPtr->internalRep.bignumValue.misc < 0) {
-	ckfree((char *)objPtr->internalRep.bignumValue.digits);
+    if (objPtr->internalRep.ptrAndLongRep.value < 0) {
+	ckfree((char *)objPtr->internalRep.ptrAndLongRep.ptr);
     }
 }
 
@@ -2705,7 +2703,7 @@ Tcl_DbNewBignumObj(mp_int* bignumValue, CONST char* file, int line)
  *
  * Side effects:
  *	A copy of bignum is stored in *bignumValue, which is expected to be
- *	uninitialized or cleared.  If conversion fails, an the 'interp'
+ *	uninitialized or cleared.  If conversion fails, and the 'interp'
  *	argument is not NULL, an error message is stored in the interpreter
  *	result.
  *
@@ -2730,8 +2728,8 @@ GetBignumFromObj(
 		    Tcl_Panic("Tcl_GetBignumAndClearObj called on shared Tcl_Obj");
 		}
 		UNPACK_BIGNUM(objPtr, *bignumValue);
-		objPtr->internalRep.bignumValue.digits = NULL;
-		objPtr->internalRep.bignumValue.misc = 0;
+		objPtr->internalRep.ptrAndLongRep.ptr = NULL;
+		objPtr->internalRep.ptrAndLongRep.value = 0;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
 		    TclInitStringRep(objPtr, NULL, 0);

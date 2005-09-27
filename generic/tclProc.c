@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.66.2.7 2005/09/15 20:58:40 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.66.2.8 2005/09/27 18:42:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -688,7 +688,7 @@ TclObjGetFrame(interp, objPtr, framePtrPtr)
 	    /*
 	     * Cache for future reference.
 	     *
-	     * TODO: Use the new bignumValue (long + pointer) intrep
+	     * TODO: Use the new ptrAndLongRep intrep
 	     */
 
 	    TclFreeIntRep(objPtr);
@@ -703,7 +703,7 @@ TclObjGetFrame(interp, objPtr, framePtrPtr)
 	    /*
 	     * Cache for future reference.
 	     *
-	     * TODO: Use the new bignumValue (long + pointer) intrep
+	     * TODO: Use the new ptrAndLongRep intrep
 	     */
 
 	    TclFreeIntRep(objPtr);
