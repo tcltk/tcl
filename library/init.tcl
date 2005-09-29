@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.81 2005/09/14 17:13:18 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.82 2005/09/29 23:16:29 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -94,6 +94,48 @@ namespace eval tcl {
             tell        ::tell
             truncate    ::tcl::chan::Truncate
         }
+    }
+
+    # TIP #255 min and max functions
+    namespace eval mathfunc {
+	proc min {args} {
+	    if {[llength $args] == 0} {
+		return -code error \
+		    "too few arguments to math function \"min\""
+	    }
+	    set val [lindex $args 0]
+	    # This will handle forcing the numeric value without
+	    # ruining the interval type of a numeric object
+	    if {[catch {expr {double($val)}} err]} {
+		return -code error $err
+	    }
+	    foreach arg [lrange $args 1 end] {
+		if {[catch {expr {double($arg)}} err]} {
+		    return -code error $err
+		}
+		if {$arg < $val} { set val $arg }
+	    }
+	    return $val
+	}
+	proc max {args} {
+	    if {[llength $args] == 0} {
+		return -code error \
+		    "too few arguments to math function \"max\""
+	    }
+	    set val [lindex $args 0]
+	    # This will handle forcing the numeric value without
+	    # ruining the interval type of a numeric object
+	    if {[catch {expr {double($val)}} err]} {
+		return -code error $err
+	    }
+	    foreach arg [lrange $args 1 end] {
+		if {[catch {expr {double($arg)}} err]} {
+		    return -code error $err
+		}
+		if {$arg > $val} { set val $arg }
+	    }
+	    return $val
+	}
     }
 }
 
