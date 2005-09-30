@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.82 2005/09/29 23:16:29 hobbs Exp $
+# RCS: @(#) $Id: init.tcl,v 1.83 2005/09/30 01:05:20 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -103,13 +103,10 @@ namespace eval tcl {
 		return -code error \
 		    "too few arguments to math function \"min\""
 	    }
-	    set val [lindex $args 0]
-	    # This will handle forcing the numeric value without
-	    # ruining the interval type of a numeric object
-	    if {[catch {expr {double($val)}} err]} {
-		return -code error $err
-	    }
-	    foreach arg [lrange $args 1 end] {
+	    set val Inf
+	    foreach arg $args {
+		# This will handle forcing the numeric value without
+		# ruining the interval type of a numeric object
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
@@ -122,13 +119,10 @@ namespace eval tcl {
 		return -code error \
 		    "too few arguments to math function \"max\""
 	    }
-	    set val [lindex $args 0]
-	    # This will handle forcing the numeric value without
-	    # ruining the interval type of a numeric object
-	    if {[catch {expr {double($val)}} err]} {
-		return -code error $err
-	    }
-	    foreach arg [lrange $args 1 end] {
+	    set val -Inf
+	    foreach arg $args {
+		# This will handle forcing the numeric value without
+		# ruining the interval type of a numeric object
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
