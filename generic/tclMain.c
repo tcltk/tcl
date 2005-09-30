@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20 2002/05/29 22:59:33 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.2.1 2005/09/30 19:28:55 dgp Exp $
  */
 
 #include "tcl.h"
@@ -204,15 +204,12 @@ Tcl_Main(argc, argv, appInitProc)
 				 * initialization but before starting to
 				 * execute commands. */
 {
-    Tcl_Obj *resultPtr;
-    Tcl_Obj *commandPtr = NULL;
-    char buffer[TCL_INTEGER_SPACE + 5], *args;
+    Tcl_Obj *resultPtr, *argvPtr, *commandPtr = NULL;
     PromptType prompt = PROMPT_START;
-    int code, length, tty;
-    int exitCode = 0;
+    int code, length, tty, exitCode = 0;
     Tcl_Channel inChannel, outChannel, errChannel;
     Tcl_Interp *interp;
-    Tcl_DString argString;
+    Tcl_DString appName;
 
     Tcl_FindExecutable(argv[0]);
 
@@ -233,28 +230,28 @@ Tcl_Main(argc, argv, appInitProc)
 	}
     }
 
-    /*
-     * The CONST casting is safe, and better we do it here than force
-     * all callers of Tcl_Main to do it.  (Those callers are likely
-     * in a main() that can't easily change its signature.)
-     */
-    
-    args = Tcl_Merge(argc-1, (CONST char **)argv+1);
-    Tcl_ExternalToUtfDString(NULL, args, -1, &argString);
-    Tcl_SetVar(interp, "argv", Tcl_DStringValue(&argString), TCL_GLOBAL_ONLY);
-    Tcl_DStringFree(&argString);
-    ckfree(args);
-
     if (TclGetStartupScriptPath() == NULL) {
-	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &argString);
+	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &appName);
     } else {
 	TclSetStartupScriptFileName(Tcl_ExternalToUtfDString(NULL,
-		TclGetStartupScriptFileName(), -1, &argString));
+		TclGetStartupScriptFileName(), -1, &appName));
     }
+    Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&appName), TCL_GLOBAL_ONLY);
+    Tcl_DStringFree(&appName);
+    argc--;
+    argv++;
 
-    TclFormatInt(buffer, (long) argc-1);
-    Tcl_SetVar(interp, "argc", buffer, TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&argString), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+
+    argvPtr = Tcl_NewListObj(0, NULL);
+    while (argc--) {
+	Tcl_DString ds;
+	Tcl_ExternalToUtfDString(NULL, *argv++, -1, &ds);
+	Tcl_ListObjAppendElement(NULL, argvPtr, Tcl_NewStringObj(
+		Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
+	Tcl_DStringFree(&ds);
+    }
+    Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 
     /*
      * Set the "tcl_interactive" variable.
@@ -308,7 +305,6 @@ Tcl_Main(argc, argv, appInitProc)
 	}
 	goto done;
     }
-    Tcl_DStringFree(&argString);
 
     /*
      * We're running interactively.  Source a user-specific startup
@@ -496,6 +492,7 @@ Tcl_Main(argc, argv, appInitProc)
      */
 
     if (!Tcl_InterpDeleted(interp)) {
+	char buffer[TCL_INTEGER_SPACE + 5];
         sprintf(buffer, "exit %d", exitCode);
         Tcl_Eval(interp, buffer);
 
