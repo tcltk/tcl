@@ -1,3 +1,8 @@
+2005-09-30  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclMain.c:	Separate encoding conversion of command line
+	arguments from list formatting.  [Bug 1306162].
+
 2005-09-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclBinary.c (FormatNumber): Factorize out copying of
