@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.83 2005/09/30 01:05:20 hobbs Exp $
+# RCS: @(#) $Id: init.tcl,v 1.84 2005/09/30 18:53:33 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -106,7 +106,7 @@ namespace eval tcl {
 	    set val Inf
 	    foreach arg $args {
 		# This will handle forcing the numeric value without
-		# ruining the interval type of a numeric object
+		# ruining the internal type of a numeric object
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
@@ -122,7 +122,7 @@ namespace eval tcl {
 	    set val -Inf
 	    foreach arg $args {
 		# This will handle forcing the numeric value without
-		# ruining the interval type of a numeric object
+		# ruining the internal type of a numeric object
 		if {[catch {expr {double($arg)}} err]} {
 		    return -code error $err
 		}
