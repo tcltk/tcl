@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.39 2005/09/27 18:42:54 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.40 2005/10/03 15:50:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2931,6 +2931,59 @@ TclSetBignumIntRep(objPtr, bignumValue)
     bignumValue->dp = NULL;
     bignumValue->alloc = bignumValue->used = 0;
     bignumValue->sign = MP_NEG;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetNumberFromObj --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int TclGetNumberFromObj(interp, objPtr, clientDataPtr, typePtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+    ClientData *clientDataPtr;
+    int *typePtr;
+{
+    do {
+	if (objPtr->typePtr == &tclDoubleType) {
+	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+		*typePtr = TCL_NUMBER_NAN;
+	    } else {
+		*typePtr = TCL_NUMBER_DOUBLE;
+	    }
+	    *clientDataPtr = &(objPtr->internalRep.doubleValue);
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclIntType) {
+	    *typePtr = TCL_NUMBER_LONG;
+	    *clientDataPtr = &(objPtr->internalRep.longValue);
+	    return TCL_OK;
+	}
+	if (objPtr->typePtr == &tclBignumType) {
+	    static Tcl_ThreadDataKey bignumKey;
+	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey, (int)sizeof(mp_int));
+	    UNPACK_BIGNUM( objPtr, *bigPtr );
+	    *typePtr = TCL_NUMBER_BIG;
+	    *clientDataPtr = bigPtr;
+	    return TCL_OK;
+	}
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+	    *typePtr = TCL_NUMBER_WIDE;
+	    *clientDataPtr = &(objPtr->internalRep.wideValue);
+	    return TCL_OK;
+	}
+#endif
+    } while (TCL_OK ==
+	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
+    return TCL_ERROR;
 }
 
 /*

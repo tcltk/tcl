@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.35 2005/09/16 19:29:02 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.36 2005/10/03 15:50:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5591,114 +5591,60 @@ ExprRoundFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
-    Tcl_Obj *valuePtr;
-    double d, fractPart, intPart;
-    mp_int big;
-#if 0
-    double i, f;
-    Tcl_Obj *resPtr;
-#endif
-
-    /*
-     * Check the argument count.
-     */
+    double d;
+    ClientData ptr;
+    int type;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 1, objc, objv);
 	return TCL_ERROR;
     }
-    valuePtr = objv[1];
 
-    /*
-     * Coerce the argument to a number. Integers are already rounded.
-     */
-
-#if 0
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((valuePtr->typePtr == &tclIntType) ||
-	    (valuePtr->typePtr == &tclWideIntType)) {
-	Tcl_SetObjResult(interp, valuePtr);
-	return TCL_OK;
-    }
-    GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
+    if (type == TCL_NUMBER_DOUBLE) {
+	double fractPart, intPart;
+	long max = LONG_MAX, min = LONG_MIN;
 
-    /*
-     * Round the number to the nearest integer. I'd like to use round(), but
-     * it's C99 (or BSD), and not yet universal.
-     */
-
-    d = valuePtr->internalRep.doubleValue;
-    f = modf(d, &i);
-    if (d < 0.0) {
-	if (f <= -0.5) {
-	    i += -1.0;
+	fractPart = modf(*((CONST double *)ptr), &intPart);
+	if (fractPart <= -0.5) {
+	    min++;
+	} else if (fractPart >= 0.5) {
+	    max--;
 	}
-	if (i <= Tcl_WideAsDouble(LLONG_MIN)) {
-	    goto tooLarge;
-	} else if (d <= (double) LONG_MIN) {
-	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
-	} else {
-	    resPtr = Tcl_NewLongObj((long) i);
-	}
-    } else {
-	if (f >= 0.5) {
-	    i += 1.0;
-	}
-	if (i >= Tcl_WideAsDouble(LLONG_MAX)) {
-	    goto tooLarge;
-	} else if (i >= (double) LONG_MAX) {
-	    resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
-	} else {
-	    resPtr = Tcl_NewLongObj((long) i);
-	}
-    }
-    Tcl_SetObjResult(interp, resPtr);
-    return TCL_OK;
-
-    /*
-     * Error return: result cannot be represented as an integer.
-     */
-
-  tooLarge:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "integer value too large to represent", -1));
-    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-	    "integer value too large to represent", (char *) NULL);
-
-    return TCL_ERROR;
-#else
-    if (Tcl_GetDoubleFromObj(interp, valuePtr, &d) != TCL_OK) {
-	/* Non-numeric */
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
-	/* Integers are already rounded */
-	mp_clear(&big);
-	Tcl_SetObjResult(interp, valuePtr);
-	return TCL_OK;
-    }
-    fractPart = modf(d, &intPart);
-    if (fractPart == 0.0) {
-	if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    } else {
-	if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (fractPart < 0.0) {
+	if ((intPart > (double)max) || (intPart < (double)min)) {
+	    mp_int big;
+	    if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
+		/* Infinity */
+		return TCL_ERROR;
+	    }
 	    if (fractPart <= -0.5) {
 		mp_sub_d(&big, 1, &big);
+	    } else if (fractPart >= 0.5) {
+		mp_add_d(&big, 1, &big);
 	    }
-	} else if (fractPart >= 0.5) {
-	    mp_add_d(&big, 1, &big);
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+	    return TCL_OK;
+	} else {
+	    long result = (long)intPart;
+	    if (fractPart <= -0.5) {
+		result--;
+	    } else if (fractPart >= 0.5) {
+		result++;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    return TCL_OK;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-    return TCL_OK;
-#endif
+    if (type != TCL_NUMBER_NAN) {
+	/* All integers are already rounded */
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+    /* Get the error message for NaN */
+    Tcl_GetDoubleFromObj(interp, objv[1], &d);
+    return TCL_ERROR;
 }
 
 static int

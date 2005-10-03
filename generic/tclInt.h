@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.40 2005/09/16 19:29:02 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.41 2005/10/03 15:50:19 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1905,6 +1905,18 @@ typedef struct ProcessGlobalValue {
 				/* Use [scan] rules dealing with 0? prefixes */
 
 /*
+ *----------------------------------------------------------------------
+ * Type values TclGetNumberFromObj
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_NUMBER_LONG		1
+#define TCL_NUMBER_WIDE		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
@@ -2049,6 +2061,9 @@ MODULE_SCOPE int	TclGetEncodingFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE int	TclGetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
+MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
+			    int *typePtr);
 MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    CONST char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);

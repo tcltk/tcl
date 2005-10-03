@@ -1,3 +1,14 @@
+2005-10-03  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclBasic.c:	Re-implemented ExprRoundFunc to use
+	TclGetNumberFromObj.
+
+	* generic/tclInt.h:	Added new routine TclGetNumberFromObj to
+	* generic/tclObj.c:	provide efficient access to the actual
+	internal rep of a numeric Tcl_Obj without conversions.
+
 2005-09-30  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]
