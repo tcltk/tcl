@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.36 2005/10/03 15:50:19 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.37 2005/10/03 18:25:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5613,7 +5613,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	} else if (fractPart >= 0.5) {
 	    max--;
 	}
-	if ((intPart > (double)max) || (intPart < (double)min)) {
+	if ((intPart >= (double)max) || (intPart <= (double)min)) {
 	    mp_int big;
 	    if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
 		/* Infinity */
