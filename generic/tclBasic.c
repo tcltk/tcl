@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.37 2005/10/03 18:25:19 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.38 2005/10/03 19:32:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5329,25 +5329,34 @@ ExprEntierFunc(clientData, interp, objc, objv)
     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
 {
     double d;
-    mp_int big;
+    int type;
+    ClientData ptr;
+
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    if (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
-	mp_clear(&big);
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (type == TCL_NUMBER_DOUBLE) {
+	mp_int big;
+	if (TclInitBignumFromDouble(interp, *((CONST double *)ptr), &big)
+		!= TCL_OK) {
+	    /* Infinity */
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+	return TCL_OK;
+    }
+    if (type != TCL_NUMBER_NAN) {
+	/* All integers are already of integer type */
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    if (Tcl_GetDoubleFromObj(interp, objv[1], &d) != TCL_OK) {
-	/* Non-numeric argument */
-	return TCL_ERROR;
-    }
-    if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-    return TCL_OK;
+    /* Get the error message for NaN */
+    Tcl_GetDoubleFromObj(interp, objv[1], &d);
+    return TCL_ERROR;
 }
 
 static int

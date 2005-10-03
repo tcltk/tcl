@@ -2,8 +2,8 @@
 
 	[kennykb-numerics-branch]
 
-	* generic/tclBasic.c:	Re-implemented ExprRoundFunc to use
-	TclGetNumberFromObj.
+	* generic/tclBasic.c:	Re-implemented ExprRoundFunc and ExprEntierFunc
+	to use TclGetNumberFromObj.
 
 	* generic/tclInt.h:	Added new routine TclGetNumberFromObj to
 	* generic/tclObj.c:	provide efficient access to the actual
