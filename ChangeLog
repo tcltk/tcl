@@ -2,9 +2,11 @@
 
 	* tools/loadICU.tcl:  Changed the file names of message catalogs
 	                      to lowercase.
+	* tools/makeTestCases.tcl:
 	* library/tzdata/*:   Olson's tzdata2005n.tar.gz.  
 	                      Includes new DST rules for USA and a
 	                      number of changes to other locales.
+	* tests/clock.test:   Regenerated for new US DST rules.
 	
 2005-09-30  Don Porter  <dgp@users.sourceforge.net>
 
