@@ -4,7 +4,8 @@
 
 	* generic/tclExecute.c:	Updated TclIncrObj() to more efficiently
 	add native long integers.  Also updated IllegalExprOperandType
-	and the INST_UMINUS and INST_BITNOT sections for performance.
+	and the INST_UMINUS, INST_UPLUS, INST_BITNOT, and
+	INST_TRY_CVT_TO_NUMERIC sections for performance.
 
 	* generic/tclBasic.c:	Updated more callers to make use of
 	TclGetNumberFromObj.  Removed some dead code.

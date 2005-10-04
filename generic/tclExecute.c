@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.44 2005/10/04 18:33:54 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.45 2005/10/04 21:02:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5300,166 +5300,70 @@ TclExecuteByteCode(interp, codePtr)
 	 * operands if at all possible as numbers first, then strings.
 	 */
 
-	double d;
-	Tcl_Obj *valuePtr;
-#if 0
-	char *s;
-	Tcl_ObjType *tPtr;
-	int converted, needNew, length;
-	long i;
-	Tcl_WideInt w;
+	ClientData ptr;
+	int type;
+	Tcl_Obj *valuePtr = *tosPtr;
 
-	valuePtr = *tosPtr;
-	tPtr = valuePtr->typePtr;
-	converted = 0;
-	if (IS_INTEGER_TYPE(tPtr)
-		|| ((tPtr == &tclDoubleType) && (valuePtr->bytes == NULL))) {
-	    /*
-	     * We already have a numeric internal rep, either some kind of
-	     * integer, or a "pure" double.  (Need "pure" so that we know the
-	     * string rep of the double would not prefer to be interpreted as
-	     * an integer.)
-	     */
-	} else {
-	    /*
-	     * Otherwise, we need to generate a numeric internal rep. from
-	     * the string rep.
-	     */
-	    s = Tcl_GetStringFromObj(valuePtr, &length);
-	    if (TclLooksLikeInt(s, length)) {
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
+	if (TclGetNumberFromObj(NULL, valuePtr, &ptr, &type) != TCL_OK) {
+	    if (*pc == INST_UPLUS) {
+		/* ... +$NonNumeric => raise an error */
+		result = TCL_ERROR;
+		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
+			(valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+		IllegalExprOperandType(interp, pc, valuePtr);
+		goto checkForCatch;
 	    } else {
-		result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
+		/* ... TryConvertToNumeric($NonNumeric) is acceptable */
+		TRACE(("\"%.20s\" => not numeric\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 0, 0);
 	    }
-	    if (result == TCL_OK) {
-		converted = 1;
-	    }
-	    result = TCL_OK; /* reset the result variable */
-	    tPtr = valuePtr->typePtr;
 	}
-
-	/*
-	 * Ensure that the topmost stack object, if numeric, has a string rep
-	 * the same as the formatted version of its internal rep. This is
-	 * used, e.g., to make sure that "expr {0001}" yields "1", not
-	 * "0001". We implement this by _discarding_ the string rep since we
-	 * know it will be regenerated, if needed later, by formatting the
-	 * internal rep's value. Also check if there has been an IEEE floating
-	 * point error.
-	 */
-
-	objResultPtr = valuePtr;
-	needNew = 0;
-	if (IS_NUMERIC_TYPE(tPtr)) {
-	    if (Tcl_IsShared(valuePtr)) {
-		if (valuePtr->bytes != NULL) {
-		    /*
-		     * We only need to make a copy of the object when it
-		     * already had a string rep
-		     */
-		    needNew = 1;
-		    if (tPtr == &tclIntType) {
-			i = valuePtr->internalRep.longValue;
-			TclNewLongObj(objResultPtr, i);
-		    } else if (tPtr == &tclWideIntType) {
-			TclGetWide(w,valuePtr);
-			TclNewWideIntObj(objResultPtr, w);
-		    } else if (tPtr == &tclBignumType) {
-			mp_int big;
-			Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-			objResultPtr = Tcl_NewBignumObj(&big);
-		    } else {
-			d = valuePtr->internalRep.doubleValue;
-			TclNewDoubleObj(objResultPtr, d);
-		    }
-		    tPtr = objResultPtr->typePtr;
-		}
-	    } else {
-		Tcl_InvalidateStringRep(valuePtr);
-	    }
-
-	    if (tPtr == &tclDoubleType) {
-		d = objResultPtr->internalRep.doubleValue;
-		if (IS_NAN(d)) {
-		    TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
-			    O2S(objResultPtr)));
-		    TclExprFloatError(interp, d);
-		    result = TCL_ERROR;
-		    goto checkForCatch;
-		}
-	    }
-	    converted = converted;  /* lint, converted not used. */
-	    TRACE(("\"%.20s\" => numeric, %s, %s\n", O2S(valuePtr),
-		    (converted? "converted" : "not converted"),
-		    (needNew? "new Tcl_Obj" : "same Tcl_Obj")));
-	} else {
-	    TRACE(("\"%.20s\" => not numeric\n", O2S(valuePtr)));
-	}
-	if (needNew) {
-	    NEXT_INST_F(1, 1, 1);
-	} else {
-	    NEXT_INST_F(1, 0, 0);
-	}
-#else
-	valuePtr = *tosPtr;
-	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
-	if ((result == TCL_OK) || valuePtr->typePtr == &tclDoubleType) {
-	    /* Value is now numeric (including NaN) */
 #ifndef ACCEPT_NAN
-	    if ((*pc == INST_TRY_CVT_TO_NUMERIC) && (result != TCL_OK)) {
+	if (type == TCL_NUMBER_NAN) {
+	    result = TCL_ERROR;
+	    if (*pc == INST_UPLUS) {
+		/* ... +$NonNumeric => raise an error */
+		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
+			(valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+		IllegalExprOperandType(interp, pc, valuePtr);
+	    } else {
 		/* Numeric conversion of NaN -> error */
 		TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 			O2S(objResultPtr)));
-		TclExprFloatError(interp, valuePtr->internalRep.doubleValue);
-		goto checkForCatch;
+		TclExprFloatError(interp, *((CONST double *)ptr));
 	    }
-#else
-	    result = TCL_OK;
+	    goto checkForCatch;
+	}
 #endif
-	    /*
-	     * Ensure that the numeric value has a string rep the same as
-	     * the formatted version of its internal rep. This is used, e.g.,
-	     * to make sure that "expr {0001}" yields "1", not "0001".
-	     * We implement this by _discarding_ the string rep since we
-	     * know it will be regenerated, if needed later, by formatting
-	     * the internal rep's value. 
-	     */
-	    if (valuePtr->bytes == NULL) {
-		TRACE(("\"%.20s\" => numeric, same Tcl_Obj\n", O2S(valuePtr)));
-		NEXT_INST_F(1, 0, 0);
-	    }
-	    if (Tcl_IsShared(valuePtr)) {
-		/*
-		 * Here we do some surgery within the Tcl_Obj internals.
-		 * We want to copy the intrep, but not the string, so we
-		 * temporarily hide the string so we do not copy it.
-		 */
-		char *savedString = valuePtr->bytes;
-		valuePtr->bytes = NULL;
-		objResultPtr = Tcl_DuplicateObj(valuePtr);
-		valuePtr->bytes = savedString;
-		TRACE(("\"%.20s\" => numeric, new Tcl_Obj\n", O2S(valuePtr)));
-		NEXT_INST_F(1, 1, 1);
-	    }
-	    TclInvalidateStringRep(valuePtr);
-	    result = TCL_OK;
+
+	/*
+	 * Ensure that the numeric value has a string rep the same as
+	 * the formatted version of its internal rep. This is used, e.g.,
+	 * to make sure that "expr {0001}" yields "1", not "0001".
+	 * We implement this by _discarding_ the string rep since we
+	 * know it will be regenerated, if needed later, by formatting
+	 * the internal rep's value. 
+	 */
+	if (valuePtr->bytes == NULL) {
 	    TRACE(("\"%.20s\" => numeric, same Tcl_Obj\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
-	/* Non-numeric argument... */
-	if (*pc == INST_UPLUS) {
-	    /* ... +$NonNumeric => raise an error */
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    IllegalExprOperandType(interp, pc, valuePtr);
-	    goto checkForCatch;
-	} else {
-	    /* ... TryConvertToNumeric($NonNumeric) is acceptable */
-	    TRACE(("\"%.20s\" => not numeric\n", O2S(valuePtr)));
-	    result = TCL_OK;
-	    NEXT_INST_F(1, 0, 0);
+	if (Tcl_IsShared(valuePtr)) {
+	    /*
+	     * Here we do some surgery within the Tcl_Obj internals.
+	     * We want to copy the intrep, but not the string, so we
+	     * temporarily hide the string so we do not copy it.
+	     */
+	    char *savedString = valuePtr->bytes;
+	    valuePtr->bytes = NULL;
+	    objResultPtr = Tcl_DuplicateObj(valuePtr);
+	    valuePtr->bytes = savedString;
+	    TRACE(("\"%.20s\" => numeric, new Tcl_Obj\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 1);
 	}
-#endif
+	TclInvalidateStringRep(valuePtr);
+	TRACE(("\"%.20s\" => numeric, same Tcl_Obj\n", O2S(valuePtr)));
+	NEXT_INST_F(1, 0, 0);
     }
 
     case INST_BREAK:
