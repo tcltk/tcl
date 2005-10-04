@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.18 2005/09/15 16:40:02 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.19 2005/10/04 18:33:30 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -345,9 +345,12 @@ Tcl_DeleteTimerHandler(token)
 				 * Tcl_DeleteTimerHandler. */
 {
     register TimerHandler *timerHandlerPtr, *prevPtr;
-    ThreadSpecificData *tsdPtr;
+    ThreadSpecificData *tsdPtr = InitTimer();
 
-    tsdPtr = InitTimer();
+    if (token == NULL) {
+	return;
+    }
+
     for (timerHandlerPtr = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL;
 	    timerHandlerPtr != NULL; prevPtr = timerHandlerPtr,
 	    timerHandlerPtr = timerHandlerPtr->nextPtr) {
