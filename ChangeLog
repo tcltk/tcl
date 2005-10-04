@@ -1,3 +1,12 @@
+2005-10-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclIO.c (Tcl_ClearChannelHandlers): now deletes any
+	outstanding timer for the channel. Also, prevents events still
+	in the event queue from triggering on the current channel.
+
+	* generic/tclTimer.c (Tcl_DeleteTimerHandler): bail out early
+	if passed NULL argument.
+
 2005-10-03  Kevin Kenny  <kennykb@acm.org>
 
 	* tools/loadICU.tcl:  Changed the file names of message catalogs
