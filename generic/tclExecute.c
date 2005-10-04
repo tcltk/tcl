@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.43 2005/10/04 16:00:13 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.44 2005/10/04 18:33:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5018,17 +5018,7 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(1, 1, 1);
     }
 
-    case INST_BITNOT:
-    case INST_UMINUS: {
-	/*
-	 * The operand must be numeric.  If the operand object is unshared
-	 * modify it directly, otherwise create a copy to modify: this is
-	 * "copy on write".  
-	 */
-
-	double d;
-	Tcl_Obj *valuePtr;
-
+    case INST_BITNOT: {
 #if 0
 	long i;
 	int negate_value = 1;
@@ -5121,61 +5111,119 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	NEXT_INST_F(1, 0, 0);
 #else
-	valuePtr = *tosPtr;
-	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
-	if ((result == TCL_OK) 
-#ifdef ACCEPT_NAN
-		|| valuePtr->typePtr == &tclDoubleType
-#endif
-		) {
-	    /* Value is now numeric (including NaN) */
-#ifdef ACCEPT_NAN
-	    if (result != TCL_OK) {
-	        /* Value is NaN */
-		if (*pc == INST_BITNOT) {
-		    /* ~NaN => error; arg must be an integer */
-		    goto error;
-		}
-		/* -NaN => NaN */
-		result = TCL_OK;
-		NEXT_INST_F(1, 0, 0);
+	mp_int big;
+	ClientData ptr;
+	int type;
+	Tcl_Obj *valuePtr = *tosPtr;
+
+	result = TclGetNumberFromObj(NULL, valuePtr, &ptr, &type);
+	if ((result != TCL_OK)
+		|| (type == TCL_NUMBER_NAN) || (type == TCL_NUMBER_DOUBLE)) {
+	    /* ... ~$NonInteger => raise an error */
+	    result = TCL_ERROR;
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
+		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+	if (type == TCL_NUMBER_LONG) {
+	    long l = *((CONST long *)ptr);
+	    if (Tcl_IsShared(valuePtr)) {
+		TclNewLongObj(objResultPtr, ~l);
+		NEXT_INST_F(1, 1, 1);
 	    }
-#endif
-	    if (valuePtr->typePtr == &tclDoubleType) {
-		if (*pc == INST_BITNOT) {
-		    /* ~ arg must be an integer */
-		    result = TCL_ERROR;
-		    goto error;
-		}
-		if (Tcl_IsShared(valuePtr)) {
-		    TclNewDoubleObj(objResultPtr, -d);
-		    NEXT_INST_F(1, 1, 1);
-		}
-		TclSetDoubleObj(valuePtr, -d);
-		NEXT_INST_F(1, 0, 0);
-	    } else {
-		/* TODO: optimize use of narrower native integers */
-		mp_int big;
+	    TclSetLongObj(valuePtr, ~l);
+	    NEXT_INST_F(1, 0, 0);
+	}
+	if (type == TCL_NUMBER_WIDE) {
+	    TclBNInitBignumFromWideInt(&big, *((CONST Tcl_WideInt*)ptr));
+	} else {
+	    if (Tcl_IsShared(valuePtr)) {
 		Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-		mp_neg(&big, &big);
-		if (*pc == INST_BITNOT) {
-		    /* ~a = - a - 1 */
-		    mp_sub_d(&big, 1, &big);
-		}
-		if (Tcl_IsShared(valuePtr)) {
-		    objResultPtr = Tcl_NewBignumObj(&big);
-		    NEXT_INST_F(1, 1, 1);
-		}
-		Tcl_SetBignumObj(valuePtr, &big);
-		NEXT_INST_F(1, 0, 0);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
 	    }
 	}
-	/* ... -$NonNumeric => raise an error */
-    error:
-	TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
-		(valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	IllegalExprOperandType(interp, pc, valuePtr);
-	goto checkForCatch;
+	/* ~a = - a - 1 */
+	mp_neg(&big, &big);
+	mp_sub_d(&big, 1, &big);
+	if (Tcl_IsShared(valuePtr)) {
+	    objResultPtr = Tcl_NewBignumObj(&big);
+	    NEXT_INST_F(1, 1, 1);
+	}
+	Tcl_SetBignumObj(valuePtr, &big);
+	NEXT_INST_F(1, 0, 0);
+    }
+
+    case INST_UMINUS: {
+	mp_int big;
+	ClientData ptr;
+	int type;
+	Tcl_Obj *valuePtr = *tosPtr;
+
+	result = TclGetNumberFromObj(NULL, valuePtr, &ptr, &type);
+	if ((result != TCL_OK)
+#ifndef ACCEPT_NAN
+		|| (type == TCL_NUMBER_NAN)
+#endif
+		) {
+	    result = TCL_ERROR;
+	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
+		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+	switch (type) {
+	case TCL_NUMBER_DOUBLE: {
+	    double d;
+	    if (Tcl_IsShared(valuePtr)) {
+		TclNewDoubleObj(objResultPtr, -(*((CONST double *)ptr)));
+		NEXT_INST_F(1, 1, 1);
+	    }
+	    d = *((CONST double *)ptr);
+	    TclSetDoubleObj(valuePtr, -d);
+	    NEXT_INST_F(1, 0, 0);
+	}
+	case TCL_NUMBER_LONG: {
+	    long l = *((CONST long *)ptr);
+	    if (l != LONG_MIN) {
+		if (Tcl_IsShared(valuePtr)) {
+		    TclNewLongObj(objResultPtr, -l);
+		    NEXT_INST_F(1, 1, 1);
+		}
+		TclSetLongObj(valuePtr, -l);
+		NEXT_INST_F(1, 0, 0);
+	    }
+	    /* FALLTHROUGH */
+	}
+	case TCL_NUMBER_WIDE:
+	case TCL_NUMBER_BIG: {
+	    switch (type) {
+	    case TCL_NUMBER_LONG:
+		TclBNInitBignumFromLong(&big, *((CONST long *)ptr));
+		break;
+	    case TCL_NUMBER_WIDE:
+		TclBNInitBignumFromWideInt(&big, *((CONST Tcl_WideInt*)ptr));
+		break;
+	    case TCL_NUMBER_BIG:
+		if (Tcl_IsShared(valuePtr)) {
+		    Tcl_GetBignumFromObj(NULL, valuePtr, &big);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
+		}
+	    }
+	    mp_neg(&big, &big);
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewBignumObj(&big);
+		NEXT_INST_F(1, 1, 1);
+	    }
+	    Tcl_SetBignumObj(valuePtr, &big);
+	    NEXT_INST_F(1, 0, 0);
+	}
+	case TCL_NUMBER_NAN:
+	    /* -NaN => NaN */
+	    NEXT_INST_F(1, 0, 0);
+	}
 #endif
     }
 
@@ -6577,41 +6625,37 @@ IllegalExprOperandType(interp, pc, opndPtr)
     Tcl_Obj *opndPtr;		/* Points to the operand holding the value
 				 * with the illegal type. */
 {
-    Tcl_Obj *msg = Tcl_NewStringObj("can't use ", -1);
-    double d;
-    int isNumeric;
-    unsigned char opCode = *pc;
-    CONST char *operator = operatorStrings[opCode - INST_LOR];
-    if (opCode == INST_EXPON) {
+    ClientData ptr;
+    int type;
+    unsigned char opcode = *pc;
+    CONST char *description, *operator = operatorStrings[opcode - INST_LOR];
+    Tcl_Obj *msg = Tcl_NewObj();
+
+    if (opcode == INST_EXPON) {
 	operator = "**";
     }
 
-    /* TODO: Consider alternative that need not write to d */
-    isNumeric = (Tcl_GetDoubleFromObj(NULL, opndPtr, &d) == TCL_OK);
-
-    if (opndPtr->typePtr == &tclDoubleType) {
-	if (!isNumeric) {
-	    Tcl_AppendToObj(msg, "non-numeric ", -1);
-	}
-	Tcl_AppendToObj(msg, "floating-point value", -1);
-    } else if (isNumeric) {
-	/* TODO: check callers, might be able to eliminate this */
-	Tcl_AppendToObj(msg, "(big) integer", -1);
-    } else {
-        /* TODO: When to post "integer value too large to represent" ? */
+    if (TclGetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
 	int numBytes;
 	CONST char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
 	if (numBytes == 0) {
-	    Tcl_AppendToObj(msg, "empty string", -1);
+	    description = "empty string";
 	} else if (TclCheckBadOctal(NULL, bytes)) {
-	    Tcl_AppendToObj(msg, "invalid octal number", -1);
+	    description = "invalid octal number";
 	} else {
-	    Tcl_AppendToObj(msg, "non-numeric string", -1);
+	    description = "non-numeric string";
 	}
+    } else if (type == TCL_NUMBER_NAN) {
+	description = "non-numeric floating-point value";
+    } else if (type == TCL_NUMBER_DOUBLE) {
+	description = "floating-point value";
+    } else {
+	/* TODO: No caller needs this.  Eliminate? */
+	description = "(big) integer";
     }
-    Tcl_AppendToObj(msg, " as operand of \"", -1);
-    Tcl_AppendToObj(msg, operator, -1);
-    Tcl_AppendToObj(msg, "\"", -1);
+
+    TclObjPrintf(NULL, msg, "can't use %s as operand of \"%s\"",
+	    description, operator);
     Tcl_SetObjResult(interp, msg);
 }
 

@@ -3,7 +3,8 @@
 	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Updated TclIncrObj() to more efficiently
-	add native long integers.
+	add native long integers.  Also updated IllegalExprOperandType
+	and the INST_UMINUS and INST_BITNOT sections for performance.
 
 	* generic/tclBasic.c:	Updated more callers to make use of
 	TclGetNumberFromObj.  Removed some dead code.
