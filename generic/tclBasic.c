@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.38 2005/10/03 19:32:42 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.39 2005/10/04 13:49:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -77,48 +77,8 @@ static int	ExprUnaryFunc (ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *CONST *objv);
 static int	ExprWideFunc (ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *CONST *objv);
-#if 0
-static int	VerifyExprObjType (Tcl_Interp *interp, Tcl_Obj *objPtr);
-#endif
 static void	MathFuncWrongNumArgs (Tcl_Interp* interp, int expected,
 		    int actual, Tcl_Obj *CONST *objv);
-
-#if 0
-#ifndef TCL_WIDE_INT_IS_LONG
-/*
- * Extract a double value from a general numeric object.
- */
-
-#define GET_DOUBLE_VALUE(doubleVar, objPtr, typePtr)			\
-    if ((typePtr) == &tclIntType) {					\
-	(doubleVar) = (double) (objPtr)->internalRep.longValue;		\
-    } else if ((typePtr) == &tclWideIntType) {				\
-	(doubleVar) = Tcl_WideAsDouble((objPtr)->internalRep.wideValue);\
-    } else {								\
-	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
-    }
-#else /* TCL_WIDE_INT_IS_LONG */
-#define GET_DOUBLE_VALUE(doubleVar, objPtr, typePtr)			\
-    if (((typePtr) == &tclIntType) || ((typePtr) == &tclWideIntType)) { \
-	(doubleVar) = (double) (objPtr)->internalRep.longValue;		\
-    } else {								\
-	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
-    }
-#endif /* TCL_WIDE_INT_IS_LONG */
-#define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
-    (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
-	    &(wideVar));						\
-    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
-	    && (wideVar) <= Tcl_LongAsWide(LONG_MAX)) {			\
-	(objPtr)->typePtr = &tclIntType;				\
-	(objPtr)->internalRep.longValue = (longVar)			\
-		= Tcl_WideAsLong(wideVar);				\
-    }
-#define IS_INTEGER_TYPE(typePtr)					\
-	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType)
-#define IS_NUMERIC_TYPE(typePtr)					\
-	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
-#endif
 
 extern TclStubs tclStubs;
 
@@ -4356,29 +4316,41 @@ Tcl_ExprLongObj(interp, objPtr, ptr)
     long *ptr;			/* Where to store long result. */
 {
     Tcl_Obj *resultPtr;
-    int result;
+    int result, type;
     double d;
+    ClientData internalPtr;
 
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
-    /* TODO - This could use a Tcl_GetNumberFromObj */
-    if (Tcl_GetDoubleFromObj(interp, resultPtr, &d) != TCL_OK) {
-	result = TCL_ERROR;
-    } else if (resultPtr->typePtr == &tclDoubleType) {
-	if (d < -(double) ULONG_MAX || d > (double) ULONG_MAX ) {
-	    Tcl_SetResult(interp, "integer value too large to represent",
-			  TCL_STATIC);
-	    result = TCL_ERROR;
-	} else if (d >= 0) {
-	    *ptr = (long)(unsigned long)d;
-	} else {
-	    *ptr = -(long)(unsigned long)-d;
-	}
-    } else {
-	result = Tcl_GetLongFromObj(interp, resultPtr, ptr);
+
+    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type) != TCL_OK) {
+	return TCL_ERROR;
     }
+
+    switch (type) {
+    case TCL_NUMBER_DOUBLE: {
+	mp_int big;
+	d = *((CONST double *)internalPtr);
+	Tcl_DecrRefCount(resultPtr);
+	if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	resultPtr = Tcl_NewBignumObj(&big);
+	/* FALLTHROUGH */
+    }
+    case TCL_NUMBER_LONG:
+    case TCL_NUMBER_WIDE:
+    case TCL_NUMBER_BIG:
+	result = Tcl_GetLongFromObj(interp, resultPtr, ptr);
+	break;
+
+    case TCL_NUMBER_NAN:
+	Tcl_GetDoubleFromObj(interp, resultPtr, &d);
+	result = TCL_ERROR;
+    }
+
     Tcl_DecrRefCount(resultPtr);  /* discard the result object */
     return result;
 }
@@ -4391,25 +4363,31 @@ Tcl_ExprDoubleObj(interp, objPtr, ptr)
     double *ptr;		/* Where to store double result. */
 {
     Tcl_Obj *resultPtr;
-    int result;
+    int result, type;
+    ClientData internalPtr;
 
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
-    if (result == TCL_OK) {
-#ifndef ACCEPT_NAN
-	result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
-#else
-	result = Tcl_GetDoubleFromObj( NULL, resultPtr, ptr );
-	if (result != TCL_OK) {
-	    if (resultPtr->typePtr == &tclDoubleType) {
-		*ptr = resultPtr->internalRep.doubleValue;
-		result = TCL_OK;
-	    } else {
-		Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
-	    }
-	}
-#endif
-	Tcl_DecrRefCount(resultPtr);  /* discard the result object */
+    if (result != TCL_OK) {
+	return TCL_ERROR;
     }
+
+    result = TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type);
+    if (result == TCL_OK) {
+	switch (type) {
+	case TCL_NUMBER_NAN:
+#ifndef ACCEPT_NAN
+	    result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
+	    break;
+#endif
+	case TCL_NUMBER_DOUBLE:
+	    *ptr = *((CONST double *)internalPtr);
+	    result = TCL_OK;
+	    break;
+	default:
+	    result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
+	}
+    }
+    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
     return result;
 }
 
@@ -5206,48 +5184,82 @@ ExprAbsFunc(clientData, interp, objc, objv)
     int objc;			/* Actual parameter count */
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
-    double d;
+    ClientData ptr;
+    int type;
     mp_int big;
-    Tcl_Obj *valuePtr = objv[1];
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
 
-    /* TODO - an Tcl_GetNumberFromObj call might be more useful ? */
-    if (Tcl_GetDoubleFromObj(NULL, valuePtr, &d) == TCL_ERROR) {
-#ifdef ACCEPT_NAN
-	if (valuePtr->typePtr == &tclDoubleType) {
-	    Tcl_SetObjResult(interp, valuePtr);
-	    return TCL_OK;
-	}
-#endif
-	/* TODO - decide what the right error message, etc. */
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("non-numeric argument", -1));
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (d >= 0.0) {
-	/* Non-negative values are their own absolute value */
-	Tcl_SetObjResult(interp, valuePtr);
+
+    if (type == TCL_NUMBER_LONG) {
+	long l = *((CONST long int *)ptr);
+	if (l < (long)0) {
+	    if (l == LONG_MIN) {
+		TclBNInitBignumFromLong(&big, l);
+		goto tooLarge;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(-l));
+	} else {
+	    Tcl_SetObjResult(interp, objv[1]);
+	}
 	return TCL_OK;
     }
 
-    /*
-     * To take the absolute value of a negative value, take care to
-     * keep the same data type, fixed vs. floating point, and to
-     * promote to wider type if needed.
-     *
-     * TODO: efficient use of narrower ints.
-     */
-
-    if (Tcl_GetBignumFromObj(NULL, valuePtr, &big) == TCL_OK) {
-	mp_neg(&big, &big);
-	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-    } else {
-	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
+    if (type == TCL_NUMBER_DOUBLE) {
+	double d = *((CONST double *)ptr);
+	if (d < 0.0) {
+	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
+	} else {
+	    Tcl_SetObjResult(interp, objv[1]);
+	}
+	return TCL_OK;
     }
-    return TCL_OK;
+
+#ifndef NO_WIDE_TYPE
+    if (type == TCL_NUMBER_WIDE) {
+	Tcl_WideInt w = *((CONST Tcl_WideInt *)ptr);
+	if (w < (Tcl_WideInt)0) {
+	    if (w == LLONG_MIN) {
+		TclBNInitBignumFromWideInt(&big, w);
+		goto tooLarge;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
+	} else {
+	    Tcl_SetObjResult(interp, objv[1]);
+	}
+	return TCL_OK;
+    }
+#endif
+
+    if (type == TCL_NUMBER_BIG) {
+	/* TODO: const correctness ? */
+	if (mp_cmp_d((mp_int *)ptr, 0) == MP_LT) {
+	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
+	tooLarge:
+	    mp_neg(&big, &big);
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+	} else {
+	    Tcl_SetObjResult(interp, objv[1]);
+	}
+	return TCL_OK;
+    }
+
+    if (type == TCL_NUMBER_NAN) {
+#ifdef ACCEPT_NAN
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+#else
+	double d;
+	Tcl_GetDoubleFromObj(interp, objv[1], &d);
+	return TCL_ERROR;
+#endif
+    }
 }
 
 static int
@@ -5340,14 +5352,20 @@ ExprEntierFunc(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (type == TCL_NUMBER_DOUBLE) {
-	mp_int big;
-	if (TclInitBignumFromDouble(interp, *((CONST double *)ptr), &big)
-		!= TCL_OK) {
-	    /* Infinity */
-	    return TCL_ERROR;
+	d = *((CONST double *)ptr);
+	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
+	    mp_int big;
+	    if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+		/* Infinity */
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+	    return TCL_OK;
+	} else {
+	    long result = (long)d;
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
+	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-	return TCL_OK;
     }
     if (type != TCL_NUMBER_NAN) {
 	/* All integers are already of integer type */
@@ -5665,7 +5683,6 @@ ExprSrandFunc(clientData, interp, objc, objv)
     Tcl_Obj *CONST *objv;	/* Parameter vector */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *valuePtr;
     long i = 0;			/* Initialized to avoid compiler warning. */
 
     /*
@@ -5676,22 +5693,9 @@ ExprSrandFunc(clientData, interp, objc, objv)
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
-    valuePtr = objv[1];
 
-
-    /* TODO: error message reform? */
-#if 0
-    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	return TCL_ERROR;
-    }
-#endif
-
-    if (Tcl_GetLongFromObj(interp, valuePtr, &i) != TCL_OK) {
-	/*
-	 * At this point, the only other possible type is double
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"can't use floating-point value as argument to srand", -1));
-	 */
+    if (Tcl_GetLongFromObj(interp, objv[1], &i) != TCL_OK) {
+	/* TODO: more ::errorInfo here?  or in caller? */
 	return TCL_ERROR;
     }
 
@@ -5716,63 +5720,6 @@ ExprSrandFunc(clientData, interp, objc, objv)
     return ExprRandFunc(clientData, interp, 1, objv);
 
 }
-
-#if 0
-/*
- *----------------------------------------------------------------------
- *
- * VerifyExprObjType --
- *
- *	This procedure is called by the math functions to verify that the
- *	object is either an int or double, coercing it if necessary. If an
- *	error occurs during conversion, an error message is left in the
- *	interpreter's result unless "interp" is NULL.
- *
- * Results:
- *	TCL_OK if it was int or double, TCL_ERROR otherwise
- *
- * Side effects:
- *	objPtr is ensured to be of tclIntType, tclWideIntType or
- *	tclDoubleType.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-VerifyExprObjType(interp, objPtr)
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
-				 * function. */
-    Tcl_Obj *objPtr;		/* Points to the object to type check. */
-{
-    if (IS_NUMERIC_TYPE(objPtr->typePtr)) {
-	return TCL_OK;
-    } else {
-	int length, result = TCL_OK;
-	char *s = Tcl_GetStringFromObj(objPtr, &length);
-
-	if (TclLooksLikeInt(s, length)) {
-	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
-	    Tcl_WideInt w;
-	    GET_WIDE_OR_INT(result, objPtr, i, w);
-	} else {
-	    double d;
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
-	}
-	if ((result != TCL_OK) && (interp != NULL)) {
-	    if (TclCheckBadOctal((Tcl_Interp *) NULL, s)) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"argument to math function was an invalid octal number",
-			-1));
-	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"argument to math function didn't have numeric value",
-			-1));
-	    }
-	}
-	return result;
-    }
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
