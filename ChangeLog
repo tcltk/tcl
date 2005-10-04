@@ -1,3 +1,9 @@
+2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclParse.c (Tcl_ParseCommand): add code that recognizes
+	{} in addition to {expand} for word expansion (make with
+	-DALLOW_EMPTY_EXPAND).
+
 2005-10-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_ClearChannelHandlers): now deletes any
