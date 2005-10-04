@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.42 2005/09/20 14:11:51 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.43 2005/10/04 16:00:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1035,12 +1035,32 @@ TclIncrObj(interp, valuePtr, incrPtr)
     Tcl_Obj *valuePtr;
     Tcl_Obj *incrPtr;
 {
+    ClientData ptr1, ptr2;
+    int type1, type2;
     mp_int value, incr;
 
     if (Tcl_IsShared(valuePtr)) {
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
+    if ((TclGetNumberFromObj(interp, valuePtr, &ptr1, &type1) == TCL_OK)
+	    && (TclGetNumberFromObj(interp, incrPtr, &ptr2, &type2) == TCL_OK)
+	    && (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
+	Tcl_WideInt w1 = (Tcl_WideInt)(*(CONST long *)ptr1);
+	Tcl_WideInt w2 = (Tcl_WideInt)(*(CONST long *)ptr2);
+	Tcl_WideInt sum = w1 + w2;
+#ifdef TCL_WIDE_INT_IS_LONG
+	/* Must check for overflow */
+	if (((w1 < 0) && (w2 < 0) && (sum > 0))
+		|| ((w1 > 0) && (w2 > 0) && (sum < 0))) {
+	    goto overflow;
+	}
+#endif
+	Tcl_SetWideIntObj(valuePtr, sum);
+	return TCL_OK;
+    }
+
+    overflow:
     if (Tcl_GetBignumAndClearObj(interp, valuePtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
