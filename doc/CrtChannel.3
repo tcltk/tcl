@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.2.4 2005/02/23 10:27:45 dkf Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.2.5 2005/10/05 20:35:45 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -343,13 +343,15 @@ typedef struct Tcl_ChannelType {
 } Tcl_ChannelType;
 .CE
 .PP
-The driver must provide implementations for all functions except
-\fIblockModeProc\fR, \fIseekProc\fR, \fIsetOptionProc\fR,
-\fIgetOptionProc\fR, and \fIclose2Proc\fR, which may be specified as
-NULL.  Other functions that can not be implemented for this type of
-device should return \fBEINVAL\fR when invoked to indicate that they
-are not implemented, except in the case of \fIflushProc\fR and
-\fIhandlerProc\fR, which should specified as NULL if not otherwise defined.
+It is not necessary to provide implementations for all channel
+operations.  Those which are not necessary may be set to NULL in the
+struct: \fIblockModeProc\fR, \fIseekProc\fR, \fIsetOptionProc\fR,
+\fIgetOptionProc\fR, and \fIclose2Proc\fR, in addition to
+\fIflushProc\fR, \fIhandlerProc\fR, and \fIthreadActionProc\fR.  Other
+functions that cannot be implemented in a meaningful way should return
+\fBEINVAL\fR when called, to indicate that the operations they
+represent are not available. Also note that \fIwideSeekProc\fR can be
+NULL if \fIseekProc\fR is.
 .PP
 The user should only use the above structure for \fBTcl_ChannelType\fR
 instantiation.  When referencing fields in a \fBTcl_ChannelType\fR
