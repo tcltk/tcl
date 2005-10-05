@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.2.2 2005/07/28 15:27:58 dkf Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.2.3 2005/10/05 22:09:11 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -508,6 +508,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     				 * closed when cleaning up. */
     int errorRelease = 0;
     CONST char *p;
+    CONST char *nextArg;
     int skip, lastBar, lastArg, i, j, atOK, flags, errorToOutput = 0;
     Tcl_DString execBuffer;
     TclFile pipeIn;
@@ -581,7 +582,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		inputLiteral = p + 1;
 		skip = 1;
 		if (*inputLiteral == '\0') {
-		    inputLiteral = argv[i + 1];
+		    inputLiteral = ((i + 1) == argc) ? NULL : argv[i + 1];
 		    if (inputLiteral == NULL) {
 			Tcl_AppendResult(interp, "can't specify \"", argv[i],
 				"\" as last word in command", (char *) NULL);
@@ -590,9 +591,10 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		    skip = 2;
 		}
 	    } else {
+		nextArg = ((i + 1) == argc) ? NULL : argv[i + 1];
 		inputLiteral = NULL;
 		inputFile = FileForRedirect(interp, p, 1, argv[i], 
-			argv[i + 1], O_RDONLY, &skip, &inputClose, &inputRelease);
+			nextArg, O_RDONLY, &skip, &inputClose, &inputRelease);
 		if (inputFile == NULL) {
 		    goto error;
 		}
@@ -643,8 +645,9 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		    TclpReleaseFile(outputFile);
 		}
 	    }
+	    nextArg = ((i + 1) == argc) ? NULL : argv[i + 1];
 	    outputFile = FileForRedirect(interp, p, atOK, argv[i], 
-		    argv[i + 1], flags, &skip, &outputClose, &outputRelease);
+		    nextArg, flags, &skip, &outputClose, &outputRelease);
 	    if (outputFile == NULL) {
 		goto error;
 	    }
@@ -696,8 +699,9 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		errorToOutput = 2;
 		skip = 1;
 	    } else {
+		nextArg = ((i + 1) == argc) ? NULL : argv[i + 1];
 		errorFile = FileForRedirect(interp, p, atOK, argv[i], 
-			argv[i + 1], flags, &skip, &errorClose, &errorRelease);
+			nextArg, flags, &skip, &errorClose, &errorRelease);
 		if (errorFile == NULL) {
 		    goto error;
 		}
@@ -864,7 +868,6 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		}
 	    }
 	}
-	argv[lastArg] = NULL;
 
 	/*
 	 * If this is the last segment, use the specified outputFile.
@@ -872,9 +875,10 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	 * curInFile for the next segment of the pipe.
 	 */
 
-	if (lastArg == argc) { 
+	if (lastArg == argc) {
 	    curOutFile = outputFile;
 	} else {
+	    argv[lastArg] = NULL;
 	    if (TclpCreatePipe(&pipeIn, &curOutFile) == 0) {
 		Tcl_AppendResult(interp, "couldn't create pipe: ",
 			Tcl_PosixError(interp), (char *) NULL);
