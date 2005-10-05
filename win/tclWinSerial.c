@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.25.2.2 2005/01/27 22:53:38 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.25.2.3 2005/10/05 06:33:52 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1579,10 +1579,10 @@ SerialModemStatusStr(status, dsPtr)
  */
 static int
 SerialSetOptionProc(instanceData, interp, optionName, value)
-    ClientData instanceData;    /* File state. */
-    Tcl_Interp *interp;         /* For error reporting - can be NULL. */
-    CONST char *optionName;     /* Which option to set? */
-    CONST char *value;          /* New value for option. */
+    ClientData instanceData;	/* File state. */
+    Tcl_Interp *interp;		/* For error reporting - can be NULL. */
+    CONST char *optionName;	/* Which option to set? */
+    CONST char *value;		/* New value for option. */
 {
     SerialInfo *infoPtr;
     DCB dcb;
@@ -1592,310 +1592,315 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
     CONST TCHAR *native;
     int argc;
     CONST char **argv;
-    
+
     infoPtr = (SerialInfo *) instanceData;
-    
-    /* 
-    * Parse options
-    */
+
+    /*
+     * Parse options
+     */
     len = strlen(optionName);
     vlen = strlen(value);
 
-    /* 
-    * Option -mode baud,parity,databits,stopbits
-    */
+    /*
+     * Option -mode baud,parity,databits,stopbits
+     */
     if ((len > 2) && (strncmp(optionName, "-mode", len) == 0)) {
-        
-        if (! GetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        native = Tcl_WinUtfToTChar(value, -1, &ds);
-        result = (*tclWinProcs->buildCommDCBProc)(native, &dcb);
-        Tcl_DStringFree(&ds);
-        
-        if (result == FALSE) {
-            if (interp) {
-                Tcl_AppendResult(interp,
-                    "bad value for -mode: should be baud,parity,data,stop",
-                    (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
+	if (! GetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	native = Tcl_WinUtfToTChar(value, -1, &ds);
+	result = (*tclWinProcs->buildCommDCBProc)(native, &dcb);
+	Tcl_DStringFree(&ds);
 
-        /* Default settings for serial communications */ 
-        dcb.fBinary = TRUE;
-        dcb.fErrorChar = FALSE;
-        dcb.fNull = FALSE;
-        dcb.fAbortOnError = FALSE;
+	if (result == FALSE) {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+			"bad value for -mode: should be baud,parity,data,stop",
+			(char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
 
-        if (! SetCommState(infoPtr->handle, &dcb) ) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't set comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        return TCL_OK;
+	/* Default settings for serial communications */ 
+	dcb.fBinary = TRUE;
+	dcb.fErrorChar = FALSE;
+	dcb.fNull = FALSE;
+	dcb.fAbortOnError = FALSE;
+
+	if (! SetCommState(infoPtr->handle, &dcb) ) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't set comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
     }
-    
-    /* 
-    * Option -handshake none|xonxoff|rtscts|dtrdsr
-    */
+
+    /*
+     * Option -handshake none|xonxoff|rtscts|dtrdsr
+     */
     if ((len > 1) && (strncmp(optionName, "-handshake", len) == 0)) {
-        
-        if (! GetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        /* 
-        * Reset all handshake options
-        * DTR and RTS are ON by default
-        */
-        dcb.fOutX = dcb.fInX = FALSE;
-        dcb.fOutxCtsFlow = dcb.fOutxDsrFlow = dcb.fDsrSensitivity = FALSE;
-        dcb.fDtrControl = DTR_CONTROL_ENABLE;
-        dcb.fRtsControl = RTS_CONTROL_ENABLE;
-        dcb.fTXContinueOnXoff = FALSE;
+	if (! GetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	/*
+	 * Reset all handshake options
+	 * DTR and RTS are ON by default
+	 */
+	dcb.fOutX = dcb.fInX = FALSE;
+	dcb.fOutxCtsFlow = dcb.fOutxDsrFlow = dcb.fDsrSensitivity = FALSE;
+	dcb.fDtrControl = DTR_CONTROL_ENABLE;
+	dcb.fRtsControl = RTS_CONTROL_ENABLE;
+	dcb.fTXContinueOnXoff = FALSE;
 
-        /* 
-        * Adjust the handshake limits.
-        * Yes, the XonXoff limits seem to influence even hardware handshake
-        */
-        dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
-        dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
-        
-        if (strnicmp(value, "NONE", vlen) == 0) {
-            /* leave all handshake options disabled */
-        } else if (strnicmp(value, "XONXOFF", vlen) == 0) {
-            dcb.fOutX = dcb.fInX = TRUE;
-        } else if (strnicmp(value, "RTSCTS", vlen) == 0) {
-            dcb.fOutxCtsFlow = TRUE;
-            dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-        } else if (strnicmp(value, "DTRDSR", vlen) == 0) {
-            dcb.fOutxDsrFlow = TRUE;
-            dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
-        } else {
-            if (interp) {
-                Tcl_AppendResult(interp, "bad value for -handshake: ",
-                    "must be one of xonxoff, rtscts, dtrdsr or none",
-                    (char *) NULL);
-                return TCL_ERROR;
-            }
-        }
-        
-        if (! SetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't set comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        return TCL_OK;
+	/*
+	 * Adjust the handshake limits.
+	 * Yes, the XonXoff limits seem to influence even hardware handshake
+	 */
+	dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
+	dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
+
+	if (strnicmp(value, "NONE", vlen) == 0) {
+	    /* leave all handshake options disabled */
+	} else if (strnicmp(value, "XONXOFF", vlen) == 0) {
+	    dcb.fOutX = dcb.fInX = TRUE;
+	} else if (strnicmp(value, "RTSCTS", vlen) == 0) {
+	    dcb.fOutxCtsFlow = TRUE;
+	    dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
+	} else if (strnicmp(value, "DTRDSR", vlen) == 0) {
+	    dcb.fOutxDsrFlow = TRUE;
+	    dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
+	} else {
+	    if (interp) {
+		Tcl_AppendResult(interp, "bad value for -handshake: ",
+			"must be one of xonxoff, rtscts, dtrdsr or none",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	}
+
+	if (! SetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't set comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
     }
-    
-    /* 
-    * Option -xchar {\x11 \x13}
-    */
+
+    /*
+     * Option -xchar {\x11 \x13}
+     */
     if ((len > 1) && (strncmp(optionName, "-xchar", len) == 0)) {
-        
-        if (! GetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        
-        if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
-            return TCL_ERROR;
-        }
-        if (argc == 2) {
-            dcb.XonChar  = argv[0][0];
-            dcb.XoffChar = argv[1][0];
-        } else {
-            if (interp) {
-                Tcl_AppendResult(interp,
-                    "bad value for -xchar: should be a list of two elements",
-                    (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        
-        if (! SetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't set comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        return TCL_OK;
+	if (! GetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+
+	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (argc == 2) {
+	    dcb.XonChar	 = argv[0][0];
+	    dcb.XoffChar = argv[1][0];
+	    ckfree((char *) argv);
+	} else {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+			"bad value for -xchar: should be a list of two elements",
+			(char *) NULL);
+	    }
+	    ckfree((char *) argv);
+	    return TCL_ERROR;
+	}
+
+	if (! SetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+			"can't set comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
     }
-    
-    /* 
-    * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
-    */
+
+    /*
+     * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
+     */
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-        
-        if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
-            return TCL_ERROR;
-        }
-        if ((argc % 2) == 1) {
-            if (interp) {
-                Tcl_AppendResult(interp,
-                    "bad value for -ttycontrol: should be a list of signal,value pairs",
-                    (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        while (argc > 1) {
-            if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
-                return TCL_ERROR;
-            }
-            if (strnicmp(argv[0], "DTR", strlen(argv[0])) == 0) {
-                if (! EscapeCommFunction(infoPtr->handle, flag ?
-                        (DWORD) SETDTR : (DWORD) CLRDTR)) {
-                    if (interp) {
-                        Tcl_AppendResult(interp, 
-                            "can't set DTR signal", (char *) NULL);
-                    }
-                    return TCL_ERROR;
-                }
-            } else if (strnicmp(argv[0], "RTS", strlen(argv[0])) == 0) {
-                if (! EscapeCommFunction(infoPtr->handle, flag ?
-                        (DWORD) SETRTS : (DWORD) CLRRTS)) {
-                    if (interp) {
-                        Tcl_AppendResult(interp, 
-                            "can't set RTS signal", (char *) NULL);
-                    }
-                    return TCL_ERROR;
-                }
-            } else if (strnicmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
-                if (! EscapeCommFunction(infoPtr->handle, flag ?
-                        (DWORD) SETBREAK : (DWORD) CLRBREAK)) {
-                    if (interp) {
-                        Tcl_AppendResult(interp, 
-                            "can't set BREAK signal", (char *) NULL);
-                    }
-                    return TCL_ERROR;
-                }
-            } else {
-                if (interp) {
-                    Tcl_AppendResult(interp, 
-                        "bad signal for -ttycontrol: must be DTR, RTS or BREAK", 
-                        (char *) NULL);
-                }
-                return TCL_ERROR;
-            }
-            argc -= 2, argv += 2;
-        } /* while (argc > 1) */
-        
-        return TCL_OK;
+	int i, result = TCL_OK;
+
+	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if ((argc % 2) == 1) {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+			"bad value for -ttycontrol: should be a list of signal,value pairs",
+			(char *) NULL);
+	    }
+	    ckfree((char *) argv);
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < argc - 1; i += 2) {
+	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
+		result = TCL_ERROR;
+		break;
+	    }
+	    if (strnicmp(argv[i], "DTR", strlen(argv[i])) == 0) {
+		if (!EscapeCommFunction(infoPtr->handle, flag ?
+			    (DWORD) SETDTR : (DWORD) CLRDTR)) {
+		    if (interp) {
+			Tcl_AppendResult(interp,
+				"can't set DTR signal", (char *) NULL);
+		    }
+		    result = TCL_ERROR;
+		    break;
+		}
+	    } else if (strnicmp(argv[i], "RTS", strlen(argv[i])) == 0) {
+		if (!EscapeCommFunction(infoPtr->handle, flag ?
+			    (DWORD) SETRTS : (DWORD) CLRRTS)) {
+		    if (interp) {
+			Tcl_AppendResult(interp,
+				"can't set RTS signal", (char *) NULL);
+		    }
+		    result = TCL_ERROR;
+		    break;
+		}
+	    } else if (strnicmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+		if (!EscapeCommFunction(infoPtr->handle, flag ?
+			    (DWORD) SETBREAK : (DWORD) CLRBREAK)) {
+		    if (interp) {
+			Tcl_AppendResult(interp,
+				"can't set BREAK signal", (char *) NULL);
+		    }
+		    result = TCL_ERROR;
+		    break;
+		}
+	    } else {
+		if (interp) {
+		    Tcl_AppendResult(interp, "bad signal for -ttycontrol: ",
+			    "must be DTR, RTS or BREAK", (char *) NULL);
+		}
+		result = TCL_ERROR;
+		break;
+	    }
+	}
+
+	ckfree((char *) argv);
+	return result;
     }
-    
-    /* 
-    * Option -sysbuffer {read_size write_size}
-    * Option -sysbuffer read_size 
-    */
+
+    /*
+     * Option -sysbuffer {read_size write_size}
+     * Option -sysbuffer read_size 
+     */
     if ((len > 1) && (strncmp(optionName, "-sysbuffer", len) == 0)) {
-        
-        /*
-        * -sysbuffer 4096 or -sysbuffer {64536 4096}
-        */
-        size_t inSize = (size_t) -1, outSize = (size_t) -1;
-        
-        if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
-            return TCL_ERROR;
-        }
-        if (argc == 1) {
-            inSize = atoi(argv[0]);
-            outSize = infoPtr->sysBufWrite;
-        } else if (argc == 2) {
-            inSize  = atoi(argv[0]);
-            outSize = atoi(argv[1]);
-        }
-        if ( (inSize <= 0) || (outSize <= 0) ) {
-            if (interp) {
-                Tcl_AppendResult(interp,
-                    "bad value for -sysbuffer: should be a list of one or two integers > 0",
-                    (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        if (! SetupComm(infoPtr->handle, inSize, outSize)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't setup comm buffers", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        infoPtr->sysBufRead  = inSize;
-        infoPtr->sysBufWrite = outSize;
-        
-         /* 
-        * Adjust the handshake limits.
-        * Yes, the XonXoff limits seem to influence even hardware handshake
-        */
-        if (! GetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
-        dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
-        if (! SetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't set comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        return TCL_OK;
+	/*
+	 * -sysbuffer 4096 or -sysbuffer {64536 4096}
+	 */
+	size_t inSize = (size_t) -1, outSize = (size_t) -1;
+
+	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (argc == 1) {
+	    inSize = atoi(argv[0]);
+	    outSize = infoPtr->sysBufWrite;
+	} else if (argc == 2) {
+	    inSize  = atoi(argv[0]);
+	    outSize = atoi(argv[1]);
+	}
+	ckfree((char *) argv);
+	if ((inSize <= 0) || (outSize <= 0)) {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+			"bad value for -sysbuffer: should be a list of one or two integers > 0",
+			(char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	if (! SetupComm(infoPtr->handle, inSize, outSize)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't setup comm buffers", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	infoPtr->sysBufRead  = inSize;
+	infoPtr->sysBufWrite = outSize;
+
+	/*
+	 * Adjust the handshake limits.
+	 * Yes, the XonXoff limits seem to influence even hardware handshake
+	 */
+	if (! GetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
+	dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
+	if (! SetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't set comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
     }
 
-    /* 
-    * Option -pollinterval msec
-    */
+    /*
+     * Option -pollinterval msec
+     */
     if ((len > 1) && (strncmp(optionName, "-pollinterval", len) == 0)) {
-        
-        if ( Tcl_GetInt(interp, value, &(infoPtr->blockTime)) != TCL_OK ) {
-            return TCL_ERROR;
-        }
-        return TCL_OK;
-    }
-    
-    /* 
-    * Option -timeout msec
-    */
-    if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
-        int msec;
-        COMMTIMEOUTS tout = {0,0,0,0,0};
-  
-        if ( Tcl_GetInt(interp, value, &msec) != TCL_OK ) {
-            return TCL_ERROR;
-        }
-        tout.ReadTotalTimeoutConstant = msec;
-        if (! SetCommTimeouts(infoPtr->handle, &tout)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't set comm timeouts", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
 
-        return TCL_OK;
+	if ( Tcl_GetInt(interp, value, &(infoPtr->blockTime)) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
     }
-    
+
+    /*
+     * Option -timeout msec
+     */
+    if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
+	int msec;
+	COMMTIMEOUTS tout = {0,0,0,0,0};
+
+	if ( Tcl_GetInt(interp, value, &msec) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+	tout.ReadTotalTimeoutConstant = msec;
+	if (! SetCommTimeouts(infoPtr->handle, &tout)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't set comm timeouts", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+
+	return TCL_OK;
+    }
+
     return Tcl_BadChannelOption(interp, optionName,
-        "mode handshake pollinterval sysbuffer timeout ttycontrol xchar");
+	    "mode handshake pollinterval sysbuffer timeout ttycontrol xchar");
 }
 
 /*
@@ -1920,200 +1925,200 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
  */
 static int
 SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
-    ClientData instanceData;    /* File state. */
-    Tcl_Interp *interp;         /* For error reporting - can be NULL. */
-    CONST char *optionName;     /* Option to get. */
-    Tcl_DString *dsPtr;         /* Where to store value(s). */
+    ClientData instanceData;	/* File state. */
+    Tcl_Interp *interp;		/* For error reporting - can be NULL. */
+    CONST char *optionName;	/* Option to get. */
+    Tcl_DString *dsPtr;		/* Where to store value(s). */
 {
     SerialInfo *infoPtr;
     DCB dcb;
     size_t len;
     int valid = 0;  /* flag if valid option parsed */
-    
+
     infoPtr = (SerialInfo *) instanceData;
-    
+
     if (optionName == NULL) {
-        len = 0;
+	len = 0;
     } else {
-        len = strlen(optionName);
+	len = strlen(optionName);
     }
-    
+
     /*
-    * get option -mode
-    */
-    
+     * get option -mode
+     */
+
     if (len == 0) {
-        Tcl_DStringAppendElement(dsPtr, "-mode");
+	Tcl_DStringAppendElement(dsPtr, "-mode");
     }
     if ((len == 0) ||
-        ((len > 2) && (strncmp(optionName, "-mode", len) == 0))) {
-        
-        char parity;
-        char *stop;
-        char buf[2 * TCL_INTEGER_SPACE + 16];
-        
-        if (! GetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        
-        valid = 1;
-        parity = 'n';
-        if (dcb.Parity <= 4) {
-            parity = "noems"[dcb.Parity];
-        }
-        stop = (dcb.StopBits == ONESTOPBIT) ? "1" :
-        (dcb.StopBits == ONE5STOPBITS) ? "1.5" : "2";
-        
-        wsprintfA(buf, "%d,%c,%d,%s", dcb.BaudRate, parity,
-            dcb.ByteSize, stop);
-        Tcl_DStringAppendElement(dsPtr, buf);
+	    ((len > 2) && (strncmp(optionName, "-mode", len) == 0))) {
+
+	char parity;
+	char *stop;
+	char buf[2 * TCL_INTEGER_SPACE + 16];
+
+	if (! GetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+
+	valid = 1;
+	parity = 'n';
+	if (dcb.Parity <= 4) {
+	    parity = "noems"[dcb.Parity];
+	}
+	stop = (dcb.StopBits == ONESTOPBIT) ? "1" :
+	    (dcb.StopBits == ONE5STOPBITS) ? "1.5" : "2";
+
+	wsprintfA(buf, "%d,%c,%d,%s", dcb.BaudRate, parity,
+		dcb.ByteSize, stop);
+	Tcl_DStringAppendElement(dsPtr, buf);
     }
-    
+
     /*
-    * get option -pollinterval
-    */
-    
+     * get option -pollinterval
+     */
+
     if (len == 0) {
-        Tcl_DStringAppendElement(dsPtr, "-pollinterval");
+	Tcl_DStringAppendElement(dsPtr, "-pollinterval");
     }
     if ((len == 0) ||
-        ((len > 1) && (strncmp(optionName, "-pollinterval", len) == 0))) {
-        char buf[TCL_INTEGER_SPACE + 1];
-        
-        valid = 1;
-        wsprintfA(buf, "%d", infoPtr->blockTime);
-        Tcl_DStringAppendElement(dsPtr, buf);
+	    ((len > 1) && (strncmp(optionName, "-pollinterval", len) == 0))) {
+	char buf[TCL_INTEGER_SPACE + 1];
+
+	valid = 1;
+	wsprintfA(buf, "%d", infoPtr->blockTime);
+	Tcl_DStringAppendElement(dsPtr, buf);
     }
-    
+
     /*
-    * get option -sysbuffer
-    */
-    
+     * get option -sysbuffer
+     */
+
     if (len == 0) {
-        Tcl_DStringAppendElement(dsPtr, "-sysbuffer");
-        Tcl_DStringStartSublist(dsPtr);
+	Tcl_DStringAppendElement(dsPtr, "-sysbuffer");
+	Tcl_DStringStartSublist(dsPtr);
     }
     if ((len == 0) ||
-        ((len > 1) && (strncmp(optionName, "-sysbuffer", len) == 0))) {
+	    ((len > 1) && (strncmp(optionName, "-sysbuffer", len) == 0))) {
 
-        char buf[TCL_INTEGER_SPACE + 1];
-        valid = 1;
+	char buf[TCL_INTEGER_SPACE + 1];
+	valid = 1;
 
-        wsprintfA(buf, "%d", infoPtr->sysBufRead);
-        Tcl_DStringAppendElement(dsPtr, buf);
-        wsprintfA(buf, "%d", infoPtr->sysBufWrite);
-        Tcl_DStringAppendElement(dsPtr, buf);
+	wsprintfA(buf, "%d", infoPtr->sysBufRead);
+	Tcl_DStringAppendElement(dsPtr, buf);
+	wsprintfA(buf, "%d", infoPtr->sysBufWrite);
+	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0) {
-        Tcl_DStringEndSublist(dsPtr);
+	Tcl_DStringEndSublist(dsPtr);
     }
-    
+
     /*
-    * get option -xchar
-    */
-    
+     * get option -xchar
+     */
+
     if (len == 0) {
-        Tcl_DStringAppendElement(dsPtr, "-xchar");
-        Tcl_DStringStartSublist(dsPtr);
+	Tcl_DStringAppendElement(dsPtr, "-xchar");
+	Tcl_DStringStartSublist(dsPtr);
     }
     if ((len == 0) ||
-        ((len > 1) && (strncmp(optionName, "-xchar", len) == 0))) {
+	    ((len > 1) && (strncmp(optionName, "-xchar", len) == 0))) {
 
-        char buf[4];
-        valid = 1;
+	char buf[4];
+	valid = 1;
 
-        if (! GetCommState(infoPtr->handle, &dcb)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get comm state", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        sprintf(buf, "%c", dcb.XonChar);
-        Tcl_DStringAppendElement(dsPtr, buf);
-        sprintf(buf, "%c", dcb.XoffChar);
-        Tcl_DStringAppendElement(dsPtr, buf);
+	if (! GetCommState(infoPtr->handle, &dcb)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get comm state", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	sprintf(buf, "%c", dcb.XonChar);
+	Tcl_DStringAppendElement(dsPtr, buf);
+	sprintf(buf, "%c", dcb.XoffChar);
+	Tcl_DStringAppendElement(dsPtr, buf);
     }
     if (len == 0) {
-        Tcl_DStringEndSublist(dsPtr);
+	Tcl_DStringEndSublist(dsPtr);
     }
 
     /*
-    * get option -lasterror
-    * option is readonly and returned by [fconfigure chan -lasterror]
-    * but not returned by unnamed [fconfigure chan]
-    */
-    
+     * get option -lasterror
+     * option is readonly and returned by [fconfigure chan -lasterror]
+     * but not returned by unnamed [fconfigure chan]
+     */
+
     if ( (len > 1) && (strncmp(optionName, "-lasterror", len) == 0) ) {
-        valid = 1;
-        SerialErrorStr(infoPtr->lastError, dsPtr);
+	valid = 1;
+	SerialErrorStr(infoPtr->lastError, dsPtr);
     }
-    
+
     /*
-    * get option -queue
-    * option is readonly and returned by [fconfigure chan -queue]
-    */
-    
+     * get option -queue
+     * option is readonly and returned by [fconfigure chan -queue]
+     */
+
     if ((len > 1) && (strncmp(optionName, "-queue", len) == 0)) {
-        char buf[TCL_INTEGER_SPACE + 1];
-        COMSTAT cStat;
-        DWORD error;
+	char buf[TCL_INTEGER_SPACE + 1];
+	COMSTAT cStat;
+	DWORD error;
 	int inBuffered, outBuffered, count;
 
-        valid = 1;
+	valid = 1;
 
-        /* 
-        * Query the pending data in Tcl's internal queues
-        */
-        inBuffered  = Tcl_InputBuffered(infoPtr->channel);
+	/* 
+	 * Query the pending data in Tcl's internal queues
+	 */
+	inBuffered  = Tcl_InputBuffered(infoPtr->channel);
 	outBuffered = Tcl_OutputBuffered(infoPtr->channel);
 
-        /*
-        * Query the number of bytes in our output queue:
-        *     1. The bytes pending in the output thread
-        *     2. The bytes in the system drivers buffer
-        * The writer thread should not interfere this action.
-        */
-        EnterCriticalSection(&infoPtr->csWrite);
-        ClearCommError( infoPtr->handle, &error, &cStat );
-        count = (int)cStat.cbOutQue + infoPtr->writeQueue;
-        LeaveCriticalSection(&infoPtr->csWrite);
+	/*
+	 * Query the number of bytes in our output queue:
+	 *     1. The bytes pending in the output thread
+	 *     2. The bytes in the system drivers buffer
+	 * The writer thread should not interfere this action.
+	 */
+	EnterCriticalSection(&infoPtr->csWrite);
+	ClearCommError( infoPtr->handle, &error, &cStat );
+	count = (int)cStat.cbOutQue + infoPtr->writeQueue;
+	LeaveCriticalSection(&infoPtr->csWrite);
 
-        wsprintfA(buf, "%d", inBuffered + cStat.cbInQue); 
-        Tcl_DStringAppendElement(dsPtr, buf);
-        wsprintfA(buf, "%d", outBuffered + count); 
-        Tcl_DStringAppendElement(dsPtr, buf);
+	wsprintfA(buf, "%d", inBuffered + cStat.cbInQue); 
+	Tcl_DStringAppendElement(dsPtr, buf);
+	wsprintfA(buf, "%d", outBuffered + count); 
+	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
     /*
-    * get option -ttystatus
-    * option is readonly and returned by [fconfigure chan -ttystatus]
-    * but not returned by unnamed [fconfigure chan]
-    */
-    if ( (len > 4) && (strncmp(optionName, "-ttystatus", len) == 0) ) {
-        
-        DWORD status;
-        
-        if (! GetCommModemStatus(infoPtr->handle, &status)) {
-            if (interp) {
-                Tcl_AppendResult(interp, 
-                    "can't get tty status", (char *) NULL);
-            }
-            return TCL_ERROR;
-        }
-        valid = 1;
-        SerialModemStatusStr(status, dsPtr);
+     * get option -ttystatus
+     * option is readonly and returned by [fconfigure chan -ttystatus]
+     * but not returned by unnamed [fconfigure chan]
+     */
+    if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
+
+	DWORD status;
+
+	if (! GetCommModemStatus(infoPtr->handle, &status)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, 
+			"can't get tty status", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	valid = 1;
+	SerialModemStatusStr(status, dsPtr);
     }
-    
+
     if (valid) {
-        return TCL_OK;
+	return TCL_OK;
     } else {
-        return Tcl_BadChannelOption(interp, optionName,
-            "mode pollinterval lasterror queue sysbuffer ttystatus xchar");
+	return Tcl_BadChannelOption(interp, optionName,
+		"mode pollinterval lasterror queue sysbuffer ttystatus xchar");
     }
 }
 
