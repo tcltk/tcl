@@ -1,3 +1,8 @@
+2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclLoadShl.c (TclpDlopen): use DYNAMIC_PATH on second
+	shl_load only.  [Bug 1204237]
+
 2005-10-04  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_ClearChannelHandlers): now deletes any
