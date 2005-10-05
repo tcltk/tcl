@@ -1,3 +1,10 @@
+2005-10-05  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclExecute.c:	Improved performance INST_MULT and
+	replaces a "goto... label" with a "break from loop" in TclIncrObj().
+
 2005-10-04  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]

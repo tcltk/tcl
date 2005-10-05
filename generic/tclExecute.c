@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.45 2005/10/04 21:02:30 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.46 2005/10/05 16:28:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1043,7 +1043,7 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
-    if ((TclGetNumberFromObj(interp, valuePtr, &ptr1, &type1) == TCL_OK)
+    do {if ((TclGetNumberFromObj(interp, valuePtr, &ptr1, &type1) == TCL_OK)
 	    && (TclGetNumberFromObj(interp, incrPtr, &ptr2, &type2) == TCL_OK)
 	    && (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	Tcl_WideInt w1 = (Tcl_WideInt)(*(CONST long *)ptr1);
@@ -1053,14 +1053,13 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	/* Must check for overflow */
 	if (((w1 < 0) && (w2 < 0) && (sum > 0))
 		|| ((w1 > 0) && (w2 > 0) && (sum < 0))) {
-	    goto overflow;
+	    break;
 	}
 #endif
 	Tcl_SetWideIntObj(valuePtr, sum);
 	return TCL_OK;
-    }
+    }} while (0);
 
-    overflow:
     if (Tcl_GetBignumAndClearObj(interp, valuePtr, &value) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -4419,9 +4418,135 @@ TclExecuteByteCode(interp, codePtr)
     }
 #endif
 
+    case INST_MULT: {
+	ClientData ptr1, ptr2;
+	int type1, type2;
+	Tcl_Obj *value2Ptr = *tosPtr;
+	Tcl_Obj *valuePtr = *(tosPtr - 1);
+
+	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	if ((result != TCL_OK) 
+#ifndef ACCEPT_NAN
+		|| (type1 == TCL_NUMBER_NAN)
+#endif
+		) {
+	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
+		    O2S(value2Ptr), O2S(valuePtr), 
+		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+
+#ifdef ACCEPT_NAN
+	if (type1 == TCL_NUMBER_NAN) {
+	    /* NaN first argument -> result is also NaN */
+	    NEXT_INST_F(1, 1, 0);
+	}
+#endif
+
+	result = TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+	if ((result != TCL_OK) 
+#ifndef ACCEPT_NAN
+		|| (type2 == TCL_NUMBER_NAN)
+#endif
+		) {
+	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
+		    O2S(value2Ptr), O2S(valuePtr), 
+		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
+	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    goto checkForCatch;
+	}
+
+#ifdef ACCEPT_NAN
+	if (value2Ptr->typePtr == &tclDoubleType) {
+	    /* NaN second argument -> result is also NaN */
+	    objResultPtr = value2Ptr;
+	    NEXT_INST_F(1, 2, 1);
+	}
+#endif
+
+	if ((type1 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_DOUBLE)) {
+	    /* At least one of the values is floating-point, so perform
+	     * floating point calculations */
+	    double d1, d2, dResult;
+	    Tcl_GetDoubleFromObj(NULL, valuePtr, &d1);
+	    Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2);
+
+	    dResult = d1 * d2;
+
+#ifndef ACCEPT_NAN
+	    /*
+	     * Check now for IEEE floating-point error.
+	     */
+
+	    if (TclIsNaN(dResult)) {
+		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
+			O2S(valuePtr), O2S(value2Ptr)));
+		TclExprFloatError(interp, dResult);
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+#endif
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (Tcl_IsShared(valuePtr)) {
+		TclNewDoubleObj(objResultPtr, dResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    TclSetDoubleObj(valuePtr, dResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
+	}
+
+	if ((sizeof(Tcl_WideInt) >= 2*sizeof(long))
+		&& (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
+	    Tcl_WideInt w1, w2, wResult;
+	    Tcl_GetWideIntFromObj(NULL, valuePtr, &w1);
+	    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+
+	    wResult = w1 * w2;
+
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewWideIntObj(wResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    Tcl_SetWideIntObj(valuePtr, wResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
+	} else {
+	    mp_int big1, big2, bigResult;
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (Tcl_IsShared(valuePtr)) {
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
+	    }
+	    if (Tcl_IsShared(value2Ptr)) {
+		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+	    }
+	    mp_init(&bigResult);
+
+	    mp_mul(&big1, &big2, &bigResult);
+
+	    mp_clear(&big1);
+	    mp_clear(&big2);
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewBignumObj(&bigResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    Tcl_SetBignumObj(valuePtr, &bigResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
+	}
+    }
+
     case INST_ADD:
     case INST_SUB:
-    case INST_MULT:
     case INST_DIV:
     case INST_MOD:
     case INST_EXPON: {
@@ -4759,9 +4884,6 @@ TclExecuteByteCode(interp, codePtr)
 	    case INST_SUB:
 		dResult = d1 - d2;
 		break;
-	    case INST_MULT:
-		dResult = d1 * d2;
-		break;
 	    case INST_DIV:
 #ifndef IEEE_FLOATING_POINT
 		if (d2 == 0.0) {
@@ -4830,9 +4952,6 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    case INST_SUB:
 		mp_sub(&big1, &big2, &bigResult);
-		break;
-	    case INST_MULT:
-		mp_mul(&big1, &big2, &bigResult);
 		break;
 	    case INST_DIV:
 	    case INST_MOD:
