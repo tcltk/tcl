@@ -1,3 +1,8 @@
+2005-10-05  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIORChan.c (RcClose): Removed unreachable panic/return
+	  statements. This fixes the remainder of [SF Tcl Bug 1286256].
+
 2005-10-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/env.test (env-6.1):
