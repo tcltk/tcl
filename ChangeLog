@@ -1,5 +1,9 @@
 2005-10-05  Andreas Kupries <andreask@activestate.com>
 
+	* doc/CrtChannel.3: Fixed [SF Tcl Bug 1104682], by application of
+	  David Welton's patch for it, and added a note about
+	  wideSeekProc.
+
 	* generic/tclIORChan.c (RcClose): Removed unreachable panic/return
 	  statements. This fixes the remainder of [SF Tcl Bug 1286256].
 
