@@ -1,5 +1,8 @@
 2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/tclLoadShl.c (TclpDlopen): use DYNAMIC_PATH on second
+	shl_load only.  [Bug 1204237]
+
 	* doc/scan.n: scan %[] requires "one or more chars" [Bug 1277503]
 
 	* tests/winFile.test (getuser): allow valid Windows usernames.
