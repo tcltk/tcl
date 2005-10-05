@@ -1,5 +1,8 @@
 2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c (TclFSNormalizeAbsolutePath): make static
+	* generic/tclEncoding.c (TclFindEncodings): make static
+
 	* unix/tclLoadShl.c (TclpDlopen): use DYNAMIC_PATH on second
 	shl_load only.  [Bug 1204237]
 
