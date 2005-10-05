@@ -1,5 +1,8 @@
 2005-10-05  Andreas Kupries <andreask@activestate.com>
 
+	* generic/tclPipe.c (TclCreatePipeline): Fixed [SF Tcl Bug
+	  1109294]. Applied the patch provided by David Gravereaux.
+
 	* doc/CrtChannel.3: Fixed [SF Tcl Bug 1104682], by application of
 	  David Welton's patch for it, and added a note about
 	  wideSeekProc.
