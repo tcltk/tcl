@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36 2002/11/27 18:13:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.2.1 2005/10/05 08:02:20 hobbs Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -423,7 +423,8 @@
  * the C level environment in synch with the system level environment.
  */
 
-#define USE_PUTENV	1
+#define USE_PUTENV		1
+#define USE_PUTENV_FOR_UNSET	1
 
 /*
  * Msvcrt's putenv() copies the string rather than takes ownership of it.
