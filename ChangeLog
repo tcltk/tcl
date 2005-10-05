@@ -1,5 +1,8 @@
 2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/http.test:              do not URI encode -._~ according
+	* library/http/http.tcl (init): to RFC3986. [Bug 1182373] (aho)
+
 	* unix/tclLoadShl.c (TclpDlopen): use DYNAMIC_PATH on second
 	shl_load only.  [Bug 1204237]
 
