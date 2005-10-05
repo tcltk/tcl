@@ -1,5 +1,8 @@
 2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/winFile.test (getuser): allow valid Windows usernames.
+	[Bug 1311285]
+
 	* generic/tclParse.c (Tcl_ParseCommand): add code that recognizes
 	{} in addition to {expand} for word expansion (make with
 	-DALLOW_EMPTY_EXPAND).
@@ -25,8 +28,8 @@
 	
 2005-09-30  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclMain.c:    Separate encoding conversion of command line
-        arguments from list formatting.  [Bug 1306162].
+	* generic/tclMain.c: Separate encoding conversion of command line
+	arguments from list formatting.	 [Bug 1306162].
 
 2005-09-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
