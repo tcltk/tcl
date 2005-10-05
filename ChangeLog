@@ -1,5 +1,7 @@
 2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinSerial.c (SerialSetOptionProc): free argv [Bug 1067708]
+
 	* tests/http.test:              do not URI encode -._~ according
 	* library/http/http.tcl (init): to RFC3986. [Bug 1182373] (aho)
 
