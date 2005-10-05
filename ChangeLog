@@ -1,5 +1,6 @@
 2005-10-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/env.test (env-6.1):
 	* win/tclWinPort.h: define USE_PUTENV_FOR_UNSET 1
 	* generic/tclEnv.c (TclSetEnv, TclUnsetEnv): add
 	USE_PUTENV_FOR_UNSET to existing USE_PUTENV define to account for
