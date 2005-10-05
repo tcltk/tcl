@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.14 2005/07/19 13:37:19 dkf Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.15 2005/10/05 04:23:28 hobbs Exp $
  */
 
 #include <dl.h>
@@ -76,7 +76,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
      */
 
     native = Tcl_FSGetNativePath(pathPtr);
-    handle = shl_load(native, BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH, 0L);
+    handle = shl_load(native, BIND_DEFERRED|BIND_VERBOSE, 0L);
 
     if (handle == NULL) {
 	/*
