@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.21 2005/05/24 04:19:32 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.22 2005/10/05 04:27:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1319,7 +1319,7 @@ Tcl_FSData(fsPtr)
  *
  *---------------------------------------------------------------------------
  */
-Tcl_Obj*
+static Tcl_Obj *
 TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
     Tcl_Interp* interp;    /* Interpreter to use */
     Tcl_Obj *pathPtr;      /* Absolute path to normalize */
