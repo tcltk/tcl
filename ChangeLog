@@ -1,3 +1,15 @@
+2005-10-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/env.test (env-6.1):
+	* win/tclWinPort.h: define USE_PUTENV_FOR_UNSET 1
+	* generic/tclEnv.c (TclSetEnv, TclUnsetEnv): add
+	USE_PUTENV_FOR_UNSET to existing USE_PUTENV define to account for
+	various systems that have putenv(), but can't unset env vars with
+	it.  Note difference between Windows and Linux for actually
+	unsetting the env var (use of '=').
+	Correct the resizing of the environ array.  We assume that we are
+	in full ownership, but that's not correct.[Bug 979640]
+
 2005-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSerial.c (SerialSetOptionProc): free argv [Bug 1067708]
