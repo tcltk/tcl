@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.49 2005/10/06 16:14:48 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.50 2005/10/06 18:48:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3825,11 +3825,13 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(0, 2, 1);
     }
 
+    case INST_LSHIFT:
     case INST_RSHIFT: {
 	Tcl_Obj *value2Ptr = *tosPtr;
 	Tcl_Obj *valuePtr  = *(tosPtr - 1);
 	ClientData ptr1, ptr2;
 	int invalid, shift, type1, type2;
+	long l;
 
 	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
@@ -3874,47 +3876,91 @@ TclExecuteByteCode(interp, codePtr)
 	    goto checkForCatch;
 	}
 
-	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	/* Quickly force large right shifts to 0 or -1 */
-	if ((type2 != TCL_NUMBER_LONG)
-		|| ( *((CONST long *)ptr2) > INT_MAX)) {
-	    int zero;
-	    switch (type1) {
-	    case TCL_NUMBER_LONG:
-		zero = (*((CONST long *)ptr1) >= (long)0);
-		break;
-#ifndef NO_WIDE_TYPE
-	    case TCL_NUMBER_WIDE: 
-		zero = (*((CONST Tcl_WideInt *)ptr1) > (Tcl_WideInt)0);
-		break;
-#endif
-	    case TCL_NUMBER_BIG:
-		/* TODO: const correctness ? */
-		zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
-	    }
-	    if (zero) {
-		objResultPtr = eePtr->constants[0];
-	    } else {
-		TclNewIntObj(objResultPtr, -1);
-	    }
+	/* Zero shifted any number of bits is still zero */
+	if ((type1 == TCL_NUMBER_LONG) && (*((CONST long *)ptr1) == (long)0)) {
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    objResultPtr = eePtr->constants[0];
 	    TRACE(("%s\n", O2S(objResultPtr)));
 	    NEXT_INST_F(1, 2, 1);
 	}
-	shift = (int)(*((CONST long *)ptr2));
-	if (type1 == TCL_NUMBER_LONG) {
-	    long l = *((CONST long *)ptr1);
-	    if (shift >= CHAR_BIT*sizeof(long)) {
-		if (l >= (long)0) {
+
+	if (*pc == INST_LSHIFT) {
+	    /* Large left shifts create integer overflow */
+	    result = Tcl_GetIntFromObj(NULL, value2Ptr, &shift);
+	    if (result != TCL_OK) {
+		/*
+		 * Technically, we could hold the value (1 << (INT_MAX+1))
+		 * in an mp_int, but since we're using mp_mul_2d() to do the
+		 * work, and it takes only an int argument, that's a good
+		 * place to draw the line.
+		 */
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"integer value too large to represent", -1));
+		goto checkForCatch;
+	    }
+	    /* Handle shifts within the native long range */
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if ((type1 == TCL_NUMBER_LONG) && (shift < CHAR_BIT*sizeof(long))
+		    && (l = *((CONST long *)ptr1)) 
+		    && !(((l>0) ? l : ~l) 
+			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
+		TclNewLongObj(objResultPtr, (l<<shift));
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	} else {
+	    /* Quickly force large right shifts to 0 or -1 */
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if ((type2 != TCL_NUMBER_LONG)
+		    || ( *((CONST long *)ptr2) > INT_MAX)) {
+		/*
+		 * Again, technically, the value to be shifted could
+		 * be an mp_int so huge that a right shift by (INT_MAX+1)
+		 * bits could not take us to the result of 0 or -1, but
+		 * since we're using mp_div_2d to do the work, and it
+		 * takes only an int argument, we draw the line there.
+		 */
+		int zero;
+		switch (type1) {
+		case TCL_NUMBER_LONG:
+		    zero = (*((CONST long *)ptr1) > (long)0);
+		    break;
+#ifndef NO_WIDE_TYPE
+		case TCL_NUMBER_WIDE: 
+		    zero = (*((CONST Tcl_WideInt *)ptr1) > (Tcl_WideInt)0);
+		    break;
+#endif
+		case TCL_NUMBER_BIG:
+		    /* TODO: const correctness ? */
+		    zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
+		}
+		if (zero) {
 		    objResultPtr = eePtr->constants[0];
 		} else {
 		    TclNewIntObj(objResultPtr, -1);
 		}
-	    } else {
-		TclNewIntObj(objResultPtr, (l >> shift));
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
 	    }
-	    TRACE(("%s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(1, 2, 1);
-	} else {
+	    shift = (int)(*((CONST long *)ptr2));
+	    /* Handle shifts within the native long range */
+	    if (type1 == TCL_NUMBER_LONG) {
+		l = *((CONST long *)ptr1);
+		if (shift >= CHAR_BIT*sizeof(long)) {
+		    if (l >= (long)0) {
+			objResultPtr = eePtr->constants[0];
+		    } else {
+			TclNewIntObj(objResultPtr, -1);
+		    }
+		} else {
+		    TclNewIntObj(objResultPtr, (l >> shift));
+		}
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	}
+
+	{
 	    mp_int big, bigResult, bigRemainder;
 
 	    if (Tcl_IsShared(valuePtr)) {
@@ -3924,94 +3970,30 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 
 	    mp_init(&bigResult);
-	    mp_init(&bigRemainder);
-	    mp_div_2d(&big, shift, &bigResult, &bigRemainder);
-	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
-		/* Convert to Tcl's integer division rules */
-		mp_sub_d(&bigResult, 1, &bigResult);
+	    if (*pc == INST_LSHIFT) {
+		mp_mul_2d(&big, shift, &bigResult);
+	    } else {
+		mp_init(&bigRemainder);
+		mp_div_2d(&big, shift, &bigResult, &bigRemainder);
+		if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
+		    /* Convert to Tcl's integer division rules */
+		    mp_sub_d(&bigResult, 1, &bigResult);
+		}
+		mp_clear(&bigRemainder);
 	    }
 	    mp_clear(&big);
-	    mp_clear(&bigRemainder);
 
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_NewBignumObj(&bigResult);
-		TRACE(("%s\n", O2S(objResultPtr)));
-		NEXT_INST_F(1, 2, 1);
+	    if (!Tcl_IsShared(valuePtr)) {
+		Tcl_SetBignumObj(valuePtr, &bigResult);
+		TRACE(("%s\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 1, 0);
 	    }
-	    Tcl_SetBignumObj(valuePtr, &bigResult);
-	    TRACE(("%s\n", O2S(valuePtr)));
-	    NEXT_INST_F(1, 1, 0);
-	}
-    }
-			      
-    case INST_LSHIFT: {
-	Tcl_Obj *valuePtr, *value2Ptr;
-	mp_int big1, big2, bigResult;
-	int shift;
-
-	value2Ptr = *tosPtr;
-	valuePtr  = *(tosPtr - 1);
-	result = Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	if (result != TCL_OK) {
-	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
-		    O2S(value2Ptr), (valuePtr->typePtr?
-		    valuePtr->typePtr->name : "null")));
-	    IllegalExprOperandType(interp, pc, valuePtr);
-	    goto checkForCatch;
-	}
-	result = Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	if (result != TCL_OK) {
-	    mp_clear(&big1);
-	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
-		    O2S(value2Ptr), (value2Ptr->typePtr?
-		    value2Ptr->typePtr->name : "null")));
-	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    goto checkForCatch;
-	}
-	if (mp_cmp_d(&big2, 0) == MP_LT) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("negative shift argument", -1));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	mp_clear(&big2);
-	if (mp_iszero(&big1)) {
-	    /* Zero shifted any integral number of bits either way is zero */
-	    mp_clear(&big1);
-	    TRACE(("0 %s => 0\n", O2S(value2Ptr)));
-	    NEXT_INST_F(1, 1, 0);
-	}
-	result = Tcl_GetIntFromObj(NULL, value2Ptr, &shift);
-	if (result != TCL_OK) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent", -1));
-	    goto checkForCatch;
-	}
-	mp_init(&bigResult);
-	if (*pc == INST_LSHIFT) {
-	    mp_mul_2d(&big1, shift, &bigResult);
-	} else {
-	    mp_int bigRemainder;
-	    mp_init(&bigRemainder);
-	    mp_div_2d(&big1, shift, &bigResult, &bigRemainder);
-	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
-		/* Convert to Tcl's integer division rules */
-		mp_sub_d(&bigResult, 1, &bigResult);
-	    }
-	    mp_clear(&bigRemainder);
-	}
-	mp_clear(&big1);
-	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (Tcl_IsShared(valuePtr)) {
 	    objResultPtr = Tcl_NewBignumObj(&bigResult);
-	    TRACE(("%s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(1, 2, 1);
 	}
-	Tcl_SetBignumObj(valuePtr, &bigResult);
-	TRACE(("%s\n", O2S(valuePtr)));
-	NEXT_INST_F(1, 1, 0);
+	TRACE(("%s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 2, 1);
     }
-
+	
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND: {

@@ -2,7 +2,8 @@
 
 	[kennykb-numerics-branch]
 
-	* generic/tclExecute.c:	Improved performance of INST_RSHIFT.
+	* generic/tclExecute.c:	Improved performance of INST_RSHIFT and
+	INST_LSHIFT.
 
 2005-10-05  Don Porter  <dgp@users.sourceforge.net>
 
