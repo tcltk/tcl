@@ -2,9 +2,9 @@
 
 	[kennykb-numerics-branch]
 
-	* generic/tclExecute.c:	Improved performance of INST_MULT and INST_DIV
-	and replaced a "goto... label" with a "break from loop" in TclIncrObj()
-	and removed some dead code.
+	* generic/tclExecute.c:	Improved performance of INST_MULT, INST_DIV,
+	INST_ADD, and INST_SUB and replaced a "goto... label" with a
+	"break from loop" in TclIncrObj() and removed some dead code.
 
 2005-10-04  Don Porter  <dgp@users.sourceforge.net>
 

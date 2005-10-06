@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.47 2005/10/06 02:51:00 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.48 2005/10/06 03:41:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4418,6 +4418,8 @@ TclExecuteByteCode(interp, codePtr)
     }
 #endif
 
+    case INST_ADD:
+    case INST_SUB:
     case INST_DIV:
     case INST_MULT: {
 	ClientData ptr1, ptr2;
@@ -4476,6 +4478,12 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2);
 
 	    switch (*pc) {
+	    case INST_ADD:
+		dResult = d1 + d2;
+		break;
+	    case INST_SUB:
+		dResult = d1 - d2;
+		break;
 	    case INST_MULT:
 		dResult = d1 * d2;
 		break;
@@ -4544,26 +4552,52 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_GetWideIntFromObj(NULL, valuePtr, &w1);
 	    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
 
-	    if (w2 == 0) {
-		TRACE(("%s %s => DIVIDE BY ZERO\n",
-			O2S(valuePtr), O2S(value2Ptr)));
-		goto divideByZero;
-	    }
+	    switch (*pc) {
+	    case INST_ADD:
+		wResult = w1 + w2;
+#ifdef TCL_WIDE_INT_IS_LONG
+		/* Must check for overflow */
+		if (((w1 < 0) && (w2 < 0) && (wResult > 0))
+			|| ((w1 > 0) && (w2 > 0) && (wResult < 0))) {
+		    goto overflow;
+		}
+#endif
+		break;
+
+	    case INST_SUB:
+		wResult = w1 - w2;
+#ifdef TCL_WIDE_INT_IS_LONG
+		/* Must check for overflow */
+		if (((w1 < 0) && (w2 > 0) && (wResult > 0))
+			|| ((w1 > 0) && (w2 < 0) && (wResult < 0))) {
+		    goto overflow;
+		}
+#endif
+		break;
+
+	    case INST_DIV:
+		if (w2 == 0) {
+		    TRACE(("%s %s => DIVIDE BY ZERO\n",
+			    O2S(valuePtr), O2S(value2Ptr)));
+		    goto divideByZero;
+		}
 
 #ifdef TCL_WIDE_INT_IS_LONG
-	    /* Need a bignum to represent (LONG_MIN / -1) */
-	    if ((w1 == LONG_MIN) && (w2 == -1)) {
-		goto overflow;
-	    }
+		/* Need a bignum to represent (LONG_MIN / -1) */
+		if ((w1 == LONG_MIN) && (w2 == -1)) {
+		    goto overflow;
+		}
 #endif
-	    wResult = w1 / w2;
+		wResult = w1 / w2;
 
-	    /* Force Tcl's integer division rules */
-	    /* TODO: examine for logic simplification */
-	    if (((wResult < 0) || ((wResult == 0) &&
-		    ((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
-		    ((wResult * w2) != w1)) {
-		wResult -= 1;
+		/* Force Tcl's integer division rules */
+		/* TODO: examine for logic simplification */
+		if (((wResult < 0) || ((wResult == 0) &&
+			((w1 < 0 && w2 > 0) || (w1 > 0 && w2 < 0)))) &&
+			((wResult * w2) != w1)) {
+		    wResult -= 1;
+		}
+		break;
 	    }
 
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -4593,6 +4627,12 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    mp_init(&bigResult);
 	    switch (*pc) {
+	    case INST_ADD:
+		mp_add(&big1, &big2, &bigResult);
+		break;
+	    case INST_SUB:
+		mp_sub(&big1, &big2, &bigResult);
+		break;
 	    case INST_MULT:
 		mp_mul(&big1, &big2, &bigResult);
 		break;
@@ -4632,8 +4672,6 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
-    case INST_ADD:
-    case INST_SUB:
     case INST_MOD:
     case INST_EXPON: {
 	/*
@@ -4950,12 +4988,6 @@ TclExecuteByteCode(interp, codePtr)
 	    /* At least one of the values is floating-point, so perform
 	     * floating point calculations */
 	    switch (*pc) {
-	    case INST_ADD:
-		dResult = d1 + d2;
-		break;
-	    case INST_SUB:
-		dResult = d1 - d2;
-		break;
 	    case INST_EXPON:
 		if (d1==0.0 && d2<0.0) {
 		    TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
@@ -5005,12 +5037,6 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    mp_init(&bigResult);
 	    switch (*pc) {
-	    case INST_ADD:
-		mp_add(&big1, &big2, &bigResult);
-		break;
-	    case INST_SUB:
-		mp_sub(&big1, &big2, &bigResult);
-		break;
 	    case INST_MOD:
 		if (mp_iszero(&big2)) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
