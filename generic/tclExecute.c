@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.48 2005/10/06 03:41:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.49 2005/10/06 16:14:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3825,8 +3825,126 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(0, 2, 1);
     }
 
-    case INST_LSHIFT:
     case INST_RSHIFT: {
+	Tcl_Obj *value2Ptr = *tosPtr;
+	Tcl_Obj *valuePtr  = *(tosPtr - 1);
+	ClientData ptr1, ptr2;
+	int invalid, shift, type1, type2;
+
+	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	if ((result != TCL_OK)
+		|| (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	    result = TCL_ERROR;
+	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
+		    O2S(value2Ptr), (valuePtr->typePtr?
+		    valuePtr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, valuePtr);
+	    goto checkForCatch;
+	}
+
+	result = TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+	if ((result != TCL_OK)
+		|| (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
+	    result = TCL_ERROR;
+	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
+		    O2S(value2Ptr), (value2Ptr->typePtr?
+		    value2Ptr->typePtr->name : "null")));
+	    IllegalExprOperandType(interp, pc, value2Ptr);
+	    goto checkForCatch;
+	}
+
+	/* reject negative shift argument */
+	switch (type2) {
+	case TCL_NUMBER_LONG:
+	    invalid = (*((CONST long *)ptr2) < (long)0);
+	    break;
+#ifndef NO_WIDE_TYPE
+	case TCL_NUMBER_WIDE:
+	    invalid = (*((CONST Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
+	    break;
+#endif
+	case TCL_NUMBER_BIG:
+	    /* TODO: const correctness ? */
+	    invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
+	}
+	if (invalid) {
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("negative shift argument", -1));
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	}
+
+	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	/* Quickly force large right shifts to 0 or -1 */
+	if ((type2 != TCL_NUMBER_LONG)
+		|| ( *((CONST long *)ptr2) > INT_MAX)) {
+	    int zero;
+	    switch (type1) {
+	    case TCL_NUMBER_LONG:
+		zero = (*((CONST long *)ptr1) >= (long)0);
+		break;
+#ifndef NO_WIDE_TYPE
+	    case TCL_NUMBER_WIDE: 
+		zero = (*((CONST Tcl_WideInt *)ptr1) > (Tcl_WideInt)0);
+		break;
+#endif
+	    case TCL_NUMBER_BIG:
+		/* TODO: const correctness ? */
+		zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
+	    }
+	    if (zero) {
+		objResultPtr = eePtr->constants[0];
+	    } else {
+		TclNewIntObj(objResultPtr, -1);
+	    }
+	    TRACE(("%s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 2, 1);
+	}
+	shift = (int)(*((CONST long *)ptr2));
+	if (type1 == TCL_NUMBER_LONG) {
+	    long l = *((CONST long *)ptr1);
+	    if (shift >= CHAR_BIT*sizeof(long)) {
+		if (l >= (long)0) {
+		    objResultPtr = eePtr->constants[0];
+		} else {
+		    TclNewIntObj(objResultPtr, -1);
+		}
+	    } else {
+		TclNewIntObj(objResultPtr, (l >> shift));
+	    }
+	    TRACE(("%s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 2, 1);
+	} else {
+	    mp_int big, bigResult, bigRemainder;
+
+	    if (Tcl_IsShared(valuePtr)) {
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
+	    }
+
+	    mp_init(&bigResult);
+	    mp_init(&bigRemainder);
+	    mp_div_2d(&big, shift, &bigResult, &bigRemainder);
+	    if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
+		/* Convert to Tcl's integer division rules */
+		mp_sub_d(&bigResult, 1, &bigResult);
+	    }
+	    mp_clear(&big);
+	    mp_clear(&bigRemainder);
+
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewBignumObj(&bigResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    Tcl_SetBignumObj(valuePtr, &bigResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
+	}
+    }
+			      
+    case INST_LSHIFT: {
 	Tcl_Obj *valuePtr, *value2Ptr;
 	mp_int big1, big2, bigResult;
 	int shift;
