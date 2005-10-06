@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.50 2005/10/06 18:48:52 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.51 2005/10/06 22:04:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3953,7 +3953,7 @@ TclExecuteByteCode(interp, codePtr)
 			TclNewIntObj(objResultPtr, -1);
 		    }
 		} else {
-		    TclNewIntObj(objResultPtr, (l >> shift));
+		    TclNewLongObj(objResultPtr, (l >> shift));
 		}
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
