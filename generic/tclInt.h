@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.41 2005/10/03 15:50:19 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.42 2005/10/07 20:15:09 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -22,8 +22,8 @@
  * Some numerics configuration options
  */
 
-#define NO_WIDE_TYPE
-#undef	ACCEPT_NAN
+#undef NO_WIDE_TYPE
+#undef ACCEPT_NAN
 
 /*
  * Common include files needed by most of the Tcl source files are included
@@ -2994,16 +2994,6 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
 #define TclNewBooleanObj(objPtr, b) \
     TclNewIntObj((objPtr), ((b)? 1 : 0))
 
-#ifndef NO_WIDE_TYPE
-#define TclNewWideIntObj(objPtr, w) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
-    (objPtr)->typePtr = &tclWideIntType
-#endif
-
 #define TclNewDoubleObj(objPtr, d) \
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
@@ -3025,9 +3015,6 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
 
 #define TclNewBooleanObj(objPtr, b) \
     (objPtr) = Tcl_NewBooleanObj(b)
-
-#define TclNewWideIntObj(objPtr, w)\
-    (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

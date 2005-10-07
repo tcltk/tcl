@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.40 2005/10/03 15:50:19 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.41 2005/10/07 20:15:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2302,12 +2302,8 @@ Tcl_NewWideIntObj(wideValue)
 {
     register Tcl_Obj *objPtr;
 
-#ifndef NO_WIDE_TYPE
-    TclNewWideIntObj(objPtr, wideValue);
-#else
     TclNewObj(objPtr);
     Tcl_SetWideIntObj(objPtr, wideValue);
-#endif
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2407,18 +2403,18 @@ Tcl_SetWideIntObj(objPtr, wideValue)
 	Tcl_Panic("Tcl_SetWideIntObj called with shared object");
     }
 
-#ifndef NO_WIDE_TYPE
-    TclSetWideIntObj(objPtr, wideValue);
-#else
     if ((wideValue >= (Tcl_WideInt) LONG_MIN)
 	    && (wideValue <= (Tcl_WideInt) LONG_MAX)) {
 	TclSetLongObj(objPtr, (long) wideValue);
     } else {
+#ifndef NO_WIDE_TYPE
+	TclSetWideIntObj(objPtr, wideValue);
+#else
 	mp_int big;
 	TclBNInitBignumFromWideInt(&big, wideValue);
 	Tcl_SetBignumObj(objPtr, &big);
-    }
 #endif
+    }
 }
 
 /*
@@ -2744,7 +2740,7 @@ GetBignumFromObj(
 #ifndef NO_WIDE_TYPE
 	if (objPtr->typePtr == &tclWideIntType) {
 	    TclBNInitBignumFromWideInt(bignumValue, 
-		    objPtr->internalRep.wideValue)
+		    objPtr->internalRep.wideValue);
 	    return TCL_OK;
 	}
 #endif

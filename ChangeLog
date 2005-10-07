@@ -2,6 +2,12 @@
 
 	[kennykb-numerics-branch]
 
+	* generic/tclInt.h:	Made #undef NO_WIDE_TYPE the default on
+	32-bit systems.  Being able to use 64-bit values without leaping
+	to mp_int should help with performance.
+	* generic/tclObj.c:	Bug fixes in the #undef NO_WIDE_TYPE
+	* generic/tclExecute.c:	configuration.
+
 	* generic/tclExecute.c:	Improved performance of comparison opcodes
 	and bitwise operations and removed yet more dead code.
 
