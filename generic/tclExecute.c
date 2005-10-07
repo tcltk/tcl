@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.52 2005/10/07 15:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.53 2005/10/07 18:01:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2537,34 +2537,6 @@ TclExecuteByteCode(interp, codePtr)
     doCondJump:
 	valuePtr = *tosPtr;
 
-#if 0
-	if (valuePtr->typePtr == &tclIntType) {
-	    b = (valuePtr->internalRep.longValue != 0);
-	} else if (valuePtr->typePtr == &tclDoubleType) {
-	    b = (valuePtr->internalRep.doubleValue != 0.0);
-	} else if (valuePtr->typePtr == &tclWideIntType) {
-	    Tcl_WideInt w;
-
-	    TclGetWide(w,valuePtr);
-	    b = (w != W0);
-	} else {
-	    /*
-	     * Taking b's address impedes it being a register variable (in gcc
-	     * at least), so we avoid doing it.
-	     */
-	    int b1;
-	    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b1);
-	    if (result != TCL_OK) {
-		if ((*pc == INST_JUMP_FALSE1) || (*pc == INST_JUMP_FALSE4)) {
-		    jmpOffset[1] = jmpOffset[0];
-		}
-		TRACE_WITH_OBJ(("%d => ERROR: ", jmpOffset[1]),
-			Tcl_GetObjResult(interp));
-		goto checkForCatch;
-	    }
-	    b = b1;
-	}
-#else
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
@@ -2574,7 +2546,6 @@ TclExecuteByteCode(interp, codePtr)
 		    ? 0 : 1]), Tcl_GetObjResult(interp));
 	    goto checkForCatch;
 	}
-#endif
 
 #ifdef TCL_COMPILE_DEBUG
 	if (b) {
@@ -3550,446 +3521,6 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(0, 2, 1);
     }
 
-#if 0
-/*
-    case INST_EQ:
-    case INST_NEQ:
-    case INST_LT:
-    case INST_GT:
-    case INST_LE:
-    case INST_GE:*/ {
-	/*
-	 * Any type is allowed but the two operands must have the same type.
-	 * We will compute value op value2.
-	 */
-
-	double d1 = 0.0;	/* Init. avoids compiler warning. */
-	double d2 = 0.0;	/* Init. avoids compiler warning. */
-	long iResult = 0;	/* Init. avoids compiler warning. */
-	Tcl_Obj *valuePtr, *value2Ptr;
-
-#if 0
-	long i;
-	Tcl_WideInt w;
-	int length;
-	char *s1 = NULL;	/* Init. avoids compiler warning. */
-	char *s2 = NULL;	/* Init. avoids compiler warning. */
-	long i2 = 0;		/* Init. avoids compiler warning. */
-	Tcl_ObjType *t1Ptr, *t2Ptr;
-
-
-	value2Ptr = *tosPtr;
-	valuePtr  = *(tosPtr - 1);
-
-	/*
-	 * Be careful in the equal-object case; 'NaN' isn't supposed to be
-	 * equal to even itself. [Bug 761471]
-	 */
-
-	t1Ptr = valuePtr->typePtr;
-	if (valuePtr == value2Ptr) {
-	    /*
-	     * If we are numeric already, or a dictionary (which is never like
-	     * a single-element list), we can proceed to the main equality
-	     * check right now.  Otherwise, we need to try to coerce to a
-	     * numeric type so we can see if we've got a NaN but haven't
-	     * parsed it as numeric.
-	     */
-	    if (!IS_NUMERIC_TYPE(t1Ptr) && (t1Ptr != &tclDictType)) {
-		if (t1Ptr == &tclListType) {
-		    int length;
-		    /*
-		     * Only a list of length 1 can be NaN or such things.
-		     */
-		    (void) Tcl_ListObjLength(NULL, valuePtr, &length);
-		    if (length == 1) {
-			goto mustConvertForNaNCheck;
-		    }
-		} else {
-		    /*
-		     * Too bad, we'll have to compute the string and try the
-		     * conversion
-		     */
-
-		  mustConvertForNaNCheck:
-		    s1 = Tcl_GetStringFromObj(valuePtr, &length);
-		    if (TclLooksLikeInt(s1, length)) {
-			GET_WIDE_OR_INT(iResult, valuePtr, i, w);
-		    } else {
-			(void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-				valuePtr, &d1);
-		    }
-		    t1Ptr = valuePtr->typePtr;
-		}
-	    }
-
-	    switch (*pc) {
-	    case INST_EQ:
-	    case INST_LE:
-	    case INST_GE:
-		iResult = !((t1Ptr == &tclDoubleType)
-			&& IS_NAN(valuePtr->internalRep.doubleValue));
-		break;
-	    case INST_LT:
-	    case INST_GT:
-		iResult = 0;
-		break;
-	    case INST_NEQ:
-		iResult = ((t1Ptr == &tclDoubleType)
-			&& IS_NAN(valuePtr->internalRep.doubleValue));
-		break;
-	    }
-	    goto foundResult;
-	}
-
-	t2Ptr = value2Ptr->typePtr;
-
-	/*
-	 * We only want to coerce numeric validation if neither type is NULL.
-	 * A NULL type means the arg is essentially an empty object ("", {} or
-	 * [list]).
-	 */
-	if (!(	   (!t1Ptr && !valuePtr->bytes)
-		|| (valuePtr->bytes && !valuePtr->length)
-		|| (!t2Ptr && !value2Ptr->bytes)
-		|| (value2Ptr->bytes && !value2Ptr->length))) {
-	    if (!IS_NUMERIC_TYPE(t1Ptr)) {
-		s1 = Tcl_GetStringFromObj(valuePtr, &length);
-		if (TclLooksLikeInt(s1, length)) {
-		    GET_WIDE_OR_INT(iResult, valuePtr, i, w);
-		} else {
-		    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-			    valuePtr, &d1);
-		}
-		t1Ptr = valuePtr->typePtr;
-	    }
-	    if (!IS_NUMERIC_TYPE(t2Ptr)) {
-		s2 = Tcl_GetStringFromObj(value2Ptr, &length);
-		if (TclLooksLikeInt(s2, length)) {
-		    GET_WIDE_OR_INT(iResult, value2Ptr, i2, w);
-		} else {
-		    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-			    value2Ptr, &d2);
-		}
-		t2Ptr = value2Ptr->typePtr;
-	    }
-	}
-	if (!IS_NUMERIC_TYPE(t1Ptr) || !IS_NUMERIC_TYPE(t2Ptr)) {
-	    /*
-	     * One operand is not numeric. Compare as strings.  NOTE: strcmp
-	     * is not correct for \x00 < \x01, but that is unlikely to occur
-	     * here.  We could use the TclUtfNCmp2 to handle this.
-	     */
-	    int s1len, s2len;
-	    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
-	    switch (*pc) {
-	    case INST_EQ:
-		if (s1len == s2len) {
-		    iResult = (strcmp(s1, s2) == 0);
-		} else {
-		    iResult = 0;
-		}
-		break;
-	    case INST_NEQ:
-		if (s1len == s2len) {
-		    iResult = (strcmp(s1, s2) != 0);
-		} else {
-		    iResult = 1;
-		}
-		break;
-	    case INST_LT:
-		iResult = (strcmp(s1, s2) < 0);
-		break;
-	    case INST_GT:
-		iResult = (strcmp(s1, s2) > 0);
-		break;
-	    case INST_LE:
-		iResult = (strcmp(s1, s2) <= 0);
-		break;
-	    case INST_GE:
-		iResult = (strcmp(s1, s2) >= 0);
-		break;
-	    }
-	} else if ((t1Ptr == &tclDoubleType) || (t2Ptr == &tclDoubleType)) {
-	    /*
-	     * Compare as doubles.
-	     */
-	    if (t1Ptr == &tclDoubleType) {
-		d1 = valuePtr->internalRep.doubleValue;
-		GET_DOUBLE_VALUE(d2, value2Ptr, t2Ptr);
-	    } else {	/* t1Ptr is integer, t2Ptr is double */
-		GET_DOUBLE_VALUE(d1, valuePtr, t1Ptr);
-		d2 = value2Ptr->internalRep.doubleValue;
-	    }
-	    switch (*pc) {
-	    case INST_EQ:
-		iResult = d1 == d2;
-		break;
-	    case INST_NEQ:
-		iResult = d1 != d2;
-		break;
-	    case INST_LT:
-		iResult = d1 < d2;
-		break;
-	    case INST_GT:
-		iResult = d1 > d2;
-		break;
-	    case INST_LE:
-		iResult = d1 <= d2;
-		break;
-	    case INST_GE:
-		iResult = d1 >= d2;
-		break;
-	    }
-	} else if ((t1Ptr == &tclWideIntType) || (t2Ptr == &tclWideIntType)) {
-	    Tcl_WideInt w2;
-	    /*
-	     * Compare as wide ints (neither are doubles)
-	     */
-	    if (t1Ptr == &tclIntType) {
-		w  = Tcl_LongAsWide(valuePtr->internalRep.longValue);
-		TclGetWide(w2,value2Ptr);
-	    } else if (t2Ptr == &tclIntType) {
-		TclGetWide(w,valuePtr);
-		w2 = Tcl_LongAsWide(value2Ptr->internalRep.longValue);
-	    } else {
-		TclGetWide(w,valuePtr);
-		TclGetWide(w2,value2Ptr);
-	    }
-	    switch (*pc) {
-	    case INST_EQ:
-		iResult = w == w2;
-		break;
-	    case INST_NEQ:
-		iResult = w != w2;
-		break;
-	    case INST_LT:
-		iResult = w < w2;
-		break;
-	    case INST_GT:
-		iResult = w > w2;
-		break;
-	    case INST_LE:
-		iResult = w <= w2;
-		break;
-	    case INST_GE:
-		iResult = w >= w2;
-		break;
-	    }
-	} else {
-	    /*
-	     * Compare as ints.
-	     */
-	    i  = valuePtr->internalRep.longValue;
-	    i2 = value2Ptr->internalRep.longValue;
-	    switch (*pc) {
-	    case INST_EQ:
-		iResult = i == i2;
-		break;
-	    case INST_NEQ:
-		iResult = i != i2;
-		break;
-	    case INST_LT:
-		iResult = i < i2;
-		break;
-	    case INST_GT:
-		iResult = i > i2;
-		break;
-	    case INST_LE:
-		iResult = i <= i2;
-		break;
-	    case INST_GE:
-		iResult = i >= i2;
-		break;
-	    }
-	}
-
-	TRACE(("%.20s %.20s => %ld\n", O2S(valuePtr), O2S(value2Ptr), iResult));
-#else
-	int arg1Numeric, arg2Numeric;
-	mp_int big1, big2;
-	int compare;
-	double dummy;
-
-	valuePtr = *(tosPtr - 1);
-	arg1Numeric = (TCL_OK == Tcl_GetDoubleFromObj(NULL, valuePtr, &d1));
-	if (!arg1Numeric && (valuePtr->typePtr == &tclDoubleType)) {
-	    /* NaN first arg: NaN != to everything, other compares are false */
-	    iResult = (*pc == INST_NEQ);
-	    goto foundResult;
-	}
-	value2Ptr = *tosPtr;
-	if (valuePtr == value2Ptr) {
-	    switch (*pc) {
-	    case INST_EQ:
-	    case INST_LE:
-	    case INST_GE:
-		iResult = 1;
-		goto foundResult;
-	    case INST_NEQ:
-	    case INST_LT:
-	    case INST_GT:
-		iResult = 0;
-		goto foundResult;
-	    }
-	}
-	arg2Numeric = (TCL_OK == Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2));
-	if (!arg2Numeric && (value2Ptr->typePtr == &tclDoubleType)) {
-	    /* NaN 2nd arg: NaN != to everything, other compares are false */
-	    iResult = (*pc == INST_NEQ);
-	    goto foundResult;
-	}
-	if (!arg1Numeric || !arg2Numeric) {
-	    /* At least one non-numeric argument - compare as strings */
-	    goto stringCompare;
-	}
-#if 0
-	if (valuePtr->typePtr == &tclDoubleType
-	    || value2Ptr->typePtr == &tclDoubleType) {
-	    /* At least one double - compare as doubles */
-	    switch (*pc) {
-	    case INST_EQ:
-		iResult = d1 == d2;
-		break;
-	    case INST_NEQ:
-		iResult = d1 != d2;
-		break;
-	    case INST_LT:
-		iResult = d1 < d2;
-		break;
-	    case INST_GT:
-		iResult = d1 > d2;
-		break;
-	    case INST_LE:
-		iResult = d1 <= d2;
-		break;
-	    case INST_GE:
-		iResult = d1 >= d2;
-		break;
-	    }
-	} else {
-#endif
-	if (valuePtr->typePtr == &tclDoubleType) {
-	    if (value2Ptr->typePtr == &tclDoubleType) {
-		/* Both args are double - compare as doubles */
-	    doubleCompare:
-		switch (*pc) {
-		case INST_EQ:
-		    iResult = d1 == d2;
-		    break;
-		case INST_NEQ:
-		    iResult = d1 != d2;
-		    break;
-		case INST_LT:
-		    iResult = d1 < d2;
-		    break;
-		case INST_GT:
-		    iResult = d1 > d2;
-		    break;
-		case INST_LE:
-		    iResult = d1 <= d2;
-		    break;
-		case INST_GE:
-		    iResult = d1 >= d2;
-		    break;
-		}
-		goto foundResult;
-	    }
-	    if (TclIsInfinite(d1)) {
-		dummy = d1;
-	    infinityCompare:
-		switch (*pc) {
-		case INST_EQ:
-		    iResult = 0;
-		    break;
-		case INST_NEQ:
-		    iResult = 1;
-		    break;
-		case INST_LT:
-		case INST_LE:
-		    iResult = (dummy < 0.0);
-		    break;
-		case INST_GT:
-		case INST_GE:
-		    iResult = (dummy > 0.0);
-		    break;
-		}
-		goto foundResult;
-	    }
-	    if (modf(d1, &dummy) != 0.0) {
-		goto doubleCompare;
-	    }
-	    TclInitBignumFromDouble(NULL, d1, &big1);
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	} else {
-	    if (value2Ptr->typePtr == &tclDoubleType) {
-		if (TclIsInfinite(d2)) {
-		    dummy = -d2;
-		    goto infinityCompare;
-		}
-		if (modf(d2, &dummy) != 0.0) {
-		    goto doubleCompare;
-		}
-		TclInitBignumFromDouble(NULL, d2, &big2);
-	    } else {
-		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    }
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	}
-	    /* Compare as bignums */
-	    /* TODO: more efficient comparisons of narrow native integers */
-	    compare = mp_cmp(&big1, &big2);
-	    mp_clear(&big1);
-	    mp_clear(&big2);
-	    switch (*pc) {
-	    case INST_EQ:
-		iResult = (compare == MP_EQ);
-		break;
-	    case INST_NEQ:
-		iResult = (compare != MP_EQ);
-		break;
-	    case INST_LT:
-		iResult = (compare == MP_LT);
-		break;
-	    case INST_GT:
-		iResult = (compare == MP_GT);
-		break;
-	    case INST_LE:
-		iResult = (compare != MP_GT);
-		break;
-	    case INST_GE:
-		iResult = (compare != MP_LT);
-		break;
-	    }
-#if 0
-	}
-#endif
-#endif
-
-	/*
-	 * Peep-hole optimisation: if you're about to jump, do jump from here.
-	 */
-
-    foundResult:
-	pc++;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((iResult? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((iResult? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((iResult? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = eePtr->constants[iResult];
-	NEXT_INST_F(0, 2, 1);
-    }
-#endif
-
     case INST_LSHIFT:
     case INST_RSHIFT: {
 	Tcl_Obj *value2Ptr = *tosPtr;
@@ -4162,158 +3693,226 @@ TclExecuteByteCode(interp, codePtr)
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND: {
-	Tcl_Obj *valuePtr, *value2Ptr;
-	mp_int big1, big2, bigResult;
-	mp_int *Pos, *Neg, *Other;
-	int numPos = 0;
+	ClientData ptr1, ptr2;
+	int type1, type2;
+	Tcl_Obj *value2Ptr = *tosPtr;
+	Tcl_Obj *valuePtr = *(tosPtr - 1);
 
-	value2Ptr = *tosPtr;
-	valuePtr  = *(tosPtr - 1);
-	result = Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	if (result != TCL_OK) {
+	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	if ((result != TCL_OK)
+		|| (type1 == TCL_NUMBER_NAN) || (type1 == TCL_NUMBER_DOUBLE)) {
+	    result = TCL_ERROR;
 	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (valuePtr->typePtr?
 		    valuePtr->typePtr->name : "null")));
 	    IllegalExprOperandType(interp, pc, valuePtr);
 	    goto checkForCatch;
 	}
-	result = Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	if (result != TCL_OK) {
-	    mp_clear(&big1);
+	result = TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+	if ((result != TCL_OK)
+		|| (type2 == TCL_NUMBER_NAN) || (type2 == TCL_NUMBER_DOUBLE)) {
+	    result = TCL_ERROR;
 	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n", O2S(valuePtr),
 		    O2S(value2Ptr), (value2Ptr->typePtr?
 		    value2Ptr->typePtr->name : "null")));
 	    IllegalExprOperandType(interp, pc, value2Ptr);
 	    goto checkForCatch;
 	}
-	if (mp_cmp_d(&big1, 0) != MP_LT) {
-	    numPos++;
-	    Pos = &big1;
-	    if (mp_cmp_d(&big2, 0) != MP_LT) {
-		numPos++;
-		Other = &big2;
+
+	if ((type1 == TCL_NUMBER_BIG) || (type2 == TCL_NUMBER_BIG)) {
+	    mp_int big1, big2, bigResult;
+	    mp_int *Pos, *Neg, *Other;
+	    int numPos = 0;
+
+	    if (Tcl_IsShared(valuePtr)) {
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	    } else {
-		Neg = &big2;
+		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
 	    }
-	} else {
-	    Neg = &big1;
-	    if (mp_cmp_d(&big2, 0) != MP_LT) {
-		numPos++;
-		Pos = &big2;
+	    if (Tcl_IsShared(value2Ptr)) {
+		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    } else {
-		Other = &big2;
+		Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
 	    }
+
+	    if (mp_cmp_d(&big1, 0) != MP_LT) {
+		numPos++;
+		Pos = &big1;
+		if (mp_cmp_d(&big2, 0) != MP_LT) {
+		    numPos++;
+		    Other = &big2;
+		} else {
+		    Neg = &big2;
+		}
+	    } else {
+		Neg = &big1;
+		if (mp_cmp_d(&big2, 0) != MP_LT) {
+		    numPos++;
+		    Pos = &big2;
+		} else {
+		    Other = &big2;
+		}
+	    }
+	    mp_init(&bigResult);
+
+	    switch (*pc) {
+	    case INST_BITAND:
+		switch (numPos) {
+		case 2:
+		    /* Both arguments positive, base case */
+		    mp_and(Pos, Other, &bigResult);
+		    break;
+		case 1:
+		    /* One arg positive; one negative
+		     * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1)) */
+		    mp_neg(Neg, Neg);
+		    mp_sub_d(Neg, 1, Neg);
+		    mp_xor(Pos, Neg, &bigResult);
+		    mp_and(Pos, &bigResult, &bigResult);
+		    break;
+		case 0:
+		    /* Both arguments negative 
+		     * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1 */
+		    mp_neg(Neg, Neg);
+		    mp_sub_d(Neg, 1, Neg);
+		    mp_neg(Other, Other);
+		    mp_sub_d(Other, 1, Other);
+		    mp_or(Neg, Other, &bigResult);
+		    mp_neg(&bigResult, &bigResult);
+		    mp_sub_d(&bigResult, 1, &bigResult);
+		    break;
+		}
+		break;
+
+	    case INST_BITOR:
+		switch (numPos) {
+		case 2:
+		    /* Both arguments positive, base case */
+		    mp_or(Pos, Other, &bigResult);
+		    break;
+		case 1:
+		    /* One arg positive; one negative
+		     * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1 */
+		    mp_neg(Neg, Neg);
+		    mp_sub_d(Neg, 1, Neg);
+		    mp_xor(Pos, Neg, &bigResult);
+		    mp_and(Neg, &bigResult, &bigResult);
+		    mp_neg(&bigResult, &bigResult);
+		    mp_sub_d(&bigResult, 1, &bigResult);
+		    break;
+		case 0:
+		    /* Both arguments negative 
+		     * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1 */
+		    mp_neg(Neg, Neg);
+		    mp_sub_d(Neg, 1, Neg);
+		    mp_neg(Other, Other);
+		    mp_sub_d(Other, 1, Other);
+		    mp_and(Neg, Other, &bigResult);
+		    mp_neg(&bigResult, &bigResult);
+		    mp_sub_d(&bigResult, 1, &bigResult);
+		    break;
+		}
+		break;
+
+	    case INST_BITXOR:
+		switch (numPos) {
+		case 2:
+		    /* Both arguments positive, base case */
+		    mp_xor(Pos, Other, &bigResult);
+		    break;
+		case 1:
+		    /* One arg positive; one negative
+		     * P^N = ~(P^~N) = -(P^(-N-1))-1
+		     */
+		    mp_neg(Neg, Neg);
+		    mp_sub_d(Neg, 1, Neg);
+		    mp_xor(Pos, Neg, &bigResult);
+		    mp_neg(&bigResult, &bigResult);
+		    mp_sub_d(&bigResult, 1, &bigResult);
+		    break;
+		case 0:
+		    /* Both arguments negative 
+		     * a ^ b = (~a ^ ~b) = (-a-1^-b-1) */
+		    mp_neg(Neg, Neg);
+		    mp_sub_d(Neg, 1, Neg);
+		    mp_neg(Other, Other);
+		    mp_sub_d(Other, 1, Other);
+		    mp_xor(Neg, Other, &bigResult);
+		    break;
+		}
+		break;
+	    }
+	
+	    mp_clear(&big1);
+	    mp_clear(&big2);
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_NewBignumObj(&bigResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    Tcl_SetBignumObj(valuePtr, &bigResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
 	}
-	mp_init(&bigResult);
-	switch (*pc) {
-	case INST_BITAND:
-	    switch (numPos) {
-	    case 2:
-		/* Both arguments positive, base case */
-		mp_and(Pos, Other, &bigResult);
+
+#ifndef NO_WIDE_TYPE
+	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE)) {
+	    Tcl_WideInt wResult, w1, w2;
+	    Tcl_GetWideIntFromObj(NULL, valuePtr, &w1);
+	    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+
+	    switch (*pc) {
+	    case INST_BITAND:
+		wResult = w1 & w2;
 		break;
-	    case 1: {
-		/* One arg positive; one negative
-		 * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1)) */
-		mp_neg(Neg, Neg);
-		mp_sub_d(Neg, 1, Neg);
-		mp_xor(Pos, Neg, &bigResult);
-		mp_and(Pos, &bigResult, &bigResult);
+	    case INST_BITOR:
+		wResult = w1 | w2;
 		break;
+	    case INST_BITXOR:
+		wResult = w1 ^ w2;
 	    }
-	    case 0: {
-		/* Both arguments negative 
-		 * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1 */
-		mp_neg(Neg, Neg);
-		mp_sub_d(Neg, 1, Neg);
-		mp_neg(Other, Other);
-		mp_sub_d(Other, 1, Other);
-		mp_or(Neg, Other, &bigResult);
-		mp_neg(&bigResult, &bigResult);
-		mp_sub_d(&bigResult, 1, &bigResult);
-		break;
+	
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (Tcl_IsShared(valuePtr)) {
+		TclNewWideIntObj(objResultPtr, wResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
 	    }
-	    }
-	    break;
-	case INST_BITOR:
-	    switch (numPos) {
-	    case 2:
-		/* Both arguments positive, base case */
-		mp_or(Pos, Other, &bigResult);
-		break;
-	    case 1: {
-		/* One arg positive; one negative
-		 * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1 */
-		mp_neg(Neg, Neg);
-		mp_sub_d(Neg, 1, Neg);
-		mp_xor(Pos, Neg, &bigResult);
-		mp_and(Neg, &bigResult, &bigResult);
-		mp_neg(&bigResult, &bigResult);
-		mp_sub_d(&bigResult, 1, &bigResult);
-		break;
-	    }
-	    case 0: {
-		/* Both arguments negative 
-		 * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1 */
-		mp_neg(Neg, Neg);
-		mp_sub_d(Neg, 1, Neg);
-		mp_neg(Other, Other);
-		mp_sub_d(Other, 1, Other);
-		mp_and(Neg, Other, &bigResult);
-		mp_neg(&bigResult, &bigResult);
-		mp_sub_d(&bigResult, 1, &bigResult);
-		break;
-	    }
-	    }
-	    break;
-	case INST_BITXOR:
-	    switch (numPos) {
-	    case 2:
-		/* Both arguments positive, base case */
-		mp_xor(Pos, Other, &bigResult);
-		break;
-	    case 1: {
-		/* One arg positive; one negative
-		 * P^N = ~(P^~N) = -(P^(-N-1))-1
-		 */
-		mp_neg(Neg, Neg);
-		mp_sub_d(Neg, 1, Neg);
-		mp_xor(Pos, Neg, &bigResult);
-		mp_neg(&bigResult, &bigResult);
-		mp_sub_d(&bigResult, 1, &bigResult);
-		break;
-	    }
-	    case 0: {
-		/* Both arguments negative 
-		 * a ^ b = (~a ^ ~b) = (-a-1^-b-1) */
-		mp_neg(Neg, Neg);
-		mp_sub_d(Neg, 1, Neg);
-		mp_neg(Other, Other);
-		mp_sub_d(Other, 1, Other);
-		mp_xor(Neg, Other, &bigResult);
-		break;
-	    }
-	    }
-	    break;
+	    TclSetWideIntObj(valuePtr, &wResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
 	}
-	mp_clear(&big1);
-	mp_clear(&big2);
-	TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (Tcl_IsShared(valuePtr)) {
-	    objResultPtr = Tcl_NewBignumObj(&bigResult);
-	    TRACE(("%s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(1, 2, 1);
+#endif
+	{
+	    long lResult, l1 = *((CONST long *)ptr1);
+	    long l2 = *((CONST long *)ptr2);
+
+	    switch (*pc) {
+	    case INST_BITAND:
+		lResult = l1 & l2;
+		break;
+	    case INST_BITOR:
+		lResult = l1 | l2;
+		break;
+	    case INST_BITXOR:
+		lResult = l1 ^ l2;
+	    }
+	
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if (Tcl_IsShared(valuePtr)) {
+		TclNewLongObj(objResultPtr, lResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+	    TclSetLongObj(valuePtr, lResult);
+	    TRACE(("%s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
 	}
-	Tcl_SetBignumObj(valuePtr, &bigResult);
-	TRACE(("%s\n", O2S(valuePtr)));
-	NEXT_INST_F(1, 1, 0);
     }
 
 #if 0
     case INST_MOD:
-    case INST_BITOR:
-    case INST_BITXOR:
-    case INST_BITAND: 
     {
 	/*
 	 * Only integers are allowed. We compute value op value2.
@@ -4358,8 +3957,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
 
-	switch (*pc) {
-	case INST_MOD:
+	do {
 	    /*
 	     * This code is tricky: C doesn't guarantee much about the
 	     * quotient or remainder, and results with a negative divisor are
@@ -4489,59 +4087,7 @@ TclExecuteByteCode(interp, codePtr)
 		rem = -rem;
 	    }
 	    iResult = rem;
-	    break;
-	case INST_BITOR:
-	    if (valuePtr->typePtr == &tclWideIntType
-		    || value2Ptr->typePtr == &tclWideIntType) {
-		/*
-		 * Promote to wide
-		 */
-		if (valuePtr->typePtr == &tclIntType) {
-		    w = Tcl_LongAsWide(i);
-		} else if (value2Ptr->typePtr == &tclIntType) {
-		    w2 = Tcl_LongAsWide(i2);
-		}
-		wResult = w | w2;
-		doWide = 1;
-		break;
-	    }
-	    iResult = i | i2;
-	    break;
-	case INST_BITXOR:
-	    if (valuePtr->typePtr == &tclWideIntType
-		    || value2Ptr->typePtr == &tclWideIntType) {
-		/*
-		 * Promote to wide
-		 */
-		if (valuePtr->typePtr == &tclIntType) {
-		    w = Tcl_LongAsWide(i);
-		} else if (value2Ptr->typePtr == &tclIntType) {
-		    w2 = Tcl_LongAsWide(i2);
-		}
-		wResult = w ^ w2;
-		doWide = 1;
-		break;
-	    }
-	    iResult = i ^ i2;
-	    break;
-	case INST_BITAND:
-	    if (valuePtr->typePtr == &tclWideIntType
-		    || value2Ptr->typePtr == &tclWideIntType) {
-		/*
-		 * Promote to wide
-		 */
-		if (valuePtr->typePtr == &tclIntType) {
-		    w = Tcl_LongAsWide(i);
-		} else if (value2Ptr->typePtr == &tclIntType) {
-		    w2 = Tcl_LongAsWide(i2);
-		}
-		wResult = w & w2;
-		doWide = 1;
-		break;
-	    }
-	    iResult = i & i2;
-	    break;
-	}
+	} while (0);
 
 	/*
 	 * Reuse the valuePtr object already on stack if possible.

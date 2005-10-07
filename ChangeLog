@@ -3,7 +3,7 @@
 	[kennykb-numerics-branch]
 
 	* generic/tclExecute.c:	Improved performance of comparison opcodes
-	and removed yet more dead code.
+	and bitwise operations and removed yet more dead code.
 
 2005-10-06  Don Porter  <dgp@users.sourceforge.net>
 
