@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.51 2005/10/06 22:04:22 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.52 2005/10/07 15:51:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2612,43 +2612,7 @@ TclExecuteByteCode(interp, codePtr)
 	int i1, i2, iResult;
 	Tcl_Obj *value2Ptr = *tosPtr;
 	Tcl_Obj *valuePtr  = *(tosPtr - 1);
-#if 0
-	Tcl_WideInt w;
-	char *s;
-	int length;
-	Tcl_ObjType *t1Ptr = valuePtr->typePtr;
-	Tcl_ObjType *t2Ptr = value2Ptr->typePtr;
 
-	if (t1Ptr == &tclIntType) {
-	    i1 = (valuePtr->internalRep.longValue != 0);
-	} else if (t1Ptr == &tclWideIntType) {
-	    TclGetWide(w,valuePtr);
-	    i1 = (w != W0);
-	} else if (t1Ptr == &tclDoubleType) {
-	    i1 = (valuePtr->internalRep.doubleValue != 0.0);
-	} else {
-	    s = Tcl_GetStringFromObj(valuePtr, &length);
-	    if (TclLooksLikeInt(s, length)) {
-		long i = 0;
-
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
-		if (valuePtr->typePtr == &tclIntType) {
-		    i1 = (i != 0);
-		} else {
-		    i1 = (w != W0);
-		}
-	    } else {
-		result = Tcl_GetBooleanFromObj(NULL, valuePtr, &i1);
-	    }
-	    if (result != TCL_OK) {
-		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
-			(t1Ptr? t1Ptr->name : "null")));
-		IllegalExprOperandType(interp, pc, valuePtr);
-		goto checkForCatch;
-	    }
-	}
-#else
-	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &i1);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
@@ -2656,39 +2620,7 @@ TclExecuteByteCode(interp, codePtr)
 	    IllegalExprOperandType(interp, pc, valuePtr);
 	    goto checkForCatch;
 	}
-#endif
 
-#if 0
-	if (t2Ptr == &tclIntType) {
-	    i2 = (value2Ptr->internalRep.longValue != 0);
-	} else if (t2Ptr == &tclWideIntType) {
-	    TclGetWide(w,value2Ptr);
-	    i2 = (w != W0);
-	} else if (t2Ptr == &tclDoubleType) {
-	    i2 = (value2Ptr->internalRep.doubleValue != 0.0);
-	} else {
-	    s = Tcl_GetStringFromObj(value2Ptr, &length);
-	    if (TclLooksLikeInt(s, length)) {
-		long i = 0;
-
-		GET_WIDE_OR_INT(result, value2Ptr, i, w);
-		if (value2Ptr->typePtr == &tclIntType) {
-		    i2 = (i != 0);
-		} else {
-		    i2 = (w != W0);
-		}
-	    } else {
-		result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
-	    }
-	    if (result != TCL_OK) {
-		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
-			(t2Ptr? t2Ptr->name : "null")));
-		IllegalExprOperandType(interp, pc, value2Ptr);
-		goto checkForCatch;
-	    }
-	}
-#else
-	/* TODO - consider optimization search for eePtr->constants */
 	result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
@@ -2696,28 +2628,12 @@ TclExecuteByteCode(interp, codePtr)
 	    IllegalExprOperandType(interp, pc, value2Ptr);
 	    goto checkForCatch;
 	}
-#endif
-
-	/*
-	 * Reuse the valuePtr object already on stack if possible.
-	 */
 
 	if (*pc == INST_LOR) {
 	    iResult = (i1 || i2);
 	} else {
 	    iResult = (i1 && i2);
 	}
-#if 0
-	if (Tcl_IsShared(valuePtr)) {
-	    TclNewLongObj(objResultPtr, iResult);
-	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
-	    NEXT_INST_F(1, 2, 1);
-	} else {	/* reuse the valuePtr object */
-	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
-	    TclSetLongObj(valuePtr, iResult);
-	    NEXT_INST_F(1, 1, 0);
-	}
-#endif
 	objResultPtr = eePtr->constants[iResult];
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 	NEXT_INST_F(1, 2, 1);
@@ -3394,6 +3310,254 @@ TclExecuteByteCode(interp, codePtr)
     case INST_GT:
     case INST_LE:
     case INST_GE: {
+	Tcl_Obj *valuePtr = *(tosPtr - 1);
+	Tcl_Obj *value2Ptr = *tosPtr;
+	ClientData ptr1, ptr2;
+	int iResult, compare, type1, type2;
+	double d1, d2, tmp;
+	long l1, l2;
+	mp_int big1, big2;
+
+	if (TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
+	    /* At least one non-numeric argument - compare as strings */
+	    goto stringCompare;
+	}
+	if (type1 == TCL_NUMBER_NAN) {
+	    /* NaN first arg: NaN != to everything, other compares are false */
+	    iResult = (*pc == INST_NEQ);
+	    goto foundResult;
+	}
+	if (valuePtr == value2Ptr) {
+	    compare = MP_EQ;
+	    goto convertComparison;
+	}
+	if (TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
+	    /* At least one non-numeric argument - compare as strings */
+	    goto stringCompare;
+	}
+	if (type2 == TCL_NUMBER_NAN) {
+	    /* NaN 2nd arg: NaN != to everything, other compares are false */
+	    iResult = (*pc == INST_NEQ);
+	    goto foundResult;
+	}
+	switch (type1) {
+	case TCL_NUMBER_LONG:
+	    l1 = *((CONST long *)ptr1);
+	    switch (type2) {
+	    case TCL_NUMBER_LONG:
+		l2 = *((CONST long *)ptr2);
+	    longCompare:
+		compare = (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
+		break;
+	    case TCL_NUMBER_DOUBLE:
+		d2 = *((CONST double *)ptr2);
+		d1 = (double) l1;
+
+		/* 
+		 * If the double has a fractional part, or if the
+		 * long can be converted to double without loss of
+		 * precision, then compare as doubles.
+		 */
+		if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
+			|| (l1 == (long) d1) || (modf(d2, &tmp) != 0.0)) {
+		    goto doubleCompare;
+		}
+		/*
+		 * Otherwise, to make comparision based on full precision,
+		 * need to convert the double to a suitably sized integer.
+		 *
+		 * Need this to get comparsions like
+		 * 	expr 20000000000000003 < 20000000000000004.0 
+		 * right.  Converting the first argument to double
+		 * will yield two double values that are equivalent
+		 * within double precision.  Converting the double to
+		 * an integer gets done exactly, then integer comparison
+		 * can tell the difference.
+		 */
+		if (d2 < (double)LONG_MIN) {
+		    compare = MP_GT;
+		    break;
+		}
+		if (d2 > (double)LONG_MAX) {
+		    compare = MP_LT;
+		    break;
+		}
+		l2 = (long) d2;
+		goto longCompare;
+	    default:
+		/* Second argument is wide or bignum */
+		if (Tcl_IsShared(value2Ptr)) {
+		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		}
+		if (mp_cmp_d(&big2, 0) == MP_LT) {
+		    compare = MP_GT;
+		} else {
+		    compare = MP_LT;
+		}
+		mp_clear(&big2);
+	    }
+	    break;
+
+	case TCL_NUMBER_DOUBLE:
+	    d1 = *((CONST double *)ptr1);
+	    switch (type2) {
+	    case TCL_NUMBER_DOUBLE:
+		d2 = *((CONST double *)ptr2);
+	    doubleCompare:
+		compare = (d1 < d2) ? MP_LT : ((d1 > d2) ? MP_GT : MP_EQ);
+		break;
+	    case TCL_NUMBER_LONG:
+		l2 = *((CONST long *)ptr2);
+		d2 = (double) l2;
+
+		if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
+			|| (l2 == (long) d2) || (modf(d1, &tmp) != 0.0)) {
+		    goto doubleCompare;
+		}
+		if (d1 < (double)LONG_MIN) {
+		    compare = MP_LT;
+		    break;
+		}
+		if (d1 > (double)LONG_MAX) {
+		    compare = MP_GT;
+		    break;
+		}
+		l1 = (long) d1;
+		goto longCompare;
+
+	    default:
+		/* Second argument is wide or bignum */
+		if (TclIsInfinite(d1)) {
+		    compare = (d1 > 0.0) ? MP_GT : MP_LT;
+		    break;
+		}
+		if (Tcl_IsShared(value2Ptr)) {
+		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		}
+		if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
+		    if (mp_cmp_d(&big2, 0) == MP_LT) {
+			compare = MP_GT;
+		    } else {
+			compare = MP_LT;
+		    }
+		    mp_clear(&big2);
+		    break;
+		}
+		if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
+			&& (modf(d1, &tmp) != 0.0)) {
+		    d2 = TclBignumToDouble( &big2);
+		    mp_clear(&big2);
+		    goto doubleCompare;
+		}
+		TclInitBignumFromDouble(NULL, d1, &big1);
+		goto bigCompare;
+	    }
+	    break;
+
+	default:
+	    /* First argument is wide or bignum */
+	    if (Tcl_IsShared(valuePtr)) {
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
+	    }
+	    switch (type2) {
+	    case TCL_NUMBER_LONG:
+		compare = mp_cmp_d(&big1, 0);
+		mp_clear(&big1);
+		break;
+	    case TCL_NUMBER_DOUBLE:
+		d2 = *((CONST double *)ptr2);
+		if (TclIsInfinite(d2)) {
+		    compare = (d2 > 0.0) ? MP_LT : MP_GT;
+		    mp_clear(&big1);
+		    break;
+		}
+		if ((d2 < (double)LONG_MAX) && (d2 > (double)LONG_MIN)) {
+		    compare = mp_cmp_d(&big1, 0);
+		    mp_clear(&big1);
+		    break;
+		}
+		if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
+			&& (modf(d2, &tmp) != 0.0)) {
+		    d1 = TclBignumToDouble( &big1);
+		    mp_clear(&big1);
+		    goto doubleCompare;
+		}
+		TclInitBignumFromDouble(NULL, d2, &big2);
+		goto bigCompare;
+	    default:
+		/* Second argument is wide or bignum */
+		if (Tcl_IsShared(value2Ptr)) {
+		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		}
+	    bigCompare:
+		compare = mp_cmp(&big1, &big2);
+		mp_clear(&big1);
+		mp_clear(&big2);
+	    }
+	}
+
+	/* Turn comparison outcome into appropriate result for opcode */
+
+    convertComparison:
+	switch (*pc) {
+	case INST_EQ:
+	    iResult = (compare == MP_EQ);
+	    break;
+	case INST_NEQ:
+	    iResult = (compare != MP_EQ);
+	    break;
+	case INST_LT:
+	    iResult = (compare == MP_LT);
+	    break;
+	case INST_GT:
+	    iResult = (compare == MP_GT);
+	    break;
+	case INST_LE:
+	    iResult = (compare != MP_GT);
+	    break;
+	case INST_GE:
+	    iResult = (compare != MP_LT);
+	    break;
+	}
+
+	/*
+	 * Peep-hole optimisation: if you're about to jump, do jump from here.
+	 */
+
+    foundResult:
+	pc++;
+#ifndef TCL_COMPILE_DEBUG
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((iResult? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((iResult? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((iResult? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
+	}
+#endif
+	objResultPtr = eePtr->constants[iResult];
+	NEXT_INST_F(0, 2, 1);
+    }
+
+#if 0
+/*
+    case INST_EQ:
+    case INST_NEQ:
+    case INST_LT:
+    case INST_GT:
+    case INST_LE:
+    case INST_GE:*/ {
 	/*
 	 * Any type is allowed but the two operands must have the same type.
 	 * We will compute value op value2.
@@ -3824,6 +3988,7 @@ TclExecuteByteCode(interp, codePtr)
 	objResultPtr = eePtr->constants[iResult];
 	NEXT_INST_F(0, 2, 1);
     }
+#endif
 
     case INST_LSHIFT:
     case INST_RSHIFT: {
@@ -4146,8 +4311,6 @@ TclExecuteByteCode(interp, codePtr)
 
 #if 0
     case INST_MOD:
-    case INST_LSHIFT:
-    case INST_RSHIFT:
     case INST_BITOR:
     case INST_BITXOR:
     case INST_BITAND: 
@@ -4326,118 +4489,6 @@ TclExecuteByteCode(interp, codePtr)
 		rem = -rem;
 	    }
 	    iResult = rem;
-	    break;
-	case INST_LSHIFT:
-	    /*
-	     * Shifts are never usefully 64-bits wide!
-	     */
-	    FORCE_LONG(value2Ptr, i2, w2);
-	    if (valuePtr->typePtr == &tclWideIntType) {
-#ifdef TCL_COMPILE_DEBUG
-		w2 = Tcl_LongAsWide(i2);
-#endif /* TCL_COMPILE_DEBUG */
-		wResult = w;
-		/*
-		 * Shift in steps when the shift gets large to prevent
-		 * annoying compiler/processor bugs. [Bug 868467]
-		 */
-		if (i2 >= 64) {
-		    wResult = Tcl_LongAsWide(0);
-		} else if (i2 > 60) {
-		    wResult = w << 30;
-		    wResult <<= 30;
-		    wResult <<= i2-60;
-		} else if (i2 > 30) {
-		    wResult = w << 30;
-		    wResult <<= i2-30;
-		} else {
-		    wResult = w << i2;
-		}
-		doWide = 1;
-		break;
-	    }
-	    /*
-	     * Shift in steps when the shift gets large to prevent annoying
-	     * compiler/processor bugs. [Bug 868467]
-	     */
-	    if (i2 >= 64) {
-		iResult = 0;
-	    } else if (i2 > 60) {
-		iResult = i << 30;
-		iResult <<= 30;
-		iResult <<= i2-60;
-	    } else if (i2 > 30) {
-		iResult = i << 30;
-		iResult <<= i2-30;
-	    } else {
-		iResult = i << i2;
-	    }
-	    break;
-	case INST_RSHIFT:
-	    /*
-	     * The following code is a bit tricky: it ensures that right
-	     * shifts propagate the sign bit even on machines where ">>" won't
-	     * do it by default.
-	     */
-	    /*
-	     * Shifts are never usefully 64-bits wide!
-	     */
-	    FORCE_LONG(value2Ptr, i2, w2);
-	    if (valuePtr->typePtr == &tclWideIntType) {
-#ifdef TCL_COMPILE_DEBUG
-		w2 = Tcl_LongAsWide(i2);
-#endif /* TCL_COMPILE_DEBUG */
-		if (w < 0) {
-		    wResult = ~w;
-		} else {
-		    wResult = w;
-		}
-		/*
-		 * Shift in steps when the shift gets large to prevent
-		 * annoying compiler/processor bugs. [Bug 868467]
-		 */
-		if (i2 >= 64) {
-		    wResult = Tcl_LongAsWide(0);
-		} else if (i2 > 60) {
-		    wResult >>= 30;
-		    wResult >>= 30;
-		    wResult >>= i2-60;
-		} else if (i2 > 30) {
-		    wResult >>= 30;
-		    wResult >>= i2-30;
-		} else {
-		    wResult >>= i2;
-		}
-		if (w < 0) {
-		    wResult = ~wResult;
-		}
-		doWide = 1;
-		break;
-	    }
-	    if (i < 0) {
-		iResult = ~i;
-	    } else {
-		iResult = i;
-	    }
-	    /*
-	     * Shift in steps when the shift gets large to prevent annoying
-	     * compiler/processor bugs. [Bug 868467]
-	     */
-	    if (i2 >= 64) {
-		iResult = 0;
-	    } else if (i2 > 60) {
-		iResult >>= 30;
-		iResult >>= 30;
-		iResult >>= i2-60;
-	    } else if (i2 > 30) {
-		iResult >>= 30;
-		iResult >>= i2-30;
-	    } else {
-		iResult >>= i2;
-	    }
-	    if (i < 0) {
-		iResult = ~iResult;
-	    }
 	    break;
 	case INST_BITOR:
 	    if (valuePtr->typePtr == &tclWideIntType
