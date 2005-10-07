@@ -1,3 +1,9 @@
+2005-10-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c (TraverseUnixTree): Adjust 2004-11-11 change to
+	* tests/fCmd.test (fCmd-20.2):           account for NFS special
+	files with a readdir rewind threshold. [Bug 1034337]
+
 2005-10-05  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclPipe.c (TclCreatePipeline): Fixed [SF Tcl Bug
