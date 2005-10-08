@@ -2,6 +2,9 @@
 
 	[kennykb-numerics-branch]
 
+	* generic/tclExecute.c:	Macro GetNumberFromObj() is version of
+	TclGetNumberFromObj() that saves a function call for common uses.
+
 	* generic/tclInt.h:	Made #undef NO_WIDE_TYPE the default on
 	32-bit systems.  Being able to use 64-bit values without leaping
 	to mp_int should help with performance.

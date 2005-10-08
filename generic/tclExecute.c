@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.54 2005/10/07 20:15:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.55 2005/10/08 01:07:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -330,6 +330,26 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     }
 #endif /* TCL_WIDE_INT_IS_LONG */
 #endif
+
+/*
+ * Macro used in this file to save a function call for common uses of
+ * TclGetNumberFromObj().  The ANSI C "prototype" is:
+ *
+ * MODULE_SCOPE int GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ *			ClientData *ptrPtr, int *tPtr);
+ */
+#define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr)				\
+    (((objPtr)->typePtr == &tclIntType)						\
+	?	(*(tPtr) = TCL_NUMBER_LONG,					\
+		*(ptrPtr) = (ClientData)(&((objPtr)->internalRep.longValue)),	\
+		TCL_OK) :							\
+    ((objPtr)->typePtr == &tclDoubleType)					\
+	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))			\
+		    ?	(*(tPtr) = TCL_NUMBER_NAN)				\
+		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),				\
+		*(ptrPtr) = (ClientData)(&((objPtr)->internalRep.doubleValue)),	\
+		TCL_OK) :							\
+    TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 
 static Tcl_ObjType dictIteratorType = {
     "dictIterator",
@@ -1043,8 +1063,8 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
-    do {if ((TclGetNumberFromObj(interp, valuePtr, &ptr1, &type1) == TCL_OK)
-	    && (TclGetNumberFromObj(interp, incrPtr, &ptr2, &type2) == TCL_OK)
+    do {if ((GetNumberFromObj(interp, valuePtr, &ptr1, &type1) == TCL_OK)
+	    && (GetNumberFromObj(interp, incrPtr, &ptr2, &type2) == TCL_OK)
 	    && (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	Tcl_WideInt w1 = (Tcl_WideInt)(*(CONST long *)ptr1);
 	Tcl_WideInt w2 = (Tcl_WideInt)(*(CONST long *)ptr2);
@@ -3289,7 +3309,7 @@ TclExecuteByteCode(interp, codePtr)
 	long l1, l2;
 	mp_int big1, big2;
 
-	if (TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
+	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	    /* At least one non-numeric argument - compare as strings */
 	    goto stringCompare;
 	}
@@ -3302,7 +3322,7 @@ TclExecuteByteCode(interp, codePtr)
 	    compare = MP_EQ;
 	    goto convertComparison;
 	}
-	if (TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
+	if (GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2) != TCL_OK) {
 	    /* At least one non-numeric argument - compare as strings */
 	    goto stringCompare;
 	}
@@ -3529,7 +3549,7 @@ TclExecuteByteCode(interp, codePtr)
 	int invalid, shift, type1, type2;
 	long l;
 
-	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
 		|| (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
 	    result = TCL_ERROR;
@@ -3540,7 +3560,7 @@ TclExecuteByteCode(interp, codePtr)
 	    goto checkForCatch;
 	}
 
-	result = TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+	result = GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 	if ((result != TCL_OK)
 		|| (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
 	    result = TCL_ERROR;
@@ -3698,7 +3718,7 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Obj *value2Ptr = *tosPtr;
 	Tcl_Obj *valuePtr = *(tosPtr - 1);
 
-	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
 		|| (type1 == TCL_NUMBER_NAN) || (type1 == TCL_NUMBER_DOUBLE)) {
 	    result = TCL_ERROR;
@@ -3708,7 +3728,7 @@ TclExecuteByteCode(interp, codePtr)
 	    IllegalExprOperandType(interp, pc, valuePtr);
 	    goto checkForCatch;
 	}
-	result = TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+	result = GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 	if ((result != TCL_OK)
 		|| (type2 == TCL_NUMBER_NAN) || (type2 == TCL_NUMBER_DOUBLE)) {
 	    result = TCL_ERROR;
@@ -4124,7 +4144,7 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Obj *value2Ptr = *tosPtr;
 	Tcl_Obj *valuePtr = *(tosPtr - 1);
 
-	result = TclGetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
+	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK) 
 #ifndef ACCEPT_NAN
 		|| (type1 == TCL_NUMBER_NAN)
@@ -4145,7 +4165,7 @@ TclExecuteByteCode(interp, codePtr)
 	}
 #endif
 
-	result = TclGetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
+	result = GetNumberFromObj(NULL, value2Ptr, &ptr2, &type2);
 	if ((result != TCL_OK) 
 #ifndef ACCEPT_NAN
 		|| (type2 == TCL_NUMBER_NAN)
@@ -4850,7 +4870,7 @@ TclExecuteByteCode(interp, codePtr)
 	int type;
 	Tcl_Obj *valuePtr = *tosPtr;
 
-	result = TclGetNumberFromObj(NULL, valuePtr, &ptr, &type);
+	result = GetNumberFromObj(NULL, valuePtr, &ptr, &type);
 	if ((result != TCL_OK)
 		|| (type == TCL_NUMBER_NAN) || (type == TCL_NUMBER_DOUBLE)) {
 	    /* ... ~$NonInteger => raise an error */
@@ -4898,7 +4918,7 @@ TclExecuteByteCode(interp, codePtr)
 	int type;
 	Tcl_Obj *valuePtr = *tosPtr;
 
-	result = TclGetNumberFromObj(NULL, valuePtr, &ptr, &type);
+	result = GetNumberFromObj(NULL, valuePtr, &ptr, &type);
 	if ((result != TCL_OK)
 #ifndef ACCEPT_NAN
 		|| (type == TCL_NUMBER_NAN)
@@ -4987,7 +5007,7 @@ TclExecuteByteCode(interp, codePtr)
 	int type;
 	Tcl_Obj *valuePtr = *tosPtr;
 
-	if (TclGetNumberFromObj(NULL, valuePtr, &ptr, &type) != TCL_OK) {
+	if (GetNumberFromObj(NULL, valuePtr, &ptr, &type) != TCL_OK) {
 	    if (*pc == INST_UPLUS) {
 		/* ... +$NonNumeric => raise an error */
 		result = TCL_ERROR;
@@ -6222,7 +6242,7 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	operator = "**";
     }
 
-    if (TclGetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
+    if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
 	int numBytes;
 	CONST char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
 	if (numBytes == 0) {
