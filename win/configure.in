@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.82.2.3 2005/10/08 22:12:04 msofer Exp $
+# RCS: @(#) $Id: configure.in,v 1.82.2.4 2005/10/08 23:15:59 msofer Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -364,15 +364,6 @@ AC_SUBST(MAN2TCLFLAGS)
 #------------------------------------------------------------------------
 
 TCL_SHARED_BUILD=${SHARED_BUILD}
-
-#--------------------------------------------------------------------
-# Define the size of pointers and of the different integer types
-#--------------------------------------------------------------------
-
-AC_CHECK_SIZEOF( short )
-AC_CHECK_SIZEOF( int )
-AC_CHECK_SIZEOF( long )
-AC_CHECK_SIZEOF( void * )
 
 #--------------------------------------------------------------------
 # Define the size of pointers and of the different integer types

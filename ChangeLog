@@ -2,6 +2,14 @@
 
 	* unix/configure:
 	* unix/configure.in:
+	* win/configure.in: reverting last patch: pilot error.
+
+	*** NOTE: win/configure.in patched, but autoconf NOT run.
+
+2005-10-08  Miguel Sofer <msofer@users.sf.net>
+
+	* unix/configure:
+	* unix/configure.in:
 	* win/configure.in: changes that somehow got left out of the
 	2005-06-12 merge.
 
