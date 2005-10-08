@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.2 2005/05/10 18:34:51 kennykb Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.3 2005/10/08 14:42:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -130,6 +130,86 @@ TclBNInitBignumFromLong( mp_int* a, long initVal )
 	a->sign = MP_ZPOS;
 	v = initVal;
     }
+
+    /* Store the magnitude in the bignum. */
+
+    p = a->dp;
+    while ( v ) {
+	*p++ = (mp_digit) ( v & MP_MASK );
+	v >>= MP_DIGIT_BIT;
+    }
+    a->used = p - a->dp;
+    
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBNInitBignumFromWideInt --
+ *
+ *	Allocate and initialize a 'bignum' from a Tcl_WideInt
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The 'bignum' is constructed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+extern void
+TclBNInitBignumFromWideInt(mp_int* a, 
+				/* Bignum to initialize */
+			    Tcl_WideInt v)
+				/* Initial value */
+{
+    if (v < (Tcl_WideInt)0) {
+	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)(-v));
+	mp_neg(a, a);
+    } else {
+	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBNInitBignumFromWideUInt --
+ *
+ *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The 'bignum' is constructed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+extern void
+TclBNInitBignumFromWideUInt(mp_int* a, 
+				/* Bignum to initialize */
+			    Tcl_WideUInt v)
+				/* Initial value */
+{
+
+    int status;
+    mp_digit* p;
+
+    /*
+     * Allocate enough memory to hold the largest possible Tcl_WideUInt 
+     */
+
+    status = mp_init_size(a, ((CHAR_BIT * sizeof( Tcl_WideUInt )
+			       + DIGIT_BIT - 1)
+			      / DIGIT_BIT));
+    if (status != MP_OKAY) {
+	Tcl_Panic( "initialization failure in TclBNInitBignumFromWideUInt" );
+    }
+    
+    a->sign = MP_ZPOS;
 
     /* Store the magnitude in the bignum. */
 
