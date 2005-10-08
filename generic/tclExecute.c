@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.55 2005/10/08 01:07:42 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.56 2005/10/08 06:07:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -338,18 +338,80 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * MODULE_SCOPE int GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  *			ClientData *ptrPtr, int *tPtr);
  */
-#define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr)				\
-    (((objPtr)->typePtr == &tclIntType)						\
-	?	(*(tPtr) = TCL_NUMBER_LONG,					\
-		*(ptrPtr) = (ClientData)(&((objPtr)->internalRep.longValue)),	\
-		TCL_OK) :							\
-    ((objPtr)->typePtr == &tclDoubleType)					\
-	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))			\
-		    ?	(*(tPtr) = TCL_NUMBER_NAN)				\
-		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),				\
-		*(ptrPtr) = (ClientData)(&((objPtr)->internalRep.doubleValue)),	\
-		TCL_OK) :							\
+
+#ifdef TCL_WIDE_INT_IS_LONG
+
+#define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr)			\
+    (((objPtr)->typePtr == &tclIntType)					\
+	?	(*(tPtr) = TCL_NUMBER_LONG,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
+    ((objPtr)->typePtr == &tclDoubleType)				\
+	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
+		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
+		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
+
+#else
+
+#define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr)			\
+    (((objPtr)->typePtr == &tclIntType)					\
+	?	(*(tPtr) = TCL_NUMBER_LONG,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.longValue)), TCL_OK) :	\
+    ((objPtr)->typePtr == &tclWideIntType)				\
+	?	(*(tPtr) = TCL_NUMBER_WIDE,				\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
+    ((objPtr)->typePtr == &tclDoubleType)				\
+	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
+		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
+		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
+		*(ptrPtr) = (ClientData)				\
+		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
+    TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
+
+#endif
+
+/*
+ * Macro used in this file to save a function call for common uses of
+ * Tcl_GetBooleanFromObj().  The ANSI C "prototype" is:
+ *
+ * MODULE_SCOPE int TclGetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ *			int *boolPtr);
+ */
+
+#define TclGetBooleanFromObj(interp, objPtr, boolPtr)			\
+    ((((objPtr)->typePtr == &tclIntType)				\
+	|| ((objPtr)->typePtr == &tclIntType))				\
+	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
+
+/*
+ * Macro used in this file to save a function call for common uses of
+ * Tcl_GetWideIntFromObj().  The ANSI C "prototype" is:
+ *
+ * MODULE_SCOPE int TclGetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ *			Tcl_WideInt *wideIntPtr);
+ */
+
+#ifdef TCL_WIDE_INT_IS_LONG
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
+    (((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#else
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
+    (((objPtr)->typePtr == &tclWideIntType)				\
+	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
+    ((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#endif
 
 static Tcl_ObjType dictIteratorType = {
     "dictIterator",
@@ -1063,30 +1125,39 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
-    do {if ((GetNumberFromObj(interp, valuePtr, &ptr1, &type1) == TCL_OK)
-	    && (GetNumberFromObj(interp, incrPtr, &ptr2, &type2) == TCL_OK)
-	    && (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
-	Tcl_WideInt w1 = (Tcl_WideInt)(*(CONST long *)ptr1);
-	Tcl_WideInt w2 = (Tcl_WideInt)(*(CONST long *)ptr2);
-	Tcl_WideInt sum = w1 + w2;
-#ifdef TCL_WIDE_INT_IS_LONG
-	/* Must check for overflow */
-	if (((w1 < 0) && (w2 < 0) && (sum > 0))
-		|| ((w1 > 0) && (w2 > 0) && (sum < 0))) {
-	    break;
-	}
-#endif
-	Tcl_SetWideIntObj(valuePtr, sum);
-	return TCL_OK;
-    }} while (0);
-
-    if (Tcl_GetBignumAndClearObj(interp, valuePtr, &value) != TCL_OK) {
-	return TCL_ERROR;
+    if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
+	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	/* Produce error message (reparse?!) */
+	return Tcl_GetIntFromObj(interp, valuePtr, &type1);
     }
-    if (Tcl_GetBignumFromObj(interp, incrPtr, &incr) != TCL_OK) {
+    if ((GetNumberFromObj(NULL, incrPtr, &ptr2, &type2) != TCL_OK)
+	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	/* Produce error message (reparse?!) */
+	Tcl_GetIntFromObj(interp, incrPtr, &type1);
 	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	return TCL_ERROR;
     }
+    do {if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
+	Tcl_WideInt w1, w2, sum;
+	TclGetWideIntFromObj(NULL, valuePtr, &w1);
+	TclGetWideIntFromObj(NULL, incrPtr, &w2);
+	sum = w1 + w2;
+#ifndef NO_WIDE_TYPE
+	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
+#endif
+	{
+	    /* Check for overflow */
+	    if (((w1 < 0) && (w2 < 0) && (sum > 0))
+		    || ((w1 > 0) && (w2 > 0) && (sum < 0))) {
+		break;
+	    }
+	}
+	Tcl_SetWideIntObj(valuePtr, sum);
+	return TCL_OK;
+    }} while (0);
+    
+    Tcl_GetBignumAndClearObj(interp, valuePtr, &value);
+    Tcl_GetBignumFromObj(interp, incrPtr, &incr);
     mp_add(&value, &incr, &value);
     mp_clear(&incr);
     Tcl_SetBignumObj(valuePtr, &value);
@@ -2559,7 +2630,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for eePtr->constants */
-	result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
+	result = TclGetBooleanFromObj(interp, valuePtr, &b);
 	if (result != TCL_OK) {
 	    TRACE_WITH_OBJ(("%d => ERROR: ", jmpOffset[
 		    ((*pc == INST_JUMP_FALSE1) || (*pc == INST_JUMP_FALSE4))
@@ -2604,7 +2675,7 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Obj *value2Ptr = *tosPtr;
 	Tcl_Obj *valuePtr  = *(tosPtr - 1);
 
-	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &i1);
+	result = TclGetBooleanFromObj(NULL, valuePtr, &i1);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
@@ -2612,7 +2683,7 @@ TclExecuteByteCode(interp, codePtr)
 	    goto checkForCatch;
 	}
 
-	result = Tcl_GetBooleanFromObj(NULL, value2Ptr, &i2);
+	result = TclGetBooleanFromObj(NULL, value2Ptr, &i2);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
@@ -3307,6 +3378,7 @@ TclExecuteByteCode(interp, codePtr)
 	int iResult, compare, type1, type2;
 	double d1, d2, tmp;
 	long l1, l2;
+	Tcl_WideInt w1, w2;
 	mp_int big1, big2;
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
@@ -3340,6 +3412,12 @@ TclExecuteByteCode(interp, codePtr)
 	    longCompare:
 		compare = (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
 		break;
+#ifndef NO_WIDE_TYPE
+	    case TCL_NUMBER_WIDE:
+		w2 = *((CONST Tcl_WideInt *)ptr2);
+		w1 = (Tcl_WideInt)l1;
+		goto wideCompare;
+#endif
 	    case TCL_NUMBER_DOUBLE:
 		d2 = *((CONST double *)ptr2);
 		d1 = (double) l1;
@@ -3375,8 +3453,7 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		l2 = (long) d2;
 		goto longCompare;
-	    default:
-		/* Second argument is wide or bignum */
+	    case TCL_NUMBER_BIG:
 		if (Tcl_IsShared(value2Ptr)) {
 		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 		} else {
@@ -3390,6 +3467,52 @@ TclExecuteByteCode(interp, codePtr)
 		mp_clear(&big2);
 	    }
 	    break;
+
+#ifndef NO_WIDE_TYPE
+	case TCL_NUMBER_WIDE:
+	    w1 = *((CONST Tcl_WideInt *)ptr1);
+	    switch (type2) {
+	    case TCL_NUMBER_WIDE:
+		w2 = *((CONST Tcl_WideInt *)ptr2);
+	    wideCompare:
+		compare = (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
+		break;
+	    case TCL_NUMBER_LONG:
+		l2 = *((CONST long *)ptr2);
+		w2 = (Tcl_WideInt)l2;
+		goto wideCompare;
+	    case TCL_NUMBER_DOUBLE:
+		d2 = *((CONST double *)ptr2);
+		d1 = (double) w1;
+		if ((DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt))
+			|| (w1 == (Tcl_WideInt) d1) || (modf(d2, &tmp) != 0.0)) {
+		    goto doubleCompare;
+		}
+		if (d2 < (double)LLONG_MIN) {
+		    compare = MP_GT;
+		    break;
+		}
+		if (d2 > (double)LLONG_MAX) {
+		    compare = MP_LT;
+		    break;
+		}
+		w2 = (Tcl_WideInt) d2;
+		goto wideCompare;
+	    case TCL_NUMBER_BIG:
+		if (Tcl_IsShared(value2Ptr)) {
+		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		}
+		if (mp_cmp_d(&big2, 0) == MP_LT) {
+		    compare = MP_GT;
+		} else {
+		    compare = MP_LT;
+		}
+		mp_clear(&big2);
+	    }
+	    break;
+#endif
 
 	case TCL_NUMBER_DOUBLE:
 	    d1 = *((CONST double *)ptr1);
@@ -3417,9 +3540,26 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		l1 = (long) d1;
 		goto longCompare;
-
-	    default:
-		/* Second argument is wide or bignum */
+#ifndef NO_WIDE_TYPE
+	    case TCL_NUMBER_WIDE:
+		w2 = *((CONST Tcl_WideInt *)ptr2);
+		d2 = (double) w2;
+		if ((DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt))
+			|| (w2 == (Tcl_WideInt) d2) || (modf(d1, &tmp) != 0.0)) {
+		    goto doubleCompare;
+		}
+		if (d1 < (double)LLONG_MIN) {
+		    compare = MP_LT;
+		    break;
+		}
+		if (d1 > (double)LLONG_MAX) {
+		    compare = MP_GT;
+		    break;
+		}
+		w1 = (Tcl_WideInt) d1;
+		goto wideCompare;
+#endif
+	    case TCL_NUMBER_BIG:
 		if (TclIsInfinite(d1)) {
 		    compare = (d1 > 0.0) ? MP_GT : MP_LT;
 		    break;
@@ -3449,14 +3589,16 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    break;
 
-	default:
-	    /* First argument is wide or bignum */
+	case TCL_NUMBER_BIG:
 	    if (Tcl_IsShared(valuePtr)) {
 		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	    } else {
 		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
 	    }
 	    switch (type2) {
+#ifndef NO_WIDE_TYPE
+	    case TCL_NUMBER_WIDE:
+#endif
 	    case TCL_NUMBER_LONG:
 		compare = mp_cmp_d(&big1, 0);
 		mp_clear(&big1);
@@ -3481,8 +3623,7 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		TclInitBignumFromDouble(NULL, d2, &big2);
 		goto bigCompare;
-	    default:
-		/* Second argument is wide or bignum */
+	    case TCL_NUMBER_BIG:
 		if (Tcl_IsShared(value2Ptr)) {
 		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 		} else {
@@ -3624,6 +3765,35 @@ TclExecuteByteCode(interp, codePtr)
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
 	    }
+
+	    /* Handle shifts within the native wide range */
+	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+	    if ((type1 != TCL_NUMBER_BIG)
+		    && (shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
+		Tcl_WideInt w;
+		TclGetWideIntFromObj(NULL, valuePtr, &w);
+		if (!(((w>0) ? w : ~w) 
+			& -(((Tcl_WideInt)1)
+			<<(CHAR_BIT*sizeof(Tcl_WideInt)-1-shift)))) {
+		    objResultPtr = Tcl_NewWideIntObj(w<<shift);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+
+/*
+	    if ((type1 == TCL_NUMBER_LONG) && (shift < CHAR_BIT*sizeof(long))
+		    && (l = *((CONST long *)ptr1)) 
+		    && !(((l>0) ? l : ~l) 
+			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
+		TclNewLongObj(objResultPtr, (l<<shift));
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+*/
+
+
+
 	} else {
 	    /* Quickly force large right shifts to 0 or -1 */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -3661,7 +3831,7 @@ TclExecuteByteCode(interp, codePtr)
 	    shift = (int)(*((CONST long *)ptr2));
 	    /* Handle shifts within the native long range */
 	    if (type1 == TCL_NUMBER_LONG) {
-		l = *((CONST long *)ptr1);
+		long l = *((CONST long *)ptr1);
 		if (shift >= CHAR_BIT*sizeof(long)) {
 		    if (l >= (long)0) {
 			objResultPtr = eePtr->constants[0];
@@ -3674,6 +3844,23 @@ TclExecuteByteCode(interp, codePtr)
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
 	    }
+#ifndef NO_WIDE_TYPE
+	    /* Handle shifts within the native wide range */
+	    if (type1 == TCL_NUMBER_WIDE) {
+		Tcl_WideInt w = *((CONST Tcl_WideInt *)ptr1);
+		if (shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
+		    if (w >= (Tcl_WideInt)0) {
+			objResultPtr = eePtr->constants[0];
+		    } else {
+			TclNewIntObj(objResultPtr, -1);
+		    }
+		} else {
+		    objResultPtr = Tcl_NewWideIntObj(w >> shift);
+		}
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+#endif
 	}
 
 	{
@@ -3879,8 +4066,8 @@ TclExecuteByteCode(interp, codePtr)
 #ifndef NO_WIDE_TYPE
 	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE)) {
 	    Tcl_WideInt wResult, w1, w2;
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &w1);
-	    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
+	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
 
 	    switch (*pc) {
 	    case INST_BITAND:
@@ -4180,7 +4367,7 @@ TclExecuteByteCode(interp, codePtr)
 	}
 
 #ifdef ACCEPT_NAN
-	if (value2Ptr->typePtr == &tclDoubleType) {
+	if (type2 == TCL_NUMBER_NAN) {
 	    /* NaN second argument -> result is also NaN */
 	    objResultPtr = value2Ptr;
 	    NEXT_INST_F(1, 2, 1);
@@ -4247,8 +4434,8 @@ TclExecuteByteCode(interp, codePtr)
 	if ((*pc == INST_MULT) && (sizeof(Tcl_WideInt) >= 2*sizeof(long))
 		&& (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	    Tcl_WideInt w1, w2, wResult;
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &w1);
-	    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
+	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
 
 	    wResult = w1 * w2;
 
@@ -4266,8 +4453,8 @@ TclExecuteByteCode(interp, codePtr)
 	if ((*pc != INST_MULT) 
 		&& (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	    Tcl_WideInt w1, w2, wResult;
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &w1);
-	    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
+	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
 
 	    switch (*pc) {
 	    case INST_ADD:
@@ -4328,7 +4515,9 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 1, 0);
 	}
 
+#ifdef TCL_WIDE_INT_IS_LONG
     overflow:
+#endif
 	{
 	    mp_int big1, big2, bigResult, bigRemainder;
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -4852,7 +5041,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for eePtr->constants */
-	result = Tcl_GetBooleanFromObj(NULL, valuePtr, &b);
+	result = TclGetBooleanFromObj(NULL, valuePtr, &b);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
@@ -4890,16 +5079,20 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 0, 0);
 	}
 #ifndef NO_WIDE_TYPE
-	if (type == TCL_NUMBER_WIDE) {
-	    TclBNInitBignumFromWideInt(&big, *((CONST Tcl_WideInt*)ptr));
-	} else 
-#endif
-	{
+	if (type == TCL_NUMBER_LONG) {
+	    Tcl_WideInt w = *((CONST Tcl_WideInt *)ptr);
 	    if (Tcl_IsShared(valuePtr)) {
-		Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
+		objResultPtr = Tcl_NewWideIntObj(~w);
+		NEXT_INST_F(1, 1, 1);
 	    }
+	    Tcl_SetWideIntObj(valuePtr, ~w);
+	    NEXT_INST_F(1, 0, 0);
+	}
+#endif
+	if (Tcl_IsShared(valuePtr)) {
+	    Tcl_GetBignumFromObj(NULL, valuePtr, &big);
+	} else {
+	    Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
 	}
 	/* ~a = - a - 1 */
 	mp_neg(&big, &big);
@@ -4913,7 +5106,6 @@ TclExecuteByteCode(interp, codePtr)
     }
 
     case INST_UMINUS: {
-	mp_int big;
 	ClientData ptr;
 	int type;
 	Tcl_Obj *valuePtr = *tosPtr;
@@ -4954,14 +5146,32 @@ TclExecuteByteCode(interp, codePtr)
 	    /* FALLTHROUGH */
 	}
 #ifndef NO_WIDE_TYPE
-	case TCL_NUMBER_WIDE:
+	case TCL_NUMBER_WIDE: {
+	    Tcl_WideInt w;
+	    if (type == TCL_NUMBER_LONG) {
+		w = (Tcl_WideInt)(*((CONST long *)ptr));
+	    } else {
+		w = *((CONST Tcl_WideInt *)ptr);
+	    }
+	    if (w != LLONG_MIN) {
+		if (Tcl_IsShared(valuePtr)) {
+		    objResultPtr = Tcl_NewWideIntObj(-w);
+		    NEXT_INST_F(1, 1, 1);
+		}
+		Tcl_SetWideIntObj(valuePtr, -w);
+		NEXT_INST_F(1, 0, 0);
+	    }
+	    /* FALLTHROUGH */
+	}
 #endif
 	case TCL_NUMBER_BIG: {
+	    mp_int big;
 	    switch (type) {
+#ifdef NO_WIDE_TYPE
 	    case TCL_NUMBER_LONG:
 		TclBNInitBignumFromLong(&big, *((CONST long *)ptr));
 		break;
-#ifndef NO_WIDE_TYPE
+#else
 	    case TCL_NUMBER_WIDE:
 		TclBNInitBignumFromWideInt(&big, *((CONST Tcl_WideInt*)ptr));
 		break;

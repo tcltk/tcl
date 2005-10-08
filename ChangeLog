@@ -1,3 +1,11 @@
+2005-10-08  Don Porter  <dgp@users.sourceforge.net>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclExecute.c:	More performance macros and special
+	handling of the wide integer type for performance on 32-bit
+	systems.
+
 2005-10-07  Don Porter  <dgp@users.sourceforge.net>
 
 	[kennykb-numerics-branch]

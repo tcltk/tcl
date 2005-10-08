@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.41 2005/10/07 20:15:09 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.42 2005/10/08 06:07:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2962,6 +2962,13 @@ int TclGetNumberFromObj(interp, objPtr, clientDataPtr, typePtr)
 	    *clientDataPtr = &(objPtr->internalRep.longValue);
 	    return TCL_OK;
 	}
+#ifndef NO_WIDE_TYPE
+	if (objPtr->typePtr == &tclWideIntType) {
+	    *typePtr = TCL_NUMBER_WIDE;
+	    *clientDataPtr = &(objPtr->internalRep.wideValue);
+	    return TCL_OK;
+	}
+#endif
 	if (objPtr->typePtr == &tclBignumType) {
 	    static Tcl_ThreadDataKey bignumKey;
 	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey, (int)sizeof(mp_int));
@@ -2970,13 +2977,6 @@ int TclGetNumberFromObj(interp, objPtr, clientDataPtr, typePtr)
 	    *clientDataPtr = bigPtr;
 	    return TCL_OK;
 	}
-#ifndef NO_WIDE_TYPE
-	if (objPtr->typePtr == &tclWideIntType) {
-	    *typePtr = TCL_NUMBER_WIDE;
-	    *clientDataPtr = &(objPtr->internalRep.wideValue);
-	    return TCL_OK;
-	}
-#endif
     } while (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "number", NULL, -1, NULL, 0));
     return TCL_ERROR;
