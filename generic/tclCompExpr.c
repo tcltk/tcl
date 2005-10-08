@@ -9,26 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.28 2005/08/03 22:25:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.29 2005/10/08 14:42:45 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-
-/*
- * The stuff below is a bit of a hack so that this file can be used in
- * environments that include no UNIX, i.e. no errno: just arrange to use the
- * errno from tclExecute.c here.
- */
-
-#ifdef TCL_GENERIC_ONLY
-#define NO_ERRNO_H
-#endif
-
-#ifdef NO_ERRNO_H
-extern int errno;			/* Use errno from tclExecute.c. */
-#define ERANGE 34
-#endif
 
 /*
  * Boolean variable that controls whether expression compilation tracing is
