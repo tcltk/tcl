@@ -1,3 +1,10 @@
+2005-10-08  Miguel Sofer <msofer@users.sf.net>
+
+	* unix/configure:
+	* unix/configure.in:
+	* win/configure.in: changes that somehow got left out of the
+	2005-06-12 merge.
+
 2005-06-12  Miguel Sofer <msofer@users.sf.net>
 
 	*** MERGE WITH HEAD *** (tag msofer-wcodes-20050611)

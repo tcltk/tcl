@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.127.2.2 2005/06/13 01:47:14 msofer Exp $
+# RCS: @(#) $Id: configure.in,v 1.127.2.3 2005/10/08 22:12:04 msofer Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.57)
@@ -419,6 +419,15 @@ AC_CHECK_FUNCS(chflags)
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNCS(getattrlist)
+
+#--------------------------------------------------------------------
+# Define the size of pointers and of the different integer types
+#--------------------------------------------------------------------
+
+AC_CHECK_SIZEOF( short )
+AC_CHECK_SIZEOF( int )
+AC_CHECK_SIZEOF( long )
+AC_CHECK_SIZEOF( void * )
 
 #--------------------------------------------------------------------
 # Define the size of pointers and of the different integer types
