@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.56 2005/10/08 06:07:58 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.57 2005/10/08 06:43:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4451,7 +4451,7 @@ TclExecuteByteCode(interp, codePtr)
 	} 
 
 	if ((*pc != INST_MULT) 
-		&& (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
+		&& (type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	    Tcl_WideInt w1, w2, wResult;
 	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
 	    TclGetWideIntFromObj(NULL, value2Ptr, &w2);
@@ -4459,24 +4459,30 @@ TclExecuteByteCode(interp, codePtr)
 	    switch (*pc) {
 	    case INST_ADD:
 		wResult = w1 + w2;
-#ifdef TCL_WIDE_INT_IS_LONG
-		/* Must check for overflow */
-		if (((w1 < 0) && (w2 < 0) && (wResult > 0))
-			|| ((w1 > 0) && (w2 > 0) && (wResult < 0))) {
-		    goto overflow;
-		}
+#ifndef NO_WIDE_TYPE
+		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 #endif
+		{
+		    /* Check for overflow */
+		    if (((w1 < 0) && (w2 < 0) && (wResult > 0))
+			    || ((w1 > 0) && (w2 > 0) && (wResult < 0))) {
+			goto overflow;
+		    }
+		}
 		break;
 
 	    case INST_SUB:
 		wResult = w1 - w2;
-#ifdef TCL_WIDE_INT_IS_LONG
-		/* Must check for overflow */
-		if (((w1 < 0) && (w2 > 0) && (wResult > 0))
-			|| ((w1 > 0) && (w2 < 0) && (wResult < 0))) {
-		    goto overflow;
-		}
+#ifndef NO_WIDE_TYPE
+		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 #endif
+		{
+		    /* Must check for overflow */
+		    if (((w1 < 0) && (w2 > 0) && (wResult > 0))
+			    || ((w1 > 0) && (w2 < 0) && (wResult < 0))) {
+			goto overflow;
+		    }
+		}
 		break;
 
 	    case INST_DIV:
@@ -4486,12 +4492,10 @@ TclExecuteByteCode(interp, codePtr)
 		    goto divideByZero;
 		}
 
-#ifdef TCL_WIDE_INT_IS_LONG
-		/* Need a bignum to represent (LONG_MIN / -1) */
-		if ((w1 == LONG_MIN) && (w2 == -1)) {
+		/* Need a bignum to represent (LLONG_MIN / -1) */
+		if ((w1 == LLONG_MIN) && (w2 == -1)) {
 		    goto overflow;
 		}
-#endif
 		wResult = w1 / w2;
 
 		/* Force Tcl's integer division rules */
@@ -4515,9 +4519,7 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 1, 0);
 	}
 
-#ifdef TCL_WIDE_INT_IS_LONG
     overflow:
-#endif
 	{
 	    mp_int big1, big2, bigResult, bigRemainder;
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
