@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.22.2.10 2005/08/18 02:09:01 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.22.2.11 2005/10/08 13:44:38 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1148,6 +1148,48 @@ test expr-old-39.1 {Rounding with wide result} {
     set x
 } {1 1}
 unset -nocomplain x y
+
+#
+# TIP #255 min and max math functions
+#
+
+test expr-old-40.1 {min math function} -body {
+    expr {min(0)}
+} -result 0
+test expr-old-40.2 {min math function} -body {
+    expr {min(0.0)}
+} -result 0.0
+test expr-old-40.3 {min math function} -body {
+    list [catch {expr {min()}} msg] $msg
+} -result {1 {too few arguments to math function "min"}}
+test expr-old-40.4 {min math function} -body {
+    expr {min(wide(-1) << 30, 4.5, -10)}
+} -result [expr {wide(-1) << 30}]
+test expr-old-40.5 {min math function} -body {
+    list [catch {expr {min("a", 0)}} msg] $msg
+} -result {1 {argument to math function didn't have numeric value}}
+test expr-old-40.6 {min math function} -body {
+    expr {min(300, "0xFF")}
+} -result 255
+
+test expr-old-41.1 {max math function} -body {
+    expr {max(0)}
+} -result 0
+test expr-old-41.2 {max math function} -body {
+    expr {max(0.0)}
+} -result 0.0
+test expr-old-41.3 {max math function} -body {
+    list [catch {expr {max()}} msg] $msg
+} -result {1 {too few arguments to math function "max"}}
+test expr-old-41.4 {max math function} -body {
+    expr {max(wide(1) << 30, 4.5, -10)}
+} -result [expr {wide(1) << 30}]
+test expr-old-41.5 {max math function} -body {
+    list [catch {expr {max("a", 0)}} msg] $msg
+} -result {1 {argument to math function didn't have numeric value}}
+test expr-old-41.6 {max math function} -body {
+    expr {max(200, "0xFF")}
+} -result 255
 
 # Special test for Pentium arithmetic bug of 1994:
 

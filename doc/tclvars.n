@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.20.2.2 2005/04/10 23:14:44 kennykb Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.20.2.3 2005/10/08 13:44:37 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -173,7 +173,7 @@ subdirectory of one of the entries in \fB$tcl_pkgPath\fR. The directories
 in \fB$tcl_pkgPath\fR are included by default in the \fBauto_path\fR
 variable, so they and their immediate subdirectories are automatically
 searched for packages during \fBpackage require\fR commands.  Note:
-\fBtcl_pkgPath\fR it not intended to be modified by the application.  Its
+\fBtcl_pkgPath\fR is not intended to be modified by the application.  Its
 value is added to \fBauto_path\fR at startup; changes to \fBtcl_pkgPath\fR
 are not reflected in \fBauto_path\fR.  If you want Tcl to search additional
 directories for packages you should add the names of those directories to

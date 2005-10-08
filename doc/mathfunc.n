@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: mathfunc.n,v 1.1.2.3 2005/07/12 20:36:16 kennykb Exp $
+'\" RCS: @(#) $Id: mathfunc.n,v 1.1.2.4 2005/10/08 13:44:37 dgp Exp $
 '\" 
 .so man.macros
 .TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
@@ -51,6 +51,10 @@ package require \fBTcl 8.5\fR
 .br
 \fB::tcl::mathfunc::log10\fR \fIarg\fR
 .br
+\fB::tcl::mathfunc::max\fR \fIarg\fR ?\fIarg\fR ...?
+.br
+\fB::tcl::mathfunc::min\fR \fIarg\fR ?\fIarg\fR ...?
+.br
 \fB::tcl::mathfunc::pow\fR \fIx\fR \fIy\fR
 .br
 \fB::tcl::mathfunc::rand\fR
@@ -87,13 +91,14 @@ Tcl supports the following mathematical functions in expressions, all
 of which work solely with floating-point numbers unless otherwise noted:
 .DS
 .ta 3c 6c 9c
-\fBabs\fR	\fBcos\fR	\fBint\fR	\fBsinh\fR
-\fBacos\fR	\fBcosh\fR	\fBlog\fR	\fBsqrt\fR
-\fBasin\fR	\fBdouble\fR	\fBlog10\fR	\fBsrand\fR
-\fBatan\fR	\fBexp\fR	\fBpow\fR	\fBtan\fR
-\fBatan2\fR	\fBfloor\fR	\fBrand\fR	\fBtanh\fR
-\fBbool\fR	\fBfmod\fR	\fBround\fR	\fBwide\fR
-\fBceil\fR	\fBhypot\fR	\fBsin\fR
+\fBabs\fR	\fBacos\fR	\fBasin\fR	\fBatan\fR
+\fBatan2\fR	\fBbool\fR	\fBceil\fR	\fBcos\fR
+\fBcosh\fR	\fBdouble\fR	\fBexp\fR	\fBfloor\fR
+\fBfmod\fR	\fBhypot\fR	\fBint\fR	\fBlog\fR
+\fBlog10\fR	\fBmax\fR	\fBmin\fR	\fBpow\fR
+\fBrand\fR	\fBround\fR	\fBsin\fR	\fBsinh\fR
+\fBsqrt\fR	\fBsrand\fR	\fBtan\fR	\fBtanh\fR
+\fBwide\fR
 .DE
 .PP
 .TP
@@ -170,6 +175,12 @@ positive value.
 \fBlog10(\fIarg\fB)\fR
 Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a
 positive value.
+.TP
+\fBmax(\fIarg\fB, \fI...\fB)\fR
+Returns the maximum value of all given numeric arguments.
+.TP
+\fBmin(\fIarg\fB, \fI...\fB)\fR
+Returns the minimum value of all given numeric arguments.
 .TP
 \fBpow(\fIx, y\fB)\fR
 Computes the value of \fIx\fR raised to the power \fIy\fR.  If \fIx\fR

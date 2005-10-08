@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.28.2.2 2005/08/02 18:17:18 dgp Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.28.2.3 2005/10/08 13:45:04 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1792,11 +1792,13 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
 	if (argc == 2) {
 	    dcb.XonChar  = argv[0][0];
 	    dcb.XoffChar = argv[1][0];
+	    ckfree((char *) argv);
 	} else {
 	    if (interp) {
 		Tcl_AppendResult(interp, "bad value for -xchar: ",
 			"should be a list of two elements", (char *) NULL);
 	    }
+	    ckfree((char *) argv);
 	    return TCL_ERROR;
 	}
 
@@ -1814,6 +1816,8 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
+	int i, result = TCL_OK;
+
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
@@ -1823,51 +1827,56 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
 			"should be a list of signal,value pairs",
 			(char *) NULL);
 	    }
+	    ckfree((char *) argv);
 	    return TCL_ERROR;
 	}
-	while (argc > 1) {
-	    if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
-		return TCL_ERROR;
+	for (i = 0; i < argc - 1; i += 2) {
+	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
+		result = TCL_ERROR;
+		break;
 	    }
-	    if (strnicmp(argv[0], "DTR", strlen(argv[0])) == 0) {
+	    if (strnicmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle, flag ?
-			(DWORD) SETDTR : (DWORD) CLRDTR)) {
+			    (DWORD) SETDTR : (DWORD) CLRDTR)) {
 		    if (interp) {
-			Tcl_AppendResult(interp, "can't set DTR signal",
-				(char *) NULL);
+			Tcl_AppendResult(interp,
+				"can't set DTR signal", (char *) NULL);
 		    }
-		    return TCL_ERROR;
+		    result = TCL_ERROR;
+		    break;
 		}
-	    } else if (strnicmp(argv[0], "RTS", strlen(argv[0])) == 0) {
+	    } else if (strnicmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle, flag ?
-			(DWORD) SETRTS : (DWORD) CLRRTS)) {
+			    (DWORD) SETRTS : (DWORD) CLRRTS)) {
 		    if (interp) {
-			Tcl_AppendResult(interp, "can't set RTS signal",
-				(char *) NULL);
+			Tcl_AppendResult(interp,
+				"can't set RTS signal", (char *) NULL);
 		    }
-		    return TCL_ERROR;
+		    result = TCL_ERROR;
+		    break;
 		}
-	    } else if (strnicmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
+	    } else if (strnicmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 		if (!EscapeCommFunction(infoPtr->handle, flag ?
-			(DWORD) SETBREAK : (DWORD) CLRBREAK)) {
+			    (DWORD) SETBREAK : (DWORD) CLRBREAK)) {
 		    if (interp) {
-			Tcl_AppendResult(interp, "can't set BREAK signal",
-				(char *) NULL);
+			Tcl_AppendResult(interp,
+				"can't set BREAK signal", (char *) NULL);
 		    }
-		    return TCL_ERROR;
+		    result = TCL_ERROR;
+		    break;
 		}
 	    } else {
 		if (interp) {
 		    Tcl_AppendResult(interp, "bad signal for -ttycontrol: ",
 			    "must be DTR, RTS or BREAK", (char *) NULL);
 		}
-		return TCL_ERROR;
+		result = TCL_ERROR;
+		break;
 	    }
-	    argc -= 2;
-	    argv += 2;
-	} /* while (argc > 1) */
+	}
 
-	return TCL_OK;
+	ckfree((char *) argv);
+	return result;
     }
 
     /*
@@ -1892,6 +1901,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
 	    inSize  = atoi(argv[0]);
 	    outSize = atoi(argv[1]);
 	}
+	ckfree((char *) argv);
 	if ((inSize <= 0) || (outSize <= 0)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "bad value for -sysbuffer: ",

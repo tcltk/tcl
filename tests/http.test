@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.38 2004/05/25 22:56:33 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.38.2.1 2005/10/08 13:44:39 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -483,7 +483,7 @@ test http-5.3 {http::formatQuery} {
 
 test http-5.4 {http::formatQuery} {
     http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2
-} {name1=%7ebwelch&name2=%c2%a1%c2%a2%c2%a2}
+} {name1=~bwelch&name2=%c2%a1%c2%a2%c2%a2}
 
 test http-5.5 {http::formatQuery} {
     set enc [http::config -urlencoding]
@@ -491,7 +491,7 @@ test http-5.5 {http::formatQuery} {
     set res [http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2]
     http::config -urlencoding $enc
     set res
-} {name1=%7ebwelch&name2=%a1%a2%a2}
+} {name1=~bwelch&name2=%a1%a2%a2}
 
 test http-6.1 {http::ProxyRequired} {
     http::config -proxyhost [info hostname] -proxyport $port

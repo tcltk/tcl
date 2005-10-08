@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.81.2.9 2005/08/29 18:38:45 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81.2.10 2005/10/08 13:44:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2880,6 +2880,12 @@ Tcl_ClearChannelHandlers(channel)
     chanPtr = statePtr->topChanPtr;
 
     /*
+     * Cancel any outstanding timer.
+     */
+
+    Tcl_DeleteTimerHandler(statePtr->timer);
+
+    /*
      * Remove any references to channel handlers for this channel that may be
      * about to be invoked.
      */
@@ -2912,13 +2918,19 @@ Tcl_ClearChannelHandlers(channel)
     StopCopy(statePtr->csPtr);
 
     /*
-     * Must set the interest mask now to 0, otherwise infinite loops will
-     * occur if Tcl_DoOneEvent is called before the channel is finally deleted
-     * in FlushChannel. This can happen if the channel has a background flush
-     * active.
+     * Must set the interest mask now to 0, otherwise infinite loops
+     * will occur if Tcl_DoOneEvent is called before the channel is
+     * finally deleted in FlushChannel. This can happen if the channel
+     * has a background flush active.
+     * Also, delete all registered file handlers for this channel 
+     * (and for the current thread). This prevents executing of pending
+     * file-events still sitting in the event queue of the current thread.
+     * We deliberately do not call UpdateInterest() because this could
+     * re-schedule new events if the channel still needs to be flushed.
      */
-
+        
     statePtr->interestMask = 0;
+    (chanPtr->typePtr->watchProc)(chanPtr->instanceData, 0);
 
     /*
      * Remove any EventScript records for this channel.

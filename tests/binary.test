@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.18.2.9 2005/08/25 15:46:53 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.18.2.10 2005/10/08 13:44:38 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -528,6 +528,10 @@ test binary-14.17 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {1.6 3.4}
     binary format d1 $a
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f
+test binary-14.18 {FormatNumber: Bug 1116542} {
+    binary scan [binary format d 1.25] d w
+    set w
+} 1.25
 
 test binary-15.1 {Tcl_BinaryObjCmd: format} {
     list [catch {binary format ax*a "y" "z"} msg] $msg
