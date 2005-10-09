@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.175 2005/10/08 14:42:44 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.176 2005/10/09 20:05:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5260,6 +5260,7 @@ ExprAbsFunc(clientData, interp, objc, objv)
 	return TCL_ERROR;
 #endif
     }
+    return TCL_OK;
 }
 
 static int
