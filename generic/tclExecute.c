@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.202 2005/10/08 14:42:45 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.203 2005/10/09 20:05:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3375,7 +3375,7 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Obj *valuePtr = *(tosPtr - 1);
 	Tcl_Obj *value2Ptr = *tosPtr;
 	ClientData ptr1, ptr2;
-	int iResult, compare, type1, type2;
+	int iResult = 0, compare = 0, type1, type2;
 	double d1, d2, tmp;
 	long l1, l2;
 	Tcl_WideInt w1, w2;
@@ -3725,6 +3725,10 @@ TclExecuteByteCode(interp, codePtr)
 	case TCL_NUMBER_BIG:
 	    /* TODO: const correctness ? */
 	    invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
+	    break;
+	default:
+	    /* Unused, here to silence compiler warning */
+	    invalid = 0;
 	}
 	if (invalid) {
 	    Tcl_SetObjResult(interp,
@@ -3819,6 +3823,9 @@ TclExecuteByteCode(interp, codePtr)
 		case TCL_NUMBER_BIG:
 		    /* TODO: const correctness ? */
 		    zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
+		default:
+		    /* Unused, here to silence compiler warning. */
+		    zero = 0;
 		}
 		if (zero) {
 		    objResultPtr = eePtr->constants[0];
@@ -3928,8 +3935,8 @@ TclExecuteByteCode(interp, codePtr)
 
 	if ((type1 == TCL_NUMBER_BIG) || (type2 == TCL_NUMBER_BIG)) {
 	    mp_int big1, big2, bigResult;
-	    mp_int *Pos, *Neg, *Other;
-	    int numPos = 0;
+	    mp_int *First, *Second;
+	    int numPos;
 
 	    if (Tcl_IsShared(valuePtr)) {
 		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
@@ -3942,23 +3949,20 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
 	    }
 
+	    /*
+	     * Count how many positive arguments we have. If only one of the 
+	     * arguments is negative, store it in 'Second'. 
+	     */
+	    
 	    if (mp_cmp_d(&big1, 0) != MP_LT) {
-		numPos++;
-		Pos = &big1;
-		if (mp_cmp_d(&big2, 0) != MP_LT) {
-		    numPos++;
-		    Other = &big2;
-		} else {
-		    Neg = &big2;
-		}
+		numPos = 1 + (mp_cmp_d(&big2, 0) != MP_LT);
+		First  = &big1;
+		Second = &big2;
 	    } else {
-		Neg = &big1;
-		if (mp_cmp_d(&big2, 0) != MP_LT) {
-		    numPos++;
-		    Pos = &big2;
-		} else {
-		    Other = &big2;
-		}
+		/* use bigResult as temporary storage for the swap. */
+		First  = &big2;
+		Second = &big1;
+		numPos = (mp_cmp_d(First, 0) != MP_LT);
 	    }
 	    mp_init(&bigResult);
 
@@ -3967,24 +3971,24 @@ TclExecuteByteCode(interp, codePtr)
 		switch (numPos) {
 		case 2:
 		    /* Both arguments positive, base case */
-		    mp_and(Pos, Other, &bigResult);
+		    mp_and(First, Second, &bigResult);
 		    break;
 		case 1:
-		    /* One arg positive; one negative
+		    /* First is positive; Second negative
 		     * P & N = P & ~~N = P&~(-N-1) = P & (P ^ (-N-1)) */
-		    mp_neg(Neg, Neg);
-		    mp_sub_d(Neg, 1, Neg);
-		    mp_xor(Pos, Neg, &bigResult);
-		    mp_and(Pos, &bigResult, &bigResult);
+		    mp_neg(Second, Second);
+		    mp_sub_d(Second, 1, Second);
+		    mp_xor(First, Second, &bigResult);
+		    mp_and(First, &bigResult, &bigResult);
 		    break;
 		case 0:
 		    /* Both arguments negative 
 		     * a & b = ~ (~a | ~b) = -(-a-1|-b-1)-1 */
-		    mp_neg(Neg, Neg);
-		    mp_sub_d(Neg, 1, Neg);
-		    mp_neg(Other, Other);
-		    mp_sub_d(Other, 1, Other);
-		    mp_or(Neg, Other, &bigResult);
+		    mp_neg(First, First);
+		    mp_sub_d(First, 1, First);
+		    mp_neg(Second, Second);
+		    mp_sub_d(Second, 1, Second);
+		    mp_or(First, Second, &bigResult);
 		    mp_neg(&bigResult, &bigResult);
 		    mp_sub_d(&bigResult, 1, &bigResult);
 		    break;
@@ -3995,26 +3999,26 @@ TclExecuteByteCode(interp, codePtr)
 		switch (numPos) {
 		case 2:
 		    /* Both arguments positive, base case */
-		    mp_or(Pos, Other, &bigResult);
+		    mp_or(First, Second, &bigResult);
 		    break;
 		case 1:
-		    /* One arg positive; one negative
+		    /* First is positive; Second negative
 		     * N|P = ~(~N&~P) = ~((-N-1)&~P) = -((-N-1)&((-N-1)^P))-1 */
-		    mp_neg(Neg, Neg);
-		    mp_sub_d(Neg, 1, Neg);
-		    mp_xor(Pos, Neg, &bigResult);
-		    mp_and(Neg, &bigResult, &bigResult);
+		    mp_neg(Second, Second);
+		    mp_sub_d(Second, 1, Second);
+		    mp_xor(First, Second, &bigResult);
+		    mp_and(Second, &bigResult, &bigResult);
 		    mp_neg(&bigResult, &bigResult);
 		    mp_sub_d(&bigResult, 1, &bigResult);
 		    break;
 		case 0:
 		    /* Both arguments negative 
 		     * a | b = ~ (~a & ~b) = -(-a-1&-b-1)-1 */
-		    mp_neg(Neg, Neg);
-		    mp_sub_d(Neg, 1, Neg);
-		    mp_neg(Other, Other);
-		    mp_sub_d(Other, 1, Other);
-		    mp_and(Neg, Other, &bigResult);
+		    mp_neg(First, First);
+		    mp_sub_d(First, 1, First);
+		    mp_neg(Second, Second);
+		    mp_sub_d(Second, 1, Second);
+		    mp_and(First, Second, &bigResult);
 		    mp_neg(&bigResult, &bigResult);
 		    mp_sub_d(&bigResult, 1, &bigResult);
 		    break;
@@ -4025,26 +4029,26 @@ TclExecuteByteCode(interp, codePtr)
 		switch (numPos) {
 		case 2:
 		    /* Both arguments positive, base case */
-		    mp_xor(Pos, Other, &bigResult);
+		    mp_xor(First, Second, &bigResult);
 		    break;
 		case 1:
-		    /* One arg positive; one negative
+		    /* First is positive; Second negative
 		     * P^N = ~(P^~N) = -(P^(-N-1))-1
 		     */
-		    mp_neg(Neg, Neg);
-		    mp_sub_d(Neg, 1, Neg);
-		    mp_xor(Pos, Neg, &bigResult);
+		    mp_neg(Second, Second);
+		    mp_sub_d(Second, 1, Second);
+		    mp_xor(First, Second, &bigResult);
 		    mp_neg(&bigResult, &bigResult);
 		    mp_sub_d(&bigResult, 1, &bigResult);
 		    break;
 		case 0:
 		    /* Both arguments negative 
 		     * a ^ b = (~a ^ ~b) = (-a-1^-b-1) */
-		    mp_neg(Neg, Neg);
-		    mp_sub_d(Neg, 1, Neg);
-		    mp_neg(Other, Other);
-		    mp_sub_d(Other, 1, Other);
-		    mp_xor(Neg, Other, &bigResult);
+		    mp_neg(First, First);
+		    mp_sub_d(First, 1, First);
+		    mp_neg(Second, Second);
+		    mp_sub_d(Second, 1, Second);
+		    mp_xor(First, Second, &bigResult);
 		    break;
 		}
 		break;
@@ -4078,6 +4082,9 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    case INST_BITXOR:
 		wResult = w1 ^ w2;
+	    default:
+		/* Unused, here to silence compiler warning. */
+		wResult = 0;
 	    }
 	
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -4104,6 +4111,9 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    case INST_BITXOR:
 		lResult = l1 ^ l2;
+	    default:
+		/* Unused, here to silence compiler warning. */
+		lResult = 0;
 	    }
 	
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -4405,6 +4415,9 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		dResult = d1 / d2;
 		break;
+	    default:
+		/* Unused, here to silence compiler warning. */
+		dResult = 0;
 	    }
 
 #ifndef ACCEPT_NAN
@@ -4506,6 +4519,9 @@ TclExecuteByteCode(interp, codePtr)
 		    wResult -= 1;
 		}
 		break;
+	    default:
+		/* Unused, here to silence compiler warning. */
+		wResult = 0;
 	    }
 
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));

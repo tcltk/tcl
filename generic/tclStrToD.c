@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.9 2005/10/08 14:42:45 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.10 2005/10/09 20:05:24 msofer Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -292,7 +292,8 @@ TclParseNumber( Tcl_Interp* interp,
 				 * in an acceptable number */
     size_t acceptLen;		/* Number of characters following that point */
     int status = TCL_OK;	/* Status to return to caller */
-    char d;			/* Last hexadecimal digit scanned */
+    char d = 0;			/* Last hexadecimal digit scanned; initialized 
+				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
 #ifdef TIP_114_FORMATS
     int explicitOctal = 0;
