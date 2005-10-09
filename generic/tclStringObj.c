@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.49 2005/10/08 14:42:45 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.50 2005/10/09 20:05:27 msofer Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1930,7 +1930,8 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 	case 'o':
 	case 'x':
 	case 'X': {
-	    short int s;
+	    short int s = 0; /* Silence compiler warning; only defined and
+			      * used when useShort is true. */
 	    long l;
 	    Tcl_WideInt w;
 	    mp_int big;
