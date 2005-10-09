@@ -1,3 +1,11 @@
+2005-10-09  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclStrToD.c:
+	* generic/tclStringObj.c: initialise variables to avoid compiler
+	warnings ([Bug 1320818] among others).
+
 2005-10-08  Don Porter  <dgp@users.sourceforge.net>
 
         TIP#237 IMPLEMENTATION
