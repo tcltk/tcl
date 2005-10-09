@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.5 2005/06/13 01:45:43 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.6 2005/10/09 13:56:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1256,7 +1256,8 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
 	    if (TclIsVarUndefined(varPtr)) {
 		continue;
 	    }
-	    varName = Tcl_GetHashKey(&globalNsPtr->varTable, entryPtr);
+	    varName = Tcl_GetHashKey(
+		(Tcl_HashTable *)&globalNsPtr->varTable, entryPtr);
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,
 			Tcl_NewStringObj(varName, -1));
@@ -2152,7 +2153,8 @@ InfoVarsCmd(dummy, interp, objc, objv)
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
 			|| TclIsVarNamespaceVar(varPtr)) {
-		    varName = Tcl_GetHashKey(&nsPtr->varTable, entryPtr);
+		    varName = Tcl_GetHashKey(
+			(Tcl_HashTable *)&nsPtr->varTable, entryPtr);
 		    if ((simplePattern == NULL)
 			    || Tcl_StringMatch(varName, simplePattern)) {
 			if (specificNsInPattern) {

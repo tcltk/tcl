@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.196.2.2 2005/06/13 01:45:41 msofer Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.196.2.3 2005/10/09 13:56:35 msofer Exp $
  */
 
 #ifndef _TCL
@@ -1230,9 +1230,6 @@ struct Tcl_HashKeyType {
  * Structure definition for a hash table.  Must be in tcl.h so clients
  * can allocate space for these structures, but clients should never
  * access any fields in this structure.
- *
- * NOTE TO MAINTAINERS: this struct must be kept in sync with
- * TclNSVarHashTable, defined in tclInt.h
  */
 
 #define TCL_SMALL_HASH_TABLE 4

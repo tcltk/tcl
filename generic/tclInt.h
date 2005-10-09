@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214.2.10 2005/06/13 01:46:10 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.11 2005/10/09 13:56:36 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -134,48 +134,22 @@ typedef struct Tcl_Ensemble Tcl_Ensemble;
 typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
- * The hash tables that store namespace variables get an extra field for
- * nsPtr, so that we can recover the namespace from its hash table. This is
+ * The hash tables that store the namespace variables have an extra field for
+ * nsPtr so that we can recover the namespace from its hash table. This is
  * used to avoid having to store an nsPtr in every variable. Note that all
  * fields (with the exception of the last) must correspond exactly to the
- * fields of Tcl_HashTable in tcl.h.
+ * fields of Tcl_HashTable in tcl.h. Instead of copying the Tcl_HashTable
+ * struct from tcl.h (and introducing a possible source of future problems if
+ * they ever get out of sync), we chose to define it in a manner that requires
+ * a cast to Tcl_HashTable type before each usage.
  */
 
 typedef struct TclNSVarHashTable {
-    Tcl_HashEntry **buckets;		/* Pointer to bucket array.  Each
-					 * element points to first entry in
-					 * bucket's hash chain, or NULL. */
-    Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
-					/* Bucket array used for small tables
-					 * (to avoid mallocs and frees). */
-    int numBuckets;			/* Total number of buckets allocated
-					 * at **bucketPtr. */
-    int numEntries;			/* Total number of entries present
-					 * in table. */
-    int rebuildSize;			/* Enlarge table when numEntries gets
-					 * to be this large. */
-    int downShift;			/* Shift count used in hashing
-					 * function.  Designed to use high-
-					 * order bits of randomized keys. */
-    int mask;				/* Mask value used in hashing
-					 * function. */
-    int keyType;			/* Type of keys used in this table. 
-					 * It's either TCL_CUSTOM_KEYS,
-					 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS,
-					 * or an integer giving the number of
-					 * ints that is the size of the key.
-					 */
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-    Tcl_HashEntry *(*findProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
-	    CONST char *key));
-    Tcl_HashEntry *(*createProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
-	    CONST char *key, int *newPtr));
-#endif
-    Tcl_HashKeyType *typePtr;		/* Type of the keys used in the
-					 * Tcl_HashTable. */
+    Tcl_HashTable hashTable;
     struct Namespace *nsPtr;		/* Points to the namespace that uses 
 				         * this table to store variables. */  
 } TclNSVarHashTable;
+
 
 /*
  * The structure below defines a namespace.
