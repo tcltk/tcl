@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.203 2005/10/09 20:05:18 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.204 2005/10/10 15:51:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3823,6 +3823,7 @@ TclExecuteByteCode(interp, codePtr)
 		case TCL_NUMBER_BIG:
 		    /* TODO: const correctness ? */
 		    zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
+		    break;
 		default:
 		    /* Unused, here to silence compiler warning. */
 		    zero = 0;
@@ -4111,6 +4112,7 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    case INST_BITXOR:
 		lResult = l1 ^ l2;
+		break;
 	    default:
 		/* Unused, here to silence compiler warning. */
 		lResult = 0;
