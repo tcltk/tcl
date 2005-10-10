@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.205 2005/10/10 16:09:17 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.206 2005/10/10 18:00:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -339,7 +339,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  *			ClientData *ptrPtr, int *tPtr);
  */
 
-#ifdef TCL_WIDE_INT_IS_LONG
+#ifdef NO_WIDE_TYPE
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr)			\
     (((objPtr)->typePtr == &tclIntType)					\
@@ -397,7 +397,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  *			Tcl_WideInt *wideIntPtr);
  */
 
-#ifdef TCL_WIDE_INT_IS_LONG
+#ifdef NO_WIDE_TYPE
 #define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
     (((objPtr)->typePtr == &tclIntType)					\
 	? (*(wideIntPtr) = (Tcl_WideInt)				\
@@ -3378,8 +3378,10 @@ TclExecuteByteCode(interp, codePtr)
 	int iResult = 0, compare = 0, type1, type2;
 	double d1, d2, tmp;
 	long l1, l2;
-	Tcl_WideInt w1, w2;
 	mp_int big1, big2;
+#ifndef NO_WIDE_TYPE
+	Tcl_WideInt w1, w2;
+#endif
 
 	if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	    /* At least one non-numeric argument - compare as strings */
