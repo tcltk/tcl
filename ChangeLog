@@ -1,3 +1,7 @@
+2005-10-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c: New convenience macro CompileTokens().
+	
 2005-10-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Corrections to the NO_WIDE_TYPE build.  Also
@@ -14,7 +18,7 @@
 
 2005-10-10  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclExecute.c: fixing errors in last commit. (Two
+	* generic/tclExecute.c: Fixing errors in last commit. (Two
 	commits, the second removes wrong comment).
 
 2005-10-09  Miguel Sofer <msofer@users.sf.net>
@@ -22,7 +26,7 @@
 	* generic/tclBasic.c:
 	* generic/tclExecute.c:
 	* generic/tclStrToD.c:
-	* generic/tclStringObj.c: initialise variables to avoid compiler
+	* generic/tclStringObj.c: Initialise variables to avoid compiler
 	warnings ([Bug 1320818] among others).
 
 2005-10-08  Don Porter  <dgp@users.sourceforge.net>
