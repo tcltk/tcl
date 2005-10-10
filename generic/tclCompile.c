@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.25 2005/06/13 01:45:45 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.26 2005/10/10 17:59:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3711,6 +3711,7 @@ OptimiseByteCodeTmp(codePtr)
 		continue;
 	    }
 	}
+	
 	/*
 	 * If some range became unreachable, remove the extra reference to the
 	 * break and continue targets. 
@@ -3847,6 +3848,9 @@ OptReduceCount(codePtr, pos, auxCount)
      */
 
     if (auxCount[pos] < 0) {
+#ifdef TCL_COMPILE_DEBUG
+	TclPrintInstruction(codePtr, codeStart+pos);
+#endif
 	Tcl_Panic("Reducing auxCount of unreachable code.");
     }
     

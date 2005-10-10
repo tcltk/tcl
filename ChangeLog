@@ -1,3 +1,14 @@
+2005-10-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fixing an error in INST_LNOT and
+	INST_LYES. Interestingly, the error only appeared in debug builds,
+	but I can't figure out how it matters. 
+
+	* generic/tclCompile.c (OptReduceCount): improved panic message.
+
+	*** NOTE: disabling the optimiser causes a panic in normal builds,
+	but is ok in debug builds. Something is very fishy.
+
 2005-10-09  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c:
