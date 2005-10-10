@@ -1,3 +1,7 @@
+2005-10-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.h: ensure MODULE_SCOPE decl
+
 2005-10-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c (TraverseUnixTree): Adjust 2004-11-11 change to
