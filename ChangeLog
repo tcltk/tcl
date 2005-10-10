@@ -1,9 +1,7 @@
 2005-10-10  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclExecute.c:	Corrections to the NO_WIDE_TYPE build.
-	* generic/tclInt.h:	Restored HEAD to the NO_WIDE_TYPE
-	configuration until some breakage in the #undef NO_WIDE_TYPE
-	configuration is corrected.
+	* generic/tclExecute.c:	Corrections to the NO_WIDE_TYPE build.  Also
+	added missing "break" to a switch that broke wide XOR operations.
 
 2005-10-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 

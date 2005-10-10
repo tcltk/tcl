@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.254 2005/10/10 18:00:10 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.255 2005/10/10 19:52:44 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -22,7 +22,7 @@
  * Some numerics configuration options
  */
 
-#define NO_WIDE_TYPE
+#undef NO_WIDE_TYPE
 #undef ACCEPT_NAN
 
 /*
