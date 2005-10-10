@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.17 2005/08/03 22:23:42 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.18 2005/10/10 21:33:09 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -75,6 +75,19 @@
 #            undef WORDS_BIGENDIAN
 #        endif
 #    endif
+#endif
+
+/*
+ * Used to tag functions that are only to be visible within the module being
+ * built and not outside it (where this is supported by the linker).
+ */
+
+#ifndef MODULE_SCOPE
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
 #endif
 
 #undef TCL_STORAGE_CLASS
