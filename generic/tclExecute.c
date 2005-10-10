@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.204 2005/10/10 15:51:01 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.205 2005/10/10 16:09:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3960,7 +3960,6 @@ TclExecuteByteCode(interp, codePtr)
 		First  = &big1;
 		Second = &big2;
 	    } else {
-		/* use bigResult as temporary storage for the swap. */
 		First  = &big2;
 		Second = &big1;
 		numPos = (mp_cmp_d(First, 0) != MP_LT);

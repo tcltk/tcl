@@ -1,6 +1,7 @@
 2005-10-10  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclExecute.c: fixing errors in last commit.
+	* generic/tclExecute.c: fixing errors in last commit. (Two
+	commits, the second removes wrong comment).
 
 2005-10-09  Miguel Sofer <msofer@users.sf.net>
 
