@@ -1,3 +1,12 @@
+2005-10-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (DeleteScriptLimitCallback) 
+	(SetScriptLimitCallback): Improve the interlocking between the script
+	limit callback record and the hash table of current such records, to
+	prevent crashes in callbacks that create callbacks.
+	(Tcl_LimitSetTime): Reset the correct flag. Problem reported by
+	Nicolas Castagne <castagne@imag.fr> on comp.lang.tcl
+
 2005-10-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fixing errors in last commit. (Two
@@ -13,7 +22,7 @@
 
 2005-10-08  Don Porter  <dgp@users.sourceforge.net>
 
-        TIP#237 IMPLEMENTATION
+	TIP#237 IMPLEMENTATION
 
 	[kennykb-numerics-branch] Resynchronized with the HEAD; at this
 	 checkpoint [-rkennykb-numerics-branch-20051008], the HEAD and
