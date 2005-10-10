@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.206 2005/10/10 18:00:10 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.207 2005/10/10 19:52:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4084,6 +4084,7 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    case INST_BITXOR:
 		wResult = w1 ^ w2;
+		break;
 	    default:
 		/* Unused, here to silence compiler warning. */
 		wResult = 0;
