@@ -1,3 +1,9 @@
+2005-10-12  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c (Tcl_ExecuteByteCode, TclIncrObj):
+	Several common cases inlined in hopes of gaining a little
+	performance in [incr].
+	
 2005-10-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: New convenience macro CompileTokens().
