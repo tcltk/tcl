@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.45 2005/08/09 11:02:36 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.46 2005/10/12 22:05:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2329,7 +2329,7 @@ SetFsPathFromAny(interp, pathPtr)
 
 		objc--; objv++;
 		while (objc--) {
-		    TclpNativeJoinPath(transPtr, TclGetString(*objv++));
+		    TclpNativeJoinPath(transPtr, Tcl_GetString(*objv++));
 		}
 		TclDecrRefCount(parts);
 	    } else {
