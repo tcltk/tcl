@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.207 2005/10/10 19:52:43 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.208 2005/10/12 18:31:34 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1124,6 +1124,24 @@ TclIncrObj(interp, valuePtr, incrPtr)
     if (Tcl_IsShared(valuePtr)) {
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
+
+    do {
+	if (valuePtr->typePtr == &tclIntType
+	    && incrPtr->typePtr == &tclIntType) {
+	    long augend = valuePtr->internalRep.longValue;
+	    long addend = incrPtr->internalRep.longValue;
+	    long sum = augend + addend;
+	    /* Test for overflow */
+	    if ( augend < 0 && addend < 0 && sum >= 0 ) {
+		break;
+	    }
+	    if ( augend >= 0 && addend >= 0 && sum < 0 ) {
+		break;
+	    }
+	    TclSetIntObj(valuePtr, sum);
+	    return TCL_OK;
+	} 
+    } while (0);
 
     if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
 	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
@@ -2500,71 +2518,58 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE(("%u %ld => ", opnd, i));
 
     doIncrVar:
-#if 0
-	objPtr = varPtr->value.objPtr;
 	if (TclIsVarDirectReadable(varPtr)
-		&& ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
-	    if (objPtr->typePtr == &tclIntType && !isWide) {
-		/*
-		 * No errors, no traces, the variable already has an integer
-		 * value: inline processing.
-		 */
-
-		i += objPtr->internalRep.longValue;
-		if (Tcl_IsShared(objPtr)) {
-		    objPtr->refCount--; /* we know it is shared */
-		    TclNewLongObj(objResultPtr, i);
-		    Tcl_IncrRefCount(objResultPtr);
-		    varPtr->value.objPtr = objResultPtr;
-		} else {
-		    TclSetLongObj(objPtr, i);
-		    objResultPtr = objPtr;
+	    && ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
+	    objPtr = varPtr->value.objPtr;
+	    if (Tcl_IsShared(objPtr)) {
+		objPtr->refCount--;  /* we know it's shared */
+		objResultPtr = Tcl_DuplicateObj(objPtr);
+		Tcl_IncrRefCount(objResultPtr);
+		varPtr->value.objPtr = objResultPtr;
+	    } else {
+		objResultPtr = objPtr;
+	    }
+	    /*
+	     * Next optimization is in TclIncrObj, and appears
+	     * not to improve things much to inline it here 
+	     * But do it anyway, a few percent can't hurt. 
+	     */
+	    do {
+		if (objResultPtr->typePtr == &tclIntType
+		    && incrPtr->typePtr == &tclIntType) {
+		    long augend = objResultPtr->internalRep.longValue;
+		    long addend = incrPtr->internalRep.longValue;
+		    long sum = augend + addend;
+		    /* Test for overflow */
+		    if ( augend < 0 && addend < 0 && sum >= 0 ) {
+			break;
+		    }
+		    if ( augend >= 0 && addend >= 0 && sum < 0 ) {
+			break;
+		    }
+		    TclSetIntObj(objResultPtr,sum);
+		    goto doneIncr;
 		}
-		goto doneIncr;
-	    } else if (objPtr->typePtr == &tclWideIntType && isWide) {
-		/*
-		 * No errors, no traces, the variable already has a wide
-		 * integer value: inline processing.
-		 */
-
-		w += objPtr->internalRep.wideValue;
-		if (Tcl_IsShared(objPtr)) {
-		    objPtr->refCount--; /* we know it is shared */
-		    TclNewWideIntObj(objResultPtr, w);
-		    Tcl_IncrRefCount(objResultPtr);
-		    varPtr->value.objPtr = objResultPtr;
-		} else {
-		    TclSetWideIntObj(objPtr, w);
-		    objResultPtr = objPtr;
-		}
-		goto doneIncr;
+	    } while(0);
+	    result = TclIncrObj(interp, objResultPtr, incrPtr);
+	    if (result != TCL_OK) {
+		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		goto checkForCatch;
+	    }
+	} else {
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrIncrObjVar(interp, varPtr, arrayPtr,
+					    part1, part2,
+					    incrPtr, TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    Tcl_DecrRefCount(incrPtr);
+	    if (objResultPtr == NULL) {
+		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		result = TCL_ERROR;
+		goto checkForCatch;
 	    }
 	}
-	DECACHE_STACK_INFO();
-	if (isWide) {
-	    objResultPtr = TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1,
-		    part2, w, TCL_LEAVE_ERR_MSG);
-	} else {
-	    objResultPtr = TclPtrIncrVar(interp, varPtr, arrayPtr, part1,
-		    part2, i, TCL_LEAVE_ERR_MSG);
-	}
-	CACHE_STACK_INFO();
-#else
-	/* TODO: Restore no trace optimization */
-	DECACHE_STACK_INFO();
-	objResultPtr = TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1, part2,
-		incrPtr, TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	Tcl_DecrRefCount(incrPtr);
-#endif
-	if (objResultPtr == NULL) {
-	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-#if 0
     doneIncr:
-#endif
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #ifndef TCL_COMPILE_DEBUG
 	if (*(pc+pcAdjustment) == INST_POP) {
