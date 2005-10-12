@@ -1,16 +1,16 @@
-/* 
+/*
  * tclRegexp.h --
  *
- * 	This file contains definitions used internally by Henry
- *	Spencer's regular expression code.
+ *	This file contains definitions used internally by Henry Spencer's
+ *	regular expression code.
  *
  * Copyright (c) 1998 by Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.12 2004/11/03 00:57:45 davygrvy Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.13 2005/10/12 23:55:25 dkf Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -19,12 +19,11 @@
 #include "regex.h"
 
 /*
- * The TclRegexp structure encapsulates a compiled regex_t,
- * the flags that were used to compile it, and an array of pointers
- * that are used to indicate subexpressions after a call to Tcl_RegExpExec.
- * Note that the string and objPtr are mutually exclusive.  These values
- * are needed by Tcl_RegExpRange in order to return pointers into the
- * original string.
+ * The TclRegexp structure encapsulates a compiled regex_t, the flags that
+ * were used to compile it, and an array of pointers that are used to indicate
+ * subexpressions after a call to Tcl_RegExpExec. Note that the string and
+ * objPtr are mutually exclusive. These values are needed by Tcl_RegExpRange
+ * in order to return pointers into the original string.
  */
 
 typedef struct TclRegexp {
@@ -44,3 +43,11 @@ typedef struct TclRegexp {
 } TclRegexp;
 
 #endif /* _TCLREGEXP */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
