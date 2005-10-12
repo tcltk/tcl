@@ -1,13 +1,18 @@
+2005-10-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclPathObj.c (SetFsPathFromAny): TclGetString macro must
+	not be combined with post-increment arguments. [Bug 1325099]
+
 2005-10-12  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclExecute.c (Tcl_ExecuteByteCode, TclIncrObj):
 	Several common cases inlined in hopes of gaining a little
 	performance in [incr].
-	
+
 2005-10-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: New convenience macro CompileTokens().
-	
+
 2005-10-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Corrections to the NO_WIDE_TYPE build.  Also
@@ -15,7 +20,7 @@
 
 2005-10-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* generic/tclInterp.c (DeleteScriptLimitCallback) 
+	* generic/tclInterp.c (DeleteScriptLimitCallback)
 	(SetScriptLimitCallback): Improve the interlocking between the script
 	limit callback record and the hash table of current such records, to
 	prevent crashes in callbacks that create callbacks.
