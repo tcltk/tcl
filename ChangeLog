@@ -1,3 +1,9 @@
+2005-10-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (GetNumberFromObj):	Restored some lost
+	optimizations for empty string values.  We avoid cost of a call to
+	TclParseNumber just to tell us an empty string isn't a number.
+
 2005-10-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclPathObj.c (SetFsPathFromAny): TclGetString macro must
