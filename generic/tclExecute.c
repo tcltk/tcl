@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.209 2005/10/12 23:54:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.210 2005/10/13 18:30:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,8 @@
 
 /*
  * The stuff below is a bit of a hack so that this file can be used in
- * environments that include no UNIX, i.e. no errno.  Just define errno here.
+ * environments that include no UNIX.
+ * TODO: Does this serve any purpose anymore?
  */
 
 #ifdef TCL_GENERIC_ONLY
@@ -46,16 +47,7 @@
 #	    include <values.h>
 #	endif /* !NO_VALUES_H */
 #   endif /* !NO_FLOAT_H */
-#   define NO_ERRNO_H
 #endif /* !TCL_GENERIC_ONLY */
-
-#if 0
-#ifdef NO_ERRNO_H
-int errno;
-#   define EDOM   33
-#   define ERANGE 34
-#endif
-#endif
 
 /*
  * A mask (should be 2**n-1) that is used to work out when the bytecode engine
