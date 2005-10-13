@@ -1,3 +1,8 @@
+2005-10-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c (TclParseNumber):	Missing goto caused crash
+	when parsing "Na".  [Bug 1325833]
+
 2005-10-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (GetNumberFromObj):	Restored some lost
