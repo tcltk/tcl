@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.13 2005/07/05 21:18:23 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.14 2005/10/13 21:45:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2195,7 +2195,11 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    }
 	    if (Tcl_GetLongFromObj(interp,		/* INTL: Tcl source. */
 		    objv[objIndex], &intValue) != TCL_OK) {
-		goto fmtError;
+		if (Tcl_GetWideIntFromObj(interp,	/* INTL: Tcl source. */
+			objv[objIndex], &wideValue) != TCL_OK) {
+		    goto fmtError;
+		}
+		intValue = Tcl_WideAsLong(wideValue);
 	    }
 
 #if (LONG_MAX > INT_MAX)
