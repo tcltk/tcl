@@ -2054,7 +2054,6 @@ int main() {
 #
 #	Defines some of the following vars:
 #		NO_DIRENT_H
-#		NO_ERRNO_H
 #		NO_VALUES_H
 #		HAVE_LIMITS_H or NO_LIMITS_H
 #		NO_STDLIB_H
@@ -2096,7 +2095,6 @@ closedir(d);
     fi
 
     AC_MSG_RESULT($tcl_ok)
-    AC_CHECK_HEADER(errno.h, , [AC_DEFINE(NO_ERRNO_H, 1, [Do we have <errno.h>?])])
     AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H, 1, [Do we have <float.h>?])])
     AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H, 1, [Do we have <values.h>?])])
     AC_CHECK_HEADER(limits.h,
