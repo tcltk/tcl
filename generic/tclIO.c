@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.95 2005/10/04 18:32:47 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.96 2005/10/13 20:51:53 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -2930,7 +2930,14 @@ Tcl_ClearChannelHandlers(channel)
      */
         
     statePtr->interestMask = 0;
+
+    /*
+     * TEMPORARILY DEFINED FOR THREADED BUILD ONLY. SEE SF BUG# 1323992
+     */
+ 
+#ifdef TCL_THREADS
     (chanPtr->typePtr->watchProc)(chanPtr->instanceData, 0);
+#endif
 
     /*
      * Remove any EventScript records for this channel.
