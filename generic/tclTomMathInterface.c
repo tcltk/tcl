@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.4 2005/10/12 23:51:44 dkf Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.5 2005/10/13 00:14:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -220,7 +220,7 @@ TclBNInitBignumFromWideUInt(
      */
 
     p = a->dp;
-    while (vd) {
+    while (v) {
 	*p++ = (mp_digit) (v & MP_MASK);
 	v >>= MP_DIGIT_BIT;
     }
