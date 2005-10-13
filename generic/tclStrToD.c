@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.10 2005/10/09 20:05:24 msofer Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.11 2005/10/13 15:15:28 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -814,6 +814,7 @@ TclParseNumber( Tcl_Interp* interp,
 		state = sNAN;
 		break;
 	    }
+	    goto endgame;
 	case sNAN:
 	    acceptState = state;
 	    acceptPoint = p;
