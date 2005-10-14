@@ -1,3 +1,15 @@
+2005-10-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclIO.c (Tcl_ClearChannelHandlers): removed
+	change dated 2005-10-04 (see below). 
+	Look into Bug# 1323992 for detailed discussion. 
+
+	* generic/tcl.h: Fixed bad definition of CRTEXPORT
+	which should have been CRTIMPORT rather. This broke
+	compilation of generic/tclMain.c and was probably 
+	introduced by mistage while applying the fix for the
+	Tcl Bug# 1256937 below.
+
 2005-10-14  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclExecute.c (TclIncrObj, TclExecuteByteCode):
