@@ -1,3 +1,9 @@
+2005-10-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclIO.c (Tcl_ClearChannelHandlers): removed
+	change dated 2005-10-04 below. Look into Bug# 1323992
+	for detailed discussion. 
+
 2005-10-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Stop [format] from seeing
