@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.210 2005/10/13 18:30:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.211 2005/10/14 14:18:45 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1123,23 +1123,18 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
-    do {
-	if (valuePtr->typePtr == &tclIntType
-	    && incrPtr->typePtr == &tclIntType) {
-	    long augend = valuePtr->internalRep.longValue;
-	    long addend = incrPtr->internalRep.longValue;
-	    long sum = augend + addend;
-	    /* Test for overflow */
-	    if ( augend < 0 && addend < 0 && sum >= 0 ) {
-		break;
-	    }
-	    if ( augend >= 0 && addend >= 0 && sum < 0 ) {
-		break;
-	    }
+    if (valuePtr->typePtr == &tclIntType
+	&& incrPtr->typePtr == &tclIntType) {
+	long augend = valuePtr->internalRep.longValue;
+	long addend = incrPtr->internalRep.longValue;
+	long sum = augend + addend;
+	/* Test for overflow */
+	if ((augend >= 0 || addend >= 0 || sum < 0)
+	    && (augend < 0 || addend < 0 || sum >= 0)) {
 	    TclSetIntObj(valuePtr, sum);
 	    return TCL_OK;
-	} 
-    } while (0);
+	}
+    }	
 
     if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
 	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
@@ -2386,32 +2381,8 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR_STK:
     case INST_INCR_STK:
 	opnd = TclGetUInt1AtPtr(pc+1);
-#if 0
-	objPtr = *tosPtr;
-	if (objPtr->typePtr == &tclIntType) {
-	    i = objPtr->internalRep.longValue;
-	    isWide = 0;
-	} else if (objPtr->typePtr == &tclWideIntType) {
-	    i = 0; /* lint */
-	    w = objPtr->internalRep.wideValue;
-	    isWide = 1;
-	} else {
-	    i = 0; /* lint */
-	    REQUIRE_WIDE_OR_INT(result, objPtr, i, w);
-	    if (result != TCL_OK) {
-		TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
-			opnd, O2S(objPtr)), Tcl_GetObjResult(interp));
-		Tcl_AddErrorInfo(interp, "\n    (reading increment)");
-		goto checkForCatch;
-	    }
-	    isWide = (objPtr->typePtr == &tclWideIntType);
-	}
-	tosPtr--;
-	TclDecrRefCount(objPtr);
-#else
 	incrPtr = *tosPtr;
 	tosPtr--;
-#endif
 	switch (*pc) {
 	case INST_INCR_SCALAR1:
 	    pcAdjustment = 2;
@@ -2428,12 +2399,8 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
 	i = TclGetInt1AtPtr(pc+1);
-#if 0
-	isWide = 0;
-#else
 	incrPtr = Tcl_NewIntObj(i);
 	Tcl_IncrRefCount(incrPtr);
-#endif
 	pcAdjustment = 2;
 
     doIncrStk:
@@ -2466,12 +2433,8 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_ARRAY1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
-#if 0
-	isWide = 0;
-#else
 	incrPtr = Tcl_NewIntObj(i);
 	Tcl_IncrRefCount(incrPtr);
-#endif
 	pcAdjustment = 3;
 
     doIncrArray:
@@ -2496,12 +2459,8 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
-#if 0
-	isWide = 0;
-#else
 	incrPtr = Tcl_NewIntObj(i);
 	Tcl_IncrRefCount(incrPtr);
-#endif
 	pcAdjustment = 3;
 
     doIncrScalar:
@@ -2532,23 +2491,18 @@ TclExecuteByteCode(interp, codePtr)
 	     * not to improve things much to inline it here 
 	     * But do it anyway, a few percent can't hurt. 
 	     */
-	    do {
-		if (objResultPtr->typePtr == &tclIntType
-		    && incrPtr->typePtr == &tclIntType) {
-		    long augend = objResultPtr->internalRep.longValue;
-		    long addend = incrPtr->internalRep.longValue;
-		    long sum = augend + addend;
-		    /* Test for overflow */
-		    if ( augend < 0 && addend < 0 && sum >= 0 ) {
-			break;
-		    }
-		    if ( augend >= 0 && addend >= 0 && sum < 0 ) {
-			break;
-		    }
-		    TclSetIntObj(objResultPtr,sum);
+	    if (objResultPtr->typePtr == &tclIntType
+		&& incrPtr->typePtr == &tclIntType) {
+		long augend = objResultPtr->internalRep.longValue;
+		long addend = incrPtr->internalRep.longValue;
+		long sum = augend + addend;
+		/* Test for overflow */
+		if ((augend >= 0 || addend >= 0 || sum < 0)
+		    && (augend < 0 || addend < 0 || sum >= 0)) {
+		    TclSetIntObj(objResultPtr, sum);
 		    goto doneIncr;
 		}
-	    } while(0);
+	    }
 	    result = TclIncrObj(interp, objResultPtr, incrPtr);
 	    if (result != TCL_OK) {
 		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
