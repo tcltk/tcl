@@ -1,3 +1,8 @@
+2005-10-14  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c (TclIncrObj, TclExecuteByteCode):
+	Tidied up a couple of infelicitous do {...} while(0) constructs.
+	
 2005-10-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tcl.h:     Fix for bug #1256937 - correctly decorate
