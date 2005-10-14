@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.14 2005/10/13 21:01:41 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.15 2005/10/14 17:12:32 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -2702,21 +2702,9 @@ Tcl_ClearChannelHandlers (channel)
      * will occur if Tcl_DoOneEvent is called before the channel is
      * finally deleted in FlushChannel. This can happen if the channel
      * has a background flush active.
-     * Also, delete all registered file handlers for this channel 
-     * (and for the current thread). This prevents executing of pending
-     * file-events still sitting in the event queue of the current thread.
-     * We deliberately do not call UpdateInterest() because this could
-     * re-schedule new events if the channel still needs to be flushed.
-     * This should happen all the time, but Linux 2.4 systems seem to lose
-     * the flush on close in some cases (socket-9.2 socket-11.13) if this is
-     * used, so restrict it to TCL_THREADS, where you can otherwise crash
-     * numerous systems. [Bug 1323992]
      */
-        
+
     statePtr->interestMask = 0;
-#ifdef TCL_THREADS
-    (chanPtr->typePtr->watchProc)(chanPtr->instanceData, 0);
-#endif
 
     /*
      * Remove any EventScript records for this channel.
