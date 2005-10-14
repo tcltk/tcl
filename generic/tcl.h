@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.205 2005/10/14 11:14:31 patthoyts Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.206 2005/10/14 17:34:20 vasiljevic Exp $
  */
 
 #ifndef _TCL
@@ -202,7 +202,7 @@ extern "C" {
 #   else
 #	define DLLIMPORT
 #	define DLLEXPORT
-#	define CRTEXPORT
+#	define CRTIMPORT
 #   endif
 #endif
 
