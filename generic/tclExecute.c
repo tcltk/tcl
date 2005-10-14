@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.212 2005/10/14 14:38:11 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.213 2005/10/14 15:57:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1123,48 +1123,64 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_Panic("shared object passed to TclIncrObj");
     }
 
-    if (valuePtr->typePtr == &tclIntType
-	&& incrPtr->typePtr == &tclIntType) {
-	long augend = valuePtr->internalRep.longValue;
-	long addend = incrPtr->internalRep.longValue;
-	long sum = augend + addend;
-	/* Test for overflow */
-	if ((augend >= 0 || addend >= 0 || sum < 0)
-	    && (augend < 0 || addend < 0 || sum >= 0)) {
-	    TclSetIntObj(valuePtr, sum);
-	    return TCL_OK;
-	}
-    }	
-
-    if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
-	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+    if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	/* Produce error message (reparse?!) */
 	return Tcl_GetIntFromObj(interp, valuePtr, &type1);
     }
-    if ((GetNumberFromObj(NULL, incrPtr, &ptr2, &type2) != TCL_OK)
-	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+    if (GetNumberFromObj(NULL, incrPtr, &ptr2, &type2) != TCL_OK) {
 	/* Produce error message (reparse?!) */
 	Tcl_GetIntFromObj(interp, incrPtr, &type1);
 	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	return TCL_ERROR;
     }
+
+    if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
+	long augend = *((CONST long *)ptr1);
+	long addend = *((CONST long *)ptr2);
+	long sum = augend + addend;
+	/* Test for overflow */
+	if ((augend >= 0 || addend >= 0 || sum < 0)
+	    && (sum >= 0 || addend < 0 || augend < 0)) {
+	    TclSetLongObj(valuePtr, sum);
+	    return TCL_OK;
+	}
+#ifndef TCL_WIDE_INT_IS_LONG
+	{
+	    Tcl_WideInt w1 = (Tcl_WideInt)augend;
+	    Tcl_WideInt w2 = (Tcl_WideInt)addend;
+	    /* We know the sum value is outside the long range,
+	     * so we use the macro form that doesn't range test again */
+	    TclSetWideIntObj(valuePtr, w1 + w2);
+	    return TCL_OK;
+	}
+#endif
+    }	
+
+    if ((type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	/* Produce error message (reparse?!) */
+	return Tcl_GetIntFromObj(interp, valuePtr, &type1);
+    }
+    if ((type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	/* Produce error message (reparse?!) */
+	Tcl_GetIntFromObj(interp, incrPtr, &type1);
+	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
+	return TCL_ERROR;
+    }
+
+#ifndef NO_WIDE_TYPE
     if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	Tcl_WideInt w1, w2, sum;
 	TclGetWideIntFromObj(NULL, valuePtr, &w1);
 	TclGetWideIntFromObj(NULL, incrPtr, &w2);
 	sum = w1 + w2;
-#ifndef NO_WIDE_TYPE
-	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
-#endif
-	    {
-		/* Check for overflow */
-		if ((w1 >= 0 || w2 >= 0 || sum < 0)
-		    && (w1 < 0 || w2 < 0 || sum >= 0)) {
-		    Tcl_SetWideIntObj(valuePtr, sum);
-		    return TCL_OK;
-		}
-	    }
+	/* Check for overflow */
+	if ((w1 >= 0 || w2 >= 0 || sum < 0)
+	    && (w1 < 0 || w2 < 0 || sum >= 0)) {
+	    Tcl_SetWideIntObj(valuePtr, sum);
+	    return TCL_OK;
+	}
     }
+#endif
     
     Tcl_GetBignumAndClearObj(interp, valuePtr, &value);
     Tcl_GetBignumFromObj(interp, incrPtr, &incr);
@@ -2498,7 +2514,7 @@ TclExecuteByteCode(interp, codePtr)
 		/* Test for overflow */
 		if ((augend >= 0 || addend >= 0 || sum < 0)
 		    && (augend < 0 || addend < 0 || sum >= 0)) {
-		    TclSetIntObj(objResultPtr, sum);
+		    TclSetLongObj(objResultPtr, sum);
 		    goto doneIncr;
 		}
 	    }
