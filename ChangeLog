@@ -1,3 +1,8 @@
+2005-10-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tcl.h:     Fix for bug #1256937 - correctly decorate
+	* generic/tclMain.c: imported functions from msvcrt in static builds.
+
 2005-10-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/format.test: "Forward"-port of test updates relating to
