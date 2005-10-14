@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.33 2005/09/30 19:31:16 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.34 2005/10/14 11:14:31 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -30,7 +30,7 @@
  * source directory to make their own modified versions).
  */
 
-extern DLLIMPORT int		isatty _ANSI_ARGS_((int fd));
+extern CRTIMPORT int		isatty _ANSI_ARGS_((int fd));
 
 static Tcl_Obj *tclStartupScriptPath = NULL;
 static Tcl_Obj *tclStartupScriptEncoding = NULL;
