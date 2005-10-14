@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.211 2005/10/14 14:18:45 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.212 2005/10/14 14:38:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1148,7 +1148,7 @@ TclIncrObj(interp, valuePtr, incrPtr)
 	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	return TCL_ERROR;
     }
-    do {if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
+    if ((type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	Tcl_WideInt w1, w2, sum;
 	TclGetWideIntFromObj(NULL, valuePtr, &w1);
 	TclGetWideIntFromObj(NULL, incrPtr, &w2);
@@ -1156,16 +1156,15 @@ TclIncrObj(interp, valuePtr, incrPtr)
 #ifndef NO_WIDE_TYPE
 	if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 #endif
-	{
-	    /* Check for overflow */
-	    if (((w1 < 0) && (w2 < 0) && (sum > 0))
-		    || ((w1 > 0) && (w2 > 0) && (sum < 0))) {
-		break;
+	    {
+		/* Check for overflow */
+		if ((w1 >= 0 || w2 >= 0 || sum < 0)
+		    && (w1 < 0 || w2 < 0 || sum >= 0)) {
+		    Tcl_SetWideIntObj(valuePtr, sum);
+		    return TCL_OK;
+		}
 	    }
-	}
-	Tcl_SetWideIntObj(valuePtr, sum);
-	return TCL_OK;
-    }} while (0);
+    }
     
     Tcl_GetBignumAndClearObj(interp, valuePtr, &value);
     Tcl_GetBignumFromObj(interp, incrPtr, &incr);
