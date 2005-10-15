@@ -1,3 +1,8 @@
+2005-10-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Restored some optimizations of the
+	INST_INCR_SCALAR1_IMM opcode.
+
 2005-10-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_ClearChannelHandlers): removed

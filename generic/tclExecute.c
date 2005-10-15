@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.213 2005/10/14 15:57:48 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.214 2005/10/15 23:27:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2382,10 +2382,7 @@ TclExecuteByteCode(interp, codePtr)
     {
 	Tcl_Obj *objPtr, *incrPtr;
 	int opnd, pcAdjustment;
-#if 0
-	int isWide;
 	Tcl_WideInt w;
-#endif
 	long i;
 	char *part1, *part2;
 	Var *varPtr, *arrayPtr;
@@ -2415,10 +2412,10 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_STK_IMM:
 	i = TclGetInt1AtPtr(pc+1);
 	incrPtr = Tcl_NewIntObj(i);
-	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 2;
 
     doIncrStk:
+	Tcl_IncrRefCount(incrPtr);
 	if ((*pc == INST_INCR_ARRAY_STK_IMM)
 		|| (*pc == INST_INCR_ARRAY_STK)) {
 	    part2 = TclGetString(*tosPtr);
@@ -2449,10 +2446,10 @@ TclExecuteByteCode(interp, codePtr)
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
 	incrPtr = Tcl_NewIntObj(i);
-	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 3;
 
     doIncrArray:
+	Tcl_IncrRefCount(incrPtr);
 	part2 = TclGetString(*tosPtr);
 	arrayPtr = &(compiledLocals[opnd]);
 	part1 = arrayPtr->name;
@@ -2474,11 +2471,108 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
-	incrPtr = Tcl_NewIntObj(i);
-	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 3;
+	cleanup = 0;
+	varPtr = &(compiledLocals[opnd]);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+
+	if (TclIsVarDirectReadable(varPtr)) {
+	    ClientData ptr;
+	    int type;
+
+	    objPtr = varPtr->value.objPtr;
+	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
+		if (type == TCL_NUMBER_LONG) {
+		    long augend = *((CONST long *)ptr);
+		    long sum = augend + i;
+		    /* Test for overflow */
+		    /* TODO: faster checking with known limits on i ? */
+		    if ((augend >= 0 || i >= 0 || sum < 0)
+			    && (sum >= 0 || i < 0 || augend < 0)) {
+
+			TRACE(("%u %ld => ", opnd, i));
+			if (Tcl_IsShared(objPtr)) {
+			    objPtr->refCount--;  /* we know it's shared */
+			    TclNewLongObj(objResultPtr, sum);
+			    Tcl_IncrRefCount(objResultPtr);
+			    varPtr->value.objPtr = objResultPtr;
+			} else {
+			    objResultPtr = objPtr;
+			    TclSetLongObj(objPtr, sum);
+			}
+			goto doneIncr;
+		    }
+#ifndef NO_WIDE_TYPE
+		    {
+			w = (Tcl_WideInt)augend;
+
+			TRACE(("%u %ld => ", opnd, i));
+			if (Tcl_IsShared(objPtr)) {
+			    objPtr->refCount--;  /* we know it's shared */
+			    objResultPtr = Tcl_NewWideIntObj(w+i);
+			    Tcl_IncrRefCount(objResultPtr);
+			    varPtr->value.objPtr = objResultPtr;
+			} else {
+			    objResultPtr = objPtr;
+			    /* We know the sum value is outside the long range;
+			     * use macro form that doesn't range test again */
+			    TclSetWideIntObj(objPtr, w+i);
+			}
+			goto doneIncr;
+		    }
+#endif
+		}	/* end if (type == TCL_NUMBER_LONG) */
+#ifndef NO_WIDE_TYPE
+		if (type == TCL_NUMBER_WIDE) {
+		    Tcl_WideInt sum;
+		    w = *((CONST Tcl_WideInt *)ptr);
+		    sum = w + i;
+
+		    /* Check for overflow */
+		    if ((w >= 0 || i >= 0 || sum < 0)
+			    && (w < 0 || i < 0 || sum >= 0)) {
+			TRACE(("%u %ld => ", opnd, i));
+			if (Tcl_IsShared(objPtr)) {
+			    objPtr->refCount--;  /* we know it's shared */
+			    objResultPtr = Tcl_NewWideIntObj(sum);
+			    Tcl_IncrRefCount(objResultPtr);
+			    varPtr->value.objPtr = objResultPtr;
+			} else {
+			    objResultPtr = objPtr;
+			    /* We *do not* know the sum value is outside
+			     * the long range (wide + long can yield long);
+			     * use the function call that checks range. */
+			    Tcl_SetWideIntObj(objPtr, sum);
+			}
+			goto doneIncr;
+		    }
+		}
+#endif
+	    }
+	    if (Tcl_IsShared(objPtr)) {
+		objPtr->refCount--;  /* we know it's shared */
+		objResultPtr = Tcl_DuplicateObj(objPtr);
+		Tcl_IncrRefCount(objResultPtr);
+		varPtr->value.objPtr = objResultPtr;
+	    } else {
+		objResultPtr = objPtr;
+	    }
+	    TclNewLongObj(incrPtr, i);
+	    result = TclIncrObj(interp, objResultPtr, incrPtr);
+	    Tcl_DecrRefCount(incrPtr);
+	    if (result != TCL_OK) {
+		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		goto checkForCatch;
+	    }
+	    goto doneIncr;
+	}
+	/* All other cases, flow through to generic handling */
+	TclNewLongObj(incrPtr, i);
 
     doIncrScalar:
+	Tcl_IncrRefCount(incrPtr);
 	varPtr = &(compiledLocals[opnd]);
 	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
@@ -2501,24 +2595,8 @@ TclExecuteByteCode(interp, codePtr)
 	    } else {
 		objResultPtr = objPtr;
 	    }
-	    /*
-	     * Next optimization is in TclIncrObj, and appears
-	     * not to improve things much to inline it here 
-	     * But do it anyway, a few percent can't hurt. 
-	     */
-	    if (objResultPtr->typePtr == &tclIntType
-		&& incrPtr->typePtr == &tclIntType) {
-		long augend = objResultPtr->internalRep.longValue;
-		long addend = incrPtr->internalRep.longValue;
-		long sum = augend + addend;
-		/* Test for overflow */
-		if ((augend >= 0 || addend >= 0 || sum < 0)
-		    && (augend < 0 || addend < 0 || sum >= 0)) {
-		    TclSetLongObj(objResultPtr, sum);
-		    goto doneIncr;
-		}
-	    }
 	    result = TclIncrObj(interp, objResultPtr, incrPtr);
+	    Tcl_DecrRefCount(incrPtr);
 	    if (result != TCL_OK) {
 		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 		goto checkForCatch;
