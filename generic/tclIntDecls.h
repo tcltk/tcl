@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.17 2005/08/15 17:23:07 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.18 2005/10/18 20:46:19 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -271,13 +271,7 @@ EXTERN int		TclInExit _ANSI_ARGS_((void));
 #endif
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
-#ifndef TclIncrVar2_TCL_DECLARED
-#define TclIncrVar2_TCL_DECLARED
-/* 49 */
-EXTERN Tcl_Obj *	TclIncrVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
-				long incrAmount, int part1NotParsed));
-#endif
+/* Slot 49 is reserved */
 #ifndef TclInitCompiledLocals_TCL_DECLARED
 #define TclInitCompiledLocals_TCL_DECLARED
 /* 50 */
@@ -684,12 +678,7 @@ EXTERN CONST84_RETURN char * TclGetEnv _ANSI_ARGS_((CONST char * name,
 				Tcl_DString * valuePtr));
 #endif
 /* Slot 139 is reserved */
-#ifndef TclLooksLikeInt_TCL_DECLARED
-#define TclLooksLikeInt_TCL_DECLARED
-/* 140 */
-EXTERN int		TclLooksLikeInt _ANSI_ARGS_((CONST char * bytes, 
-				int length));
-#endif
+/* Slot 140 is reserved */
 #ifndef TclpGetCwd_TCL_DECLARED
 #define TclpGetCwd_TCL_DECLARED
 /* 141 */
@@ -872,14 +861,7 @@ EXTERN int		TclUniCharMatch _ANSI_ARGS_((
 				CONST Tcl_UniChar * pattern, int ptnLen, 
 				int nocase));
 #endif
-#ifndef TclIncrWideVar2_TCL_DECLARED
-#define TclIncrWideVar2_TCL_DECLARED
-/* 174 */
-EXTERN Tcl_Obj *	TclIncrWideVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
-				Tcl_WideInt wideIncrAmount, 
-				int part1NotParsed));
-#endif
+/* Slot 174 is reserved */
 #ifndef TclCallVarTraces_TCL_DECLARED
 #define TclCallVarTraces_TCL_DECLARED
 /* 175 */
@@ -1162,7 +1144,7 @@ typedef struct TclIntStubs {
     int (*tclInExit) _ANSI_ARGS_((void)); /* 46 */
     void *reserved47;
     void *reserved48;
-    Tcl_Obj * (*tclIncrVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, long incrAmount, int part1NotParsed)); /* 49 */
+    void *reserved49;
     void (*tclInitCompiledLocals) _ANSI_ARGS_((Tcl_Interp * interp, CallFrame * framePtr, Namespace * nsPtr)); /* 50 */
     int (*tclInterpInit) _ANSI_ARGS_((Tcl_Interp * interp)); /* 51 */
     void *reserved52;
@@ -1258,7 +1240,7 @@ typedef struct TclIntStubs {
     void *reserved137;
     CONST84_RETURN char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
     void *reserved139;
-    int (*tclLooksLikeInt) _ANSI_ARGS_((CONST char * bytes, int length)); /* 140 */
+    void *reserved140;
     CONST84_RETURN char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
     int (*tclSetByteCodeFromAny) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData)); /* 142 */
     int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
@@ -1292,7 +1274,7 @@ typedef struct TclIntStubs {
     int (*tclCheckExecutionTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 171 */
     int (*tclInThreadExit) _ANSI_ARGS_((void)); /* 172 */
     int (*tclUniCharMatch) _ANSI_ARGS_((CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int nocase)); /* 173 */
-    Tcl_Obj * (*tclIncrWideVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, Tcl_WideInt wideIncrAmount, int part1NotParsed)); /* 174 */
+    void *reserved174;
     int (*tclCallVarTraces) _ANSI_ARGS_((Interp * iPtr, Var * arrayPtr, Var * varPtr, CONST char * part1, CONST char * part2, int flags, int leaveErrMsg)); /* 175 */
     void (*tclCleanupVar) _ANSI_ARGS_((Var * varPtr, Var * arrayPtr)); /* 176 */
     void (*tclVarErrMsg) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * part1, CONST char * part2, CONST char * operation, CONST char * reason)); /* 177 */
@@ -1515,10 +1497,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #endif
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
-#ifndef TclIncrVar2
-#define TclIncrVar2 \
-	(tclIntStubsPtr->tclIncrVar2) /* 49 */
-#endif
+/* Slot 49 is reserved */
 #ifndef TclInitCompiledLocals
 #define TclInitCompiledLocals \
 	(tclIntStubsPtr->tclInitCompiledLocals) /* 50 */
@@ -1797,10 +1776,7 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetEnv) /* 138 */
 #endif
 /* Slot 139 is reserved */
-#ifndef TclLooksLikeInt
-#define TclLooksLikeInt \
-	(tclIntStubsPtr->tclLooksLikeInt) /* 140 */
-#endif
+/* Slot 140 is reserved */
 #ifndef TclpGetCwd
 #define TclpGetCwd \
 	(tclIntStubsPtr->tclpGetCwd) /* 141 */
@@ -1924,10 +1900,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclUniCharMatch \
 	(tclIntStubsPtr->tclUniCharMatch) /* 173 */
 #endif
-#ifndef TclIncrWideVar2
-#define TclIncrWideVar2 \
-	(tclIntStubsPtr->tclIncrWideVar2) /* 174 */
-#endif
+/* Slot 174 is reserved */
 #ifndef TclCallVarTraces
 #define TclCallVarTraces \
 	(tclIntStubsPtr->tclCallVarTraces) /* 175 */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.11 2005/07/26 04:11:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.12 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -47,6 +47,18 @@
     TclCompileCmdWord((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
 	    (envPtr))
 
+
+/*
+ * Convenience macro for use when compiling tokens to be pushed. The ANSI C
+ * "prototype" for this macro is:
+ *
+ * static void		CompileTokens(CompileEnv *envPtr, Tcl_Token *tokenPtr,
+ *			    Tcl_Interp *interp);
+ */
+
+#define CompileTokens(envPtr, tokenPtr, interp) \
+    TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
+            (envPtr));
 /*
  * Convenience macro for use when pushing literals. The ANSI C "prototype" for
  * this macro is:
@@ -367,8 +379,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	CompileBody(envPtr, cmdTokenPtr, interp);
 	ExceptionRangeEnds(envPtr, range);
     } else {
-	TclCompileTokens(interp, cmdTokenPtr+1,
-		cmdTokenPtr->numComponents, envPtr);
+	CompileTokens(envPtr, cmdTokenPtr, interp);
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(INST_EVAL_STK, envPtr);
 	ExceptionRangeEnds(envPtr, range);
@@ -611,6 +622,7 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
 	    word = incrTokenPtr[1].start;
 	    numBytes = incrTokenPtr[1].size;
 
+#if 0
 	    /*
 	     * Note there is a danger that modifying the string could have
 	     * undesirable side effects.  In this case, TclLooksLikeInt has no
@@ -620,6 +632,7 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
 	    if (!TclLooksLikeInt(word, numBytes)) {
 		return TCL_ERROR;
 	    }
+#endif
 
 	    /*
 	     * Now try to really parse the number.
@@ -1403,9 +1416,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    TclCompileTokens(interp, tokenPtr+1,
-		    tokenPtr->numComponents, envPtr);
-
+	    CompileTokens(envPtr, tokenPtr, interp);
 	    tempVar = (firstValueTemp + loopIndex);
 	    if (tempVar <= 255) {
 		TclEmitInstInt1(INST_STORE_SCALAR1, tempVar, envPtr);
@@ -1959,7 +1970,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    CONST char *word = incrTokenPtr[1].start;
 	    int numBytes = incrTokenPtr[1].size;
-
+#if 0
 	    /*
 	     * Note there is a danger that modifying the string could have
 	     * undesirable side effects.  In this case, TclLooksLikeInt has
@@ -1967,6 +1978,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	     */
 
 	    if (TclLooksLikeInt(word, numBytes)) {
+#endif
 		int code;
 		Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 		Tcl_IncrRefCount(intObj);
@@ -1976,13 +1988,14 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 			&& (-127 <= immValue) && (immValue <= 127)) {
 		    haveImmValue = 1;
 		}
+#if 0
 	    }
+#endif
 	    if (!haveImmValue) {
 		PushLiteral(envPtr, word, numBytes);
 	    }
 	} else {
-	    TclCompileTokens(interp, incrTokenPtr+1,
-		    incrTokenPtr->numComponents, envPtr);
+	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
     } else {			/* no incr amount given so use 1 */
 	haveImmValue = 1;
@@ -2280,8 +2293,11 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
-	    TclLooksLikeInt(varTokenPtr[1].start, varTokenPtr[1].size)) {
+    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
+#if 0
+	    && TclLooksLikeInt(varTokenPtr[1].start, varTokenPtr[1].size)
+#endif
+	    ) {
 	Tcl_Obj *tmpObj;
 	int idx, result;
 
@@ -3189,8 +3205,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		}
 		PushLiteral(envPtr, str, length);
 	    } else {
-		TclCompileTokens(interp, varTokenPtr+1,
-			varTokenPtr->numComponents, envPtr);
+		CompileTokens(envPtr, varTokenPtr, interp);
 	    }
 	    varTokenPtr = TokenAfter(varTokenPtr);
 	}
@@ -3220,8 +3235,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    PushLiteral(envPtr, buf, len);
 	    return TCL_OK;
 	} else {
-	    TclCompileTokens(interp, varTokenPtr+1,
-		    varTokenPtr->numComponents, envPtr);
+	    CompileTokens(envPtr, varTokenPtr, interp);
 	}
 	TclEmitOpcode(INST_STR_LEN, envPtr);
 	return TCL_OK;
@@ -3545,8 +3559,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
      * First, we push the value we're matching against on the stack.
      */
 
-    TclCompileTokens(interp, valueTokenPtr+1, valueTokenPtr->numComponents,
-	    envPtr);
+    CompileTokens(envPtr, valueTokenPtr, interp);
 
     /*
      * Generate a test for each arm.
@@ -4159,8 +4172,7 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	 * The var name isn't simple: compile and push it.
 	 */
 
-	TclCompileTokens(interp, varTokenPtr+1, varTokenPtr->numComponents,
-		envPtr);
+	CompileTokens(envPtr, varTokenPtr, interp);
     }
 
     if (removedParen) {

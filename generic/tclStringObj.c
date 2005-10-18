@@ -33,9 +33,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.7 2005/09/15 20:30:00 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.8 2005/10/18 20:46:19 dgp Exp $ */
 
 #include "tclInt.h"
+#include "tommath.h"
 
 /*
  * Prototypes for functions defined later in this file:
@@ -386,6 +387,8 @@ Tcl_GetCharLength(objPtr)
 	 * string to count continuous ascii characters before resorting to the
 	 * Tcl_NumUtfChars call. This is a long form of:
 	 stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes,objPtr->length);
+	 *
+	 * TODO: Consider macro-izing this.
 	 */
 
 	while (i && (*str < 0xC0)) {
@@ -1722,7 +1725,7 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
     while (*format != '\0') {
 	char *end;
 	int gotMinus, gotHash, gotZero, gotSpace, gotPlus, sawFlag;
-	int width, gotPrecision, precision, useShort, useWide;
+	int width, gotPrecision, precision, useShort, useWide, useBig;
 	int newXpg, numChars, allocSegment = 0;
 	Tcl_Obj *segment;
 	Tcl_UniChar ch;
@@ -1865,17 +1868,23 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 
 	/* 5. Length modifier */
 
-	useShort = useWide = 0;
+	useShort = useWide = useBig = 0;
 	if (ch == 'h') {
 	    useShort = 1;
 	    format += step;
 	    step = Tcl_UtfToUniChar(format, &ch);
 	} else if (ch == 'l') {
+	    format += step;
+	    step = Tcl_UtfToUniChar(format, &ch);
+	    if (ch == 'l') {
+		useBig = 1;
+		format += step;
+		step = Tcl_UtfToUniChar(format, &ch);
+	    } else {
 #ifndef TCL_WIDE_INT_IS_LONG
 	    useWide = 1;
 #endif
-	    format += step;
-	    step = Tcl_UtfToUniChar(format, &ch);
+	    }
 	}
 
 	format += step;
@@ -1913,33 +1922,66 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 	}
 	
 	case 'u':
+	    if (useBig) {
+		msg = "unsigned bignum format is invalid";
+		goto errorMsg;
+	    }
 	case 'd':
 	case 'o':
 	case 'x':
 	case 'X': {
-	    short int s;
+	    short int s = 0; /* Silence compiler warning; only defined and
+			      * used when useShort is true. */
 	    long l;
 	    Tcl_WideInt w;
+	    mp_int big;
 	    int isNegative = 0;
 
-	    if (useWide) {
-		if (Tcl_GetWideIntFromObj(interp, segment, &w) != TCL_OK) {
+	    if (useBig) {
+		if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
 		    goto error;
 		}
-	    } else if (Tcl_GetLongFromObj(NULL, segment, &l) != TCL_OK) {
-		if (Tcl_GetWideIntFromObj(interp, segment, &w) != TCL_OK) {
-		    goto error;
-		}
-		l = Tcl_WideAsLong(w);
-	    }
-
-	    if (useShort) {
-		s = (short int) l;
-		isNegative = (s < (short int)0);
+		isNegative = (mp_cmp_d(&big, 0) == MP_LT);
 	    } else if (useWide) {
+		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
+		    Tcl_Obj *objPtr;
+		    if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
+			goto error;
+		    }
+		    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
+		    objPtr = Tcl_NewBignumObj(&big);
+		    Tcl_IncrRefCount(objPtr);
+		    Tcl_GetWideIntFromObj(NULL, objPtr, &w);
+		    Tcl_DecrRefCount(objPtr);
+		}
 		isNegative = (w < (Tcl_WideInt)0);
+	    } else if (Tcl_GetLongFromObj(NULL, segment, &l) != TCL_OK) {
+		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
+		    Tcl_Obj *objPtr;
+		    if (Tcl_GetBignumFromObj(interp, segment, &big) != TCL_OK) {
+			goto error;
+		    }
+		    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+		    objPtr = Tcl_NewBignumObj(&big);
+		    Tcl_IncrRefCount(objPtr);
+		    Tcl_GetLongFromObj(NULL, objPtr, &l);
+		    Tcl_DecrRefCount(objPtr);
+		} else {
+		    l = Tcl_WideAsLong(w);
+		}
+		if (useShort) {
+		    s = (short int) l;
+		    isNegative = (s < (short int)0);
+		} else {
+		    isNegative = (l < (long)0);
+		}
 	    } else {
-		isNegative = (l < (long)0);
+		if (useShort) {
+		    s = (short int) l;
+		    isNegative = (s < (short int)0);
+		} else {
+		    isNegative = (l < (long)0);
+		}
 	    }
 
 	    segment = Tcl_NewObj();
@@ -1947,7 +1989,7 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 	    Tcl_IncrRefCount(segment);
 
 	    if (isNegative || gotPlus) {
-		if (ch == 'd') {
+		if (useBig || (ch == 'd')) {
 		    if (isNegative) {
 			Tcl_AppendToObj(segment, "-", 1);
 		    } else {
@@ -1975,26 +2017,18 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 		Tcl_Obj *pure;
 		CONST char *bytes;
 
-		if (isNegative) {
-		    if (useShort) {
-			pure = Tcl_NewIntObj((int)(-s));
-		    } else if (useWide) {
-			pure = Tcl_NewWideIntObj(-w);
-		    } else {
-			pure = Tcl_NewLongObj(-l);
-		    }
+		if (useShort) {
+		    pure = Tcl_NewIntObj((int)(s));
+		} else if (useWide) {
+		    pure = Tcl_NewWideIntObj(w);
+		} else if (useBig) {
+		    pure = Tcl_NewBignumObj(&big);
 		} else {
-		    if (useShort) {
-			pure = Tcl_NewIntObj((int)(s));
-		    } else if (useWide) {
-			pure = Tcl_NewWideIntObj(w);
-		    } else {
-			pure = Tcl_NewLongObj(l);
-		    }
+		    pure = Tcl_NewLongObj(l);
 		}
 		Tcl_IncrRefCount(pure);
 		bytes = Tcl_GetStringFromObj(pure, &length);
-		/* Handle things like -INT_MIN == INT_MIN */
+		/* Already did the sign above */
 		if (*bytes == '-') {
 		    length--; bytes++;
 		}
@@ -2024,8 +2058,9 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 	    case 'o':
 	    case 'x':
 	    case 'X': {
-		Tcl_WideUInt bits;
-		int length, numDigits = 0, base = 16;
+		Tcl_WideUInt bits = (Tcl_WideUInt)0;
+		int length, numBits = 4, numDigits = 0, base = 16;
+		int index = 0, shift = 0;
 		Tcl_Obj *pure;
 		char *bytes;
 
@@ -2034,6 +2069,7 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 		}
 		if (ch == 'o') {
 		    base = 8;
+		    numBits = 3;
 		}
 		if (useShort) {
 		    unsigned short int us = (unsigned short int) s;
@@ -2048,6 +2084,14 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 		    while (uw) {
 			numDigits++;
 			uw /= base;
+		    }
+		} else if (useBig) {
+		    int leftover = (big.used * DIGIT_BIT) % numBits;
+		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);
+		    numDigits = 1 + ((big.used * DIGIT_BIT) / numBits);
+		    while ((mask & big.dp[big.used-1]) == 0) {
+			numDigits--;
+			mask >>= numBits;
 		    }
 		} else {
 		    unsigned long int ul = (unsigned long int) l;
@@ -2066,7 +2110,15 @@ TclAppendFormattedObjs(interp, appendObj, format, objc, objv)
 		bytes = Tcl_GetString(pure);
 		length = numDigits;
 		while (numDigits--) {
-		    int digitOffset = (int) (bits % base);
+		    int digitOffset;
+		    if (useBig) {
+			if (shift<CHAR_BIT*sizeof(Tcl_WideUInt)-DIGIT_BIT) {
+			    bits |= (((Tcl_WideUInt)big.dp[index++]) << shift);
+			    shift += DIGIT_BIT;
+			}
+			shift -= numBits;
+		    }
+		    digitOffset = (int) (bits % base);
 		    if (digitOffset > 9) {
 			bytes[numDigits] = 'a' + digitOffset - 10;
 		    } else {

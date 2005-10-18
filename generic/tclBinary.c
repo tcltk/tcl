@@ -7,10 +7,10 @@
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.8 2005/07/26 04:11:52 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.9 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -32,10 +32,10 @@
  * Theoretically, it would be possible to keep the cache about for the values
  * that are already in it, but that makes the code slower in practise when
  * overflow happens, and makes little odds the rest of the time (as measured
- * on my machine.)  It is also slower (on the sample I tried at least) to grow
+ * on my machine.) It is also slower (on the sample I tried at least) to grow
  * the cache to hold all items we might want to put in it; presumably the
  * extra cost of managing the memory for the enlarged table outweighs the
- * benefit from allocating fewer objects.  This is probably because as the
+ * benefit from allocating fewer objects. This is probably because as the
  * number of objects increases, the likelihood of reuse of any particular one
  * drops, and there is very little gain from larger maximum cache sizes (the
  * value below is chosen to allow caching to work in full with conversion of
@@ -48,39 +48,38 @@
  * Prototypes for local procedures defined in this file:
  */
 
-static void		DupByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
-			    Tcl_Obj *copyPtr));
-static int		FormatNumber _ANSI_ARGS_((Tcl_Interp *interp, int type,
-			    Tcl_Obj *src, unsigned char **cursorPtr));
-static void		FreeByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		GetFormatSpec _ANSI_ARGS_((char **formatPtr,
-			    char *cmdPtr, int *countPtr));
-static Tcl_Obj *	ScanNumber _ANSI_ARGS_((unsigned char *buffer,
-			    int type, Tcl_HashTable **numberCachePtr));
-static int		SetByteArrayFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
-static void		UpdateStringOfByteArray _ANSI_ARGS_((Tcl_Obj *listPtr));
-static void		DeleteScanNumberCache _ANSI_ARGS_((
-			    Tcl_HashTable *numberCachePtr));
-static int		NeedReversing _ANSI_ARGS_((int format));
-static void		CopyNumber _ANSI_ARGS_((CONST void *from, void *to,
-			    unsigned int length, int type));
+static void		DupByteArrayInternalRep(Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr);
+static int		FormatNumber(Tcl_Interp *interp, int type,
+			    Tcl_Obj *src, unsigned char **cursorPtr);
+static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
+static int		GetFormatSpec(char **formatPtr, char *cmdPtr,
+			    int *countPtr);
+static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
+			    Tcl_HashTable **numberCachePtr);
+static int		SetByteArrayFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
+static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
+static int		NeedReversing(int format);
+static void		CopyNumber(CONST void *from, void *to,
+			    unsigned int length, int type);
 
 /*
- * The following object type represents an array of bytes.  An array of bytes
- * is not equivalent to an internationalized string.  Conceptually, a string
- * is an array of 16-bit quantities organized as a sequence of properly formed
+ * The following object type represents an array of bytes. An array of bytes
+ * is not equivalent to an internationalized string. Conceptually, a string is
+ * an array of 16-bit quantities organized as a sequence of properly formed
  * UTF-8 characters, while a ByteArray is an array of 8-bit quantities.
  * Accessor functions are provided to convert a ByteArray to a String or a
- * String to a ByteArray.  Two or more consecutive bytes in an array of bytes
+ * String to a ByteArray. Two or more consecutive bytes in an array of bytes
  * may look like a single UTF-8 character if the array is casually treated as
- * a string.  But obtaining the String from a ByteArray is guaranteed to
+ * a string. But obtaining the String from a ByteArray is guaranteed to
  * produced properly formed UTF-8 sequences so that there is a one-to-one map
  * between bytes and characters.
  *
  * Converting a ByteArray to a String proceeds by casting each byte in the
  * array to a 16-bit quantity, treating that number as a Unicode character,
- * and storing the UTF-8 version of that Unicode character in the String.  For
+ * and storing the UTF-8 version of that Unicode character in the String. For
  * ByteArrays consisting entirely of values 1..127, the corresponding String
  * representation is the same as the ByteArray representation.
  *
@@ -100,7 +99,7 @@ Tcl_ObjType tclByteArrayType = {
 };
 
 /*
- * The following structure is the internal rep for a ByteArray object.  Keeps
+ * The following structure is the internal rep for a ByteArray object. Keeps
  * track of how much memory has been used and how much has been allocated for
  * the byte array to enable growing and shrinking of the ByteArray object with
  * fewer mallocs.
@@ -111,8 +110,8 @@ typedef struct ByteArray {
 				 * array. */
     int allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[4];	/* The array of bytes.  The actual size of
-				 * this field depends on the 'allocated' field
+    unsigned char bytes[4];	/* The array of bytes. The actual size of this
+				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
 
@@ -133,8 +132,8 @@ typedef struct ByteArray {
  *	from the given array of bytes.
  *
  * Results:
- *	The newly create object is returned.  This object will have no initial
- *	string representation.  The returned object has a ref count of 0.
+ *	The newly create object is returned. This object will have no initial
+ *	string representation. The returned object has a ref count of 0.
  *
  * Side effects:
  *	Memory allocated for new object and copy of byte array argument.
@@ -146,10 +145,10 @@ typedef struct ByteArray {
 #undef Tcl_NewByteArrayObj
 
 Tcl_Obj *
-Tcl_NewByteArrayObj(bytes, length)
-    CONST unsigned char *bytes;	/* The array of bytes used to initialize the
+Tcl_NewByteArrayObj(
+    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length;			/* Length of the array of bytes, which must be
+    int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
 {
     return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
@@ -158,10 +157,10 @@ Tcl_NewByteArrayObj(bytes, length)
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
-Tcl_NewByteArrayObj(bytes, length)
-    CONST unsigned char *bytes;	/* The array of bytes used to initialize the
+Tcl_NewByteArrayObj(
+    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length;			/* Length of the array of bytes, which must be
+    int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
 {
     Tcl_Obj *objPtr;
@@ -188,8 +187,8 @@ Tcl_NewByteArrayObj(bytes, length)
  *	result of calling Tcl_NewByteArrayObj.
  *
  * Results:
- *	The newly create object is returned.  This object will have no initial
- *	string representation.  The returned object has a ref count of 0.
+ *	The newly create object is returned. This object will have no initial
+ *	string representation. The returned object has a ref count of 0.
  *
  * Side effects:
  *	Memory allocated for new object and copy of byte array argument.
@@ -200,14 +199,14 @@ Tcl_NewByteArrayObj(bytes, length)
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
-Tcl_DbNewByteArrayObj(bytes, length, file, line)
-    CONST unsigned char *bytes;	/* The array of bytes used to initialize the
+Tcl_DbNewByteArrayObj(
+    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length;			/* Length of the array of bytes, which must be
+    int length,			/* Length of the array of bytes, which must be
 				 * >= 0. */
-    CONST char *file;		/* The name of the source file calling this
+    CONST char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
-    int line;			/* Line number in the source file; used for
+    int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
     Tcl_Obj *objPtr;
@@ -220,14 +219,14 @@ Tcl_DbNewByteArrayObj(bytes, length, file, line)
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
-Tcl_DbNewByteArrayObj(bytes, length, file, line)
-    CONST unsigned char *bytes;	/* The array of bytes used to initialize the
+Tcl_DbNewByteArrayObj(
+    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length;			/* Length of the array of bytes, which must be
+    int length,			/* Length of the array of bytes, which must be
 				 * >= 0. */
-    CONST char *file;		/* The name of the source file calling this
+    CONST char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
-    int line;			/* Line number in the source file; used for
+    int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
     return Tcl_NewByteArrayObj(bytes, length);
@@ -246,18 +245,18 @@ Tcl_DbNewByteArrayObj(bytes, length, file, line)
  *	None.
  *
  * Side effects:
- *	The object's old string rep and internal rep is freed.  Memory
+ *	The object's old string rep and internal rep is freed. Memory
  *	allocated for copy of byte array argument.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Tcl_SetByteArrayObj(objPtr, bytes, length)
-    Tcl_Obj *objPtr;		/* Object to initialize as a ByteArray. */
-    CONST unsigned char *bytes;	/* The array of bytes to use as the new
+Tcl_SetByteArrayObj(
+    Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
+    CONST unsigned char *bytes,	/* The array of bytes to use as the new
 				 * value. */
-    int length;			/* Length of the array of bytes, which must be
+    int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
 {
     ByteArray *byteArrayPtr;
@@ -282,7 +281,7 @@ Tcl_SetByteArrayObj(objPtr, bytes, length)
  *
  * Tcl_GetByteArrayFromObj --
  *
- *	Attempt to get the array of bytes from the Tcl object.  If the object
+ *	Attempt to get the array of bytes from the Tcl object. If the object
  *	is not already a ByteArray object, an attempt will be made to convert
  *	it to one.
  *
@@ -290,15 +289,15 @@ Tcl_SetByteArrayObj(objPtr, bytes, length)
  *	Pointer to array of bytes representing the ByteArray object.
  *
  * Side effects:
- *	Frees old internal rep.  Allocates memory for new internal rep.
+ *	Frees old internal rep. Allocates memory for new internal rep.
  *
  *----------------------------------------------------------------------
  */
 
 unsigned char *
-Tcl_GetByteArrayFromObj(objPtr, lengthPtr)
-    Tcl_Obj *objPtr;		/* The ByteArray object. */
-    int *lengthPtr;		/* If non-NULL, filled with length of the
+Tcl_GetByteArrayFromObj(
+    Tcl_Obj *objPtr,		/* The ByteArray object. */
+    int *lengthPtr)		/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
@@ -335,9 +334,9 @@ Tcl_GetByteArrayFromObj(objPtr, lengthPtr)
  */
 
 unsigned char *
-Tcl_SetByteArrayLength(objPtr, length)
-    Tcl_Obj *objPtr;		/* The ByteArray object. */
-    int length;			/* New length for internal byte array. */
+Tcl_SetByteArrayLength(
+    Tcl_Obj *objPtr,		/* The ByteArray object. */
+    int length)			/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr, *newByteArrayPtr;
 
@@ -381,9 +380,9 @@ Tcl_SetByteArrayLength(objPtr, length)
  */
 
 static int
-SetByteArrayFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Not used. */
-    Tcl_Obj *objPtr;		/* The object to convert to type ByteArray. */
+SetByteArrayFromAny(
+    Tcl_Interp *interp,		/* Not used. */
+    Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     int length;
     char *src, *srcEnd;
@@ -429,8 +428,8 @@ SetByteArrayFromAny(interp, objPtr)
  */
 
 static void
-FreeByteArrayInternalRep(objPtr)
-    Tcl_Obj *objPtr;		/* Object with internal rep to free. */
+FreeByteArrayInternalRep(
+    Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
     ckfree((char *) GET_BYTEARRAY(objPtr));
 }
@@ -453,9 +452,9 @@ FreeByteArrayInternalRep(objPtr)
  */
 
 static void
-DupByteArrayInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
+DupByteArrayInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     int length;
     ByteArray *srcArrayPtr, *copyArrayPtr;
@@ -496,8 +495,8 @@ DupByteArrayInternalRep(srcPtr, copyPtr)
  */
 
 static void
-UpdateStringOfByteArray(objPtr)
-    Tcl_Obj *objPtr;		/* ByteArray object whose string rep to
+UpdateStringOfByteArray(
+    Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
     int i, length, size;
@@ -552,11 +551,11 @@ UpdateStringOfByteArray(objPtr)
  */
 
 int
-Tcl_BinaryObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_BinaryObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     int arg;			/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
@@ -598,8 +597,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	}
 
 	/*
-	 * To avoid copying the data, we format the string in two passes.  The
-	 * first pass computes the size of the output buffer.  The second pass
+	 * To avoid copying the data, we format the string in two passes. The
+	 * first pass computes the size of the output buffer. The second pass
 	 * places the formatted data into the buffer.
 	 */
 
@@ -761,7 +760,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	memset((VOID *) buffer, 0, (size_t) length);
 
 	/*
-	 * Pack the data into the result object.  Note that we can skip the
+	 * Pack the data into the result object. Note that we can skip the
 	 * error checking during this pass, since we have already parsed the
 	 * string once.
 	 */
@@ -1152,7 +1151,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		char *dest;
 		unsigned char *src;
 		int i;
-		static char hexdigit[] = "0123456789abcdef";
+		static CONST char hexdigit[] = "0123456789abcdef";
 
 		if (arg >= objc) {
 		    DeleteScanNumberCache(numberCachePtr);
@@ -1363,9 +1362,9 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
  *
  * Results:
  *	Moves the formatPtr to the start of the next command. Returns the
- *	current command character and count in cmdPtr and countPtr.  The count
+ *	current command character and count in cmdPtr and countPtr. The count
  *	is set to BINARY_ALL if the count character was '*' or BINARY_NOCOUNT
- *	if no count was specified.  Returns 1 on success, or 0 if the string
+ *	if no count was specified. Returns 1 on success, or 0 if the string
  *	did not have a format specifier.
  *
  * Side effects:
@@ -1375,10 +1374,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
  */
 
 static int
-GetFormatSpec(formatPtr, cmdPtr, countPtr)
-    char **formatPtr;		/* Pointer to format string. */
-    char *cmdPtr;		/* Pointer to location of command char. */
-    int *countPtr;		/* Pointer to repeat count value. */
+GetFormatSpec(
+    char **formatPtr,		/* Pointer to format string. */
+    char *cmdPtr,		/* Pointer to location of command char. */
+    int *countPtr)		/* Pointer to repeat count value. */
 {
     /*
      * Skip any leading blanks.
@@ -1421,7 +1420,7 @@ GetFormatSpec(formatPtr, cmdPtr, countPtr)
  *	This routine determines, if bytes of a number need to be reversed.
  *	This depends on the endiannes of the machine and the desired format.
  *	It is in effect a table (whose contents depend on the endianness of
- *	the system) describing whether a value needs reversing or not.  Anyone
+ *	the system) describing whether a value needs reversing or not. Anyone
  *	porting the code to a big-endian platform should take care to make
  *	sure that they define WORDS_BIGENDIAN though this is already done by
  *	configure for the Unix build; little-endian platforms (including
@@ -1437,8 +1436,8 @@ GetFormatSpec(formatPtr, cmdPtr, countPtr)
  */
 
 static int
-NeedReversing(format)
-    int format;
+NeedReversing(
+    int format)
 {
     switch (format) {
 	/* native floats and doubles: never reverse */
@@ -1493,7 +1492,7 @@ NeedReversing(format)
  * CopyNumber --
  *
  *	This routine is called by FormatNumber and ScanNumber to copy a
- *	floating-point number.  If required, bytes are reversed while copying.
+ *	floating-point number. If required, bytes are reversed while copying.
  *	The behaviour is only fully defined when used with IEEE float and
  *	double values (guaranteed to be 4 and 8 bytes long, respectively.)
  *
@@ -1507,11 +1506,11 @@ NeedReversing(format)
  */
 
 static void
-CopyNumber(from, to, length, type)
-    CONST void *from;		/* source */
-    void *to;			/* destination */
-    unsigned int length;	/* Number of bytes to copy */
-    int type;			/* What type of thing are we copying? */
+CopyNumber(
+    CONST void *from,		/* source */
+    void *to,			/* destination */
+    unsigned int length,	/* Number of bytes to copy */
+    int type)			/* What type of thing are we copying? */
 {
     if (NeedReversing(type)) {
 	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
@@ -1558,12 +1557,12 @@ CopyNumber(from, to, length, type)
  */
 
 static int
-FormatNumber(interp, type, src, cursorPtr)
-    Tcl_Interp *interp;		/* Current interpreter, used to report
+FormatNumber(
+    Tcl_Interp *interp,		/* Current interpreter, used to report
 				 * errors. */
-    int type;			/* Type of number to format. */
-    Tcl_Obj *src;		/* Number to format. */
-    unsigned char **cursorPtr;	/* Pointer to index into destination buffer. */
+    int type,			/* Type of number to format. */
+    Tcl_Obj *src,		/* Number to format. */
+    unsigned char **cursorPtr)	/* Pointer to index into destination buffer. */
 {
     long value;
     double dvalue;
@@ -1575,7 +1574,7 @@ FormatNumber(interp, type, src, cursorPtr)
     case 'q':
     case 'Q':
 	/*
-	 * Double-precision floating point values.  Tcl_GetDoubleFromObj
+	 * Double-precision floating point values. Tcl_GetDoubleFromObj
 	 * returns TCL_ERROR for NaN, but we can check by comparing the
 	 * object's type pointer.
 	 */
@@ -1594,7 +1593,7 @@ FormatNumber(interp, type, src, cursorPtr)
     case 'r':
     case 'R':
 	/*
-	 * Single-precision floating point values.  Tcl_GetDoubleFromObj
+	 * Single-precision floating point values. Tcl_GetDoubleFromObj
 	 * returns TCL_ERROR for NaN, but we can check by comparing the
 	 * object's type pointer.
 	 */
@@ -1712,26 +1711,26 @@ FormatNumber(interp, type, src, cursorPtr)
  *
  * ScanNumber --
  *
- *	This routine is called by Tcl_BinaryObjCmd to scan a number
- *	out of a buffer.
+ *	This routine is called by Tcl_BinaryObjCmd to scan a number out of a
+ *	buffer.
  *
  * Results:
- *	Returns a newly created object containing the scanned number.
- *	This object has a ref count of zero.
+ *	Returns a newly created object containing the scanned number. This
+ *	object has a ref count of zero.
  *
  * Side effects:
- *	Might reuse an object in the number cache, place a new object
- *	in the cache, or delete the cache and set the reference to
- *	it (itself passed in by reference) to NULL.
+ *	Might reuse an object in the number cache, place a new object in the
+ *	cache, or delete the cache and set the reference to it (itself passed
+ *	in by reference) to NULL.
  *
  *----------------------------------------------------------------------
  */
 
 static Tcl_Obj *
-ScanNumber(buffer, type, numberCachePtrPtr)
-    unsigned char *buffer;	/* Buffer to scan number from. */
-    int type;			/* Format character from "binary scan" */
-    Tcl_HashTable **numberCachePtrPtr;
+ScanNumber(
+    unsigned char *buffer,	/* Buffer to scan number from. */
+    int type,			/* Format character from "binary scan" */
+    Tcl_HashTable **numberCachePtrPtr)
 				/* Place to look for cache of scanned
 				 * value objects, or NULL if too many
 				 * different numbers have been scanned. */
@@ -1744,7 +1743,7 @@ ScanNumber(buffer, type, numberCachePtrPtr)
     /*
      * We cannot rely on the compiler to properly sign extend integer values
      * when we cast from smaller values to larger values because we don't know
-     * the exact size of the integer types.  So, we have to handle sign
+     * the exact size of the integer types. So, we have to handle sign
      * extension explicitly by checking the high bit and padding with 1's as
      * needed.
      */
@@ -1752,7 +1751,7 @@ ScanNumber(buffer, type, numberCachePtrPtr)
     switch (type) {
     case 'c':
 	/*
-	 * Characters need special handling.  We want to produce a signed
+	 * Characters need special handling. We want to produce a signed
 	 * result, but on some platforms (such as AIX) chars are unsigned. To
 	 * deal with this, check for a value that should be negative but
 	 * isn't.
@@ -1765,8 +1764,8 @@ ScanNumber(buffer, type, numberCachePtrPtr)
 	goto returnNumericObject;
 
 	/*
-	 * 16-bit numeric values.  We need the sign extension trick (see
-	 * above) here as well.
+	 * 16-bit numeric values. We need the sign extension trick (see above)
+	 * here as well.
 	 */
 
     case 's':
@@ -1825,10 +1824,9 @@ ScanNumber(buffer, type, numberCachePtrPtr)
 		return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries > BINARY_SCAN_MAX_CACHE) {
-
 		/*
-		 * We've overflowed the cache!  Someone's parsing a LOT of
-		 * varied binary data in a single call!  Bail out by switching
+		 * We've overflowed the cache! Someone's parsing a LOT of
+		 * varied binary data in a single call! Bail out by switching
 		 * back to the old behaviour for the rest of the scan.
 		 *
 		 * Note that anyone just using the 'c' conversion (for bytes)
@@ -1922,10 +1920,11 @@ ScanNumber(buffer, type, numberCachePtrPtr)
  */
 
 static void
-DeleteScanNumberCache(numberCachePtr)
-    Tcl_HashTable *numberCachePtr;	/* Pointer to the hash table, or NULL
-					 * (when the cache has already been
-					 * deleted due to overflow.) */
+DeleteScanNumberCache(
+    Tcl_HashTable *numberCachePtr)
+				/* Pointer to the hash table, or NULL (when
+				 * the cache has already been deleted due to
+				 * overflow.) */
 {
     Tcl_HashEntry *hEntry;
     Tcl_HashSearch search;

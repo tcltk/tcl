@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.9.4.3 2005/04/07 17:32:01 dgp Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.9.4.4 2005/10/18 20:46:17 dgp Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -136,8 +136,7 @@ decimal digits.
 It is read in and stored in the variable as a floating-point string.
 .TP 10
 \fB[\fIchars\fB]\fR
-The input field consists of any number of characters in 
-\fIchars\fR.
+The input field consists of one or more characters in \fIchars\fR.
 The matching string is stored in the variable.
 If the first character between the brackets is a \fB]\fR then
 it is treated as part of \fIchars\fR rather than the closing
@@ -149,8 +148,7 @@ If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range.
 .TP 10
 \fB[^\fIchars\fB]\fR
-The input field consists of any number of characters not in 
-\fIchars\fR.
+The input field consists of one or more characters not in \fIchars\fR.
 The matching string is stored in the variable.
 If the character immediately following the \fB^\fR is a \fB]\fR then it is 
 treated as part of the set rather than the closing bracket for 

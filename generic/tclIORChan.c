@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.3 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.4 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1048,9 +1048,6 @@ RcClose (clientData, interp)
 #endif
 	return (res == TCL_OK) ? EOK : EINVAL;
     }
-
-    Tcl_Panic ("Should not be reached");
-    return EINVAL;
 }
 
 /*

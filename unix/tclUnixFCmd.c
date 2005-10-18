@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.13 2005/09/15 20:30:11 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.14 2005/10/18 20:47:32 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -162,6 +162,22 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 #endif
 };
 #endif
+
+/*
+ * This is the maximum number of consecutive readdir/unlink calls that can be
+ * made (with no intervening rewinddir or closedir/opendir) before triggering
+ * a bug that makes readdir return NULL even though some directory entries
+ * have not been processed.  The bug afflicts SunOS's readdir when applied to
+ * ufs file systems and Darwin 6.5's (and OSX v.10.3.8's) HFS+.  JH found the
+ * Darwin readdir to reset at 172, so 150 is chosen to be conservative.  We
+ * can't do a general rewind on failure as NFS can create special files that
+ * recreate themselves when you try and delete them.  8.4.8 added a solution
+ * that was affected by a single such NFS file, this solution should not be
+ * affected by less than THRESHOLD such files. [Bug 1034337]
+ */
+
+#define MAX_READDIR_UNLINK_THRESHOLD 150
+
 /*
  * Declarations for local procedures defined in this file:
  */
@@ -864,7 +880,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
     CONST char *source, *errfile;
     int result, sourceLen;
     int targetLen;
-    int needRewind;
+    int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
     DIR *dirPtr;
 
@@ -909,45 +925,47 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 
-    do {
-	needRewind = 0;
-	while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native */
-	    if ((dirEntPtr->d_name[0] == '.')
-		    && ((dirEntPtr->d_name[1] == '\0')
-			    || (strcmp(dirEntPtr->d_name, "..") == 0))) {
-		continue;
-	    }
-
-	    /*
-	     * Append name after slash, and recurse on the file.
-	     */
-
-	    Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, -1);
-	    if (targetPtr != NULL) {
-		Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, -1);
-	    }
-	    result = TraverseUnixTree(traverseProc, sourcePtr, targetPtr,
-		    errorPtr, doRewind);
-	    if (result != TCL_OK) {
-	    	needRewind = 0;
-		break;
-	    } else {
-		needRewind = doRewind;
-	    }
-
-	    /*
-	     * Remove name after slash.
-	     */
-
-	    Tcl_DStringSetLength(sourcePtr, sourceLen);
-	    if (targetPtr != NULL) {
-		Tcl_DStringSetLength(targetPtr, targetLen);
-	    }
+    while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native. */
+	if ((dirEntPtr->d_name[0] == '.')
+		&& ((dirEntPtr->d_name[1] == '\0')
+			|| (strcmp(dirEntPtr->d_name, "..") == 0))) {
+	    continue;
 	}
-	if (needRewind) {
+
+	/*
+	 * Append name after slash, and recurse on the file.
+	 */
+
+	Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, -1);
+	if (targetPtr != NULL) {
+	    Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, -1);
+	}
+	result = TraverseUnixTree(traverseProc, sourcePtr, targetPtr,
+		errorPtr, doRewind);
+	if (result != TCL_OK) {
+	    break;
+	} else {
+	    numProcessed++;
+	}
+
+	/*
+	 * Remove name after slash.
+	 */
+
+	Tcl_DStringSetLength(sourcePtr, sourceLen);
+	if (targetPtr != NULL) {
+	    Tcl_DStringSetLength(targetPtr, targetLen);
+	}
+	if (doRewind && (numProcessed > MAX_READDIR_UNLINK_THRESHOLD)) {
+	    /*
+	     * Call rewinddir if we've called unlink or rmdir so many times
+	     * (since the opendir or the previous rewinddir), to avoid
+	     * a NULL-return that may a symptom of a buggy readdir.
+	     */
 	    rewinddir(dirPtr);
+	    numProcessed = 0;
 	}
-    } while (needRewind);
+    }
     closedir(dirPtr);
 
     /*

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.4 2005/01/12 21:36:38 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.5 2005/10/18 20:47:03 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -40,10 +40,14 @@ namespace eval http {
 
     proc init {} {
 	# Set up the map for quoting chars
-	# The spec says: "non-alphanumeric characters are replaced by '%HH'"
-	for {set i 0} {$i < 256} {incr i} {
+	# RFC3986 Section 2.3 say percent encode all except:
+	# "... percent-encoded octets in the ranges of ALPHA
+	# (%41-%5A and %61-%7A), DIGIT (%30-%39), hyphen (%2D),
+	# period (%2E), underscore (%5F), or tilde (%7E) should
+	# not be created by URI producers ..."
+	for {set i 0} {$i <= 256} {incr i} {
 	    set c [format %c $i]
-	    if {![string match {[a-zA-Z0-9]} $c]} {
+	    if {![string match {[-._~a-zA-Z0-9]} $c]} {
 		set map($c) %[format %.2x $i]
 	    }
 	}

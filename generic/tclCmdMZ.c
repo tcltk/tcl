@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.21 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.22 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1530,52 +1530,20 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_IS_DOUBLE: {
 	    char *stop;
 
+	    /* TODO */
 	    if ((objPtr->typePtr == &tclDoubleType) ||
-		    (objPtr->typePtr == &tclIntType)) {
+		(objPtr->typePtr == &tclIntType) ||
+#ifndef NO_WIDE_TYPE
+		(objPtr->typePtr == &tclWideIntType) ||
+#endif
+		(objPtr->typePtr == &tclBignumType)) {
 		break;
 	    }
-
-	    /*
-	     * This is adapted from Tcl_GetDouble
-	     *
-	     * The danger in this function is that "12345678901234567890" is
-	     * an acceptable 'double', but will later be interp'd as an int by
-	     * something like [expr]. Therefore, we check to see if it looks
-	     * like an int, and if so we do a range check on it. If strtoul
-	     * gets to the end, we know we either received an acceptable int,
-	     * or over/underflow.
-	     */
-
-	    if (TclLooksLikeInt(string1, length1)) {
-		errno = 0;
-#ifdef TCL_WIDE_INT_IS_LONG
-		strtoul(string1, &stop, 0); /* INTL: Tcl source. */
-#else
-		strtoull(string1, &stop, 0); /* INTL: Tcl source. */
-#endif
-		if (stop == end) {
-		    if (errno == ERANGE) {
-			result = 0;
-			failat = -1;
-		    }
-		    break;
-		}
-	    }
-	    errno = 0;
-	    TclStrToD(string1, (CONST char **) &stop); /* INTL: Tcl source. */
-	    if (stop == string1) {
-		/*
-		 * In this case, nothing like a number was found.
-		 */
-
+	    if (TclParseNumber( NULL, objPtr, NULL, NULL, -1, 
+				(CONST char**) &stop, 0 ) != TCL_OK) {
 		result = 0;
 		failat = 0;
 	    } else {
-		/*
-		 * Assume we sucked up one char per byte and then we go onto
-		 * SPACE, since we are allowed trailing whitespace.
-		 */
-
 		failat = stop - string1;
 		string1 = stop;
 		chcomp = Tcl_UniCharIsSpace;

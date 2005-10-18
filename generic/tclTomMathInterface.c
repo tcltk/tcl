@@ -3,15 +3,15 @@
  *
  * tclTomMathInterface.c --
  *
- *	This file contains procedures that are used as a 'glue'
- *	layer between Tcl and libtommath.
+ *	This file contains procedures that are used as a 'glue' layer between
+ *	Tcl and libtommath.
  *
  * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.2.2.2 2005/05/11 16:58:47 dgp Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.2.2.3 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -28,38 +28,41 @@
  * Results:
  *	Returns a pointer to the allocated block.
  *
- * This procedure is a wrapper around Tcl_Alloc, needed because of
- * a mismatched type signature between Tcl_Alloc and malloc.
+ * This procedure is a wrapper around Tcl_Alloc, needed because of a
+ * mismatched type signature between Tcl_Alloc and malloc.
  *
  *----------------------------------------------------------------------
- */	
+ */
 
 extern void *
-TclBNAlloc( size_t x )
+TclBNAlloc(
+    size_t x)
 {
-    return (void*) Tcl_Alloc( (unsigned int) x );
+    return (void *) Tcl_Alloc((unsigned int) x);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclBNAlloc --
+ * TclBNRealloc --
  *
  *	Change the size of an allocated block of memory in libtommath
  *
  * Results:
  *	Returns a pointer to the allocated block.
  *
- * This procedure is a wrapper around Tcl_Realloc, needed because of
- * a mismatched type signature between Tcl_Realloc and realloc.
+ * This procedure is a wrapper around Tcl_Realloc, needed because of a
+ * mismatched type signature between Tcl_Realloc and realloc.
  *
  *----------------------------------------------------------------------
- */	
+ */
 
 extern void *
-TclBNRealloc( void* p, size_t s  )
+TclBNRealloc(
+    void *p,
+    size_t s)
 {
-    return (void*) Tcl_Realloc( (char*) p, (unsigned int) s );
+    return (void *) Tcl_Realloc((char *) p, (unsigned int) s);
 }
 
 /*
@@ -75,16 +78,17 @@ TclBNRealloc( void* p, size_t s  )
  * Side effects:
  *	Memory is freed.
  *
- * This function is simply a wrapper around Tcl_Free, needed in
- * libtommath because of a type mismatch between free and Tcl_Free.
+ * This function is simply a wrapper around Tcl_Free, needed in libtommath
+ * because of a type mismatch between free and Tcl_Free.
  *
  *----------------------------------------------------------------------
  */
 
 extern void
-TclBNFree( void* p )
+TclBNFree(
+    void *p)
 {
-    Tcl_Free( (char*) p);
+    Tcl_Free((char *) p);
 }
 
 /*
@@ -104,9 +108,10 @@ TclBNFree( void* p )
  */
 
 extern void
-TclBNInitBignumFromLong( mp_int* a, long initVal )
+TclBNInitBignumFromLong(
+    mp_int *a,
+    long initVal)
 {
-
     int status;
     unsigned long v;
     mp_digit* p;
@@ -115,15 +120,17 @@ TclBNInitBignumFromLong( mp_int* a, long initVal )
      * Allocate enough memory to hold the largest possible long
      */
 
-    status = mp_init_size( a, ( ( CHAR_BIT * sizeof( long ) + DIGIT_BIT - 1 )
-				/ DIGIT_BIT ) );
-    if ( status != MP_OKAY ) {
-	Tcl_Panic( "initialization failure in TclBNInitBignumFromLong" );
+    status = mp_init_size(a,
+	    (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT);
+    if (status != MP_OKAY) {
+	Tcl_Panic("initialization failure in TclBNInitBignumFromLong");
     }
-    
-    /* Convert arg to sign and magnitude */
 
-    if ( initVal < 0 ) {
+    /*
+     * Convert arg to sign and magnitude.
+     */
+
+    if (initVal < 0) {
 	a->sign = MP_NEG;
 	v = -initVal;
     } else {
@@ -131,13 +138,99 @@ TclBNInitBignumFromLong( mp_int* a, long initVal )
 	v = initVal;
     }
 
-    /* Store the magnitude in the bignum. */
+    /*
+     * Store the magnitude in the bignum.
+     */
 
     p = a->dp;
-    while ( v ) {
-	*p++ = (mp_digit) ( v & MP_MASK );
+    while (v) {
+	*p++ = (mp_digit) (v & MP_MASK);
 	v >>= MP_DIGIT_BIT;
     }
     a->used = p - a->dp;
-    
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBNInitBignumFromWideInt --
+ *
+ *	Allocate and initialize a 'bignum' from a Tcl_WideInt
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The 'bignum' is constructed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+extern void
+TclBNInitBignumFromWideInt(
+    mp_int *a,			/* Bignum to initialize */
+    Tcl_WideInt v)		/* Initial value */
+{
+    if (v < (Tcl_WideInt)0) {
+	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)(-v));
+	mp_neg(a, a);
+    } else {
+	TclBNInitBignumFromWideUInt(a, (Tcl_WideUInt)v);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBNInitBignumFromWideUInt --
+ *
+ *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The 'bignum' is constructed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+extern void
+TclBNInitBignumFromWideUInt(
+    mp_int *a,			/* Bignum to initialize */
+    Tcl_WideUInt v)		/* Initial value */
+{
+    int status;
+    mp_digit *p;
+
+    /*
+     * Allocate enough memory to hold the largest possible Tcl_WideUInt.
+     */
+
+    status = mp_init_size(a,
+	    (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT);
+    if (status != MP_OKAY) {
+	Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
+    }
+
+    a->sign = MP_ZPOS;
+
+    /*
+     * Store the magnitude in the bignum.
+     */
+
+    p = a->dp;
+    while (v) {
+	*p++ = (mp_digit) (v & MP_MASK);
+	v >>= MP_DIGIT_BIT;
+    }
+    a->used = p - a->dp;
+}
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

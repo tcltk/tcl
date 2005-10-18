@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.12 2005/08/02 16:38:18 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.13 2005/10/18 20:47:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1525,6 +1525,11 @@ test fileName-18.1 {windows - split ADS name correctly} {win} {
     set y [eval [linsert $x 0 file join]]
     list $x $y
 } {{c:/ ./c:d} c:/c:d}
+
+test fileName-19.1 {ensure that [Bug 1325099] stays fixed} {
+    # Any non-crashing result is OK
+    list [file exists ~//.nonexistant_file] [file exists ~///.nonexistant_file]
+} {0 0}
 
 # cleanup
 catch {file delete -force C:/globTest}

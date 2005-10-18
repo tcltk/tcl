@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.9 2005/09/12 15:45:02 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.10 2005/10/18 20:47:32 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -351,13 +351,6 @@ SC_CONFIG_CFLAGS
 SC_ENABLE_SYMBOLS
 
 TCL_DBGX=${DBGX}
-
-#--------------------------------------------------------------------
-# man2tcl needs this so that it can use errno.h
-#--------------------------------------------------------------------
-
-AC_CHECK_HEADER(errno.h, , MAN2TCLFLAGS="-DNO_ERRNO_H")
-AC_SUBST(MAN2TCLFLAGS)
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name

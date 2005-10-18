@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.7 2005/07/26 04:12:19 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.8 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -22,14 +22,17 @@
 #define SCAN_UNSIGNED	0x4		/* Read an unsigned value. */
 #define SCAN_WIDTH	0x8		/* A width value was supplied. */
 
+#if 0
 #define SCAN_SIGNOK	0x10		/* A +/- character is allowed. */
 #define SCAN_NODIGITS	0x20		/* No digits have been scanned. */
 #define SCAN_NOZERO	0x40		/* No zero digits have been scanned. */
 #define SCAN_XOK	0x80		/* An 'x' is allowed. */
 #define SCAN_PTOK	0x100		/* Decimal point is allowed. */
 #define SCAN_EXPOK	0x200		/* An exponent is allowed. */
+#endif
 
 #define SCAN_LONGER	0x400		/* Asked for a wide value. */
+#define SCAN_BIG	0x800		/* Asked for a bignum value. */
 
 /*
  * The following structure contains the information associated with a
@@ -366,6 +369,12 @@ ValidateFormat(interp, format, numVars, totalSubs)
 
 	switch (ch) {
 	case 'l':
+	    if (*format == 'l') {
+		flags |= SCAN_BIG;
+		format += 1;
+		format += Tcl_UtfToUniChar(format, &ch);
+		break;
+	    }
 	case 'L':
 	    flags |= SCAN_LONGER;
 	case 'h':
@@ -393,11 +402,11 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	     */
 	case 'n':
 	case 's':
-	    if (flags & SCAN_LONGER) {
-	    invalidLonger:
+	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
+	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 		Tcl_AppendResult(interp,
-			"'l' modifier may not be specified in %", buf,
+			"field size modifier may not be specified in %", buf,
 			" conversion", NULL);
 		goto error;
 	    }
@@ -410,15 +419,21 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	case 'g':
 	case 'i':
 	case 'o':
-	case 'u':
 	case 'x':
+	    break;
+	case 'u':
+	    if (flags & SCAN_BIG) {
+		Tcl_SetResult(interp,
+			"unsigned bignum scans are invalid", TCL_STATIC);
+		goto error;
+	    }
 	    break;
 	    /*
 	     * Bracket terms need special checking
 	     */
 	case '[':
-	    if (flags & SCAN_LONGER) {
-		goto invalidLonger;
+	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
+		goto invalidFieldSize;
 	    }
 	    if (*format == '\0') {
 		goto badSet;
@@ -574,22 +589,24 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
     long value;
-    char *string, *end, *baseString;
+    CONST char *string, *end, *baseString;
     char op = 0;
-    int base = 0;
     int underflow = 0;
     size_t width;
-    long (*fn) _ANSI_ARGS_((char*,void*,int)) = NULL;
-#ifndef TCL_WIDE_INT_IS_LONG
-    Tcl_WideInt (*lfn) _ANSI_ARGS_((char*,void*,int)) = NULL;
     Tcl_WideInt wideValue;
-#endif
     Tcl_UniChar ch, sch;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
     char buf[513];		/* Temporary buffer to hold scanned number
 				 * strings before they are passed to
 				 * strtoul. */
+#if 0
+    int base = 0;
+    long (*fn) _ANSI_ARGS_((char*,void*,int)) = NULL;
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_WideInt (*lfn) _ANSI_ARGS_((char*,void*,int)) = NULL;
+#endif
+#endif
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -631,6 +648,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     objIndex = 0;
     nconversions = 0;
     while (*format != '\0') {
+	int parseFlag = 0;
 	format += Tcl_UtfToUniChar(format, &ch);
 
 	flags = 0;
@@ -678,9 +696,10 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    flags |= SCAN_SUPPRESS;
 	    format += Tcl_UtfToUniChar(format, &ch);
 	} else if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    value = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
-	    if (*end == '$') {
-		format = end+1;
+	    char *formatEnd;
+	    value = strtoul(format-1, &formatEnd, 10);/* INTL: "C" locale. */
+	    if (*formatEnd == '$') {
+		format = formatEnd+1;
 		format += Tcl_UtfToUniChar(format, &ch);
 		objIndex = (int) value - 1;
 	    }
@@ -703,6 +722,12 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 
 	switch (ch) {
 	case 'l':
+	    if (*format == 'l') {
+		flags |= SCAN_BIG;
+		format += 1;
+		format += Tcl_UtfToUniChar(format, &ch);
+		break;
+	    }
 	case 'L':
 	    flags |= SCAN_LONGER;
 	    /*
@@ -728,43 +753,57 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 
 	case 'd':
 	    op = 'i';
+	    parseFlag = TCL_PARSE_DECIMAL_ONLY;
+#if 0
 	    base = 10;
 	    fn = (long (*) _ANSI_ARGS_((char*,void*,int)))strtol;
 #ifndef TCL_WIDE_INT_IS_LONG
 	    lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoll;
 #endif
+#endif
 	    break;
 	case 'i':
 	    op = 'i';
+	    parseFlag = TCL_PARSE_SCAN_PREFIXES;
+#if 0
 	    base = 0;
 	    fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtol;
 #ifndef TCL_WIDE_INT_IS_LONG
 	    lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoll;
 #endif
+#endif
 	    break;
 	case 'o':
 	    op = 'i';
+	    parseFlag = TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
+#if 0
 	    base = 8;
 	    fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;
 #ifndef TCL_WIDE_INT_IS_LONG
 	    lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoull;
 #endif
+#endif
 	    break;
 	case 'x':
 	    op = 'i';
+	    parseFlag = TCL_PARSE_HEXADECIMAL_ONLY;
+#if 0
 	    base = 16;
 	    fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;
 #ifndef TCL_WIDE_INT_IS_LONG
 	    lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoull;
 #endif
+#endif
 	    break;
 	case 'u':
 	    op = 'i';
-	    base = 10;
 	    flags |= SCAN_UNSIGNED;
+#if 0
+	    base = 10;
 	    fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;
 #ifndef TCL_WIDE_INT_IS_LONG
 	    lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoull;
+#endif
 #endif
 	    break;
 
@@ -903,6 +942,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	     * Scan an unsigned or signed integer.
 	     */
 
+#if 0
 	    if ((width == 0) || (width > sizeof(buf) - 1)) {
 		width = sizeof(buf) - 1;
 	    }
@@ -1049,111 +1089,91 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    break;
+#else
+	    objPtr = Tcl_NewLongObj(0);
+	    Tcl_IncrRefCount(objPtr);
+	    if (width == 0) {
+		width = -1;
+	    }
+	    if (TclParseNumber(NULL, objPtr, NULL, string, width, &end,
+		    TCL_PARSE_INTEGER_ONLY | parseFlag) != TCL_OK) {
+		Tcl_DecrRefCount(objPtr);
+		/* TODO: set underflow?  test scan-4.44 */
+		goto done;
+	    }
+	    string = end;
+	    if (flags & SCAN_SUPPRESS) {
+		Tcl_DecrRefCount(objPtr);
+		break;
+	    }
+	    if (flags & SCAN_LONGER) {
+		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
+		    wideValue = ~(Tcl_WideUInt)0 >> 1;	/* WIDE_MAX */
+		    if (Tcl_GetString(objPtr)[0] == '-') {
+			wideValue++;	/* WIDE_MAX + 1 = WIDE_MIN */
+		    }
+		}
+		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
+		    sprintf(buf, "%" TCL_LL_MODIFIER "u",
+			    (Tcl_WideUInt)wideValue);
+		    Tcl_SetStringObj(objPtr, buf, -1);
+		} else {
+		    Tcl_SetWideIntObj(objPtr, wideValue);
+		}
+	    } else if (!(flags & SCAN_BIG)) {
+		if (Tcl_GetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		    if (Tcl_GetString(objPtr)[0] == '-') {
+			value = LONG_MIN;
+		    } else {
+			value = LONG_MAX;
+		    }
+		}
+		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
+		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
+		    Tcl_SetStringObj(objPtr, buf, -1);
+		} else {
+		    Tcl_SetLongObj(objPtr, value);
+		}
+	    }
+	    objs[objIndex++] = objPtr;
+	    break;
+#endif
 
 	case 'f':
 	    /*
 	     * Scan a floating point number
 	     */
 
-	    if ((width == 0) || (width > sizeof(buf) - 1)) {
-		width = sizeof(buf) - 1;
+	    objPtr = Tcl_NewDoubleObj(0.0);
+	    Tcl_IncrRefCount(objPtr);
+	    if (width == 0) {
+		width = -1;
 	    }
-	    flags &= ~SCAN_LONGER;
-	    flags |= SCAN_SIGNOK | SCAN_NODIGITS | SCAN_PTOK | SCAN_EXPOK;
-	    for (end = buf; width > 0; width--) {
-		switch (*string) {
-		case '0': case '1': case '2': case '3':
-		case '4': case '5': case '6': case '7':
-		case '8': case '9':
-		    flags &= ~(SCAN_SIGNOK | SCAN_NODIGITS);
-		    goto addToFloat;
-		case '+': case '-':
-		    if (flags & SCAN_SIGNOK) {
-			flags &= ~SCAN_SIGNOK;
-			goto addToFloat;
-		    }
-		    break;
-		case '.':
-		    if (flags & SCAN_PTOK) {
-			flags &= ~(SCAN_SIGNOK | SCAN_PTOK);
-			goto addToFloat;
-		    }
-		    break;
-		case 'e': case 'E':
-		    /*
-		     * An exponent is not allowed until there has been at
-		     * least one digit.
-		     */
-
-		    if ((flags & (SCAN_NODIGITS | SCAN_EXPOK)) == SCAN_EXPOK) {
-			flags = (flags & ~(SCAN_EXPOK|SCAN_PTOK))
-				| SCAN_SIGNOK | SCAN_NODIGITS;
-			goto addToFloat;
-		    }
-		    break;
-		}
-
-		/*
-		 * We got an illegal character so we are done accumulating.
-		 */
-
-		break;
-
-	    addToFloat:
-		/*
-		 * Add the character to the temporary buffer.
-		 */
-
-		*end++ = *string++;
-		if (*string == '\0') {
-		    break;
-		}
-	    }
-
-	    /*
-	     * Check to see if we need to back up because we saw a trailing
-	     * 'e' or sign.
-	     */
-
-	    if (flags & SCAN_NODIGITS) {
-		if (flags & SCAN_EXPOK) {
-		    /*
-		     * There were no digits at all so scanning has failed and
-		     * we are done.
-		     */
-
-		    if (*string == '\0') {
-			underflow = 1;
-		    }
-		    goto done;
-		}
-
-		/*
-		 * We got a bad exponent ('e' and maybe a sign).
-		 */
-
-		end--;
-		string--;
-		if (*end != 'e' && *end != 'E') {
-		    end--;
-		    string--;
-		}
-	    }
-
-	    /*
-	     * Scan the value from the temporary buffer.
-	     */
-
-	    if (!(flags & SCAN_SUPPRESS)) {
+	    if (TclParseNumber(NULL, objPtr, NULL, string, width, &end,
+			       TCL_PARSE_DECIMAL_ONLY) != TCL_OK) {
+		/* TODO: set underflow?  test scan-4.55 */
+		Tcl_DecrRefCount(objPtr);
+		goto done;
+	    } else if (flags & SCAN_SUPPRESS) {
+		Tcl_DecrRefCount(objPtr);
+		string = end;
+	    } else {
 		double dvalue;
-
-		*end = '\0';
-		dvalue = TclStrToD(buf, NULL);
-		objPtr = Tcl_NewDoubleObj(dvalue);
-		Tcl_IncrRefCount(objPtr);
+		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
+#ifdef ACCEPT_NAN
+		    if (objPtr->typePtr == &tclDoubleType) {
+			dValue = objPtr->internalRep.doubleValue;
+		    } else
+#endif
+		    {
+		    Tcl_DecrRefCount(objPtr);
+		    goto done;
+		    }
+		}
+		Tcl_SetDoubleObj(objPtr, dvalue);
 		objs[objIndex++] = objPtr;
+		string = end;
 	    }
-	    break;
 	}
 	nconversions++;
     }

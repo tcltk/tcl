@@ -12,11 +12,18 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.33 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.34 2005/10/18 20:46:19 dgp Exp $
  */
 
 #ifndef _TCLINT
 #define _TCLINT
+
+/*
+ * Some numerics configuration options
+ */
+
+#undef NO_WIDE_TYPE
+#undef ACCEPT_NAN
 
 /*
  * Common include files needed by most of the Tcl source files are included
@@ -95,6 +102,14 @@ typedef int ptrdiff_t;
 #   else
 #	define MODULE_SCOPE extern
 #   endif
+#endif
+
+/*
+ * When Tcl_WideInt and long are the same type, there's no value in
+ * having a tclWideIntType separate from the tclIntType.
+ */
+#ifdef TCL_WIDE_INT_IS_LONG
+#define NO_WIDE_TYPE
 #endif
 
 /*
@@ -1913,6 +1928,35 @@ typedef struct ProcessGlobalValue {
 } ProcessGlobalValue;
 
 /*
+ *----------------------------------------------------------------------
+ * Flags for TclParseNumber
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_PARSE_DECIMAL_ONLY		1
+				/* Leading zero doesn't denote octal or hex */
+#define TCL_PARSE_OCTAL_ONLY		2
+				/* Parse octal even without prefix */
+#define TCL_PARSE_HEXADECIMAL_ONLY	4
+				/* Parse hexadecimal even without prefix */
+#define TCL_PARSE_INTEGER_ONLY		8
+				/* Disable floating point parsing */
+#define TCL_PARSE_SCAN_PREFIXES		16
+				/* Use [scan] rules dealing with 0? prefixes */
+
+/*
+ *----------------------------------------------------------------------
+ * Type values TclGetNumberFromObj
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_NUMBER_LONG		1
+#define TCL_NUMBER_WIDE		2
+#define TCL_NUMBER_BIG		3
+#define TCL_NUMBER_DOUBLE	4
+#define TCL_NUMBER_NAN		5
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
@@ -1937,6 +1981,7 @@ MODULE_SCOPE ClientData		tclTimeClientData;
  * Variables denoting the Tcl object types defined in the core.
  */
 
+MODULE_SCOPE Tcl_ObjType tclBignumType;
 MODULE_SCOPE Tcl_ObjType tclBooleanType;
 MODULE_SCOPE Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE Tcl_ObjType tclByteCodeType;
@@ -1949,7 +1994,9 @@ MODULE_SCOPE Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE Tcl_ObjType tclStringType;
 MODULE_SCOPE Tcl_ObjType tclArraySearchType;
 MODULE_SCOPE Tcl_ObjType tclNsNameType;
+#ifndef NO_WIDE_TYPE
 MODULE_SCOPE Tcl_ObjType tclWideIntType;
+#endif
 MODULE_SCOPE Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclTokensType;
 
@@ -2042,6 +2089,7 @@ MODULE_SCOPE void	TclAppendObjToErrorInfo(Tcl_Interp *interp,
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(mp_int* bignum);
+MODULE_SCOPE double	TclCeil(mp_int* a);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,CONST char *value);
 MODULE_SCOPE int	TclChanCreateObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
@@ -2084,6 +2132,7 @@ MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
+MODULE_SCOPE double	TclFloor(mp_int* a);
 MODULE_SCOPE void	TclFormatNaN(double value, char* buffer);
 MODULE_SCOPE int	TclFormatObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    CONST char *format, ...);
@@ -2096,6 +2145,9 @@ MODULE_SCOPE int	TclGetEncodingFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE int	TclGetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
+MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
+			    int *typePtr);
 MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    CONST char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);
@@ -2105,7 +2157,13 @@ MODULE_SCOPE Tcl_Token *TclGetTokensFromObj (Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData* types);
+MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
+			    Tcl_Obj *incrPtr);
+MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
 MODULE_SCOPE void	TclInitAlloc(void);
+MODULE_SCOPE int	TclInitBignumFromDouble(Tcl_Interp *interp, double d,
+			    mp_int *b);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
@@ -2151,9 +2209,14 @@ MODULE_SCOPE int	TclParseExpr (Tcl_Interp *interp, CONST char *string,
 			    Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclParseHex(CONST char *src, int numBytes,
 			    Tcl_UniChar *resultPtr);
+MODULE_SCOPE int	TclParseNumber(Tcl_Interp* interp, Tcl_Obj* objPtr,
+			    CONST char* type, CONST char* string,
+			    size_t length, CONST char** endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, CONST char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
+#if 0
 MODULE_SCOPE int	TclParseInteger(CONST char *string, int numBytes);
+#endif
 MODULE_SCOPE Tcl_Token *TclParseScript (CONST char *script, int numBytes,
 			    int flags, Tcl_Token **lastTokenPtrPtr,
 			    CONST char **termPtr);
@@ -2226,10 +2289,11 @@ MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
+MODULE_SCOPE void	TclSetBignumIntRep (Tcl_Obj *objPtr,
+			    mp_int *bignumValue);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE VOID	TclSignalExitThread(Tcl_ThreadId id, int result);
-MODULE_SCOPE double	TclStrToD(CONST char* string, CONST char** endPtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int flags);
 MODULE_SCOPE void	TclTransferResult(Tcl_Interp *sourceInterp, int result,
@@ -2608,6 +2672,11 @@ MODULE_SCOPE Tcl_Obj *	TclPtrSetVar(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, CONST char *part1,
 			    CONST char *part2, Tcl_Obj *newValuePtr,
 			    CONST int flags);
+MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVar (Tcl_Interp *interp,
+			    Var *varPtr, Var *arrayPtr, CONST char *part1,
+			    CONST char *part2, Tcl_Obj *incrPtr,
+			    CONST int flags);
+#if 0
 MODULE_SCOPE Tcl_Obj *	TclPtrIncrVar(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, CONST char *part1,
 			    CONST char *part2, CONST long i, CONST int flags);
@@ -2615,6 +2684,7 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrWideVar(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, CONST char *part1,
 			    CONST char *part2, CONST Tcl_WideInt i,
 			    CONST int flags);
+#endif
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 
 /*
@@ -2829,24 +2899,20 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
     }\
 
 
+#if 0
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to get a Tcl_WideInt value out of a Tcl_Obj of
- * the "wideInt" type. Different implementation on different platforms
- * depending whether TCL_WIDE_INT_IS_LONG.
+ * the "wideInt" type.  
  *----------------------------------------------------------------
  */
 
-#ifdef TCL_WIDE_INT_IS_LONG
-#    define TclGetWide(resultVar, objPtr) \
-	(resultVar) = (objPtr)->internalRep.longValue
-#    define TclGetLongFromWide(resultVar, objPtr) \
-	(resultVar) = (objPtr)->internalRep.longValue
-#else
+#ifndef NO_WIDE_TYPE
 #    define TclGetWide(resultVar, objPtr) \
 	(resultVar) = (objPtr)->internalRep.wideValue
 #    define TclGetLongFromWide(resultVar, objPtr) \
 	(resultVar) = Tcl_WideAsLong((objPtr)->internalRep.wideValue)
+#endif
 #endif
 
 /*
@@ -2956,7 +3022,10 @@ MODULE_SCOPE void *	TclBNAlloc(size_t nBytes);
 MODULE_SCOPE void *	TclBNRealloc(void *oldBlock, size_t newNBytes);
 MODULE_SCOPE void	TclBNFree(void *block);
 MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
-
+MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int* bignum,
+			    Tcl_WideInt initVal);
+MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
+			    Tcl_WideUInt initVal);
 
 /*
  *----------------------------------------------------------------
@@ -3014,11 +3083,13 @@ MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 #define TclSetBooleanObj(objPtr, b) \
     TclSetIntObj((objPtr), ((b)? 1 : 0));
 
+#ifndef NO_WIDE_TYPE
 #define TclSetWideIntObj(objPtr, w) \
     TclInvalidateStringRep(objPtr);\
     TclFreeIntRep(objPtr); \
     (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
     (objPtr)->typePtr = &tclWideIntType
+#endif
 
 #define TclSetDoubleObj(objPtr, d) \
     TclInvalidateStringRep(objPtr);\
@@ -3061,14 +3132,6 @@ MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 #define TclNewBooleanObj(objPtr, b) \
     TclNewIntObj((objPtr), ((b)? 1 : 0))
 
-#define TclNewWideIntObj(objPtr, w) \
-    TclIncrObjsAllocated(); \
-    TclAllocObjStorage(objPtr); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes = NULL; \
-    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
-    (objPtr)->typePtr = &tclWideIntType
-
 #define TclNewDoubleObj(objPtr, d) \
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
@@ -3091,15 +3154,29 @@ MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 #define TclNewBooleanObj(objPtr, b) \
     (objPtr) = Tcl_NewBooleanObj(b)
 
-#define TclNewWideIntObj(objPtr, w)\
-    (objPtr) = Tcl_NewWideIntObj(w)
-
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)
 
 #define TclNewStringObj(objPtr, s, len) \
     (objPtr) = Tcl_NewStringObj((s), (len))
 #endif /* TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to test for some special double values.
+ * The ANSI C "prototypes" for these macros are: 
+ *
+ * MODULE_SCOPE int	TclIsInfinite _ANSI_ARGS_((double d));
+ * MODULE_SCOPE int	TclIsNaN _ANSI_ARGS_((double d));
+ */
+
+#ifdef _MSC_VER
+#define TclIsInfinite(d)	( ! (_finite((d))) )
+#define TclIsNaN(d)		(_isnan((d)))
+#else
+#define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
+#define TclIsNaN(d)		((d) != (d))
+#endif
 
 #include "tclPort.h"
 #include "tclIntDecls.h"

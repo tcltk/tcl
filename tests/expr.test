@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.15 2005/09/12 15:44:41 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.16 2005/10/18 20:47:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -26,7 +26,8 @@ testConstraint testmathfunctions [expr {
 
 testConstraint longIs32bit [expr {int(0x80000000) < 0}]
 testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit [expr {(0x80000000 > 0) && (0x8000000000000000 < 0)}]
+testConstraint wideIs64bit \
+	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -54,6 +55,8 @@ proc testIEEE {} {
 		ieeeValues(+Infinity)
 	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
 		ieeeValues(NaN)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\xff d \
+		ieeeValues(-NaN)
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
@@ -76,6 +79,8 @@ proc testIEEE {} {
 		ieeeValues(+Infinity)
 	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
+	    binary scan \xff\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-NaN)
 	    set ieeeValues(littleEndian) 0
 	    return 1
 	}
@@ -6238,6 +6243,245 @@ test expr-37.14 {expr edge cases} {wideIs64bit} {
 test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
     expr {abs(-2147483648)}
 } 2147483648
+
+testConstraint testexprlongobj   [llength [info commands testexprlongobj]]
+testConstraint testexprdoubleobj [llength [info commands testexprdoubleobj]]
+
+test expr-39.1 {Check that Tcl_ExprLongObj doesn't modify interpreter result if no error} testexprlongobj {
+    testexprlongobj 4+1
+} {This is a result: 5}
+#Check for [Bug 1109484]
+test expr-39.2 {Tcl_ExprLongObj handles wide ints gracefully} testexprlongobj {
+    testexprlongobj wide(1)+2
+} {This is a result: 3}
+
+test expr-39.3 {Tcl_ExprLongObj on the empty string} \
+    -constraints testexprlongobj \
+    -body {
+	list [catch {testexprlongobj ""} result] $result
+    } \
+    -match glob \
+    -result {1 {syntax error*}}
+test expr-39.4 {Tcl_ExprLongObj coerces doubles} testexprlongobj {
+    testexprlongobj 3+.14159
+} {This is a result: 3}
+test expr-39.5 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
+    testexprlongobj 0x80000000
+} {This is a result: -2147483648}
+test expr-39.6 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
+    testexprlongobj 0xffffffff
+} {This is a result: -1}
+test expr-39.7 {Tcl_ExprLongObj handles overflows} \
+    -constraints {testexprlongobj longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj 0x100000000} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-39.8 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj -0x80000000
+} {This is a result: -2147483648}
+test expr-39.9 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
+    testexprlongobj -0xffffffff
+} {This is a result: 1}
+test expr-39.10 {Tcl_ExprLongObj handles overflows} \
+    -constraints {testexprlongobj longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj -0x100000000} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-39.11 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
+    testexprlongobj 2147483648.
+} {This is a result: -2147483648}
+test expr-39.12 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
+    testexprlongobj 4294967295.
+} {This is a result: -1}
+test expr-39.13 {Tcl_ExprLongObj handles overflows} \
+    -constraints {testexprlongobj longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj 4294967296.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+test expr-39.14 {Tcl_ExprLongObj handles overflows} testexprlongobj {
+    testexprlongobj -2147483648.
+} {This is a result: -2147483648}
+test expr-39.15 {Tcl_ExprLongObj handles overflows} {testexprlongobj longIs32bit} {
+    testexprlongobj -4294967295.
+} {This is a result: 1}
+test expr-39.16 {Tcl_ExprLongObj handles overflows} \
+    -constraints {testexprlongobj longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlongobj 4294967296.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
+    
+test expr-39.17 {Check that Tcl_ExprDoubleObj doesn't modify interpreter result if no error} testexprdoubleobj {
+    testexprdoubleobj 4.+1.
+} {This is a result: 5.0}
+#Check for [Bug 1109484]
+test expr-39.18 {Tcl_ExprDoubleObj on the empty string} \
+    -constraints testexprdoubleobj \
+    -match glob \
+    -body {
+	list [catch {testexprdoubleobj ""} result] $result
+    } \
+    -result {1 {syntax error*}}
+test expr-39.19 {Tcl_ExprDoubleObj coerces wides} testexprdoubleobj {
+    testexprdoubleobj 1[string repeat 0 17]
+} {This is a result: 1e+17}
+test expr-39.20 {Tcl_ExprDoubleObj coerces bignums} testexprdoubleobj {
+    testexprdoubleobj 1[string repeat 0 38]
+} {This is a result: 1e+38}
+test expr-39.21 {Tcl_ExprDoubleObj handles overflows} \
+    testexprdoubleobj&&ieeeFloatingPoint {
+	testexprdoubleobj 17976931348623157[string repeat 0 292].
+    } {This is a result: 1.7976931348623157e+308}
+test expr-39.22 {Tcl_ExprDoubleObj handles overflows that look like int} \
+    testexprdoubleobj&&ieeeFloatingPoint {
+	testexprdoubleobj 17976931348623157[string repeat 0 292]
+    } {This is a result: 1.7976931348623157e+308}
+test expr-39.23 {Tcl_ExprDoubleObj handles overflows} \
+    testexprdoubleobj&&ieeeFloatingPoint {
+	testexprdoubleobj 17976931348623165[string repeat 0 292].
+    } {This is a result: Inf}
+test expr-39.24 {Tcl_ExprDoubleObj handles overflows that look like int} \
+    testexprdoubleobj&&ieeeFloatingPoint {
+	testexprdoubleobj 17976931348623165[string repeat 0 292]
+    } {This is a result: Inf}
+test expr-39.25 {Tcl_ExprDoubleObj and NaN} \
+    testexprdoubleobj&&ieeeFloatingPoint {
+	list [catch {testexprdoubleobj 0.0/0.0} result] $result
+    } {1 {floating point value is Not a Number}}
+
+test expr-40.1 {large octal shift} {
+    expr 0100000000000000000000000000000000
+} [expr 0x1000000000000000000000000]
+test expr-40.2 {large octal shift} {
+    expr 0100000000000000000000000000000001
+} [expr 0x1000000000000000000000001]
+
+test expr-41.1 {exponent overflow} {
+    expr 1.0e2147483630
+} Inf
+test expr-41.2 {exponent underflow} {
+    expr 1.0e-2147483630
+} 0.0
+
+test expr-42.1 {denormals} ieeeFloatingPoint {
+    expr 7e-324
+} 5e-324
+
+# TIP 114
+
+test expr-43.1 {0b notation} {
+    expr 0b0
+} 0
+test expr-43.2 {0b notation} {
+    expr 0b1
+} 1
+test expr-43.3 {0b notation} {
+    expr 0b10
+} 2
+test expr-43.4 {0b notation} {
+    expr 0b11
+} 3
+test expr-43.5 {0b notation} {
+    expr 0b100
+} 4
+test expr-43.6 {0b notation} {
+    expr 0b101
+} 5
+test expr-43.7 {0b notation} {
+    expr 0b1000
+} 8
+test expr-43.8 {0b notation} {
+    expr 0b1001
+} 9
+test expr-43.9 {0b notation} {
+    expr 0b1[string repeat 0 31]
+} 2147483648
+test expr-43.10 {0b notation} {
+    expr 0b1[string repeat 0 30]1
+} 2147483649
+test expr-43.11 {0b notation} {
+    expr 0b[string repeat 1 64]
+} 18446744073709551615
+test expr-43.12 {0b notation} {
+    expr 0b1[string repeat 0 64]
+} 18446744073709551616
+test expr-43.13 {0b notation} {
+    expr 0b1[string repeat 0 63]1
+} 18446744073709551617
+
+test expr-44.1 {0o notation} {
+    expr 0o0
+} 0
+test expr-44.2 {0o notation} {
+    expr 0o1
+} 1
+test expr-44.3 {0o notation} {
+    expr 0o7
+} 7
+test expr-44.4 {0o notation} {
+    expr 0o10
+} 8
+test expr-44.5 {0o notation} {
+    expr 0o11
+} 9
+test expr-44.6 {0o notation} {
+    expr 0o100
+} 64
+test expr-44.7 {0o notation} {
+    expr 0o101
+} 65
+test expr-44.8 {0o notation} {
+    expr 0o1000
+} 512
+test expr-44.9 {0o notation} {
+    expr 0o1001
+} 513
+test expr-44.10 {0o notation} {
+    expr 0o1[string repeat 7 21]
+} 18446744073709551615
+test expr-44.11 {0o notation} {
+    expr 0o2[string repeat 0 21]
+} 18446744073709551616
+test expr-44.12 {0o notation} {
+    expr 0o2[string repeat 0 20]1
+} 18446744073709551617
+
+# TIP 237 again
+
+test expr-45.1 {entier} {
+    expr entier(0)
+} 0
+test expr-45.2 {entier} {
+    expr entier(0.5)
+} 0
+test expr-45.3 {entier} {
+    expr entier(1.0)
+} 1
+test expr-45.4 {entier} {
+    expr entier(1.5)
+} 1
+test expr-45.5 {entier} {
+    expr entier(2.0)
+} 2
+test expr-45.6 {entier} {
+    expr entier(1e+22)
+} 10000000000000000000000
+test expr-45.7 {entier} {
+    list [catch {expr entier(Inf)} result] $result
+} {1 {integer value too large to represent}}
+test expr-45.8 {entier} ieeeFloatingPoint {
+    list [catch {expr {entier($ieeeValues(NaN))}} result] $result
+} {1 {floating point value is Not a Number}}
+test expr-45.9 {entier} ieeeFloatingPoint {
+    list [catch {expr {entier($ieeeValues(-NaN))}} result] $result
+} {1 {floating point value is Not a Number}}
 
 test expr-46.1 {round() rounds to +-infinity} {
     expr round(0.5)

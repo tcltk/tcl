@@ -3,10 +3,23 @@
 ::  edit this (or make your own) for your needs and wants using
 ::  the instructions for calling makefile.vc found in makefile.vc
 ::
-::  RCS: @(#) $Id: buildall.vc.bat,v 1.6.4.2 2004/03/26 22:28:30 dgp Exp $
+::  RCS: @(#) $Id: buildall.vc.bat,v 1.6.4.3 2005/10/18 20:47:32 dgp Exp $
 
+set SYMBOLS=
+
+:OPTIONS
 if "%1" == "/?" goto help
 if /i "%1" == "/help" goto help
+if %1.==symbols. goto SYMBOLS
+if %1.==debug. goto SYMBOLS
+goto OPTIONS_DONE
+
+:SYMBOLS
+   set SYMBOLS=symbols
+   shift
+   goto OPTIONS
+
+:OPTIONS_DONE
 
 :: reset errorlevel
 cd > nul
@@ -39,35 +52,49 @@ if "%INSTALLDIR%" == "" set INSTALLDIR=C:\Program Files\Tcl
 
 :: Build the normal stuff along with the help file.
 ::
-nmake -nologo -f makefile.vc release winhelp OPTS=none %1
+set OPTS=none
+if not %SYMBOLS%.==. set OPTS=symbols
+nmake -nologo -f makefile.vc release winhelp OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 :: Build the static core, dlls and shell.
 ::
-nmake -nologo -f makefile.vc release OPTS=static %1
+set OPTS=static
+if not %SYMBOLS%.==. set OPTS=symbols,static
+nmake -nologo -f makefile.vc release OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 :: Build the special static libraries that use the dynamic runtime.
 ::
-nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt %1
+set OPTS=static,msvcrt
+if not %SYMBOLS%.==. set OPTS=symbols,static,msvcrt
+nmake -nologo -f makefile.vc core dlls OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 :: Build the core and shell for thread support.
 ::
-nmake -nologo -f makefile.vc shell OPTS=threads %1
+set OPTS=threads
+if not %SYMBOLS%.==. set OPTS=symbols,threads
+nmake -nologo -f makefile.vc shell OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 :: Build a static, thread support core library with a shell.
 ::
-nmake -nologo -f makefile.vc shell OPTS=static,threads %1
+set OPTS=static,threads
+if not %SYMBOLS%.==. set OPTS=symbols,static,threads
+nmake -nologo -f makefile.vc shell OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 :: Build the special static libraries that use the dynamic runtime,
 :: but now with thread support.
 ::
-nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt,threads %1
+set OPTS=static,msvcrt,threads
+if not %SYMBOLS%.==. set OPTS=symbols,static,msvcrt,threads
+nmake -nologo -f makefile.vc core dlls OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
+set OPTS=
+set SYMBOLS=
 goto end
 
 :error
@@ -82,7 +109,9 @@ goto out
 title buildall.vc.bat help message
 echo usage:
 echo   %0           : builds Tcl for all build types (do this first)
-echo   %0 install   : installs all the builds        (do this second)
+echo   %0 install   : installs all the release builds (do this second)
+echo   %0 symbols   : builds Tcl for all debugging build types
+echo   %0 symbols install : install all the debug builds.
 echo.
 goto out
 

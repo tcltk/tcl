@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.9 2005/09/12 15:44:41 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.10 2005/10/18 20:47:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -528,6 +528,10 @@ test binary-14.17 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {1.6 3.4}
     binary format d1 $a
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f
+test binary-14.18 {FormatNumber: Bug 1116542} {
+    binary scan [binary format d 1.25] d w
+    set w
+} 1.25
 
 test binary-15.1 {Tcl_BinaryObjCmd: format} {
     list [catch {binary format ax*a "y" "z"} msg] $msg
@@ -2137,6 +2141,66 @@ proc testIEEE {} {
 
 testConstraint ieeeFloatingPoint [testIEEE]
 
+# scan/format infinities
+
+test binary-62.1 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q Infinity] w w
+    format 0x%016lx $w
+} 0x7ff0000000000000
+test binary-62.2 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q -Infinity] w w
+    format 0x%016lx $w
+} 0xfff0000000000000
+test binary-62.3 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q Inf] w w
+    format 0x%016lx $w
+} 0x7ff0000000000000
+test binary-62.4 {infinity} ieeeFloatingPoint {
+    binary scan [binary format q -Infinity] w w
+    format 0x%016lx $w
+} 0xfff0000000000000
+test binary-62.5 {infinity} ieeeFloatingPoint {
+    binary scan [binary format w 0x7ff0000000000000] q d
+    set d
+} Inf
+test binary-62.6 {infinity} ieeeFloatingPoint {
+    binary scan [binary format w 0xfff0000000000000] q d
+    set d
+} -Inf
+
+# scan/format Not-a-Number
+
+test binary-63.1 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q NaN] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0x7ff0000000000000
+test binary-63.2 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q -NaN] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0xfff0000000000000
+test binary-63.3 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q NaN(3123456789aBc)] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0x7ff3123456789abc
+test binary-63.4 {NaN} ieeeFloatingPoint {
+    binary scan [binary format q {NaN( 3123456789aBc)}] w w
+    format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
+} 0x7ff3123456789abc
+test binary-64.1 {NaN} \
+    -constraints ieeeFloatingPoint \
+    -body {
+	binary scan [binary format w 0x7ff8000000000000] q d
+	set d
+    } \
+    -match glob -result NaN*
+test binary-64.2 {NaN} \
+    -constraints ieeeFloatingPoint \
+    -body {
+	binary scan [binary format w 0x7ff0123456789aBc] q d
+	set d
+    } \
+    -match glob -result NaN(*123456789abc)
+
 test binary-65.1 {largest significand} ieeeFloatingPoint {
     binary scan [binary format w 0x3fcfffffffffffff] q d
     set d
@@ -2174,7 +2238,10 @@ test binary-65.8 {largest significand} ieeeFloatingPoint {
     set d
 } 18014398509481988.0
 
-
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

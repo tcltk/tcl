@@ -549,7 +549,7 @@ TOMMATH_STORAGE_CLASS int mp_to_unsigned_bin_n (mp_int * a, unsigned char *b, un
 
 TOMMATH_STORAGE_CLASS int mp_signed_bin_size(mp_int *a);
 TOMMATH_STORAGE_CLASS int mp_read_signed_bin(mp_int *a, const unsigned char *b, int c);
-TOMMATH_STORAGE_CLASS int mp_to_signed_bin(mp_int *a,  unsigned char *b);
+TOMMATH_STORAGE_CLASS int mp_to_signed_bin(mp_int *a, unsigned char *b);
 TOMMATH_STORAGE_CLASS int mp_to_signed_bin_n (mp_int * a, unsigned char *b, unsigned long *outlen);
 
 TOMMATH_STORAGE_CLASS int mp_read_radix(mp_int *a, const char *str, int radix);
@@ -603,6 +603,6 @@ extern const char *mp_s_rmap;
 
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tommath.h,v $ */
-/* $Revision: 1.2.2.3 $ */
-/* $Date: 2005/09/26 20:51:08 $ */
+/* $Revision: 1.2.2.4 $ */
+/* $Date: 2005/10/18 20:46:19 $ */
 

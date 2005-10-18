@@ -1,8 +1,9 @@
 # TODO - When integrating this with the Core, path names will need to be
 # swizzled here.
 
-package require newclock
+package require msgcat
 set d [file dirname [file dirname [info script]]]
+puts "getting transition data from [file join $d library tzdata America Detroit]"
 source [file join $d library/tzdata/America/Detroit]
 
 namespace eval ::tcl::clock {
@@ -547,17 +548,14 @@ proc testcases5 { f2 } {
     set fmt {%H:%M:%S %z %Z}
     
     set i 0
-    puts $f2 "::tcltest::testConstraint detroit 0"
     puts $f2 "test clock-5.[incr i] {does Detroit exist} {"
     puts $f2 "    clock format 0 -format {} -timezone :America/Detroit"
-    puts $f2 "    ::tcltest::testConstraint detroit 1"
     puts $f2 "    concat"
     puts $f2 "} {}"
     puts $f2 "test clock-5.[incr i] {does Detroit have a Y2038 problem} detroit {"
     puts $f2 "    if { \[clock format 2158894800 -format %z -timezone :America/Detroit\] ne {-0400} } {"
     puts $f2 "        concat {y2038 problem}"
     puts $f2 "    } else {"
-    puts $f2 "        ::tcltest::testConstraint y2038 1"
     puts $f2 "        concat {ok}"
     puts $f2 "    }"
     puts $f2 "} ok"

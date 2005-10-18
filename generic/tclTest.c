@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.14 2005/09/12 15:40:30 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.15 2005/10/18 20:46:19 dgp Exp $
  */
 
 #define TCL_TEST
@@ -258,6 +258,14 @@ static int		TestexithandlerCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
 static int		TestexprlongCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
+static int		TestexprlongobjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc, 
+			    Tcl_Obj *CONST objv[]));
+static int		TestexprdoubleCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, CONST char **argv));
+static int		TestexprdoubleobjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc, 
+			    Tcl_Obj *CONST objv[]));
 static int		TestexprparserObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -639,6 +647,12 @@ Tcltest_Init(interp)
     Tcl_CreateCommand(interp, "testexithandler", TestexithandlerCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testexprlong", TestexprlongCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testexprlongobj", TestexprlongobjCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testexprdouble", TestexprdoubleCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testexprdoubleobj", TestexprdoubleobjCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testexprparser", TestexprparserObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -2308,6 +2322,135 @@ TestexprlongCmd(clientData, interp, argc, argv)
         return result;
     }
     sprintf(buf, ": %ld", exprResult);
+    Tcl_AppendResult(interp, buf, NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestexprlongobjCmd --
+ *
+ *	This procedure verifies that Tcl_ExprLongObj does not modify the
+ *	interpreter result if there is no error.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestexprlongobjCmd(clientData, interp, objc, objv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST *objv;		/* Argument objects. */
+{
+    long exprResult;
+    char buf[4 + TCL_INTEGER_SPACE];
+    int result;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "expression");
+	return TCL_ERROR;
+    }
+    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    result = Tcl_ExprLongObj(interp, objv[1], &exprResult);
+    if (result != TCL_OK) {
+        return result;
+    }
+    sprintf(buf, ": %ld", exprResult);
+    Tcl_AppendResult(interp, buf, NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestexprdoubleCmd --
+ *
+ *	This procedure verifies that Tcl_ExprDouble does not modify the
+ *	interpreter result if there is no error.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestexprdoubleCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    CONST char **argv;			/* Argument strings. */
+{
+    double exprResult;
+    char buf[4 + TCL_DOUBLE_SPACE];
+    int result;
+
+    if (argc != 2) {
+        Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
+                " expression\"", (char *) NULL);
+        return TCL_ERROR;
+    }
+    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    result = Tcl_ExprDouble(interp, argv[1], &exprResult);
+    if (result != TCL_OK) {
+        return result;
+    }
+    strcpy(buf, ": ");
+    Tcl_PrintDouble(interp, exprResult, buf+2);
+    Tcl_AppendResult(interp, buf, NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestexprdoubleobjCmd --
+ *
+ *	This procedure verifies that Tcl_ExprLongObj does not modify the
+ *	interpreter result if there is no error.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestexprdoubleobjCmd(clientData, interp, objc, objv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST *objv;		/* Argument objects. */
+{
+    double exprResult;
+    char buf[4 + TCL_DOUBLE_SPACE];
+    int result;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "expression");
+	return TCL_ERROR;
+    }
+    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    result = Tcl_ExprDoubleObj(interp, objv[1], &exprResult);
+    if (result != TCL_OK) {
+        return result;
+    }
+    strcpy(buf, ": ");
+    Tcl_PrintDouble(interp, exprResult, buf+2);
     Tcl_AppendResult(interp, buf, NULL);
     return TCL_OK;
 }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.18 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.19 2005/10/18 20:46:18 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3484,39 +3484,46 @@ EXTERN void		Tcl_SetBignumObj _ANSI_ARGS_((Tcl_Obj* obj,
 EXTERN int		Tcl_GetBignumFromObj _ANSI_ARGS_((Tcl_Interp* interp, 
 				Tcl_Obj* obj, mp_int* value));
 #endif
+#ifndef Tcl_GetBignumAndClearObj_TCL_DECLARED
+#define Tcl_GetBignumAndClearObj_TCL_DECLARED
+/* 559 */
+EXTERN int		Tcl_GetBignumAndClearObj _ANSI_ARGS_((
+				Tcl_Interp* interp, Tcl_Obj* obj, 
+				mp_int* value));
+#endif
 #ifndef Tcl_TruncateChannel_TCL_DECLARED
 #define Tcl_TruncateChannel_TCL_DECLARED
-/* 559 */
+/* 560 */
 EXTERN int		Tcl_TruncateChannel _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_WideInt length));
 #endif
 #ifndef Tcl_ChannelTruncateProc_TCL_DECLARED
 #define Tcl_ChannelTruncateProc_TCL_DECLARED
-/* 560 */
+/* 561 */
 EXTERN Tcl_DriverTruncateProc * Tcl_ChannelTruncateProc _ANSI_ARGS_((
 				Tcl_ChannelType * chanTypePtr));
 #endif
 #ifndef Tcl_SetChannelErrorInterp_TCL_DECLARED
 #define Tcl_SetChannelErrorInterp_TCL_DECLARED
-/* 561 */
+/* 562 */
 EXTERN void		Tcl_SetChannelErrorInterp _ANSI_ARGS_((
 				Tcl_Interp* interp, Tcl_Obj* msg));
 #endif
 #ifndef Tcl_GetChannelErrorInterp_TCL_DECLARED
 #define Tcl_GetChannelErrorInterp_TCL_DECLARED
-/* 562 */
+/* 563 */
 EXTERN void		Tcl_GetChannelErrorInterp _ANSI_ARGS_((
 				Tcl_Interp* interp, Tcl_Obj** msg));
 #endif
 #ifndef Tcl_SetChannelError_TCL_DECLARED
 #define Tcl_SetChannelError_TCL_DECLARED
-/* 563 */
+/* 564 */
 EXTERN void		Tcl_SetChannelError _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_Obj* msg));
 #endif
 #ifndef Tcl_GetChannelError_TCL_DECLARED
 #define Tcl_GetChannelError_TCL_DECLARED
-/* 564 */
+/* 565 */
 EXTERN void		Tcl_GetChannelError _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_Obj** msg));
 #endif
@@ -4120,12 +4127,13 @@ typedef struct TclStubs {
     Tcl_Obj* (*tcl_DbNewBignumObj) _ANSI_ARGS_((mp_int* value, CONST char* file, int line)); /* 556 */
     void (*tcl_SetBignumObj) _ANSI_ARGS_((Tcl_Obj* obj, mp_int* value)); /* 557 */
     int (*tcl_GetBignumFromObj) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)); /* 558 */
-    int (*tcl_TruncateChannel) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt length)); /* 559 */
-    Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 560 */
-    void (*tcl_SetChannelErrorInterp) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* msg)); /* 561 */
-    void (*tcl_GetChannelErrorInterp) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj** msg)); /* 562 */
-    void (*tcl_SetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj* msg)); /* 563 */
-    void (*tcl_GetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj** msg)); /* 564 */
+    int (*tcl_GetBignumAndClearObj) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)); /* 559 */
+    int (*tcl_TruncateChannel) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt length)); /* 560 */
+    Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 561 */
+    void (*tcl_SetChannelErrorInterp) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* msg)); /* 562 */
+    void (*tcl_GetChannelErrorInterp) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj** msg)); /* 563 */
+    void (*tcl_SetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj* msg)); /* 564 */
+    void (*tcl_GetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj** msg)); /* 565 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6402,29 +6410,33 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_GetBignumFromObj \
 	(tclStubsPtr->tcl_GetBignumFromObj) /* 558 */
 #endif
+#ifndef Tcl_GetBignumAndClearObj
+#define Tcl_GetBignumAndClearObj \
+	(tclStubsPtr->tcl_GetBignumAndClearObj) /* 559 */
+#endif
 #ifndef Tcl_TruncateChannel
 #define Tcl_TruncateChannel \
-	(tclStubsPtr->tcl_TruncateChannel) /* 559 */
+	(tclStubsPtr->tcl_TruncateChannel) /* 560 */
 #endif
 #ifndef Tcl_ChannelTruncateProc
 #define Tcl_ChannelTruncateProc \
-	(tclStubsPtr->tcl_ChannelTruncateProc) /* 560 */
+	(tclStubsPtr->tcl_ChannelTruncateProc) /* 561 */
 #endif
 #ifndef Tcl_SetChannelErrorInterp
 #define Tcl_SetChannelErrorInterp \
-	(tclStubsPtr->tcl_SetChannelErrorInterp) /* 561 */
+	(tclStubsPtr->tcl_SetChannelErrorInterp) /* 562 */
 #endif
 #ifndef Tcl_GetChannelErrorInterp
 #define Tcl_GetChannelErrorInterp \
-	(tclStubsPtr->tcl_GetChannelErrorInterp) /* 562 */
+	(tclStubsPtr->tcl_GetChannelErrorInterp) /* 563 */
 #endif
 #ifndef Tcl_SetChannelError
 #define Tcl_SetChannelError \
-	(tclStubsPtr->tcl_SetChannelError) /* 563 */
+	(tclStubsPtr->tcl_SetChannelError) /* 564 */
 #endif
 #ifndef Tcl_GetChannelError
 #define Tcl_GetChannelError \
-	(tclStubsPtr->tcl_GetChannelError) /* 564 */
+	(tclStubsPtr->tcl_GetChannelError) /* 565 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

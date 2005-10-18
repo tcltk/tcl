@@ -11,32 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.18 2005/09/15 20:30:01 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.19 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <float.h>
 #include <math.h>
-
-/*
- * Define test for NaN
- */
-
-#ifdef _MSC_VER
-#define IS_NAN(f) (_isnan((f)))
-#else
-#define IS_NAN(f) ((f) != (f))
-#endif
-
-/*
- * Define test for Inf
- */
-
-#ifdef _MSC_VER
-#define IS_INF(f) ( ! (_finite((f))))
-#else
-#define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
-#endif
 
 /*
  * The absolute pathname of the executable in which this Tcl library
@@ -87,6 +67,8 @@ static void		FreeProcessGlobalValue _ANSI_ARGS_((
 			    ClientData clientData));
 static void		FreeThreadHash _ANSI_ARGS_((ClientData clientData));
 static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_((Tcl_ThreadDataKey *keyPtr));
+static int		ParseInteger _ANSI_ARGS_((CONST char *bytes,
+			    int numBytes));
 static int		SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
 			    Tcl_Obj* objPtr));
 static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
@@ -1906,7 +1888,7 @@ Tcl_PrintDouble(interp, value, dst)
 	 * Handle NaN.
 	 */
 
-	if (IS_NAN(value)) {
+	if (TclIsNaN(value)) {
 	    TclFormatNaN(value, dst);
 	    return;
 	}
@@ -1915,7 +1897,7 @@ Tcl_PrintDouble(interp, value, dst)
 	 * Handle infinities.
 	 */
 
-	if (IS_INF(value)) {
+	if (TclIsInfinite(value)) {
 	    if (value < 0) {
 		strcpy(dst, "-Inf");
 	    } else {
@@ -2175,6 +2157,7 @@ TclNeedSpace(start, end)
     }
     return 1;
 }
+#if 0
 
 /*
  *----------------------------------------------------------------------
@@ -2227,6 +2210,61 @@ TclLooksLikeInt(bytes, length)
     }
 
     return (0 != TclParseInteger(p, length));
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseInteger --
+ *
+ *	Scans up to numBytes bytes starting at bytes, and checks whether the
+ *	leading bytes look like an integer's string representation.
+ *
+ * Results:
+ *	Returns 0 if the leading bytes do not look like an integer.
+ *	Otherwise, returns the number of bytes examined that look like an
+ *	integer.  This may be less than numBytes if the integer is only the
+ *	leading part of the string.     
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseInteger(bytes, numBytes)
+    CONST char *bytes;	/* The string to examine. */
+    int numBytes;	/* Max number of bytes to scan. */
+{
+    register CONST char *p = bytes;
+
+    /* Take care of introductory "0x". */
+    if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
+	int scanned;
+	Tcl_UniChar ch;
+
+	p += 2;
+	numBytes -= 2;
+	scanned = TclParseHex(p, numBytes, &ch);
+	if (scanned) {
+	    return scanned+2;
+	}
+
+	/* Recognize the 0 as valid integer, but x is left behind. */
+	return 1;
+    }
+    while (numBytes && isdigit(UCHAR(*p))) {            /* INTL: digit */
+	numBytes--; p++;
+    }
+    if (numBytes == 0) {
+	return (p - bytes);
+    }
+    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
+	return (p - bytes);
+    }
+    return 0;
 }
 
 /*
@@ -2291,7 +2329,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	if ((*p == '+') || (*p == '-')) {
 	    p++; length--;
 	}
-	opIdx = TclParseInteger(p, length) + (int) (p-bytes);
+	opIdx = ParseInteger(p, length) + (int) (p-bytes);
 	if (opIdx) {
 	    int code, first, second;
 	    char savedOp = bytes[opIdx];

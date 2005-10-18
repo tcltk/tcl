@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.16 2005/09/12 15:40:29 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.17 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2880,6 +2880,12 @@ Tcl_ClearChannelHandlers(channel)
     chanPtr = statePtr->topChanPtr;
 
     /*
+     * Cancel any outstanding timer.
+     */
+
+    Tcl_DeleteTimerHandler(statePtr->timer);
+
+    /*
      * Remove any references to channel handlers for this channel that may be
      * about to be invoked.
      */
@@ -2912,10 +2918,10 @@ Tcl_ClearChannelHandlers(channel)
     StopCopy(statePtr->csPtr);
 
     /*
-     * Must set the interest mask now to 0, otherwise infinite loops will
-     * occur if Tcl_DoOneEvent is called before the channel is finally deleted
-     * in FlushChannel. This can happen if the channel has a background flush
-     * active.
+     * Must set the interest mask now to 0, otherwise infinite loops
+     * will occur if Tcl_DoOneEvent is called before the channel is
+     * finally deleted in FlushChannel. This can happen if the channel
+     * has a background flush active.
      */
 
     statePtr->interestMask = 0;

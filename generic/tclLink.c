@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.4.2 2005/09/12 15:40:29 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.4.3 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -383,9 +383,16 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     case TCL_LINK_DOUBLE:
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d)
 		!= TCL_OK) {
+#ifdef ACCEPT_NAN
+	  if (valueObj->typePtr != &tclDoubleType) {
+#endif
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
 	    return "variable must have real value";
+#ifdef ACCEPT_NAN
+	  }
+	  linkPtr->lastValue.d = valueObj->internalRep.doubleValue;
+#endif
 	}
 	*(double *)(linkPtr->addr) = linkPtr->lastValue.d;
 	break;

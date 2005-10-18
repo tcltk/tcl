@@ -9,10 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.14 2005/09/15 20:37:37 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.15 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tommath.h"
 
 /*
  * Forward declaration.
@@ -1873,17 +1874,23 @@ DictIncrCmd(interp, objc, objv)
     int objc;
     Tcl_Obj *CONST *objv;
 {
-    Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
+#if 0
+    Tcl_Obj *dictPtr, *resultPtr;
     int result, isWide = 0;
     long incrValue = 1;
     Tcl_WideInt wideIncrValue = 0;
     int allocatedDict = 0;
+#else
+    int code = TCL_OK;
+    Tcl_Obj *dictPtr, *valuePtr = NULL;
+#endif
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "varName key ?increment?");
 	return TCL_ERROR;
     }
 
+#if 0
     if (objc == 5) {
 	if (objv[4]->typePtr == &tclIntType) {
 	    incrValue = objv[4]->internalRep.longValue;
@@ -2040,6 +2047,67 @@ DictIncrCmd(interp, objc, objv)
     }
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
+#else
+    dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
+    if (dictPtr == NULL) {
+	/* Variable didn't yet exist.  Create new dictionary value */
+	dictPtr = Tcl_NewDictObj();
+    } else if (Tcl_DictObjGet(interp, dictPtr, objv[3], &valuePtr) != TCL_OK) {
+	/* Variable contents are not a dict, report error */
+	return TCL_ERROR;
+    }
+    if (Tcl_IsShared(dictPtr)) {
+	/* A little internals surgery to avoid copying a string rep
+	 * that will soon be no good */
+	char *saved = dictPtr->bytes;
+	dictPtr->bytes = NULL;
+	dictPtr = Tcl_DuplicateObj(dictPtr);
+	dictPtr->bytes = saved;
+    }
+    if (valuePtr == NULL) {
+	/* Key not in dictionary.  Create new key with increment as value */
+	if (objc == 5) {
+	    /* Verify increment is an integer */
+	    mp_int increment;
+	    code = Tcl_GetBignumFromObj(interp, objv[4], &increment);
+	    if (code != TCL_OK) {
+		Tcl_AddErrorInfo(interp, "\n    (reading increment)");
+	    } else {
+		Tcl_DictObjPut(interp, dictPtr, objv[3], objv[4]);
+	    }
+	} else {
+	    Tcl_DictObjPut(interp, dictPtr, objv[3], Tcl_NewIntObj(1));
+	}
+    } else {
+	/* Key in dictionary.  Increment its value with minimum dup. */
+	if (Tcl_IsShared(valuePtr)) {
+	    valuePtr = Tcl_DuplicateObj(valuePtr);
+	    Tcl_DictObjPut(interp, dictPtr, objv[3], valuePtr);
+	}
+	if (objc == 5) {
+	    code = TclIncrObj(interp, valuePtr, objv[4]);
+	} else {
+	    Tcl_Obj *incrPtr = Tcl_NewIntObj(1);
+	    Tcl_IncrRefCount(incrPtr);
+	    code = TclIncrObj(interp, valuePtr, incrPtr);
+	    Tcl_DecrRefCount(incrPtr);
+	}
+    }
+    Tcl_IncrRefCount(dictPtr);
+    if (code == TCL_OK) {
+	Tcl_InvalidateStringRep(dictPtr);
+	valuePtr = Tcl_ObjSetVar2(interp, objv[2], NULL,
+		dictPtr, TCL_LEAVE_ERR_MSG);
+	if (valuePtr == NULL) {
+	    code = TCL_ERROR;
+	}
+    }
+    Tcl_DecrRefCount(dictPtr);
+    if (code == TCL_OK) {
+	Tcl_SetObjResult(interp, valuePtr);
+    }
+    return code;
+#endif
 }
 
 /*

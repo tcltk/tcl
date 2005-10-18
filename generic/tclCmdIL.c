@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.15 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.16 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -301,16 +301,19 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
+#if 0
     long incrAmount = 1;
     Tcl_WideInt wideIncrAmount;
-    Tcl_Obj *newValuePtr;
     int isWide = 0;
+#endif
+    Tcl_Obj *newValuePtr, *incrPtr;
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?increment?");
 	return TCL_ERROR;
     }
 
+#if 0
     /*
      * Calculate the amount to increment by.
      */
@@ -357,6 +360,18 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
 	newValuePtr = TclIncrVar2(interp, objv[1], (Tcl_Obj *) NULL,
 		incrAmount, TCL_LEAVE_ERR_MSG);
     }
+#else
+    if (objc == 3) {
+	incrPtr = objv[2];
+    } else {
+	incrPtr = Tcl_NewIntObj(1);
+    }
+    Tcl_IncrRefCount(incrPtr);
+    newValuePtr = TclIncrObjVar2(interp, objv[1], NULL,
+	    incrPtr, TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(incrPtr);
+
+#endif
     if (newValuePtr == NULL) {
 	return TCL_ERROR;
     }

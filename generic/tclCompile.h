@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.15 2005/07/26 04:11:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.16 2005/10/18 20:46:18 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -71,7 +71,7 @@ MODULE_SCOPE int 	tclTraceExec;
  */
 
 typedef enum {
-    LOOP_EXCEPTION_RANGE,	/* Exception's range is part of a loop.  Break
+    LOOP_EXCEPTION_RANGE,	/* Exception's range is part of a loop. Break
 				 * and continue "exceptions" cause jumps to
 				 * appropriate PC offsets. */
     CATCH_EXCEPTION_RANGE	/* Exception's range is controlled by a catch
@@ -128,8 +128,8 @@ typedef struct CmdLocation {
  * the AuxData structure.
  */
 
-typedef ClientData (AuxDataDupProc)  _ANSI_ARGS_((ClientData clientData));
-typedef void       (AuxDataFreeProc) _ANSI_ARGS_((ClientData clientData));
+typedef ClientData (AuxDataDupProc)  (ClientData clientData);
+typedef void       (AuxDataFreeProc) (ClientData clientData);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information
@@ -188,7 +188,7 @@ typedef struct CompileEnv {
     int numSrcBytes;		/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise NULL. Used
-				 * to compile local variables.  Set from
+				 * to compile local variables. Set from
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     int numCommands;		/* Number of commands compiled. */
@@ -278,7 +278,7 @@ typedef struct CompileEnv {
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
-				 * compiled code.  Commands and their compile
+				 * compiled code. Commands and their compile
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
@@ -508,7 +508,7 @@ typedef struct ByteCode {
 #define INST_LIST_INDEX_MULTI		94
 
 /*
- * TIP #33 - 'lset' command.  Code gen also required a Forth-like
+ * TIP #33 - 'lset' command. Code gen also required a Forth-like
  *	     OVER operation.
  */
 
@@ -531,7 +531,7 @@ typedef struct ByteCode {
 #define INST_INVOKE_EXPANDED		102
 
 /*
- * TIP #57 - 'lassign' command.  Code generation requires immediate
+ * TIP #57 - 'lassign' command. Code generation requires immediate
  *	     LINDEX and LRANGE operators.
  */
 
@@ -702,9 +702,9 @@ MODULE_SCOPE AuxDataType		tclForeachInfoType;
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp,
+MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
-			    CONST char *command, int length, int flags));
+			    CONST char *command, int length, int flags);
 
 /*
  *----------------------------------------------------------------
@@ -712,8 +712,8 @@ MODULE_SCOPE int	TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclCompEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int flags));
+MODULE_SCOPE int	TclCompEvalObj (Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, int flags);
 
 /*
  *----------------------------------------------------------------
@@ -722,98 +722,83 @@ MODULE_SCOPE int	TclCompEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE void	TclCleanupByteCode _ANSI_ARGS_((ByteCode *codePtr));
-MODULE_SCOPE void	TclCompileCmdWord _ANSI_ARGS_((Tcl_Interp *interp,
+MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
-			    CompileEnv *envPtr));
-MODULE_SCOPE int	TclCompileExpr _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *script, int numBytes,
-			    CompileEnv *envPtr));
-MODULE_SCOPE void	TclCompileExprWords _ANSI_ARGS_((Tcl_Interp *interp,
+			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileExpr(Tcl_Interp *interp, CONST char *script,
+			    int numBytes, CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
-			    CompileEnv *envPtr));
-MODULE_SCOPE void	TclCompileScript _ANSI_ARGS_((Tcl_Interp *interp,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    CONST char *script, int numBytes,
-			    CompileEnv *envPtr));
-MODULE_SCOPE void	TclCompileScriptTokens _ANSI_ARGS_((Tcl_Interp *interp,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileScriptTokens (Tcl_Interp *interp,
 			    Tcl_Token *tokens, Tcl_Token *lastTokenPtr,
-			    CompileEnv *envPtr));
-MODULE_SCOPE void	TclCompileTokens _ANSI_ARGS_((Tcl_Interp *interp,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
-			    CompileEnv *envPtr));
-MODULE_SCOPE int	TclCreateAuxData _ANSI_ARGS_((ClientData clientData,
-			    AuxDataType *typePtr, CompileEnv *envPtr));
-MODULE_SCOPE int	TclCreateExceptRange _ANSI_ARGS_((
-			    ExceptionRangeType type, CompileEnv *envPtr));
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv _ANSI_ARGS_((Tcl_Interp *interp));
-MODULE_SCOPE void	TclDeleteExecEnv _ANSI_ARGS_((ExecEnv *eePtr));
-MODULE_SCOPE void	TclDeleteLiteralTable _ANSI_ARGS_((
-			    Tcl_Interp *interp, LiteralTable *tablePtr));
-MODULE_SCOPE void	TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
-			    TclJumpType jumpType, JumpFixup *jumpFixupPtr));
-MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc _ANSI_ARGS_((
-			    unsigned char *pc, int catchOnly,
-			    ByteCode* codePtr));
-MODULE_SCOPE void	TclExpandJumpFixupArray _ANSI_ARGS_((
-			    JumpFixupArray *fixupArrayPtr));
-MODULE_SCOPE void	TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
-MODULE_SCOPE int	TclFindCompiledLocal _ANSI_ARGS_((CONST char *name, 
-			    int nameChars, int create, int flags,
-			    Proc *procPtr));
-MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Obj *objPtr));
-MODULE_SCOPE int	TclFixupForwardJump _ANSI_ARGS_((
-			    CompileEnv *envPtr, JumpFixup *jumpFixupPtr,
-			    int jumpDist, int distThreshold));
-MODULE_SCOPE void	TclFreeCompileEnv _ANSI_ARGS_((CompileEnv *envPtr));
-MODULE_SCOPE void	TclFreeJumpFixupArray _ANSI_ARGS_((
-  			    JumpFixupArray *fixupArrayPtr));
-MODULE_SCOPE void	TclInitAuxDataTypeTable _ANSI_ARGS_((void));
-MODULE_SCOPE void	TclInitByteCodeObj _ANSI_ARGS_((Tcl_Obj *objPtr,
-			    CompileEnv *envPtr));
-MODULE_SCOPE void	TclInitCompilation _ANSI_ARGS_((void));
-MODULE_SCOPE void	TclInitCompileEnv _ANSI_ARGS_((Tcl_Interp *interp,
-			    CompileEnv *envPtr, char *string, int numBytes));
-MODULE_SCOPE void	TclInitJumpFixupArray _ANSI_ARGS_((
-			    JumpFixupArray *fixupArrayPtr));
-MODULE_SCOPE void	TclInitLiteralTable _ANSI_ARGS_((
-			    LiteralTable *tablePtr));
-EXTERN void             TclLogCompilationInfo _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *script, CONST char *command,
-			    int length));
+			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
+			    AuxDataType *typePtr, CompileEnv *envPtr);
+MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
+			    CompileEnv *envPtr);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
+MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
+MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
+			    LiteralTable *tablePtr);
+MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
+			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
+			    int catchOnly, ByteCode* codePtr);
+MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
+MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
+MODULE_SCOPE int	TclFindCompiledLocal(CONST char *name, int nameChars,
+			    int create, int flags, Proc *procPtr);
+MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
+			    JumpFixup *jumpFixupPtr, int jumpDist,
+			    int distThreshold);
+MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
+MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
+MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
+MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclInitCompilation(void);
+MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
+			    CompileEnv *envPtr, char *string, int numBytes);
+MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
+MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 #ifdef TCL_COMPILE_STATS
-MODULE_SCOPE char *	TclLiteralStats _ANSI_ARGS_((
-			    LiteralTable *tablePtr));
-MODULE_SCOPE int	TclLog2 _ANSI_ARGS_((int value));
+MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
+MODULE_SCOPE int	TclLog2(int value);
 #endif
 #ifdef TCL_COMPILE_DEBUG
-MODULE_SCOPE void	TclPrintByteCodeObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
+MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
 #endif
-MODULE_SCOPE int	TclPrintInstruction _ANSI_ARGS_((ByteCode* codePtr,
-			    unsigned char *pc));
-MODULE_SCOPE void	TclPrintObject _ANSI_ARGS_((FILE *outFile,
-			    Tcl_Obj *objPtr, int maxChars));
-MODULE_SCOPE void	TclPrintSource _ANSI_ARGS_((FILE *outFile,
-			    CONST char *string, int maxChars));
-MODULE_SCOPE void	TclRegisterAuxDataType _ANSI_ARGS_((
-			    AuxDataType *typePtr));
-MODULE_SCOPE int	TclRegisterLiteral _ANSI_ARGS_((CompileEnv *envPtr,
-			    char *bytes, int length, int flags));
-MODULE_SCOPE void	TclReleaseLiteral _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
-MODULE_SCOPE void	TclSetCmdNameObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Command *cmdPtr));
+MODULE_SCOPE int	TclPrintInstruction(ByteCode* codePtr,
+			    unsigned char *pc);
+MODULE_SCOPE void	TclPrintObject(FILE *outFile,
+			    Tcl_Obj *objPtr, int maxChars);
+MODULE_SCOPE void	TclPrintSource(FILE *outFile,
+			    CONST char *string, int maxChars);
+MODULE_SCOPE void	TclRegisterAuxDataType(AuxDataType *typePtr);
+MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
+			    char *bytes, int length, int flags);
+MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    Command *cmdPtr);
 #ifdef TCL_COMPILE_DEBUG
-MODULE_SCOPE void	TclVerifyGlobalLiteralTable _ANSI_ARGS_((
-			    Interp *iPtr));
-MODULE_SCOPE void	TclVerifyLocalLiteralTable _ANSI_ARGS_((
-			    CompileEnv *envPtr));
+MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
+MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
-MODULE_SCOPE int	TclCompileVariableCmd _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, CompileEnv *envPtr));
-MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
-			    Tcl_Token *tokenPtr, Tcl_Obj *valuePtr));
+MODULE_SCOPE int	TclCompileVariableCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, CompileEnv *envPtr);
+MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
+			    Tcl_Obj *valuePtr);
 
 /*
  *----------------------------------------------------------------
@@ -837,7 +822,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 	TclRegisterLiteral(envPtr, (char *)(bytes), length, /*flags*/ 0)
 
 /*
- * Form of TclRegisterNSLiteral with onHeap == 0.  In that case, it is safe to
+ * Form of TclRegisterNSLiteral with onHeap == 0. In that case, it is safe to
  * cast away CONSTness, and it is cleanest to do that here, all in one place.
  *
  * int TclRegisterNewNSLiteral(CompileEnv *envPtr, const char *bytes,
@@ -865,7 +850,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     (envPtr)->currStackDepth += (delta)
 
 /*
- * Macro used to update the stack requirements.  It is called by the macros
+ * Macro used to update the stack requirements. It is called by the macros
  * TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
  * Remark that the very last instruction of a bytecode always reduces the
  * stack level: INST_DONE or INST_POP, so that the maxStackdepth is always
@@ -886,7 +871,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     }
 
 /*
- * Macro to emit an opcode byte into a CompileEnv's code array.  The ANSI C
+ * Macro to emit an opcode byte into a CompileEnv's code array. The ANSI C
  * "prototype" for this macro is:
  *
  * void TclEmitOpcode(unsigned char op, CompileEnv *envPtr);
@@ -899,7 +884,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     TclUpdateStackReqs(op, 0, envPtr)
 
 /*
- * Macros to emit an integer operand.  The ANSI C "prototype" for these macros
+ * Macros to emit an integer operand. The ANSI C "prototype" for these macros
  * are:
  *
  * void TclEmitInt1(int i, CompileEnv *envPtr);
@@ -927,8 +912,8 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 /*
  * Macros to emit an instruction with signed or unsigned integer operands.
  * Four byte integers are stored in "big-endian" order with the high order
- * byte stored at the lowest address.  The ANSI C "prototypes" for these
- * macros are:
+ * byte stored at the lowest address. The ANSI C "prototypes" for these macros
+ * are:
  *
  * void TclEmitInstInt1(unsigned char op, int i, CompileEnv *envPtr);
  * void TclEmitInstInt4(unsigned char op, int i, CompileEnv *envPtr);
@@ -977,7 +962,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     }
 
 /*
- * Macros to update a (signed or unsigned) integer starting at a pointer.  The
+ * Macros to update a (signed or unsigned) integer starting at a pointer. The
  * two variants depend on the number of bytes. The ANSI C "prototypes" for
  * these macros are:
  *
@@ -1028,7 +1013,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
  * (GET_UINT{1,2}) from a pointer. There are two variants for each return type
- * that depend on the number of bytes fetched.  The ANSI C "prototypes" for
+ * that depend on the number of bytes fetched. The ANSI C "prototypes" for
  * these macros are:
  *
  * int TclGetInt1AtPtr(unsigned char *p);
@@ -1068,7 +1053,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 					    (*((p)+3)))
 
 /*
- * Macros used to compute the minimum and maximum of two integers.  The ANSI C
+ * Macros used to compute the minimum and maximum of two integers. The ANSI C
  * "prototypes" for these macros are:
  *
  * int TclMin(int i, int j);
@@ -1079,3 +1064,11 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 #define TclMax(i, j)   ((((int) i) > ((int) j))? (i) : (j))
 
 #endif /* _TCLCOMPILATION */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

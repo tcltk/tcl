@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.15 2005/09/12 15:45:02 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.16 2005/10/18 20:47:32 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -341,10 +341,12 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_fast_s_mp_sqr.obj \
 	$(TMP_DIR)\bn_mp_add.obj \
 	$(TMP_DIR)\bn_mp_add_d.obj \
+	$(TMP_DIR)\bn_mp_and.obj \
 	$(TMP_DIR)\bn_mp_clamp.obj \
 	$(TMP_DIR)\bn_mp_clear.obj \
 	$(TMP_DIR)\bn_mp_clear_multi.obj \
 	$(TMP_DIR)\bn_mp_cmp.obj \
+	$(TMP_DIR)\bn_mp_cmp_d.obj \
 	$(TMP_DIR)\bn_mp_cmp_mag.obj \
 	$(TMP_DIR)\bn_mp_copy.obj \
 	$(TMP_DIR)\bn_mp_count_bits.obj \
@@ -354,6 +356,7 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_mp_div_2d.obj \
 	$(TMP_DIR)\bn_mp_div_3.obj \
 	$(TMP_DIR)\bn_mp_exch.obj \
+	$(TMP_DIR)\bn_mp_expt_d.obj \
 	$(TMP_DIR)\bn_mp_grow.obj \
 	$(TMP_DIR)\bn_mp_init.obj \
 	$(TMP_DIR)\bn_mp_init_copy.obj \
@@ -369,17 +372,25 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_mp_mul_2.obj \
 	$(TMP_DIR)\bn_mp_mul_2d.obj \
 	$(TMP_DIR)\bn_mp_mul_d.obj \
+	$(TMP_DIR)\bn_mp_neg.obj \
+	$(TMP_DIR)\bn_mp_or.obj \
 	$(TMP_DIR)\bn_mp_radix_size.obj \
 	$(TMP_DIR)\bn_mp_radix_smap.obj \
 	$(TMP_DIR)\bn_mp_read_radix.obj \
 	$(TMP_DIR)\bn_mp_rshd.obj \
 	$(TMP_DIR)\bn_mp_set.obj \
+	$(TMP_DIR)\bn_mp_shrink.obj \
 	$(TMP_DIR)\bn_mp_sqr.obj \
+	$(TMP_DIR)\bn_mp_sqrt.obj \
 	$(TMP_DIR)\bn_mp_sub.obj \
 	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_to_unsigned_bin.obj \
+	$(TMP_DIR)\bn_mp_to_unsigned_bin_n.obj \
 	$(TMP_DIR)\bn_mp_toom_mul.obj \
 	$(TMP_DIR)\bn_mp_toom_sqr.obj \
 	$(TMP_DIR)\bn_mp_toradix_n.obj \
+	$(TMP_DIR)\bn_mp_unsigned_bin_size.obj \
+	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
 	$(TMP_DIR)\bn_s_mp_mul_digs.obj \
@@ -452,7 +463,8 @@ crt = -MT
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) \
-			-DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH
+			-DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH \
+			-DMP_PREC=4
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
 STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)

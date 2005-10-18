@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.24 2005/09/15 20:29:59 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.25 2005/10/18 20:46:17 dgp Exp $
  */
 
 #ifndef _TCL
@@ -175,18 +175,34 @@ extern "C" {
  * windows is for a DLL, which causes the DLLIMPORT and DLLEXPORT macros to be
  * nonempty. To build a static library, the macro STATIC_BUILD should be
  * defined.
+ *
+ * Note: when building static but linking dynamically to MSVCRT we must still
+ *       correctly decorate the C library imported function.  Use CRTIMPORT
+ *       for this purpose.  _DLL is defined by the compiler when linking to
+ *       MSVCRT.  
  */
+
+#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#   define HAVE_DECLSPEC 1
+#endif
 
 #ifdef STATIC_BUILD
 #   define DLLIMPORT
 #   define DLLEXPORT
+#   if HAVE_DECLSPEC && defined(_DLL)
+#	define CRTIMPORT __declspec(dllimport)
+#   else
+#	define CRTIMPORT
+#   endif
 #else
-#   if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#   if HAVE_DECLSPEC
 #	define DLLIMPORT __declspec(dllimport)
 #	define DLLEXPORT __declspec(dllexport)
+#	define CRTIMPORT __declspec(dllimport)
 #   else
 #	define DLLIMPORT
 #	define DLLEXPORT
+#	define CRTIMPORT
 #   endif
 #endif
 
@@ -770,10 +786,10 @@ typedef struct Tcl_Obj {
 	} twoPtrValue;
 	struct {		/*   - internal rep as a wide int, tightly
 				 *     packed fields */
-	    VOID *digits;	/* Pointer to digits */
-	    unsigned long misc;	/* Alloc, used, and signum packed into a
+	    VOID *ptr;		/* Pointer to digits */
+	    unsigned long value;/* Alloc, used, and signum packed into a
 				 * single word */
-	} bignumValue;
+	} ptrAndLongRep;
     } internalRep;
 } Tcl_Obj;
 

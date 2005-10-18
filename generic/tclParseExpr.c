@@ -12,25 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.11 2005/07/26 04:12:18 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.12 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
-
-/*
- * The stuff below is a bit of a hack so that this file can be used in
- * environments that include no UNIX, i.e. no errno: just arrange to use the
- * errno from tclExecute.c here.
- */
-
-#ifdef TCL_GENERIC_ONLY
-#define NO_ERRNO_H
-#endif
-
-#ifdef NO_ERRNO_H
-extern int errno;			/* Use errno from tclExecute.c. */
-#define ERANGE 34
-#endif
 
 /*
  * Boolean variable that controls whether expression parse tracing is enabled.
@@ -168,8 +153,6 @@ static int		ParseCondExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseEqualityExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseLandExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseLorExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseMaxDoubleLength _ANSI_ARGS_((CONST char *string,
-			    CONST char *end));
 static int		ParseMultiplyExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParsePrimaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseRelationalExpr _ANSI_ARGS_((ParseInfo *infoPtr));
@@ -1632,7 +1615,6 @@ GetLexeme(infoPtr)
     char c;
     int offset, length, numBytes;
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
-    Tcl_Interp *interp = parsePtr->interp;
     Tcl_UniChar ch;
 
     /*
@@ -1675,59 +1657,16 @@ GetLexeme(infoPtr)
     c = *src;
     if ((c != '+') && (c != '-')) {
 	CONST char *end = infoPtr->lastChar;
-	if ((length = TclParseInteger(src, end-src))) {
-	    /*
-	     * First length bytes look like an integer.  Verify by attempting
-	     * the conversion to the largest integer we have.
-	     */
-
-	    int code;
-	    Tcl_WideInt wide;
-	    Tcl_Obj *value = Tcl_NewStringObj(src, length);
-
-	    Tcl_IncrRefCount(value);
-	    code = Tcl_GetWideIntFromObj(interp, value, &wide);
-	    Tcl_DecrRefCount(value);
-	    if (code == TCL_ERROR) {
-		parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
-		return TCL_ERROR;
-	    }
-	    infoPtr->lexeme = LITERAL;
-	    infoPtr->start = src;
-	    infoPtr->size = length;
-	    infoPtr->next = (src + length);
-	    parsePtr->term = infoPtr->next;
-	    return TCL_OK;
-	} else if ((length = ParseMaxDoubleLength(src, end))) {
-	    /*
-	     * There are length characters that could be a double. Let
-	     * strtod() tells us for sure. Need a writable copy so we can set
-	     * an terminating NULL to keep strtod from scanning too far.
-	     */
-
-	    char *startPtr;
-	    CONST char *termPtr;
-	    double doubleValue;
-	    Tcl_DString toParse;
-
-	    errno = 0;
-	    Tcl_DStringInit(&toParse);
-	    startPtr = Tcl_DStringAppend(&toParse, src, length);
-	    doubleValue = TclStrToD(startPtr, &termPtr);
-	    Tcl_DStringFree(&toParse);
-	    if (termPtr != startPtr) {
-		/*
-		 * startPtr was the start of a valid double, copied from src.
-		 */
-
+	CONST char* end2;
+	int code = TclParseNumber(NULL, NULL, NULL,
+				  src, (unsigned)(end-src), &end2, 0);
+	if ( code == TCL_OK ) {
+	    length = end2-src;
+	    if ( length > 0 ) {
 		infoPtr->lexeme = LITERAL;
 		infoPtr->start = src;
-		if ((termPtr - startPtr) > length) {
-		    infoPtr->size = length;
-		} else {
-		    infoPtr->size = (termPtr - startPtr);
-		}
-		infoPtr->next = src + infoPtr->size;
+		infoPtr->size = length;
+		infoPtr->next = (src + length);
 		parsePtr->term = infoPtr->next;
 		return TCL_OK;
 	    }
@@ -1975,6 +1914,7 @@ GetLexeme(infoPtr)
     }
 }
 
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -2034,55 +1974,7 @@ TclParseInteger(string, numBytes)
     }
     return 0;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * ParseMaxDoubleLength --
- *
- *	Scans a sequence of bytes checking that the characters could be in a
- *	string rep of a double.
- *
- * Results:
- *	Returns the number of bytes starting with string, running to, but not
- *	including end, all of which could be part of a string rep. of a
- *	double.  Only character identity is used, no actual parsing is done.
- *
- *	The legal bytes are '0' - '9', 'A' - 'F', 'a' - 'f', '.', '+', '-',
- *	'i', 'I', 'n', 'N', 'p', 'P', 'x', and 'X'.  This covers the values
- *	"Inf" and "Nan" as well as the decimal and hexadecimal representations
- *	recognized by a C99-compliant strtod().
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ParseMaxDoubleLength(string, end)
-    register CONST char *string;/* The string to examine. */
-    CONST char *end;		/* Point to the first character past the end
-				 * of the string we are examining. */
-{
-    CONST char *p = string;
-    while (p < end) {
-	switch (*p) {
-	case '0': case '1': case '2': case '3': case '4': case '5':
-	case '6': case '7': case '8': case '9': case 'A': case 'B':
-	case 'C': case 'D': case 'E': case 'F': case 'I': case 'N':
-	case 'P': case 'X': case 'a': case 'b': case 'c': case 'd':
-	case 'e': case 'f': case 'i': case 'n': case 'p': case 'x':
-	case '.': case '+': case '-': case '(': case ' ': case ')':
-	    p++;
-	    break;
-	default:
-	    goto done;
-	}
-    }
-  done:
-    return (p - string);
-}
+#endif
 
 /*
  *----------------------------------------------------------------------

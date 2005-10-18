@@ -10,11 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.15 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.16 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
+
+#define NEW_FORMAT 1
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -2245,6 +2247,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	case 'G':
 	    if (Tcl_GetDoubleFromObj(interp,	/* INTL: Tcl source. */
 		    objv[objIndex], &doubleValue) != TCL_OK) {
+		/*TODO: figure out ACCEPT_NAN */
 		goto fmtError;
 	    }
 	    whichValue = DOUBLE_VALUE;

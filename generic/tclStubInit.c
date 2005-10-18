@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.25 2005/09/12 15:40:30 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.26 2005/10/18 20:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -128,7 +128,7 @@ TclIntStubs tclIntStubs = {
     TclInExit, /* 46 */
     NULL, /* 47 */
     NULL, /* 48 */
-    TclIncrVar2, /* 49 */
+    NULL, /* 49 */
     TclInitCompiledLocals, /* 50 */
     TclInterpInit, /* 51 */
     NULL, /* 52 */
@@ -224,7 +224,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 137 */
     TclGetEnv, /* 138 */
     NULL, /* 139 */
-    TclLooksLikeInt, /* 140 */
+    NULL, /* 140 */
     TclpGetCwd, /* 141 */
     TclSetByteCodeFromAny, /* 142 */
     TclAddLiteralObj, /* 143 */
@@ -258,7 +258,7 @@ TclIntStubs tclIntStubs = {
     TclCheckExecutionTraces, /* 171 */
     TclInThreadExit, /* 172 */
     TclUniCharMatch, /* 173 */
-    TclIncrWideVar2, /* 174 */
+    NULL, /* 174 */
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
@@ -982,12 +982,13 @@ TclStubs tclStubs = {
     Tcl_DbNewBignumObj, /* 556 */
     Tcl_SetBignumObj, /* 557 */
     Tcl_GetBignumFromObj, /* 558 */
-    Tcl_TruncateChannel, /* 559 */
-    Tcl_ChannelTruncateProc, /* 560 */
-    Tcl_SetChannelErrorInterp, /* 561 */
-    Tcl_GetChannelErrorInterp, /* 562 */
-    Tcl_SetChannelError, /* 563 */
-    Tcl_GetChannelError, /* 564 */
+    Tcl_GetBignumAndClearObj, /* 559 */
+    Tcl_TruncateChannel, /* 560 */
+    Tcl_ChannelTruncateProc, /* 561 */
+    Tcl_SetChannelErrorInterp, /* 562 */
+    Tcl_GetChannelErrorInterp, /* 563 */
+    Tcl_SetChannelError, /* 564 */
+    Tcl_GetChannelError, /* 565 */
 };
 
 /* !END!: Do not edit above this line. */

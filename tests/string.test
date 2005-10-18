@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.10 2005/08/02 16:38:18 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.11 2005/10/18 20:47:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -293,7 +293,7 @@ proc largest_int {} {
     # so we can test for overflow properly below on >32 bit systems
     set int 1
     set exp 7; # assume we get at least 8 bits
-    while {$int > 0} { set int [expr {wide(1) << [incr exp]}] }
+    while {wide($int) > 0} { set int [expr {wide(1) << [incr exp]}] }
     return [expr {$int-1}]
 }
 

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.15 2005/08/15 17:23:07 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.16 2005/10/18 20:46:19 dgp Exp $
 
 library tcl
 
@@ -210,10 +210,10 @@ declare 46 generic {
 #    Tcl_Obj *TclIncrIndexedScalar(Tcl_Interp *interp, int localIndex,
 #	    long incrAmount)
 #}
-declare 49 generic {
-    Tcl_Obj *TclIncrVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
-	    Tcl_Obj *part2Ptr, long incrAmount, int part1NotParsed)
-}
+#declare 49 generic {
+#    Tcl_Obj *TclIncrVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+#	    Tcl_Obj *part2Ptr, long incrAmount, int part1NotParsed)
+#}
 declare 50 generic {
     void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr,
 	    Namespace *nsPtr)
@@ -553,9 +553,9 @@ declare 138 generic {
 #	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
 #	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
 #}
-declare 140 generic {
-    int TclLooksLikeInt(CONST char *bytes, int length)
-}
+#declare 140 generic {
+#    int TclLooksLikeInt(CONST char *bytes, int length)
+#}
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
     CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
@@ -709,10 +709,10 @@ declare 173 generic {
 
 # added for 8.4.3
 
-declare 174 generic {
-    Tcl_Obj *TclIncrWideVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
-	    Tcl_Obj *part2Ptr, Tcl_WideInt wideIncrAmount, int part1NotParsed)
-}
+#declare 174 generic {
+#    Tcl_Obj *TclIncrWideVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+#	    Tcl_Obj *part2Ptr, Tcl_WideInt wideIncrAmount, int part1NotParsed)
+#}
 
 # Factoring out of trace code
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.10.2.4 2004/12/09 23:01:12 dgp Exp $
+# RCS: @(#) $Id: winFile.test,v 1.10.2.5 2005/10/18 20:47:04 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -112,7 +112,7 @@ proc getuser {fname} {
 	if {[string match -nocase "* $tail" $line]} {
 	    set attrs [string range $line \
 	      0 end-[string length $tail]]
-	    regexp { [A-Z]+\\.*$} $attrs owner
+	    regexp { [^ \\]+\\.*$} $attrs owner
 	    set owner [string trim $owner]
 	}
     }

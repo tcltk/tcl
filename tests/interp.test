@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.12 2005/06/22 21:12:45 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.13 2005/10/18 20:47:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -24,8 +24,6 @@ set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket
 foreach i [interp slaves] {
   interp delete $i
 }
-
-proc equiv {x} {return $x}
 
 # Part 0: Check out options for interp command
 test interp-1.1 {options for interp command} {
@@ -379,7 +377,7 @@ test interp-10.7 {testing aliases between interpreters} {
     set x [foo 33]
     a eval {rename zoppo {}}
     interp alias "" foo a {}
-    equiv $x
+    return $x
 } {33 33 33}
 
 # Part 10: Testing "interp target"
@@ -3113,6 +3111,64 @@ test interp-34.10 {time limits trigger in vwaits: Bug 1221395} -body {
     interp delete $i
     lappend result $msg
 } -result {1 {time limit exceeded}}
+test interp-34.11 {time limit extension in callbacks} -setup {
+    proc cb1 {i t} {
+	global result
+	lappend result cb1
+	$i limit time -seconds $t -command cb2
+    }
+    proc cb2 {} {
+	global result
+	lappend result cb2
+    }
+} -body {
+    set i [interp create]
+    set t0 [clock seconds]
+    $i limit time -seconds [expr {$t0+1}] -granularity 1 \
+	-command "cb1 $i [expr {$t0+2}]"
+    set ::result {}
+    lappend ::result [catch {
+	$i eval {
+	    for {set i 0} {$i<30} {incr i} {
+		after 100
+	    }
+	}
+    } msg] $msg
+    set t1 [clock seconds]
+    lappend ::result [expr {$t1-$t0>=2 ? "ok" : "$t0,$t1"}]
+    interp delete $i
+    return $::result
+} -result {cb1 cb2 1 {time limit exceeded} ok} -cleanup {
+    rename cb1 {}
+    rename cb2 {}
+}
+test interp-34.12 {time limit extension in callbacks} -setup {
+    proc cb1 {i} {
+	global result times
+	lappend result cb1
+	set times [lassign $times t]
+	$i limit time -seconds $t
+    }
+} -body {
+    set i [interp create]
+    set t0 [clock seconds]
+    set ::times "[expr {$t0+2}] [expr {$t0+100}]"
+    $i limit time -seconds [expr {$t0+1}] -granularity 1 -command "cb1 $i"
+    set ::result {}
+    lappend ::result [catch {
+	$i eval {
+	    for {set i 0} {$i<30} {incr i} {
+		after 100
+	    }
+	}
+    } msg] $msg
+    set t1 [clock seconds]
+    lappend ::result [expr {$t1-$t0>=2 ? "ok" : "$t0,$t1"}]
+    interp delete $i
+    return $::result
+} -result {cb1 cb1 0 {} ok} -cleanup {
+    rename cb1 {}
+}
 
 test interp-35.1 {interp limit syntax} -body {
     interp limit

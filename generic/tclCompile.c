@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.20 2005/07/26 04:11:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.21 2005/10/18 20:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -42,7 +42,7 @@ static int traceInitialized = 0;
 
 /*
  * A table describing the Tcl bytecode instructions. Entries in this table
- * must correspond to the instruction opcode definitions in tclCompile.h.  The
+ * must correspond to the instruction opcode definitions in tclCompile.h. The
  * names "op1" and "op4" refer to an instruction's one or four byte first
  * operand. Similarly, "stktop" and "stknext" refer to the topmost and next to
  * topmost stack elements.
@@ -186,7 +186,7 @@ InstructionDesc tclInstructionTable[] = {
     {"callBuiltinFunc1",  2,   1,          1,	{OPERAND_UINT1}},
 	/* Call builtin math function with index op1; any args are on stk */
     {"callFunc1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
-	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1>  */
+	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1> */
     {"tryCvtToNumeric",	  1,   0,          0,	{OPERAND_NONE}},
 	/* Try converting stktop to first int then double if possible. */
 
@@ -201,10 +201,10 @@ InstructionDesc tclInstructionTable[] = {
 	 * of the ForeachInfo structure for the foreach command. */
     {"foreach_step4",	  5,   +1,         1,	{OPERAND_UINT4}},
 	/* "Step" or begin next iteration of foreach loop. Push 0 if to
-	 *  terminate loop, else push 1. */
+	 * terminate loop, else push 1. */
 
     {"beginCatch4",	  5,   0,          1,	{OPERAND_UINT4}},
-	/* Record start of catch with the operand's exception index.  Push the
+	/* Record start of catch with the operand's exception index. Push the
 	 * current stack depth onto a special catch stack. */
     {"endCatch",	  1,   0,          0,	{OPERAND_NONE}},
 	/* End of last catch. Pop the bytecode interpreter's catch stack. */
@@ -369,22 +369,21 @@ InstructionDesc tclInstructionTable[] = {
  * Prototypes for procedures defined later in this file:
  */
 
-static void		DupByteCodeInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
-			    Tcl_Obj *copyPtr));
-static unsigned char *	EncodeCmdLocMap _ANSI_ARGS_((CompileEnv *envPtr,
-			    ByteCode *codePtr, unsigned char *startPtr));
-static void		EnterCmdExtentData _ANSI_ARGS_((CompileEnv *envPtr,
-			    int cmdNumber, int numSrcBytes, int numCodeBytes));
-static void		EnterCmdStartData _ANSI_ARGS_((CompileEnv *envPtr,
-			    int cmdNumber, int srcOffset, int codeOffset));
-static void		FreeByteCodeInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		GetCmdLocEncodingSize _ANSI_ARGS_((
-			    CompileEnv *envPtr));
+static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr);
+static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
+			    ByteCode *codePtr, unsigned char *startPtr);
+static void		EnterCmdExtentData(CompileEnv *envPtr,
+			    int cmdNumber, int numSrcBytes, int numCodeBytes);
+static void		EnterCmdStartData(CompileEnv *envPtr,
+			    int cmdNumber, int srcOffset, int codeOffset);
+static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
+static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
-static void		RecordByteCodeStats _ANSI_ARGS_((ByteCode *codePtr));
+static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
-static int		SetByteCodeFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
+static int		SetByteCodeFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -406,7 +405,7 @@ Tcl_ObjType tclByteCodeType = {
  *
  *	Part of the bytecode Tcl object type implementation. Attempts to
  *	generate an byte code internal form for the Tcl object "objPtr" by
- *	compiling its string representation.  This function also takes a hook
+ *	compiling its string representation. This function also takes a hook
  *	procedure that will be invoked to perform any needed post processing
  *	on the compilation results before generating byte codes.
  *
@@ -425,12 +424,12 @@ Tcl_ObjType tclByteCodeType = {
  */
 
 int
-TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
-    Tcl_Interp *interp;		/* The interpreter for which the code is being
-				 * compiled.  Must not be NULL. */
-    Tcl_Obj *objPtr;		/* The object to make a ByteCode object. */
-    CompileHookProc *hookProc;	/* Procedure to invoke after compilation. */
-    ClientData clientData;	/* Hook procedure private data. */
+TclSetByteCodeFromAny(
+    Tcl_Interp *interp,		/* The interpreter for which the code is being
+				 * compiled. Must not be NULL. */
+    Tcl_Obj *objPtr,		/* The object to make a ByteCode object. */
+    CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
+    ClientData clientData)	/* Hook procedure private data. */
 {
 #ifdef TCL_COMPILE_DEBUG
     Interp *iPtr = (Interp *) interp;
@@ -538,18 +537,18 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
  *
  * Side effects:
  *	Frees the old internal representation. If no error occurs, then the
- *	compiled code is stored as "objPtr"s bytecode representation.  Also,
- *	if debugging, initializes the "tcl_traceCompile" Tcl variable used to
+ *	compiled code is stored as "objPtr"s bytecode representation. Also, if
+ *	debugging, initializes the "tcl_traceCompile" Tcl variable used to
  *	trace compilations.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-SetByteCodeFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* The interpreter for which the code is being
-				 * compiled.  Must not be NULL. */
-    Tcl_Obj *objPtr;		/* The object to make a ByteCode object. */
+SetByteCodeFromAny(
+    Tcl_Interp *interp,		/* The interpreter for which the code is being
+				 * compiled. Must not be NULL. */
+    Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
 {
     return TclSetByteCodeFromAny(interp, objPtr,
 	    (CompileHookProc *) NULL, (ClientData) NULL);
@@ -575,9 +574,9 @@ SetByteCodeFromAny(interp, objPtr)
  */
 
 static void
-DupByteCodeInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
+DupByteCodeInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     return;
 }
@@ -596,15 +595,15 @@ DupByteCodeInternalRep(srcPtr, copyPtr)
  *
  * Side effects:
  *	The bytecode object's internal rep is marked invalid and its code gets
- *	freed unless the code is actively being executed.  In that case the
+ *	freed unless the code is actively being executed. In that case the
  *	cleanup is delayed until the last execution of the code completes.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-FreeByteCodeInternalRep(objPtr)
-    register Tcl_Obj *objPtr;	/* Object whose internal rep to free. */
+FreeByteCodeInternalRep(
+    register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
     register ByteCode *codePtr = (ByteCode *)
 	    objPtr->internalRep.otherValuePtr;
@@ -638,8 +637,8 @@ FreeByteCodeInternalRep(objPtr)
  */
 
 void
-TclCleanupByteCode(codePtr)
-    register ByteCode *codePtr;	/* Points to the ByteCode to free. */
+TclCleanupByteCode(
+    register ByteCode *codePtr)	/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     int numLitObjects = codePtr->numLitObjects;
@@ -694,7 +693,7 @@ TclCleanupByteCode(codePtr)
      *
      * The case for TCL_BYTECODE_PRECOMPILED (precompiled ByteCodes, like
      * those generated from tbcload) is special, as they doesn't make use of
-     * the global literal table.  They instead maintain private references to
+     * the global literal table. They instead maintain private references to
      * their literals which must be decremented.
      *
      * In order to insure a proper and efficient cleanup of the literal array
@@ -762,13 +761,13 @@ TclCleanupByteCode(codePtr)
  */
 
 void
-TclInitCompileEnv(interp, envPtr, stringPtr, numBytes)
-    Tcl_Interp *interp;		 /* The interpreter for which a CompileEnv
-				  * structure is initialized. */
-    register CompileEnv *envPtr; /* Points to the CompileEnv structure to
-				  * initialize. */
-    char *stringPtr;		 /* The source string to be compiled. */
-    int numBytes;		 /* Number of bytes in source string. */
+TclInitCompileEnv(
+    Tcl_Interp *interp,		/* The interpreter for which a CompileEnv
+				 * structure is initialized. */
+    register CompileEnv *envPtr,/* Points to the CompileEnv structure to
+				 * initialize. */
+    char *stringPtr,		/* The source string to be compiled. */
+    int numBytes)		/* Number of bytes in source string. */
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -831,8 +830,8 @@ TclInitCompileEnv(interp, envPtr, stringPtr, numBytes)
  */
 
 void
-TclFreeCompileEnv(envPtr)
-    register CompileEnv *envPtr; /* Points to the CompileEnv structure. */
+TclFreeCompileEnv(
+    register CompileEnv *envPtr)/* Points to the CompileEnv structure. */
 {
     if (envPtr->mallocedCodeArray) {
 	ckfree((char *) envPtr->codeStart);
@@ -860,10 +859,10 @@ TclFreeCompileEnv(envPtr)
  *
  * Results:
  *	Returns true if the tokenPtr argument points to a word value that is
- *	completely known at compile time.  Generally, values that are known at
+ *	completely known at compile time. Generally, values that are known at
  *	compile time can be compiled to their values, while values that cannot
  *	be known until substitution at runtime must be compiled to bytecode
- *	instructions that perform that substitution.  For several commands,
+ *	instructions that perform that substitution. For several commands,
  *	whether or not arguments are known at compile time determine whether
  *	it is worthwhile to compile at all.
  *
@@ -875,9 +874,9 @@ TclFreeCompileEnv(envPtr)
  */
 
 int
-TclWordKnownAtCompileTime(tokenPtr, valuePtr)
-    Tcl_Token *tokenPtr;	/* Points to Tcl_Token we should check */
-    Tcl_Obj *valuePtr;		/* If not NULL, points to an unshared Tcl_Obj
+TclWordKnownAtCompileTime(
+    Tcl_Token *tokenPtr,	/* Points to Tcl_Token we should check */
+    Tcl_Obj *valuePtr)		/* If not NULL, points to an unshared Tcl_Obj
 				 * to which we should append the known value
 				 * of the word. */
 {
@@ -948,15 +947,15 @@ TclWordKnownAtCompileTime(tokenPtr, valuePtr)
  */
 
 void
-TclCompileScript(interp, script, numBytes, envPtr)
-    Tcl_Interp *interp;		/* Used for error and status reporting.  Also
+TclCompileScript(
+    Tcl_Interp *interp,		/* Used for error and status reporting. Also
 				 * serves as context for finding and compiling
-				 * commands.  May not be NULL. */
-    CONST char *script;		/* The source script to compile. */
-    int numBytes;		/* Number of bytes in script. If < 0, the
+				 * commands. May not be NULL. */
+    CONST char *script,		/* The source script to compile. */
+    int numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *lastTokenPtr;
     Tcl_Token *tokens = TclParseScript(script, numBytes, /* flags */ 0,
@@ -1255,13 +1254,13 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
  */
 
 void
-TclCompileTokens(interp, tokenPtr, count, envPtr)
-    Tcl_Interp *interp;		/* Used for error and status reporting. */
-    Tcl_Token *tokenPtr;	/* Pointer to first in an array of tokens to
+TclCompileTokens(
+    Tcl_Interp *interp,		/* Used for error and status reporting. */
+    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * compile. */
-    int count;			/* Number of tokens to consider at tokenPtr.
+    int count,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
-    CompileEnv *envPtr;		/* Holds the resulting instructions. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
@@ -1519,13 +1518,13 @@ done:
  */
 
 void
-TclCompileCmdWord(interp, tokenPtr, count, envPtr)
-    Tcl_Interp *interp;		/* Used for error and status reporting. */
-    Tcl_Token *tokenPtr;	/* Pointer to first in an array of tokens for
+TclCompileCmdWord(
+    Tcl_Interp *interp,		/* Used for error and status reporting. */
+    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    int count;			/* Number of tokens to consider at tokenPtr.
+    int count,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
-    CompileEnv *envPtr;		/* Holds the resulting instructions. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
 	/*
@@ -1536,7 +1535,7 @@ TclCompileCmdWord(interp, tokenPtr, count, envPtr)
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
     } else {
 	/*
-	 * Multiple tokens or the single token involves substitutions.  Emit
+	 * Multiple tokens or the single token involves substitutions. Emit
 	 * instructions to invoke the eval command procedure at runtime on the
 	 * result of evaluating the tokens.
 	 */
@@ -1568,15 +1567,15 @@ TclCompileCmdWord(interp, tokenPtr, count, envPtr)
  */
 
 void
-TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
-    Tcl_Interp *interp;		/* Used for error and status reporting. */
-    Tcl_Token *tokenPtr;	/* Points to first in an array of word tokens
+TclCompileExprWords(
+    Tcl_Interp *interp,		/* Used for error and status reporting. */
+    Tcl_Token *tokenPtr,	/* Points to first in an array of word tokens
 				 * tokens for the expression to compile
 				 * inline. */
-    int numWords;		/* Number of word tokens starting at tokenPtr.
+    int numWords,		/* Number of word tokens starting at tokenPtr.
 				 * Must be at least 1. Each word token
 				 * contains one or more subtokens. */
-    CompileEnv *envPtr;		/* Holds the resulting instructions. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *wordPtr;
     int i, concatItems;
@@ -1631,7 +1630,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
  *	Create a ByteCode structure and initialize it from a CompileEnv
  *	compilation environment structure. The ByteCode structure is smaller
  *	and contains just that information needed to execute the bytecode
- *	instructions resulting from compiling a Tcl script.  The resulting
+ *	instructions resulting from compiling a Tcl script. The resulting
  *	structure is placed in the specified object.
  *
  * Results:
@@ -1649,12 +1648,12 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
  */
 
 void
-TclInitByteCodeObj(objPtr, envPtr)
-    Tcl_Obj *objPtr;		 /* Points object that should be initialized,
-				  * and whose string rep contains the source
-				  * code. */
-    register CompileEnv *envPtr; /* Points to the CompileEnv structure from
-				  * which to create a ByteCode structure. */
+TclInitByteCodeObj(
+    Tcl_Obj *objPtr,		/* Points object that should be initialized,
+				 * and whose string rep contains the source
+				 * code. */
+    register CompileEnv *envPtr)/* Points to the CompileEnv structure from
+				 * which to create a ByteCode structure. */
 {
     register ByteCode *codePtr;
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
@@ -1782,62 +1781,6 @@ TclInitByteCodeObj(objPtr, envPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclLogCompilationInfo --
- *
- *	This procedure is invoked after an error occurs during compilation.
- *	It adds information to the "errorInfo" variable to describe the
- *	command that was being compiled when the error occurred.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Information about the command is added to errorInfo and the
- *	line number stored internally in the interpreter is set.  If this
- *	is the first call to this procedure or Tcl_AddObjErrorInfo since
- *	an error occurred, then old information in errorInfo is
- *	deleted.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclLogCompilationInfo(interp, script, command, length)
-    Tcl_Interp *interp;		/* Interpreter in which to log the
-				 * information. */
-    CONST char *script;		/* First character in script containing
-				 * command (must be <= command). */
-    CONST char *command;	/* First character in command that
-				 * generated the error. */
-    int length;			/* Number of bytes in command (-1 means
-				 * use all bytes up to first null byte). */
-{
-    register CONST char *p;
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *message;
-
-    /*
-     * Compute the line number where the error occurred.
-     */
-
-    iPtr->errorLine = 1;
-    for (p = script; p != command; p++) {
-	if (*p == '\n') {
-	    iPtr->errorLine++;
-	}
-    }
-
-    message = Tcl_NewStringObj("\n    while compiling\n\"", -1);
-    Tcl_IncrRefCount(message);
-    TclAppendLimitedToObj(message, command, length, 153, NULL);
-    Tcl_AppendToObj(message, "\"", -1);
-    TclAppendObjToErrorInfo(interp, message);
-    Tcl_DecrRefCount(message);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclFindCompiledLocal --
  *
  *	This procedure is called at compile time to look up and optionally
@@ -1861,17 +1804,17 @@ TclLogCompilationInfo(interp, script, command, length)
  */
 
 int
-TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
-    register CONST char *name;	/* Points to first character of the name of a
+TclFindCompiledLocal(
+    register CONST char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
-    int nameBytes;		/* Number of bytes in the name. */
-    int create;			/* If 1, allocate a local frame entry for the
+    int nameBytes,		/* Number of bytes in the name. */
+    int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
-    int flags;			/* Flag bits for the compiled local if
+    int flags,			/* Flag bits for the compiled local if
 				 * created. Only VAR_SCALAR, VAR_ARRAY, and
 				 * VAR_LINK make sense. */
-    register Proc *procPtr;	/* Points to structure describing procedure
+    register Proc *procPtr)	/* Points to structure describing procedure
 				 * containing the variable reference. */
 {
     register CompiledLocal *localPtr;
@@ -1952,8 +1895,8 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
  */
 
 void
-TclExpandCodeArray(envArgPtr)
-    void *envArgPtr;		/* Points to the CompileEnv whose code array
+TclExpandCodeArray(
+    void *envArgPtr)		/* Points to the CompileEnv whose code array
 				 * must be enlarged. */
 {
     CompileEnv *envPtr = (CompileEnv*) envArgPtr;
@@ -2006,14 +1949,14 @@ TclExpandCodeArray(envArgPtr)
  */
 
 static void
-EnterCmdStartData(envPtr, cmdIndex, srcOffset, codeOffset)
-    CompileEnv *envPtr;		/* Points to the compilation environment
+EnterCmdStartData(
+    CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex;		/* Index of the command whose start data is
+    int cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
-    int srcOffset;		/* Offset of first char of the command. */
-    int codeOffset;		/* Offset of first byte of command code. */
+    int srcOffset,		/* Offset of first char of the command. */
+    int codeOffset)		/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -2083,14 +2026,14 @@ EnterCmdStartData(envPtr, cmdIndex, srcOffset, codeOffset)
  */
 
 static void
-EnterCmdExtentData(envPtr, cmdIndex, numSrcBytes, numCodeBytes)
-    CompileEnv *envPtr;		/* Points to the compilation environment
+EnterCmdExtentData(
+    CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex;		/* Index of the command whose source and code
+    int cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    int numSrcBytes;		/* Number of command source chars. */
-    int numCodeBytes;		/* Offset of last byte of command code. */
+    int numSrcBytes,		/* Number of command source chars. */
+    int numCodeBytes)		/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
@@ -2129,9 +2072,9 @@ EnterCmdExtentData(envPtr, cmdIndex, numSrcBytes, numCodeBytes)
  */
 
 int
-TclCreateExceptRange(type, envPtr)
-    ExceptionRangeType type;	/* The kind of ExceptionRange desired. */
-    register CompileEnv *envPtr;/* Points to CompileEnv for which to create a
+TclCreateExceptRange(
+    ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
+    register CompileEnv *envPtr)/* Points to CompileEnv for which to create a
 				 * new ExceptionRange structure. */
 {
     register ExceptionRange *rangePtr;
@@ -2201,12 +2144,12 @@ TclCreateExceptRange(type, envPtr)
  */
 
 int
-TclCreateAuxData(clientData, typePtr, envPtr)
-    ClientData clientData;	/* The compilation auxiliary data to store in
+TclCreateAuxData(
+    ClientData clientData,	/* The compilation auxiliary data to store in
 				 * the new aux data record. */
-    AuxDataType *typePtr;	/* Pointer to the type to attach to this
+    AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */
-    register CompileEnv *envPtr;/* Points to the CompileEnv for which a new
+    register CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
     int index;			/* Index for the new AuxData structure. */
@@ -2265,8 +2208,8 @@ TclCreateAuxData(clientData, typePtr, envPtr)
  */
 
 void
-TclInitJumpFixupArray(fixupArrayPtr)
-    register JumpFixupArray *fixupArrayPtr;
+TclInitJumpFixupArray(
+    register JumpFixupArray *fixupArrayPtr)
 				/* Points to the JumpFixupArray structure to
 				 * initialize. */
 {
@@ -2297,8 +2240,8 @@ TclInitJumpFixupArray(fixupArrayPtr)
  */
 
 void
-TclExpandJumpFixupArray(fixupArrayPtr)
-    register JumpFixupArray *fixupArrayPtr;
+TclExpandJumpFixupArray(
+    register JumpFixupArray *fixupArrayPtr)
 				/* Points to the JumpFixupArray structure
 				 * to enlarge. */
 {
@@ -2344,8 +2287,8 @@ TclExpandJumpFixupArray(fixupArrayPtr)
  */
 
 void
-TclFreeJumpFixupArray(fixupArrayPtr)
-    register JumpFixupArray *fixupArrayPtr;
+TclFreeJumpFixupArray(
+    register JumpFixupArray *fixupArrayPtr)
 				/* Points to the JumpFixupArray structure to
 				 * free. */
 {
@@ -2377,12 +2320,12 @@ TclFreeJumpFixupArray(fixupArrayPtr)
  */
 
 void
-TclEmitForwardJump(envPtr, jumpType, jumpFixupPtr)
-    CompileEnv *envPtr;		/* Points to the CompileEnv structure that
+TclEmitForwardJump(
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
 				 * holds the resulting instruction. */
-    TclJumpType jumpType;	/* Indicates the kind of jump: if true or
+    TclJumpType jumpType,	/* Indicates the kind of jump: if true or
 				 * false or unconditional. */
-    JumpFixup *jumpFixupPtr;	/* Points to the JumpFixup structure to
+    JumpFixup *jumpFixupPtr)	/* Points to the JumpFixup structure to
 				 * initialize with information about this
 				 * forward jump. */
 {
@@ -2439,13 +2382,13 @@ TclEmitForwardJump(envPtr, jumpType, jumpFixupPtr)
  */
 
 int
-TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
-    CompileEnv *envPtr;		/* Points to the CompileEnv structure that
+TclFixupForwardJump(
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
 				 * holds the resulting instruction. */
-    JumpFixup *jumpFixupPtr;    /* Points to the JumpFixup structure that
+    JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
 				 * describes the forward jump. */
-    int jumpDist;		/* Jump distance to set in jump instr. */
-    int distThreshold;		/* Maximum distance before the two byte jump
+    int jumpDist,		/* Jump distance to set in jump instr. */
+    int distThreshold)		/* Maximum distance before the two byte jump
 				 * is grown to five bytes. */
 {
     unsigned char *jumpPc, *p;
@@ -2469,9 +2412,9 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
     }
 
     /*
-     * We must grow the jump then move subsequent instructions down.  Note
-     * that if we expand the space for generated instructions, code addresses
-     * might change; be careful about updating any of these addresses held in
+     * We must grow the jump then move subsequent instructions down. Note that
+     * if we expand the space for generated instructions, code addresses might
+     * change; be careful about updating any of these addresses held in
      * variables.
      */
 
@@ -2579,8 +2522,8 @@ TclGetInstructionTable()
  */
 
 void
-TclRegisterAuxDataType(typePtr)
-    AuxDataType *typePtr;	/* Information about object type; storage must
+TclRegisterAuxDataType(
+    AuxDataType *typePtr)	/* Information about object type; storage must
 				 * be statically allocated (must live
 				 * forever; will not be deallocated). */
 {
@@ -2630,8 +2573,8 @@ TclRegisterAuxDataType(typePtr)
  */
 
 AuxDataType *
-TclGetAuxDataType(typeName)
-    char *typeName;		/* Name of AuxData type to look up. */
+TclGetAuxDataType(
+    char *typeName)		/* Name of AuxData type to look up. */
 {
     register Tcl_HashEntry *hPtr;
     AuxDataType *typePtr = NULL;
@@ -2693,7 +2636,7 @@ TclInitAuxDataTypeTable()
  *
  *	This procedure is called by Tcl_Finalize after all exit handlers have
  *	been run to free up storage associated with the table of AuxData
- *	types.  This procedure is called by TclFinalizeExecution() which is
+ *	types. This procedure is called by TclFinalizeExecution() which is
  *	called by Tcl_Finalize().
  *
  * Results:
@@ -2734,8 +2677,8 @@ TclFinalizeAuxDataTypeTable()
  */
 
 static int
-GetCmdLocEncodingSize(envPtr)
-    CompileEnv *envPtr;		/* Points to compilation environment structure
+GetCmdLocEncodingSize(
+    CompileEnv *envPtr)		/* Points to compilation environment structure
 				 * containing the CmdLocation structure to
 				 * encode. */
 {
@@ -2813,13 +2756,13 @@ GetCmdLocEncodingSize(envPtr)
  */
 
 static unsigned char *
-EncodeCmdLocMap(envPtr, codePtr, startPtr)
-    CompileEnv *envPtr;		/* Points to compilation environment structure
+EncodeCmdLocMap(
+    CompileEnv *envPtr,		/* Points to compilation environment structure
 				 * containing the CmdLocation structure to
 				 * encode. */
-    ByteCode *codePtr;		/* ByteCode in which to encode envPtr's
+    ByteCode *codePtr,		/* ByteCode in which to encode envPtr's
 				 * command location information. */
-    unsigned char *startPtr;	/* Points to the first byte in codePtr's
+    unsigned char *startPtr)	/* Points to the first byte in codePtr's
 				 * memory block where the location information
 				 * is to be stored. */
 {
@@ -2933,9 +2876,9 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
  */
 
 void
-TclPrintByteCodeObj(interp, objPtr)
-    Tcl_Interp *interp;		/* Used only for Tcl_GetStringFromObj. */
-    Tcl_Obj *objPtr;		/* The bytecode object to disassemble. */
+TclPrintByteCodeObj(
+    Tcl_Interp *interp,		/* Used only for Tcl_GetStringFromObj. */
+    Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
     ByteCode* codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
     unsigned char *codeStart, *codeLimit, *pc;
@@ -3205,9 +3148,9 @@ TclPrintByteCodeObj(interp, objPtr)
  */
 
 int
-TclPrintInstruction(codePtr, pc)
-    ByteCode* codePtr;		/* Bytecode containing the instruction. */
-    unsigned char *pc;		/* Points to first byte of instruction. */
+TclPrintInstruction(
+    ByteCode *codePtr,		/* Bytecode containing the instruction. */
+    unsigned char *pc)		/* Points to first byte of instruction. */
 {
     Proc *procPtr = codePtr->procPtr;
     unsigned char opCode = *pc;
@@ -3330,11 +3273,11 @@ TclPrintInstruction(codePtr, pc)
  */
 
 void
-TclPrintObject(outFile, objPtr, maxChars)
-    FILE *outFile;		/* The file to print the source to. */
-    Tcl_Obj *objPtr;		/* Points to the Tcl object whose string
+TclPrintObject(
+    FILE *outFile,		/* The file to print the source to. */
+    Tcl_Obj *objPtr,		/* Points to the Tcl object whose string
 				 * representation should be printed. */
-    int maxChars;		/* Maximum number of chars to print. */
+    int maxChars)		/* Maximum number of chars to print. */
 {
     char *bytes;
     int length;
@@ -3362,10 +3305,10 @@ TclPrintObject(outFile, objPtr, maxChars)
  */
 
 void
-TclPrintSource(outFile, stringPtr, maxChars)
-    FILE *outFile;		/* The file to print the source to. */
-    CONST char *stringPtr;	/* The string to print. */
-    int maxChars;		/* Maximum number of chars to print. */
+TclPrintSource(
+    FILE *outFile,		/* The file to print the source to. */
+    CONST char *stringPtr,	/* The string to print. */
+    int maxChars)		/* Maximum number of chars to print. */
 {
     register CONST char *p;
     register int i = 0;
@@ -3428,8 +3371,8 @@ TclPrintSource(outFile, stringPtr, maxChars)
  */
 
 void
-RecordByteCodeStats(codePtr)
-    ByteCode *codePtr;		/* Points to ByteCode structure with info
+RecordByteCodeStats(
+    ByteCode *codePtr)		/* Points to ByteCode structure with info
 				 * to add to accumulated statistics. */
 {
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
