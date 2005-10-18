@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.214 2005/10/15 23:27:18 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.215 2005/10/18 13:19:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4498,7 +4498,27 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F(1, 1, 0);
 	}
 
-	if ((*pc == INST_MULT) && (sizeof(Tcl_WideInt) >= 2*sizeof(long))
+	if ((sizeof(long) >= 2*sizeof(int)) && (*pc == INST_MULT)
+		&& (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
+	    long l1 = *((CONST long *)ptr1);
+	    long l2 = *((CONST long *)ptr2);
+	    if ((l1 <= INT_MAX) && (l1 >= INT_MIN)
+		    && (l2 <= INT_MAX) && (l2 >= INT_MIN)) {
+		long lResult = l1 * l2;
+
+		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		if (Tcl_IsShared(valuePtr)) {
+		    TclNewLongObj(objResultPtr,lResult);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		TclSetLongObj(valuePtr, lResult);
+		TRACE(("%s\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 1, 0);
+	    }
+	}
+
+	if ((sizeof(Tcl_WideInt) >= 2*sizeof(long)) && (*pc == INST_MULT) 
 		&& (type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	    Tcl_WideInt w1, w2, wResult;
 	    TclGetWideIntFromObj(NULL, valuePtr, &w1);
