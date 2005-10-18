@@ -1,3 +1,9 @@
+2005-10-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Added optimization for I32L64 systems to
+	avoid using bignums to perform int multiplies.  The improvement
+	shows up most dramatically in tclbench's matrix.bench.
+
 2005-10-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Restored some optimizations of the
