@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.36 2005/10/08 14:42:45 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.37 2005/10/19 18:39:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1874,180 +1874,14 @@ DictIncrCmd(interp, objc, objv)
     int objc;
     Tcl_Obj *CONST *objv;
 {
-#if 0
-    Tcl_Obj *dictPtr, *resultPtr;
-    int result, isWide = 0;
-    long incrValue = 1;
-    Tcl_WideInt wideIncrValue = 0;
-    int allocatedDict = 0;
-#else
     int code = TCL_OK;
     Tcl_Obj *dictPtr, *valuePtr = NULL;
-#endif
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "varName key ?increment?");
 	return TCL_ERROR;
     }
 
-#if 0
-    if (objc == 5) {
-	if (objv[4]->typePtr == &tclIntType) {
-	    incrValue = objv[4]->internalRep.longValue;
-	} else if (objv[4]->typePtr == &tclWideIntType) {
-	    wideIncrValue = objv[4]->internalRep.wideValue;
-	    isWide = 1;
-	} else {
-	    result = Tcl_GetWideIntFromObj(interp, objv[4], &wideIncrValue);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	    if (wideIncrValue <= Tcl_LongAsWide(LONG_MAX)
-		    && wideIncrValue >= Tcl_LongAsWide(LONG_MIN)) {
-		incrValue = Tcl_WideAsLong(wideIncrValue);
-		objv[4]->typePtr = &tclIntType;
-	    } else {
-		isWide = 1;
-	    }
-	}
-    }
-
-    dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
-    if (dictPtr == NULL) {
-	allocatedDict = 1;
-	dictPtr = Tcl_NewDictObj();
-	if (isWide) {
-	    valuePtr = Tcl_NewWideIntObj(wideIncrValue);
-	} else {
-	    valuePtr = Tcl_NewLongObj(incrValue);
-	}
-	Tcl_DictObjPut(interp, dictPtr, objv[3], valuePtr);
-    } else {
-	long lValue;
-	Tcl_WideInt wValue;
-
-	if (Tcl_IsShared(dictPtr)) {
-	    allocatedDict = 1;
-	    dictPtr = Tcl_DuplicateObj(dictPtr);
-	}
-
-	if (Tcl_DictObjGet(interp, dictPtr, objv[3], &valuePtr) != TCL_OK) {
-	    if (allocatedDict) {
-		TclDecrRefCount(dictPtr);
-	    }
-	    return TCL_ERROR;
-	}
-	if (valuePtr == NULL) {
-	    if (isWide) {
-		valuePtr = Tcl_NewWideIntObj(wideIncrValue);
-	    } else {
-		valuePtr = Tcl_NewLongObj(incrValue);
-	    }
-	} else if (valuePtr->typePtr == &tclWideIntType) {
-	    Tcl_GetWideIntFromObj(NULL, valuePtr, &wValue);
-	    if (Tcl_IsShared(valuePtr)) {
-		if (isWide) {
-		    valuePtr = Tcl_NewWideIntObj(wValue + wideIncrValue);
-		} else {
-		    valuePtr = Tcl_NewWideIntObj(wValue + incrValue);
-		}
-	    } else {
-		if (isWide) {
-		    Tcl_SetWideIntObj(valuePtr, wValue + wideIncrValue);
-		} else {
-		    Tcl_SetWideIntObj(valuePtr, wValue + incrValue);
-		}
-		if (dictPtr->bytes != NULL) {
-		    Tcl_InvalidateStringRep(dictPtr);
-		}
-		goto valueAlreadyInDictionary;
-	    }
-	} else if (valuePtr->typePtr == &tclIntType) {
-	    Tcl_GetLongFromObj(NULL, valuePtr, &lValue);
-	    if (Tcl_IsShared(valuePtr)) {
-		if (isWide) {
-		    valuePtr = Tcl_NewWideIntObj(lValue + wideIncrValue);
-		} else {
-		    valuePtr = Tcl_NewLongObj(lValue + incrValue);
-		}
-	    } else {
-		if (isWide) {
-		    Tcl_SetWideIntObj(valuePtr, lValue + wideIncrValue);
-		} else {
-		    Tcl_SetLongObj(valuePtr, lValue + incrValue);
-		}
-		if (dictPtr->bytes != NULL) {
-		    Tcl_InvalidateStringRep(dictPtr);
-		}
-		goto valueAlreadyInDictionary;
-	    }
-	} else {
-	    /*
-	     * Note that these operations on wide ints should work
-	     * fine where they are the same as normal longs, though
-	     * the compiler might complain about trivially satisifed
-	     * tests.
-	     */
-	    result = Tcl_GetWideIntFromObj(interp, valuePtr, &wValue);
-	    if (result != TCL_OK) {
-		if (allocatedDict) {
-		    TclDecrRefCount(dictPtr);
-		}
-		return result;
-	    }
-	    /*
-	     * Determine if we should have got a standard long instead.
-	     */
-	    if (Tcl_IsShared(valuePtr)) {
-		if (isWide) {
-		    valuePtr = Tcl_NewWideIntObj(wValue + wideIncrValue);
-		} else if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
-		    /*
-		     * Convert the type...
-		     */
-		    Tcl_GetLongFromObj(NULL, valuePtr, &lValue);
-		    valuePtr = Tcl_NewLongObj(lValue + incrValue);
-		} else {
-		    valuePtr = Tcl_NewWideIntObj(wValue + incrValue);
-		}
-	    } else {
-		if (isWide) {
-		    Tcl_SetWideIntObj(valuePtr, wValue + wideIncrValue);
-		} else if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
-		    Tcl_SetLongObj(valuePtr,
-			    Tcl_WideAsLong(wValue) + incrValue);
-		} else {
-		    Tcl_SetWideIntObj(valuePtr, wValue + incrValue);
-		}
-		if (dictPtr->bytes != NULL) {
-		    Tcl_InvalidateStringRep(dictPtr);
-		}
-		goto valueAlreadyInDictionary;
-	    }
-	}
-	if (Tcl_DictObjPut(interp, dictPtr, objv[3], valuePtr) != TCL_OK) {
-	    /* 
-	     * This shouldn't happen since dictPtr is known
-	     * from above to be a valid dictionary.
-	     */
-	    if (allocatedDict) {
-		TclDecrRefCount(dictPtr);
-	    }
-	    TclDecrRefCount(valuePtr);
-	    return TCL_ERROR;
-	}
-    }
-  valueAlreadyInDictionary:
-    Tcl_IncrRefCount(dictPtr);
-    resultPtr = Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
-	    TCL_LEAVE_ERR_MSG);
-    TclDecrRefCount(dictPtr);
-    if (resultPtr == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;
-#else
     dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
     if (dictPtr == NULL) {
 	/* Variable didn't yet exist.  Create new dictionary value */
@@ -2107,7 +1941,6 @@ DictIncrCmd(interp, objc, objv)
 	Tcl_SetObjResult(interp, valuePtr);
     }
     return code;
-#endif
 }
 
 /*

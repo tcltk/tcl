@@ -1,3 +1,16 @@
+2005-10-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclClock.c:		Removed some dead code.
+	* generic/tclCmdIL.c:
+	* generic/tclCompCmds.c:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclLiteral.c:
+	* generic/tclParseExpr.c:
+	* generic/tclScan.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
+
 2005-10-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclIORChan.c: General cleanup, removing checks that are

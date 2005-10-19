@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.28 2005/10/08 14:42:45 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.29 2005/10/19 18:39:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1870,68 +1870,6 @@ GetLexeme(infoPtr)
 	return TCL_OK;
     }
 }
-
-#if 0
-/*
- *----------------------------------------------------------------------
- *
- * TclParseInteger --
- *
- *	Scans up to numBytes bytes starting at src, and checks whether the
- *	leading bytes look like an integer's string representation.
- *
- * Results:
- *	Returns 0 if the leading bytes do not look like an integer.
- *	Otherwise, returns the number of bytes examined that look like an
- *	integer.  This may be less than numBytes if the integer is only the
- *	leading part of the string.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclParseInteger(string, numBytes)
-    register CONST char *string;/* The string to examine. */
-    register int numBytes;	/* Max number of bytes to scan. */
-{
-    register CONST char *p = string;
-
-    /*
-     * Take care of introductory "0x".
-     */
-
-    if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
-	int scanned;
-	Tcl_UniChar ch;
-
-	p += 2;
-	numBytes -= 2;
- 	scanned = TclParseHex(p, numBytes, &ch);
-	if (scanned) {
-	    return scanned+2;
-	}
-
-	/*
-	 * Recognize the 0 as valid integer, but x is left behind.
-	 */
-
-	return 1;
-    }
-    while (numBytes && isdigit(UCHAR(*p))) {		/* INTL: digit */
-	numBytes--; p++;
-    }
-    if (numBytes == 0) {
-	return (p - string);
-    }
-    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
-	return (p - string);
-    }
-    return 0;
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
