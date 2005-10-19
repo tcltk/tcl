@@ -1,3 +1,9 @@
+2005-10-19  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_DICT_APPEND, INST_DICT_LAPPEND):
+	fixed faulty peephole optimisation that can cause crashes 
+	[Bug 1331475]
+
 2005-10-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Added optimization for I32L64 systems to
