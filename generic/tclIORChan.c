@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.8 2005/10/19 14:10:05 dkf Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.9 2005/10/19 14:11:27 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -2201,9 +2201,9 @@ ForwardProc(
 	return 1;
     }
 
-    paramPtr->code = TCL_OK;
-    paramPtr->msgStr = NULL;
-    paramPtr->mustFree = 0;
+    paramPtr->base.code = TCL_OK;
+    paramPtr->base.msgStr = NULL;
+    paramPtr->base.mustFree = 0;
 
     switch (evPtr->op) {
 	/*
