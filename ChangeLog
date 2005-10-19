@@ -1,3 +1,10 @@
+2005-10-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIORChan.c (PassReceivedError,PassReceivedErrorInterp):
+	Fix crash caused by passing -1 as the length to TclNewStringObj().
+	Only Tcl_NewStringObj (the function call, not the macro) handles that
+	sort of thing correctly. This makes ioCmd.test pass again.
+
 2005-10-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclClock.c:		Removed some dead code.
