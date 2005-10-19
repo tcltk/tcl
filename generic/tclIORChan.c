@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.7 2005/10/19 13:59:01 dkf Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.8 2005/10/19 14:10:05 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -304,7 +304,8 @@ typedef struct ForwardingEvent {
     ForwardingResult *resultPtr;
     ForwardedOperation op;	/* Forwarded driver operation */
     ReflectedChannel *rcPtr;	/* Channel instance */
-    CONST ForwardParam *param;	/* Arguments, a ForwardParamXXX pointer */
+    ForwardParam *param;	/* Packaged arguments and return values, a
+				 * ForwardParam pointer. */
 } ForwardingEvent;
 
 /*
@@ -356,7 +357,7 @@ static void		DstExitProc(ClientData clientData);
 	if ((p)->base.mustFree) { \
 	    ckfree((p)->base.msgStr); \
 	}
-#define PassReceivedErrorInterp(i,pb) \
+#define PassReceivedErrorInterp(i,p) \
 	if ((i) != NULL) { \
             Tcl_Obj *preiTmpObj; \
 	    TclNewStringObj(preiTmpObj, (p)->base.msgStr, -1); \
@@ -889,7 +890,7 @@ TclChanCaughtErrorBypass(
     if (chanMsgObj != NULL) {
 	msgObj = chanMsgObj;
     } else if (interpMsgObj != NULL) {
-	msg = interpMsgObj;
+	msgObj = interpMsgObj;
     }
     if (msgObj != NULL) {
 	Tcl_IncrRefCount(msgObj);
@@ -1961,12 +1962,12 @@ FreeReflectedChannel(rcPtr)
 
 static int
 InvokeTclMethod(
-    ReflectedChannel *rcPtr;
-    CONST char *method;
-    Tcl_Obj *argOneObj;		/* NULL'able */
-    Tcl_Obj *argTwoObj;		/* NULL'able */
-    Tcl_Obj **resultObjPtr;	/* NULL'able */
-    int flags;
+    ReflectedChannel *rcPtr,
+    CONST char *method,
+    Tcl_Obj *argOneObj,		/* NULL'able */
+    Tcl_Obj *argTwoObj,		/* NULL'able */
+    Tcl_Obj **resultObjPtr,	/* NULL'able */
+    int flags)
 {
     int cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
@@ -2292,7 +2293,7 @@ ForwardProc(
 	Tcl_Obj *offObj = Tcl_NewWideIntObj(paramPtr->seek.offset);
 	Tcl_Obj *baseObj = Tcl_NewStringObj(
 		(paramPtr->seek.seekMode==SEEK_SET) ? "start" :
-		(paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end"), -1);
+		(paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
 
 	if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj,
 		0) != TCL_OK) {
@@ -2324,7 +2325,7 @@ ForwardProc(
     case ForwardedWatch: {
 	Tcl_Obj *maskObj = DecodeEventMask(paramPtr->watch.mask);
 
-	(void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL, NULL,
+	(void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL,
 		INVOKE_NO_CAPTURE);
 	Tcl_DecrRefCount(maskObj);
 	break;
@@ -2520,7 +2521,7 @@ DstExitProc(
 
 static void
 ForwardSetObjError(
-    ForwardParam *p,
+    ForwardParam *paramPtr,
     Tcl_Obj *obj)
 {
     int len;
@@ -2528,7 +2529,7 @@ ForwardSetObjError(
 
     len++;
     ForwardSetDynamicError(paramPtr, ckalloc((unsigned) len));
-    memcpy(p->base.msgStr, msgStr, (unsigned) len);
+    memcpy(paramPtr->base.msgStr, msgStr, (unsigned) len);
 }
 #endif
 
