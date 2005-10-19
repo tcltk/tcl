@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.9 2005/10/19 14:11:27 dkf Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.10 2005/10/19 14:12:35 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -2097,7 +2097,7 @@ ForwardOpToOwnerThread(
     evPtr->resultPtr = resultPtr;
     evPtr->op = op;
     evPtr->rcPtr = rcPtr;
-    evPtr->param = param;
+    evPtr->param = (ForwardParam *) param;
 
     resultPtr->src = Tcl_GetCurrentThread();
     resultPtr->dst = dst;
