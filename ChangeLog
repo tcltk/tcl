@@ -1,8 +1,14 @@
+2005-10-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclIORChan.c: General cleanup, removing checks that are
+	unnecessary due to the general contracts of other functions in the
+	core, converting to using ANSI declarations, etc. Note that nearly
+	the whole file has changed, but it is often just cosmetic.
+
 2005-10-19  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclExecute.c (INST_DICT_APPEND, INST_DICT_LAPPEND):
-	fixed faulty peephole optimisation that can cause crashes 
-	[Bug 1331475]
+	* generic/tclExecute.c (INST_DICT_APPEND, INST_DICT_LAPPEND): fixed
+	faulty peephole optimisation that can cause crashes [Bug 1331475]
 
 2005-10-18  Don Porter  <dgp@users.sourceforge.net>
 
