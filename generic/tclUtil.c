@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.66 2005/10/08 14:42:45 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.67 2005/10/19 18:39:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2157,61 +2157,6 @@ TclNeedSpace(start, end)
     }
     return 1;
 }
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * TclLooksLikeInt --
- *
- *	This function decides whether the leading characters of a string look
- *	like an integer or something else (such as a floating-point number or
- *	string).
- *
- * Results:
- *	The return value is 1 if the leading characters of p look like a valid
- *	Tcl integer. If they look like a floating-point number (e.g. "e01" or
- *	"2.4"), or if they don't look like a number at all, then 0 is
- *	returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclLooksLikeInt(bytes, length)
-    register CONST char *bytes;	/* Points to first byte of the string. */
-    int length;			/* Number of bytes in the string. If < 0 bytes
-				 * up to the first null byte are considered
-				 * (if they may appear in an integer). */
-{
-    register CONST char *p;
-
-    if ((bytes == NULL) && (length > 0)) {
-	Tcl_Panic("TclLooksLikeInt: cannot scan %d bytes from NULL", length);
-    }
-
-    if (length < 0) {
-	length = (bytes? strlen(bytes) : 0);
-    }
-
-    p = bytes;
-    while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	length--; p++;
-    }
-    if (length == 0) {
-	return 0;
-    }
-    if ((*p == '+') || (*p == '-')) {
-	p++;
-	length--;
-    }
-
-    return (0 != TclParseInteger(p, length));
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
