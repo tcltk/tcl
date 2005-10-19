@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.215 2005/10/18 13:19:12 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.216 2005/10/19 13:15:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5882,7 +5882,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
 #ifndef TCL_COMPILE_DEBUG
-	if (*(pc+9) == INST_POP) {
+	if (*(pc+5) == INST_POP) {
 	    NEXT_INST_F(6, 2, 0);
 	}
 #endif
