@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.40 2005/08/12 23:55:28 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.41 2005/10/19 18:39:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -407,17 +407,9 @@ TclClockClicksObjCmd(clientData, interp, objc, objv)
 		now.sec * 1000 + now.usec / 1000 ) );
 	break;
     case CLICKS_NATIVE:
-#if 0
-	/* 
-	 * The following code will be used once this is incorporated
-	 * into Tcl.  But TEA bugs prevent it for right now. :(
-	 * So we fall through this case and return the microseconds
-	 * instead.
-	 */
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
 		TclpGetClicks()));
 	break;
-#endif
     case CLICKS_MICROS:
 	Tcl_GetTime(&now);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(

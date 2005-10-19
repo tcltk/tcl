@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.216 2005/10/19 13:15:14 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.217 2005/10/19 18:39:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -286,41 +286,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * Combined with REQUIRE_WIDE_OR_INT, this gets a long value from an obj.
  */
 #if 0
-#define FORCE_LONG(objPtr, longVar, wideVar)				\
-    if ((objPtr)->typePtr == &tclWideIntType) {				\
-	(longVar) = Tcl_WideAsLong(wideVar);				\
-    }
-#define IS_INTEGER_TYPE(typePtr)					\
-	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType || (typePtr) == &tclBignumType)
-#define IS_NUMERIC_TYPE(typePtr)					\
-	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
-
 #define W0	Tcl_LongAsWide(0)
 /*
  * For tracing that uses wide values.
  */
 #define LLD				"%" TCL_LL_MODIFIER "d"
-
-#ifndef TCL_WIDE_INT_IS_LONG
-/*
- * Extract a double value from a general numeric object.
- */
-#define GET_DOUBLE_VALUE(doubleVar, objPtr, typePtr)			\
-    if ((typePtr) == &tclIntType) {					\
-	(doubleVar) = (double) (objPtr)->internalRep.longValue;		\
-    } else if ((typePtr) == &tclWideIntType) {				\
-	(doubleVar) = Tcl_WideAsDouble((objPtr)->internalRep.wideValue);\
-    } else {								\
-	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
-    }
-#else /* TCL_WIDE_INT_IS_LONG */
-#define GET_DOUBLE_VALUE(doubleVar, objPtr, typePtr)			\
-    if (((typePtr) == &tclIntType) || ((typePtr) == &tclWideIntType)) { \
-	(doubleVar) = (double) (objPtr)->internalRep.longValue;		\
-    } else {								\
-	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
-    }
-#endif /* TCL_WIDE_INT_IS_LONG */
 #endif
 
 /*
