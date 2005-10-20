@@ -1,3 +1,9 @@
+2005-10-20  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclListObj.c (TclLsetFlat):
+	* tests/lset.test (lset-10.3): fixed handling of unshared lists
+	with shared sublists, [Bug 1333036] reported by neuronstorm. 
+	
 2005-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIORChan.c (PassReceivedError,PassReceivedErrorInterp):
@@ -28,7 +34,8 @@
 2005-10-19  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_DICT_APPEND, INST_DICT_LAPPEND): fixed
-	faulty peephole optimisation that can cause crashes [Bug 1331475]
+	faulty peephole optimisation that can cause crashes, [Bug 1331475]
+	reported by Aric Bills.
 
 2005-10-18  Don Porter  <dgp@users.sourceforge.net>
 
