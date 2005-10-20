@@ -369,6 +369,12 @@ test lset-10.2 {lset, not compiled, shared data} testevalex {
     list [testevalex {lset a {0 0} x}] $a
 } {{{x q} {p q}} {{x q} {p q}}}
 
+test lset-10.3 {lset, not compiled, shared data, [Bug 1333036]} testevalex {
+    set a [list [list p q] [list r s]]
+    set b $a
+    list [testevalex {lset b {0 0} x}] $a
+} {{{x q} {r s}} {{p q} {r s}}}
+
 test lset-11.1 {lset, not compiled, 2-d basics} testevalex {
     set a {{b c} {d e}}
     list [testevalex {lset a 0 0 f}] $a
