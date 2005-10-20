@@ -2,8 +2,8 @@
 
 	* generic/tclListObj.c (TclLsetFlat):
 	* tests/lset.test (lset-10.3): fixed handling of unshared lists
-	with shared sublists, [Bug 1333036] reported by neuronstorm. 
-	
+	with shared sublists, [Bug 1333036] reported by neuronstorm.
+
 2005-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIORChan.c (PassReceivedError,PassReceivedErrorInterp):
