@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.61 2005/10/21 15:25:41 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.62 2005/10/21 17:05:43 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1624,13 +1624,11 @@ TtyParseMode(
      * sure to allow for the case where strchr is a macro.  [Bug: 5089]
      */
 
-    if (strchr(
 #if defined(PAREXT) || defined(USE_TERMIO)
-	    "noems",
+    if (strchr("noems", parity) == NULL) {
 #else
-	    "noe",
+    if (strchr("noe", parity) == NULL) {
 #endif /* PAREXT|USE_TERMIO */
-	    parity) == NULL) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, bad, " parity: should be ",
 #if defined(PAREXT) || defined(USE_TERMIO)
