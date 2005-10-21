@@ -1,3 +1,9 @@
+2005-10-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/binary.n: Clarify that virtually all code that uses the 'h'
+	format in [binary scan] should be using the 'H' format instead. It
+	is nearly always a bug to use the other!
+
 2005-10-20  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclListObj.c (TclLsetFlat):
