@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.14 2005/10/21 20:52:16 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.15 2005/10/21 22:14:02 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1315,6 +1315,7 @@ MakeLowPrecisionDouble(
     TclBNInitBignumFromWideUInt(&significandBig, significand);
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
+    mp_clear(&significandBig);
     
     /*
      * Come here to return the computed value.
