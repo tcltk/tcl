@@ -1,5 +1,9 @@
 2005-10-22  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/foreach.test (foreach-8.1): added test for [Bug 1189274]
+	
+2005-10-22  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclExecute.c (INST_INCR_*): fixed [Bug 1334570]. Obj
 	leak detection and patch by Eric Melbardis.
 
