@@ -1,3 +1,8 @@
+2005-10-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_CONCAT): disable the optimisation for
+	wide integers, [Bug 1251791].
+	
 2005-10-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_ClearChannelHandlers): removed
