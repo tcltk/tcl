@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.5 2004/03/29 18:49:36 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.6 2005/10/23 22:01:31 msofer Exp $
  */
 
 #include "tclWinInt.h"
@@ -847,7 +847,9 @@ Tcl_Init(interp)
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();
     }
+    Tcl_IncrRefCount(pathPtr);    
     Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(pathPtr);    
     return Tcl_Eval(interp, initScript);
 }
 
