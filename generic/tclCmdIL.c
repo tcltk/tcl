@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.6 2005/07/29 14:57:26 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.7 2005/10/23 22:01:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -933,10 +933,11 @@ InfoDefaultCmd(dummy, interp, objc, objv)
 		Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
             } else {
                 Tcl_Obj *nullObjPtr = Tcl_NewObj();
+		Tcl_IncrRefCount(nullObjPtr);
                 valueObjPtr = Tcl_ObjSetVar2(interp, objv[4], NULL,
 			nullObjPtr, 0);
+		Tcl_DecrRefCount(nullObjPtr); /* free unneeded obj */
                 if (valueObjPtr == NULL) {
-                    Tcl_DecrRefCount(nullObjPtr); /* free unneeded obj */
                     goto defStoreError;
                 }
 		Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);

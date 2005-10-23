@@ -1,3 +1,25 @@
+2005-10-23  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclBinary.c:
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclExecute.c:
+	* generic/tclLink.c:
+	* generic/tclMain.c:
+	* generic/tclProc.c:
+	* generic/tclScan.c:
+	* generic/tclTest.c:
+	* generic/tclVar.c:
+	* mac/tclMacInit.c:
+	* unix/tclUnixInit.c:
+	* win/tclWinInit.c: Insure that the core never calls TclPtrSetVar,
+	Tcl_SetVar2Ex, Tcl_ObjSetVar2 or Tcl_SetObjErrorCode with a 0-ref
+	new value. It is not possible to handle error returns correctly in
+	that case [Bug 1334947], one has the choice of leaking the object
+	in some cases, or else risk crashing in some others.
+
 2005-10-22  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_CONCAT): disable the optimisation for

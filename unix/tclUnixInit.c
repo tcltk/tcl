@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.9 2005/08/05 20:48:19 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.10 2005/10/23 22:01:31 msofer Exp $
  */
 
 #if defined(HAVE_COREFOUNDATION)
@@ -963,7 +963,9 @@ Tcl_Init(interp)
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();
     }
+    Tcl_IncrRefCount(pathPtr);
     Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(pathPtr);
     return Tcl_Eval(interp, initScript);
 }
 

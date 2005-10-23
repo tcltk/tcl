@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.9.2.1 2004/03/29 18:49:36 hobbs Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.9.2.2 2005/10/23 22:01:31 msofer Exp $
  */
 
 #include <AppleEvents.h>
@@ -712,7 +712,9 @@ Tcl_Init(
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();
     }
+    Tcl_IncrRefCount(pathPtr);
     Tcl_SetVar2Ex(interp, "auto_path", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(pathPtr);
     return Tcl_Eval(interp, initCmd);
 }
 

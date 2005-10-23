@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.17 2005/07/26 17:05:43 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.18 2005/10/23 22:01:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5284,7 +5284,7 @@ Tcl_AddObjErrorInfo(interp, message, length)
 				 * NULL byte. */
 {
     register Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *messagePtr;
+    Tcl_Obj *objPtr;
     
     /*
      * If we are just starting to log an error, errorInfo is initialized
@@ -5298,8 +5298,11 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
 	            iPtr->objResultPtr, TCL_GLOBAL_ONLY);
 	} else {		/* use the string result */
+	    objPtr = Tcl_NewStringObj(interp->result, -1);
+	    Tcl_IncrRefCount(objPtr);
 	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	            Tcl_NewStringObj(interp->result, -1), TCL_GLOBAL_ONLY);
+	            objPtr, TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(objPtr);
 	}
 
 	/*
@@ -5308,8 +5311,11 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	 */
 
 	if (!(iPtr->flags & ERROR_CODE_SET)) {
+	    objPtr = Tcl_NewStringObj("NONE", -1);
+	    Tcl_IncrRefCount(objPtr);
 	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL, 
-	            Tcl_NewStringObj("NONE", -1), TCL_GLOBAL_ONLY);
+	            objPtr, TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(objPtr);
 	}
     }
 
@@ -5318,11 +5324,11 @@ Tcl_AddObjErrorInfo(interp, message, length)
      */
 
     if (length != 0) {
-	messagePtr = Tcl_NewStringObj(message, length);
-	Tcl_IncrRefCount(messagePtr);
+	objPtr = Tcl_NewStringObj(message, length);
+	Tcl_IncrRefCount(objPtr);
 	Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	        messagePtr, (TCL_GLOBAL_ONLY | TCL_APPEND_VALUE));
-	Tcl_DecrRefCount(messagePtr); /* free msg object appended above */
+	        objPtr, (TCL_GLOBAL_ONLY | TCL_APPEND_VALUE));
+	Tcl_DecrRefCount(objPtr); /* free msg object appended above */
     }
 }
 

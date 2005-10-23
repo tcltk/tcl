@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.2.1 2004/08/19 21:12:04 dkf Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.2.2 2005/10/23 22:01:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1168,15 +1168,17 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	 */
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
+		Tcl_Obj *tmpPtr;
+		
 		result++;
-		if (Tcl_ObjSetVar2(interp, objv[i+3], NULL,
-			objs[i], 0) == NULL) {
+		tmpPtr = Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i], 0);
+		Tcl_DecrRefCount(objs[i]);
+		if (tmpPtr == NULL) {
 		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			    "couldn't set variable \"",
 			    Tcl_GetString(objv[i+3]), "\"", (char *) NULL);
 		    code = TCL_ERROR;
 		}
-		Tcl_DecrRefCount(objs[i]);
 	    }
 	}
     } else {
