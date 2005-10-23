@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.2.1 2005/10/23 22:01:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -95,7 +95,7 @@ Tcl_LinkVar(interp, varName, addr, type)
 				 * Also may have TCL_LINK_READ_ONLY
 				 * OR'ed in. */
 {
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *resPtr;
     Link *linkPtr;
     int code;
 
@@ -111,10 +111,12 @@ Tcl_LinkVar(interp, varName, addr, type)
 	linkPtr->flags = 0;
     }
     objPtr = ObjValue(linkPtr);
-    if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
-	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
+    Tcl_IncrRefCount(objPtr);
+    resPtr = Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
+	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(objPtr);
+    if (resPtr == NULL) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	Tcl_DecrRefCount(objPtr);
 	ckfree((char *) linkPtr);
 	return TCL_ERROR;
     }
@@ -191,6 +193,7 @@ Tcl_UpdateLinkedVar(interp, varName)
 {
     Link *linkPtr;
     int savedFlag;
+    Tcl_Obj *objPtr;
 
     linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
 	    LinkTraceProc, (ClientData) NULL);
@@ -199,8 +202,10 @@ Tcl_UpdateLinkedVar(interp, varName)
     }
     savedFlag = linkPtr->flags & LINK_BEING_UPDATED;
     linkPtr->flags |= LINK_BEING_UPDATED;
-    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
-	    TCL_GLOBAL_ONLY);
+    objPtr = ObjValue(linkPtr);
+    Tcl_IncrRefCount(objPtr);
+    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr, TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(objPtr);
     linkPtr->flags = (linkPtr->flags & ~LINK_BEING_UPDATED) | savedFlag;
 }
 
@@ -237,7 +242,7 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     int changed, valueLength;
     CONST char *value;
     char **pp, *result;
-    Tcl_Obj *objPtr, *valueObj;
+    Tcl_Obj *objPtr, *valueObj, *tmpPtr;
 
     /*
      * If the variable is being unset, then just re-create it (with a
@@ -249,8 +254,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	    Tcl_DecrRefCount(linkPtr->varName);
 	    ckfree((char *) linkPtr);
 	} else if (flags & TCL_TRACE_DESTROYED) {
-	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	    tmpPtr = ObjValue(linkPtr);
+	    Tcl_IncrRefCount(tmpPtr);
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		    TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(tmpPtr);
 	    Tcl_TraceVar(interp, Tcl_GetString(linkPtr->varName),
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, LinkTraceProc, (ClientData) linkPtr);
@@ -293,8 +301,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	    return "internal error: bad linked variable type";
 	}
 	if (changed) {
-	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	    tmpPtr = ObjValue(linkPtr);
+	    Tcl_IncrRefCount(tmpPtr);
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		    TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(tmpPtr);
 	}
 	return NULL;
     }
@@ -309,8 +320,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
      */
 
     if (linkPtr->flags & LINK_READ_ONLY) {
-	Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	tmpPtr = ObjValue(linkPtr);
+	Tcl_IncrRefCount(tmpPtr);
+	Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(tmpPtr);
 	return "linked variable is read-only";
     }
     valueObj = Tcl_ObjGetVar2(interp, linkPtr->varName,NULL, TCL_GLOBAL_ONLY);
@@ -331,8 +345,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	if (Tcl_GetIntFromObj(interp, valueObj, &linkPtr->lastValue.i)
 		!= TCL_OK) {
 	    Tcl_SetObjResult(interp, objPtr);
-	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	    tmpPtr = ObjValue(linkPtr);
+	    Tcl_IncrRefCount(tmpPtr);
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		    TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(tmpPtr);
 	    result = "variable must have integer value";
 	    goto end;
 	}
@@ -343,8 +360,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	if (Tcl_GetWideIntFromObj(interp, valueObj, &linkPtr->lastValue.w)
 		!= TCL_OK) {
 	    Tcl_SetObjResult(interp, objPtr);
-	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	    tmpPtr = ObjValue(linkPtr);
+	    Tcl_IncrRefCount(tmpPtr);
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		    TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(tmpPtr);
 	    result = "variable must have integer value";
 	    goto end;
 	}
@@ -355,8 +375,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	if (Tcl_GetDoubleFromObj(interp, valueObj, &linkPtr->lastValue.d)
 		!= TCL_OK) {
 	    Tcl_SetObjResult(interp, objPtr);
-	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	    tmpPtr = ObjValue(linkPtr);
+	    Tcl_IncrRefCount(tmpPtr);
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		    TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(tmpPtr);
 	    result = "variable must have real value";
 	    goto end;
 	}
@@ -367,8 +390,11 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	if (Tcl_GetBooleanFromObj(interp, valueObj, &linkPtr->lastValue.i)
 	    != TCL_OK) {
 	    Tcl_SetObjResult(interp, objPtr);
-	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+	    tmpPtr = ObjValue(linkPtr);
+	    Tcl_IncrRefCount(tmpPtr);
+	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, tmpPtr,
 		    TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(tmpPtr);
 	    result = "variable must have boolean value";
 	    goto end;
 	}
