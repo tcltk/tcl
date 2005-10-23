@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.2.3 2005/09/27 15:44:13 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.2.4 2005/10/23 22:01:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1083,12 +1083,13 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			valuePtr = Tcl_NewByteArrayObj(src, size);
+			Tcl_IncrRefCount(valuePtr);
 			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
 				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			Tcl_DecrRefCount(valuePtr);
 			arg++;
 			if (resultPtr == NULL) {
 			    DeleteScanNumberCache(numberCachePtr);
-			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
 			}
 			offset += count;
@@ -1137,13 +1138,14 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				*dest++ = (char) ((value & 0x80) ? '1' : '0');
 			    }
 			}
-			
+
+			Tcl_IncrRefCount(valuePtr);			
 			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
 				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			Tcl_DecrRefCount(valuePtr);
 			arg++;
 			if (resultPtr == NULL) {
 			    DeleteScanNumberCache(numberCachePtr);
-			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
 			}
 			offset += (count + 7 ) / 8;
@@ -1195,12 +1197,13 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			
+			Tcl_IncrRefCount(valuePtr);
 			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
 				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			Tcl_DecrRefCount(valuePtr);
 			arg++;
 			if (resultPtr == NULL) {
 			    DeleteScanNumberCache(numberCachePtr);
-			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
 			}
 			offset += (count + 1) / 2;
@@ -1266,12 +1269,13 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset += count*size;
 			}
 
+			Tcl_IncrRefCount(valuePtr); 
 			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
 				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			Tcl_DecrRefCount(valuePtr);
 			arg++;
 			if (resultPtr == NULL) {
 			    DeleteScanNumberCache(numberCachePtr);
-			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 			    return TCL_ERROR;
 			}
 			break;
