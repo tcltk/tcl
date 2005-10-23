@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.8 2004/10/01 00:09:36 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.9 2005/10/23 22:01:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2686,7 +2686,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *varValuePtr, *newValuePtr;
     register List *listRepPtr;
     register Tcl_Obj **elemPtrs;
-    int numElems, numRequired, createdNewObj, createVar, i, j;
+    int numElems, numRequired, createdNewObj, i, j;
     Var *varPtr, *arrayPtr;
     char *part1;
 
@@ -2703,10 +2703,11 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	     */
 	    
 	    varValuePtr = Tcl_NewObj();
+	    Tcl_IncrRefCount(varValuePtr);
 	    newValuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, varValuePtr,
 		    TCL_LEAVE_ERR_MSG);
+	    Tcl_DecrRefCount(varValuePtr);
 	    if (newValuePtr == NULL) {
-		Tcl_DecrRefCount(varValuePtr); /* free unneeded object */
 		return TCL_ERROR;
 	    }
 	}
@@ -2719,12 +2720,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	 * the variable will now each only be called once. Also, if the
 	 * variable's old value is unshared we modify it directly, otherwise
 	 * we create a new copy to modify: this is "copy on write".
-	 */
-
-	createdNewObj = 0;
-	createVar = 1;
-
-	/*
+	 *
 	 * Use the TCL_TRACE_READS flag to ensure that if we have an
 	 * array with no elements set yet, but with a read trace on it,
 	 * we will create the variable and get read traces triggered.
@@ -2750,6 +2746,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	    arrayPtr->refCount--;
 	}
 
+	createdNewObj = 0;
 	if (varValuePtr == NULL) {
 	    /*
 	     * We couldn't read the old value: either the var doesn't yet
@@ -2757,7 +2754,6 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	     * create it with Tcl_ObjSetVar2 below.
 	     */
 	    
-	    createVar = (TclIsVarUndefined(varPtr));
 	    varValuePtr = Tcl_NewObj();
 	    createdNewObj = 1;
 	} else if (Tcl_IsShared(varValuePtr)) {	
@@ -2824,12 +2820,11 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	 * was new and we didn't create the variable.
 	 */
 	
+	Tcl_IncrRefCount(varValuePtr);
 	newValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1, NULL, 
 	            varValuePtr, TCL_LEAVE_ERR_MSG);	
+	Tcl_DecrRefCount(varValuePtr);
 	if (newValuePtr == NULL) {
-	    if (createdNewObj && !createVar) {
-		Tcl_DecrRefCount(varValuePtr); /* free unneeded obj */
-	    }
 	    return TCL_ERROR;
 	}
     }
