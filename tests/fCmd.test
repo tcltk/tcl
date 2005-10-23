@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.47 2005/10/07 22:35:33 hobbs Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.48 2005/10/23 18:51:31 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2181,6 +2181,16 @@ test fCmd-28.9 {file link: success with file} {linkFile} {
     cd [workingDirectory]
     set res
 } {0 abc.file}
+test fCmd-28.9.1 {file link: success with file} {linkFile win} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    set res {}
+    file stat abc.file arr ; lappend res $arr(nlink)
+    lappend res [catch {file link abc.link abc.file} msg] $msg
+    file stat abc.file arr ; lappend res $arr(nlink)
+    cd [workingDirectory]
+    set res
+} {1 0 abc.file 2}
 cd [temporaryDirectory]
 catch {file delete -force abc.link}
 cd [workingDirectory]
