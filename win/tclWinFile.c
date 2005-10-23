@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.77 2005/08/31 15:12:18 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.78 2005/10/23 18:51:31 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT	0x0500
@@ -182,6 +182,7 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC(
  */
 
 static int		NativeAccess(CONST TCHAR *path, int mode);
+static int		NativeDev(CONST TCHAR *path);
 static int		NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr,
 			    int checkLinks);
 static unsigned short	NativeStatMode(DWORD attr, int checkLinks, int isExec);
@@ -1954,25 +1955,6 @@ TclpObjStat(pathPtr, statPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat. */
     Tcl_StatBuf *statPtr;	/* Filled with results of stat call. */
 {
-#ifdef OLD_API
-    Tcl_Obj *transPtr;
-
-    /*
-     * Eliminate file names containing wildcard characters, or subsequent call
-     * to FindFirstFile() will expand them, matching some other file.
-     */
-
-    transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-    if (transPtr == NULL || (strpbrk(Tcl_GetString(transPtr), "?*") != NULL)) {
-	if (transPtr != NULL) {
-	    Tcl_DecrRefCount(transPtr);
-	}
-	Tcl_SetErrno(ENOENT);
-	return -1;
-    }
-    Tcl_DecrRefCount(transPtr);
-#endif
-
     /*
      * Ensure correct file sizes by forcing the OS to write any pending data
      * to disk. This is done only for channels which are dirty, i.e. have been
@@ -2013,18 +1995,82 @@ NativeStat(nativePath, statPtr, checkLinks)
     Tcl_StatBuf *statPtr;	/* Filled with results of stat call. */
     int checkLinks;		/* If non-zero, behave like 'lstat' */
 {
-    Tcl_DString ds;
     DWORD attr;
-    WCHAR nativeFullPath[MAX_PATH];
-    TCHAR *nativePart;
-    CONST char *fullPath;
     int dev;
     unsigned short mode;
+    int nlink = 1;
+    unsigned int inode = 0;
+    HANDLE fileHandle;
+    
+    /* 
+     * If we can use 'createFile' on this, then we can use the
+     * resulting fileHandle to read more information (nlink, ino)
+     * than we can get from other attributes reading APIs.  If not,
+     * then we try to fall back on the 'getFileAttributesExProc',
+     * and if that isn't available, then on even simpler routines.
+     */ 
+    fileHandle = (tclWinProcs->createFileProc) (
+	nativePath, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+	FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
-    if (tclWinProcs->getFileAttributesExProc == NULL) {
+    if (fileHandle != INVALID_HANDLE_VALUE) {
+	BY_HANDLE_FILE_INFORMATION data;
+	
+	if (GetFileInformationByHandle(fileHandle,&data) != TRUE) {
+	    CloseHandle(fileHandle);
+	    Tcl_SetErrno(ENOENT);
+	    return -1;
+	}
+	CloseHandle(fileHandle);
+
+	attr = data.dwFileAttributes;
+
+	statPtr->st_size = ((Tcl_WideInt)data.nFileSizeLow) |
+		(((Tcl_WideInt)data.nFileSizeHigh) << 32);
+	statPtr->st_atime = ToCTime(data.ftLastAccessTime);
+	statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
+	statPtr->st_ctime = ToCTime(data.ftCreationTime);
+	
 	/*
-	 * We don't have the faster attributes proc, so we're probably running
-	 * on Win95.
+	 * On Unix, for directories, nlink apparently depends on the
+	 * number of files in the directory.  We could calculate that,
+	 * but it would be a bit of a performance penalty, I think.
+	 * Hence we just use what Windows gives us, which is the
+	 * same as Unix for files, at least.
+	 */
+	nlink = data.nNumberOfLinks;
+	/* 
+	 * Unfortunately our stat definition's inode field (unsigned
+	 * short) will throw away most of the precision we have here,
+	 * which means we can't rely on inode as a unique identifier of
+	 * a file.  We'd really like to do something like how we handle
+	 * 'st_size'.
+	 */
+	inode = data.nFileIndexHigh | data.nFileIndexLow;
+    } else if (tclWinProcs->getFileAttributesExProc != NULL) {
+	/* 
+	 * Fall back on the less capable routines.  This means
+	 * no nlink or ino.
+	 */
+	WIN32_FILE_ATTRIBUTE_DATA data;
+
+	if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
+		GetFileExInfoStandard, &data) != TRUE) {
+	    Tcl_SetErrno(ENOENT);
+	    return -1;
+	}
+
+	attr = data.dwFileAttributes;
+
+	statPtr->st_size = ((Tcl_WideInt)data.nFileSizeLow) |
+		(((Tcl_WideInt)data.nFileSizeHigh) << 32);
+	statPtr->st_atime = ToCTime(data.ftLastAccessTime);
+	statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
+	statPtr->st_ctime = ToCTime(data.ftCreationTime);
+    } else {
+	/*
+	 * We don't have the faster attributes proc, so we're probably
+	 * running on Win95.
 	 */
 
 	WIN32_FIND_DATAT data;
@@ -2044,8 +2090,8 @@ NativeStat(nativePath, statPtr, checkLinks)
 	    }
 
 	    /*
-	     * Make up some fake information for this file. It has the correct
-	     * file attributes and a time of 0.
+	     * Make up some fake information for this file.  It has the
+	     * correct file attributes and a time of 0.
 	     */
 
 	    memset(&data, 0, sizeof(data));
@@ -2054,51 +2100,6 @@ NativeStat(nativePath, statPtr, checkLinks)
 	    FindClose(handle);
 	}
 
-	(*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH,
-		nativeFullPath, &nativePart);
-
-	fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
-
-	dev = -1;
-	if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
-	    CONST char *p;
-	    DWORD dw;
-	    CONST TCHAR *nativeVol;
-	    Tcl_DString volString;
-
-	    p = strchr(fullPath + 2, '\\');
-	    p = strchr(p + 1, '\\');
-	    if (p == NULL) {
-		/*
-		 * Add terminating backslash to fullpath or
-		 * GetVolumeInformation() won't work.
-		 */
-
-		fullPath = Tcl_DStringAppend(&ds, "\\", 1);
-		p = fullPath + Tcl_DStringLength(&ds);
-	    } else {
-		p++;
-	    }
-	    nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
-	    dw = (DWORD) -1;
-	    (*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
-		    NULL, NULL, NULL, 0);
-
-	    /*
-	     * GetFullPathName() turns special devices like "NUL" into
-	     * "\\.\NUL", but GetVolumeInformation() returns failure for
-	     * "\\.\NUL". This will cause "NUL" to get a drive number of -1,
-	     * which makes about as much sense as anything since the special
-	     * devices don't live on any drive.
-	     */
-
-	    dev = dw;
-	    Tcl_DStringFree(&volString);
-	} else if ((fullPath[0] != '\0') && (fullPath[1] == ':')) {
-	    dev = Tcl_UniCharToLower(fullPath[0]) - 'a';
-	}
-	Tcl_DStringFree(&ds);
-
 	attr = data.a.dwFileAttributes;
 
 	statPtr->st_size = ((Tcl_WideInt)data.a.nFileSizeLow) |
@@ -2106,79 +2107,87 @@ NativeStat(nativePath, statPtr, checkLinks)
 	statPtr->st_atime = ToCTime(data.a.ftLastAccessTime);
 	statPtr->st_mtime = ToCTime(data.a.ftLastWriteTime);
 	statPtr->st_ctime = ToCTime(data.a.ftCreationTime);
-    } else {
-	WIN32_FILE_ATTRIBUTE_DATA data;
-
-	if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
-		GetFileExInfoStandard, &data) != TRUE) {
-	    Tcl_SetErrno(ENOENT);
-	    return -1;
-	}
-
-	(*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH,
-		nativeFullPath, &nativePart);
-
-	fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
-
-	dev = -1;
-	if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
-	    CONST char *p;
-	    DWORD dw;
-	    CONST TCHAR *nativeVol;
-	    Tcl_DString volString;
-
-	    p = strchr(fullPath + 2, '\\');
-	    p = strchr(p + 1, '\\');
-	    if (p == NULL) {
-		/*
-		 * Add terminating backslash to fullpath or
-		 * GetVolumeInformation() won't work.
-		 */
-
-		fullPath = Tcl_DStringAppend(&ds, "\\", 1);
-		p = fullPath + Tcl_DStringLength(&ds);
-	    } else {
-		p++;
-	    }
-	    nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
-	    dw = (DWORD) -1;
-	    (*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
-		    NULL, NULL, NULL, 0);
-
-	    /*
-	     * GetFullPathName() turns special devices like "NUL" into
-	     * "\\.\NUL", but GetVolumeInformation() returns failure for
-	     * "\\.\NUL". This will cause "NUL" to get a drive number of -1,
-	     * which makes about as much sense as anything since the special
-	     * devices don't live on any drive.
-	     */
-
-	    dev = dw;
-	    Tcl_DStringFree(&volString);
-	} else if ((fullPath[0] != '\0') && (fullPath[1] == ':')) {
-	    dev = Tcl_UniCharToLower(fullPath[0]) - 'a';
-	}
-	Tcl_DStringFree(&ds);
-
-	attr = data.dwFileAttributes;
-
-	statPtr->st_size = ((Tcl_WideInt)data.nFileSizeLow) |
-		(((Tcl_WideInt)data.nFileSizeHigh) << 32);
-	statPtr->st_atime = ToCTime(data.ftLastAccessTime);
-	statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
-	statPtr->st_ctime = ToCTime(data.ftCreationTime);
     }
-
+    
+    dev = NativeDev(nativePath);
     mode = NativeStatMode(attr, checkLinks, NativeIsExec(nativePath));
 
     statPtr->st_dev	= (dev_t) dev;
-    statPtr->st_ino	= 0;
+    statPtr->st_ino	= inode;
     statPtr->st_mode	= mode;
-    statPtr->st_nlink	= 1;
+    statPtr->st_nlink	= nlink;
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
     statPtr->st_rdev	= (dev_t) dev;
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeDev --
+ *
+ *	Calculate just the 'st_dev' field of a 'stat' structure.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+NativeDev(nativePath)
+    CONST TCHAR *nativePath;	/* Full path of file to stat */
+{
+    int dev;
+    Tcl_DString ds;
+    WCHAR nativeFullPath[MAX_PATH];
+    TCHAR *nativePart;
+    CONST char *fullPath;
+    
+    (*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH,
+	    nativeFullPath, &nativePart);
+
+    fullPath = Tcl_WinTCharToUtf((TCHAR*)nativeFullPath, -1, &ds);
+
+    if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
+	CONST char *p;
+	DWORD dw;
+	CONST TCHAR *nativeVol;
+	Tcl_DString volString;
+
+	p = strchr(fullPath + 2, '\\');
+	p = strchr(p + 1, '\\');
+	if (p == NULL) {
+	    /*
+	     * Add terminating backslash to fullpath or
+	     * GetVolumeInformation() won't work.
+	     */
+
+	    fullPath = Tcl_DStringAppend(&ds, "\\", 1);
+	    p = fullPath + Tcl_DStringLength(&ds);
+	} else {
+	    p++;
+	}
+	nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
+	dw = (DWORD) -1;
+	(*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
+		NULL, NULL, NULL, 0);
+
+	/*
+	 * GetFullPathName() turns special devices like "NUL" into
+	 * "\\.\NUL", but GetVolumeInformation() returns failure for
+	 * "\\.\NUL". This will cause "NUL" to get a drive number of -1,
+	 * which makes about as much sense as anything since the special
+	 * devices don't live on any drive.
+	 */
+
+	dev = dw;
+	Tcl_DStringFree(&volString);
+    } else if ((fullPath[0] != '\0') && (fullPath[1] == ':')) {
+	dev = Tcl_UniCharToLower(fullPath[0]) - 'a';
+    } else {
+	dev = -1;
+    }
+    Tcl_DStringFree(&ds);
+    
+    return dev;
 }
 
 /*
