@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.16 2005/10/23 22:01:29 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.17 2005/10/28 03:26:32 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -5501,7 +5501,7 @@ ExprRoundFunc(interp, eePtr, clientData)
 	    }
 	    if (i <= Tcl_WideAsDouble(LLONG_MIN)) {
 		goto tooLarge;
-	    } else if (d <= (double) LONG_MIN) {
+	    } else if (i <= (double) LONG_MIN) {
 		resPtr = Tcl_NewWideIntObj(Tcl_DoubleAsWide(i));
 	    } else {
 		resPtr = Tcl_NewLongObj((long) i);
