@@ -1,3 +1,9 @@
+2005-10-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/expr.test: Fix problems in new round()
+	tests that lead to correct result only on 32
+	bit long systems. [Bug 1341368]
+
 2005-10-29  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdMZ.c (TraceVarProc): [Bug 1337229], partial
@@ -7,6 +13,18 @@
 	completely fixed.
 	* tests/trace.test (test-18.3-4): added tests for bugs #1337229
 	and 1338280.
+
+2005-10-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclExecute.c (ExprRoundFunc):
+	Fix typo where number before rounding is
+	compared with smallest integer instead of
+	number after rounding. This fix does not
+	change the results of any tests.
+	* tests/expr.test: Add round() tests
+	for cases near the min and max int values.
+	* tests/util.test: Remove pointless
+	warning code about testobj command.
 
 2005-10-23  Miguel Sofer <msofer@users.sf.net>
 
