@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.40 2005/07/26 16:24:35 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.41 2005/10/29 19:16:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1160,6 +1160,26 @@ test trace-18.2 {namespace delete / trace vdelete combo} {
     namespace delete ::foo
     info exists ::foo::x
 } 0
+test trace-18.3 {namespace delete / trace vdelete combo, Bug \#1337229} {
+    namespace eval ::ns {}
+    trace add variable ::ns::var unset {unset ::ns::var ;#}
+    namespace delete ::ns
+} {}
+test trace-18.4 {namespace delete / trace vdelete combo, Bug \#1338280} {
+    namespace eval ::ref {}
+    set ::ref::var1 AAA
+    trace add variable ::ref::var1 unset doTrace
+    set ::ref::var2 BBB
+    trace add variable ::ref::var2 {unset} doTrace
+    proc doTrace {vtraced vidx op} {
+	global info
+	append info [catch {set ::$vtraced}][llength [info vars ::ref::*]]
+    }
+    set info {}
+    namespace delete ::ref
+    rename doTrace {}
+    set info
+} 1110
 
 # Delete arrays when done, so they can be re-used as scalars
 # elsewhere.
