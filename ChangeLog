@@ -1,6 +1,6 @@
 2005-10-29  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclCmdMZ.c (TraceVarProc): [Bug 1337229], partial
+	* generic/tclTrace.c (TraceVarProc): [Bug 1337229], partial
 	fix. Insure that a second call with TCL_TRACE_DESTROYED does not
 	lead to a second call to Tcl_EventuallyFree(). It is still true
 	that that second call should not happen, so the bug is not
