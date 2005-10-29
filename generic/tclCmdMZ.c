@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.21 2005/10/23 22:01:29 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.22 2005/10/29 17:45:23 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4694,7 +4694,7 @@ TraceVarProc(clientData, interp, name1, name2, flags)
     Tcl_SavedResult state;
     TraceVarInfo *tvarPtr = (TraceVarInfo *) clientData;
     char *result;
-    int code;
+    int code, destroy = 0;
     Tcl_DString cmd;
 
     /* 
@@ -4755,7 +4755,9 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	     */
 
 	    Tcl_SaveResult(interp, &state);
-	    if (flags & TCL_TRACE_DESTROYED) {
+	    if ((flags & TCL_TRACE_DESTROYED)
+		    && !(tvarPtr->flags & TCL_TRACE_DESTROYED)) {
+		destroy = 1;
 		tvarPtr->flags |= TCL_TRACE_DESTROYED;
 	    }
 
@@ -4772,7 +4774,7 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	    Tcl_DStringFree(&cmd);
 	}
     }
-    if (flags & TCL_TRACE_DESTROYED) {
+    if (destroy) {
 	if (result != NULL) {
 	    register Tcl_Obj *errMsgObj = (Tcl_Obj *) result;
 
