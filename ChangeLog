@@ -1,3 +1,13 @@
+2005-10-29  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdMZ.c (TraceVarProc): [Bug 1337229], partial
+	fix. Insure that a second call with TCL_TRACE_DESTROYED does not
+	lead to a second call to Tcl_EventuallyFree(). It is still true
+	that that second call should not happen, so the bug is not
+	completely fixed.
+	* tests/trace.test (test-18.3-4): added tests for bugs #1337229
+	and 1338280.
+
 2005-10-23  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* generic/tclFileName.c: fix to memory leak in glob [Bug 1335006]
