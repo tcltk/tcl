@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.99 2005/10/31 15:59:41 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.100 2005/10/31 17:15:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6262,7 +6262,7 @@ Tcl_OutputBuffered(
     if (statePtr->curOutPtr != NULL) {
 	register ChannelBuffer *curOutPtr = statePtr->curOutPtr;
 
-	if {curOutPtr->nextAdded > curOutPtr->nextRemoved) {
+	if (curOutPtr->nextAdded > curOutPtr->nextRemoved) {
 	    bytesBuffered += curOutPtr->nextAdded - curOutPtr->nextRemoved;
 	}
     }
