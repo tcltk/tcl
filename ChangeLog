@@ -1,3 +1,8 @@
+2005-10-31  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclNamesp.c: fix for [Bugs 1338280/1337229]. Thanks Don.
+	* tests/trace.test: fix duplicate test numbers
+
 2005-10-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* win/tclWinSerial.c (SerialSetOptionProc): Cleaned up option parsing
