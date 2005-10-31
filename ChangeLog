@@ -1,38 +1,44 @@
+2005-10-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* win/tclWinSerial.c (SerialSetOptionProc): Cleaned up option parsing
+	to produce more informative error messages and separate error and
+	non-error code paths better.
+	* tests/ioCmd.test (iocmd-8-19): Updated.
+
 2005-10-29  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclTrace.c (TraceVarProc): [Bug 1337229], partial
-	fix. Insure that a second call with TCL_TRACE_DESTROYED does not
-	lead to a second call to Tcl_EventuallyFree(). It is still true
-	that that second call should not happen, so the bug is not
-	completely fixed.
-	* tests/trace.test (test-18.3-4): added tests for bugs #1337229
-	and 1338280.
+	* generic/tclTrace.c (TraceVarProc): [Bug 1337229], partial fix.
+	Ensure that a second call with TCL_TRACE_DESTROYED does not lead to a
+	second call to Tcl_EventuallyFree(). It is still true that that second
+	call should not happen, so the bug is not completely fixed.
+	* tests/trace.test (test-18.3-4): added tests for [Bug 1337229] and
+	[Bug 1338280].
 
 2005-10-23  Vince Darley  <vincentdarley@sourceforge.net>
 
-	* generic/tclFileName.c: fix to memory leak in glob [Bug 1335006]
-	Obj leak detection and patch by Eric Melbardis.
+	* generic/tclFileName.c: fix to memory leak in glob [Bug 1335006] Obj
+	leak detection and patch by Eric Melbardis.
 
 	* tests/fCmd.test:
-	* win/tclWinFile.c: where appropriate windows API is available, try
-	to set 'nlink' and 'ino' stat fields (previously they were always 0).
+	* win/tclWinFile.c: where appropriate windows API is available, try to
+	set 'nlink' and 'ino' stat fields (previously they were always 0).
 	[Bug 1325803]
 
 2005-10-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/foreach.test (foreach-8.1): added test for [Bug 1189274]
-	
+
 2005-10-22  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (INST_INCR_*): fixed [Bug 1334570]. Obj
-	leak detection and patch by Eric Melbardis.
+	* generic/tclExecute.c (INST_INCR_*): fixed [Bug 1334570]. Obj leak
+	detection and patch by Eric Melbardis.
 
 2005-10-21  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c (RefineApproximation): Plugged a memory leak
-	where two intermediate results were not freed on one return path.
-	[Bug 1334461]. Thanks to Eric Melbardis for the patch.
-	
+	where two intermediate results were not freed on one return path. [Bug
+	1334461]. Thanks to Eric Melbardis for the patch.
+
 2005-10-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/binary.n: Clarify that virtually all code that uses the 'h'
