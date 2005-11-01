@@ -1,5 +1,11 @@
 2005-11-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/unixNotfy.test (1.1,2):	Update error message whitespace to
+	match changes in code.
+
+	* tests/expr-old.test (expr-32.52):     Use int(.) to restrict
+        result of left shift to the C long range.
+
 	* expr.test (expr-46.13):	Added test that illustrates
 	shortcoming of Patch 1340260.
 
