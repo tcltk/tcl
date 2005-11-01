@@ -1,5 +1,9 @@
 2005-11-01  Don Porter  <dgp@users.sourceforge.net>
 
+        * generic/tclTrace.c (TclCheckExecutionTraces): Corrected mistaken
+        assumption that all command traces are set at the script level.
+        Report/fix from Jacques H. de Villiers. [Bug 1337941]
+
 	* tests/unixNotfy.test (1.1,2):	Update error message whitespace to
 	match changes in code.
 
