@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.27 2005/10/29 19:16:32 msofer Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.28 2005/11/01 20:17:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1426,18 +1426,20 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code, traceFlags,
 	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
 	}
-	tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
-	if (tcmdPtr->flags != 0) {
-	    tcmdPtr->curFlags = traceFlags | TCL_TRACE_EXEC_DIRECT;
-	    tcmdPtr->curCode  = code;
-	    tcmdPtr->refCount++;
-	    if (state == NULL) {
-		state = Tcl_SaveInterpState(interp, code);
-	    }
-	    traceCode = TraceExecutionProc((ClientData)tcmdPtr, interp,
-		    curLevel, command, (Tcl_Command)cmdPtr, objc, objv);
-	    if ((--tcmdPtr->refCount) <= 0) {
-		ckfree((char*)tcmdPtr);
+	if (tracePtr->traceProc == TraceCommandProc) {
+	    tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
+	    if (tcmdPtr->flags != 0) {
+		tcmdPtr->curFlags = traceFlags | TCL_TRACE_EXEC_DIRECT;
+		tcmdPtr->curCode  = code;
+		tcmdPtr->refCount++;
+		if (state == NULL) {
+		    state = Tcl_SaveInterpState(interp, code);
+		}
+		traceCode = TraceExecutionProc((ClientData)tcmdPtr, interp,
+			curLevel, command, (Tcl_Command)cmdPtr, objc, objv);
+		if ((--tcmdPtr->refCount) <= 0) {
+		    ckfree((char*)tcmdPtr);
+		}
 	    }
 	}
 	if (active.nextTracePtr) {
