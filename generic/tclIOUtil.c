@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.124 2005/11/01 15:30:52 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.125 2005/11/01 15:47:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2326,7 +2326,7 @@ NativeFileAttrsGet(
     Tcl_Obj *pathPtr,		/* path of file we are operating on. */
     Tcl_Obj **objPtrRef)	/* for output. */
 {
-    return (tclpFileAttrProcs[index]->getProc)(interp, index, pathPtr,
+    return (*tclpFileAttrProcs[index].getProc)(interp, index, pathPtr,
 	    objPtrRef);
 }
 
@@ -2356,7 +2356,7 @@ NativeFileAttrsSet(
     Tcl_Obj *pathPtr,		/* path of file we are operating on. */
     Tcl_Obj *objPtr)		/* set to this value. */
 {
-    return (tclpFileAttrProcs[index]->setProc)(interp, index, pathPtr, objPtr);
+    return (*tclpFileAttrProcs[index].setProc)(interp, index, pathPtr, objPtr);
 }
 
 /*
