@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.22 2005/10/29 17:45:23 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.23 2005/11/01 20:19:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4223,19 +4223,21 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code,
 	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
         }
-	tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
-	if (tcmdPtr->flags != 0) {
-            tcmdPtr->curFlags = traceFlags | TCL_TRACE_EXEC_DIRECT;
-            tcmdPtr->curCode  = code;
-	    tcmdPtr->refCount++;
-	    traceCode = TraceExecutionProc((ClientData)tcmdPtr, interp, 
-	          curLevel, command, (Tcl_Command)cmdPtr, objc, objv);
-	    tcmdPtr->refCount--;
-	    if (tcmdPtr->refCount < 0) {
-		Tcl_Panic("TclCheckExecutionTraces: negative TraceCommandInfo refCount");
-	    }
-	    if (tcmdPtr->refCount == 0) {
-	        ckfree((char*)tcmdPtr);
+	if (tracePtr->traceProc == TraceCommandProc) {
+	    tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
+	    if (tcmdPtr->flags != 0) {
+        	tcmdPtr->curFlags = traceFlags | TCL_TRACE_EXEC_DIRECT;
+        	tcmdPtr->curCode  = code;
+		tcmdPtr->refCount++;
+		traceCode = TraceExecutionProc((ClientData)tcmdPtr, interp, 
+			curLevel, command, (Tcl_Command)cmdPtr, objc, objv);
+		tcmdPtr->refCount--;
+		if (tcmdPtr->refCount < 0) {
+		    Tcl_Panic("TclCheckExecutionTraces: negative TraceCommandInfo refCount");
+		}
+		if (tcmdPtr->refCount == 0) {
+		    ckfree((char*)tcmdPtr);
+		}
 	    }
 	}
 	if (active.nextTracePtr) {
