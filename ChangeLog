@@ -1,3 +1,8 @@
+2005-11-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* expr.test (expr-46.13):	Added test that illustrates
+	shortcoming of Patch 1340260.
+
 2005-10-31  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclNamesp.c: fix for [Bugs 1338280/1337229]. Thanks Don.
