@@ -5,32 +5,31 @@
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.5 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.6 2005/11/02 23:26:50 dkf Exp $
  */
 
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
-static int	TesteventloopCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, CONST char **argv));
-extern void	InitNotifier _ANSI_ARGS_((void));
-
+static int	TesteventloopCmd(ClientData clientData,
+		    Tcl_Interp *interp, int argc, CONST char **argv);
+extern void	InitNotifier(void);
 
 /*
  *----------------------------------------------------------------------
  *
  * Tclxttest_Init --
  *
- *	This procedure performs application-specific initialization.
- *	Most applications, especially those that incorporate additional
- *	packages, will have their own version of this procedure.
+ *	This procedure performs application-specific initialization. Most
+ *	applications, especially those that incorporate additional packages,
+ *	will have their own version of this procedure.
  *
  * Results:
- *	Returns a standard Tcl completion code, and leaves an error
- *	message in the interp's result if an error occurs.
+ *	Returns a standard Tcl completion code, and leaves an error message in
+ *	the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.
@@ -39,8 +38,8 @@ extern void	InitNotifier _ANSI_ARGS_((void));
  */
 
 int
-Tclxttest_Init(interp)
-    Tcl_Interp *interp;		/* Interpreter for application. */
+Tclxttest_Init(
+    Tcl_Interp *interp)		/* Interpreter for application. */
 {
     if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
@@ -48,7 +47,7 @@ Tclxttest_Init(interp)
     XtToolkitInitialize();
     InitNotifier();
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+            (ClientData) 0, NULL);
     return TCL_OK;
 }
 
@@ -57,9 +56,9 @@ Tclxttest_Init(interp)
  *
  * TesteventloopCmd --
  *
- *	This procedure implements the "testeventloop" command. It is
- *	used to test the Tcl notifier from an "external" event loop
- *	(i.e. not Tcl_DoOneEvent()).
+ *	This procedure implements the "testeventloop" command. It is used to
+ *	test the Tcl notifier from an "external" event loop (i.e. not
+ *	Tcl_DoOneEvent()).
  *
  * Results:
  *	A standard Tcl result.
@@ -71,19 +70,19 @@ Tclxttest_Init(interp)
  */
 
 static int
-TesteventloopCmd(clientData, interp, argc, argv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int argc;				/* Number of arguments. */
-    CONST char **argv;			/* Argument strings. */
+TesteventloopCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int argc,			/* Number of arguments. */
+    CONST char **argv)		/* Argument strings. */
 {
-    static int *framePtr = NULL; /* Pointer to integer on stack frame of
-				  * innermost invocation of the "wait"
-				  * subcommand. */
+    static int *framePtr = NULL;/* Pointer to integer on stack frame of
+				 * innermost invocation of the "wait"
+				 * subcommand. */
 
    if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-                " option ... \"", (char *) NULL);
+                " option ... \"", NULL);
         return TCL_ERROR;
     }
     if (strcmp(argv[1], "done") == 0) {
@@ -101,8 +100,8 @@ TesteventloopCmd(clientData, interp, argc, argv)
 	framePtr = &done;
 
 	/*
-	 * Enter an Xt event loop until the flag changes.
-	 * Note that we do not explicitly call Tcl_ServiceEvent().
+	 * Enter an Xt event loop until the flag changes. Note that we do not
+	 * explicitly call Tcl_ServiceEvent().
 	 */
 
 	done = 0;
@@ -113,7 +112,7 @@ TesteventloopCmd(clientData, interp, argc, argv)
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be done or wait", (char *) NULL);
+		"\": must be done or wait", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
