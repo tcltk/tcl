@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.20 2005/10/19 18:39:58 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.21 2005/11/02 11:55:47 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -45,11 +45,11 @@ typedef struct CharSet {
  * Declarations for functions used only in this file.
  */
 
-static char *	BuildCharSet _ANSI_ARGS_((CharSet *cset, char *format));
-static int	CharInSet _ANSI_ARGS_((CharSet *cset, int ch));
-static void	ReleaseCharSet _ANSI_ARGS_((CharSet *cset));
-static int	ValidateFormat _ANSI_ARGS_((Tcl_Interp *interp, char *format,
-		    int numVars, int *totalVars));
+static char *		BuildCharSet(CharSet *cset, char *format);
+static int		CharInSet(CharSet *cset, int ch);
+static void		ReleaseCharSet(CharSet *cset);
+static int		ValidateFormat(Tcl_Interp *interp, char *format,
+			    int numVars, int *totalVars);
 
 /*
  *----------------------------------------------------------------------
@@ -70,9 +70,9 @@ static int	ValidateFormat _ANSI_ARGS_((Tcl_Interp *interp, char *format,
  */
 
 static char *
-BuildCharSet(cset, format)
-    CharSet *cset;
-    char *format;		/* Points to first char of set. */
+BuildCharSet(
+    CharSet *cset,
+    char *format)		/* Points to first char of set. */
 {
     Tcl_UniChar ch, start;
     int offset, nranges;
@@ -103,8 +103,8 @@ BuildCharSet(cset, format)
 	end += Tcl_UtfToUniChar(end, &ch);
     }
 
-    cset->chars = (Tcl_UniChar *) ckalloc(sizeof(Tcl_UniChar)
-	    * (end - format - 1));
+    cset->chars = (Tcl_UniChar *)
+	    ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
 	cset->ranges = (struct Range *) ckalloc(sizeof(struct Range)*nranges);
     } else {
@@ -181,13 +181,14 @@ BuildCharSet(cset, format)
  */
 
 static int
-CharInSet(cset, c)
-    CharSet *cset;
-    int c;			/* Character to test, passed as int because of
+CharInSet(
+    CharSet *cset,
+    int c)			/* Character to test, passed as int because of
 				 * non-ANSI prototypes. */
 {
     Tcl_UniChar ch = (Tcl_UniChar) c;
     int i, match = 0;
+
     for (i = 0; i < cset->nchars; i++) {
 	if (cset->chars[i] == ch) {
 	    match = 1;
@@ -196,8 +197,7 @@ CharInSet(cset, c)
     }
     if (!match) {
 	for (i = 0; i < cset->nranges; i++) {
-	    if ((cset->ranges[i].start <= ch)
-		    && (ch <= cset->ranges[i].end)) {
+	    if ((cset->ranges[i].start <= ch) && (ch <= cset->ranges[i].end)) {
 		match = 1;
 		break;
 	    }
@@ -223,8 +223,8 @@ CharInSet(cset, c)
  */
 
 static void
-ReleaseCharSet(cset)
-    CharSet *cset;
+ReleaseCharSet(
+    CharSet *cset)
 {
     ckfree((char *)cset->chars);
     if (cset->ranges) {
@@ -250,12 +250,12 @@ ReleaseCharSet(cset)
  */
 
 static int
-ValidateFormat(interp, format, numVars, totalSubs)
-    Tcl_Interp *interp;		/* Current interpreter. */
-    char *format;		/* The format string. */
-    int numVars;		/* The number of variables passed to the scan
+ValidateFormat(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    char *format,		/* The format string. */
+    int numVars,		/* The number of variables passed to the scan
 				 * command. */
-    int *totalSubs;		/* The number of variables that will be
+    int *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
 #define STATIC_LIST_SIZE 16
@@ -301,14 +301,14 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	    goto xpgCheckDone;
 	}
 
-	if ((ch < 0x80) && isdigit(UCHAR(ch))) { /* INTL: "C" locale. */
+	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
 	    /*
 	     * Check for an XPG3-style %n$ specification. Note: there must
 	     * not be a mixture of XPG3 specs and non-XPG3 specs in the same
 	     * format string.
 	     */
 
-	    value = strtoul(format-1, &end, 10); /* INTL: "C" locale. */
+	    value = strtoul(format-1, &end, 10);	/* INTL: "C" locale. */
 	    if (*end != '$') {
 		goto notXpg;
 	    }
@@ -348,8 +348,8 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	 * Parse any width specifier.
 	 */
 
-	if ((ch < 0x80) && isdigit(UCHAR(ch))) { /* INTL: "C" locale. */
-	    value = strtoul(format-1, &format, 10); /* INTL: "C" locale. */
+	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
+	    value = strtoul(format-1, &format, 10);	/* INTL: "C" locale. */
 	    flags |= SCAN_WIDTH;
 	    format += Tcl_UtfToUniChar(format, &ch);
 	}
@@ -478,12 +478,11 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		    nspace += STATIC_LIST_SIZE;
 		}
 		if (nassign == staticAssign) {
-		    nassign = (void *)ckalloc(nspace * sizeof(int));
-		    for (i = 0; i < STATIC_LIST_SIZE; ++i) {
-			nassign[i] = staticAssign[i];
-		    }
+		    nassign = (void *) ckalloc(nspace * sizeof(int));
+		    memcpy((void *) nassign, (void *) staticAssign,
+			    sizeof(staticAssign));
 		} else {
-		    nassign = (void *)ckrealloc((void *)nassign,
+		    nassign = (void *) ckrealloc((void *)nassign,
 			    nspace * sizeof(int));
 		}
 		for (i = value; i < nspace; i++) {
@@ -570,11 +569,11 @@ ValidateFormat(interp, format, numVars, totalSubs)
 
 	/* ARGSUSED */
 int
-Tcl_ScanObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;    	/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_ScanObjCmd(
+    ClientData dummy,    	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     char *format;
     int numVars, nconversions, totalVars = -1;
@@ -898,7 +897,11 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    if (TclParseNumber(NULL, objPtr, NULL, string, width, &end,
 		    TCL_PARSE_INTEGER_ONLY | parseFlag) != TCL_OK) {
 		Tcl_DecrRefCount(objPtr);
-		/* TODO: set underflow?  test scan-4.44 */
+
+		/*
+		 * TODO: set underflow? test scan-4.44
+		 */
+
 		goto done;
 	    }
 	    string = end;
@@ -949,8 +952,11 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		width = -1;
 	    }
 	    if (TclParseNumber(NULL, objPtr, NULL, string, width, &end,
-			       TCL_PARSE_DECIMAL_ONLY) != TCL_OK) {
-		/* TODO: set underflow?  test scan-4.55 */
+		    TCL_PARSE_DECIMAL_ONLY) != TCL_OK) {
+		/*
+		 * TODO: set underflow? test scan-4.55
+		 */
+
 		Tcl_DecrRefCount(objPtr);
 		goto done;
 	    } else if (flags & SCAN_SUPPRESS) {
@@ -965,8 +971,8 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		    } else
 #endif
 		    {
-		    Tcl_DecrRefCount(objPtr);
-		    goto done;
+			Tcl_DecrRefCount(objPtr);
+			goto done;
 		    }
 		}
 		Tcl_SetDoubleObj(objPtr, dvalue);
@@ -993,7 +999,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    result++;
 	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i], 0) == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
-			TclGetString(objv[i+3]), "\"", (char *) NULL);
+			TclGetString(objv[i+3]), "\"", NULL);
 		code = TCL_ERROR;
 	    }
 	    Tcl_DecrRefCount(objs[i]);
