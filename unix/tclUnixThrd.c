@@ -1,4 +1,4 @@
-/* 
+/*
  * tclUnixThrd.c --
  *
  *	This file implements the UNIX-specific thread support.
@@ -75,13 +75,13 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
  */
 
 int
-TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
-    Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
-    Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
-    ClientData clientData;		/* The one argument to Main() */
-    int stackSize;			/* Size of stack for the new thread */
-    int flags;				/* Flags controlling behaviour of the
-					 * new thread. */
+TclpThreadCreate(
+    Tcl_ThreadId *idPtr,	/* Return, the ID of the thread */
+    Tcl_ThreadCreateProc proc,	/* Main() function of the thread */
+    ClientData clientData,	/* The one argument to Main() */
+    int stackSize,		/* Size of stack for the new thread */
+    int flags)			/* Flags controlling behaviour of the new
+				 * thread. */
 {
 #ifdef TCL_THREADS
     pthread_attr_t attr;
@@ -154,16 +154,16 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
  */
 
 int
-Tcl_JoinThread(threadId, state)
-    Tcl_ThreadId threadId;	/* Id of the thread to wait upon. */
-    int *state;			/* Reference to the storage the result of the
+Tcl_JoinThread(
+    Tcl_ThreadId threadId,	/* Id of the thread to wait upon. */
+    int *state)			/* Reference to the storage the result of the
 				 * thread we wait upon will be written
 				 * into. */
 {
 #ifdef TCL_THREADS
     int result;
 
-    result = pthread_join ((pthread_t) threadId, (VOID**) state);
+    result = pthread_join((pthread_t) threadId, (void**) state);
     return (result == 0) ? TCL_OK : TCL_ERROR;
 #else
     return TCL_ERROR;
@@ -188,8 +188,8 @@ Tcl_JoinThread(threadId, state)
  */
 
 void
-TclpThreadExit(status)
-    int status;
+TclpThreadExit(
+    int status)
 {
     pthread_exit((VOID *)status);
 }
@@ -213,7 +213,7 @@ TclpThreadExit(status)
  */
 
 int
-TclpThreadGetStackSize()
+TclpThreadGetStackSize(void)
 {
 #if defined(HAVE_PTHREAD_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
     pthread_attr_t threadAttr;	/* This will hold the thread attributes for
@@ -261,7 +261,7 @@ TclpThreadGetStackSize()
  */
 
 Tcl_ThreadId
-Tcl_GetCurrentThread()
+Tcl_GetCurrentThread(void)
 {
 #ifdef TCL_THREADS
     return (Tcl_ThreadId) pthread_self();
@@ -269,7 +269,6 @@ Tcl_GetCurrentThread()
     return (Tcl_ThreadId) 0;
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -291,7 +290,7 @@ Tcl_GetCurrentThread()
  */
 
 void
-TclpInitLock()
+TclpInitLock(void)
 {
 #ifdef TCL_THREADS
     pthread_mutex_lock(&initLock);
@@ -317,7 +316,7 @@ TclpInitLock()
  */
 
 void
-TclFinalizeLock ()
+TclFinalizeLock(void)
 {
 #ifdef TCL_THREADS
     /*
@@ -348,7 +347,7 @@ TclFinalizeLock ()
  */
 
 void
-TclpInitUnlock()
+TclpInitUnlock(void)
 {
 #ifdef TCL_THREADS
     pthread_mutex_unlock(&initLock);
@@ -377,7 +376,7 @@ TclpInitUnlock()
  */
 
 void
-TclpMasterLock()
+TclpMasterLock(void)
 {
 #ifdef TCL_THREADS
     pthread_mutex_lock(&masterLock);
@@ -403,7 +402,7 @@ TclpMasterLock()
  */
 
 void
-TclpMasterUnlock()
+TclpMasterUnlock(void)
 {
 #ifdef TCL_THREADS
     pthread_mutex_unlock(&masterLock);
@@ -431,7 +430,7 @@ TclpMasterUnlock()
  */
 
 Tcl_Mutex *
-Tcl_GetAllocMutex()
+Tcl_GetAllocMutex(void)
 {
 #ifdef TCL_THREADS
     return (Tcl_Mutex *)&allocLockPtr;
@@ -464,17 +463,17 @@ Tcl_GetAllocMutex()
  */
 
 void
-Tcl_MutexLock(mutexPtr)
-    Tcl_Mutex *mutexPtr;	/* Really (pthread_mutex_t **) */
+Tcl_MutexLock(
+    Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
     pthread_mutex_t *pmutexPtr;
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
-	    /* 
+	    /*
 	     * Double inside master lock check to avoid a race condition.
 	     */
-    
+
 	    pmutexPtr = (pthread_mutex_t *)ckalloc(sizeof(pthread_mutex_t));
 	    pthread_mutex_init(pmutexPtr, NULL);
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
@@ -485,7 +484,6 @@ Tcl_MutexLock(mutexPtr)
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pthread_mutex_lock(pmutexPtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -505,13 +503,12 @@ Tcl_MutexLock(mutexPtr)
  */
 
 void
-Tcl_MutexUnlock(mutexPtr)
-    Tcl_Mutex *mutexPtr;	/* Really (pthread_mutex_t **) */
+Tcl_MutexUnlock(
+    Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
     pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
     pthread_mutex_unlock(pmutexPtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -533,13 +530,13 @@ Tcl_MutexUnlock(mutexPtr)
  */
 
 void
-TclpFinalizeMutex(mutexPtr)
-    Tcl_Mutex *mutexPtr;
+TclpFinalizeMutex(
+    Tcl_Mutex *mutexPtr)
 {
     pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
     if (pmutexPtr != NULL) {
 	pthread_mutex_destroy(pmutexPtr);
-	ckfree((char *)pmutexPtr);
+	ckfree((char *) pmutexPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -567,10 +564,10 @@ TclpFinalizeMutex(mutexPtr)
  */
 
 void
-Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-    Tcl_Condition *condPtr;	/* Really (pthread_cond_t **) */
-    Tcl_Mutex *mutexPtr;	/* Really (pthread_mutex_t **) */
-    Tcl_Time *timePtr;		/* Timeout on waiting period */
+Tcl_ConditionWait(
+    Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
+    Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
+    Tcl_Time *timePtr)		/* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     pthread_mutex_t *pmutexPtr;
@@ -579,13 +576,13 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     if (*condPtr == NULL) {
 	MASTER_LOCK;
 
-	/* 
+	/*
 	 * Double check inside mutex to avoid race, then initialize condition
 	 * variable if necessary.
 	 */
 
 	if (*condPtr == NULL) {
-	    pcondPtr = (pthread_cond_t *)ckalloc(sizeof(pthread_cond_t));
+	    pcondPtr = (pthread_cond_t *) ckalloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
 	    *condPtr = (Tcl_Condition)pcondPtr;
 	    TclRememberCondition(condPtr);
@@ -632,8 +629,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
  */
 
 void
-Tcl_ConditionNotify(condPtr)
-    Tcl_Condition *condPtr;
+Tcl_ConditionNotify(
+    Tcl_Condition *condPtr)
 {
     pthread_cond_t *pcondPtr = *((pthread_cond_t **)condPtr);
     if (pcondPtr != NULL) {
@@ -644,7 +641,6 @@ Tcl_ConditionNotify(condPtr)
 	 */
     }
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -666,13 +662,13 @@ Tcl_ConditionNotify(condPtr)
  */
 
 void
-TclpFinalizeCondition(condPtr)
-    Tcl_Condition *condPtr;
+TclpFinalizeCondition(
+    Tcl_Condition *condPtr)
 {
     pthread_cond_t *pcondPtr = *(pthread_cond_t **)condPtr;
     if (pcondPtr != NULL) {
 	pthread_cond_destroy(pcondPtr);
-	ckfree((char *)pcondPtr);
+	ckfree((char *) pcondPtr);
 	*condPtr = NULL;
     }
 }
@@ -700,13 +696,15 @@ TclpFinalizeCondition(condPtr)
  */
 
 Tcl_DirEntry *
-TclpReaddir(DIR * dir)
+TclpReaddir(
+    DIR * dir)
 {
     return TclOSreaddir(dir);
 }
 
 char *
-TclpInetNtoa(struct in_addr addr)
+TclpInetNtoa(
+    struct in_addr addr)
 {
 #ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -714,7 +712,7 @@ TclpInetNtoa(struct in_addr addr)
 	unsigned long l;
 	unsigned char b[4];
     } u;
-    
+
     u.l = (unsigned long) addr.s_addr;
     sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", u.b[0], u.b[1], u.b[2], u.b[3]);
     return tsdPtr->nabuf;
@@ -730,7 +728,7 @@ TclpInetNtoa(struct in_addr addr)
 
 #ifdef USE_THREAD_ALLOC
 static volatile int initialized = 0;
-static pthread_key_t	key;
+static pthread_key_t key;
 
 typedef struct allocMutex {
     Tcl_Mutex tlock;
@@ -752,8 +750,8 @@ TclpNewAllocMutex(void)
 }
 
 void
-TclpFreeAllocMutex(mutex)
-    Tcl_Mutex *mutex; /* The alloc mutex to free. */
+TclpFreeAllocMutex(
+    Tcl_Mutex *mutex)		/* The alloc mutex to free. */
 {
     allocMutex* lockPtr = (allocMutex*) mutex;
     if (!lockPtr) {
@@ -763,8 +761,9 @@ TclpFreeAllocMutex(mutex)
     free(lockPtr);
 }
 
-void TclpFreeAllocCache(ptr)
-    void *ptr;
+void
+TclpFreeAllocCache(
+    void *ptr)
 {
     if (ptr != NULL) {
 	/*
@@ -799,7 +798,8 @@ TclpGetAllocCache(void)
 }
 
 void
-TclpSetAllocCache(void *arg)
+TclpSetAllocCache(
+    void *arg)
 {
     pthread_setspecific(key, arg);
 }
