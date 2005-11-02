@@ -305,25 +305,25 @@ typedef struct {
 /* automatically gathered by fwd; do not hand-edit */
 /* === regproto.h === */
 #ifndef __REG_NOCHAR
-int re_comp _ANSI_ARGS_((regex_t *, __REG_CONST char *, size_t, int));
+int re_comp(regex_t *, __REG_CONST char *, size_t, int);
 #endif
 #ifndef __REG_NOFRONT
-int regcomp _ANSI_ARGS_((regex_t *, __REG_CONST char *, int));
+int regcomp(regex_t *, __REG_CONST char *, int);
 #endif
 #ifdef __REG_WIDE_T
-int __REG_WIDE_COMPILE _ANSI_ARGS_((regex_t *, __REG_CONST __REG_WIDE_T *, size_t, int));
+int __REG_WIDE_COMPILE(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, int);
 #endif
 #ifndef __REG_NOCHAR
-int re_exec _ANSI_ARGS_((regex_t *, __REG_CONST char *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
+int re_exec(regex_t *, __REG_CONST char *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
 #ifndef __REG_NOFRONT
-int regexec _ANSI_ARGS_((regex_t *, __REG_CONST char *, size_t, regmatch_t [], int));
+int regexec(regex_t *, __REG_CONST char *, size_t, regmatch_t [], int);
 #endif
 #ifdef __REG_WIDE_T
-int __REG_WIDE_EXEC _ANSI_ARGS_((regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
+int __REG_WIDE_EXEC(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
-re_void regfree _ANSI_ARGS_((regex_t *));
-extern size_t regerror _ANSI_ARGS_((int, __REG_CONST regex_t *, char *, size_t));
+re_void regfree(regex_t *);
+extern size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 

@@ -123,33 +123,33 @@ struct vars {
 /* =====^!^===== begin forwards =====^!^===== */
 /* automatically gathered by fwd; do not hand-edit */
 /* === regexec.c === */
-int exec _ANSI_ARGS_((regex_t *, CONST chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
-static int find _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
-static int cfind _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
-static int cfindloop _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *, struct dfa *, struct dfa *, chr **));
-static VOID zapsubs _ANSI_ARGS_((regmatch_t *, size_t));
-static VOID zapmem _ANSI_ARGS_((struct vars *, struct subre *));
-static VOID subset _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int dissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int condissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int altdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int cdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int ccondissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int crevdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int cbrdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int caltdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+int exec(regex_t *, CONST chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+static int find(struct vars *, struct cnfa *, struct colormap *);
+static int cfind(struct vars *, struct cnfa *, struct colormap *);
+static int cfindloop(struct vars *, struct cnfa *, struct colormap *, struct dfa *, struct dfa *, chr **);
+static VOID zapsubs(regmatch_t *, size_t);
+static VOID zapmem(struct vars *, struct subre *);
+static VOID subset(struct vars *, struct subre *, chr *, chr *);
+static int dissect(struct vars *, struct subre *, chr *, chr *);
+static int condissect(struct vars *, struct subre *, chr *, chr *);
+static int altdissect(struct vars *, struct subre *, chr *, chr *);
+static int cdissect(struct vars *, struct subre *, chr *, chr *);
+static int ccondissect(struct vars *, struct subre *, chr *, chr *);
+static int crevdissect(struct vars *, struct subre *, chr *, chr *);
+static int cbrdissect(struct vars *, struct subre *, chr *, chr *);
+static int caltdissect(struct vars *, struct subre *, chr *, chr *);
 /* === rege_dfa.c === */
-static chr *longest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, int *));
-static chr *shortest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, chr *, chr **, int *));
-static chr *lastcold _ANSI_ARGS_((struct vars *, struct dfa *));
-static struct dfa *newdfa _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *, struct smalldfa *));
-static VOID freedfa _ANSI_ARGS_((struct dfa *));
-static unsigned hash _ANSI_ARGS_((unsigned *, int));
-static struct sset *initialize _ANSI_ARGS_((struct vars *, struct dfa *, chr *));
-static struct sset *miss _ANSI_ARGS_((struct vars *, struct dfa *, struct sset *, pcolor, chr *, chr *));
-static int lacon _ANSI_ARGS_((struct vars *, struct cnfa *, chr *, pcolor));
-static struct sset *getvacant _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *));
-static struct sset *pickss _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *));
+static chr *longest(struct vars *, struct dfa *, chr *, chr *, int *);
+static chr *shortest(struct vars *, struct dfa *, chr *, chr *, chr *, chr **, int *);
+static chr *lastcold(struct vars *, struct dfa *);
+static struct dfa *newdfa(struct vars *, struct cnfa *, struct colormap *, struct smalldfa *);
+static VOID freedfa(struct dfa *);
+static unsigned hash(unsigned *, int);
+static struct sset *initialize(struct vars *, struct dfa *, chr *);
+static struct sset *miss(struct vars *, struct dfa *, struct sset *, pcolor, chr *, chr *);
+static int lacon(struct vars *, struct cnfa *, chr *, pcolor);
+static struct sset *getvacant(struct vars *, struct dfa *, chr *, chr *);
+static struct sset *pickss(struct vars *, struct dfa *, chr *, chr *);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 
