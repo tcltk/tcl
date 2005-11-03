@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.28 2004/11/03 00:26:59 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.29 2005/11/03 01:16:07 patthoyts Exp $
  */
 
 #ifndef _TCLWININT
@@ -127,6 +127,23 @@ typedef struct TclWinProcs {
 		    LPDWORD PrivilegeSetLength,
 		    LPDWORD GrantedAccess,
 		    LPBOOL AccessStatus);
+    /*
+     * Unicode console support. WriteConsole and ReadConsole
+     */
+    BOOL (WINAPI *readConsoleProc)(
+      HANDLE hConsoleInput,
+      LPVOID lpBuffer,
+      DWORD nNumberOfCharsToRead,
+      LPDWORD lpNumberOfCharsRead,
+      LPVOID lpReserved
+    );
+    BOOL (WINAPI *writeConsoleProc)(
+      HANDLE hConsoleOutput,
+      const VOID* lpBuffer,
+      DWORD nNumberOfCharsToWrite,
+      LPDWORD lpNumberOfCharsWritten,
+      LPVOID lpReserved
+    );
 } TclWinProcs;
 
 MODULE_SCOPE TclWinProcs *tclWinProcs;
