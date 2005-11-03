@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.10 2005/10/23 22:01:31 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.11 2005/11/03 16:16:29 dgp Exp $
  */
 
 #if defined(HAVE_COREFOUNDATION)
@@ -493,7 +493,6 @@ CONST char *path;		/* Path to the executable in native
 void
 TclpSetInitialEncodings()
 {
-    if (libraryPathEncodingFixed == 0) {
 	CONST char *encoding = NULL;
 	int i, setSysEncCode = TCL_ERROR;
 	Tcl_Obj *pathPtr;
@@ -657,6 +656,8 @@ TclpSetInitialEncodings()
 
 	setlocale(LC_NUMERIC, "C");
 
+    if ((libraryPathEncodingFixed == 0) && strcmp("identity",
+	    Tcl_GetEncodingName(Tcl_GetEncoding(NULL, NULL))) ) {
 	/*
 	 * Until the system encoding was actually set, the library path was
 	 * actually in the native multi-byte encoding, and not really UTF-8
