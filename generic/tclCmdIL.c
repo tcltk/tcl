@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.16 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.17 2005/11/03 17:52:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -301,11 +301,6 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-#if 0
-    long incrAmount = 1;
-    Tcl_WideInt wideIncrAmount;
-    int isWide = 0;
-#endif
     Tcl_Obj *newValuePtr, *incrPtr;
 
     if ((objc != 2) && (objc != 3)) {
@@ -313,54 +308,6 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-#if 0
-    /*
-     * Calculate the amount to increment by.
-     */
-
-    if (objc == 3) {
-	/*
-	 * Need to be a bit cautious to ensure that [expr]-like rules are
-	 * enforced for interpretation of wide integers, despite the fact that
-	 * the underlying API itself is a 'long' only one.
-	 */
-
-	if (objv[2]->typePtr == &tclIntType) {
-	    incrAmount = objv[2]->internalRep.longValue;
-	    isWide = 0;
-	} else if (objv[2]->typePtr == &tclWideIntType) {
-	    wideIncrAmount = objv[2]->internalRep.wideValue;
-	    isWide = 1;
-	} else {
-	    if (Tcl_GetWideIntFromObj(interp, objv[2],
-		    &wideIncrAmount) != TCL_OK) {
-		Tcl_AddErrorInfo(interp, "\n    (reading increment)");
-		return TCL_ERROR;
-	    }
-	    if ((wideIncrAmount <= Tcl_LongAsWide(LONG_MAX))
-		    && (wideIncrAmount >= Tcl_LongAsWide(LONG_MIN))) {
-		incrAmount = Tcl_WideAsLong(wideIncrAmount);
-		objv[2]->typePtr = &tclIntType;
-		objv[2]->internalRep.longValue = incrAmount;
-		isWide = 0;
-	    } else {
-		isWide = 1;
-	    }
-	}
-    }
-
-    /*
-     * Increment the variable's value.
-     */
-
-    if (isWide) {
-	newValuePtr = TclIncrWideVar2(interp, objv[1], (Tcl_Obj *) NULL,
-		wideIncrAmount, TCL_LEAVE_ERR_MSG);
-    } else {
-	newValuePtr = TclIncrVar2(interp, objv[1], (Tcl_Obj *) NULL,
-		incrAmount, TCL_LEAVE_ERR_MSG);
-    }
-#else
     if (objc == 3) {
 	incrPtr = objv[2];
     } else {
@@ -371,7 +318,6 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
 	    incrPtr, TCL_LEAVE_ERR_MSG);
     Tcl_DecrRefCount(incrPtr);
 
-#endif
     if (newValuePtr == NULL) {
 	return TCL_ERROR;
     }

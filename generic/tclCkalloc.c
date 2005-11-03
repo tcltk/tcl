@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.5 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.6 2005/11/03 17:52:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -33,7 +33,7 @@ typedef struct MemTag {
     int refCount;		/* Number of mem_headers referencing this
 				 * tag. */
     char string[4];		/* Actual size of string will be as large as
-				 * needed for actual tag.  This must be the
+				 * needed for actual tag. This must be the
 				 * last field in the structure. */
 } MemTag;
 
@@ -78,7 +78,7 @@ static struct mem_header *allocHead = NULL;  /* List of allocated structures */
 
 /*
  * The following macro computes the offset of the "body" field within
- * mem_header.  It is used to get back to the header pointer from the body
+ * mem_header. It is used to get back to the header pointer from the body
  * pointer that's used by clients.
  */
 
@@ -93,17 +93,17 @@ static int current_malloc_packets = 0;
 static int maximum_malloc_packets = 0;
 static int break_on_malloc = 0;
 static int trace_on_at_malloc = 0;
-static int  alloc_tracing = FALSE;
-static int  init_malloced_bodies = TRUE;
+static int alloc_tracing = FALSE;
+static int init_malloced_bodies = TRUE;
 #ifdef MEM_VALIDATE
-    static int  validate_memory = TRUE;
+static int validate_memory = TRUE;
 #else
-    static int  validate_memory = FALSE;
+static int validate_memory = FALSE;
 #endif
 
 /*
  * The following variable indicates to TclFinalizeMemorySubsystem() that it
- * should dump out the state of memory before exiting.  If the value is
+ * should dump out the state of memory before exiting. If the value is
  * non-NULL, it gives the name of the file in which to dump memory usage
  * information.
  */
@@ -115,8 +115,8 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 				 * information. */
 
 /*
- * Mutex to serialize allocations.  This is a low-level mutex that must be
- * explicitly initialized.  This is necessary because the self initializing
+ * Mutex to serialize allocations. This is a low-level mutex that must be
+ * explicitly initialized. This is necessary because the self initializing
  * mutexes use ckalloc...
  */
 
@@ -127,20 +127,19 @@ static int ckallocInit = 0;
  * Prototypes for procedures defined in this file:
  */
 
-static int		CheckmemCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, CONST char *argv[]));
-static int		MemoryCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, CONST char **argv));
-static void		ValidateMemory _ANSI_ARGS_((
-			    struct mem_header *memHeaderP, CONST char *file,
-			    int line, int nukeGuards));
+static int		CheckmemCmd(ClientData clientData, Tcl_Interp *interp,
+			    int argc, CONST char *argv[]);
+static int		MemoryCmd(ClientData clientData, Tcl_Interp *interp,
+			    int argc, CONST char *argv[]);
+static void		ValidateMemory(struct mem_header *memHeaderP,
+			    CONST char *file, int line, int nukeGuards);
 
 /*
  *----------------------------------------------------------------------
  *
  * TclInitDbCkalloc --
  *
- *	Initialize the locks used by the allocator.  This is only appropriate
+ *	Initialize the locks used by the allocator. This is only appropriate
  *	to call in a single threaded environment, such as during
  *	TclInitSubsystems.
  *
@@ -148,7 +147,7 @@ static void		ValidateMemory _ANSI_ARGS_((
  */
 
 void
-TclInitDbCkalloc()
+TclInitDbCkalloc(void)
 {
     if (!ckallocInit) {
 	ckallocInit = 1;
@@ -167,8 +166,8 @@ TclInitDbCkalloc()
  */
 
 void
-TclDumpMemoryInfo(outFile)
-    FILE *outFile;
+TclDumpMemoryInfo(
+    FILE *outFile)
 {
     fprintf(outFile,"total mallocs             %10d\n",
 	    total_mallocs);
@@ -202,15 +201,16 @@ TclDumpMemoryInfo(outFile)
  */
 
 static void
-ValidateMemory(memHeaderP, file, line, nukeGuards)
-    struct mem_header *memHeaderP;	/* Memory chunk to validate */
-    CONST char *file;			/* File containing the call to
-					 * Tcl_ValidateAllMemory */
-    int line;				/* Line number of call to
-					 * Tcl_ValidateAllMemory */
-    int nukeGuards;			/* If non-zero, indicates that the
-					 * memory guards are to be reset to 0
-					 * after they have been printed */
+ValidateMemory(
+    struct mem_header *memHeaderP,
+				/* Memory chunk to validate */
+    CONST char *file,		/* File containing the call to
+				 * Tcl_ValidateAllMemory */
+    int line,			/* Line number of call to
+				 * Tcl_ValidateAllMemory */
+    int nukeGuards)		/* If non-zero, indicates that the memory
+				 * guards are to be reset to 0 after they have
+				 * been printed */
 {
     unsigned char *hiPtr;
     int idx;
@@ -231,7 +231,7 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
 	TclDumpMemoryInfo (stderr);
 	fprintf(stderr, "low guard failed at %lx, %s %d\n",
 		(long unsigned int) memHeaderP->body, file, line);
-	fflush(stderr);  /* In case name pointer is bad. */
+	fflush(stderr);			/* In case name pointer is bad. */
 	fprintf(stderr, "%ld bytes allocated at (%s %d)\n", memHeaderP->length,
 		memHeaderP->file, memHeaderP->line);
 	Tcl_Panic("Memory validation failure");
@@ -253,7 +253,7 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
 	TclDumpMemoryInfo(stderr);
 	fprintf(stderr, "high guard failed at %lx, %s %d\n",
 		(long unsigned int) memHeaderP->body, file, line);
-	fflush(stderr);  /* In case name pointer is bad. */
+	fflush(stderr);			/* In case name pointer is bad. */
 	fprintf(stderr, "%ld bytes allocated at (%s %d)\n",
 		memHeaderP->length, memHeaderP->file,
 		memHeaderP->line);
@@ -284,10 +284,10 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
  */
 
 void
-Tcl_ValidateAllMemory(file, line)
-    CONST char *file;		/* File from which Tcl_ValidateAllMemory was
+Tcl_ValidateAllMemory(
+    CONST char *file,		/* File from which Tcl_ValidateAllMemory was
 				 * called. */
-    int line;			/* Line number of call to
+    int line)			/* Line number of call to
 				 * Tcl_ValidateAllMemory */
 {
     struct mem_header *memScanP;
@@ -318,8 +318,8 @@ Tcl_ValidateAllMemory(file, line)
  */
 
 int
-Tcl_DumpActiveMemory (fileName)
-    CONST char *fileName;	/* Name of the file to write info to */
+Tcl_DumpActiveMemory(
+    CONST char *fileName)	/* Name of the file to write info to */
 {
     FILE *fileP;
     struct mem_header *memScanP;
@@ -371,10 +371,10 @@ Tcl_DumpActiveMemory (fileName)
  */
 
 char *
-Tcl_DbCkalloc(size, file, line)
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_DbCkalloc(
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     struct mem_header *result;
 
@@ -460,12 +460,12 @@ Tcl_DbCkalloc(size, file, line)
 
     return result->body;
 }
-
+
 char *
-Tcl_AttemptDbCkalloc(size, file, line)
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_AttemptDbCkalloc(
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     struct mem_header *result;
 
@@ -570,10 +570,10 @@ Tcl_AttemptDbCkalloc(size, file, line)
  */
 
 int
-Tcl_DbCkfree(ptr, file, line)
-    char *ptr;
-    CONST char *file;
-    int line;
+Tcl_DbCkfree(
+    char *ptr,
+    CONST char *file,
+    int line)
 {
     struct mem_header *memp;
 
@@ -650,11 +650,11 @@ Tcl_DbCkfree(ptr, file, line)
  */
 
 char *
-Tcl_DbCkrealloc(ptr, size, file, line)
-    char *ptr;
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_DbCkrealloc(
+    char *ptr,
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     char *new;
     unsigned int copySize;
@@ -679,13 +679,13 @@ Tcl_DbCkrealloc(ptr, size, file, line)
     Tcl_DbCkfree(ptr, file, line);
     return new;
 }
-
+
 char *
-Tcl_AttemptDbCkrealloc(ptr, size, file, line)
-    char *ptr;
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_AttemptDbCkrealloc(
+    char *ptr,
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     char *new;
     unsigned int copySize;
@@ -739,37 +739,37 @@ Tcl_AttemptDbCkrealloc(ptr, size, file, line)
 #undef Tcl_AttemptRealloc
 
 char *
-Tcl_Alloc(size)
-    unsigned int size;
+Tcl_Alloc(
+    unsigned int size)
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
 }
 
 char *
-Tcl_AttemptAlloc(size)
-    unsigned int size;
+Tcl_AttemptAlloc(
+    unsigned int size)
 {
     return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
 
 void
-Tcl_Free(ptr)
-    char *ptr;
+Tcl_Free(
+    char *ptr)
 {
     Tcl_DbCkfree(ptr, "unknown", 0);
 }
 
 char *
-Tcl_Realloc(ptr, size)
-    char *ptr;
-    unsigned int size;
+Tcl_Realloc(
+    char *ptr,
+    unsigned int size)
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
 }
 char *
-Tcl_AttemptRealloc(ptr, size)
-    char *ptr;
-    unsigned int size;
+Tcl_AttemptRealloc(
+    char *ptr,
+    unsigned int size)
 {
     return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
 }
@@ -798,26 +798,26 @@ Tcl_AttemptRealloc(ptr, size)
  */
 	/* ARGSUSED */
 static int
-MemoryCmd(clientData, interp, argc, argv)
-    ClientData clientData;
-    Tcl_Interp *interp;
-    int argc;
-    CONST char **argv;
+MemoryCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int argc,
+    CONST char *argv[])
 {
     CONST char *fileName;
     Tcl_DString buffer;
     int result;
 
     if (argc < 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-		argv[0], " option [args..]\"", (char *) NULL);
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		" option [args..]\"", NULL);
 	return TCL_ERROR;
     }
 
     if ((strcmp(argv[1],"active") == 0) || (strcmp(argv[1],"display") == 0)) {
 	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		    argv[0], " ", argv[1], " file\"", (char *) NULL);
+	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		    " ", argv[1], " file\"", NULL);
 	    return TCL_ERROR;
 	}
 	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
@@ -827,8 +827,7 @@ MemoryCmd(clientData, interp, argc, argv)
 	result = Tcl_DumpActiveMemory (fileName);
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "error accessing ", argv[2],
-		    (char *) NULL);
+	    Tcl_AppendResult(interp, "error accessing ", argv[2], NULL);
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -862,8 +861,8 @@ MemoryCmd(clientData, interp, argc, argv)
     }
     if (strcmp(argv[1],"onexit") == 0) {
 	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		    argv[0], " onexit file\"", (char *) NULL);
+	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		    " onexit file\"", NULL);
 	    return TCL_ERROR;
 	}
 	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
@@ -878,7 +877,7 @@ MemoryCmd(clientData, interp, argc, argv)
     if (strcmp(argv[1],"tag") == 0) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		    " tag string\"", (char *) NULL);
+		    " tag string\"", NULL);
 	    return TCL_ERROR;
 	}
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
@@ -916,17 +915,17 @@ MemoryCmd(clientData, interp, argc, argv)
 
     Tcl_AppendResult(interp, "bad option \"", argv[1],
 	    "\": should be active, break_on_malloc, info, init, onexit, ",
-	    "tag, trace, trace_on_at_malloc, or validate", (char *) NULL);
+	    "tag, trace, trace_on_at_malloc, or validate", NULL);
     return TCL_ERROR;
 
   argError:
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-	    " ", argv[1], " count\"", (char *) NULL);
+	    " ", argv[1], " count\"", NULL);
     return TCL_ERROR;
 
   bad_suboption:
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-	    " ", argv[1], " on|off\"", (char *) NULL);
+	    " ", argv[1], " on|off\"", NULL);
     return TCL_ERROR;
 }
 
@@ -949,15 +948,15 @@ MemoryCmd(clientData, interp, argc, argv)
  */
 
 static int
-CheckmemCmd(clientData, interp, argc, argv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Interpreter for evaluation. */
-    int argc;				/* Number of arguments. */
-    CONST char *argv[];			/* String values of arguments. */
+CheckmemCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Interpreter for evaluation. */
+    int argc,			/* Number of arguments. */
+    CONST char *argv[])		/* String values of arguments. */
 {
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" fileName\"", (char *) NULL);
+		" fileName\"", NULL);
 	return TCL_ERROR;
     }
     tclMemDumpFileName = dumpFile;
@@ -982,14 +981,13 @@ CheckmemCmd(clientData, interp, argc, argv)
  */
 
 void
-Tcl_InitMemory(interp)
-    Tcl_Interp *interp;	/* Interpreter in which commands should be added */
+Tcl_InitMemory(
+    Tcl_Interp *interp)		/* Interpreter in which commands should be
+				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateCommand(interp, "memory", MemoryCmd, (ClientData) NULL,
-	    (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, (ClientData) 0,
-	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "memory", MemoryCmd, (ClientData) NULL, NULL);
+    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, (ClientData) 0, NULL);
 }
 
 
@@ -1014,8 +1012,8 @@ Tcl_InitMemory(interp)
  */
 
 char *
-Tcl_Alloc(size)
-    unsigned int size;
+Tcl_Alloc(
+    unsigned int size)
 {
     char *result;
 
@@ -1023,7 +1021,7 @@ Tcl_Alloc(size)
 
     /*
      * Most systems will not alloc(0), instead bumping it to one so that NULL
-     * isn't returned.  Some systems (AIX, Tru64) will alloc(0) by returning
+     * isn't returned. Some systems (AIX, Tru64) will alloc(0) by returning
      * NULL, so we have to check that the NULL we get is not in response to
      * alloc(0).
      *
@@ -1038,10 +1036,10 @@ Tcl_Alloc(size)
 }
 
 char *
-Tcl_DbCkalloc(size, file, line)
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_DbCkalloc(
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     char *result;
 
@@ -1066,8 +1064,8 @@ Tcl_DbCkalloc(size, file, line)
  */
 
 char *
-Tcl_AttemptAlloc(size)
-    unsigned int size;
+Tcl_AttemptAlloc(
+    unsigned int size)
 {
     char *result;
 
@@ -1076,10 +1074,10 @@ Tcl_AttemptAlloc(size)
 }
 
 char *
-Tcl_AttemptDbCkalloc(size, file, line)
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_AttemptDbCkalloc(
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     char *result;
 
@@ -1099,9 +1097,9 @@ Tcl_AttemptDbCkalloc(size, file, line)
  */
 
 char *
-Tcl_Realloc(ptr, size)
-    char *ptr;
-    unsigned int size;
+Tcl_Realloc(
+    char *ptr,
+    unsigned int size)
 {
     char *result;
 
@@ -1114,11 +1112,11 @@ Tcl_Realloc(ptr, size)
 }
 
 char *
-Tcl_DbCkrealloc(ptr, size, file, line)
-    char *ptr;
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_DbCkrealloc(
+    char *ptr,
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     char *result;
 
@@ -1143,9 +1141,9 @@ Tcl_DbCkrealloc(ptr, size, file, line)
  */
 
 char *
-Tcl_AttemptRealloc(ptr, size)
-    char *ptr;
-    unsigned int size;
+Tcl_AttemptRealloc(
+    char *ptr,
+    unsigned int size)
 {
     char *result;
 
@@ -1154,11 +1152,11 @@ Tcl_AttemptRealloc(ptr, size)
 }
 
 char *
-Tcl_AttemptDbCkrealloc(ptr, size, file, line)
-    char *ptr;
-    unsigned int size;
-    CONST char *file;
-    int line;
+Tcl_AttemptDbCkrealloc(
+    char *ptr,
+    unsigned int size,
+    CONST char *file,
+    int line)
 {
     char *result;
 
@@ -1179,17 +1177,17 @@ Tcl_AttemptDbCkrealloc(ptr, size, file, line)
  */
 
 void
-Tcl_Free(ptr)
-    char *ptr;
+Tcl_Free(
+    char *ptr)
 {
     TclpFree(ptr);
 }
 
 int
-Tcl_DbCkfree(ptr, file, line)
-    char *ptr;
-    CONST char *file;
-    int line;
+Tcl_DbCkfree(
+    char *ptr,
+    CONST char *file,
+    int line)
 {
     TclpFree(ptr);
     return 0;
@@ -1207,28 +1205,28 @@ Tcl_DbCkfree(ptr, file, line)
  */
 	/* ARGSUSED */
 void
-Tcl_InitMemory(interp)
-    Tcl_Interp *interp;
+Tcl_InitMemory(
+    Tcl_Interp *interp)
 {
 }
 
 int
-Tcl_DumpActiveMemory(fileName)
-    CONST char *fileName;
+Tcl_DumpActiveMemory(
+    CONST char *fileName)
 {
     return TCL_OK;
 }
 
 void
-Tcl_ValidateAllMemory(file, line)
-    CONST char *file;
-    int line;
+Tcl_ValidateAllMemory(
+    CONST char *file,
+    int line)
 {
 }
 
 void
-TclDumpMemoryInfo(outFile)
-    FILE *outFile;
+TclDumpMemoryInfo(
+    FILE *outFile)
 {
 }
 
@@ -1254,7 +1252,7 @@ TclDumpMemoryInfo(outFile)
  */
 
 void
-TclFinalizeMemorySubsystem()
+TclFinalizeMemorySubsystem(void)
 {
 #ifdef TCL_MEM_DEBUG
     if (tclMemDumpFileName != NULL) {

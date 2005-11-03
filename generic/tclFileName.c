@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.16 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.17 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1875,6 +1875,9 @@ TclGlob(
 	    result = TCL_OK;
 	}
 	TclDecrRefCount(savedResultObj);
+	if (pathPrefix != NULL) {
+	    Tcl_DecrRefCount(pathPrefix);
+	}
 	return result;
     }
 
@@ -1951,6 +1954,9 @@ TclGlob(
     }
     TclDecrRefCount(savedResultObj);
     TclDecrRefCount(filenamesObj);
+    if (pathPrefix != NULL) {
+	Tcl_DecrRefCount(pathPrefix);
+    }
 
     return result;
 }

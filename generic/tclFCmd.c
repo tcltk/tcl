@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.8 2005/07/26 04:11:56 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.9 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -18,15 +18,14 @@
  * Declarations for local functions defined in this file:
  */
 
-static int		CopyRenameOneFile _ANSI_ARGS_((Tcl_Interp *interp,
+static int		CopyRenameOneFile(Tcl_Interp *interp,
 			    Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr,
-			    int copyFlag, int force));
-static Tcl_Obj *	FileBasename _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr));
-static int		FileCopyRename _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[], int copyFlag));
-static int		FileForceOption _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[], int *forcePtr));
+			    int copyFlag, int force);
+static Tcl_Obj *	FileBasename(Tcl_Interp *interp, Tcl_Obj *pathPtr);
+static int		FileCopyRename(Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[], int copyFlag);
+static int		FileForceOption(Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[], int *forcePtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -48,10 +47,11 @@ static int		FileForceOption _ANSI_ARGS_((Tcl_Interp *interp,
  */
 
 int
-TclFileRenameCmd(interp, objc, objv)
-    Tcl_Interp *interp;		/* Interp for error reporting. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument strings passed to Tcl_FileCmd. */
+TclFileRenameCmd(
+    Tcl_Interp *interp,		/* Interp for error reporting or recursive
+				 * calls in the case of a tricky rename. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 0);
 }
@@ -75,10 +75,11 @@ TclFileRenameCmd(interp, objc, objv)
  */
 
 int
-TclFileCopyCmd(interp, objc, objv)
-    Tcl_Interp *interp;		/* Used for error reporting */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument strings passed to Tcl_FileCmd. */
+TclFileCopyCmd(
+    Tcl_Interp *interp,		/* Used for error reporting or recursive calls
+				 * in the case of a tricky copy. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 1);
 }
@@ -101,11 +102,11 @@ TclFileCopyCmd(interp, objc, objv)
  */
 
 static int
-FileCopyRename(interp, objc, objv, copyFlag)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument strings passed to Tcl_FileCmd. */
-    int copyFlag;		/* If non-zero, copy source(s). Otherwise,
+FileCopyRename(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument strings passed to Tcl_FileCmd. */
+    int copyFlag)		/* If non-zero, copy source(s). Otherwise,
 				 * rename them. */
 {
     int i, result, force;
@@ -120,8 +121,7 @@ FileCopyRename(interp, objc, objv, copyFlag)
     if ((objc - i) < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
 		TclGetString(objv[0]), " ", TclGetString(objv[1]),
-		" ?options? source ?source ...? target\"",
-		(char *) NULL);
+		" ?options? source ?source ...? target\"", NULL);
 	return TCL_ERROR;
     }
 
@@ -149,9 +149,8 @@ FileCopyRename(interp, objc, objv, copyFlag)
 	    errno = ENOTDIR;
 	    Tcl_PosixError(interp);
 	    Tcl_AppendResult(interp, "error ",
-		    ((copyFlag) ? "copying" : "renaming"), ": target \"",
-		    TclGetString(target), "\" is not a directory",
-		    (char *) NULL);
+		    (copyFlag ? "copying" : "renaming"), ": target \"",
+		    TclGetString(target), "\" is not a directory", NULL);
 	    result = TCL_ERROR;
 	} else {
 	    /*
@@ -216,11 +215,12 @@ FileCopyRename(interp, objc, objv, copyFlag)
  *
  *----------------------------------------------------------------------
  */
+
 int
-TclFileMakeDirsCmd(interp, objc, objv)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    int objc;			/* Number of arguments */
-    Tcl_Obj *CONST objv[];	/* Argument strings passed to Tcl_FileCmd. */
+TclFileMakeDirsCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile;
     int result, i, j, pobjc;
@@ -307,8 +307,7 @@ TclFileMakeDirsCmd(interp, objc, objv)
   done:
     if (errfile != NULL) {
 	Tcl_AppendResult(interp, "can't create directory \"",
-		TclGetString(errfile), "\": ", Tcl_PosixError(interp),
-		(char *) NULL);
+		TclGetString(errfile), "\": ", Tcl_PosixError(interp), NULL);
 	result = TCL_ERROR;
     }
     if (split != NULL) {
@@ -338,10 +337,10 @@ TclFileMakeDirsCmd(interp, objc, objv)
  */
 
 int
-TclFileDeleteCmd(interp, objc, objv)
-    Tcl_Interp *interp;		/* Used for error reporting */
-    int objc;			/* Number of arguments */
-    Tcl_Obj *CONST objv[];	/* Argument strings passed to Tcl_FileCmd. */
+TclFileDeleteCmd(
+    Tcl_Interp *interp,		/* Used for error reporting */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     int i, force, result;
     Tcl_Obj *errfile;
@@ -355,7 +354,7 @@ TclFileDeleteCmd(interp, objc, objv)
     if ((objc - i) < 1) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
 		TclGetString(objv[0]), " ", TclGetString(objv[1]),
-		" ?options? file ?file ...?\"", (char *) NULL);
+		" ?options? file ?file ...?\"", NULL);
 	return TCL_ERROR;
     }
 
@@ -395,7 +394,7 @@ TclFileDeleteCmd(interp, objc, objv)
 		if ((force == 0) && (errno == EEXIST)) {
 		    Tcl_AppendResult(interp, "error deleting \"",
 			    TclGetString(objv[i]), "\": directory not empty",
-			    (char *) NULL);
+			    NULL);
 		    Tcl_PosixError(interp);
 		    goto done;
 		}
@@ -436,11 +435,11 @@ TclFileDeleteCmd(interp, objc, objv)
 	     */
 
 	    Tcl_AppendResult(interp, "error deleting unknown file: ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    Tcl_PosixError(interp), NULL);
 	} else {
 	    Tcl_AppendResult(interp, "error deleting \"",
 		    TclGetString(errfile), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    NULL);
 	}
     }
 
@@ -471,15 +470,15 @@ TclFileDeleteCmd(interp, objc, objv)
  */
 
 static int
-CopyRenameOneFile(interp, source, target, copyFlag, force)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Obj *source;		/* Pathname of file to copy. May need to be
+CopyRenameOneFile(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Obj *source,		/* Pathname of file to copy. May need to be
 				 * translated. */
-    Tcl_Obj *target;		/* Pathname of file to create/overwrite. May
+    Tcl_Obj *target,		/* Pathname of file to create/overwrite. May
 				 * need to be translated. */
-    int copyFlag;		/* If non-zero, copy files. Otherwise, rename
+    int copyFlag,		/* If non-zero, copy files. Otherwise, rename
 				 * them. */
-    int force;			/* If non-zero, overwrite target file if it
+    int force)			/* If non-zero, overwrite target file if it
 				 * exists. Otherwise, error if target already
 				 * exists. */
 {
@@ -549,7 +548,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    errno = EISDIR;
 	    Tcl_AppendResult(interp, "can't overwrite file \"",
 		    TclGetString(target), "\" with directory \"",
-		    TclGetString(source), "\"", (char *) NULL);
+		    TclGetString(source), "\"", NULL);
 	    goto done;
 	}
 	if (!S_ISDIR(sourceStatBuf.st_mode)
@@ -557,7 +556,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    errno = EISDIR;
 	    Tcl_AppendResult(interp, "can't overwrite directory \"",
 		    TclGetString(target), "\" with file \"",
-		    TclGetString(source), "\"", (char *) NULL);
+		    TclGetString(source), "\"", NULL);
 	    goto done;
 	}
 
@@ -589,7 +588,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    Tcl_AppendResult(interp, "error renaming \"",
 		    TclGetString(source), "\" to \"", TclGetString(target),
 		    "\": trying to rename a volume or ",
-		    "move a directory into itself", (char *) NULL);
+		    "move a directory into itself", NULL);
 	    goto done;
 	} else if (errno != EXDEV) {
 	    errfile = target;
@@ -634,8 +633,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	     */
 
 	    Tcl_AppendResult(interp, "error copying \"", TclGetString(source),
-		    "\": the target of this link doesn't exist",
-		    (char *) NULL);
+		    "\": the target of this link doesn't exist", NULL);
 	    goto done;
 	} else {
 	    int counter = 0;
@@ -682,7 +680,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    /* Now 'actualSource' is the correct file */
 	}
     }
-#endif
+#endif /* S_ISLNK */
 #endif
 
     if (S_ISDIR(sourceStatBuf.st_mode)) {
@@ -694,7 +692,8 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		 * cross-filesystem copy. We do this through our Tcl library.
 		 */
 
-		Tcl_Obj *copyCommand = Tcl_NewListObj(0,NULL);
+		Tcl_Obj *copyCommand = Tcl_NewListObj(0, NULL);
+
 		Tcl_IncrRefCount(copyCommand);
 		Tcl_ListObjAppendElement(interp, copyCommand,
 			Tcl_NewStringObj("::tcl::CopyDirectory",-1));
@@ -769,26 +768,22 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	}
 	if (result != TCL_OK) {
 	    Tcl_AppendResult(interp, "can't unlink \"", TclGetString(errfile),
-		    "\": ", Tcl_PosixError(interp), (char *) NULL);
+		    "\": ", Tcl_PosixError(interp), NULL);
 	    errfile = NULL;
 	}
     }
 
   done:
     if (errfile != NULL) {
-	Tcl_AppendResult(interp,
-		((copyFlag) ? "error copying \"" : "error renaming \""),
-		 TclGetString(source), (char *) NULL);
+	Tcl_AppendResult(interp, "error ", (copyFlag ? "copying" : "renaming"),
+		 " \"", TclGetString(source), NULL);
 	if (errfile != source) {
-	    Tcl_AppendResult(interp, "\" to \"", TclGetString(target),
-		    (char *) NULL);
+	    Tcl_AppendResult(interp, "\" to \"", TclGetString(target), NULL);
 	    if (errfile != target) {
-		Tcl_AppendResult(interp, "\": \"", TclGetString(errfile),
-			(char *) NULL);
+		Tcl_AppendResult(interp, "\": \"", TclGetString(errfile),NULL);
 	    }
 	}
-	Tcl_AppendResult(interp, "\": ", Tcl_PosixError(interp),
-		(char *) NULL);
+	Tcl_AppendResult(interp, "\": ", Tcl_PosixError(interp), NULL);
     }
     if (errorBuffer != NULL) {
 	Tcl_DecrRefCount(errorBuffer);
@@ -819,12 +814,12 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
  */
 
 static int
-FileForceOption(interp, objc, objv, forcePtr)
-    Tcl_Interp *interp;		/* Interp, for error return. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument strings.  First command line
+FileForceOption(
+    Tcl_Interp *interp,		/* Interp, for error return. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
-    int *forcePtr;		/* If the "-force" was specified, *forcePtr is
+    int *forcePtr)		/* If the "-force" was specified, *forcePtr is
 				 * filled with 1, otherwise with 0. */
 {
     int force, i;
@@ -841,7 +836,7 @@ FileForceOption(interp, objc, objv, forcePtr)
 	    break;
 	} else {
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[i]),
-		    "\": should be -force or --", (char *)NULL);
+		    "\": should be -force or --", NULL);
 	    return -1;
 	}
     }
@@ -869,9 +864,9 @@ FileForceOption(interp, objc, objv, forcePtr)
  */
 
 static Tcl_Obj *
-FileBasename(interp, pathPtr)
-    Tcl_Interp *interp;		/* Interp, for error return. */
-    Tcl_Obj *pathPtr;		/* Path whose basename to extract. */
+FileBasename(
+    Tcl_Interp *interp,		/* Interp, for error return. */
+    Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
     int objc;
     Tcl_Obj *splitPtr;
@@ -945,10 +940,10 @@ FileBasename(interp, pathPtr)
  */
 
 int
-TclFileAttrsCmd(interp, objc, objv)
-    Tcl_Interp *interp;		/* The interpreter for error reporting. */
-    int objc;			/* Number of command line arguments. */
-    Tcl_Obj *CONST objv[];	/* The command line objects. */
+TclFileAttrsCmd(
+    Tcl_Interp *interp,		/* The interpreter for error reporting. */
+    int objc,			/* Number of command line arguments. */
+    Tcl_Obj *CONST objv[])	/* The command line objects. */
 {
     int result;
     CONST char ** attributeStrings;
@@ -985,7 +980,7 @@ TclFileAttrsCmd(interp, objc, objv)
 		 */
 		Tcl_AppendResult(interp, "could not read \"",
 			TclGetString(filePtr), "\": ", Tcl_PosixError(interp),
-			(char *) NULL);
+			NULL);
 		return TCL_ERROR;
 	    }
 	    goto end;
@@ -1064,7 +1059,7 @@ TclFileAttrsCmd(interp, objc, objv)
 	if (numObjStrings == 0) {
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
 		    "\", there are no file attributes in this filesystem.",
-		    (char *) NULL);
+		    NULL);
 	    goto end;
 	}
 
@@ -1087,7 +1082,7 @@ TclFileAttrsCmd(interp, objc, objv)
 	if (numObjStrings == 0) {
 	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
 		    "\", there are no file attributes in this filesystem.",
-		    (char *) NULL);
+		    NULL);
 	    goto end;
 	}
 
@@ -1098,7 +1093,7 @@ TclFileAttrsCmd(interp, objc, objv)
     	    }
 	    if (i + 1 == objc) {
 		Tcl_AppendResult(interp, "value for \"",
-			TclGetString(objv[i]), "\" missing", (char *) NULL);
+			TclGetString(objv[i]), "\" missing", NULL);
 		goto end;
 	    }
     	    if (Tcl_FSFileAttrsSet(interp, index, filePtr,

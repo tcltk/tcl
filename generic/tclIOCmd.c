@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.9 2005/09/12 15:40:29 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.10 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -26,22 +26,23 @@ typedef struct AcceptCallback {
  * Static functions for this file:
  */
 
-static void	AcceptCallbackProc _ANSI_ARGS_((ClientData callbackData,
-		    Tcl_Channel chan, char *address, int port));
-static void	RegisterTcpServerInterpCleanup _ANSI_ARGS_((Tcl_Interp *interp,
-		    AcceptCallback *acceptCallbackPtr));
-static void	TcpAcceptCallbacksDeleteProc _ANSI_ARGS_((
-		    ClientData clientData, Tcl_Interp *interp));
-static void	TcpServerCloseProc _ANSI_ARGS_((ClientData callbackData));
-static void	UnregisterTcpServerInterpCleanupProc _ANSI_ARGS_((
-		    Tcl_Interp *interp, AcceptCallback *acceptCallbackPtr));
+static void		AcceptCallbackProc(ClientData callbackData,
+			    Tcl_Channel chan, char *address, int port);
+static void		RegisterTcpServerInterpCleanup(Tcl_Interp *interp,
+			    AcceptCallback *acceptCallbackPtr);
+static void		TcpAcceptCallbacksDeleteProc(ClientData clientData,
+			    Tcl_Interp *interp);
+static void		TcpServerCloseProc(ClientData callbackData);
+static void		UnregisterTcpServerInterpCleanupProc(
+			    Tcl_Interp *interp,
+			    AcceptCallback *acceptCallbackPtr);
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_PutsObjCmd --
  *
- *	This procedure is invoked to process the "puts" Tcl command.  See the
+ *	This function is invoked to process the "puts" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -55,11 +56,11 @@ static void	UnregisterTcpServerInterpCleanupProc _ANSI_ARGS_((
 
 	/* ARGSUSED */
 int
-Tcl_PutsObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_PutsObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to puts on. */
     Tcl_Obj *string;		/* String to write. */
@@ -101,9 +102,10 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
 	    int length;
 
 	    arg = Tcl_GetStringFromObj(objv[3], &length);
-	    if ((length != 9) || (strncmp(arg, "nonewline", (size_t) length) != 0)) {
+	    if ((length != 9)
+		    || (strncmp(arg, "nonewline", (size_t) length) != 0)) {
 		Tcl_AppendResult(interp, "bad argument \"", arg,
-			"\": should be \"nonewline\"", (char *) NULL);
+			"\": should be \"nonewline\"", NULL);
 		return TCL_ERROR;
 	    }
 	    channelId = Tcl_GetString(objv[1]);
@@ -124,7 +126,7 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_WRITABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", channelId,
-		"\" wasn't opened for writing", (char *) NULL);
+		"\" wasn't opened for writing", NULL);
 	return TCL_ERROR;
     }
 
@@ -140,15 +142,17 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
     }
     return TCL_OK;
 
-  error:
-    /* TIP #219.
+    /*
+     * TIP #219.
      * Capture error messages put by the driver into the bypass area and put
      * them into the regular interpreter result. Fall back to the regular
      * message if nothing was found in the bypass.
      */
-    if (!TclChanCaughtErrorBypass (interp, chan)) {
+
+  error:
+    if (!TclChanCaughtErrorBypass(interp, chan)) {
 	Tcl_AppendResult(interp, "error writing \"", channelId, "\": ",
-			 Tcl_PosixError(interp), (char *) NULL);
+		Tcl_PosixError(interp), NULL);
     }
     return TCL_ERROR;
 }
@@ -158,7 +162,7 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_FlushObjCmd --
  *
- *	This procedure is called to process the Tcl "flush" command.  See the
+ *	This function is called to process the Tcl "flush" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -172,11 +176,11 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_FlushObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_FlushObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to flush on. */
     char *channelId;
@@ -193,19 +197,21 @@ Tcl_FlushObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_WRITABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", channelId,
-		"\" wasn't opened for writing", (char *) NULL);
+		"\" wasn't opened for writing", NULL);
 	return TCL_ERROR;
     }
 
     if (Tcl_Flush(chan) != TCL_OK) {
-	/* TIP #219.
+	/*
+	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
 	 * put them into the regular interpreter result. Fall back to the
 	 * regular message if nothing was found in the bypass.
 	 */
-	if (!TclChanCaughtErrorBypass (interp, chan)) {
+
+	if (!TclChanCaughtErrorBypass(interp, chan)) {
 	    Tcl_AppendResult(interp, "error flushing \"", channelId, "\": ",
-			     Tcl_PosixError(interp), (char *) NULL);
+		    Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -217,7 +223,7 @@ Tcl_FlushObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_GetsObjCmd --
  *
- *	This procedure is called to process the Tcl "gets" command.  See the
+ *	This function is called to process the Tcl "gets" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -231,11 +237,11 @@ Tcl_FlushObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_GetsObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_GetsObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int lineLen;		/* Length of line just read. */
@@ -254,7 +260,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_READABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", name,
-		"\" wasn't opened for reading", (char *) NULL);
+		"\" wasn't opened for reading", NULL);
 	return TCL_ERROR;
     }
 
@@ -265,15 +271,16 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
 
-	    /* TIP #219.
+	    /*
+	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area
 	     * and put them into the regular interpreter result. Fall back to
 	     * the regular message if nothing was found in the bypass.
 	     */
-	    if (!TclChanCaughtErrorBypass (interp, chan)) {
+	    if (!TclChanCaughtErrorBypass(interp, chan)) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "error reading \"", name, "\": ",
-				 Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -298,7 +305,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ReadObjCmd --
  *
- *	This procedure is invoked to process the Tcl "read" command.  See the
+ *	This function is invoked to process the Tcl "read" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -312,11 +319,11 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_ReadObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_ReadObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
@@ -362,7 +369,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_READABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", name,
-		"\" wasn't opened for reading", (char *) NULL);
+		"\" wasn't opened for reading", NULL);
 	return TCL_ERROR;
     }
     i++;	/* Consumed channel name. */
@@ -385,7 +392,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
 	    newline = 1;
 	} else {
 	    Tcl_AppendResult(interp, "bad argument \"", arg,
-		    "\": should be \"nonewline\"", (char *) NULL);
+		    "\": should be \"nonewline\"", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -394,15 +401,17 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     Tcl_IncrRefCount(resultPtr);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead < 0) {
-	/* TIP #219.
+	/*
+	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
 	 * put them into the regular interpreter result. Fall back to the
 	 * regular message if nothing was found in the bypass.
 	 */
-	if (!TclChanCaughtErrorBypass (interp, chan)) {
+
+	if (!TclChanCaughtErrorBypass(interp, chan)) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "error reading \"", name, "\": ",
-			     Tcl_PosixError(interp), (char *) NULL);
+		    Tcl_PosixError(interp), NULL);
 	    Tcl_DecrRefCount(resultPtr);
 	}
 	return TCL_ERROR;
@@ -431,7 +440,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_SeekObjCmd --
  *
- *	This procedure is invoked to process the Tcl "seek" command. See the
+ *	This function is invoked to process the Tcl "seek" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -446,20 +455,20 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_SeekObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+Tcl_SeekObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_Channel chan;			/* The channel to tell on. */
-    Tcl_WideInt offset;			/* Where to seek? */
-    int mode;				/* How to seek? */
-    Tcl_WideInt result;			/* Of calling Tcl_Seek. */
+    Tcl_Channel chan;		/* The channel to tell on. */
+    Tcl_WideInt offset;		/* Where to seek? */
+    int mode;			/* How to seek? */
+    Tcl_WideInt result;		/* Of calling Tcl_Seek. */
     char *chanName;
     int optionIndex;
     static CONST char *originOptions[] = {
-	"start", "current", "end", (char *) NULL
+	"start", "current", "end", NULL
     };
     static int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
 
@@ -486,15 +495,15 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
 
     result = Tcl_Seek(chan, offset, mode);
     if (result == Tcl_LongAsWide(-1)) {
-	/* TIP #219.
+	/*
+	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
 	 * put them into the regular interpreter result. Fall back to the
 	 * regular message if nothing was found in the bypass.
 	 */
-	if (!TclChanCaughtErrorBypass (interp, chan)) {
-	    Tcl_AppendResult(interp, "error during seek on \"",
-			     chanName, "\": ", Tcl_PosixError(interp),
-			     (char *) NULL);
+	if (!TclChanCaughtErrorBypass(interp, chan)) {
+	    Tcl_AppendResult(interp, "error during seek on \"", chanName,
+		    "\": ", Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -506,7 +515,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
  *
  * Tcl_TellObjCmd --
  *
- *	This procedure is invoked to process the Tcl "tell" command.  See the
+ *	This function is invoked to process the Tcl "tell" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -520,13 +529,13 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_TellObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+Tcl_TellObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_Channel chan;			/* The channel to tell on. */
+    Tcl_Channel chan;		/* The channel to tell on. */
     char *chanName;
     Tcl_WideInt newLoc;
 
@@ -548,11 +557,13 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
 
     newLoc = Tcl_Tell(chan);
 
-    /* TIP #219.
+    /*
+     * TIP #219.
      * Capture error messages put by the driver into the bypass area and put
      * them into the regular interpreter result.
      */
-    if (TclChanCaughtErrorBypass (interp, chan)) {
+
+    if (TclChanCaughtErrorBypass(interp, chan)) {
 	return TCL_ERROR;
     }
 
@@ -565,7 +576,7 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
  *
  * Tcl_CloseObjCmd --
  *
- *	This procedure is invoked to process the Tcl "close" command.  See the
+ *	This function is invoked to process the Tcl "close" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -579,13 +590,13 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_CloseObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_CloseObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_Channel chan;			/* The channel to close. */
+    Tcl_Channel chan;		/* The channel to close. */
     char *arg;
 
     if (objc != 2) {
@@ -635,8 +646,8 @@ Tcl_CloseObjCmd(clientData, interp, objc, objv)
  *
  * Tcl_FconfigureObjCmd --
  *
- *	This procedure is invoked to process the Tcl "fconfigure" command.
- *	See the user documentation for details on what it does.
+ *	This function is invoked to process the Tcl "fconfigure" command. See
+ *	the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -649,17 +660,15 @@ Tcl_CloseObjCmd(clientData, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+Tcl_FconfigureObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     char *chanName, *optionName, *valueName;
-    Tcl_Channel chan;			/* The channel to set a mode on. */
-    int i;				/* Iterate over arg-value pairs. */
-    Tcl_DString ds;			/* DString to hold result of calling
-					 * Tcl_GetChannelOption. */
+    Tcl_Channel chan;		/* The channel to set a mode on. */
+    int i;			/* Iterate over arg-value pairs. */
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -674,14 +683,20 @@ Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
     }
 
     if (objc == 2) {
+	Tcl_DString ds;		/* DString to hold result of calling
+				 * Tcl_GetChannelOption. */
+
 	Tcl_DStringInit(&ds);
-	if (Tcl_GetChannelOption(interp, chan, (char *) NULL, &ds) != TCL_OK) {
+	if (Tcl_GetChannelOption(interp, chan, NULL, &ds) != TCL_OK) {
 	    Tcl_DStringFree(&ds);
 	    return TCL_ERROR;
 	}
 	Tcl_DStringResult(interp, &ds);
 	return TCL_OK;
     } else if (objc == 3) {
+	Tcl_DString ds;		/* DString to hold result of calling
+				 * Tcl_GetChannelOption. */
+
 	Tcl_DStringInit(&ds);
 	optionName = Tcl_GetString(objv[2]);
 	if (Tcl_GetChannelOption(interp, chan, optionName, &ds) != TCL_OK) {
@@ -709,7 +724,7 @@ Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
  *
  * Tcl_EofObjCmd --
  *
- *	This procedure is invoked to process the Tcl "eof" command.  See the
+ *	This function is invoked to process the Tcl "eof" command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -724,11 +739,11 @@ Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_EofObjCmd(unused, interp, objc, objv)
-    ClientData unused;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_EofObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
     int dummy;
@@ -754,7 +769,7 @@ Tcl_EofObjCmd(unused, interp, objc, objv)
  *
  * Tcl_ExecObjCmd --
  *
- *	This procedure is invoked to process the "exec" Tcl command.  See the
+ *	This function is invoked to process the "exec" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -768,14 +783,14 @@ Tcl_EofObjCmd(unused, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_ExecObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+Tcl_ExecObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     /*
-     * This procedure generates an argv array for the string arguments. It
+     * This function generates an argv array for the string arguments. It
      * starts out with stack-allocated space but uses dynamically-allocated
      * storage if needed.
      */
@@ -788,7 +803,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     CONST char *argStorage[NUM_ARGS];
     int argc, background, i, index, keepNewline, result, skip, length;
     static CONST char *options[] = {
-	"-keepnewline",	"--",		NULL
+	"-keepnewline",	"--", NULL
     };
     enum options {
 	EXEC_KEEPNEWLINE, EXEC_LAST
@@ -882,15 +897,17 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     resultPtr = Tcl_NewObj();
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
 	if (Tcl_ReadChars(chan, resultPtr, -1, 0) < 0) {
-	    /* TIP #219.
+	    /*
+	     * TIP #219.
 	     * Capture error messages put by the driver into the bypass area
 	     * and put them into the regular interpreter result. Fall back to
 	     * the regular message if nothing was found in the bypass.
 	     */
+
 	    if (!TclChanCaughtErrorBypass (interp, chan)) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "error reading output from command: ",
-				 Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 		Tcl_DecrRefCount(resultPtr);
 	    }
 	    return TCL_ERROR;
@@ -899,7 +916,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
     /*
      * If the process produced anything on stderr, it will have been returned
-     * in the interpreter result.  It needs to be appended to the result
+     * in the interpreter result. It needs to be appended to the result
      * string.
      */
 
@@ -927,7 +944,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_FblockedObjCmd --
  *
- *	This procedure is invoked to process the Tcl "fblocked" command.  See
+ *	This function is invoked to process the Tcl "fblocked" command. See
  *	the user documentation for details on what it does.
  *
  * Results:
@@ -942,11 +959,11 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_FblockedObjCmd(unused, interp, objc, objv)
-    ClientData unused;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_FblockedObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
     int mode;
@@ -964,7 +981,7 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
     }
     if ((mode & TCL_READABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", arg,
-		"\" wasn't opened for reading", (char *) NULL);
+		"\" wasn't opened for reading", NULL);
 	return TCL_ERROR;
     }
 
@@ -977,7 +994,7 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
  *
  * Tcl_OpenObjCmd --
  *
- *	This procedure is invoked to process the "open" Tcl command.  See the
+ *	This function is invoked to process the "open" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -991,11 +1008,11 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_OpenObjCmd(notUsed, interp, objc, objv)
-    ClientData notUsed;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+Tcl_OpenObjCmd(
+    ClientData notUsed,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     int pipeline, prot;
     char *modeString, *what;
@@ -1068,7 +1085,7 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
-    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), (char *) NULL);
+    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), NULL);
     return TCL_OK;
 }
 
@@ -1095,10 +1112,10 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 
 	/* ARGSUSED */
 static void
-TcpAcceptCallbacksDeleteProc(clientData, interp)
-    ClientData clientData;	/* Data which was passed when the assocdata
+TcpAcceptCallbacksDeleteProc(
+    ClientData clientData,	/* Data which was passed when the assocdata
 				 * was registered. */
-    Tcl_Interp *interp;		/* Interpreter being deleted - not used. */
+    Tcl_Interp *interp)		/* Interpreter being deleted - not used. */
 {
     Tcl_HashTable *hTblPtr;
     Tcl_HashEntry *hPtr;
@@ -1107,10 +1124,9 @@ TcpAcceptCallbacksDeleteProc(clientData, interp)
 
     hTblPtr = (Tcl_HashTable *) clientData;
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
-	    hPtr != (Tcl_HashEntry *) NULL;
-	    hPtr = Tcl_NextHashEntry(&hSearch)) {
+	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
 	acceptCallbackPtr = (AcceptCallback *) Tcl_GetHashValue(hPtr);
-	acceptCallbackPtr->interp = (Tcl_Interp *) NULL;
+	acceptCallbackPtr->interp = NULL;
     }
     Tcl_DeleteHashTable(hTblPtr);
     ckfree((char *) hTblPtr);
@@ -1136,10 +1152,10 @@ TcpAcceptCallbacksDeleteProc(clientData, interp)
  */
 
 static void
-RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr)
-    Tcl_Interp *interp;		/* Interpreter for which we want to be
+RegisterTcpServerInterpCleanup(
+    Tcl_Interp *interp,		/* Interpreter for which we want to be
 				 * informed of deletion. */
-    AcceptCallback *acceptCallbackPtr;
+    AcceptCallback *acceptCallbackPtr)
 				/* The accept callback record whose interp
 				 * field we want set to NULL when the
 				 * interpreter is deleted. */
@@ -1150,14 +1166,16 @@ RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr)
     Tcl_HashEntry *hPtr;	/* Entry for this record. */
     int new;			/* Is the entry new? */
 
-    hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp,
-	    "tclTCPAcceptCallbacks", NULL);
-    if (hTblPtr == (Tcl_HashTable *) NULL) {
+    hTblPtr = (Tcl_HashTable *)
+	    Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+
+    if (hTblPtr == NULL) {
 	hTblPtr = (Tcl_HashTable *) ckalloc((unsigned) sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
 	(void) Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
 		TcpAcceptCallbacksDeleteProc, (ClientData) hTblPtr);
     }
+
     hPtr = Tcl_CreateHashEntry(hTblPtr, (char *) acceptCallbackPtr, &new);
     if (!new) {
 	Tcl_Panic("RegisterTcpServerCleanup: damaged accept record table");
@@ -1185,10 +1203,10 @@ RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr)
  */
 
 static void
-UnregisterTcpServerInterpCleanupProc(interp, acceptCallbackPtr)
-    Tcl_Interp *interp;		/* Interpreter in which the accept callback
+UnregisterTcpServerInterpCleanupProc(
+    Tcl_Interp *interp,		/* Interpreter in which the accept callback
 				 * record was registered. */
-    AcceptCallback *acceptCallbackPtr;
+    AcceptCallback *acceptCallbackPtr)
 				/* The record for which to delete the
 				 * registration. */
 {
@@ -1197,14 +1215,14 @@ UnregisterTcpServerInterpCleanupProc(interp, acceptCallbackPtr)
 
     hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp,
 	    "tclTCPAcceptCallbacks", NULL);
-    if (hTblPtr == (Tcl_HashTable *) NULL) {
+    if (hTblPtr == NULL) {
 	return;
     }
+
     hPtr = Tcl_FindHashEntry(hTblPtr, (char *) acceptCallbackPtr);
-    if (hPtr == (Tcl_HashEntry *) NULL) {
-	return;
+    if (hPtr != NULL) {
+	Tcl_DeleteHashEntry(hPtr);
     }
-    Tcl_DeleteHashEntry(hPtr);
 }
 
 /*
@@ -1225,15 +1243,14 @@ UnregisterTcpServerInterpCleanupProc(interp, acceptCallbackPtr)
  */
 
 static void
-AcceptCallbackProc(callbackData, chan, address, port)
-    ClientData callbackData;		/* The data stored when the callback
-					 * was created in the call to
-					 * Tcl_OpenTcpServer. */
-    Tcl_Channel chan;			/* Channel for the newly accepted
-					 * connection. */
-    char *address;			/* Address of client that was
-					 * accepted. */
-    int port;				/* Port of client that was accepted. */
+AcceptCallbackProc(
+    ClientData callbackData,	/* The data stored when the callback was
+				 * created in the call to
+				 * Tcl_OpenTcpServer. */
+    Tcl_Channel chan,		/* Channel for the newly accepted
+				 * connection. */
+    char *address,		/* Address of client that was accepted. */
+    int port)			/* Port of client that was accepted. */
 {
     AcceptCallback *acceptCallbackPtr;
     Tcl_Interp *interp;
@@ -1249,7 +1266,7 @@ AcceptCallbackProc(callbackData, chan, address, port)
      * data to NULL.
      */
 
-    if (acceptCallbackPtr->interp != (Tcl_Interp *) NULL) {
+    if (acceptCallbackPtr->interp != NULL) {
 
 	script = acceptCallbackPtr->script;
 	interp = acceptCallbackPtr->interp;
@@ -1265,10 +1282,10 @@ AcceptCallbackProc(callbackData, chan, address, port)
 	 * deleted while the script is being evaluated.
 	 */
 
-	Tcl_RegisterChannel((Tcl_Interp *) NULL,  chan);
+	Tcl_RegisterChannel(NULL, chan);
 
 	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
-		" ", address, " ", portBuf, (char *) NULL);
+		" ", address, " ", portBuf, NULL);
 	if (result != TCL_OK) {
 	    Tcl_BackgroundError(interp);
 	    Tcl_UnregisterChannel(interp, chan);
@@ -1279,18 +1296,18 @@ AcceptCallbackProc(callbackData, chan, address, port)
 	 * safe anymore to use "chan", because it may now be deleted.
 	 */
 
-	Tcl_UnregisterChannel((Tcl_Interp *) NULL, chan);
+	Tcl_UnregisterChannel(NULL, chan);
 
 	Tcl_Release((ClientData) interp);
 	Tcl_Release((ClientData) script);
-    } else {
 
+    } else {
 	/*
 	 * The interpreter has been deleted, so there is no useful way to
 	 * utilize the client socket - just close it.
 	 */
 
-	Tcl_Close((Tcl_Interp *) NULL, chan);
+	Tcl_Close(NULL, chan);
     }
 }
 
@@ -1316,15 +1333,15 @@ AcceptCallbackProc(callbackData, chan, address, port)
  */
 
 static void
-TcpServerCloseProc(callbackData)
-    ClientData callbackData;	/* The data passed in the call to
+TcpServerCloseProc(
+    ClientData callbackData)	/* The data passed in the call to
 				 * Tcl_CreateCloseHandler. */
 {
     AcceptCallback *acceptCallbackPtr;
 				/* The actual data. */
 
     acceptCallbackPtr = (AcceptCallback *) callbackData;
-    if (acceptCallbackPtr->interp != (Tcl_Interp *) NULL) {
+    if (acceptCallbackPtr->interp != NULL) {
 	UnregisterTcpServerInterpCleanupProc(acceptCallbackPtr->interp,
 		acceptCallbackPtr);
     }
@@ -1337,8 +1354,8 @@ TcpServerCloseProc(callbackData)
  *
  * Tcl_SocketObjCmd --
  *
- *	This procedure is invoked to process the "socket" Tcl command.  See
- *	the user documentation for details on what it does.
+ *	This function is invoked to process the "socket" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -1350,14 +1367,14 @@ TcpServerCloseProc(callbackData)
  */
 
 int
-Tcl_SocketObjCmd(notUsed, interp, objc, objv)
-    ClientData notUsed;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+Tcl_SocketObjCmd(
+    ClientData notUsed,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     static CONST char *socketOptions[] = {
-	"-async", "-myaddr", "-myport","-server", (char *) NULL
+	"-async", "-myaddr", "-myport","-server", NULL
     };
     enum socketOptions {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
@@ -1382,16 +1399,15 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	if (arg[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[a], socketOptions,
-		"option", TCL_EXACT, &optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[a], socketOptions, "option",
+		TCL_EXACT, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum socketOptions) optionIndex) {
 	case SKT_ASYNC:
 	    if (server == 1) {
 		Tcl_AppendResult(interp,
-			"cannot set -async option for server sockets",
-			(char *) NULL);
+			"cannot set -async option for server sockets", NULL);
 		return TCL_ERROR;
 	    }
 	    async = 1;
@@ -1400,7 +1416,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	    a++;
 	    if (a >= objc) {
 		Tcl_AppendResult(interp,
-			"no argument given for -myaddr option", (char *) NULL);
+			"no argument given for -myaddr option", NULL);
 		return TCL_ERROR;
 	    }
 	    myaddr = Tcl_GetString(objv[a]);
@@ -1411,7 +1427,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	    a++;
 	    if (a >= objc) {
 		Tcl_AppendResult(interp,
-			"no argument given for -myport option", (char *) NULL);
+			"no argument given for -myport option", NULL);
 		return TCL_ERROR;
 	    }
 	    myPortName = Tcl_GetString(objv[a]);
@@ -1423,15 +1439,14 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	case SKT_SERVER:
 	    if (async == 1) {
 		Tcl_AppendResult(interp,
-			"cannot set -async option for server sockets",
-			(char *) NULL);
+			"cannot set -async option for server sockets", NULL);
 		return TCL_ERROR;
 	    }
 	    server = 1;
 	    a++;
 	    if (a >= objc) {
 		Tcl_AppendResult(interp,
-			"no argument given for -server option", (char *) NULL);
+			"no argument given for -server option", NULL);
 		return TCL_ERROR;
 	    }
 	    script = Tcl_GetString(objv[a]);
@@ -1443,7 +1458,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
     if (server) {
 	host = myaddr;		/* NULL implies INADDR_ANY */
 	if (myport != 0) {
-	    Tcl_AppendResult(interp, "Option -myport is not valid for servers",
+	    Tcl_AppendResult(interp, "option -myport is not valid for servers",
 		    NULL);
 	    return TCL_ERROR;
 	}
@@ -1512,7 +1527,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	}
     }
     Tcl_RegisterChannel(interp, chan);
-    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), (char *) NULL);
+    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), NULL);
 
     return TCL_OK;
 }
@@ -1522,7 +1537,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
  *
  * Tcl_FcopyObjCmd --
  *
- *	This procedure is invoked to process the "fcopy" Tcl command.  See the
+ *	This function is invoked to process the "fcopy" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -1536,11 +1551,11 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
  */
 
 int
-Tcl_FcopyObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_FcopyObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
     char *arg;
@@ -1568,7 +1583,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_READABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", arg,
-		"\" wasn't opened for reading", (char *) NULL);
+		"\" wasn't opened for reading", NULL);
 	return TCL_ERROR;
     }
     arg = Tcl_GetString(objv[2]);
@@ -1578,7 +1593,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_WRITABLE) == 0) {
 	Tcl_AppendResult(interp, "channel \"", arg,
-		"\" wasn't opened for writing", (char *) NULL);
+		"\" wasn't opened for writing", NULL);
 	return TCL_ERROR;
     }
 
@@ -1609,7 +1624,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ChanTruncateObjCmd --
  *
- *	This procedure is invoked to process the "chan truncate" Tcl command.
+ *	This function is invoked to process the "chan truncate" Tcl command.
  *	See the user documentation for details on what it does.
  *
  * Results:
@@ -1622,11 +1637,11 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
  */
 
 int
-TclChanTruncateObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+TclChanTruncateObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
     int mode;
@@ -1672,7 +1687,7 @@ TclChanTruncateObjCmd(dummy, interp, objc, objv)
 
     if (Tcl_TruncateChannel(chan, length) != TCL_OK) {
 	Tcl_AppendResult(interp, "error during truncate on \"", chanName,
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
+		"\": ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
 

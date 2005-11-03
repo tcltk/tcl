@@ -1,24 +1,24 @@
-/* 
+/*
  * tclClock.c --
  *
- *	Contains the time and date related commands.  This code
- *	is derived from the time and date facilities of TclX,
- *	by Mark Diekhans and Karl Lehenbauer.
+ *	Contains the time and date related commands. This code is derived from
+ *	the time and date facilities of TclX, by Mark Diekhans and Karl
+ *	Lehenbauer.
  *
  * Copyright 1991-1995 Karl Lehenbauer and Mark Diekhans.
  * Copyright (c) 1995 Sun Microsystems, Inc.
  * Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.12 2005/08/15 17:23:07 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.13 2005/11/03 17:52:07 dgp Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * Windows has mktime.  The configurators do not check.
+ * Windows has mktime. The configurators do not check.
  */
 
 #ifdef __WIN32__
@@ -26,15 +26,15 @@
 #endif
 
 /*
- * Thread specific data block holding a 'struct tm' for the 'gmtime'
- * and 'localtime' library calls.
+ * Thread specific data block holding a 'struct tm' for the 'gmtime' and
+ * 'localtime' library calls.
  */
 
 static Tcl_ThreadDataKey tmKey;
 
 /*
- * Mutex protecting 'gmtime', 'localtime' and 'mktime' calls
- * and the statics in the date parsing code.
+ * Mutex protecting 'gmtime', 'localtime' and 'mktime' calls and the statics
+ * in the date parsing code.
  */
 
 TCL_DECLARE_MUTEX(clockMutex)
@@ -43,8 +43,8 @@ TCL_DECLARE_MUTEX(clockMutex)
  * Function prototypes for local procedures in this file:
  */
 
-static struct tm* ThreadSafeLocalTime _ANSI_ARGS_(( CONST time_t* ));
-static void TzsetIfNecessary _ANSI_ARGS_(( void ));
+static struct tm *	ThreadSafeLocalTime(CONST time_t *);
+static void		TzsetIfNecessary(void);
 
 /*
  *----------------------------------------------------------------------
@@ -69,26 +69,28 @@ static void TzsetIfNecessary _ANSI_ARGS_(( void ));
  */
 
 int
-TclClockGetenvObjCmd( ClientData clientData,
-		      Tcl_Interp* interp,
-		      int objc,
-		      Tcl_Obj *CONST objv[] )
+TclClockGetenvObjCmd(
+    ClientData clientData,
+    Tcl_Interp* interp,
+    int objc,
+    Tcl_Obj *CONST objv[])
 {
 
     CONST char* varName;
     CONST char* varValue;
-    if ( objc != 2 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "name" );
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    varName = Tcl_GetStringFromObj( objv[1], NULL );
-    varValue = getenv( varName );
-    if ( varValue == NULL ) {
-	Tcl_SetObjResult( interp,
-			  Tcl_NewStringObj( "variable not found", -1 ) );
+    varName = Tcl_GetStringFromObj(objv[1], NULL);
+    varValue = getenv(varName);
+    if (varValue == NULL) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("variable not found", -1));
 	return TCL_ERROR;
     } else {
-	Tcl_SetObjResult( interp, Tcl_NewStringObj( varValue, -1 ) );
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
 	return TCL_OK;
     }
 }
@@ -108,6 +110,7 @@ TclClockGetenvObjCmd( ClientData clientData,
  *	<tick> -- A count of seconds from the Posix epoch.
  *
  * Results:
+
  *	Returns a standard Tcl result.  The object result is a Tcl
  *	list containing the year, month, day, hour, minute, and second
  *	fields of the local time.  It may return an error if the
@@ -128,14 +131,11 @@ TclClockGetenvObjCmd( ClientData clientData,
  */
 
 int
-TclClockLocaltimeObjCmd( ClientData clientData,
-				/* Unused */
-			 Tcl_Interp* interp,
-				/* Tcl interpreter */
-			 int objc,
-				/* Parameter count */
-			 Tcl_Obj* CONST* objv )
-				/* Parameter vector */
+TclClockLocaltimeObjCmd(
+    ClientData clientData,	/* Unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj* CONST* objv)	/* Parameter vector */
 {
     Tcl_WideInt tick;		/* Time to convert */
     time_t tock;
@@ -143,49 +143,50 @@ TclClockLocaltimeObjCmd( ClientData clientData,
 
     Tcl_Obj* returnVec[ 6 ];
 
-    /* Check args */
+    /*
+     * Check args
+     */
 
-    if ( objc != 2 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "seconds" );
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "seconds");
 	return TCL_ERROR;
     }
-    if ( Tcl_GetWideIntFromObj( interp, objv[1], &tick ) != TCL_OK ) {
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &tick) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    /* Convert the time, checking for overflow */
+    /*
+     * Convert the time, checking for overflow
+     */
 
     tock = (time_t) tick;
-    if ( (Tcl_WideInt) tock != tick ) {
-	Tcl_SetObjResult
-	    ( interp, 
-	      Tcl_NewStringObj("number too large to represent as a Posix time", 
-			       -1) );
-	Tcl_SetErrorCode( interp, "CLOCK", "argTooLarge", (char*) NULL );
+    if ((Tcl_WideInt) tock != tick) {
+	Tcl_AppendResult(interp,
+		"number too large to represent as a Posix time", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
 	return TCL_ERROR;
     }
     TzsetIfNecessary();
-    timeVal = ThreadSafeLocalTime( &tock );
-    if ( timeVal == NULL ) {
-	Tcl_SetObjResult(interp, 
-			 Tcl_NewStringObj("localtime failed (clock "
-					  "value may be too large/"
-					  "small to represent)", -1));
-	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", (char*) NULL);
+    timeVal = ThreadSafeLocalTime(&tock);
+    if (timeVal == NULL) {
+	Tcl_AppendResult(interp, "localtime failed (clock value may be too ",
+		"large/small to represent)", NULL);
+	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", NULL);
 	return TCL_ERROR;
     }
 
-    /* Package the results */
+    /*
+     * Package the results.
+     */
 
-    returnVec[0] = Tcl_NewIntObj( timeVal->tm_year + 1900 );
-    returnVec[1] = Tcl_NewIntObj( timeVal->tm_mon + 1);
-    returnVec[2] = Tcl_NewIntObj( timeVal->tm_mday );
-    returnVec[3] = Tcl_NewIntObj( timeVal->tm_hour );
-    returnVec[4] = Tcl_NewIntObj( timeVal->tm_min );
-    returnVec[5] = Tcl_NewIntObj( timeVal->tm_sec );
-    Tcl_SetObjResult( interp, Tcl_NewListObj( 6, returnVec ) );
+    returnVec[0] = Tcl_NewIntObj(timeVal->tm_year + 1900);
+    returnVec[1] = Tcl_NewIntObj(timeVal->tm_mon + 1);
+    returnVec[2] = Tcl_NewIntObj(timeVal->tm_mday);
+    returnVec[3] = Tcl_NewIntObj(timeVal->tm_hour);
+    returnVec[4] = Tcl_NewIntObj(timeVal->tm_min);
+    returnVec[5] = Tcl_NewIntObj(timeVal->tm_sec);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(6, returnVec));
     return TCL_OK;
-
 }
 
 /*
@@ -206,8 +207,8 @@ TclClockLocaltimeObjCmd( ClientData clientData,
  */
 
 static struct tm *
-ThreadSafeLocalTime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+ThreadSafeLocalTime(
+    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -239,8 +240,7 @@ ThreadSafeLocalTime(timePtr)
  *
  * TclClockMktimeObjCmd --
  *
- *	Determine seconds from the epoch, given the fields of a local
- *	time.
+ *	Determine seconds from the epoch, given the fields of a local time.
  *
  * Usage:
  *	mktime <year> <month> <day> <hour> <minute> <second>
@@ -257,8 +257,8 @@ ThreadSafeLocalTime(timePtr)
  *	Returns the given local time.
  *
  * Errors:
- *	Returns an error if the 'mktime' function does not exist in the
- *	C library, or if the given time cannot be converted.
+ *	Returns an error if the 'mktime' function does not exist in the C
+ *	library, or if the given time cannot be converted.
  *
  * Side effects:
  *	None.
@@ -267,18 +267,14 @@ ThreadSafeLocalTime(timePtr)
  */
 
 int
-TclClockMktimeObjCmd(  ClientData clientData,
-		       			/* Unused */
-		       Tcl_Interp* interp,
-		       			/* Tcl interpreter */
-		       int objc,
-		       			/* Parameter count */
-		       Tcl_Obj* CONST* objv )
-     					/* Parameter vector */
+TclClockMktimeObjCmd(
+    ClientData clientData,	/* Unused */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *CONST *objv)	/* Parameter vector */
 {
 #ifndef HAVE_MKTIME
-    Tcl_SetObjResult( interp,
-		      Tcl_NewStringObj( "cannot determine local time", -1 ) );
+    Tcl_AppendResult(interp, "cannot determine local time", NULL);
     return TCL_ERROR;
 #else
 
@@ -287,34 +283,35 @@ TclClockMktimeObjCmd(  ClientData clientData,
     time_t convertedTime;	/* Time converted from mktime */
     int localErrno;
 
-    /* Convert parameters */
+    /*
+     * Convert parameters
+     */
 
-    if ( objc != 7 ) {
-	Tcl_WrongNumArgs( interp, 1, objv,
-			  "year month day hour minute second" );
+    if (objc != 7) {
+	Tcl_WrongNumArgs(interp, 1, objv, "year month day hour minute second");
 	return TCL_ERROR;
     }
-    if ( Tcl_GetIntFromObj( interp, objv[1], &i ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
     toConvert.tm_year = i - 1900;
-    if ( Tcl_GetIntFromObj( interp, objv[2], &i ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[2], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
     toConvert.tm_mon = i - 1;
-    if ( Tcl_GetIntFromObj( interp, objv[3], &i ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
     toConvert.tm_mday = i;
-    if ( Tcl_GetIntFromObj( interp, objv[4], &i ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[4], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
     toConvert.tm_hour = i;
-    if ( Tcl_GetIntFromObj( interp, objv[5], &i ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[5], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
     toConvert.tm_min = i;
-    if ( Tcl_GetIntFromObj( interp, objv[6], &i ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[6], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
     toConvert.tm_sec = i;
@@ -322,34 +319,31 @@ TclClockMktimeObjCmd(  ClientData clientData,
     toConvert.tm_wday = -1;
     toConvert.tm_yday = -1;
 
-    /* Convert the time.  It is rumored that mktime is not thread
-     * safe on some platforms. */
+    /*
+     * Convert the time. It is rumored that mktime is not thread safe on some
+     * platforms.
+     */
 
     TzsetIfNecessary();
-    Tcl_MutexLock( &clockMutex );
+    Tcl_MutexLock(&clockMutex);
     errno = 0;
-    convertedTime = mktime( &toConvert );
+    convertedTime = mktime(&toConvert);
     localErrno = errno;
-    Tcl_MutexUnlock( &clockMutex );
+    Tcl_MutexUnlock(&clockMutex);
 
-    /* Return the converted time, or an error if conversion fails */
+    /*
+     * Return the converted time, or an error if conversion fails.
+     */
 
-    if ( localErrno != 0
-	 || ( convertedTime == -1
-	      && toConvert.tm_yday == -1 ) ) {
-	Tcl_SetObjResult
-	    ( interp,
-	      Tcl_NewStringObj( "time value too large/small to represent", 
-				-1 ) );
+    if (localErrno != 0 || (convertedTime == -1 && toConvert.tm_yday == -1)) {
+	Tcl_AppendResult(interp, "time value too large/small to represent",
+		NULL);
 	return TCL_ERROR;
-    } else {
-	Tcl_SetObjResult( interp,
-			  Tcl_NewWideIntObj( (Tcl_WideInt) convertedTime ) );
-	return TCL_OK;
     }
 
-#endif
-
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) convertedTime));
+    return TCL_OK;
+#endif /* HAVE_MKTIME */
 }
 
 /*----------------------------------------------------------------------
@@ -364,21 +358,21 @@ TclClockMktimeObjCmd(  ClientData clientData,
  * Side effects:
  *	None.
  *
- * This function implements the 'clock clicks' Tcl command.  Refer
- * to the user documentation for details on what it does.
+ * This function implements the 'clock clicks' Tcl command. Refer to the user
+ * documentation for details on what it does.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclClockClicksObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Client data is unused */
-    Tcl_Interp* interp;		/* Tcl interpreter */
-    int objc;			/* Parameter count */
-    Tcl_Obj* CONST* objv;	/* Parameter values */
+TclClockClicksObjCmd(
+    ClientData clientData,	/* Client data is unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj* CONST* objv)	/* Parameter values */
 {
     static CONST char *clicksSwitches[] = {
-	"-milliseconds", "-microseconds", (char*) NULL
+	"-milliseconds", "-microseconds", NULL
     };
     enum ClicksSwitch {
 	CLICKS_MILLIS,   CLICKS_MICROS,   CLICKS_NATIVE
@@ -407,17 +401,9 @@ TclClockClicksObjCmd(clientData, interp, objc, objv)
 		now.sec * 1000 + now.usec / 1000 ) );
 	break;
     case CLICKS_NATIVE:
-#if 0
-	/* 
-	 * The following code will be used once this is incorporated
-	 * into Tcl.  But TEA bugs prevent it for right now. :(
-	 * So we fall through this case and return the microseconds
-	 * instead.
-	 */
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
 		TclpGetClicks()));
 	break;
-#endif
     case CLICKS_MICROS:
 	Tcl_GetTime(&now);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
@@ -440,20 +426,21 @@ TclClockClicksObjCmd(clientData, interp, objc, objv)
  * Side effects:
  *	None.
  *
- * This function implements the 'clock milliseconds' Tcl command.  Refer
- * to the user documentation for details on what it does.
+ * This function implements the 'clock milliseconds' Tcl command. Refer to the
+ * user documentation for details on what it does.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclClockMillisecondsObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Client data is unused */
-    Tcl_Interp* interp;		/* Tcl interpreter */
-    int objc;			/* Parameter count */
-    Tcl_Obj* CONST* objv;	/* Parameter values */
+TclClockMillisecondsObjCmd(
+    ClientData clientData,	/* Client data is unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj* CONST* objv)	/* Parameter values */
 {
     Tcl_Time now;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
@@ -476,20 +463,21 @@ TclClockMillisecondsObjCmd(clientData, interp, objc, objv)
  * Side effects:
  *	None.
  *
- * This function implements the 'clock microseconds' Tcl command.  Refer
- * to the user documentation for details on what it does.
+ * This function implements the 'clock microseconds' Tcl command. Refer to the
+ * user documentation for details on what it does.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclClockMicrosecondsObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Client data is unused */
-    Tcl_Interp* interp;		/* Tcl interpreter */
-    int objc;			/* Parameter count */
-    Tcl_Obj* CONST* objv;	/* Parameter values */
+TclClockMicrosecondsObjCmd(
+    ClientData clientData,	/* Client data is unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj* CONST* objv)	/* Parameter values */
 {
     Tcl_Time now;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
@@ -512,20 +500,21 @@ TclClockMicrosecondsObjCmd(clientData, interp, objc, objv)
  * Side effects:
  *	None.
  *
- * This function implements the 'clock seconds' Tcl command.  Refer
- * to the user documentation for details on what it does.
+ * This function implements the 'clock seconds' Tcl command. Refer to the user
+ * documentation for details on what it does.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclClockSecondsObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Client data is unused */
-    Tcl_Interp* interp;		/* Tcl interpreter */
-    int objc;			/* Parameter count */
-    Tcl_Obj* CONST* objv;	/* Parameter values */
+TclClockSecondsObjCmd(
+    ClientData clientData,	/* Client data is unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj* CONST* objv)	/* Parameter values */
 {
     Tcl_Time now;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
@@ -553,27 +542,33 @@ TclClockSecondsObjCmd(clientData, interp, objc, objv)
  */
 
 static void
-TzsetIfNecessary()
+TzsetIfNecessary(void)
 {
     static char* tzWas = NULL;	/* Previous value of TZ, protected by
 				 * clockMutex. */
     CONST char* tzIsNow;	/* Current value of TZ */
 
-    Tcl_MutexLock( &clockMutex );
-    tzIsNow = getenv( "TZ" );
-    if ( tzIsNow != NULL
-	 && ( tzWas == NULL || strcmp( tzIsNow, tzWas ) != 0 ) ) {
+    Tcl_MutexLock(&clockMutex);
+    tzIsNow = getenv("TZ");
+    if (tzIsNow != NULL && (tzWas == NULL || strcmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if ( tzWas != NULL ) {
-	    ckfree( tzWas );
+	if (tzWas != NULL) {
+	    ckfree(tzWas);
 	}
-	tzWas = ckalloc( strlen( tzIsNow ) + 1 );
-	strcpy( tzWas, tzIsNow );
-    } else if ( tzIsNow == NULL && tzWas != NULL ) {
+	tzWas = ckalloc(strlen(tzIsNow) + 1);
+	strcpy(tzWas, tzIsNow);
+    } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	ckfree( tzWas );
+	ckfree(tzWas);
 	tzWas = NULL;
     }
-    Tcl_MutexUnlock( &clockMutex );
+    Tcl_MutexUnlock(&clockMutex);
 }
-
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

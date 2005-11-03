@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.10 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.11 2005/11/03 17:52:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -136,21 +136,19 @@ static Tcl_HashTable opHashTable;
  * Declarations for local procedures to this file:
  */
 
-static int		CompileCondExpr _ANSI_ARGS_((
+static int		CompileCondExpr(
 			    Tcl_Token *exprTokenPtr, ExprInfo *infoPtr,
-			    CompileEnv *envPtr, Tcl_Token **endPtrPtr));
-static int		CompileLandOrLorExpr _ANSI_ARGS_((
+			    CompileEnv *envPtr, Tcl_Token **endPtrPtr);
+static int		CompileLandOrLorExpr(
 			    Tcl_Token *exprTokenPtr, int opIndex,
 			    ExprInfo *infoPtr, CompileEnv *envPtr,
-			    Tcl_Token **endPtrPtr));
-static int		CompileMathFuncCall _ANSI_ARGS_((
-			    Tcl_Token *exprTokenPtr, CONST char *funcName,
-			    ExprInfo *infoPtr, CompileEnv *envPtr,
-			    Tcl_Token **endPtrPtr));
-static int		CompileSubExpr _ANSI_ARGS_((
-			    Tcl_Token *exprTokenPtr, ExprInfo *infoPtr,
-			    CompileEnv *envPtr));
-static void		LogSyntaxError _ANSI_ARGS_((ExprInfo *infoPtr));
+			    Tcl_Token **endPtrPtr);
+static int		CompileMathFuncCall(Tcl_Token *exprTokenPtr,
+			    CONST char *funcName, ExprInfo *infoPtr,
+			    CompileEnv *envPtr, Tcl_Token **endPtrPtr);
+static int		CompileSubExpr(Tcl_Token *exprTokenPtr,
+			    ExprInfo *infoPtr, CompileEnv *envPtr);
+static void		LogSyntaxError(ExprInfo *infoPtr);
 
 /*
  * Macro used to debug the execution of the expression compiler.
@@ -189,13 +187,13 @@ static void		LogSyntaxError _ANSI_ARGS_((ExprInfo *infoPtr));
  */
 
 int
-TclCompileExpr(interp, script, numBytes, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    CONST char *script;		/* The source script to compile. */
-    int numBytes;		/* Number of bytes in script. If < 0, the
+TclCompileExpr(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    CONST char *script,		/* The source script to compile. */
+    int numBytes,		/* Number of bytes in script. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     ExprInfo info;
     Tcl_Parse parse;
@@ -286,7 +284,7 @@ TclCompileExpr(interp, script, numBytes, envPtr)
  */
 
 void
-TclFinalizeCompilation()
+TclFinalizeCompilation(void)
 {
     Tcl_MutexLock(&opMutex);
     if (opTableInitialized) {
@@ -317,12 +315,12 @@ TclFinalizeCompilation()
  */
 
 static int
-CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
-    Tcl_Token *exprTokenPtr;	/* Points to TCL_TOKEN_SUB_EXPR token to
+CompileSubExpr(
+    Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token to
 				 * compile. */
-    ExprInfo *infoPtr;		/* Describes the compilation state for the
+    ExprInfo *infoPtr,		/* Describes the compilation state for the
 				 * expression being compiled. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Interp *interp = infoPtr->interp;
     Tcl_Token *tokenPtr, *endPtr, *afterSubexprPtr;
@@ -366,7 +364,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	break;
  
     case TCL_TOKEN_BS:
-	length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL, buffer);
+	length = Tcl_UtfBackslash(tokenPtr->start, NULL, buffer);
 	if (length > 0) {
 	    objIndex = TclRegisterNewLiteral(envPtr, buffer, length);
 	} else {
@@ -554,15 +552,15 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
  */
 
 static int
-CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
-    Tcl_Token *exprTokenPtr;	/* Points to TCL_TOKEN_SUB_EXPR token
+CompileLandOrLorExpr(
+    Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the "&&" or "||" operator. */
-    int opIndex;		/* A code describing the expression operator:
+    int opIndex,		/* A code describing the expression operator:
 				 * either OP_LAND or OP_LOR. */
-    ExprInfo *infoPtr;		/* Describes the compilation state for the
+    ExprInfo *infoPtr,		/* Describes the compilation state for the
 				 * expression being compiled. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
-    Tcl_Token **endPtrPtr;	/* If successful, a pointer to the token just
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    Tcl_Token **endPtrPtr)	/* If successful, a pointer to the token just
 				 * after the last token in the subexpression
 				 * is stored here. */
 {
@@ -672,13 +670,13 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
  */
 
 static int
-CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
-    Tcl_Token *exprTokenPtr;	/* Points to TCL_TOKEN_SUB_EXPR token
+CompileCondExpr(
+    Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the "?" operator. */
-    ExprInfo *infoPtr;		/* Describes the compilation state for the
+    ExprInfo *infoPtr,		/* Describes the compilation state for the
 				 * expression being compiled. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
-    Tcl_Token **endPtrPtr;	/* If successful, a pointer to the token just
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    Tcl_Token **endPtrPtr)	/* If successful, a pointer to the token just
 				 * after the last token in the subexpression
 				 * is stored here. */
 {
@@ -797,14 +795,14 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
  */
 
 static int
-CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
-    Tcl_Token *exprTokenPtr;	/* Points to TCL_TOKEN_SUB_EXPR token
+CompileMathFuncCall(
+    Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the math function call. */
-    CONST char *funcName;	/* Name of the math function. */
-    ExprInfo *infoPtr;		/* Describes the compilation state for the
+    CONST char *funcName,	/* Name of the math function. */
+    ExprInfo *infoPtr,		/* Describes the compilation state for the
 				 * expression being compiled. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
-    Tcl_Token **endPtrPtr;	/* If successful, a pointer to the token just
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    Tcl_Token **endPtrPtr)	/* If successful, a pointer to the token just
 				 * after the last token in the subexpression
 				 * is stored here. */
 {
@@ -877,12 +875,13 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
  */
 
 static void
-LogSyntaxError(infoPtr)
-    ExprInfo *infoPtr;		/* Describes the compilation state for the
+LogSyntaxError(
+    ExprInfo *infoPtr)		/* Describes the compilation state for the
 				 * expression being compiled. */
 {
     Tcl_Obj *result =
 	    Tcl_NewStringObj("syntax error in expression \"", -1);
+
     TclAppendLimitedToObj(result, infoPtr->expr,
 	    (int)(infoPtr->lastChar - infoPtr->expr), 60, "");
     Tcl_AppendToObj(result, "\"", -1);

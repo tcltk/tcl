@@ -1,22 +1,22 @@
-/* 
+/*
  * tclStubLib.c --
  *
- *	Stub object that will be statically linked into extensions that wish
+ *	Stub object that will be statically linked into extensions that want
  *	to access Tcl.
  *
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 1998 Paul Duffin.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.2 2004/04/09 20:58:16 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.3 2005/11/03 17:52:09 dgp Exp $
  */
 
 /*
- * We need to ensure that we use the stub macros so that this file contains
- * no references to any of the stub functions.  This will make it possible
- * to build an extension that references Tcl_InitStubs but doesn't end up
+ * We need to ensure that we use the stub macros so that this file contains no
+ * references to any of the stub functions. This will make it possible to
+ * build an extension that references Tcl_InitStubs but doesn't end up
  * including the rest of the stub functions.
  */
 
@@ -28,7 +28,7 @@
 #include "tclInt.h"
 
 /*
- * Ensure that Tcl_InitStubs is built as an exported symbol.  The other stub
+ * Ensure that Tcl_InitStubs is built as an exported symbol. The other stub
  * functions should be built as non-exported symbols.
  */
 
@@ -40,20 +40,21 @@ TclPlatStubs *tclPlatStubsPtr = NULL;
 TclIntStubs *tclIntStubsPtr = NULL;
 TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
-static TclStubs *	HasStubSupport _ANSI_ARGS_((Tcl_Interp *interp));
+static TclStubs *	HasStubSupport(Tcl_Interp *interp);
 
 static TclStubs *
-HasStubSupport (interp)
-    Tcl_Interp *interp;
+HasStubSupport(
+    Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
 	return iPtr->stubTable;
     }
-    interp->result = "This interpreter does not support stubs-enabled extensions.";
-    interp->freeProc = TCL_STATIC;
 
+    interp->result =
+	    "This interpreter does not support stubs-enabled extensions.";
+    interp->freeProc = TCL_STATIC;
     return NULL;
 }
 
@@ -62,12 +63,12 @@ HasStubSupport (interp)
  *
  * Tcl_InitStubs --
  *
- *	Tries to initialise the stub table pointers and ensures that
- *	the correct version of Tcl is loaded.
+ *	Tries to initialise the stub table pointers and ensures that the
+ *	correct version of Tcl is loaded.
  *
  * Results:
- *	The actual version of Tcl that satisfies the request, or
- *	NULL to indicate that an error occurred.
+ *	The actual version of Tcl that satisfies the request, or NULL to
+ *	indicate that an error occurred.
  *
  * Side effects:
  *	Sets the stub table pointers.
@@ -80,19 +81,19 @@ HasStubSupport (interp)
 #endif
 
 CONST char *
-Tcl_InitStubs (interp, version, exact)
-    Tcl_Interp *interp;
-    CONST char *version;
-    int exact;
+Tcl_InitStubs(
+    Tcl_Interp *interp,
+    CONST char *version,
+    int exact)
 {
     CONST char *actualVersion = NULL;
     TclStubs *tmp;
     TclStubs **tmpp;
 
     /*
-     * We can't optimize this check by caching tclStubsPtr because
-     * that prevents apps from being able to load/unload Tcl dynamically
-     * multiple times. [Bug 615304]
+     * We can't optimize this check by caching tclStubsPtr because that
+     * prevents apps from being able to load/unload Tcl dynamically multiple
+     * times. [Bug 615304]
      */
 
     tclStubsPtr = HasStubSupport(interp);
@@ -100,7 +101,10 @@ Tcl_InitStubs (interp, version, exact)
 	return NULL;
     }
 
-    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+    /*
+     * This is needed to satisfy GCC 3.3's strict aliasing rules.
+     */
+
     tmpp = &tmp;
     actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact,
 	    (ClientData *) tmpp);
@@ -118,6 +122,14 @@ Tcl_InitStubs (interp, version, exact)
 	tclIntStubsPtr = NULL;
 	tclIntPlatStubsPtr = NULL;
     }
-    
+
     return actualVersion;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

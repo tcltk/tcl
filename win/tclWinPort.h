@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.8 2005/10/18 20:47:32 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.9 2005/11/03 17:52:35 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -412,6 +412,17 @@
 #	error "You must use the -j switch to ensure char is signed."
 #   endif
 #endif
+
+
+/*
+ * MSVC 8.0 started to mark many standard C library functions depreciated
+ * including the *printf family and others. Tell it to shut up.
+ * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
+ */
+#if _MSC_VER >= 1400
+#pragma warning(disable:4996)
+#endif
+
 
 /*
  * There is no platform-specific panic routine for Windows in the Tcl internals.

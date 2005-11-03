@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.10 2005/07/26 04:12:37 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.11 2005/11/03 17:52:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -464,7 +464,7 @@ NativeGetTime(timePtr, clientData)
 	    timeInfo.fileTimeLastCall.QuadPart = curFileTime;
 	    timeInfo.perfCounterLastCall.QuadPart = curCounter.QuadPart;
 	    usecSincePosixEpoch = (curFileTime - posixEpoch.QuadPart) / 10;
-	    timePtr->sec = (time_t) (usecSincePosixEpoch / 1000000);
+	    timePtr->sec = (long) (usecSincePosixEpoch / 1000000);
 	    timePtr->usec = (unsigned long) (usecSincePosixEpoch % 1000000);
 	    useFtime = 0;
 	}
@@ -478,7 +478,7 @@ NativeGetTime(timePtr, clientData)
 	 */
 
 	ftime(&t);
-	timePtr->sec = t.time;
+	timePtr->sec = (long)t.time;
 	timePtr->usec = t.millitm * 1000;
     }
 }
@@ -701,9 +701,9 @@ TclpGetDate(t, useGMT)
 	    }
 
 	    time /= 24;
-	    tmPtr->tm_mday += time;
-	    tmPtr->tm_yday += time;
-	    tmPtr->tm_wday = (tmPtr->tm_wday + time) % 7;
+	    tmPtr->tm_mday += (int)time;
+	    tmPtr->tm_yday += (int)time;
+	    tmPtr->tm_wday = (tmPtr->tm_wday + (int)time) % 7;
 	}
     } else {
 	tmPtr = ComputeGMT(t);
@@ -744,8 +744,8 @@ ComputeGMT(tp)
      * Compute the 4 year span containing the specified time.
      */
 
-    tmp = *tp / SECSPER4YEAR;
-    rem = *tp % SECSPER4YEAR;
+    tmp = (long)(*tp / SECSPER4YEAR);
+    rem = (long)(*tp % SECSPER4YEAR);
 
     /*
      * Correct for weird mod semantics so the remainder is always positive.
@@ -812,7 +812,7 @@ ComputeGMT(tp)
      * Compute day of week.  Epoch started on a Thursday.
      */
 
-    tmPtr->tm_wday = (*tp / SECSPERDAY) + 4;
+    tmPtr->tm_wday = (long)(*tp / SECSPERDAY) + 4;
     if ((*tp % SECSPERDAY) < 0) {
 	tmPtr->tm_wday--;
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.6 2005/07/26 04:12:34 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.7 2005/11/03 17:52:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -44,12 +44,12 @@ static char *lastTZ = NULL;	/* Holds the last setting of the TZ
  * Static functions declared in this file.
  */
 
-static void		SetTZIfNecessary _ANSI_ARGS_((void));
-static void		CleanupMemory _ANSI_ARGS_((ClientData));
-static void		NativeScaleTime _ANSI_ARGS_((Tcl_Time *timebuf,
-			    ClientData clientData));
-static void		NativeGetTime _ANSI_ARGS_((Tcl_Time *timebuf,
-			    ClientData clientData));
+static void		SetTZIfNecessary(void);
+static void		CleanupMemory(ClientData clientData);
+static void		NativeScaleTime(Tcl_Time *timebuf,
+			    ClientData clientData);
+static void		NativeGetTime(Tcl_Time *timebuf,
+			    ClientData clientData);
 
 /*
  * TIP #233 (Virtualized Time): Data for the time hooks, if any.
@@ -77,9 +77,9 @@ ClientData tclTimeClientData = NULL;
  */
 
 unsigned long
-TclpGetSeconds()
+TclpGetSeconds(void)
 {
-    return time((time_t *) NULL);
+    return time(NULL);
 }
 
 /*
@@ -102,7 +102,7 @@ TclpGetSeconds()
  */
 
 unsigned long
-TclpGetClicks()
+TclpGetClicks(void)
 {
     unsigned long now;
 
@@ -149,8 +149,8 @@ TclpGetClicks()
  */
 
 int
-TclpGetTimeZone(currentTime)
-    unsigned long currentTime;
+TclpGetTimeZone(
+    unsigned long currentTime)
 {
     int timeZone;
 
@@ -172,7 +172,7 @@ TclpGetTimeZone(currentTime)
     time_t curTime = (time_t) currentTime;
     struct tm *timeDataPtr = TclpLocaltime(&curTime);
 
-    timeZone = timeDataPtr->tm_tzadj  / 60;
+    timeZone = timeDataPtr->tm_tzadj / 60;
     if (timeDataPtr->tm_isdst) {
 	timeZone += 60;
     }
@@ -267,8 +267,8 @@ TclpGetTimeZone(currentTime)
  */
 
 void
-Tcl_GetTime(timePtr)
-    Tcl_Time *timePtr;		/* Location to store time information. */
+Tcl_GetTime(
+    Tcl_Time *timePtr)		/* Location to store time information. */
 {
     (*tclGetTimeProcPtr) (timePtr, tclTimeClientData);
 }
@@ -292,9 +292,9 @@ Tcl_GetTime(timePtr)
  */
 
 struct tm *
-TclpGetDate(time, useGMT)
-    CONST time_t *time;
-    int useGMT;
+TclpGetDate(
+    CONST time_t *time,
+    int useGMT)
 {
     if (useGMT) {
 	return TclpGmtime(time);
@@ -321,8 +321,8 @@ TclpGetDate(time, useGMT)
  */
 
 struct tm *
-TclpGmtime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+TclpGmtime(
+    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -347,9 +347,9 @@ TclpGmtime(timePtr)
  * Forwarder for obsolete item in Stubs
  */
 
-struct tm*
-TclpGmtime_unix(timePtr)
-    CONST time_t *timePtr;
+struct tm *
+TclpGmtime_unix(
+    CONST time_t *timePtr)
 {
     return TclpGmtime(timePtr);
 }
@@ -372,8 +372,8 @@ TclpGmtime_unix(timePtr)
  */
 
 struct tm *
-TclpLocaltime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+TclpLocaltime(
+    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -398,8 +398,8 @@ TclpLocaltime(timePtr)
  * Forwarder for obsolete item in Stubs
  */
 struct tm*
-TclpLocaltime_unix(timePtr)
-    CONST time_t *timePtr;
+TclpLocaltime_unix(
+    CONST time_t *timePtr)
 {
     return TclpLocaltime(timePtr);
 }
@@ -422,10 +422,10 @@ TclpLocaltime_unix(timePtr)
  */
 
 void
-Tcl_SetTimeProc(getProc, scaleProc, clientData)
-    Tcl_GetTimeProc *getProc;
-    Tcl_ScaleTimeProc *scaleProc;
-    ClientData clientData;
+Tcl_SetTimeProc(
+    Tcl_GetTimeProc *getProc,
+    Tcl_ScaleTimeProc *scaleProc,
+    ClientData clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -449,10 +449,10 @@ Tcl_SetTimeProc(getProc, scaleProc, clientData)
  */
 
 void
-Tcl_QueryTimeProc(getProc, scaleProc, clientData)
-    Tcl_GetTimeProc **getProc;
-    Tcl_ScaleTimeProc **scaleProc;
-    ClientData *clientData;
+Tcl_QueryTimeProc(
+    Tcl_GetTimeProc **getProc,
+    Tcl_ScaleTimeProc **scaleProc,
+    ClientData *clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;
@@ -483,9 +483,9 @@ Tcl_QueryTimeProc(getProc, scaleProc, clientData)
  */
 
 static void
-NativeScaleTime(timePtr, clientData)
-    Tcl_Time *timePtr;
-    ClientData clientData;
+NativeScaleTime(
+    Tcl_Time *timePtr,
+    ClientData clientData)
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -508,9 +508,9 @@ NativeScaleTime(timePtr, clientData)
  */
 
 static void
-NativeGetTime(timePtr, clientData)
-    Tcl_Time *timePtr;
-    ClientData clientData;
+NativeGetTime(
+    Tcl_Time *timePtr,
+    ClientData clientData)
 {
     struct timeval tv;
     struct timezone tz;
@@ -539,7 +539,7 @@ NativeGetTime(timePtr, clientData)
  */
 
 static void
-SetTZIfNecessary()
+SetTZIfNecessary(void)
 {
     CONST char *newTZ = getenv("TZ");
 
@@ -578,7 +578,8 @@ SetTZIfNecessary()
  */
 
 static void
-CleanupMemory(ClientData ignored)
+CleanupMemory(
+    ClientData ignored)
 {
     Tcl_Free(lastTZ);
 }

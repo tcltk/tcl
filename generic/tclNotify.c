@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.6 2005/07/26 04:12:01 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.7 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -89,8 +89,8 @@ TCL_DECLARE_MUTEX(listLock)
  * Declarations for routines used only in this file.
  */
 
-static void		QueueEvent _ANSI_ARGS_((ThreadSpecificData *tsdPtr,
-			    Tcl_Event* evPtr, Tcl_QueuePosition position));
+static void		QueueEvent(ThreadSpecificData *tsdPtr,
+			    Tcl_Event* evPtr, Tcl_QueuePosition position);
 
 /*
  *----------------------------------------------------------------------
@@ -110,7 +110,7 @@ static void		QueueEvent _ANSI_ARGS_((ThreadSpecificData *tsdPtr,
  */
 
 void
-TclInitNotifier()
+TclInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr;
     Tcl_ThreadId threadId = Tcl_GetCurrentThread();
@@ -162,7 +162,7 @@ TclInitNotifier()
  */
 
 void
-TclFinalizeNotifier()
+TclFinalizeNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ThreadSpecificData **prevPtrPtr;
@@ -173,7 +173,7 @@ TclFinalizeNotifier()
     }
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (evPtr = tsdPtr->firstEventPtr; evPtr != (Tcl_Event *) NULL; ) {
+    for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL; ) {
 	hold = evPtr;
 	evPtr = evPtr->nextPtr;
 	ckfree((char *) hold);
@@ -221,8 +221,8 @@ TclFinalizeNotifier()
  */
 
 void
-Tcl_SetNotifier(notifierProcPtr)
-    Tcl_NotifierProcs *notifierProcPtr;
+Tcl_SetNotifier(
+    Tcl_NotifierProcs *notifierProcPtr)
 {
 #if !defined(__WIN32__) /* UNIX */
     tclStubs.tcl_CreateFileHandler = notifierProcPtr->createFileHandlerProc;
@@ -272,14 +272,14 @@ Tcl_SetNotifier(notifierProcPtr)
  */
 
 void
-Tcl_CreateEventSource(setupProc, checkProc, clientData)
-    Tcl_EventSetupProc *setupProc;
+Tcl_CreateEventSource(
+    Tcl_EventSetupProc *setupProc,
 				/* Function to invoke to figure out what to
 				 * wait for. */
-    Tcl_EventCheckProc *checkProc;
+    Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    ClientData clientData;	/* One-word argument to pass to setupProc and
+    ClientData clientData)	/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -311,14 +311,14 @@ Tcl_CreateEventSource(setupProc, checkProc, clientData)
  */
 
 void
-Tcl_DeleteEventSource(setupProc, checkProc, clientData)
-    Tcl_EventSetupProc *setupProc;
+Tcl_DeleteEventSource(
+    Tcl_EventSetupProc *setupProc,
 				/* Function to invoke to figure out what to
 				 * wait for. */
-    Tcl_EventCheckProc *checkProc;
+    Tcl_EventCheckProc *checkProc,
 				/* Function to call after waiting to see what
 				 * happened. */
-    ClientData clientData;	/* One-word argument to pass to setupProc and
+    ClientData clientData)	/* One-word argument to pass to setupProc and
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -359,13 +359,13 @@ Tcl_DeleteEventSource(setupProc, checkProc, clientData)
  */
 
 void
-Tcl_QueueEvent(evPtr, position)
-    Tcl_Event* evPtr;		/* Event to add to queue. The storage space
+Tcl_QueueEvent(
+    Tcl_Event* evPtr,		/* Event to add to queue. The storage space
 				 * must have been allocated the caller with
 				 * malloc (ckalloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position;	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
+    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
 				 * TCL_QUEUE_MARK. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -389,14 +389,14 @@ Tcl_QueueEvent(evPtr, position)
  */
 
 void
-Tcl_ThreadQueueEvent(threadId, evPtr, position)
-    Tcl_ThreadId threadId;	/* Identifier for thread to use. */
-    Tcl_Event* evPtr;		/* Event to add to queue. The storage space
+Tcl_ThreadQueueEvent(
+    Tcl_ThreadId threadId,	/* Identifier for thread to use. */
+    Tcl_Event *evPtr,		/* Event to add to queue. The storage space
 				 * must have been allocated the caller with
 				 * malloc (ckalloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position;	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
+    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
 				 * TCL_QUEUE_MARK. */
 {
     ThreadSpecificData *tsdPtr;
@@ -443,15 +443,15 @@ Tcl_ThreadQueueEvent(threadId, evPtr, position)
  */
 
 static void
-QueueEvent(tsdPtr, evPtr, position)
-    ThreadSpecificData *tsdPtr;	/* Handle to thread local data that indicates
+QueueEvent(
+    ThreadSpecificData *tsdPtr,	/* Handle to thread local data that indicates
 				 * which event queue to use. */
-    Tcl_Event* evPtr;		/* Event to add to queue.  The storage space
+    Tcl_Event *evPtr,		/* Event to add to queue.  The storage space
 				 * must have been allocated the caller with
 				 * malloc (ckalloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position;	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
+    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
 				 * TCL_QUEUE_MARK. */
 {
     Tcl_MutexLock(&(tsdPtr->queueMutex));
@@ -518,23 +518,22 @@ QueueEvent(tsdPtr, evPtr, position)
  */
 
 void
-Tcl_DeleteEvents(proc, clientData)
-    Tcl_EventDeleteProc *proc;	/* The function to call. */
-    ClientData clientData;    	/* The type-specific data. */
+Tcl_DeleteEvents(
+    Tcl_EventDeleteProc *proc,	/* The function to call. */
+    ClientData clientData)    	/* The type-specific data. */
 {
     Tcl_Event *evPtr, *prevPtr, *hold;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (prevPtr = (Tcl_Event *) NULL, evPtr = tsdPtr->firstEventPtr;
-	    evPtr != (Tcl_Event *) NULL; /*EMPTY STEP*/) {
+    for (prevPtr=NULL, evPtr=tsdPtr->firstEventPtr; evPtr!=NULL; ) {
 	if ((*proc) (evPtr, clientData) == 1) {
 	    if (tsdPtr->firstEventPtr == evPtr) {
 		tsdPtr->firstEventPtr = evPtr->nextPtr;
 	    } else {
 		prevPtr->nextPtr = evPtr->nextPtr;
 	    }
-	    if (evPtr->nextPtr == (Tcl_Event *) NULL) {
+	    if (evPtr->nextPtr == NULL) {
 		tsdPtr->lastEventPtr = prevPtr;
 	    }
 	    if (tsdPtr->markerEventPtr == evPtr) {
@@ -572,8 +571,8 @@ Tcl_DeleteEvents(proc, clientData)
  */
 
 int
-Tcl_ServiceEvent(flags)
-    int flags;			/* Indicates what events should be processed.
+Tcl_ServiceEvent(
+    int flags)			/* Indicates what events should be processed.
 				 * May be any combination of TCL_WINDOW_EVENTS
 				 * TCL_FILE_EVENTS, TCL_TIMER_EVENTS, or other
 				 * flags defined elsewhere. Events not
@@ -592,7 +591,7 @@ Tcl_ServiceEvent(flags)
      */
 
     if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke((Tcl_Interp *) NULL, 0);
+	(void) Tcl_AsyncInvoke(NULL, 0);
 	return 1;
     }
 
@@ -711,7 +710,7 @@ Tcl_ServiceEvent(flags)
  */
 
 int
-Tcl_GetServiceMode()
+Tcl_GetServiceMode(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -735,8 +734,8 @@ Tcl_GetServiceMode()
  */
 
 int
-Tcl_SetServiceMode(mode)
-    int mode;			/* New service mode: TCL_SERVICE_ALL or
+Tcl_SetServiceMode(
+    int mode)			/* New service mode: TCL_SERVICE_ALL or
 				 * TCL_SERVICE_NONE */
 {
     int oldMode;
@@ -770,8 +769,8 @@ Tcl_SetServiceMode(mode)
  */
 
 void
-Tcl_SetMaxBlockTime(timePtr)
-    Tcl_Time *timePtr;		/* Specifies a maximum elapsed time for the
+Tcl_SetMaxBlockTime(
+    Tcl_Time *timePtr)		/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {
@@ -822,8 +821,8 @@ Tcl_SetMaxBlockTime(timePtr)
  */
 
 int
-Tcl_DoOneEvent(flags)
-    int flags;			/* Miscellaneous flag values: may be any
+Tcl_DoOneEvent(
+    int flags)			/* Miscellaneous flag values: may be any
 				 * combination of TCL_DONT_WAIT,
 				 * TCL_WINDOW_EVENTS, TCL_FILE_EVENTS,
 				 * TCL_TIMER_EVENTS, TCL_IDLE_EVENTS, or
@@ -839,7 +838,7 @@ Tcl_DoOneEvent(flags)
      */
 
     if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke((Tcl_Interp *) NULL, 0);
+	(void) Tcl_AsyncInvoke(NULL, 0);
 	return 1;
     }
 
@@ -1010,7 +1009,7 @@ Tcl_DoOneEvent(flags)
  */
 
 int
-Tcl_ServiceAll()
+Tcl_ServiceAll(void)
 {
     int result = 0;
     EventSource *sourcePtr;
@@ -1032,7 +1031,7 @@ Tcl_ServiceAll()
      */
 
     if (Tcl_AsyncReady()) {
-	(void) Tcl_AsyncInvoke((Tcl_Interp *) NULL, 0);
+	(void) Tcl_AsyncInvoke(NULL, 0);
     }
 
     /*
@@ -1092,8 +1091,8 @@ Tcl_ServiceAll()
  */
 
 void
-Tcl_ThreadAlert(threadId)
-    Tcl_ThreadId threadId;	/* Identifier for thread to use. */
+Tcl_ThreadAlert(
+    Tcl_ThreadId threadId)	/* Identifier for thread to use. */
 {
     ThreadSpecificData *tsdPtr;
 

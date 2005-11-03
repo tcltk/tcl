@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.3 2005/07/26 04:12:34 dgp Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.4 2005/11/03 17:52:34 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -53,6 +53,7 @@ TCL_DECLARE_MUTEX(consoleMutex)
 /*
  * This structure describes per-instance data for a console based channel.
  */
+
 
 typedef struct ConsoleInfo {
     HANDLE handle;
@@ -184,6 +185,45 @@ static Tcl_ChannelType consoleChannelType = {
     NULL,			/* wide seek proc */
     ConsoleThreadActionProc,    /* thread action proc */
 };
+
+/*
+ *----------------------------------------------------------------------
+ * 
+ * readConsoleBytes, writeConsoleBytes --
+ * Wrapper for ReadConsole{A,W}, that takes and returns number of bytes
+ * instead of number of TCHARS
+ */
+static BOOL readConsoleBytes(HANDLE hConsole,
+  LPVOID lpBuffer,
+  DWORD nbytes,
+  LPDWORD nbytesread)
+{
+    DWORD ntchars;
+    BOOL result;
+    int tcharsize;
+    tcharsize = tclWinProcs->useWide? 2 : 1;
+    result = tclWinProcs->readConsoleProc(
+	    hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
+    if (nbytesread) 
+	*nbytesread = (ntchars*tcharsize);
+    return result;
+}
+
+static BOOL writeConsoleBytes(HANDLE hConsole,
+  const VOID *lpBuffer,
+  DWORD nbytes,
+  LPDWORD nbyteswritten)
+{
+    DWORD ntchars;
+    BOOL result;
+    int tcharsize;
+    tcharsize = tclWinProcs->useWide? 2 : 1;
+    result = tclWinProcs->writeConsoleProc(
+	    hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
+    if (nbyteswritten) 
+	*nbyteswritten = (ntchars*tcharsize);
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -701,8 +741,8 @@ ConsoleInputProc(
      * byte is available or an EOF occurs.
      */
 
-    if (ReadConsole(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &count,
-	    (LPOVERLAPPED) NULL) == TRUE) {
+    if (readConsoleBytes(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &count) 
+	    == TRUE) {
 	buf[count] = '\0';
 	return count;
     }
@@ -788,8 +828,8 @@ ConsoleOutputProc(
 	 * avoids an unnecessary copy.
 	 */
 
-	if (WriteConsole(infoPtr->handle, buf, toWrite, &bytesWritten,
-		NULL) == FALSE) {
+	if (writeConsoleBytes(infoPtr->handle, buf, toWrite, &bytesWritten)
+		== FALSE) {
 	    TclWinConvertError(GetLastError());
 	    goto error;
 	}
@@ -1133,8 +1173,8 @@ ConsoleReaderThread(LPVOID arg)
 	 * not KEY_EVENTs.
 	 */
 
-	if (ReadConsoleA(handle, infoPtr->buffer, CONSOLE_BUFFER_SIZE,
-		(LPDWORD) &infoPtr->bytesRead, NULL) != FALSE) {
+	if (readConsoleBytes(handle, infoPtr->buffer, CONSOLE_BUFFER_SIZE,
+		(LPDWORD) &infoPtr->bytesRead) != FALSE) {
 	    /*
 	     * Data was stored in the buffer.
 	     */
@@ -1233,7 +1273,7 @@ ConsoleWriterThread(LPVOID arg)
 	 */
 
 	while (toWrite > 0) {
-	    if (WriteConsole(handle, buf, toWrite, &count, NULL) == FALSE) {
+	    if (writeConsoleBytes(handle, buf, toWrite, &count) == FALSE) {
 		infoPtr->writeError = GetLastError();
 		break;
 	    } else {
@@ -1363,7 +1403,10 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
+    if (tclWinProcs->useWide)
+	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
+    else
+	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
 
     return infoPtr->channel;
 }

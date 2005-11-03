@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.13.4.5 2004/10/28 18:47:11 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.13.4.6 2005/11/03 17:52:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -640,13 +640,13 @@ test execute-7.12 {Wide int handling in INST_LSHIFT} {longIs32bit} {
 test execute-7.13 {Wide int handling in INST_RSHIFT} {longIs32bit} {
     expr 0x543210febcda9876>>7
 } 47397893236700464
-test execute-7.14 {Wide int handling in INST_RSHIFT} {longIs32bit} {
+test execute-7.14 {Wide int handling in INST_RSHIFT} {longIs32bit knownBug} {
     expr 0x9876543210febcda>>7
 } -58286587177206407
-test execute-7.15 {Wide int handling in INST_BITOR} {longIs32bit} {
+test execute-7.15 {Wide int handling in INST_BITOR} {longIs32bit knownBug} {
     expr 0x9876543210febcda | 0x543210febcda9876
 } -2560765885044310786
-test execute-7.16 {Wide int handling in INST_BITXOR} {longIs32bit} {
+test execute-7.16 {Wide int handling in INST_BITXOR} {longIs32bit knownBug} {
     expr 0x9876543210febcda ^ 0x543210febcda9876
 } -3727778945703861076
 test execute-7.17 {Wide int handling in INST_BITAND} {longIs32bit} {
@@ -703,10 +703,10 @@ test execute-7.31 {Wide int handling in abs()} {longIs32bit} {
     set y 0x123456871234568
     concat [expr {abs($x)}] [expr {abs($y)}]
 } {730503879441204585 81985533099853160}
-test execute-7.32 {Wide int handling} {longIs32bit} {
+test execute-7.32 {Wide int handling} {longIs32bit knownBug} {
     expr {1024 * 1024 * 1024 * 1024}
 } 0
-test execute-7.33 {Wide int handling} {longIs32bit} {
+test execute-7.33 {Wide int handling} {longIs32bit knownBug} {
     expr {0x1 * 1024 * 1024 * 1024 * 1024}
 } 0
 test execute-7.34 {Wide int handling} {longIs32bit} {

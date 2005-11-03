@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.6 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.7 2005/11/03 17:52:09 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1315,6 +1315,7 @@ MakeLowPrecisionDouble(
     TclBNInitBignumFromWideUInt(&significandBig, significand);
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
+    mp_clear(&significandBig);
     
     /*
      * Come here to return the computed value.
@@ -1616,6 +1617,8 @@ RefineApproximation(
      */
 
     if (mp_cmp_mag(&twoMd, &twoMv) == MP_LT) {
+        mp_clear(&twoMd);
+        mp_clear(&twoMv);
 	return approxResult;
     }
 
@@ -2080,7 +2083,7 @@ TclInitDoubleConversion(void)
     maxpow10_wide = (int)
 	    floor(sizeof(Tcl_WideUInt) * CHAR_BIT * log(2.) / log(10.));
     pow10_wide = (Tcl_WideUInt *)
-	    Tcl_Alloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
+	    ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;

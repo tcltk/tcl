@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.8 2005/09/12 15:40:29 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.9 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1112,12 +1112,21 @@ TclLsetFlat(interp, listPtr, indexCount, indexArray, valuePtr)
     }
 
     /*
-     * If the list is shared, make a private copy.
+     * If the list is shared, make a private copy. Duplicate the intrep to
+     * insure that it is modifyable [Bug 1333036]. A plain Tcl_DuplicateObj
+     * will just increase the intrep's refCount without upping the sublists'
+     * refCount, so that their true shared status cannot be determined from
+     * their refCount. 
      */
 
     if (Tcl_IsShared(listPtr)) {
 	duplicated = 1;
-	listPtr = Tcl_DuplicateObj(listPtr);
+	if (listPtr->typePtr == &tclListType) {	
+	    result = Tcl_ListObjGetElements(interp, listPtr, &elemCount, &elemPtrs);
+	    listPtr = Tcl_NewListObj(elemCount, elemPtrs);
+	} else {
+	    listPtr = Tcl_DuplicateObj(listPtr);
+	}
 	Tcl_IncrRefCount(listPtr);
     } else {
 	duplicated = 0;
@@ -1182,12 +1191,20 @@ TclLsetFlat(interp, listPtr, indexCount, indexArray, valuePtr)
 	}
 
 	/*
-	 * Extract the appropriate sublist, and make sure that it is unshared.
+	 * Extract the appropriate sublist, and make sure that it is unshared. 
+	 * If it is a list, duplicate the intrep to avoid [Bug 1333036], as
+	 * per the previous comment. 
 	 */
 
 	subListPtr = elemPtrs[index];
 	if (Tcl_IsShared(subListPtr)) {
-	    subListPtr = Tcl_DuplicateObj(subListPtr);
+	    if (subListPtr->typePtr == &tclListType) {
+		result = Tcl_ListObjGetElements(interp, subListPtr, &elemCount,
+			&elemPtrs);
+		subListPtr = Tcl_NewListObj(elemCount, elemPtrs);
+	    } else {
+		subListPtr = Tcl_DuplicateObj(subListPtr);
+	    }
 	    result = TclListObjSetElement(interp, listPtr, index, subListPtr);
 	    if (result != TCL_OK) {
 		/*

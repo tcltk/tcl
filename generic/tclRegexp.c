@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.4 2005/07/26 04:12:19 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.5 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -85,18 +85,17 @@ static Tcl_ThreadDataKey dataKey;
  * Declarations for functions used only in this file.
  */
 
-static TclRegexp *	CompileRegexp _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *pattern, int length, int flags));
-static void		DupRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
-			    Tcl_Obj *copyPtr));
-static void		FinalizeRegexp _ANSI_ARGS_((ClientData clientData));
-static void		FreeRegexp _ANSI_ARGS_((TclRegexp *regexpPtr));
-static void		FreeRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		RegExpExecUniChar _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_RegExp re, CONST Tcl_UniChar *uniString,
-			    int numChars, int nmatches, int flags));
-static int		SetRegexpFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
+static TclRegexp *	CompileRegexp(Tcl_Interp *interp, CONST char *pattern,
+			    int length, int flags);
+static void		DupRegexpInternalRep(Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr);
+static void		FinalizeRegexp(ClientData clientData);
+static void		FreeRegexp(TclRegexp *regexpPtr);
+static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
+static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
+			    CONST Tcl_UniChar *uniString, int numChars,
+			    int nmatches, int flags);
+static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
  * The regular expression Tcl object type. This serves as a cache of the
@@ -134,10 +133,10 @@ Tcl_ObjType tclRegexpType = {
  */
 
 Tcl_RegExp
-Tcl_RegExpCompile(interp, pattern)
-    Tcl_Interp *interp;		/* For use in error reporting and to access
+Tcl_RegExpCompile(
+    Tcl_Interp *interp,		/* For use in error reporting and to access
 				 * the interp regexp cache. */
-    CONST char *pattern;	/* String for which to produce compiled
+    CONST char *pattern)	/* String for which to produce compiled
 				 * regular expression. */
 {
     return (Tcl_RegExp) CompileRegexp(interp, pattern, (int) strlen(pattern),
@@ -165,13 +164,13 @@ Tcl_RegExpCompile(interp, pattern)
  */
 
 int
-Tcl_RegExpExec(interp, re, text, start)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    Tcl_RegExp re;		/* Compiled regular expression; must have been
+Tcl_RegExpExec(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
+    Tcl_RegExp re,		/* Compiled regular expression; must have been
 				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
-    CONST char *text;		/* Text against which to match re. */
-    CONST char *start;		/* If text is part of a larger string, this
+    CONST char *text,		/* Text against which to match re. */
+    CONST char *start)		/* If text is part of a larger string, this
 				 * identifies beginning of larger string, so
 				 * that "^" won't match. */
 {
@@ -232,15 +231,15 @@ Tcl_RegExpExec(interp, re, text, start)
  */
 
 void
-Tcl_RegExpRange(re, index, startPtr, endPtr)
-    Tcl_RegExp re;		/* Compiled regular expression that has been
+Tcl_RegExpRange(
+    Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    int index;			/* 0 means give the range of the entire match,
+    int index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
 				 * subrange. */
-    CONST char **startPtr;	/* Store address of first character in
+    CONST char **startPtr,	/* Store address of first character in
 				 * (sub-)range here. */
-    CONST char **endPtr;	/* Store address of character just after last
+    CONST char **endPtr)	/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -282,17 +281,17 @@ Tcl_RegExpRange(re, index, startPtr, endPtr)
  */
 
 static int
-RegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    Tcl_RegExp re;		/* Compiled regular expression; returned by a
+RegExpExecUniChar(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
+    Tcl_RegExp re,		/* Compiled regular expression; returned by a
 				 * previous call to Tcl_GetRegExpFromObj */
-    CONST Tcl_UniChar *wString;	/* String against which to match re. */
-    int numChars;		/* Length of Tcl_UniChar string (must be
+    CONST Tcl_UniChar *wString,	/* String against which to match re. */
+    int numChars,		/* Length of Tcl_UniChar string (must be
 				 * >=0). */
-    int nmatches;		/* How many subexpression matches (counting
+    int nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means "don't know". */
-    int flags;			/* Regular expression flags. */
+    int flags)			/* Regular expression flags. */
 {
     int status;
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -344,16 +343,16 @@ RegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
  */
 
 void
-TclRegExpRangeUniChar(re, index, startPtr, endPtr)
-    Tcl_RegExp re;		/* Compiled regular expression that has been
+TclRegExpRangeUniChar(
+    Tcl_RegExp re,		/* Compiled regular expression that has been
 				 * passed to Tcl_RegExpExec. */
-    int index;			/* 0 means give the range of the entire match,
+    int index,			/* 0 means give the range of the entire match,
 				 * > 0 means give the range of a matching
 				 * subrange, -1 means the range of the
 				 * rm_extend field. */
-    int *startPtr;		/* Store address of first character in
+    int *startPtr,		/* Store address of first character in
 				 * (sub-)range here. */
-    int *endPtr;		/* Store address of character just after last
+    int *endPtr)		/* Store address of character just after last
 				 * in (sub-)range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -389,10 +388,10 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
  */
 
 int
-Tcl_RegExpMatch(interp, text, pattern)
-    Tcl_Interp *interp;		/* Used for error reporting. May be NULL. */
-    CONST char *text;		/* Text to search for pattern matches. */
-    CONST char *pattern;	/* Regular expression to match against text. */
+Tcl_RegExpMatch(
+    Tcl_Interp *interp,		/* Used for error reporting. May be NULL. */
+    CONST char *text,		/* Text to search for pattern matches. */
+    CONST char *pattern)	/* Regular expression to match against text. */
 {
     Tcl_RegExp re;
 
@@ -422,18 +421,18 @@ Tcl_RegExpMatch(interp, text, pattern)
  */
 
 int
-Tcl_RegExpExecObj(interp, re, textObj, offset, nmatches, flags)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    Tcl_RegExp re;		/* Compiled regular expression; must have been
+Tcl_RegExpExecObj(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
+    Tcl_RegExp re,		/* Compiled regular expression; must have been
 				 * returned by previous call to
 				 * Tcl_GetRegExpFromObj. */
-    Tcl_Obj *textObj;		/* Text against which to match re. */
-    int offset;			/* Character index that marks where matching
+    Tcl_Obj *textObj,		/* Text against which to match re. */
+    int offset,			/* Character index that marks where matching
 				 * should begin. */
-    int nmatches;		/* How many subexpression matches (counting
+    int nmatches,		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are of
 				 * interest. -1 means all of them. */
-    int flags;			/* Regular expression execution flags. */
+    int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
@@ -476,10 +475,10 @@ Tcl_RegExpExecObj(interp, re, textObj, offset, nmatches, flags)
  */
 
 int
-Tcl_RegExpMatchObj(interp, textObj, patternObj)
-    Tcl_Interp *interp;		/* Used for error reporting. May be NULL. */
-    Tcl_Obj *textObj;		/* Object containing the String to search. */
-    Tcl_Obj *patternObj;	/* Regular expression to match against
+Tcl_RegExpMatchObj(
+    Tcl_Interp *interp,		/* Used for error reporting. May be NULL. */
+    Tcl_Obj *textObj,		/* Object containing the String to search. */
+    Tcl_Obj *patternObj)	/* Regular expression to match against
 				 * string. */
 {
     Tcl_RegExp re;
@@ -510,9 +509,9 @@ Tcl_RegExpMatchObj(interp, textObj, patternObj)
  */
 
 void
-Tcl_RegExpGetInfo(regexp, infoPtr)
-    Tcl_RegExp regexp;		/* Pattern from which to get subexpressions. */
-    Tcl_RegExpInfo *infoPtr;	/* Match information is stored here. */
+Tcl_RegExpGetInfo(
+    Tcl_RegExp regexp,		/* Pattern from which to get subexpressions. */
+    Tcl_RegExpInfo *infoPtr)	/* Match information is stored here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) regexp;
 
@@ -542,14 +541,14 @@ Tcl_RegExpGetInfo(regexp, infoPtr)
  */
 
 Tcl_RegExp
-Tcl_GetRegExpFromObj(interp, objPtr, flags)
-    Tcl_Interp *interp;		/* For use in error reporting, and to access
+Tcl_GetRegExpFromObj(
+    Tcl_Interp *interp,		/* For use in error reporting, and to access
 				 * the interp regexp cache. */
-    Tcl_Obj *objPtr;		/* Object whose string rep contains regular
+    Tcl_Obj *objPtr,		/* Object whose string rep contains regular
 				 * expression pattern. Internal rep will be
 				 * changed to compiled form of this regular
 				 * expression. */
-    int flags;			/* Regular expression compilation flags. */
+    int flags)			/* Regular expression compilation flags. */
 {
     int length;
     TclRegexp *regexpPtr;
@@ -583,7 +582,7 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
 	 */
 
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.otherValuePtr = (VOID *) regexpPtr;
+	objPtr->internalRep.otherValuePtr = (void *) regexpPtr;
 	objPtr->typePtr = &tclRegexpType;
     }
     return (Tcl_RegExp) regexpPtr;
@@ -609,9 +608,9 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
  */
 
 int
-TclRegAbout(interp, re)
-    Tcl_Interp *interp;		/* For use in variable assignment. */
-    Tcl_RegExp re;		/* The compiled regular expression. */
+TclRegAbout(
+    Tcl_Interp *interp,		/* For use in variable assignment. */
+    Tcl_RegExp re)		/* The compiled regular expression. */
 {
     TclRegexp *regexpPtr = (TclRegexp *)re;
     char buf[TCL_INTEGER_SPACE];
@@ -686,10 +685,10 @@ TclRegAbout(interp, re)
  */
 
 void
-TclRegError(interp, msg, status)
-    Tcl_Interp *interp;		/* Interpreter for error reporting. */
-    CONST char *msg;		/* Message to prepend to error. */
-    int status;			/* Status code to report. */
+TclRegError(
+    Tcl_Interp *interp,		/* Interpreter for error reporting. */
+    CONST char *msg,		/* Message to prepend to error. */
+    int status)			/* Status code to report. */
 {
     char buf[100];		/* ample in practice */
     char cbuf[100];		/* lots in practice */
@@ -697,12 +696,12 @@ TclRegError(interp, msg, status)
     char *p;
 
     Tcl_ResetResult(interp);
-    n = TclReError(status, (regex_t *)NULL, buf, sizeof(buf));
+    n = TclReError(status, NULL, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_AppendResult(interp, msg, buf, p, NULL);
 
     sprintf(cbuf, "%d", status);
-    (VOID) TclReError(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
+    (void) TclReError(REG_ITOA, NULL, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
@@ -724,8 +723,8 @@ TclRegError(interp, msg, status)
  */
 
 static void
-FreeRegexpInternalRep(objPtr)
-    Tcl_Obj *objPtr;		/* Regexp object with internal rep to free. */
+FreeRegexpInternalRep(
+    Tcl_Obj *objPtr)		/* Regexp object with internal rep to free. */
 {
     TclRegexp *regexpRepPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
@@ -756,9 +755,9 @@ FreeRegexpInternalRep(objPtr)
  */
 
 static void
-DupRegexpInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
+DupRegexpInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) srcPtr->internalRep.otherValuePtr;
 
@@ -788,9 +787,9 @@ DupRegexpInternalRep(srcPtr, copyPtr)
  */
 
 static int
-SetRegexpFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr;		/* The object to convert. */
+SetRegexpFromAny(
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (Tcl_GetRegExpFromObj(interp, objPtr, REG_ADVANCED) == NULL) {
 	return TCL_ERROR;
@@ -821,11 +820,11 @@ SetRegexpFromAny(interp, objPtr)
  */
 
 static TclRegexp *
-CompileRegexp(interp, string, length, flags)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    CONST char *string;		/* The regexp to compile (UTF-8). */
-    int length;			/* The length of the string in bytes. */
-    int flags;			/* Compilation flags. */
+CompileRegexp(
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    CONST char *string,		/* The regexp to compile (UTF-8). */
+    int length,			/* The length of the string in bytes. */
+    int flags)			/* Compilation flags. */
 {
     TclRegexp *regexpPtr;
     CONST Tcl_UniChar *uniString;
@@ -975,8 +974,8 @@ CompileRegexp(interp, string, length, flags)
  */
 
 static void
-FreeRegexp(regexpPtr)
-    TclRegexp *regexpPtr;	/* Compiled regular expression to free. */
+FreeRegexp(
+    TclRegexp *regexpPtr)	/* Compiled regular expression to free. */
 {
     TclReFree(&regexpPtr->re);
     if (regexpPtr->matches) {
@@ -990,8 +989,7 @@ FreeRegexp(regexpPtr)
  *
  * FinalizeRegexp --
  *
- *	Release the storage associated with the per-thread regexp
- *	cache.
+ *	Release the storage associated with the per-thread regexp cache.
  *
  * Results:
  *	None.
@@ -1003,8 +1001,8 @@ FreeRegexp(regexpPtr)
  */
 
 static void
-FinalizeRegexp(clientData)
-    ClientData clientData;	/* Not used. */
+FinalizeRegexp(
+    ClientData clientData)	/* Not used. */
 {
     int i;
     TclRegexp *regexpPtr;

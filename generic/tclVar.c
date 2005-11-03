@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.19 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.20 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -39,41 +39,39 @@ static CONST char *isArrayElement =
 	"name refers to an element in an array";
 
 /*
- * Forward references to procedures defined later in this file:
+ * Forward references to functions defined later in this file:
  */
 
-static void		DeleteSearches _ANSI_ARGS_((Var *arrayVarPtr));
-static void		DeleteArray _ANSI_ARGS_((Interp *iPtr,
-			    CONST char *arrayName, Var *varPtr, int flags));
-static int		ObjMakeUpvar _ANSI_ARGS_((Tcl_Interp *interp,
+static void		DeleteSearches(Var *arrayVarPtr);
+static void		DeleteArray(Interp *iPtr, CONST char *arrayName,
+			    Var *varPtr, int flags);
+static int		ObjMakeUpvar(Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *otherP1Ptr,
 			    CONST char *otherP2, CONST int otherFlags,
-			    CONST char *myName, int myFlags, int index));
-static Var *		NewVar _ANSI_ARGS_((void));
-static ArraySearch *	ParseSearchId _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST Var *varPtr, CONST char *varName,
-			    Tcl_Obj *handleObj));
-static int		SetArraySearchObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
+			    CONST char *myName, int myFlags, int index);
+static Var *		NewVar(void);
+static ArraySearch *	ParseSearchId(Tcl_Interp *interp, CONST Var *varPtr,
+			    CONST char *varName, Tcl_Obj *handleObj);
+static int		SetArraySearchObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
  * Functions defined in this file that may be exported in the future for use
  * by the bytecode compiler and engine or to the public interface.
  */
 
-Var *		TclLookupSimpleVar _ANSI_ARGS_((Tcl_Interp *interp,
-		    CONST char *varName, int flags, CONST int create,
-		    CONST char **errMsgPtr, int *indexPtr));
-int		TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
-		    Tcl_Obj *part1Ptr, CONST char *part2, int flags));
+Var *			TclLookupSimpleVar(Tcl_Interp *interp,
+			    CONST char *varName, int flags, CONST int create,
+			    CONST char **errMsgPtr, int *indexPtr);
+int			TclObjUnsetVar2(Tcl_Interp *interp,
+			    Tcl_Obj *part1Ptr, CONST char *part2, int flags);
 
-static Tcl_DupInternalRepProc DupLocalVarName;
-static Tcl_FreeInternalRepProc FreeParsedVarName;
-static Tcl_DupInternalRepProc DupParsedVarName;
-static Tcl_UpdateStringProc UpdateParsedVarName;
+static Tcl_DupInternalRepProc	DupLocalVarName;
+static Tcl_FreeInternalRepProc	FreeParsedVarName;
+static Tcl_DupInternalRepProc	DupParsedVarName;
+static Tcl_UpdateStringProc	UpdateParsedVarName;
 
-static Tcl_UpdateStringProc PanicOnUpdateVarName;
-static Tcl_SetFromAnyProc PanicOnSetVarName;
+static Tcl_UpdateStringProc	PanicOnUpdateVarName;
+static Tcl_SetFromAnyProc	PanicOnSetVarName;
 
 /*
  * Types of Tcl_Objs used to cache variable lookups.
@@ -143,7 +141,7 @@ Tcl_ObjType tclArraySearchType = {
  *
  * TclLookupVar --
  *
- *	This procedure is used to locate a variable given its name(s). It has
+ *	This function is used to locate a variable given its name(s). It has
  *	been mostly superseded by TclObjLookupVar, it is now only used by the
  *	string-based interfaces. It is kept in tcl8.4 mainly because it is in
  *	the internal stubs table, so that some extension may be calling it.
@@ -177,26 +175,25 @@ Tcl_ObjType tclArraySearchType = {
  */
 
 Var *
-TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
-	arrayPtrPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for lookup. */
-    CONST char *part1;		/* If part2 isn't NULL, this is the name of an
+TclLookupVar(
+    Tcl_Interp *interp,		/* Interpreter to use for lookup. */
+    CONST char *part1,		/* If part2 isn't NULL, this is the name of an
 				 * array. Otherwise, this is a full variable
 				 * name that could include a parenthesized
 				 * array element. */
-    CONST char *part2;		/* Name of element within array, or NULL. */
-    int flags;			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+    CONST char *part2,		/* Name of element within array, or NULL. */
+    int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * and TCL_LEAVE_ERR_MSG bits matter. */
-    CONST char *msg;		/* Verb to use in error messages, e.g.  "read"
+    CONST char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    int createPart1;		/* If 1, create hash table entry for part 1 of
+    int createPart1,		/* If 1, create hash table entry for part 1 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    int createPart2;		/* If 1, create hash table entry for part 2 of
+    int createPart2,		/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    Var **arrayPtrPtr;		/* If the name refers to an element of an
+    Var **arrayPtrPtr)		/* If the name refers to an element of an
 				 * array, *arrayPtrPtr gets filled in with
 				 * address of array variable. Otherwise this
 				 * is set to NULL. */
@@ -204,10 +201,10 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     Var *varPtr;
     CONST char *elName;		/* Name of array element or NULL; may be same
 				 * as part2, or may be openParen+1. */
-    int openParen, closeParen;	/* If this procedure parses a name into array
+    int openParen, closeParen;	/* If this function parses a name into array
 				 * and index, these are the offsets to the
-				 * parens around the index.  Otherwise they
-				 * are -1. */
+				 * parens around the index. Otherwise they are
+				 * -1. */
     register CONST char *p;
     CONST char *errMsg = NULL;
     int index;
@@ -291,7 +288,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
  *
  * TclObjLookupVar --
  *
- *	This procedure is used by virtually all of the variable code to locate
+ *	This function is used by virtually all of the variable code to locate
  *	a variable given its name(s). The parsing into array/element
  *	components and (if possible) the lookup results are cached in
  *	part1Ptr, which is converted to one of the varNameTypes.
@@ -327,26 +324,25 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
  */
 
 Var *
-TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
-	arrayPtrPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for lookup. */
-    register Tcl_Obj *part1Ptr;	/* If part2 isn't NULL, this is the name of an
+TclObjLookupVar(
+    Tcl_Interp *interp,		/* Interpreter to use for lookup. */
+    register Tcl_Obj *part1Ptr,	/* If part2 isn't NULL, this is the name of an
 				 * array. Otherwise, this is a full variable
 				 * name that could include a parenthesized
 				 * array element. */
-    CONST char *part2;		/* Name of element within array, or NULL. */
-    int flags;			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+    CONST char *part2,		/* Name of element within array, or NULL. */
+    int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * and TCL_LEAVE_ERR_MSG bits matter. */
-    CONST char *msg;		/* Verb to use in error messages, e.g. "read"
+    CONST char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    CONST int createPart1;	/* If 1, create hash table entry for part 1 of
+    CONST int createPart1,	/* If 1, create hash table entry for part 1 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    CONST int createPart2;	/* If 1, create hash table entry for part 2 of
+    CONST int createPart2,	/* If 1, create hash table entry for part 2 of
 				 * name, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    Var **arrayPtrPtr;		/* If the name refers to an element of an
+    Var **arrayPtrPtr)		/* If the name refers to an element of an
 				 * array, *arrayPtrPtr gets filled in with
 				 * address of array variable. Otherwise this
 				 * is set to NULL. */
@@ -432,8 +428,10 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 		(varFramePtr &&
 		!(varFramePtr->isProcCallFrame & FRAME_IS_PROC) &&
 		!(flags & TCL_GLOBAL_ONLY) &&
-		/* Careful: an undefined ns variable could be hiding a valid
-		 * global reference. */
+		/*
+		 * Careful: an undefined ns variable could be hiding a valid
+		 * global reference.
+		 */
 		!TclIsVarUndefined(varPtr))));
 
 	if (useReference && (varPtr->hPtr != NULL)) {
@@ -507,8 +505,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 		TclNewStringObj(part1Ptr, part1, len1);
 		Tcl_IncrRefCount(part1Ptr);
 
-		objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) part1Ptr;
-		objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) part2;
+		objPtr->internalRep.twoPtrValue.ptr1 = (void *) part1Ptr;
+		objPtr->internalRep.twoPtrValue.ptr2 = (void *) part2;
 
 		typePtr = part1Ptr->typePtr;
 		part1 = TclGetString(part1Ptr);
@@ -557,8 +555,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	nsPtr = ((index == -1)? iPtr->globalNsPtr : varFramePtr->nsPtr);
 	varPtr->refCount++;
 	part1Ptr->typePtr = &tclNsVarNameType;
-	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) nsPtr;
-	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) varPtr;
+	part1Ptr->internalRep.twoPtrValue.ptr1 = (void *) nsPtr;
+	part1Ptr->internalRep.twoPtrValue.ptr2 = (void *) varPtr;
 #endif
     } else {
 	/*
@@ -617,7 +615,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  *
  * TclLookupSimpleVar --
  *
- *	This procedure is used by to locate a simple variable (i.e., not an
+ *	This function is used by to locate a simple variable (i.e., not an
  *	array element) given its name.
  *
  * Results:
@@ -655,18 +653,18 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  */
 
 Var *
-TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for lookup. */
-    CONST char *varName;	/* This is a simple variable name that could
+TclLookupSimpleVar(
+    Tcl_Interp *interp,		/* Interpreter to use for lookup. */
+    CONST char *varName,	/* This is a simple variable name that could
 				 * represent a scalar or an array. */
-    int flags;			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+    int flags,			/* Only TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * LOOKUP_FOR_UPVAR and TCL_LEAVE_ERR_MSG bits
 				 * matter. */
-    CONST int create;		/* If 1, create hash table entry for varname,
+    CONST int create,		/* If 1, create hash table entry for varname,
 				 * if it doesn't already exist. If 0, return
 				 * error if it doesn't exist. */
-    CONST char **errMsgPtr;
-    int *indexPtr;
+    CONST char **errMsgPtr,
+    int *indexPtr)
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -696,7 +694,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 
     /*
      * If this namespace has a variable resolver, then give it first crack at
-     * the variable resolution.  It may return a Tcl_Var value, it may signal
+     * the variable resolution. It may return a Tcl_Var value, it may signal
      * to continue onward, or it may signal an error.
      */
 
@@ -727,7 +725,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 
     /*
      * Look up varName. Look it up as either a namespace variable or as a
-     * local variable in a procedure call frame (varFramePtr).  Interpret
+     * local variable in a procedure call frame (varFramePtr). Interpret
      * varName as a namespace variable if:
      *    1) so requested by a TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY flag,
      *    2) there is no active frame (we're at the global :: scope),
@@ -778,7 +776,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	}
 
 	if (varPtr == NULL) {
-	    if (create) {	/* var wasn't found so create it  */
+	    if (create) {	/* var wasn't found so create it */
 		TclGetNamespaceForQualName(interp, varName, cxtNsPtr,
 			flags, &varNsPtr, &dummy1Ptr, &dummy2Ptr, &tail);
 		if (varNsPtr == NULL) {
@@ -817,7 +815,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	Var *localVarPtr = varFramePtr->compiledLocals;
 	int varNameLen = strlen(varName);
 
-	for (i = 0;  i < localCt;  i++) {
+	for (i=0 ; i<localCt ; i++) {
 	    if (!TclIsVarTemporary(localPtr)) {
 		register char *localName = localVarPtr->name;
 		if ((varName[0] == localName[0])
@@ -867,7 +865,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
  *
  * TclLookupArrayElement --
  *
- *	This procedure is used to locate a variable which is in an array's
+ *	This function is used to locate a variable which is in an array's
  *	hashtable given a pointer to the array's Var structure and the
  *	element's name.
  *
@@ -900,22 +898,22 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
  */
 
 Var *
-TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, createElem, arrayPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for lookup. */
-    CONST char *arrayName;	/* This is the name of the array. */
-    CONST char *elName;		/* Name of element within array. */
-    CONST int flags;		/* Only TCL_LEAVE_ERR_MSG bit matters. */
-    CONST char *msg;		/* Verb to use in error messages, e.g.  "read"
+TclLookupArrayElement(
+    Tcl_Interp *interp,		/* Interpreter to use for lookup. */
+    CONST char *arrayName,	/* This is the name of the array. */
+    CONST char *elName,		/* Name of element within array. */
+    CONST int flags,		/* Only TCL_LEAVE_ERR_MSG bit matters. */
+    CONST char *msg,		/* Verb to use in error messages, e.g. "read"
 				 * or "set". Only needed if TCL_LEAVE_ERR_MSG
 				 * is set in flags. */
-    CONST int createArray;	/* If 1, transform arrayName to be an array if
+    CONST int createArray,	/* If 1, transform arrayName to be an array if
 				 * it isn't one yet and the transformation is
 				 * possible. If 0, return error if it isn't
 				 * already an array. */
-    CONST int createElem;	/* If 1, create hash table entry for the
+    CONST int createElem,	/* If 1, create hash table entry for the
 				 * element, if it doesn't already exist. If 0,
 				 * return error if it doesn't exist. */
-    Var *arrayPtr;		/* Pointer to the array's Var structure. */
+    Var *arrayPtr)		/* Pointer to the array's Var structure. */
 {
     Tcl_HashEntry *hPtr;
     int new;
@@ -1005,15 +1003,15 @@ TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, create
  */
 
 CONST char *
-Tcl_GetVar(interp, varName, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which varName is to
+Tcl_GetVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    CONST char *varName;	/* Name of a variable in interp. */
-    int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY,
+    CONST char *varName,	/* Name of a variable in interp. */
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
 				 * bits. */
 {
-    return Tcl_GetVar2(interp, varName, (char *) NULL, flags);
+    return Tcl_GetVar2(interp, varName, NULL, flags);
 }
 
 /*
@@ -1040,14 +1038,14 @@ Tcl_GetVar(interp, varName, flags)
  */
 
 CONST char *
-Tcl_GetVar2(interp, part1, part2, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+Tcl_GetVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    CONST char *part1;		/* Name of an array (if part2 is non-NULL) or
+    CONST char *part1,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
-    CONST char *part2;		/* If non-NULL, gives the name of an element
+    CONST char *part2,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY,
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY and TCL_LEAVE_ERR_MSG *
 				 * bits. */
 {
@@ -1084,14 +1082,14 @@ Tcl_GetVar2(interp, part1, part2, flags)
  */
 
 Tcl_Obj *
-Tcl_GetVar2Ex(interp, part1, part2, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+Tcl_GetVar2Ex(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    CONST char *part1;		/* Name of an array (if part2 is non-NULL) or
+    CONST char *part1,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
-    CONST char *part2;		/* If non-NULL, gives the name of an element
+    CONST char *part2,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     Var *varPtr, *arrayPtr;
@@ -1136,16 +1134,16 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
  */
 
 Tcl_Obj *
-Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+Tcl_ObjGetVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    register Tcl_Obj *part1Ptr;	/* Points to an object holding the name of an
+    register Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    register Tcl_Obj *part2Ptr;	/* If non-null, points to an object holding
+    register Tcl_Obj *part2Ptr,	/* If non-null, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
-    int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY and
+    int flags)			/* OR-ed combination of TCL_GLOBAL_ONLY and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     Var *varPtr, *arrayPtr;
@@ -1193,17 +1191,17 @@ Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags)
  */
 
 Tcl_Obj *
-TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+TclPtrGetVar(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    register Var *varPtr;	/* The variable to be read.*/
-    Var *arrayPtr;		/* NULL for scalar variables, pointer to the
+    register Var *varPtr,	/* The variable to be read.*/
+    Var *arrayPtr,		/* NULL for scalar variables, pointer to the
 				 * containing array otherwise. */
-    CONST char *part1;		/* Name of an array (if part2 is non-NULL) or
+    CONST char *part1,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
-    CONST char *part2;		/* If non-NULL, gives the name of an element
+    CONST char *part2,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    CONST int flags;		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    CONST int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1259,7 +1257,7 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
  *
  * Tcl_SetObjCmd --
  *
- *	This procedure is invoked to process the "set" Tcl command.  See the
+ *	This function is invoked to process the "set" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -1273,11 +1271,11 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
 
 	/* ARGSUSED */
 int
-Tcl_SetObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    register Tcl_Interp *interp;/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_SetObjCmd(
+    ClientData dummy,		/* Not used. */
+    register Tcl_Interp *interp,/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValueObj;
 
@@ -1327,17 +1325,17 @@ Tcl_SetObjCmd(dummy, interp, objc, objv)
  */
 
 CONST char *
-Tcl_SetVar(interp, varName, newValue, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which varName is to
+Tcl_SetVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    CONST char *varName;	/* Name of a variable in interp. */
-    CONST char *newValue;	/* New value for varName. */
-    int flags;			/* Various flags that tell how to set value:
+    CONST char *varName,	/* Name of a variable in interp. */
+    CONST char *newValue,	/* New value for varName. */
+    int flags)			/* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    return Tcl_SetVar2(interp, varName, (char *) NULL, newValue, flags);
+    return Tcl_SetVar2(interp, varName, NULL, newValue, flags);
 }
 
 /*
@@ -1367,16 +1365,16 @@ Tcl_SetVar(interp, varName, newValue, flags)
  */
 
 CONST char *
-Tcl_SetVar2(interp, part1, part2, newValue, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+Tcl_SetVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    CONST char *part1;		/* If part2 is NULL, this is name of scalar
+    CONST char *part1,		/* If part2 is NULL, this is name of scalar
 				 * variable. Otherwise it is the name of an
 				 * array. */
-    CONST char *part2;		/* Name of an element within an array, or
+    CONST char *part2,		/* Name of an element within an array, or
 				 * NULL. */
-    CONST char *newValue;	/* New value for variable. */
-    int flags;			/* Various flags that tell how to set value:
+    CONST char *newValue,	/* New value for variable. */
+    int flags)			/* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT, or
 				 * TCL_LEAVE_ERR_MSG */
@@ -1440,15 +1438,15 @@ Tcl_SetVar2(interp, part1, part2, newValue, flags)
  */
 
 Tcl_Obj *
-Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+Tcl_SetVar2Ex(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be found. */
-    CONST char *part1;		/* Name of an array (if part2 is non-NULL) or
+    CONST char *part1,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
-    CONST char *part2;		/* If non-NULL, gives the name of an element
+    CONST char *part2,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int flags;			/* Various flags that tell how to set value:
+    Tcl_Obj *newValuePtr,	/* New value for variable. */
+    int flags)			/* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT or
 				 * TCL_LEAVE_ERR_MSG. */
@@ -1490,17 +1488,17 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
  */
 
 Tcl_Obj *
-Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, newValuePtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+Tcl_ObjSetVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be found. */
-    register Tcl_Obj *part1Ptr;	/* Points to an object holding the name of an
+    register Tcl_Obj *part1Ptr,	/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    register Tcl_Obj *part2Ptr;	/* If non-null, points to an object holding
+    register Tcl_Obj *part2Ptr,	/* If non-NULL, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
-    Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int flags;			/* Various flags that tell how to set value:
+    Tcl_Obj *newValuePtr,	/* New value for variable. */
+    int flags)			/* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT, or
 				 * TCL_LEAVE_ERR_MSG. */
@@ -1547,17 +1545,19 @@ Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, newValuePtr, flags)
  */
 
 Tcl_Obj *
-TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+TclPtrSetVar(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be looked up. */
-    register Var *varPtr;
-    Var *arrayPtr;
-    CONST char *part1;		/* Name of an array (if part2 is non-NULL) or
+    register Var *varPtr,	/* Reference to the variable to set. */
+    Var *arrayPtr,		/* Reference to the array containing the
+				 * variable, or NULL if the variable is a
+				 * scalar. */
+    CONST char *part1,		/* Name of an array (if part2 is non-NULL) or
 				 * the name of a variable. */
-    CONST char *part2;		/* If non-NULL, gives the name of an element
+    CONST char *part2,		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
-    Tcl_Obj *newValuePtr;	/* New value for variable. */
-    CONST int flags;		/* OR-ed combination of TCL_GLOBAL_ONLY, and
+    Tcl_Obj *newValuePtr,	/* New value for variable. */
+    CONST int flags)		/* OR-ed combination of TCL_GLOBAL_ONLY, and
 				 * TCL_LEAVE_ERR_MSG bits. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1568,7 +1568,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     /*
      * If the variable is in a hashtable and its hPtr field is NULL, then we
      * may have an upvar to an array element where the array was deleted or an
-     * upvar to a namespace variable whose namespace was deleted.  Generate an
+     * upvar to a namespace variable whose namespace was deleted. Generate an
      * error (allowing the variable to be reset would screw up our storage
      * allocation and is meaningless anyway).
      */
@@ -1718,171 +1718,6 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
     }
     return resultPtr;
 }
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * TclIncrVar2 --
- *
- *	Given a two-part variable name, which may refer either to a scalar
- *	variable or an element of an array, increment the Tcl object value of
- *	the variable by a specified amount.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable.  If the specified variable doesn't exist, or there is a
- *	clash in array usage, or an error occurs while executing variable
- *	traces, then NULL is returned and a message will be left in the
- *	interpreter's result.
- *
- * Side effects:
- *	The value of the given variable is incremented by the specified
- *	amount. If either the array or the entry didn't exist then a new
- *	variable is created. The ref count for the returned object is _not_
- *	incremented to reflect the returned reference; if you want to keep a
- *	reference to the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclIncrVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
-				 * be found. */
-    Tcl_Obj *part1Ptr;		/* Points to an object holding the name of an
-				 * array (if part2 is non-NULL) or the name of
-				 * a variable. */
-    Tcl_Obj *part2Ptr;		/* If non-null, points to an object holding
-				 * the name of an element in the array
-				 * part1Ptr. */
-    long incrAmount;		/* Amount to be added to variable. */
-    int flags;			/* Various flags that tell how to incr value:
-				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
-				 * TCL_LEAVE_ERR_MSG. */
-{
-    Var *varPtr, *arrayPtr;
-    char *part1, *part2;
-
-    part1 = TclGetString(part1Ptr);
-    part2 = ((part2Ptr == NULL)? NULL : TclGetString(part2Ptr));
-
-    varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
-	    0, 1, &arrayPtr);
-    if (varPtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
-    }
-    return TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2,
-	    incrAmount, flags);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclPtrIncrVar --
- *
- *	Given the pointers to a variable and possible containing array,
- *	increment the Tcl object value of the variable by a specified amount.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable.  If the specified variable doesn't exist, or there is a
- *	clash in array usage, or an error occurs while executing variable
- *	traces, then NULL is returned and a message will be left in the
- *	interpreter's result.
- *
- * Side effects:
- *	The value of the given variable is incremented by the specified
- *	amount. If either the array or the entry didn't exist then a new
- *	variable is created. The ref count for the returned object is _not_
- *	incremented to reflect the returned reference; if you want to keep a
- *	reference to the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
-				 * be found. */
-    Var *varPtr;
-    Var *arrayPtr;
-    CONST char *part1;		/* Points to an object holding the name of an
-				 * array (if part2 is non-NULL) or the name of
-				 * a variable. */
-    CONST char *part2;		/* If non-null, points to an object holding
-				 * the name of an element in the array
-				 * part1Ptr. */
-    CONST long incrAmount;	/* Amount to be added to variable. */
-    CONST int flags;		/* Various flags that tell how to incr value:
-				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
-				 * TCL_LEAVE_ERR_MSG. */
-{
-    register Tcl_Obj *varValuePtr;
-    int createdNewObj;		/* Set 1 if var's value object is shared so we
-				 * must increment a copy (i.e. copy on
-				 * write). */
-    long i;
-
-    varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags);
-
-    if (varValuePtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
-    }
-
-    /*
-     * Increment the variable's value. If the object is unshared we can modify
-     * it directly, otherwise we must create a new copy to modify: this is
-     * "copy on write". Then free the variable's old string representation, if
-     * any, since it will no longer be valid.
-     */
-
-    createdNewObj = 0;
-    if (Tcl_IsShared(varValuePtr)) {
-	varValuePtr = Tcl_DuplicateObj(varValuePtr);
-	createdNewObj = 1;
-    }
-    if (varValuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wide;
-	TclGetWide(wide,varValuePtr);
-	TclSetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
-    } else if (varValuePtr->typePtr == &tclIntType) {
-	i = varValuePtr->internalRep.longValue;
-	TclSetIntObj(varValuePtr, i + incrAmount);
-    } else {
-	/*
-	 * Not an integer or wide internal-rep...
-	 */
-
-	Tcl_WideInt wide;
-	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
-	    if (createdNewObj) {
-		TclDecrRefCount(varValuePtr); /* free unneeded copy */
-	    }
-	    return NULL;
-	}
-	if (wide <= Tcl_LongAsWide(LONG_MAX)
-		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
-	    TclSetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
-	} else {
-	    TclSetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
-	}
-    }
-
-    /*
-     * Store the variable's new value and run any write traces.
-     */
-
-    return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
-	    varValuePtr, flags);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1895,10 +1730,10 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
  *
  * Results:
  *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable.  If the specified variable doesn't exist, or there is a
- *	clash in array usage, or an error occurs while executing variable
- *	traces, then NULL is returned and a message will be left in the
- *	interpreter's result.
+ *	variable. If the specified variable doesn't exist, or there is a clash
+ *	in array usage, or an error occurs while executing variable traces,
+ *	then NULL is returned and a message will be left in the interpreter's
+ *	result.
  *
  * Side effects:
  *	The value of the given variable is incremented by the specified
@@ -1911,17 +1746,17 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
  */
 
 Tcl_Obj *
-TclIncrObjVar2(interp, part1Ptr, part2Ptr, incrPtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+TclIncrObjVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be found. */
-    Tcl_Obj *part1Ptr;		/* Points to an object holding the name of an
+    Tcl_Obj *part1Ptr,		/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    Tcl_Obj *part2Ptr;		/* If non-null, points to an object holding
+    Tcl_Obj *part2Ptr,		/* If non-null, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
-    Tcl_Obj *incrPtr;		/* Amount to be added to variable. */
-    int flags;			/* Various flags that tell how to incr value:
+    Tcl_Obj *incrPtr,		/* Amount to be added to variable. */
+    int flags)			/* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
@@ -1953,10 +1788,10 @@ TclIncrObjVar2(interp, part1Ptr, part2Ptr, incrPtr, flags)
  *
  * Results:
  *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable.  If the specified variable doesn't exist, or there is a
- *	clash in array usage, or an error occurs while executing variable
- *	traces, then NULL is returned and a message will be left in the
- *	interpreter's result.
+ *	variable. If the specified variable doesn't exist, or there is a clash
+ *	in array usage, or an error occurs while executing variable traces,
+ *	then NULL is returned and a message will be left in the interpreter's
+ *	result.
  *
  * Side effects:
  *	The value of the given variable is incremented by the specified
@@ -1969,20 +1804,22 @@ TclIncrObjVar2(interp, part1Ptr, part2Ptr, incrPtr, flags)
  */
 
 Tcl_Obj *
-TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1, part2, incrPtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
+TclPtrIncrObjVar(
+    Tcl_Interp *interp,		/* Command interpreter in which variable is to
 				 * be found. */
-    Var *varPtr;
-    Var *arrayPtr;
-    CONST char *part1;		/* Points to an object holding the name of an
+    Var *varPtr,		/* Reference to the variable to set. */
+    Var *arrayPtr,		/* Reference to the array containing the
+				 * variable, or NULL if the variable is a
+				 * scalar. */
+    CONST char *part1,		/* Points to an object holding the name of an
 				 * array (if part2 is non-NULL) or the name of
 				 * a variable. */
-    CONST char *part2;		/* If non-null, points to an object holding
+    CONST char *part2,		/* If non-null, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
-    Tcl_Obj *incrPtr;		/* Increment value */
+    Tcl_Obj *incrPtr,		/* Increment value */
 /* TODO: Which of these flag values really make sense? */
-    CONST int flags;		/* Various flags that tell how to incr value:
+    CONST int flags)		/* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
@@ -2008,165 +1845,6 @@ TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1, part2, incrPtr, flags)
     Tcl_DecrRefCount(varValuePtr);
     return newValuePtr;
 }
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * TclIncrWideVar2 --
- *
- *	Given a two-part variable name, which may refer either to a scalar
- *	variable or an element of an array, increment the Tcl object value of
- *	the variable by a specified amount.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable.  If the specified variable doesn't exist, or there is a
- *	clash in array usage, or an error occurs while executing variable
- *	traces, then NULL is returned and a message will be left in the
- *	interpreter's result.
- *
- * Side effects:
- *	The value of the given variable is incremented by the specified
- *	amount. If either the array or the entry didn't exist then a new
- *	variable is created. The ref count for the returned object is _not_
- *	incremented to reflect the returned reference; if you want to keep a
- *	reference to the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclIncrWideVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
-				 * be found. */
-    Tcl_Obj *part1Ptr;		/* Points to an object holding the name of an
-				 * array (if part2 is non-NULL) or the name of
-				 * a variable. */
-    Tcl_Obj *part2Ptr;		/* If non-null, points to an object holding
-				 * the name of an element in the array
-				 * part1Ptr. */
-    Tcl_WideInt incrAmount;	/* Amount to be added to variable. */
-    int flags;			/* Various flags that tell how to incr value:
-				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
-				 * TCL_LEAVE_ERR_MSG. */
-{
-    Var *varPtr, *arrayPtr;
-    char *part1, *part2;
-
-    part1 = TclGetString(part1Ptr);
-    part2 = ((part2Ptr == NULL)? NULL : TclGetString(part2Ptr));
-
-    varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
-	    0, 1, &arrayPtr);
-    if (varPtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
-    }
-    return TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2,
-	    incrAmount, flags);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclPtrIncrWideVar --
- *
- *	Given the pointers to a variable and possible containing array,
- *	increment the Tcl object value of the variable by a specified amount.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable. If the specified variable doesn't exist, or there is a clash
- *	in array usage, or an error occurs while executing variable traces,
- *	then NULL is returned and a message will be left in the interpreter's
- *	result.
- *
- * Side effects:
- *	The value of the given variable is incremented by the specified
- *	amount. If either the array or the entry didn't exist then a new
- *	variable is created. The ref count for the returned object is _not_
- *	incremented to reflect the returned reference; if you want to keep a
- *	reference to the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is to
-				 * be found. */
-    Var *varPtr;
-    Var *arrayPtr;
-    CONST char *part1;		/* Points to an object holding the name of an
-				 * array (if part2 is non-NULL) or the name of
-				 * a variable. */
-    CONST char *part2;		/* If non-null, points to an object holding
-				 * the name of an element in the array
-				 * part1Ptr. */
-    CONST Tcl_WideInt incrAmount;
-				/* Amount to be added to variable. */
-    CONST int flags;		/* Various flags that tell how to incr value:
-				 * any of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
-				 * TCL_LEAVE_ERR_MSG. */
-{
-    register Tcl_Obj *varValuePtr;
-    int createdNewObj;		/* Set 1 if var's value object is shared so we
-				 * must increment a copy (i.e. copy on
-				 * write). */
-    Tcl_WideInt wide;
-
-    varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags);
-
-    if (varValuePtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
-    }
-
-    /*
-     * Increment the variable's value. If the object is unshared we can modify
-     * it directly, otherwise we must create a new copy to modify: this is
-     * "copy on write". Then free the variable's old string representation, if
-     * any, since it will no longer be valid.
-     */
-
-    createdNewObj = 0;
-    if (Tcl_IsShared(varValuePtr)) {
-	varValuePtr = Tcl_DuplicateObj(varValuePtr);
-	createdNewObj = 1;
-    }
-    if (varValuePtr->typePtr == &tclWideIntType) {
-	TclGetWide(wide, varValuePtr);
-	TclSetWideIntObj(varValuePtr, wide + incrAmount);
-    } else if (varValuePtr->typePtr == &tclIntType) {
-	long i = varValuePtr->internalRep.longValue;
-	TclSetWideIntObj(varValuePtr, Tcl_LongAsWide(i) + incrAmount);
-    } else {
-	/*
-	 * Not an integer or wide internal-rep...
-	 */
-
-	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
-	    if (createdNewObj) {
-		TclDecrRefCount(varValuePtr); /* free unneeded copy */
-	    }
-	    return NULL;
-	}
-	TclSetWideIntObj(varValuePtr, wide + incrAmount);
-    }
-
-    /*
-     * Store the variable's new value and run any write traces.
-     */
-
-    return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
-	    varValuePtr, flags);
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2177,7 +1855,7 @@ TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
  *
  * Results:
  *	Returns TCL_OK if the variable was successfully deleted, TCL_ERROR if
- *	the variable can't be unset.  In the event of an error, if the
+ *	the variable can't be unset. In the event of an error, if the
  *	TCL_LEAVE_ERR_MSG flag is set then an error message is left in the
  *	interp's result.
  *
@@ -2189,17 +1867,17 @@ TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
  */
 
 int
-Tcl_UnsetVar(interp, varName, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which varName is to
+Tcl_UnsetVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    CONST char *varName;	/* Name of a variable in interp. May be either
+    CONST char *varName,	/* Name of a variable in interp. May be either
 				 * a scalar name or an array name or an
 				 * element in an array. */
-    int flags;			/* OR-ed combination of any of
+    int flags)			/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY or
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    return Tcl_UnsetVar2(interp, varName, (char *) NULL, flags);
+    return Tcl_UnsetVar2(interp, varName, NULL, flags);
 }
 
 /*
@@ -2211,25 +1889,25 @@ Tcl_UnsetVar(interp, varName, flags)
  *
  * Results:
  *	Returns TCL_OK if the variable was successfully deleted, TCL_ERROR if
- *	the variable can't be unset.  In the event of an error, if the
+ *	the variable can't be unset. In the event of an error, if the
  *	TCL_LEAVE_ERR_MSG flag is set then an error message is left in the
  *	interp's result.
  *
  * Side effects:
  *	If part1 and part2 indicate a local or global variable in interp, it
- *	is deleted.  If part1 is an array name and part2 is NULL, then the
+ *	is deleted. If part1 is an array name and part2 is NULL, then the
  *	whole array is deleted.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Tcl_UnsetVar2(interp, part1, part2, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which varName is to
+Tcl_UnsetVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    CONST char *part1;		/* Name of variable or array. */
-    CONST char *part2;		/* Name of element within array or NULL. */
-    int flags;			/* OR-ed combination of any of
+    CONST char *part1,		/* Name of variable or array. */
+    CONST char *part2,		/* Name of element within array or NULL. */
+    int flags)			/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
 {
@@ -2253,25 +1931,25 @@ Tcl_UnsetVar2(interp, part1, part2, flags)
  *
  * Results:
  *	Returns TCL_OK if the variable was successfully deleted, TCL_ERROR if
- *	the variable can't be unset.  In the event of an error, if the
+ *	the variable can't be unset. In the event of an error, if the
  *	TCL_LEAVE_ERR_MSG flag is set then an error message is left in the
  *	interp's result.
  *
  * Side effects:
  *	If part1ptr and part2Ptr indicate a local or global variable in
- *	interp, it is deleted.  If part1Ptr is an array name and part2Ptr is
+ *	interp, it is deleted. If part1Ptr is an array name and part2Ptr is
  *	NULL, then the whole array is deleted.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclObjUnsetVar2(interp, part1Ptr, part2, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which varName is to
+TclObjUnsetVar2(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    Tcl_Obj *part1Ptr;		/* Name of variable or array. */
-    CONST char *part2;		/* Name of element within array or NULL. */
-    int flags;			/* OR-ed combination of any of
+    Tcl_Obj *part1Ptr,		/* Name of variable or array. */
+    CONST char *part2,		/* Name of element within array or NULL. */
+    int flags)			/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
 {
@@ -2299,7 +1977,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 
     /*
      * The code below is tricky, because of the possibility that a trace
-     * procedure might try to access a variable being deleted. To handle this
+     * function might try to access a variable being deleted. To handle this
      * situation gracefully, do things in three steps:
      * 1. Copy the contents of the variable to a dummy variable structure, and
      *    mark the original Var structure as undefined.
@@ -2326,7 +2004,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     varPtr->refCount++;
 
     /*
-     * Call trace procedures for the variable being deleted. Then delete its
+     * Call trace functions for the variable being deleted. Then delete its
      * traces. Be sure to abort any other traces for the variable that are
      * still pending. Special tricks:
      * 1. We need to increment varPtr's refCount around this: TclCallVarTraces
@@ -2346,7 +2024,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	    dummyVar.tracePtr = tracePtr->nextPtr;
 	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	}
-	for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
+	for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
 		activePtr = activePtr->nextPtr) {
 	    if (activePtr->varPtr == varPtr) {
 		activePtr->nextTracePtr = NULL;
@@ -2365,7 +2043,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
 	/*
 	 * Deleting the elements of the array may cause traces to be fired on
-	 * those elements.  Before deleting them, bump the reference count of
+	 * those elements. Before deleting them, bump the reference count of
 	 * the array, so that if those trace procs make a global or upvar link
 	 * to the array, the array is not deleted when the call stack gets
 	 * popped (we will delete the array ourselves later in this function).
@@ -2379,7 +2057,10 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	DeleteArray(iPtr, part1, dummyVarPtr,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_UNSETS);
-	/* Decr ref count */
+
+	/*
+	 * Decr ref count
+	 */
     }
     if (TclIsVarScalar(dummyVarPtr)
 	    && (dummyVarPtr->value.objPtr != NULL)) {
@@ -2438,7 +2119,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
  *
  * Tcl_UnsetObjCmd --
  *
- *	This object-based procedure is invoked to process the "unset" Tcl
+ *	This object-based function is invoked to process the "unset" Tcl
  *	command. See the user documentation for details on what it does.
  *
  * Results:
@@ -2452,11 +2133,11 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 
 	/* ARGSUSED */
 int
-Tcl_UnsetObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_UnsetObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     register int i, flags = TCL_LEAVE_ERR_MSG;
     register char *name;
@@ -2475,7 +2156,7 @@ Tcl_UnsetObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Simple, restrictive argument parsing.  The only options are -- and
+     * Simple, restrictive argument parsing. The only options are -- and
      * -nocomplain (which must come first and be given exactly to be an
      * option).
      */
@@ -2496,7 +2177,7 @@ Tcl_UnsetObjCmd(dummy, interp, objc, objv)
  	}
     }
 
-    for (; i < objc;  i++) {
+    for (; i < objc; i++) {
 	if ((TclObjUnsetVar2(interp, objv[i], NULL, flags) != TCL_OK)
 		&& (flags == TCL_LEAVE_ERR_MSG)) {
 	    return TCL_ERROR;
@@ -2510,7 +2191,7 @@ Tcl_UnsetObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_AppendObjCmd --
  *
- *	This object-based procedure is invoked to process the "append" Tcl
+ *	This object-based function is invoked to process the "append" Tcl
  *	command. See the user documentation for details on what it does.
  *
  * Results:
@@ -2524,11 +2205,11 @@ Tcl_UnsetObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_AppendObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_AppendObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Var *varPtr, *arrayPtr;
     char *part1;
@@ -2555,7 +2236,7 @@ Tcl_AppendObjCmd(dummy, interp, objc, objv)
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	for (i = 2;  i < objc;  i++) {
+	for (i=2 ; i<objc ; i++) {
 	    /*
 	     * Note that we do not need to increase the refCount of the Var
 	     * pointers: should a trace delete the variable, the return value
@@ -2579,7 +2260,7 @@ Tcl_AppendObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_LappendObjCmd --
  *
- *	This object-based procedure is invoked to process the "lappend" Tcl
+ *	This object-based function is invoked to process the "lappend" Tcl
  *	command. See the user documentation for details on what it does.
  *
  * Results:
@@ -2593,11 +2274,11 @@ Tcl_AppendObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_LappendObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_LappendObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
     int numElems, createdNewObj, createVar;
@@ -2610,7 +2291,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (objc == 2) {
-	newValuePtr = Tcl_ObjGetVar2(interp, objv[1], (Tcl_Obj *) NULL, 0);
+	newValuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
 	if (newValuePtr == NULL) {
 	    /*
 	     * The variable doesn't exist yet. Just create it with an empty
@@ -2642,7 +2323,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	/*
 	 * Use the TCL_TRACE_READS flag to ensure that if we have an array
 	 * with no elements set yet, but with a read trace on it, we will
-	 * create the variable and get read traces triggered.  Note that you
+	 * create the variable and get read traces triggered. Note that you
 	 * have to protect the variable pointers around the TclPtrGetVar call
 	 * to insure that they remain valid even if the variable was undefined
 	 * and unused.
@@ -2668,7 +2349,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	if (varValuePtr == NULL) {
 	    /*
 	     * We couldn't read the old value: either the var doesn't yet
-	     * exist or it's an array element.  If it's new, we will try to
+	     * exist or it's an array element. If it's new, we will try to
 	     * create it with Tcl_ObjSetVar2 below.
 	     */
 
@@ -2722,7 +2403,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_ArrayObjCmd --
  *
- *	This object-based procedure is invoked to process the "array" Tcl
+ *	This object-based function is invoked to process the "array" Tcl
  *	command. See the user documentation for details on what it does.
  *
  * Results:
@@ -2736,23 +2417,25 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_ArrayObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_ArrayObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     /*
      * The list of constants below should match the arrayOptions string array
      * below.
      */
 
-    enum {ARRAY_ANYMORE, ARRAY_DONESEARCH,  ARRAY_EXISTS, ARRAY_GET,
-	  ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
-	  ARRAY_STARTSEARCH, ARRAY_STATISTICS, ARRAY_UNSET};
+    enum {
+	ARRAY_ANYMORE, ARRAY_DONESEARCH, ARRAY_EXISTS, ARRAY_GET,
+	ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
+	ARRAY_STARTSEARCH, ARRAY_STATISTICS, ARRAY_UNSET
+    };
     static CONST char *arrayOptions[] = {
 	"anymore", "donesearch", "exists", "get", "names", "nextelement",
-	"set", "size", "startsearch", "statistics", "unset", (char *) NULL
+	"set", "size", "startsearch", "statistics", "unset", NULL
     };
 
     Interp *iPtr = (Interp *) interp;
@@ -3068,7 +2751,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	Tcl_Obj *namePtr, *resultPtr;
 	int mode, matched = 0;
 	static CONST char *options[] = {
-	    "-exact", "-glob", "-regexp", (char *) NULL
+	    "-exact", "-glob", "-regexp", NULL
 	};
 	enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
 
@@ -3259,9 +2942,9 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
  *
  * TclArraySet --
  *
- *	Set the elements of an array.  If there are no elements to set, create
- *	an empty array.  This routine is used by the Tcl_ArrayObjCmd and by
- *	the TclSetupEnv routine.
+ *	Set the elements of an array. If there are no elements to set, create
+ *	an empty array. This routine is used by the Tcl_ArrayObjCmd and by the
+ *	TclSetupEnv routine.
  *
  * Results:
  *	A standard Tcl result object.
@@ -3273,11 +2956,11 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
  */
 
 int
-TclArraySet(interp, arrayNameObj, arrayElemObj)
-    Tcl_Interp *interp;		/* Current interpreter. */
-    Tcl_Obj *arrayNameObj;	/* The array name. */
-    Tcl_Obj *arrayElemObj;	/* The array elements list or dict.  If this
-				 * is NULL, create an empty array. */
+TclArraySet(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    Tcl_Obj *arrayNameObj,	/* The array name. */
+    Tcl_Obj *arrayElemObj)	/* The array elements list or dict. If this is
+				 * NULL, create an empty array. */
 {
     Var *varPtr, *arrayPtr;
     Tcl_Obj **elemPtrs;
@@ -3337,7 +3020,7 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done)) {
 	    /*
 	     * At this point, it would be nice if the key was directly usable
-	     * by the array.  This isn't the case though.
+	     * by the array. This isn't the case though.
 	     */
 
 	    char *part2 = TclGetString(keyPtr);
@@ -3412,14 +3095,14 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 	     * Either an array element, or a scalar: lose!
 	     */
 
-	    TclVarErrMsg(interp, varName, (char*)NULL, "array set", needArray);
+	    TclVarErrMsg(interp, varName, NULL, "array set", needArray);
 	    return TCL_ERROR;
 	}
     }
     TclSetVarArray(varPtr);
     TclClearVarUndefined(varPtr);
-    varPtr->value.tablePtr =
-	    (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+    varPtr->value.tablePtr = (Tcl_HashTable *)
+	    ckalloc(sizeof(Tcl_HashTable));
     Tcl_InitHashTable(varPtr->value.tablePtr, TCL_STRING_KEYS);
     return TCL_OK;
 }
@@ -3429,7 +3112,7 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
  *
  * ObjMakeUpvar --
  *
- *	This procedure does all of the work of the "global" and "upvar"
+ *	This function does all of the work of the "global" and "upvar"
  *	commands.
  *
  * Results:
@@ -3445,21 +3128,20 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
  */
 
 static int
-ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
-	myFlags, index)
-    Tcl_Interp *interp;		/* Interpreter containing variables. Used for
+ObjMakeUpvar(
+    Tcl_Interp *interp,		/* Interpreter containing variables. Used for
 				 * error messages, too. */
-    CallFrame *framePtr;	/* Call frame containing "other" variable.
+    CallFrame *framePtr,	/* Call frame containing "other" variable.
 				 * NULL means use global :: context. */
-    Tcl_Obj *otherP1Ptr;
-    CONST char *otherP2;	/* Two-part name of variable in framePtr. */
-    CONST int otherFlags;	/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    Tcl_Obj *otherP1Ptr,
+    CONST char *otherP2,	/* Two-part name of variable in framePtr. */
+    CONST int otherFlags,	/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of "other" variable. */
-    CONST char *myName;		/* Name of variable which will refer to
+    CONST char *myName,		/* Name of variable which will refer to
 				 * otherP1/otherP2. Must be a scalar. */
-    int myFlags;		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    int index;			/* If the variable to be linked is an indexed
+    int index)			/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
@@ -3508,13 +3190,13 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
 		|| (strstr(myName, "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
 		    myName, "\": upvar won't create namespace variable that ",
-		    "refers to procedure variable", (char *) NULL);
+		    "refers to procedure variable", NULL);
 	    return TCL_ERROR;
 	}
 
 	/*
 	 * Do not permit the new variable to look like an array reference, as
-	 * it will not be reachable in that case [Bug 600812, TIP 184].  The
+	 * it will not be reachable in that case [Bug 600812, TIP 184]. The
 	 * "definition" of what "looks like an array reference" is consistent
 	 * (and must remain consistent) with the code in TclObjLookupVar().
 	 */
@@ -3529,7 +3211,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
 
 		Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
 			myName, "\": upvar won't create a scalar variable ",
-			"that looks like an array element", (char *) NULL);
+			"that looks like an array element", NULL);
 		return TCL_ERROR;
 	    }
 	}
@@ -3559,7 +3241,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
 
     if (varPtr->tracePtr != NULL) {
 	Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", myName,
-		"\" has traces: can't use for upvar", (char *) NULL);
+		"\" has traces: can't use for upvar", NULL);
 	return TCL_ERROR;
     } else if (!TclIsVarUndefined(varPtr)) {
 	/*
@@ -3580,7 +3262,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
 	    }
 	} else {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", myName,
-		    "\" already exists", (char *) NULL);
+		    "\" already exists", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -3596,11 +3278,11 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
  *
  * Tcl_UpVar --
  *
- *	This procedure links one variable to another, just like the "upvar"
+ *	This function links one variable to another, just like the "upvar"
  *	command.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs then an error
+ *	A standard Tcl completion code. If an error occurs then an error
  *	message is left in the interp's result.
  *
  * Side effects:
@@ -3612,16 +3294,16 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName,
  */
 
 int
-Tcl_UpVar(interp, frameName, varName, localName, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which varName is to
+Tcl_UpVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
 				 * be looked up. */
-    CONST char *frameName;	/* Name of the frame containing the source
+    CONST char *frameName,	/* Name of the frame containing the source
 				 * variable, such as "1" or "#0". */
-    CONST char *varName;	/* Name of a variable in interp to link to.
+    CONST char *varName,	/* Name of a variable in interp to link to.
 				 * May be either a scalar name or an element
 				 * in an array. */
-    CONST char *localName;	/* Name of link variable. */
-    int flags;			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    CONST char *localName,	/* Name of link variable. */
+    int flags)			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of localName. */
 {
     return Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags);
@@ -3632,11 +3314,11 @@ Tcl_UpVar(interp, frameName, varName, localName, flags)
  *
  * Tcl_UpVar2 --
  *
- *	This procedure links one variable to another, just like the "upvar"
+ *	This function links one variable to another, just like the "upvar"
  *	command.
  *
  * Results:
- *	A standard Tcl completion code.  If an error occurs then an error
+ *	A standard Tcl completion code. If an error occurs then an error
  *	message is left in the interp's result.
  *
  * Side effects:
@@ -3648,16 +3330,16 @@ Tcl_UpVar(interp, frameName, varName, localName, flags)
  */
 
 int
-Tcl_UpVar2(interp, frameName, part1, part2, localName, flags)
-    Tcl_Interp *interp;		/* Interpreter containing variables.  Used for
+Tcl_UpVar2(
+    Tcl_Interp *interp,		/* Interpreter containing variables. Used for
 				 * error messages too. */
-    CONST char *frameName;	/* Name of the frame containing the source
+    CONST char *frameName,	/* Name of the frame containing the source
 				 * variable, such as "1" or "#0". */
-    CONST char *part1;
-    CONST char *part2;		/* Two parts of source variable name to link
+    CONST char *part1,
+    CONST char *part2,		/* Two parts of source variable name to link
 				 * to. */
-    CONST char *localName;	/* Name of link variable. */
-    int flags;			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    CONST char *localName,	/* Name of link variable. */
+    int flags)			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of localName. */
 {
     int result;
@@ -3682,7 +3364,7 @@ Tcl_UpVar2(interp, frameName, part1, part2, localName, flags)
  *
  * Tcl_GetVariableFullName --
  *
- *	Given a Tcl_Var token returned by Tcl_FindNamespaceVar, this procedure
+ *	Given a Tcl_Var token returned by Tcl_FindNamespaceVar, this function
  *	appends to an object the namespace variable's full name, qualified by
  *	a sequence of parent namespace names.
  *
@@ -3697,11 +3379,11 @@ Tcl_UpVar2(interp, frameName, part1, part2, localName, flags)
  */
 
 void
-Tcl_GetVariableFullName(interp, variable, objPtr)
-    Tcl_Interp *interp;		/* Interpreter containing the variable. */
-    Tcl_Var variable;		/* Token for the variable returned by a
+Tcl_GetVariableFullName(
+    Tcl_Interp *interp,		/* Interpreter containing the variable. */
+    Tcl_Var variable,		/* Token for the variable returned by a
 				 * previous call to Tcl_FindNamespaceVar. */
-    Tcl_Obj *objPtr;		/* Points to the object onto which the
+    Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * variable's full name is appended. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -3736,7 +3418,7 @@ Tcl_GetVariableFullName(interp, variable, objPtr)
  *
  * Tcl_GlobalObjCmd --
  *
- *	This object-based procedure is invoked to process the "global" Tcl
+ *	This object-based function is invoked to process the "global" Tcl
  *	command. See the user documentation for details on what it does.
  *
  * Results:
@@ -3749,11 +3431,11 @@ Tcl_GetVariableFullName(interp, variable, objPtr)
  */
 
 int
-Tcl_GlobalObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_GlobalObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
     register Tcl_Obj *objPtr;
@@ -3775,7 +3457,7 @@ Tcl_GlobalObjCmd(dummy, interp, objc, objv)
 	return TCL_OK;
     }
 
-    for (i = 1;  i < objc;  i++) {
+    for (i=1 ; i<objc ; i++) {
 	/*
 	 * Make a local variable linked to its counterpart in the global ::
 	 * namespace.
@@ -3789,7 +3471,7 @@ Tcl_GlobalObjCmd(dummy, interp, objc, objv)
 	 * the local "link" variable must be the simple name at the tail.
 	 */
 
-	for (tail = varName;  *tail != '\0';  tail++) {
+	for (tail=varName ; *tail!='\0' ; tail++) {
 	    /* empty body */
 	}
 	while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
@@ -3803,9 +3485,8 @@ Tcl_GlobalObjCmd(dummy, interp, objc, objv)
 	 * Link to the variable "varName" in the global :: namespace.
 	 */
 
-	result = ObjMakeUpvar(interp, (CallFrame *) NULL,
-		objPtr, NULL, /*otherFlags*/ TCL_GLOBAL_ONLY,
-		/*myName*/ tail, /*myFlags*/ 0, -1);
+	result = ObjMakeUpvar(interp, (CallFrame *) NULL, objPtr, NULL,
+		TCL_GLOBAL_ONLY, /*myName*/ tail, /*myFlags*/ 0, -1);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -3841,18 +3522,18 @@ Tcl_GlobalObjCmd(dummy, interp, objc, objv)
  *	if anything goes wrong.
  *
  * Side effects:
- *	If anything goes wrong, this procedure returns an error message as the
+ *	If anything goes wrong, this function returns an error message as the
  *	result in the interpreter's result object.
  *
  *----------------------------------------------------------------------
  */
 
 int
-Tcl_VariableObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_VariableObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
     char *varName, *tail, *cp;
@@ -3866,7 +3547,7 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    for (i = 1;  i < objc;  i = i+2) {
+    for (i=1 ; i<objc ; i+=2) {
 	/*
 	 * Look up each variable in the current namespace context, creating it
 	 * if necessary.
@@ -3880,8 +3561,8 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 
 	if (arrayPtr != NULL) {
 	    /*
-	     * Variable cannot be an element in an array.  If arrayPtr is
-	     * non-null, it is, so throw up an error and return.
+	     * Variable cannot be an element in an array. If arrayPtr is
+	     * non-NULL, it is, so throw up an error and return.
 	     */
 
 	    TclVarErrMsg(interp, varName, NULL, "define", isArrayElement);
@@ -3946,8 +3627,7 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 	     * current namespace.
 	     */
 
-	    result = ObjMakeUpvar(interp, (CallFrame *) NULL,
-		    /*otherP1*/ varNamePtr, /*otherP2*/ NULL,
+	    result = ObjMakeUpvar(interp, NULL, varNamePtr, /*otherP2*/ NULL,
 		    /*otherFlags*/ TCL_NAMESPACE_ONLY,
 		    /*myName*/ tail, /*myFlags*/ 0, -1);
 	    if (result != TCL_OK) {
@@ -3963,7 +3643,7 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
  *
  * Tcl_UpvarObjCmd --
  *
- *	This object-based procedure is invoked to process the "upvar" Tcl
+ *	This object-based function is invoked to process the "upvar" Tcl
  *	command. See the user documentation for details on what it does.
  *
  * Results:
@@ -3977,11 +3657,11 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_UpvarObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+Tcl_UpvarObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     CallFrame *framePtr;
     char *localName;
@@ -4010,7 +3690,7 @@ Tcl_UpvarObjCmd(dummy, interp, objc, objv)
     objv += result+1;
 
     /*
-     * Iterate over each (other variable, local variable) pair.  Divide the
+     * Iterate over each (other variable, local variable) pair. Divide the
      * other variable name into two parts, then call MakeUpvar to do all the
      * work of linking it to the local variable.
      */
@@ -4048,7 +3728,7 @@ Tcl_UpvarObjCmd(dummy, interp, objc, objv)
  */
 
 static Var *
-NewVar()
+NewVar(void)
 {
     register Var *varPtr;
 
@@ -4078,16 +3758,16 @@ NewVar()
  *
  * Side effects:
  *	Updates the internal type and representation of the object to make
- *	this an array-search object.  See the tclArraySearchType declaration
+ *	this an array-search object. See the tclArraySearchType declaration
  *	above for details of the internal representation.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-SetArraySearchObj(interp, objPtr)
-    Tcl_Interp *interp;
-    Tcl_Obj *objPtr;
+SetArraySearchObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
 {
     char *string;
     char *end;
@@ -4122,13 +3802,12 @@ SetArraySearchObj(interp, objPtr)
 
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &tclArraySearchType;
-    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *)(((char *)NULL) + id);
-    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *)(((char *)NULL) + offset);
+    objPtr->internalRep.twoPtrValue.ptr1 = (void *)(((char *)NULL) + id);
+    objPtr->internalRep.twoPtrValue.ptr2 = (void *)(((char *)NULL) + offset);
     return TCL_OK;
 
   syntax:
-    Tcl_AppendResult(interp, "illegal search identifier \"", string, "\"",
-	    (char *) NULL);
+    Tcl_AppendResult(interp, "illegal search identifier \"",string,"\"", NULL);
     return TCL_ERROR;
 }
 
@@ -4137,12 +3816,12 @@ SetArraySearchObj(interp, objPtr)
  *
  * ParseSearchId --
  *
- *	This procedure translates from a tcl object to a pointer to an active
+ *	This function translates from a tcl object to a pointer to an active
  *	array search (if there is one that matches the string).
  *
  * Results:
  *	The return value is a pointer to the array search indicated by string,
- *	or NULL if there isn't one.  If NULL is returned, the interp's result
+ *	or NULL if there isn't one. If NULL is returned, the interp's result
  *	contains an error message.
  *
  * Side effects:
@@ -4153,12 +3832,12 @@ SetArraySearchObj(interp, objPtr)
  */
 
 static ArraySearch *
-ParseSearchId(interp, varPtr, varName, handleObj)
-    Tcl_Interp *interp;		/* Interpreter containing variable. */
-    CONST Var *varPtr;		/* Array variable search is for. */
-    CONST char *varName;	/* Name of array variable that search is
+ParseSearchId(
+    Tcl_Interp *interp,		/* Interpreter containing variable. */
+    CONST Var *varPtr,		/* Array variable search is for. */
+    CONST char *varName,	/* Name of array variable that search is
 				 * supposed to be for. */
-    Tcl_Obj *handleObj;		/* Object containing id of search. Must have
+    Tcl_Obj *handleObj)		/* Object containing id of search. Must have
 				 * form "search-num-var" where "num" is a
 				 * decimal number and "var" is a variable
 				 * name. */
@@ -4193,7 +3872,7 @@ ParseSearchId(interp, varPtr, varName, handleObj)
 
     if (strcmp(string+offset, varName) != 0) {
 	Tcl_AppendResult(interp, "search identifier \"", string,
-		"\" isn't for variable \"", varName, "\"", (char *) NULL);
+		"\" isn't for variable \"", varName, "\"", NULL);
 	return NULL;
     }
 
@@ -4212,8 +3891,7 @@ ParseSearchId(interp, varPtr, varName, handleObj)
 	    return searchPtr;
 	}
     }
-    Tcl_AppendResult(interp, "couldn't find search \"", string, "\"",
-	    (char *) NULL);
+    Tcl_AppendResult(interp, "couldn't find search \"", string, "\"", NULL);
     return NULL;
 }
 
@@ -4222,7 +3900,7 @@ ParseSearchId(interp, varPtr, varName, handleObj)
  *
  * DeleteSearches --
  *
- *	This procedure is called to free up all of the searches associated
+ *	This function is called to free up all of the searches associated
  *	with an array variable.
  *
  * Results:
@@ -4235,8 +3913,8 @@ ParseSearchId(interp, varPtr, varName, handleObj)
  */
 
 static void
-DeleteSearches(arrayVarPtr)
-    register Var *arrayVarPtr;	/* Variable whose searches are to be
+DeleteSearches(
+    register Var *arrayVarPtr)	/* Variable whose searches are to be
 				 * deleted. */
 {
     ArraySearch *searchPtr;
@@ -4253,25 +3931,25 @@ DeleteSearches(arrayVarPtr)
  *
  * TclDeleteVars --
  *
- *	This procedure is called to recycle all the storage space associated
- *	with a table of variables. For this procedure to work correctly, it
+ *	This function is called to recycle all the storage space associated
+ *	with a table of variables. For this function to work correctly, it
  *	must not be possible for any of the variables in the table to be
- *	accessed from Tcl commands (e.g. from trace procedures).
+ *	accessed from Tcl commands (e.g. from trace functions).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Variables are deleted and trace procedures are invoked, if any are
+ *	Variables are deleted and trace functions are invoked, if any are
  *	declared.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclDeleteVars(iPtr, tablePtr)
-    Interp *iPtr;		/* Interpreter to which variables belong. */
-    Tcl_HashTable *tablePtr;	/* Hash table containing variables to
+TclDeleteVars(
+    Interp *iPtr,		/* Interpreter to which variables belong. */
+    Tcl_HashTable *tablePtr)	/* Hash table containing variables to
 				 * delete. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) iPtr;
@@ -4285,7 +3963,7 @@ TclDeleteVars(iPtr, tablePtr)
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
 
     /*
-     * Determine what flags to pass to the trace callback procedures.
+     * Determine what flags to pass to the trace callback functions.
      */
 
     flags = TCL_TRACE_UNSETS;
@@ -4298,7 +3976,7 @@ TclDeleteVars(iPtr, tablePtr)
 	flags |= TCL_INTERP_DESTROYED;
     }
 
-    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);  hPtr != NULL;
+    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
 	varPtr = (Var *) Tcl_GetHashValue(hPtr);
 
@@ -4331,7 +4009,7 @@ TclDeleteVars(iPtr, tablePtr)
 	 * we're dealing with a global variable: the hash entries will be
 	 * deleted automatically when the whole table is deleted). Note that
 	 * we give TclCallVarTraces the variable's fully-qualified name so
-	 * that any called trace procedures can refer to these variables being
+	 * that any called trace functions can refer to these variables being
 	 * deleted.
 	 */
 
@@ -4339,8 +4017,8 @@ TclDeleteVars(iPtr, tablePtr)
 	    TclNewObj(objPtr);
 	    Tcl_IncrRefCount(objPtr);	/* until done with traces */
 	    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
-	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, TclGetString(objPtr),
-		    NULL, flags, /* leaveErrMsg */ 0);
+	    TclCallVarTraces(iPtr, NULL, varPtr, TclGetString(objPtr), NULL,
+		    flags, /* leaveErrMsg */ 0);
 	    TclDecrRefCount(objPtr);	/* free no longer needed obj */
 
 	    while (varPtr->tracePtr != NULL) {
@@ -4399,31 +4077,31 @@ TclDeleteVars(iPtr, tablePtr)
  *
  * TclDeleteCompiledLocalVars --
  *
- *	This procedure is called to recycle storage space associated with the
+ *	This function is called to recycle storage space associated with the
  *	compiler-allocated array of local variables in a procedure call frame.
- *	This procedure resembles TclDeleteVars above except that each variable
- *	is stored in a call frame and not a hash table. For this procedure to
+ *	This function resembles TclDeleteVars above except that each variable
+ *	is stored in a call frame and not a hash table. For this function to
  *	work correctly, it must not be possible for any of the variable in the
- *	table to be accessed from Tcl commands (e.g. from trace procedures).
+ *	table to be accessed from Tcl commands (e.g. from trace functions).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Variables are deleted and trace procedures are invoked, if any are
+ *	Variables are deleted and trace functions are invoked, if any are
  *	declared.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclDeleteCompiledLocalVars(iPtr, framePtr)
-    Interp *iPtr;		/* Interpreter to which variables belong. */
-    CallFrame *framePtr;	/* Procedure call frame containing compiler-
+TclDeleteCompiledLocalVars(
+    Interp *iPtr,		/* Interpreter to which variables belong. */
+    CallFrame *framePtr)	/* Procedure call frame containing compiler-
 				 * assigned local variables to delete. */
 {
     register Var *varPtr;
-    int flags;			/* Flags passed to trace procedures. */
+    int flags;			/* Flags passed to trace functions. */
     Var *linkPtr;
     ActiveVarTrace *activePtr;
     int numLocals, i;
@@ -4431,7 +4109,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
     flags = TCL_TRACE_UNSETS;
     numLocals = framePtr->numCompiledLocals;
     varPtr = framePtr->compiledLocals;
-    for (i = 0;  i < numLocals;  i++) {
+    for (i=0 ; i<numLocals ; i++) {
 	/*
 	 * For global/upvar variables referenced in procedures, decrement the
 	 * reference count on the variable referred to, and free the
@@ -4461,8 +4139,8 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 */
 
 	if (varPtr->tracePtr != NULL) {
-	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, varPtr->name, NULL,
-		    flags, /* leaveErrMsg */ 0);
+	    TclCallVarTraces(iPtr, NULL, varPtr, varPtr->name, NULL, flags,
+		    /* leaveErrMsg */ 0);
 	    while (varPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = varPtr->tracePtr;
 		varPtr->tracePtr = tracePtr->nextPtr;
@@ -4502,16 +4180,16 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
  *
  * DeleteArray --
  *
- *	This procedure is called to free up everything in an array variable.
+ *	This function is called to free up everything in an array variable.
  *	It's the caller's responsibility to make sure that the array is no
- *	longer accessible before this procedure is called.
+ *	longer accessible before this function is called.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	All storage associated with varPtr's array elements is deleted
- *	(including the array's hash table). Deletion trace procedures for
+ *	(including the array's hash table). Deletion trace functions for
  *	array elements are invoked, then deleted. Any pending traces for array
  *	elements are also deleted.
  *
@@ -4519,12 +4197,11 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
  */
 
 static void
-DeleteArray(iPtr, arrayName, varPtr, flags)
-    Interp *iPtr;		/* Interpreter containing array. */
-    CONST char *arrayName;	/* Name of array (used for trace
-				 * callbacks). */
-    Var *varPtr;		/* Pointer to variable structure. */
-    int flags;			/* Flags to pass to TclCallVarTraces:
+DeleteArray(
+    Interp *iPtr,		/* Interpreter containing array. */
+    CONST char *arrayName,	/* Name of array (used for trace callbacks) */
+    Var *varPtr,		/* Pointer to variable structure. */
+    int flags)			/* Flags to pass to TclCallVarTraces:
 				 * TCL_TRACE_UNSETS and sometimes
 				 * TCL_INTERP_DESTROYED, TCL_NAMESPACE_ONLY,
 				 * or TCL_GLOBAL_ONLY. */
@@ -4547,7 +4224,7 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	elPtr->hPtr = NULL;
 	if (elPtr->tracePtr != NULL) {
 	    elPtr->flags &= ~VAR_TRACE_ACTIVE;
-	    TclCallVarTraces(iPtr, (Var *) NULL, elPtr, arrayName,
+	    TclCallVarTraces(iPtr, NULL, elPtr, arrayName,
 		    Tcl_GetHashKey(varPtr->value.tablePtr, hPtr), flags,
 		    /* leaveErrMsg */ 0);
 	    while (elPtr->tracePtr != NULL) {
@@ -4590,10 +4267,10 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
  *
  * TclCleanupVar --
  *
- *	This procedure is called when it looks like it may be OK to free up a
+ *	This function is called when it looks like it may be OK to free up a
  *	variable's storage. If the variable is in a hashtable, its Var
  *	structure and hash table entry will be freed along with those of its
- *	containing array, if any. This procedure is called, for example, when
+ *	containing array, if any. This function is called, for example, when
  *	a trace on a variable deletes a variable.
  *
  * Results:
@@ -4608,10 +4285,10 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
  */
 
 void
-TclCleanupVar(varPtr, arrayPtr)
-    Var *varPtr;		/* Pointer to variable that may be a candidate
+TclCleanupVar(
+    Var *varPtr,		/* Pointer to variable that may be a candidate
 				 * for being expunged. */
-    Var *arrayPtr;		/* Array that contains the variable, or NULL
+    Var *arrayPtr)		/* Array that contains the variable, or NULL
 				 * if this variable isn't an array element. */
 {
     if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)
@@ -4653,21 +4330,20 @@ TclCleanupVar(varPtr, arrayPtr)
  */
 
 void
-TclVarErrMsg(interp, part1, part2, operation, reason)
-    Tcl_Interp *interp;		/* Interpreter in which to record message. */
-    CONST char *part1;
-    CONST char *part2;		/* Variable's two-part name. */
-    CONST char *operation;	/* String describing operation that failed,
+TclVarErrMsg(
+    Tcl_Interp *interp,		/* Interpreter in which to record message. */
+    CONST char *part1,
+    CONST char *part2,		/* Variable's two-part name. */
+    CONST char *operation,	/* String describing operation that failed,
 				 * e.g. "read", "set", or "unset". */
-    CONST char *reason;		/* String describing why operation failed. */
+    CONST char *reason)		/* String describing why operation failed. */
 {
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "can't ", operation, " \"", part1,
-	    (char *) NULL);
+    Tcl_AppendResult(interp, "can't ", operation, " \"", part1, NULL);
     if (part2 != NULL) {
-	Tcl_AppendResult(interp, "(", part2, ")", (char *) NULL);
+	Tcl_AppendResult(interp, "(", part2, ")", NULL);
     }
-    Tcl_AppendResult(interp, "\": ", reason, (char *) NULL);
+    Tcl_AppendResult(interp, "\": ", reason, NULL);
 }
 
 /*
@@ -4683,17 +4359,17 @@ TclVarErrMsg(interp, part1, part2, operation, reason)
  */
 
 static void
-PanicOnUpdateVarName(objPtr)
-    Tcl_Obj *objPtr;
+PanicOnUpdateVarName(
+    Tcl_Obj *objPtr)
 {
     Tcl_Panic("ERROR: updateStringProc of type %s should not be called.",
 	    objPtr->typePtr->name);
 }
 
 static int
-PanicOnSetVarName(interp, objPtr)
-    Tcl_Interp *interp;
-    Tcl_Obj *objPtr;
+PanicOnSetVarName(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
 {
     Tcl_Panic("ERROR: setFromAnyProc of type %s should not be called.",
 	    objPtr->typePtr->name);
@@ -4708,9 +4384,9 @@ PanicOnSetVarName(interp, objPtr)
  */
 
 static void
-DupLocalVarName(srcPtr, dupPtr)
-    Tcl_Obj *srcPtr;
-    Tcl_Obj *dupPtr;
+DupLocalVarName(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *dupPtr)
 {
     dupPtr->internalRep.longValue = srcPtr->internalRep.longValue;
     dupPtr->typePtr = &localVarNameType;
@@ -4726,8 +4402,8 @@ DupLocalVarName(srcPtr, dupPtr)
  */
 
 static void
-FreeNsVarName(objPtr)
-    Tcl_Obj *objPtr;
+FreeNsVarName(
+    Tcl_Obj *objPtr)
 {
     register Var *varPtr = (Var *) objPtr->internalRep.twoPtrValue.ptr2;
 
@@ -4738,15 +4414,15 @@ FreeNsVarName(objPtr)
 }
 
 static void
-DupNsVarName(srcPtr, dupPtr)
-    Tcl_Obj *srcPtr;
-    Tcl_Obj *dupPtr;
+DupNsVarName(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *dupPtr)
 {
     Namespace *nsPtr = (Namespace *) srcPtr->internalRep.twoPtrValue.ptr1;
     register Var *varPtr = (Var *) srcPtr->internalRep.twoPtrValue.ptr2;
 
-    dupPtr->internalRep.twoPtrValue.ptr1 =  (VOID *) nsPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = (VOID *) varPtr;
+    dupPtr->internalRep.twoPtrValue.ptr1 = (void *) nsPtr;
+    dupPtr->internalRep.twoPtrValue.ptr2 = (void *) varPtr;
     varPtr->refCount++;
     dupPtr->typePtr = &tclNsVarNameType;
 }
@@ -4762,8 +4438,8 @@ DupNsVarName(srcPtr, dupPtr)
  */
 
 static void
-FreeParsedVarName(objPtr)
-    Tcl_Obj *objPtr;
+FreeParsedVarName(
+    Tcl_Obj *objPtr)
 {
     register Tcl_Obj *arrayPtr = (Tcl_Obj *)
 	    objPtr->internalRep.twoPtrValue.ptr1;
@@ -4776,9 +4452,9 @@ FreeParsedVarName(objPtr)
 }
 
 static void
-DupParsedVarName(srcPtr, dupPtr)
-    Tcl_Obj *srcPtr;
-    Tcl_Obj *dupPtr;
+DupParsedVarName(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *dupPtr)
 {
     register Tcl_Obj *arrayPtr = (Tcl_Obj *)
 	    srcPtr->internalRep.twoPtrValue.ptr1;
@@ -4795,14 +4471,14 @@ DupParsedVarName(srcPtr, dupPtr)
 	elem = elemCopy;
     }
 
-    dupPtr->internalRep.twoPtrValue.ptr1 = (VOID *) arrayPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = (VOID *) elem;
+    dupPtr->internalRep.twoPtrValue.ptr1 = (void *) arrayPtr;
+    dupPtr->internalRep.twoPtrValue.ptr2 = (void *) elem;
     dupPtr->typePtr = &tclParsedVarNameType;
 }
 
 static void
-UpdateParsedVarName(objPtr)
-    Tcl_Obj *objPtr;
+UpdateParsedVarName(
+    Tcl_Obj *objPtr)
 {
     Tcl_Obj *arrayPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
     char *part2 = (char *) objPtr->internalRep.twoPtrValue.ptr2;
@@ -4831,7 +4507,7 @@ UpdateParsedVarName(objPtr)
     memcpy(p, part2, (unsigned int) len2);
     p += len2;
     *p++ = ')';
-    *p   = '\0';
+    *p = '\0';
 }
 
 /*

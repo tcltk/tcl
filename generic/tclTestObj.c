@@ -1,19 +1,19 @@
-/* 
+/*
  * tclTestObj.c --
  *
- *	This file contains C command procedures for the additional Tcl
- *	commands that are used for testing implementations of the Tcl object
- *	types. These commands are not normally included in Tcl
- *	applications; they're only used for testing.
+ *	This file contains C command functions for the additional Tcl commands
+ *	that are used for testing implementations of the Tcl object types.
+ *	These commands are not normally included in Tcl applications; they're
+ *	only used for testing.
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
  * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.3 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.4 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,50 +21,42 @@
 
 /*
  * An array of Tcl_Obj pointers used in the commands that operate on or get
- * the values of Tcl object-valued variables. varPtr[i] is the i-th
- * variable's Tcl_Obj *.
+ * the values of Tcl object-valued variables. varPtr[i] is the i-th variable's
+ * Tcl_Obj *.
  */
 
 #define NUMBER_OF_OBJECT_VARS 20
 static Tcl_Obj *varPtr[NUMBER_OF_OBJECT_VARS];
 
 /*
- * Forward declarations for procedures defined later in this file:
+ * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset _ANSI_ARGS_((Tcl_Interp *interp,
-			    int varIndex));
-static int		GetVariableIndex _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int *indexPtr));
-static void		SetVarToObj _ANSI_ARGS_((int varIndex,
-			    Tcl_Obj *objPtr));
-int			TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-static int		TestbignumobjCmd _ANSI_ARGS_((ClientData dummy,
+static int		CheckIfVarUnset(Tcl_Interp *interp, int varIndex);
+static int		GetVariableIndex(Tcl_Interp *interp,
+			    char *string, int *indexPtr);
+static void		SetVarToObj(int varIndex, Tcl_Obj *objPtr);
+int			TclObjTest_Init(Tcl_Interp *interp);
+static int		TestbignumobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		TestbooleanobjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		TestbooleanobjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
+			    Tcl_Obj *CONST objv[]);
 #if 0
-static int		TestconvertobjCmd _ANSI_ARGS_((ClientData dummy,
+static int		TestconvertobjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
+			    Tcl_Obj *CONST objv[]);
 #endif
-static int		TestdoubleobjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		TestindexobjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		TestintobjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		TestobjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
-static int		TeststringobjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
+static int		TestdoubleobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		TestindexobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		TestintobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		TestobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
 
 typedef struct TestString {
     int numChars;
@@ -72,14 +64,13 @@ typedef struct TestString {
     size_t uallocated;
     Tcl_UniChar unicode[2];
 } TestString;
-
 
 /*
  *----------------------------------------------------------------------
  *
  * TclObjTest_Init --
  *
- *	This procedure creates additional commands that are used to test the
+ *	This function creates additional commands that are used to test the
  *	Tcl object support.
  *
  * Results:
@@ -97,29 +88,28 @@ TclObjTest_Init(interp)
     Tcl_Interp *interp;
 {
     register int i;
-    
+
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
         varPtr[i] = NULL;
     }
-	
-    Tcl_CreateObjCommand( interp, "testbignumobj", TestbignumobjCmd,
-			  (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
+
+    Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
+	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    (ClientData) 0, NULL);
 #if 0
     Tcl_CreateObjCommand(interp, "testconvertobj", TestconvertobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    (ClientData) 0, NULL);
 #endif
     Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+	    (ClientData) 0, NULL);
     return TCL_OK;
 }
 
@@ -128,7 +118,7 @@ TclObjTest_Init(interp)
  *
  * TestbignumobjCmd --
  *
- *	This procedure implmenets the "testbignumobj" command.  It is used
+ *	This function implmenets the "testbignumobj" command.  It is used
  *	to exercise the bignum Tcl object type implementation.
  *
  * Results:
@@ -149,8 +139,7 @@ TestbignumobjCmd( clientData, interp, objc, objv )
     Tcl_Obj* CONST objv[];	/* Argument vector */
 {
     const char * subcmds[] = {
-	"set",      "get",      "mult10",      "div10", 
-	NULL
+	"set",      "get",      "mult10",      "div10", NULL
     };
     enum options {
 	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10
@@ -193,12 +182,11 @@ TestbignumobjCmd( clientData, interp, objc, objv )
 	}
 
 	/*
-	 * If the object currently bound to the variable with index
-	 * varIndex has ref count 1 (i.e. the object is unshared) we can
-	 * modify that object directly.  Otherwise, if RC>1 (i.e. the
-	 * object is shared), we must create a new object to modify/set and
-	 * decrement the old formerly-shared object's ref count. This is
-	 * "copy on write".
+	 * If the object currently bound to the variable with index varIndex
+	 * has ref count 1 (i.e. the object is unshared) we can modify that
+	 * object directly.  Otherwise, if RC>1 (i.e. the object is shared),
+	 * we must create a new object to modify/set and decrement the old
+	 * formerly-shared object's ref count. This is "copy on write".
 	 */
 
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
@@ -207,7 +195,7 @@ TestbignumobjCmd( clientData, interp, objc, objv )
 	    SetVarToObj(varIndex, Tcl_NewBignumObj(&bignumValue));
 	}
 	break;
-	    
+
     case BIGNUM_GET:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "varIndex");
@@ -230,7 +218,7 @@ TestbignumobjCmd( clientData, interp, objc, objv )
 		&bignumValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (mp_init(&newValue) != MP_OKAY 
+	if (mp_init(&newValue) != MP_OKAY
 		|| (mp_mul_d(&bignumValue, 10, &newValue) != MP_OKAY)) {
 	    mp_clear(&bignumValue);
 	    mp_clear(&newValue);
@@ -258,7 +246,7 @@ TestbignumobjCmd( clientData, interp, objc, objv )
 		&bignumValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (mp_init(&newValue) != MP_OKAY 
+	if (mp_init(&newValue) != MP_OKAY
 		|| (mp_div_d(&bignumValue, 10, &newValue, NULL) != MP_OKAY)) {
 	    mp_clear(&bignumValue);
 	    mp_clear(&newValue);
@@ -283,8 +271,8 @@ TestbignumobjCmd( clientData, interp, objc, objv )
  *
  * TestbooleanobjCmd --
  *
- *	This procedure implements the "testbooleanobj" command.  It is used
- *	to test the boolean Tcl object type implementation.
+ *	This function implements the "testbooleanobj" command.  It is used to
+ *	test the boolean Tcl object type implementation.
  *
  * Results:
  *	A standard Tcl object result.
@@ -368,7 +356,7 @@ TestbooleanobjCmd(clientData, interp, objc, objv)
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", (char *) NULL);
+		"\": must be set, get, or not", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -380,8 +368,8 @@ TestbooleanobjCmd(clientData, interp, objc, objv)
  *
  * TestconvertobjCmd --
  *
- *	This procedure implements the "testconvertobj" command. It is used
- *	to test converting objects to new types.
+ *	This function implements the "testconvertobj" command. It is used to
+ *	test converting objects to new types.
  *
  * Results:
  *	A standard Tcl object result.
@@ -423,7 +411,7 @@ TestconvertobjCmd(clientData, interp, objc, objv)
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be double", (char *) NULL);
+		"\": must be double", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -435,8 +423,8 @@ TestconvertobjCmd(clientData, interp, objc, objv)
  *
  * TestdoubleobjCmd --
  *
- *	This procedure implements the "testdoubleobj" command.  It is used
- *	to test the double-precision floating point Tcl object type
+ *	This function implements the "testdoubleobj" command.  It is used to
+ *	test the double-precision floating point Tcl object type
  *	implementation.
  *
  * Results:
@@ -459,7 +447,7 @@ TestdoubleobjCmd(clientData, interp, objc, objv)
     int varIndex;
     double doubleValue;
     char *index, *subCmd, *string;
-	
+
     if (objc < 3) {
 	wrongNumArgs:
 	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg ...?");
@@ -484,8 +472,8 @@ TestdoubleobjCmd(clientData, interp, objc, objv)
 	/*
 	 * If the object currently bound to the variable with index varIndex
 	 * has ref count 1 (i.e. the object is unshared) we can modify that
-	 * object directly. Otherwise, if RC>1 (i.e. the object is shared),
-	 * we must create a new object to modify/set and decrement the old
+	 * object directly. Otherwise, if RC>1 (i.e. the object is shared), we
+	 * must create a new object to modify/set and decrement the old
 	 * formerly-shared object's ref count. This is "copy on write".
 	 */
 
@@ -540,7 +528,7 @@ TestdoubleobjCmd(clientData, interp, objc, objv)
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", (char *) NULL);
+		"\": must be set, get, mult10, or div10", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -551,7 +539,7 @@ TestdoubleobjCmd(clientData, interp, objc, objv)
  *
  * TestindexobjCmd --
  *
- *	This procedure implements the "testindexobj" command. It is used to
+ *	This function implements the "testindexobj" command. It is used to
  *	test the index Tcl object type implementation.
  *
  * Results:
@@ -573,7 +561,7 @@ TestindexobjCmd(clientData, interp, objc, objv)
 {
     int allowAbbrev, index, index2, setError, i, result;
     CONST char **argv;
-    static CONST char *tablePtr[] = {"a", "b", "check", (char *) NULL};
+    static CONST char *tablePtr[] = {"a", "b", "check", NULL};
     /*
      * Keep this structure declaration in sync with tclIndexObj.c
      */
@@ -587,20 +575,19 @@ TestindexobjCmd(clientData, interp, objc, objv)
     if ((objc == 3) && (strcmp(Tcl_GetString(objv[1]),
 	    "check") == 0)) {
 	/*
-	 * This code checks to be sure that the results of
-	 * Tcl_GetIndexFromObj are properly cached in the object and
-	 * returned on subsequent lookups.
+	 * This code checks to be sure that the results of Tcl_GetIndexFromObj
+	 * are properly cached in the object and returned on subsequent
+	 * lookups.
 	 */
 
 	if (Tcl_GetIntFromObj(interp, objv[2], &index2) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
-	Tcl_GetIndexFromObj((Tcl_Interp *) NULL, objv[1], tablePtr,
-		"token", 0, &index);
+	Tcl_GetIndexFromObj(NULL, objv[1], tablePtr, "token", 0, &index);
 	indexRep = (struct IndexRep *) objv[1]->internalRep.otherValuePtr;
 	indexRep->index = index2;
-	result = Tcl_GetIndexFromObj((Tcl_Interp *) NULL, objv[1],
+	result = Tcl_GetIndexFromObj(NULL, objv[1],
 		tablePtr, "token", 0, &index);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
@@ -625,12 +612,12 @@ TestindexobjCmd(clientData, interp, objc, objv)
 	argv[i-4] = Tcl_GetString(objv[i]);
     }
     argv[objc-4] = NULL;
-    
+
     /*
-     * Tcl_GetIndexFromObj assumes that the table is statically-allocated
-     * so that its address is different for each index object. If we
-     * accidently allocate a table at the same address as that cached in
-     * the index object, clear out the object's cached state.
+     * Tcl_GetIndexFromObj assumes that the table is statically-allocated so
+     * that its address is different for each index object. If we accidently
+     * allocate a table at the same address as that cached in the index
+     * object, clear out the object's cached state.
      */
 
     if ( objv[3]->typePtr != NULL
@@ -656,7 +643,7 @@ TestindexobjCmd(clientData, interp, objc, objv)
  *
  * TestintobjCmd --
  *
- *	This procedure implements the "testintobj" command. It is used to
+ *	This function implements the "testintobj" command. It is used to
  *	test the int Tcl object type implementation.
  *
  * Results:
@@ -679,7 +666,7 @@ TestintobjCmd(clientData, interp, objc, objv)
     int intValue, varIndex, i;
     long longValue;
     char *index, *subCmd, *string;
-	
+
     if (objc < 3) {
 	wrongNumArgs:
 	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg ...?");
@@ -705,8 +692,8 @@ TestintobjCmd(clientData, interp, objc, objv)
 	/*
 	 * If the object currently bound to the variable with index varIndex
 	 * has ref count 1 (i.e. the object is unshared) we can modify that
-	 * object directly. Otherwise, if RC>1 (i.e. the object is shared),
-	 * we must create a new object to modify/set and decrement the old
+	 * object directly. Otherwise, if RC>1 (i.e. the object is shared), we
+	 * must create a new object to modify/set and decrement the old
 	 * formerly-shared object's ref count. This is "copy on write".
 	 */
 
@@ -786,18 +773,18 @@ TestintobjCmd(clientData, interp, objc, objv)
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), string, -1);
     } else if (strcmp(subCmd, "inttoobigtest") == 0) {
 	/*
-	 * If long ints have more bits than ints on this platform, verify
-	 * that Tcl_GetIntFromObj returns an error if the long int held
-	 * in an integer object's internal representation is too large
-	 * to fit in an int.
+	 * If long ints have more bits than ints on this platform, verify that
+	 * Tcl_GetIntFromObj returns an error if the long int held in an
+	 * integer object's internal representation is too large to fit in an
+	 * int.
 	 */
-	
+
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
 #if (INT_MAX == LONG_MAX)   /* int is same size as long int */
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), "1", -1);
-#else 
+#else
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetLongObj(varPtr[varIndex], LONG_MAX);
 	} else {
@@ -847,8 +834,7 @@ TestintobjCmd(clientData, interp, objc, objv)
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10",
-		(char *) NULL);
+		"\": must be set, get, get2, mult10, or div10", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -859,7 +845,7 @@ TestintobjCmd(clientData, interp, objc, objv)
  *
  * TestobjCmd --
  *
- *	This procedure implements the "testobj" command. It is used to test
+ *	This function implements the "testobj" command. It is used to test
  *	the type-independent portions of the Tcl object type implementation.
  *
  * Results:
@@ -881,7 +867,7 @@ TestobjCmd(clientData, interp, objc, objv)
     int varIndex, destIndex, i;
     char *index, *subCmd, *string;
     Tcl_ObjType *targetType;
-	
+
     if (objc < 2) {
 	wrongNumArgs:
 	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg ...?");
@@ -921,7 +907,7 @@ TestobjCmd(clientData, interp, objc, objv)
         typeName = Tcl_GetString(objv[3]);
         if ((targetType = Tcl_GetObjType(typeName)) == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", typeName, " found", (char *) NULL);
+		    "no type ", typeName, " found", NULL);
             return TCL_ERROR;
         }
         if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -986,7 +972,7 @@ TestobjCmd(clientData, interp, objc, objv)
 	 * return an object containing the name of the argument's type
 	 * of internal rep.  If none exists, return "none".
 	 */
-	
+
         if (objc != 3) {
             goto wrongNumArgs;
         }
@@ -1038,11 +1024,9 @@ TestobjCmd(clientData, interp, objc, objv)
 	}
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad option \"",
-		Tcl_GetString(objv[1]),
+		"bad option \"", Tcl_GetString(objv[1]),
 		"\": must be assign, convert, duplicate, freeallvars, ",
-		"newobj, objcount, objtype, refcount, type, or types",
-		(char *) NULL);
+		"newobj, objcount, objtype, refcount, type, or types", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1053,7 +1037,7 @@ TestobjCmd(clientData, interp, objc, objv)
  *
  * TeststringobjCmd --
  *
- *	This procedure implements the "teststringobj" command. It is used to
+ *	This function implements the "teststringobj" command. It is used to
  *	test the string Tcl object type implementation.
  *
  * Results:
@@ -1079,8 +1063,7 @@ TeststringobjCmd(clientData, interp, objc, objv)
     TestString *strPtr;
     static CONST char *options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "ualloc", "getunicode", 
-	(char *) NULL
+	"set", "set2", "setlength", "ualloc", "getunicode", NULL
     };
 
     if (objc < 3) {
@@ -1109,12 +1092,12 @@ TeststringobjCmd(clientData, interp, objc, objv)
 	    if (varPtr[varIndex] == NULL) {
 		SetVarToObj(varIndex, Tcl_NewObj());
 	    }
-	    
+
 	    /*
 	     * If the object bound to variable "varIndex" is shared, we must
-	     * "copy on write" and append to a copy of the object. 
+	     * "copy on write" and append to a copy of the object.
 	     */
-	    
+
 	    if (Tcl_IsShared(varPtr[varIndex])) {
 		SetVarToObj(varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
@@ -1132,7 +1115,7 @@ TeststringobjCmd(clientData, interp, objc, objv)
 
 	    /*
 	     * If the object bound to variable "varIndex" is shared, we must
-	     * "copy on write" and append to a copy of the object. 
+	     * "copy on write" and append to a copy of the object.
 	     */
 
 	    if (Tcl_IsShared(varPtr[varIndex])) {
@@ -1196,13 +1179,13 @@ TeststringobjCmd(clientData, interp, objc, objv)
 
 	    /*
 	     * If the object currently bound to the variable with index
-	     * varIndex has ref count 1 (i.e. the object is unshared) we
-	     * can modify that object directly. Otherwise, if RC>1 (i.e.
-	     * the object is shared), we must create a new object to
-	     * modify/set and decrement the old formerly-shared object's
-	     * ref count. This is "copy on write".
+	     * varIndex has ref count 1 (i.e. the object is unshared) we can
+	     * modify that object directly. Otherwise, if RC>1 (i.e. the
+	     * object is shared), we must create a new object to modify/set
+	     * and decrement the old formerly-shared object's ref count. This
+	     * is "copy on write".
 	     */
-    
+
 	    string = Tcl_GetStringFromObj(objv[3], &length);
 	    if ((varPtr[varIndex] != NULL)
 		    && !Tcl_IsShared(varPtr[varIndex])) {
@@ -1265,9 +1248,9 @@ TeststringobjCmd(clientData, interp, objc, objv)
  *	None.
  *
  * Side effects:
- *	This routine handles ref counting details for assignment:
- *	i.e. the old value's ref count must be decremented (if not NULL) and
- *	the new one incremented (also if not NULL).
+ *	This routine handles ref counting details for assignment: i.e. the old
+ *	value's ref count must be decremented (if not NULL) and the new one
+ *	incremented (also if not NULL).
  *
  *----------------------------------------------------------------------
  */
@@ -1311,7 +1294,7 @@ GetVariableIndex(interp, string, indexPtr)
     int *indexPtr;              /* Place to store converted result. */
 {
     int index;
-    
+
     if (Tcl_GetInt(interp, string, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1330,7 +1313,7 @@ GetVariableIndex(interp, string, indexPtr)
  *
  * CheckIfVarUnset --
  *
- *	Utility procedure that checks whether a test variable is readable:
+ *	Utility function that checks whether a test variable is readable:
  *	i.e., that varPtr[varIndex] is non-NULL.
  *
  * Results:
@@ -1350,7 +1333,7 @@ CheckIfVarUnset(interp, varIndex)
 {
     if (varPtr[varIndex] == NULL) {
 	char buf[32 + TCL_INTEGER_SPACE];
-	
+
 	sprintf(buf, "variable %d is unset (NULL)", varIndex);
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
@@ -1358,3 +1341,11 @@ CheckIfVarUnset(interp, varIndex)
     }
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.12 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.13 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -142,26 +142,26 @@ static char *lexemeStrings[] = {
  * Declarations for local functions to this file:
  */
 
-static int		GetLexeme _ANSI_ARGS_((ParseInfo *infoPtr));
-static void		LogSyntaxError _ANSI_ARGS_((ParseInfo *infoPtr,
-			    CONST char *extraInfo));
-static int		ParseAddExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseBitAndExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseBitOrExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseBitXorExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseCondExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseEqualityExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseLandExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseLorExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseMultiplyExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParsePrimaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseRelationalExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseShiftExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseExponentialExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static int		ParseUnaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
-			    int opBytes, CONST char *src, int srcBytes,
-			    int firstIndex, ParseInfo *infoPtr));
+static int		GetLexeme(ParseInfo *infoPtr);
+static void		LogSyntaxError(ParseInfo *infoPtr,
+			    CONST char *extraInfo);
+static int		ParseAddExpr(ParseInfo *infoPtr);
+static int		ParseBitAndExpr(ParseInfo *infoPtr);
+static int		ParseBitOrExpr(ParseInfo *infoPtr);
+static int		ParseBitXorExpr(ParseInfo *infoPtr);
+static int		ParseCondExpr(ParseInfo *infoPtr);
+static int		ParseEqualityExpr(ParseInfo *infoPtr);
+static int		ParseLandExpr(ParseInfo *infoPtr);
+static int		ParseLorExpr(ParseInfo *infoPtr);
+static int		ParseMultiplyExpr(ParseInfo *infoPtr);
+static int		ParsePrimaryExpr(ParseInfo *infoPtr);
+static int		ParseRelationalExpr(ParseInfo *infoPtr);
+static int		ParseShiftExpr(ParseInfo *infoPtr);
+static int		ParseExponentialExpr(ParseInfo *infoPtr);
+static int		ParseUnaryExpr(ParseInfo *infoPtr);
+static void		PrependSubExprTokens(CONST char *op, int opBytes,
+			    CONST char *src, int srcBytes, int firstIndex,
+			    ParseInfo *infoPtr);
 
 /*
  * Macro used to debug the execution of the recursive descent parser used to
@@ -209,13 +209,13 @@ static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
  */
 
 int
-Tcl_ParseExpr(interp, start, numBytes, parsePtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    CONST char *start;		/* Start of source string to parse. */
-    int numBytes;		/* Number of bytes in string. If < 0, the
+Tcl_ParseExpr(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    CONST char *start,		/* Start of source string to parse. */
+    int numBytes,		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr;	/* Structure to fill with information about
+    Tcl_Parse *parsePtr)	/* Structure to fill with information about
 				 * the parsed expression; any previous
 				 * information in the structure is ignored. */
 {
@@ -321,8 +321,8 @@ TclParseExpr(interp, start, numBytes, useInternalTokens, parsePtr)
  */
 
 static int
-ParseCondExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseCondExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -432,8 +432,8 @@ ParseCondExpr(infoPtr)
  */
 
 static int
-ParseLorExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseLorExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -491,8 +491,8 @@ ParseLorExpr(infoPtr)
  */
 
 static int
-ParseLandExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseLandExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -550,8 +550,8 @@ ParseLandExpr(infoPtr)
  */
 
 static int
-ParseBitOrExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseBitOrExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -610,8 +610,8 @@ ParseBitOrExpr(infoPtr)
  */
 
 static int
-ParseBitXorExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseBitXorExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -670,8 +670,8 @@ ParseBitXorExpr(infoPtr)
  */
 
 static int
-ParseBitAndExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseBitAndExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -730,8 +730,8 @@ ParseBitAndExpr(infoPtr)
  */
 
 static int
-ParseEqualityExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseEqualityExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -793,8 +793,8 @@ ParseEqualityExpr(infoPtr)
  */
 
 static int
-ParseRelationalExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseRelationalExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -860,8 +860,8 @@ ParseRelationalExpr(infoPtr)
  */
 
 static int
-ParseShiftExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseShiftExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -921,8 +921,8 @@ ParseShiftExpr(infoPtr)
  */
 
 static int
-ParseAddExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseAddExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -982,8 +982,8 @@ ParseAddExpr(infoPtr)
  */
 
 static int
-ParseMultiplyExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseMultiplyExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -1043,8 +1043,8 @@ ParseMultiplyExpr(infoPtr)
  */
 
 static int
-ParseExponentialExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseExponentialExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -1104,8 +1104,8 @@ ParseExponentialExpr(infoPtr)
  */
 
 static int
-ParseUnaryExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParseUnaryExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -1151,7 +1151,7 @@ ParseUnaryExpr(infoPtr)
  *
  *	This function parses a Tcl primary expression:
  *	primaryExpr ::= literal | varReference | quotedString |
- *			'[' command ']' | mathFuncCall | '(' condExpr ')'
+ *		'[' command ']' | mathFuncCall | '(' condExpr ')'
  *
  * Results:
  *	The return value is TCL_OK on a successful parse and TCL_ERROR on
@@ -1166,8 +1166,8 @@ ParseUnaryExpr(infoPtr)
  */
 
 static int
-ParsePrimaryExpr(infoPtr)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+ParsePrimaryExpr(
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -1607,8 +1607,8 @@ ParsePrimaryExpr(infoPtr)
  */
 
 static int
-GetLexeme(infoPtr)
-    ParseInfo *infoPtr;		/* Holds state needed to parse the expr,
+GetLexeme(
+    ParseInfo *infoPtr)		/* Holds state needed to parse the expr,
 				 * including the resulting lexeme. */
 {
     register CONST char *src;	/* Points to current source char. */
@@ -1658,11 +1658,12 @@ GetLexeme(infoPtr)
     if ((c != '+') && (c != '-')) {
 	CONST char *end = infoPtr->lastChar;
 	CONST char* end2;
-	int code = TclParseNumber(NULL, NULL, NULL,
-				  src, (unsigned)(end-src), &end2, 0);
-	if ( code == TCL_OK ) {
+	int code = TclParseNumber(NULL, NULL, NULL, src, (unsigned)(end-src),
+		&end2, 0);
+
+	if (code == TCL_OK) {
 	    length = end2-src;
-	    if ( length > 0 ) {
+	    if (length > 0) {
 		infoPtr->lexeme = LITERAL;
 		infoPtr->start = src;
 		infoPtr->size = length;
@@ -1914,68 +1915,6 @@ GetLexeme(infoPtr)
     }
 }
 
-#if 0
-/*
- *----------------------------------------------------------------------
- *
- * TclParseInteger --
- *
- *	Scans up to numBytes bytes starting at src, and checks whether the
- *	leading bytes look like an integer's string representation.
- *
- * Results:
- *	Returns 0 if the leading bytes do not look like an integer.
- *	Otherwise, returns the number of bytes examined that look like an
- *	integer.  This may be less than numBytes if the integer is only the
- *	leading part of the string.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclParseInteger(string, numBytes)
-    register CONST char *string;/* The string to examine. */
-    register int numBytes;	/* Max number of bytes to scan. */
-{
-    register CONST char *p = string;
-
-    /*
-     * Take care of introductory "0x".
-     */
-
-    if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
-	int scanned;
-	Tcl_UniChar ch;
-
-	p += 2;
-	numBytes -= 2;
- 	scanned = TclParseHex(p, numBytes, &ch);
-	if (scanned) {
-	    return scanned+2;
-	}
-
-	/*
-	 * Recognize the 0 as valid integer, but x is left behind.
-	 */
-
-	return 1;
-    }
-    while (numBytes && isdigit(UCHAR(*p))) {		/* INTL: digit */
-	numBytes--; p++;
-    }
-    if (numBytes == 0) {
-	return (p - string);
-    }
-    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
-	return (p - string);
-    }
-    return 0;
-}
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1997,17 +1936,17 @@ TclParseInteger(string, numBytes)
  */
 
 static void
-PrependSubExprTokens(op, opBytes, src, srcBytes, firstIndex, infoPtr)
-    CONST char *op;		/* Points to first byte of the operator in the
+PrependSubExprTokens(
+    CONST char *op,		/* Points to first byte of the operator in the
 				 * source script. */
-    int opBytes;		/* Number of bytes in the operator. */
-    CONST char *src;		/* Points to first byte of the subexpression
+    int opBytes,		/* Number of bytes in the operator. */
+    CONST char *src,		/* Points to first byte of the subexpression
 				 * in the source script. */
-    int srcBytes;		/* Number of bytes in subexpression's
+    int srcBytes,		/* Number of bytes in subexpression's
 				 * source. */
-    int firstIndex;		/* Index of first token already emitted for
+    int firstIndex,		/* Index of first token already emitted for
 				 * operator's first (or only) operand. */
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+    ParseInfo *infoPtr)		/* Holds the parse state for the expression
 				 * being parsed. */
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
@@ -2056,17 +1995,18 @@ PrependSubExprTokens(op, opBytes, src, srcBytes, firstIndex, infoPtr)
  */
 
 static void
-LogSyntaxError(infoPtr, extraInfo)
-    ParseInfo *infoPtr;		/* Holds the parse state for the expression
+LogSyntaxError(
+    ParseInfo *infoPtr,		/* Holds the parse state for the expression
 				 * being parsed. */
-    CONST char *extraInfo;	/* String to provide extra information about
+    CONST char *extraInfo)	/* String to provide extra information about
 				 * the syntax error. */
 {
     Tcl_Obj *result =
 	    Tcl_NewStringObj("syntax error in expression \"", -1);
+
     TclAppendLimitedToObj(result, infoPtr->originalExpr,
 	    (int)(infoPtr->lastChar - infoPtr->originalExpr), 63, NULL);
-    Tcl_AppendStringsToObj(result, "\": ", extraInfo, (char *) NULL);
+    Tcl_AppendStringsToObj(result, "\": ", extraInfo, NULL);
     Tcl_SetObjResult(infoPtr->parsePtr->interp, result);
     infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;
     infoPtr->parsePtr->term = infoPtr->start;

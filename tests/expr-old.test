@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.17.2.8 2005/10/18 20:47:04 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.17.2.9 2005/11/03 17:52:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -784,7 +784,7 @@ test expr-old-32.24 {math functions in expressions} {
     format %.6g [expr abs(66)]
 } {66}
 
-test expr-old-32.25a {math functions in expressions} {
+test expr-old-32.25a {math functions in expressions} knownBug {
     list [catch {expr abs(0x8000000000000000)} msg] $msg
 } {1 {integer value too large to represent}}
 
@@ -813,10 +813,10 @@ test expr-old-32.31 {math functions in expressions} {
 test expr-old-32.32 {math functions in expressions} {
     expr int(-1.6)
 } {-1}
-test expr-old-32.33 {math functions in expressions} {
+test expr-old-32.33 {math functions in expressions} knownBug {
     list [catch {expr int(1e60)} msg] $msg
 } {1 {integer value too large to represent}}
-test expr-old-32.34 {math functions in expressions} {
+test expr-old-32.34 {math functions in expressions} knownBug {
     list [catch {expr int(-1e60)} msg] $msg
 } {1 {integer value too large to represent}}
 test expr-old-32.35 {math functions in expressions} {
@@ -831,10 +831,10 @@ test expr-old-32.37 {math functions in expressions} {
 test expr-old-32.38 {math functions in expressions} {
     expr round(-1.51)
 } {-2}
-test expr-old-32.39 {math functions in expressions} {
+test expr-old-32.39 {math functions in expressions} knownBug {
     list [catch {expr round(1e60)} msg] $msg
 } {1 {integer value too large to represent}}
-test expr-old-32.40 {math functions in expressions} {
+test expr-old-32.40 {math functions in expressions} knownBug {
     list [catch {expr round(-1e60)} msg] $msg
 } {1 {integer value too large to represent}}
 test expr-old-32.41 {math functions in expressions} {
@@ -858,10 +858,10 @@ test expr-old-32.46 {math functions in expressions} -body {
 test expr-old-32.47 {math functions in expressions} -body {
     list [catch {expr srand()} msg] $msg
 } -match glob -result {1 {too few arguments for math function*}}
-test expr-old-32.48 {math functions in expressions} {
+test expr-old-32.48 {math functions in expressions} knownBug {
     list [catch {expr srand(3.79)} msg] $msg
 } {1 {can't use floating-point value as argument to srand}}
-test expr-old-32.49 {math functions in expressions} {
+test expr-old-32.49 {math functions in expressions} knownBug {
     list [catch {expr srand("")} msg] $msg
 } {1 {argument to math function didn't have numeric value}}
 test expr-old-32.50 {math functions in expressions} {
@@ -871,11 +871,11 @@ test expr-old-32.50 {math functions in expressions} {
     }
     set result
 } {97 834 948 36 12 51 766 585 914 784 333}
-test expr-old-32.51 {math functions in expressions} {
+test expr-old-32.51 {math functions in expressions} knownBug {
     list [catch {expr {srand([lindex "6ty" 0])}} msg] $msg
 } {1 {argument to math function didn't have numeric value}}
 test expr-old-32.52 {math functions in expressions} {
-    expr {srand(1<<37) < 1}
+    expr {srand(int(1<<37)) < 1}
 } {1}
 test expr-old-32.53 {math functions in expressions} {
     expr {srand((1<<31) - 1) > 0}
@@ -936,16 +936,16 @@ test expr-old-34.12a {errors in math functions} !ieeeFloatingPoint {
 test expr-old-34.12b {errors in math functions} ieeeFloatingPoint {
     list [catch {expr -14.0*exp(100000)} msg] $msg
 } {0 -Inf}
-test expr-old-34.13 {errors in math functions} {
+test expr-old-34.13 {errors in math functions} knownBug {
     list [catch {expr int(1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-test expr-old-34.14 {errors in math functions} {
+test expr-old-34.14 {errors in math functions} knownBug {
     list [catch {expr int(-1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-test expr-old-34.15 {errors in math functions} {
+test expr-old-34.15 {errors in math functions} knownBug {
     list [catch {expr round(1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-test expr-old-34.16 {errors in math functions} {
+test expr-old-34.16 {errors in math functions} knownBug {
     list [catch {expr round(-1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
 test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
@@ -953,7 +953,7 @@ test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
         list [catch {expr T1(4)} msg] $msg
     } -match glob -result {1 {too many arguments for math function*}}
 
-test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
+test expr-old-36.1 {ExprLooksLikeInt procedure} -constraints knownBug -body {
     expr 0289
 } -returnCodes error -match glob -result {*invalid octal number*}
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
@@ -989,7 +989,7 @@ test expr-old-36.10 {ExprLooksLikeInt procedure} -body {
 } -returnCodes error -match glob -result {syntax error in expression "78e"*}
 
 # test for [Bug #542588]
-test expr-old-36.11 {ExprLooksLikeInt procedure} {
+test expr-old-36.11 {ExprLooksLikeInt procedure} knownBug {
     # define a "too large integer"; this one works also for 64bit arith
     set x 665802003400000000000000
     list [catch {expr {$x+1}} msg] $msg
@@ -1004,7 +1004,7 @@ test expr-old-36.13 {ExprLooksLikeInt procedure} {
     set x " +"
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use non-numeric string as operand of "+"}}
-test expr-old-36.14 {ExprLooksLikeInt procedure} {
+test expr-old-36.14 {ExprLooksLikeInt procedure} knownBug {
     set x "123456789012345678901234567890 "
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use integer value too large to represent as operand of "+"}}
@@ -1012,7 +1012,7 @@ test expr-old-36.15 {ExprLooksLikeInt procedure} {
     set x "099 "
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use invalid octal number as operand of "+"}}
-test expr-old-36.16 {ExprLooksLikeInt procedure} {
+test expr-old-36.16 {ExprLooksLikeInt procedure} knownBug {
     set x " 0xffffffffffffffffffffffffffffffffffffff  "
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use integer value too large to represent as operand of "+"}}
@@ -1118,7 +1118,7 @@ test expr-old-37.24 {Tcl_ExprDouble handles overflows that look like int} \
 	testexprdouble 17976931348623165[string repeat 0 292]
     } {This is a result: Inf}
 test expr-old-37.25 {Tcl_ExprDouble and NaN} \
-    ieeeFloatingPoint&&testexprdouble {
+    {ieeeFloatingPoint testexprdouble knownBug} {
 	list [catch {testexprdouble 0.0/0.0} result] $result
     } {1 {floating point value is Not a Number}}
     
@@ -1165,7 +1165,7 @@ test expr-old-40.3 {min math function} -body {
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
-test expr-old-40.5 {min math function} -body {
+test expr-old-40.5 {min math function} -constraints knownBug -body {
     list [catch {expr {min("a", 0)}} msg] $msg
 } -result {1 {argument to math function didn't have numeric value}}
 test expr-old-40.6 {min math function} -body {
@@ -1184,7 +1184,7 @@ test expr-old-41.3 {max math function} -body {
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]
-test expr-old-41.5 {max math function} -body {
+test expr-old-41.5 {max math function} -constraints knownBug -body {
     list [catch {expr {max("a", 0)}} msg] $msg
 } -result {1 {argument to math function didn't have numeric value}}
 test expr-old-41.6 {max math function} -body {

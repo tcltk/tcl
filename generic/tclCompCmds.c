@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.12 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.13 2005/11/03 17:52:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -20,7 +20,7 @@
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
- * the simplest of compiles.  The ANSI C "prototype" for this macro is:
+ * the simplest of compiles. The ANSI C "prototype" for this macro is:
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
  *			    Tcl_Interp *interp);
@@ -114,11 +114,12 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static ClientData	DupForeachInfo _ANSI_ARGS_((ClientData clientData));
-static void		FreeForeachInfo _ANSI_ARGS_((ClientData clientData));
-static int		PushVarName _ANSI_ARGS_((Tcl_Interp *interp,
-	Tcl_Token *varTokenPtr, CompileEnv *envPtr, int flags,
-	int *localIndexPtr, int *simpleVarNamePtr, int *isScalarPtr));
+static ClientData	DupForeachInfo(ClientData clientData);
+static void		FreeForeachInfo(ClientData clientData);
+static int		PushVarName(Tcl_Interp *interp,
+			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
+			    int flags, int *localIndexPtr,
+			    int *simpleVarNamePtr, int *isScalarPtr);
 
 /*
  * Flags bits used by PushVarName.
@@ -145,7 +146,7 @@ AuxDataType tclForeachInfoType = {
  *	Procedure called to compile the "append" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -156,11 +157,11 @@ AuxDataType tclForeachInfoType = {
  */
 
 int
-TclCompileAppendCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileAppendCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords;
@@ -195,7 +196,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 
     /*
      * We are doing an assignment, otherwise TclCompileSetCmd was called, so
-     * push the new value.  This will need to be extended to push a value for
+     * push the new value. This will need to be extended to push a value for
      * each argument.
      */
 
@@ -241,7 +242,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "break" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -252,11 +253,11 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileBreakCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileBreakCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
@@ -278,7 +279,7 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "catch" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -289,11 +290,11 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileCatchCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileCatchCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
@@ -338,7 +339,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 		    resultNameTokenPtr[1].size, /*create*/ 1, VAR_SCALAR,
 		    envPtr->procPtr);
 	} else {
-	   return TCL_ERROR;
+	    return TCL_ERROR;
 	}
 	/* DKF */
 	if (parsePtr->numWords == 4) {
@@ -475,7 +476,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "continue" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -486,11 +487,11 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileContinueCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileContinueCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
      * There should be no argument after the "continue".
@@ -516,7 +517,7 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "dict" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -527,11 +528,11 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileDictCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileDictCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
     int numWords, size, i;
@@ -621,22 +622,6 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
 	    }
 	    word = incrTokenPtr[1].start;
 	    numBytes = incrTokenPtr[1].size;
-
-#if 0
-	    /*
-	     * Note there is a danger that modifying the string could have
-	     * undesirable side effects.  In this case, TclLooksLikeInt has no
-	     * dependencies on shared strings so we should be safe.
-	     */
-
-	    if (!TclLooksLikeInt(word, numBytes)) {
-		return TCL_ERROR;
-	    }
-#endif
-
-	    /*
-	     * Now try to really parse the number.
-	     */
 
 	    intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
@@ -1027,7 +1012,7 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "expr" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -1038,11 +1023,11 @@ TclCompileDictCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileExprCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileExprCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *firstWordPtr;
 
@@ -1063,7 +1048,7 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "for" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -1072,12 +1057,13 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
  *
  *----------------------------------------------------------------------
  */
+
 int
-TclCompileForCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileForCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
@@ -1223,7 +1209,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "foreach" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -1234,11 +1220,11 @@ n*----------------------------------------------------------------------
  */
 
 int
-TclCompileForeachCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileForeachCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Proc *procPtr = envPtr->procPtr;
     ForeachInfo *infoPtr;	/* Points to the structure describing this
@@ -1328,7 +1314,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	}
 
 	/*
-	 * Lots of copying going on here.  Need a ListObj wizard to show a
+	 * Lots of copying going on here. Need a ListObj wizard to show a
 	 * better way.
 	 */
 
@@ -1353,7 +1339,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * We will compile the foreach command.  Reserve (numLists + 1) temporary
+     * We will compile the foreach command. Reserve (numLists + 1) temporary
      * variables:
      *    - numLists temps to hold each value list
      *    - 1 temp for the loop counter (index of next element in each list)
@@ -1510,7 +1496,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
   done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	if (varvList[loopIndex] != (CONST char **) NULL) {
+	if (varvList[loopIndex] != NULL) {
 	    ckfree((char *) varvList[loopIndex]);
 	}
     }
@@ -1544,9 +1530,9 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
  */
 
 static ClientData
-DupForeachInfo(clientData)
-    ClientData clientData;	/* The foreach command's compilation
-				 * auxiliary data to duplicate. */
+DupForeachInfo(
+    ClientData clientData)	/* The foreach command's compilation auxiliary
+				 * data to duplicate. */
 {
     register ForeachInfo *srcPtr = (ForeachInfo *) clientData;
     ForeachInfo *dupPtr;
@@ -1594,9 +1580,9 @@ DupForeachInfo(clientData)
  */
 
 static void
-FreeForeachInfo(clientData)
-    ClientData clientData;	/* The foreach command's compilation
-				 * auxiliary data to free. */
+FreeForeachInfo(
+    ClientData clientData)	/* The foreach command's compilation auxiliary
+				 * data to free. */
 {
     register ForeachInfo *infoPtr = (ForeachInfo *) clientData;
     register ForeachVarList *listPtr;
@@ -1618,7 +1604,7 @@ FreeForeachInfo(clientData)
  *	Procedure called to compile the "if" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -1628,11 +1614,11 @@ FreeForeachInfo(clientData)
  *----------------------------------------------------------------------
  */
 int
-TclCompileIfCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileIfCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     JumpFixupArray jumpFalseFixupArray;
     				/* Used to fix the ifFalse jump after each
@@ -1929,7 +1915,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "incr" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -1940,11 +1926,11 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileIncrCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileIncrCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
     int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
@@ -1970,27 +1956,14 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    CONST char *word = incrTokenPtr[1].start;
 	    int numBytes = incrTokenPtr[1].size;
-#if 0
-	    /*
-	     * Note there is a danger that modifying the string could have
-	     * undesirable side effects.  In this case, TclLooksLikeInt has
-	     * no dependencies on shared strings so we should be safe.
-	     */
-
-	    if (TclLooksLikeInt(word, numBytes)) {
-#endif
-		int code;
-		Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
-		Tcl_IncrRefCount(intObj);
-		code = Tcl_GetIntFromObj(NULL, intObj, &immValue);
-		Tcl_DecrRefCount(intObj);
-		if ((code == TCL_OK)
-			&& (-127 <= immValue) && (immValue <= 127)) {
-		    haveImmValue = 1;
-		}
-#if 0
+	    int code;
+	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
+	    Tcl_IncrRefCount(intObj);
+	    code = Tcl_GetIntFromObj(NULL, intObj, &immValue);
+	    Tcl_DecrRefCount(intObj);
+	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
+		haveImmValue = 1;
 	    }
-#endif
 	    if (!haveImmValue) {
 		PushLiteral(envPtr, word, numBytes);
 	    }
@@ -2056,7 +2029,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "lappend" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2067,11 +2040,11 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileLappendCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileLappendCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords;
@@ -2108,7 +2081,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	    &localIndex, &simpleVarName, &isScalar);
 
     /*
-     * If we are doing an assignment, push the new value.  In the no values
+     * If we are doing an assignment, push the new value. In the no values
      * case, create an empty object.
      */
 
@@ -2158,7 +2131,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "lassign" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2169,11 +2142,11 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileLassignCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileLassignCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
     int simpleVarName, isScalar, localIndex, numWords, idx;
@@ -2263,7 +2236,7 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "lindex" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2274,11 +2247,11 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileLindexCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileLindexCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
     int i, numWords = parsePtr->numWords;
@@ -2293,11 +2266,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)
-#if 0
-	    && TclLooksLikeInt(varTokenPtr[1].start, varTokenPtr[1].size)
-#endif
-	    ) {
+    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
 	Tcl_Obj *tmpObj;
 	int idx, result;
 
@@ -2357,7 +2326,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "list" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2368,11 +2337,11 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileListCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileListCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
      * If we're not in a procedure, don't compile.
@@ -2415,7 +2384,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "llength" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2426,11 +2395,11 @@ TclCompileListCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileLlengthCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileLlengthCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
 
@@ -2452,7 +2421,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "lset" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2475,7 +2444,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
  *		varName? arrayElementName? index1 index2 ... newValue oldList
  *	    The compiler emits one of INST_LSET_FLAT or INST_LSET_LIST
  *	    according as whether there is exactly one index element (LIST) or
- *	    either zero or else two or more (FLAT).  This instruction removes
+ *	    either zero or else two or more (FLAT). This instruction removes
  *	    everything from the stack except for the two names and pushes the
  *	    new value of the variable.
  *	(7) Finally, INST_STORE_* stores the new value in the variable and
@@ -2485,11 +2454,11 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileLsetCmd(interp, parsePtr, envPtr)
-    Tcl_Interp* interp;		/* Tcl interpreter for error reporting */
-    Tcl_Parse* parsePtr;	/* Points to a parse structure for the
+TclCompileLsetCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Parse* parsePtr,	/* Points to a parse structure for the
 				 * command */
-    CompileEnv* envPtr;		/* Holds the resulting instructions */
+    CompileEnv* envPtr)		/* Holds the resulting instructions */
 {
     int tempDepth;		/* Depth used for emitting one part of the
 				 * code burst. */
@@ -2623,7 +2592,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "regexp" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2634,11 +2603,11 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileRegexpCmd(interp, parsePtr, envPtr)
-    Tcl_Interp* interp;		/* Tcl interpreter for error reporting */
-    Tcl_Parse* parsePtr;	/* Points to a parse structure for the
+TclCompileRegexpCmd(
+    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
+    Tcl_Parse* parsePtr,	/* Points to a parse structure for the
 				 * command */
-    CompileEnv* envPtr;		/* Holds the resulting instructions */
+    CompileEnv* envPtr)		/* Holds the resulting instructions */
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string */
@@ -2646,11 +2615,12 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     char *str;
 
     /*
-     * We are only interested in compiling simple regexp cases.  Currently
+     * We are only interested in compiling simple regexp cases. Currently
      * supported compile cases are:
      *   regexp ?-nocase? ?--? staticString $var
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
+
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -2659,10 +2629,11 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr;
 
     /*
-     * We only look for -nocase and -- as options.  Everything else gets
-     * pushed to runtime execution.  This is different than regexp's runtime
-     * option handling, but satisfies our stricter needs.
+     * We only look for -nocase and -- as options. Everything else gets pushed
+     * to runtime execution. This is different than regexp's runtime option
+     * handling, but satisfies our stricter needs.
      */
+
     for (i = 1; i < parsePtr->numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -2688,9 +2659,10 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Get the regexp string.  If it is not a simple string, punt to runtime.
+     * Get the regexp string. If it is not a simple string, punt to runtime.
      * If it has a '-', it could be an incorrectly formed regexp command.
      */
+
     varTokenPtr = TokenAfter(varTokenPtr);
     str = (char *) varTokenPtr[1].start;
     len = varTokenPtr[1].size;
@@ -2702,6 +2674,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	/*
 	 * The semantics of regexp are always match on re == "".
 	 */
+
 	PushLiteral(envPtr, "1", 1);
 	return TCL_OK;
     }
@@ -2710,6 +2683,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * Make a copy of the string that is null-terminated for checks which
      * require such.
      */
+
     str = (char *) ckalloc((unsigned) len + 1);
     strncpy(str, varTokenPtr[1].start, (size_t) len);
     str[len] = '\0';
@@ -2719,6 +2693,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * Check for anchored REs (ie ^foo$), so we can use string equal if
      * possible. Do not alter the start of str so we can free it correctly.
      */
+
     if (str[0] == '^') {
 	start++;
 	anchorLeft = 1;
@@ -2734,8 +2709,9 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 
     /*
      * On the first (pattern) arg, check to see if any RE special characters
-     * are in the word.  If not, this is the same as 'string equal'.
+     * are in the word. If not, this is the same as 'string equal'.
      */
+
     if ((len > 1+start) && (str[start] == '.') && (str[start+1] == '*')) {
 	start += 2;
 	anchorLeft = 0;
@@ -2752,6 +2728,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * is a bad RE (do this at the end because it can be expensive). If so,
      * let it complain at runtime.
      */
+
     if ((strpbrk(str + start, "*+?{}()[].\\|^$") != NULL)
 	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
 	ckfree((char *) str);
@@ -2765,6 +2742,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	 * This needs to find the substring anywhere in the string, so use
 	 * [string match] and *foo*, with appropriate anchoring.
 	 */
+
 	char *newStr = ckalloc((unsigned) len + 3);
 
 	len -= start;
@@ -2807,7 +2785,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "return" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2818,11 +2796,11 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileReturnCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+TclCompileReturnCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
      * General syntax: [return ?-option value ...? ?result?]
@@ -2870,8 +2848,8 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Scan through the return options.  If any are unknown at compile time,
-     * there is no value in bytecompiling.  Save the option values known in an
+     * Scan through the return options. If any are unknown at compile time,
+     * there is no value in bytecompiling. Save the option values known in an
      * objv array for merging into a return options dictionary.
      */
 
@@ -2969,7 +2947,7 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "set" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -2980,11 +2958,11 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileSetCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileSetCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int isAssignment, isScalar, simpleVarName, localIndex, numWords;
@@ -3066,7 +3044,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
  *	command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -3077,11 +3055,11 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileStringCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileStringCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *opTokenPtr, *varTokenPtr;
     Tcl_Obj *opObj;
@@ -3093,7 +3071,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	"map",		"match",	"range",	"repeat",
 	"replace",	"tolower",	"toupper",	"totitle",
 	"trim",		"trimleft",	"trimright",
-	"wordend",	"wordstart",	(char *) NULL
+	"wordend",	"wordstart",	NULL
     };
     enum options {
 	STR_BYTELENGTH,	STR_COMPARE,	STR_EQUAL,	STR_FIRST,
@@ -3274,11 +3252,11 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileSwitchCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileSwitchCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;	/* Pointer to tokens in command */
     int numWords;		/* Number of words in command */
@@ -3370,7 +3348,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 
 	/*
 	 * The switch command has many flags we cannot compile at all (e.g.
-	 * all the RE-related ones) which we must have encountered.  Either
+	 * all the RE-related ones) which we must have encountered. Either
 	 * that or we have run off the end. The action here is the same: punt
 	 * to interpreted version.
 	 */
@@ -3632,7 +3610,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	}
 
 	/*
-	 * Generate the body for the arm.  This is guaranteed not to be a
+	 * Generate the body for the arm. This is guaranteed not to be a
 	 * fall-through case, but it might have preceding fall-through cases,
 	 * so we must process those first.
 	 */
@@ -3680,8 +3658,8 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Do jump fixups for arms that were executed.  First, fill in the jumps
-     * of all jumps that don't point elsewhere to point to here.
+     * Do jump fixups for arms that were executed. First, fill in the jumps of
+     * all jumps that don't point elsewhere to point to here.
      */
 
     for (i=0 ; i<fixupCount ; i++) {
@@ -3692,7 +3670,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 
     /*
      * Now scan backwards over all the jumps (all of which are forward jumps)
-     * doing each one.  When we do one and there is a size changes, we must
+     * doing each one. When we do one and there is a size changes, we must
      * scan back over all the previous ones and see if they need adjusting
      * before proceeding with further jump fixups (the interleaved nature of
      * all the jumps makes this impossible to do without nested loops).
@@ -3734,11 +3712,11 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileVariableCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileVariableCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
     int i, numWords;
@@ -3790,7 +3768,7 @@ TclCompileVariableCmd(interp, parsePtr, envPtr)
  *	Procedure called to compile the "while" command.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -3801,11 +3779,11 @@ TclCompileVariableCmd(interp, parsePtr, envPtr)
  */
 
 int
-TclCompileWhileCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the command
+TclCompileWhileCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
@@ -3856,7 +3834,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 	    loopMayEnd = 0;
 	} else {
 	    /*
-	     * This is an empty loop: "while 0 {...}" or such.  Compile no
+	     * This is an empty loop: "while 0 {...}" or such. Compile no
 	     * bytecodes.
 	     */
 
@@ -3962,7 +3940,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
  *	necessary (append, lappend, set).
  *
  * Results:
- * 	Returns TCL_OK for a successful compile.  Returns TCL_ERROR to defer
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
@@ -3973,15 +3951,14 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
  */
 
 static int
-PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
-	simpleVarNamePtr, isScalarPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Token *varTokenPtr;	/* Points to a variable token. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
-    int flags;			/* TCL_CREATE_VAR or TCL_NO_LARGE_INDEX */
-    int *localIndexPtr;		/* must not be NULL */
-    int *simpleVarNamePtr;	/* must not be NULL */
-    int *isScalarPtr;		/* must not be NULL */
+PushVarName(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Token *varTokenPtr,	/* Points to a variable token. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int flags,			/* TCL_CREATE_VAR or TCL_NO_LARGE_INDEX */
+    int *localIndexPtr,		/* must not be NULL */
+    int *simpleVarNamePtr,	/* must not be NULL */
+    int *isScalarPtr)		/* must not be NULL */
 {
     register CONST char *p;
     CONST char *name, *elName;

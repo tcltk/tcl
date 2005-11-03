@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.15 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.16 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -186,37 +186,32 @@ CONST char *tclParseErrorMsg[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int		ParseBraces _ANSI_ARGS_((Tcl_Interp *interp,
+static int		CommandComplete(CONST char *script, int numBytes);
+static int		ParseBraces(Tcl_Interp *interp, CONST char *start,
+			    int numBytes, Tcl_Parse *parsePtr, int flags,
+			    CONST char **termPtr);
+static int		ParseCommand(Tcl_Interp *interp, CONST char *start,
+			    int numBytes, int flags, Tcl_Parse *parsePtr);
+static int		ParseComment(CONST char *src, int numBytes,
+			    Tcl_Parse *parsePtr);
+static int		ParseQuotedString(Tcl_Interp *interp,
 			    CONST char *start, int numBytes,
 			    Tcl_Parse *parsePtr, int flags,
-			    CONST char **termPtr));
-static int		ParseCommand _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *start, int numBytes, int flags,
-			    Tcl_Parse *parsePtr));
-static int		ParseComment _ANSI_ARGS_((CONST char *src,
-			    int numBytes, Tcl_Parse *parsePtr));
-static int		ParseQuotedString _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *start, int numBytes,
-			    Tcl_Parse *parsePtr, int flags,
-			    CONST char **termPtr));
-void			ParseScript _ANSI_ARGS_((CONST char *script,
-			    int numBytes, int flags, Tcl_Parse *parsePtr));
-static int		ParseTokens _ANSI_ARGS_((CONST char *src, int numBytes,
-			    int mask, int flags, Tcl_Parse *parsePtr));
-static int		ParseVarName _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *start, int numBytes,
-			    Tcl_Parse *parsePtr, int flags));
+			    CONST char **termPtr);
+void			ParseScript(CONST char *script, int numBytes,
+			    int flags, Tcl_Parse *parsePtr);
+static int		ParseTokens(CONST char *src, int numBytes, int mask,
+			    int flags, Tcl_Parse *parsePtr);
+static int		ParseVarName(Tcl_Interp *interp, CONST char *start,
+			    int numBytes, Tcl_Parse *parsePtr, int flags);
 
 /*
  * Prototypes for the Tokens object type.
  */
 
-static void             DupTokensInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
-                            Tcl_Obj *copyPtr));
-static void             FreeTokensInternalRep _ANSI_ARGS_((
-                            Tcl_Obj *objPtr));
-static int              SetTokensFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-                            Tcl_Obj *objPtr));
+static void             DupTokensInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
+static void             FreeTokensInternalRep(Tcl_Obj *objPtr);
+static int              SetTokensFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
  * The structure below defines the "tokens" Tcl object type.
@@ -524,13 +519,13 @@ ParseScript(script, numBytes, flags, parsePtr)
  */
 
 void
-TclParseInit(interp, start, numBytes, parsePtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting */
-    CONST char *start;		/* Start of string to be parsed. */
-    int numBytes;		/* Total number of bytes in string. If < 0,
+TclParseInit(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting */
+    CONST char *start,		/* Start of string to be parsed. */
+    int numBytes,		/* Total number of bytes in string. If < 0,
 				 * the script consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr;	/* Points to struct to initialize */
+    Tcl_Parse *parsePtr)	/* Points to struct to initialize */
 {
     parsePtr->numWords = 0;
     parsePtr->tokenPtr = parsePtr->staticTokens;
@@ -568,15 +563,15 @@ TclParseInit(interp, start, numBytes, parsePtr)
  */
 
 int
-Tcl_ParseCommand(interp, start, numBytes, nested, parsePtr)
-    Tcl_Interp *interp;		/* See ParseCommand */
-    CONST char *start;		/* See ParseCommand */
-    register int numBytes;	/* See ParseCommand */
-    int nested;			/* Non-zero means this is a nested command:
+Tcl_ParseCommand(
+    Tcl_Interp *interp,		/* See ParseCommand */
+    CONST char *start,		/* See ParseCommand */
+    register int numBytes,	/* See ParseCommand */
+    int nested,			/* Non-zero means this is a nested command:
 				 * close bracket should be considered
 				 * a command terminator. If zero, then close
 				 * bracket has no special meaning. */
-    register Tcl_Parse *parsePtr;
+    register Tcl_Parse *parsePtr)
     				/* See ParseCommand */
 {
     int code = ParseCommand(interp, start, numBytes,
@@ -588,18 +583,18 @@ Tcl_ParseCommand(interp, start, numBytes, nested, parsePtr)
 }
 
 int
-ParseCommand(interp, start, numBytes, flags, parsePtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting; if
+ParseCommand(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting; if
 				 * NULL, then no error message is provided. */
-    CONST char *start;		/* First character of string containing one or
+    CONST char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    register int numBytes;	/* Total number of bytes in string.  If < 0,
+    register int numBytes,	/* Total number of bytes in string. If < 0,
 				 * the script consists of all bytes up to the
 				 * first null character. */
-    int flags;			/* Bit flags to control details of the parsing.
+    int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_NESTED flag has an effect
 				 * here.  Other flags are passed along. */
-    register Tcl_Parse *parsePtr;
+    register Tcl_Parse *parsePtr)
     				/* Structure to fill in with information about
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
@@ -854,13 +849,13 @@ ParseCommand(interp, start, numBytes, flags, parsePtr)
  */
 
 int
-TclParseWhiteSpace(src, numBytes, parsePtr, typePtr)
-    CONST char *src;		/* First character to parse. */
-    register int numBytes;	/* Max number of bytes to scan. */
-    Tcl_Parse *parsePtr;	/* Information about parse in progress.
+TclParseWhiteSpace(
+    CONST char *src,		/* First character to parse. */
+    register int numBytes,	/* Max number of bytes to scan. */
+    Tcl_Parse *parsePtr,	/* Information about parse in progress.
 				 * Updated if parsing indicates an incomplete
 				 * command. */
-    char *typePtr;		/* Points to location to store character type
+    char *typePtr)		/* Points to location to store character type
 				 * of character that ends run of whitespace */
 {
     register char type = TYPE_NORMAL;
@@ -917,10 +912,10 @@ TclParseWhiteSpace(src, numBytes, parsePtr, typePtr)
  */
 
 int
-TclParseHex(src, numBytes, resultPtr)
-    CONST char *src;		/* First character to parse. */
-    int numBytes;		/* Max number of byes to scan */
-    Tcl_UniChar *resultPtr;	/* Points to storage provided by caller where
+TclParseHex(
+    CONST char *src,		/* First character to parse. */
+    int numBytes,		/* Max number of byes to scan */
+    Tcl_UniChar *resultPtr)	/* Points to storage provided by caller where
 				 * the Tcl_UniChar resulting from the
 				 * conversion is to be written. */
 {
@@ -972,13 +967,13 @@ TclParseHex(src, numBytes, resultPtr)
  */
 
 int
-TclParseBackslash(src, numBytes, readPtr, dst)
-    CONST char *src;		/* Points to the backslash character of a a
+TclParseBackslash(
+    CONST char *src,		/* Points to the backslash character of a a
 				 * backslash sequence. */
-    int numBytes;		/* Max number of bytes to scan. */
-    int *readPtr;		/* NULL, or points to storage where the number
+    int numBytes,		/* Max number of bytes to scan. */
+    int *readPtr,		/* NULL, or points to storage where the number
 				 * of bytes scanned should be written. */
-    char *dst;			/* NULL, or points to buffer where the UTF-8
+    char *dst)			/* NULL, or points to buffer where the UTF-8
 				 * encoding of the backslash sequence is to be
 				 * written. At most TCL_UTF_MAX bytes will be
 				 * written there. */
@@ -1145,10 +1140,10 @@ TclParseBackslash(src, numBytes, readPtr, dst)
  */
 
 static int
-ParseComment(src, numBytes, parsePtr)
-    CONST char *src;		/* First character to parse. */
-    register int numBytes;	/* Max number of bytes to scan. */
-    Tcl_Parse *parsePtr;	/* Information about parse in progress.
+ParseComment(
+    CONST char *src,		/* First character to parse. */
+    register int numBytes,	/* Max number of bytes to scan. */
+    Tcl_Parse *parsePtr)	/* Information about parse in progress.
 				 * Updated if parsing indicates an incomplete
 				 * command. */
 {
@@ -1227,18 +1222,18 @@ ParseComment(src, numBytes, parsePtr)
  */
 
 static int
-ParseTokens(src, numBytes, mask, flags, parsePtr)
-    register CONST char *src;	/* First character to parse. */
-    register int numBytes;	/* Max number of bytes to scan. */
-    int flags;			/* OR-ed bits indicating what substitutions to
-				   perform: TCL_SUBST_COMMANDS,
-				   TCL_SUBST_VARIABLES, and
-				   TCL_SUBST_BACKSLASHES */
-    int mask;			/* Specifies when to stop parsing. The parse
+ParseTokens(
+    register CONST char *src,	/* First character to parse. */
+    register int numBytes,	/* Max number of bytes to scan. */
+    int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
 				 * CHAR_TYPE contains any of the bits in
 				 * mask. */
-    Tcl_Parse *parsePtr;	/* Information about parse in progress.
+    int flags,			/* OR-ed bits indicating what substitutions to
+				 * perform: TCL_SUBST_COMMANDS,
+				 * TCL_SUBST_VARIABLES, and
+				 * TCL_SUBST_BACKSLASHES */
+    Tcl_Parse *parsePtr)	/* Information about parse in progress.
 				 * Updated with additional tokens and
 				 * termination information. */
 {
@@ -1442,8 +1437,8 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
     }
     if (parsePtr->numTokens == originalTokens) {
 	/*
-	 * There was nothing in this range of text.  Add an empty token for
-	 * the empty range, so that there is always at least one token added.
+	 * There was nothing in this range of text. Add an empty token for the
+	 * empty range, so that there is always at least one token added.
 	 */
 
 	TclGrowParseTokenArray(parsePtr,1);
@@ -1479,8 +1474,8 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
  */
 
 void
-Tcl_FreeParse(parsePtr)
-    Tcl_Parse *parsePtr;	/* Structure that was filled in by a previous
+Tcl_FreeParse(
+    Tcl_Parse *parsePtr)	/* Structure that was filled in by a previous
 				 * call to Tcl_ParseCommand. */
 {
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
@@ -1495,7 +1490,7 @@ Tcl_FreeParse(parsePtr)
  * Tcl_ParseVarName --
  *
  *	Given a string starting with a $ sign, parse off a variable name and
- *	return information about the parse.  No more than numBytes bytes will
+ *	return information about the parse. No more than numBytes bytes will
  *	be scanned.
  *
  * Results:
@@ -1517,12 +1512,12 @@ Tcl_FreeParse(parsePtr)
  */
 
 int
-Tcl_ParseVarName(interp, start, numBytes, parsePtr, append)
-    Tcl_Interp *interp;		/* See ParseVarName */
-    CONST char *start;		/* See ParseVarName */
-    register int numBytes;	/* See ParseVarName */
-    Tcl_Parse *parsePtr;	/* See ParseVarName */
-    int append;			/* Non-zero means append tokens to existing
+Tcl_ParseVarName(
+    Tcl_Interp *interp,		/* See ParseVarName */
+    CONST char *start,		/* See ParseVarName */
+    register int numBytes,	/* See ParseVarName */
+    Tcl_Parse *parsePtr,	/* See ParseVarName */
+    int append)			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means ignore
 				 * existing tokens in parsePtr and reinitialize
 				 * it. */
@@ -1536,17 +1531,17 @@ Tcl_ParseVarName(interp, start, numBytes, parsePtr, append)
 }
 
 int
-ParseVarName(interp, start, numBytes, parsePtr, flags)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting; if
+ParseVarName(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting; if
 				 * NULL, then no error message is provided. */
-    CONST char *start;		/* Start of variable substitution string.
+    CONST char *start,		/* Start of variable substitution string.
 				 * First character must be "$". */
-    register int numBytes;	/* Total number of bytes in string. If < 0,
+    register int numBytes,	/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    Tcl_Parse *parsePtr;	/* Structure to fill in with information about
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
 				 * the variable name. */
-    int flags;			/* Bit flags to control details of the parsing.
+    int flags)			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect
 				 * here.  Other flags are passed along. */
 {
@@ -1596,12 +1591,12 @@ ParseVarName(interp, start, numBytes, parsePtr, flags)
      * 1. The $ sign is followed by an open curly brace. Then the variable
      *	  name is everything up to the next close curly brace, and the
      *	  variable is a scalar variable.
-     * 2. The $ sign is not followed by an open curly brace.  Then the
-     *	  variable name is everything up to the next character that isn't a
-     *	  letter, digit, or underscore.  :: sequences are also considered part
-     *	  of the variable name, in order to support namespaces. If the
-     *	  following character is an open parenthesis, then the information
-     *	  between parentheses is the array element name.
+     * 2. The $ sign is not followed by an open curly brace. Then the variable
+     *	  name is everything up to the next character that isn't a letter,
+     *	  digit, or underscore. :: sequences are also considered part of the
+     *	  variable name, in order to support namespaces. If the following
+     *	  character is an open parenthesis, then the information between
+     *	  parentheses is the array element name.
      * 3. The $ sign is followed by something that isn't a letter, digit, or
      *	  underscore: in this case, there is no variable name and the token is
      *	  just "$".
@@ -1706,7 +1701,7 @@ ParseVarName(interp, start, numBytes, parsePtr, flags)
     return TCL_OK;
 
     /*
-     * The dollar sign isn't followed by a variable name.  Replace the
+     * The dollar sign isn't followed by a variable name. Replace the
      * TCL_TOKEN_VARIABLE token with a TCL_TOKEN_TEXT token for the dollar
      * sign.
      */
@@ -1737,9 +1732,9 @@ ParseVarName(interp, start, numBytes, parsePtr, flags)
  *
  * Results:
  *	The return value is the contents of the variable given by the leading
- *	characters of string.  If termPtr isn't NULL, *termPtr gets filled in
+ *	characters of string. If termPtr isn't NULL, *termPtr gets filled in
  *	with the address of the character just after the last one in the
- *	variable specifier.  If the variable doesn't exist, then the return
+ *	variable specifier. If the variable doesn't exist, then the return
  *	value is NULL and an error message will be left in interp's result.
  *
  * Side effects:
@@ -1749,11 +1744,11 @@ ParseVarName(interp, start, numBytes, parsePtr, flags)
  */
 
 CONST char *
-Tcl_ParseVar(interp, start, termPtr)
-    Tcl_Interp *interp;			/* Context for looking up variable. */
-    register CONST char *start;		/* Start of variable substitution.
+Tcl_ParseVar(
+    Tcl_Interp *interp,			/* Context for looking up variable. */
+    register CONST char *start,		/* Start of variable substitution.
 					 * First character must be "$". */
-    CONST char **termPtr;		/* If non-NULL, points to word to fill
+    CONST char **termPtr)		/* If non-NULL, points to word to fill
 					 * in with character just after last
 					 * one in the variable specifier. */
 {
@@ -1829,17 +1824,17 @@ Tcl_ParseVar(interp, start, termPtr)
  */
 
 int
-Tcl_ParseBraces(interp, start, numBytes, parsePtr, append, termPtr)
-    Tcl_Interp *interp;		/* See ParseBraces */
-    CONST char *start;		/* See ParseBraces */
-    register int numBytes;	/* See ParseBraces */
-    register Tcl_Parse *parsePtr;
+Tcl_ParseBraces(
+    Tcl_Interp *interp,		/* See ParseBraces */
+    CONST char *start,		/* See ParseBraces */
+    register int numBytes,	/* See ParseBraces */
+    register Tcl_Parse *parsePtr,
     				/* See ParseBraces */
-    int append;			/* Non-zero means append tokens to existing
+    int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means
 				 * ignore existing tokens in parsePtr and
 				 * reinitialize it. */
-    CONST char **termPtr;	/* See ParseBraces */
+    CONST char **termPtr)	/* See ParseBraces */
 
 {
     int code = ParseBraces(interp, start, numBytes, parsePtr,
@@ -1851,21 +1846,21 @@ Tcl_ParseBraces(interp, start, numBytes, parsePtr, append, termPtr)
 }
 
 static int
-ParseBraces(interp, start, numBytes, parsePtr, flags, termPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting; if
+ParseBraces(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting; if
 				 * NULL, then no error message is provided. */
-    CONST char *start;		/* Start of string enclosed in braces.  The
+    CONST char *start,		/* Start of string enclosed in braces. The
 				 * first character must be {'. */
-    register int numBytes;	/* Total number of bytes in string. If < 0,
+    register int numBytes,	/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    register Tcl_Parse *parsePtr;
+    register Tcl_Parse *parsePtr,
     				/* Structure to fill in with information about
 				 * the string. */
-    int flags;			/* Bit flags to control details of the parsing.
+    int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect
 				 * here.  Other flags are passed along. */
-    CONST char **termPtr;	/* If non-NULL, points to word in which to
+    CONST char **termPtr)	/* If non-NULL, points to word in which to
 				 * store a pointer to the character just after
 				 * the terminating '}' if the parse was
 				 * successful. */
@@ -2053,17 +2048,17 @@ ParseBraces(interp, start, numBytes, parsePtr, flags, termPtr)
  */
 
 int
-Tcl_ParseQuotedString(interp, start, numBytes, parsePtr, append, termPtr)
-    Tcl_Interp *interp;		/* See ParseQuotedString */
-    CONST char *start;		/* See ParseQuotedString */
-    int numBytes;		/* See ParseQuotedString */
-    Tcl_Parse *parsePtr;
+Tcl_ParseQuotedString(
+    Tcl_Interp *interp,		/* See ParseQuotedString */
+    CONST char *start,		/* See ParseQuotedString */
+    int numBytes,		/* See ParseQuotedString */
+    Tcl_Parse *parsePtr,
     				/* See ParseQuotedString */
-    int append;			/* Non-zero means append tokens to existing
+    int append,			/* Non-zero means append tokens to existing
 				 * information in parsePtr; zero means
 				 * ignore existing tokens in parsePtr and
 				 * reinitialize it. */
-    CONST char **termPtr;	/* See ParseQuotedString */
+    CONST char **termPtr)	/* See ParseQuotedString */
 {
     int code = ParseQuotedString(interp, start, numBytes, parsePtr,
 	    (append != 0) ? PARSE_APPEND : 0, termPtr);
@@ -2074,21 +2069,21 @@ Tcl_ParseQuotedString(interp, start, numBytes, parsePtr, append, termPtr)
 }
 
 int
-ParseQuotedString(interp, start, numBytes, parsePtr, flags, termPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting; if
+ParseQuotedString(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting; if
 				 * NULL, then no error message is provided. */
-    CONST char *start;		/* Start of the quoted string.  The first
+    CONST char *start,		/* Start of the quoted string. The first
 				 * character must be '"'. */
-    register int numBytes;	/* Total number of bytes in string. If < 0,
+    register int numBytes,	/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
-    register Tcl_Parse *parsePtr;
+    register Tcl_Parse *parsePtr,
     				/* Structure to fill in with information about
 				 * the string. */
-    int flags;			/* Bit flags to control details of the parsing.
+    int flags,			/* Bit flags to control details of the parsing.
 				 * Only the PARSE_APPEND flag has an effect
 				 * here.  Other flags are passed along. */
-    CONST char **termPtr;	/* If non-NULL, points to word in which to
+    CONST char **termPtr)	/* If non-NULL, points to word in which to
 				 * store a pointer to the character just after
 				 * the quoted string's terminating close-quote
 				 * if the parse succeeds. */
@@ -2147,10 +2142,10 @@ ParseQuotedString(interp, start, numBytes, parsePtr, flags, termPtr)
  */
 
 Tcl_Obj *
-Tcl_SubstObj(interp, objPtr, flags)
-    Tcl_Interp *interp;		/* Interpreter in which substitution occurs */
-    Tcl_Obj *objPtr;		/* The value to be substituted. */
-    int flags;			/* What substitutions to do. */
+Tcl_SubstObj(
+    Tcl_Interp *interp,		/* Interpreter in which substitution occurs */
+    Tcl_Obj *objPtr,		/* The value to be substituted. */
+    int flags)			/* What substitutions to do. */
 {
     int length, tokensLeft, code;
     Tcl_Parse parse;
@@ -2235,18 +2230,18 @@ Tcl_SubstObj(interp, objPtr, flags)
  */
 
 int
-TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
-    Tcl_Interp *interp;		/* Interpreter in which to lookup variables,
+TclSubstTokens(
+    Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
 				 * execute nested commands, and report
 				 * errors. */
-    Tcl_Token *tokenPtr;	/* Pointer to first in an array of tokens to
+    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count;			/* Number of tokens to consider at tokenPtr.
+    int count,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
-    int *tokensLeftPtr;		/* If not NULL, points to memory where an
+    int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int flags;
+    int flags)
 {
     Tcl_Obj *result;
     int code = TCL_OK;
@@ -2447,9 +2442,9 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
  */
 
 static int
-CommandComplete(script, numBytes)
-    CONST char *script;		/* Script to check. */
-    int numBytes;		/* Number of bytes in script. */
+CommandComplete(
+    CONST char *script,		/* Script to check. */
+    int numBytes)		/* Number of bytes in script. */
 {
     Tcl_Parse parse;
     CONST char *p, *end;
@@ -2482,7 +2477,7 @@ CommandComplete(script, numBytes)
  *	and quotes and brackets.
  *
  * Results:
- *	1 is returned if the script is complete, 0 otherwise.  1 is also
+ *	1 is returned if the script is complete, 0 otherwise. 1 is also
  *	returned if there is a parse error in the script other than unmatched
  *	delimiters.
  *
@@ -2493,8 +2488,8 @@ CommandComplete(script, numBytes)
  */
 
 int
-Tcl_CommandComplete(script)
-    CONST char *script;		/* Script to check. */
+Tcl_CommandComplete(
+    CONST char *script)		/* Script to check. */
 {
     return CommandComplete(script, (int) strlen(script));
 }
@@ -2518,8 +2513,8 @@ Tcl_CommandComplete(script)
  */
 
 int
-TclObjCommandComplete(objPtr)
-    Tcl_Obj *objPtr;		/* Points to object holding script to
+TclObjCommandComplete(
+    Tcl_Obj *objPtr)		/* Points to object holding script to
 				 * check. */
 {
     CONST char *script;
@@ -2547,9 +2542,9 @@ TclObjCommandComplete(objPtr)
  */
 
 int
-TclIsLocalScalar(src, len)
-    CONST char *src;
-    int len;
+TclIsLocalScalar(
+    CONST char *src,
+    int len)
 {
     CONST char *p;
     CONST char *lastChar = src + (len - 1);
@@ -2565,7 +2560,7 @@ TclIsLocalScalar(src, len)
 
 	    return 0;
 	}
-	if  (*p == '(') {
+	if (*p == '(') {
 	    if (*lastChar == ')') { /* we have an array element */
 		return 0;
 	    }

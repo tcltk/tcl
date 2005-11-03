@@ -1,4 +1,4 @@
-/* 
+/*
  * tclUnixEvent.c --
  *
  *	This file implements Unix specific event related routines.
@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.3 2005/07/26 04:12:33 dgp Exp $
+ * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.4 2005/11/03 17:52:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -30,8 +30,8 @@
  */
 
 void
-Tcl_Sleep(ms)
-    int ms;			/* Number of milliseconds to sleep. */
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
 {
     struct timeval delay;
     Tcl_Time before, after, vdelay;

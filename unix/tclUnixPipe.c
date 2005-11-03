@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.7 2005/08/02 16:38:20 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.8 2005/11/03 17:52:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -25,8 +25,8 @@
  * the same as NULL.
  */
 
-#define MakeFile(fd) ((TclFile)(((int)fd)+1))
-#define GetFd(file) (((int)file)-1)
+#define MakeFile(fd)	((TclFile)(((int)fd)+1))
+#define GetFd(file)	(((int)file)-1)
 
 /*
  * This structure describes per-instance state of a pipe based channel.
@@ -47,23 +47,21 @@ typedef struct PipeState {
 } PipeState;
 
 /*
- * Declarations for local procedures defined in this file:
+ * Declarations for local functions defined in this file:
  */
 
-static int	PipeBlockModeProc _ANSI_ARGS_((ClientData instanceData,
-		    int mode));
-static int	PipeCloseProc _ANSI_ARGS_((ClientData instanceData,
-		    Tcl_Interp *interp));
-static int	PipeGetHandleProc _ANSI_ARGS_((ClientData instanceData,
-		    int direction, ClientData *handlePtr));
-static int	PipeInputProc _ANSI_ARGS_((ClientData instanceData,
-		    char *buf, int toRead, int *errorCode));
-static int	PipeOutputProc _ANSI_ARGS_((
-		    ClientData instanceData, CONST char *buf, int toWrite,
-		    int *errorCode));
-static void	PipeWatchProc _ANSI_ARGS_((ClientData instanceData, int mask));
-static void	RestoreSignals _ANSI_ARGS_((void));
-static int	SetupStdFile _ANSI_ARGS_((TclFile file, int type));
+static int		PipeBlockModeProc(ClientData instanceData, int mode);
+static int		PipeCloseProc(ClientData instanceData,
+			    Tcl_Interp *interp);
+static int		PipeGetHandleProc(ClientData instanceData,
+			    int direction, ClientData *handlePtr);
+static int		PipeInputProc(ClientData instanceData, char *buf,
+			    int toRead, int *errorCode);
+static int		PipeOutputProc(ClientData instanceData,
+			    CONST char *buf, int toWrite, int *errorCode);
+static void		PipeWatchProc(ClientData instanceData, int mask);
+static void		RestoreSignals(void);
+static int		SetupStdFile(TclFile file, int type);
 
 /*
  * This structure describes the channel type structure for command pipe based
@@ -106,9 +104,9 @@ static Tcl_ChannelType pipeChannelType = {
  */
 
 TclFile
-TclpMakeFile(channel, direction)
-    Tcl_Channel channel;	/* Channel to get file from. */
-    int direction;		/* Either TCL_READABLE or TCL_WRITABLE. */
+TclpMakeFile(
+    Tcl_Channel channel,	/* Channel to get file from. */
+    int direction)		/* Either TCL_READABLE or TCL_WRITABLE. */
 {
     ClientData data;
 
@@ -137,9 +135,9 @@ TclpMakeFile(channel, direction)
  */
 
 TclFile
-TclpOpenFile(fname, mode)
-    CONST char *fname;		/* The name of the file to open. */
-    int mode;			/* In what mode to open the file? */
+TclpOpenFile(
+    CONST char *fname,		/* The name of the file to open. */
+    int mode)			/* In what mode to open the file? */
 {
     int fd;
     CONST char *native;
@@ -189,8 +187,8 @@ TclpOpenFile(fname, mode)
  */
 
 TclFile
-TclpCreateTempFile(contents)
-    CONST char *contents;	/* String to write into temp file, or NULL. */
+TclpCreateTempFile(
+    CONST char *contents)	/* String to write into temp file, or NULL. */
 {
     char fileName[L_tmpnam + 9];
     CONST char *native;
@@ -243,7 +241,7 @@ TclpCreateTempFile(contents)
  */
 
 Tcl_Obj *
-TclpTempFileName()
+TclpTempFileName(void)
 {
     char fileName[L_tmpnam + 9];
     Tcl_Obj *result = NULL;
@@ -287,10 +285,10 @@ TclpTempFileName()
  */
 
 int
-TclpCreatePipe(readPipe, writePipe)
-    TclFile *readPipe;		/* Location to store file handle for read side
+TclpCreatePipe(
+    TclFile *readPipe,		/* Location to store file handle for read side
 				 * of pipe. */
-    TclFile *writePipe;		/* Location to store file handle for write
+    TclFile *writePipe)		/* Location to store file handle for write
 				 * side of pipe. */
 {
     int pipeIds[2];
@@ -324,8 +322,8 @@ TclpCreatePipe(readPipe, writePipe)
  */
 
 int
-TclpCloseFile(file)
-    TclFile file;	/* The file to close. */
+TclpCloseFile(
+    TclFile file)	/* The file to close. */
 {
     int fd = GetFd(file);
 
@@ -366,33 +364,32 @@ TclpCloseFile(file)
 
     /* ARGSUSED */
 int
-TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
-	pidPtr)
-    Tcl_Interp *interp;		/* Interpreter in which to leave errors that
+TclpCreateProcess(
+    Tcl_Interp *interp,		/* Interpreter in which to leave errors that
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc;			/* Number of arguments in following array. */
-    CONST char **argv;		/* Array of argument strings in UTF-8.
+    int argc,			/* Number of arguments in following array. */
+    CONST char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
 				 * call). Additional arguments have not been
 				 * converted. */
-    TclFile inputFile;		/* If non-NULL, gives the file to use as input
+    TclFile inputFile,		/* If non-NULL, gives the file to use as input
 				 * for the child process. If inputFile file is
 				 * not readable or is NULL, the child will
 				 * receive no standard input. */
-    TclFile outputFile;		/* If non-NULL, gives the file that receives
+    TclFile outputFile,		/* If non-NULL, gives the file that receives
 				 * output from the child process. If
 				 * outputFile file is not writeable or is
 				 * NULL, output from the child will be
 				 * discarded. */
-    TclFile errorFile;		/* If non-NULL, gives the file that receives
+    TclFile errorFile,		/* If non-NULL, gives the file that receives
 				 * errors from the child process. If errorFile
 				 * file is not writeable or is NULL, errors
 				 * from the child will be discarded. errorFile
 				 * may be the same as outputFile. */
-    Tcl_Pid *pidPtr;		/* If this procedure is successful, pidPtr is
+    Tcl_Pid *pidPtr)		/* If this function is successful, pidPtr is
 				 * filled with the process id of the child
 				 * process. */
 {
@@ -414,7 +411,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 
     if (TclpCreatePipe(&errPipeIn, &errPipeOut) == 0) {
 	Tcl_AppendResult(interp, "couldn't create pipe: ",
-		Tcl_PosixError(interp), (char *) NULL);
+		Tcl_PosixError(interp), NULL);
 	goto error;
     }
 
@@ -473,7 +470,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 
     if (pid == -1) {
 	Tcl_AppendResult(interp, "couldn't fork child process: ",
-		Tcl_PosixError(interp), (char *) NULL);
+		Tcl_PosixError(interp), NULL);
 	goto error;
     }
 
@@ -492,8 +489,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 	char *end;
 	errSpace[count] = 0;
 	errno = strtol(errSpace, &end, 10);
-	Tcl_AppendResult(interp, end, Tcl_PosixError(interp),
-		(char *) NULL);
+	Tcl_AppendResult(interp, end, Tcl_PosixError(interp), NULL);
 	goto error;
     }
 
@@ -527,7 +523,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
  *
  * RestoreSignals --
  *
- *	This procedure is invoked in a forked child process just before
+ *	This function is invoked in a forked child process just before
  *	exec-ing a new program to restore all signals to their default
  *	settings.
  *
@@ -541,7 +537,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
  */
 
 static void
-RestoreSignals()
+RestoreSignals(void)
 {
 #ifdef SIGABRT
     signal(SIGABRT, SIG_DFL);
@@ -616,9 +612,9 @@ RestoreSignals()
  */
 
 static int
-SetupStdFile(file, type)
-    TclFile file;		/* File to dup, or NULL. */
-    int type;			/* One of TCL_STDIN, TCL_STDOUT, TCL_STDERR */
+SetupStdFile(
+    TclFile file,		/* File to dup, or NULL. */
+    int type)			/* One of TCL_STDIN, TCL_STDOUT, TCL_STDERR */
 {
     Tcl_Channel channel;
     int fd;
@@ -693,13 +689,13 @@ SetupStdFile(file, type)
  */
 
 Tcl_Channel
-TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
-    TclFile readFile;		/* If non-null, gives the file for reading. */
-    TclFile writeFile;		/* If non-null, gives the file for writing. */
-    TclFile errorFile;		/* If non-null, gives the file where errors
+TclpCreateCommandChannel(
+    TclFile readFile,		/* If non-null, gives the file for reading. */
+    TclFile writeFile,		/* If non-null, gives the file for writing. */
+    TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    int numPids;		/* The number of pids in the pid array. */
-    Tcl_Pid *pidPtr;		/* An array of process identifiers. Allocated
+    int numPids,		/* The number of pids in the pid array. */
+    Tcl_Pid *pidPtr)		/* An array of process identifiers. Allocated
 				 * by the caller, freed when the channel is
 				 * closed or the processes are detached (in a
 				 * background exec). */
@@ -755,7 +751,7 @@ TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
  *
  * TclGetAndDetachPids --
  *
- *	This procedure is invoked in the generic implementation of a
+ *	This function is invoked in the generic implementation of a
  *	background "exec" (an exec when invoked with a terminating "&") to
  *	store a list of the PIDs for processes in a command pipeline in the
  *	interp's result and to detach the processes.
@@ -770,9 +766,9 @@ TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
  */
 
 void
-TclGetAndDetachPids(interp, chan)
-    Tcl_Interp *interp;		/* Interpreter to append the PIDs to. */
-    Tcl_Channel chan;		/* Handle for the pipeline. */
+TclGetAndDetachPids(
+    Tcl_Interp *interp,		/* Interpreter to append the PIDs to. */
+    Tcl_Channel chan)		/* Handle for the pipeline. */
 {
     PipeState *pipePtr;
     Tcl_ChannelType *chanTypePtr;
@@ -805,7 +801,7 @@ TclGetAndDetachPids(interp, chan)
  *
  * PipeBlockModeProc --
  *
- *	Helper procedure to set blocking and nonblocking modes on a pipe based
+ *	Helper function to set blocking and nonblocking modes on a pipe based
  *	channel. Invoked by generic IO level code.
  *
  * Results:
@@ -819,9 +815,9 @@ TclGetAndDetachPids(interp, chan)
 
 	/* ARGSUSED */
 static int
-PipeBlockModeProc(instanceData, mode)
-    ClientData instanceData;	/* Pipe state. */
-    int mode;			/* The mode to set. Can be one of
+PipeBlockModeProc(
+    ClientData instanceData,	/* Pipe state. */
+    int mode)			/* The mode to set. Can be one of
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
@@ -875,7 +871,7 @@ PipeBlockModeProc(instanceData, mode)
 	} else {
 	    curStatus = 1;
 	}
-	if (ioctl(fd, (int) FIONBIO,  &curStatus) < 0) {
+	if (ioctl(fd, (int) FIONBIO, &curStatus) < 0) {
 	    return errno;
 	}
     }
@@ -891,7 +887,7 @@ PipeBlockModeProc(instanceData, mode)
  *
  * PipeCloseProc --
  *
- *	This procedure is invoked by the generic IO level to perform
+ *	This function is invoked by the generic IO level to perform
  *	channel-type-specific cleanup when a command pipeline channel is
  *	closed.
  *
@@ -906,9 +902,9 @@ PipeBlockModeProc(instanceData, mode)
 
 	/* ARGSUSED */
 static int
-PipeCloseProc(instanceData, interp)
-    ClientData instanceData;	/* The pipe to close. */
-    Tcl_Interp *interp;		/* For error reporting. */
+PipeCloseProc(
+    ClientData instanceData,	/* The pipe to close. */
+    Tcl_Interp *interp)		/* For error reporting. */
 {
     PipeState *pipePtr;
     Tcl_Channel errChan;
@@ -972,7 +968,7 @@ PipeCloseProc(instanceData, interp)
  *
  * PipeInputProc --
  *
- *	This procedure is invoked from the generic IO level to read input from
+ *	This function is invoked from the generic IO level to read input from
  *	a command pipeline based channel.
  *
  * Results:
@@ -986,12 +982,12 @@ PipeCloseProc(instanceData, interp)
  */
 
 static int
-PipeInputProc(instanceData, buf, toRead, errorCodePtr)
-    ClientData instanceData;	/* Pipe state. */
-    char *buf;			/* Where to store data read. */
-    int toRead;			/* How much space is available in the
+PipeInputProc(
+    ClientData instanceData,	/* Pipe state. */
+    char *buf,			/* Where to store data read. */
+    int toRead,			/* How much space is available in the
 				 * buffer? */
-    int *errorCodePtr;		/* Where to store error code. */
+    int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = (PipeState *) instanceData;
     int bytesRead;		/* How many bytes were actually read from the
@@ -1024,7 +1020,7 @@ PipeInputProc(instanceData, buf, toRead, errorCodePtr)
  *
  * PipeOutputProc--
  *
- *	This procedure is invoked from the generic IO level to write output to
+ *	This function is invoked from the generic IO level to write output to
  *	a command pipeline based channel.
  *
  * Results:
@@ -1038,11 +1034,11 @@ PipeInputProc(instanceData, buf, toRead, errorCodePtr)
  */
 
 static int
-PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
-    ClientData instanceData;	/* Pipe state. */
-    CONST char *buf;		/* The data buffer. */
-    int toWrite;		/* How many bytes to write? */
-    int *errorCodePtr;		/* Where to store error code. */
+PipeOutputProc(
+    ClientData instanceData,	/* Pipe state. */
+    CONST char *buf,		/* The data buffer. */
+    int toWrite,		/* How many bytes to write? */
+    int *errorCodePtr)		/* Where to store error code. */
 {
     PipeState *psPtr = (PipeState *) instanceData;
     int written;
@@ -1084,9 +1080,9 @@ PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
  */
 
 static void
-PipeWatchProc(instanceData, mask)
-    ClientData instanceData;	/* The pipe state. */
-    int mask;			/* Events of interest; an OR-ed combination of
+PipeWatchProc(
+    ClientData instanceData,	/* The pipe state. */
+    int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
@@ -1134,10 +1130,10 @@ PipeWatchProc(instanceData, mask)
  */
 
 static int
-PipeGetHandleProc(instanceData, direction, handlePtr)
-    ClientData instanceData;	/* The pipe state. */
-    int direction;		/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr;	/* Where to store the handle.  */
+PipeGetHandleProc(
+    ClientData instanceData,	/* The pipe state. */
+    int direction,		/* TCL_READABLE or TCL_WRITABLE */
+    ClientData *handlePtr)	/* Where to store the handle. */
 {
     PipeState *psPtr = (PipeState *) instanceData;
 
@@ -1169,10 +1165,10 @@ PipeGetHandleProc(instanceData, direction, handlePtr)
  */
 
 Tcl_Pid
-Tcl_WaitPid(pid, statPtr, options)
-    Tcl_Pid pid;
-    int *statPtr;
-    int options;
+Tcl_WaitPid(
+    Tcl_Pid pid,
+    int *statPtr,
+    int options)
 {
     int result;
     pid_t real_pid;
@@ -1191,7 +1187,7 @@ Tcl_WaitPid(pid, statPtr, options)
  *
  * Tcl_PidObjCmd --
  *
- *	This procedure is invoked to process the "pid" Tcl command. See the
+ *	This function is invoked to process the "pid" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -1205,11 +1201,11 @@ Tcl_WaitPid(pid, statPtr, options)
 
 	/* ARGSUSED */
 int
-Tcl_PidObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST *objv;	/* Argument strings. */
+Tcl_PidObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST *objv)	/* Argument strings. */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
@@ -1254,13 +1250,13 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
  *	None.
  *
  * Notes:
- *	This procedure carries out no operation on Unix.
+ *	This function carries out no operation on Unix.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclpFinalizePipes()
+TclpFinalizePipes(void)
 {
 }
 

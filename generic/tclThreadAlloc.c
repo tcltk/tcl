@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.7 2005/07/26 04:12:20 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.8 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -132,16 +132,14 @@ static struct {
  * Static functions defined in this file.
  */
 
-static void	LockBucket _ANSI_ARGS_((Cache *cachePtr, int bucket));
-static void	UnlockBucket _ANSI_ARGS_((Cache *cachePtr, int bucket));
-static void	PutBlocks _ANSI_ARGS_((Cache *cachePtr, int bucket,
-		    int numMove));
-static int	GetBlocks _ANSI_ARGS_((Cache *cachePtr, int bucket));
-static Block *	Ptr2Block _ANSI_ARGS_((char *ptr));
-static char *	Block2Ptr _ANSI_ARGS_((Block *blockPtr, int bucket,
-		    unsigned int reqSize));
-static void	MoveObjs _ANSI_ARGS_((Cache *fromPtr, Cache *toPtr,
-		    int numMove));
+static Cache *	GetCache(void);
+static void	LockBucket(Cache *cachePtr, int bucket);
+static void	UnlockBucket(Cache *cachePtr, int bucket);
+static void	PutBlocks(Cache *cachePtr, int bucket, int numMove);
+static int	GetBlocks(Cache *cachePtr, int bucket);
+static Block *	Ptr2Block(char *ptr);
+static char *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
+static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
 
 /*
  * Local variables defined in this file and initialized at startup.
@@ -231,8 +229,8 @@ GetCache(void)
  */
 
 void
-TclFreeAllocCache(arg)
-    void *arg;
+TclFreeAllocCache(
+    void *arg)
 {
     Cache *cachePtr = arg;
     Cache **nextPtrPtr;
@@ -290,8 +288,8 @@ TclFreeAllocCache(arg)
  */
 
 char *
-TclpAlloc(reqSize)
-    unsigned int reqSize;
+TclpAlloc(
+    unsigned int reqSize)
 {
     Cache *cachePtr = TclpGetAllocCache();
     Block *blockPtr;
@@ -356,8 +354,8 @@ TclpAlloc(reqSize)
  */
 
 void
-TclpFree(ptr)
-    char *ptr;
+TclpFree(
+    char *ptr)
 {
     Cache *cachePtr;
     Block *blockPtr;
@@ -415,9 +413,9 @@ TclpFree(ptr)
  */
 
 char *
-TclpRealloc(ptr, reqSize)
-    char *ptr;
-    unsigned int reqSize;
+TclpRealloc(
+    char *ptr,
+    unsigned int reqSize)
 {
     Cache *cachePtr = TclpGetAllocCache();
     Block *blockPtr;
@@ -568,8 +566,8 @@ TclThreadAllocObj(void)
  */
 
 void
-TclThreadFreeObj(objPtr)
-    Tcl_Obj *objPtr;
+TclThreadFreeObj(
+    Tcl_Obj *objPtr)
 {
     Cache *cachePtr = TclpGetAllocCache();
 
@@ -614,8 +612,8 @@ TclThreadFreeObj(objPtr)
  */
 
 void
-Tcl_GetMemoryInfo(dsPtr)
-    Tcl_DString *dsPtr;
+Tcl_GetMemoryInfo(
+    Tcl_DString *dsPtr)
 {
     Cache *cachePtr;
     char buf[200];
@@ -665,9 +663,10 @@ Tcl_GetMemoryInfo(dsPtr)
  */
 
 static void
-MoveObjs(fromPtr, toPtr, numMove)
-    Cache *fromPtr, *toPtr;
-    int numMove;
+MoveObjs(
+    Cache *fromPtr,
+    Cache *toPtr,
+    int numMove)
 {
     register Tcl_Obj *objPtr = fromPtr->firstObjPtr;
     Tcl_Obj *fromFirstObjPtr = objPtr;
@@ -711,10 +710,10 @@ MoveObjs(fromPtr, toPtr, numMove)
  */
 
 static char *
-Block2Ptr(blockPtr, bucket, reqSize)
-    Block *blockPtr;
-    int bucket;
-    unsigned int reqSize;
+Block2Ptr(
+    Block *blockPtr,
+    int bucket,
+    unsigned int reqSize)
 {
     register void *ptr;
 
@@ -729,8 +728,8 @@ Block2Ptr(blockPtr, bucket, reqSize)
 }
 
 static Block *
-Ptr2Block(ptr)
-    char *ptr;
+Ptr2Block(
+    char *ptr)
 {
     register Block *blockPtr;
 
@@ -767,9 +766,9 @@ Ptr2Block(ptr)
  */
 
 static void
-LockBucket(cachePtr, bucket)
-    Cache *cachePtr;
-    int bucket;
+LockBucket(
+    Cache *cachePtr,
+    int bucket)
 {
 #if 0
     if (Tcl_MutexTryLock(bucketInfo[bucket].lockPtr) != TCL_OK) {
@@ -785,9 +784,9 @@ LockBucket(cachePtr, bucket)
 }
 
 static void
-UnlockBucket(cachePtr, bucket)
-    Cache *cachePtr;
-    int bucket;
+UnlockBucket(
+    Cache *cachePtr,
+    int bucket)
 {
     Tcl_MutexUnlock(bucketInfo[bucket].lockPtr);
 }
@@ -809,9 +808,10 @@ UnlockBucket(cachePtr, bucket)
  */
 
 static void
-PutBlocks(cachePtr, bucket, numMove)
-    Cache *cachePtr;
-    int bucket, numMove;
+PutBlocks(
+    Cache *cachePtr,
+    int bucket,
+    int numMove)
 {
     register Block *lastPtr, *firstPtr;
     register int n = numMove;
@@ -857,9 +857,9 @@ PutBlocks(cachePtr, bucket, numMove)
  */
 
 static int
-GetBlocks(cachePtr, bucket)
-    Cache *cachePtr;
-    int bucket;
+GetBlocks(
+    Cache *cachePtr,
+    int bucket)
 {
     register Block *blockPtr;
     register int n;
@@ -971,7 +971,7 @@ GetBlocks(cachePtr, bucket)
  */
 
 void
-TclFinalizeThreadAlloc()
+TclFinalizeThreadAlloc(void)
 {
     int i;
     for (i = 0; i < NBUCKETS; ++i) {
@@ -1007,7 +1007,7 @@ TclFinalizeThreadAlloc()
  */
 
 void
-TclFinalizeThreadAlloc()
+TclFinalizeThreadAlloc(void)
 {
     Tcl_Panic("TclFinalizeThreadAlloc called when threaded memory allocator not in use.");
 }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.14 2005/10/18 20:47:32 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.15 2005/11/03 17:52:27 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -68,43 +68,35 @@
  * Callbacks for file attributes code.
  */
 
-static int		GetGroupAttribute _ANSI_ARGS_((Tcl_Interp *interp,
+static int		GetGroupAttribute(Tcl_Interp *interp, int objIndex,
+			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
+static int		GetOwnerAttribute(Tcl_Interp *interp, int objIndex,
+			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
+static int		GetPermissionsAttribute(Tcl_Interp *interp,
 			    int objIndex, Tcl_Obj *fileName,
-			    Tcl_Obj **attributePtrPtr));
-static int		GetOwnerAttribute _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj **attributePtrPtr);
+static int		SetGroupAttribute(Tcl_Interp *interp, int objIndex,
+			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
+static int		SetOwnerAttribute(Tcl_Interp *interp, int objIndex,
+			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
+static int		SetPermissionsAttribute(Tcl_Interp *interp,
 			    int objIndex, Tcl_Obj *fileName,
-			    Tcl_Obj **attributePtrPtr));
-static int		GetPermissionsAttribute _ANSI_ARGS_((
-			    Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr));
-static int		SetGroupAttribute _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, Tcl_Obj *fileName,
-			    Tcl_Obj *attributePtr));
-static int		SetOwnerAttribute _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, Tcl_Obj *fileName,
-			    Tcl_Obj *attributePtr));
-static int		SetPermissionsAttribute _ANSI_ARGS_((
-			    Tcl_Interp *interp, int objIndex,
-			    Tcl_Obj *fileName, Tcl_Obj *attributePtr));
-static int		GetModeFromPermString _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *modeStringPtr,
-			    mode_t *modePtr));
+			    Tcl_Obj *attributePtr);
+static int		GetModeFromPermString(Tcl_Interp *interp,
+			    char *modeStringPtr, mode_t *modePtr);
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
-static int		GetReadOnlyAttribute _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, Tcl_Obj *fileName,
-			    Tcl_Obj **attributePtrPtr));
-static int		SetReadOnlyAttribute _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, Tcl_Obj *fileName,
-			    Tcl_Obj *attributePtr));
+static int		GetReadOnlyAttribute(Tcl_Interp *interp, int objIndex,
+			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
+static int		SetReadOnlyAttribute(Tcl_Interp *interp, int objIndex,
+			    Tcl_Obj *fileName, Tcl_Obj *attributePtr);
 #endif
 
 /*
  * Prototype for the TraverseUnixTree callback function.
  */
 
-typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
-	Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr, int type,
-	Tcl_DString *errorPtr));
+typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
+	CONST Tcl_StatBuf *statBufPtr, int type, Tcl_DString *errorPtr);
 
 /*
  * Constants and variables necessary for file attributes subcommand.
@@ -144,7 +136,7 @@ CONST char *tclpFileAttrStrings[] = {
 #ifdef MAC_OSX_TCL
     "-creator", "-type", "-hidden", "-rsrclength",
 #endif
-    (char *) NULL
+    NULL
 };
 
 CONST TclFileAttrProcs tclpFileAttrProcs[] = {
@@ -182,25 +174,22 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
  * Declarations for local procedures defined in this file:
  */
 
-static int		CopyFileAtts _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
-static int		DoCopyFile _ANSI_ARGS_((CONST char *srcPtr,
-			    CONST char *dstPtr));
-static int		DoCreateDirectory _ANSI_ARGS_((CONST char *pathPtr));
-static int		DoRemoveDirectory _ANSI_ARGS_((Tcl_DString *pathPtr,
-			    int recursive, Tcl_DString *errorPtr));
-static int		DoRenameFile _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst));
-static int		TraversalCopy _ANSI_ARGS_((Tcl_DString *srcPtr,
+static int		CopyFileAtts(CONST char *src,
+			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr);
+static int		DoCopyFile(CONST char *srcPtr, CONST char *dstPtr);
+static int		DoCreateDirectory(CONST char *pathPtr);
+static int		DoRemoveDirectory(Tcl_DString *pathPtr,
+			    int recursive, Tcl_DString *errorPtr);
+static int		DoRenameFile(CONST char *src, CONST char *dst);
+static int		TraversalCopy(Tcl_DString *srcPtr,
 			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
-			    int type, Tcl_DString *errorPtr));
-static int		TraversalDelete _ANSI_ARGS_((Tcl_DString *srcPtr,
+			    int type, Tcl_DString *errorPtr);
+static int		TraversalDelete(Tcl_DString *srcPtr,
 			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
-			    int type, Tcl_DString *errorPtr));
-static int		TraverseUnixTree _ANSI_ARGS_((
-			    TraversalProc *traversalProc,
+			    int type, Tcl_DString *errorPtr);
+static int		TraverseUnixTree(TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
-			    Tcl_DString *errorPtr, int doRewind));
+			    Tcl_DString *errorPtr, int doRewind);
 
 #ifdef PURIFY
 /*
@@ -210,13 +199,12 @@ static int		TraverseUnixTree _ANSI_ARGS_((
  * passing the standard MAXPATHLEN size resolved arg.
  */
 
-static char *		Realpath _ANSI_ARGS_((CONST char *path,
-			    char *resolved));
+static char *		Realpath(CONST char *path, char *resolved);
 
 char *
-Realpath(path, resolved)
-    CONST char *path;
-    char *resolved;
+Realpath(
+    CONST char *path,
+    char *resolved)
 {
     memset(resolved, 0, MAXPATHLEN);
     return realpath(path, resolved);
@@ -260,19 +248,19 @@ Realpath(path, resolved)
  */
 
 int
-TclpObjRenameFile(srcPathPtr, destPathPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
+TclpObjRenameFile(
+    Tcl_Obj *srcPathPtr,
+    Tcl_Obj *destPathPtr)
 {
     return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
 	    Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
-DoRenameFile(src, dst)
-    CONST char *src;		/* Pathname of file or dir to be renamed
+DoRenameFile(
+    CONST char *src,		/* Pathname of file or dir to be renamed
 				 * (native). */
-    CONST char *dst;		/* New pathname of file or directory
+    CONST char *dst)		/* New pathname of file or directory
 				 * (native). */
 {
     if (rename(src, dst) == 0) {			/* INTL: Native. */
@@ -376,18 +364,18 @@ DoRenameFile(src, dst)
  */
 
 int
-TclpObjCopyFile(srcPathPtr, destPathPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
+TclpObjCopyFile(
+    Tcl_Obj *srcPathPtr,
+    Tcl_Obj *destPathPtr)
 {
     return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
 	    Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
-DoCopyFile(src, dst)
-    CONST char *src;		/* Pathname of file to be copied (native). */
-    CONST char *dst;		/* Pathname of file to copy to (native). */
+DoCopyFile(
+    CONST char *src,		/* Pathname of file to be copied (native). */
+    CONST char *dst)		/* Pathname of file to copy to (native). */
 {
     Tcl_StatBuf srcStatBuf, dstStatBuf;
 
@@ -473,13 +461,13 @@ DoCopyFile(src, dst)
  */
 
 int
-TclUnixCopyFile(src, dst, statBufPtr, dontCopyAtts)
-    CONST char *src;		/* Pathname of file to copy (native). */
-    CONST char *dst;		/* Pathname of file to create/overwrite
+TclUnixCopyFile(
+    CONST char *src,		/* Pathname of file to copy (native). */
+    CONST char *dst,		/* Pathname of file to create/overwrite
 				 * (native). */
-    CONST Tcl_StatBuf *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr,
 				/* Used to determine mode and blocksize. */
-    int dontCopyAtts;		/* If flag set, don't copy attributes. */
+    int dontCopyAtts)		/* If flag set, don't copy attributes. */
 {
     int srcFd, dstFd;
     unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
@@ -580,15 +568,15 @@ TclUnixCopyFile(src, dst, statBufPtr, dontCopyAtts)
  */
 
 int
-TclpObjDeleteFile(pathPtr)
-    Tcl_Obj *pathPtr;
+TclpObjDeleteFile(
+    Tcl_Obj *pathPtr)
 {
     return TclpDeleteFile(Tcl_FSGetNativePath(pathPtr));
 }
 
 int
-TclpDeleteFile(path)
-    CONST char *path;		/* Pathname of file to be removed (native). */
+TclpDeleteFile(
+    CONST char *path)		/* Pathname of file to be removed (native). */
 {
     if (unlink(path) != 0) {				/* INTL: Native. */
 	return TCL_ERROR;
@@ -623,15 +611,15 @@ TclpDeleteFile(path)
  */
 
 int
-TclpObjCreateDirectory(pathPtr)
-    Tcl_Obj *pathPtr;
+TclpObjCreateDirectory(
+    Tcl_Obj *pathPtr)
 {
     return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
 }
 
 static int
-DoCreateDirectory(path)
-    CONST char *path;	/* Pathname of directory to create (native). */
+DoCreateDirectory(
+    CONST char *path)		/* Pathname of directory to create (native). */
 {
     mode_t mode;
 
@@ -675,10 +663,10 @@ DoCreateDirectory(path)
  */
 
 int
-TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
-    Tcl_Obj **errorPtr;
+TclpObjCopyDirectory(
+    Tcl_Obj *srcPathPtr,
+    Tcl_Obj *destPathPtr,
+    Tcl_Obj **errorPtr)
 {
     Tcl_DString ds;
     Tcl_DString srcString, dstString;
@@ -687,14 +675,14 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
 
     transPtr = Tcl_FSGetTranslatedPath(NULL,srcPathPtr);
     Tcl_UtfToExternalDString(NULL,
-	    (transPtr != NULL ? Tcl_GetString(transPtr) : NULL),
+	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, &srcString);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
     }
     transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
     Tcl_UtfToExternalDString(NULL,
-	    (transPtr != NULL ? Tcl_GetString(transPtr) : NULL),
+	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, &dstString);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
@@ -741,10 +729,10 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
  */
 
 int
-TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
-    Tcl_Obj *pathPtr;
-    int recursive;
-    Tcl_Obj **errorPtr;
+TclpObjRemoveDirectory(
+    Tcl_Obj *pathPtr,
+    int recursive,
+    Tcl_Obj **errorPtr)
 {
     Tcl_DString ds;
     Tcl_DString pathString;
@@ -752,7 +740,7 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
 
     Tcl_UtfToExternalDString(NULL,
-	    (transPtr != NULL ? Tcl_GetString(transPtr) : NULL),
+	    (transPtr != NULL ? TclGetString(transPtr) : NULL),
 	    -1, &pathString);
     if (transPtr != NULL) {
 	Tcl_DecrRefCount(transPtr);
@@ -769,13 +757,13 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
 }
 
 static int
-DoRemoveDirectory(pathPtr, recursive, errorPtr)
-    Tcl_DString *pathPtr;	/* Pathname of directory to be removed
+DoRemoveDirectory(
+    Tcl_DString *pathPtr,	/* Pathname of directory to be removed
 				 * (native). */
-    int recursive;		/* If non-zero, removes directories that are
+    int recursive,		/* If non-zero, removes directories that are
 				 * nonempty. Otherwise, will only remove empty
 				 * directories. */
-    Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free DString
+    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
@@ -858,17 +846,17 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
  */
 
 static int
-TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
-    TraversalProc *traverseProc;/* Function to call for every file and
+TraverseUnixTree(
+    TraversalProc *traverseProc,/* Function to call for every file and
 				 * directory in source hierarchy. */
-    Tcl_DString *sourcePtr;	/* Pathname of source directory to be
+    Tcl_DString *sourcePtr,	/* Pathname of source directory to be
 				 * traversed (native). */
-    Tcl_DString *targetPtr;	/* Pathname of directory to traverse in
+    Tcl_DString *targetPtr,	/* Pathname of directory to traverse in
 				 * parallel with source directory (native). */
-    Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free DString
+    Tcl_DString *errorPtr,	/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
-    int doRewind;		/* Flag indicating that to ensure complete
+    int doRewind)		/* Flag indicating that to ensure complete
     				 * traversal of source hierarchy, the readdir
     				 * loop should be rewound whenever
     				 * traverseProc has returned TCL_OK; this is
@@ -962,6 +950,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
 	     * (since the opendir or the previous rewinddir), to avoid
 	     * a NULL-return that may a symptom of a buggy readdir.
 	     */
+
 	    rewinddir(dirPtr);
 	    numProcessed = 0;
 	}
@@ -1017,13 +1006,13 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
  */
 
 static int
-TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
-    Tcl_DString *srcPtr;	/* Source pathname to copy (native). */
-    Tcl_DString *dstPtr;	/* Destination pathname of copy (native). */
-    CONST Tcl_StatBuf *statBufPtr;
+TraversalCopy(
+    Tcl_DString *srcPtr,	/* Source pathname to copy (native). */
+    Tcl_DString *dstPtr,	/* Destination pathname of copy (native). */
+    CONST Tcl_StatBuf *statBufPtr,
 				/* Stat info for file specified by srcPtr. */
-    int type;			/* Reason for call - see TraverseUnixTree(). */
-    Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free DString
+    int type,			/* Reason for call - see TraverseUnixTree(). */
+    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
@@ -1081,13 +1070,13 @@ TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
  */
 
 static int
-TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr)
-    Tcl_DString *srcPtr;	/* Source pathname (native). */
-    Tcl_DString *ignore;	/* Destination pathname (not used). */
-    CONST Tcl_StatBuf *statBufPtr;
+TraversalDelete(
+    Tcl_DString *srcPtr,	/* Source pathname (native). */
+    Tcl_DString *ignore,	/* Destination pathname (not used). */
+    CONST Tcl_StatBuf *statBufPtr,
 				/* Stat info for file specified by srcPtr. */
-    int type;			/* Reason for call - see TraverseUnixTree(). */
-    Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free DString
+    int type,			/* Reason for call - see TraverseUnixTree(). */
+    Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free DString
 				 * filled with UTF-8 name of file causing
 				 * error. */
 {
@@ -1131,10 +1120,10 @@ TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr)
  */
 
 static int
-CopyFileAtts(src, dst, statBufPtr)
-    CONST char *src;		/* Path name of source file (native). */
-    CONST char *dst;		/* Path name of target file (native). */
-    CONST Tcl_StatBuf *statBufPtr;
+CopyFileAtts(
+    CONST char *src,		/* Path name of source file (native). */
+    CONST char *dst,		/* Path name of target file (native). */
+    CONST Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
     struct utimbuf tval;
@@ -1189,11 +1178,11 @@ CopyFileAtts(src, dst, statBufPtr)
  */
 
 static int
-GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
-    Tcl_Interp *interp;		/* The interp we are using for errors. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;  	/* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
+GetGroupAttribute(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,  	/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     struct group *groupPtr;
@@ -1204,8 +1193,8 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(fileName), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    TclGetString(fileName), "\": ",
+		    Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1243,11 +1232,11 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
  */
 
 static int
-GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
-    Tcl_Interp *interp;		/* The interp we are using for errors. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;  	/* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
+GetOwnerAttribute(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,  	/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     struct passwd *pwPtr;
@@ -1258,8 +1247,8 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(fileName), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    TclGetString(fileName), "\": ",
+		    Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1297,11 +1286,11 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
  */
 
 static int
-GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
-    Tcl_Interp *interp;		    /* The interp we are using for errors. */
-    int objIndex;		    /* The index of the attribute. */
-    Tcl_Obj *fileName;  	    /* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr;	    /* A pointer to return the object with. */
+GetPermissionsAttribute(
+    Tcl_Interp *interp,		    /* The interp we are using for errors. */
+    int objIndex,		    /* The index of the attribute. */
+    Tcl_Obj *fileName,  	    /* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	    /* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
@@ -1311,8 +1300,8 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(fileName), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    TclGetString(fileName), "\": ",
+		    Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1341,11 +1330,11 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
  */
 
 static int
-SetGroupAttribute(interp, objIndex, fileName, attributePtr)
-    Tcl_Interp *interp;		/* The interp for error reporting. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;		/* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr;	/* New group for file. */
+SetGroupAttribute(
+    Tcl_Interp *interp,		/* The interp for error reporting. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* New group for file. */
 {
     long gid;
     int result;
@@ -1367,9 +1356,8 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 	    endgrent();
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "could not set group for file \"",
-			Tcl_GetString(fileName), "\": group \"",
-			string, "\" does not exist",
-			(char *) NULL);
+			TclGetString(fileName), "\": group \"", string,
+			"\" does not exist", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1383,8 +1371,8 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not set group for file \"",
-		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1408,11 +1396,11 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
  */
 
 static int
-SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
-    Tcl_Interp *interp;		/* The interp for error reporting. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;		/* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr;	/* New owner for file. */
+SetOwnerAttribute(
+    Tcl_Interp *interp,		/* The interp for error reporting. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* New owner for file. */
 {
     long uid;
     int result;
@@ -1433,8 +1421,8 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 	if (pwPtr == NULL) {
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "could not set owner for file \"",
-			Tcl_GetString(fileName), "\": user \"", string,
-			"\" does not exist", (char *) NULL);
+			TclGetString(fileName), "\": user \"", string,
+			"\" does not exist", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1447,8 +1435,8 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not set owner for file \"",
-		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1472,11 +1460,11 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
  */
 
 static int
-SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
-    Tcl_Interp *interp;		/* The interp we are using for errors. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;		/* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr;	/* The attribute to set. */
+SetPermissionsAttribute(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     long mode;
     mode_t newMode;
@@ -1491,7 +1479,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
 	newMode = (mode_t) (mode & 0x00007FFF);
     } else {
 	Tcl_StatBuf buf;
-	char *modeStringPtr = Tcl_GetString(attributePtr);
+	char *modeStringPtr = TclGetString(attributePtr);
 
 	/*
 	 * Try the forms "rwxrwxrwx" and "ugo=rwx"
@@ -1504,8 +1492,8 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
 	if (result != 0) {
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "could not read \"",
-			Tcl_GetString(fileName), "\": ",
-			Tcl_PosixError(interp), (char *) NULL);
+			TclGetString(fileName), "\": ",
+			Tcl_PosixError(interp), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1514,7 +1502,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
 	if (GetModeFromPermString(NULL, modeStringPtr, &newMode) != TCL_OK) {
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "unknown permission string format \"",
-			modeStringPtr, "\"", (char *) NULL);
+			modeStringPtr, "\"", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1525,8 +1513,8 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not set permissions for file \"",
-		    Tcl_GetString(fileName), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    TclGetString(fileName), "\": ",
+		    Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1550,10 +1538,10 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
  *---------------------------------------------------------------------------
  */
 
-Tcl_Obj*
+Tcl_Obj *
 TclpObjListVolumes(void)
 {
-    Tcl_Obj *resultPtr = Tcl_NewStringObj("/",1);
+    Tcl_Obj *resultPtr = Tcl_NewStringObj("/", 1);
 
     Tcl_IncrRefCount(resultPtr);
     return resultPtr;
@@ -1579,10 +1567,10 @@ TclpObjListVolumes(void)
  */
 
 static int
-GetModeFromPermString(interp, modeStringPtr, modePtr)
-    Tcl_Interp *interp;		/* The interp we are using for errors. */
-    char *modeStringPtr;	/* Permissions string */
-    mode_t *modePtr;		/* pointer to the mode value */
+GetModeFromPermString(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    char *modeStringPtr,	/* Permissions string */
+    mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
     mode_t oldMode;		/* Storage for the value of the old mode (that
@@ -1769,10 +1757,10 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
  */
 
 int
-TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
-    Tcl_Interp *interp;
-    Tcl_Obj *pathPtr;
-    int nextCheckpoint;
+TclpObjNormalizePath(
+    Tcl_Interp *interp,
+    Tcl_Obj *pathPtr,
+    int nextCheckpoint)
 {
     char *currentPathEndPosition;
     int pathLen;
@@ -1969,11 +1957,11 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
  */
 
 static int
-GetReadOnlyAttribute(interp, objIndex, fileName, attributePtrPtr)
-    Tcl_Interp *interp;		/* The interp we are using for errors. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;		/* The name of the file (UTF-8). */
-    Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
+GetReadOnlyAttribute(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
     int result;
@@ -1983,8 +1971,8 @@ GetReadOnlyAttribute(interp, objIndex, fileName, attributePtrPtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2011,11 +1999,11 @@ GetReadOnlyAttribute(interp, objIndex, fileName, attributePtrPtr)
  */
 
 static int
-SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
-    Tcl_Interp *interp;		/* The interp we are using for errors. */
-    int objIndex;		/* The index of the attribute. */
-    Tcl_Obj *fileName;		/* The name of the file (UTF-8). */
-    Tcl_Obj *attributePtr;	/* The attribute to set. */
+SetReadOnlyAttribute(
+    Tcl_Interp *interp,		/* The interp we are using for errors. */
+    int objIndex,		/* The index of the attribute. */
+    Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr)	/* The attribute to set. */
 {
     Tcl_StatBuf statBuf;
     int result;
@@ -2031,8 +2019,8 @@ SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2048,8 +2036,8 @@ SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
     if (result != 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not set flags for file \"",
-		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
+		    NULL);
 	}
 	return TCL_ERROR;
     }

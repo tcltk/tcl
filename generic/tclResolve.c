@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResolve.c,v 1.4.4.2 2005/07/26 04:12:19 dgp Exp $
+ * RCS: @(#) $Id: tclResolve.c,v 1.4.4.3 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -20,7 +20,7 @@
  * Declarations for functions local to this file:
  */
 
-static void		BumpCmdRefEpochs _ANSI_ARGS_((Namespace *nsPtr));
+static void		BumpCmdRefEpochs(Namespace *nsPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -54,17 +54,16 @@ static void		BumpCmdRefEpochs _ANSI_ARGS_((Namespace *nsPtr));
  */
 
 void
-Tcl_AddInterpResolvers(interp, name, cmdProc, varProc, compiledVarProc)
-    Tcl_Interp *interp;			/* Interpreter whose name resolution
-					 * rules are being modified. */
-    CONST char *name;			/* Name of this resolution scheme. */
-    Tcl_ResolveCmdProc *cmdProc;	/* New function for command
-					 * resolution. */
-    Tcl_ResolveVarProc *varProc;	/* Function for variable resolution at
-					 * runtime. */
-    Tcl_ResolveCompiledVarProc *compiledVarProc;
-					/* Function for variable resolution at
-					 * compile time. */
+Tcl_AddInterpResolvers(
+    Tcl_Interp *interp,		/* Interpreter whose name resolution rules are
+				 * being modified. */
+    CONST char *name,		/* Name of this resolution scheme. */
+    Tcl_ResolveCmdProc *cmdProc,/* New function for command resolution. */
+    Tcl_ResolveVarProc *varProc,/* Function for variable resolution at
+				 * runtime. */
+    Tcl_ResolveCompiledVarProc *compiledVarProc)
+				/* Function for variable resolution at compile
+				 * time. */
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
@@ -134,12 +133,13 @@ Tcl_AddInterpResolvers(interp, name, cmdProc, varProc, compiledVarProc)
  */
 
 int
-Tcl_GetInterpResolvers(interp, name, resInfoPtr)
-    Tcl_Interp *interp;			/* Interpreter whose name resolution
-					 * rules are being queried. */
-    CONST char *name;			/* Look for a scheme with this name. */
-    Tcl_ResolverInfo *resInfoPtr;	/* Returns pointers to the functions,
-					 * if found */
+Tcl_GetInterpResolvers(
+    Tcl_Interp *interp,		/* Interpreter whose name resolution rules are
+				 * being queried. */
+    CONST char *name,		/* Look for a scheme with this name. */
+    Tcl_ResolverInfo *resInfoPtr)
+				/* Returns pointers to the functions, if
+				 * found */
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
@@ -185,10 +185,10 @@ Tcl_GetInterpResolvers(interp, name, resInfoPtr)
  */
 
 int
-Tcl_RemoveInterpResolvers(interp, name)
-    Tcl_Interp *interp;			/* Interpreter whose name resolution
-					 * rules are being modified. */
-    CONST char *name;			/* Name of the scheme to be removed. */
+Tcl_RemoveInterpResolvers(
+    Tcl_Interp *interp,		/* Interpreter whose name resolution rules are
+				 * being modified. */
+    CONST char *name)		/* Name of the scheme to be removed. */
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme **prevPtrPtr, *resPtr;
@@ -254,8 +254,8 @@ Tcl_RemoveInterpResolvers(interp, name)
  */
 
 static void
-BumpCmdRefEpochs(nsPtr)
-    Namespace *nsPtr;			/* Namespace being modified. */
+BumpCmdRefEpochs(
+    Namespace *nsPtr)		/* Namespace being modified. */
 {
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
@@ -335,15 +335,15 @@ BumpCmdRefEpochs(nsPtr)
  */
 
 void
-Tcl_SetNamespaceResolvers(namespacePtr, cmdProc, varProc, compiledVarProc)
-    Tcl_Namespace *namespacePtr;	/* Namespace whose resolution rules
-					 * are being modified. */
-    Tcl_ResolveCmdProc *cmdProc;	/* Function for command resolution */
-    Tcl_ResolveVarProc *varProc;	/* Function for variable resolution at
-					 * run-time */
-    Tcl_ResolveCompiledVarProc *compiledVarProc;
-					/* Function for variable resolution at
-					 * compile time. */
+Tcl_SetNamespaceResolvers(
+    Tcl_Namespace *namespacePtr,/* Namespace whose resolution rules are being
+				 * modified. */
+    Tcl_ResolveCmdProc *cmdProc,/* Function for command resolution */
+    Tcl_ResolveVarProc *varProc,/* Function for variable resolution at
+				 * run-time */
+    Tcl_ResolveCompiledVarProc *compiledVarProc)
+				/* Function for variable resolution at compile
+				 * time. */
 {
     Namespace *nsPtr = (Namespace *) namespacePtr;
 
@@ -384,12 +384,12 @@ Tcl_SetNamespaceResolvers(namespacePtr, cmdProc, varProc, compiledVarProc)
  */
 
 int
-Tcl_GetNamespaceResolvers(namespacePtr, resInfoPtr)
-    Tcl_Namespace *namespacePtr;	/* Namespace whose resolution rules
-					 * are being modified. */
-    Tcl_ResolverInfo *resInfoPtr;	/* Returns: pointers for all name
-					 * resolution functions assigned to
-					 * this namespace. */
+Tcl_GetNamespaceResolvers(
+    Tcl_Namespace *namespacePtr,/* Namespace whose resolution rules are being
+				 * modified. */
+    Tcl_ResolverInfo *resInfoPtr)
+				/* Returns: pointers for all name resolution
+				 * functions assigned to this namespace. */
 {
     Namespace *nsPtr = (Namespace *) namespacePtr;
 

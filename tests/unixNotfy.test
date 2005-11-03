@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.11.4.5 2005/05/16 19:23:19 dgp Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.11.4.6 2005/11/03 17:52:27 dgp Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -40,7 +40,7 @@ test unixNotfy-1.1 {Tcl_DeleteFileHandler} -constraints {noTk unix unthreaded} -
     vwait x
     close $f
     list [catch {vwait x} msg] $msg
-} -result {1 {can't wait for variable "x":  would wait forever}} -cleanup { 
+} -result {1 {can't wait for variable "x": would wait forever}} -cleanup { 
     catch { close $f }
     catch { removeFile foo }
 }
@@ -55,7 +55,7 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} -constraints {noTk unix unthreaded} -
     vwait y
     close $f2
     list [catch {vwait x} msg] $msg
-} -result {1 {can't wait for variable "x":  would wait forever}} -cleanup {
+} -result {1 {can't wait for variable "x": would wait forever}} -cleanup {
     catch { close $f1 }
     catch { close $f2 }
     catch { removeFile foo }

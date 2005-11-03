@@ -10,50 +10,50 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.8 2005/07/26 04:12:26 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.9 2005/11/03 17:52:27 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
-# 
+#
 # Some tests in socket.test depend on the existence of a remote server to
 # which they connect. The remote server must be an instance of tcltest and it
 # must run the script found in the file "remote.tcl" in this directory. You
 # can start the remote server on any machine reachable from the machine on
 # which you want to run the socket tests, by issuing:
-# 
+#
 #     tcltest remote.tcl -port 2048	# Or choose another port number.
-# 
+#
 # If the machine you are running the remote server on has several IP
 # interfaces, you can choose which interface the server listens on for
 # connections by specifying the -address command line flag, so:
-# 
+#
 #     tcltest remote.tcl -address your.machine.com
-# 
+#
 # These options can also be set by environment variables. On Unix, you can
 # type these commands to the shell from which the remote server is started:
-# 
+#
 #     shell% setenv serverPort 2048
 #     shell% setenv serverAddress your.machine.com
-# 
+#
 # and subsequently you can start the remote server with:
-# 
+#
 #     tcltest remote.tcl
-# 
+#
 # to have it listen on port 2048 on the interface your.machine.com.
-#     
+#
 # When the server starts, it prints out a detailed message containing its
 # configuration information, and it will block until killed with a Ctrl-C.
 # Once the remote server exists, you can run the tests in socket.test with
 # the server by setting two Tcl variables:
-# 
+#
 #     % set remoteServerIP <name or address of machine on which server runs>
 #     % set remoteServerPort 2048
-# 
+#
 # These variables are also settable from the environment. On Unix, you can:
-# 
+#
 #     shell% setenv remoteServerIP machine.where.server.runs
 #     shell% senetv remoteServerPort 2048
-# 
+#
 # The preamble of the socket.test file checks to see if the variables are set
 # either in Tcl or in the environment; if they are, it attempts to connect to
 # the server. If the connection is successful, the tests using the remote
@@ -222,7 +222,7 @@ test socket-1.8 {arg parsing for socket command} {socket} {
 } {1 {bad option "-froboz": must be -async, -myaddr, -myport, or -server}}
 test socket-1.9 {arg parsing for socket command} {socket} {
     list [catch {socket -server foo -myport 2521 3333} msg] $msg
-} {1 {Option -myport is not valid for servers}}
+} {1 {option -myport is not valid for servers}}
 test socket-1.10 {arg parsing for socket command} {socket} {
     list [catch {socket host 2528 -junk} msg] $msg
 } {1 {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}}
@@ -276,7 +276,7 @@ test socket-2.1 {tcp connection} {socket stdio} {
 
 if [info exists port] {
     incr port
-} else { 
+} else {
     set port [expr 2048 + [pid]%1024]
 }
 test socket-2.2 {tcp connection with client port specified} {socket stdio} {
@@ -478,7 +478,7 @@ test socket-2.8 {echo server, loop 50 times, single connection} -constraints {so
                  global x
                  close $s
                  set x done
-             } else { 
+             } else {
 	         incr i
                  puts $s $l
              }
@@ -1013,7 +1013,7 @@ test socket-9.3 {testing EOF stickyness} {socket} {
 	set done true
 	set count {timer went off, eof is not sticky}
 	close $c
-    }	
+    }
     set count 0
     set done false
     proc write_then_close {s} {
@@ -1203,7 +1203,7 @@ test socket-11.7 {server with several clients} {socket doTestsWithRemoteServer} 
     close $s3
     sendCommand {close $socket10_9_test_server}
     set i
-} 100    
+} 100
 test socket-11.8 {client with several servers} {socket doTestsWithRemoteServer} {
     sendCommand {
 	set s1 [socket -server "accept 4003" 4003]
@@ -1436,7 +1436,7 @@ test socket-12.1 {testing inheritance of server sockets} {socket stdio exec} {
 	vwait forever
     }
     close $f
-	
+
     # Launch script2 and wait 5 seconds
 
     ### exec [interpreter] script2 &
@@ -1571,7 +1571,7 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
     puts $f {
 	    after 1000 exit
 	}
-    puts $f \} 
+    puts $f \}
     puts $f {
 	vwait forever
     }
@@ -1620,7 +1620,7 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
 	}
 	return
     }
-    
+
     vwait x
 
     close $p

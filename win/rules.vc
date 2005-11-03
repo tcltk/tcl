@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.6 2005/08/15 17:23:22 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.7 2005/11/03 17:52:34 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -64,7 +64,7 @@ RMDIR	= deltree /Y
 #----------------------------------------------------------
 
 !if !exist(nmakehlp.exe)
-!if [$(cc32) -nologo -ML nmakehlp.c -link -subsystem:console > nul]
+!if [$(cc32) -nologo nmakehlp.c -link -subsystem:console > nul]
 !endif
 !endif
 
@@ -73,12 +73,38 @@ RMDIR	= deltree /Y
 #----------------------------------------------------------
 
 ### test for optimizations
-!if [nmakehlp -c -Otip]
+!if [nmakehlp -c -Oti]
 !message *** Compiler has 'Optimizations'
 OPTIMIZING	= 1
 !else
 !message *** Compiler doesn't have 'Optimizations'
 OPTIMIZING	= 0
+!endif
+
+OPTIMIZATIONS  =
+
+!if [nmakehlp -c -Op]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -Op
+!endif
+
+!if [nmakehlp -c -fp:strict]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:strict
+!endif
+
+!if [nmakehlp -c -Gs]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -Gs
+!endif
+
+!if [nmakehlp -c -GS]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -GS
+!endif
+
+DEBUGFLAGS     =
+
+!if [nmakehlp -c -RTC1]
+DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
+!elseif [nmakehlp -c -GZ]
+DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
 !if "$(MACHINE)" == "IX86"

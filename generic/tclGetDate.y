@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.4 2005/01/12 21:36:23 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.5 2005/11/03 17:52:08 dgp Exp $
  */
 
 %{
@@ -151,11 +151,11 @@ typedef enum _MERIDIAN {
 /*
  * Prototypes of internal functions.
  */
-static void	TclDateerror _ANSI_ARGS_((char *s));
-static time_t	ToSeconds _ANSI_ARGS_((time_t Hours, time_t Minutes,
-		    time_t Seconds, MERIDIAN Meridian));
-static int	LookupWord _ANSI_ARGS_((char *buff));
-static int	TclDatelex _ANSI_ARGS_((void* info));
+static void	TclDateerror(char *s);
+static time_t	ToSeconds(time_t Hours, time_t Minutes,
+		    time_t Seconds, MERIDIAN Meridian);
+static int	LookupWord(char *buff);
+static int	TclDatelex(void* info);
 
 
 %}

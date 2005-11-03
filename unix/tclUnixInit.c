@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.11 2005/08/15 17:23:21 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.12 2005/11/03 17:52:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -52,8 +52,8 @@
  *
  * The getrlimit() function is documented to return the maximum stack size in
  * bytes. However, with threads enabled, the pthread library does bad things
- * to the stack size limits.  First, the limits cannot be changed. Second,
- * they appear to be reported incorrectly by a factor of about 64.
+ * to the stack size limits. First, the limits cannot be changed. Second, they
+ * appear to be reported incorrectly by a factor of about 64.
  *
  * The defines below may need to be adjusted if more platforms have this
  * broken behavior with threads enabled.
@@ -325,14 +325,12 @@ static CONST LocaleTable localeTable[] = {
 };
 
 #ifndef TCL_NO_STACK_CHECK
-static int		GetStackSize _ANSI_ARGS_((size_t *stackSizePtr));
+static int		GetStackSize(size_t *stackSizePtr);
 #endif /* TCL_NO_STACK_CHECK */
 #ifdef HAVE_COREFOUNDATION
-static int		MacOSXGetLibraryPath _ANSI_ARGS_((
-			    Tcl_Interp *interp, int maxPathLen,
-			    char *tclLibPath));
+static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
+			    int maxPathLen, char *tclLibPath);
 #endif /* HAVE_COREFOUNDATION */
-
 
 /*
  *---------------------------------------------------------------------------
@@ -354,7 +352,7 @@ static int		MacOSXGetLibraryPath _ANSI_ARGS_((
  */
 
 void
-TclpInitPlatform()
+TclpInitPlatform(void)
 {
 #ifdef DJGPP
     tclPlatform = TCL_PLATFORM_WINDOWS;
@@ -377,7 +375,7 @@ TclpInitPlatform()
     }
 
     /*
-     * The code below causes SIGPIPE (broken pipe) errors to be ignored.  This
+     * The code below causes SIGPIPE (broken pipe) errors to be ignored. This
      * is needed so that Tcl processes don't die if they create child
      * processes (e.g. using "exec" or "open") that terminate prematurely.
      * The signal handler is only set up when the first interpreter is
@@ -440,10 +438,10 @@ TclpInitPlatform()
  */
 
 void
-TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
-    char **valuePtr;
-    int *lengthPtr;
-    Tcl_Encoding *encodingPtr;
+TclpInitLibraryPath(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
@@ -562,7 +560,7 @@ TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
  */
 
 void
-TclpSetInitialEncodings()
+TclpSetInitialEncodings(void)
 {
     Tcl_DString encodingName;
     Tcl_SetSystemEncoding(NULL,
@@ -571,14 +569,14 @@ TclpSetInitialEncodings()
 }
 
 void
-TclpSetInterfaces()
+TclpSetInterfaces(void)
 {
-	/* do nothing */
+    /* do nothing */
 }
 
 static CONST char *
-SearchKnownEncodings(encoding)
-    CONST char *encoding;
+SearchKnownEncodings(
+    CONST char *encoding)
 {
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
@@ -600,8 +598,8 @@ SearchKnownEncodings(encoding)
 }
 
 CONST char *
-TclpGetEncodingNameFromEnvironment(bufPtr)
-    Tcl_DString *bufPtr;
+TclpGetEncodingNameFromEnvironment(
+    Tcl_DString *bufPtr)
 {
     CONST char *encoding;
     CONST char *knownEncoding;
@@ -610,7 +608,7 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
 
     /*
      * Determine the current encoding from the LC_* or LANG environment
-     * variables.  We previously used setlocale() to determine the locale, but
+     * variables. We previously used setlocale() to determine the locale, but
      * this does not work on some systems (e.g. Linux/i386 RH 5.0).
      */
 
@@ -722,8 +720,8 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
  */
 
 void
-TclpSetVariables(interp)
-    Tcl_Interp *interp;
+TclpSetVariables(
+    Tcl_Interp *interp)
 {
 #ifndef NO_UNAME
     struct utsname name;
@@ -893,7 +891,7 @@ TclpSetVariables(interp)
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or -1 if there is no such entry.  The integer at *lengthPtr is
+ *	"name", or -1 if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -904,10 +902,10 @@ TclpSetVariables(interp)
  */
 
 int
-TclpFindVariable(name, lengthPtr)
-    CONST char *name;		/* Name of desired environment variable
+TclpFindVariable(
+    CONST char *name,		/* Name of desired environment variable
 				 * (native). */
-    int *lengthPtr;		/* Used to return length of name (for
+    int *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */
@@ -958,7 +956,7 @@ TclpFindVariable(name, lengthPtr)
  */
 
 int
-TclpCheckStackSpace()
+TclpCheckStackSpace(void)
 {
 #ifdef TCL_NO_STACK_CHECK
 
@@ -1071,8 +1069,8 @@ TclpCheckStackSpace()
 
 #ifndef TCL_NO_STACK_CHECK
 static int
-GetStackSize(stackSizePtr)
-    size_t *stackSizePtr;
+GetStackSize(
+    size_t *stackSizePtr)
 {
     size_t rawStackSize;
     struct rlimit rLimit;	/* The result from getrlimit(). */
@@ -1153,7 +1151,10 @@ GetStackSize(stackSizePtr)
 
 #ifdef HAVE_COREFOUNDATION
 static int
-MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
+MacOSXGetLibraryPath(
+    Tcl_Interp *interp,
+    int maxPathLen,
+    char *tclLibPath)
 {
     int foundInFramework = TCL_ERROR;
 

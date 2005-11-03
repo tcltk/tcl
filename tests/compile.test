@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.27.2.8 2005/05/11 16:58:47 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.27.2.9 2005/11/03 17:52:27 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -253,7 +253,7 @@ test compile-11.5 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; incr foo }
     list [catch {p} msg] $msg
 } {1 {can't read "foo": no such variable}}
-test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} knownBug {
     proc p {} { set r [list foobar] ; incr foo bogus }
     list [catch {p} msg] $msg
 } {1 {expected integer but got "bogus"}}

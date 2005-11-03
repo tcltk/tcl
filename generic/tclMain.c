@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.11 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.12 2005/11/03 17:52:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -25,16 +25,15 @@
 #define DEFAULT_PRIMARY_PROMPT	"% "
 
 /*
- * Declarations for various library procedures and variables (don't want to
+ * Declarations for various library functions and variables (don't want to
  * include tclPort.h here, because people might copy this file out of the Tcl
  * source directory to make their own modified versions).
  */
 
-extern CRTIMPORT int		isatty _ANSI_ARGS_((int fd));
+extern CRTIMPORT int	isatty(int fd);
 
 static Tcl_Obj *tclStartupScriptPath = NULL;
 static Tcl_Obj *tclStartupScriptEncoding = NULL;
-
 static Tcl_MainLoopProc *mainLoopProc = NULL;
 
 /*
@@ -63,13 +62,11 @@ typedef struct InteractiveState {
 } InteractiveState;
 
 /*
- * Forward declarations for procedures defined later in this file.
+ * Forward declarations for functions defined later in this file.
  */
 
-static void		Prompt _ANSI_ARGS_((Tcl_Interp *interp,
-			    PromptType *promptPtr));
-static void		StdinProc _ANSI_ARGS_((ClientData clientData,
-			    int mask));
+static void		Prompt(Tcl_Interp *interp, PromptType *promptPtr);
+static void		StdinProc(ClientData clientData, int mask);
 
 /*
  *----------------------------------------------------------------------
@@ -88,9 +85,9 @@ static void		StdinProc _ANSI_ARGS_((ClientData clientData,
  */
 
 void
-Tcl_SetStartupScript(path, encoding)
-    Tcl_Obj *path;		/* Filesystem path of startup script file */
-    CONST char *encoding;	/* Encoding of the data in that file */
+Tcl_SetStartupScript(
+    Tcl_Obj *path,		/* Filesystem path of startup script file */
+    CONST char *encoding)	/* Encoding of the data in that file */
 {
     Tcl_Obj *newEncoding = NULL;
     if (encoding != NULL) {
@@ -135,8 +132,8 @@ Tcl_SetStartupScript(path, encoding)
  */
 
 Tcl_Obj *
-Tcl_GetStartupScript(encodingPtr)
-    CONST char **encodingPtr;	/* When not NULL, points to storage for the
+Tcl_GetStartupScript(
+    CONST char **encodingPtr)	/* When not NULL, points to storage for the
 				 * (CONST char *) that points to the
 				 * registered encoding name for the startup
 				 * script */
@@ -163,15 +160,15 @@ Tcl_GetStartupScript(encodingPtr)
  *	None.
  *
  * Side effects:
- *	This procedure initializes the VFS path of the Tcl script to run at
+ *	This function initializes the VFS path of the Tcl script to run at
  *	startup.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclSetStartupScriptPath(path)
-    Tcl_Obj *path;
+TclSetStartupScriptPath(
+    Tcl_Obj *path)
 {
     Tcl_SetStartupScript(path, NULL);
 }
@@ -194,7 +191,7 @@ TclSetStartupScriptPath(path)
  */
 
 Tcl_Obj *
-TclGetStartupScriptPath()
+TclGetStartupScriptPath(void)
 {
     return Tcl_GetStartupScript(NULL);
 }
@@ -211,15 +208,15 @@ TclGetStartupScriptPath()
  *	None.
  *
  * Side effects:
- *	This procedure initializes the file name of the Tcl script to run at
+ *	This function initializes the file name of the Tcl script to run at
  *	startup.
  *
  *----------------------------------------------------------------------
  */
 
 void
-TclSetStartupScriptFileName(fileName)
-    CONST char *fileName;
+TclSetStartupScriptFileName(
+    CONST char *fileName)
 {
     Tcl_Obj *path = Tcl_NewStringObj(fileName,-1);
     Tcl_SetStartupScript(path, NULL);
@@ -243,7 +240,7 @@ TclSetStartupScriptFileName(fileName)
  */
 
 CONST char *
-TclGetStartupScriptFileName()
+TclGetStartupScriptFileName(void)
 {
     Tcl_Obj *path = Tcl_GetStartupScript(NULL);
 
@@ -257,9 +254,9 @@ TclGetStartupScriptFileName()
  *
  * Tcl_SourceRCFile --
  *
- *	This procedure is typically invoked by Tcl_Main of Tk_Main procedure
- *	to source an application specific rc file into the interpreter at
- *	startup time.
+ *	This function is typically invoked by Tcl_Main of Tk_Main function to
+ *	source an application specific rc file into the interpreter at startup
+ *	time.
  *
  * Results:
  *	None.
@@ -271,8 +268,8 @@ TclGetStartupScriptFileName()
  */
 
 void
-Tcl_SourceRCFile(interp)
-    Tcl_Interp *interp;		/* Interpreter to source rc file into. */
+Tcl_SourceRCFile(
+    Tcl_Interp *interp)		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
     CONST char *fileName;
@@ -319,11 +316,11 @@ Tcl_SourceRCFile(interp)
  *	Main program for tclsh and most other Tcl-based applications.
  *
  * Results:
- *	None. This procedure never returns (it exits the process when it's
+ *	None. This function never returns (it exits the process when it's
  *	done).
  *
  * Side effects:
- *	This procedure initializes the Tcl world and then starts interpreting
+ *	This function initializes the Tcl world and then starts interpreting
  *	commands; almost anything could happen, depending on the script being
  *	interpreted.
  *
@@ -331,12 +328,12 @@ Tcl_SourceRCFile(interp)
  */
 
 void
-Tcl_Main(argc, argv, appInitProc)
-    int argc;			/* Number of arguments. */
-    char **argv;		/* Array of argument strings. */
-    Tcl_AppInitProc *appInitProc;
+Tcl_Main(
+    int argc,			/* Number of arguments. */
+    char **argv,		/* Array of argument strings. */
+    Tcl_AppInitProc *appInitProc)
 				/* Application-specific initialization
-				 * procedure to call after most initialization
+				 * function to call after most initialization
 				 * but before starting to execute commands. */
 {
     Tcl_Obj *path, *resultPtr, *argvPtr, *commandPtr = NULL;
@@ -689,21 +686,21 @@ Tcl_Main(argc, argv, appInitProc)
  *
  * Tcl_SetMainLoop --
  *
- *	Sets an alternative main loop procedure.
+ *	Sets an alternative main loop function.
  *
  * Results:
- *	Returns the previously defined main loop procedure.
+ *	Returns the previously defined main loop function.
  *
  * Side effects:
- *	This procedure will be called before Tcl exits, allowing for the
+ *	This function will be called before Tcl exits, allowing for the
  *	creation of an event loop.
  *
  *---------------------------------------------------------------
  */
 
 void
-Tcl_SetMainLoop(proc)
-    Tcl_MainLoopProc *proc;
+Tcl_SetMainLoop(
+    Tcl_MainLoopProc *proc)
 {
     mainLoopProc = proc;
 }
@@ -713,7 +710,7 @@ Tcl_SetMainLoop(proc)
  *
  * StdinProc --
  *
- *	This procedure is invoked by the event dispatcher whenever standard
+ *	This function is invoked by the event dispatcher whenever standard
  *	input becomes readable. It grabs the next line of input characters,
  *	adds them to a command being assembled, and executes the command if
  *	it's complete.
@@ -729,9 +726,9 @@ Tcl_SetMainLoop(proc)
 
     /* ARGSUSED */
 static void
-StdinProc(clientData, mask)
-    ClientData clientData;	/* The state of interactive cmd line */
-    int mask;			/* Not used. */
+StdinProc(
+    ClientData clientData,	/* The state of interactive cmd line */
+    int mask)			/* Not used. */
 {
     InteractiveState *isPtr = (InteractiveState *) clientData;
     Tcl_Channel chan = isPtr->input;
@@ -838,9 +835,9 @@ StdinProc(clientData, mask)
  */
 
 static void
-Prompt(interp, promptPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for prompting. */
-    PromptType *promptPtr;	/* Points to type of prompt to print. Filled
+Prompt(
+    Tcl_Interp *interp,		/* Interpreter to use for prompting. */
+    PromptType *promptPtr)	/* Points to type of prompt to print. Filled
 				 * with PROMPT_NONE after a prompt is
 				 * printed. */
 {

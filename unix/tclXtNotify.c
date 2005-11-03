@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.3 2005/07/26 04:12:34 dgp Exp $
+ * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.4 2005/11/03 17:52:27 dgp Exp $
  */
 
 #include <X11/Intrinsic.h>
@@ -75,26 +75,23 @@ static int initialized = 0;
  * Static routines defined in this file.
  */
 
-static int		FileHandlerEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
-			    int flags));
-static void		FileProc _ANSI_ARGS_((caddr_t clientData,
-			    int *source, XtInputId *id));
-void			InitNotifier _ANSI_ARGS_((void));
-static void		NotifierExitHandler _ANSI_ARGS_((
-			    ClientData clientData));
-static void		TimerProc _ANSI_ARGS_((caddr_t clientData,
-			    XtIntervalId *id));
-static void		CreateFileHandler _ANSI_ARGS_((int fd, int mask,
-				Tcl_FileProc * proc, ClientData clientData));
-static void		DeleteFileHandler _ANSI_ARGS_((int fd));
-static void		SetTimer _ANSI_ARGS_((Tcl_Time * timePtr));
-static int		WaitForEvent _ANSI_ARGS_((Tcl_Time * timePtr));
+static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static void		FileProc(caddr_t clientData, int *source,
+			    XtInputId *id);
+void			InitNotifier(void);
+static void		NotifierExitHandler(ClientData clientData);
+static void		TimerProc(caddr_t clientData, XtIntervalId *id);
+static void		CreateFileHandler(int fd, int mask,
+				Tcl_FileProc * proc, ClientData clientData);
+static void		DeleteFileHandler(int fd);
+static void		SetTimer(Tcl_Time * timePtr);
+static int		WaitForEvent(Tcl_Time * timePtr);
 
 /*
  * Functions defined in this file for use by users of the Xt Notifier:
  */
 
-EXTERN XtAppContext	TclSetAppContext _ANSI_ARGS_((XtAppContext ctx));
+EXTERN XtAppContext	TclSetAppContext(XtAppContext ctx);
 
 /*
  *----------------------------------------------------------------------

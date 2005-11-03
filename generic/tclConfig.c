@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.3.2.5 2005/07/26 04:11:54 dgp Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.3.2.6 2005/11/03 17:52:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -33,13 +33,13 @@
  * Static functions in this file:
  */
 
-static int		QueryConfigObjCmd _ANSI_ARGS_((ClientData clientData,
+static int		QueryConfigObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    struct Tcl_Obj * CONST * objv));
-static void		QueryConfigDelete _ANSI_ARGS_((ClientData clientData));
-static Tcl_Obj *	GetConfigDict _ANSI_ARGS_((Tcl_Interp* interp));
-static void		ConfigDictDeleteProc _ANSI_ARGS_((
-			    ClientData clientData, Tcl_Interp *interp));
+			    struct Tcl_Obj * CONST * objv);
+static void		QueryConfigDelete(ClientData clientData);
+static Tcl_Obj *	GetConfigDict(Tcl_Interp* interp);
+static void		ConfigDictDeleteProc(ClientData clientData,
+			    Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -58,19 +58,19 @@ static void		ConfigDictDeleteProc _ANSI_ARGS_((
  */
 
 void
-Tcl_RegisterConfig(interp, pkgName, configuration, valEncoding)
-    Tcl_Interp *interp;		/* Interpreter the configuration command is
+Tcl_RegisterConfig(
+    Tcl_Interp *interp,		/* Interpreter the configuration command is
 				 * registered in. */
-    CONST char *pkgName;	/* Name of the package registering the
+    CONST char *pkgName,	/* Name of the package registering the
 				 * embedded configuration. ASCII, thus in
 				 * UTF-8 too. */
-    Tcl_Config *configuration;	/* Embedded configuration. */
-    CONST char *valEncoding;	/* Name of the encoding used to store the
+    Tcl_Config *configuration,	/* Embedded configuration. */
+    CONST char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
-    Tcl_Obj *pDB  = GetConfigDict(interp);
-    Tcl_Obj *pkg  = Tcl_NewStringObj(pkgName, -1);
+    Tcl_Obj *pDB = GetConfigDict(interp);
+    Tcl_Obj *pkg = Tcl_NewStringObj(pkgName, -1);
     Tcl_Obj *pkgDict;
     Tcl_DString cmdName;
     Tcl_Config *cfg;
@@ -180,11 +180,11 @@ Tcl_RegisterConfig(interp, pkgName, configuration, valEncoding)
  */
 
 static int
-QueryConfigObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;
-    Tcl_Interp *interp;
-    int objc;
-    struct Tcl_Obj * CONST *objv;
+QueryConfigObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    struct Tcl_Obj * CONST *objv)
 {
     Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
@@ -294,8 +294,8 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
  */
 
 static void
-QueryConfigDelete(clientData)
-    ClientData clientData;
+QueryConfigDelete(
+    ClientData clientData)
 {
     Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
     Tcl_DecrRefCount(pkgName);
@@ -319,12 +319,12 @@ QueryConfigDelete(clientData)
  */
 
 static Tcl_Obj *
-GetConfigDict(interp)
-    Tcl_Interp *interp;
+GetConfigDict(
+    Tcl_Interp *interp)
 {
     Tcl_Obj *pDB = Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 
-    if (pDB == (Tcl_Obj *) NULL) {
+    if (pDB == NULL) {
 	pDB = Tcl_NewDictObj();
 	Tcl_IncrRefCount(pDB);
 	Tcl_SetAssocData(interp, ASSOC_KEY, ConfigDictDeleteProc, pDB);
@@ -353,9 +353,9 @@ GetConfigDict(interp)
  */
 
 static void
-ConfigDictDeleteProc(clientData, interp)
-    ClientData clientData;	/* Pointer to Tcl_Obj. */
-    Tcl_Interp *interp;		/* Interpreter being deleted. */
+ConfigDictDeleteProc(
+    ClientData clientData,	/* Pointer to Tcl_Obj. */
+    Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
     Tcl_Obj *pDB = (Tcl_Obj *) clientData;
     Tcl_DecrRefCount(pDB);

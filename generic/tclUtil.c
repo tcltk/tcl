@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.19 2005/10/18 20:46:19 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.20 2005/11/03 17:52:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -22,7 +22,10 @@
  * The absolute pathname of the executable in which this Tcl library
  * is running.
  */
-static ProcessGlobalValue executableName = {0, 0, NULL, NULL, NULL, NULL, NULL};
+
+static ProcessGlobalValue executableName = {
+    0, 0, NULL, NULL, NULL, NULL, NULL
+};
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement and
@@ -62,16 +65,14 @@ static Tcl_ThreadDataKey precisionKey;
  * Prototypes for functions defined later in this file.
  */
 
-static void		ClearHash _ANSI_ARGS_((Tcl_HashTable *tablePtr));
-static void		FreeProcessGlobalValue _ANSI_ARGS_((
-			    ClientData clientData));
-static void		FreeThreadHash _ANSI_ARGS_((ClientData clientData));
-static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_((Tcl_ThreadDataKey *keyPtr));
-static int		ParseInteger _ANSI_ARGS_((CONST char *bytes,
-			    int numBytes));
-static int		SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
-			    Tcl_Obj* objPtr));
-static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
+static void		ClearHash(Tcl_HashTable *tablePtr);
+static void		FreeProcessGlobalValue(ClientData clientData);
+static void		FreeThreadHash(ClientData clientData);
+static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
+static int		ParseInteger(CONST char *bytes, int numBytes);
+static int		SetEndOffsetFromAny(Tcl_Interp* interp,
+			    Tcl_Obj* objPtr);
+static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
 
 /*
  * The following is the Tcl object type definition for an object that
@@ -82,12 +83,11 @@ static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
 
 Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
-    (Tcl_FreeInternalRepProc*) NULL,    /* freeIntRepProc */
-    (Tcl_DupInternalRepProc*) NULL,	/* dupIntRepProc */
+    NULL,				/* freeIntRepProc */
+    NULL,				/* dupIntRepProc */
     UpdateStringOfEndOffset,		/* updateStringProc */
     SetEndOffsetFromAny
 };
-
 
 /*
  *----------------------------------------------------------------------
@@ -124,23 +124,22 @@ Tcl_ObjType tclEndOffsetType = {
  */
 
 int
-TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
-	bracePtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+TclFindElement(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    CONST char *list;		/* Points to the first byte of a string
+    CONST char *list,		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
-    int listLength;		/* Number of bytes in the list's string. */
-    CONST char **elementPtr;	/* Where to put address of first significant
+    int listLength,		/* Number of bytes in the list's string. */
+    CONST char **elementPtr,	/* Where to put address of first significant
 				 * character in first element of list. */
-    CONST char **nextPtr;	/* Fill in with location of character just
+    CONST char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list). */
-    int *sizePtr;		/* If non-zero, fill in with size of
+    int *sizePtr,		/* If non-zero, fill in with size of
 				 * element. */
-    int *bracePtr;		/* If non-zero, fill in with non-zero/zero to
+    int *bracePtr)		/* If non-zero, fill in with non-zero/zero to
 				 * indicate that arg was/wasn't in braces. */
 {
     CONST char *p = list;
@@ -351,10 +350,10 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
  */
 
 int
-TclCopyAndCollapse(count, src, dst)
-    int count;			/* Number of characters to copy from src. */
-    CONST char *src;		/* Copy from here... */
-    char *dst;			/* ... to here. */
+TclCopyAndCollapse(
+    int count,			/* Number of characters to copy from src. */
+    CONST char *src,		/* Copy from here... */
+    char *dst)			/* ... to here. */
 {
     register char c;
     int numRead;
@@ -407,13 +406,13 @@ TclCopyAndCollapse(count, src, dst)
  */
 
 int
-Tcl_SplitList(interp, list, argcPtr, argvPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+Tcl_SplitList(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
-    CONST char *list;		/* Pointer to string with list structure. */
-    int *argcPtr;		/* Pointer to location to fill in with the
+    CONST char *list,		/* Pointer to string with list structure. */
+    int *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
-    CONST char ***argvPtr;	/* Pointer to place to store pointer to array
+    CONST char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
     CONST char **argv;
@@ -462,7 +461,7 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
 	}
 	argv[i] = p;
 	if (brace) {
-	    memcpy((VOID *) p, (VOID *) element, (size_t) elSize);
+	    memcpy((void *) p, (void *) element, (size_t) elSize);
 	    p += elSize;
 	    *p = 0;
 	    p++;
@@ -500,10 +499,10 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
  */
 
 int
-Tcl_ScanElement(string, flagPtr)
-    register CONST char *string; /* String to convert to list element. */
-    register int *flagPtr;	 /* Where to store information to guide
-				  * Tcl_ConvertCountedElement. */
+Tcl_ScanElement(
+    register CONST char *string,/* String to convert to list element. */
+    register int *flagPtr)	/* Where to store information to guide
+				 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(string, -1, flagPtr);
 }
@@ -532,10 +531,10 @@ Tcl_ScanElement(string, flagPtr)
  */
 
 int
-Tcl_ScanCountedElement(string, length, flagPtr)
-    CONST char *string;		/* String to convert to Tcl list element. */
-    int length;			/* Number of bytes in string, or -1. */
-    int *flagPtr;		/* Where to store information to guide
+Tcl_ScanCountedElement(
+    CONST char *string,		/* String to convert to Tcl list element. */
+    int length,			/* Number of bytes in string, or -1. */
+    int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     int flags, nestingLevel;
@@ -665,10 +664,10 @@ Tcl_ScanCountedElement(string, length, flagPtr)
  */
 
 int
-Tcl_ConvertElement(src, dst, flags)
-    register CONST char *src;	/* Source information for list element. */
-    register char *dst;		/* Place to put list-ified element. */
-    register int flags;		/* Flags produced by Tcl_ScanElement. */
+Tcl_ConvertElement(
+    register CONST char *src,	/* Source information for list element. */
+    register char *dst,		/* Place to put list-ified element. */
+    register int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -695,11 +694,11 @@ Tcl_ConvertElement(src, dst, flags)
  */
 
 int
-Tcl_ConvertCountedElement(src, length, dst, flags)
-    register CONST char *src;	/* Source information for list element. */
-    int length;			/* Number of bytes in src, or -1. */
-    char *dst;			/* Place to put list-ified element. */
-    int flags;			/* Flags produced by Tcl_ScanElement. */
+Tcl_ConvertCountedElement(
+    register CONST char *src,	/* Source information for list element. */
+    int length,			/* Number of bytes in src, or -1. */
+    char *dst,			/* Place to put list-ified element. */
+    int flags)			/* Flags produced by Tcl_ScanElement. */
 {
     register char *p = dst;
     register CONST char *lastChar;
@@ -843,9 +842,9 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
  */
 
 char *
-Tcl_Merge(argc, argv)
-    int argc;			/* How many strings to merge. */
-    CONST char * CONST *argv;	/* Array of string values. */
+Tcl_Merge(
+    int argc,			/* How many strings to merge. */
+    CONST char * CONST *argv)	/* Array of string values. */
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
@@ -876,7 +875,7 @@ Tcl_Merge(argc, argv)
     dst = result;
     for (i = 0; i < argc; i++) {
 	numChars = Tcl_ConvertElement(argv[i], dst,
-		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH) );
+		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH));
 	dst += numChars;
 	*dst = ' ';
 	dst++;
@@ -913,10 +912,10 @@ Tcl_Merge(argc, argv)
  */
 
 char
-Tcl_Backslash(src, readPtr)
-    CONST char *src;		/* Points to the backslash character of a
+Tcl_Backslash(
+    CONST char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
-    int *readPtr;		/* Fill in with number of characters read from
+    int *readPtr)		/* Fill in with number of characters read from
 				 * src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
@@ -947,9 +946,9 @@ Tcl_Backslash(src, readPtr)
  */
 
 char *
-Tcl_Concat(argc, argv)
-    int argc;			/* Number of strings to concatenate. */
-    CONST char * CONST *argv;	/* Array of strings to concatenate. */
+Tcl_Concat(
+    int argc,			/* Number of strings to concatenate. */
+    CONST char * CONST *argv)	/* Array of strings to concatenate. */
 {
     int totalSize, i;
     char *p;
@@ -986,7 +985,7 @@ Tcl_Concat(argc, argv)
 	if (length == 0) {
 	    continue;
 	}
-	memcpy((VOID *) p, (VOID *) element, (size_t) length);
+	memcpy((void *) p, (void *) element, (size_t) length);
 	p += length;
 	*p = ' ';
 	p++;
@@ -1018,9 +1017,9 @@ Tcl_Concat(argc, argv)
  */
 
 Tcl_Obj *
-Tcl_ConcatObj(objc, objv)
-    int objc;			/* Number of objects to concatenate. */
-    Tcl_Obj *CONST objv[];	/* Array of objects to concatenate. */
+Tcl_ConcatObj(
+    int objc,			/* Number of objects to concatenate. */
+    Tcl_Obj *CONST objv[])	/* Array of objects to concatenate. */
 {
     int allocSize, finalSize, length, elemLength, i;
     char *p;
@@ -1119,14 +1118,15 @@ Tcl_ConcatObj(objc, objv)
 	     */
 
 	    while ((elemLength > 0) && (UCHAR(element[elemLength-1]) < 127)
-		    && isspace(UCHAR(element[elemLength-1])) /* INTL: ISO C space. */
+		    && isspace(UCHAR(element[elemLength-1]))
+						/* INTL: ISO C space. */
 		    && ((elemLength < 2) || (element[elemLength-2] != '\\'))) {
 		elemLength--;
 	    }
 	    if (elemLength == 0) {
 		continue;	/* nothing left of this element */
 	    }
-	    memcpy((VOID *) p, (VOID *) element, (size_t) elemLength);
+	    memcpy((void *) p, (void *) element, (size_t) elemLength);
 	    p += elemLength;
 	    *p = ' ';
 	    p++;
@@ -1141,7 +1141,7 @@ Tcl_ConcatObj(objc, objv)
     }
 
     TclNewObj(objPtr);
-    objPtr->bytes  = concatStr;
+    objPtr->bytes = concatStr;
     objPtr->length = finalSize;
     return objPtr;
 }
@@ -1165,9 +1165,9 @@ Tcl_ConcatObj(objc, objv)
  */
 
 int
-Tcl_StringMatch(str, pattern)
-    CONST char *str;		/* String. */
-    CONST char *pattern;	/* Pattern, which may contain special
+Tcl_StringMatch(
+    CONST char *str,		/* String. */
+    CONST char *pattern)	/* Pattern, which may contain special
 				 * characters. */
 {
     return Tcl_StringCaseMatch(str, pattern, 0);
@@ -1193,11 +1193,11 @@ Tcl_StringMatch(str, pattern)
  */
 
 int
-Tcl_StringCaseMatch(str, pattern, nocase)
-    CONST char *str;		/* String. */
-    CONST char *pattern;	/* Pattern, which may contain special
+Tcl_StringCaseMatch(
+    CONST char *str,		/* String. */
+    CONST char *pattern,	/* Pattern, which may contain special
 				 * characters. */
-    int nocase;			/* 0 for case sensitive, 1 for insensitive */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     int p, charLen;
     CONST char *pstart = pattern;
@@ -1394,7 +1394,7 @@ Tcl_StringCaseMatch(str, pattern, nocase)
 	 * each string match.
 	 */
 
-	str  += TclUtfToUniChar(str, &ch1);
+	str += TclUtfToUniChar(str, &ch1);
 	pattern += TclUtfToUniChar(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
@@ -1425,8 +1425,8 @@ Tcl_StringCaseMatch(str, pattern, nocase)
  */
 
 void
-Tcl_DStringInit(dsPtr)
-    Tcl_DString *dsPtr;		/* Pointer to structure for dynamic string. */
+Tcl_DStringInit(
+    Tcl_DString *dsPtr)		/* Pointer to structure for dynamic string. */
 {
     dsPtr->string = dsPtr->staticSpace;
     dsPtr->length = 0;
@@ -1453,11 +1453,11 @@ Tcl_DStringInit(dsPtr)
  */
 
 char *
-Tcl_DStringAppend(dsPtr, bytes, length)
-    Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *bytes;		/* String to append. If length is -1 then this
+Tcl_DStringAppend(
+    Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
+    CONST char *bytes,		/* String to append. If length is -1 then this
 				 * must be null-terminated. */
-    int length;			/* Number of bytes from "bytes" to append. If
+    int length)			/* Number of bytes from "bytes" to append. If
 				 * < 0, then append all of bytes, up to null
 				 * at end. */
 {
@@ -1482,11 +1482,11 @@ Tcl_DStringAppend(dsPtr, bytes, length)
 	    char *newString;
 
 	    newString = (char *) ckalloc((unsigned) dsPtr->spaceAvl);
-	    memcpy((VOID *) newString, (VOID *) dsPtr->string,
+	    memcpy((void *) newString, (void *) dsPtr->string,
 		    (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = (char *) ckrealloc((VOID *) dsPtr->string,
+	    dsPtr->string = (char *) ckrealloc((void *) dsPtr->string,
 		    (size_t) dsPtr->spaceAvl);
 	}
     }
@@ -1523,9 +1523,9 @@ Tcl_DStringAppend(dsPtr, bytes, length)
  */
 
 char *
-Tcl_DStringAppendElement(dsPtr, element)
-    Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    CONST char *element;	/* String to append. Must be
+Tcl_DStringAppendElement(
+    Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
+    CONST char *element)	/* String to append. Must be
 				 * null-terminated. */
 {
     int newSize, flags, strSize;
@@ -1549,11 +1549,11 @@ Tcl_DStringAppendElement(dsPtr, element)
 	    char *newString;
 
 	    newString = (char *) ckalloc((unsigned) dsPtr->spaceAvl);
-	    memcpy((VOID *) newString, (VOID *) dsPtr->string,
+	    memcpy((void *) newString, (void *) dsPtr->string,
 		    (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = (char *) ckrealloc((VOID *) dsPtr->string,
+	    dsPtr->string = (char *) ckrealloc((void *) dsPtr->string,
 		    (size_t) dsPtr->spaceAvl);
 	}
     }
@@ -1601,9 +1601,9 @@ Tcl_DStringAppendElement(dsPtr, element)
  */
 
 void
-Tcl_DStringSetLength(dsPtr, length)
-    Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    int length;			/* New length for dynamic string. */
+Tcl_DStringSetLength(
+    Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
+    int length)			/* New length for dynamic string. */
 {
     int newsize;
 
@@ -1633,11 +1633,11 @@ Tcl_DStringSetLength(dsPtr, length)
 	    char *newString;
 
 	    newString = (char *) ckalloc((unsigned) dsPtr->spaceAvl);
-	    memcpy((VOID *) newString, (VOID *) dsPtr->string,
+	    memcpy((void *) newString, (void *) dsPtr->string,
 		    (size_t) dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = (char *) ckrealloc((VOID *) dsPtr->string,
+	    dsPtr->string = (char *) ckrealloc((void *) dsPtr->string,
 		    (size_t) dsPtr->spaceAvl);
 	}
     }
@@ -1664,8 +1664,8 @@ Tcl_DStringSetLength(dsPtr, length)
  */
 
 void
-Tcl_DStringFree(dsPtr)
-    Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
+Tcl_DStringFree(
+    Tcl_DString *dsPtr)		/* Structure describing dynamic string. */
 {
     if (dsPtr->string != dsPtr->staticSpace) {
 	ckfree(dsPtr->string);
@@ -1696,9 +1696,9 @@ Tcl_DStringFree(dsPtr)
  */
 
 void
-Tcl_DStringResult(interp, dsPtr)
-    Tcl_Interp *interp;		/* Interpreter whose result is to be reset. */
-    Tcl_DString *dsPtr;		/* Dynamic string that is to become the
+Tcl_DStringResult(
+    Tcl_Interp *interp,		/* Interpreter whose result is to be reset. */
+    Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
     Tcl_ResetResult(interp);
@@ -1740,9 +1740,9 @@ Tcl_DStringResult(interp, dsPtr)
  */
 
 void
-Tcl_DStringGetResult(interp, dsPtr)
-    Tcl_Interp *interp;		/* Interpreter whose result is to be reset. */
-    Tcl_DString *dsPtr;		/* Dynamic string that is to become the result
+Tcl_DStringGetResult(
+    Tcl_Interp *interp,		/* Interpreter whose result is to be reset. */
+    Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1804,8 +1804,8 @@ Tcl_DStringGetResult(interp, dsPtr)
  */
 
 void
-Tcl_DStringStartSublist(dsPtr)
-    Tcl_DString *dsPtr;		/* Dynamic string. */
+Tcl_DStringStartSublist(
+    Tcl_DString *dsPtr)		/* Dynamic string. */
 {
     if (TclNeedSpace(dsPtr->string, dsPtr->string + dsPtr->length)) {
 	Tcl_DStringAppend(dsPtr, " {", -1);
@@ -1833,8 +1833,8 @@ Tcl_DStringStartSublist(dsPtr)
  */
 
 void
-Tcl_DStringEndSublist(dsPtr)
-    Tcl_DString *dsPtr;		/* Dynamic string. */
+Tcl_DStringEndSublist(
+    Tcl_DString *dsPtr)		/* Dynamic string. */
 {
     Tcl_DStringAppend(dsPtr, "}", -1);
 }
@@ -1860,12 +1860,12 @@ Tcl_DStringEndSublist(dsPtr)
  */
 
 void
-Tcl_PrintDouble(interp, value, dst)
-    Tcl_Interp *interp;		/* Interpreter whose tcl_precision variable
+Tcl_PrintDouble(
+    Tcl_Interp *interp,		/* Interpreter whose tcl_precision variable
 				 * used to be used to control printing. It's
 				 * ignored now. */
-    double value;		/* Value to print as string. */
-    char *dst;			/* Where to store converted value; must have
+    double value,		/* Value to print as string. */
+    char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
 {
     char *p, c;
@@ -1879,11 +1879,11 @@ Tcl_PrintDouble(interp, value, dst)
     /*
      * If *precisionPtr == 0, then use TclDoubleDigits to develop a decimal
      * significand and exponent, then format it in E or F format as
-     * appropriate.  If *precisionPtr != 0, use the native sprintf and then
-     * add a trailing ".0" if there is no decimal point in the rep.
+     * appropriate. If *precisionPtr != 0, use the native sprintf and then add
+     * a trailing ".0" if there is no decimal point in the rep.
      */
 
-    if ( *precisionPtr == 0 ) {
+    if (*precisionPtr == 0) {
 	/*
 	 * Handle NaN.
 	 */
@@ -1961,7 +1961,6 @@ Tcl_PrintDouble(interp, value, dst)
 	    }
 	    *dst++ = '\0';
 	}
-
     } else {
 	/*
 	 * tcl_precision is supplied, pass it to the native sprintf.
@@ -1972,11 +1971,11 @@ Tcl_PrintDouble(interp, value, dst)
 	/*
 	 * If the ASCII result looks like an integer, add ".0" so that it
 	 * doesn't look like an integer anymore. This prevents floating-point
-	 * values from being converted to integers unintentionally.  Check for
+	 * values from being converted to integers unintentionally. Check for
 	 * ASCII specifically to speed up the function.
 	 */
 
-	for (p = dst; *p != 0; ) {
+	for (p = dst; *p != 0;) {
 	    if (UCHAR(*p) < 0x80) {
 		c = *p++;
 	    } else {
@@ -1990,7 +1989,6 @@ Tcl_PrintDouble(interp, value, dst)
 	p[0] = '.';
 	p[1] = '0';
 	p[2] = 0;
-
     }
 }
 
@@ -2016,16 +2014,16 @@ Tcl_PrintDouble(interp, value, dst)
 
 	/* ARGSUSED */
 char *
-TclPrecTraceProc(clientData, interp, name1, name2, flags)
-    ClientData clientData;	/* Not used. */
-    Tcl_Interp *interp;		/* Interpreter containing variable. */
-    CONST char *name1;		/* Name of variable. */
-    CONST char *name2;		/* Second part of variable name. */
-    int flags;			/* Information about what happened. */
+TclPrecTraceProc(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Interpreter containing variable. */
+    CONST char *name1,		/* Name of variable. */
+    CONST char *name2,		/* Second part of variable name. */
+    int flags)			/* Information about what happened. */
 {
     Tcl_Obj* value;
     int prec;
-    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int)sizeof(int));
+    int *precisionPtr = Tcl_GetThreadData(&precisionKey, (int) sizeof(int));
 
     /*
      * If the variable is unset, then recreate the trace.
@@ -2037,7 +2035,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, TclPrecTraceProc, clientData);
 	}
-	return (char *) NULL;
+	return NULL;
     }
 
     /*
@@ -2050,7 +2048,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     if (flags & TCL_TRACE_READS) {
 	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
-	return (char *) NULL;
+	return NULL;
     }
 
     /*
@@ -2069,7 +2067,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 	return "improper value for precision";
     }
     *precisionPtr = prec;
-    return (char *) NULL;
+    return NULL;
 }
 
 /*
@@ -2090,9 +2088,9 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
  */
 
 int
-TclNeedSpace(start, end)
-    CONST char *start;		/* First character in string. */
-    CONST char *end;		/* End of string (place where space will be
+TclNeedSpace(
+    CONST char *start,		/* First character in string. */
+    CONST char *end)		/* End of string (place where space will be
 				 * added, if appropriate). */
 {
     /*
@@ -2157,61 +2155,6 @@ TclNeedSpace(start, end)
     }
     return 1;
 }
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * TclLooksLikeInt --
- *
- *	This function decides whether the leading characters of a string look
- *	like an integer or something else (such as a floating-point number or
- *	string).
- *
- * Results:
- *	The return value is 1 if the leading characters of p look like a valid
- *	Tcl integer. If they look like a floating-point number (e.g. "e01" or
- *	"2.4"), or if they don't look like a number at all, then 0 is
- *	returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclLooksLikeInt(bytes, length)
-    register CONST char *bytes;	/* Points to first byte of the string. */
-    int length;			/* Number of bytes in the string. If < 0 bytes
-				 * up to the first null byte are considered
-				 * (if they may appear in an integer). */
-{
-    register CONST char *p;
-
-    if ((bytes == NULL) && (length > 0)) {
-	Tcl_Panic("TclLooksLikeInt: cannot scan %d bytes from NULL", length);
-    }
-
-    if (length < 0) {
-	length = (bytes? strlen(bytes) : 0);
-    }
-
-    p = bytes;
-    while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	length--; p++;
-    }
-    if (length == 0) {
-	return 0;
-    }
-    if ((*p == '+') || (*p == '-')) {
-	p++;
-	length--;
-    }
-
-    return (0 != TclParseInteger(p, length));
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2224,8 +2167,8 @@ TclLooksLikeInt(bytes, length)
  * Results:
  *	Returns 0 if the leading bytes do not look like an integer.
  *	Otherwise, returns the number of bytes examined that look like an
- *	integer.  This may be less than numBytes if the integer is only the
- *	leading part of the string.     
+ *	integer. This may be less than numBytes if the integer is only the
+ *	leading part of the string.
  *
  * Side effects:
  *	None.
@@ -2234,13 +2177,16 @@ TclLooksLikeInt(bytes, length)
  */
 
 static int
-ParseInteger(bytes, numBytes)
-    CONST char *bytes;	/* The string to examine. */
-    int numBytes;	/* Max number of bytes to scan. */
+ParseInteger(
+    CONST char *bytes,		/* The string to examine. */
+    int numBytes)		/* Max number of bytes to scan. */
 {
     register CONST char *p = bytes;
 
-    /* Take care of introductory "0x". */
+    /*
+     * Take care of introductory "0x".
+     */
+
     if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
 	int scanned;
 	Tcl_UniChar ch;
@@ -2252,7 +2198,10 @@ ParseInteger(bytes, numBytes)
 	    return scanned+2;
 	}
 
-	/* Recognize the 0 as valid integer, but x is left behind. */
+	/*
+	 * Recognize the 0 as valid integer, but x is left behind.
+	 */
+
 	return 1;
     }
     while (numBytes && isdigit(UCHAR(*p))) {            /* INTL: digit */
@@ -2292,15 +2241,15 @@ ParseInteger(bytes, numBytes)
  */
 
 int
-TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+TclGetIntForIndex(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    Tcl_Obj *objPtr;		/* Points to an object containing either "end"
+    Tcl_Obj *objPtr,		/* Points to an object containing either "end"
 				 * or an integer. */
-    int endValue;		/* The value to be stored at "indexPtr" if
+    int endValue,		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
-    int *indexPtr;		/* Location filled in with an integer
+    int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
     if (Tcl_GetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
@@ -2342,10 +2291,10 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	    bytes[opIdx] = '\0';
 	    code = Tcl_GetInt(interp, bytes, &first);
 	    bytes[opIdx] = savedOp;
-	    if (code == TCL_ERROR)  {
+	    if (code == TCL_ERROR) {
 		goto parseError;
 	    }
-	    if (TCL_ERROR == Tcl_GetInt(interp, bytes+opIdx+1, &second))  {
+	    if (TCL_ERROR == Tcl_GetInt(interp, bytes+opIdx+1, &second)) {
 		goto parseError;
 	    }
 	    if (savedOp == '+') {
@@ -2407,8 +2356,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
  */
 
 static void
-UpdateStringOfEndOffset(objPtr)
-    register Tcl_Obj* objPtr;
+UpdateStringOfEndOffset(
+    register Tcl_Obj* objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + sizeof("end") + 1];
     register int len;
@@ -2443,9 +2392,9 @@ UpdateStringOfEndOffset(objPtr)
  */
 
 static int
-SetEndOffsetFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Tcl interpreter or NULL */
-    Tcl_Obj* objPtr;		/* Pointer to the object to parse */
+SetEndOffsetFromAny(
+    Tcl_Interp *interp,		/* Tcl interpreter or NULL */
+    Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
     register char* bytes;	/* String rep of the object */
@@ -2538,11 +2487,11 @@ SetEndOffsetFromAny(interp, objPtr)
  */
 
 int
-TclCheckBadOctal(interp, value)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. If
+TclCheckBadOctal(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    CONST char *value;		/* String to check. */
+    CONST char *value)		/* String to check. */
 {
     register CONST char *p = value;
 
@@ -2594,8 +2543,8 @@ TclCheckBadOctal(interp, value)
  */
 
 static void
-ClearHash(tablePtr)
-    Tcl_HashTable *tablePtr;
+ClearHash(
+    Tcl_HashTable *tablePtr)
 {
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
@@ -2627,11 +2576,12 @@ ClearHash(tablePtr)
  */
 
 static Tcl_HashTable *
-GetThreadHash(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;
+GetThreadHash(
+    Tcl_ThreadDataKey *keyPtr)
 {
     Tcl_HashTable **tablePtrPtr = (Tcl_HashTable **)
-	    Tcl_GetThreadData(keyPtr, (int)sizeof(Tcl_HashTable *));
+	    Tcl_GetThreadData(keyPtr, (int) sizeof(Tcl_HashTable *));
+
     if (NULL == *tablePtrPtr) {
 	*tablePtrPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_CreateThreadExitHandler(FreeThreadHash, (ClientData)*tablePtrPtr);
@@ -2655,10 +2605,11 @@ GetThreadHash(keyPtr)
  */
 
 static void
-FreeThreadHash(clientData)
-    ClientData clientData;
+FreeThreadHash(
+    ClientData clientData)
 {
     Tcl_HashTable *tablePtr = (Tcl_HashTable *) clientData;
+
     ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
     ckfree((char *) tablePtr);
@@ -2676,10 +2627,11 @@ FreeThreadHash(clientData)
  */
 
 static void
-FreeProcessGlobalValue(clientData)
-    ClientData clientData;
+FreeProcessGlobalValue(
+    ClientData clientData)
 {
     ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *) clientData;
+
     pgvPtr->epoch++;
     pgvPtr->numBytes = 0;
     ckfree(pgvPtr->value);
@@ -2703,10 +2655,10 @@ FreeProcessGlobalValue(clientData)
  */
 
 void
-TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
-    ProcessGlobalValue *pgvPtr;
-    Tcl_Obj *newValue;
-    Tcl_Encoding encoding;
+TclSetProcessGlobalValue(
+    ProcessGlobalValue *pgvPtr,
+    Tcl_Obj *newValue,
+    Tcl_Encoding encoding)
 {
     CONST char *bytes;
     Tcl_HashTable *cacheMap;
@@ -2762,8 +2714,8 @@ TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
  */
 
 Tcl_Obj *
-TclGetProcessGlobalValue(pgvPtr)
-    ProcessGlobalValue *pgvPtr;
+TclGetProcessGlobalValue(
+    ProcessGlobalValue *pgvPtr)
 {
     Tcl_Obj *value = NULL;
     Tcl_HashTable *cacheMap;
@@ -2793,7 +2745,7 @@ TclGetProcessGlobalValue(pgvPtr)
 	    ckfree(pgvPtr->value);
 	    pgvPtr->value = ckalloc((unsigned int)
 		    Tcl_DStringLength(&newValue) + 1);
-	    memcpy((VOID*) pgvPtr->value, (VOID*) Tcl_DStringValue(&newValue),
+	    memcpy((void*) pgvPtr->value, (void*) Tcl_DStringValue(&newValue),
 		    (size_t) Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
 	    Tcl_FreeEncoding(pgvPtr->encoding);
@@ -2863,9 +2815,9 @@ TclGetProcessGlobalValue(pgvPtr)
  */
 
 void
-TclSetObjNameOfExecutable(name, encoding)
-    Tcl_Obj *name;
-    Tcl_Encoding encoding;
+TclSetObjNameOfExecutable(
+    Tcl_Obj *name,
+    Tcl_Encoding encoding)
 {
     TclSetProcessGlobalValue(&executableName, name, encoding);
 }
@@ -2891,7 +2843,7 @@ TclSetObjNameOfExecutable(name, encoding)
  */
 
 Tcl_Obj *
-TclGetObjNameOfExecutable()
+TclGetObjNameOfExecutable(void)
 {
     return TclGetProcessGlobalValue(&executableName);
 }
@@ -2918,7 +2870,7 @@ TclGetObjNameOfExecutable()
  */
 
 CONST char *
-Tcl_GetNameOfExecutable()
+Tcl_GetNameOfExecutable(void)
 {
     int numBytes;
     CONST char * bytes =
@@ -2948,8 +2900,8 @@ Tcl_GetNameOfExecutable()
  */
 
 void
-TclpGetTime(timePtr)
-    Tcl_Time* timePtr;
+TclpGetTime(
+    Tcl_Time *timePtr)
 {
     Tcl_GetTime(timePtr);
 }
@@ -2972,7 +2924,7 @@ TclpGetTime(timePtr)
  */
 
 TclPlatformType *
-TclGetPlatform()
+TclGetPlatform(void)
 {
     return &tclPlatform;
 }

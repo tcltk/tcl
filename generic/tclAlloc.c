@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.6 2005/07/26 04:11:52 dgp Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.7 2005/11/03 17:52:07 dgp Exp $
  */
 
 /*
@@ -67,7 +67,7 @@ union overhead {
 	unsigned long size;	/* actual block size */
 	unsigned short unused2;	/* padding to 8-byte align */
 #endif
-   } ovu;
+    } ovu;
 #define overMagic0	ovu.magic0
 #define overMagic1	ovu.magic1
 #define bucketIndex	ovu.index
@@ -156,7 +156,7 @@ static	unsigned int numMallocs[NBUCKETS+1];
  * Prototypes for functions used only in this file.
  */
 
-static void 		MoreCore _ANSI_ARGS_((int bucket));
+static void 		MoreCore(int bucket);
 
 /*
  *-------------------------------------------------------------------------
@@ -175,7 +175,7 @@ static void 		MoreCore _ANSI_ARGS_((int bucket));
  */
 
 void
-TclInitAlloc()
+TclInitAlloc(void)
 {
     if (!allocInit) {
 	allocInit = 1;
@@ -209,7 +209,7 @@ TclInitAlloc()
  */
 
 void
-TclFinalizeAllocSubsystem()
+TclFinalizeAllocSubsystem(void)
 {
     int i;
     struct block *blockPtr, *nextPtr;
@@ -258,8 +258,8 @@ TclFinalizeAllocSubsystem()
  */
 
 char *
-TclpAlloc(numBytes)
-    unsigned int numBytes;	/* Number of bytes to allocate. */
+TclpAlloc(
+    unsigned int numBytes)	/* Number of bytes to allocate. */
 {
     register union overhead *overPtr;
     register long bucket;
@@ -269,7 +269,7 @@ TclpAlloc(numBytes)
     if (!allocInit) {
 	/*
 	 * We have to make the "self initializing" because Tcl_Alloc may be
-	 * used before any other part of Tcl.  E.g., see main() for tclsh!
+	 * used before any other part of Tcl. E.g., see main() for tclsh!
 	 */
 
 	TclInitAlloc();
@@ -395,8 +395,8 @@ TclpAlloc(numBytes)
  */
 
 static void
-MoreCore(bucket)
-    int bucket;			/* What bucket to allocat to. */
+MoreCore(
+    int bucket)			/* What bucket to allocat to. */
 {
     register union overhead *overPtr;
     register long size;		/* size of desired block */
@@ -436,7 +436,7 @@ MoreCore(bucket)
 	overPtr->next = (union overhead *)((caddr_t)overPtr + size);
 	overPtr = (union overhead *)((caddr_t)overPtr + size);
     }
-    overPtr->next = (union overhead *)NULL;
+    overPtr->next = NULL;
 }
 
 /*
@@ -456,8 +456,8 @@ MoreCore(bucket)
  */
 
 void
-TclpFree(oldPtr)
-    char *oldPtr;		/* Pointer to memory to free. */
+TclpFree(
+    char *oldPtr)		/* Pointer to memory to free. */
 {
     register long size;
     register union overhead *overPtr;
@@ -521,9 +521,9 @@ TclpFree(oldPtr)
  */
 
 char *
-TclpRealloc(oldPtr, numBytes)
-    char *oldPtr;		/* Pointer to alloced block. */
-    unsigned int numBytes;	/* New size of memory. */
+TclpRealloc(
+    char *oldPtr,		/* Pointer to alloced block. */
+    unsigned int numBytes)	/* New size of memory. */
 {
     int i;
     union overhead *overPtr;
@@ -653,8 +653,8 @@ TclpRealloc(oldPtr, numBytes)
 
 #ifdef MSTATS
 void
-mstats(s)
-    char *s;			/* Where to write info. */
+mstats(
+    char *s)			/* Where to write info. */
 {
     register int i, j;
     register union overhead *overPtr;
@@ -685,7 +685,7 @@ mstats(s)
 }
 #endif
 
-#else  /* !USE_TCLALLOC */
+#else	/* !USE_TCLALLOC */
 
 /*
  *----------------------------------------------------------------------
@@ -704,8 +704,8 @@ mstats(s)
  */
 
 char *
-TclpAlloc(numBytes)
-    unsigned int numBytes;	/* Number of bytes to allocate. */
+TclpAlloc(
+    unsigned int numBytes)	/* Number of bytes to allocate. */
 {
     return (char*) malloc(numBytes);
 }
@@ -727,8 +727,8 @@ TclpAlloc(numBytes)
  */
 
 void
-TclpFree(oldPtr)
-    char *oldPtr;		/* Pointer to memory to free. */
+TclpFree(
+    char *oldPtr)		/* Pointer to memory to free. */
 {
     free(oldPtr);
     return;
@@ -751,9 +751,9 @@ TclpFree(oldPtr)
  */
 
 char *
-TclpRealloc(oldPtr, numBytes)
-    char *oldPtr;		/* Pointer to alloced block. */
-    unsigned int numBytes;	/* New size of memory. */
+TclpRealloc(
+    char *oldPtr,		/* Pointer to alloced block. */
+    unsigned int numBytes)	/* New size of memory. */
 {
     return (char*) realloc(oldPtr, numBytes);
 }
