@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.7 2005/06/06 21:04:47 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.8 2005/11/03 11:53:59 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -118,6 +118,8 @@ static TclWinProcs asciiProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime,
     NULL,
     NULL,
+    (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
+    (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleA    
 };
 
 static TclWinProcs unicodeProcs = {
@@ -167,6 +169,8 @@ static TclWinProcs unicodeProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime,
     NULL,
     NULL,
+    (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
+    (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleW
 };
 
 TclWinProcs *tclWinProcs;
