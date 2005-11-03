@@ -1,3 +1,17 @@
+2005-11-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	Applied patch #1096916 to support building with MSVC 8.
+	* generic/regerror.c: Avoid use of reserved word.
+	* generic/tcl.h:      Select the right Tcl_Stat structure
+	* generic/tclDate.c:  Casts to handle 64 bit time_t case.
+	* tests/env.test:     Include essential envvar on Win32
+	* win/nmakehlp.c:     Handle new return codes.
+	* win/makefile.vc:    Use the selected options.
+	* win/rules.vc:       Check options are applicable
+	* win/tclWinPort.h:   Disable deprecated function warnings
+	* win/tclWinSock.c:   Provide default value to avoid warning.
+	* win/tclWinTime.c:   Add casts to handle 64bit time_t type.
+
 2005-11-01  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclTrace.c (TclCheckExecutionTraces): Corrected mistaken
