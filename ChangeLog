@@ -1,3 +1,9 @@
+2005-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWin32Dll.c:   Applied patch #1256872 to provide unicode
+	* win/tclWinConsole.c: support in the console on suitable systems.
+	* win/tclWinInt.h:     Patch by Anton Kovalenko
+
 2005-11-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	Applied patch #1096916 to support building with MSVC 8.
