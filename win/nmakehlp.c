@@ -9,7 +9,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.7 2004/02/10 22:04:04 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.8 2005/11/03 00:17:31 patthoyts Exp $
  * ----------------------------------------------------------------------------
  */
 #include <windows.h>
@@ -192,8 +192,13 @@ CheckForCompilerFeature (const char *option)
     CloseHandle(pipeThreads[0]);
     CloseHandle(pipeThreads[1]);
 
-    /* look for the commandline warning code in both streams. */
-    return !(strstr(Out.buffer, "D4002") != NULL || strstr(Err.buffer, "D4002") != NULL);
+    /* look for the commandline warning code in both streams. 
+     *  - in MSVC 6 & 7 we get D4002, in MSVC 8 we get D9002.
+     */
+    return !(strstr(Out.buffer, "D4002") != NULL 
+             || strstr(Err.buffer, "D4002") != NULL
+             || strstr(Out.buffer, "D9002") != NULL
+             || strstr(Err.buffer, "D9002") != NULL);
 }
 
 int

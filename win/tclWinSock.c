@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.48 2005/07/24 22:56:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.49 2005/11/03 00:17:31 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -1079,7 +1079,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
 				 * progress. */
     SOCKADDR_IN sockaddr;	/* Socket address */
     SOCKADDR_IN mysockaddr;	/* Socket address for client */
-    SOCKET sock;
+    SOCKET sock = INVALID_SOCKET;
     SocketInfo *infoPtr;	/* The returned value. */
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
