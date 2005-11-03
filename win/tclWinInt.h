@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.20.2.3 2004/05/03 18:01:37 kennykb Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.20.2.4 2005/11/03 11:53:59 patthoyts Exp $
  */
 
 #ifndef _TCLWININT
@@ -111,6 +111,20 @@ typedef struct TclWinProcs {
 					 LPVOID, UINT,
 					 LPVOID, DWORD);
     BOOL (WINAPI *getVolumeNameForVMPProc)(CONST TCHAR*, TCHAR*, DWORD);
+
+   /*
+    * Unicode console support. WriteConsole and ReadConsole
+    */
+    BOOL (WINAPI *readConsoleProc)(HANDLE hConsoleInput,
+	                           LPVOID lpBuffer,
+	                           DWORD nNumberOfCharsToRead,
+	                           LPDWORD lpNumberOfCharsRead,
+	                           LPVOID lpReserved);
+    BOOL (WINAPI *writeConsoleProc)(HANDLE hConsoleOutput,
+				    const VOID* lpBuffer,
+				    DWORD nNumberOfCharsToWrite,
+				    LPDWORD lpNumberOfCharsWritten,
+				    LPVOID lpReserved);
 } TclWinProcs;
 
 EXTERN TclWinProcs *tclWinProcs;
