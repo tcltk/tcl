@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.42 2005/10/31 19:54:56 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.43 2005/11/04 02:13:41 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1179,7 +1179,7 @@ test trace-18.4 {namespace delete / trace vdelete combo, Bug \#1338280} {
     namespace delete ::ref
     rename doTrace {}
     set info
-} 1010
+} 1110
 
 # Delete arrays when done, so they can be re-used as scalars
 # elsewhere.
