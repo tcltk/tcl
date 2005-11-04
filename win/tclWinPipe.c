@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.14 2005/07/28 15:27:59 dkf Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.15 2005/11/04 18:33:35 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -2576,12 +2576,12 @@ Tcl_WaitPid(
 		case EXCEPTION_FLT_UNDERFLOW:
 		case EXCEPTION_INT_DIVIDE_BY_ZERO:
 		case EXCEPTION_INT_OVERFLOW:
-		    *statPtr = SIGFPE;
+		    *statPtr = 0xC0000000 | SIGFPE;
 		    break;
 
 		case EXCEPTION_PRIV_INSTRUCTION:
 		case EXCEPTION_ILLEGAL_INSTRUCTION:
-		    *statPtr = SIGILL;
+		    *statPtr = 0xC0000000 | SIGILL;
 		    break;
 
 		case EXCEPTION_ACCESS_VIOLATION:
@@ -2592,28 +2592,24 @@ Tcl_WaitPid(
 		case EXCEPTION_INVALID_DISPOSITION:
 		case EXCEPTION_GUARD_PAGE:
 		case EXCEPTION_INVALID_HANDLE:
-		    *statPtr = SIGSEGV;
+		    *statPtr = 0xC0000000 | SIGSEGV;
 		    break;
 
 		case CONTROL_C_EXIT:
-		    *statPtr = SIGINT;
+		    *statPtr = 0xC0000000 | SIGINT;
 		    break;
 
 		default:
-		    *statPtr = SIGABRT;
+		    *statPtr = 0xC0000000 | SIGABRT;
 		    break;
 	    }
 	} else {
-	    /*
-	     * Non exception, normal, exit code.  Note that the exit code
-	     * is truncated to a byte range.
-	     */
-	    *statPtr = ((exitCode << 8) & 0xff00);
+	    *statPtr = exitCode;
 	}
 	result = pid;
     } else {
 	errno = ECHILD;
-        *statPtr = ECHILD;
+        *statPtr = 0xC0000000 | ECHILD;
 	result = (Tcl_Pid) -1;
     }
 
