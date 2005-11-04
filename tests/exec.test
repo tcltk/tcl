@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.16.2.5 2005/07/28 15:27:59 dkf Exp $
+# RCS: @(#) $Id: exec.test,v 1.16.2.6 2005/11/04 18:33:35 patthoyts Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -484,6 +484,51 @@ test exec-13.3 {setting errorCode variable} {exec} {
     list $x [string tolower $msg] [lindex $errorCode 0] \
 	    [string tolower [lrange $errorCode 2 end]]
 } {1 {couldn't execute "_weird_cmd_": no such file or directory} POSIX {{no such file or directory}}}
+
+test exec-13.4 {extended exit result codes} {
+    -constraints {win}
+    -setup {
+        set tmp [makeFile {exit 0x00000101} tmpfile.exec-13.4]
+    }
+    -body {
+        list [catch {exec [interpreter] $tmp} err]\
+            [lreplace $::errorCode 1 1 {}]
+    }
+    -cleanup {
+        removeFile $tmp
+    }
+    -result {1 {CHILDSTATUS {} 257}}
+}
+
+test exec-13.5 {extended exit result codes: max value} {
+    -constraints {win}
+    -setup {
+        set tmp [makeFile {exit 0x3fffffff} tmpfile.exec-13.5]
+    }
+    -body {
+        list [catch {exec [interpreter] $tmp} err]\
+            [lreplace $::errorCode 1 1 {}]
+    }
+    -cleanup {
+        removeFile $tmp
+    }
+    -result {1 {CHILDSTATUS {} 1073741823}}
+}
+
+test exec-13.6 {extended exit result codes: signalled} {   
+    -constraints {win}
+    -setup {
+        set tmp [makeFile {exit 0xffffffff} tmpfile.exec-13.6]
+    }
+    -body {
+        list [catch {exec [interpreter] $tmp} err]\
+            [lreplace $::errorCode 1 1 {}]
+    }
+    -cleanup {
+        removeFile $tmp
+    }
+    -result {1 {CHILDKILLED {} SIGABRT SIGABRT}}
+}
 
 # Switches before the first argument
 
