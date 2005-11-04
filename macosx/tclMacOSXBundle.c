@@ -169,7 +169,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	bundleRef = versionedBundleRef;
     }
 
-    if (bundleRef) {	
+    if (bundleRef) {
 	if (hasResourceFile) {
 	    /*
 	     * Dynamically acquire address for CFBundleOpenBundleResourceMap
@@ -214,7 +214,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    CFRelease(libURL);
 	}
     }
-    
+
     if (libraryPath[0]) {
 	return TCL_OK;
     } else {
