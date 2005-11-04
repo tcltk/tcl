@@ -14,7 +14,10 @@
 	directory in 'make dist'. [RFE 1333318]
 
 	* unix/tcl.m4: Added code to enable [load] on LynxOS. Thanks to
-	heidibr@users.sf.net for the patch. [Bug 1163896].
+	heidibr@users.sf.net for the patch. [Bug 1163896].  Removed the
+	last vestiges of GNU dld from the Unix build [Bug 1071992].
+	
+	* unix/tclLoadDld.c: Removed.
 	* unix/configure: Regenerated.
 	
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
