@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.13 2005/10/08 14:42:45 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.14 2005/11/04 22:38:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -118,7 +118,6 @@ Tcl_LinkVar(interp, varName, addr, type)
     if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
 	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	Tcl_DecrRefCount(objPtr);
 	ckfree((char *) linkPtr);
 	return TCL_ERROR;
     }

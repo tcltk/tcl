@@ -1,3 +1,20 @@
+2005-11-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBinary.c:
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclIOCmd.c:
+	* generic/tclLink.c:
+	* generic/tclTest.c:
+	* generic/tclVar.c: fix for [Bug 1334947]. The functions
+	TclPtrSetVar, Tcl_ObjSetVar2 and Tcl_SetVar2Ex now always consume
+	the newValuePtr argument - i.e., they will free a 0-refCount
+	object if they failed to set the variable. Fixed all callers in
+	the core. 
+
 2005-11-04  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclGetDate.y: Added abbreviations for the Korean
