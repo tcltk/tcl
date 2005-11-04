@@ -1273,21 +1273,13 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    if test "$have_dl" = yes; then
-		SHLIB_LD="${CC} -shared"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS="-ldl"
-		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    else
-		AC_CHECK_HEADER(dld.h, [
-		    SHLIB_LD="ld -shared"
-		    DL_OBJS="tclLoadDld.o"
-		    DL_LIBS="-ldld"
-		    CC_SEARCH_FLAGS=""
-		    LD_SEARCH_FLAGS=""])
-	    fi
+
+	    SHLIB_LD="${CC} -shared"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-ldl"
+	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    if test "`uname -m`" = "alpha" ; then
 		CFLAGS="$CFLAGS -mieee"
 	    fi
@@ -1312,21 +1304,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
-	    if test "$have_dl" = yes; then
-		SHLIB_LD="${CC} -shared"
-		DL_OBJS=""
-		DL_LIBS="-ldl"
-		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-		CC_SEARCH_FLAGS=""
-		LD_SEARCH_FLAGS=""
-	    else
-		AC_CHECK_HEADER(dld.h, [
-		    SHLIB_LD="ld -shared"
-		    DL_OBJS=""
-		    DL_LIBS="-ldld"
-		    CC_SEARCH_FLAGS=""
-		    LD_SEARCH_FLAGS=""])
-	    fi
+	   SHLIB_LD="${CC} -shared"
+	    DL_OBJS=""
+	    DL_LIBS="-ldl"
+	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    CC_SEARCH_FLAGS=""
+	    LD_SEARCH_FLAGS=""
 	    if test "`uname -m`" = "alpha" ; then
 		CFLAGS="$CFLAGS -mieee"
 	    fi
