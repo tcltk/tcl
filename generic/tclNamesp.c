@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.85 2005/10/31 19:54:56 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.86 2005/11/04 02:13:41 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -958,7 +958,7 @@ Tcl_DeleteNamespace(namespacePtr)
 	     * one last time.
 	     */
 
-	    TclDeleteVars((Interp *) nsPtr->interp, &nsPtr->varTable);
+	    TclDeleteNamespaceVars(nsPtr);
 
 	    Tcl_DeleteHashTable(&nsPtr->childTable);
 	    Tcl_DeleteHashTable(&nsPtr->cmdTable);
@@ -1019,6 +1019,15 @@ TclTeardownNamespace(nsPtr)
     int i;
 
     /*
+     * Start by destroying the namespace's variable table, since variables
+     * might trigger traces. Variable table should be cleared but not freed!
+     * TclDeleteNamespaceVars frees it, so we reinitialize it afterwards.
+     */
+
+    TclDeleteNamespaceVars(nsPtr);
+    Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
+
+    /*
      * Delete all commands in this namespace. Be careful when traversing the
      * hash table: when each command is deleted, it removes itself from the
      * command table.
@@ -1047,15 +1056,6 @@ TclTeardownNamespace(nsPtr)
 	}
     }
     nsPtr->parentPtr = NULL;
-
-    /*
-     * Destroy the namespace's variable table
-     * Variable table should be cleared but not freed!
-     * TclDeleteVars frees it, so we reinitialize it afterwards.
-     */
-
-    TclDeleteVars(iPtr, &nsPtr->varTable);
-    Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
 
     /*
      * Delete the namespace path if one is installed.
