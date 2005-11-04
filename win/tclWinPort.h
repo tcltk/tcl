@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.46 2005/11/03 00:17:31 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.47 2005/11/04 23:01:40 patthoyts Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -240,15 +240,15 @@
 #endif /* TCL_UNION_WAIT */
 
 #ifndef WIFEXITED
-#   define WIFEXITED(stat)  (((*((int *) &(stat))) & 0xff) == 0)
+#   define WIFEXITED(stat)  (((*((int *) &(stat))) & 0xC0000000) == 0)
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat) (short)(((*((int *) &(stat))) >> 8) & 0xffff)
+#   define WEXITSTATUS(stat) (*((int *) &(stat)))
 #endif
 
 #ifndef WIFSIGNALED
-#   define WIFSIGNALED(stat) (((*((int *) &(stat)))) && ((*((int *) &(stat))) == ((*((int *) &(stat))) & 0x00ff)))
+#   define WIFSIGNALED(stat) ((*((int *) &(stat))) & 0xC0000000)
 #endif
 
 #ifndef WTERMSIG
@@ -256,7 +256,7 @@
 #endif
 
 #ifndef WIFSTOPPED
-#   define WIFSTOPPED(stat)  (((*((int *) &(stat))) & 0xff) == 0177)
+#   define WIFSTOPPED(stat)  0
 #endif
 
 #ifndef WSTOPSIG

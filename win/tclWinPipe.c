@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.60 2005/11/04 00:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.61 2005/11/04 23:01:40 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -2579,12 +2579,12 @@ Tcl_WaitPid(
 	case EXCEPTION_FLT_UNDERFLOW:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_INT_OVERFLOW:
-	    *statPtr = SIGFPE;
+	    *statPtr = 0xC0000000 | SIGFPE;
 	    break;
 
 	case EXCEPTION_PRIV_INSTRUCTION:
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
-	    *statPtr = SIGILL;
+	    *statPtr = 0xC0000000 | SIGILL;
 	    break;
 
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -2594,20 +2594,20 @@ Tcl_WaitPid(
 	case EXCEPTION_INVALID_DISPOSITION:
 	case EXCEPTION_GUARD_PAGE:
 	case EXCEPTION_INVALID_HANDLE:
-	    *statPtr = SIGSEGV;
+	    *statPtr = 0xC0000000 | SIGSEGV;
 	    break;
 
 	case EXCEPTION_DATATYPE_MISALIGNMENT:
-	    *statPtr = SIGBUS;
+	    *statPtr = 0xC0000000 | SIGBUS;
 	    break;
 
 	case EXCEPTION_BREAKPOINT:
 	case EXCEPTION_SINGLE_STEP:
-	    *statPtr = SIGTRAP;
+	    *statPtr = 0xC0000000 | SIGTRAP;
 	    break;
 
 	case CONTROL_C_EXIT:
-	    *statPtr = SIGINT;
+	    *statPtr = 0xC0000000 | SIGINT;
 	    break;
 
 	default:
@@ -2622,13 +2622,13 @@ Tcl_WaitPid(
 	     * truncating it.
 	     */
 
-	    *statPtr = (((int)(short) exitCode << 8) & 0xffff00);
+	    *statPtr = exitCode;
 	    break;
 	}
 	result = pid;
     } else {
 	errno = ECHILD;
-	*statPtr = ECHILD;
+	*statPtr = 0xC0000000 | ECHILD;
 	result = (Tcl_Pid) -1;
     }
 
