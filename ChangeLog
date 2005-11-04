@@ -12,6 +12,10 @@
 	
 	* unix/Makefile.in: Trimmed a bunch of fat out of the tommath/
 	directory in 'make dist'. [RFE 1333318]
+
+	* unix/tcl.m4: Added code to enable [load] on LynxOS. Thanks to
+	heidibr@users.sf.net for the patch. [Bug 1163896].
+	* unix/configure: Regenerated.
 	
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
 
