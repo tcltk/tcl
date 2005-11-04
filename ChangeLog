@@ -15,7 +15,7 @@
 
 	* unix/tcl.m4: Added code to enable [load] on LynxOS. Thanks to
 	heidibr@users.sf.net for the patch. [Bug 1163896].  Removed the
-	last vestiges of GNU dld from the Unix build [Bug 1071992].
+	last vestiges of GNU dld from the Unix build [RFE 1071992].
 	
 	* unix/tclLoadDld.c: Removed.
 	* unix/configure: Regenerated.
