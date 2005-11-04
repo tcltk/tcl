@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.8 2005/07/26 16:20:44 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.9 2005/11/04 01:15:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -629,7 +629,7 @@ Tcl_DeleteNamespace(namespacePtr)
              * variable list one last time.
 	     */
 
-            TclDeleteVars((Interp *) nsPtr->interp, &nsPtr->varTable);
+            TclDeleteNamespaceVars(nsPtr);
 	    
             Tcl_DeleteHashTable(&nsPtr->childTable);
             Tcl_DeleteHashTable(&nsPtr->cmdTable);
@@ -713,7 +713,7 @@ TclTeardownNamespace(nsPtr)
 	    Tcl_IncrRefCount(errorCode);
 	}
 
-        TclDeleteVars(iPtr, &nsPtr->varTable);
+        TclDeleteNamespaceVars(nsPtr);
         Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
 
 	if (errorInfo) {
@@ -732,7 +732,7 @@ TclTeardownNamespace(nsPtr)
 	 * frees it, so we reinitialize it afterwards.
 	 */
     
-        TclDeleteVars(iPtr, &nsPtr->varTable);
+        TclDeleteNamespaceVars(nsPtr);
         Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
     }
 
