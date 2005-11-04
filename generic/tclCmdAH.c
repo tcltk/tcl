@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.69 2005/10/08 14:42:44 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.70 2005/11/04 22:38:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -267,7 +267,6 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	Tcl_Obj *options = Tcl_GetReturnOptions(interp, result);
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
 		options, 0)) {
-	    Tcl_DecrRefCount(options);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp,
 		    "couldn't save return options in variable", NULL);
@@ -1485,7 +1484,6 @@ StoreStatData(interp, varName, statPtr)
     value = (object); \
     if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
 	Tcl_DecrRefCount(field); \
-	Tcl_DecrRefCount(value); \
 	return TCL_ERROR; \
     }
 
@@ -1805,20 +1803,15 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    for (v=0 ; v<varcList[i] ; v++) {
 		int k = index[i]++;
 		Tcl_Obj *valuePtr, *varValuePtr;
-		int isEmptyObj = 0;
 
 		if (k < argcList[i]) {
 		    valuePtr = argvList[i][k];
 		} else {
 		    valuePtr = Tcl_NewObj(); /* empty string */
-		    isEmptyObj = 1;
 		}
 		varValuePtr = Tcl_ObjSetVar2(interp, varvList[i][v],
 			NULL, valuePtr, 0);
 		if (varValuePtr == NULL) {
-		    if (isEmptyObj) {
-			Tcl_DecrRefCount(valuePtr);
-		    }
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "couldn't set loop variable: \"",
 			    TclGetString(varvList[i][v]), "\"", (char *) NULL);

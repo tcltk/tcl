@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.83 2005/10/19 18:39:58 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.84 2005/11/04 22:38:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1012,7 +1012,6 @@ InfoDefaultCmd(dummy, interp, objc, objv)
 		valueObjPtr = Tcl_ObjSetVar2(interp, objv[4], NULL,
 			nullObjPtr, 0);
 		if (valueObjPtr == NULL) {
-		    Tcl_DecrRefCount(nullObjPtr); /* free unneeded obj */
 		    goto defStoreError;
 		}
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
@@ -2260,7 +2259,8 @@ Tcl_LassignObjCmd(dummy, interp, objc, objv)
     Tcl_Obj **listObjv;		/* The contents of the list. */
     int listObjc;		/* The length of the list. */
     int i;
-
+    Tcl_Obj *resPtr;
+    
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list varname ?varname ...?");
 	return TCL_ERROR;
@@ -2294,15 +2294,15 @@ Tcl_LassignObjCmd(dummy, interp, objc, objv)
 	 */
 
 	Tcl_IncrRefCount(valueObj);
-	if (Tcl_ObjSetVar2(interp, objv[i+2], NULL, valueObj,
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_DecrRefCount(valueObj);
+	resPtr = Tcl_ObjSetVar2(interp, objv[i+2], NULL, valueObj,
+		TCL_LEAVE_ERR_MSG);
+	TclDecrRefCount(valueObj);
+	if (resPtr == NULL) {
 	    if (emptyObj != NULL) {
 		Tcl_DecrRefCount(emptyObj);
 	    }
 	    return TCL_ERROR;
 	}
-	Tcl_DecrRefCount(valueObj);
     }
     if (emptyObj != NULL) {
 	Tcl_DecrRefCount(emptyObj);
