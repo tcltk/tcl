@@ -1,3 +1,10 @@
+2005-11-04  Kevin Kenny  <kennykb@acm.org>
+
+	* compat/strftime.c: Fixed a problem where the name of the
+	time zone was double-converted from system encoding to
+	UTF-8.  Thanks to the anonymous submitter of [Bug 1317477]
+	for the report and the patch.
+	
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
