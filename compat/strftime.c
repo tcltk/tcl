@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.10.2.2 2004/09/08 18:32:20 kennykb Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.10.2.3 2005/11/04 18:18:04 kennykb Exp $
  */
 
 /*
@@ -47,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.10.2.2 2004/09/08 18:32:20 kennykb Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.10.2.3 2005/11/04 18:18:04 kennykb Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -339,9 +339,11 @@ _fmt(format, t)
 		 * we must make use of the special localized calls.
 		 */
 		case 'c':
-		    if (!GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE,
-			    &syst, NULL, buf, BUF_SIZ) || !_add(buf)
-			    || !_add(" ")) {
+		    if (!GetDateFormat(LOCALE_USER_DEFAULT,
+				       DATE_LONGDATE | LOCALE_USE_CP_ACP,
+				       &syst, NULL, buf, BUF_SIZ)
+			|| !_add(buf)
+			|| !_add(" ")) {
 			return(0);
 		    }
 		    /*
@@ -349,14 +351,18 @@ _fmt(format, t)
 		     * so continue to %X case here.
 		     */
 		case 'X':
-		    if (!GetTimeFormat(LOCALE_USER_DEFAULT, 0,
-			    &syst, NULL, buf, BUF_SIZ) || !_add(buf)) {
+		    if (!GetTimeFormat(LOCALE_USER_DEFAULT,
+				       LOCALE_USE_CP_ACP,
+				       &syst, NULL, buf, BUF_SIZ)
+			|| !_add(buf)) {
 			return(0);
 		    }
 		    continue;
 		case 'x':
-		    if (!GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE,
-			    &syst, NULL, buf, BUF_SIZ) || !_add(buf)) {
+		    if (!GetDateFormat(LOCALE_USER_DEFAULT,
+				       DATE_SHORTDATE | LOCALE_USE_CP_ACP,
+				       &syst, NULL, buf, BUF_SIZ)
+			|| !_add(buf)) {
 			return(0);
 		    }
 		    continue;
@@ -385,9 +391,11 @@ _fmt(format, t)
 		    continue;
 		case 'Z': {
 		    char *name = (isGMT ? "GMT" : TclpGetTZName(t->tm_isdst));
-		    if (name && !_add(name)) {
-			return 0;
-		    }
+		    int wrote;
+		    Tcl_UtfToExternal(NULL, NULL, name, -1, 0, NULL,
+				      pt, gsize, NULL, &wrote, NULL);
+		    pt += wrote;
+		    gsize -= wrote;
 		    continue;
 		}
 		case '%':
