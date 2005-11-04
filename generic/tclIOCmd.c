@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.32 2005/11/01 15:30:52 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.33 2005/11/04 22:38:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -289,7 +289,6 @@ Tcl_GetsObjCmd(
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
-	    Tcl_DecrRefCount(linePtr);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(lineLen));

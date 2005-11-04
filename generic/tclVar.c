@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.114 2005/11/04 02:13:41 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.115 2005/11/04 22:38:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1390,10 +1390,7 @@ Tcl_SetVar2(
      */
 
     valuePtr = Tcl_NewStringObj(newValue, -1);
-    Tcl_IncrRefCount(valuePtr);
-
     varValuePtr = Tcl_SetVar2Ex(interp, part1, part2, valuePtr, flags);
-    TclDecrRefCount(valuePtr); /* done with the object */
 
     if (varValuePtr == NULL) {
 	return NULL;
@@ -1458,6 +1455,9 @@ Tcl_SetVar2Ex(
     varPtr = TclLookupVar(interp, part1, part2, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
+	if (newValuePtr->refCount == 0) {
+	    Tcl_DecrRefCount(newValuePtr);
+	}
 	return NULL;
     }
 
@@ -1514,6 +1514,9 @@ Tcl_ObjSetVar2(
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
+	if (newValuePtr->refCount == 0) {
+	    Tcl_DecrRefCount(newValuePtr);
+	}
 	return NULL;
     }
 
@@ -1583,7 +1586,7 @@ TclPtrSetVar(
 		TclVarErrMsg(interp, part1, part2, "set", danglingVar);
 	    }
 	}
-	return NULL;
+	goto earlyError;
     }
 
     /*
@@ -1594,7 +1597,7 @@ TclPtrSetVar(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclVarErrMsg(interp, part1, part2, "set", isArray);
 	}
-	return NULL;
+	goto earlyError;
     }
 
     /*
@@ -1606,7 +1609,7 @@ TclPtrSetVar(
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
 	if (TCL_ERROR == TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
-	    return NULL;
+	    goto earlyError;
 	}
     }
 
@@ -1641,7 +1644,7 @@ TclPtrSetVar(
 	    result = Tcl_ListObjAppendElement(interp, oldValuePtr,
 		    newValuePtr);
 	    if (result != TCL_OK) {
-		return NULL;
+		goto earlyError;
 	    }
 	} else {				/* append string */
 	    /*
@@ -1719,6 +1722,12 @@ TclPtrSetVar(
 	TclCleanupVar(varPtr, arrayPtr);
     }
     return resultPtr;
+
+  earlyError:
+    if (newValuePtr->refCount == 0) {
+	Tcl_DecrRefCount(newValuePtr);
+    }
+    goto cleanup;    
 }
 
 /*
@@ -1827,7 +1836,7 @@ TclPtrIncrObjVar(
 				 * TCL_LEAVE_ERR_MSG. */
 {
     register Tcl_Obj *varValuePtr, *newValuePtr = NULL;
-    int code;
+    int duplicated, code;
 
     varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags);
     if (varValuePtr == NULL) {
@@ -1836,15 +1845,18 @@ TclPtrIncrObjVar(
 	return NULL;
     }
     if (Tcl_IsShared(varValuePtr)) {
+	duplicated = 1;
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
+    } else {
+	duplicated = 0;
     }
     code = TclIncrObj(interp, varValuePtr, incrPtr);
-    Tcl_IncrRefCount(varValuePtr);
     if (code == TCL_OK) {
 	newValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
 		varValuePtr, flags);
+    } else if (duplicated) {
+	Tcl_DecrRefCount(varValuePtr);
     }
-    Tcl_DecrRefCount(varValuePtr);
     return newValuePtr;
 }
 
@@ -2331,7 +2343,7 @@ Tcl_LappendObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
-    int numElems, createdNewObj, createVar;
+    int numElems, createdNewObj;
     Var *varPtr, *arrayPtr;
     char *part1;
     int result;
@@ -2352,7 +2364,6 @@ Tcl_LappendObjCmd(
 	    newValuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, varValuePtr,
 		    TCL_LEAVE_ERR_MSG);
 	    if (newValuePtr == NULL) {
-		TclDecrRefCount(varValuePtr); /* free unneeded object */
 		return TCL_ERROR;
 	    }
 	}
@@ -2368,7 +2379,6 @@ Tcl_LappendObjCmd(
 	 */
 
 	createdNewObj = 0;
-	createVar = 1;
 
 	/*
 	 * Use the TCL_TRACE_READS flag to ensure that if we have an array
@@ -2403,7 +2413,6 @@ Tcl_LappendObjCmd(
 	     * create it with Tcl_ObjSetVar2 below.
 	     */
 
-	    createVar = (TclIsVarUndefined(varPtr));
 	    TclNewObj(varValuePtr);
 	    createdNewObj = 1;
 	} else if (Tcl_IsShared(varValuePtr)) {
@@ -2432,9 +2441,6 @@ Tcl_LappendObjCmd(
 	newValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1, NULL,
 		varValuePtr, TCL_LEAVE_ERR_MSG);
 	if (newValuePtr == NULL) {
-	    if (createdNewObj && !createVar) {
-		TclDecrRefCount(varValuePtr); /* free unneeded obj */
-	    }
 	    return TCL_ERROR;
 	}
     }
