@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.255 2005/10/10 19:52:44 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.256 2005/11/04 02:13:41 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2019,6 +2019,7 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp* interp,
 			    LiteralTable* tablePtr);
 MODULE_SCOPE int	TclDoubleDigits(char* buf, double value, int* signum);
+MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclExpandTokenArray(Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
