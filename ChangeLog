@@ -1,3 +1,10 @@
+2005-11-04  Kevin Kenny  <kennykb@acm.org>
+
+	* tools/findBadExternals.tcl: Added this script, which locates
+	external symbols that do not begin with 'Tcl' or 'tcl' and hence
+	might be in conflict with other link libraries.  Thanks to George
+	Peter Staplin for the idea and the initial version of the script.
+	
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
