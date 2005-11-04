@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.19 2005/08/12 23:59:07 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.20 2005/11/04 20:13:30 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -558,7 +558,10 @@ proc ::tcl::clock::Initialize {} {
 	jt	+0730 \
 	cct	+0800 \
 	jst	+0900 \
+	kst     +0900 \
 	cast	+0930 \
+        jdt     +1000 \
+        kdt     +1000 \
 	cadt	+1030 \
 	east	+1000 \
 	eadt	+1030 \

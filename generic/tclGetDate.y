@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.28 2005/11/02 14:51:04 dkf Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.29 2005/11/04 20:13:30 kennykb Exp $
  */
 
 %{
@@ -579,6 +579,9 @@ static TABLE    TimezoneTable[] = {
     { "jt",     tZONE,    -HOUR(15/2) },    /* Java (3pm in Cronusland!) */
     { "cct",    tZONE,    -HOUR( 8) },      /* China Coast, USSR Zone 7 */
     { "jst",    tZONE,    -HOUR( 9) },      /* Japan Standard, USSR Zone 8 */
+    { "jdt",    tDAYZONE, -HOUR( 9) },      /* Japan Daylight */
+    { "kst",    tZONE,    -HOUR( 9) },      /* Korea Standard */
+    { "kdt",    tDAYZONE, -HOUR( 9) },      /* Korea Daylight */
     { "cast",   tZONE,    -HOUR(19/2) },    /* Central Australian Standard */
     { "cadt",   tDAYZONE, -HOUR(19/2) },    /* Central Australian Daylight */
     { "east",   tZONE,    -HOUR(10) },      /* Eastern Australian Standard */

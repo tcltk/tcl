@@ -1,5 +1,9 @@
 2005-11-04  Kevin Kenny  <kennykb@acm.org>
 
+	* generic/tclGetDate.y: Added abbreviations for the Korean
+	* library/clock.tcl:    timezone.
+	* generic/tclDate.c:    Regenerated.
+	
 	* tools/findBadExternals.tcl: Added this script, which locates
 	external symbols that do not begin with 'Tcl' or 'tcl' and hence
 	might be in conflict with other link libraries.  Thanks to George
