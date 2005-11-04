@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.4 2005/07/25 20:48:34 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.5 2005/11/04 00:06:49 dkf Exp $
  */
 
 #ifdef HAVE_COREFOUNDATION	/* Traditional unix select-based notifier is
@@ -233,7 +233,7 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  */
 
 ClientData
-Tcl_InitNotifier()
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -322,8 +322,8 @@ Tcl_InitNotifier()
  */
 
 void
-Tcl_FinalizeNotifier(clientData)
-    ClientData clientData;		/* Not used. */
+Tcl_FinalizeNotifier(
+    ClientData clientData)		/* Not used. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -401,8 +401,8 @@ Tcl_FinalizeNotifier(clientData)
  */
 
 void
-Tcl_AlertNotifier(clientData)
-    ClientData clientData;
+Tcl_AlertNotifier(
+    ClientData clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -434,8 +434,8 @@ Tcl_AlertNotifier(clientData)
  */
 
 void
-Tcl_SetTimer(timePtr)
-    Tcl_Time *timePtr;		/* Timeout value, may be NULL. */
+Tcl_SetTimer(
+    Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because
@@ -465,8 +465,8 @@ Tcl_SetTimer(timePtr)
  */
 
 void
-Tcl_ServiceModeHook(mode)
-    int mode;			/* Either TCL_SERVICE_ALL, or
+Tcl_ServiceModeHook(
+    int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
 }
@@ -488,15 +488,15 @@ Tcl_ServiceModeHook(mode)
  */
 
 void
-Tcl_CreateFileHandler(fd, mask, proc, clientData)
-    int fd;			/* Handle of stream to watch. */
-    int mask;			/* OR'ed combination of TCL_READABLE,
+Tcl_CreateFileHandler(
+    int fd,			/* Handle of stream to watch. */
+    int mask,			/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
 				 * conditions under which proc should be
 				 * called. */
-    Tcl_FileProc *proc;		/* Function to call for each
+    Tcl_FileProc *proc,		/* Function to call for each
 				 * selected event. */
-    ClientData clientData;	/* Arbitrary data to pass to proc. */
+    ClientData clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr;
@@ -565,8 +565,8 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
  */
 
 void
-Tcl_DeleteFileHandler(fd)
-    int fd;			/* Stream id for which to remove callback
+Tcl_DeleteFileHandler(
+    int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
     FileHandler *filePtr, *prevPtr;
@@ -658,9 +658,9 @@ Tcl_DeleteFileHandler(fd)
  */
 
 static int
-FileHandlerEventProc(evPtr, flags)
-    Tcl_Event *evPtr;		/* Event to service. */
-    int flags;			/* Flags that indicate what events to handle,
+FileHandlerEventProc(
+    Tcl_Event *evPtr,		/* Event to service. */
+    int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
     int mask;
@@ -727,8 +727,8 @@ FileHandlerEventProc(evPtr, flags)
  */
 
 int
-Tcl_WaitForEvent(timePtr)
-    Tcl_Time *timePtr;		/* Maximum block time, or NULL. */
+Tcl_WaitForEvent(
+    Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
@@ -906,8 +906,8 @@ Tcl_WaitForEvent(timePtr)
  */
 
 static void
-NotifierThreadProc(clientData)
-    ClientData clientData;	/* Not used. */
+NotifierThreadProc(
+    ClientData clientData)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask;
