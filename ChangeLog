@@ -1,3 +1,10 @@
+2005-11-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinPort.h:  Applied patch #1267871 by Matt Newman for
+	* win/tclWinPipe.c:  extended error code support on Windows.
+	* tests/exec.test:   Tests for extended error codes.
+	* generic/tclPipe.c: Permit long codes (platform macros permitting).
+
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBinary.c:
