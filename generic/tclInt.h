@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.18 2005/10/10 21:33:09 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.19 2005/11/04 01:15:20 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1652,6 +1652,7 @@ EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
+EXTERN void		TclDeleteNamespaceVars _ANSI_ARGS_((Namespace *nsPtr));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
