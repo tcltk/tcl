@@ -1,3 +1,12 @@
+2005-11-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c: 
+	* generic/tclVar.c: 
+	* tests/trace.test: fix for [Bugs 1338280/1337229]; changed to use
+	the same approach as the 8.4 patch in the ticket (i.e., removed
+	the patch committed on 2005-31-10).
+	
 2005-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWin32Dll.c:   Applied patch #1256872 to provide unicode
