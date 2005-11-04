@@ -1331,6 +1331,18 @@ dnl AC_CHECK_TOOL(AR, ar)
 		CFLAGS="$CFLAGS -mieee"
 	    fi
 	    ;;
+	Lynx*)
+	    SHLIB_CFLAGS="-fPIC"
+            SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+            CFLAGS_OPTIMIZE=-02
+	    SHLIB_LD="${CC} -shared "
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-mshared -ldl"
+	    LD_FLAGS="-Wl,--export-dynamic"
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+            LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+            ;;
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD="cc -G"
