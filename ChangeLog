@@ -1,3 +1,11 @@
+2005-11-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c: 
+	* generic/tclVar.c: fix for [Bugs 1338280/1337229]. Thanks Don.
+	
+	* tests/trace.test: fix duplicate test numbers	
+
 2005-11-03  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclUnixInit.c (TclpSetInitialEncodings):	Modified so
