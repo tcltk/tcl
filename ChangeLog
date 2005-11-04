@@ -1,13 +1,17 @@
 2005-11-04  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclGetDate.y: Added abbreviations for the Korean
-	* library/clock.tcl:    timezone.
+	* library/clock.tcl:    timezone. [Patch 1298737]
 	* generic/tclDate.c:    Regenerated.
 	
 	* tools/findBadExternals.tcl: Added this script, which locates
 	external symbols that do not begin with 'Tcl' or 'tcl' and hence
 	might be in conflict with other link libraries.  Thanks to George
 	Peter Staplin for the idea and the initial version of the script.
+	[Bug 1263012]
+	
+	* unix/Makefile.in: Trimmed a bunch of fat out of the tommath/
+	directory in 'make dist'. [RFE 1333318]
 	
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
 
