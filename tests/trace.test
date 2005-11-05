@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.43 2005/11/04 02:13:41 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.44 2005/11/05 02:10:55 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,6 +19,14 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+
+proc getbytes {} {
+    set lines [split [memory info] "\n"]
+    lindex [lindex $lines 3] 3
+}
 
 proc traceScalar {name1 name2 op} {
     global info
@@ -541,6 +549,22 @@ test trace-8.8 {error returns from traces} {
     }
     unset x
 } {}
+test trace-8.9 {leaks in error returns from traces} \
+    -constraints memory -body {
+	set end [getbytes]
+	for {set i 0} {$i < 5} {incr i} {
+	    set apa {a 1 b 2}
+	    set bepa [lrange $apa 0 end]
+	    trace add variable bepa write {error hej}
+	    catch {set bepa a}
+	    unset bepa
+	    set tmp $end
+	    set end [getbytes]
+	}
+	expr {$end - $tmp}
+    } -cleanup {
+	unset -nocomplain end i tmp
+    } -result 0
 
 # Check to see that variables are expunged before trace
 # procedures are invoked, so trace procedure can even manipulate
