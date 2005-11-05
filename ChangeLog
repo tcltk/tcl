@@ -1,3 +1,8 @@
+2005-11-05  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-8.9): added test to detect leak, see
+	[Bug 1348775].
+
 2005-11-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWinPort.h:  Applied patch #1267871 by Matt Newman for
