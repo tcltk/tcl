@@ -1,3 +1,8 @@
+2005-11-07  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-13.2-4): added tests to detect leak, see [Bug
+	1348775]. 
+
 2005-11-04  Don Porter	<dgp@users.sourceforge.net>
 
 	* unix/tcl.m4:	Added code to enable [load] on LynxOS. Thanks to
