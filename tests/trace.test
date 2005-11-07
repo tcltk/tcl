@@ -11,11 +11,19 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.26.2.11 2005/11/04 01:15:21 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.26.2.12 2005/11/07 10:28:01 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
+}
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+
+proc getbytes {} {
+    set lines [split [memory info] "\n"]
+    lindex [lindex $lines 3] 3
 }
 
 proc traceScalar {name1 name2 op} {
@@ -713,7 +721,7 @@ test trace-12.8 {errors when setting variable traces} {
     list [catch {trace add variable x(0) write traceProc} msg] $msg
 } {1 {can't trace "x(0)": variable isn't array}}
 
-# Check deleting one trace from another.
+# Check trace deletion
 
 test trace-13.1 {delete one trace from another} {
     proc delTraces {args} {
@@ -734,6 +742,52 @@ test trace-13.1 {delete one trace from another} {
     set x
     set info
 } {5 1}
+test trace-13.2 {leak when unsetting traced variable} \
+    -constraints memory -body {
+	set end [getbytes]
+	proc f args {}
+	for {set i 0} {$i < 5} {incr i} {
+	    trace add variable bepa write f
+	    set bepa a
+	    unset bepa
+	    set tmp $end
+	    set end [getbytes]
+	}
+	expr {$end - $tmp}
+    } -cleanup {
+	unset -nocomplain end i tmp
+    } -result 0
+test trace-13.3 {leak when removing traces} \
+    -constraints memory -body {
+	set end [getbytes]
+	proc f args {}
+	for {set i 0} {$i < 5} {incr i} {
+	    trace add variable bepa write f
+	    set bepa a
+	    trace remove variable bepa write f
+	    set tmp $end
+	    set end [getbytes]
+	}
+	expr {$end - $tmp}
+    } -cleanup {
+	unset -nocomplain end i tmp
+    } -result 0
+test trace-13.4 {leaks in error returns from traces} \
+    -constraints memory -body {
+	set end [getbytes]
+	for {set i 0} {$i < 5} {incr i} {
+	    set apa {a 1 b 2}
+	    set bepa [lrange $apa 0 end]
+	    trace add variable bepa write {error hej}
+	    catch {set bepa a}
+	    unset bepa
+	    set tmp $end
+	    set end [getbytes]
+	}
+	expr {$end - $tmp}
+    } -cleanup {
+	unset -nocomplain end i tmp
+    } -result 0
 
 # Check operation and syntax of "trace" command.
 
