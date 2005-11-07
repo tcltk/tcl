@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.15 2005/11/04 23:01:40 patthoyts Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.16 2005/11/07 08:56:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -317,7 +317,8 @@ TclCleanupChildren(
 	    sprintf(msg1, "%lu", resolvedPid);
 	    if (WIFEXITED(waitStatus)) {
                 if (interp != (Tcl_Interp *) NULL) {
-		    sprintf(msg2, "%lu", WEXITSTATUS(waitStatus));
+		    sprintf(msg2, "%lu",
+			    (unsigned long) WEXITSTATUS(waitStatus));
                     Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2, NULL);
                 }
 		abnormalExit = 1;
