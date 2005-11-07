@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.91 2005/10/13 20:15:45 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.92 2005/11/07 15:23:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -391,11 +391,11 @@ static int		SetByteCodeFromAny(Tcl_Interp *interp,
  */
 
 Tcl_ObjType tclByteCodeType = {
-    "bytecode",				/* name */
-    FreeByteCodeInternalRep,		/* freeIntRepProc */
-    DupByteCodeInternalRep,		/* dupIntRepProc */
-    (Tcl_UpdateStringProc *) NULL,	/* updateStringProc */
-    SetByteCodeFromAny			/* setFromAnyProc */
+    "bytecode",			/* name */
+    FreeByteCodeInternalRep,	/* freeIntRepProc */
+    DupByteCodeInternalRep,	/* dupIntRepProc */
+    NULL,			/* updateStringProc */
+    SetByteCodeFromAny		/* setFromAnyProc */
 };
 
 /*
@@ -550,8 +550,7 @@ SetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
 {
-    return TclSetByteCodeFromAny(interp, objPtr,
-	    (CompileHookProc *) NULL, (ClientData) NULL);
+    return TclSetByteCodeFromAny(interp, objPtr, NULL, (ClientData) NULL);
 }
 
 /*
@@ -1349,7 +1348,7 @@ TclCompileTokens(
 	    break;
 
 	case TCL_TOKEN_BS:
-	    length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL, buffer);
+	    length = Tcl_UtfBackslash(tokenPtr->start, NULL, buffer);
 	    Tcl_DStringAppend(&textBuffer, buffer, length);
 	    break;
 
@@ -1723,7 +1722,7 @@ TclInitByteCodeObj(
 
     p += sizeof(ByteCode);
     codePtr->codeStart = p;
-    memcpy((VOID *) p, (VOID *) envPtr->codeStart, (size_t) codeBytes);
+    memcpy((void *) p, (void *) envPtr->codeStart, (size_t) codeBytes);
 
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
@@ -1734,7 +1733,7 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
-	memcpy((VOID *) p, (VOID *) envPtr->exceptArrayPtr,
+	memcpy((void *) p, (void *) envPtr->exceptArrayPtr,
 		(size_t) exceptArrayBytes);
     } else {
 	codePtr->exceptArrayPtr = NULL;
@@ -1743,7 +1742,7 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
     if (auxDataArrayBytes > 0) {
 	codePtr->auxDataArrayPtr = (AuxData *) p;
-	memcpy((VOID *) p, (VOID *) envPtr->auxDataArrayPtr,
+	memcpy((void *) p, (void *) envPtr->auxDataArrayPtr,
 		(size_t) auxDataArrayBytes);
     } else {
 	codePtr->auxDataArrayPtr = NULL;
@@ -1778,7 +1777,7 @@ TclInitByteCodeObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = (VOID *) codePtr;
+    objPtr->internalRep.otherValuePtr = (void *) codePtr;
     objPtr->typePtr = &tclByteCodeType;
 }
 
@@ -1871,7 +1870,7 @@ TclFindCompiledLocal(
 	localPtr->resolveInfo = NULL;
 
 	if (name != NULL) {
-	    memcpy((VOID *) localPtr->name, (VOID *) name, (size_t) nameBytes);
+	    memcpy((void *) localPtr->name, (void *) name, (size_t) nameBytes);
 	}
 	localPtr->name[nameBytes] = '\0';
 	procPtr->numCompiledLocals++;
@@ -1922,7 +1921,7 @@ TclExpandCodeArray(
      * mark new code array as malloced.
      */
 
-    memcpy((VOID *) newPtr, (VOID *) envPtr->codeStart, currBytes);
+    memcpy((void *) newPtr, (void *) envPtr->codeStart, currBytes);
     if (envPtr->mallocedCodeArray) {
 	ckfree((char *) envPtr->codeStart);
     }
@@ -1986,7 +1985,7 @@ EnterCmdStartData(
 	 * location array if needed, and mark new array as malloced.
 	 */
 
-	memcpy((VOID *) newPtr, (VOID *) envPtr->cmdMapPtr, currBytes);
+	memcpy((void *) newPtr, (void *) envPtr->cmdMapPtr, currBytes);
 	if (envPtr->mallocedCmdMap) {
 	    ckfree((char *) envPtr->cmdMapPtr);
 	}
@@ -2103,7 +2102,7 @@ TclCreateExceptRange(
 	 * array if needed, and mark the new ExceptionRange array as malloced.
 	 */
 
-	memcpy((VOID *) newPtr, (VOID *) envPtr->exceptArrayPtr, currBytes);
+	memcpy((void *) newPtr, (void *) envPtr->exceptArrayPtr, currBytes);
 	if (envPtr->mallocedExceptArray) {
 	    ckfree((char *) envPtr->exceptArrayPtr);
 	}
@@ -2178,7 +2177,7 @@ TclCreateAuxData(
 	 * needed, and mark the new AuxData array as malloced.
 	 */
 
-	memcpy((VOID *) newPtr, (VOID *) envPtr->auxDataArrayPtr, currBytes);
+	memcpy((void *) newPtr, (void *) envPtr->auxDataArrayPtr, currBytes);
 	if (envPtr->mallocedAuxDataArray) {
 	    ckfree((char *) envPtr->auxDataArrayPtr);
 	}
@@ -2265,7 +2264,7 @@ TclExpandJumpFixupArray(
      * the new array as malloced.
      */
 
-    memcpy((VOID *) newPtr, (VOID *) fixupArrayPtr->fixup, currBytes);
+    memcpy((void *) newPtr, (void *) fixupArrayPtr->fixup, currBytes);
     if (fixupArrayPtr->mallocedArray) {
 	ckfree((char *) fixupArrayPtr->fixup);
     }
@@ -2544,7 +2543,7 @@ TclRegisterAuxDataType(
      */
 
     hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typePtr->name);
-    if (hPtr != (Tcl_HashEntry *) NULL) {
+    if (hPtr != NULL) {
 	Tcl_DeleteHashEntry(hPtr);
     }
 
@@ -2589,7 +2588,7 @@ TclGetAuxDataType(
     }
 
     hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typeName);
-    if (hPtr != (Tcl_HashEntry *) NULL) {
+    if (hPtr != NULL) {
 	typePtr = (AuxDataType *) Tcl_GetHashValue(hPtr);
     }
     Tcl_MutexUnlock(&tableMutex);
