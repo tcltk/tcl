@@ -1,3 +1,8 @@
+2005-11-07  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-13.2-4): added tests to detect leak, see [Bug
+	1348775]. The recently added trace-8.9 test is now 13.4.
+
 2005-11-07  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* tests/dict.test (dict-19.2): arrange for the stress testing code to
