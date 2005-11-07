@@ -1,11 +1,17 @@
+2005-11-07  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/dict.test (dict-19.2): arrange for the stress testing code to
+	only stress test the dict code and not the trace code as well. [Bug
+	1342858]
+
 2005-11-05  Miguel Sofer <msofer@users.sf.net>
 
-	* tests/trace.test (trace-8.9): added test to detect leak, see
-	[Bug 1348775].
+	* tests/trace.test (trace-8.9): added test to detect leak, see [Bug
+	1348775].
 
 2005-11-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* win/tclWinPort.h:  Applied patch #1267871 by Matt Newman for
+	* win/tclWinPort.h:  Applied [Patch 1267871] by Matt Newman for
 	* win/tclWinPipe.c:  extended error code support on Windows.
 	* tests/exec.test:   Tests for extended error codes.
 	* generic/tclPipe.c: Permit long codes (platform macros permitting).
@@ -21,52 +27,51 @@
 	* generic/tclIOCmd.c:
 	* generic/tclLink.c:
 	* generic/tclTest.c:
-	* generic/tclVar.c: fix for [Bug 1334947]. The functions
-	TclPtrSetVar, Tcl_ObjSetVar2 and Tcl_SetVar2Ex now always consume
-	the newValuePtr argument - i.e., they will free a 0-refCount
-	object if they failed to set the variable. Fixed all callers in
-	the core. 
+	* generic/tclVar.c: fix for [Bug 1334947]. The functions TclPtrSetVar,
+	Tcl_ObjSetVar2 and Tcl_SetVar2Ex now always consume the newValuePtr
+	argument - i.e., they will free a 0-refCount object if they failed to
+	set the variable. Fixed all callers in the core.
 
 2005-11-04  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclGetDate.y: Added abbreviations for the Korean
 	* library/clock.tcl:    timezone. [Patch 1298737]
 	* generic/tclDate.c:    Regenerated.
-	
+
 	* tools/findBadExternals.tcl: Added this script, which locates
-	external symbols that do not begin with 'Tcl' or 'tcl' and hence
-	might be in conflict with other link libraries.  Thanks to George
-	Peter Staplin for the idea and the initial version of the script.
-	[Bug 1263012]
-	
+	external symbols that do not begin with 'Tcl' or 'tcl' and hence might
+	be in conflict with other link libraries. Thanks to George Peter
+	Staplin for the idea and the initial version of the script. [Bug
+	1263012]
+
 	* unix/Makefile.in: Trimmed a bunch of fat out of the tommath/
 	directory in 'make dist'. [RFE 1333318]
 
 	* unix/tcl.m4: Added code to enable [load] on LynxOS. Thanks to
-	heidibr@users.sf.net for the patch. [Bug 1163896].  Removed the
-	last vestiges of GNU dld from the Unix build [RFE 1071992].
-	
+	heidibr@users.sf.net for the patch. [Bug 1163896]. Removed the last
+	vestiges of GNU dld from the Unix build [RFE 1071992].
+
 	* unix/tclLoadDld.c: Removed.
 	* unix/configure: Regenerated.
-	
+
 2005-11-04  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
-	* generic/tclNamesp.c: 
-	* generic/tclVar.c: 
-	* tests/trace.test: fix for [Bugs 1338280/1337229]; changed to use
-	the same approach as the 8.4 patch in the ticket (i.e., removed
-	the patch committed on 2005-31-10).
-	
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+	* tests/trace.test: fix for [Bugs 1338280/1337229]; changed to use the
+	same approach as the 8.4 patch in the ticket (i.e., removed the patch
+	committed on 2005-31-10).
+
 2005-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* win/tclWin32Dll.c:   Applied patch #1256872 to provide unicode
+	* win/tclWin32Dll.c:   Applied [Patch 1256872] to provide unicode
 	* win/tclWinConsole.c: support in the console on suitable systems.
 	* win/tclWinInt.h:     Patch by Anton Kovalenko
 
 2005-11-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	Applied patch #1096916 to support building with MSVC 8.
+	Applied [Patch 1096916] to support building with MSVC 8.
 	* generic/regerror.c: Avoid use of reserved word.
 	* generic/tcl.h:      Select the right Tcl_Stat structure
 	* generic/tclDate.c:  Casts to handle 64 bit time_t case.
@@ -87,8 +92,8 @@
 	* tests/unixNotfy.test (1.1,2):	Update error message whitespace to
 	match changes in code.
 
-	* tests/expr-old.test (expr-32.52):     Use int(.) to restrict
-        result of left shift to the C long range.
+	* tests/expr-old.test (expr-32.52):     Use int(.) to restrict result
+	of left shift to the C long range.
 
 	* expr.test (expr-46.13):	Added test that illustrates
 	shortcoming of Patch 1340260.
