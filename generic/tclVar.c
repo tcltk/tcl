@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.115 2005/11/04 22:38:39 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.116 2005/11/07 10:50:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -52,8 +52,9 @@ static int		ObjMakeUpvar(Tcl_Interp *interp,
 static Var *		NewVar(void);
 static ArraySearch *	ParseSearchId(Tcl_Interp *interp, CONST Var *varPtr,
 			    CONST char *varName, Tcl_Obj *handleObj);
-static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr, Interp *iPtr,
-	                     CONST char *part1, CONST char *part2, int flags);
+static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
+			    Interp *iPtr, CONST char *part1,
+			    CONST char *part2, int flags);
 static int		SetArraySearchObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
@@ -1727,7 +1728,7 @@ TclPtrSetVar(
     if (newValuePtr->refCount == 0) {
 	Tcl_DecrRefCount(newValuePtr);
     }
-    goto cleanup;    
+    goto cleanup;
 }
 
 /*
@@ -1979,16 +1980,16 @@ TclObjUnsetVar2(
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
- 
+
     result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
 
     /*
      * Keep the variable alive until we're done with it. We used to
-     * increase/decrease the refCount for each operation, making it
-     * hard to find [Bug 735335] - caused by unsetting the variable
-     * whose value was the variable's name.
+     * increase/decrease the refCount for each operation, making it hard to
+     * find [Bug 735335] - caused by unsetting the variable whose value was
+     * the variable's name.
      */
-    
+
     varPtr->refCount++;
 
     UnsetVarStruct(varPtr, arrayPtr, iPtr, part1, part2, flags);
@@ -1996,17 +1997,17 @@ TclObjUnsetVar2(
     /*
      * It's an error to unset an undefined variable.
      */
-	
+
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    TclVarErrMsg(interp, part1, part2, "unset", 
+	    TclVarErrMsg(interp, part1, part2, "unset",
 		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement));
 	}
     }
 
 #if ENABLE_NS_VARNAME_CACHING
     /*
-     * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType 
+     * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType
      * keeping a reference. This removes some additional exteriorisations of
      * [Bug 736729], but may be a good thing independently of the bug.
      */
@@ -2016,7 +2017,7 @@ TclObjUnsetVar2(
 	part1Ptr->typePtr = NULL;
     }
 #endif
-    
+
     /*
      * Finally, if the variable is truly not in use then free up its Var
      * structure and remove it from its hash table, if any. The ref count of
@@ -2042,7 +2043,7 @@ TclObjUnsetVar2(
  *
  * Side effects:
  *	If the arguments indicate a local or global variable in iPtr, it is
- *      unset and deleted.   
+ *      unset and deleted.
  *
  *----------------------------------------------------------------------
  */
@@ -2065,9 +2066,9 @@ UnsetVarStruct(
     }
 
     /*
-     * For global/upvar variables referenced in procedures, decrement
-     * the reference count on the variable referred to, and free
-     * the referenced variable if it's no longer needed. 
+     * For global/upvar variables referenced in procedures, decrement the
+     * reference count on the variable referred to, and free the referenced
+     * variable if it's no longer needed.
      */
 
     if (TclIsVarLink(varPtr)) {
@@ -2088,11 +2089,11 @@ UnsetVarStruct(
      * function might try to access a variable being deleted. To handle this
      * situation gracefully, do things in three steps:
      * 1. Copy the contents of the variable to a dummy variable structure, and
-     *    mark the original Var structure as undefined. 
+     *    mark the original Var structure as undefined.
      * 2. Invoke traces and clean up the variable, using the dummy copy.
      * 3. If at the end of this the original variable is still undefined and
      *    has no outstanding references, then delete it (but it could have
-     *    gotten recreated by a trace). 
+     *    gotten recreated by a trace).
      */
 
     dummyVar = *varPtr;
@@ -2103,9 +2104,9 @@ UnsetVarStruct(
     varPtr->searchPtr = NULL;
 
     /*
-     * Call trace procedures for the variable being deleted. Then delete its
+     * Call trace functions for the variable being deleted. Then delete its
      * traces. Be sure to abort any other traces for the variable that are
-     * still pending. Special tricks: 
+     * still pending. Special tricks:
      * 1. We need to increment varPtr's refCount around this: TclCallVarTraces
      *    will use dummyVar so it won't increment varPtr's refCount itself.
      * 2. Turn off the VAR_TRACE_ACTIVE flag in dummyVar: we want to
@@ -2135,7 +2136,7 @@ UnsetVarStruct(
      * If the variable is an array, delete all of its elements. This must be
      * done after calling the traces on the array, above (that's the way
      * traces are defined). If it is a scalar, "discard" its object (decrement
-     * the ref count of its object, if any). 
+     * the ref count of its object, if any).
      */
 
     dummyVarPtr = &dummyVar;
@@ -2147,13 +2148,16 @@ UnsetVarStruct(
 	 * to the array, the array is not deleted when the call stack gets
 	 * popped (we will delete the array ourselves later in this function).
 	 *
-	 * Bumping the count can lead to the odd situation that elements of the
-	 * array are being deleted when the array still exists, but since the
-	 * array is about to be removed anyway, that shouldn't really matter.
+	 * Bumping the count can lead to the odd situation that elements of
+	 * the array are being deleted when the array still exists, but since
+	 * the array is about to be removed anyway, that shouldn't really
+	 * matter.
 	 */
+
 	DeleteArray(iPtr, part1, dummyVarPtr,
-		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) 
+		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_UNSETS);
+
 	/*
 	 * Decr ref count
 	 */
@@ -2166,14 +2170,14 @@ UnsetVarStruct(
     }
 
     /*
-     * If the variable was a namespace variable, decrement its reference count.
+     * If the variable was a namespace variable, decrement its reference
+     * count.
      */
-    
+
     if (TclIsVarNamespaceVar(varPtr)) {
 	TclClearVarNamespaceVar(varPtr);
 	varPtr->refCount--;
     }
-
 }
 
 /*
@@ -2277,8 +2281,7 @@ Tcl_AppendObjCmd(
     char *part1;
 
     register Tcl_Obj *varValuePtr = NULL;
-    					/* Initialized to avoid compiler
-					 * warning. */
+    				/* Initialized to avoid compiler warning. */
     int i;
 
     if (objc < 2) {
@@ -3314,7 +3317,7 @@ ObjMakeUpvar(
 	    }
 	    linkPtr->refCount--;
 	    if (TclIsVarUndefined(linkPtr)) {
-		TclCleanupVar(linkPtr, (Var *) NULL);
+		TclCleanupVar(linkPtr, NULL);
 	    }
 	} else {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", myName,
@@ -3541,7 +3544,7 @@ Tcl_GlobalObjCmd(
 	 * Link to the variable "varName" in the global :: namespace.
 	 */
 
-	result = ObjMakeUpvar(interp, (CallFrame *) NULL, objPtr, NULL,
+	result = ObjMakeUpvar(interp, NULL, objPtr, NULL,
 		TCL_GLOBAL_ONLY, /*myName*/ tail, /*myFlags*/ 0, -1);
 	if (result != TCL_OK) {
 	    return result;
@@ -3987,15 +3990,15 @@ DeleteSearches(
  *
  * TclDeleteNamespaceVars --
  *
- *	This procedure is called to recycle all the storage space
- *	associated with a namespace's table of variables. 
+ *	This function is called to recycle all the storage space associated
+ *	with a namespace's table of variables.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Variables are deleted and trace procedures are invoked, if
- *	any are declared.
+ *	Variables are deleted and trace functions are invoked, if any are
+ *	declared.
  *
  *----------------------------------------------------------------------
  */
@@ -4013,7 +4016,7 @@ TclDeleteNamespaceVars(
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
 
     /*
-     * Determine what flags to pass to the trace callback procedures.
+     * Determine what flags to pass to the trace callback functions.
      */
 
     if (nsPtr == iPtr->globalNsPtr) {
@@ -4030,14 +4033,17 @@ TclDeleteNamespaceVars(
 	register Var *varPtr = (Var *) Tcl_GetHashValue(hPtr);
 	Tcl_Obj *objPtr = Tcl_NewObj();
 	varPtr->refCount++;	/* Make sure we get to remove from hash */
-	Tcl_IncrRefCount(objPtr); 
+	Tcl_IncrRefCount(objPtr);
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
 	UnsetVarStruct(varPtr, NULL, iPtr, Tcl_GetString(objPtr), NULL, flags);
 	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 	varPtr->refCount--;
 
-	/* Remove the variable from the table and force it undefined
-	 * in case an unset trace brought it back from the dead */
+	/*
+	 * Remove the variable from the table and force it undefined in case
+	 * an unset trace brought it back from the dead.
+	 */
+
 	Tcl_DeleteHashEntry(hPtr);
 	varPtr->hPtr = NULL;
 	TclSetVarUndefined(varPtr);
