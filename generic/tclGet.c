@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.16 2005/07/24 22:56:43 dkf Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.17 2005/11/07 15:13:36 dkf Exp $
  */
 
 #include "tclInt.h"
-
 
 /*
  *----------------------------------------------------------------------
@@ -37,11 +36,11 @@
  */
 
 int
-Tcl_GetInt(interp, src, intPtr)
-    Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
-    CONST char *src;		/* String containing a (possibly signed)
+Tcl_GetInt(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
+    CONST char *src,		/* String containing a (possibly signed)
 				 * integer in a form acceptable to strtoul. */
-    int *intPtr;		/* Place to store converted result. */
+    int *intPtr)		/* Place to store converted result. */
 {
     Tcl_Obj obj;
     int code;
@@ -80,12 +79,12 @@ Tcl_GetInt(interp, src, intPtr)
  */
 
 int
-TclGetLong(interp, src, longPtr)
-    Tcl_Interp *interp;		/* Interpreter used for error reporting if not
+TclGetLong(
+    Tcl_Interp *interp,		/* Interpreter used for error reporting if not
 				 * NULL. */
-    CONST char *src;		/* String containing a (possibly signed) long
+    CONST char *src,		/* String containing a (possibly signed) long
 				 * integer in a form acceptable to strtoul. */
-    long *longPtr;		/* Place to store converted long result. */
+    long *longPtr)		/* Place to store converted long result. */
 {
     Tcl_Obj obj;
     int code;
@@ -123,11 +122,11 @@ TclGetLong(interp, src, longPtr)
  */
 
 int
-Tcl_GetDouble(interp, src, doublePtr)
-    Tcl_Interp *interp;		/* Interpreter used for error reporting. */
-    CONST char *src;		/* String containing a floating-point number
+Tcl_GetDouble(
+    Tcl_Interp *interp,		/* Interpreter used for error reporting. */
+    CONST char *src,		/* String containing a floating-point number
 				 * in a form acceptable to strtod. */
-    double *doublePtr;		/* Place to store converted result. */
+    double *doublePtr)		/* Place to store converted result. */
 {
     Tcl_Obj obj;
     int code;
@@ -165,12 +164,12 @@ Tcl_GetDouble(interp, src, doublePtr)
  */
 
 int
-Tcl_GetBoolean(interp, src, boolPtr)
-    Tcl_Interp *interp;		/* Interpreter used for error reporting. */
-    CONST char *src;		/* String containing a boolean number
+Tcl_GetBoolean(
+    Tcl_Interp *interp,		/* Interpreter used for error reporting. */
+    CONST char *src,		/* String containing a boolean number
 				 * specified either as 1/0 or true/false or
 				 * yes/no. */
-    int *boolPtr;		/* Place to store converted result, which will
+    int *boolPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
     Tcl_Obj obj;

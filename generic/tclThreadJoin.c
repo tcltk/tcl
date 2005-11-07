@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadJoin.c,v 1.6 2005/07/19 22:45:35 dkf Exp $
+ * RCS: @(#) $Id: tclThreadJoin.c,v 1.7 2005/11/07 15:15:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -78,9 +78,9 @@ static JoinableThread* firstThreadPtr;
  */
 
 int
-TclJoinThread(id, result)
-    Tcl_ThreadId id;		/* The id of the thread to wait upon. */
-    int *result;		/* Reference to a location for the result of
+TclJoinThread(
+    Tcl_ThreadId id,		/* The id of the thread to wait upon. */
+    int *result)		/* Reference to a location for the result of
 				 * the thread we are waiting upon. */
 {
     JoinableThread *threadPtr;
@@ -226,9 +226,9 @@ TclJoinThread(id, result)
  *----------------------------------------------------------------------
  */
 
-VOID
-TclRememberJoinableThread(id)
-    Tcl_ThreadId id; /* The thread to remember as joinable */
+void
+TclRememberJoinableThread(
+    Tcl_ThreadId id)		/* The thread to remember as joinable */
 {
     JoinableThread *threadPtr;
 
@@ -265,10 +265,10 @@ TclRememberJoinableThread(id)
  *----------------------------------------------------------------------
  */
 
-VOID
-TclSignalExitThread(id,result)
-    Tcl_ThreadId id;		/* Id of the thread signaling its exit. */
-    int result;			/* The result from the thread. */
+void
+TclSignalExitThread(
+    Tcl_ThreadId id,		/* Id of the thread signaling its exit. */
+    int result)			/* The result from the thread. */
 {
     JoinableThread *threadPtr;
 
