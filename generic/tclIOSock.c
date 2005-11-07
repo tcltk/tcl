@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.9 2005/07/19 22:45:35 dkf Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.10 2005/11/07 15:17:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -33,11 +33,11 @@
  */
 
 int
-TclSockGetPort(interp, string, proto, portPtr)
-    Tcl_Interp *interp;
-    char *string;		/* Integer or service name */
-    char *proto;		/* "tcp" or "udp", typically */
-    int *portPtr;		/* Return port number */
+TclSockGetPort(
+    Tcl_Interp *interp,
+    char *string,		/* Integer or service name */
+    char *proto,		/* "tcp" or "udp", typically */
+    int *portPtr)		/* Return port number */
 {
     struct servent *sp;		/* Protocol info for named services */
     Tcl_DString ds;
@@ -61,7 +61,7 @@ TclSockGetPort(interp, string, proto, portPtr)
     }
     if (*portPtr > 0xFFFF) {
 	Tcl_AppendResult(interp, "couldn't open socket: port number too high",
-		(char *) NULL);
+		NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -84,9 +84,9 @@ TclSockGetPort(interp, string, proto, portPtr)
  */
 
 int
-TclSockMinimumBuffers(sock, size)
-    int sock;			/* Socket file descriptor */
-    int size;			/* Minimum buffer size */
+TclSockMinimumBuffers(
+    int sock,			/* Socket file descriptor */
+    int size)			/* Minimum buffer size */
 {
     int current;
     socklen_t len;
