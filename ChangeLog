@@ -1,3 +1,11 @@
+2005-11-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclTrace.c (TraceVarEx): Factor out the core of Tcl_TraceVar2
+	(TclTraceVariableObjCmd,TraceVarProc): Use the new internal API to
+	arrange for the clientData to be cleaned up at the same time as the
+	rest of the main trace record. This simplifies the code a bit at the
+	same time.
+
 2005-11-07  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/trace.test (trace-13.2-4): added tests to detect leak, see [Bug
