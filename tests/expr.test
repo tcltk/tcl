@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.48 2005/11/01 15:18:27 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.49 2005/11/08 20:22:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6554,9 +6554,33 @@ test expr-46.12 {round() boundary case - -1/2 + 1 ulp} {
     }
     expr {round($x)}
 } 0
-test expr-46.13 {round() handling of long/bignum boundary} {
+test expr-46.13 {round() boundary case - round down} {
+    expr {round(2147483647 - 0.51)}
+} 2147483646
+
+test expr-46.14 {round() boundary case - round up} {
+    expr {round(2147483647 - 0.50)}
+} 2147483647
+
+test expr-46.15 {round() boundary case - round up to wide} {
+    expr {round(2147483647 + 0.50)}
+} [expr {wide(2147483647) + 1}]
+
+test expr-46.16 {round() boundary case - round up} {
+    expr {round(-2147483648 + 0.51)}
+} -2147483647
+
+test expr-46.17 {round() boundary case - round down} {
+    expr {round(-2147483648 + 0.50)}
+} -2147483648
+test expr-46.18 {round() boundary case - round down to wide} {
+    expr {round(-2147483648 - 0.50)}
+} [expr {wide(-2147483648) - 1}]
+
+test expr-46.19 {round() handling of long/bignum boundary} {
     expr {round(double(0x7fffffffffffffff))}
 } 9223372036854775808
+
 
 # cleanup
 if {[info exists a]} {
