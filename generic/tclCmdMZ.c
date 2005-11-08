@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.23 2005/11/01 20:19:26 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.24 2005/11/08 14:53:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -23,7 +23,7 @@
 #include "tclCompile.h"
 
 /*
- * Structure used to hold information about variable traces:
+ * Structures used to hold information about variable traces:
  */
 
 typedef struct {
@@ -36,6 +36,11 @@ typedef struct {
 				 * last in the structure, so that it can
 				 * be larger than 4 bytes. */
 } TraceVarInfo;
+
+typedef struct {
+    VarTrace trace;
+    TraceVarInfo tvar;
+} CompoundVarTrace;
 
 /*
  * Structure used to hold information about command traces:
@@ -3678,10 +3683,24 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 	    command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	    length = (size_t) commandLength;
 	    if ((enum traceOptions) optionIndex == TRACE_ADD) {
+		/*
+		 * This code essentially mallocs together the VarTrace and the
+		 * TraceVarInfo, then inlines the Tcl_TraceVar(). This is
+		 * necessary in order to have the TraceVarInfo to be freed 
+		 * automatically when the VarTrace is freed [Bug 1348775]
+		 */
+
+		CompoundVarTrace *compTracePtr;
 		TraceVarInfo *tvarPtr;
-		tvarPtr = (TraceVarInfo *) ckalloc((unsigned)
-			(sizeof(TraceVarInfo) - sizeof(tvarPtr->command)
+		Var *varPtr, *arrayPtr;
+		VarTrace *tracePtr;
+		int flagMask;
+
+		compTracePtr = (CompoundVarTrace *) ckalloc((unsigned)
+			(sizeof(CompoundVarTrace) - sizeof(tvarPtr->command)
 				+ length + 1));
+		tracePtr = &(compTracePtr->trace);
+		tvarPtr = &(compTracePtr->tvar);
 		tvarPtr->flags = flags;
 		if (objv[0] == NULL) {
 		    tvarPtr->flags |= TCL_TRACE_OLD_STYLE;
@@ -3690,11 +3709,25 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 		flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 		strcpy(tvarPtr->command, command);
 		name = Tcl_GetString(objv[3]);
-		if (Tcl_TraceVar(interp, name, flags, TraceVarProc,
-			(ClientData) tvarPtr) != TCL_OK) {
-		    ckfree((char *) tvarPtr);
+		flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
+		varPtr = TclLookupVar(interp, name, NULL,
+			(flags & flagMask) | TCL_LEAVE_ERR_MSG, "trace",
+			/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+		if (varPtr == NULL) {
+		    ckfree((char *) tracePtr);
 		    return TCL_ERROR;
 		}
+		flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES
+			| TCL_TRACE_UNSETS | TCL_TRACE_ARRAY
+			| TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+		flagMask |= TCL_TRACE_OLD_STYLE;
+#endif
+		tracePtr->traceProc = TraceVarProc;
+		tracePtr->clientData = (ClientData) tvarPtr;
+		tracePtr->flags = flags & flagMask;
+		tracePtr->nextPtr = varPtr->tracePtr;
+		varPtr->tracePtr = tracePtr;
 	    } else {
 		/*
 		 * Search through all of our traces on this variable to
@@ -3715,7 +3748,6 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 			Tcl_UntraceVar2(interp, name, NULL, 
 			  flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 				TraceVarProc, clientData);
-			Tcl_EventuallyFree((ClientData) tvarPtr, TCL_DYNAMIC);
 			break;
 		    }
 		}
@@ -4700,14 +4732,11 @@ TraceVarProc(clientData, interp, name1, name2, flags)
     Tcl_DString cmd;
 
     /* 
-     * We might call Tcl_Eval() below, and that might evaluate
-     * [trace vdelete] which might try to free tvarPtr.  We want
-     * to use tvarPtr until the end of this function, so we use
-     * Tcl_Preserve() and Tcl_Release() to be sure it is not 
-     * freed while we still need it.
+     * We might call Tcl_Eval() below, and that might evaluate [trace
+     * vdelete] which might try to free tvarPtr. However we do not
+     * need to protect anything here; it's done by our caller because
+     * the TraceVarInfo is really part of a CompoundVarTrace. [Bug 1348775]
      */
-
-    Tcl_Preserve((ClientData) tvarPtr);
 
     result = NULL;
     if ((tvarPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
@@ -4783,9 +4812,7 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	    Tcl_DecrRefCount(errMsgObj);
 	    result = NULL;
 	}
-	Tcl_EventuallyFree((ClientData) tvarPtr, TCL_DYNAMIC);
     }
-    Tcl_Release((ClientData) tvarPtr);
     return result;
 }
 
