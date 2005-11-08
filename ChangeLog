@@ -1,3 +1,11 @@
+2005-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPkg.c:	Corrected inconsistencies in the value returned
+	* tests/pkg.test:	by Tcl_PkgRequire(Ex) so that the returned
+	values will always agree with what is stored in the package database.
+	This way repeated calls to Tcl_PkgRequire(Ex) have the same results.
+	Thanks to Hemang Lavana.  [Bug 1162286].
+
 2005-11-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclTrace.c (TraceVarEx): Factor out the core of Tcl_TraceVar2
