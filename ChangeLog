@@ -1,5 +1,8 @@
 2005-11-08  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/compExpr-old.test:	Updated tests with changed behavior
+	due to addition of bignums.
+
         * tests/expr.test:      Portable tests expr-46.13-18 [Bug 1341368]
 
 	* generic/tclPkg.c:	Corrected inconsistencies in the value returned
