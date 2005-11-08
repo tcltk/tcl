@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.17.2.10 2005/10/29 19:58:04 mdejong Exp $
+# RCS: @(#) $Id: expr.test,v 1.17.2.11 2005/11/08 20:21:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -899,40 +899,28 @@ test expr-46.12 {round() boundary case - -1/2 + 1 ulp} {
     expr {round($x)}
 } 0
 
-if {int(0x80000000) < 0} {
-    # 32 bit long
-    set min_long -2147483648
-    set max_long  2147483647
-} else {
-    # 64 bit long
-    set min_long -9223372036854775808
-    set max_long  9223372036854775807
-}
-
 test expr-46.13 {round() boundary case - round down} {
-    expr {round($max_long - 0.51)}
-} [expr {$max_long - 1}]
+    expr {round(2147483647 - 0.51)}
+} 2147483646
 
 test expr-46.14 {round() boundary case - round up} {
-    expr {round($max_long - 0.50)}
-} $max_long
+    expr {round(2147483647 - 0.50)}
+} 2147483647
 
 test expr-46.15 {round() boundary case - round up to wide} {
-    expr {round($max_long + 0.50)}
-} [expr {wide($max_long) + 1}]
+    expr {round(2147483647 + 0.50)}
+} [expr {wide(2147483647) + 1}]
 
 test expr-46.16 {round() boundary case - round up} {
-    expr {round($min_long + 0.51)}
-} [expr {$min_long + 1}]
+    expr {round(-2147483648 + 0.51)}
+} -2147483647
 
 test expr-46.17 {round() boundary case - round down} {
-    expr {round($min_long + 0.50)}
-} $min_long
-
+    expr {round(-2147483648 + 0.50)}
+} -2147483648
 test expr-46.18 {round() boundary case - round down to wide} {
-    expr {round($min_long - 0.50)}
-} [expr {wide($min_long) - 1}]
-
+    expr {round(-2147483648 - 0.50)}
+} [expr {wide(-2147483648) - 1}]
 
 # cleanup
 if {[info exists a]} {
