@@ -1,3 +1,10 @@
+2005-11-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdMZ.c (TclTraceVariableObjCmd, TraceVarProc):
+	Applied Miguel's fix for [Bug 1348775]. It is not quite as elegant
+	as the one applied to the HEAD, but it is easier to use it rather
+	than fully backporting.
+
 2005-11-07  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/trace.test (trace-13.2-4): added tests to detect leak, see [Bug
