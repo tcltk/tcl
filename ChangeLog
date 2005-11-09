@@ -1,3 +1,13 @@
+2005-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/compile.test:	Updated tests with changed behavior
+	* tests/execute.test:	due to addition of bignums.
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/parseExpr.test:
+	* tests/platform.test:
+	* tests/string.test:
+
 2005-11-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c (MAX_READDIR_UNLINK_THRESHOLD): reduce to 130
