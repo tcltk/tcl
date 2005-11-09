@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.7.22.1 2004/10/26 20:14:51 dgp Exp $
+# RCS: @(#) $Id: timer.test,v 1.7.22.2 2005/11/09 21:46:20 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -549,18 +549,16 @@ test timer-10.1 {Bug 1016167: [after] overwrites imports} -setup {
     interp delete slave
 } -result ::after
 
+test timer-11.2 {Bug 1350293: [after] negative argument} \
+    -body {
+	set l {}
+	after 100 {lappend l 100; set done 1}
+	after -1 {lappend l -1}
+	vwait done
+	set l
+    } \
+    -result {-1 100}
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
