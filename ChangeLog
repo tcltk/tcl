@@ -1,3 +1,8 @@
+2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclTimer.c: Changed [after] so that it behaves correctly
+	* tests/timer.test:   with negative arguments [Bug 1350293].
+	
 2005-11-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c (MAX_READDIR_UNLINK_THRESHOLD): reduce to 130

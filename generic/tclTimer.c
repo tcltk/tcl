@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.2.3 2005/10/04 18:14:14 vasiljevic Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.2.4 2005/11/09 21:46:20 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -781,7 +781,8 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
 	goto processInteger;
     }
     argString = Tcl_GetStringFromObj(objv[1], &length);
-    if (isdigit(UCHAR(argString[0]))) {	/* INTL: digit */
+    if (argString[0] == '+' || argString[0] == '-'
+	|| isdigit(UCHAR(argString[0]))) {	/* INTL: digit */
 	if (Tcl_GetIntFromObj(interp, objv[1], &ms) != TCL_OK) {
 	    return TCL_ERROR;
 	}
