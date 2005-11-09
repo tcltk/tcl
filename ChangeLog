@@ -1,3 +1,9 @@
+2005-11-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c (MAX_READDIR_UNLINK_THRESHOLD): reduce to 130
+	based on errors seen on OS X 10.3 with lots of links in a dir.
+	[Bug 1034337 followup]
+
 2005-11-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/expr.test:	Portable tests expr-46.13-18 [Bug 1341368]
