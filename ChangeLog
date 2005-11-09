@@ -1,3 +1,9 @@
+2005-11-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c (MAX_READDIR_UNLINK_THRESHOLD): reduce to 130
+	based on errors seen on OS X 10.3 with lots of links in a dir.
+	[Bug 1034337 followup]
+
 2005-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/Makefile.in (gdb-test): Added a new target to make it easier to
