@@ -1,3 +1,8 @@
+2005-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/Makefile.in (gdb-test): Added a new target to make it easier to
+	run the test suite inside a debugger.
+
 2005-11-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/compExpr-old.test:	Updated tests with changed behavior
