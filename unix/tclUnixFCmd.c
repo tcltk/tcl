@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.5 2005/10/07 22:35:03 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.6 2005/11/09 00:53:06 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -129,14 +129,14 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
  * a bug that makes readdir return NULL even though some directory entries
  * have not been processed.  The bug afflicts SunOS's readdir when applied to
  * ufs file systems and Darwin 6.5's (and OSX v.10.3.8's) HFS+.  JH found the
- * Darwin readdir to reset at 172, so 150 is chosen to be conservative.  We
+ * Darwin readdir to reset at 147, so 130 is chosen to be conservative.  We
  * can't do a general rewind on failure as NFS can create special files that
  * recreate themselves when you try and delete them.  8.4.8 added a solution
  * that was affected by a single such NFS file, this solution should not be
  * affected by less than THRESHOLD such files. [Bug 1034337]
  */
 
-#define MAX_READDIR_UNLINK_THRESHOLD 150
+#define MAX_READDIR_UNLINK_THRESHOLD 130
 
 /*
  * Declarations for local procedures defined in this file:
