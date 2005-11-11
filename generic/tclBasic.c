@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.176 2005/10/09 20:05:17 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.177 2005/11/11 22:20:24 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2462,6 +2462,13 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     Tcl_Command importCmd;
 
     /*
+     * Bump the command epoch counter. This will invalidate all cached
+     * references that point to this command.
+     */
+
+    cmdPtr->cmdEpoch++;
+
+    /*
      * The code here is tricky. We can't delete the hash table entry before
      * invoking the deletion callback because there are cases where the
      * deletion callback needs to invoke the command (e.g. object systems such
@@ -2563,13 +2570,6 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     }
 
     /*
-     * Bump the command epoch counter. This will invalidate all cached
-     * references that point to this command.
-     */
-
-    cmdPtr->cmdEpoch++;
-
-    /*
      * If this command was imported into other namespaces, then imported
      * commands were created that refer back to this command. Delete these
      * imported commands now.
@@ -2591,6 +2591,7 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
+	cmdPtr->hPtr = NULL;
     }
 
     /*
