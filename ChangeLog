@@ -1,3 +1,14 @@
+2005-11-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
+	* generic/tclObj.c (Tcl_GetCommandFromObj): bump the cmd epoch
+	early to insure that cached references to this command are
+	invalidated. Partial fix for [Bug 1352734] - at least insures that
+	namespace-51.13 does not cause a panic. The test is still marked
+	as knownbug, pending resolution of what is actually the correct
+	return value ([Bug 1354540])
+	
+	
 2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTimer.c: Changed [after] so that it behaves correctly
