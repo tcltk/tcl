@@ -1,4 +1,4 @@
-/* 
+/*
  * tclBasic.c --
  *
  *	Contains the basic facilities for TCL command interpretation,
@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.177 2005/11/11 22:20:24 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.178 2005/11/11 23:50:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -28,14 +28,14 @@
  */
 
 typedef struct OldMathFuncData {
-    Tcl_MathProc* proc;		/* Handler procedure */
+    Tcl_MathProc *proc;		/* Handler function */
     int numArgs;		/* Number of args expected */
-    Tcl_ValueType* argTypes;	/* Types of the args */
+    Tcl_ValueType *argTypes;	/* Types of the args */
     ClientData clientData;	/* Client data for the handler function */
 } OldMathFuncData;
 
 /*
- * Static procedures in this file:
+ * Static functions in this file:
  */
 
 static char *	CallCommandTraces (Interp *iPtr, Command *cmdPtr,
@@ -88,15 +88,15 @@ extern TclStubs tclStubs;
 
 typedef struct {
     char *name;			/* Name of object-based command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based procedure for command. */
-    CompileProc *compileProc;	/* Procedure called to compile command. */
+    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
+    CompileProc *compileProc;	/* Function called to compile command. */
     int isSafe;			/* If non-zero, command will be present in
 				 * safe interpreter. Otherwise it will be
 				 * hidden. */
 } CmdInfo;
 
 /*
- * The built-in commands, and the procedures that implement them:
+ * The built-in commands, and the functions that implement them:
  */
 
 static CmdInfo builtInCmds[] = {
@@ -105,61 +105,61 @@ static CmdInfo builtInCmds[] = {
      */
 
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	1},
-    {"array",		Tcl_ArrayObjCmd,	(CompileProc *) NULL,	1},
-    {"binary",		Tcl_BinaryObjCmd,	(CompileProc *) NULL,	1},
+    {"array",		Tcl_ArrayObjCmd,	NULL,			1},
+    {"binary",		Tcl_BinaryObjCmd,	NULL,			1},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	1},
-    {"case",		Tcl_CaseObjCmd,		(CompileProc *) NULL,	1},
+    {"case",		Tcl_CaseObjCmd,		NULL,			1},
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	1},
-    {"concat",		Tcl_ConcatObjCmd,	(CompileProc *) NULL,	1},
+    {"concat",		Tcl_ConcatObjCmd,	NULL,			1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	1},
     {"dict",		Tcl_DictObjCmd,		TclCompileDictCmd,	1},
-    {"encoding",	Tcl_EncodingObjCmd,	(CompileProc *) NULL,	0},
-    {"error",		Tcl_ErrorObjCmd,	(CompileProc *) NULL,	1},
-    {"eval",		Tcl_EvalObjCmd,		(CompileProc *) NULL,	1},
-    {"exit",		Tcl_ExitObjCmd,		(CompileProc *) NULL,	0},
+    {"encoding",	Tcl_EncodingObjCmd,	NULL,			0},
+    {"error",		Tcl_ErrorObjCmd,	NULL,			1},
+    {"eval",		Tcl_EvalObjCmd,		NULL,			1},
+    {"exit",		Tcl_ExitObjCmd,		NULL,			0},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	1},
-    {"fcopy",		Tcl_FcopyObjCmd,	(CompileProc *) NULL,	1},
-    {"fileevent",	Tcl_FileEventObjCmd,	(CompileProc *) NULL,	1},
+    {"fcopy",		Tcl_FcopyObjCmd,	NULL,			1},
+    {"fileevent",	Tcl_FileEventObjCmd,	NULL,			1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	1},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	1},
-    {"format",		Tcl_FormatObjCmd,	(CompileProc *) NULL,	1},
-    {"global",		Tcl_GlobalObjCmd,	(CompileProc *) NULL,	1},
+    {"format",		Tcl_FormatObjCmd,	NULL,			1},
+    {"global",		Tcl_GlobalObjCmd,	NULL,			1},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	1},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	1},
-    {"info",		Tcl_InfoObjCmd,		(CompileProc *) NULL,	1},
-    {"join",		Tcl_JoinObjCmd,		(CompileProc *) NULL,	1},
+    {"info",		Tcl_InfoObjCmd,		NULL,			1},
+    {"join",		Tcl_JoinObjCmd,		NULL,			1},
     {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	1},
     {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	1},
     {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	1},
-    {"linsert",		Tcl_LinsertObjCmd,	(CompileProc *) NULL,	1},
+    {"linsert",		Tcl_LinsertObjCmd,	NULL,			1},
     {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	1},
     {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	1},
-    {"load",		Tcl_LoadObjCmd,		(CompileProc *) NULL,	0},
-    {"lrange",		Tcl_LrangeObjCmd,	(CompileProc *) NULL,	1},
-    {"lrepeat",		Tcl_LrepeatObjCmd,	(CompileProc *) NULL,	1},
-    {"lreplace",	Tcl_LreplaceObjCmd,	(CompileProc *) NULL,	1},
-    {"lsearch",		Tcl_LsearchObjCmd,	(CompileProc *) NULL,	1},
+    {"load",		Tcl_LoadObjCmd,		NULL,			0},
+    {"lrange",		Tcl_LrangeObjCmd,	NULL,			1},
+    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			1},
+    {"lreplace",	Tcl_LreplaceObjCmd,	NULL,			1},
+    {"lsearch",		Tcl_LsearchObjCmd,	NULL,			1},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	1},
-    {"lsort",		Tcl_LsortObjCmd,	(CompileProc *) NULL,	1},
-    {"namespace",	Tcl_NamespaceObjCmd,	(CompileProc *) NULL,	1},
-    {"package",		Tcl_PackageObjCmd,	(CompileProc *) NULL,	1},
-    {"proc",		Tcl_ProcObjCmd,		(CompileProc *) NULL,	1},
+    {"lsort",		Tcl_LsortObjCmd,	NULL,			1},
+    {"namespace",	Tcl_NamespaceObjCmd,	NULL,			1},
+    {"package",		Tcl_PackageObjCmd,	NULL,			1},
+    {"proc",		Tcl_ProcObjCmd,		NULL,			1},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	1},
-    {"regsub",		Tcl_RegsubObjCmd,	(CompileProc *) NULL,	1},
-    {"rename",		Tcl_RenameObjCmd,	(CompileProc *) NULL,	1},
+    {"regsub",		Tcl_RegsubObjCmd,	NULL,			1},
+    {"rename",		Tcl_RenameObjCmd,	NULL,			1},
     {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	1},
-    {"scan",		Tcl_ScanObjCmd,		(CompileProc *) NULL,	1},
+    {"scan",		Tcl_ScanObjCmd,		NULL,			1},
     {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,	1},
-    {"split",		Tcl_SplitObjCmd,	(CompileProc *) NULL,	1},
+    {"split",		Tcl_SplitObjCmd,	NULL,			1},
     {"string",		Tcl_StringObjCmd,	TclCompileStringCmd,	1},
-    {"subst",		Tcl_SubstObjCmd,	(CompileProc *) NULL,	1},
+    {"subst",		Tcl_SubstObjCmd,	NULL,			1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	1},
-    {"trace",		Tcl_TraceObjCmd,	(CompileProc *) NULL,	1},
-    {"unload",		Tcl_UnloadObjCmd,	(CompileProc *) NULL,	1},
-    {"unset",		Tcl_UnsetObjCmd,	(CompileProc *) NULL,	1},
-    {"uplevel",		Tcl_UplevelObjCmd,	(CompileProc *) NULL,	1},
-    {"upvar",		Tcl_UpvarObjCmd,	(CompileProc *) NULL,	1},
-    {"variable",	Tcl_VariableObjCmd,	(CompileProc *) NULL,	1},
+    {"trace",		Tcl_TraceObjCmd,	NULL,			1},
+    {"unload",		Tcl_UnloadObjCmd,	NULL,			1},
+    {"unset",		Tcl_UnsetObjCmd,	NULL,			1},
+    {"uplevel",		Tcl_UplevelObjCmd,	NULL,			1},
+    {"upvar",		Tcl_UpvarObjCmd,	NULL,			1},
+    {"variable",	Tcl_VariableObjCmd,	NULL,			1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	1},
 
     /*
@@ -167,31 +167,31 @@ static CmdInfo builtInCmds[] = {
      */
 
 #ifndef TCL_GENERIC_ONLY
-    {"after",		Tcl_AfterObjCmd,	(CompileProc *) NULL,	1},
-    {"cd",		Tcl_CdObjCmd,		(CompileProc *) NULL,	0},
-    {"close",		Tcl_CloseObjCmd,	(CompileProc *) NULL,	1},
-    {"eof",		Tcl_EofObjCmd,		(CompileProc *) NULL,	1},
-    {"fblocked",	Tcl_FblockedObjCmd,	(CompileProc *) NULL,	1},
-    {"fconfigure",	Tcl_FconfigureObjCmd,	(CompileProc *) NULL,	0},
-    {"file",		Tcl_FileObjCmd,		(CompileProc *) NULL,	0},
-    {"flush",		Tcl_FlushObjCmd,	(CompileProc *) NULL,	1},
-    {"gets",		Tcl_GetsObjCmd,		(CompileProc *) NULL,	1},
-    {"glob",		Tcl_GlobObjCmd,		(CompileProc *) NULL,	0},
-    {"open",		Tcl_OpenObjCmd,		(CompileProc *) NULL,	0},
-    {"pid",		Tcl_PidObjCmd,		(CompileProc *) NULL,	1},
-    {"puts",		Tcl_PutsObjCmd,		(CompileProc *) NULL,	1},
-    {"pwd",		Tcl_PwdObjCmd,		(CompileProc *) NULL,	0},
-    {"read",		Tcl_ReadObjCmd,		(CompileProc *) NULL,	1},
-    {"seek",		Tcl_SeekObjCmd,		(CompileProc *) NULL,	1},
-    {"socket",		Tcl_SocketObjCmd,	(CompileProc *) NULL,	0},
-    {"tell",		Tcl_TellObjCmd,		(CompileProc *) NULL,	1},
-    {"time",		Tcl_TimeObjCmd,		(CompileProc *) NULL,	1},
-    {"update",		Tcl_UpdateObjCmd,	(CompileProc *) NULL,	1},
-    {"vwait",		Tcl_VwaitObjCmd,	(CompileProc *) NULL,	1},
-    {"exec",		Tcl_ExecObjCmd,		(CompileProc *) NULL,	0},
-    {"source",		Tcl_SourceObjCmd,	(CompileProc *) NULL,	0},
+    {"after",		Tcl_AfterObjCmd,	NULL,			1},
+    {"cd",		Tcl_CdObjCmd,		NULL,			0},
+    {"close",		Tcl_CloseObjCmd,	NULL,			1},
+    {"eof",		Tcl_EofObjCmd,		NULL,			1},
+    {"fblocked",	Tcl_FblockedObjCmd,	NULL,			1},
+    {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			0},
+    {"file",		Tcl_FileObjCmd,		NULL,			0},
+    {"flush",		Tcl_FlushObjCmd,	NULL,			1},
+    {"gets",		Tcl_GetsObjCmd,		NULL,			1},
+    {"glob",		Tcl_GlobObjCmd,		NULL,			0},
+    {"open",		Tcl_OpenObjCmd,		NULL,			0},
+    {"pid",		Tcl_PidObjCmd,		NULL,			1},
+    {"puts",		Tcl_PutsObjCmd,		NULL,			1},
+    {"pwd",		Tcl_PwdObjCmd,		NULL,			0},
+    {"read",		Tcl_ReadObjCmd,		NULL,			1},
+    {"seek",		Tcl_SeekObjCmd,		NULL,			1},
+    {"socket",		Tcl_SocketObjCmd,	NULL,			0},
+    {"tell",		Tcl_TellObjCmd,		NULL,			1},
+    {"time",		Tcl_TimeObjCmd,		NULL,			1},
+    {"update",		Tcl_UpdateObjCmd,	NULL,			1},
+    {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
+    {"exec",		Tcl_ExecObjCmd,		NULL,			0},
+    {"source",		Tcl_SourceObjCmd,	NULL,			0},
 #endif /* TCL_GENERIC_ONLY */
-    {NULL,	(Tcl_ObjCmdProc *) NULL,	(CompileProc *) NULL,	0}
+    {NULL,		NULL,			NULL,			0}
 };
 
 /*
@@ -200,8 +200,8 @@ static CmdInfo builtInCmds[] = {
 
 typedef struct {
     CONST char* name;		/* Name of the function */
-    Tcl_ObjCmdProc* objCmdProc;	/* Procedure that evaluates the function */
-    ClientData clientData;	/* Client data for the procedure */
+    Tcl_ObjCmdProc* objCmdProc;	/* Function that evaluates the function */
+    ClientData clientData;	/* Client data for the function */
 } BuiltinFuncDef;
 static BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::abs",	ExprAbsFunc,	NULL 			},
@@ -221,7 +221,7 @@ static BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
     { "::tcl::mathfunc::int",	ExprIntFunc,	NULL			},
     { "::tcl::mathfunc::log",	ExprUnaryFunc,	(ClientData) log 	},
-    { "::tcl::mathfunc::log10",	ExprUnaryFunc,  (ClientData) log10 	},
+    { "::tcl::mathfunc::log10",	ExprUnaryFunc,	(ClientData) log10 	},
     { "::tcl::mathfunc::pow",	ExprBinaryFunc,	(ClientData) pow 	},
     { "::tcl::mathfunc::rand",	ExprRandFunc,	NULL			},
     { "::tcl::mathfunc::round",	ExprRoundFunc,	NULL			},
@@ -234,7 +234,6 @@ static BuiltinFuncDef BuiltinFuncTable[] = {
     { "::tcl::mathfunc::wide",	ExprWideFunc,	NULL		 	},
     { NULL, NULL, NULL }
 };
-
 
 /*
  *----------------------------------------------------------------------
@@ -245,7 +244,7 @@ static BuiltinFuncDef BuiltinFuncTable[] = {
  *
  * Results:
  *	The return value is a token for the interpreter, which may be used in
- *	calls to procedures like Tcl_CreateCmd, Tcl_Eval, or Tcl_DeleteInterp.
+ *	calls to functions like Tcl_CreateCmd, Tcl_Eval, or Tcl_DeleteInterp.
  *
  * Side effects:
  *	The command interpreter is initialized with the built-in commands and
@@ -255,7 +254,7 @@ static BuiltinFuncDef BuiltinFuncTable[] = {
  */
 
 Tcl_Interp *
-Tcl_CreateInterp()
+Tcl_CreateInterp(void)
 {
     Interp *iPtr;
     Tcl_Interp *interp;
@@ -293,15 +292,15 @@ Tcl_CreateInterp()
     iPtr = (Interp *) ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
-    iPtr->result		= iPtr->resultSpace;
-    iPtr->freeProc		= NULL;
-    iPtr->errorLine		= 0;
-    iPtr->objResultPtr		= Tcl_NewObj();
+    iPtr->result = iPtr->resultSpace;
+    iPtr->freeProc = NULL;
+    iPtr->errorLine = 0;
+    iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
-    iPtr->handle		= TclHandleCreate(iPtr);
-    iPtr->globalNsPtr		= NULL;
-    iPtr->hiddenCmdTablePtr	= NULL;
-    iPtr->interpInfo		= NULL;
+    iPtr->handle = TclHandleCreate(iPtr);
+    iPtr->globalNsPtr = NULL;
+    iPtr->hiddenCmdTablePtr = NULL;
+    iPtr->interpInfo = NULL;
 
     iPtr->numLevels = 0;
     iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
@@ -337,7 +336,7 @@ Tcl_CreateInterp()
     iPtr->tracesForbiddingInline = 0;
     iPtr->activeCmdTracePtr = NULL;
     iPtr->activeInterpTracePtr = NULL;
-    iPtr->assocData = (Tcl_HashTable *) NULL;
+    iPtr->assocData = NULL;
     iPtr->execEnvPtr = NULL;		/* set after namespaces initialized */
     iPtr->emptyObjPtr = Tcl_NewObj();	/* another empty object */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
@@ -345,7 +344,7 @@ Tcl_CreateInterp()
 
     iPtr->globalNsPtr = NULL;		/* force creation of global ns below */
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
-	    (ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL);
+	    (ClientData) NULL, NULL);
     if (iPtr->globalNsPtr == NULL) {
 	Tcl_Panic("Tcl_CreateInterp: can't create global namespace");
     }
@@ -363,7 +362,7 @@ Tcl_CreateInterp()
      * TIP #219, Tcl Channel Reflection API support.
      */
 
-    iPtr->chanMsg  = NULL;
+    iPtr->chanMsg = NULL;
 
     /*
      * Initialize the compilation and execution statistics kept for this
@@ -375,29 +374,29 @@ Tcl_CreateInterp()
     statsPtr->numExecutions = 0;
     statsPtr->numCompilations = 0;
     statsPtr->numByteCodesFreed = 0;
-    (VOID *) memset(statsPtr->instructionCount, 0,
+    (void) memset(statsPtr->instructionCount, 0,
 	    sizeof(statsPtr->instructionCount));
 
     statsPtr->totalSrcBytes = 0.0;
     statsPtr->totalByteCodeBytes = 0.0;
     statsPtr->currentSrcBytes = 0.0;
     statsPtr->currentByteCodeBytes = 0.0;
-    (VOID *) memset(statsPtr->srcCount, 0, sizeof(statsPtr->srcCount));
-    (VOID *) memset(statsPtr->byteCodeCount, 0,
+    (void) memset(statsPtr->srcCount, 0, sizeof(statsPtr->srcCount));
+    (void) memset(statsPtr->byteCodeCount, 0,
 	    sizeof(statsPtr->byteCodeCount));
-    (VOID *) memset(statsPtr->lifetimeCount, 0,
+    (void) memset(statsPtr->lifetimeCount, 0,
 	    sizeof(statsPtr->lifetimeCount));
 
-    statsPtr->currentInstBytes   = 0.0;
-    statsPtr->currentLitBytes    = 0.0;
+    statsPtr->currentInstBytes = 0.0;
+    statsPtr->currentLitBytes = 0.0;
     statsPtr->currentExceptBytes = 0.0;
-    statsPtr->currentAuxBytes    = 0.0;
+    statsPtr->currentAuxBytes = 0.0;
     statsPtr->currentCmdMapBytes = 0.0;
 
-    statsPtr->numLiteralsCreated    = 0;
-    statsPtr->totalLitStringBytes   = 0.0;
+    statsPtr->numLiteralsCreated = 0;
+    statsPtr->totalLitStringBytes = 0.0;
     statsPtr->currentLitStringBytes = 0.0;
-    (VOID *) memset(statsPtr->literalCount, 0, sizeof(statsPtr->literalCount));
+    (void) memset(statsPtr->literalCount, 0, sizeof(statsPtr->literalCount));
 #endif /* TCL_COMPILE_STATS */
 
     /*
@@ -425,8 +424,8 @@ Tcl_CreateInterp()
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
      * pre-existing command by the same name). If a command has a Tcl_CmdProc
      * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
-     * TclInvokeStringCommand. This is an object-based wrapper procedure that
-     * extracts strings, calls the string procedure, and creates an object for
+     * TclInvokeStringCommand. This is an object-based wrapper function that
+     * extracts strings, calls the string function, and creates an object for
      * the result. Similarly, if a command has a Tcl_ObjCmdProc but no
      * Tcl_CmdProc, set the Tcl_CmdProc to TclInvokeObjectCommand.
      */
@@ -435,8 +434,8 @@ Tcl_CreateInterp()
 	int new;
 	Tcl_HashEntry *hPtr;
 
-	if ((cmdInfoPtr->objProc == (Tcl_ObjCmdProc *) NULL)
-		&& (cmdInfoPtr->compileProc == (CompileProc *) NULL)) {
+	if ((cmdInfoPtr->objProc == NULL)
+		&& (cmdInfoPtr->compileProc == NULL)) {
 	    Tcl_Panic("Tcl_CreateInterp: builtin command with NULL object command proc and a NULL compile proc\n");
 	}
 
@@ -468,44 +467,34 @@ Tcl_CreateInterp()
      */
 
     Tcl_CreateObjCommand(interp,	"::tcl::clock::clicks",
-	    TclClockClicksObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockClicksObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::getenv",
-	    TclClockGetenvObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockGetenvObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::microseconds",
-	    TclClockMicrosecondsObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockMicrosecondsObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::milliseconds",
-	    TclClockMillisecondsObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockMillisecondsObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::seconds",
-	    TclClockSecondsObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockSecondsObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::Localtime",
-	    TclClockLocaltimeObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockLocaltimeObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::Mktime",
-	    TclClockMktimeObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockMktimeObjCmd,	(ClientData) NULL, NULL);
     Tcl_CreateObjCommand(interp,	"::tcl::clock::Oldscan",
-	    TclClockOldscanObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclClockOldscanObjCmd,	(ClientData) NULL, NULL);
     /* TIP #208 */
     Tcl_CreateObjCommand(interp, "::tcl::chan::Truncate",
-	    TclChanTruncateObjCmd, (ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclChanTruncateObjCmd, (ClientData) NULL, NULL);
     /* TIP #219 */
     Tcl_CreateObjCommand(interp, "::tcl::chan::rCreate",
-	    TclChanCreateObjCmd, (ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclChanCreateObjCmd, (ClientData) NULL, NULL);
 
     Tcl_CreateObjCommand(interp, "::tcl::chan::rPostevent",
-	    TclChanPostEventObjCmd, (ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclChanPostEventObjCmd, (ClientData) NULL, NULL);
 
     /*
-     * Register the built-in functions
+     * Register the built-in functions. This is empty now that they are
+     * implemented as commands in the ::tcl::mathfunc namespace.
      */
 
 
@@ -514,8 +503,7 @@ Tcl_CreateInterp()
      */
 
     Tcl_CreateObjCommand(interp,	"::tcl::Bgerror",
-	    TclDefaultBgErrorHandlerObjCmd,	(ClientData) NULL,
-	    (Tcl_CmdDeleteProc*) NULL);
+	    TclDefaultBgErrorHandlerObjCmd,	(ClientData) NULL, NULL);
 
     /*
      * Register the unsupported encoding search path command.
@@ -529,7 +517,7 @@ Tcl_CreateInterp()
      */
 
     mathfuncNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc",
-	    (ClientData) NULL, (Tcl_NamespaceDeleteProc*) NULL);
+	    (ClientData) NULL, NULL);
     if (mathfuncNSPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
@@ -541,8 +529,7 @@ Tcl_CreateInterp()
 	    break;
 	}
 	Tcl_CreateObjCommand(interp, builtinFuncPtr->name,
-		builtinFuncPtr->objCmdProc, builtinFuncPtr->clientData,
-		(Tcl_CmdDeleteProc*) NULL);
+		builtinFuncPtr->objCmdProc, builtinFuncPtr->clientData, NULL);
 	tail = builtinFuncPtr->name + strlen("::tcl::mathfunc::");
 	Tcl_Export(interp, mathfuncNSPtr, tail, 0);
     }
@@ -582,7 +569,7 @@ Tcl_CreateInterp()
 
     Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
-    Tcl_TraceVar2(interp, "tcl_precision", (char *) NULL,
+    Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, (ClientData) NULL);
     TclpSetVariables(interp);
@@ -594,7 +581,6 @@ Tcl_CreateInterp()
      * turned on. Using "info exists tcl_platform(threaded)" a Tcl script can
      * introspect on the interpreter level of thread safety.
      */
-
 
     Tcl_SetVar2(interp, "tcl_platform", "threaded", "1", TCL_GLOBAL_ONLY);
 #endif
@@ -630,12 +616,12 @@ Tcl_CreateInterp()
  */
 
 int
-TclHideUnsafeCommands(interp)
-    Tcl_Interp *interp;		/* Hide commands in this interpreter. */
+TclHideUnsafeCommands(
+    Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
     register const CmdInfo *cmdInfoPtr;
 
-    if (interp == (Tcl_Interp *) NULL) {
+    if (interp == NULL) {
 	return TCL_ERROR;
     }
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
@@ -651,11 +637,11 @@ TclHideUnsafeCommands(interp)
  *
  * Tcl_CallWhenDeleted --
  *
- *	Arrange for a procedure to be called before a given interpreter is
- *	deleted. The procedure is called as soon as Tcl_DeleteInterp is
- *	called; if Tcl_CallWhenDeleted is called on an interpreter that has
- *	already been deleted, the procedure will be called when the last
- *	Tcl_Release is done on the interpreter.
+ *	Arrange for a function to be called before a given interpreter is
+ *	deleted. The function is called as soon as Tcl_DeleteInterp is called;
+ *	if Tcl_CallWhenDeleted is called on an interpreter that has already
+ *	been deleted, the function will be called when the last Tcl_Release is
+ *	done on the interpreter.
  *
  * Results:
  *	None.
@@ -668,11 +654,11 @@ TclHideUnsafeCommands(interp)
  */
 
 void
-Tcl_CallWhenDeleted(interp, proc, clientData)
-    Tcl_Interp *interp;		/* Interpreter to watch. */
-    Tcl_InterpDeleteProc *proc;	/* Procedure to call when interpreter is about
+Tcl_CallWhenDeleted(
+    Tcl_Interp *interp,		/* Interpreter to watch. */
+    Tcl_InterpDeleteProc *proc,	/* Function to call when interpreter is about
 				 * to be deleted. */
-    ClientData clientData;	/* One-word value to pass to proc. */
+    ClientData clientData)	/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
@@ -686,7 +672,7 @@ Tcl_CallWhenDeleted(interp, proc, clientData)
     sprintf(buffer, "Assoc Data Key #%d", *assocDataCounterPtr);
     (*assocDataCounterPtr)++;
 
-    if (iPtr->assocData == (Tcl_HashTable *) NULL) {
+    if (iPtr->assocData == NULL) {
 	iPtr->assocData = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(iPtr->assocData, TCL_STRING_KEYS);
     }
@@ -701,7 +687,7 @@ Tcl_CallWhenDeleted(interp, proc, clientData)
  *
  * Tcl_DontCallWhenDeleted --
  *
- *	Cancel the arrangement for a procedure to be called when a given
+ *	Cancel the arrangement for a function to be called when a given
  *	interpreter is deleted.
  *
  * Results:
@@ -716,11 +702,11 @@ Tcl_CallWhenDeleted(interp, proc, clientData)
  */
 
 void
-Tcl_DontCallWhenDeleted(interp, proc, clientData)
-    Tcl_Interp *interp;		/* Interpreter to watch. */
-    Tcl_InterpDeleteProc *proc;	/* Procedure to call when interpreter is about
+Tcl_DontCallWhenDeleted(
+    Tcl_Interp *interp,		/* Interpreter to watch. */
+    Tcl_InterpDeleteProc *proc,	/* Function to call when interpreter is about
 				 * to be deleted. */
-    ClientData clientData;	/* One-word value to pass to proc. */
+    ClientData clientData)	/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTablePtr;
@@ -729,7 +715,7 @@ Tcl_DontCallWhenDeleted(interp, proc, clientData)
     AssocData *dPtr;
 
     hTablePtr = iPtr->assocData;
-    if (hTablePtr == (Tcl_HashTable *) NULL) {
+    if (hTablePtr == NULL) {
 	return;
     }
     for (hPtr = Tcl_FirstHashEntry(hTablePtr, &hSearch); hPtr != NULL;
@@ -763,19 +749,19 @@ Tcl_DontCallWhenDeleted(interp, proc, clientData)
  */
 
 void
-Tcl_SetAssocData(interp, name, proc, clientData)
-    Tcl_Interp *interp;		/* Interpreter to associate with. */
-    CONST char *name;		/* Name for association. */
-    Tcl_InterpDeleteProc *proc;	/* Proc to call when interpreter is about to
+Tcl_SetAssocData(
+    Tcl_Interp *interp,		/* Interpreter to associate with. */
+    CONST char *name,		/* Name for association. */
+    Tcl_InterpDeleteProc *proc,	/* Proc to call when interpreter is about to
 				 * be deleted. */
-    ClientData clientData;	/* One-word value to pass to proc. */
+    ClientData clientData)	/* One-word value to pass to proc. */
 {
     Interp *iPtr = (Interp *) interp;
     AssocData *dPtr;
     Tcl_HashEntry *hPtr;
     int new;
 
-    if (iPtr->assocData == (Tcl_HashTable *) NULL) {
+    if (iPtr->assocData == NULL) {
 	iPtr->assocData = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(iPtr->assocData, TCL_STRING_KEYS);
     }
@@ -809,19 +795,19 @@ Tcl_SetAssocData(interp, name, proc, clientData)
  */
 
 void
-Tcl_DeleteAssocData(interp, name)
-    Tcl_Interp *interp;		/* Interpreter to associate with. */
-    CONST char *name;		/* Name of association. */
+Tcl_DeleteAssocData(
+    Tcl_Interp *interp,		/* Interpreter to associate with. */
+    CONST char *name)		/* Name of association. */
 {
     Interp *iPtr = (Interp *) interp;
     AssocData *dPtr;
     Tcl_HashEntry *hPtr;
 
-    if (iPtr->assocData == (Tcl_HashTable *) NULL) {
+    if (iPtr->assocData == NULL) {
 	return;
     }
     hPtr = Tcl_FindHashEntry(iPtr->assocData, name);
-    if (hPtr == (Tcl_HashEntry *) NULL) {
+    if (hPtr == NULL) {
 	return;
     }
     dPtr = (AssocData *) Tcl_GetHashValue(hPtr);
@@ -851,10 +837,10 @@ Tcl_DeleteAssocData(interp, name)
  */
 
 ClientData
-Tcl_GetAssocData(interp, name, procPtr)
-    Tcl_Interp *interp;		/* Interpreter associated with. */
-    CONST char *name;		/* Name of association. */
-    Tcl_InterpDeleteProc **procPtr;
+Tcl_GetAssocData(
+    Tcl_Interp *interp,		/* Interpreter associated with. */
+    CONST char *name,		/* Name of association. */
+    Tcl_InterpDeleteProc **procPtr)
 				/* Pointer to place to store address of
 				 * current deletion callback. */
 {
@@ -862,15 +848,15 @@ Tcl_GetAssocData(interp, name, procPtr)
     AssocData *dPtr;
     Tcl_HashEntry *hPtr;
 
-    if (iPtr->assocData == (Tcl_HashTable *) NULL) {
+    if (iPtr->assocData == NULL) {
 	return (ClientData) NULL;
     }
     hPtr = Tcl_FindHashEntry(iPtr->assocData, name);
-    if (hPtr == (Tcl_HashEntry *) NULL) {
+    if (hPtr == NULL) {
 	return (ClientData) NULL;
     }
     dPtr = (AssocData *) Tcl_GetHashValue(hPtr);
-    if (procPtr != (Tcl_InterpDeleteProc **) NULL) {
+    if (procPtr != NULL) {
 	*procPtr = dPtr->proc;
     }
     return dPtr->clientData;
@@ -894,8 +880,8 @@ Tcl_GetAssocData(interp, name, procPtr)
  */
 
 int
-Tcl_InterpDeleted(interp)
-    Tcl_Interp *interp;
+Tcl_InterpDeleted(
+    Tcl_Interp *interp)
 {
     return (((Interp *) interp)->flags & DELETED) ? 1 : 0;
 }
@@ -909,7 +895,7 @@ Tcl_InterpDeleted(interp)
  *	no Tcl_Preserve calls in effect for this interpreter, it is deleted
  *	immediately, otherwise the interpreter is deleted when the last
  *	Tcl_Preserve is matched by a call to Tcl_Release. In either case, the
- *	procedure runs the currently registered deletion callbacks.
+ *	function runs the currently registered deletion callbacks.
  *
  * Results:
  *	None.
@@ -924,8 +910,8 @@ Tcl_InterpDeleted(interp)
  */
 
 void
-Tcl_DeleteInterp(interp)
-    Tcl_Interp *interp;		/* Token for command interpreter (returned by
+Tcl_DeleteInterp(
+    Tcl_Interp *interp)		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
 {
     Interp *iPtr = (Interp *) interp;
@@ -967,9 +953,9 @@ Tcl_DeleteInterp(interp)
  *
  * DeleteInterpProc --
  *
- *	Helper procedure to delete an interpreter. This procedure is called
- *	when the last call to Tcl_Preserve on this interpreter is matched by a
- *	call to Tcl_Release. The procedure cleans up all resources used in the
+ *	Helper function to delete an interpreter. This function is called when
+ *	the last call to Tcl_Preserve on this interpreter is matched by a call
+ *	to Tcl_Release. The function cleans up all resources used in the
  *	interpreter and calls all currently registered interpreter deletion
  *	callbacks.
  *
@@ -984,8 +970,8 @@ Tcl_DeleteInterp(interp)
  */
 
 static void
-DeleteInterpProc(interp)
-    Tcl_Interp *interp;		/* Interpreter to delete. */
+DeleteInterpProc(
+    Tcl_Interp *interp)		/* Interpreter to delete. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
@@ -1058,11 +1044,11 @@ DeleteInterpProc(interp)
      * callbacks, so we iterate.
      */
 
-    while (iPtr->assocData != (Tcl_HashTable *) NULL) {
+    while (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
 	hTablePtr = iPtr->assocData;
-	iPtr->assocData = (Tcl_HashTable *) NULL;
+	iPtr->assocData = NULL;
 	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
@@ -1156,10 +1142,10 @@ DeleteInterpProc(interp)
  */
 
 int
-Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
-    Tcl_Interp *interp;		/* Interpreter in which to hide command. */
-    CONST char *cmdName;	/* Name of command to hide. */
-    CONST char *hiddenCmdToken;	/* Token name of the to-be-hidden command. */
+Tcl_HideCommand(
+    Tcl_Interp *interp,		/* Interpreter in which to hide command. */
+    CONST char *cmdName,	/* Name of command to hide. */
+    CONST char *hiddenCmdToken)	/* Token name of the to-be-hidden command. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Command cmd;
@@ -1169,7 +1155,6 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     int new;
 
     if (iPtr->flags & DELETED) {
-
 	/*
 	 * The interpreter is being deleted. Do not create any new structures,
 	 * because it is not safe to modify the interpreter.
@@ -1187,8 +1172,8 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
      * We don't need to check for "::" in cmdName because the real check is on
      * the nsPtr below.
      *
-     * hiddenCmdToken is just a string which is not interpreted in any way.
-     * It may contain :: but the string is not interpreted as a namespace
+     * hiddenCmdToken is just a string which is not interpreted in any way. It
+     * may contain :: but the string is not interpreted as a namespace
      * qualifier command name. Thus, hiding foo::bar to foo::bar and then
      * trying to expose or invoke ::foo::bar will NOT work; but if the
      * application always uses the same strings it will get consistent
@@ -1202,7 +1187,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     if (strstr(hiddenCmdToken, "::") != NULL) {
 	Tcl_AppendResult(interp,
 		"cannot use namespace qualifiers in hidden command",
-		" token (rename)", (char *) NULL);
+		" token (rename)", NULL);
 	return TCL_ERROR;
     }
 
@@ -1212,7 +1197,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
      * the command must be given if using namespaces.
      */
 
-    cmd = Tcl_FindCommand(interp, cmdName, (Tcl_Namespace *) NULL,
+    cmd = Tcl_FindCommand(interp, cmdName, NULL,
 	    /*flags*/ TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
     if (cmd == (Tcl_Command) NULL) {
 	return TCL_ERROR;
@@ -1225,7 +1210,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
 	Tcl_AppendResult(interp, "can only hide global namespace commands",
-		" (use rename then hide)", (char *) NULL);
+		" (use rename then hide)", NULL);
 	return TCL_ERROR;
     }
 
@@ -1250,14 +1235,14 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     hPtr = Tcl_CreateHashEntry(hiddenCmdTablePtr, hiddenCmdToken, &new);
     if (!new) {
 	Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
-		"\" already exists", (char *) NULL);
+		"\" already exists", NULL);
 	return TCL_ERROR;
     }
 
     /*
-     * Nb : This code is currently 'like' a rename to a specialy set apart
-     * name table. Changes here and in TclRenameCommand must be kept in synch
-     * untill the common parts are actually factorized out.
+     * NB: This code is currently 'like' a rename to a specialy set apart name
+     * table. Changes here and in TclRenameCommand must be kept in synch until
+     * the common parts are actually factorized out.
      */
 
     /*
@@ -1268,7 +1253,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
 
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
-	cmdPtr->hPtr = (Tcl_HashEntry *) NULL;
+	cmdPtr->hPtr = NULL;
 	cmdPtr->cmdEpoch++;
     }
 
@@ -1289,7 +1274,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     Tcl_SetHashValue(hPtr, (ClientData) cmdPtr);
 
     /*
-     * If the command being hidden has a compile procedure, increment the
+     * If the command being hidden has a compile function, increment the
      * interpreter's compileEpoch to invalidate its compiled code. This makes
      * sure that we don't later try to execute old code compiled with
      * command-specific (i.e., inline) bytecodes for the now-hidden command.
@@ -1322,11 +1307,11 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
  */
 
 int
-Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
-    Tcl_Interp *interp;		/* Interpreter in which to make command
+Tcl_ExposeCommand(
+    Tcl_Interp *interp,		/* Interpreter in which to make command
 				 * callable. */
-    CONST char *hiddenCmdToken;	/* Name of hidden command. */
-    CONST char *cmdName;	/* Name of to-be-exposed command. */
+    CONST char *hiddenCmdToken,	/* Name of hidden command. */
+    CONST char *cmdName)	/* Name of to-be-exposed command. */
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr;
@@ -1352,7 +1337,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 
     if (strstr(cmdName, "::") != NULL) {
 	Tcl_AppendResult(interp, "can not expose to a namespace ",
-		"(use expose to toplevel, then rename)", (char *) NULL);
+		"(use expose to toplevel, then rename)", NULL);
 	return TCL_ERROR;
     }
 
@@ -1365,9 +1350,9 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
     if (hiddenCmdTablePtr != NULL) {
 	hPtr = Tcl_FindHashEntry(hiddenCmdTablePtr, hiddenCmdToken);
     }
-    if (hPtr == (Tcl_HashEntry *) NULL) {
+    if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown hidden command \"", hiddenCmdToken,
-		"\"", (char *) NULL);
+		"\"", NULL);
 	return TCL_ERROR;
     }
     cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
@@ -1386,11 +1371,14 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 
 	Tcl_AppendResult(interp,
 		"trying to expose a non global command name space command",
-		(char *) NULL);
+		NULL);
 	return TCL_ERROR;
     }
 
-    /* This is the global table */
+    /*
+     * This is the global table.
+     */
+
     nsPtr = cmdPtr->nsPtr;
 
     /*
@@ -1401,7 +1389,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
     hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &new);
     if (!new) {
 	Tcl_AppendResult(interp, "exposed command \"", cmdName,
-		"\" already exists", (char *) NULL);
+		"\" already exists", NULL);
 	return TCL_ERROR;
     }
 
@@ -1441,7 +1429,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
      */
 
     /*
-     * If the command being exposed has a compile procedure, increment
+     * If the command being exposed has a compile function, increment
      * interpreter's compileEpoch to invalidate its compiled code. This makes
      * sure that we don't later try to execute old code compiled assuming the
      * command is hidden. This field is checked in Tcl_EvalObj and
@@ -1472,24 +1460,24 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
  *	the command is created with a wrapper Tcl_ObjCmdProc
  *	(TclInvokeStringCommand) that eventially calls proc. When the command
- *	is deleted from the table, deleteProc will be called.  See the manual
+ *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Command
-Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
-    Tcl_Interp *interp;		/* Token for command interpreter returned by a
+Tcl_CreateCommand(
+    Tcl_Interp *interp,		/* Token for command interpreter returned by a
 				 * previous call to Tcl_CreateInterp. */
-    CONST char *cmdName;	/* Name of command. If it contains namespace
+    CONST char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
-    Tcl_CmdProc *proc;		/* Procedure to associate with cmdName. */
-    ClientData clientData;	/* Arbitrary value passed to string proc. */
-    Tcl_CmdDeleteProc *deleteProc;
-				/* If not NULL, gives a procedure to call when
+    Tcl_CmdProc *proc,		/* Function to associate with cmdName. */
+    ClientData clientData,	/* Arbitrary value passed to string proc. */
+    Tcl_CmdDeleteProc *deleteProc)
+				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1517,7 +1505,7 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
      */
 
     if (strstr(cmdName, "::") != NULL) {
-	TclGetNamespaceForQualName(interp, cmdName, (Namespace *) NULL,
+	TclGetNamespaceForQualName(interp, cmdName, NULL,
 		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
 	if ((nsPtr == NULL) || (tail == NULL)) {
 	    return (Tcl_Command) NULL;
@@ -1567,7 +1555,7 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->nsPtr = nsPtr;
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
-    cmdPtr->compileProc = (CompileProc *) NULL;
+    cmdPtr->compileProc = NULL;
     cmdPtr->objProc = TclInvokeStringCommand;
     cmdPtr->objClientData = (ClientData) cmdPtr;
     cmdPtr->proc = proc;
@@ -1633,19 +1621,19 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
  */
 
 Tcl_Command
-Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
-    Tcl_Interp *interp;		/* Token for command interpreter (returned by
+Tcl_CreateObjCommand(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
-    CONST char *cmdName;	/* Name of command. If it contains namespace
+    CONST char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
-    Tcl_ObjCmdProc *proc;	/* Object-based procedure to associate with
+    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
-    ClientData clientData;	/* Arbitrary value to pass to object
-    				 * procedure. */
-    Tcl_CmdDeleteProc *deleteProc;
-				/* If not NULL, gives a procedure to call when
+    ClientData clientData,	/* Arbitrary value to pass to object
+    				 * function. */
+    Tcl_CmdDeleteProc *deleteProc)
+				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1673,7 +1661,7 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
      */
 
     if (strstr(cmdName, "::") != NULL) {
-	TclGetNamespaceForQualName(interp, cmdName, (Namespace *) NULL,
+	TclGetNamespaceForQualName(interp, cmdName, NULL,
 		TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
 	if ((nsPtr == NULL) || (tail == NULL)) {
 	    return (Tcl_Command) NULL;
@@ -1739,7 +1727,7 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->nsPtr = nsPtr;
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
-    cmdPtr->compileProc = (CompileProc *) NULL;
+    cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
     cmdPtr->objClientData = clientData;
     cmdPtr->proc = TclInvokeObjectCommand;
@@ -1782,8 +1770,8 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
  * TclInvokeStringCommand --
  *
  *	"Wrapper" Tcl_ObjCmdProc used to call an existing string-based
- *	Tcl_CmdProc if no object-based procedure exists for a command. A
- *	pointer to this procedure is stored as the Tcl_ObjCmdProc in a Command
+ *	Tcl_CmdProc if no object-based function exists for a command. A
+ *	pointer to this function is stored as the Tcl_ObjCmdProc in a Command
  *	structure. It simply turns around and calls the string Tcl_CmdProc in
  *	the Command structure.
  *
@@ -1798,18 +1786,18 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
  */
 
 int
-TclInvokeStringCommand(clientData, interp, objc, objv)
-    ClientData clientData;	/* Points to command's Command structure. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    register int objc;		/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+TclInvokeStringCommand(
+    ClientData clientData,	/* Points to command's Command structure. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    register int objc,		/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     register Command *cmdPtr = (Command *) clientData;
     register int i;
     int result;
 
     /*
-     * This procedure generates an argv array for the string arguments. It
+     * This function generates an argv array for the string arguments. It
      * starts out with stack-allocated space but uses dynamically-allocated
      * storage if needed.
      */
@@ -1855,8 +1843,8 @@ TclInvokeStringCommand(clientData, interp, objc, objv)
  * TclInvokeObjectCommand --
  *
  *	"Wrapper" Tcl_CmdProc used to call an existing object-based
- *	Tcl_ObjCmdProc if no string-based procedure exists for a command. A
- *	pointer to this procedure is stored as the Tcl_CmdProc in a Command
+ *	Tcl_ObjCmdProc if no string-based function exists for a command. A
+ *	pointer to this function is stored as the Tcl_CmdProc in a Command
  *	structure. It simply turns around and calls the object Tcl_ObjCmdProc
  *	in the Command structure.
  *
@@ -1871,11 +1859,11 @@ TclInvokeStringCommand(clientData, interp, objc, objv)
  */
 
 int
-TclInvokeObjectCommand(clientData, interp, argc, argv)
-    ClientData clientData;	/* Points to command's Command structure. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int argc;			/* Number of arguments. */
-    register CONST char **argv;	/* Argument strings. */
+TclInvokeObjectCommand(
+    ClientData clientData,	/* Points to command's Command structure. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int argc,			/* Number of arguments. */
+    register CONST char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = (Command *) clientData;
     register Tcl_Obj *objPtr;
@@ -1883,7 +1871,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
     int length, result;
 
     /*
-     * This procedure generates an objv array for object arguments that hold
+     * This function generates an objv array for object arguments that hold
      * the argv strings. It starts out with stack-allocated space but uses
      * dynamically-allocated storage if needed.
      */
@@ -1962,10 +1950,10 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
  */
 
 int
-TclRenameCommand(interp, oldName, newName)
-    Tcl_Interp *interp;			/* Current interpreter. */
-    char *oldName;			/* Existing command name. */
-    char *newName;			/* New command name. */
+TclRenameCommand(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    char *oldName,		/* Existing command name. */
+    char *newName)		/* New command name. */
 {
     Interp *iPtr = (Interp *) interp;
     CONST char *newTail;
@@ -1982,13 +1970,13 @@ TclRenameCommand(interp, oldName, newName)
      * found.
      */
 
-    cmd = Tcl_FindCommand(interp, oldName, (Tcl_Namespace *) NULL,
+    cmd = Tcl_FindCommand(interp, oldName, NULL,
 	    /*flags*/ 0);
     cmdPtr = (Command *) cmd;
     if (cmdPtr == NULL) {
 	Tcl_AppendResult(interp, "can't ",
 		((newName == NULL)||(*newName == '\0'))? "delete":"rename",
-		" \"", oldName, "\": command doesn't exist", (char *) NULL);
+		" \"", oldName, "\": command doesn't exist", NULL);
 	return TCL_ERROR;
     }
     cmdNsPtr = cmdPtr->nsPtr;
@@ -2013,18 +2001,18 @@ TclRenameCommand(interp, oldName, newName)
      * create the containing namespaces just like Tcl_CreateCommand would.
      */
 
-    TclGetNamespaceForQualName(interp, newName, (Namespace *) NULL,
+    TclGetNamespaceForQualName(interp, newName, NULL,
 	    TCL_CREATE_NS_IF_UNKNOWN, &newNsPtr, &dummy1, &dummy2, &newTail);
 
     if ((newNsPtr == NULL) || (newTail == NULL)) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
-		"\": bad command name", (char *) NULL);
+		"\": bad command name", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_AppendResult(interp, "can't rename to \"", newName,
-		 "\": command already exists", (char *) NULL);
+		 "\": command already exists", NULL);
 	result = TCL_ERROR;
 	goto done;
     }
@@ -2077,9 +2065,9 @@ TclRenameCommand(interp, oldName, newName)
      * is freed only towards the end of this function by calling
      * TclCleanupCommand.
      *
-     * The trace procedure needs to get a fully qualified name for old and new
+     * The trace function needs to get a fully qualified name for old and new
      * commands [Tcl bug #651271], or else there's no way for the trace
-     * procedure to get the namespace from which the old command is being
+     * function to get the namespace from which the old command is being
      * renamed!
      */
 
@@ -2104,7 +2092,7 @@ TclRenameCommand(interp, oldName, newName)
     cmdPtr->cmdEpoch++;
 
     /*
-     * If the command being renamed has a compile procedure, increment the
+     * If the command being renamed has a compile function, increment the
      * interpreter's compileEpoch to invalidate its compiled code. This makes
      * sure that we don't later try to execute old code compiled for the
      * now-renamed command.
@@ -2133,7 +2121,7 @@ TclRenameCommand(interp, oldName, newName)
  * Tcl_SetCommandInfo --
  *
  *	Modifies various information about a Tcl command. Note that this
- *	procedure will not change a command's namespace; use TclRenameCommand
+ *	function will not change a command's namespace; use TclRenameCommand
  *	to do that. Also, the isNativeObjectProc member of *infoPtr is
  *	ignored.
  *
@@ -2149,20 +2137,17 @@ TclRenameCommand(interp, oldName, newName)
  */
 
 int
-Tcl_SetCommandInfo(interp, cmdName, infoPtr)
-    Tcl_Interp *interp;		/* Interpreter in which to look for
+Tcl_SetCommandInfo(
+    Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
-    CONST char *cmdName;	/* Name of desired command. */
-    CONST Tcl_CmdInfo *infoPtr;	/* Where to find information to store in the
+    CONST char *cmdName,	/* Name of desired command. */
+    CONST Tcl_CmdInfo *infoPtr)	/* Where to find information to store in the
 				 * command. */
 {
     Tcl_Command cmd;
 
-    cmd = Tcl_FindCommand(interp, cmdName, (Tcl_Namespace *) NULL,
-	    /*flags*/ 0);
-
+    cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
     return Tcl_SetCommandInfoFromToken(cmd, infoPtr);
-
 }
 
 /*
@@ -2171,7 +2156,7 @@ Tcl_SetCommandInfo(interp, cmdName, infoPtr)
  * Tcl_SetCommandInfoFromToken --
  *
  *	Modifies various information about a Tcl command. Note that this
- *	procedure will not change a command's namespace; use TclRenameCommand
+ *	function will not change a command's namespace; use TclRenameCommand
  *	to do that. Also, the isNativeObjectProc member of *infoPtr is
  *	ignored.
  *
@@ -2187,11 +2172,11 @@ Tcl_SetCommandInfo(interp, cmdName, infoPtr)
  */
 
 int
-Tcl_SetCommandInfoFromToken(cmd, infoPtr)
-    Tcl_Command cmd;
-    CONST Tcl_CmdInfo* infoPtr;
+Tcl_SetCommandInfoFromToken(
+    Tcl_Command cmd,
+    CONST Tcl_CmdInfo *infoPtr)
 {
-    Command* cmdPtr;		/* Internal representation of the command */
+    Command *cmdPtr;		/* Internal representation of the command */
 
     if (cmd == (Tcl_Command) NULL) {
 	return 0;
@@ -2204,7 +2189,7 @@ Tcl_SetCommandInfoFromToken(cmd, infoPtr)
     cmdPtr = (Command *) cmd;
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
-    if (infoPtr->objProc == (Tcl_ObjCmdProc *) NULL) {
+    if (infoPtr->objProc == NULL) {
 	cmdPtr->objProc = TclInvokeStringCommand;
 	cmdPtr->objClientData = (ClientData) cmdPtr;
     } else {
@@ -2235,20 +2220,17 @@ Tcl_SetCommandInfoFromToken(cmd, infoPtr)
  */
 
 int
-Tcl_GetCommandInfo(interp, cmdName, infoPtr)
-    Tcl_Interp *interp;		/* Interpreter in which to look for
+Tcl_GetCommandInfo(
+    Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
-    CONST char *cmdName;	/* Name of desired command. */
-    Tcl_CmdInfo *infoPtr;	/* Where to store information about
+    CONST char *cmdName,	/* Name of desired command. */
+    Tcl_CmdInfo *infoPtr)	/* Where to store information about
 				 * command. */
 {
     Tcl_Command cmd;
 
-    cmd = Tcl_FindCommand(interp, cmdName, (Tcl_Namespace *) NULL,
-	    /*flags*/ 0);
-
+    cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
     return Tcl_GetCommandInfoFromToken(cmd, infoPtr);
-
 }
 
 /*
@@ -2270,11 +2252,11 @@ Tcl_GetCommandInfo(interp, cmdName, infoPtr)
  */
 
 int
-Tcl_GetCommandInfoFromToken(cmd, infoPtr)
-    Tcl_Command cmd;
-    Tcl_CmdInfo* infoPtr;
+Tcl_GetCommandInfoFromToken(
+    Tcl_Command cmd,
+    Tcl_CmdInfo *infoPtr)
 {
-    Command* cmdPtr;		/* Internal representation of the command */
+    Command *cmdPtr;		/* Internal representation of the command */
 
     if (cmd == (Tcl_Command) NULL) {
 	return 0;
@@ -2297,7 +2279,6 @@ Tcl_GetCommandInfoFromToken(cmd, infoPtr)
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
 
     return 1;
-
 }
 
 /*
@@ -2305,9 +2286,8 @@ Tcl_GetCommandInfoFromToken(cmd, infoPtr)
  *
  * Tcl_GetCommandName --
  *
- *	Given a token returned by Tcl_CreateCommand, this procedure returns
- *	the current name of the command (which may have changed due to
- *	renaming).
+ *	Given a token returned by Tcl_CreateCommand, this function returns the
+ *	current name of the command (which may have changed due to renaming).
  *
  * Results:
  *	The return value is the name of the given command.
@@ -2319,9 +2299,9 @@ Tcl_GetCommandInfoFromToken(cmd, infoPtr)
  */
 
 CONST char *
-Tcl_GetCommandName(interp, command)
-    Tcl_Interp *interp;		/* Interpreter containing the command. */
-    Tcl_Command command;	/* Token for command returned by a previous
+Tcl_GetCommandName(
+    Tcl_Interp *interp,		/* Interpreter containing the command. */
+    Tcl_Command command)	/* Token for command returned by a previous
 				 * call to Tcl_CreateCommand. The command must
 				 * not have been deleted. */
 {
@@ -2346,7 +2326,7 @@ Tcl_GetCommandName(interp, command)
  * Tcl_GetCommandFullName --
  *
  *	Given a token returned by, e.g., Tcl_CreateCommand or Tcl_FindCommand,
- *	this procedure appends to an object the command's full name, qualified
+ *	this function appends to an object the command's full name, qualified
  *	by a sequence of parent namespace names. The command's fully-qualified
  *	name may have changed due to renaming.
  *
@@ -2361,12 +2341,12 @@ Tcl_GetCommandName(interp, command)
  */
 
 void
-Tcl_GetCommandFullName(interp, command, objPtr)
-    Tcl_Interp *interp;		/* Interpreter containing the command. */
-    Tcl_Command command;	/* Token for command returned by a previous
+Tcl_GetCommandFullName(
+    Tcl_Interp *interp,		/* Interpreter containing the command. */
+    Tcl_Command command,	/* Token for command returned by a previous
 				 * call to Tcl_CreateCommand. The command must
 				 * not have been deleted. */
-    Tcl_Obj *objPtr;		/* Points to the object onto which the
+    Tcl_Obj *objPtr)		/* Points to the object onto which the
 				 * command's full name is appended. */
 
 {
@@ -2389,7 +2369,7 @@ Tcl_GetCommandFullName(interp, command, objPtr)
 	if (cmdPtr->hPtr != NULL) {
 	    name = Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
 	    Tcl_AppendToObj(objPtr, name, -1);
-	} 
+	}
     }
 }
 
@@ -2411,19 +2391,18 @@ Tcl_GetCommandFullName(interp, command, objPtr)
  */
 
 int
-Tcl_DeleteCommand(interp, cmdName)
-    Tcl_Interp *interp;		/* Token for command interpreter (returned by
+Tcl_DeleteCommand(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous Tcl_CreateInterp call). */
-    CONST char *cmdName;	/* Name of command to remove. */
+    CONST char *cmdName)	/* Name of command to remove. */
 {
     Tcl_Command cmd;
 
     /*
-     *  Find the desired command and delete it.
+     * Find the desired command and delete it.
      */
 
-    cmd = Tcl_FindCommand(interp, cmdName, (Tcl_Namespace *) NULL,
-	    /*flags*/ 0);
+    cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
     if (cmd == (Tcl_Command) NULL) {
 	return -1;
     }
@@ -2435,7 +2414,7 @@ Tcl_DeleteCommand(interp, cmdName)
  *
  * Tcl_DeleteCommandFromToken --
  *
- *	Removes the given command from the given interpreter. This procedure
+ *	Removes the given command from the given interpreter. This function
  *	resembles Tcl_DeleteCommand, but takes a Tcl_Command token instead of
  *	a command name for efficiency.
  *
@@ -2451,10 +2430,10 @@ Tcl_DeleteCommand(interp, cmdName)
  */
 
 int
-Tcl_DeleteCommandFromToken(interp, cmd)
-    Tcl_Interp *interp;		/* Token for command interpreter returned by a
+Tcl_DeleteCommandFromToken(
+    Tcl_Interp *interp,		/* Token for command interpreter returned by a
 				 * previous call to Tcl_CreateInterp. */
-    Tcl_Command cmd;		/* Token for command to delete. */
+    Tcl_Command cmd)		/* Token for command to delete. */
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = (Command *) cmd;
@@ -2504,7 +2483,7 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     cmdPtr->flags |= CMD_IS_DELETED;
 
     /*
-     * Call trace procedures for the command being deleted. Then delete its
+     * Call trace functions for the command being deleted. Then delete its
      * traces.
      */
 
@@ -2536,7 +2515,7 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
 
     /*
-     * If the command being deleted has a compile procedure, increment the
+     * If the command being deleted has a compile function, increment the
      * interpreter's compileEpoch to invalidate its compiled code. This makes
      * sure that we don't later try to execute old code compiled with
      * command-specific (i.e., inline) bytecodes for the now-deleted command.
@@ -2618,14 +2597,14 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 }
 
 static char *
-CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
-    Interp *iPtr;		/* Interpreter containing command. */
-    Command *cmdPtr;		/* Command whose traces are to be invoked. */
-    CONST char *oldName;	/* Command's old name, or NULL if we must get
+CallCommandTraces(
+    Interp *iPtr,		/* Interpreter containing command. */
+    Command *cmdPtr,		/* Command whose traces are to be invoked. */
+    CONST char *oldName,	/* Command's old name, or NULL if we must get
 				 * the name from cmdPtr */
-    CONST char *newName;	/* Command's new name, or NULL if the command
+    CONST char *newName,	/* Command's new name, or NULL if the command
 				 * is not being renamed */
-    int flags;			/* Flags indicating the type of traces to
+    int flags)			/* Flags indicating the type of traces to
 				 * trigger, either TCL_TRACE_DELETE or
 				 * TCL_TRACE_RENAME. */
 {
@@ -2716,7 +2695,7 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
  *
  * TclCleanupCommand --
  *
- *	This procedure frees up a Command structure unless it is still
+ *	This function frees up a Command structure unless it is still
  *	referenced from an interpreter's command hashtable or from a CmdName
  *	Tcl object representing the name of a command in a ByteCode
  *	instruction sequence.
@@ -2733,8 +2712,8 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
  */
 
 void
-TclCleanupCommand(cmdPtr)
-    register Command *cmdPtr;	/* Points to the Command structure to
+TclCleanupCommand(
+    register Command *cmdPtr)	/* Points to the Command structure to
 				 * be freed. */
 {
     cmdPtr->refCount--;
@@ -2754,7 +2733,7 @@ TclCleanupCommand(cmdPtr)
  *	None.
  *
  * Side effects:
- *	The function defined by "name" is created or redefined. If the
+ *	The Tcl function defined by "name" is created or redefined. If the
  *	function already exists then its definition is replaced; this includes
  *	the builtin functions. Redefining a builtin function forces all
  *	existing code to be invalidated since that code may be compiled using
@@ -2766,22 +2745,20 @@ TclCleanupCommand(cmdPtr)
  */
 
 void
-Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
-    Tcl_Interp *interp;		/* Interpreter in which function is to be
+Tcl_CreateMathFunc(
+    Tcl_Interp *interp,		/* Interpreter in which function is to be
 				 * available. */
-    CONST char *name;		/* Name of function (e.g. "sin"). */
-    int numArgs;		/* Nnumber of arguments required by
+    CONST char *name,		/* Name of function (e.g. "sin"). */
+    int numArgs,		/* Nnumber of arguments required by
 				 * function. */
-    Tcl_ValueType *argTypes;	/* Array of types acceptable for each
+    Tcl_ValueType *argTypes,	/* Array of types acceptable for each
 				 * argument. */
-    Tcl_MathProc *proc;		/* Procedure that implements the math
+    Tcl_MathProc *proc,		/* C function that implements the math
 				 * function. */
-    ClientData clientData;	/* Additional value to pass to the
+    ClientData clientData)	/* Additional value to pass to the
 				 * function. */
 {
-
     Tcl_DString bigName;
-
     OldMathFuncData *data = (OldMathFuncData *)
 	    ckalloc(sizeof(OldMathFuncData));
 
@@ -2822,14 +2799,14 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
  */
 
 static int
-OldMathFuncProc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ponter to OldMathFuncData describing the
+OldMathFuncProc(
+    ClientData clientData,	/* Ponter to OldMathFuncData describing the
 				 * function being called */
-    Tcl_Interp *interp;		/* Tcl interpreter */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Parameter vector */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Parameter vector */
 {
-    Tcl_Obj* valuePtr;
+    Tcl_Obj *valuePtr;
     OldMathFuncData* dataPtr = (OldMathFuncData*) clientData;
     Tcl_Value args[MAX_MATH_ARGS];
     Tcl_Value funcResult;
@@ -2917,16 +2894,16 @@ OldMathFuncProc(clientData, interp, objc, objv)
 	if (result != TCL_OK) {
 	    /* Non-numeric argument */
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "argument to math function didn't have numeric value", -1));
+		    "argument to math function didn't have numeric value",-1));
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
 	    return TCL_ERROR;
 	}
 
 	/*
-	 * Copy the object's numeric value to the argument record,
-	 * converting it if necessary. 
+	 * Copy the object's numeric value to the argument record, converting
+	 * it if necessary.
 	 *
-	 * NOTE: no bignum support;  use the new mathfunc interface for that
+	 * NOTE: no bignum support; use the new mathfunc interface for that.
 	 */
 
 	args[k].type = dataPtr->argTypes[k];
@@ -3011,12 +2988,12 @@ OldMathFuncProc(clientData, interp, objc, objv)
  */
 
 static void
-OldMathFuncDeleteProc(clientData)
-     ClientData clientData;
+OldMathFuncDeleteProc(
+     ClientData clientData)
 {
-    OldMathFuncData* dataPtr = (OldMathFuncData*) clientData;
-    Tcl_Free((VOID*) dataPtr->argTypes);
-    Tcl_Free((VOID*) dataPtr);
+    OldMathFuncData *dataPtr = (OldMathFuncData *) clientData;
+    Tcl_Free((void *) dataPtr->argTypes);
+    Tcl_Free((void *) dataPtr);
 }
 
 /*
@@ -3044,17 +3021,16 @@ OldMathFuncDeleteProc(clientData)
  */
 
 int
-Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
-	clientDataPtr)
-    Tcl_Interp *interp;
-    CONST char *name;
-    int *numArgsPtr;
-    Tcl_ValueType **argTypesPtr;
-    Tcl_MathProc **procPtr;
-    ClientData *clientDataPtr;
+Tcl_GetMathFuncInfo(
+    Tcl_Interp *interp,
+    CONST char *name,
+    int *numArgsPtr,
+    Tcl_ValueType **argTypesPtr,
+    Tcl_MathProc **procPtr,
+    ClientData *clientDataPtr)
 {
-    Tcl_Obj* cmdNameObj;
-    Command* cmdPtr;
+    Tcl_Obj *cmdNameObj;
+    Command *cmdPtr;
 
     /*
      * Get the command that implements the math function.
@@ -3063,7 +3039,7 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
     cmdNameObj = Tcl_NewStringObj("tcl::mathfunc::", -1);
     Tcl_AppendToObj(cmdNameObj, name, -1);
     Tcl_IncrRefCount(cmdNameObj);
-    cmdPtr = (Command*) Tcl_GetCommandFromObj(interp, cmdNameObj);
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdNameObj);
     Tcl_DecrRefCount(cmdNameObj);
 
     /*
@@ -3071,11 +3047,14 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
      */
 
     if (cmdPtr == NULL) {
-	Tcl_Obj* message;
+	Tcl_Obj *message;
+
 	message = Tcl_NewStringObj("unknown math function \"", -1);
 	Tcl_AppendToObj(message, name, -1);
 	Tcl_AppendToObj(message, "\"", 1);
-	*numArgsPtr = -1; *argTypesPtr = NULL;
+	Tcl_SetObjResult(interp, message);
+	*numArgsPtr = -1;
+	*argTypesPtr = NULL;
 	*procPtr = NULL;
 	*clientDataPtr = NULL;
 	return TCL_ERROR;
@@ -3087,7 +3066,8 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
      */
 
     if (cmdPtr->objProc == &OldMathFuncProc) {
-	OldMathFuncData* dataPtr = (OldMathFuncData*) cmdPtr->clientData;
+	OldMathFuncData *dataPtr = (OldMathFuncData*) cmdPtr->clientData;
+
 	*procPtr = dataPtr->proc;
 	*numArgsPtr = dataPtr->numArgs;
 	*argTypesPtr = dataPtr->argTypes;
@@ -3100,7 +3080,6 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
 	*clientDataPtr = NULL;
     }
     return TCL_OK;
-
 }
 
 /*
@@ -3123,19 +3102,19 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
  */
 
 Tcl_Obj *
-Tcl_ListMathFuncs(interp, pattern)
-    Tcl_Interp *interp;
-    CONST char *pattern;
+Tcl_ListMathFuncs(
+    Tcl_Interp *interp,
+    CONST char *pattern)
 {
-    Namespace* globalNsPtr = (Namespace*) Tcl_GetGlobalNamespace(interp);
-    Namespace* nsPtr;
-    Namespace* dummy1NsPtr;
-    Namespace* dummy2NsPtr;
-    CONST char* dummyNamePtr;
-    Tcl_Obj* result = Tcl_NewObj();
-    Tcl_HashEntry* cmdHashEntry;
+    Namespace *globalNsPtr = (Namespace*) Tcl_GetGlobalNamespace(interp);
+    Namespace *nsPtr;
+    Namespace *dummy1NsPtr;
+    Namespace *dummy2NsPtr;
+    CONST char *dummyNamePtr;
+    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_HashEntry *cmdHashEntry;
     Tcl_HashSearch cmdHashSearch;
-    CONST char* cmdNamePtr;
+    CONST char *cmdNamePtr;
 
     TclGetNamespaceForQualName(interp, "::tcl::mathfunc",
 	    globalNsPtr, TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY,
@@ -3181,8 +3160,8 @@ Tcl_ListMathFuncs(interp, pattern)
  */
 
 int
-TclInterpReady(interp)
-    Tcl_Interp *interp;
+TclInterpReady(
+    Tcl_Interp *interp)
 {
     register Interp *iPtr = (Interp *) interp;
 
@@ -3200,9 +3179,9 @@ TclInterpReady(interp)
     if (iPtr->flags & DELETED) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp,
-		"attempt to call eval in deleted interpreter", (char *) NULL);
+		"attempt to call eval in deleted interpreter", NULL);
 	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
-		"attempt to call eval in deleted interpreter", (char *) NULL);
+		"attempt to call eval in deleted interpreter", NULL);
 	return TCL_ERROR;
     }
 
@@ -3214,7 +3193,7 @@ TclInterpReady(interp)
     if (((iPtr->numLevels) > iPtr->maxNestingDepth)
 	    || (TclpCheckStackSpace() == 0)) {
 	Tcl_AppendResult(interp,
-		"too many nested evaluations (infinite loop?)", (char *) NULL);
+		"too many nested evaluations (infinite loop?)", NULL);
 	return TCL_ERROR;
     }
 
@@ -3226,14 +3205,14 @@ TclInterpReady(interp)
  *
  * TclEvalObjvInternal --
  *
- *	This procedure evaluates a Tcl command that has already been parsed
+ *	This function evaluates a Tcl command that has already been parsed
  *	into words, with one Tcl_Obj holding each word. The caller is
  *	responsible for managing the iPtr->numLevels.
  *
  * Results:
  *	The return value is a standard Tcl completion code such as TCL_OK or
  *	TCL_ERROR. A result or error message is left in interp's result. If an
- *	error occurs, this procedure does NOT add any information to the
+ *	error occurs, this function does NOT add any information to the
  *	errorInfo variable.
  *
  * Side effects:
@@ -3243,26 +3222,25 @@ TclInterpReady(interp)
  */
 
 int
-TclEvalObjvInternal(interp, objc, objv, command, length, flags)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
+TclEvalObjvInternal(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc;			/* Number of words in command. */
-    Tcl_Obj *CONST objv[];	/* An array of pointers to objects that are
+    int objc,			/* Number of words in command. */
+    Tcl_Obj *CONST objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
-    CONST char *command;	/* Points to the beginning of the string
+    CONST char *command,	/* Points to the beginning of the string
 				 * representation of the command; this is used
 				 * for traces. If the string representation of
 				 * the command is unknown, an empty string
 				 * should be supplied. If it is NULL, no
 				 * traces will be called. */
-    int length;			/* Number of bytes in command; if -1, all
+    int length,			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are
 				 * used. */
-    int flags;			/* Collection of OR-ed bits that control the
+    int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
 				 * currently supported. */
-
 {
     Command *cmdPtr;
     Interp *iPtr = (Interp *) interp;
@@ -3283,9 +3261,9 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     }
 
     /*
-     * Find the procedure to execute this command. If there isn't one, then
-     * see if there is a command "unknown". If so, create a new word array
-     * with "unknown" as the first word and the original command words as
+     * Find the function to execute this command. If there isn't one, then see
+     * if there is a command "unknown". If so, create a new word array with
+     * "unknown" as the first word and the original command words as
      * arguments. Then call ourselves recursively to execute it.
      *
      * If caller requests, or if we're resolving the target end of an
@@ -3315,7 +3293,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	if (cmdPtr == NULL) {
 	    Tcl_AppendResult(interp, "invalid command name \"",
-		    TclGetString(objv[0]), "\"", (char *) NULL);
+		    TclGetString(objv[0]), "\"", NULL);
 	    code = TCL_ERROR;
 	} else {
 	    iPtr->numLevels++;
@@ -3329,7 +3307,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     }
 
     /*
-     * Call trace procedures if needed.
+     * Call trace functions if needed.
      */
 
     if ((checkTraces) && (command != NULL)) {
@@ -3415,7 +3393,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 
     /*
      * If the interpreter has a non-empty string result, the result object is
-     * either empty or stale because some procedure set interp->result
+     * either empty or stale because some function set interp->result
      * directly. If so, move the string result to the result object, then
      * reset the string result.
      */
@@ -3433,7 +3411,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
  *
  * Tcl_EvalObjv --
  *
- *	This procedure evaluates a Tcl command that has already been parsed
+ *	This function evaluates a Tcl command that has already been parsed
  *	into words, with one Tcl_Obj holding each word.
  *
  * Results:
@@ -3447,13 +3425,13 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
  */
 
 int
-Tcl_EvalObjv(interp, objc, objv, flags)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
+Tcl_EvalObjv(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc;			/* Number of words in command. */
-    Tcl_Obj *CONST objv[];	/* An array of pointers to objects that are
+    int objc,			/* Number of words in command. */
+    Tcl_Obj *CONST objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
-    int flags;			/* Collection of OR-ed bits that control the
+    int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
 				 * currently supported. */
@@ -3465,7 +3443,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 				 * command traces or error logs; it will be
 				 * generated to replace this default value if
 				 * necessary. */
-    int cmdLen = 0;		/* a non-zero value indicates that a command
+    int cmdLen = 0;		/* A non-zero value indicates that a command
 				 * string was generated. */
     int code = TCL_OK;
     int i;
@@ -3501,7 +3479,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 	if (code == TCL_RETURN) {
 	    code = TclUpdateReturnInfo(iPtr);
 	}
-	if ((code != TCL_OK) && (code != TCL_ERROR) 
+	if ((code != TCL_OK) && (code != TCL_ERROR)
 	    && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, code);
 	    code = TCL_ERROR;
@@ -3509,7 +3487,6 @@ Tcl_EvalObjv(interp, objc, objv, flags)
     }
 
     if ((code == TCL_ERROR) && !(flags & TCL_EVAL_INVOKE)) {
-
 	/*
 	 * If there was an error, a command string will be needed for the
 	 * error log: generate it now if it was not done previously.
@@ -3537,7 +3514,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
  *
  * Tcl_LogCommandInfo --
  *
- *	This procedure is invoked after an error occurs in an interpreter. It
+ *	This function is invoked after an error occurs in an interpreter. It
  *	adds information to iPtr->errorInfo field to describe the command that
  *	was being executed when the error occurred.
  *
@@ -3552,13 +3529,13 @@ Tcl_EvalObjv(interp, objc, objv, flags)
  */
 
 void
-Tcl_LogCommandInfo(interp, script, command, length)
-    Tcl_Interp *interp;		/* Interpreter in which to log information. */
-    CONST char *script;		/* First character in script containing
+Tcl_LogCommandInfo(
+    Tcl_Interp *interp,		/* Interpreter in which to log information. */
+    CONST char *script,		/* First character in script containing
 				 * command (must be <= command). */
-    CONST char *command;	/* First character in command that generated
+    CONST char *command,	/* First character in command that generated
 				 * the error. */
-    int length;			/* Number of bytes in command (-1 means use
+    int length)			/* Number of bytes in command (-1 means use
 				 * all bytes up to first null byte). */
 {
     register CONST char *p;
@@ -3598,7 +3575,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
  * Tcl_EvalTokensStandard --
  *
  *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
- *	that make up a word or the index for an array variable) this procedure
+ *	that make up a word or the index for an array variable) this function
  *	evaluates the tokens and concatenates their values to form a single
  *	result value.
  *
@@ -3608,31 +3585,30 @@ Tcl_LogCommandInfo(interp, script, command, length)
  *
  * Side effects:
  *	Depends on the array of tokens being evaled.
-  *
+ *
  *----------------------------------------------------------------------
  */
 
 int
-Tcl_EvalTokensStandard(interp, tokenPtr, count)
-    Tcl_Interp *interp;		/* Interpreter in which to lookup variables,
+Tcl_EvalTokensStandard(
+    Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
 				 * execute nested commands, and report
 				 * errors. */
-    Tcl_Token *tokenPtr;	/* Pointer to first in an array of tokens to
+    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count;			/* Number of tokens to consider at tokenPtr.
+    int count)			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
     return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL);
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_EvalTokens --
  *
  *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
- *	that make up a word or the index for an array variable) this procedure
+ *	that make up a word or the index for an array variable) this function
  *	evaluates the tokens and concatenates their values to form a single
  *	result value.
  *
@@ -3654,36 +3630,32 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
  */
 
 Tcl_Obj *
-Tcl_EvalTokens(interp, tokenPtr, count)
-    Tcl_Interp *interp;		/* Interpreter in which to lookup variables,
+Tcl_EvalTokens(
+    Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
 				 * execute nested commands, and report
 				 * errors. */
-    Tcl_Token *tokenPtr;	/* Pointer to first in an array of tokens to
+    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count;			/* Number of tokens to consider at tokenPtr.
+    int count)			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
-    int code;
     Tcl_Obj *resPtr;
 
-    code = Tcl_EvalTokensStandard(interp, tokenPtr, count);
-    if (code == TCL_OK) {
-	resPtr = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(resPtr);
-	Tcl_ResetResult(interp);
-	return resPtr;
-    } else {
+    if (Tcl_EvalTokensStandard(interp, tokenPtr, count) != TCL_OK) {
 	return NULL;
     }
+    resPtr = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(resPtr);
+    Tcl_ResetResult(interp);
+    return resPtr;
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_EvalEx --
  *
- *	This procedure evaluates a Tcl script without using the compiler or
+ *	This function evaluates a Tcl script without using the compiler or
  *	byte-code interpreter. It just parses the script, creates values for
  *	each word of each command, then calls EvalObjv to execute each
  *	command.
@@ -3699,14 +3671,14 @@ Tcl_EvalTokens(interp, tokenPtr, count)
  */
 
 int
-Tcl_EvalEx(interp, script, numBytes, flags)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
+Tcl_EvalEx(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
-    CONST char *script;		/* First character of script to evaluate. */
-    int numBytes;		/* Number of bytes in script. If < 0, the
+    CONST char *script,		/* First character of script to evaluate. */
+    int numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
-    int flags;			/* Collection of OR-ed bits that control the
+    int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
 {
@@ -3787,7 +3759,10 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 		    code = Tcl_ListObjLength(interp,
 			    objv[objectsUsed], &numElements);
 		    if (code == TCL_ERROR) {
-			/* Attempt to expand a non-list. */
+			/*
+			 * Attempt to expand a non-list.
+			 */
+
 			TclFormatToErrorInfo(interp,
 				"\n    (expanding word %d)", objectsUsed);
 			Tcl_DecrRefCount(objv[objectsUsed]);
@@ -3940,9 +3915,9 @@ Tcl_EvalEx(interp, script, numBytes, flags)
  *
  * Tcl_Eval --
  *
- *	Execute a Tcl command in a string. This procedure executes the script
+ *	Execute a Tcl command in a string. This function executes the script
  *	directly, rather than compiling it to bytecodes. Before the arrival of
- *	the bytecode compiler in Tcl 8.0 Tcl_Eval was the main procedure used
+ *	the bytecode compiler in Tcl 8.0 Tcl_Eval was the main function used
  *	for executing Tcl commands, but nowadays it isn't used much.
  *
  * Results:
@@ -3958,10 +3933,10 @@ Tcl_EvalEx(interp, script, numBytes, flags)
  */
 
 int
-Tcl_Eval(interp, script)
-    Tcl_Interp *interp;		/* Token for command interpreter (returned by
+Tcl_Eval(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
-    CONST char *script;		/* Pointer to TCL command to execute. */
+    CONST char *script)		/* Pointer to TCL command to execute. */
 {
     int code = Tcl_EvalEx(interp, script, -1, 0);
 
@@ -3994,18 +3969,18 @@ Tcl_Eval(interp, script)
 
 #undef Tcl_EvalObj
 int
-Tcl_EvalObj(interp, objPtr)
-    Tcl_Interp * interp;
-    Tcl_Obj * objPtr;
+Tcl_EvalObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
 {
     return Tcl_EvalObjEx(interp, objPtr, 0);
 }
 
 #undef Tcl_GlobalEvalObj
 int
-Tcl_GlobalEvalObj(interp, objPtr)
-    Tcl_Interp * interp;
-    Tcl_Obj * objPtr;
+Tcl_GlobalEvalObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
 {
     return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
@@ -4033,12 +4008,12 @@ Tcl_GlobalEvalObj(interp, objPtr)
  */
 
 int
-Tcl_EvalObjEx(interp, objPtr, flags)
-    Tcl_Interp *interp;		/* Token for command interpreter (returned by
+Tcl_EvalObjEx(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr;	/* Pointer to object containing commands to
+    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
-    int flags;			/* Collection of OR-ed bits that control the
+    int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
 {
@@ -4150,7 +4125,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
  *
  * ProcessUnexpectedResult --
  *
- *	Procedure called by Tcl_EvalObj to set the interpreter's result value
+ *	Function called by Tcl_EvalObj to set the interpreter's result value
  *	to an appropriate error message when the code it evaluates returns an
  *	unexpected result code (not TCL_OK and not TCL_ERROR) to the topmost
  *	evaluation level.
@@ -4166,21 +4141,22 @@ Tcl_EvalObjEx(interp, objPtr, flags)
  */
 
 static void
-ProcessUnexpectedResult(interp, returnCode)
-    Tcl_Interp *interp;		/* The interpreter in which the unexpected
+ProcessUnexpectedResult(
+    Tcl_Interp *interp,		/* The interpreter in which the unexpected
 				 * result code was returned. */
-    int returnCode;		/* The unexpected result code. */
+    int returnCode)		/* The unexpected result code. */
 {
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
 	Tcl_AppendResult(interp,
-		"invoked \"break\" outside of a loop", (char *) NULL);
+		"invoked \"break\" outside of a loop", NULL);
     } else if (returnCode == TCL_CONTINUE) {
 	Tcl_AppendResult(interp,
-		"invoked \"continue\" outside of a loop", (char *) NULL);
+		"invoked \"continue\" outside of a loop", NULL);
     } else {
 	Tcl_Obj *objPtr = Tcl_NewObj();
-	TclObjPrintf(NULL, objPtr, "command returned bad code: %d", returnCode);
+	TclObjPrintf(NULL, objPtr, "command returned bad code: %d",
+		returnCode);
 	Tcl_SetObjResult(interp, objPtr);
     }
 }
@@ -4190,15 +4166,15 @@ ProcessUnexpectedResult(interp, returnCode)
  *
  * Tcl_ExprLong, Tcl_ExprDouble, Tcl_ExprBoolean --
  *
- *	Procedures to evaluate an expression and return its value in a
+ *	Functions to evaluate an expression and return its value in a
  *	particular form.
  *
  * Results:
- *	Each of the procedures below returns a standard Tcl result. If an
- *	error occurs then an error message is left in the interp's result.
- *	Otherwise the value of the expression, in the appropriate form, is
- *	stored at *ptr. If the expression had a result that was incompatible
- *	with the desired form then an error is returned.
+ *	Each of the functions below returns a standard Tcl result. If an error
+ *	occurs then an error message is left in the interp's result. Otherwise
+ *	the value of the expression, in the appropriate form, is stored at
+ *	*ptr. If the expression had a result that was incompatible with the
+ *	desired form then an error is returned.
  *
  * Side effects:
  *	None.
@@ -4207,16 +4183,19 @@ ProcessUnexpectedResult(interp, returnCode)
  */
 
 int
-Tcl_ExprLong(interp, exprstring, ptr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprLong(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprstring;	/* Expression to evaluate. */
-    long *ptr;			/* Where to store result. */
+    CONST char *exprstring,	/* Expression to evaluate. */
+    long *ptr)			/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
     int result = TCL_OK;
     if (*exprstring == '\0') {
-	/* Legacy compatibility - return 0 for the zero-length string. */
+	/*
+	 * Legacy compatibility - return 0 for the zero-length string.
+	 */
+
 	*ptr = 0;
     } else {
 	exprPtr = Tcl_NewStringObj(exprstring, -1);
@@ -4231,23 +4210,26 @@ Tcl_ExprLong(interp, exprstring, ptr)
 }
 
 int
-Tcl_ExprDouble(interp, exprstring, ptr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprDouble(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprstring;	/* Expression to evaluate. */
-    double *ptr;		/* Where to store result. */
+    CONST char *exprstring,	/* Expression to evaluate. */
+    double *ptr)		/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
     int result = TCL_OK;
 
     if (*exprstring == '\0') {
-	/* Legacy compatibility - return 0 for the zero-length string. */
+	/*
+	 * Legacy compatibility - return 0 for the zero-length string.
+	 */
+
 	*ptr = 0.0;
     } else {
 	exprPtr = Tcl_NewStringObj(exprstring, -1);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
-	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */
+	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
 	if (result != TCL_OK) {
 	    (void) Tcl_GetStringResult(interp);
 	}
@@ -4256,11 +4238,11 @@ Tcl_ExprDouble(interp, exprstring, ptr)
 }
 
 int
-Tcl_ExprBoolean(interp, exprstring, ptr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprBoolean(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprstring;	/* Expression to evaluate. */
-    int *ptr;			/* Where to store 0/1 result. */
+    CONST char *exprstring,	/* Expression to evaluate. */
+    int *ptr)			/* Where to store 0/1 result. */
 {
     if (*exprstring == '\0') {
 	/*
@@ -4293,11 +4275,11 @@ Tcl_ExprBoolean(interp, exprstring, ptr)
  *
  * Tcl_ExprLongObj, Tcl_ExprDoubleObj, Tcl_ExprBooleanObj --
  *
- *	Procedures to evaluate an expression in an object and return its value
+ *	Functions to evaluate an expression in an object and return its value
  *	in a particular form.
  *
  * Results:
- *	Each of the procedures below returns a standard Tcl result object. If
+ *	Each of the functions below returns a standard Tcl result object. If
  *	an error occurs then an error message is left in the interpreter's
  *	result. Otherwise the value of the expression, in the appropriate
  *	form, is stored at *ptr. If the expression had a result that was
@@ -4310,11 +4292,11 @@ Tcl_ExprBoolean(interp, exprstring, ptr)
  */
 
 int
-Tcl_ExprLongObj(interp, objPtr, ptr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprLongObj(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr;	/* Expression to evaluate. */
-    long *ptr;			/* Where to store long result. */
+    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    long *ptr)			/* Where to store long result. */
 {
     Tcl_Obj *resultPtr;
     int result, type;
@@ -4326,13 +4308,14 @@ Tcl_ExprLongObj(interp, objPtr, ptr)
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type) != TCL_OK) {
+    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type) != TCL_OK){
 	return TCL_ERROR;
     }
 
     switch (type) {
     case TCL_NUMBER_DOUBLE: {
 	mp_int big;
+
 	d = *((CONST double *)internalPtr);
 	Tcl_DecrRefCount(resultPtr);
 	if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
@@ -4352,16 +4335,16 @@ Tcl_ExprLongObj(interp, objPtr, ptr)
 	result = TCL_ERROR;
     }
 
-    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
+    Tcl_DecrRefCount(resultPtr);/* discard the result object */
     return result;
 }
 
 int
-Tcl_ExprDoubleObj(interp, objPtr, ptr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprDoubleObj(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr;	/* Expression to evaluate. */
-    double *ptr;		/* Where to store double result. */
+    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    double *ptr)		/* Where to store double result. */
 {
     Tcl_Obj *resultPtr;
     int result, type;
@@ -4377,7 +4360,7 @@ Tcl_ExprDoubleObj(interp, objPtr, ptr)
 	switch (type) {
 	case TCL_NUMBER_NAN:
 #ifndef ACCEPT_NAN
-	    result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
+	    result = Tcl_GetDoubleFromObj(interp, resultPtr, ptr);
 	    break;
 #endif
 	case TCL_NUMBER_DOUBLE:
@@ -4385,19 +4368,19 @@ Tcl_ExprDoubleObj(interp, objPtr, ptr)
 	    result = TCL_OK;
 	    break;
 	default:
-	    result = Tcl_GetDoubleFromObj( interp, resultPtr, ptr );
+	    result = Tcl_GetDoubleFromObj(interp, resultPtr, ptr);
 	}
     }
-    Tcl_DecrRefCount(resultPtr);  /* discard the result object */
+    Tcl_DecrRefCount(resultPtr);/* discard the result object */
     return result;
 }
 
 int
-Tcl_ExprBooleanObj(interp, objPtr, ptr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprBooleanObj(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr;	/* Expression to evaluate. */
-    int *ptr;			/* Where to store 0/1 result. */
+    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    int *ptr)			/* Where to store 0/1 result. */
 {
     Tcl_Obj *resultPtr;
     int result;
@@ -4405,7 +4388,7 @@ Tcl_ExprBooleanObj(interp, objPtr, ptr)
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
     if (result == TCL_OK) {
 	result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
-	Tcl_DecrRefCount(resultPtr);  /* discard the result object */
+	Tcl_DecrRefCount(resultPtr); /* discard the result object */
     }
     return result;
 }
@@ -4431,14 +4414,14 @@ Tcl_ExprBooleanObj(interp, objPtr, ptr)
  */
 
 int
-TclObjInvokeNamespace(interp, objc, objv, nsPtr, flags)
-    Tcl_Interp *interp;		/* Interpreter in which command is to be
+TclObjInvokeNamespace(
+    Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    int objc;			/* Count of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects; objv[0] points to the
+    int objc,			/* Count of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
-    Tcl_Namespace *nsPtr;	/* The namespace to use. */
-    int flags;			/* Combination of flags controlling the call:
+    Tcl_Namespace *nsPtr,	/* The namespace to use. */
+    int flags)			/* Combination of flags controlling the call:
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
 				 * or TCL_INVOKE_NO_TRACEBACK. */
 {
@@ -4450,7 +4433,7 @@ TclObjInvokeNamespace(interp, objc, objv, nsPtr, flags)
      * command.
      */
 
-    result = TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcCallFrame*/ 0);
+    result = TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcCallFrame*/0);
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -4479,13 +4462,13 @@ TclObjInvokeNamespace(interp, objc, objv, nsPtr, flags)
  */
 
 int
-TclObjInvoke(interp, objc, objv, flags)
-    Tcl_Interp *interp;		/* Interpreter in which command is to be
+TclObjInvoke(
+    Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
-    int objc;			/* Count of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects; objv[0] points to the
+    int objc,			/* Count of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
-    int flags;			/* Combination of flags controlling the call:
+    int flags)			/* Combination of flags controlling the call:
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
 				 * or TCL_INVOKE_NO_TRACEBACK. */
 {
@@ -4496,12 +4479,12 @@ TclObjInvoke(interp, objc, objv, flags)
     Command *cmdPtr;
     int result;
 
-    if (interp == (Tcl_Interp *) NULL) {
+    if (interp == NULL) {
 	return TCL_ERROR;
     }
 
-    if ((objc < 1) || (objv == (Tcl_Obj **) NULL)) {
-	Tcl_AppendResult(interp, "illegal argument vector", (char *) NULL);
+    if ((objc < 1) || (objv == NULL)) {
+	Tcl_AppendResult(interp, "illegal argument vector", NULL);
 	return TCL_ERROR;
     }
 
@@ -4520,13 +4503,13 @@ TclObjInvoke(interp, objc, objv, flags)
     }
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "invalid hidden command name \"",
-		cmdName, "\"", (char *) NULL);
+		cmdName, "\"", NULL);
 	return TCL_ERROR;
     }
     cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
 
     /*
-     * Invoke the command procedure.
+     * Invoke the command function.
      */
 
     iPtr->cmdCount++;
@@ -4574,10 +4557,10 @@ TclObjInvoke(interp, objc, objv, flags)
  */
 
 int
-Tcl_ExprString(interp, expr)
-    Tcl_Interp *interp;		/* Context in which to evaluate the
+Tcl_ExprString(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *expr;		/* Expression to evaluate. */
+    CONST char *expr)		/* Expression to evaluate. */
 {
     int code = TCL_OK;
 
@@ -4627,10 +4610,10 @@ Tcl_ExprString(interp, expr)
  */
 
 void
-TclAppendObjToErrorInfo(interp, objPtr)
-    Tcl_Interp *interp;		/* Interpreter to which error information
+TclAppendObjToErrorInfo(
+    Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    Tcl_Obj *objPtr;		/* Message to record. */
+    Tcl_Obj *objPtr)		/* Message to record. */
 {
     int length;
     CONST char *message = Tcl_GetStringFromObj(objPtr, &length);
@@ -4658,10 +4641,10 @@ TclAppendObjToErrorInfo(interp, objPtr)
  */
 
 void
-Tcl_AddErrorInfo(interp, message)
-    Tcl_Interp *interp;		/* Interpreter to which error information
+Tcl_AddErrorInfo(
+    Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    CONST char *message;	/* Message to record. */
+    CONST char *message)	/* Message to record. */
 {
     Tcl_AddObjErrorInfo(interp, message, -1);
 }
@@ -4688,12 +4671,12 @@ Tcl_AddErrorInfo(interp, message)
  */
 
 void
-Tcl_AddObjErrorInfo(interp, message, length)
-    Tcl_Interp *interp;		/* Interpreter to which error information
+Tcl_AddObjErrorInfo(
+    Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    CONST char *message;	/* Points to the first byte of an array of
+    CONST char *message,	/* Points to the first byte of an array of
 				 * bytes of the message. */
-    int length;			/* The number of bytes in the message. If < 0,
+    int length)			/* The number of bytes in the message. If < 0,
 				 * then append all bytes up to a NULL byte. */
 {
     register Interp *iPtr = (Interp *) interp;
@@ -4756,9 +4739,9 @@ Tcl_AddObjErrorInfo(interp, message, length)
  */
 
 int
-Tcl_VarEvalVA(interp, argList)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate command. */
-    va_list argList;		/* Variable argument list. */
+Tcl_VarEvalVA(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
+    va_list argList)		/* Variable argument list. */
 {
     Tcl_DString buf;
     char *string;
@@ -4803,7 +4786,9 @@ Tcl_VarEvalVA(interp, argList)
  */
 	/* ARGSUSED */
 int
-Tcl_VarEval(Tcl_Interp *interp, ...)
+Tcl_VarEval(
+    Tcl_Interp *interp,
+    ...)
 {
     va_list argList;
     int result;
@@ -4828,16 +4813,16 @@ Tcl_VarEval(Tcl_Interp *interp, ...)
  *
  * Side effects:
  *	The command string is executed in interp, and the execution is carried
- *	out in the variable context of global level (no procedures active),
+ *	out in the variable context of global level (no functions active),
  *	just as if an "uplevel #0" command were being executed.
  *
  ---------------------------------------------------------------------------
  */
 
 int
-Tcl_GlobalEval(interp, command)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate command. */
-    CONST char *command;	/* Command to evaluate. */
+Tcl_GlobalEval(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
+    CONST char *command)	/* Command to evaluate. */
 {
     register Interp *iPtr = (Interp *) interp;
     int result;
@@ -4868,10 +4853,10 @@ Tcl_GlobalEval(interp, command)
  */
 
 int
-Tcl_SetRecursionLimit(interp, depth)
-    Tcl_Interp *interp;		/* Interpreter whose nesting limit is to be
+Tcl_SetRecursionLimit(
+    Tcl_Interp *interp,		/* Interpreter whose nesting limit is to be
 				 * set. */
-    int depth;			/* New value for maximimum depth. */
+    int depth)			/* New value for maximimum depth. */
 {
     Interp *iPtr = (Interp *) interp;
     int old;
@@ -4902,8 +4887,8 @@ Tcl_SetRecursionLimit(interp, depth)
  */
 
 void
-Tcl_AllowExceptions(interp)
-    Tcl_Interp *interp;		/* Interpreter in which to set flag. */
+Tcl_AllowExceptions(
+    Tcl_Interp *interp)		/* Interpreter in which to set flag. */
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -4929,11 +4914,11 @@ Tcl_AllowExceptions(interp)
  */
 
 void
-Tcl_GetVersion(majorV, minorV, patchLevelV, type)
-    int *majorV;
-    int *minorV;
-    int *patchLevelV;
-    int *type;
+Tcl_GetVersion(
+    int *majorV,
+    int *minorV,
+    int *patchLevelV,
+    int *type)
 {
     if (majorV != NULL) {
 	*majorV = TCL_MAJOR_VERSION;
@@ -4954,11 +4939,11 @@ Tcl_GetVersion(majorV, minorV, patchLevelV, type)
  *
  * Math Functions --
  *
- *	This page contains the procedures that implement all of the built-in
+ *	This page contains the functions that implement all of the built-in
  *	math functions for expressions.
  *
  * Results:
- *	Each procedure returns TCL_OK if it succeeds and pushes an Tcl object
+ *	Each function returns TCL_OK if it succeeds and pushes an Tcl object
  *	holding the result. If it fails it returns TCL_ERROR and leaves an
  *	error message in the interpreter's result.
  *
@@ -4969,12 +4954,12 @@ Tcl_GetVersion(majorV, minorV, patchLevelV, type)
  */
 
 static int
-ExprCeilFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprCeilFunc(
+    ClientData clientData,	/* Ignored */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5004,12 +4989,12 @@ ExprCeilFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprFloorFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprFloorFunc(
+    ClientData clientData,	/* Ignored */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5039,12 +5024,12 @@ ExprFloorFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprSqrtFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprSqrtFunc(
+    ClientData clientData,	/* Ignored */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5064,8 +5049,8 @@ ExprSqrtFunc(clientData, interp, objc, objv)
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (d >= 0.0 && TclIsInfinite(d) 
-	    && Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK) {
+    if ((d >= 0.0) && TclIsInfinite(d)
+	    && (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK)) {
 	mp_int root;
 	mp_init(&root);
 	mp_sqrt(&big, &root);
@@ -5079,14 +5064,14 @@ ExprSqrtFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprUnaryFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Contains the address of a procedure that
+ExprUnaryFunc(
+    ClientData clientData,	/* Contains the address of a function that
 				 * takes one double argument and returns a
 				 * double result. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5112,9 +5097,9 @@ ExprUnaryFunc(clientData, interp, objc, objv)
 }
 
 static int
-CheckDoubleResult(interp, dResult)
-    Tcl_Interp *interp;
-    double dResult;
+CheckDoubleResult(
+    Tcl_Interp *interp,
+    double dResult)
 {
 #ifndef ACCEPT_NAN
     if (TclIsNaN(dResult)) {
@@ -5123,9 +5108,14 @@ CheckDoubleResult(interp, dResult)
     }
 #endif
     if ((errno == ERANGE) && ((dResult == 0.0) || TclIsInfinite(dResult))) {
-	/* When ERANGE signals under/overflow, just accept 0.0 or +/-Inf */
+	/*
+	 * When ERANGE signals under/overflow, just accept 0.0 or +/-Inf
+	 */
     } else if (errno != 0) {
-	/* Report other errno values as errors */
+	/*
+	 * Report other errno values as errors.
+	 */
+
 	TclExprFloatError(interp, dResult);
 	return TCL_ERROR;
     }
@@ -5134,14 +5124,14 @@ CheckDoubleResult(interp, dResult)
 }
 
 static int
-ExprBinaryFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Contains the address of a procedure that
+ExprBinaryFunc(
+    ClientData clientData,	/* Contains the address of a function that
 				 * takes two double arguments and returns a
 				 * double result. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Parameter vector */
 {
     int code;
     double d1, d2;
@@ -5150,7 +5140,7 @@ ExprBinaryFunc(clientData, interp, objc, objv)
     if (objc != 3) {
 	MathFuncWrongNumArgs(interp, 3, objc, objv);
 	return TCL_ERROR;
-    } 
+    }
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
     if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
@@ -5178,12 +5168,12 @@ ExprBinaryFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprAbsFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprAbsFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Parameter vector */
 {
     ClientData ptr;
     int type;
@@ -5265,12 +5255,12 @@ ExprAbsFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprBoolFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprBoolFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
     int value;
 
@@ -5286,12 +5276,12 @@ ExprBoolFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprDoubleFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprDoubleFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
     double dResult;
 #if 0
@@ -5335,12 +5325,12 @@ ExprDoubleFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprEntierFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprEntierFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
     double d;
     int type;
@@ -5353,10 +5343,12 @@ ExprEntierFunc(clientData, interp, objc, objv)
     if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
+
     if (type == TCL_NUMBER_DOUBLE) {
 	d = *((CONST double *)ptr);
 	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
 	    mp_int big;
+
 	    if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
@@ -5364,28 +5356,37 @@ ExprEntierFunc(clientData, interp, objc, objv)
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	    return TCL_OK;
 	} else {
-	    long result = (long)d;
+	    long result = (long) d;
+
 	    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
 	    return TCL_OK;
 	}
     }
+
     if (type != TCL_NUMBER_NAN) {
-	/* All integers are already of integer type */
+	/*
+	 * All integers are already of integer type.
+	 */
+
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    /* Get the error message for NaN */
+
+    /*
+     * Get the error message for NaN.
+     */
+
     Tcl_GetDoubleFromObj(interp, objv[1], &d);
     return TCL_ERROR;
 }
 
 static int
-ExprIntFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprIntFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
     long iResult;
     Tcl_Obj *objPtr;
@@ -5410,8 +5411,7 @@ ExprIntFunc(clientData, interp, objc, objv)
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"integer value too large to represent", -1));
 			Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-				"integer value too large to represent",
-				(char *) NULL);
+				"integer value too large to represent", NULL);
 			return TCL_ERROR;
 		    }
 		} else if (d > (double) LONG_MAX) {
@@ -5435,8 +5435,12 @@ ExprIntFunc(clientData, interp, objc, objv)
     }
     objPtr = Tcl_GetObjResult(interp);
     if (Tcl_GetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
-	/* truncate the bignum; keep only bits in long range */
+	/*
+	 * Truncate the bignum; keep only bits in long range.
+	 */
+
 	mp_int big;
+
 	Tcl_GetBignumFromObj(NULL, objPtr, &big);
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
 	objPtr = Tcl_NewBignumObj(&big);
@@ -5450,18 +5454,18 @@ ExprIntFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprWideFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprWideFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
     Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
 #if 0
     register Tcl_Obj *valuePtr;
-    Tcl_Obj* oResult;
+    Tcl_Obj *oResult;
 
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
@@ -5480,8 +5484,7 @@ ExprWideFunc(clientData, interp, objc, objv)
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"integer value too large to represent", -1));
 			Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-				"integer value too large to represent",
-				(char *) NULL);
+				"integer value too large to represent", NULL);
 			return TCL_ERROR;
 		    }
 		} else if (d > Tcl_WideAsDouble(LLONG_MAX)) {
@@ -5505,8 +5508,12 @@ ExprWideFunc(clientData, interp, objc, objv)
     }
     objPtr = Tcl_GetObjResult(interp);
     if (Tcl_GetWideIntFromObj(NULL, objPtr, &wResult) != TCL_OK) {
-	/* truncate the bignum; keep only bits in wide int range */
+	/*
+	 * Truncate the bignum; keep only bits in wide int range.
+	 */
+
 	mp_int big;
+
 	Tcl_GetBignumFromObj(NULL, objPtr, &big);
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(Tcl_WideInt), &big);
 	objPtr = Tcl_NewBignumObj(&big);
@@ -5520,17 +5527,17 @@ ExprWideFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprRandFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprRandFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
     Interp *iPtr = (Interp *) interp;
     double dResult;
-    long tmp;			/* Algorithm assumes at least 32 bits.
-				 * Only long guarantees that.  See below. */
+    long tmp;			/* Algorithm assumes at least 32 bits. Only
+				 * long guarantees that. See below. */
     Tcl_Obj* oResult;
 
     if (objc != 1) {
@@ -5613,12 +5620,12 @@ ExprRandFunc(clientData, interp, objc, objv)
 }
 
 static int
-ExprRoundFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprRoundFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Parameter vector */
 {
     double d;
     ClientData ptr;
@@ -5632,6 +5639,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
     if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
 	return TCL_ERROR;
     }
+
     if (type == TCL_NUMBER_DOUBLE) {
 	double fractPart, intPart;
 	long max = LONG_MAX, min = LONG_MIN;
@@ -5644,6 +5652,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	}
 	if ((intPart >= (double)max) || (intPart <= (double)min)) {
 	    mp_int big;
+
 	    if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
@@ -5657,6 +5666,7 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	    return TCL_OK;
 	} else {
 	    long result = (long)intPart;
+
 	    if (fractPart <= -0.5) {
 		result--;
 	    } else if (fractPart >= 0.5) {
@@ -5666,23 +5676,31 @@ ExprRoundFunc(clientData, interp, objc, objv)
 	    return TCL_OK;
 	}
     }
+
     if (type != TCL_NUMBER_NAN) {
-	/* All integers are already rounded */
+	/*
+	 * All integers are already rounded
+	 */
+
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     }
-    /* Get the error message for NaN */
+
+    /*
+     * Get the error message for NaN.
+     */
+
     Tcl_GetDoubleFromObj(interp, objv[1], &d);
     return TCL_ERROR;
 }
 
 static int
-ExprSrandFunc(clientData, interp, objc, objv)
-    ClientData clientData;	/* Ignored. */
-    Tcl_Interp *interp;		/* The interpreter in which to execute the
+ExprSrandFunc(
+    ClientData clientData,	/* Ignored. */
+    Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
-    int objc;			/* Actual parameter count */
-    Tcl_Obj *CONST *objv;	/* Parameter vector */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Parameter vector */
 {
     Interp *iPtr = (Interp *) interp;
     long i = 0;			/* Initialized to avoid compiler warning. */
@@ -5697,7 +5715,7 @@ ExprSrandFunc(clientData, interp, objc, objv)
     }
 
     if (Tcl_GetLongFromObj(interp, objv[1], &i) != TCL_OK) {
-	/* TODO: more ::errorInfo here?  or in caller? */
+	/* TODO: more ::errorInfo here? or in caller? */
 	return TCL_ERROR;
     }
 
@@ -5720,7 +5738,6 @@ ExprSrandFunc(clientData, interp, objc, objv)
      */
 
     return ExprRandFunc(clientData, interp, 1, objv);
-
 }
 
 /*
@@ -5741,15 +5758,15 @@ ExprSrandFunc(clientData, interp, objc, objv)
  */
 
 static void
-MathFuncWrongNumArgs(interp, expected, found, objv)
-     Tcl_Interp* interp;	/* Tcl interpreter */
-     int expected;		/* Formal parameter count */
-     int found;			/* Actual parameter count */
-     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+MathFuncWrongNumArgs(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int expected,		/* Formal parameter count */
+    int found,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
-    Tcl_Obj* errorMessage;
-    CONST char* name = Tcl_GetString(objv[0]);
-    CONST char* tail = name + strlen(name);
+    Tcl_Obj *errorMessage;
+    CONST char *name = Tcl_GetString(objv[0]);
+    CONST char *tail = name + strlen(name);
 
     while (tail > name+1) {
 	--tail;
@@ -5758,15 +5775,10 @@ MathFuncWrongNumArgs(interp, expected, found, objv)
 	    break;
 	}
     }
-    errorMessage = Tcl_NewStringObj("too ", -1);
-    if (found < expected) {
-	Tcl_AppendToObj(errorMessage, "few", -1);
-    } else {
-	Tcl_AppendToObj(errorMessage, "many", -1);
-    }
-    Tcl_AppendToObj(errorMessage, " arguments for math function \"", -1);
-    Tcl_AppendToObj(errorMessage, name, -1);
-    Tcl_AppendToObj(errorMessage, "\"", -1);
+    TclNewObj(errorMessage);
+    TclObjPrintf(NULL, errorMessage,
+	    "too %s arguments for math function \"%s\"",
+	    (found < expected ? "few", "many"), name);
     Tcl_SetObjResult(interp, errorMessage);
 }
 
