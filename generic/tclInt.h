@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.256 2005/11/04 02:13:41 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.257 2005/11/12 04:08:05 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2122,8 +2122,8 @@ MODULE_SCOPE int	TclParseBackslash(CONST char *src,
 MODULE_SCOPE int	TclParseHex(CONST char *src, int numBytes,
 			    Tcl_UniChar *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp* interp, Tcl_Obj* objPtr,
-			    CONST char* type, CONST char* string,
-			    size_t length, CONST char** endPtrPtr, int flags);
+			    CONST char *expected, CONST char* bytes,
+			    int numBytes, CONST char** endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, CONST char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
 #if 0
