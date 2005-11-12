@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.178 2005/11/11 23:50:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.179 2005/11/12 02:01:10 das Exp $
  */
 
 #include "tclInt.h"
@@ -5778,7 +5778,7 @@ MathFuncWrongNumArgs(
     TclNewObj(errorMessage);
     TclObjPrintf(NULL, errorMessage,
 	    "too %s arguments for math function \"%s\"",
-	    (found < expected ? "few", "many"), name);
+	    (found < expected ? "few" : "many"), name);
     Tcl_SetObjResult(interp, errorMessage);
 }
 
