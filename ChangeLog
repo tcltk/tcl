@@ -1,3 +1,10 @@
+2005-11-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Revised TclParseNumber interface to enable
+	* generic/tclScan.c:	revision to the [scan] command implementation
+	* generic/tclStrToD.c:	to permit tests scan-4.44,55 to pass again.
+	[Bug 1348067].
+
 2005-11-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
@@ -8,14 +15,13 @@
 	as knownbug, pending resolution of what is actually the correct
 	return value ([Bug 1354540])
 	
-	
 2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTimer.c: Changed [after] so that it behaves correctly
 	* tests/timer.test:   with negative arguments [Bug 1350293] and
 	                      arguments that overflow a 32-bit word
 	                      [Bug 1350291].
-	
+
 2005-11-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/compile.test:	Updated tests with changed behavior
