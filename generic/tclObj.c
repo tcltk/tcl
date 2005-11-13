@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.98 2005/11/11 22:20:24 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.99 2005/11/13 01:21:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3503,7 +3503,7 @@ Tcl_GetCommandFromObj(
 	    && (resPtr->refNsId == currNsPtr->nsId)
 	    && (resPtr->refNsCmdEpoch == currNsPtr->cmdRefEpoch)) {
 	cmdPtr = resPtr->cmdPtr;
-	if ((cmdPtr->cmdEpoch != resPtr->cmdEpoch) || (cmdPtr->hPtr == NULL)) {
+	if ((cmdPtr->cmdEpoch != resPtr->cmdEpoch) || (cmdPtr->flags & CMD_IS_DELETED)) {
 	    cmdPtr = NULL;
 	}
     }
