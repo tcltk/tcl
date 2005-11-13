@@ -1,3 +1,10 @@
+2005-11-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
+	* generic/tclObj.c (Tcl_GetCommandFromObj): more partial fixes for
+	[Bug 1354540] - making sure that cached references to a command
+	being deleted cannot be made reusable by a delete trace.
+
 2005-11-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclNamesp.c (Tcl_FindCommand): Do not find commands in dead

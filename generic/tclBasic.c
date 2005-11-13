@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.179 2005/11/12 02:01:10 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.180 2005/11/13 01:21:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2441,13 +2441,6 @@ Tcl_DeleteCommandFromToken(
     Tcl_Command importCmd;
 
     /*
-     * Bump the command epoch counter. This will invalidate all cached
-     * references that point to this command.
-     */
-
-    cmdPtr->cmdEpoch++;
-
-    /*
      * The code here is tricky. We can't delete the hash table entry before
      * invoking the deletion callback because there are cases where the
      * deletion callback needs to invoke the command (e.g. object systems such
@@ -2477,7 +2470,8 @@ Tcl_DeleteCommandFromToken(
      * may try to avoid this (renaming the command etc). Also traces and
      * delete procs may try to delete the command themsevles. This flag
      * declares that a delete is in progress and that recursive deletes should
-     * be ignored.
+     * be ignored. It also invalidates all cached references that point to
+     * this command. 
      */
 
     cmdPtr->flags |= CMD_IS_DELETED;
