@@ -1,3 +1,13 @@
+2005-11-13  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c: 
+	* tests/namespace.test: fix for bugs #1354540 and #1355942. The
+	new tests 7.3-6 and the modified 51.13 fail due to the unrelated
+	[Bug 1355342] 
+
+	* tests/trace.test: added tests 20.13-16 for [Bug 1355342]
+
 2005-11-12  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
