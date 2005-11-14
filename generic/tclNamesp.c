@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.87 2005/11/12 23:15:50 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.88 2005/11/14 00:41:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -941,12 +941,16 @@ Tcl_DeleteNamespace(
 	    }
 	}
 	nsPtr->parentPtr = NULL;
-    } else {
+    } else if (!(nsPtr->flags & NS_KILLED)) {
 	/*
 	 * Delete the namespace and everything in it. If this is the global
 	 * namespace, then clear it but don't free its storage unless the
-	 * interpreter is being torn down.
+	 * interpreter is being torn down. Set the NS_KILLED flag to avoid
+	 * recursive calls here - if the namespace is really in the process of
+	 * being deleted, ignore any second call.
 	 */
+
+	nsPtr->flags |= (NS_DYING|NS_KILLED);
 
 	TclTeardownNamespace(nsPtr);
 
@@ -3277,13 +3281,14 @@ NamespaceDeleteCmd(
     /*
      * Destroying one namespace may cause another to be destroyed. Break this
      * into two passes: first check to make sure that all namespaces on the
-     * command line are valid, and report any errors.
+     * command line are valid, and report any errors. 
      */
 
     for (i = 2;  i < objc;  i++) {
 	name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name, NULL, /*flags*/ 0);
-	if (namespacePtr == NULL) {
+	if ((namespacePtr == NULL)
+		|| (((Namespace *)namespacePtr)->flags & NS_KILLED)) {
 	    Tcl_AppendResult(interp, "unknown namespace \"",
 		    TclGetString(objv[i]),
 		    "\" in namespace delete command", NULL);
