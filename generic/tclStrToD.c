@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.16 2005/11/12 04:08:06 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.17 2005/11/14 17:43:51 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -934,7 +934,8 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
-	    panic("in TclParseNumber: bad acceptState, can't happen.");
+	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
+		    acceptState, bytes);
 
 #ifdef TIP_114_FORMATS
 	case BINARY:
