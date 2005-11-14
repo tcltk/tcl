@@ -1,3 +1,8 @@
+2005-11-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (CallCommandTraces):	Save/restore the
+	interp result during traces to fix [Bug 1355342].
+
 2005-11-13  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
