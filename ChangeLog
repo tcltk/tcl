@@ -1,5 +1,8 @@
 2005-11-14  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStrToD.c:	More data in the "can't happen" Tcl_Panic
+	to aid debugging.
+
 	* generic/tclBasic.c (CallCommandTraces):	Save/restore the
 	interp result during traces to fix [Bug 1355342].
 
