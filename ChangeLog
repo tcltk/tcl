@@ -1,3 +1,14 @@
+2005-11-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/cmdAH.test: Backported the fix for [Bug 926016] because of
+	* win/tclWinFile.c: a repeated bug report in 8.4 [Bug 1353840].
+	Windows [file mtime] will now return seconds from the Posix epoch
+	correctly (except for FAT32 file systems after a DST change
+	without a reboot - for which there is no help).  A side effect is
+	that file times will appear different in Tcl from the way they do
+	in Windows Explorer or a 'dir' listing, because the Microsoft
+	tools get the DST state wrong in the listings.
+	
 2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTimer.c: Changed [after] so that it behaves correctly
