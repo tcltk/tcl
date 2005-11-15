@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.12 2005/06/22 21:23:33 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.13 2005/11/15 16:41:41 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -21,6 +21,13 @@
 #include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
+
+/*
+ * The number of 100-ns intervals between the Windows system epoch (1601-01-01
+ * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
+ */
+
+#define POSIX_EPOCH_AS_FILETIME		116444736000000000
 
 /*
  * Declarations for 'link' related information.  This information
@@ -151,6 +158,7 @@ typedef enum _FINDEX_SEARCH_OPS {
 /* Other typedefs required by this code */
 
 static time_t		ToCTime(FILETIME fileTime);
+static void		FromCTime(time_t posixTime, FILETIME *fileTime);
 
 typedef NET_API_STATUS NET_API_FUNCTION NETUSERGETINFOPROC
 	(LPWSTR servername, LPWSTR username, DWORD level, LPBYTE *bufptr);
@@ -1860,57 +1868,57 @@ NativeStatMode(DWORD attr, int checkLinks, int isExec)
     return (unsigned short)mode;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * ToCTime --
+ *
+ *	Converts a Windows FILETIME to a time_t in UTC.
+ *
+ * Results:
+ *	Returns the count of seconds from the Posix epoch.
+ *
+ *------------------------------------------------------------------------
+ */
+
 static time_t
 ToCTime(
-    FILETIME fileTime)		/* UTC Time to convert to local time_t. */
+    FILETIME fileTime)		/* UTC time */
 {
-    FILETIME localFileTime;
-    SYSTEMTIME systemTime;
-    struct tm tm;
+    LARGE_INTEGER convertedTime;
 
-    if (FileTimeToLocalFileTime(&fileTime, &localFileTime) == 0) {
-	return 0;
-    }
-    if (FileTimeToSystemTime(&localFileTime, &systemTime) == 0) {
-	return 0;
-    }
-    tm.tm_sec = systemTime.wSecond;
-    tm.tm_min = systemTime.wMinute;
-    tm.tm_hour = systemTime.wHour;
-    tm.tm_mday = systemTime.wDay;
-    tm.tm_mon = systemTime.wMonth - 1;
-    tm.tm_year = systemTime.wYear - 1900;
-    tm.tm_wday = 0;
-    tm.tm_yday = 0;
-    tm.tm_isdst = -1;
+    convertedTime.LowPart = fileTime.dwLowDateTime;
+    convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
-    return mktime(&tm);
+    return (time_t) ((convertedTime.QuadPart
+	    - (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME) / (Tcl_WideInt) 10000000);
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * FromCTime --
+ *
+ *	Converts a time_t to a Windows FILETIME
+ *
+ * Results:
+ *	Returns the count of 100-ns ticks seconds from the Windows epoch.
+ *
+ *------------------------------------------------------------------------
+ */
 
-#if 0
-
-    /*
-     * Borland's stat doesn't take into account localtime.
-     */
-
-    if ((result == 0) && (buf->st_mtime != 0)) {
-	TIME_ZONE_INFORMATION tz;
-	int time, bias;
-
-	time = GetTimeZoneInformation(&tz);
-	bias = tz.Bias;
-	if (time == TIME_ZONE_ID_DAYLIGHT) {
-	    bias += tz.DaylightBias;
-	}
-	bias *= 60;
-	buf->st_atime -= bias;
-	buf->st_ctime -= bias;
-	buf->st_mtime -= bias;
-    }
-
-#endif
-
-
+static void
+FromCTime(
+    time_t posixTime,
+    FILETIME* fileTime)		/* UTC Time */
+{
+    LARGE_INTEGER convertedTime;
+    convertedTime.QuadPart = ((LONGLONG) posixTime) * 10000000
+	+ POSIX_EPOCH_AS_FILETIME;
+    fileTime->dwLowDateTime = convertedTime.LowPart;
+    fileTime->dwHighDateTime = convertedTime.HighPart;
+}
+
 #if 0
 /*
  *-------------------------------------------------------------------------
@@ -2443,6 +2451,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     return nextCheckpoint;
 }
 
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2454,25 +2463,41 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
  *	0 on success, -1 on error.
  *
  * Side effects:
- *	None.
+ *	Sets errno to a representation of any Windows problem that's observed
+ *	in the process.
  *
  *---------------------------------------------------------------------------
  */
+
 int
-TclpUtime(pathPtr, tval)
-    Tcl_Obj *pathPtr;      /* File to modify */
-    struct utimbuf *tval;  /* New modification date structure */
+TclpUtime(
+    Tcl_Obj *pathPtr,		/* File to modify */
+    struct utimbuf *tval)	/* New modification date structure */
 {
-    int res;
-    /* 
-     * Windows uses a slightly different structure name and, possibly,
-     * contents, so we have to copy the information over
+    int res = 0;
+    HANDLE fileHandle;
+    FILETIME lastAccessTime, lastModTime;
+
+    FromCTime(tval->actime, &lastAccessTime);
+    FromCTime(tval->modtime, &lastModTime);
+
+    /*
+     * We use the native APIs (not 'utime') because there are some daylight
+     * savings complications that utime gets wrong.
      */
-    struct _utimbuf buf;
-    
-    buf.actime = tval->actime;
-    buf.modtime = tval->modtime;
-    
-    res = (*tclWinProcs->utimeProc)(Tcl_FSGetNativePath(pathPtr),&buf);
+
+    fileHandle = (tclWinProcs->createFileProc) (
+	    (CONST TCHAR *) Tcl_FSGetNativePath(pathPtr),
+	    FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
+	    FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (fileHandle == INVALID_HANDLE_VALUE ||
+	    !SetFileTime(fileHandle, NULL, &lastAccessTime, &lastModTime)) {
+	TclWinConvertError(GetLastError());
+	res = -1;
+    }
+    if (fileHandle != INVALID_HANDLE_VALUE) {
+	CloseHandle(fileHandle);
+    }
     return res;
 }
