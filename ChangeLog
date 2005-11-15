@@ -1,3 +1,7 @@
+2005-11-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:		Update changes for 8.4.12 release
+
 2005-11-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/cmdAH.test: Backported the fix for [Bug 926016] because of
@@ -29,6 +33,10 @@
         values will always agree with what is stored in the package database.
         This way repeated calls to Tcl_PkgRequire(Ex) have the same results.
         Thanks to Hemang Lavana.  [Bug 1162286].
+	***POTENTIAL INCOMPATIBILITY***: Incompatible with those existing
+	packages that are accustomed to the [package] command forgiving
+	their bugs.
+
 	* tests/namespace.test (25.7,8):	Backport test of knownBug.
 
 2005-11-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
