@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.26 2005/06/27 18:20:16 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.27 2005/11/15 23:41:18 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4218,7 +4218,7 @@ input lines.  (redman)
 This is used on Windows to avoid the various problems that people
 have been seeing where the system hangs when tclsh is running
 outside of the event loop. As part of this, renamed
-TclpAlertNotifier back to Tcl_AlertNotifier since it is public.
+TcapAlertNotifier back to Tcl_AlertNotifier since it is public.
 (stanton)
 
 3/23/99 (feature change) Test suite now uses "tcltest" namespace to
@@ -6229,3 +6229,84 @@ Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 Restores Tcl 8.4.9 behavior (porter)
 
 --- Released 8.4.11, June 28, 2005 --- See ChangeLog for details ---
+
+2005-07-01 (bug fix)[1222872] notifier spurious wake-up protection (vasiljevic)
+
+2005-07-05 (bug fix)[1077262] improved Tcl_Encoding lifetimes (porter)
+
+2005-07-05 (bug fix)[1230597] allow idempotent [namespace import] (porter)
+
+2005-07-07 (bug fix)[1095909] readdir_r usage purged (hobbs)
+
+2005-07-22 (enhancement)[1237755] 8.4 features in script library (fradin,porter)
+
+2005-07-24 (new feature) configure macros SC_PROG_TCLSH, SC_BUILD_TCLSH (dejong) 
+2005-07-26 (bug fix)[1047286] cmd delete traces during namespace delete (porter)
+
+2005-07-26 (new unix feature)[1231015] ${prefix}/share on ::tcl_pkgPath (dejong)
+
+2005-07-28 (unix bug fix)[1245953] O_APPEND for >> redirection (fellows)
+
+2005-07-29 (bug fix)[1247135] [info globals] return only existing vars (fellows)
+
+2005-07-30 (new Darwin feature) TCL_LOAD_FROM_MEMORY configuration (steffen)
+
+2005-08-05 (bug fix)[1241572] correct [expr abs($LONG_MIN)] (kenny)
+
+2005-08-05 (Solaris bug fix)[1252475] recognize cp1251 encoding (wagner,fellows)
+
+2005-08-17 (bug fix)[1217375] [file mkdir] race (diekhans,darley)
+
+2005-08-25 (bug fix)[1267380] [lrepeat] buffer overflow prevention (fellows)
+
+2005-08-29 (bug fix)[1275043] restore round() away from zero (kenny)
+
+2005-09-07 (bug fix)[1283976] invalid [format %c -1] result (porter)
+
+2005-09-15 (RHEL bug fix)[1287638] support open >2GB files RHEL 3 (palan)
+
+2005-09-30 (bug fix)[1306162] $argv encoding and list formatting (porter)
+
+2005-10-04 (bug fix)[1067708] [fconfigure -ttycontrol] leak (hobbs)
+
+2005-10-04 (bug fix)[1182373] [http::mapReply] update to RFC 3986 (aho,hobbs)
+=> http 2.5.2
+
+2005-10-04 (HPUX bug fix)[1204237] shl_load() and DYNAMIC_PATH (collins,hobbs)
+
+2005-10-05 (bug fix)[979640] buffer overrun mixing putenv(), ::env (bold,hobbs)
+
+2005-10-07 (Darwin bug fix)[1034337] recursive file delete, MacOSX, NFS (hobbs)
+
+2005-10-13 (bug fix)[1284178] [format] accept all integer values (porter)
+
+2005-10-22 (bug fix)[1251791] optimization exposed wide/int difference(sofer)
+
+2005-10-23 (bug fix)[1334947] value refcount error in var setting (sofer)
+
+2005-11-01 (bug fix)[1337941] Tcl_TraceCommand() -> crash (devilliers,porter)
+
+2005-11-03 (new Win NT/XP feature) Unicode console support (kovalenko,thoyts)
+
+2005-11-03 (bug fix)[1201171] [encoding system] in Tclkit (schekin,porter)
+
+2005-11-04 (bug fix)[1337229,1338280] [namespace delete] / unset traces (porter)
+
+2005-11-04 (enhancement) Korean timezone abbreviations (kenny)
+
+2005-11-04 (bug fix)[1317477] double encoding of time zone (kenny)
+
+2005-11-04 (Win enhancement)[1267871] extended exit codes (newman,thoyts)
+
+2005-11-04 (platform support)[1163896] LynxOS [load] (heidibr)
+
+2005-11-08 (bug fix)[1348775] unset trace memory leak (sofer)
+
+2005-11-08 (bug fix)[1162286] [package ifneeded] errors reported (lavana,porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2005-11-09 (bug fix)[1350293] [after $negative $script] fixed (kenny)
+
+2005-11-15 (Win bug fix)[926016,1353840] correct [file mtime] (kenny)
+
+--- Released 8.4.12, November 30, 2005 --- See ChangeLog for details ---
