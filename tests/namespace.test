@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.48 2005/11/14 00:48:14 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.49 2005/11/17 15:29:05 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -158,7 +158,7 @@ test namespace-7.5 {recursive Tcl_DeleteNamespace, no active call frames in ns} 
     }
     namespace delete test_ns_2
 } {}
-test namespace-7.6 {recursive Tcl_DeleteNamespace, active call frames in ns} {
+test namespace-7.6 {recursive Tcl_DeleteNamespace, no active call frames in ns} {
     # [Bug 1355942]
     # Currently fails due to [Bug 1355342]
     namespace eval test_ns_2 {
