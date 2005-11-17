@@ -4,8 +4,8 @@
 
 2005-11-14  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStrToD.c:	More data in the "can't happen" Tcl_Panic
-	to aid debugging.
+	* generic/tclStrToD.c:	More data in the "can't happen" Tcl_Panic to
+	aid debugging.
 
 	* generic/tclBasic.c (CallCommandTraces):	Save/restore the
 	interp result during traces to fix [Bug 1355342].
@@ -13,10 +13,10 @@
 2005-11-13  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
-	* generic/tclNamesp.c: 
-	* tests/namespace.test: fix for bugs #1354540 and #1355942. The
-	new tests 7.3-6 and the modified 51.13 fail due to the unrelated
-	[Bug 1355342] 
+	* generic/tclNamesp.c:
+	* tests/namespace.test: fix for [Bug 1354540] and [Bug 1355942]. The
+	new tests 7.3-6 and the modified 51.13 fail due to the unrelated [Bug
+	1355342]
 
 	* tests/trace.test: added tests 20.13-16 for [Bug 1355342]
 
@@ -24,8 +24,8 @@
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
 	* generic/tclObj.c (Tcl_GetCommandFromObj): more partial fixes for
-	[Bug 1354540] - making sure that cached references to a command
-	being deleted cannot be made reusable by a delete trace.
+	[Bug 1354540] - making sure that cached references to a command being
+	deleted cannot be made reusable by a delete trace.
 
 2005-11-12  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -42,13 +42,13 @@
 2005-11-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
-	* generic/tclObj.c (Tcl_GetCommandFromObj): bump the cmd epoch
-	early to insure that cached references to this command are
-	invalidated. Partial fix for [Bug 1352734] - at least insures that
-	namespace-51.13 does not cause a panic. The test is still marked
-	as knownbug, pending resolution of what is actually the correct
-	return value ([Bug 1354540])
-	
+	* generic/tclObj.c (Tcl_GetCommandFromObj): bump the cmd epoch early
+	to insure that cached references to this command are invalidated.
+	Partial fix for [Bug 1352734] - at least insures that namespace-51.13
+	does not cause a panic. The test is still marked as knownbug, pending
+	resolution of what is actually the correct return value ([Bug
+	1354540])
+
 2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTimer.c: Changed [after] so that it behaves correctly
@@ -880,8 +880,8 @@
 	* generic/tclIO.c: Moved Tcl_{Cut,Splice}Channel to
 	{Cut,Splice}Channel for internal use, and created new public functions
 	for Tcl_{Cut,Splice}Channel which walk the whole stack of
-	transformations and invoke the necessary thread actions. Added code
-	to Tcl_(Un)StackChannel to properly invoke the thread actions when
+	transformations and invoke the necessary thread actions. Added code to
+	Tcl_(Un)StackChannel to properly invoke the thread actions when
 	pushing and popping transformations on/from a channel.
 
 2005-08-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
