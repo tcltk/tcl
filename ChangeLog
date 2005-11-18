@@ -1,3 +1,12 @@
+2005-11-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
+	* generic/tclCmdMZ.c (TraceCommandProc):
+	* generic/tclInt.h (NS_KILLED):
+	* generic/tclNamesp.c (Tcl_DeleteNamespace
+	* tests/namespace.test (namespace-7.3-6):
+	* tests/trace.test (trace-20.13-16): fix [Bugs 1355942/1355342]. 
+
 2005-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr
