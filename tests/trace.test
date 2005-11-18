@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.26.2.12 2005/11/07 10:28:01 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.26.2.13 2005/11/18 23:07:27 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1480,6 +1480,27 @@ test trace-20.12 {delete trace renames command} {
     # None of these should exist.
     list [info commands foo] [info commands bar] [info commands someothername]
 } {{} {} {}}
+
+test trace-20.13 {rename trace discards result [Bug 1355342]} {
+    proc foo {} {}
+    trace add command foo rename {set w Aha!;#}
+    list [rename foo bar] [rename bar {}]
+} {{} {}}
+test trace-20.14 {rename trace discards error result [Bug 1355342]} {
+    proc foo {} {}
+    trace add command foo rename {error}
+    list [rename foo bar] [rename bar {}]
+} {{} {}}
+test trace-20.15 {delete trace discards result [Bug 1355342]} {
+    proc foo {} {}
+    trace add command foo delete {set w Aha!;#}
+    rename foo {}
+} {}
+test trace-20.16 {delete trace discards error result [Bug 1355342]} {
+    proc foo {} {}
+    trace add command foo delete {error}
+    rename foo {}
+} {}
 
 proc foo {b} { set a $b }
 

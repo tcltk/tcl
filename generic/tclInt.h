@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.19 2005/11/04 01:15:20 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.20 2005/11/18 23:07:27 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -270,10 +270,13 @@ typedef struct Namespace {
  *		in any byte code code unit that refers to the namespace has
  *		been freed (i.e., when the namespace's refCount is 0), the
  *		namespace's storage will be freed.
+ * NS_KILLED    1 means that TclTeardownNamespace has already been called on
+ *              this namespace and it should not be called again [Bug 1355942]
  */
 
 #define NS_DYING	0x01
 #define NS_DEAD		0x02
+#define NS_KILLED       0x04
 
 /*
  * Flag passed to TclGetNamespaceForQualName to have it create all namespace
