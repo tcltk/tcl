@@ -1,3 +1,9 @@
+2005-11-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n:  Restored several missing lines near the %w
+	format group so that %w and %W are documented with their
+	actual behaviour.  [Bug 1359183]
+	
 2005-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr
