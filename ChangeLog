@@ -1,3 +1,10 @@
+2005-11-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclObj.c (GetBignumFromObj): replace NULL with
+	tclEmptyStringRep to stop memcpy from complaining in a debug build
+	(the corresponding branch is eliminated by the optimiser
+	otherwise). 
+
 2005-11-18  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts'
