@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.40 2005/11/18 13:57:53 dkf Exp $
+# RCS: @(#) $Id: http.test,v 1.41 2005/11/18 14:51:02 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -122,8 +122,8 @@ test http-3.2 {http::geturl} {
     catch {http::geturl http:junk} err
     set err
 } {Unsupported URL: http:junk}
-set url [info hostname]:$port
-set badurl [info hostname]:6666
+set url //[info hostname]:$port
+set badurl //[info hostname]:6666
 test http-3.3 {http::geturl} {
     set token [http::geturl $url]
     http::data $token
@@ -132,11 +132,11 @@ test http-3.3 {http::geturl} {
 <h2>GET /</h2>
 </body></html>"
 set tail /a/b/c
-set url [info hostname]:$port/a/b/c
+set url //[info hostname]:$port/a/b/c
 set fullurl http://user:pass@[info hostname]:$port/a/b/c
-set binurl [info hostname]:$port/binary
-set posturl [info hostname]:$port/post
-set badposturl [info hostname]:$port/droppost
+set binurl //[info hostname]:$port/binary
+set posturl //[info hostname]:$port/post
+set badposturl //[info hostname]:$port/droppost
 test http-3.4 {http::geturl} {
     set token [http::geturl $url]
     http::data $token
@@ -155,7 +155,7 @@ test http-3.5 {http::geturl} {
     http::data $token
 } "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
-<h2>GET http://$url</h2>
+<h2>GET http:$url</h2>
 </body></html>"
 test http-3.6 {http::geturl} {
     http::config -proxyfilter bogus
@@ -381,7 +381,7 @@ test http-4.6 {http::Event} {
     close $in
     removeFile $testfile
     set x
-} "$bindata$binurl"
+} "$bindata[string trimleft $binurl /]"
 proc myProgress {token total current} {
     global progress httpLog
     if {[info exists httpLog] && $httpLog} {
@@ -453,7 +453,7 @@ test http-4.15 {http::Event} {
     # This test may fail if you use a proxy server.  That is to be
     # expected and is not a problem with Tcl.
     set code [catch {
-	set token [http::geturl not_a_host.tcl.tk -timeout 1000 -command {#}]
+	set token [http::geturl //not_a_host.tcl.tk -timeout 1000 -command {#}]
 	http::wait $token
 	http::status $token
     } err]
@@ -488,7 +488,7 @@ test http-6.1 {http::ProxyRequired} {
     set data(body)
 } "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
-<h2>GET http://$url</h2>
+<h2>GET http:$url</h2>
 </body></html>"
 
 test http-7.1 {http::mapReply} {
