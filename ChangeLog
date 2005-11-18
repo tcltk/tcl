@@ -1,3 +1,11 @@
+2005-11-18  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts'
+	  patch for [SF Tcl Bug 1359094]. This moves the retrieval of the
+	  next channel state to the end of the loop, as the called
+	  closeproc may close other channels, i.e. modify the list we are
+	  iterating, invalidating any pointer retrieved earlier.
+
 2005-11-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclListObj.c:	Restored the SetListFromAny routine to
