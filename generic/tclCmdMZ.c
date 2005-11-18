@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.24 2005/11/08 14:53:12 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.25 2005/11/18 23:07:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4167,9 +4167,18 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	 * Remove the trace since TCL_TRACE_DESTROYED tells us to, or the
 	 * command we're tracing has just gone away.  Then decrement the
 	 * clientData refCount that was set up by trace creation.
+	 *
+	 * Note that we save the (return) state of the interpreter to prevent
+	 * bizarre error messages.
 	 */
+
+	Tcl_SaveResult(interp, &state);
+	stateCode = iPtr->returnCode;
 	Tcl_UntraceCommand(interp, oldName, untraceFlags,
 		TraceCommandProc, clientData);
+	Tcl_RestoreResult(interp, &state);
+	iPtr->returnCode = stateCode;
+
 	tcmdPtr->refCount--;
     }
     tcmdPtr->refCount--;
