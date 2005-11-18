@@ -1,5 +1,9 @@
 2005-11-18  Miguel Sofer <msofer@users.sf.net>
 
+	* tests/trace.test (trace-34.5): [Bug 1047286], added a second
+	test illustrating the role of "ns in callStack" in the ns's
+	visibility during deletion traces. 
+
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
 	* generic/tclCmdMZ.c (TraceCommandProc):
 	* generic/tclInt.h (NS_KILLED):
