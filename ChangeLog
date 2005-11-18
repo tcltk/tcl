@@ -1,3 +1,8 @@
+2005-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr
+	until we netrieve next statePtr from it.
+
 2005-11-18  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclObj.c (GetBignumFromObj): replace NULL with
