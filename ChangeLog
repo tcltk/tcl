@@ -1,3 +1,9 @@
+2005-11-18  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-34.5): [Bug 1047286], added a second
+	test illustrating the role of "ns in callStack" in the ns's
+	visibility during deletion traces. 
+
 2005-11-18  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n:  Restored several missing lines near the %w
