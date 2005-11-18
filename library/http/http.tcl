@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.54 2005/11/18 13:57:53 dkf Exp $
+# RCS: @(#) $Id: http.tcl,v 1.55 2005/11/18 14:51:02 dkf Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -333,7 +333,7 @@ proc http::geturl { url args } {
 
     set URLmatcher {(?x)		# this is _expanded_ syntax
 	^
-	(?: (\w+) : )			# <protocol scheme>
+	(?: (\w+) : ) ?			# <protocol scheme>
 	(?: //
 	    (?:
 		(
@@ -343,7 +343,7 @@ proc http::geturl { url args } {
 	    ( [^/:\#?]+ )		# <host part of authority>
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#?]* (?: \? [^\#?]* ) )?	# <path> (including query)
+	( / [^\#?]* (?: \? [^\#?]* )?)?	# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -372,13 +372,13 @@ proc http::geturl { url args } {
 	# Check for validity according to RFC 3986, Appendix A
 	set validityRE {(?xi)
 	    ^
-	    (?: [\w-.~!$&'()*+,;=:] | %[0-9a-f][0-9a-f] )+
+	    (?: [-\w.~!$&'()*+,;=:] | %[0-9a-f][0-9a-f] )+
 	    $
 	}
 	if {![regexp -- $validityRE $user]} {
 	    unset $token
 	    # Provide a better error message in this error case
-	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f]).?.?} $path bad]} {
+	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f]).?.?} $user bad]} {
 		return -code error \
 			"Illegal encoding character usage \"$bad\" in URL user"
 	    }
@@ -390,15 +390,15 @@ proc http::geturl { url args } {
 	set validityRE {(?xi)
 	    ^
 	    # Path part (already must start with / character)
-	    (?:	      [\w-.~!$&'()*+,;=:@/]  | %[0-9a-f][0-9a-f] )*
+	    (?:	      [-\w.~!$&'()*+,;=:@/]  | %[0-9a-f][0-9a-f] )*
 	    # Query part (optional, permits ? characters)
-	    (?: ? (?: [\w-.~!$&'()*+,;=:@/?] | %[0-9a-f][0-9a-f] )* )?
+	    (?: \? (?: [-\w.~!$&'()*+,;=:@/?] | %[0-9a-f][0-9a-f] )* )?
 	    $
 	}
 	if {![regexp -- $validityRE $srvurl]} {
 	    unset $token
 	    # Provide a better error message in this error case
-	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f])..} $path bad]} {
+	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f])..} $srvurl bad]} {
 		return -code error \
 			"Illegal encoding character usage \"$bad\" in URL path"
 	    }
