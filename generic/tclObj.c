@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.100 2005/11/18 15:58:18 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.101 2005/11/18 17:23:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2745,7 +2745,7 @@ GetBignumFromObj(
 		objPtr->internalRep.ptrAndLongRep.value = 0;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, NULL, 0);
+		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
 		}
 	    }
 	    return TCL_OK;
