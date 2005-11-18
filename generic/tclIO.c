@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.15 2005/10/14 17:12:32 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.16 2005/11/18 17:14:52 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -210,7 +210,6 @@ TclFinalizeIOSubsystem()
     for (statePtr = tsdPtr->firstCSPtr; statePtr != (ChannelState *) NULL;
 	 statePtr = nextCSPtr) {
 	chanPtr		= statePtr->topChanPtr;
-        nextCSPtr	= statePtr->nextCSPtr;
 
         /*
          * Set the channel back into blocking mode to ensure that we wait
@@ -273,6 +272,11 @@ TclFinalizeIOSubsystem()
             chanPtr->instanceData = (ClientData) NULL;
             statePtr->flags |= CHANNEL_DEAD;
         }
+	/*
+	 * We look for the next pointer now in case we had one closed on up during
+	 * the current channel's closeproc. (eg: rechan extension). [PT]
+	 */
+	nextCSPtr = statePtr->nextCSPtr;
     }
     TclpFinalizePipes();
 }
