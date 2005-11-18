@@ -1,3 +1,11 @@
+2005-11-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Restored the SetListFromAny routine to
+	* generic/tclObj.c:	the "list" Tcl_ObjType, and restored the
+	Tcl_RegisterObjType() call for "list".  This addresses the needs
+	of some "bridge" extensions to examine whether the Tcl_ObjType of
+	a Tcl_Obj is that of the "list" Tcl_ObjType.
+
 2005-11-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* library/http/http.tcl (http::geturl): Improved syntactic validation
