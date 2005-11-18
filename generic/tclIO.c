@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.16 2005/11/18 17:14:52 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.17 2005/11/18 19:38:02 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -209,20 +209,19 @@ TclFinalizeIOSubsystem()
 
     for (statePtr = tsdPtr->firstCSPtr; statePtr != (ChannelState *) NULL;
 	 statePtr = nextCSPtr) {
-	chanPtr		= statePtr->topChanPtr;
+	chanPtr = statePtr->topChanPtr;
 
         /*
          * Set the channel back into blocking mode to ensure that we wait
          * for all data to flush out.
          */
-        
+
         (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
                 "-blocking", "on");
 
         if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
                 (chanPtr == (Channel *) tsdPtr->stdoutChannel) ||
                 (chanPtr == (Channel *) tsdPtr->stderrChannel)) {
-
             /*
              * Decrement the refcount which was earlier artificially bumped
              * up to keep the channel from being closed.
@@ -231,6 +230,11 @@ TclFinalizeIOSubsystem()
             statePtr->refCount--;
         }
 
+	/*
+	 * Preserve statePtr from disappearing until we can get the
+	 * nextCSPtr below.
+	 */
+	Tcl_Preserve(statePtr);
         if (statePtr->refCount <= 0) {
 
 	    /*
@@ -240,9 +244,7 @@ TclFinalizeIOSubsystem()
              */
 
             (void) Tcl_Close((Tcl_Interp *) NULL, (Tcl_Channel) chanPtr);
-
         } else {
-
             /*
              * The refcount is greater than zero, so flush the channel.
              */
@@ -253,7 +255,7 @@ TclFinalizeIOSubsystem()
              * Call the device driver to actually close the underlying
              * device for this channel.
              */
-            
+
 	    if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
 		(chanPtr->typePtr->closeProc)(chanPtr->instanceData,
 			(Tcl_Interp *) NULL);
@@ -273,11 +275,12 @@ TclFinalizeIOSubsystem()
             statePtr->flags |= CHANNEL_DEAD;
         }
 	/*
-	 * We look for the next pointer now in case we had one closed on up during
-	 * the current channel's closeproc. (eg: rechan extension). [PT]
+	 * We look for the next pointer now in case we had one closed on up
+	 * during the current channel's closeproc (eg: rechan extension)
 	 */
 	nextCSPtr = statePtr->nextCSPtr;
-    }
+	Tcl_Release(statePtr);
+   }
     TclpFinalizePipes();
 }
 
