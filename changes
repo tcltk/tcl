@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.27 2005/11/15 23:41:18 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.28 2005/11/18 15:49:06 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6308,5 +6308,7 @@ Restores Tcl 8.4.9 behavior (porter)
 2005-11-09 (bug fix)[1350293] [after $negative $script] fixed (kenny)
 
 2005-11-15 (Win bug fix)[926016,1353840] correct [file mtime] (kenny)
+
+2005-11-18 (bug fix)[1358369] URL parsing standards compliance (wu,fellows)
 
 --- Released 8.4.12, November 30, 2005 --- See ChangeLog for details ---
