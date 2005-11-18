@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.29 2005/11/11 23:46:34 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.30 2005/11/18 15:58:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -43,7 +43,7 @@ Tcl_ObjType tclListType = {
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    NULL			/* setFromAnyProc */
+    SetListFromAny		/* setFromAnyProc */
 };
 
 /*
