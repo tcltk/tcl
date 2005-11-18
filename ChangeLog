@@ -1,3 +1,8 @@
+2005-11-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* library/http/http.tcl (http::geturl): Improved syntactic validation
+	of URLs, and better error messages in some cases. [Bug 1358369]
+
 2005-11-17  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/namespace.test: fix comment
