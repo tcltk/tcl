@@ -643,6 +643,13 @@ equivalent). Each week begins on a Monday. On input, accepts the
 ISO8601 week number.
 .TP
 \fB%w\fR
+On output, produces the ordinal number of the day of the week
+(Sunday==0; Saturday==6).  On input, accepts a single digit and
+interprets it as the day of the week; Sunday may be represented as 
+either 0 or 7.  Note that \fB%w\fR is not the ISO8601 weekday number, 
+which is produced and accepted by \fB%u\fR.
+.TP
+\fB%W\fR
 On output, produces a week number (00-53) within the year; week 01
 begins on the first Monday of the year. On input, accepts two digits,
 which are otherwise ignored. This format group is never used in
