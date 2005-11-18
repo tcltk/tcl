@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.18 2005/10/23 22:01:28 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.19 2005/11/18 23:07:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2431,6 +2431,13 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     cmdPtr->flags |= CMD_IS_DELETED;
 
     /*
+     * Bump the command epoch counter. This will invalidate all cached
+     * references that point to this command.
+     */
+    
+    cmdPtr->cmdEpoch++;
+
+    /*
      * Call trace procedures for the command being deleted. Then delete
      * its traces. 
      */
@@ -2483,13 +2490,6 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 
 	(*cmdPtr->deleteProc)(cmdPtr->deleteData);
     }
-
-    /*
-     * Bump the command epoch counter. This will invalidate all cached
-     * references that point to this command.
-     */
-    
-    cmdPtr->cmdEpoch++;
 
     /*
      * If this command was imported into other namespaces, then imported

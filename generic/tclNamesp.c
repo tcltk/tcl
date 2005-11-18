@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.9 2005/11/04 01:15:20 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.10 2005/11/18 23:07:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -612,13 +612,17 @@ Tcl_DeleteNamespace(namespacePtr)
             }
         }
         nsPtr->parentPtr = NULL;
-    } else {
+    } else if (!(nsPtr->flags & NS_KILLED)) {
 	/*
 	 * Delete the namespace and everything in it. If this is the global
 	 * namespace, then clear it but don't free its storage unless the
-	 * interpreter is being torn down.
+	 * interpreter is being torn down. Set the NS_KILLED flag to avoid
+	 * recursive calls here - if the namespace is really in the process of
+	 * being deleted, ignore any second call.
 	 */
 
+	nsPtr->flags |= (NS_DYING|NS_KILLED);
+	
         TclTeardownNamespace(nsPtr);
 
         if ((nsPtr != globalNsPtr) || (iPtr->flags & DELETED)) {
@@ -2048,11 +2052,12 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
         if ((nsPtr[search] != NULL) && (simpleName != NULL)) {
 	    entryPtr = Tcl_FindHashEntry(&nsPtr[search]->cmdTable,
 		    simpleName);
-            if (entryPtr != NULL) {
-                cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
-            }
-        }
+	    if (entryPtr != NULL) {
+		cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+	    }
+	}
     }
+
     if (cmdPtr != NULL) {
         return (Tcl_Command) cmdPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
@@ -2887,7 +2892,7 @@ NamespaceDeleteCmd(dummy, interp, objc, objv)
         name = Tcl_GetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name,
 		(Tcl_Namespace *) NULL, /*flags*/ 0);
-        if (namespacePtr == NULL) {
+	if (namespacePtr == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                     "unknown namespace \"", Tcl_GetString(objv[i]),
 		    "\" in namespace delete command", (char *) NULL);
