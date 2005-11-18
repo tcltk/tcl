@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.46 2005/11/14 00:41:06 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.47 2005/11/18 23:42:12 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2334,6 +2334,8 @@ test trace-34.3 {Bug 1224585} {
     foo
 } {}
 
+# We test here for the half-documented and currently valid interplay between
+# delete traces and namespace deletion.
 test trace-34.4 {Bug 1047286} {
     variable x notrace
     proc callback {old - -} {
@@ -2344,6 +2346,17 @@ test trace-34.4 {Bug 1047286} {
     namespace delete ::foo
     set x
 } {::foo::bar exists: ::foo::bar}
+
+test trace-34.5 {Bug 1047286} {
+    variable x notrace
+    proc callback {old - -} {
+        variable x "$old exists: [namespace which -command $old]"
+    }
+    namespace eval ::foo {proc bar {} {}}
+    trace add command ::foo::bar delete [namespace code callback]
+    namespace eval ::foo namespace delete ::foo
+    set x
+} {::foo::bar exists: }
 
 test trace-35.1 {527164: Keep -errorinfo of traces} -setup {
     unset -nocomplain x y
