@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.2.1 2005/11/08 18:28:56 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.2.2 2005/11/18 19:27:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -331,8 +331,8 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 	    Tcl_Release((ClientData) script);
 	    pkgPtr = FindPackage(interp, name);
 	    if (code == TCL_OK) {
-		Tcl_ResetResult(interp);
 		if (pkgPtr->version == NULL) {
+		    Tcl_ResetResult(interp);
 		    code = TCL_ERROR;
 		    Tcl_AppendResult(interp, "attempt to provide package ",
 			    name, " ", versionToProvide,
@@ -340,11 +340,55 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 			    " provided", NULL);
 		} else if (0 != ComparePkgVersions(
 			pkgPtr->version, versionToProvide, NULL)) {
-		    code = TCL_ERROR;
-		    Tcl_AppendResult(interp, "attempt to provide package ",
-			    name, " ", versionToProvide, " failed: package ",
-			    name, " ", pkgPtr->version, " provided instead",
-			    NULL);
+		    /* At this point, it is clear that a prior
+		     * [package ifneeded] command lied to us.  It said
+		     * that to get a particular version of a particular
+		     * package, we needed to evaluate a particular script.
+		     * However, we evaluated that script and got a different
+		     * version than we were told.  This is an error, and we
+		     * ought to report it.
+		     *
+		     * However, we've been letting this type of error slide
+		     * for a long time, and as a result, a lot of packages
+		     * suffer from them.
+		     *
+		     * It's a bit too harsh to make a large number of
+		     * existing packages start failing by releasing a
+		     * new patch release, so we forgive this type of error
+		     * for the rest of the Tcl 8.4 series, and only report
+		     * a warning.  We limit the error reporting to only
+		     * the situation where a broken ifneeded script leads
+		     * to a failure to satisfy the requirement.
+		     */
+		    if (version) {
+			result = ComparePkgVersions(
+				pkgPtr->version, version, &satisfies);
+			if (result && (exact || !satisfies)) {
+			    Tcl_ResetResult(interp);
+			    code = TCL_ERROR;
+			    Tcl_AppendResult(interp,
+				    "attempt to provide package ", name, " ",
+				    versionToProvide, " failed: package ",
+				    name, " ", pkgPtr->version,
+				    " provided instead", NULL);
+			}
+		    }
+		    if (code == TCL_OK) {
+			/* Forgiving the error, report warning instead */
+			Tcl_Obj *msg = Tcl_NewStringObj(
+				"attempt to provide package ", -1);
+			Tcl_Obj *cmdPtr = Tcl_NewListObj(0, NULL);
+			Tcl_ListObjAppendElement(NULL, cmdPtr,
+				Tcl_NewStringObj("tclLog", -1));
+			Tcl_AppendStringsToObj(msg, name, " ", versionToProvide,
+				" failed: package ", name, " ",
+				pkgPtr->version, " provided instead", NULL);
+			Tcl_ListObjAppendElement(NULL, cmdPtr, msg);
+			Tcl_IncrRefCount(cmdPtr);
+			Tcl_GlobalEvalObj(interp, cmdPtr);
+			Tcl_DecrRefCount(cmdPtr);
+			Tcl_ResetResult(interp);
+		    }
 		}
 	    } else if (code != TCL_ERROR) {
 		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
