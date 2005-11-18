@@ -1,3 +1,10 @@
+2005-11-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPkg.c:	Revised Bug 1162286 fix from 2005-11-08
+	* tests/pkg.test:	to be more forgiving of package version
+	mismatch errors in [package ifneeded] commands.  This reduces the
+	***POTENTIAL INCOMPATIBILITY*** noted for that change.
+
 2005-11-18  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts'
