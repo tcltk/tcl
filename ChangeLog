@@ -1,3 +1,9 @@
+2005-11-20  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclStubLib.c: Don't set tclStubsPtr to 0 when
+	Tcl_PkgRequireEx() fails [Fix for #1091431 "Tcl_InitStubs failure
+	crashes wish"]
+
 2005-11-18  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/trace.test (trace-34.5): [Bug 1047286], added a second
