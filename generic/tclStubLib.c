@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.9 2005/11/02 14:51:05 dkf Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.10 2005/11/20 18:33:17 jenglish Exp $
  */
 
 /*
@@ -32,15 +32,10 @@
  * functions should be built as non-exported symbols.
  */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
 TclStubs *tclStubsPtr = NULL;
 TclPlatStubs *tclPlatStubsPtr = NULL;
 TclIntStubs *tclIntStubsPtr = NULL;
 TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-
-static TclStubs *	HasStubSupport(Tcl_Interp *interp);
 
 static TclStubs *
 HasStubSupport(
@@ -87,8 +82,7 @@ Tcl_InitStubs(
     int exact)
 {
     CONST char *actualVersion = NULL;
-    TclStubs *tmp;
-    TclStubs **tmpp;
+    ClientData pkgData = NULL;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -101,17 +95,11 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    /*
-     * This is needed to satisfy GCC 3.3's strict aliasing rules.
-     */
-
-    tmpp = &tmp;
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact,
-	    (ClientData *) tmpp);
+    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact, &pkgData);
     if (actualVersion == NULL) {
-	tclStubsPtr = NULL;
 	return NULL;
     }
+    tclStubsPtr = (TclStubs*)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
@@ -125,11 +113,3 @@ Tcl_InitStubs(
 
     return actualVersion;
 }
-
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * End:
- */
