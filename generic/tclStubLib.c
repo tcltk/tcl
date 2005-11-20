@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6 2002/12/04 07:07:59 hobbs Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.2.1 2005/11/20 18:23:03 jenglish Exp $
  */
 
 /*
@@ -32,9 +32,6 @@
  * Ensure that Tcl_InitStubs is built as an exported symbol.  The other stub
  * functions should be built as non-exported symbols.
  */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
 
 TclStubs *tclStubsPtr = NULL;
 TclPlatStubs *tclPlatStubsPtr = NULL;
@@ -87,7 +84,7 @@ Tcl_InitStubs (interp, version, exact)
     int exact;
 {
     CONST char *actualVersion = NULL;
-    TclStubs *tmp;
+    ClientData pkgData = NULL;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because
@@ -100,12 +97,11 @@ Tcl_InitStubs (interp, version, exact)
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact,
-	    (ClientData *) &tmp);
+    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact, &pkgData);
     if (actualVersion == NULL) {
-	tclStubsPtr = NULL;
 	return NULL;
     }
+    tclStubsPtr = (TclStubs*)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
