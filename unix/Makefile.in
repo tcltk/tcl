@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.176 2005/11/09 00:11:49 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.177 2005/11/21 17:19:56 andreas_kupries Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -776,8 +776,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http1.0; \
 	    done;
-	@echo "Installing package http 2.5.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.1.tm;
+	@echo "Installing package http 2.5.2 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.2.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
