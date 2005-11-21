@@ -1,3 +1,15 @@
+2005-11-21  Andreas Kupries <andreask@activestate.com>
+
+	* unix/Makefile.in (install-libraries): Updated Makefile to new
+	* win/Makefile.in (install-libraries):  version of the http
+	  package. This fixes the ifneeded/provide mismatch reported when
+	  trying to require http. Should we maybe try to automatically
+	  extract the version number from the http code to prevent future
+	  breakage ?
+
+	  This follows the update of the version number by dgp on Nov 15
+	  (No entry found in the ChangeLog).
+
 2005-11-20  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclStubLib.c: Don't set tclStubsPtr to 0 when
