@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.28 2005/11/18 15:49:06 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.29 2005/11/21 18:31:42 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6302,7 +6302,7 @@ Restores Tcl 8.4.9 behavior (porter)
 
 2005-11-08 (bug fix)[1348775] unset trace memory leak (sofer)
 
-2005-11-08 (bug fix)[1162286] [package ifneeded] errors reported (lavana,porter)
+2005-11-08 (bug fix)[1162286] [package ifneeded] warns reported (lavana,porter)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2005-11-09 (bug fix)[1350293] [after $negative $script] fixed (kenny)
@@ -6310,5 +6310,11 @@ Restores Tcl 8.4.9 behavior (porter)
 2005-11-15 (Win bug fix)[926016,1353840] correct [file mtime] (kenny)
 
 2005-11-18 (bug fix)[1358369] URL parsing standards compliance (wu,fellows)
+
+2005-11-18 (bug fix)[1359094] Tclkit crash (thoyts, kupries)
+
+2005-11-18 (bug fix)[1355942,1355342] cmd delete trace/ namespace delete (sofer)
+
+2005-11-20 (bug fix)[1091431] Tcl_InitStubs failure crashes wish (english)
 
 --- Released 8.4.12, November 30, 2005 --- See ChangeLog for details ---
