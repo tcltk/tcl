@@ -4,7 +4,7 @@
 #	uses the standard unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# RCS: @(#) $Id: Makefile,v 1.22 2005/06/03 08:52:16 das Exp $
+# RCS: @(#) $Id: GNUmakefile,v 1.1 2005/11/22 20:22:08 das Exp $
 #
 ########################################################################################################
 
