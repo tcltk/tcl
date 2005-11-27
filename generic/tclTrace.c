@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.30 2005/11/08 14:24:55 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.31 2005/11/27 02:33:49 das Exp $
  */
 
 #include "tclInt.h"
@@ -98,9 +98,9 @@ typedef struct {
 typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, int optionIndex,
 	int objc, Tcl_Obj *CONST objv[]);
 
-Tcl_TraceTypeObjCmd TclTraceVariableObjCmd;
-Tcl_TraceTypeObjCmd TclTraceCommandObjCmd;
-Tcl_TraceTypeObjCmd TclTraceExecutionObjCmd;
+MODULE_SCOPE Tcl_TraceTypeObjCmd TclTraceVariableObjCmd;
+MODULE_SCOPE Tcl_TraceTypeObjCmd TclTraceCommandObjCmd;
+MODULE_SCOPE Tcl_TraceTypeObjCmd TclTraceExecutionObjCmd;
 
 /*
  * Each subcommand has a number of 'types' to which it can apply. Currently

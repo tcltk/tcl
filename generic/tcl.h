@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.207 2005/11/03 00:17:30 patthoyts Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.208 2005/11/27 02:33:48 das Exp $
  */
 
 #ifndef _TCL
@@ -45,7 +45,12 @@ extern "C" {
  * win/tcl.m4		(not patchlevel)
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
- * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 2 LOC
+ * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
+ * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
+ * macosx/Tcl.xcode/project.pbxproj (not patchlevel) 2 LOC
+ * macosx/Tcl.xcode/default.pbxuser (not patchlevel) 1 LOC
+ * macosx/Tcl.xcodeproj/project.pbxproj (not patchlevel) 8 LOC
+ * macosx/Tcl.xcodeproj/default.pbxuser (not patchlevel) 4 LOC
  * win/README.binary	(sections 0-4, with and without separator)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
@@ -328,6 +333,23 @@ typedef long LONG;
 #   endif
 #   define _CLIENTDATA
 #endif
+
+/*
+ * Darwin specifc configure overrides (to support fat compiles, where
+ * configure runs only once for multiple architectures):
+ */
+
+#ifdef __APPLE__
+#   ifdef __LP64__
+#	undef TCL_WIDE_INT_TYPE
+#	define TCL_WIDE_INT_IS_LONG 1
+#	define TCL_CFG_DO64BIT 1
+#    else /* !__LP64__ */
+#	define TCL_WIDE_INT_TYPE long long
+#	undef TCL_WIDE_INT_IS_LONG
+#	undef TCL_CFG_DO64BIT
+#    endif /* __LP64__ */
+#endif /* __APPLE__ */
 
 /*
  * Define Tcl_WideInt to be a type that is (at least) 64-bits wide, and define

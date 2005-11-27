@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.220 2005/11/04 22:38:38 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.221 2005/11/27 02:33:49 das Exp $
  */
 
 #include "tclInt.h"
@@ -2353,7 +2353,9 @@ TclExecuteByteCode(
     {
 	Tcl_Obj *objPtr, *incrPtr;
 	int opnd, pcAdjustment;
+#ifndef NO_WIDE_TYPE
 	Tcl_WideInt w;
+#endif
 	long i;
 	char *part1, *part2;
 	Var *varPtr, *arrayPtr;
