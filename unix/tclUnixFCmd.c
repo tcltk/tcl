@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.48 2005/11/09 00:53:33 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.49 2005/11/27 02:33:50 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -128,6 +128,7 @@ enum {
     UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
 };
 
+MODULE_SCOPE CONST char *tclpFileAttrStrings[];
 CONST char *tclpFileAttrStrings[] = {
     "-group", "-owner", "-permissions",
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -139,6 +140,7 @@ CONST char *tclpFileAttrStrings[] = {
     NULL
 };
 
+MODULE_SCOPE CONST TclFileAttrProcs tclpFileAttrProcs[];
 CONST TclFileAttrProcs tclpFileAttrProcs[] = {
     {GetGroupAttribute, SetGroupAttribute},
     {GetOwnerAttribute, SetOwnerAttribute},
@@ -422,6 +424,9 @@ DoCopyFile(
 	if (symlink(link, dst) < 0) {			/* INTL: Native. */
 	    return TCL_ERROR;
 	}
+#ifdef MAC_OSX_TCL
+	TclMacOSXCopyFileAttributes(src, dst, &srcStatBuf);
+#endif
 	break;
     }
 #endif

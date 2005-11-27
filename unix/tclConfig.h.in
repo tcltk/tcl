@@ -1,7 +1,8 @@
-/* tclConfig.h.in.  Generated from configure.in by autoheader.  */
+/* ../unix/tclConfig.h.in.  Generated from configure.ac by autoheader.  */
 
-#ifndef _TCLCONFIG
-#define _TCLCONFIG
+
+    #ifndef _TCLCONFIG
+    #define _TCLCONFIG
 
 /* Is pthread_attr_get_np() declared in <pthread.h>? */
 #undef ATTRGETNP_NOT_DECLARED
@@ -17,6 +18,12 @@
 
 /* Define to 1 if you have the `chflags' function. */
 #undef HAVE_CHFLAGS
+
+/* Define to 1 if you have the `copyfile' function. */
+#undef HAVE_COPYFILE
+
+/* Define to 1 if you have the <copyfile.h> header file. */
+#undef HAVE_COPYFILE_H
 
 /* Do we have access to Darwin CoreFoundation.framework ? */
 #undef HAVE_COREFOUNDATION
@@ -130,7 +137,7 @@
 /* Define to 1 if you have the <sys/param.h> header file. */
 #undef HAVE_SYS_PARAM_H
 
-/* May we include <sys/select.h>? */
+/* Should we include <sys/select.h>? */
 #undef HAVE_SYS_SELECT_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
@@ -213,7 +220,7 @@
 /* Do we have strerror() */
 #undef NO_STRERROR
 
-/* May we include <string.h>? */
+/* Do we have <string.h>? */
 #undef NO_STRING_H
 
 /* Do we have <sys/wait.h>? */
@@ -279,6 +286,10 @@
 /* Is Tcl built as a framework? */
 #undef TCL_FRAMEWORK
 
+/* Use better emulation of non-blocking channels for channels without
+   BlockModeProc? */
+#undef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
+
 /* Can this platform load code from memory? */
 #undef TCL_LOAD_FROM_MEMORY
 
@@ -343,6 +354,9 @@
 /* Add the _LARGEFILE64_SOURCE flag when building */
 #undef _LARGEFILE64_SOURCE
 
+/* Add the _LARGEFILE_SOURCE64 flag when building */
+#undef _LARGEFILE_SOURCE64
+
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS
 
@@ -387,4 +401,10 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-#endif /* _TCLCONFIG */
+
+    /* Undef unused package specific autoheader defines so that we can
+     * include both tclConfig.h and tkConfig.h at the same time: */
+    /* override */ #undef PACKAGE_NAME
+    /* override */ #undef PACKAGE_STRING
+    /* override */ #undef PACKAGE_TARNAME
+    #endif /* _TCLCONFIG */
