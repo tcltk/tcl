@@ -4,7 +4,7 @@
 #	uses the standard unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.13 2005/06/03 08:53:12 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.14 2005/11/27 02:34:41 das Exp $
 #
 ########################################################################################################
 
@@ -89,7 +89,7 @@ UNIX_DIR		:= ${CURDIR}/../unix
 VERSION			:= $(shell awk -F= '/^TCL_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.in)
 TCLSH			:= tclsh${VERSION}
 
-BUILD_TARGET		:= tclsh tcltest
+BUILD_TARGET		:= all tcltest
 INSTALL_TARGET		:= install
 
 export CPPROG		:= cp -p
@@ -108,7 +108,7 @@ endif
 MAKE_VARS		:= INSTALL_ROOT INSTALL_TARGETS VERSION GENERIC_FLAGS
 MAKE_ARGS_V		= $(foreach v,${MAKE_VARS},$v='${$v}')
 
-build-${PROJECT}:	target = ${TARGET}
+build-${PROJECT}:	target = ${BUILD_TARGET}
 install-${PROJECT}:	target = ${INSTALL_TARGET}
 clean-${PROJECT} distclean-${PROJECT} test-${PROJECT}: \
 			target = $*
@@ -121,11 +121,13 @@ DO_MAKE			= +${MAKE} -C ${OBJ_DIR} ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA
 ${PROJECT}:
 	${MAKE} install-${PROJECT} INSTALL_ROOT=${OBJ_DIR}/
 
-${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure
-	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && ${UNIX_DIR}/configure \
+${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
+                     ${UNIX_DIR}/tclConfig.sh.in Tcl-Info.plist.in
+	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && \
+	if [ ${UNIX_DIR}/configure -nt config.status ]; then ${UNIX_DIR}/configure \
 	--prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} \
 	--mandir=${MANDIR} --enable-threads --enable-framework \
-	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}
+	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; else ./config.status; fi
 
 build-${PROJECT}: ${OBJ_DIR}/Makefile
 	${DO_MAKE}

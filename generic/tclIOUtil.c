@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.22 2005/10/05 04:27:38 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.23 2005/11/27 02:34:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -4592,7 +4592,7 @@ static int 		FindSplitPos _ANSI_ARGS_((char *path, char *separator));
  * Define the 'path' object type, which Tcl uses to represent
  * file paths internally.
  */
-Tcl_ObjType tclFsPathType = {
+static Tcl_ObjType tclFsPathType = {
     "path",				/* name */
     FreeFsPathInternalRep,		/* freeIntRepProc */
     DupFsPathInternalRep,	        /* dupIntRepProc */

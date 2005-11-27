@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.13.2.1 2005/08/03 22:23:35 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.13.2.2 2005/11/27 02:34:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -338,7 +338,8 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Interp *interp = infoPtr->interp;
-    Tcl_Token *tokenPtr, *endPtr, *afterSubexprPtr;
+    Tcl_Token *tokenPtr, *endPtr = NULL; /* silence gcc 4 warning */
+    Tcl_Token *afterSubexprPtr;
     OperatorDesc *opDescPtr;
     Tcl_HashEntry *hPtr;
     CONST char *operator;

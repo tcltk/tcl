@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.10 2005/11/04 01:15:20 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.11 2005/11/27 02:34:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -111,17 +111,17 @@ static Tcl_UpdateStringProc UpdateParsedVarName;
  *                      it is a scalar variable
  */
 
-Tcl_ObjType tclLocalVarNameType = {
+static Tcl_ObjType tclLocalVarNameType = {
     "localVarName",
     FreeLocalVarName, DupLocalVarName, UpdateLocalVarName, NULL
 };
 
-Tcl_ObjType tclNsVarNameType = {
+static Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
     FreeNsVarName, DupNsVarName, NULL, NULL
 };
 
-Tcl_ObjType tclParsedVarNameType = {
+static Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, NULL
 };
