@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.5 2005/11/27 02:34:42 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.6 2005/11/27 06:09:19 das Exp $
  */
 
 #include "tclInt.h"
@@ -21,6 +21,7 @@
 #include <mach-o/fat.h>
 #include <mach-o/swap.h>
 #include <mach-o/arch.h>
+#include <libkern/OSByteOrder.h>
 #undef panic
 #include <mach/mach.h>
 
