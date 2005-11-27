@@ -135,8 +135,8 @@
 				INCLUDEDIR = "${PREFIX}/include";
 				INSTALL_PATH = "${BINDIR}";
 				LIBDIR = "${PREFIX}/lib";
-				MANDIR = "${PREFIX}/man";
 				MACOSX_DEPLOYMENT_TARGET = 10.3;
+				MANDIR = "${PREFIX}/man";
 				OTHER_LDFLAGS = "-headerpad_max_install_names";
 				PREFIX = /usr/local;
 				PRODUCT_NAME = tcltest;
