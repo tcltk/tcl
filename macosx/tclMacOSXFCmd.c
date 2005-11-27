@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.6 2005/11/27 02:33:49 das Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.7 2005/11/27 06:09:10 das Exp $
  */
 
 #include "tclInt.h"
@@ -18,6 +18,7 @@
 #ifdef HAVE_GETATTRLIST
 #include <sys/attr.h>
 #include <sys/paths.h>
+#include <libkern/OSByteOrder.h>
 #endif
 
 /* Darwin 8 copyfile API */

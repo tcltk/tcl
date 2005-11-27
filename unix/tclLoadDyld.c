@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.21 2005/11/27 02:33:50 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.22 2005/11/27 06:09:10 das Exp $
  */
 
 #include "tclInt.h"
@@ -20,6 +20,7 @@
 #include <mach-o/fat.h>
 #include <mach-o/swap.h>
 #include <mach-o/arch.h>
+#include <libkern/OSByteOrder.h>
 #include <mach/mach.h>
 
 typedef struct Tcl_DyldModuleHandle {
