@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.15 2005/06/23 05:59:51 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.16 2005/11/27 02:34:41 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -490,7 +490,7 @@ objs: ${OBJS}
 
 
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
-	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		${CC_SEARCH_FLAGS} -o tclsh
 
 # Resetting the LIB_RUNTIME_DIR below is required so that
@@ -502,7 +502,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR=`pwd`
 
 tcltest-real:
-	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		${CC_SEARCH_FLAGS} -o tcltest
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
@@ -771,8 +771,12 @@ depend:
 # complicated because they are compiled from tclAppInit.c.  Can't use
 # the "-o" option because this doesn't work on some strange compilers
 # (e.g. UnixWare).
+# To enable concurrent parallel make of tclsh and tcltest resp xttest, these
+# targets have to depend on tclsh, this ensures that linking of tclsh with
+# tclAppInit.o does not execute concurrently with the renaming and recompiling
+# of that same object file in the targets below.
 
-tclTestInit.o: $(UNIX_DIR)/tclAppInit.c
+tclTestInit.o: $(UNIX_DIR)/tclAppInit.c tclsh
 	@if test -f tclAppInit.o ; then \
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
@@ -786,7 +790,7 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
 
-xtTestInit.o: $(UNIX_DIR)/tclAppInit.c
+xtTestInit.o: $(UNIX_DIR)/tclAppInit.c tclsh
 	@if test -f tclAppInit.o ; then \
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
@@ -1166,12 +1170,13 @@ genstubs:
 # tables.
 #
 
-checkstubs:
-	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$2 ~ /T/ { print $$3 }' \
+checkstubs: $(TCL_LIB_FILE)
+	-@for i in `nm -p $(TCL_LIB_FILE) \
+		| awk '$$2 ~ /^[TDBCS]$$/ { sub("^_", "", $$3); print $$3 }' \
 		| sort -n`; do \
 		match=0; \
 		for j in $(TCL_DECLS); do \
-		    if [ `grep -c $$i $$j` -gt 0 ]; then \
+		    if [ `grep -c "$$i *(" $$j` -gt 0 ]; then \
 			match=1; \
 		    fi; \
 		done; \
@@ -1184,7 +1189,7 @@ checkstubs:
 # manpages.
 #
 
-checkdoc:
+checkdoc: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
 		| grep -v 'Cmd$$' | sort -n`; do \
 		match=0; \
@@ -1209,7 +1214,9 @@ checkuchar:
 #
 
 checkexports: $(TCL_LIB_FILE)
-	-nm -p $(TCL_LIB_FILE) | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | grep -v '^[Tt]cl'
+	-@nm -p $(TCL_LIB_FILE) \
+	| awk '$$2 ~ /^[TDBCS]$$/ { sub("^_", "", $$3); print $$3 }' \
+	| sort -n | grep -E -v '^[Tt]cl' || true
 
 #
 # Target to create a Tcl RPM for Linux.  Requires that you be on a Linux
@@ -1314,12 +1321,11 @@ dist:
 	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/macosx
-	cp -p $(TOP_DIR)/macosx/Makefile \
+	cp -p $(TOP_DIR)/macosx/Makefile $(TOP_DIR)/macosx/README \
 		$(TOP_DIR)/macosx/*.c $(TOP_DIR)/macosx/*.in \
 		$(DISTDIR)/macosx
 	mkdir $(DISTDIR)/macosx/Tcl.pbproj
 	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
-	cp -p $(TOP_DIR)/macosx/README $(DISTDIR)/macosx
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README \

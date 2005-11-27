@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.6 2005/11/09 00:53:06 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.7 2005/11/27 02:34:42 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -397,6 +397,9 @@ DoCopyFile(src, dst)
 	    if (symlink(link, dst) < 0) {		/* INTL: Native. */
 		return TCL_ERROR;
 	    }
+#ifdef HAVE_COPYFILE
+	    copyfile(src, dst, NULL, COPYFILE_XATTR|COPYFILE_NOFOLLOW_SRC);
+#endif
 	    break;
 	}
 #endif
@@ -1118,6 +1121,9 @@ CopyFileAtts(src, dst, statBufPtr)
     if (utime(dst, &tval)) {				/* INTL: Native. */
 	return TCL_ERROR;
     }
+#ifdef HAVE_COPYFILE
+    copyfile(src, dst, NULL, COPYFILE_XATTR|COPYFILE_ACL);
+#endif
     return TCL_OK;
 }
 

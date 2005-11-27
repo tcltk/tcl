@@ -659,22 +659,20 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 
     HAVE_LANGINFO=0
     if test "$langinfo_ok" = "yes"; then
-	if test "$langinfo_ok" = "yes"; then
-	    AC_CHECK_HEADER(langinfo.h,[langinfo_ok=yes],[langinfo_ok=no])
-	fi
+	AC_CHECK_HEADER(langinfo.h,[langinfo_ok=yes],[langinfo_ok=no])
     fi
     AC_MSG_CHECKING([whether to use nl_langinfo])
     if test "$langinfo_ok" = "yes"; then
-	AC_TRY_COMPILE([#include <langinfo.h>],
-		[nl_langinfo(CODESET);],[langinfo_ok=yes],[langinfo_ok=no])
-	if test "$langinfo_ok" = "no"; then
-	    langinfo_ok="no (could not compile with nl_langinfo)";
-	fi
-	if test "$langinfo_ok" = "yes"; then
+	AC_CACHE_VAL(tcl_cv_langinfo_h,
+	    AC_TRY_COMPILE([#include <langinfo.h>], [nl_langinfo(CODESET);],
+		    [tcl_cv_langinfo_h=yes],[tcl_cv_langinfo_h=no]))
+	AC_MSG_RESULT($tcl_cv_langinfo_h)
+	if test $tcl_cv_langinfo_h = yes; then
 	    AC_DEFINE(HAVE_LANGINFO)
 	fi
+    else 
+	AC_MSG_RESULT([$langinfo_ok])
     fi
-    AC_MSG_RESULT([$langinfo_ok])
 ])
 
 #--------------------------------------------------------------------
@@ -703,44 +701,44 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 #			according to the user's selection.
 #
 #--------------------------------------------------------------------
+
 AC_DEFUN(SC_CONFIG_MANPAGES, [
+    AC_MSG_CHECKING([whether to use symlinks for manpages])
+    AC_ARG_ENABLE(man-symlinks,
+	    [  --enable-man-symlinks   use symlinks for the manpages],
+	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
+	enableval="no")
+    AC_MSG_RESULT([$enableval])
 
-	AC_MSG_CHECKING([whether to use symlinks for manpages])
-	AC_ARG_ENABLE(man-symlinks,
-		[  --enable-man-symlinks   use symlinks for the manpages],
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
-		enableval="no")
-	AC_MSG_RESULT([$enableval])
+    AC_MSG_CHECKING([whether to compress the manpages])
+    AC_ARG_ENABLE(man-compression,
+	    [  --enable-man-compression=PROG
+		      compress the manpages with PROG],
+	test "$enableval" = "yes" && AC_MSG_ERROR([missing argument to --enable-man-compression])
+	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --compress $enableval",
+	enableval="no")
+    AC_MSG_RESULT([$enableval])
+    if test "$enableval" != "no"; then
+	AC_MSG_CHECKING([for compressed file suffix])
+	touch TeST
+	$enableval TeST
+	Z=`ls TeST* | sed 's/^....//'`
+	rm -f TeST*
+	MAN_FLAGS="$MAN_FLAGS --extension $Z"
+	AC_MSG_RESULT([$Z])
+    fi
 
-	AC_MSG_CHECKING([whether to compress the manpages])
-	AC_ARG_ENABLE(man-compression,
-		[  --enable-man-compression=PROG
-                          compress the manpages with PROG],
-		test "$enableval" = "yes" && AC_MSG_ERROR([missing argument to --enable-man-compression])
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --compress $enableval",
-		enableval="no")
-	AC_MSG_RESULT([$enableval])
-	if test "$enableval" != "no"; then
-		AC_MSG_CHECKING([for compressed file suffix])
-		touch TeST
-		$enableval TeST
-		Z=`ls TeST* | sed 's/^....//'`
-		rm -f TeST*
-		MAN_FLAGS="$MAN_FLAGS --extension $Z"
-		AC_MSG_RESULT([$Z])
-	fi
+    AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
+    AC_ARG_ENABLE(man-suffix,
+	    [  --enable-man-suffix=STRING
+		      use STRING as a suffix to manpage file names
+		      (default: $1)],
+	test "$enableval" = "yes" && enableval="$1"
+	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --suffix $enableval",
+	enableval="no")
+    AC_MSG_RESULT([$enableval])
 
-	AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
-	AC_ARG_ENABLE(man-suffix,
-		[  --enable-man-suffix=STRING
-                          use STRING as a suffix to manpage file names
-                          (default: $1)],
-		test "$enableval" = "yes" && enableval="$1"
-		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --suffix $enableval",
-		enableval="no")
-	AC_MSG_RESULT([$enableval])
-
-	AC_SUBST(MAN_FLAGS)
+    AC_SUBST(MAN_FLAGS)
 ])
 
 #--------------------------------------------------------------------
@@ -956,7 +954,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test "$do64bit" = "yes" -a "`uname -v`" -gt "3" ; then
 		if test "$GCC" = "yes" ; then
 		    AC_MSG_WARN([64bit mode not supported with GCC on $system])
-		else
+		else 
 		    do64bit_ok=yes
 		    CFLAGS="$CFLAGS -q64"
 		    LDFLAGS="$LDFLAGS -q64"
@@ -1363,7 +1361,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    SHLIB_CFLAGS="-fpic";;
 	        esac
 		SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
-		SHLIB_LD_LIBS=""
+		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
@@ -1417,7 +1415,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
-	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
+	    if test $do64bit = yes; then
+	        do64bit_ok=yes
+	        CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+	    fi
+	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
 	        hold_ldflags=$LDFLAGS
 	        LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
@@ -1430,7 +1432,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind -headerpad_max_install_names"
+	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
+	    if test -z "${MACOSX_DEPLOYMENT_TARGET}" -o \
+		    `echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print [$]2}'` -lt 4; then
+		LDFLAGS="$LDFLAGS -prebind"
+	    fi
+	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
 	        hold_ldflags=$LDFLAGS
 	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
@@ -1450,12 +1457,18 @@ dnl AC_CHECK_TOOL(AR, ar)
             AC_MSG_RESULT([$tcl_corefoundation])
             if test $tcl_corefoundation = yes; then
                 AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
-                    hold_libs=$LIBS
+                    hold_libs=$LIBS; hold_cflags=$CFLAGS
+                    if test $do64bit_ok = no ; then
+                        # remove -arch ppc64 from CFLAGS while testing presence
+                        # of CF, otherwise all archs will have CF disabled.
+                        # CF for ppc64 is disabled in tclUnixPort.h instead.
+                        CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
+                    fi
                     LIBS="$LIBS -framework CoreFoundation"
                     AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
                         [CFBundleRef b = CFBundleGetMainBundle();], 
                         tcl_cv_lib_corefoundation=yes, tcl_cv_lib_corefoundation=no)
-                    LIBS=$hold_libs])
+                    LIBS=$hold_libs; CFLAGS=$hold_cflags])
                 if test $tcl_cv_lib_corefoundation = yes; then
                     LIBS="$LIBS -framework CoreFoundation"
                     AC_DEFINE(HAVE_COREFOUNDATION)
@@ -1463,14 +1476,17 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    fi
 	    AC_CHECK_HEADERS(libkern/OSAtomic.h)
 	    AC_CHECK_FUNCS(OSSpinLockLock)
+	    AC_CHECK_HEADERS(copyfile.h)
+	    AC_CHECK_FUNCS(copyfile)
 	    AC_DEFINE(MAC_OSX_TCL)
 	    AC_DEFINE(USE_VFORK)
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8")
 	    AC_DEFINE(TCL_LOAD_FROM_MEMORY)
+	    AC_DEFINE(TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING)
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)
-	    if test "$ac_cv_func_realpath" = yes -a "${TCL_THREADS}" = 1 \
+	    if test $ac_cv_func_realpath = yes -a "${TCL_THREADS}" = 1 \
 	            -a `uname -r | awk -F. '{print [$]1}'` -lt 7 ; then
 	        ac_cv_func_realpath=no
 	    fi
@@ -2177,9 +2193,7 @@ closedir(d);
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H)])
 
     # OS/390 lacks sys/param.h (and doesn't need it, by chance).
-
     AC_HAVE_HEADERS(unistd.h sys/param.h)
-
 ])
 
 #--------------------------------------------------------------------
@@ -2267,6 +2281,7 @@ AC_DEFUN(SC_PATH_X, [
 	XLIBSW=-lX11
     fi
 ])
+
 #--------------------------------------------------------------------
 # SC_BLOCKING_STYLE
 #
@@ -2383,7 +2398,7 @@ AC_DEFUN(SC_TIME_HANDLER, [
     # (like convex) have timezone functions, etc.
     #
     AC_MSG_CHECKING([long timezone variable])
-    AC_CACHE_VAL(tcl_cv_var_timezone,
+    AC_CACHE_VAL(tcl_cv_timezone_long,
 	AC_TRY_COMPILE([#include <time.h>],
 	    [extern long timezone;
 	    timezone += 1;
@@ -2667,7 +2682,7 @@ AC_DEFUN(SC_TCL_64BIT_FLAGS, [
 	if test "x${tcl_cv_type_off64_t}" = "xyes" && \
 	        test "x${ac_cv_func_lseek64}" = "xyes" && \
 	        test "x${ac_cv_func_open64}" = "xyes" ; then
-	    AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
+	    AC_DEFINE(HAVE_TYPE_OFF64_T)
 	    AC_MSG_RESULT(yes)
 	else
 	    AC_MSG_RESULT(no)
