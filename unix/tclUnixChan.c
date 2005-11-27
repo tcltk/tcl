@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.63 2005/11/11 23:46:34 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.64 2005/11/27 02:33:50 das Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3151,7 +3151,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    Tcl_Time abortTime, now;
+    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     int index, bit, numFound, result = 0;
     fd_mask readyMasks[3*MASK_SIZE];

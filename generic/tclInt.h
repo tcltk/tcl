@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.258 2005/11/14 00:41:05 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.259 2005/11/27 02:33:49 das Exp $
  */
 
 #ifndef _TCLINT
@@ -68,7 +68,7 @@ typedef int ptrdiff_t;
 /*
  * Ensure WORDS_BIGENDIAN is defined correcly:
  * Needs to happen here in addition to configure to work with fat compiles on
- * Darwin (i.e. ppc and i386 at the same time).
+ * Darwin (where configure runs only once for multiple architectures).
  */
 
 #ifdef HAVE_SYS_TYPES_H

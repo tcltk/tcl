@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.47 2005/11/04 23:01:40 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.48 2005/11/27 02:33:50 das Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -519,25 +519,6 @@
  */
 
 #define TclpExit		exit
-
-/*
- * Platform specific mutex definition used by memory allocators.
- * These mutexes are statically allocated and explicitly initialized.
- * Most modules do not use this, but instead use Tcl_Mutex types and
- * Tcl_MutexLock and Tcl_MutexUnlock that are self-initializing.
- */
-
-#ifdef TCL_THREADS
-typedef CRITICAL_SECTION TclpMutex;
-MODULE_SCOPE void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
-MODULE_SCOPE void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
-MODULE_SCOPE void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
-#else /* !TCL_THREADS */
-typedef int TclpMutex;
-#define	TclpMutexInit(a)
-#define	TclpMutexLock(a)
-#define	TclpMutexUnlock(a)
-#endif /* TCL_THREADS */
 
 #ifdef TCL_WIDE_INT_TYPE
 MODULE_SCOPE Tcl_WideInt	strtoll _ANSI_ARGS_((CONST char *string,

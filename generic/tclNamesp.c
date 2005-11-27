@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.88 2005/11/14 00:41:05 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.89 2005/11/27 02:33:49 das Exp $
  */
 
 #include "tclInt.h"
@@ -4893,7 +4893,7 @@ NamespaceEnsembleCmd(
 	}
 
 	if (objc == 5) {
-	    Tcl_Obj *resultObj;
+	    Tcl_Obj *resultObj = NULL; /* silence gcc 4 warning */
 
 	    if (Tcl_GetIndexFromObj(interp, objv[4], configOptions, "option",
 		    0, &index) != TCL_OK) {
@@ -4913,7 +4913,7 @@ NamespaceEnsembleCmd(
 		}
 		break;
 	    case CONF_NAMESPACE: {
-		Tcl_Namespace *namespacePtr;
+		Tcl_Namespace *namespacePtr = NULL; /* silence gcc 4 warning */
 
 		Tcl_GetEnsembleNamespace(NULL, token, &namespacePtr);
 		Tcl_SetResult(interp, ((Namespace *)namespacePtr)->fullName,
@@ -4921,7 +4921,7 @@ NamespaceEnsembleCmd(
 		break;
 	    }
 	    case CONF_PREFIX: {
-		int flags;
+		int flags = 0; /* silence gcc 4 warning */
 
 		Tcl_GetEnsembleFlags(NULL, token, &flags);
 		Tcl_SetObjResult(interp,
@@ -4942,9 +4942,9 @@ NamespaceEnsembleCmd(
 	     * Produce list of all information.
 	     */
 
-	    Tcl_Obj *resultObj, *tmpObj;
-	    Tcl_Namespace *namespacePtr;
-	    int flags;
+	    Tcl_Obj *resultObj, *tmpObj = NULL; /* silence gcc 4 warning */
+	    Tcl_Namespace *namespacePtr = NULL;  /* silence gcc 4 warning */
+	    int flags = 0;  /* silence gcc 4 warning */
 
 	    TclNewObj(resultObj);
 
@@ -4999,8 +4999,9 @@ NamespaceEnsembleCmd(
 	    Tcl_DictSearch search;
 	    Tcl_Obj *listObj;
 	    int done, len, allocatedMapFlag = 0;
-	    Tcl_Obj *subcmdObj, *mapObj, *unknownObj;	/* Defaults */
-	    int permitPrefix, flags;
+	    Tcl_Obj *subcmdObj = NULL, *mapObj = NULL,
+		    *unknownObj = NULL; /* Defaults, silence gcc 4 warnings */
+	    int permitPrefix, flags = 0; /* silence gcc 4 warning */
 
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &subcmdObj);
 	    Tcl_GetEnsembleMappingDict(NULL, token, &mapObj);
