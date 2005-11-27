@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.177 2005/11/21 17:19:56 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.178 2005/11/27 02:33:50 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -168,7 +168,7 @@ SHELL			= /bin/sh
 INSTALL_STRIP_PROGRAM   = -s
 INSTALL_STRIP_LIBRARY   = -S -S
 
-INSTALL			= @srcdir@/install-sh -c
+INSTALL			= @srcdir@/../unix/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
 INSTALL_LIBRARY		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
@@ -244,7 +244,7 @@ GENERIC_DIR		= $(TOP_DIR)/generic
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
-UNIX_DIR		= $(SRC_DIR)
+UNIX_DIR		= $(TOP_DIR)/unix
 MAC_OSX_DIR		= $(TOP_DIR)/macosx
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
@@ -570,7 +570,7 @@ objs: ${OBJS}
 
 
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
-	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		${CC_SEARCH_FLAGS} -o tclsh
 
 # Resetting the LIB_RUNTIME_DIR below is required so that
@@ -582,7 +582,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR=`pwd`
 
 tcltest-real:
-	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		${CC_SEARCH_FLAGS} -o tcltest
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
@@ -717,8 +717,8 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@if test ! -x $(SRC_DIR)/install-sh; then \
-	    chmod +x $(SRC_DIR)/install-sh; \
+	@if test ! -x $(SRC_DIR)../unix/install-sh; then \
+	    chmod +x $(SRC_DIR)/../unix/install-sh; \
 	    fi
 	@echo "Installing $(LIB_FILE) to $(LIB_INSTALL_DIR)/"
 	@@INSTALL_LIB@
@@ -757,8 +757,8 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@if test ! -x $(SRC_DIR)/install-sh; then \
-	    chmod +x $(SRC_DIR)/install-sh; \
+	@if test ! -x $(SRC_DIR)/../unix/install-sh; then \
+	    chmod +x $(SRC_DIR)/../unix/install-sh; \
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
@@ -850,8 +850,8 @@ install-private-headers: libraries
 		else true; \
 		fi; \
 	    done;
-	@if test ! -x $(SRC_DIR)/install-sh; then \
-	    chmod +x $(SRC_DIR)/install-sh; \
+	@if test ! -x $(SRC_DIR)/../unix/install-sh; then \
+	    chmod +x $(SRC_DIR)/../unix/install-sh; \
 	    fi
 	@echo "Installing private header files";
 	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
@@ -886,8 +886,12 @@ depend:
 # complicated because they are compiled from tclAppInit.c.  Can't use
 # the "-o" option because this doesn't work on some strange compilers
 # (e.g. UnixWare).
+# To enable concurrent parallel make of tclsh and tcltest resp xttest, these
+# targets have to depend on tclsh, this ensures that linking of tclsh with
+# tclAppInit.o does not execute concurrently with the renaming and recompiling
+# of that same object file in the targets below.
 
-tclTestInit.o: $(UNIX_DIR)/tclAppInit.c
+tclTestInit.o: $(UNIX_DIR)/tclAppInit.c tclsh
 	@if test -f tclAppInit.o ; then \
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
@@ -901,7 +905,7 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
 
-xtTestInit.o: $(UNIX_DIR)/tclAppInit.c
+xtTestInit.o: $(UNIX_DIR)/tclAppInit.c tclsh
 	@if test -f tclAppInit.o ; then \
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
@@ -1513,12 +1517,13 @@ genstubs:
 # tables.
 #
 
-checkstubs:
-	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$2 ~ /T/ { print $$3 }' \
+checkstubs: $(TCL_LIB_FILE)
+	-@for i in `nm -p $(TCL_LIB_FILE) \
+		| awk '$$2 ~ /^[TDBCS]$$/ { sub("^_", "", $$3); print $$3 }' \
 		| sort -n`; do \
 		match=0; \
 		for j in $(TCL_DECLS); do \
-		    if [ `grep -c $$i $$j` -gt 0 ]; then \
+		    if [ `grep -c "$$i *(" $$j` -gt 0 ]; then \
 			match=1; \
 		    fi; \
 		done; \
@@ -1531,7 +1536,7 @@ checkstubs:
 # manpages.
 #
 
-checkdoc:
+checkdoc: $(TCL_LIB_FILE)
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
 		| grep -v 'Cmd$$' | sort -n`; do \
 		match=0; \
@@ -1556,7 +1561,9 @@ checkuchar:
 #
 
 checkexports: $(TCL_LIB_FILE)
-	-nm -p $(TCL_LIB_FILE) | awk '$$2 ~ /[TDB]/ { print $$3 }' | sort -n | grep -v '^[Tt]cl'
+	-@nm -p $(TCL_LIB_FILE) \
+	| awk '$$2 ~ /^[TDBCS]$$/ { sub("^_", "", $$3); print $$3 }' \
+	| sort -n | grep -E -v '^[Tt]cl' || true
 
 #
 # Target to create a Tcl RPM for Linux.  Requires that you be on a Linux
@@ -1663,12 +1670,15 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/macosx
-	cp -p $(TOP_DIR)/macosx/Makefile \
+	cp -p $(TOP_DIR)/macosx/GNUmakefile $(TOP_DIR)/macosx/README \
 		$(TOP_DIR)/macosx/*.c $(TOP_DIR)/macosx/*.in \
-		$(DISTDIR)/macosx
+		$(TOP_DIR)/macosx/*.ac $(DISTDIR)/macosx
 	mkdir $(DISTDIR)/macosx/Tcl.pbproj
 	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
-	cp -p $(TOP_DIR)/macosx/README $(DISTDIR)/macosx
+	mkdir $(DISTDIR)/macosx/Tcl.xcode
+	cp -p $(TOP_DIR)/macosx/Tcl.xcode/*.pbx* $(DISTDIR)/macosx/Tcl.xcode
+	mkdir $(DISTDIR)/macosx/Tcl.xcodeproj
+	cp -p $(TOP_DIR)/macosx/Tcl.xcodeproj/*.pbx* $(DISTDIR)/macosx/Tcl.xcodeproj
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README \

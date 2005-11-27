@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.114 2005/10/08 14:42:44 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.115 2005/11/27 02:33:48 das Exp $
 
 library tcl
 
@@ -2069,3 +2069,11 @@ declare 1 macosx {
 	    int maxPathLen,
 	    char *libraryPath)
 }
+
+##############################################################################
+
+# Public functions that are not accessible via the stubs table:
+# (listed here _as comments_ so that the 'checkstubs' make target does not 
+# complain about them) 
+
+# void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)

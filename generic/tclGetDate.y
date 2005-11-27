@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.29 2005/11/04 20:13:30 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.30 2005/11/27 02:33:49 das Exp $
  */
 
 %{
@@ -156,6 +156,8 @@ static time_t	ToSeconds(time_t Hours, time_t Minutes,
 		    time_t Seconds, MERIDIAN Meridian);
 static int	LookupWord(char *buff);
 static int	TclDatelex(void* info);
+
+MODULE_SCOPE int yyparse (void *);
 
 
 %}
@@ -432,6 +434,10 @@ o_merid : /* NULL */ {
         ;
 
 %%
+
+MODULE_SCOPE int yychar;
+MODULE_SCOPE YYSTYPE yylval;
+MODULE_SCOPE int yynerrs;
 
 /*
  * Month and day table.

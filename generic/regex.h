@@ -294,7 +294,7 @@ int re_comp(regex_t *, __REG_CONST char *, size_t, int);
 int regcomp(regex_t *, __REG_CONST char *, int);
 #endif
 #ifdef __REG_WIDE_T
-int __REG_WIDE_COMPILE(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, int);
+MODULE_SCOPE int __REG_WIDE_COMPILE(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, int);
 #endif
 #ifndef __REG_NOCHAR
 int re_exec(regex_t *, __REG_CONST char *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
@@ -303,10 +303,10 @@ int re_exec(regex_t *, __REG_CONST char *, size_t, rm_detail_t *, size_t, regmat
 int regexec(regex_t *, __REG_CONST char *, size_t, regmatch_t [], int);
 #endif
 #ifdef __REG_WIDE_T
-int __REG_WIDE_EXEC(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
-re_void regfree(regex_t *);
-extern size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
+MODULE_SCOPE re_void regfree(regex_t *);
+MODULE_SCOPE size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 

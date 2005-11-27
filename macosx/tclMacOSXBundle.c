@@ -45,12 +45,12 @@
  *	terms specified in this license.
  */
 
+#include "tclPort.h"
+
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 #include <mach-o/dyld.h>
 #endif /* HAVE_COREFOUNDATION */
-
-#include "tcl.h"
 
 /*
  *----------------------------------------------------------------------

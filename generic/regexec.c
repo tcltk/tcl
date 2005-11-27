@@ -404,7 +404,7 @@ cfind(
 {
     struct dfa *s;
     struct dfa *d;
-    chr *cold;
+    chr *cold = NULL; /* silence gcc 4 warning */
     int ret;
 
     s = newdfa(v, &v->g->search, cm, &v->dfa1);

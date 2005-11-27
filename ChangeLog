@@ -1,3 +1,121 @@
+2005-11-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): add 64bit support, check for Tiger copyfile(),
+	add CFLAGS to SHLIB_LD to support passing -isysroot in env(CFLAGS) to
+	configure (flag can't be present twice, so can't be in both CFLAGS and
+	LDFLAGS during configure), don't use -prebind when deploying on 10.4,
+	define TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING (rdar://3171542).
+	(SC_ENABLE_LANGINFO, SC_TIME_HANDLER): add/fix caching, fix obsolete
+	autoconf macros. Sync with tk/unix/tcl.m4.
+
+	* unix/configure.in: fix obsolete autoconf macros, sync gratuitous
+	formatting/ordering differences with tk/unix/configure.in.
+
+	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make executable
+	linking the same as during configure (needed to avoid loosing any linker
+	relevant flags in CFLAGS, in particular flags that can't be in LDFLAGS).
+	Avoid concurrent linking of tclsh and compiling of tclTestInit.o or
+	xtTestInit.o during parallel make.
+	(checkstubs, checkdoc, checkexports): dependency and Darwin fixes
+	(dist): add new macosx files.
+
+	* unix/tclLoadDyld.c (TclpDlopen): use NSADDIMAGE_OPTION_WITH_SEARCHING
+	on second NSAddImage only. [Bug 1204237]
+	(TclGuessPackageName): should not be MODULE_SCOPE.
+	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for loading
+	universal (fat) bundles from memory.
+
+	* unix/tclUnixFCmd.c:
+	* macosx/tclMacOSXFCmd.c: ppc64 and endian (i386) fixes.
+	(TclMacOSXCopyFileAttributes): add support for new Tiger copyfile() API
+	to enable copying of xattrs & ACLs by [file copy].
+
+	* generic/tcl.h: add Darwin specifc configure overrides for TCL_WIDE
+	defines to support fat compiles of ppc and ppc64 at the same time,
+	(replaces Darwin CVS fix by emoy, rdar://3693001).
+	add/correct location of version numbers in macosx files.
+
+	* generic/tclInt.h: clarify fat compile comment.
+
+	* unix/tclUnixPort.h: add Darwin specifc configure overrides to support
+	fat compiles, where configure runs only once for multiple architectures
+	(replaces Darwin CVS fix by emoy, rdar://3693001).
+
+	* macosx/tclMacOSXBundle.c:
+	* macosx/tclMacOSXNotify.c:
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixPort.h: fix #include order to support compile time
+	override of HAVE_COREFOUNDATION in tclUnixPort.h when building for ppc64
+
+	* macosx/Tcl.pbproj/default.pbxuser (new file):
+	* macosx/Tcl.pbproj/jingham.pbxuser:
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* macosx/Tcl.xcode/default.pbxuser (new file):
+	* macosx/Tcl.xcode/project.pbxproj (new file):
+	* macosx/Tcl.xcodeproj/default.pbxuser (new file):
+	* macosx/Tcl.xcodeproj/project.pbxproj (new file): new/updated projects
+	for Xcode 2.2 on 10.4, Xcode 1.5 on 10.3 & ProjectBuilder on 10.2, with
+	native tcltest targets and support for universal (fat) compiles.
+
+	* macosx/README: clarification/cleanup, document new Xcode projects and
+	universal (fat) builds via CFLAGS (i.e. all of ppc ppc64 i386 at once).
+
+	* unix/Makefile.in:
+	* unix/aclocal.m4:
+	* unix/configure.in:
+	* unix/dltest/Makefile.in:
+	* macosx/configure.ac (new file): add support for inclusion of
+	unix/configure.in by macosx/configure.ac, allows generation of a config
+	headers enabled configure script in macosx (required by Xcode projects).
+
+	* macosx/GNUmakefile: rename from Makefile to avoid overwriting by
+	configure run in tcl/macosx, add support for reusing configure cache,
+	build target fixes, remove GENERIC_FLAGS override now handled by tcl.m4.
+
+	* generic/tcl.decls: add Tcl_Main declaration as comment to avoid
+	'checkstubs' target complaining about it missing from stubs.
+
+	* generic/regex.h:
+	* generic/tclDate.c:
+	* generic/tclEnv.c:
+	* generic/tclGetDate.y:
+	* generic/tclIOUtil.c:
+	* generic/tclObj.c:
+	* generic/tclStubInit.c:
+	* generic/tclStubLib.c:
+	* generic/tclPathObj.c:
+	* generic/tclThreadAlloc.c:
+	* generic/tclThreadStorage.c:
+	* generic/tclTrace.c:
+	* generic/tclVar.c:
+	* generic/tommath.h:
+	* tools/fix_tommath_h.tcl:
+	* unix/tclUnixFCmd.c: ensure externally visible symbols not contained in
+	stubs table are declared as MODULE_SCOPE (or as static if not used
+	outside of own source file). These changes allow 'make checkstubs' to
+	complete without error on Darwin with gcc 4.
+
+	* generic/rege_dfa.c (getvacant):
+	* generic/regexec.c (cfind):
+	* generic/tclCompExpr.c (CompileSubExpr):
+	* generic/tclNamesp.c (NamespaceEnsembleCmd):
+	* unix/tclUnixChan.c (TclUnixWaitForFile): initialise variables to
+	silence gcc 4 warnings.
+
+	* generic/tclExecute.c (TclExecuteByteCode): fix unused variable warning
+	when NO_WIDE_TYPE is defined.
+
+	* generic/regguts.h: only #define NDEBUG if not already #defined.
+
+	* unix/tclUnixNotfy.c:
+	* macosx/tclMacOSXNotify.c: sync whitespace & comments.
+
+	* unix/tclUnixPort.h:
+	* win/tclWinPort.h: remove declaration of obsolete&unused TclpMutex API.
+
+	* unix/configure:
+	* unix/tclConfig.h.in: regen.
+
 2005-11-21  Andreas Kupries <andreask@activestate.com>
 
 	* unix/Makefile.in (install-libraries): Updated Makefile to new
@@ -27,7 +145,7 @@
 	* doc/clock.n:  Restored several missing lines near the %w
 	format group so that %w and %W are documented with their
 	actual behaviour.  [Bug 1359183]
-	
+
 2005-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr
@@ -376,7 +494,7 @@
 
 	* generic/tcl.h: Fixed bad definition of CRTEXPORT which should have
 	been CRTIMPORT rather. This broke compilation of generic/tclMain.c and
-	was probably introduced by mistage while applying the fix for [Bug
+	was probably introduced by mistake while applying the fix for [Bug
 	1256937] below.
 
 2005-10-14  Kevin Kenny  <kennykb@acm.org>

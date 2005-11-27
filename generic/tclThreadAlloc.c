@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.18 2005/11/02 11:55:47 dkf Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.19 2005/11/27 02:33:49 das Exp $
  */
 
 #include "tclInt.h"
@@ -611,7 +611,7 @@ TclThreadFreeObj(
  *----------------------------------------------------------------------
  */
 
-void
+MODULE_SCOPE void
 Tcl_GetMemoryInfo(
     Tcl_DString *dsPtr)
 {

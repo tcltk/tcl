@@ -12,10 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.101 2005/11/18 17:23:02 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.102 2005/11/27 02:33:49 das Exp $
  */
 
 #include "tclInt.h"
+#include "tclCompile.h"
 #include "tommath.h"
 #include <float.h>
 
@@ -41,6 +42,7 @@ Tcl_Obj *tclFreeObjList = NULL;
  */
 
 #ifdef TCL_THREADS
+MODULE_SCOPE Tcl_Mutex tclObjMutex;
 Tcl_Mutex tclObjMutex;
 #endif
 
