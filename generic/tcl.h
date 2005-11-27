@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.20 2005/11/16 22:05:26 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.21 2005/11/27 02:34:41 das Exp $
  */
 
 #ifndef _TCL
@@ -46,7 +46,8 @@ extern "C" {
  * win/makefile.vc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
- * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 2 LOC
+ * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 1 LOC
+ * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
@@ -326,6 +327,21 @@ typedef long LONG;
 #   endif
 #   define _CLIENTDATA
 #endif
+
+/*
+ * Darwin specifc configure overrides (to support fat compiles, where
+ * configure runs only once for multiple architectures):
+ */
+
+#ifdef __APPLE__
+#   ifdef __LP64__
+#	undef TCL_WIDE_INT_TYPE
+#	define TCL_WIDE_INT_IS_LONG 1
+#    else /* !__LP64__ */
+#	define TCL_WIDE_INT_TYPE long long
+#	undef TCL_WIDE_INT_IS_LONG
+#    endif /* __LP64__ */
+#endif /* __APPLE__ */
 
 /*
  * Define Tcl_WideInt to be a type that is (at least) 64-bits wide,

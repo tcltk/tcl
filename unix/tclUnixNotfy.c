@@ -11,13 +11,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.13 2005/07/01 10:57:59 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.14 2005/11/27 02:34:42 das Exp $
  */
 
-#ifndef HAVE_COREFOUNDATION /* Darwin/Mac OS X CoreFoundation notifier
-                             * is in tclMacOSXNotify.c */
 #include "tclInt.h"
 #include "tclPort.h"
+#ifndef HAVE_COREFOUNDATION /* Darwin/Mac OS X CoreFoundation notifier
+                             * is in tclMacOSXNotify.c */
 #include <signal.h> 
 
 extern TclStubs tclStubs;
