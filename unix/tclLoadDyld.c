@@ -12,12 +12,15 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.4 2005/07/30 07:58:16 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.5 2005/11/27 02:34:42 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include <mach-o/dyld.h>
+#include <mach-o/fat.h>
+#include <mach-o/swap.h>
+#include <mach-o/arch.h>
 #undef panic
 #include <mach/mach.h>
 
@@ -120,8 +123,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
      */
 
     native = Tcl_FSGetNativePath(pathPtr);
-    dyldLibHeader = NSAddImage(native, NSADDIMAGE_OPTION_WITH_SEARCHING |
-	    NSADDIMAGE_OPTION_RETURN_ON_ERROR);
+    dyldLibHeader = NSAddImage(native, NSADDIMAGE_OPTION_RETURN_ON_ERROR);
 
     if (!dyldLibHeader) {
 	NSLinkEditErrors editError;
@@ -148,7 +150,8 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 	    if (!dyldLibHeader) {
 		NSLinkEditError(&editError, &errorNumber, &name, &msg);
 	    }
-	} else if ((editError==NSLinkEditFileFormatError && errorNumber==EBADMACHO)
+	} else if ((editError == NSLinkEditFileFormatError
+		&& errorNumber == EBADMACHO)
 		|| editError == NSLinkEditOtherError){
 	    /*
 	     * The requested file was found but was not of type MH_DYLIB,
@@ -232,7 +235,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
     NSSymbol nsSymbol;
     CONST char *native;
     Tcl_DString newName, ds;
-    Tcl_PackageInitProc* proc = NULL;
+    Tcl_PackageInitProc *proc = NULL;
     Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *) loadHandle;
 
     /*
@@ -464,15 +467,57 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 
     if (codeSize >= 0) {
 	NSObjectFileImageReturnCode err = NSObjectFileImageSuccess;
-
+	CONST struct fat_header *fh = buffer;
+	uint32_t ms = 0;
 #ifndef __LP64__
-	struct mach_header *mh = buffer;
-	if (codeSize < sizeof(struct mach_header) || mh->magic != MH_MAGIC
+	CONST struct mach_header *mh = NULL;
+	#define mh_magic OSSwapHostToBigInt32(MH_MAGIC)
+	#define mh_size  sizeof(struct mach_header)
 #else
-	struct mach_header_64 *mh = buffer;
-	if (codeSize < sizeof(struct mach_header_64) || mh->magic != MH_MAGIC_64
+	CONST struct mach_header_64 *mh = NULL;
+	#define mh_magic OSSwapHostToBigInt32(MH_MAGIC_64)
+	#define mh_size  sizeof(struct mach_header_64)
 #endif
-		|| mh->filetype != MH_BUNDLE) {
+	
+	if (codeSize >= sizeof(struct fat_header)
+		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {
+	    /*
+	     * Fat binary, try to find mach_header for our architecture
+	     */
+	    uint32_t fh_nfat_arch = OSSwapBigToHostInt32(fh->nfat_arch);
+	    
+	    if (codeSize >= sizeof(struct fat_header) + 
+		    fh_nfat_arch * sizeof(struct fat_arch)) {
+		void *fatarchs = buffer + sizeof(struct fat_header);
+		CONST NXArchInfo *arch = NXGetLocalArchInfo();
+		struct fat_arch *fa;
+		
+		if (fh->magic != FAT_MAGIC) {
+		    swap_fat_arch(fatarchs, fh_nfat_arch, arch->byteorder);
+		}
+		fa = NXFindBestFatArch(arch->cputype, arch->cpusubtype,
+			fatarchs, fh_nfat_arch);
+		if (fa) {
+		    mh = buffer + fa->offset;
+		    ms = fa->size;
+		} else {
+		    err = NSObjectFileImageInappropriateFile;
+		}
+		if (fh->magic != FAT_MAGIC) {
+		    swap_fat_arch(fatarchs, fh_nfat_arch, arch->byteorder);
+		}
+	    } else {
+		err = NSObjectFileImageInappropriateFile;
+	    }
+	} else {
+	    /*
+	     * Thin binary
+	     */
+	    mh = buffer;
+	    ms = codeSize;
+	}
+	if (ms && !(ms >= mh_size && mh->magic == mh_magic &&
+		 mh->filetype == OSSwapHostToBigInt32(MH_BUNDLE))) {
 	    err = NSObjectFileImageInappropriateFile;
 	}
 	if (err == NSObjectFileImageSuccess) {

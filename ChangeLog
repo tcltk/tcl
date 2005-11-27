@@ -1,3 +1,77 @@
+2005-11-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): add 64bit support, check for Tiger copyfile(),
+	add CFLAGS to SHLIB_LD to support passing -isysroot in env(CFLAGS) to
+	configure (flag can't be present twice, so can't be in both CFLAGS and
+	LDFLAGS during configure), don't use -prebind when deploying on 10.4,
+	define TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING (rdar://3171542).
+	(SC_ENABLE_LANGINFO, SC_TIME_HANDLER): add/fix caching, fix obsolete
+	autoconf macros. Sync with tk/unix/tcl.m4, sync whitespace with HEAD.
+
+	* unix/configure.in: fix obsolete autoconf macros, sync gratuitous
+	formatting/ordering differences with tk/unix/configure.in.
+
+	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make executable
+	linking the same as during configure (needed to avoid loosing any linker
+	relevant flags in CFLAGS, in particular flags that can't be in LDFLAGS).
+	Avoid concurrent linking of tclsh and compiling of tclTestInit.o or
+	xtTestInit.o during parallel make.
+	(checkstubs, checkdoc, checkexports): dependency and Darwin fixes
+
+	* unix/tclLoadDyld.c (TclpDlopen): use NSADDIMAGE_OPTION_WITH_SEARCHING
+	on second NSAddImage only. [Bug 1204237]
+	(TclGuessPackageName): should not be MODULE_SCOPE.
+	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for loading
+	universal (fat) bundles from memory.
+
+	* unix/tclUnixPort.h:
+	* unix/tclUnixFCmd.c: add support for new Tiger copyfile() API to enable
+	copying of xattrs & ACLs by [file copy].
+
+	* generic/tcl.h: add Darwin specifc configure overrides for TCL_WIDE
+	defines to support fat compiles of ppc and ppc64 at the same time,
+	(replaces Darwin CVS fix by emoy, rdar://3693001).
+	add/correct location of version numbers in macosx files.
+
+	* generic/tclInt.h: clarify fat compile comment.
+
+	* unix/tclUnixPort.h: add Darwin specifc configure overrides to support
+	fat compiles, where configure runs only once for multiple architectures
+	(replaces Darwin CVS fix by emoy, rdar://3693001).
+
+	* macosx/tclMacOSXBundle.c:
+	* macosx/tclMacOSXNotify.c:
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixPort.h: fix #include order to support compile time
+	override of HAVE_COREFOUNDATION in tclUnixPort.h when building for ppc64
+
+	* macosx/Tcl.pbproj/default.pbxuser (new file):
+	* macosx/Tcl.pbproj/jingham.pbxuser:
+	* macosx/Tcl.pbproj/project.pbxproj: sync with HEAD.
+
+	* macosx/README: clarification/cleanup, sync with HEAD, document
+	universal (fat) builds via CFLAGS (i.e. all of ppc ppc64 i386 at once).
+
+	* macosx/Makefile: add support for reusing configure cache, build target
+	fixes, remove GENERIC_FLAGS override now handled by tcl.m4.
+
+	* generic/tclIOUtil.c:
+	* generic/tclRegexp.c:
+	* generic/tclVar.c: declare globals used only in own file as static
+	(sync with HEAD).
+
+	* generic/rege_dfa.c (getvacant):
+	* generic/regexec.c (cfind):
+	* generic/tclCompExpr.c (CompileSubExpr):
+	* unix/tclUnixChan.c (TclUnixWaitForFile): initialise variables to
+	silence gcc 4 warnings.
+
+	* generic/regguts.h: only #define NDEBUG if not already #defined.
+
+	* macosx/tclMacOSXNotify.c: sync whitespace & comments with HEAD
+
+	* unix/configure: regen.
+
 2005-11-20  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclStubLib.c: Don't set tclStubsPtr to 0 when
@@ -69,7 +143,7 @@
 	that file times will appear different in Tcl from the way they do
 	in Windows Explorer or a 'dir' listing, because the Microsoft
 	tools get the DST state wrong in the listings.
-	
+
 2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTimer.c: Changed [after] so that it behaves correctly
