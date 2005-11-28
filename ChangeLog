@@ -3,7 +3,7 @@
 	* tools/tclZIC.tcl (convertTimeOfDay): Corrected a typo that
 	caused wrong DST transitions in any time zone where the transition
 	is specified as local Standard Time (as opposed to wall-clock or
-	UTC).
+	UTC).  (Also updated the code to be bignum-safe.)
 	* tests/clock.test (clock-51.1): Added regression test for the
 	above.
 	* library/tzdata: Regenerated.

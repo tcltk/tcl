@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.6 2005/11/28 15:37:20 kennykb Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.7 2005/11/28 16:28:04 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -44,10 +44,6 @@ set olsonFiles {
     pacificnew southamerica systemv
 }
 
-# Temporary scaffolding - load up the new 'clock' package.
-
-source [file join [file dirname [info script]] .. library clock.tcl]
-
 # Define the year at which the DST information will stop.
 
 set maxyear 2100
@@ -56,7 +52,7 @@ set maxyear 2100
 
 set MAXWIDE [expr {wide(1)}]
 while 1 {
-    set next [expr {$MAXWIDE + $MAXWIDE + 1}]
+    set next [expr {wide($MAXWIDE + $MAXWIDE + 1)}]
     if {$next < 0} {
 	break
     }
@@ -1334,6 +1330,9 @@ proc writeLinks {outDir} {
 # MAIN PROGRAM
 #
 #----------------------------------------------------------------------
+
+puts "Compiling time zones -- [clock format [clock seconds] \
+                                   -format {%x %X} -locale system]"
 
 # Determine directories
 
