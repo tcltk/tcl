@@ -6,7 +6,8 @@
 	UTC).  (Also updated the code to be bignum-safe.)
 	* tests/clock.test (clock-51.1): Added regression test for the
 	above.
-	* library/tzdata: Regenerated.
+	* library/tzdata: Updated to Olson's 'tzdata2005o' (changes
+	for Cuba, Nicaragua, Jordan, and Georgia) and regenerated.
 	Thanks to Paul Mackerras for reporting this problem.
 	
 2005-11-27  Daniel Steffen  <das@users.sourceforge.net>
