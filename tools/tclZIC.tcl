@@ -12,7 +12,7 @@
 # Parameters:
 #	inputDir - Directory (e.g., tzdata2003e) where Olson's source
 #		   files are to be found.
-#	outputDir - Directory (e.g., ../library/clock/tzdata) where
+#	outputDir - Directory (e.g., ../library/tzdata) where
 #		    the time zone information files are to be placed.
 #
 # Results:
@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.5 2005/05/10 18:35:25 kennykb Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.6 2005/11/28 15:37:20 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1158,7 +1158,7 @@ proc convertTimeOfDay {seconds stdGMTOffset DSTOffset timeOfDay flag} {
 	    incr seconds [expr {-$stdGMTOffset}]
 	    incr seconds [expr {-$DSTOffset}]
 	}
-	z {
+	s {
 	    incr seconds [expr {-$stdGMTOffset}]
 	}
     }
@@ -1338,6 +1338,9 @@ proc writeLinks {outDir} {
 # Determine directories
 
 lassign $argv inDir outDir
+
+puts "Olson files in $inDir"
+puts "Tcl files to be placed in $outDir"
 
 # Initialize count of errors
 
