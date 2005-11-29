@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.182 2005/11/14 16:45:11 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.183 2005/11/29 22:50:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -466,22 +466,8 @@ Tcl_CreateInterp(void)
      * Tcl_CreateObjCommand, since they aren't in the global namespace.
      */
 
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::clicks",
-	    TclClockClicksObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::getenv",
-	    TclClockGetenvObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::microseconds",
-	    TclClockMicrosecondsObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::milliseconds",
-	    TclClockMillisecondsObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::seconds",
-	    TclClockSecondsObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::Localtime",
-	    TclClockLocaltimeObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::Mktime",
-	    TclClockMktimeObjCmd,	(ClientData) NULL, NULL);
-    Tcl_CreateObjCommand(interp,	"::tcl::clock::Oldscan",
-	    TclClockOldscanObjCmd,	(ClientData) NULL, NULL);
+    TclClockInit(interp);
+
     /* TIP #208 */
     Tcl_CreateObjCommand(interp, "::tcl::chan::Truncate",
 	    TclChanTruncateObjCmd, (ClientData) NULL, NULL);
