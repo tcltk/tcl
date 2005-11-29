@@ -1,3 +1,10 @@
+2005-11-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Allow [lsearch -regexp] to
+	process REs that contain backreferences. This expensive mode of
+	operation is only used if the RE would otherwise cause a compilation
+	failure. [Bug 1366683]
+
 2005-11-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* win/tclWinSock.c (CreateSocket): Applied [Patch 1353853] to prevent
