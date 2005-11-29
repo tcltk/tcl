@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.13 2005/08/04 19:54:29 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.14 2005/11/29 14:02:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2574,8 +2574,19 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
     register int result;
 
     if (objPtr->typePtr == &tclWideIntType) {
+    gotWide:
 	*wideIntPtr = objPtr->internalRep.wideValue;
 	return TCL_OK;
+    }
+    if (objPtr->typePtr == &tclIntType) {
+	/*
+	 * This cast is safe; all valid ints/longs are wides.
+	 */
+
+	objPtr->internalRep.wideValue =
+		Tcl_LongAsWide(objPtr->internalRep.longValue);
+	objPtr->typePtr = &tclWideIntType;
+	goto gotWide;
     }
     result = SetWideIntFromAny(interp, objPtr);
     if (result == TCL_OK) {

@@ -1,5 +1,8 @@
 2005-11-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclObj.c (Tcl_GetWideIntFromObj): Add more efficient
+	conversion to wides from normal ints. [Bug 1310081]
+
 	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Allow [lsearch -regexp] to
 	process REs that contain backreferences. This expensive mode of
 	operation is only used if the RE would otherwise cause a compilation
