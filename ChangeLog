@@ -1,3 +1,10 @@
+2005-11-29  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Allow [lsearch -regexp] to
+	process REs that contain backreferences. This expensive mode of
+	operation is only used if the RE would otherwise cause a compilation
+	failure. [Bug 1366683]
+
 2005-11-28  Kevin Kenny  <kennykb@acm.org>
 
 	* tools/tclZIC.tcl (convertTimeOfDay): Corrected a typo that
@@ -9,7 +16,7 @@
 	* library/tzdata: Updated to Olson's 'tzdata2005o' (changes
 	for Cuba, Nicaragua, Jordan, and Georgia) and regenerated.
 	Thanks to Paul Mackerras for reporting this problem.
-	
+
 2005-11-27  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (Darwin): add 64bit support, check for Tiger copyfile(),
@@ -150,7 +157,7 @@
 
 	* tests/trace.test (trace-34.5): [Bug 1047286], added a second
 	test illustrating the role of "ns in callStack" in the ns's
-	visibility during deletion traces. 
+	visibility during deletion traces.
 
 2005-11-18  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -168,7 +175,7 @@
 	* generic/tclObj.c (GetBignumFromObj): replace NULL with
 	tclEmptyStringRep to stop memcpy from complaining in a debug build
 	(the corresponding branch is eliminated by the optimiser
-	otherwise). 
+	otherwise).
 
 2005-11-18  Andreas Kupries <andreask@activestate.com>
 
