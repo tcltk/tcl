@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.7 2005/10/23 22:01:29 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.8 2005/11/29 10:32:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3017,10 +3017,25 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     if ((enum modes) mode == REGEXP) {
 	/*
 	 * We can shimmer regexp/list if listv[i] == pattern, so get the
-	 * regexp rep before the list rep.
+	 * regexp rep before the list rep. First time round, omit the interp
+         * and hope that the compilation will succeed. If it fails, we'll
+         * recompile in "expensive" mode with a place to put error messages.
 	 */
-	regexp = Tcl_GetRegExpFromObj(interp, objv[objc - 1],
+
+	regexp = Tcl_GetRegExpFromObj(NULL, objv[objc - 1],
 		TCL_REG_ADVANCED | TCL_REG_NOSUB);
+	if (regexp == NULL) {
+            /*
+             * Failed to compile the RE. Try again without the TCL_REG_NOSUB
+             * flag in case the RE had sub-expressions in it [Bug 1366683].
+             * If this fails, an error message will be left in the
+             * interpreter.
+             */
+
+            regexp = Tcl_GetRegExpFromObj(interp, objv[objc - 1],
+		    TCL_REG_ADVANCED);
+	}
+
 	if (regexp == NULL) {
 	    if (startPtr) {
 		Tcl_DecrRefCount(startPtr);
