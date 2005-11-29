@@ -1,3 +1,10 @@
+2005-11-29  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c:	Moved a big part of [clock format] down
+	* generic/tclClock.c:   to the C level in order to make it go faster.
+	* generic/tclInt.h:     Preliminary measurements suggest that it
+	* generic/clock.tcl:    more than doubles in speed with this change.
+	
 2005-11-29  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Allow [lsearch -regexp] to
