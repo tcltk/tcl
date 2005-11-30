@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.46 2005/11/30 15:39:37 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.47 2005/11/30 19:34:13 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -112,6 +112,7 @@ typedef struct TclDateFields {
     int dayOfWeek;		/* Day of the week */
     
 } TclDateFields;
+static CONST char* eras[] = { "CE", "BCE", NULL };
 
 /*
  * Thread specific data block holding a 'struct tm' for the 'gmtime' and
@@ -159,6 +160,12 @@ static int		ClockConvertlocaltoutcObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		ClockGetdatefieldsObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		ClockGetjuliandayfromerayearmonthdayObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		ClockGetjuliandayfromerayearweekdayObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		ClockGetenvObjCmd(
@@ -238,6 +245,16 @@ TclClockInit(
     ++data->refCount;
     Tcl_CreateObjCommand(interp,	"::tcl::clock::GetDateFields",
 	    ClockGetdatefieldsObjCmd,(ClientData) data,
+	    ClockDeleteCmdProc);
+    ++data->refCount;
+    Tcl_CreateObjCommand(interp,	
+	    "::tcl::clock::GetJulianDayFromEraYearMonthDay",
+	    ClockGetjuliandayfromerayearmonthdayObjCmd,(ClientData) data,
+	    ClockDeleteCmdProc);
+    ++data->refCount;
+    Tcl_CreateObjCommand(interp,	
+	    "::tcl::clock::GetJulianDayFromEraYearWeekDay",
+	    ClockGetjuliandayfromerayearweekdayObjCmd,(ClientData) data,
 	    ClockDeleteCmdProc);
     ++data->refCount;
 
@@ -428,6 +445,170 @@ ClockGetdatefieldsObjCmd(
 
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockGetjuliandayfromerayearmonthdayObjCmd --
+ *
+ *	Tcl command that converts a time from era-year-month-day to
+ *	a Julian Day Number.
+ *
+ * Parameters:
+ *	dict - Dictionary that contains 'era', 'year', 'month' and
+ *	       'dayOfMonth' keys.
+ *	changeover - Julian Day of changeover to the Gregorian calendar
+ *
+ * Results:
+ *	Result is either TCL_OK, with the interpreter result being the
+ *	dictionary augmented with a 'julianDay' key, or TCL_ERROR,
+ *	with the result being an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ClockGetjuliandayfromerayearmonthdayObjCmd (
+    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *CONST *objv	/* Parameter vector */
+) {
+    TclDateFields fields;
+    Tcl_Obj* dict;
+    ClockClientData* data = (ClockClientData*) clientData;
+    Tcl_Obj* CONST * literals = data->literals;
+    Tcl_Obj* fieldPtr;
+    int changeover;
+    int copied = 0;
+    int status;
+
+    /* Check params */
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dict changeover");
+	return TCL_ERROR;
+    }
+    dict = objv[1];
+    if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
+	|| Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
+			       &(fields.era)) != TCL_OK
+	|| Tcl_DictObjGet(interp, dict, literals[LIT_YEAR],
+			  &fieldPtr) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.year)) != TCL_OK
+	|| Tcl_DictObjGet(interp, dict, literals[LIT_MONTH],
+			  &fieldPtr) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.month)) != TCL_OK
+	|| Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFMONTH],
+			  &fieldPtr) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.dayOfMonth)) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Get Julian day */
+
+    GetJulianDayFromEraYearMonthDay(&fields, changeover);
+
+    /* Store Julian day in the dictionary - copy on write */
+
+    if (Tcl_IsShared(dict)) {
+	dict = Tcl_DuplicateObj(dict);
+	Tcl_IncrRefCount(dict);
+	copied = 1;
+    }
+    status = Tcl_DictObjPut(interp, dict, literals[LIT_JULIANDAY],
+			    Tcl_NewIntObj(fields.julianDay));
+    if (status == TCL_OK) {
+	Tcl_SetObjResult(interp, dict);
+    }
+    if (copied) {
+	Tcl_DecrRefCount(dict);
+    }
+    return status;
+}    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClockGetjuliandayfromerayearweekdayObjCmd --
+ *
+ *	Tcl command that converts a time from the ISO calendar to
+ *	a Julian Day Number.
+ *
+ * Parameters:
+ *	dict - Dictionary that contains 'era', 'iso8601Year', 'iso8601Week' 
+ *	       and 'dayOfWeek' keys.
+ *	changeover - Julian Day of changeover to the Gregorian calendar
+ *
+ * Results:
+ *	Result is either TCL_OK, with the interpreter result being the
+ *	dictionary augmented with a 'julianDay' key, or TCL_ERROR,
+ *	with the result being an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ClockGetjuliandayfromerayearweekdayObjCmd (
+    ClientData clientData,	/* Opaque pointer to literal pool, etc. */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *CONST *objv	/* Parameter vector */
+) {
+    TclDateFields fields;
+    Tcl_Obj* dict;
+    ClockClientData* data = (ClockClientData*) clientData;
+    Tcl_Obj* CONST * literals = data->literals;
+    Tcl_Obj* fieldPtr;
+    int changeover;
+    int copied = 0;
+    int status;
+
+    /* Check params */
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dict changeover");
+	return TCL_ERROR;
+    }
+    dict = objv[1];
+    if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
+	|| Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
+			       &(fields.era)) != TCL_OK
+	|| Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR],
+			  &fieldPtr) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.iso8601Year)) != TCL_OK
+	|| Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601WEEK],
+			  &fieldPtr) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.iso8601Week)) != TCL_OK
+	|| Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFWEEK],
+			  &fieldPtr) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.dayOfWeek)) != TCL_OK
+	|| Tcl_GetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* Get Julian day */
+
+    GetJulianDayFromEraYearWeekDay(&fields, changeover);
+
+    /* Store Julian day in the dictionary - copy on write */
+
+    if (Tcl_IsShared(dict)) {
+	dict = Tcl_DuplicateObj(dict);
+	Tcl_IncrRefCount(dict);
+	copied = 1;
+    }
+    status = Tcl_DictObjPut(interp, dict, literals[LIT_JULIANDAY],
+			    Tcl_NewIntObj(fields.julianDay));
+    if (status == TCL_OK) {
+	Tcl_SetObjResult(interp, dict);
+    }
+    if (copied) {
+	Tcl_DecrRefCount(dict);
+    }
+    return status;
+}    
 
 /*
  *----------------------------------------------------------------------
@@ -1137,6 +1318,7 @@ GetJulianDayFromEraYearMonthDay(
 ) {
     int year;  int ym1;
     int month; int mm1;
+    int q; int r;
 
     if (fields->era == BCE) {
 	year = 1 - fields->year;
@@ -1148,8 +1330,14 @@ GetJulianDayFromEraYearMonthDay(
 
     month = fields->month;
     mm1 = month - 1;
-    year += mm1 / 12;
-    month = (mm1 % 12) + 1;
+    q = mm1 / 12;
+    r = (mm1 % 12);
+    if (r < 0) {
+	r += 12;
+	q -= 1;
+    }
+    year += q;
+    month = r + 1;
     ym1 = year - 1;
     
     /* Adjust the year after reducing the month */
