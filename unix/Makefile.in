@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.178 2005/11/27 02:33:50 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.179 2005/11/30 15:04:07 dkf Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -949,7 +949,7 @@ tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
 
-tclBasic.o: $(GENERIC_DIR)/tclBasic.c
+tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
@@ -973,13 +973,13 @@ tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c
 tclDate.o: $(GENERIC_DIR)/tclDate.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
-tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c
+tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
 
-tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c
+tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
 
-tclCompile.o: $(GENERIC_DIR)/tclCompile.c
+tclCompile.o: $(GENERIC_DIR)/tclCompile.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
 
 tclConfig.o: $(GENERIC_DIR)/tclConfig.c
@@ -997,7 +997,7 @@ tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 tclEvent.o: $(GENERIC_DIR)/tclEvent.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
-tclExecute.o: $(GENERIC_DIR)/tclExecute.c
+tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclExecute.c
 
 tclFCmd.o: $(GENERIC_DIR)/tclFCmd.c
@@ -1045,10 +1045,10 @@ tclLink.o: $(GENERIC_DIR)/tclLink.c
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
 
-tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c
+tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
 
-tclObj.o: $(GENERIC_DIR)/tclObj.c
+tclObj.o: $(GENERIC_DIR)/tclObj.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
 
 tclLoad.o: $(GENERIC_DIR)/tclLoad.c
@@ -1136,7 +1136,7 @@ tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
 tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPreserve.c
 
-tclProc.o: $(GENERIC_DIR)/tclProc.c
+tclProc.o: $(GENERIC_DIR)/tclProc.c $(GENERIC_DIR)/tclCompile.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
 
 tclRegexp.o: $(GENERIC_DIR)/tclRegexp.c
