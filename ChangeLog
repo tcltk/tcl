@@ -1,3 +1,9 @@
+2005-11-30  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c:  Fixed a bad refcount in previous commit
+	that led to a corrupted heap. Thanks to Miguel Sofer for pointing
+	out this bug.
+	
 2005-11-29  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclBasic.c:	Moved a big part of [clock format] down
