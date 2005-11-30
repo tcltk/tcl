@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.43 2005/11/29 22:50:58 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.44 2005/11/30 14:48:04 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -233,6 +233,7 @@ TclClockInit(
     Tcl_CreateObjCommand(interp,	"::tcl::clock::ConvertLocalToUTC",
 	    ClockConvertlocaltoutcObjCmd, (ClientData) data,
 	    ClockDeleteCmdProc);
+    ++data->refCount;
     Tcl_CreateObjCommand(interp,	"::tcl::clock::GetDateFields",
 	    ClockGetdatefieldsObjCmd,(ClientData) data,
 	    ClockDeleteCmdProc);
