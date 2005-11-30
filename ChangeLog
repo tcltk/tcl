@@ -1,16 +1,30 @@
+2005-11-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	***POTENTIAL INCOMPATIBILITY*** for bytecode savers/loaders. See below.
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Arrange for very simple
+	[switch] invokations to be compiled into hash lookups into jump tables;
+	only a very specific kind of [switch] can be safely compiled this way,
+	but that happens to be the most common kind. This makes around 5-10%
+	difference to the speed of execution of clock.test.
+	* generic/tclExecute.c (TEBC:INST_JUMP_TABLE): New instruction to
+	allow for jumps to locations looked up in a hashtable. Requires a new
+	AuxData type, tclJumptableInfoType (supported by the functions
+	DupJumptableInfo and FreeJumptableInfo in tclCompCmds.c) so anything
+	that saves bytecode containing this *must* be updated!
+
 2005-11-30  Kevin Kenny  <kennykb@acm.org>
 
-	* generic/tclClock.c:  Fixed a bad refcount in previous commit
-	that led to a corrupted heap. Thanks to Miguel Sofer for pointing
-	out this bug.
-	
+	* generic/tclClock.c: Fixed a bad refcount in previous commit that led
+	to a corrupted heap. Thanks to Miguel Sofer for pointing out this bug.
+
 2005-11-29  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclBasic.c:	Moved a big part of [clock format] down
 	* generic/tclClock.c:   to the C level in order to make it go faster.
 	* generic/tclInt.h:     Preliminary measurements suggest that it
 	* generic/clock.tcl:    more than doubles in speed with this change.
-	
+
 2005-11-29  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Allow [lsearch -regexp] to
@@ -295,7 +309,7 @@
 	* tests/compExpr-old.test:	Updated tests with changed behavior
 	due to addition of bignums.
 
-        * tests/expr.test:      Portable tests expr-46.13-18 [Bug 1341368]
+	* tests/expr.test:      Portable tests expr-46.13-18 [Bug 1341368]
 
 	* generic/tclPkg.c:	Corrected inconsistencies in the value returned
 	* tests/pkg.test:	by Tcl_PkgRequire(Ex) so that the returned
@@ -403,9 +417,9 @@
 
 2005-11-01  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclTrace.c (TclCheckExecutionTraces): Corrected mistaken
-        assumption that all command traces are set at the script level.
-        Report/fix from Jacques H. de Villiers. [Bug 1337941]
+	* generic/tclTrace.c (TclCheckExecutionTraces): Corrected mistaken
+	assumption that all command traces are set at the script level.
+	Report/fix from Jacques H. de Villiers. [Bug 1337941]
 
 	* tests/unixNotfy.test (1.1,2):	Update error message whitespace to
 	match changes in code.
