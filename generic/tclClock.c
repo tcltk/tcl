@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.45 2005/11/30 15:09:41 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.46 2005/11/30 15:39:37 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -575,6 +575,7 @@ ConvertLocalToUTCUsingC(
 ) {
     struct tm timeVal;
     int localErrno;
+    int secondOfDay;
 
     /* Convert the given time to a date */
 
@@ -588,9 +589,13 @@ ConvertLocalToUTCUsingC(
     timeVal.tm_year = fields->year - 1900;
     timeVal.tm_mon = fields->month - 1;
     timeVal.tm_mday = fields->dayOfMonth;
-    timeVal.tm_hour = (int)((fields->localSeconds / 3600) % 24);
-    timeVal.tm_min = (int)((fields->localSeconds / 60) % 60);
-    timeVal.tm_sec = (int)(fields->localSeconds % 60);
+    secondOfDay = (int)(fields->localSeconds % SECONDS_PER_DAY);
+    if (secondOfDay < 0) {
+	secondOfDay += SECONDS_PER_DAY;
+    }
+    timeVal.tm_hour = (secondOfDay / 3600) % 24;
+    timeVal.tm_min = (secondOfDay / 60) % 60;
+    timeVal.tm_sec = secondOfDay % 60;
     timeVal.tm_isdst = -1;
     timeVal.tm_wday = -1;
     timeVal.tm_yday = -1;
