@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.21 2005/11/29 22:50:58 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.22 2005/11/30 19:34:13 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -399,7 +399,8 @@ proc ::tcl::clock::Initialize {} {
 	    dict set date era CE
 	    dict set date year [expr { 100 * [dict get $date century]
 				       + [dict get $date yearOfCentury] }]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
+			  $changeover]
 	}
 	{ century yearOfCentury dayOfYear } 2 {
 	    dict set date era CE
@@ -412,13 +413,15 @@ proc ::tcl::clock::Initialize {} {
 	    dict set date iso8601Year \
 		[expr { 100 * [dict get $date iso8601Century]
 			+ [dict get $date iso8601YearOfCentury] }]
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
+			 $changeover]
 	}
 
 	{ yearOfCentury month dayOfMonth } 3 {
 	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
 	    dict set date era CE
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
+			  $changeover]
 	}
 	{ yearOfCentury dayOfYear } 3 {
 	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
@@ -430,13 +433,15 @@ proc ::tcl::clock::Initialize {} {
 			  $date[set date {}] $baseTime \
 			  iso8601YearOfCentury iso8601Year]
 	    dict set date era CE
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
+			 $changeover]
 	}
 
 	{ month dayOfMonth } 4 {
 	    set date [AssignBaseYear $date[set date {}] \
 			  $baseTime $timeZone]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
+			  $changeover]
 	}
 	{ dayOfYear } 4 {
 	    set date [AssignBaseYear $date[set date {}] \
@@ -446,19 +451,22 @@ proc ::tcl::clock::Initialize {} {
 	{ iso8601Week dayOfWeek } 4 {
 	    set date [AssignBaseIso8601Year $date[set date {}] \
 			  $baseTime $timeZone]
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
+			 $changeover]
 	}
 
 	{ dayOfMonth } 5 {
 	    set date [AssignBaseMonth $date[set date {}] \
 			  $baseTime $timeZone]
-	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
+			  $changeover]
 	}
 
 	{ dayOfWeek } 6 {
 	    set date [AssignBaseWeek $date[set date {}] \
 			  $baseTime $timeZone]
-	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
+			 $changeover]
 	}
 
 	{} 7 {
@@ -1313,7 +1321,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 
     # Assemble date, time, zone into seconds-from-epoch
 
-    set date [GetJulianDayFromEraYearMonthDay $date[set date {}]]
+    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] 2299161]
     if { $parseTime ne {} } {
 	dict set date secondOfDay $parseTime
     } elseif { [llength $parseWeekday] != 0 
@@ -1870,6 +1878,7 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
     append procBody "set date \[dict create\]" \n
     append procBody {dict set date tzName $timeZone} \n
     append procBody $postcode
+    append procBody [list set changeover [mc GREGORIAN_CHANGE_DATE]] \n
 
     # Add code that gets Julian Day Number from the fields.
 
@@ -1906,7 +1915,7 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 	    ::tcl::clock::SetupTimeZone $timeZone
 	    set date [::tcl::clock::ConvertLocalToUTC $date[set date {}] \
 			  $TZData($timeZone) \
-			  [mc GREGORIAN_CHANGE_DATE]]
+			  $changeover]
 	}
     }
 
@@ -2525,11 +2534,7 @@ proc ::tcl::clock::FormatStarDate { date } {
 
     # Determine whether the year is a leap year
 
-    if { [dict get $date gregorian] } {
-	set lp [IsGregorianLeapYear $date]
-    } else {
-	set lp [expr { [dict get $date year] % 4 == 0  }]
-    }
+    set lp [IsGregorianLeapYear $date]
 
     # Convert day of year to a fractional year
 
@@ -2577,6 +2582,7 @@ proc ::tcl::clock::ParseStarDate { year fractYear fractDay } {
     # Build a tentative date from year and fraction.
 
     set date [dict create \
+		  gregorian 1 \
 		  era CE \
 		  year [expr { $year + $Roddenberry }] \
 		  dayOfYear [expr { $fractYear * 365 / 1000 + 1 }]]
@@ -2584,11 +2590,7 @@ proc ::tcl::clock::ParseStarDate { year fractYear fractDay } {
 
     # Determine whether the given year is a leap year
 
-    if { [dict get $date gregorian] } {
-	set lp [IsGregorianLeapYear $date]
-    } else {
-	set lp [expr { [dict get $date year] % 4 == 0  }]
-    }
+    set lp [IsGregorianLeapYear $date]
 
     # Reconvert the fractional year according to whether the given
     # year is a leap year
@@ -3878,158 +3880,6 @@ proc ::tcl::clock::GetLocaleEra { date } {
 
 #----------------------------------------------------------------------
 #
-# GetJulianDayFromEraYearWeekDay --
-#
-#	Finds the Julian Day Number corresponding to the given era,
-#	year, week and day.
-#
-# Parameters:
-#	date -- A dictionary populated with fields whose keys are given
-#		by the 'keys' parameter below, plus the 'era' field.
-#	daysInFirstWeek -- (Optional) The minimum number of days in
-#			   the first week of the year.  Default is 4.
-#	firstDayOfWeek -- (Optional) The ordinal number of the first
-#			  day of the week. Default is 1 (Monday);
-#			  0 (Sunday) is an alternative.
-#	keys -- (Optional) Keys in the dictionary for looking up the
-#		fiscal year, fiscal week, and day of week. The
-#		default is { iso8601Year iso8601Week dayOfWeek }.
-#
-# Results:
-#	Returns the dictionary augmented with a 'julianDay' field
-#	that gives the Julian Day Number corresponding to the given
-#	date.
-#
-# Bugs:
-#	This code needs to be moved to the C layer.
-# 
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::GetJulianDayFromEraYearWeekDay {
-    date 
-    { daysInFirstWeek 4 } 
-    { firstDayOfWeek 1 }
-    { keys { iso8601Year iso8601Week dayOfWeek } }
-} {
-
-    foreach var { fiscalYear fiscalWeek dayOfWeek } key $keys {
-	set $var [dict get $date $key]
-    }
-
-    # Find a day of the first week of the year.
-
-    set date2 [dict create \
-		   era [dict get $date era] \
-		   year $fiscalYear \
-		   month 1 \
-		   dayOfMonth $daysInFirstWeek]
-    set date2 [GetJulianDayFromEraYearMonthDay $date2[set date2 {}]]
-
-    # Find the Julian Day Number of the start of that week.
-
-    set jd [WeekdayOnOrBefore $firstDayOfWeek [dict get $date2 julianDay]]
-
-    # Add the required number of weeks and days
-
-    dict set date julianDay \
-	[expr { $jd
-		+ ( 7 * ( $fiscalWeek - 1 ) )
-	        + $dayOfWeek - $firstDayOfWeek }]
-
-    return $date
-
-}
-
-#----------------------------------------------------------------------
-#
-# GetJulianDayFromEraYearMonthDay --
-#
-#	Given a year, month and day on the Gregorian calendar, determines
-#	the Julian Day Number beginning at noon on that date.
-#
-# Parameters:
-#	date -- A dictionary in which the 'era', 'year', 'month', and
-#		'dayOfMonth' slots are populated. The calendar in use
-#		is determined by the date itself relative to
-#		[mc GREGORIAN_CHANGE_DATE] in the current locale.
-#
-# Results:
-#	Returns the given dictionary augmented with a 'julianDay' key
-#	whose value is the desired Julian Day Number, and a 'gregorian'
-#	key that specifies whether the calendar is Gregorian (1) or
-#	Julian (0).
-#
-# Side effects:
-#	None.
-#
-# Bugs:
-#	This code needs to be moved to the C layer.
-#
-#----------------------------------------------------------------------
-
-proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
-
-    variable DaysInPriorMonthsInCommonYear
-    variable DaysInPriorMonthsInLeapYear
-
-    # Get absolute year number from the civil year
-
-    switch -exact -- [dict get $date era] {
-	BCE {
-	    set year [expr { 1 - [dict get $date year] }]
-	}
-	CE {
-	    set year [dict get $date year]
-	}
-    }
-
-    # If month is out of range, reduce modulo 12 and adjust year accordingly.
-
-    set month [expr { [dict get $date month] - 1 }]
-    incr year [expr { $month / 12 }]
-    set month [expr { ( $month % 12 ) + 1 }]
-    dict set date era CE; dict set date year $year; dict set date month $month
-
-    set ym1 [expr { $year - 1 }]
-
-    # Try the Gregorian calendar first.
-
-    dict set date gregorian 1
-    set jd [expr { 1721425
-		   + [dict get $date dayOfMonth]
-		   + ( [IsGregorianLeapYear $date] ?
-		       [lindex $DaysInPriorMonthsInLeapYear \
-			    [expr { $month - 1}]]
-		       : [lindex $DaysInPriorMonthsInCommonYear \
-			      [expr { $month - 1}]] )
-		   + ( 365 * $ym1 )
-		   + ( $ym1 / 4 )
-		   - ( $ym1 / 100 )
-		   + ( $ym1 / 400 ) }]
-    
-    # If the date is before the Gregorian change, use the Julian calendar.
-
-    if { $jd < [mc GREGORIAN_CHANGE_DATE] } {
-
-	dict set date gregorian 0
-	set jd [expr { 1721423
-		       + [dict get $date dayOfMonth]
-		       + ( ( $year % 4 == 0 ) ?
-		       [lindex $DaysInPriorMonthsInLeapYear \
-			    [expr { $month - 1}]]
-		       : [lindex $DaysInPriorMonthsInCommonYear \
-			      [expr { $month - 1}]] )
-		       + ( 365 * $ym1 )
-		       + ( $ym1 / 4 ) }]
-    }
-
-    dict set date julianDay $jd
-    return $date
-
-}
-
-#----------------------------------------------------------------------
-#
 # GetJulianDayFromEraYearDay --
 #
 #	Given a year, month and day on the Gregorian calendar, determines
@@ -4129,7 +3979,8 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthWeekDay { date } {
 	dict incr date2 month
 	dict set date2 dayOfMonth 7
     }
-    set date2 [GetJulianDayFromEraYearMonthDay $date2[set date2 {}]]
+    set date2 [GetJulianDayFromEraYearMonthDay $date2[set date2 {}] \
+		   [mc GREGORIAN_CHANGE_DATE]]
     set wd0 [WeekdayOnOrBefore [dict get $date dayOfWeek] \
 		 [dict get $date2 julianDay]]
     dict set date julianDay [expr { $wd0 + 7 * $week }]
@@ -4490,7 +4341,8 @@ proc ::tcl::clock::AddMonths { months clockval timezone } {
     # Reconvert to a number of seconds
 
     set date [GetJulianDayFromEraYearMonthDay \
-		  $date[set date {}]]
+		  $date[set date {}]\
+		  $changeover]
     dict set date localSeconds \
 	[expr { -210866803200
 		+ ( 86400 * wide([dict get $date julianDay]) )

@@ -26,6 +26,9 @@
 	JULIAN_SEC_POSIX_EPOCH.  Also fixed a bug where [clock format]
 	would fail in the :localtime zone for times before the Posix
 	Epoch.  Thanks to Miguel Sofer for pointing out all of these.
+	Also rationalized the code a little bit by moving parts of
+	[clock scan] into C, eliminating some code that was duplicated
+	in the C and Tcl layers.
 
 2005-11-29  Kevin Kenny  <kennykb@acm.org>
 
