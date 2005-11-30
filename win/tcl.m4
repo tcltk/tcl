@@ -382,7 +382,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # Step 0: Enable 64 bit support?
 
     AC_MSG_CHECKING([if 64bit support is requested])
-    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
+    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable = amd64|ia64)], [do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT($do64bit)
 
     # Set some defaults (may get changed below)
@@ -427,7 +427,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
-	if test "$do64bit" = "yes" ; then
+	if test "$do64bit" != "no" ; then
 	    AC_MSG_WARN("64bit mode not supported with GCC on Windows")
 	fi
 	SHLIB_LD=""
@@ -567,34 +567,49 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
 	# This is a 2-stage check to make sure we have the 64-bit SDK
 	# We have to know where the SDK is installed.
-	if test "$do64bit" = "yes" ; then
+	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
+	# MACHINE is IX86 for LINK, but this is used by the manifest,
+	# which requires x86|amd64|ia64.
+	MACHINE="X86"
+	if test "$do64bit" != "no" ; then
 	    if test "x${MSSDK}x" = "xx" ; then
-		MSSDK="C:/Progra~1/Microsoft SDK"
+		MSSDK="C:/Progra~1/Microsoft Platform SDK"
 	    fi
 	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
-	    if test ! -d "${MSSDK}/bin/win64" ; then
-		AC_MSG_WARN("could not find 64-bit SDK to enable 64bit mode")
+	    PATH64=""
+	    case "$do64bit" in
+		amd64|x64|yes)
+		    MACHINE="AMD64" ; # default to AMD64 64-bit build
+		    PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
+		    ;;
+		ia64)
+		    MACHINE="IA64"
+		    PATH64="${MSSDK}/Bin/Win64"
+		    ;;
+	    esac
+	    if test ! -d "${PATH64}" ; then
+		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK to enable 64bit mode])
+		AC_MSG_WARN([Ensure latest Platform SDK is installed])
 		do64bit="no"
+	    else
+		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	    fi
 	fi
 
-	if test "$do64bit" = "yes" ; then
-	    # All this magic is necessary for the Win64 SDK RC1 - hobbs
+	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.  TEA has the
-	    # TEA_PATH_NOSPACE to avoid this issue.
-	    CC="\"${MSSDK}/Bin/Win64/cl.exe\" \
-		-I\"${MSSDK}/Include/prerelease\" \
-		-I\"${MSSDK}/Include/Win64/crt\" \
-		-I\"${MSSDK}/Include/Win64/crt/sys\" \
-		-I\"${MSSDK}/Include\""
+	    # not work if AC_TRY_COMPILE is called.
+	    CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
+		-I\"${MSSDK}/Include/crt\" -I\"${MSSDK}/Include/crt/sys\""
 	    RC="\"${MSSDK}/bin/rc.exe\""
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="-MACHINE:IA64 -LIBPATH:\"${MSSDK}/Lib/IA64\" \
-		-LIBPATH:\"${MSSDK}/Lib/Prerelease/IA64\" -nologo"
-	    LINKBIN="\"${MSSDK}/bin/win64/link.exe\""
+	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
+	    LINKBIN="\"${PATH64}/link.exe\""
+	    # Avoid 'unresolved external symbol __security_cookie' errors.
+	    # c.f. http://support.microsoft.com/?id=894573
+	    LIBS="user32.lib advapi32.lib bufferoverflowU.lib"
 	else
 	    RC="rc"
 	    # -Od - no optimization
@@ -604,9 +619,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
 	    lflags="-nologo"
 	    LINKBIN="link"
+	    LIBS="user32.lib advapi32.lib"
 	fi
 
-	LIBS="user32.lib advapi32.lib"
 	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib"
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	# link -lib only works when -lib is the first arg
