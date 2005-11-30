@@ -21,7 +21,9 @@
 2005-11-30  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c: Fixed a bad refcount in previous commit that led
-	to a corrupted heap. Thanks to Miguel Sofer for pointing out this bug.
+	to a corrupted heap. Thanks to Miguel Sofer for pointing out this
+	bug.  Also silenced a warning that some compilers gave about the
+	excessively long constant for JULIAN_SEC_POSIX_EPOCH.
 
 2005-11-29  Kevin Kenny  <kennykb@acm.org>
 
