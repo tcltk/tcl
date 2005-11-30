@@ -1,3 +1,10 @@
+2005-11-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4:      Add build support for Windows-x64 builds.
+	* win/configure:   --enable-64bit now accepts =amd64|ia64 for
+	* win/Makefile.in: Windows 64-bit build variants (default: amd64)
+	* win/makefile.vc: [Bug 1369597]
+
 2005-11-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclObj.c (Tcl_GetWideIntFromObj): Add more efficient
@@ -26,22 +33,22 @@
 	* unix/configure.in: fix obsolete autoconf macros, sync gratuitous
 	formatting/ordering differences with tk/unix/configure.in.
 
-	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make executable
-	linking the same as during configure (needed to avoid loosing any linker
-	relevant flags in CFLAGS, in particular flags that can't be in LDFLAGS).
-	Avoid concurrent linking of tclsh and compiling of tclTestInit.o or
-	xtTestInit.o during parallel make.
+	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make
+	executable linking the same as during configure (needed to avoid
+	loosing any linker relevant flags in CFLAGS, in particular flags
+	that can't be in LDFLAGS).  Avoid concurrent linking of tclsh and
+	compiling of tclTestInit.o or xtTestInit.o during parallel make.
 	(checkstubs, checkdoc, checkexports): dependency and Darwin fixes
 
-	* unix/tclLoadDyld.c (TclpDlopen): use NSADDIMAGE_OPTION_WITH_SEARCHING
-	on second NSAddImage only. [Bug 1204237]
+	* unix/tclLoadDyld.c (TclpDlopen): [Bug 1204237] use
+	NSADDIMAGE_OPTION_WITH_SEARCHING on second NSAddImage only.
 	(TclGuessPackageName): should not be MODULE_SCOPE.
-	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for loading
-	universal (fat) bundles from memory.
+	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for
+	loading universal (fat) bundles from memory.
 
 	* unix/tclUnixPort.h:
-	* unix/tclUnixFCmd.c: add support for new Tiger copyfile() API to enable
-	copying of xattrs & ACLs by [file copy].
+	* unix/tclUnixFCmd.c: add support for new Tiger copyfile() API to
+	enable copying of xattrs & ACLs by [file copy].
 
 	* generic/tcl.h: add Darwin specifc configure overrides for TCL_WIDE
 	defines to support fat compiles of ppc and ppc64 at the same time,
@@ -50,15 +57,15 @@
 
 	* generic/tclInt.h: clarify fat compile comment.
 
-	* unix/tclUnixPort.h: add Darwin specifc configure overrides to support
-	fat compiles, where configure runs only once for multiple architectures
-	(replaces Darwin CVS fix by emoy, rdar://3693001).
+	* unix/tclUnixPort.h: add Darwin specifc configure overrides to
+	support fat compiles, where configure runs only once for multiple
+	architectures (replaces Darwin CVS fix by emoy, rdar://3693001).
 
 	* macosx/tclMacOSXBundle.c:
 	* macosx/tclMacOSXNotify.c:
-	* unix/tclUnixNotfy.c:
-	* unix/tclUnixPort.h: fix #include order to support compile time
-	override of HAVE_COREFOUNDATION in tclUnixPort.h when building for ppc64
+	* unix/tclUnixNotfy.c: fix #include order to support compile time
+	* unix/tclUnixPort.h:  override of HAVE_COREFOUNDATION in
+	tclUnixPort.h when building for ppc64
 
 	* macosx/Tcl.pbproj/default.pbxuser (new file):
 	* macosx/Tcl.pbproj/jingham.pbxuser:
@@ -67,8 +74,8 @@
 	* macosx/README: clarification/cleanup, sync with HEAD, document
 	universal (fat) builds via CFLAGS (i.e. all of ppc ppc64 i386 at once).
 
-	* macosx/Makefile: add support for reusing configure cache, build target
-	fixes, remove GENERIC_FLAGS override now handled by tcl.m4.
+	* macosx/Makefile: add support for reusing configure cache, build
+	target fixes, remove GENERIC_FLAGS override now handled by tcl.m4.
 
 	* generic/tclIOUtil.c:
 	* generic/tclRegexp.c:
