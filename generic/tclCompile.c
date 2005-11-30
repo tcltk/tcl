@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.92 2005/11/07 15:23:56 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.93 2005/11/30 14:59:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -362,6 +362,13 @@ InstructionDesc tclInstructionTable[] = {
 	 * dictionary in the variable referred to by the immediate argument.
 	 * Stack:  ... keyList LVTindexList => ...
 	 * Same notes as in "dictUpdateStart" apply here. */
+    {"jumpTable",	  5,	-1,	   1,	{OPERAND_UINT4}},
+	/* Jump according to the jump-table (in AuxData as indicated by the
+	 * operand) and the argument popped from the list. Always executes the
+	 * next instruction if no match against the table's entries was found.
+	 * Stack:  ... value => ...
+	 * Note that the jump table contains offsets relative to the PC when
+	 * it points to this instruction; the code is relocatable. */
     {0}
 };
 
@@ -2500,7 +2507,7 @@ TclFixupForwardJump(
  */
 
 void * /* == InstructionDesc* == */
-TclGetInstructionTable()
+TclGetInstructionTable(void)
 {
     return &tclInstructionTable[0];
 }
@@ -2616,7 +2623,7 @@ TclGetAuxDataType(
  */
 
 void
-TclInitAuxDataTypeTable()
+TclInitAuxDataTypeTable(void)
 {
     /*
      * The table mutex must already be held before this routine is invoked.
@@ -2626,10 +2633,11 @@ TclInitAuxDataTypeTable()
     Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
 
     /*
-     * There is only one AuxData type at this time, so register it here.
+     * There are only two AuxData type at this time, so register them here.
      */
 
     TclRegisterAuxDataType(&tclForeachInfoType);
+    TclRegisterAuxDataType(&tclJumptableInfoType);
 }
 
 /*
@@ -2652,7 +2660,7 @@ TclInitAuxDataTypeTable()
  */
 
 void
-TclFinalizeAuxDataTypeTable()
+TclFinalizeAuxDataTypeTable(void)
 {
     Tcl_MutexLock(&tableMutex);
     if (auxDataTypeTableInitialized) {
