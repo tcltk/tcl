@@ -1,5 +1,10 @@
 2005-11-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* unix/Makefile.in: Add dependency information relating to tclCompile.h
+	since when the list of opcodes changes it is usually useful to rebuild
+	everything that depends on it (but which is nonetheless a small
+	fraction of the total set of Tcl source files).
+
 	***POTENTIAL INCOMPATIBILITY*** for bytecode savers/loaders. See below.
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Arrange for very simple
