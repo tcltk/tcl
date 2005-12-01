@@ -1,3 +1,8 @@
+2005-12-01  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset.
+	* unix/configure: regen.
+
 2005-11-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/Makefile.in: Add dependency information relating to tclCompile.h
