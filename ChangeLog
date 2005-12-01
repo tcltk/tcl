@@ -1,8 +1,14 @@
+2005-12-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/Makefile.in: Add remaining dependency info. While automated
+	maintenance of this information would be good, having it at all is
+	much better than a poke in the eye with a sharp stick...
+
 2005-12-01  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclClock.c: fix warning.
-	
-	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset.
+
+	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset
 	* unix/configure: regen.
 
 2005-11-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
