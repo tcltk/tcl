@@ -1433,10 +1433,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
 	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
-	    if test -z "${MACOSX_DEPLOYMENT_TARGET}" -o \
-		    `echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print [$]2}'` -lt 4; then
+	    test -z "${MACOSX_DEPLOYMENT_TARGET}" || \
+		test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print [$]2}'`" -lt 4 && \
 		LDFLAGS="$LDFLAGS -prebind"
-	    fi
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
 	        hold_ldflags=$LDFLAGS
