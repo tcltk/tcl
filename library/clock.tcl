@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.22 2005/11/30 19:34:13 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.23 2005/12/01 20:39:34 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -406,7 +406,8 @@ proc ::tcl::clock::Initialize {} {
 	    dict set date era CE
 	    dict set date year [expr { 100 * [dict get $date century]
 				       + [dict get $date yearOfCentury] }]
-	    set date [GetJulianDayFromEraYearDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
+			  $changeover]
 	}
 	{ iso8601Century iso8601YearOfCentury iso8601Week dayOfWeek } 2 {
 	    dict set date era CE
@@ -426,7 +427,8 @@ proc ::tcl::clock::Initialize {} {
 	{ yearOfCentury dayOfYear } 3 {
 	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
 	    dict set date era CE
-	    set date [GetJulianDayFromEraYearDay $date[set date {}]]
+	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
+			  $changeover]
 	}
 	{ iso8601YearOfCentury iso8601Week dayOfWeek } 3 {
 	    set date [InterpretTwoDigitYear \
@@ -439,39 +441,40 @@ proc ::tcl::clock::Initialize {} {
 
 	{ month dayOfMonth } 4 {
 	    set date [AssignBaseYear $date[set date {}] \
-			  $baseTime $timeZone]
+			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
 			  $changeover]
 	}
 	{ dayOfYear } 4 {
 	    set date [AssignBaseYear $date[set date {}] \
-			  $baseTime $timeZone]
-	    set date [GetJulianDayFromEraYearDay $date[set date {}]]
+			  $baseTime $timeZone $changeover]
+	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
+			 $changeover]
 	}
 	{ iso8601Week dayOfWeek } 4 {
 	    set date [AssignBaseIso8601Year $date[set date {}] \
-			  $baseTime $timeZone]
+			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
 			 $changeover]
 	}
 
 	{ dayOfMonth } 5 {
 	    set date [AssignBaseMonth $date[set date {}] \
-			  $baseTime $timeZone]
+			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
 			  $changeover]
 	}
 
 	{ dayOfWeek } 6 {
 	    set date [AssignBaseWeek $date[set date {}] \
-			  $baseTime $timeZone]
+			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
 			 $changeover]
 	}
 
 	{} 7 {
 	    set date [AssignBaseJulianDay $date[set date {}] \
-			  $baseTime $timeZone]
+			  $baseTime $timeZone $changeover]
 	}
     }
 
@@ -1262,7 +1265,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     set date [GetDateFields \
 		  $base \
 		  $TZData($timezone) \
-		  2299161]
+		  2361222]
     dict set date secondOfDay [expr { [dict get $date localSeconds] 
 				      % 86400 }]
 
@@ -1321,7 +1324,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 
     # Assemble date, time, zone into seconds-from-epoch
 
-    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] 2299161]
+    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] 2361222]
     if { $parseTime ne {} } {
 	dict set date secondOfDay $parseTime
     } elseif { [llength $parseWeekday] != 0 
@@ -1337,7 +1340,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 		+ ( 86400 * wide([dict get $date julianDay]) )
 		+ [dict get $date secondOfDay] }]
     dict set date tzName $timezone
-    set date [ConvertLocalToUTC $date[set date {}] $TZData($timezone) 2299161]
+    set date [ConvertLocalToUTC $date[set date {}] $TZData($timezone) 2361222]
     set seconds [dict get $date seconds]
 
     # Do relative times
@@ -1354,7 +1357,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     if { [llength $parseWeekday] > 0 } {
 
 	foreach {dayOrdinal dayOfWeek} $parseWeekday break
-	set date2 [GetDateFields $seconds $TZData($timezone) 2299161]
+	set date2 [GetDateFields $seconds $TZData($timezone) 2361222]
 	dict set date2 era CE
 	set jdwkday [WeekdayOnOrBefore $dayOfWeek \
 			 [expr { [dict get $date2 julianDay] 
@@ -1372,7 +1375,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 		    + [dict get $date secondOfDay] }]
 	dict set date2 tzName $timezone
 	set date2 [ConvertLocalToUTC $date2[set date2 {}] $TZData($timezone) \
-		       2299161]
+		       2361222]
 	set seconds [dict get $date2 seconds]
 
     }
@@ -2694,6 +2697,9 @@ proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
 #	date - Dictionary value to update
 #	baseTime - Base time from which to extract the year, expressed
 #		   in seconds from the Posix epoch
+#	timezone - the time zone in which the date is being scanned
+#	changeover - the Julian Day on which the Gregorian calendar
+#		     was adopted in the target locale.
 #
 # Results:
 #	Returns the dictionary with the current year assigned.
@@ -2703,15 +2709,14 @@ proc ::tcl::clock::InterpretTwoDigitYear { date baseTime
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseYear { date baseTime timezone } {
+proc ::tcl::clock::AssignBaseYear { date baseTime timezone changeover } {
 
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time, and
     # find the Gregorian year corresponding to that Julian Day.
 
-    set date2 [GetDateFields $baseTime $TZData($timezone) \
-		   [mc GREGORIAN_CHANGE_DATE]]
+    set date2 [GetDateFields $baseTime $TZData($timezone) $changeover]
 
     # Store the converted year
 
@@ -2732,6 +2737,9 @@ proc ::tcl::clock::AssignBaseYear { date baseTime timezone } {
 #	date - Dictionary containing the fields of the date that
 #	       is to be augmented with the base year.
 #	baseTime - Base time expressed in seconds from the Posix epoch.
+#	timeZone - Target time zone
+#	changeover - Julian Day of adoption of the Gregorian calendar in
+#		     the target locale.
 #
 # Results:
 #	Returns the given date with "iso8601Year" set to the
@@ -2742,14 +2750,13 @@ proc ::tcl::clock::AssignBaseYear { date baseTime timezone } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseIso8601Year { date baseTime timeZone } {
+proc ::tcl::clock::AssignBaseIso8601Year {date baseTime timeZone changeover} {
 
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time
 
-    set date2 [GetDateFields $baseTime $TZData($timeZone) \
-		   [mc GREGORIAN_CHANGE_DATE]]
+    set date2 [GetDateFields $baseTime $TZData($timeZone) $changeover]
 
     # Calculate the ISO8601 date and transfer the year
 
@@ -2769,6 +2776,8 @@ proc ::tcl::clock::AssignBaseIso8601Year { date baseTime timeZone } {
 #	date - Dictionary value to update
 #	baseTime - Time from which the year and month are to be
 #	           obtained, expressed in seconds from the Posix epoch.
+#	timezone - Name of the desired time zone
+#	changeover - Julian Day on which the Gregorian calendar was adopted.
 #
 # Results:
 #	Returns the dictionary with the base year and month assigned.
@@ -2778,14 +2787,13 @@ proc ::tcl::clock::AssignBaseIso8601Year { date baseTime timeZone } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseMonth { date baseTime timezone } {
+proc ::tcl::clock::AssignBaseMonth {date baseTime timezone changeover} {
 
     variable TZData
 
     # Find the year and month corresponding to the base time
 
-    set date2 [GetDateFields $baseTime $TZData($timezone) \
-		   [mc GREGORIAN_CHANGE_DATE]]
+    set date2 [GetDateFields $baseTime $TZData($timezone) $changeover]
     dict set date era [dict get $date2 era]
     dict set date year [dict get $date2 year]
     dict set date month [dict get $date2 month]
@@ -2803,6 +2811,8 @@ proc ::tcl::clock::AssignBaseMonth { date baseTime timezone } {
 #	date - Dictionary containing the fields of the date that
 #	       is to be augmented with the base year and week.
 #	baseTime - Base time expressed in seconds from the Posix epoch.
+#	changeover - Julian Day on which the Gregorian calendar was adopted
+#		     in the target locale.
 #
 # Results:
 #	Returns the given date with "iso8601Year" set to the
@@ -2813,14 +2823,13 @@ proc ::tcl::clock::AssignBaseMonth { date baseTime timezone } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseWeek { date baseTime timeZone } {
+proc ::tcl::clock::AssignBaseWeek {date baseTime timeZone changeover} {
 
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time
 
-    set date2 [GetDateFields $baseTime $TZData($timeZone) \
-		   [mc GREGORIAN_CHANGE_DATE]]
+    set date2 [GetDateFields $baseTime $TZData($timeZone) $changeover]
 
     # Calculate the ISO8601 date and transfer the year
 
@@ -2839,6 +2848,8 @@ proc ::tcl::clock::AssignBaseWeek { date baseTime timeZone } {
 # Parameters:
 #	date - Dictionary that is to get the base day
 #	baseTime - Base time expressed in seconds from the Posix epoch
+#	changeover - Julian day on which the Gregorian calendar was
+#		     adpoted in the target locale.
 #
 # Results:
 #	Returns the given dictionary augmented with a 'julianDay' field
@@ -2849,14 +2860,13 @@ proc ::tcl::clock::AssignBaseWeek { date baseTime timeZone } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AssignBaseJulianDay { date baseTime timeZone } {
+proc ::tcl::clock::AssignBaseJulianDay { date baseTime timeZone changeover } {
 
     variable TZData
 
     # Find the Julian Day Number corresponding to the base time
 
-    set date2 [GetDateFields $baseTime $TZData($timeZone) \
-		   [mc GREGORIAN_CHANGE_DATE]]
+    set date2 [GetDateFields $baseTime $TZData($timeZone) $changeover]
     dict set date julianDay [dict get $date2 julianDay]
 
     return $date
@@ -3799,7 +3809,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 	    incr doy
 	}
 	dict set date dayOfYear $doy
-	set date [GetJulianDayFromEraYearDay $date[set date {}]]
+	set date [GetJulianDayFromEraYearDay $date[set date {}] 2361222]
     } else {
 
 	# Time was specified as a day of the week within a month
@@ -3811,7 +3821,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 	    set dow -1
 	}
 	dict set date dayOfWeek $dow
-	set date [GetJulianDayFromEraYearMonthWeekDay $date[set date {}]]
+	set date [GetJulianDayFromEraYearMonthWeekDay $date[set date {}] 2361222]
 
     }
 
@@ -3888,8 +3898,9 @@ proc ::tcl::clock::GetLocaleEra { date } {
 # Parameters:
 #	date -- A dictionary in which the 'era', 'year', and
 #		'dayOfYear' slots are populated. The calendar in use
-#		is determined by the date itself relative to
-#		[mc GREGORIAN_CHANGE_DATE] in the current locale.
+#		is determined by the date itself relative to:
+#       changeover -- Julian day on which the Gregorian calendar was
+#		adopted in the current locale.
 #
 # Results:
 #	Returns the given dictionary augmented with a 'julianDay' key
@@ -3905,7 +3916,7 @@ proc ::tcl::clock::GetLocaleEra { date } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
+proc ::tcl::clock::GetJulianDayFromEraYearDay {date changeover} {
 
     # Get absolute year number from the civil year
 
@@ -3931,7 +3942,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
     
     # If the date is before the Gregorian change, use the Julian calendar.
 
-    if { $jd < [mc GREGORIAN_CHANGE_DATE] } {
+    if { $jd < $changeover } {
 	dict set date gregorian 0
 	set jd [expr { 1721423
 		       + [dict get $date dayOfYear]
@@ -3953,6 +3964,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
 # Parameters:
 #	date - Dictionary containing the keys, 'era', 'year', 'month'
 #	       'weekOfMonth', 'dayOfWeek', and 'dayOfWeekInMonth'.
+#	changeover - Julian Day of adoption of the Gregorian calendar
 #
 # Results:
 #	Returns the given dictionary, augmented with a 'julianDay' key.
@@ -3965,7 +3977,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetJulianDayFromEraYearMonthWeekDay { date } {
+proc ::tcl::clock::GetJulianDayFromEraYearMonthWeekDay {date changeover} {
 
     # Come up with a reference day; either the zeroeth day of the
     # given month (dayOfWeekInMonth >= 0) or the seventh day of the
@@ -3980,7 +3992,7 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthWeekDay { date } {
 	dict set date2 dayOfMonth 7
     }
     set date2 [GetJulianDayFromEraYearMonthDay $date2[set date2 {}] \
-		   [mc GREGORIAN_CHANGE_DATE]]
+		   $changeover]
     set wd0 [WeekdayOnOrBefore [dict get $date dayOfWeek] \
 		 [dict get $date2 julianDay]]
     dict set date julianDay [expr { $wd0 + 7 * $week }]
@@ -4215,6 +4227,8 @@ proc ::tcl::clock::add { clockval args } {
 
     EnterLocale $locale oldLocale
     
+    set changeover [mc GREGORIAN_CHANGE_DATE]
+
     if {[catch {SetupTimeZone $timezone} retval opts]} {
 	dict unset opts -errorinfo
 	return -options $opts $retval
@@ -4229,18 +4243,20 @@ proc ::tcl::clock::add { clockval args } {
 		years - year {
 		    set clockval \
 			[AddMonths [expr { 12 * $quantity }] \
-			     $clockval $timezone]
+			     $clockval $timezone $changeover]
 		}
 		months - month {
-		    set clockval [AddMonths $quantity $clockval $timezone]
+		    set clockval [AddMonths $quantity $clockval $timezone \
+				     $changeover]
 		}
 
 		weeks - week {
 		    set clockval [AddDays [expr { 7 * $quantity }] \
-				      $clockval $timezone]
+				      $clockval $timezone $changeover]
 		}
 		days - day {
-		    set clockval [AddDays $quantity $clockval $timezone]
+		    set clockval [AddDays $quantity $clockval $timezone \
+				      $changeover]
 		}
 
 		hours - hour {
@@ -4302,13 +4318,11 @@ proc ::tcl::clock::add { clockval args } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AddMonths { months clockval timezone } {
+proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
 
     variable DaysInRomanMonthInCommonYear
     variable DaysInRomanMonthInLeapYear
     variable TZData
-
-    set changeover [mc GREGORIAN_CHANGE_DATE]
 
     # Convert the time to year, month, day, and fraction of day.
 
@@ -4365,6 +4379,8 @@ proc ::tcl::clock::AddMonths { months clockval timezone } {
 #	days - Number of days to add (may be negative)
 #	clockval - Seconds since the epoch before the operation
 #	timezone - Time zone in which the operation is to be performed
+#	changeover - Julian Day on which the Gregorian calendar was adopted
+#		     in the target locale.
 #
 # Results:
 #	Returns the new clock value as a number of seconds since
@@ -4375,11 +4391,9 @@ proc ::tcl::clock::AddMonths { months clockval timezone } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::AddDays { days clockval timezone } {
+proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 
     variable TZData
-
-    set changeover [mc GREGORIAN_CHANGE_DATE]
 
     # Convert the time to Julian Day
 
