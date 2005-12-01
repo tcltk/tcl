@@ -1,3 +1,8 @@
+2005-12-01  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset.
+	* unix/configure: regen.
+
 2005-11-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tcl.m4:      Add build support for Windows-x64 builds.
