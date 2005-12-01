@@ -7238,10 +7238,9 @@ echo "${ECHO_T}$tcl_cv_ld_single_module" >&6
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
 	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
-	    if test -z "${MACOSX_DEPLOYMENT_TARGET}" -o \
-		    `echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print $2}'` -lt 4; then
+	    test -z "${MACOSX_DEPLOYMENT_TARGET}" || \
+		test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print $2}'`" -lt 4 && \
 		LDFLAGS="$LDFLAGS -prebind"
-	    fi
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    echo "$as_me:$LINENO: checking if ld accepts -search_paths_first flag" >&5
 echo $ECHO_N "checking if ld accepts -search_paths_first flag... $ECHO_C" >&6
