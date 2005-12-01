@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.24 2005/12/01 20:50:37 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.25 2005/12/01 22:38:05 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -673,7 +673,7 @@ proc ::tcl::clock::format { args } {
     set format {%a %b %d %H:%M:%S %z %Y}
     set gmt 0
     set locale C
-    set timezone [GetSystemTimeZone]
+    set timezone {}
 
     # Pick up command line options.
 
@@ -708,11 +708,11 @@ proc ::tcl::clock::format { args } {
 	    -errorcode [list CLOCK gmtWithTimezone] \
 	    "cannot use -gmt and -timezone in same call"
     }
-    if { [catch { expr { wide($clockval) } } result] } {
+    if { ![string is wide -strict $clockval] } {
 	return -code error \
 	    "expected integer but got \"$clockval\"" 
     }
-    if { ![string is boolean $gmt] } {
+    if { ![string is boolean -strict $gmt] } {
 	return -code error \
 	    "expected boolean value but got \"$gmt\""
     } else {
@@ -721,368 +721,60 @@ proc ::tcl::clock::format { args } {
 	}
     }
 
+    # Get the data for time changes in the given zone
+    
+    if {$timezone eq ""} {
+	set timezone [GetSystemTimeZone]
+    }
+    if {[catch {SetupTimeZone $timezone} retval opts]} {
+	dict unset opts -errorinfo
+	return -options $opts $retval
+    }
+    
+    # Extract the fields of the date.
+    
+    set date [GetDateFields $clockval \
+		  $TZData($timezone) \
+		  [mc GREGORIAN_CHANGE_DATE]]
+    
+    # Format the result
+    
+    set formatter [ParseClockFormatFormat $format $locale]
+    return [$formatter $date $TZData($timezone)]
+
+}
+
+#----------------------------------------------------------------------
+#
+# ParseClockFormatFormat --
+#
+#	Builds and caches a procedure that formats a time value.
+#
+# Parameters:
+#	format -- Format string to use
+#	locale -- Locale in which the format string is to be interpreted
+#
+# Results:
+#	Returns the name of the newly-built procedure.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::ParseClockFormatFormat {format locale} {
+
+    set procName [namespace current]::formatproc'$format'$locale
+    if {[info procs $procName] != {}} {
+	return $procName
+    }
+
+    # Map away the locale-dependent composite format groups
+    
     EnterLocale $locale oldLocale
 
     # Change locale if a fresh locale has been given on the command line.
 
     set status [catch {
 
-	# Map away the locale-dependent composite format groups
-
-	set format [LocalizeFormat $locale $format]
-
-	# Convert the given time to local time.
-	
-	# Get the data for time changes in the given zone
-	
-	if {[catch {SetupTimeZone $timezone} retval opts]} {
-	    dict unset opts -errorinfo
-	    return -options $opts $retval
-	}
-
-	# Extract the fields of the date.
-
-	set date [GetDateFields $clockval \
-		      $TZData($timezone) \
-		      [mc GREGORIAN_CHANGE_DATE]]
-	
-	# Format the result
-
-	# TO BE:
-	# set formatter [ParseClockFormatFormat $format $locale]
-	# $formatter $date $TZData($timezone) $changeover
-	
-	set state {}
-	set retval {}
-	foreach char [split $format {}] {
-	    switch -exact -- $state {
-		{} {
-		    if { [string equal % $char] } {
-			set state percent
-		    } else {
-			append retval $char
-		    }
-		}
-		percent {		# Character following a '%' character
-		    set state {}
-		    switch -exact -- $char {
-			% {		# A literal character, '%'
-			    append retval %
-			}
-			a {		# Day of week, abbreviated
-			    set dow [expr { [dict get $date dayOfWeek] % 7 }]
-			    append retval \
-				[lindex [mc DAYS_OF_WEEK_ABBREV] $dow]
-			}
-			A {		# Day of week, spelt out.
-			    set dow [expr { [dict get $date dayOfWeek] % 7 }]
-			    append retval [lindex [mc DAYS_OF_WEEK_FULL] $dow]
-			}
-			b - h {		# Name of month, abbreviated.
-			    set month [expr { [dict get $date month] - 1 }]
-			    append retval [lindex [mc MONTHS_ABBREV] $month]
-			}
-			B {		# Name of month, spelt out
-			    set month [expr { [dict get $date month] - 1 }]
-			    append retval [lindex [mc MONTHS_FULL] $month]
-			}
-			C {		# Century number
-			    set cent [expr { [dict get $date year] / 100 }]
-			    append retval [::format %02d $cent]
-			}
-			d {		# Day of month, with leading zero
-			    append retval [::format %02d \
-					       [dict get $date dayOfMonth]]
-			}
-			e {		# Day of month, without leading zero
-			    append retval [::format %2d \
-					       [dict get $date dayOfMonth]]
-			}
-			E {		# Format group in a locale-dependent
-					# alternative era
-			    set state percentE
-			    if { ![dict exists $date localeEra] } {
-				set date [GetLocaleEra $date[set date {}]]
-			    }
-			}
-			g {		# Two-digit year relative to ISO8601
-					# week number
-			    set year \
-				[expr { [dict get $date iso8601Year] % 100 }]
-			    append retval [::format %02d $year]
-			}
-			G {		# Four-digit year relative to ISO8601
-					# week number
-			    append retval [::format %04d \
-					       [dict get $date iso8601Year]]
-			}
-			H {		# Hour in the 24-hour day, leading zero
-			    append retval \
-				[::format %02d \
-				     [expr { [dict get $date localSeconds] 
-					     / 3600
-					     % 24 }]]
-			}
-			I {		# Hour AM/PM, with leading zero
-			    set hour12 \
-				[expr { ( ( ( [dict get $date localSeconds]
-					      % 86400 )
-					    + 86400
-					    - 3600 )
-					  / 3600 )
-					% 12 + 1 }]
-			    append retval [::format %02d $hour12]
-			}
-			j {		# Day of year (001-366)
-			    append retval [::format %03d \
-					       [dict get $date dayOfYear]]
-			}
-			J {		# Julian Day Number
-			    append retval [::format %07ld \
-					       [dict get $date julianDay]]
-			}
-			k {		# Hour (0-23), no leading zero
-			    append retval \
-				[::format %2d \
-				     [expr { [dict get $date localSeconds] 
-					     / 3600
-					     % 24 }]]
-			}
-			l {		# Hour (12-11), no leading zero
-			    set hour12 \
-				[expr { ( ( ( [dict get $date localSeconds]
-					      % 86400 )
-					    + 86400
-					    - 3600 )
-					  / 3600 )
-					% 12 + 1 }]
-			    append retval [::format %2d $hour12]
-			}
-			m {		# Month number, leading zero
-			    append retval [::format %02d \
-					       [dict get $date month]]
-			}
-			M {		# Minute of the hour, leading zero
-			    append retval \
-				[::format %02d \
-				     [expr { [dict get $date localSeconds] 
-					     / 60
-					     % 60 }]]
-			}
-			n {		# A literal newline
-			    append retval \n
-			}
-			N {		# Month number, no leading zero
-			    append retval [::format %2d \
-					       [dict get $date month]]
-			}
-			O {		# A format group in the locale's
-					# alternative numerals
-			    set state percentO
-			}
-			p {		# Localized 'AM' or 'PM' indicator
-					# converted to uppercase
-			    set tod [expr { [dict get $date localSeconds] 
-					    % 86400 }]
-			    if { $tod >= ( 86400 / 2 ) } {
-				append retval [string toupper [mc PM]]
-			    } else {
-				append retval [string toupper [mc AM]]
-			    }
-			}
-			P {		# Localized 'AM' or 'PM' indicator
-			    set tod [expr { [dict get $date localSeconds] 
-					    % 86400 }]
-			    if { $tod >= ( 86400 / 2 ) } {
-				append retval [mc PM]
-			    } else {
-				append retval [mc AM]
-			    }
-			}
-			Q {			# Hi, Jeff!
-			    append retval [FormatStarDate $date]
-			}
-			s {		# Seconds from the Posix Epoch
-			    append retval $clockval
-			}
-			S {		# Second of the minute, with 
-					# leading zero
-			    append retval \
-				[::format %02d \
-				     [expr { [dict get $date localSeconds] 
-					     % 60 }]]
-			}
-			t {		# A literal tab character
-			    append retval \t
-			}
-			u {		# Day of the week (1-Monday, 7-Sunday)
-			    append retval [dict get $date dayOfWeek]
-			}
-			U {		# Week of the year (00-53). The
-					# first Sunday of the year is the
-					# first day of week 01
-			    set dow [dict get $date dayOfWeek]
-			    if { $dow == 7 } {
-				set dow 0
-			    }
-			    incr dow
-			    set weekNumber \
-				[expr { ( [dict get $date dayOfYear] 
-					  - $dow + 7 )
-					/ 7 }]
-			    append retval [::format %02d $weekNumber]
-			}
-			V {		# The ISO8601 week number
-			    append retval [::format %02d \
-					       [dict get $date iso8601Week]]
-			}
-			w {		# Day of the week (0-Sunday,
-					# 6-Saturday)
-			    append retval \
-				[expr { [dict get $date dayOfWeek] % 7 }]
-			}
-			W {		# Week of the year (00-53). The first
-					# Monday of the year is the first day
-					# of week 01.
-			    set weekNumber \
-				[expr { ( [dict get $date dayOfYear]
-					  - [dict get $date dayOfWeek]
-					  + 7 ) 
-					/ 7 }]
-			    append retval [::format %02d $weekNumber]
-			}
-			y {		# The two-digit year of the century
-			    append retval \
-				[::format %02d \
-				     [expr { [dict get $date year] % 100 }]]
-			}
-			Y {		# The four-digit year
-			    append retval [::format %04d \
-					       [dict get $date year]]
-			}
-			z {		# The time zone as hours and minutes
-					# east (+) or west (-) of Greenwich
-			    append retval [FormatNumericTimeZone \
-					       [dict get $date tzOffset]]
-			}
-			Z {		# The name of the time zone
-			    append retval [dict get $date tzName]
-			}
-			% {		# A literal percent character
-			    append retval %
-			}
-			default {	# An unknown escape sequence
-			    append retval % $char
-			}
-		    }
-		}
-		percentE {		# Character following %E
-		    set state {}
-		    switch -exact -- $char {
-			C {		# Locale-dependent era
-			    append retval [dict get $date localeEra]
-			}
-			y {		# Locale-dependent year of the era
-			    set y [dict get $date localeYear]
-			    if { $y >= 0 && $y < 100 } {
-				append retval [lindex [mc LOCALE_NUMERALS] $y]
-			    } else {
-				append retval $y
-			    }
-			}
-			default {	# Unknown format group
-			    append retval %E $char
-			}
-		    }
-		}
-		percentO {		# Character following %O
-		    set state {}
-		    switch -exact -- $char {
-			d - e {		# Day of the month in alternative 
-					# numerals
-			    append retval [lindex \
-					       [mc LOCALE_NUMERALS] \
-					       [dict get $date dayOfMonth]]
-			}
-			H - k {		# Hour of the day in alternative
-					# numerals
-			    set hour [expr { [dict get $date localSeconds] 
-					     / 3600
-					     % 24 }]
-			    append retval [lindex [mc LOCALE_NUMERALS] $hour]
-			}
-			I - l {		# Hour (12-11) AM/PM in alternative
-					# numerals
-			    set hour12 \
-				[expr { ( ( ( [dict get $date localSeconds]
-					      % 86400 )
-					    + 86400
-					    - 3600 )
-					  / 3600 )
-					% 12 + 1 }]
-			    append retval [lindex [mc LOCALE_NUMERALS] $hour12]
-			}
-			m {		# Month number in alternative numerals
-			    append retval [lindex \
-					       [mc LOCALE_NUMERALS] \
-					       [dict get $date month]]
-			}
-			M {		# Minute of the hour in alternative
-					# numerals
-			    set minute [expr { [dict get $date localSeconds] 
-					       / 60
-					       % 60 }]
-			    append retval [lindex [mc LOCALE_NUMERALS] $minute]
-			}
-			S {		# Second of the minute in alternative
-					# numerals
-			    set second [expr { [dict get $date localSeconds] 
-					       % 60 }]
-			    append retval [lindex [mc LOCALE_NUMERALS] $second]
-			}
-			u {		# Day of the week (Monday=1,Sunday=7)
-					# in alternative numerals
-			    append retval [lindex \
-					       [mc LOCALE_NUMERALS] \
-					       [dict get $date dayOfWeek]]
-			}
-			w {		# Day of the week (Sunday=0,Saturday=6)
-					# in alternative numerals
-			    append retval \
-				[lindex \
-				     [mc LOCALE_NUMERALS] \
-				     [expr { [dict get $date dayOfWeek] % 7 }]]
-			}
-			y {		# Year of the century in alternative
-					# numerals
-			    append retval \
-				[lindex \
-				     [mc LOCALE_NUMERALS] \
-				     [expr { [dict get $date year] % 100 }]]
-			}
-			default {	# Unknown format group
-			    append retval %O $char
-			}
-		    }
-		}
-	    }
-	}
-	
-	# Clean up any improperly terminated groups
-	
-	switch -exact -- $state {
-	    percent {
-		append retval %
-	    }
-	    percentE {
-		append retval %E
-	    }
-	    percentO {
-		append retval %O
-	    }
-	}
-
-	set retval
+	ParseClockFormatFormat2 $format $locale $procName
 
     } result opts]
 
@@ -1091,6 +783,8 @@ proc ::tcl::clock::format { args } {
     if { [info exists oldLocale] } {
 	mclocale $oldLocale
     }
+
+    # Return either the error or the proc name
 
     if { $status == 1 } {
 	if { [lindex [dict get $opts -errorcode] 0] eq {clock} } {
@@ -1102,6 +796,425 @@ proc ::tcl::clock::format { args } {
 	return $result
     }
 
+}
+
+proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
+
+    set didLocaleEra 0
+    set didLocaleNumerals 0
+    set preFormatCode {}
+    set formatString {}
+    set substituents {}
+    set state {}
+	
+    set format [LocalizeFormat $locale $format]
+
+    foreach char [split $format {}] {
+	switch -exact -- $state {
+	    {} {
+		if { [string equal % $char] } {
+		    set state percent
+		} else {
+		    append formatString $char
+		}
+	    }
+	    percent {			# Character following a '%' character
+		set state {}
+		switch -exact -- $char {
+		    % {			# A literal character, '%'
+			append formatString %%
+		    }
+		    a {			# Day of week, abbreviated
+			append formatString %s
+			append substituents \
+			    [string map \
+				 [list @DAYS_OF_WEEK_ABBREV@ \
+				      [list [mc DAYS_OF_WEEK_ABBREV]]] \
+				 { [lindex @DAYS_OF_WEEK_ABBREV@ \
+					[expr {[dict get $date dayOfWeek] \
+						   % 7}]]}]
+		    }			 
+		    A {			# Day of week, spelt out.
+			append formatString %s
+			append substituents \
+			    [string map \
+				 [list @DAYS_OF_WEEK_FULL@ \
+				      [list [mc DAYS_OF_WEEK_FULL]]] \
+				 { [lindex @DAYS_OF_WEEK_FULL@ \
+					[expr {[dict get $date dayOfWeek] \
+						   % 7}]]}]
+		    }
+		    b - h {		# Name of month, abbreviated.
+			append formatString %s
+			append substituents \
+			    [string map \
+				 [list @MONTHS_ABBREV@ \
+				      [list [mc MONTHS_ABBREV]]] \
+				 { [lindex @MONTHS_ABBREV@ \
+					[expr {[dict get $date month]-1}]]}]
+		    }
+		    B {			# Name of month, spelt out
+			append formatString %s
+			append substituents \
+			    [string map \
+				 [list @MONTHS_FULL@ \
+				      [list [mc MONTHS_FULL]]] \
+				 { [lindex @MONTHS_FULL@ \
+					[expr {[dict get $date month]-1}]]}]
+		    }
+		    C {			# Century number
+			append formatString %02d
+			append substituents \
+			    { [expr {[dict get $date year] / 100}]}
+		    }
+		    d {			# Day of month, with leading zero
+			append formatString %02d
+			append substituents { [dict get $date dayOfMonth]}
+		    }
+		    e {			# Day of month, without leading zero
+			append formatString %2d
+			append substituents { [dict get $date dayOfMonth]}
+		    }
+		    E {			# Format group in a locale-dependent
+					# alternative era
+			set state percentE
+			if {!$didLocaleEra} {
+			    append preFormatCode \
+				[string map \
+				     [list @LOCALE_ERAS@ \
+					  [list [mc LOCALE_ERAS]]] \
+				     {
+					 set date [GetLocaleEra \
+						       $date[set date {}] \
+						       @LOCALE_ERAS@]}]
+			    set didLocaleEra 1
+			}
+			if {!$didLocaleNumerals} {
+			    append preFormatCode \
+				[list set localeNumerals \
+				     [mc LOCALE_NUMERALS]] \n
+			    set didLocaleNumerals 1
+			}
+		    }
+		    g {			# Two-digit year relative to ISO8601
+					# week number
+			append formatString %02d
+			append substituents \
+			    { [expr { [dict get $date iso8601Year] % 100 }]}
+		    }
+		    G {			# Four-digit year relative to ISO8601
+					# week number
+			append formatString %02d
+			append substituents { [dict get $date iso8601Year]}
+		    }
+		    H {			# Hour in the 24-hour day, leading zero
+			append formatString %02d
+			append substituents \
+			    { [expr { [dict get $date localSeconds] \
+					  / 3600 % 24}]}
+		    }
+		    I {			# Hour AM/PM, with leading zero
+			append formatString %02d
+			append substituents \
+			    { [expr { ( ( ( [dict get $date localSeconds] \
+					    % 86400 ) \
+					  + 86400 \
+					  - 3600 ) \
+					/ 3600 ) \
+				      % 12 + 1 }] }
+		    }
+		    j {			# Day of year (001-366)
+			append formatString %03d
+			append substituents { [dict get $date dayOfYear]}
+		    }
+		    J {			# Julian Day Number
+			append formatString %07ld
+			append substituents { [dict get $date julianDay]}
+		    }
+		    k {			# Hour (0-23), no leading zero
+			append formatString %2d
+			append substituents \
+			    { [expr { [dict get $date localSeconds] 
+				      / 3600
+				      % 24 }]}
+		    }
+		    l {			# Hour (12-11), no leading zero
+			append formatString %2d
+			append substituents \
+			    { [expr { ( ( ( [dict get $date localSeconds]
+					   % 86400 )
+					 + 86400
+					 - 3600 )
+				       / 3600 )
+				     % 12 + 1 }]}
+		    }
+		    m {			# Month number, leading zero
+			append formatString %02d
+			append substituents { [dict get $date month]}
+		    }
+		    M {			# Minute of the hour, leading zero
+			append formatString %02d
+			append substituents \
+			    { [expr { [dict get $date localSeconds] 
+				      / 60
+				      % 60 }]}
+		    }
+		    n {			# A literal newline
+			append formatString \n
+		    }
+		    N {			# Month number, no leading zero
+			append formatString %2d
+			append substituents { [dict get $date month]}
+		    }
+		    O {			# A format group in the locale's
+					# alternative numerals
+			set state percentO
+			if {!$didLocaleNumerals} {
+			    append preFormatCode \
+				[list set localeNumerals \
+				     [mc LOCALE_NUMERALS]] \n
+			    set didLocaleNumerals 1
+			}
+		    }
+		    p {			# Localized 'AM' or 'PM' indicator
+					# converted to uppercase
+			append formatString %s
+			append preFormatCode \
+			    [list set AM [string toupper [mc AM]]] \n \
+			    [list set PM [string toupper [mc PM]]] \n
+			append substituents \
+			    { [expr {(([dict get $date localSeconds]
+				       % 86400) < 43200) ?
+				     $AM : $PM}]}
+		    }
+		    P {			# Localized 'AM' or 'PM' indicator
+			append formatString %s
+			append preFormatCode \
+			    [list set am [mc AM]] \n \
+			    [list set pm [mc PM]] \n
+			append substituents \
+			    { [expr {(([dict get $date localSeconds]
+				       % 86400) < 43200) ?
+				     $am : $pm}]}
+			
+		    }
+		    Q {			# Hi, Jeff!
+			append formatString %s
+			append substituents { [FormatStarDate $date]}
+		    }
+		    s {			# Seconds from the Posix Epoch
+			append formatString %s
+			append substituents { [dict get $date seconds]}
+		    }
+		    S {			# Second of the minute, with 
+			# leading zero
+			append formatString %02d
+			append substituents \
+			    { [expr { [dict get $date localSeconds] 
+				      % 60 }]}
+		    }
+		    t {			# A literal tab character
+			append formatString \t
+		    }
+		    u {			# Day of the week (1-Monday, 7-Sunday)
+			append formatString %1d
+			append substituents { [dict get $date dayOfWeek]}
+		    }
+		    U {			# Week of the year (00-53). The
+					# first Sunday of the year is the
+					# first day of week 01
+			append formatString %02d
+			append preFormatCode {
+			    set dow [dict get $date dayOfWeek]
+			    if { $dow == 7 } {
+				set dow 0
+			    }
+			    incr dow
+			    set UweekNumber \
+				[expr { ( [dict get $date dayOfYear] 
+					  - $dow + 7 )
+					/ 7 }]
+			}
+			append substituents { $UweekNumber}
+		    }
+		    V {			# The ISO8601 week number
+			append formatString %02d
+			append substituents { [dict get $date iso8601Week]}
+		    }
+		    w {			# Day of the week (0-Sunday,
+					# 6-Saturday)
+			append formatString %1d
+			append substituents \
+			    { [expr { [dict get $date dayOfWeek] % 7 }]}
+		    }
+		    W {			# Week of the year (00-53). The first
+					# Monday of the year is the first day
+					# of week 01.
+			append preFormatCode {
+			    set WweekNumber \
+				[expr { ( [dict get $date dayOfYear]
+					  - [dict get $date dayOfWeek]
+					  + 7 ) 
+					/ 7 }]
+			}
+			append formatString %02d
+			append substituents { $Wweeknumber}
+		    }
+		    y {			# The two-digit year of the century
+			append formatString %02d
+			append substituents \
+			    { [expr { [dict get $date year] % 100 }]}
+		    }
+		    Y {			# The four-digit year
+			append formatString %04d
+			append substituents { [dict get $date year]}
+		    }
+		    z {			# The time zone as hours and minutes
+					# east (+) or west (-) of Greenwich
+			append formatString %s
+			append substituents { [FormatNumericTimeZone \
+						   [dict get $date tzOffset]]}
+		    }
+		    Z {			# The name of the time zone
+			append formatString %s
+			append substituents { [dict get $date tzName]}
+		    }
+		    % {			# A literal percent character
+			append formatString %%
+		    }
+		    default {		# An unknown escape sequence
+			append formatString %% $char
+		    }
+		}
+	    }
+	    percentE {			# Character following %E
+		set state {}
+		switch -exact -- $char {
+		    C {			# Locale-dependent era
+			append formatString %s
+			append substituents { [dict get $date localeEra]}
+		    }
+		    y {			# Locale-dependent year of the era
+			append preFormatCode {
+			    set y [dict get $date localeYear]
+			    if { $y >= 0 && $y < 100 } {
+				set Eyear [lindex $localeNumerals $y]
+			    } else {
+				set Eyear $y
+			    }
+			}
+			append formatString %s
+			append substituents { $Eyear}
+		    }
+		    default {		# Unknown %E format group
+			append formatString %%E $char
+		    }
+		}
+	    }
+	    percentO {			# Character following %O
+		set state {}
+		switch -exact -- $char {
+		    d - e {		# Day of the month in alternative 
+			# numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [dict get $date dayOfMonth]]}
+		    }
+		    H - k {		# Hour of the day in alternative
+					# numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [expr { [dict get $date localSeconds] 
+					   / 3600
+					   % 24 }]]}
+		    }
+		    I - l {		# Hour (12-11) AM/PM in alternative
+					# numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [expr { ( ( ( [dict get $date localSeconds]
+						 % 86400 )
+					       + 86400
+					       - 3600 )
+					     / 3600 )
+					   % 12 + 1 }]]}
+		    }
+		    m {			# Month number in alternative numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals [dict get $date month]]}
+		    }
+		    M {			# Minute of the hour in alternative
+					# numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [expr { [dict get $date localSeconds] 
+					   / 60
+					   % 60 }]]}
+		    }
+		    S {			# Second of the minute in alternative
+					# numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [expr { [dict get $date localSeconds] 
+					   % 60 }]]}
+		    }
+		    u {			# Day of the week (Monday=1,Sunday=7)
+					# in alternative numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [dict get $date dayOfWeek]]}
+			}
+		    w {			# Day of the week (Sunday=0,Saturday=6)
+					# in alternative numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [expr { [dict get $date dayOfWeek] % 7 }]]}
+		    }
+		    y {			# Year of the century in alternative
+					# numerals
+			append formatString %s
+			append substituents \
+			    { [lindex $localeNumerals \
+				   [expr { [dict get $date year] % 100 }]]}
+		    }
+		    default {	# Unknown format group
+			append formatString %%O $char
+		    }
+		}
+	    }
+	}
+    }
+	
+    # Clean up any improperly terminated groups
+    
+    switch -exact -- $state {
+	percent {
+	    append formatString %%
+	}
+	percentE {
+	    append retval %%E
+	}
+	percentO {
+	    append retval %%O
+	}
+    }
+
+    proc $procName {date changeover} "
+        $preFormatCode
+        return \[::format [list $formatString] $substituents\]
+    "
+
+    #    puts [list $procName [info args $procName] [info body $procName]]
+
+    return $procName
 }
 
 #----------------------------------------------------------------------
@@ -1443,13 +1556,6 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 
 proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 
-    variable DateParseActions
-    variable TimeParseActions
-
-    # Condense whitespace
-
-    regsub -all {[[:space:]]+} $formatString { } formatString
-
     # Check whether the format has been parsed previously, and return
     # the existing recognizer if it has.
 
@@ -1458,7 +1564,16 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 	return $procName
     }
 
+    variable DateParseActions
+    variable TimeParseActions
+
+    # Localize the %x, %X, etc. groups
+
     set formatString [LocalizeFormat $locale $formatString]
+
+    # Condense whitespace
+
+    regsub -all {[[:space:]]+} $formatString { } formatString
 
     # Walk through the groups of the format string.  In this loop, we
     # accumulate:
@@ -3877,6 +3992,8 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 #	date - Dictionary that must contain the keys, 'localSeconds',
 #	       whose value is expressed as the appropriate local time;
 #	       and 'year', whose value is the Gregorian year.
+#	etable - Value of the LOCALE_ERAS key in the message catalogue
+#	         for the target locale.
 #
 # Results:
 #	Returns the dictionary, augmented with the keys, 'localeEra'
@@ -3884,9 +4001,8 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::GetLocaleEra { date } {
+proc ::tcl::clock::GetLocaleEra { date etable } {
 
-    set etable [mc LOCALE_ERAS]
     set index [BSearch $etable [dict get $date localSeconds]]
     if { $index < 0 } {
 	dict set date localeEra \
@@ -4491,6 +4607,9 @@ proc ::tcl::clock::ClearCaches {} {
     variable TimeZoneBad
 
     foreach p [info procs [namespace current]::scanproc'*] {
+	rename $p {}
+    }
+    foreach p [info procs [namespace current]::formatproc'*] {
 	rename $p {}
     }
 

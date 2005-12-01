@@ -1,7 +1,9 @@
 2005-12-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Continued rationalizing the code, eliminating
-	numerous redundant [mc] calls.
+	numerous redundant [mc] calls.  Added another time boost by
+	precompiling a [::format] command to do the bulk of the work
+	of [clock format].
 	
 2005-12-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
