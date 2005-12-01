@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.29 2005/11/21 18:31:42 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.30 2005/12/01 18:29:46 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6317,4 +6317,8 @@ Restores Tcl 8.4.9 behavior (porter)
 
 2005-11-20 (bug fix)[1091431] Tcl_InitStubs failure crashes wish (english)
 
---- Released 8.4.12, November 30, 2005 --- See ChangeLog for details ---
+2005-11-29 (bug fix)[1366683] [lsearch -regexp] backrefs (cleverly,fellows)
+
+2005-11-29 (enhancement)[1369597] Win 64: --enable-64bit=amd64|ia64 (hobbs)
+
+--- Released 8.4.12, Decemeber 1, 2005 --- See ChangeLog for details ---
