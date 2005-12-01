@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.23 2005/12/01 20:39:34 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.24 2005/12/01 20:50:37 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -747,6 +747,10 @@ proc ::tcl::clock::format { args } {
 		      [mc GREGORIAN_CHANGE_DATE]]
 	
 	# Format the result
+
+	# TO BE:
+	# set formatter [ParseClockFormatFormat $format $locale]
+	# $formatter $date $TZData($timezone) $changeover
 	
 	set state {}
 	set retval {}
@@ -1206,8 +1210,7 @@ proc ::tcl::clock::scan { args } {
 
 	# Map away the locale-dependent composite format groups
 
-	set format [LocalizeFormat $locale $format]
-	set scanner [ParseClockScanFormat $format]
+	set scanner [ParseClockScanFormat $format $locale]
 	$scanner $string $base $timezone
 
     } result opts]
@@ -1414,7 +1417,8 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 #	Parses a format string given to [clock scan -format]
 #
 # Parameters:
-#	None.
+#	formatString - The format being parsed
+#	locale - The current locale
 #
 # Results:
 #	Constructs and returns a procedure that accepts the
@@ -1437,7 +1441,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::ParseClockScanFormat { formatString } {
+proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 
     variable DateParseActions
     variable TimeParseActions
@@ -1449,10 +1453,12 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
     # Check whether the format has been parsed previously, and return
     # the existing recognizer if it has.
 
-    set procName [namespace current]::scanproc'$formatString'[mclocale]
+    set procName [namespace current]::scanproc'$formatString'$locale
     if { [info procs $procName] != {} } {
 	return $procName
     }
+
+    set formatString [LocalizeFormat $locale $formatString]
 
     # Walk through the groups of the format string.  In this loop, we
     # accumulate:
@@ -1752,7 +1758,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 		        
 		    }
 		    y {			# Locale-dependent year of the era
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			incr fieldCount
 		    }
@@ -1769,7 +1776,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 	    %O {
 		switch -exact -- $c {
 		    d - e {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet dayOfMonth [incr fieldCount]
 			append postcode "dict set date dayOfMonth \[" \
@@ -1778,7 +1786,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    H - k {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet hour [incr fieldCount]
 			append postcode "dict set date hour \[" \
@@ -1787,7 +1796,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    I - l {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet hourAMPM [incr fieldCount]
 			append postcode "dict set date hourAMPM \[" \
@@ -1796,7 +1806,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    m {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet month [incr fieldCount]
 			append postcode "dict set date month \[" \
@@ -1805,7 +1816,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    M {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet minute [incr fieldCount]
 			append postcode "dict set date minute \[" \
@@ -1814,7 +1826,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    S {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet second [incr fieldCount]
 			append postcode "dict set date second \[" \
@@ -1823,7 +1836,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    u - w {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet dayOfWeek [incr fieldCount]
 			append postcode "set dow \[dict get " [list $lookup] \
@@ -1840,7 +1854,8 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    }				
 		    }
 		    y {
-			foreach {regex lookup} [LocaleNumeralMatcher] break
+			foreach {regex lookup} \
+			    [LocaleNumeralMatcher $locale] break
 			append re $regex
 			dict set fieldSet yearOfCentury [incr fieldCount]
 			append postcode {dict set date yearOfCentury } \[ \
@@ -1941,7 +1956,7 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 #	locale, and a dictionary to map them to conventional numerals.
 #
 # Parameters:
-#	none.
+#	locale - Name of the current locale
 #
 # Results:
 #	Returns a two-element list comprising the regexp and the
@@ -1952,11 +1967,10 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 #
 #----------------------------------------------------------------------
 
-proc ::tcl::clock::LocaleNumeralMatcher {} {
+proc ::tcl::clock::LocaleNumeralMatcher {l} {
 
     variable LocaleNumeralCache
 
-    set l [mclocale]
     if { ![dict exists $LocaleNumeralCache $l] } {
 	set d {}
 	set i 0
