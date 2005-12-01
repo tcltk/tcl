@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.47 2005/11/30 19:34:13 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.48 2005/12/01 06:11:40 das Exp $
  */
 
 #include "tclInt.h"
@@ -482,6 +482,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd (
     int changeover;
     int copied = 0;
     int status;
+    int era = 0;
 
     /* Check params */
 
@@ -492,7 +493,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd (
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
 	|| Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-			       &(fields.era)) != TCL_OK
+			       &era) != TCL_OK
 	|| Tcl_DictObjGet(interp, dict, literals[LIT_YEAR],
 			  &fieldPtr) != TCL_OK
 	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.year)) != TCL_OK
@@ -505,6 +506,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd (
 	|| Tcl_GetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
+    fields.era = era;
 
     /* Get Julian day */
 
@@ -564,6 +566,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd (
     int changeover;
     int copied = 0;
     int status;
+    int era = 0;
 
     /* Check params */
 
@@ -574,7 +577,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd (
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
 	|| Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-			       &(fields.era)) != TCL_OK
+			       &era) != TCL_OK
 	|| Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR],
 			  &fieldPtr) != TCL_OK
 	|| Tcl_GetIntFromObj(interp, fieldPtr, &(fields.iso8601Year)) != TCL_OK
@@ -587,6 +590,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd (
 	|| Tcl_GetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
 	return TCL_ERROR;
     }
+    fields.era = era;
 
     /* Get Julian day */
 
