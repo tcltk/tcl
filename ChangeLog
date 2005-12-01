@@ -1,5 +1,7 @@
 2005-12-01  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclClock.c: fix warning.
+	
 	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset.
 	* unix/configure: regen.
 
