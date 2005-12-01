@@ -1,3 +1,8 @@
+2005-12-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Continued rationalizing the code, eliminating
+	numerous redundant [mc] calls.
+	
 2005-12-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/Makefile.in: Add remaining dependency info. While automated
