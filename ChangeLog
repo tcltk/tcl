@@ -1,3 +1,11 @@
+2005-12-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Moved a tiny bit more of [clock format] from
+	run time to compile time, and fixed a l10n bug in the process.
+	[Bug 1371446]
+	* unix/Makefile.in: Made some changes to support a 'make' command
+	that is present on some antiquated versions of Solaris.
+	
 2005-12-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Continued rationalizing the code, eliminating
