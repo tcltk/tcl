@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.26 2005/12/02 16:58:13 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.27 2005/12/02 19:47:36 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -652,6 +652,7 @@ proc ::tcl::clock::Initialize {} {
 
 proc ::tcl::clock::format { args } {
 
+    variable TZData
     set format {}
 
     # Check the count of args
@@ -724,9 +725,11 @@ proc ::tcl::clock::format { args } {
     if {$timezone eq ""} {
 	set timezone [GetSystemTimeZone]
     }
-    if {[catch {SetupTimeZone $timezone} retval opts]} {
-	dict unset opts -errorinfo
-	return -options $opts $retval
+    if {![info exists TZData($timezone)]} {
+	if {[catch {SetupTimeZone $timezone} retval opts]} {
+	    dict unset opts -errorinfo
+	    return -options $opts $retval
+	}
     }
     
     # Format the result
