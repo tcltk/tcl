@@ -1,10 +1,11 @@
 2005-12-02  Kevin B. Kenny  <kennykb@acm.org>
 
-	* library/clock.tcl: Moved a tiny bit more of [clock format] from
-	run time to compile time, and fixed a l10n bug in the process.
-	[Bug 1371446]. Also, conditoned the call to SetupTimeZone to speed
-	the common case where TZData($timezone) already exists.
-	
+	* generic/tclClock.c: Moved a tiny bit more of [clock format] from
+	* library/clock.tcl: run time to compile time, and fixed a l10n
+	bug in the process. [Bug 1371446]. Also, conditoned the call to
+	SetupTimeZone to speed the common case where TZData($timezone)
+	already exists, and achieved a puny speedup by making 
+	::tcl::clock::getenv not throw errors.
 	* unix/Makefile.in: Made some changes to support a 'make' command
 	that is present on some antiquated versions of Solaris.
 	

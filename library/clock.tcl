@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.27 2005/12/02 19:47:36 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.28 2005/12/02 22:13:41 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3087,9 +3087,9 @@ proc ::tcl::clock::GetSystemTimeZone {} {
     variable CachedSystemTimeZone
     variable TimeZoneBad
 
-    if { ![catch {getenv TCL_TZ} result] } {
+    if {[set result [getenv TCL_TZ]] ne {}} {
 	set timezone $result
-    } elseif { ![catch {getenv TZ} result] } {
+    } elseif {[set result [getenv TZ]] ne {}} {
 	set timezone $result
     } elseif { [info exists CachedSystemTimeZone] } {
 	set timezone $CachedSystemTimeZone
