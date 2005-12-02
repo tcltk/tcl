@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.9 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.10 2005/12/02 18:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1085,7 +1085,6 @@ Tcl_BinaryObjCmd(
 		arg++;
 		if (resultPtr == NULL) {
 		    DeleteScanNumberCache(numberCachePtr);
-		    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 		    return TCL_ERROR;
 		}
 		offset += count;
@@ -1140,7 +1139,6 @@ Tcl_BinaryObjCmd(
 		arg++;
 		if (resultPtr == NULL) {
 		    DeleteScanNumberCache(numberCachePtr);
-		    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 		    return TCL_ERROR;
 		}
 		offset += (count + 7 ) / 8;
@@ -1197,7 +1195,6 @@ Tcl_BinaryObjCmd(
 		arg++;
 		if (resultPtr == NULL) {
 		    DeleteScanNumberCache(numberCachePtr);
-		    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 		    return TCL_ERROR;
 		}
 		offset += (count + 1) / 2;
@@ -1267,7 +1264,6 @@ Tcl_BinaryObjCmd(
 		arg++;
 		if (resultPtr == NULL) {
 		    DeleteScanNumberCache(numberCachePtr);
-		    Tcl_DecrRefCount(valuePtr);	/* unneeded */
 		    return TCL_ERROR;
 		}
 		break;

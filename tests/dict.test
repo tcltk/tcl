@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.7 2005/10/18 20:47:04 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.8 2005/12/02 18:42:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -808,6 +808,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa [lrange $apa 0 end]
         trace add variable bepa write {error hej}
         catch {dict incr bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to a shared object, incr
@@ -815,6 +816,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa $apa
         trace add variable bepa write {error hej}
         catch {dict incr bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # A shared valid dictionary, invalid lappend
@@ -827,6 +829,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa [lrange $apa 0 end]
         trace add variable bepa write {error hej}
         catch {dict lappend bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to a shared object, lappend
@@ -834,6 +837,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa $apa
         trace add variable bepa write {error hej}
         catch {dict lappend bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to an unshared object, append
@@ -841,6 +845,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa [lrange $apa 0 end]
         trace add variable bepa write {error hej}
         catch {dict append bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to a shared object, append
@@ -848,6 +853,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa $apa
         trace add variable bepa write {error hej}
         catch {dict append bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to an unshared object, set
@@ -855,6 +861,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa [lrange $apa 0 end]
         trace add variable bepa write {error hej}
         catch {dict set bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to a shared object, set
@@ -862,6 +869,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa $apa
         trace add variable bepa write {error hej}
         catch {dict set bepa a 5}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to an unshared object, unset
@@ -869,6 +877,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa [lrange $apa 0 end]
         trace add variable bepa write {error hej}
         catch {dict unset bepa a}
+	trace remove variable bepa write {error hej}
         unset bepa
 
         # An error during write to a shared object, unset
@@ -876,6 +885,7 @@ test dict-19.2 {dict: testing for leaks} -setup {
         set bepa $apa
         trace add variable bepa write {error hej}
         catch {dict unset bepa a}
+	trace remove variable bepa write {error hej}
         unset bepa
     }
 } -constraints memory -body {

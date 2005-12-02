@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.14.2 2005/07/26 04:11:52 dgp Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.14.3 2005/12/02 18:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -52,12 +52,12 @@ typedef struct ThreadSpecificData {
     AsyncHandler *lastHandler;	/* Last handler or NULL. */
     int asyncReady;		/* This is set to 1 whenever a handler becomes
 				 * ready and it is cleared to zero whenever
-				 * Tcl_AsyncInvoke is called.  It can be
+				 * Tcl_AsyncInvoke is called. It can be
 				 * checked elsewhere in the application by
 				 * calling Tcl_AsyncReady to see if
 				 * Tcl_AsyncInvoke should be invoked. */
     int asyncActive;		/* Indicates whether Tcl_AsyncInvoke is
-				 * currently working.  If so then we won't set
+				 * currently working. If so then we won't set
 				 * asyncReady again until Tcl_AsyncInvoke
 				 * returns. */
     Tcl_Mutex asyncMutex;	/* Thread-specific AsyncHandler linked-list
@@ -83,7 +83,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 void
-TclFinalizeAsync()
+TclFinalizeAsync(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -112,10 +112,10 @@ TclFinalizeAsync()
  */
 
 Tcl_AsyncHandler
-Tcl_AsyncCreate(proc, clientData)
-    Tcl_AsyncProc *proc;	/* Procedure to call when handler is
+Tcl_AsyncCreate(
+    Tcl_AsyncProc *proc,	/* Procedure to call when handler is
 				 * invoked. */
-    ClientData clientData;	/* Argument to pass to handler. */
+    ClientData clientData)	/* Argument to pass to handler. */
 {
     AsyncHandler *asyncPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -145,7 +145,7 @@ Tcl_AsyncCreate(proc, clientData)
  * Tcl_AsyncMark --
  *
  *	This procedure is called to request that an asynchronous handler be
- *	invoked as soon as possible.  It's typically called from an interrupt
+ *	invoked as soon as possible. It's typically called from an interrupt
  *	handler, where it isn't safe to do anything that depends on or
  *	modifies application state.
  *
@@ -159,8 +159,8 @@ Tcl_AsyncCreate(proc, clientData)
  */
 
 void
-Tcl_AsyncMark(async)
-    Tcl_AsyncHandler async;		/* Token for handler. */
+Tcl_AsyncMark(
+    Tcl_AsyncHandler async)		/* Token for handler. */
 {
     AsyncHandler *token = (AsyncHandler *) async;
 
@@ -192,11 +192,11 @@ Tcl_AsyncMark(async)
  */
 
 int
-Tcl_AsyncInvoke(interp, code)
-    Tcl_Interp *interp;		/* If invoked from Tcl_Eval just after
+Tcl_AsyncInvoke(
+    Tcl_Interp *interp,		/* If invoked from Tcl_Eval just after
 				 * completing a command, points to
-				 * interpreter.  Otherwise it is NULL. */
-    int code;			/* If interp is non-NULL, this gives
+				 * interpreter. Otherwise it is NULL. */
+    int code)			/* If interp is non-NULL, this gives
 				 * completion code from command that just
 				 * completed. */
 {
@@ -263,8 +263,8 @@ Tcl_AsyncInvoke(interp, code)
  */
 
 void
-Tcl_AsyncDelete(async)
-    Tcl_AsyncHandler async;		/* Token for handler to delete. */
+Tcl_AsyncDelete(
+    Tcl_AsyncHandler async)		/* Token for handler to delete. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
@@ -296,7 +296,7 @@ Tcl_AsyncDelete(async)
  * Tcl_AsyncReady --
  *
  *	This procedure can be used to tell whether Tcl_AsyncInvoke needs to be
- *	called.  This procedure is the external interface for checking the
+ *	called. This procedure is the external interface for checking the
  *	thread-specific asyncReady variable.
  *
  * Results:
@@ -310,7 +310,7 @@ Tcl_AsyncDelete(async)
  */
 
 int
-Tcl_AsyncReady()
+Tcl_AsyncReady(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     return tsdPtr->asyncReady;

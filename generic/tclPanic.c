@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.4.14.3 2005/09/15 20:30:00 dgp Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.4.14.4 2005/12/02 18:42:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -48,8 +48,8 @@ static Tcl_PanicProc *CONST platformPanicProc = TclpPanic;
  */
 
 void
-Tcl_SetPanicProc(proc)
-    Tcl_PanicProc *proc;
+Tcl_SetPanicProc(
+    Tcl_PanicProc *proc)
 {
     panicProc = proc;
 }
@@ -71,10 +71,10 @@ Tcl_SetPanicProc(proc)
  */
 
 void
-Tcl_PanicVA(format, argList)
-    CONST char *format;		/* Format string, suitable for passing to
+Tcl_PanicVA(
+    CONST char *format,		/* Format string, suitable for passing to
 				 * fprintf. */
-    va_list argList;		/* Variable argument list. */
+    va_list argList)		/* Variable argument list. */
 {
     char *arg1, *arg2, *arg3, *arg4;	/* Additional arguments (variable in
 					 * number) to pass to fprintf. */
@@ -122,7 +122,9 @@ Tcl_PanicVA(format, argList)
 
 	/* ARGSUSED */
 void
-Tcl_Panic(CONST char *format, ...)
+Tcl_Panic(
+    CONST char *format,
+    ...)
 {
     va_list argList;
 

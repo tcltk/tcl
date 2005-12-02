@@ -10,12 +10,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.13 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.14 2005/12/02 18:43:11 dgp Exp $
  */
 
+#include "tclInt.h"
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
-#include "tclInt.h"
 #include <signal.h>
 
 /*
@@ -60,7 +60,6 @@ typedef struct FileHandlerEvent {
 } FileHandlerEvent;
 
 /*
- *
  * The following structure contains a set of select() masks to track readable,
  * writable, and exceptional conditions.
  */
@@ -99,7 +98,7 @@ typedef struct ThreadSpecificData {
 				/* All threads that are currently waiting on
 				 * an event have their ThreadSpecificData
 				 * structure on a doubly-linked listed formed
-				 * from these pointers.  You must hold the
+				 * from these pointers. You must hold the
 				 * notifierMutex lock before accessing these
 				 * fields. */
     Tcl_Condition waitCV;	/* Any other thread alerts a notifier that an
@@ -164,7 +163,7 @@ TCL_DECLARE_MUTEX(notifierMutex)
 static Tcl_Condition notifierCV;
 
 /*
- * The pollState bits:
+ * The pollState bits
  *	POLL_WANT is set by each thread before it waits on its condition
  *		variable. It is checked by the notifier before it does select.
  *	POLL_DONE is set by the notifier if it goes into select after seeing
@@ -277,8 +276,9 @@ Tcl_FinalizeNotifier(
 
     if (notifierCount == 0) {
 	int result;
+
 	if (triggerPipe < 0) {
-	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
+	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized.");
 	}
 
 	/*
@@ -297,9 +297,10 @@ Tcl_FinalizeNotifier(
 	while(triggerPipe >= 0) {
 	    Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
 	}
+
 	result = Tcl_JoinThread(notifierThread, NULL);
 	if (result) {
-	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread");
+	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread.");
 	}
     }
 
@@ -431,7 +432,8 @@ Tcl_CreateFileHandler(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr;
 
-    if (tclStubs.tcl_CreateFileHandler != tclOriginalNotifier.createFileHandlerProc) {
+    if (tclStubs.tcl_CreateFileHandler !=
+	    tclOriginalNotifier.createFileHandlerProc) {
 	tclStubs.tcl_CreateFileHandler(fd, mask, proc, clientData);
 	return;
     }
@@ -502,7 +504,8 @@ Tcl_DeleteFileHandler(
     int i;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (tclStubs.tcl_DeleteFileHandler != tclOriginalNotifier.deleteFileHandlerProc) {
+    if (tclStubs.tcl_DeleteFileHandler !=
+	    tclOriginalNotifier.deleteFileHandlerProc) {
 	tclStubs.tcl_DeleteFileHandler(fd);
 	return;
     }
@@ -512,7 +515,7 @@ Tcl_DeleteFileHandler(
      */
 
     for (prevPtr = NULL, filePtr = tsdPtr->firstFileHandlerPtr; ;
-	    prevPtr = filePtr, filePtr = filePtr->nextPtr) {
+	 prevPtr = filePtr, filePtr = filePtr->nextPtr) {
 	if (filePtr == NULL) {
 	    return;
 	}

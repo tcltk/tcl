@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkgConfig.c,v 1.2.2.2 2005/07/26 04:12:19 dgp Exp $
+ * RCS: @(#) $Id: tclPkgConfig.c,v 1.2.2.3 2005/12/02 18:42:08 dgp Exp $
  */
 
 /* Note, the definitions in this module are influenced by the following C
@@ -121,8 +121,8 @@ static Tcl_Config cfg[] = {
 };
 
 void
-TclInitEmbeddedConfigurationInformation(interp)
-    Tcl_Interp* interp;		/* Interpreter the configuration command is
+TclInitEmbeddedConfigurationInformation(
+    Tcl_Interp* interp)		/* Interpreter the configuration command is
 				 * registered in. */
 {
     Tcl_RegisterConfig(interp, "tcl", cfg, TCL_CFGVAL_ENCODING);

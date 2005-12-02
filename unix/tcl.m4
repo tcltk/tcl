@@ -721,22 +721,20 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 
     HAVE_LANGINFO=0
     if test "$langinfo_ok" = "yes"; then
-	if test "$langinfo_ok" = "yes"; then
-	    AC_CHECK_HEADER(langinfo.h,[langinfo_ok=yes],[langinfo_ok=no])
-	fi
+	AC_CHECK_HEADER(langinfo.h,[langinfo_ok=yes],[langinfo_ok=no])
     fi
     AC_MSG_CHECKING([whether to use nl_langinfo])
     if test "$langinfo_ok" = "yes"; then
-	AC_TRY_COMPILE([#include <langinfo.h>],
-		[nl_langinfo(CODESET);],[langinfo_ok=yes],[langinfo_ok=no])
-	if test "$langinfo_ok" = "no"; then
-	    langinfo_ok="no (could not compile with nl_langinfo)";
-	fi
-	if test "$langinfo_ok" = "yes"; then
+	AC_CACHE_VAL(tcl_cv_langinfo_h,
+	    AC_TRY_COMPILE([#include <langinfo.h>], [nl_langinfo(CODESET);],
+		    [tcl_cv_langinfo_h=yes],[tcl_cv_langinfo_h=no]))
+	AC_MSG_RESULT($tcl_cv_langinfo_h)
+	if test $tcl_cv_langinfo_h = yes; then
 	    AC_DEFINE(HAVE_LANGINFO, 1, [Do we have nl_langinfo()?])
 	fi
+    else 
+	AC_MSG_RESULT([$langinfo_ok])
     fi
-    AC_MSG_RESULT([$langinfo_ok])
 ])
 
 #--------------------------------------------------------------------
@@ -1273,21 +1271,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    if test "$have_dl" = yes; then
-		SHLIB_LD="${CC} -shared"
-		DL_OBJS="tclLoadDl.o"
-		DL_LIBS="-ldl"
-		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    else
-		AC_CHECK_HEADER(dld.h, [
-		    SHLIB_LD="ld -shared"
-		    DL_OBJS="tclLoadDld.o"
-		    DL_LIBS="-ldld"
-		    CC_SEARCH_FLAGS=""
-		    LD_SEARCH_FLAGS=""])
-	    fi
+	    SHLIB_LD="${CC} -shared"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-ldl"
+	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    if test "`uname -m`" = "alpha" ; then
 		CFLAGS="$CFLAGS -mieee"
 	    fi
@@ -1312,25 +1301,28 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
-	    if test "$have_dl" = yes; then
-		SHLIB_LD="${CC} -shared"
-		DL_OBJS=""
-		DL_LIBS="-ldl"
-		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-		CC_SEARCH_FLAGS=""
-		LD_SEARCH_FLAGS=""
-	    else
-		AC_CHECK_HEADER(dld.h, [
-		    SHLIB_LD="ld -shared"
-		    DL_OBJS=""
-		    DL_LIBS="-ldld"
-		    CC_SEARCH_FLAGS=""
-		    LD_SEARCH_FLAGS=""])
-	    fi
+	   SHLIB_LD="${CC} -shared"
+	    DL_OBJS=""
+	    DL_LIBS="-ldl"
+	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	    CC_SEARCH_FLAGS=""
+	    LD_SEARCH_FLAGS=""
 	    if test "`uname -m`" = "alpha" ; then
 		CFLAGS="$CFLAGS -mieee"
 	    fi
 	    ;;
+	Lynx*)
+	    SHLIB_CFLAGS="-fPIC"
+            SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+            CFLAGS_OPTIMIZE=-02
+	    SHLIB_LD="${CC} -shared "
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-mshared -ldl"
+	    LD_FLAGS="-Wl,--export-dynamic"
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+            LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+            ;;
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD="cc -G"
@@ -1388,7 +1380,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		SHLIB_CFLAGS="-fpic";;
 	    esac
 	    SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1440,7 +1432,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
-	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
+	    if test $do64bit = yes; then
+	        do64bit_ok=yes
+	        CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+	    fi
+	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
 	        hold_ldflags=$LDFLAGS
 	        LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
@@ -1453,7 +1449,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind -headerpad_max_install_names"
+	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
+	    test -z "${MACOSX_DEPLOYMENT_TARGET}" || \
+		test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print [$]2}'`" -lt 4 && \
+		LDFLAGS="$LDFLAGS -prebind"
+	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
 	        hold_ldflags=$LDFLAGS
 	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
@@ -1475,12 +1475,18 @@ dnl AC_CHECK_TOOL(AR, ar)
             AC_MSG_RESULT([$tcl_corefoundation])
             if test $tcl_corefoundation = yes; then
                 AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
-                    hold_libs=$LIBS
+                    hold_libs=$LIBS; hold_cflags=$CFLAGS
+                    if test $do64bit_ok = no ; then
+                        # remove -arch ppc64 from CFLAGS while testing presence
+                        # of CF, otherwise all archs will have CF disabled.
+                        # CF for ppc64 is disabled in tclUnixPort.h instead.
+                        CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
+                    fi
                     LIBS="$LIBS -framework CoreFoundation"
                     AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
                         [CFBundleRef b = CFBundleGetMainBundle();], 
                         tcl_cv_lib_corefoundation=yes, tcl_cv_lib_corefoundation=no)
-                    LIBS=$hold_libs])
+                    LIBS=$hold_libs; CFLAGS=$hold_cflags])
                 if test $tcl_cv_lib_corefoundation = yes; then
                     LIBS="$LIBS -framework CoreFoundation"
                     AC_DEFINE(HAVE_COREFOUNDATION, 1, 
@@ -1489,16 +1495,20 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    fi
 	    AC_CHECK_HEADERS(libkern/OSAtomic.h)
 	    AC_CHECK_FUNCS(OSSpinLockLock)
+	    AC_CHECK_HEADERS(copyfile.h)
+	    AC_CHECK_FUNCS(copyfile)
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8",
 		[Are we to override what our default encoding is?])
 	    AC_DEFINE(MODULE_SCOPE, __private_extern__, [Linker support for module scope symbols])
 	    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1, [Can this platform load code from memory?])
+	    AC_DEFINE(TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING, 1,
+		[Use better emulation of non-blocking channels for channels without BlockModeProc?])
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)
-	    if test "$ac_cv_func_realpath" = yes -a "${TCL_THREADS}" = 1 \
+	    if test $ac_cv_func_realpath = yes -a "${TCL_THREADS}" = 1 \
 	            -a `uname -r | awk -F. '{print [$]1}'` -lt 7 ; then
 	        ac_cv_func_realpath=no
 	    fi
@@ -2327,7 +2337,7 @@ AC_DEFUN(SC_TIME_HANDLER, [
     # (like convex) have timezone functions, etc.
     #
     AC_MSG_CHECKING([long timezone variable])
-    AC_CACHE_VAL(tcl_cv_var_timezone,
+    AC_CACHE_VAL(tcl_cv_timezone_long,
 	AC_TRY_COMPILE([#include <time.h>],
 	    [extern long timezone;
 	    timezone += 1;

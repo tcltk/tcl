@@ -45,12 +45,12 @@
  *	terms specified in this license.
  */
 
+#include "tclPort.h"
+
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
 #include <mach-o/dyld.h>
 #endif /* HAVE_COREFOUNDATION */
-
-#include "tcl.h"
 
 /*
  *----------------------------------------------------------------------
@@ -169,7 +169,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	bundleRef = versionedBundleRef;
     }
 
-    if (bundleRef) {	
+    if (bundleRef) {
 	if (hasResourceFile) {
 	    /*
 	     * Dynamically acquire address for CFBundleOpenBundleResourceMap
@@ -214,7 +214,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    CFRelease(libURL);
 	}
     }
-    
+
     if (libraryPath[0]) {
 	return TCL_OK;
     } else {

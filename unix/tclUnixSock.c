@@ -1,14 +1,14 @@
-/* 
+/*
  * tclUnixSock.c --
  *
  *	This file contains Unix-specific socket related code.
  *
  * Copyright (c) 1995 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.5 2005/09/12 15:45:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.6 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -17,7 +17,7 @@
  * The following variable holds the network name of this host.
  */
 
-static TclInitProcessGlobalValueProc	InitializeHostName;
+static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
@@ -27,8 +27,8 @@ static ProcessGlobalValue hostName =
  *
  * InitializeHostName --
  *
- * 	This routine sets the process global value of the name of
- * 	the local host on which the process is running.
+ * 	This routine sets the process global value of the name of the local
+ * 	host on which the process is running.
  *
  * Results:
  *	None.
@@ -37,28 +37,32 @@ static ProcessGlobalValue hostName =
  */
 
 static void
-InitializeHostName(valuePtr, lengthPtr, encodingPtr)
-    char **valuePtr;
-    int *lengthPtr;
-    Tcl_Encoding *encodingPtr;
+InitializeHostName(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
 {
     CONST char *native = NULL;
 
 #ifndef NO_UNAME
     struct utsname u;
     struct hostent *hp;
-    (VOID *) memset((VOID *) &u, (int) 0, sizeof(struct utsname));
+
+    (void *) memset((void *) &u, (int) 0, sizeof(struct utsname));
     if (uname(&u) > -1) {				/* INTL: Native. */
         hp = gethostbyname(u.nodename);			/* INTL: Native. */
 	if (hp == NULL) {
 	    /*
 	     * Sometimes the nodename is fully qualified, but gets truncated
-	     * as it exceeds SYS_NMLN.  See if we can just get the immediate
+	     * as it exceeds SYS_NMLN. See if we can just get the immediate
 	     * nodename and get a proper answer that way.
 	     */
+
 	    char *dot = strchr(u.nodename, '.');
+
 	    if (dot != NULL) {
 		char *node = ckalloc((unsigned) (dot - u.nodename + 1));
+
 		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
 		node[dot - u.nodename] = '\0';
 		hp = gethostbyname(node);
@@ -78,18 +82,18 @@ InitializeHostName(valuePtr, lengthPtr, encodingPtr)
     /*
      * Uname doesn't exist; try gethostname instead.
      *
-     * There is no portable macro for the maximum length
-     * of host names returned by gethostbyname().  We should only
-     * trust SYS_NMLN if it is at least 255 + 1 bytes to comply with DNS
-     * host name limits.
+     * There is no portable macro for the maximum length of host names
+     * returned by gethostbyname(). We should only trust SYS_NMLN if it is at
+     * least 255 + 1 bytes to comply with DNS host name limits.
      *
-     * Note:  SYS_NMLN is a restriction on "uname" not on gethostbyname!
+     * Note: SYS_NMLN is a restriction on "uname" not on gethostbyname!
      *
-     * For example HP-UX 10.20 has SYS_NMLN == 9,  while gethostbyname()
-     * can return a fully qualified name from DNS of up to 255 bytes.
+     * For example HP-UX 10.20 has SYS_NMLN == 9, while gethostbyname() can
+     * return a fully qualified name from DNS of up to 255 bytes.
      *
      * Fix suggested by Viktor Dukhovni (viktor@esm.com)
      */
+
 #    if defined(SYS_NMLN) && SYS_NMLEN >= 256
     char buffer[SYS_NMLEN];
 #    else
@@ -104,7 +108,7 @@ InitializeHostName(valuePtr, lengthPtr, encodingPtr)
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = strlen(native);
     *valuePtr = ckalloc((unsigned int) (*lengthPtr)+1);
-    memcpy((VOID *) *valuePtr, (VOID *) native, (size_t)(*lengthPtr)+1);
+    memcpy((void *) *valuePtr, (void *) native, (size_t)(*lengthPtr)+1);
 }
 
 /*
@@ -115,9 +119,9 @@ InitializeHostName(valuePtr, lengthPtr, encodingPtr)
  *	Returns the name of the local host.
  *
  * Results:
- *	A string containing the network name for this machine, or
- *	an empty string if we can't figure out the name.  The caller 
- *	must not modify or free this string.
+ *	A string containing the network name for this machine, or an empty
+ *	string if we can't figure out the name. The caller must not modify or
+ *	free this string.
  *
  * Side effects:
  *	Caches the name to return for future calls.
@@ -126,7 +130,7 @@ InitializeHostName(valuePtr, lengthPtr, encodingPtr)
  */
 
 CONST char *
-Tcl_GetHostName()
+Tcl_GetHostName(void)
 {
     return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
 }
@@ -148,8 +152,16 @@ Tcl_GetHostName()
  */
 
 int
-TclpHasSockets(interp)
-    Tcl_Interp *interp;		/* Not used. */
+TclpHasSockets(
+    Tcl_Interp *interp)		/* Not used. */
 {
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */

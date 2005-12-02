@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.7 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.8 2005/12/02 18:42:08 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -145,68 +145,113 @@ static double		SafeLdExp(double fraction, int exponent);
  *
  * TclParseNumber --
  *
- *	Place a "numeric" internal representation on a Tcl object.
+ *	Scans bytes, interpreted as characters in Tcl's internal encoding,
+ *	and parses the longest prefix that is the string representation of
+ *	a number in a format recognized by Tcl.
+ *
+ *	The arguments bytes, numBytes, and objPtr are the inputs which
+ *	determine the string to be parsed.  If bytes is non-NULL, it
+ *	points to the first byte to be scanned.  If bytes is NULL, then objPtr
+ *	must be non-NULL, and the string representation of objPtr will be
+ *	scanned (generated first, if necessary).  The numBytes argument
+ *	determines the number of bytes to be scanned.  If numBytes is
+ *	negative, the first NUL byte encountered will terminate the scan.
+ *	If numBytes is non-negative, then no more than numBytes bytes will
+ *	be scanned.  
+ *
+ *	The argument flags is an input that controls the numeric formats
+ *	recognized by the parser.  The flag bits are:
+ *
+ *	 - TCL_PARSE_INTEGER_ONLY:	accept only integer values; reject
+ *		strings that denote floating point values (or accept only the
+ *		leading portion of them that are integer values).
+ *	- TCL_PARSE_SCAN_PREFIXES:	ignore the prefixes 0b and 0o that are
+ *		not part of the [scan] command's vocabulary. Use only in
+ *		combination with TCL_PARSE_INTEGER_ONLY.
+ * 	- TCL_PARSE_OCTAL_ONLY:		parse only in the octal format, whether
+ *		or not a prefix is present that would lead to octal parsing. Use
+ *		only in combination with TCL_PARSE_INTEGER_ONLY.
+ * 	- TCL_PARSE_HEXADECIMAL_ONLY:	parse only in the hexadecimal format,
+ *		whether or not a prefix is present that would lead to
+ *		hexadecimal parsing. Use only in combination with
+ *		TCL_PARSE_INTEGER_ONLY.
+ * 	- TCL_PARSE_DECIMAL_ONLY:	parse only in the decimal format, no
+ *		matter whether a 0 prefix would normally force a different base.
+ *
+ *	The arguments interp and expected are inputs that control error message
+ * 	generation.  If interp is NULL, no error message will be generated.
+ *	If interp is non-NULL, then expected must also be non-NULL.  When
+ *	TCL_ERROR is returned, an error message will be left in the result
+ *	of interp, and the expected argument will appear in the error message
+ *	as the thing TclParseNumber expected, but failed to find in the string.
+ *
+ *	The arguments objPtr and endPtrPtr as well as the return code are the
+ *	outputs.
+ *
+ *	When the parser cannot find any prefix of the string that matches a
+ *	format it is looking for, TCL_ERROR is returned and an error message
+ *	may be generated and returned as described above.  The contents of
+ *	objPtr will not be changed.  If endPtrPtr is non-NULL, a pointer to
+ *	the character in the string that terminated the scan will be written
+ *	to *endPtrPtr.
+ *
+ *	When the parser determines that the entire string matches a format
+ *	it is looking for, TCL_OK is returned, and if objPtr is non-NULL,
+ *	then the internal rep and Tcl_ObjType of objPtr are set	to the
+ *	"canonical" numeric value that matches the scanned string.  If
+ *	endPtrPtr is non-NULL, a pointer to the end of the string will be
+ *	written to *endPtrPtr (that is, either bytes+numBytes or a pointer
+ *	to a terminating NUL byte).
+ *
+ *	When the parser determines that a partial string matches a format
+ *	it is looking for, the value of endPtrPtr determines what happens.
+ *
+ *	If endPtrPtr is NULL, then the remainder of the string is scanned
+ *	and if it consists entirely of trailing whitespace, then TCL_OK is
+ *	returned and objPtr internals are set as above.  If any non-whitespace
+ *	is encountered, TCL_ERROR is returned, with error message generation
+ *	as above.
+ *
+ *	When the parser detects a partial string match and endPtrPtr is
+ *	non-NULL, then TCL_OK is returned and objPtr internals are set as
+ *	above.  Also, a pointer to the first character following the parsed
+ *	numeric string is written to *endPtrPtr.
+ *
+ *	In some cases where the string being scanned is the string rep of
+ *	objPtr, this routine can leave objPtr in an inconsistent state
+ *	where its string rep and its internal rep do not agree.  In these
+ *	cases the internal rep will be in agreement with only some substring
+ *	of the string rep.  This might happen if the caller passes in a
+ * 	non-NULL bytes value that points somewhere into the string rep.  It
+ *	might happen if the caller passes in a numBytes value that limits the 
+ * 	scan to only a prefix of the string rep.  Or it might happen if a
+ *	non-NULL value of endPtrPtr permits a TCL_OK return from only a partial
+ *	string match.  It is the responsibility of the caller to detect and
+ *	correct such inconsistencies when they can and do arise.
  *
  * Results:
  *	Returns a standard Tcl result.
  *
  * Side effects:
- *	Stores an internal representation appropriate to the string. The
- *	internal representation may be an integer, a wide integer, a bignum,
- *	or a double.
- *
- *	TclMakeObjNumeric is called as a common scanner in routines that
- *	expect numbers in Tcl_Obj's. It scans the string representation of a
- *	given Tcl_Obj and stores an internal rep that represents a "canonical"
- *	version of its numeric value. The value of the canonicalization is
- *	that a routine can determine simply by examining the type pointer
- *	whether an object LooksLikeInt, what size of integer is needed to hold
- *	it, and similar questions, and never needs to refer back to the string
- *	representation, even for "impure" objects.
- *
- *	The 'strPtr' and 'endPtrPtr' arguments allow for recognizing a number
- *	that is in a substring of a Tcl_Obj, for example a screen metric or
- *	"end-" index. If 'strPtr' is not NULL, it designates where the number
- *	begins within the string. (The default is the start of objPtr's string
- *	rep, which will be constructed if necessary.)
- *
- *	If 'strPtr' is supplied, 'objPtr' may be NULL. In this case, no
- *	internal representation will be generated; instead, the routine will
- *	simply check for a syntactically correct number, returning TCL_OK or
- *	TCL_ERROR as appropriate, and setting *endPtrPtr if necessary.
- *
- *	If 'endPtrPtr' is not NULL, it designates the first character after
- *	the scanned number. In this case, successfully recognizing any digits
- *	will yield a return code of TCL_OK. Only in the case where no leading
- *	string of 'strPtr' (or of objPtr's internal rep) represents a number
- *	will TCL_ERROR be returned.
- *
- *	When only a partial string is being recognized, it is the caller's
- *	responsibility to destroy the internal representation, or at least
- *	change its type. Failure to do so will lead to subsequent problems
- *	where a string that does not represent a number will be recognized as
- *	one because it has a numeric internal representation.
- *
- *	When the 'flags' word includes TCL_PARSE_DECIMAL_ONLY, only decimal
- *	numbers are recognized; leading 0 has no special interpretation as
- *	octal and leading '0x' is forbidden.
+ *	The string representaton of objPtr may be generated.
+ *	
+ *	The internal representation and Tcl_ObjType of objPtr may be changed.
+ *	This may involve allocation and/or freeing of memory.
  *
  *----------------------------------------------------------------------
  */
 
 int
 TclParseNumber(
-    Tcl_Interp *interp,		/* Tcl interpreter for error reporting. May be
-				 * NULL */
+    Tcl_Interp *interp,		/* Used for error reporting. May be NULL */
     Tcl_Obj *objPtr,		/* Object to receive the internal rep */
-    CONST char *type,		/* Type of number being parsed ("integer",
-				 * "wide integer", etc. */
-    CONST char *string,		/* Pointer to the start of the string to scan,
-				 * see above */
-    size_t length,		/* Maximum length of the string to scan, see
-				 * above. */
-    CONST char **endPtrPtr,	/* (Output) pointer to the end of the scanned
-				 * number, see above */
+    CONST char *expected,	/* Description of the type of number the caller
+				 * expects to be able to parse ("integer", 
+				 * "boolean value", etc.). */
+    CONST char *bytes,		/* Pointer to the start of the string to scan */
+    int numBytes,		/* Maximum number of bytes to scan, see above */
+    CONST char **endPtrPtr,	/* Place to store pointer to the character
+				 * that terminated the scan */
     int flags)			/* Flags governing the parse */
 {
     enum State {
@@ -267,16 +312,16 @@ TclParseNumber(
 #define MOST_BITS	(ALL_BITS >> 1)
 
     /* 
-     * Initialize string to start of the object's string rep if the caller
+     * Initialize bytes to start of the object's string rep if the caller
      * didn't pass anything else.
      */
 
-    if (string == NULL) {
-	string = TclGetString(objPtr);
+    if (bytes == NULL) {
+	bytes = TclGetString(objPtr);
     }
 
-    p = string;
-    len = length;
+    p = bytes;
+    len = numBytes;
     acceptPoint = p;
     acceptLen = len;
     while (1) {
@@ -838,36 +883,28 @@ TclParseNumber(
     }
 
   endgame:
-
-    /*
-     * Back up to the last accepting state in the lexer.
-     */
-
     if (acceptState == INITIAL) {
+	/* No numeric string at all found */
 	status = TCL_ERROR;
-    }
-    p = acceptPoint;
-    len = acceptLen;
-
-    /*
-     * Skip past trailing whitespace.
-     */
-
-    if (endPtrPtr != NULL) {
-	*endPtrPtr = p;
-    }
-
-    while (len > 0 && isspace(UCHAR(*p))) {
-	++p;
-	--len;
-    }
-
-    /*
-     * Determine whether a partial string is acceptable.
-     */
-
-    if (endPtrPtr == NULL && len != 0 && *p != '\0') {
-	status = TCL_ERROR;
+	if (endPtrPtr != NULL) {
+	    *endPtrPtr = p;
+	}
+    } else {
+	/* Back up to the last accepting state in the lexer. */
+	p = acceptPoint;
+	len = acceptLen;
+	if (endPtrPtr == NULL) {
+	    /* Accept trailing whitespace */
+	    while (len != 0 && isspace(UCHAR(*p))) {
+		++p;
+		--len;
+	    }
+	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
+		status = TCL_ERROR;
+	    }
+	} else {
+	    *endPtrPtr = p;
+	}
     }
 
     /*
@@ -875,15 +912,8 @@ TclParseNumber(
      */
 
     if (status == TCL_OK && objPtr != NULL) {
-	if (acceptState != INITIAL) {
-	    TclFreeIntRep(objPtr);
-	}
+	TclFreeIntRep(objPtr);
 	switch (acceptState) {
-
-	case INITIAL:
-	    status = TCL_ERROR;
-	    break;
-
 	case SIGNUM:
 	case BAD_OCTAL:
 	case ZERO_X:
@@ -904,7 +934,8 @@ TclParseNumber(
 	case sNA:
 	case sNANPAREN:
 	case sNANHEX:
-	    panic("in TclParseNumber: bad acceptState, can't happen.");
+	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
+		    acceptState, bytes);
 
 #ifdef TIP_114_FORMATS
 	case BINARY:
@@ -1093,6 +1124,10 @@ TclParseNumber(
 	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
 	    objPtr->typePtr = &tclDoubleType;
 	    break;
+
+	case INITIAL:
+	    /* This case only to silence compiler warning */
+	    Tcl_Panic("TclParseNumber: state INITIAL can't happen here");
 	}
     }
 
@@ -1103,10 +1138,9 @@ TclParseNumber(
     if (status != TCL_OK) {
 	if (interp != NULL) {
 	    Tcl_Obj *msg = Tcl_NewStringObj("expected ", -1);
-
-	    Tcl_AppendToObj(msg, type, -1);
+	    Tcl_AppendToObj(msg, expected, -1);
 	    Tcl_AppendToObj(msg, " but got \"", -1);
-	    TclAppendLimitedToObj(msg, string, length, 50, "");
+	    TclAppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    if (state == BAD_OCTAL) {
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
@@ -1668,7 +1702,7 @@ RefineApproximation(
 
 int
 TclDoubleDigits(
-    char *string,		/* Buffer in which to store the result, must
+    char *buffer,		/* Buffer in which to store the result, must
 				 * have at least 18 chars */
     double v,			/* Number to convert. Must be finite, and not
 				 * NaN */
@@ -1710,8 +1744,8 @@ TclDoubleDigits(
      */
 
     if (v == 0.0) {
-	*string++ = '0';
-	*string++ = '\0';
+	*buffer++ = '0';
+	*buffer++ = '\0';
 	return 1;
     }
 
@@ -1879,7 +1913,7 @@ TclDoubleDigits(
 	}
 	if (!tc1) {
 	    if (!tc2) {
-		*string++ = '0' + i;
+		*buffer++ = '0' + i;
 	    } else {
 		c = (char) (i + '1');
 		break;
@@ -1899,8 +1933,8 @@ TclDoubleDigits(
 	    break;
 	}
     };
-    *string++ = c;
-    *string++ = '\0';
+    *buffer++ = c;
+    *buffer++ = '\0';
 
     /*
      * Free memory, and return.

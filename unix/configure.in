@@ -3,16 +3,26 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.14 2005/09/12 15:45:02 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.15 2005/12/02 18:43:11 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
 
-dnl AC_CONFIG_HEADERS([tclConfig.h])
-dnl AC_CONFIG_COMMANDS_PRE([DEFS="-DHAVE_TCL_CONFIG_H  -imacros tclConfig.h"])
-dnl AH_TOP([#ifndef _TCLCONFIG
-dnl #define _TCLCONFIG])
-dnl AH_BOTTOM([#endif /* _TCLCONFIG */])
+dnl This is only used when included from macosx/configure.ac
+m4_ifdef([SC_USE_CONFIG_HEADERS], [
+    AC_CONFIG_HEADERS([tclConfig.h:../unix/tclConfig.h.in])
+    AC_CONFIG_COMMANDS_PRE([DEFS="-DHAVE_TCL_CONFIG_H  -imacros tclConfig.h"])
+    AH_TOP([
+    #ifndef _TCLCONFIG
+    #define _TCLCONFIG])
+    AH_BOTTOM([
+    /* Undef unused package specific autoheader defines so that we can
+     * include both tclConfig.h and tkConfig.h at the same time: */
+    /* override */ #undef PACKAGE_NAME
+    /* override */ #undef PACKAGE_STRING
+    /* override */ #undef PACKAGE_TARNAME
+    #endif /* _TCLCONFIG */])
+])
 
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
@@ -30,6 +40,8 @@ fi
 if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
+# Make sure srcdir is fully qualified!
+srcdir=`cd $srcdir ; pwd`
 TCL_SRC_DIR=`cd $srcdir/..; pwd`
 
 #------------------------------------------------------------------------
@@ -61,18 +73,6 @@ AC_PROG_CC
 SC_MISSING_POSIX_HEADERS
 
 #------------------------------------------------------------------------
-# Threads support
-#------------------------------------------------------------------------
-
-SC_ENABLE_THREADS
-
-#------------------------------------------------------------------------
-# Embedded configuration information, encoding to use for the values, TIP #59
-#------------------------------------------------------------------------
-
-SC_TCL_CFG_ENCODING
-
-#------------------------------------------------------------------------
 # If we're using GCC, see if the compiler understands -pipe.  If so, use it.
 # It makes compiling go faster.  (This is only a performance feature.)
 #------------------------------------------------------------------------
@@ -88,6 +88,18 @@ if test -n "$GCC"; then
     AC_MSG_RESULT(no))
 fi  
 fi
+
+#------------------------------------------------------------------------
+# Threads support
+#------------------------------------------------------------------------
+
+SC_ENABLE_THREADS
+
+#------------------------------------------------------------------------
+# Embedded configuration information, encoding to use for the values, TIP #59
+#------------------------------------------------------------------------
+
+SC_TCL_CFG_ENCODING
 
 #--------------------------------------------------------------------
 # Look for libraries that we will need when compiling the Tcl shell
@@ -165,19 +177,19 @@ AC_CACHE_VAL(tcl_cv_type_fd_set,
     AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
 	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no))
 AC_MSG_RESULT($tcl_cv_type_fd_set)
-tk_ok=$tcl_cv_type_fd_set
+tcl_ok=$tcl_cv_type_fd_set
 if test $tcl_cv_type_fd_set = no; then
     AC_MSG_CHECKING([for fd_mask in sys/select])
     AC_CACHE_VAL(tcl_cv_grep_fd_mask,
-	AC_HEADER_EGREP(fd_mask, sys/select.h,
+	AC_EGREP_HEADER(fd_mask, sys/select.h,
 	     tcl_cv_grep_fd_mask=present, tcl_cv_grep_fd_mask=missing))
     AC_MSG_RESULT($tcl_cv_grep_fd_mask)
     if test $tcl_cv_grep_fd_mask = present; then
-	AC_DEFINE(HAVE_SYS_SELECT_H, 1, [May we include <sys/select.h>?])
-	tk_ok=yes
+	AC_DEFINE(HAVE_SYS_SELECT_H, 1, [Should we include <sys/select.h>?])
+	tcl_ok=yes
     fi
 fi
-if test $tk_ok = no; then
+if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
 fi
 
@@ -207,7 +219,7 @@ AC_FUNC_MEMCMP
 #--------------------------------------------------------------------
 AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_MEMMOVE, 1, [Do we have memmove()?])
-    AC_DEFINE(NO_STRING_H, 1, [May we include <string.h>?]) ])
+    AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
 
 #--------------------------------------------------------------------
 #	On some systems strstr is broken: it returns a pointer even
@@ -642,5 +654,9 @@ AC_SUBST(EXTRA_BUILD_HTML)
 dnl	Disable the automake-friendly normalization of LIBOBJS
 dnl	performed by autoconf 2.53 and later.  It's not correct for us.
 define([_AC_LIBOBJS_NORMALIZE],[])
-AC_CONFIG_FILES([Makefile dltest/Makefile tclConfig.sh])
+AC_CONFIG_FILES([
+    Makefile:../unix/Makefile.in
+    dltest/Makefile:../unix/dltest/Makefile.in
+    tclConfig.sh:../unix/tclConfig.sh.in
+])
 AC_OUTPUT

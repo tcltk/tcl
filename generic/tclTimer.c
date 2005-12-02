@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.12 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.13 2005/12/02 18:42:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -126,7 +126,7 @@ static Tcl_ThreadDataKey dataKey;
     (((t1).sec<(t2).sec) || ((t1).sec==(t2).sec && (t1).usec<(t2).usec))
 
 #define TCL_TIME_DIFF_MS(t1, t2) \
-    (1000*((long)(t1).sec - (long)(t2).sec) + \
+    (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
 	    ((long)(t1).usec - (long)(t2).usec)/1000)
 
 /*
@@ -135,7 +135,7 @@ static Tcl_ThreadDataKey dataKey;
 
 static void		AfterCleanupProc(ClientData clientData,
 			    Tcl_Interp *interp);
-static int		AfterDelay(Tcl_Interp *interp, int ms);
+static int		AfterDelay(Tcl_Interp *interp, Tcl_WideInt ms);
 static void		AfterProc(ClientData clientData);
 static void		FreeAfterPtr(AfterInfo *afterPtr);
 static AfterInfo *	GetAfterEvent(AfterAssocData *assocPtr,
@@ -771,11 +771,11 @@ Tcl_AfterObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    int ms;
+    Tcl_WideInt ms;		/* Number of milliseconds to wait */
+    Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
     int length;
-    char *argString;
     int index;
     char buf[16 + TCL_INTEGER_SPACE];
     static CONST char *afterSubCmds[] = {
@@ -808,16 +808,30 @@ Tcl_AfterObjCmd(
      * First lets see if the command was passed a number as the first argument.
      */
 
-    if (objv[1]->typePtr == &tclIntType) {
-	ms = (int) objv[1]->internalRep.longValue;
-	goto processInteger;
-    }
-    argString = Tcl_GetStringFromObj(objv[1], &length);
-    if (isdigit(UCHAR(argString[0]))) {	/* INTL: digit */
-	if (Tcl_GetIntFromObj(interp, objv[1], &ms) != TCL_OK) {
+    if (objv[1]->typePtr == &tclIntType
+#ifndef NO_WIDE_TYPE
+	|| objv[1]->typePtr == &tclWideIntType
+#endif
+	|| objv[1]->typePtr == &tclBignumType
+	|| ( Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, 
+				 &index) != TCL_OK )) {
+	index = -1;
+	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
+	    Tcl_AppendResult(interp, "bad argument \"",
+			     Tcl_GetString(objv[1]),
+			     "\": must be cancel, idle, info, or an integer",
+			     NULL);
 	    return TCL_ERROR;
 	}
-    processInteger:
+    }
+
+    /* 
+     * At this point, either index = -1 and ms contains the number of ms
+     * to wait, or else index is the index of a subcommand.
+     */
+
+    switch ((enum afterSubCmds) index) {
+    case -1: {
 	if (ms < 0) {
 	    ms = 0;
 	}
@@ -845,8 +859,15 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
-	afterPtr->token = Tcl_CreateTimerHandler(ms, AfterProc,
-		(ClientData) afterPtr);
+	Tcl_GetTime(&wakeup);
+	wakeup.sec += (time_t)(ms / 1000);
+	wakeup.usec += ((int)(ms % 1000)) * 1000;
+	if (wakeup.usec > 1000000) {
+	    wakeup.sec++;
+	    wakeup.usec -= 1000000;
+	}
+	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup, AfterProc,
+							(ClientData) afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	objPtr = Tcl_NewObj();
@@ -854,19 +875,6 @@ Tcl_AfterObjCmd(
 	Tcl_SetObjResult(interp, objPtr);
 	return TCL_OK;
     }
-
-    /*
-     * If it's not a number it must be a subcommand. Note that we're using a
-     * custom error message here, so we do not pass an interpreter to T_GIFO.
-     */
-
-    if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "argument", 0,
-	    &index) != TCL_OK) {
-	Tcl_AppendResult(interp, "bad argument \"", argString,
-		"\": must be cancel, idle, info, or a number", NULL);
-	return TCL_ERROR;
-    }
-    switch ((enum afterSubCmds) index) {
     case AFTER_CANCEL: {
 	Tcl_Obj *commandPtr;
 	char *command, *tempCommand;
@@ -988,42 +996,56 @@ Tcl_AfterObjCmd(
 static int
 AfterDelay(
     Tcl_Interp *interp,
-    int ms)
+    Tcl_WideInt ms)
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (iPtr->limit.timeEvent != NULL) {
-	Tcl_Time endTime, now;
+    Tcl_Time endTime, now;
+    Tcl_WideInt diff;
 
-	Tcl_GetTime(&endTime);
-	endTime.sec += ms/1000;
-	endTime.usec += (ms%1000)*1000;
-	if (endTime.usec >= 1000000) {
-	    endTime.sec++;
-	    endTime.usec -= 1000000;
-	}
-
-	do {
-	    Tcl_GetTime(&now);
-	    if (TCL_TIME_BEFORE(iPtr->limit.time, now)) {
-		iPtr->limit.granularityTicker = 0;
-		if (Tcl_LimitCheck(interp) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-	    }
-	    if (TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
-		Tcl_Sleep(TCL_TIME_DIFF_MS(endTime, now));
-		break;
-	    } else {
-		Tcl_Sleep(TCL_TIME_DIFF_MS(iPtr->limit.time, now));
-		if (Tcl_LimitCheck(interp) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-	    }
-	} while (TCL_TIME_BEFORE(now, endTime));
-    } else {
-	Tcl_Sleep(ms);
+    Tcl_GetTime(&endTime);
+    endTime.sec += (time_t)(ms/1000);
+    endTime.usec += ((int)(ms%1000))*1000;
+    if (endTime.usec >= 1000000) {
+	endTime.sec++;
+	endTime.usec -= 1000000;
     }
+
+    do {
+	Tcl_GetTime(&now);
+	if (iPtr->limit.timeEvent != NULL
+	    && TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+	    iPtr->limit.granularityTicker = 0;
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (iPtr->limit.timeEvent == NULL
+	    || TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
+	    diff = TCL_TIME_DIFF_MS(endTime, now);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (diff > LONG_MAX) {
+		diff = LONG_MAX;
+	    }
+#endif
+	    if (diff > 0) {
+		Tcl_Sleep((long)diff);
+	    }
+	} else {
+	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
+#ifndef TCL_WIDE_INT_IS_LONG
+	    if (diff > LONG_MAX) {
+		diff = LONG_MAX;
+	    }
+#endif
+	    if (diff > 0) {
+		Tcl_Sleep((long)diff);
+	    }
+	    if (Tcl_LimitCheck(interp) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+    } while (TCL_TIME_BEFORE(now, endTime));
     return TCL_OK;
 }
 

@@ -12,7 +12,7 @@
 # Parameters:
 #	inputDir - Directory (e.g., tzdata2003e) where Olson's source
 #		   files are to be found.
-#	outputDir - Directory (e.g., ../library/clock/tzdata) where
+#	outputDir - Directory (e.g., ../library/tzdata) where
 #		    the time zone information files are to be placed.
 #
 # Results:
@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.3 2005/04/29 22:41:02 dgp Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.4 2005/12/02 18:43:10 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -44,10 +44,6 @@ set olsonFiles {
     pacificnew southamerica systemv
 }
 
-# Temporary scaffolding - load up the new 'clock' package.
-
-source [file join [file dirname [info script]] .. library clock.tcl]
-
 # Define the year at which the DST information will stop.
 
 set maxyear 2100
@@ -56,7 +52,7 @@ set maxyear 2100
 
 set MAXWIDE [expr {wide(1)}]
 while 1 {
-    set next [expr {$MAXWIDE + $MAXWIDE + 1}]
+    set next [expr {wide($MAXWIDE + $MAXWIDE + 1)}]
     if {$next < 0} {
 	break
     }
@@ -1158,7 +1154,7 @@ proc convertTimeOfDay {seconds stdGMTOffset DSTOffset timeOfDay flag} {
 	    incr seconds [expr {-$stdGMTOffset}]
 	    incr seconds [expr {-$DSTOffset}]
 	}
-	z {
+	s {
 	    incr seconds [expr {-$stdGMTOffset}]
 	}
     }
@@ -1335,9 +1331,15 @@ proc writeLinks {outDir} {
 #
 #----------------------------------------------------------------------
 
+puts "Compiling time zones -- [clock format [clock seconds] \
+                                   -format {%x %X} -locale system]"
+
 # Determine directories
 
 lassign $argv inDir outDir
+
+puts "Olson files in $inDir"
+puts "Tcl files to be placed in $outDir"
 
 # Initialize count of errors
 

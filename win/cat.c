@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: cat.c,v 1.2 1998/09/14 18:40:19 stanton Exp $
+ * RCS: @(#) $Id: cat.c,v 1.2.42.1 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include <stdio.h>
@@ -16,8 +16,8 @@
 #include <string.h>
 
 int
-main()
-{   
+main(void)
+{
     char buf[1024];
     int n;
     char *err;
@@ -34,4 +34,3 @@ main()
 
     return 0;
 }
-	

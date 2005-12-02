@@ -4,20 +4,20 @@
  * regular expressions
  *
  * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
- * 
+ *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
- * Corporation, none of whom are responsible for the results.  The author
- * thanks all of them. 
- * 
+ * Corporation, none of whom are responsible for the results. The author
+ * thanks all of them.
+ *
  * Redistribution and use in source and binary forms -- with or without
  * modification -- are permitted for any purpose, provided that
  * redistributions in source form retain this entire copyright notice and
  * indicate the origin and nature of any modifications.
  *
- * I'd appreciate being given credit for this package in the documentation
- * of software which uses it, but that is not a requirement.
- * 
+ * I'd appreciate being given credit for this package in the documentation of
+ * software which uses it, but that is not a requirement.
+ *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
  * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
@@ -30,37 +30,34 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
- *
  * Prototypes etc. marked with "^" within comments get gathered up (and
- * possibly edited) by the regfwd program and inserted near the bottom of
- * this file.
+ * possibly edited) by the regfwd program and inserted near the bottom of this
+ * file.
  *
- * We offer the option of declaring one wide-character version of the
- * RE functions as well as the char versions.  To do that, define
- * __REG_WIDE_T to the type of wide characters (unfortunately, there
- * is no consensus that wchar_t is suitable) and __REG_WIDE_COMPILE and
- * __REG_WIDE_EXEC to the names to be used for the compile and execute
- * functions (suggestion:  re_Xcomp and re_Xexec, where X is a letter
- * suggestive of the wide type, e.g. re_ucomp and re_uexec for Unicode).
- * For cranky old compilers, it may be necessary to do something like:
+ * We offer the option of declaring one wide-character version of the RE
+ * functions as well as the char versions. To do that, define __REG_WIDE_T to
+ * the type of wide characters (unfortunately, there is no consensus that
+ * wchar_t is suitable) and __REG_WIDE_COMPILE and __REG_WIDE_EXEC to the
+ * names to be used for the compile and execute functions (suggestion:
+ * re_Xcomp and re_Xexec, where X is a letter suggestive of the wide type,
+ * e.g. re_ucomp and re_uexec for Unicode). For cranky old compilers, it may
+ * be necessary to do something like:
  * #define	__REG_WIDE_COMPILE(a,b,c,d)	re_Xcomp(a,b,c,d)
  * #define	__REG_WIDE_EXEC(a,b,c,d,e,f,g)	re_Xexec(a,b,c,d,e,f,g)
  * rather than just #defining the names as parameterless macros.
  *
  * For some specialized purposes, it may be desirable to suppress the
- * declarations of the "front end" functions, regcomp() and regexec(),
- * or of the char versions of the compile and execute functions.  To
- * suppress the front-end functions, define __REG_NOFRONT.  To suppress
- * the char versions, define __REG_NOCHAR.
+ * declarations of the "front end" functions, regcomp() and regexec(), or of
+ * the char versions of the compile and execute functions. To suppress the
+ * front-end functions, define __REG_NOFRONT. To suppress the char versions,
+ * define __REG_NOCHAR.
  *
  * The right place to do those defines (and some others you may want, see
- * below) would be <sys/types.h>.  If you don't have control of that file,
- * the right place to add your own defines to this file is marked below.
- * This is normally done automatically, by the makefile and regmkhdr, based
- * on the contents of regcustom.h.
+ * below) would be <sys/types.h>. If you don't have control of that file, the
+ * right place to add your own defines to this file is marked below. This is
+ * normally done automatically, by the makefile and regmkhdr, based on the
+ * contents of regcustom.h.
  */
-
-
 
 /*
  * voodoo for C++
@@ -69,18 +66,15 @@
 extern "C" {
 #endif
 
-
-
 /*
  * Add your own defines, if needed, here.
  */
 
-
-
 /*
- * Location where a chunk of regcustom.h is automatically spliced into
- * this file (working from its prototype, regproto.h).
+ * Location where a chunk of regcustom.h is automatically spliced into this
+ * file (working from its prototype, regproto.h).
  */
+
 /* --- begin --- */
 /* ensure certain things don't sneak in from system headers */
 #ifdef __REG_WIDE_T
@@ -121,15 +115,14 @@ extern "C" {
 #define	regerror	TclReError
 /* --- end --- */
 
-
 /*
  * interface types etc.
  */
 
 /*
- * regoff_t has to be large enough to hold either off_t or ssize_t,
- * and must be signed; it's only a guess that long is suitable, so we
- * offer <sys/types.h> an override.
+ * regoff_t has to be large enough to hold either off_t or ssize_t, and must
+ * be signed; it's only a guess that long is suitable, so we offer
+ * <sys/types.h> an override.
  */
 #ifdef __REG_REGOFF_T
 typedef __REG_REGOFF_T regoff_t;
@@ -148,8 +141,8 @@ typedef void re_void;
 #endif
 
 /*
- * Also for benefit of old compilers, <sys/types.h> can supply a macro
- * which expands to a substitute for `const'.
+ * Also for benefit of old compilers, <sys/types.h> can supply a macro which
+ * expands to a substitute for `const'.
  */
 #ifndef __REG_CONST
 #define	__REG_CONST	const
@@ -163,42 +156,40 @@ typedef void re_void;
 
 /* the biggie, a compiled RE (or rather, a front end to same) */
 typedef struct {
-	int re_magic;		/* magic number */
-	size_t re_nsub;		/* number of subexpressions */
-	long re_info;		/* information about RE */
-#		define	REG_UBACKREF		000001
-#		define	REG_ULOOKAHEAD		000002
-#		define	REG_UBOUNDS		000004
-#		define	REG_UBRACES		000010
-#		define	REG_UBSALNUM		000020
-#		define	REG_UPBOTCH		000040
-#		define	REG_UBBS		000100
-#		define	REG_UNONPOSIX		000200
-#		define	REG_UUNSPEC		000400
-#		define	REG_UUNPORT		001000
-#		define	REG_ULOCALE		002000
-#		define	REG_UEMPTYMATCH		004000
-#		define	REG_UIMPOSSIBLE		010000
-#		define	REG_USHORTEST		020000
-	int re_csize;		/* sizeof(character) */
-	char *re_endp;		/* backward compatibility kludge */
-	/* the rest is opaque pointers to hidden innards */
-	char *re_guts;		/* `char *' is more portable than `void *' */
-	char *re_fns;
+    int re_magic;		/* magic number */
+    size_t re_nsub;		/* number of subexpressions */
+    long re_info;		/* information about RE */
+#define	REG_UBACKREF		000001
+#define	REG_ULOOKAHEAD		000002
+#define	REG_UBOUNDS		000004
+#define	REG_UBRACES		000010
+#define	REG_UBSALNUM		000020
+#define	REG_UPBOTCH		000040
+#define	REG_UBBS		000100
+#define	REG_UNONPOSIX		000200
+#define	REG_UUNSPEC		000400
+#define	REG_UUNPORT		001000
+#define	REG_ULOCALE		002000
+#define	REG_UEMPTYMATCH		004000
+#define	REG_UIMPOSSIBLE		010000
+#define	REG_USHORTEST		020000
+    int re_csize;		/* sizeof(character) */
+    char *re_endp;		/* backward compatibility kludge */
+    /* the rest is opaque pointers to hidden innards */
+    char *re_guts;		/* `char *' is more portable than `void *' */
+    char *re_fns;
 } regex_t;
 
 /* result reporting (may acquire more fields later) */
 typedef struct {
-	regoff_t rm_so;		/* start of substring */
-	regoff_t rm_eo;		/* end of substring */
+    regoff_t rm_so;		/* start of substring */
+    regoff_t rm_eo;		/* end of substring */
 } regmatch_t;
 
 /* supplementary control and reporting */
 typedef struct {
-	regmatch_t rm_extend;	/* see REG_EXPECT */
+    regmatch_t rm_extend;	/* see REG_EXPECT */
 } rm_detail_t;
-
-
 
 /*
  * compilation
@@ -231,8 +222,6 @@ typedef struct {
 #define	REG_FAKE	010000	/* none of your business :-) */
 #define	REG_PROGRESS	020000	/* none of your business :-) */
 
-
-
 /*
  * execution
  ^ #ifndef __REG_NOCHAR
@@ -254,23 +243,19 @@ typedef struct {
 #define	REG_MTRACE	0020	/* none of your business */
 #define	REG_SMALL	0040	/* none of your business */
 
-
-
 /*
  * misc generics (may be more functions here eventually)
  ^ re_void regfree(regex_t *);
  */
-
-
 
 /*
  * error reporting
  * Be careful if modifying the list of error codes -- the table used by
  * regerror() is generated automatically from this file!
  *
- * Note that there is no wide-char variant of regerror at this time; what
- * kind of character is used for error reports is independent of what kind
- * is used in matching.
+ * Note that there is no wide-char variant of regerror at this time; what kind
+ * of character is used for error reports is independent of what kind is used
+ * in matching.
  *
  ^ extern size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
  */
@@ -296,8 +281,6 @@ typedef struct {
 #define	REG_ATOI	101	/* convert error-code name to number */
 #define	REG_ITOA	102	/* convert error-code number to name */
 
-
-
 /*
  * the prototypes, as possibly munched by regfwd
  */
@@ -311,7 +294,7 @@ int re_comp(regex_t *, __REG_CONST char *, size_t, int);
 int regcomp(regex_t *, __REG_CONST char *, int);
 #endif
 #ifdef __REG_WIDE_T
-int __REG_WIDE_COMPILE(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, int);
+MODULE_SCOPE int __REG_WIDE_COMPILE(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, int);
 #endif
 #ifndef __REG_NOCHAR
 int re_exec(regex_t *, __REG_CONST char *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
@@ -320,14 +303,12 @@ int re_exec(regex_t *, __REG_CONST char *, size_t, rm_detail_t *, size_t, regmat
 int regexec(regex_t *, __REG_CONST char *, size_t, regmatch_t [], int);
 #endif
 #ifdef __REG_WIDE_T
-int __REG_WIDE_EXEC(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
-re_void regfree(regex_t *);
-extern size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
+MODULE_SCOPE re_void regfree(regex_t *);
+MODULE_SCOPE size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
-
-
 
 /*
  * more C++ voodoo
@@ -335,7 +316,5 @@ extern size_t regerror(int, __REG_CONST regex_t *, char *, size_t);
 #ifdef __cplusplus
 }
 #endif
-
-
 
 #endif

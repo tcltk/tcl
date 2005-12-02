@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.9 2005/07/26 04:12:34 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.10 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -155,7 +155,7 @@ typedef struct EXCEPTION_REGISTRATION {
  */
 
 static ThreadSpecificData *
-FileInit()
+FileInit(void)
 {
     ThreadSpecificData *tsdPtr =
 	    (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
@@ -187,8 +187,8 @@ FileInit()
  */
 
 static void
-FileChannelExitHandler(clientData)
-    ClientData clientData;	/* Old window proc */
+FileChannelExitHandler(
+    ClientData clientData)	/* Old window proc */
 {
     Tcl_DeleteEventSource(FileSetupProc, FileCheckProc, NULL);
 }
@@ -211,9 +211,9 @@ FileChannelExitHandler(clientData)
  */
 
 void
-FileSetupProc(data, flags)
-    ClientData data;		/* Not used. */
-    int flags;			/* Event flags as passed to Tcl_DoOneEvent. */
+FileSetupProc(
+    ClientData data,		/* Not used. */
+    int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
@@ -254,9 +254,9 @@ FileSetupProc(data, flags)
  */
 
 static void
-FileCheckProc(data, flags)
-    ClientData data;		/* Not used. */
-    int flags;			/* Event flags as passed to Tcl_DoOneEvent. */
+FileCheckProc(
+    ClientData data,		/* Not used. */
+    int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileEvent *evPtr;
     FileInfo *infoPtr;
@@ -305,9 +305,9 @@ FileCheckProc(data, flags)
  */
 
 static int
-FileEventProc(evPtr, flags)
-    Tcl_Event *evPtr;		/* Event to service. */
-    int flags;			/* Flags that indicate what events to handle,
+FileEventProc(
+    Tcl_Event *evPtr,		/* Event to service. */
+    int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
     FileEvent *fileEvPtr = (FileEvent *)evPtr;
@@ -353,9 +353,9 @@ FileEventProc(evPtr, flags)
  */
 
 static int
-FileBlockProc(instanceData, mode)
-    ClientData instanceData;	/* Instance data for channel. */
-    int mode;			/* TCL_MODE_BLOCKING or
+FileBlockProc(
+    ClientData instanceData,	/* Instance data for channel. */
+    int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
@@ -392,9 +392,9 @@ FileBlockProc(instanceData, mode)
  */
 
 static int
-FileCloseProc(instanceData, interp)
-    ClientData instanceData;	/* Pointer to FileInfo structure. */
-    Tcl_Interp *interp;		/* Not used. */
+FileCloseProc(
+    ClientData instanceData,	/* Pointer to FileInfo structure. */
+    Tcl_Interp *interp)		/* Not used. */
 {
     FileInfo *fileInfoPtr = (FileInfo *) instanceData;
     FileInfo *infoPtr;
@@ -465,11 +465,11 @@ FileCloseProc(instanceData, interp)
  */
 
 static int
-FileSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;	/* File state. */
-    long offset;		/* Offset to seek to. */
-    int mode;			/* Relative to where should we seek? */
-    int *errorCodePtr;		/* To store error code. */
+FileSeekProc(
+    ClientData instanceData,	/* File state. */
+    long offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
@@ -543,11 +543,11 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
  */
 
 static Tcl_WideInt
-FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;	/* File state. */
-    Tcl_WideInt offset;		/* Offset to seek to. */
-    int mode;			/* Relative to where should we seek? */
-    int *errorCodePtr;		/* To store error code. */
+FileWideSeekProc(
+    ClientData instanceData,	/* File state. */
+    Tcl_WideInt offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
@@ -594,9 +594,9 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
  */
 
 static int
-FileTruncateProc(instanceData, length)
-    ClientData instanceData;	/* File state. */
-    Tcl_WideInt length;		/* Length to truncate at. */
+FileTruncateProc(
+    ClientData instanceData,	/* File state. */
+    Tcl_WideInt length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
@@ -668,11 +668,11 @@ FileTruncateProc(instanceData, length)
  */
 
 static int
-FileInputProc(instanceData, buf, bufSize, errorCode)
-    ClientData instanceData;	/* File state. */
-    char *buf;			/* Where to store data read. */
-    int bufSize;		/* Num bytes available in buffer. */
-    int *errorCode;		/* Where to store error code. */
+FileInputProc(
+    ClientData instanceData,	/* File state. */
+    char *buf,			/* Where to store data read. */
+    int bufSize,		/* Num bytes available in buffer. */
+    int *errorCode)		/* Where to store error code. */
 {
     FileInfo *infoPtr;
     DWORD bytesRead;
@@ -720,11 +720,11 @@ FileInputProc(instanceData, buf, bufSize, errorCode)
  */
 
 static int
-FileOutputProc(instanceData, buf, toWrite, errorCode)
-    ClientData instanceData;	/* File state. */
-    CONST char *buf;		/* The data buffer. */
-    int toWrite;		/* How many bytes to write? */
-    int *errorCode;		/* Where to store error code. */
+FileOutputProc(
+    ClientData instanceData,	/* File state. */
+    CONST char *buf,		/* The data buffer. */
+    int toWrite,		/* How many bytes to write? */
+    int *errorCode)		/* Where to store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD bytesWritten;
@@ -767,9 +767,9 @@ FileOutputProc(instanceData, buf, toWrite, errorCode)
  */
 
 static void
-FileWatchProc(instanceData, mask)
-    ClientData instanceData;	/* File state. */
-    int mask;			/* What events to watch for; OR-ed combination
+FileWatchProc(
+    ClientData instanceData,	/* File state. */
+    int mask)			/* What events to watch for; OR-ed combination
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
@@ -806,10 +806,10 @@ FileWatchProc(instanceData, mask)
  */
 
 static int
-FileGetHandleProc(instanceData, direction, handlePtr)
-    ClientData instanceData;	/* The file state. */
-    int direction;		/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr;	/* Where to store the handle.  */
+FileGetHandleProc(
+    ClientData instanceData,	/* The file state. */
+    int direction,		/* TCL_READABLE or TCL_WRITABLE */
+    ClientData *handlePtr)	/* Where to store the handle.  */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
 
@@ -840,12 +840,12 @@ FileGetHandleProc(instanceData, direction, handlePtr)
  */
 
 Tcl_Channel
-TclpOpenFileChannel(interp, pathPtr, mode, permissions)
-    Tcl_Interp *interp;		/* Interpreter for error reporting; can be
+TclpOpenFileChannel(
+    Tcl_Interp *interp,		/* Interpreter for error reporting; can be
 				 * NULL. */
-    Tcl_Obj *pathPtr;		/* Name of file to open. */
-    int mode;			/* POSIX mode. */
-    int permissions;		/* If the open involves creating a file, with
+    Tcl_Obj *pathPtr,		/* Name of file to open. */
+    int mode,			/* POSIX mode. */
+    int permissions)		/* If the open involves creating a file, with
 				 * what modes to create it? */
 {
     Tcl_Channel channel = 0;
@@ -943,7 +943,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 	TclWinConvertError(err);
 	if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
-		    "\": ", Tcl_PosixError(interp), (char *) NULL);
+		    "\": ", Tcl_PosixError(interp), NULL);
 	}
 	return NULL;
     }
@@ -984,7 +984,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 	    if (interp != (Tcl_Interp *) NULL) {
 		Tcl_AppendResult(interp, "couldn't reopen serial \"",
 			TclGetString(pathPtr), "\": ",
-			Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 	    }
 	    return NULL;
 	}
@@ -1019,7 +1019,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 
 	channel = NULL;
 	Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
-		"\": bad file type", (char *) NULL);
+		"\": bad file type", NULL);
 	break;
     }
 
@@ -1043,9 +1043,9 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
  */
 
 Tcl_Channel
-Tcl_MakeFileChannel(rawHandle, mode)
-    ClientData rawHandle;	/* OS level handle */
-    int mode;			/* ORed combination of TCL_READABLE and
+Tcl_MakeFileChannel(
+    ClientData rawHandle,	/* OS level handle */
+    int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
 #ifdef HAVE_NO_SEH
@@ -1261,8 +1261,8 @@ Tcl_MakeFileChannel(rawHandle, mode)
  */
 
 Tcl_Channel
-TclpGetDefaultStdChannel(type)
-    int type;			/* One of TCL_STDIN, TCL_STDOUT, or
+TclpGetDefaultStdChannel(
+    int type)			/* One of TCL_STDIN, TCL_STDOUT, or
 				 * TCL_STDERR. */
 {
     Tcl_Channel channel;
@@ -1317,7 +1317,7 @@ TclpGetDefaultStdChannel(type)
     if (Tcl_SetChannelOption(NULL,channel,"-translation","auto")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-eofchar","\032 {}")!=TCL_OK ||
 	    Tcl_SetChannelOption(NULL,channel,"-buffering",bufMode)!=TCL_OK) {
-	Tcl_Close((Tcl_Interp *) NULL, channel);
+	Tcl_Close(NULL, channel);
 	return (Tcl_Channel) NULL;
     }
     return channel;
@@ -1343,13 +1343,13 @@ TclpGetDefaultStdChannel(type)
  */
 
 Tcl_Channel
-TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
-    HANDLE handle;		/* Win32 HANDLE to swallow */
-    char *channelName;		/* Buffer to receive channel name */
-    int permissions;		/* OR'ed combination of TCL_READABLE,
+TclWinOpenFileChannel(
+    HANDLE handle,		/* Win32 HANDLE to swallow */
+    char *channelName,		/* Buffer to receive channel name */
+    int permissions,		/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION, indicating
 				 * which operations are valid on the file. */
-    int appendMode;		/* OR'ed combination of bits indicating what
+    int appendMode)		/* OR'ed combination of bits indicating what
 				 * additional configuration of the channel is
 				 * present. */
 {
@@ -1417,7 +1417,7 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
  */
 
 void
-TclWinFlushDirtyChannels()
+TclWinFlushDirtyChannels(void)
 {
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr = FileInit();
@@ -1453,9 +1453,9 @@ TclWinFlushDirtyChannels()
  */
 
 static void
-FileThreadActionProc(instanceData, action)
-    ClientData instanceData;
-    int action;
+FileThreadActionProc(
+    ClientData instanceData,
+    int action)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileInfo *infoPtr = (FileInfo *) instanceData;

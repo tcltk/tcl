@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.16 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.17 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1801,11 +1801,11 @@ TclpOpenFileChannel(
     fd = TclOSopen(native, mode, permissions);
 
 #ifdef SUPPORTS_TTY
-    ctl_tty = (strcmp (native, "/dev/tty") == 0);
+    ctl_tty = (strcmp(native, "/dev/tty") == 0);
 #endif /* SUPPORTS_TTY */
 
     if (fd < 0) {
-	if (interp != (Tcl_Interp *) NULL) {
+	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "couldn't open \"",
 		    TclGetString(pathPtr), "\": ", Tcl_PosixError(interp),
 		    NULL);
@@ -2636,7 +2636,7 @@ CreateSocketAddress(
     struct hostent *hostent;		/* Host database entry */
     struct in_addr addr;		/* For 64/32 bit madness */
 
-    (void) memset((VOID *) sockaddrPtr, '\0', sizeof(struct sockaddr_in));
+    (void) memset((void *) sockaddrPtr, '\0', sizeof(struct sockaddr_in));
     sockaddrPtr->sin_family = AF_INET;
     sockaddrPtr->sin_port = htons((unsigned short) (port & 0xFFFF));
     if (host == NULL) {
@@ -2658,8 +2658,8 @@ CreateSocketAddress(
 	if (addr.s_addr == 0xFFFFFFFF) {
 	    hostent = gethostbyname(native);		/* INTL: Native. */
 	    if (hostent != NULL) {
-		memcpy((VOID *) &addr,
-			(VOID *) hostent->h_addr_list[0],
+		memcpy((void *) &addr,
+			(void *) hostent->h_addr_list[0],
 			(size_t) hostent->h_length);
 	    } else {
 #ifdef	EHOSTUNREACH
@@ -3151,7 +3151,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    Tcl_Time abortTime, now;
+    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     int index, bit, numFound, result = 0;
     fd_mask readyMasks[3*MASK_SIZE];
@@ -3188,7 +3188,7 @@ TclUnixWaitForFile(
     if (fd >= FD_SETSIZE) {
 	Tcl_Panic("TclWaitForFile can't handle file id %d", fd);
     }
-    memset((VOID *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
+    memset((void *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));
     bit = 1 << (fd%(NBBY*sizeof(fd_mask)));
 

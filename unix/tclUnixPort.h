@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.11 2005/05/16 19:23:24 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.12 2005/12/02 18:43:11 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -502,6 +502,24 @@ extern double strtod();
 #define TclpPanic ((Tcl_PanicProc *) NULL)
 
 /*
+ * Darwin specifc configure overrides (to support fat compiles, where
+ * configure runs only once for multiple architectures):
+ */
+
+#ifdef __APPLE__
+#   ifdef __LP64__
+#       undef HAVE_COREFOUNDATION
+#    endif /* __LP64__ */
+#   ifdef __DARWIN_UNIX03
+#       define USE_TERMIOS 1
+#       undef HAVE_PUTENV_THAT_COPIES
+#    else /* !__DARWIN_UNIX03 */
+#       undef USE_TERMIOS
+#       define HAVE_PUTENV_THAT_COPIES 1
+#    endif /* __DARWIN_UNIX03 */
+#endif /* __APPLE__ */
+
+/*
  *---------------------------------------------------------------------------
  * The following macros and declarations represent the interface between 
  * generic and unix-specific parts of Tcl.  Some of the macros may override 
@@ -543,19 +561,7 @@ typedef int socklen_t;
 
 #define TclpExit		exit
 
-/*
- * Platform specific mutex definition used by memory allocators.
- * These mutexes are statically allocated and explicitly initialized.
- * Most modules do not use this, but instead use Tcl_Mutex types and
- * Tcl_MutexLock and Tcl_MutexUnlock that are self-initializing.
- */
-
 #ifdef TCL_THREADS
-#   include <pthread.h>
-typedef pthread_mutex_t TclpMutex;
-EXTERN void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
-EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
-EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN struct tm *     	TclpLocaltime(CONST time_t *);
 EXTERN struct tm *     	TclpGmtime(CONST time_t *);
 EXTERN char *          	TclpInetNtoa(struct in_addr);
@@ -580,11 +586,6 @@ EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
 #	    endif
 #	endif /* HAVE_PTHREAD_GETATTR_NP */
 #   endif /* HAVE_PTHREAD_ATTR_GET_NP */
-#else
-typedef int TclpMutex;
-#   define	TclpMutexInit(a)
-#   define	TclpMutexLock(a)
-#   define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
 
 #endif /* _TCLUNIXPORT */

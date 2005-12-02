@@ -1,4 +1,4 @@
-/* 
+/*
  * tclWinTime.c --
  *
  *	Contains Windows specific versions of Tcl functions that obtain time
@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.11 2005/11/03 17:52:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.12 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -67,7 +67,7 @@ typedef struct TimeInfo {
     /*
      * The following values are used for calculating virtual time. Virtual
      * time is always equal to:
-     *    lastFileTime + (current perf counter - lastCounter) 
+     *    lastFileTime + (current perf counter - lastCounter)
      *				* 10000000 / curCounterFreq
      * and lastFileTime and lastCounter are updated any time that virtual time
      * is returned to a caller.
@@ -119,7 +119,7 @@ static struct tm *	ComputeGMT(const time_t *tp);
 static void		StopCalibration(ClientData clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
-static void		ResetCounterSamples(Tcl_WideUInt fileTime, 
+static void		ResetCounterSamples(Tcl_WideUInt fileTime,
 			    Tcl_WideInt perfCounter, Tcl_WideInt perfFreq);
 static Tcl_WideInt	AccumulateSample(Tcl_WideInt perfCounter,
 			    Tcl_WideUInt fileTime);
@@ -154,7 +154,7 @@ ClientData tclTimeClientData = NULL;
  */
 
 unsigned long
-TclpGetSeconds()
+TclpGetSeconds(void)
 {
     Tcl_Time t;
 
@@ -182,7 +182,7 @@ TclpGetSeconds()
  */
 
 unsigned long
-TclpGetClicks()
+TclpGetClicks(void)
 {
     /*
      * Use the Tcl_GetTime abstraction to get the time in microseconds, as
@@ -217,8 +217,8 @@ TclpGetClicks()
  */
 
 int
-TclpGetTimeZone(currentTime)
-    unsigned long currentTime;
+TclpGetTimeZone(
+    unsigned long currentTime)
 {
     int timeZone;
 
@@ -251,8 +251,8 @@ TclpGetTimeZone(currentTime)
  */
 
 void
-Tcl_GetTime(timePtr)
-    Tcl_Time *timePtr;		/* Location to store time information. */
+Tcl_GetTime(
+    Tcl_Time *timePtr)		/* Location to store time information. */
 {
     (*tclGetTimeProcPtr) (timePtr, tclTimeClientData);
 }
@@ -275,9 +275,9 @@ Tcl_GetTime(timePtr)
  */
 
 static void
-NativeScaleTime(timePtr, clientData)
-    Tcl_Time *timePtr;
-    ClientData clientData;
+NativeScaleTime(
+    Tcl_Time *timePtr,
+    ClientData clientData)
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -307,9 +307,9 @@ NativeScaleTime(timePtr, clientData)
  */
 
 static void
-NativeGetTime(timePtr, clientData)
-    Tcl_Time *timePtr;
-    ClientData clientData;
+NativeGetTime(
+    Tcl_Time *timePtr,
+    ClientData clientData)
 {
     struct timeb t;
     int useFtime = 1;		/* Flag == TRUE if we need to fall back on
@@ -322,7 +322,7 @@ NativeGetTime(timePtr, clientData)
      * avoids an extra mutex lock in the common case.
      */
 
-    if (!timeInfo.initialized) { 
+    if (!timeInfo.initialized) {
 	TclpInitLock();
 	if (!timeInfo.initialized) {
 	    timeInfo.perfCounterAvailable =
@@ -379,7 +379,7 @@ NativeGetTime(timePtr, clientData)
 			&& regs[1] == 0x756e6547	/* "Genu" */
 			&& regs[3] == 0x49656e69	/* "ineI" */
 			&& regs[2] == 0x6c65746e	/* "ntel" */
-			&& TclWinCPUID(1, regs) == TCL_OK 
+			&& TclWinCPUID(1, regs) == TCL_OK
 			&& ((regs[0]&0x00000F00) == 0x00000F00 /* Pentium 4 */
 			|| ((regs[0] & 0x00F00000)	/* Extended family */
 			&& (regs[3] & 0x10000000)))	/* Hyperthread */
@@ -446,7 +446,7 @@ NativeGetTime(timePtr, clientData)
 
 	QueryPerformanceCounter(&curCounter);
 
-	/* 
+	/*
 	 * If it appears to be more than 1.1 seconds since the last trip
 	 * through the calibration loop, the performance counter may have
 	 * jumped forward. (See MSDN Knowledge Base article Q274323 for a
@@ -471,7 +471,7 @@ NativeGetTime(timePtr, clientData)
 
 	LeaveCriticalSection(&timeInfo.cs);
     }
-	
+
     if (useFtime) {
 	/*
 	 * High resolution timer is not available. Just use ftime.
@@ -502,8 +502,8 @@ NativeGetTime(timePtr, clientData)
  */
 
 static void
-StopCalibration(ClientData unused)
-				/* Client data is unused */
+StopCalibration(
+    ClientData unused)		/* Client data is unused */
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -534,7 +534,8 @@ StopCalibration(ClientData unused)
  */
 
 char *
-TclpGetTZName(int dst)
+TclpGetTZName(
+    int dst)
 {
     int len;
     char *zone, *p;
@@ -595,11 +596,11 @@ TclpGetTZName(int dst)
 	    dst = 0;
 	}
 	encoding = Tcl_GetEncoding(NULL, "unicode");
-	Tcl_ExternalToUtf(NULL, encoding, 
-		(char *) ((dst) ? tz.DaylightName : tz.StandardName), -1, 
+	Tcl_ExternalToUtf(NULL, encoding,
+		(char *) ((dst) ? tz.DaylightName : tz.StandardName), -1,
 		0, NULL, name, sizeof(tsdPtr->tzName), NULL, NULL, NULL);
 	Tcl_FreeEncoding(encoding);
-    } 
+    }
     return name;
 }
 
@@ -622,9 +623,9 @@ TclpGetTZName(int dst)
  */
 
 struct tm *
-TclpGetDate(t, useGMT)
-    CONST time_t *t;
-    int useGMT;
+TclpGetDate(
+    CONST time_t *t,
+    int useGMT)
 {
     struct tm *tmPtr;
     time_t time;
@@ -660,7 +661,7 @@ TclpGetDate(t, useGMT)
 	}
 
 	time = *t - timezone;
-	
+
 	/*
 	 * If we aren't near to overflowing the long, just add the bias and
 	 * use the normal calculation. Otherwise we will need to adjust the
@@ -685,7 +686,7 @@ TclpGetDate(t, useGMT)
 		tmPtr->tm_sec += 60;
 		time -= 60;
 	    }
-    
+
 	    time = tmPtr->tm_min + time/60;
 	    tmPtr->tm_min = (int)(time % 60);
 	    if (tmPtr->tm_min < 0) {
@@ -729,8 +730,8 @@ TclpGetDate(t, useGMT)
  */
 
 static struct tm *
-ComputeGMT(tp)
-    const time_t *tp;
+ComputeGMT(
+    const time_t *tp)
 {
     struct tm *tmPtr;
     long tmp, rem;
@@ -787,7 +788,7 @@ ComputeGMT(tp)
 
     tmPtr->tm_yday = rem / SECSPERDAY;
     rem %= SECSPERDAY;
-    
+
     /*
      * Compute the time of day.
      */
@@ -851,7 +852,8 @@ ComputeGMT(tp)
  */
 
 static DWORD WINAPI
-CalibrationThread(LPVOID arg)
+CalibrationThread(
+    LPVOID arg)
 {
     FILETIME curFileTime;
     DWORD waitResult;
@@ -918,7 +920,7 @@ CalibrationThread(LPVOID arg)
  */
 
 static void
-UpdateTimeEachSecond()
+UpdateTimeEachSecond(void)
 {
     LARGE_INTEGER curPerfCounter;
 				/* Current value returned from
@@ -989,11 +991,11 @@ UpdateTimeEachSecond()
      * sec, so that virtual time 2 sec from now will be
      *
      * vt1 = 20000000 + curFileTime
-     * 
+     *
      * The frequency that we need to use to drift the counter back into place
      * is estFreq * 20000000 / (vt1 - vt0)
      */
-    
+
     vt0 = 10000000 * (curPerfCounter.QuadPart
 		- timeInfo.perfCounterLastCall.QuadPart)
 	    / timeInfo.curCounterFreq.QuadPart
@@ -1090,7 +1092,9 @@ ResetCounterSamples(
  */
 
 static Tcl_WideInt
-AccumulateSample(Tcl_WideInt perfCounter, Tcl_WideUInt fileTime)
+AccumulateSample(
+    Tcl_WideInt perfCounter,
+    Tcl_WideUInt fileTime)
 {
     Tcl_WideUInt workFTSample;	/* File time sample being removed from or
 				 * added to the circular buffer. */
@@ -1128,22 +1132,22 @@ AccumulateSample(Tcl_WideInt perfCounter, Tcl_WideUInt fileTime)
 	/*
 	 * Estimate the frequency.
 	 */
-	
+
 	workPCSample = timeInfo.perfCounterSample[timeInfo.sampleNo];
 	workFTSample = timeInfo.fileTimeSample[timeInfo.sampleNo];
 	estFreq = 10000000 * (perfCounter - workPCSample)
 		/ (fileTime - workFTSample);
 	timeInfo.perfCounterSample[timeInfo.sampleNo] = perfCounter;
 	timeInfo.fileTimeSample[timeInfo.sampleNo] = (Tcl_WideInt) fileTime;
-	
+
 	/*
 	 * Advance the sample number.
 	 */
-	
+
 	if (++timeInfo.sampleNo >= SAMPLES) {
 	    timeInfo.sampleNo = 0;
-	} 
-	
+	}
+
 	return estFreq;
     }
 }
@@ -1165,8 +1169,8 @@ AccumulateSample(Tcl_WideInt perfCounter, Tcl_WideUInt fileTime)
  */
 
 struct tm *
-TclpGmtime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+TclpGmtime(
+    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -1196,8 +1200,8 @@ TclpGmtime(timePtr)
  */
 
 struct tm *
-TclpLocaltime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds since the
+TclpLocaltime(
+    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 
 {
@@ -1228,10 +1232,10 @@ TclpLocaltime(timePtr)
  */
 
 void
-Tcl_SetTimeProc(getProc, scaleProc, clientData)
-    Tcl_GetTimeProc *getProc;
-    Tcl_ScaleTimeProc *scaleProc;
-    ClientData clientData;
+Tcl_SetTimeProc(
+    Tcl_GetTimeProc *getProc,
+    Tcl_ScaleTimeProc *scaleProc,
+    ClientData clientData)
 {
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
@@ -1255,10 +1259,10 @@ Tcl_SetTimeProc(getProc, scaleProc, clientData)
  */
 
 void
-Tcl_QueryTimeProc(getProc, scaleProc, clientData)
-    Tcl_GetTimeProc ** getProc;
-    Tcl_ScaleTimeProc **scaleProc;
-    ClientData *clientData;
+Tcl_QueryTimeProc(
+    Tcl_GetTimeProc **getProc,
+    Tcl_ScaleTimeProc **scaleProc,
+    ClientData *clientData)
 {
     if (getProc) {
 	*getProc = tclGetTimeProcPtr;

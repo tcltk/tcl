@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.12 2005/08/02 16:38:20 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.13 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -245,7 +245,7 @@ static Tcl_ChannelType pipeChannelType = {
  */
 
 static void
-PipeInit()
+PipeInit(void)
 {
     ThreadSpecificData *tsdPtr;
 
@@ -314,7 +314,7 @@ PipeExitHandler(
  */
 
 void
-TclpFinalizePipes()
+TclpFinalizePipes(void)
 {
     Tcl_MutexLock(&pipeMutex);
     initialized = 0;
@@ -497,8 +497,8 @@ TclWinMakeFile(
  */
 
 static int
-TempFileName(name)
-    WCHAR name[MAX_PATH];	/* Buffer in which name for temporary file
+TempFileName(
+    WCHAR name[MAX_PATH])	/* Buffer in which name for temporary file
 				 * gets stored. */
 {
     TCHAR *prefix;
@@ -538,9 +538,9 @@ TempFileName(name)
  */
 
 TclFile
-TclpMakeFile(channel, direction)
-    Tcl_Channel channel;	/* Channel to get file from. */
-    int direction;		/* Either TCL_READABLE or TCL_WRITABLE. */
+TclpMakeFile(
+    Tcl_Channel channel,	/* Channel to get file from. */
+    int direction)		/* Either TCL_READABLE or TCL_WRITABLE. */
 {
     HANDLE handle;
 
@@ -570,9 +570,9 @@ TclpMakeFile(channel, direction)
  */
 
 TclFile
-TclpOpenFile(path, mode)
-    CONST char *path;		/* The name of the file to open. */
-    int mode;			/* In what mode to open the file? */
+TclpOpenFile(
+    CONST char *path,		/* The name of the file to open. */
+    int mode)			/* In what mode to open the file? */
 {
     HANDLE handle;
     DWORD accessMode, createMode, shareMode, flags;
@@ -691,8 +691,8 @@ TclpOpenFile(path, mode)
  */
 
 TclFile
-TclpCreateTempFile(contents)
-    CONST char *contents;	/* String to write into temp file, or NULL. */
+TclpCreateTempFile(
+    CONST char *contents)	/* String to write into temp file, or NULL. */
 {
     WCHAR name[MAX_PATH];
     CONST char *native;
@@ -783,8 +783,8 @@ TclpCreateTempFile(contents)
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj*
-TclpTempFileName()
+Tcl_Obj *
+TclpTempFileName(void)
 {
     WCHAR fileName[MAX_PATH];
 
@@ -1327,7 +1327,7 @@ TclpCreateProcess(
  */
 
 static BOOL
-HasConsole()
+HasConsole(void)
 {
     HANDLE handle;
 
@@ -1378,10 +1378,10 @@ HasConsole()
  */
 
 static int
-ApplicationType(interp, originalName, fullName)
-    Tcl_Interp *interp;		/* Interp, for error message. */
-    const char *originalName;	/* Name of the application to find. */
-    char fullName[];		/* Filled with complete path to
+ApplicationType(
+    Tcl_Interp *interp,		/* Interp, for error message. */
+    const char *originalName,	/* Name of the application to find. */
+    char fullName[])		/* Filled with complete path to
 				 * application. */
 {
     int applType, i, nameLen, found;
@@ -2579,12 +2579,12 @@ Tcl_WaitPid(
 	case EXCEPTION_FLT_UNDERFLOW:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_INT_OVERFLOW:
-	    *statPtr = SIGFPE;
+	    *statPtr = 0xC0000000 | SIGFPE;
 	    break;
 
 	case EXCEPTION_PRIV_INSTRUCTION:
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
-	    *statPtr = SIGILL;
+	    *statPtr = 0xC0000000 | SIGILL;
 	    break;
 
 	case EXCEPTION_ACCESS_VIOLATION:
@@ -2594,20 +2594,20 @@ Tcl_WaitPid(
 	case EXCEPTION_INVALID_DISPOSITION:
 	case EXCEPTION_GUARD_PAGE:
 	case EXCEPTION_INVALID_HANDLE:
-	    *statPtr = SIGSEGV;
+	    *statPtr = 0xC0000000 | SIGSEGV;
 	    break;
 
 	case EXCEPTION_DATATYPE_MISALIGNMENT:
-	    *statPtr = SIGBUS;
+	    *statPtr = 0xC0000000 | SIGBUS;
 	    break;
 
 	case EXCEPTION_BREAKPOINT:
 	case EXCEPTION_SINGLE_STEP:
-	    *statPtr = SIGTRAP;
+	    *statPtr = 0xC0000000 | SIGTRAP;
 	    break;
 
 	case CONTROL_C_EXIT:
-	    *statPtr = SIGINT;
+	    *statPtr = 0xC0000000 | SIGINT;
 	    break;
 
 	default:
@@ -2622,13 +2622,13 @@ Tcl_WaitPid(
 	     * truncating it.
 	     */
 
-	    *statPtr = (((int)(short) exitCode << 8) & 0xffff00);
+	    *statPtr = exitCode;
 	    break;
 	}
 	result = pid;
     } else {
 	errno = ECHILD;
-	*statPtr = ECHILD;
+	*statPtr = 0xC0000000 | ECHILD;
 	result = (Tcl_Pid) -1;
     }
 
@@ -2661,9 +2661,9 @@ Tcl_WaitPid(
  */
 
 void
-TclWinAddProcess(hProcess, id)
-    HANDLE hProcess;		/* Handle to process */
-    DWORD id;			/* Global process identifier */
+TclWinAddProcess(
+    HANDLE hProcess,		/* Handle to process */
+    DWORD id)			/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
 
@@ -2874,7 +2874,8 @@ WaitForRead(
  */
 
 static DWORD WINAPI
-PipeReaderThread(LPVOID arg)
+PipeReaderThread(
+    LPVOID arg)
 {
     PipeInfo *infoPtr = (PipeInfo *)arg;
     HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
@@ -2996,7 +2997,8 @@ PipeReaderThread(LPVOID arg)
  */
 
 static DWORD WINAPI
-PipeWriterThread(LPVOID arg)
+PipeWriterThread(
+    LPVOID arg)
 {
     PipeInfo *infoPtr = (PipeInfo *)arg;
     HANDLE *handle = ((WinFile *) infoPtr->writeFile)->handle;
@@ -3088,9 +3090,9 @@ PipeWriterThread(LPVOID arg)
  */
 
 static void
-PipeThreadActionProc(instanceData, action)
-    ClientData instanceData;
-    int action;
+PipeThreadActionProc(
+    ClientData instanceData,
+    int action)
 {
     PipeInfo *infoPtr = (PipeInfo *) instanceData;
 

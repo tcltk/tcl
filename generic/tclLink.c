@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.4.3 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.4.4 2005/12/02 18:42:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -63,7 +63,7 @@ typedef struct Link {
 #define LINK_BEING_UPDATED	2
 
 /*
- * Forward references to procedures defined later in this file:
+ * Forward references to functions defined later in this file:
  */
 
 static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
@@ -91,12 +91,12 @@ static Tcl_Obj *	ObjValue(Link *linkPtr);
  */
 
 int
-Tcl_LinkVar(interp, varName, addr, type)
-    Tcl_Interp *interp;		/* Interpreter in which varName exists. */
-    CONST char *varName;	/* Name of a global variable in interp. */
-    char *addr;			/* Address of a C variable to be linked to
+Tcl_LinkVar(
+    Tcl_Interp *interp,		/* Interpreter in which varName exists. */
+    CONST char *varName,	/* Name of a global variable in interp. */
+    char *addr,			/* Address of a C variable to be linked to
 				 * varName. */
-    int type;			/* Type of C variable: TCL_LINK_INT, etc. Also
+    int type)			/* Type of C variable: TCL_LINK_INT, etc. Also
 				 * may have TCL_LINK_READ_ONLY OR'ed in. */
 {
     Tcl_Obj *objPtr;
@@ -118,7 +118,6 @@ Tcl_LinkVar(interp, varName, addr, type)
     if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
 	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	Tcl_DecrRefCount(objPtr);
 	ckfree((char *) linkPtr);
 	return TCL_ERROR;
     }
@@ -151,9 +150,9 @@ Tcl_LinkVar(interp, varName, addr, type)
  */
 
 void
-Tcl_UnlinkVar(interp, varName)
-    Tcl_Interp *interp;		/* Interpreter containing variable to unlink */
-    CONST char *varName;	/* Global variable in interp to unlink. */
+Tcl_UnlinkVar(
+    Tcl_Interp *interp,		/* Interpreter containing variable to unlink */
+    CONST char *varName)	/* Global variable in interp to unlink. */
 {
     Link *linkPtr;
 
@@ -174,9 +173,9 @@ Tcl_UnlinkVar(interp, varName)
  *
  * Tcl_UpdateLinkedVar --
  *
- *	This procedure is invoked after a linked variable has been changed by
- *	C code. It updates the Tcl variable so that traces on the variable
- *	will trigger.
+ *	This function is invoked after a linked variable has been changed by C
+ *	code. It updates the Tcl variable so that traces on the variable will
+ *	trigger.
  *
  * Results:
  *	None.
@@ -189,9 +188,9 @@ Tcl_UnlinkVar(interp, varName)
  */
 
 void
-Tcl_UpdateLinkedVar(interp, varName)
-    Tcl_Interp *interp;		/* Interpreter containing variable. */
-    CONST char *varName;	/* Name of global variable that is linked. */
+Tcl_UpdateLinkedVar(
+    Tcl_Interp *interp,		/* Interpreter containing variable. */
+    CONST char *varName)	/* Name of global variable that is linked. */
 {
     Link *linkPtr;
     int savedFlag;
@@ -213,7 +212,7 @@ Tcl_UpdateLinkedVar(interp, varName)
  *
  * LinkTraceProc --
  *
- *	This procedure is invoked when a linked Tcl variable is read, written,
+ *	This function is invoked when a linked Tcl variable is read, written,
  *	or unset from Tcl. It's responsible for keeping the C variable in sync
  *	with the Tcl variable.
  *
@@ -230,12 +229,12 @@ Tcl_UpdateLinkedVar(interp, varName)
  */
 
 static char *
-LinkTraceProc(clientData, interp, name1, name2, flags)
-    ClientData clientData;	/* Contains information about the link. */
-    Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
-    CONST char *name1;		/* First part of variable name. */
-    CONST char *name2;		/* Second part of variable name. */
-    int flags;			/* Miscellaneous additional information. */
+LinkTraceProc(
+    ClientData clientData,	/* Contains information about the link. */
+    Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
+    CONST char *name1,		/* First part of variable name. */
+    CONST char *name2,		/* Second part of variable name. */
+    int flags)			/* Miscellaneous additional information. */
 {
     Link *linkPtr = (Link *) clientData;
     int changed, valueLength;
@@ -544,8 +543,8 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
  */
 
 static Tcl_Obj *
-ObjValue(linkPtr)
-    Link *linkPtr;		/* Structure describing linked variable. */
+ObjValue(
+    Link *linkPtr)		/* Structure describing linked variable. */
 {
     char *p;
 

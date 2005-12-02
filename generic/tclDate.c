@@ -1,7 +1,7 @@
-/* A Bison parser, made by GNU Bison 1.875b.  */
+/* A Bison parser, made by GNU Bison 1.875.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -248,6 +248,8 @@ static time_t	ToSeconds(time_t Hours, time_t Minutes,
 		    time_t Seconds, MERIDIAN Meridian);
 static int	LookupWord(char *buff);
 static int	TclDatelex(void* info);
+
+MODULE_SCOPE int yyparse (void *);
 
 
 
@@ -645,7 +647,6 @@ static const unsigned char yystos[] =
 #define YYABORT		goto yyabortlab
 #define YYERROR		goto yyerrlab1
 
-
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
    Once GCC version 2 has supplanted version 1, this can go.  */
@@ -766,9 +767,9 @@ yy_reduce_print (yyrule)
 #endif
 {
   int yyi;
-  unsigned int yylno = yyrline[yyrule];
+  unsigned int yylineno = yyrline[yyrule];
   YYFPRINTF (stderr, "Reducing stack by rule %d (line %u), ",
-             yyrule - 1, yylno);
+             yyrule - 1, yylineno);
   /* Print the symbols being reduced, and their result.  */
   for (yyi = yyprhs[yyrule]; 0 <= yyrhs[yyi]; yyi++)
     YYFPRINTF (stderr, "%s ", yytname [yyrhs[yyi]]);
@@ -1657,7 +1658,7 @@ yyreduce:
 
     }
 
-/* Line 999 of yacc.c.  */
+/* Line 991 of yacc.c.  */
 
 
   yyvsp -= yylen;
@@ -1699,33 +1700,18 @@ yyerrlab:
 	{
 	  YYSIZE_T yysize = 0;
 	  int yytype = YYTRANSLATE (yychar);
-	  const char* yyprefix;
 	  char *yymsg;
-	  int yyx;
+	  int yyx, yycount;
 
+	  yycount = 0;
 	  /* Start YYX at -YYN if negative to avoid negative indexes in
 	     YYCHECK.  */
-	  int yyxbegin = yyn < 0 ? -yyn : 0;
-
-	  /* Stay within bounds of both yycheck and yytname.  */
-	  int yychecklim = YYLAST - yyn;
-	  int yyxend = yychecklim < YYNTOKENS ? yychecklim : YYNTOKENS;
-	  int yycount = 0;
-
-	  yyprefix = ", expecting ";
-	  for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+	  for (yyx = yyn < 0 ? -yyn : 0;
+	       yyx < (int) (sizeof (yytname) / sizeof (char *)); yyx++)
 	    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
-	      {
-		yysize += yystrlen (yyprefix) + yystrlen (yytname [yyx]);
-		yycount += 1;
-		if (yycount == 5)
-		  {
-		    yysize = 0;
-		    break;
-		  }
-	      }
-	  yysize += (sizeof ("syntax error, unexpected ")
-		     + yystrlen (yytname[yytype]));
+	      yysize += yystrlen (yytname[yyx]) + 15, yycount++;
+	  yysize += yystrlen ("syntax error, unexpected ") + 1;
+	  yysize += yystrlen (yytname[yytype]);
 	  yymsg = (char *) YYSTACK_ALLOC (yysize);
 	  if (yymsg != 0)
 	    {
@@ -1734,13 +1720,16 @@ yyerrlab:
 
 	      if (yycount < 5)
 		{
-		  yyprefix = ", expecting ";
-		  for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+		  yycount = 0;
+		  for (yyx = yyn < 0 ? -yyn : 0;
+		       yyx < (int) (sizeof (yytname) / sizeof (char *));
+		       yyx++)
 		    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
 		      {
-			yyp = yystpcpy (yyp, yyprefix);
+			const char *yyq = ! yycount ? ", expecting " : " or ";
+			yyp = yystpcpy (yyp, yyq);
 			yyp = yystpcpy (yyp, yytname[yyx]);
-			yyprefix = " or ";
+			yycount++;
 		      }
 		}
 	      yyerror (yymsg);
@@ -1784,13 +1773,30 @@ yyerrlab:
 
   /* Else will try to reuse lookahead token after shifting the error
      token.  */
-  goto yyerrlab1;
+  goto yyerrlab2;
 
 
 /*----------------------------------------------------.
 | yyerrlab1 -- error raised explicitly by an action.  |
 `----------------------------------------------------*/
 yyerrlab1:
+
+  /* Suppress GCC warning that yyerrlab1 is unused when no action
+     invokes YYERROR.  Doesn't work in C++ */
+#ifndef __cplusplus
+#if defined (__GNUC_MINOR__) && 2093 <= (__GNUC__ * 1000 + __GNUC_MINOR__)
+  __attribute__ ((__unused__))
+#endif
+#endif
+
+
+  goto yyerrlab2;
+
+
+/*---------------------------------------------------------------.
+| yyerrlab2 -- pop states until the error token can be shifted.  |
+`---------------------------------------------------------------*/
+yyerrlab2:
   yyerrstatus = 3;	/* Each real token shifted decrements this.  */
 
   for (;;)
@@ -1866,6 +1872,10 @@ yyreturn:
 
 
 
+
+MODULE_SCOPE int yychar;
+MODULE_SCOPE YYSTYPE yylval;
+MODULE_SCOPE int yynerrs;
 
 /*
  * Month and day table.
@@ -2013,6 +2023,9 @@ static TABLE    TimezoneTable[] = {
     { "jt",     tZONE,    -HOUR(15/2) },    /* Java (3pm in Cronusland!) */
     { "cct",    tZONE,    -HOUR( 8) },      /* China Coast, USSR Zone 7 */
     { "jst",    tZONE,    -HOUR( 9) },      /* Japan Standard, USSR Zone 8 */
+    { "jdt",    tDAYZONE, -HOUR( 9) },      /* Japan Daylight */
+    { "kst",    tZONE,    -HOUR( 9) },      /* Korea Standard */
+    { "kdt",    tDAYZONE, -HOUR( 9) },      /* Korea Daylight */
     { "cast",   tZONE,    -HOUR(19/2) },    /* Central Australian Standard */
     { "cadt",   tDAYZONE, -HOUR(19/2) },    /* Central Australian Daylight */
     { "east",   tZONE,    -HOUR(10) },      /* Eastern Australian Standard */
@@ -2359,17 +2372,17 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
     resultElement = Tcl_NewObj();
     if ( yyHaveDate ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyYear ) );
+				  Tcl_NewIntObj( yyYear ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyMonth ) );
+				  Tcl_NewIntObj( yyMonth ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyDay ) );
+				  Tcl_NewIntObj( yyDay ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 
     if ( yyHaveTime ) {
 	Tcl_ListObjAppendElement( interp, result,
-				  Tcl_NewIntObj( (int) ToSeconds( yyHour,
+				  Tcl_NewIntObj( ToSeconds( yyHour,
 							    yyMinutes,
 							    yySeconds,
 							    yyMeridian ) ) );
@@ -2380,7 +2393,7 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
     resultElement = Tcl_NewObj();
     if ( yyHaveZone ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) -yyTimezone ) );
+				  Tcl_NewIntObj( -yyTimezone ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
 				  Tcl_NewIntObj( 1-yyDSTmode ) );
     }
@@ -2389,29 +2402,29 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
     resultElement = Tcl_NewObj();
     if ( yyHaveRel ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyRelMonth ) );
+				  Tcl_NewIntObj( yyRelMonth ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyRelDay ) );
+				  Tcl_NewIntObj( yyRelDay ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyRelSeconds ) );
+				  Tcl_NewIntObj( yyRelSeconds ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 
     resultElement = Tcl_NewObj();
     if ( yyHaveDay && !yyHaveDate ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyDayOrdinal ) );
+				  Tcl_NewIntObj( yyDayOrdinal ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyDayNumber ) );
+				  Tcl_NewIntObj( yyDayNumber ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 
     resultElement = Tcl_NewObj();
     if ( yyHaveOrdinalMonth ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyMonthOrdinal ) );
+				  Tcl_NewIntObj( yyMonthOrdinal ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( (int) yyMonth ) );
+				  Tcl_NewIntObj( yyMonth ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 	

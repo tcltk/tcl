@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.9 2005/08/15 17:23:22 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.10 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -162,9 +162,9 @@ static int		TraverseWinTree(TraversalProc *traverseProc,
  */
 
 int
-TclpObjRenameFile(srcPathPtr, destPathPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
+TclpObjRenameFile(
+    Tcl_Obj *srcPathPtr,
+    Tcl_Obj *destPathPtr)
 {
     return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
 	    Tcl_FSGetNativePath(destPathPtr));
@@ -553,9 +553,9 @@ DoRenameFile(
  */
 
 int
-TclpObjCopyFile(srcPathPtr, destPathPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
+TclpObjCopyFile(
+    Tcl_Obj *srcPathPtr,
+    Tcl_Obj *destPathPtr)
 {
     return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
 	    Tcl_FSGetNativePath(destPathPtr));
@@ -758,8 +758,8 @@ DoCopyFile(
  */
 
 int
-TclpObjDeleteFile(pathPtr)
-    Tcl_Obj *pathPtr;
+TclpObjDeleteFile(
+    Tcl_Obj *pathPtr)
 {
     return TclpDeleteFile(Tcl_FSGetNativePath(pathPtr));
 }
@@ -870,8 +870,8 @@ TclpDeleteFile(
  */
 
 int
-TclpObjCreateDirectory(pathPtr)
-    Tcl_Obj *pathPtr;
+TclpObjCreateDirectory(
+    Tcl_Obj *pathPtr)
 {
     return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
 }
@@ -914,10 +914,10 @@ DoCreateDirectory(
  */
 
 int
-TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
-    Tcl_Obj **errorPtr;
+TclpObjCopyDirectory(
+    Tcl_Obj *srcPathPtr,
+    Tcl_Obj *destPathPtr,
+    Tcl_Obj **errorPtr)
 {
     Tcl_DString ds;
     Tcl_DString srcString, dstString;
@@ -978,10 +978,10 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
  */
 
 int
-TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
-    Tcl_Obj *pathPtr;
-    int recursive;
-    Tcl_Obj **errorPtr;
+TclpObjRemoveDirectory(
+    Tcl_Obj *pathPtr,
+    int recursive,
+    Tcl_Obj **errorPtr)
 {
     Tcl_DString ds;
     Tcl_Obj *normPtr = NULL;

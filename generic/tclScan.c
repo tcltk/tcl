@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.9 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.10 2005/12/02 18:42:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -581,8 +581,7 @@ Tcl_ScanObjCmd(
     long value;
     CONST char *string, *end, *baseString;
     char op = 0;
-    int underflow = 0;
-    size_t width;
+    int width, underflow = 0;
     Tcl_WideInt wideValue;
     Tcl_UniChar ch, sch;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
@@ -693,7 +692,7 @@ Tcl_ScanObjCmd(
 	 */
 
 	if ((ch < 0x80) && isdigit(UCHAR(ch))) {	/* INTL: "C" locale. */
-	    width = strtoul(format-1, &format, 10);	/* INTL: "C" locale. */
+	    width = (int) strtoul(format-1, &format, 10);/* INTL: "C" locale. */
 	    format += Tcl_UtfToUniChar(format, &ch);
 	} else {
 	    width = 0;
@@ -815,7 +814,7 @@ Tcl_ScanObjCmd(
 	     */
 
 	    if (width == 0) {
-		width = (size_t) ~0;
+		width = ~0;
 	    }
 	    end = string;
 	    while (*end != '\0') {
@@ -840,7 +839,7 @@ Tcl_ScanObjCmd(
 	    CharSet cset;
 
 	    if (width == 0) {
-		width = (size_t) ~0;
+		width = ~0;
 	    }
 	    end = string;
 
@@ -892,16 +891,20 @@ Tcl_ScanObjCmd(
 	    objPtr = Tcl_NewLongObj(0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
-		width = -1;
+		width = ~0;
 	    }
-	    if (TclParseNumber(NULL, objPtr, NULL, string, width, &end,
-		    TCL_PARSE_INTEGER_ONLY | parseFlag) != TCL_OK) {
+	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
+		    &end, TCL_PARSE_INTEGER_ONLY | parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
-
-		/*
-		 * TODO: set underflow? test scan-4.44
-		 */
-
+		if (width < 0) {
+		    if (*end == '\0') {
+			underflow = 1;
+		    }
+		} else {
+		    if (end == string + width) {
+			underflow = 1;
+		    }
+		}
 		goto done;
 	    }
 	    string = end;
@@ -949,15 +952,20 @@ Tcl_ScanObjCmd(
 	    objPtr = Tcl_NewDoubleObj(0.0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
-		width = -1;
+		width = ~0;
 	    }
-	    if (TclParseNumber(NULL, objPtr, NULL, string, width, &end,
-		    TCL_PARSE_DECIMAL_ONLY) != TCL_OK) {
-		/*
-		 * TODO: set underflow? test scan-4.55
-		 */
-
+	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
+		    &end, TCL_PARSE_DECIMAL_ONLY)) {
 		Tcl_DecrRefCount(objPtr);
+		if (width < 0) {
+		    if (*end == '\0') {
+			underflow = 1;
+		    }
+		} else {
+		    if (end == string + width) {
+			underflow = 1;
+		    }
+		}
 		goto done;
 	    } else if (flags & SCAN_SUPPRESS) {
 		Tcl_DecrRefCount(objPtr);

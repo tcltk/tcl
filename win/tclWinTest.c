@@ -1,50 +1,44 @@
-/* 
+/*
  * tclWinTest.c --
  *
  *	Contains commands for platform specific tests on Windows.
  *
  * Copyright (c) 1996 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.2 2004/09/08 23:03:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.3 2005/12/02 18:43:11 dgp Exp $
  */
 
 #define USE_COMPAT_CONST
 #include "tclInt.h"
 
 /*
- * Forward declarations of procedures defined later in this file:
+ * Forward declarations of functions defined later in this file:
  */
-int		TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
-static int	TesteventloopCmd _ANSI_ARGS_((ClientData dummy,
-	Tcl_Interp *interp, int argc, char **argv));
-static int	TestvolumetypeCmd _ANSI_ARGS_((ClientData dummy,
-	Tcl_Interp *interp, int objc,
-	Tcl_Obj *CONST objv[]));
-static int      TestwinclockCmd _ANSI_ARGS_(( ClientData dummy,
-					      Tcl_Interp* interp,
-					      int objc,
-					      Tcl_Obj *CONST objv[] ));
-static int      TestwinsleepCmd _ANSI_ARGS_(( ClientData dummy,
-					      Tcl_Interp* interp,
-					      int objc,
-					      Tcl_Obj *CONST objv[] ));
-static Tcl_ObjCmdProc TestExceptionCmd;
-static int	TestwincpuidCmd _ANSI_ARGS_(( ClientData dummy,
-					      Tcl_Interp* interp,
-					      int objc,
-					      Tcl_Obj *CONST objv[] ));
 
+int			TclplatformtestInit(Tcl_Interp *interp);
+static int		TesteventloopCmd(ClientData dummy, Tcl_Interp *interp,
+			    int argc, char **argv);
+static int		TestvolumetypeCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+static int		TestwinclockCmd(ClientData dummy, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static Tcl_ObjCmdProc	TestExceptionCmd;
+static int		TestwincpuidCmd(ClientData dummy, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *CONST objv[]);
 
 /*
  *----------------------------------------------------------------------
  *
  * TclplatformtestInit --
  *
- *	Defines commands that test platform specific functionality for
- *	Windows platforms.
+ *	Defines commands that test platform specific functionality for Windows
+ *	platforms.
  *
  * Results:
  *	A standard Tcl result.
@@ -56,26 +50,23 @@ static int	TestwincpuidCmd _ANSI_ARGS_(( ClientData dummy,
  */
 
 int
-TclplatformtestInit(interp)
-    Tcl_Interp *interp;		/* Interpreter to add commands to. */
+TclplatformtestInit(
+    Tcl_Interp *interp)		/* Interpreter to add commands to. */
 {
     /*
      * Add commands for platform specific tests for Windows here.
      */
 
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+            (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+            (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+            (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testwincpuid", TestwincpuidCmd,
-			 (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
-    Tcl_CreateObjCommand( interp,
-			  "testwinsleep",
-			  TestwinsleepCmd,
-			  (ClientData) 0,
-			  (Tcl_CmdDeleteProc *) NULL );
+	    (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd,
+	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
     return TCL_OK;
 }
@@ -85,9 +76,9 @@ TclplatformtestInit(interp)
  *
  * TesteventloopCmd --
  *
- *	This procedure implements the "testeventloop" command. It is
- *	used to test the Tcl notifier from an "external" event loop
- *	(i.e. not Tcl_DoOneEvent()).
+ *	This function implements the "testeventloop" command. It is used to
+ *	test the Tcl notifier from an "external" event loop (i.e. not
+ *	Tcl_DoOneEvent()).
  *
  * Results:
  *	A standard Tcl result.
@@ -99,19 +90,19 @@ TclplatformtestInit(interp)
  */
 
 static int
-TesteventloopCmd(clientData, interp, argc, argv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int argc;				/* Number of arguments. */
-    char **argv;			/* Argument strings. */
+TesteventloopCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int argc,			/* Number of arguments. */
+    char **argv)		/* Argument strings. */
 {
-    static int *framePtr = NULL; /* Pointer to integer on stack frame of
-				  * innermost invocation of the "wait"
-				  * subcommand. */
+    static int *framePtr = NULL;/* Pointer to integer on stack frame of
+				 * innermost invocation of the "wait"
+				 * subcommand. */
 
    if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-                " option ... \"", (char *) NULL);
+                " option ... \"", NULL);
         return TCL_ERROR;
     }
     if (strcmp(argv[1], "done") == 0) {
@@ -152,7 +143,7 @@ TesteventloopCmd(clientData, interp, argc, argv)
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be done or wait", (char *) NULL);
+		"\": must be done or wait", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -163,8 +154,8 @@ TesteventloopCmd(clientData, interp, argc, argv)
  *
  * Testvolumetype --
  *
- *	This procedure implements the "testvolumetype" command. It is
- *	used to check the volume type (FAT, NTFS) of a volume.
+ *	This function implements the "testvolumetype" command. It is used to
+ *	check the volume type (FAT, NTFS) of a volume.
  *
  * Results:
  *	A standard Tcl result.
@@ -176,11 +167,11 @@ TesteventloopCmd(clientData, interp, argc, argv)
  */
 
 static int
-TestvolumetypeCmd(clientData, interp, objc, objv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
+TestvolumetypeCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
 #define VOL_BUF_SIZE 32
     int found;
@@ -200,12 +191,12 @@ TestvolumetypeCmd(clientData, interp, objc, objv)
     } else {
 	path = NULL;
     }
-    found = GetVolumeInformationA(path, NULL, 0, NULL, NULL, 
+    found = GetVolumeInformationA(path, NULL, 0, NULL, NULL,
 	    NULL, volType, VOL_BUF_SIZE);
 
     if (found == 0) {
 	Tcl_AppendResult(interp, "could not get volume type for \"",
-		(path?path:""), "\"", (char *) NULL);
+		(path?path:""), "\"", NULL);
 	TclWinConvertError(GetLastError());
 	return TCL_ERROR;
     }
@@ -241,54 +232,50 @@ TestvolumetypeCmd(clientData, interp, objc, objv)
  */
 
 static int
-TestwinclockCmd( ClientData dummy,
-				/* Unused */
-		 Tcl_Interp* interp,
-				/* Tcl interpreter */
-		 int objc,
-				/* Argument count */
-		 Tcl_Obj *CONST objv[] )
-				/* Argument vector */
+TestwinclockCmd(
+    ClientData dummy,		/* Unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Argument count */
+    Tcl_Obj *CONST objv[])	/* Argument vector */
 {
     CONST static FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
-				/* The Posix epoch, expressed as a
-				 * Windows FILETIME */
+				/* The Posix epoch, expressed as a Windows
+				 * FILETIME */
     Tcl_Time tclTime;		/* Tcl clock */
     FILETIME sysTime;		/* System clock */
     Tcl_Obj* result;		/* Result of the command */
     LARGE_INTEGER t1, t2;
     LARGE_INTEGER p1, p2;
 
-    if ( objc != 1 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "" );
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
 
-    QueryPerformanceCounter( &p1 );
+    QueryPerformanceCounter(&p1);
 
-    Tcl_GetTime( &tclTime );
-    GetSystemTimeAsFileTime( &sysTime );
+    Tcl_GetTime(&tclTime);
+    GetSystemTimeAsFileTime(&sysTime);
     t1.LowPart = posixEpoch.dwLowDateTime;
     t1.HighPart = posixEpoch.dwHighDateTime;
     t2.LowPart = sysTime.dwLowDateTime;
     t2.HighPart = sysTime.dwHighDateTime;
     t2.QuadPart -= t1.QuadPart;
 
-    QueryPerformanceCounter( &p2 );
+    QueryPerformanceCounter(&p2);
 
     result = Tcl_NewObj();
-    Tcl_ListObjAppendElement
-	( interp, result, Tcl_NewIntObj( (int) (t2.QuadPart / 10000000 ) ) );
-    Tcl_ListObjAppendElement
-	( interp, result,
-	  Tcl_NewIntObj( (int) ( (t2.QuadPart / 10 ) % 1000000 ) ) );
-    Tcl_ListObjAppendElement( interp, result, Tcl_NewIntObj( tclTime.sec ) );
-    Tcl_ListObjAppendElement( interp, result, Tcl_NewIntObj( tclTime.usec ) );
+    Tcl_ListObjAppendElement(interp, result,
+	    Tcl_NewIntObj((int) (t2.QuadPart / 10000000)));
+    Tcl_ListObjAppendElement(interp, result,
+	    Tcl_NewIntObj((int) ((t2.QuadPart / 10) % 1000000)));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(tclTime.sec));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(tclTime.usec));
 
-    Tcl_ListObjAppendElement( interp, result, Tcl_NewWideIntObj( p1.QuadPart ) );
-    Tcl_ListObjAppendElement( interp, result, Tcl_NewWideIntObj( p2.QuadPart ) );
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p1.QuadPart));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p2.QuadPart));
 
-    Tcl_SetObjResult( interp, result );
+    Tcl_SetObjResult(interp, result);
 
     return TCL_OK;
 }
@@ -317,10 +304,11 @@ TestwinclockCmd( ClientData dummy,
  */
 
 static int
-TestwincpuidCmd( ClientData dummy,
-		 Tcl_Interp* interp, /* Tcl interpreter */
-		 int objc,	/* Parameter count */
-		 Tcl_Obj *CONST * objv ) /* Parameter vector */
+TestwincpuidCmd(
+    ClientData dummy,
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *CONST * objv)	/* Parameter vector */
 {
     int status;
     int index;
@@ -328,25 +316,24 @@ TestwincpuidCmd( ClientData dummy,
     Tcl_Obj * regsObjs[4];
     int i;
 
-    if ( objc != 2 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "eax" );
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "eax");
 	return TCL_ERROR;
     }
-    if ( Tcl_GetIntFromObj( interp, objv[1], &index ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[1], &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    status = TclWinCPUID( (unsigned int) index, regs );
-    if ( status != TCL_OK ) {
-	Tcl_SetObjResult( interp, Tcl_NewStringObj( "operation not available", 
-						    -1 ) );
+    status = TclWinCPUID((unsigned int) index, regs);
+    if (status != TCL_OK) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("operation not available", -1));
 	return status;
     }
-    for ( i = 0; i < 4; ++i ) {
-	regsObjs[i] = Tcl_NewIntObj( (int) regs[i] );
+    for (i=0 ; i<4 ; ++i) {
+	regsObjs[i] = Tcl_NewIntObj((int) regs[i]);
     }
-    Tcl_SetObjResult( interp, Tcl_NewListObj( 4, regsObjs ) );
+    Tcl_SetObjResult(interp, Tcl_NewListObj(4, regsObjs));
     return TCL_OK;
-       
 }
 
 /*
@@ -354,8 +341,8 @@ TestwincpuidCmd( ClientData dummy,
  *
  * TestwinsleepCmd --
  *
- *	Causes this process to wait for the given number of milliseconds
- *	by means of a direct call to Sleep.
+ *	Causes this process to wait for the given number of milliseconds by
+ *	means of a direct call to Sleep.
  *
  * Usage:
  *	testwinsleep <n>
@@ -373,24 +360,21 @@ TestwincpuidCmd( ClientData dummy,
  */
 
 static int
-TestwinsleepCmd( ClientData clientData,
-				/* Unused */
-		 Tcl_Interp* interp,
-				/* Tcl interpreter */
-		 int objc,
-				/* Parameter count */
-		 Tcl_Obj * CONST * objv )
-				/* Parameter vector */
+TestwinsleepCmd(
+    ClientData clientData,	/* Unused */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj * CONST * objv)	/* Parameter vector */
 {
     int ms;
-    if ( objc != 2 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "ms" );
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "ms");
 	return TCL_ERROR;
     }
-    if ( Tcl_GetIntFromObj( interp, objv[1], &ms ) != TCL_OK ) {
+    if (Tcl_GetIntFromObj(interp, objv[1], &ms) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Sleep( (DWORD) ms );
+    Sleep((DWORD) ms);
     return TCL_OK;
 }
 
@@ -399,8 +383,8 @@ TestwinsleepCmd( ClientData clientData,
  *
  * TestExceptionCmd --
  *
- *	Causes this process to end with the named exception. Used for
- *	testing Tcl_WaitPid().
+ *	Causes this process to end with the named exception. Used for testing
+ *	Tcl_WaitPid().
  *
  * Usage:
  *	testexcept <type>
@@ -473,7 +457,7 @@ TestExceptionCmd(
     };
     int cmd;
 
-    if ( objc != 2 ) {
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
 	return TCL_ERROR;
     }

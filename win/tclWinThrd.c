@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.9 2005/08/15 17:23:22 dgp Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.10 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -144,13 +144,13 @@ typedef struct allocMutex {
  */
 
 int
-TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
-    Tcl_ThreadId *idPtr;		/* Return, the ID of the thread. */
-    Tcl_ThreadCreateProc proc;		/* Main() function of the thread. */
-    ClientData clientData;		/* The one argument to Main(). */
-    int stackSize;			/* Size of stack for the new thread. */
-    int flags;				/* Flags controlling behaviour of the
-					 * new thread. */
+TclpThreadCreate(
+    Tcl_ThreadId *idPtr,	/* Return, the ID of the thread. */
+    Tcl_ThreadCreateProc proc,	/* Main() function of the thread. */
+    ClientData clientData,	/* The one argument to Main(). */
+    int stackSize,		/* Size of stack for the new thread. */
+    int flags)			/* Flags controlling behaviour of the new
+				 * thread. */
 {
     HANDLE tHandle;
 
@@ -202,9 +202,9 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
  */
 
 int
-Tcl_JoinThread(threadId, result)
-    Tcl_ThreadId threadId;	/* Id of the thread to wait upon */
-    int *result;		/* Reference to the storage the result of the
+Tcl_JoinThread(
+    Tcl_ThreadId threadId,	/* Id of the thread to wait upon */
+    int *result)		/* Reference to the storage the result of the
 				 * thread we wait upon will be written into. */
 {
     return TclJoinThread(threadId, result);
@@ -227,8 +227,8 @@ Tcl_JoinThread(threadId, result)
  */
 
 void
-TclpThreadExit(status)
-    int status;
+TclpThreadExit(
+    int status)
 {
     EnterCriticalSection(&joinLock);
     TclSignalExitThread(Tcl_GetCurrentThread(), status);
@@ -258,7 +258,7 @@ TclpThreadExit(status)
  */
 
 Tcl_ThreadId
-Tcl_GetCurrentThread()
+Tcl_GetCurrentThread(void)
 {
     return (Tcl_ThreadId) GetCurrentThreadId();
 }
@@ -283,7 +283,7 @@ Tcl_GetCurrentThread()
  */
 
 void
-TclpInitLock()
+TclpInitLock(void)
 {
     if (!init) {
 	/*
@@ -319,7 +319,7 @@ TclpInitLock()
  */
 
 void
-TclpInitUnlock()
+TclpInitUnlock(void)
 {
     LeaveCriticalSection(&initLock);
 }
@@ -345,7 +345,7 @@ TclpInitUnlock()
  */
 
 void
-TclpMasterLock()
+TclpMasterLock(void)
 {
     if (!init) {
 	/*
@@ -381,7 +381,7 @@ TclpMasterLock()
  */
 
 void
-TclpMasterUnlock()
+TclpMasterUnlock(void)
 {
     LeaveCriticalSection(&masterLock);
 }
@@ -406,7 +406,7 @@ TclpMasterUnlock()
  */
 
 Tcl_Mutex *
-Tcl_GetAllocMutex()
+Tcl_GetAllocMutex(void)
 {
 #ifdef TCL_THREADS
     if (!allocOnce) {
@@ -438,7 +438,7 @@ Tcl_GetAllocMutex()
  */
 
 void
-TclFinalizeLock()
+TclFinalizeLock(void)
 {
     MASTER_LOCK;
     DeleteCriticalSection(&joinLock);
@@ -469,7 +469,7 @@ TclFinalizeLock()
 #ifdef TCL_THREADS
 
 /* locally used prototype */
-static void FinalizeConditionEvent(ClientData data);
+static void		FinalizeConditionEvent(ClientData data);
 
 /*
  *----------------------------------------------------------------------
@@ -489,8 +489,8 @@ static void FinalizeConditionEvent(ClientData data);
  */
 
 void
-Tcl_MutexLock(mutexPtr)
-    Tcl_Mutex *mutexPtr;	/* The lock */
+Tcl_MutexLock(
+    Tcl_Mutex *mutexPtr)	/* The lock */
 {
     CRITICAL_SECTION *csPtr;
     if (*mutexPtr == NULL) {
@@ -529,8 +529,8 @@ Tcl_MutexLock(mutexPtr)
  */
 
 void
-Tcl_MutexUnlock(mutexPtr)
-    Tcl_Mutex *mutexPtr;	/* The lock */
+Tcl_MutexUnlock(
+    Tcl_Mutex *mutexPtr)	/* The lock */
 {
     CRITICAL_SECTION *csPtr = *((CRITICAL_SECTION **)mutexPtr);
     LeaveCriticalSection(csPtr);
@@ -554,13 +554,13 @@ Tcl_MutexUnlock(mutexPtr)
  */
 
 void
-TclpFinalizeMutex(mutexPtr)
-    Tcl_Mutex *mutexPtr;
+TclpFinalizeMutex(
+    Tcl_Mutex *mutexPtr)
 {
     CRITICAL_SECTION *csPtr = *(CRITICAL_SECTION **)mutexPtr;
     if (csPtr != NULL) {
 	DeleteCriticalSection(csPtr);
-	ckfree((char *)csPtr);
+	ckfree((char *) csPtr);
 	*mutexPtr = NULL;
     }
 }
@@ -588,10 +588,10 @@ TclpFinalizeMutex(mutexPtr)
  */
 
 void
-Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-    Tcl_Condition *condPtr;	/* Really (WinCondition **) */
-    Tcl_Mutex *mutexPtr;	/* Really (CRITICAL_SECTION **) */
-    Tcl_Time *timePtr;		/* Timeout on waiting period */
+Tcl_ConditionWait(
+    Tcl_Condition *condPtr,	/* Really (WinCondition **) */
+    Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
+    Tcl_Time *timePtr)		/* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
@@ -760,8 +760,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
  */
 
 void
-Tcl_ConditionNotify(condPtr)
-    Tcl_Condition *condPtr;
+Tcl_ConditionNotify(
+    Tcl_Condition *condPtr)
 {
     WinCondition *winCondPtr;
     ThreadSpecificData *tsdPtr;
@@ -813,8 +813,8 @@ Tcl_ConditionNotify(condPtr)
  */
 
 static void
-FinalizeConditionEvent(data)
-    ClientData data;
+FinalizeConditionEvent(
+    ClientData data)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) data;
     tsdPtr->flags = WIN_THREAD_DEAD;
@@ -841,8 +841,8 @@ FinalizeConditionEvent(data)
  */
 
 void
-TclpFinalizeCondition(condPtr)
-    Tcl_Condition *condPtr;
+TclpFinalizeCondition(
+    Tcl_Condition *condPtr)
 {
     WinCondition *winCondPtr = *(WinCondition **)condPtr;
 
@@ -855,7 +855,7 @@ TclpFinalizeCondition(condPtr)
 
     if (winCondPtr != NULL) {
 	DeleteCriticalSection(&winCondPtr->condLock);
-	ckfree((char *)winCondPtr);
+	ckfree((char *) winCondPtr);
 	*condPtr = NULL;
     }
 }
@@ -880,8 +880,8 @@ TclpNewAllocMutex(void)
 }
 
 void
-TclpFreeAllocMutex(mutex)
-    Tcl_Mutex *mutex; /* The alloc mutex to free. */
+TclpFreeAllocMutex(
+    Tcl_Mutex *mutex)		/* The alloc mutex to free. */
 {
     allocMutex *lockPtr = (allocMutex *) mutex;
 
@@ -918,7 +918,8 @@ TclpGetAllocCache(void)
 }
 
 void
-TclpSetAllocCache(void *ptr)
+TclpSetAllocCache(
+    void *ptr)
 {
     BOOL success;
     success = TlsSetValue(tlsKey, ptr);
@@ -928,7 +929,8 @@ TclpSetAllocCache(void *ptr)
 }
 
 void
-TclpFreeAllocCache(void *ptr)
+TclpFreeAllocCache(
+    void *ptr)
 {
     BOOL success;
 
@@ -941,7 +943,7 @@ TclpFreeAllocCache(void *ptr)
 	TclFreeAllocCache(ptr);
 	success = TlsSetValue(tlsKey, NULL);
 	if (!success) {
-	    panic("TlsSetValue failed from TclpFreeAllocCache!");
+	    Tcl_Panic("TlsSetValue failed from TclpFreeAllocCache!");
 	}
     } else if (once) {
 	/*
@@ -957,7 +959,6 @@ TclpFreeAllocCache(void *ptr)
     }
 
 }
-
 #endif /* USE_THREAD_ALLOC */
 #endif /* TCL_THREADS */
 

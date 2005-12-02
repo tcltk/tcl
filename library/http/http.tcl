@@ -1,31 +1,30 @@
 # http.tcl --
 #
-#	Client-side HTTP for GET, POST, and HEAD commands.
-#	These routines can be used in untrusted code that uses 
-#	the Safesock security policy.  These procedures use a 
-#	callback interface to avoid using vwait, which is not 
+#	Client-side HTTP for GET, POST, and HEAD commands. These routines can
+#	be used in untrusted code that uses the Safesock security policy. These
+#	procedures use a callback interface to avoid using vwait, which is not
 #	defined in the safe base.
 #
-# See the file "license.terms" for information on usage and
-# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.5 2005/10/18 20:47:03 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.6 2005/12/02 18:42:36 dgp Exp $
 
 # Rough version history:
-# 1.0	Old http_get interface
-# 2.0	http:: namespace and http::geturl
-# 2.1	Added callbacks to handle arriving data, and timeouts
-# 2.2	Added ability to fetch into a channel
-# 2.3	Added SSL support, and ability to post from a channel
-#	This version also cleans up error cases and eliminates the
-#	"ioerror" status in favor of raising an error
-# 2.4	Added -binary option to http::geturl and charset element
-#	to the state array.
+# 1.0	Old http_get interface.
+# 2.0	http:: namespace and http::geturl.
+# 2.1	Added callbacks to handle arriving data, and timeouts.
+# 2.2	Added ability to fetch into a channel.
+# 2.3	Added SSL support, and ability to post from a channel. This version
+#	also cleans up error cases and eliminates the "ioerror" status in
+#	favor of raising an error
+# 2.4	Added -binary option to http::geturl and charset element to the state
+#	array.
 
 package require Tcl 8.4
-# keep this in sync with pkgIndex.tcl
-# and with the install directories in Makefiles
-package provide http 2.5.1
+# Keep this in sync with pkgIndex.tcl and with the install directories
+# in Makefiles
+package provide http 2.5.2
 
 namespace eval http {
     variable http
@@ -39,12 +38,11 @@ namespace eval http {
     set http(-useragent) "Tcl http client package [package provide http]"
 
     proc init {} {
-	# Set up the map for quoting chars
-	# RFC3986 Section 2.3 say percent encode all except:
-	# "... percent-encoded octets in the ranges of ALPHA
-	# (%41-%5A and %61-%7A), DIGIT (%30-%39), hyphen (%2D),
-	# period (%2E), underscore (%5F), or tilde (%7E) should
-	# not be created by URI producers ..."
+	# Set up the map for quoting chars. RFC3986 Section 2.3 say percent
+	# encode all except: "... percent-encoded octets in the ranges of ALPHA
+	# (%41-%5A and %61-%7A), DIGIT (%30-%39), hyphen (%2D), period (%2E),
+	# underscore (%5F), or tilde (%7E) should not be created by URI
+	# producers ..."
 	for {set i 0} {$i <= 256} {incr i} {
 	    set c [format %c $i]
 	    if {![string match {[-._~a-zA-Z0-9]} $c]} {
@@ -152,9 +150,9 @@ proc http::config {args} {
 # Arguments:
 #	token	    Connection token.
 #	errormsg    (optional) If set, forces status to error.
-#       skipCB      (optional) If set, don't call the -command callback.  This
+#       skipCB      (optional) If set, don't call the -command callback. This
 #                   is useful when geturl wants to throw an exception instead
-#                   of calling the callback.  That way, the same error isn't
+#                   of calling the callback. That way, the same error isn't
 #                   reported to two places.
 #
 # Side Effects:
@@ -218,17 +216,16 @@ proc http::reset { token {why reset} } {
 #       args		Option value pairs. Valid options include:
 #				-blocksize, -validate, -headers, -timeout
 # Results:
-#	Returns a token for this connection.
-#	This token is the name of an array that the caller should
-#	unset to garbage collect the state.
+#	Returns a token for this connection. This token is the name of an array
+#	that the caller should unset to garbage collect the state.
 
 proc http::geturl { url args } {
     variable http
     variable urlTypes
     variable defaultCharset
 
-    # Initialize the state variable, an array.  We'll return the
-    # name of this array as the token for the transaction.
+    # Initialize the state variable, an array. We'll return the name of this
+    # array as the token for the transaction.
 
     if {![info exists http(uid)]} {
 	set http(uid) 0
@@ -301,17 +298,118 @@ proc http::geturl { url args } {
     }
 
     # Validate URL, determine the server host and port, and check proxy case
-    # Recognize user:pass@host URLs also, although we do not do anything
-    # with that info yet.
+    # Recognize user:pass@host URLs also, although we do not do anything with
+    # that info yet.
 
-    set exp {^(([^:]*)://)?([^@]+@)?([^/:]+)(:([0-9]+))?(/.*)?$}
-    if {![regexp -nocase $exp $url x prefix proto user host y port srvurl]} {
+    # URLs have basically four parts.
+    # First, before the colon, is the protocol scheme (e.g. http)
+    # Second, for HTTP-like protocols, is the authority
+    #	The authority is preceded by // and lasts up to (but not including)
+    #	the following / and it identifies up to four parts, of which only one,
+    #	the host, is required (if an authority is present at all). All other
+    #	parts of the authority (user name, password, port number) are optional.
+    # Third is the resource name, which is split into two parts at a ?
+    #	The first part (from the single "/" up to "?") is the path, and the
+    #	second part (from that "?" up to "#") is the query. *HOWEVER*, we do
+    #	not need to separate them; we send the whole lot to the server.
+    # Fourth is the fragment identifier, which is everything after the first
+    #	"#" in the URL. The fragment identifier MUST NOT be sent to the server
+    #	and indeed, we don't bother to validate it (it could be an error to
+    #	pass it in here, but it's cheap to strip).
+    #
+    # An example of a URL that has all the parts:
+    #   http://jschmoe:xyzzy@www.bogus.net:8000/foo/bar.tml?q=foo#changes
+    # The "http" is the protocol, the user is "jschmoe", the password is
+    # "xyzzy", the host is "www.bogus.net", the port is "8000", the path is
+    # "/foo/bar.tml", the query is "q=foo", and the fragment is "changes".
+    #
+    # Note that the RE actually combines the user and password parts, as
+    # recommended in RFC 3986. Indeed, that RFC states that putting passwords
+    # in URLs is a Really Bad Idea, something with which I would agree utterly.
+    # Also note that we do not currently support IPv6 addresses.
+    #
+    # From a validation perspective, we need to ensure that the parts of the
+    # URL that are going to the server are correctly encoded.
+
+    set URLmatcher {(?x)		# this is _expanded_ syntax
+	^
+	(?: (\w+) : ) ?			# <protocol scheme>
+	(?: //
+	    (?:
+		(
+		    [^@/\#?]+		# <userinfo part of authority>
+		) @
+	    )?
+	    ( [^/:\#?]+ )		# <host part of authority>
+	    (?: : (\d+) )?		# <port part of authority>
+	)?
+	( / [^\#?]* (?: \? [^\#?]* )?)?	# <path> (including query)
+	(?: \# (.*) )?			# <fragment>
+	$
+    }
+
+    # Phase one: parse
+    if {![regexp -- $URLmatcher $url -> proto user host port srvurl]} {
 	unset $token
 	return -code error "Unsupported URL: $url"
     }
+    # Phase two: validate
+    if {$host eq ""} {
+	# Caller has to provide a host name; we do not have a "default host"
+	# that would enable us to handle relative URLs.
+	unset $token
+	return -code error "Missing host part: $url"
+	# Note that we don't check the hostname for validity here; if it's
+	# invalid, we'll simply fail to resolve it later on.
+    }
+    if {$port ne "" && $port>65535} {
+	unset $token
+	return -code error "Invalid port number: $port"
+    }
+    # The user identification and resource identification parts of the URL can
+    # have encoded characters in them; take care!
+    if {$user ne ""} {
+	# Check for validity according to RFC 3986, Appendix A
+	set validityRE {(?xi)
+	    ^
+	    (?: [-\w.~!$&'()*+,;=:] | %[0-9a-f][0-9a-f] )+
+	    $
+	}
+	if {![regexp -- $validityRE $user]} {
+	    unset $token
+	    # Provide a better error message in this error case
+	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f]).?.?} $user bad]} {
+		return -code error \
+			"Illegal encoding character usage \"$bad\" in URL user"
+	    }
+	    return -code error "Illegal characters in URL user"
+	}
+    }
+    if {$srvurl ne ""} {
+	# Check for validity according to RFC 3986, Appendix A
+	set validityRE {(?xi)
+	    ^
+	    # Path part (already must start with / character)
+	    (?:	      [-\w.~!$&'()*+,;=:@/]  | %[0-9a-f][0-9a-f] )*
+	    # Query part (optional, permits ? characters)
+	    (?: \? (?: [-\w.~!$&'()*+,;=:@/?] | %[0-9a-f][0-9a-f] )* )?
+	    $
+	}
+	if {![regexp -- $validityRE $srvurl]} {
+	    unset $token
+	    # Provide a better error message in this error case
+	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f])..} $srvurl bad]} {
+		return -code error \
+			"Illegal encoding character usage \"$bad\" in URL path"
+	    }
+	    return -code error "Illegal characters in URL path"
+	}
+    } else {
+	set srvurl /
+    }
     if {[string length $proto] == 0} {
 	set proto http
-	set url ${proto}://$url
+	set url ${proto}:$url
     }
     if {![info exists urlTypes($proto)]} {
 	unset $token
@@ -323,20 +421,27 @@ proc http::geturl { url args } {
     if {[string length $port] == 0} {
 	set port $defport
     }
-    if {[string length $srvurl] == 0} {
-	set srvurl /
-    }
-    if {[string length $proto] == 0} {
-	set url http://$url
-    }
-    set state(url) $url
     if {![catch {$http(-proxyfilter) $host} proxy]} {
 	set phost [lindex $proxy 0]
 	set pport [lindex $proxy 1]
     }
 
-    # If a timeout is specified we set up the after event
-    # and arrange for an asynchronous socket connection.
+    # OK, now reassemble into a full URL
+    set url ${proto}://
+    if {$user ne ""} {
+	append url $user
+	append url @
+    }
+    append url $host
+    if {$port != $defport} {
+	append url : $port
+    }
+    append url $srvurl
+    # Don't append the fragment!
+    set state(url) $url
+
+    # If a timeout is specified we set up the after event and arrange for an
+    # asynchronous socket connection.
 
     if {$state(-timeout) > 0} {
 	set state(after) [after $state(-timeout) \
@@ -346,8 +451,8 @@ proc http::geturl { url args } {
 	set async ""
     }
 
-    # If we are using the proxy, we must pass in the full URL that
-    # includes the server name.
+    # If we are using the proxy, we must pass in the full URL that includes
+    # the server name.
 
     if {[info exists phost] && [string length $phost]} {
 	set srvurl $url
@@ -355,11 +460,11 @@ proc http::geturl { url args } {
     } else {
 	set conStat [catch {eval $defcmd $async {$host $port}} s]
     }
-    if {$conStat} {
 
-	# something went wrong while trying to establish the connection
-	# Clean up after events and such, but DON'T call the command callback
-	# (if available) because we're going to throw an exception from here
+    if {$conStat} {
+	# Something went wrong while trying to establish the connection. Clean
+	# up after events and such, but DON'T call the command callback (if
+	# available) because we're going to throw an exception from here
 	# instead.
 	Finish $token "" 1
 	cleanup $token
@@ -367,16 +472,16 @@ proc http::geturl { url args } {
     }
     set state(sock) $s
 
-    # Wait for the connection to complete
+    # Wait for the connection to complete.
 
     if {$state(-timeout) > 0} {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
 
 	if {$state(status) eq "error"} {
-	    # something went wrong while trying to establish the connection
+	    # Something went wrong while trying to establish the connection.
 	    # Clean up after events and such, but DON'T call the command
-	    # callback (if available) because we're going to throw an 
+	    # callback (if available) because we're going to throw an
 	    # exception from here instead.
 	    set err [lindex $state(error) 0]
 	    cleanup $token
@@ -392,8 +497,8 @@ proc http::geturl { url args } {
 
     fconfigure $s -translation {auto crlf} -buffersize $state(-blocksize)
 
-    # The following is disallowed in safe interpreters, but the socket
-    # is already in non-blocking mode in that case.
+    # The following is disallowed in safe interpreters, but the socket is
+    # already in non-blocking mode in that case.
 
     catch {fconfigure $s -blocking off}
     set how GET
@@ -403,7 +508,7 @@ proc http::geturl { url args } {
 	    set how POST
 	    set contDone 0
 	} else {
-	    # there's no query data
+	    # There's no query data.
 	    unset state(-query)
 	    set isQuery 0
 	}
@@ -421,8 +526,8 @@ proc http::geturl { url args } {
 	puts $s "$how $srvurl HTTP/1.0"
 	puts $s "Accept: $http(-accept)"
 	if {$port == $defport} {
-	    # Don't add port in this case, to handle broken servers.
-	    # [Bug #504508]
+	    # Don't add port in this case, to handle broken servers. [Bug
+	    # 504508]
 	    puts $s "Host: $host"
 	} else {
 	    puts $s "Host: $host:$port"
@@ -440,8 +545,8 @@ proc http::geturl { url args } {
 	    }
 	}
 	if {$isQueryChannel && $state(querylength) == 0} {
-	    # Try to determine size of data in channel
-	    # If we cannot seek, the surrounding catch will trap us
+	    # Try to determine size of data in channel. If we cannot seek, the
+	    # surrounding catch will trap us
 
 	    set start [tell $state(-querychannel)]
 	    seek $state(-querychannel) 0 end
@@ -450,22 +555,21 @@ proc http::geturl { url args } {
 	    seek $state(-querychannel) $start
 	}
 
-	# Flush the request header and set up the fileevent that will
-	# either push the POST data or read the response.
+	# Flush the request header and set up the fileevent that will either
+	# push the POST data or read the response.
 	#
 	# fileevent note:
 	#
-	# It is possible to have both the read and write fileevents active
-	# at this point.  The only scenario it seems to affect is a server
-	# that closes the connection without reading the POST data.
-	# (e.g., early versions TclHttpd in various error cases).
-	# Depending on the platform, the client may or may not be able to
-	# get the response from the server because of the error it will
-	# get trying to write the post data.  Having both fileevents active
-	# changes the timing and the behavior, but no two platforms
-	# (among Solaris, Linux, and NT)  behave the same, and none 
-	# behave all that well in any case.  Servers should always read thier
-	# POST data if they expect the client to read their response.
+	# It is possible to have both the read and write fileevents active at
+	# this point. The only scenario it seems to affect is a server that
+	# closes the connection without reading the POST data. (e.g., early
+	# versions TclHttpd in various error cases). Depending on the platform,
+	# the client may or may not be able to get the response from the server
+	# because of the error it will get trying to write the post data.
+	# Having both fileevents active changes the timing and the behavior,
+	# but no two platforms (among Solaris, Linux, and NT) behave the same,
+	# and none behave all that well in any case. Servers should always read
+	# their POST data if they expect the client to read their response.
 
 	if {$isQuery || $isQueryChannel} {
 	    puts $s "Content-Type: $state(-type)"
@@ -482,9 +586,8 @@ proc http::geturl { url args } {
 	}
 
 	if {! [info exists state(-command)]} {
-
-	    # geturl does EVERYTHING asynchronously, so if the user
-	    # calls it synchronously, we just do a wait here.
+	    # geturl does EVERYTHING asynchronously, so if the user calls it
+	    # synchronously, we just do a wait here.
 
 	    wait $token
 	    if {$state(status) eq "error"} {
@@ -494,8 +597,8 @@ proc http::geturl { url args } {
 	    }
 	}
     } err]} {
-	# The socket probably was never connected,
-	# or the connection dropped later.
+	# The socket probably was never connected, or the connection dropped
+	# later.
 
 	# Clean up after events and such, but DON'T call the command callback
 	# (if available) because we're going to throw an exception from here
@@ -622,8 +725,8 @@ proc http::Write {token} {
 	# Catch I/O errors on dead sockets
 
 	if {[info exists state(-query)]} {
-	    # Chop up large query strings so queryprogress callback
-	    # can give smooth feedback
+	    # Chop up large query strings so queryprogress callback can give
+	    # smooth feedback.
 
 	    puts -nonewline $s \
 		    [string range $state(-query) $state(queryoffset) \
@@ -644,8 +747,8 @@ proc http::Write {token} {
 	    }
 	}
     } err]} {
-	# Do not call Finish here, but instead let the read half of
-	# the socket process whatever server reply there is to get.
+	# Do not call Finish here, but instead let the read half of the socket
+	# process whatever server reply there is to get.
 
 	set state(posterror) $err
 	set done 1
@@ -656,7 +759,7 @@ proc http::Write {token} {
 	fileevent $s readable [list http::Event $token]
     }
 
-    # Callback to the client after we've completely handled everything
+    # Callback to the client after we've completely handled everything.
 
     if {[string length $state(-queryprogress)]} {
 	eval $state(-queryprogress) [list $token $state(querylength)\
@@ -698,10 +801,10 @@ proc http::Event {token} {
 		    fconfigure $state(-channel) -translation binary
 		}
 	    } else {
-		# If we are getting text, set the incoming channel's
-		# encoding correctly.  iso8859-1 is the RFC default, but
-		# this could be any IANA charset.  However, we only know
-		# how to convert what we have encodings for.
+		# If we are getting text, set the incoming channel's encoding
+		# correctly. iso8859-1 is the RFC default, but this could be
+		# any IANA charset. However, we only know how to convert what
+		# we have encodings for.
 		set idx [lsearch -exact $encodings \
 			[string tolower $state(charset)]]
 		if {$idx >= 0} {
@@ -855,16 +958,15 @@ proc http::wait {token} {
 
 # http::formatQuery --
 #
-#	See documentaion for details.
-#	Call http::formatQuery with an even number of arguments, where 
-#	the first is a name, the second is a value, the third is another 
-#	name, and so on.
+#	See documentaion for details. Call http::formatQuery with an even
+#	number of arguments, where the first is a name, the second is a value,
+#	the third is another name, and so on.
 #
 # Arguments:
 #	args	A list of name-value pairs.
 #
 # Results:
-#        TODO
+#	TODO
 
 proc http::formatQuery {args} {
     set result ""
@@ -894,9 +996,9 @@ proc http::mapReply {string} {
     variable http
     variable formMap
 
-    # The spec says: "non-alphanumeric characters are replaced by '%HH'"
-    # Use a pre-computed map and [string map] to do the conversion
-    # (much faster than [regsub]/[subst]). [Bug 1020491]
+    # The spec says: "non-alphanumeric characters are replaced by '%HH'". Use
+    # a pre-computed map and [string map] to do the conversion (much faster
+    # than [regsub]/[subst]). [Bug 1020491]
 
     if {$http(-urlencoding) ne ""} {
 	set string [encoding convertto $http(-urlencoding) $string]
@@ -913,7 +1015,7 @@ proc http::mapReply {string} {
 }
 
 # http::ProxyRequired --
-#	Default proxy filter. 
+#	Default proxy filter.
 #
 # Arguments:
 #	host	The destination host

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.8 2005/09/12 15:45:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.9 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,8 +35,8 @@ static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
  */
 
 void
-TclpFindExecutable(argv0)
-    CONST char *argv0;		/* The value of the application's argv[0]
+TclpFindExecutable(
+    CONST char *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
     CONST char *name, *p;
@@ -197,12 +197,12 @@ TclpFindExecutable(argv0)
  */
 
 int
-TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
-    Tcl_Interp *interp;		/* Interpreter to receive errors. */
-    Tcl_Obj *resultPtr;		/* List object to lappend results. */
-    Tcl_Obj *pathPtr;		/* Contains path to directory to search. */
-    CONST char *pattern;	/* Pattern to match against. */
-    Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
+TclpMatchInDirectory(
+    Tcl_Interp *interp,		/* Interpreter to receive errors. */
+    Tcl_Obj *resultPtr,		/* List object to lappend results. */
+    Tcl_Obj *pathPtr,		/* Contains path to directory to search. */
+    CONST char *pattern,	/* Pattern to match against. */
+    Tcl_GlobTypeData *types)	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
@@ -358,7 +358,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 static int
 NativeMatchType(
-    CONST char* nativeEntry,  /* Native path to check. */
+    CONST char *nativeEntry,  /* Native path to check. */
     Tcl_GlobTypeData *types)  /* Type description to match against. */
 {
     Tcl_StatBuf buf;
@@ -488,9 +488,9 @@ NativeMatchType(
  */
 
 char *
-TclpGetUserHome(name, bufferPtr)
-    CONST char *name;		/* User name for desired home directory. */
-    Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled with
+TclpGetUserHome(
+    CONST char *name,		/* User name for desired home directory. */
+    Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of user's home directory. */
 {
     struct passwd *pwPtr;
@@ -527,9 +527,9 @@ TclpGetUserHome(name, bufferPtr)
  */
 
 int
-TclpObjAccess(pathPtr, mode)
-    Tcl_Obj *pathPtr;		/* Path of file to access */
-    int mode;			/* Permission setting. */
+TclpObjAccess(
+    Tcl_Obj *pathPtr,		/* Path of file to access */
+    int mode)			/* Permission setting. */
 {
     CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
@@ -556,8 +556,8 @@ TclpObjAccess(pathPtr, mode)
  */
 
 int
-TclpObjChdir(pathPtr)
-    Tcl_Obj *pathPtr;		/* Path to new working directory */
+TclpObjChdir(
+    Tcl_Obj *pathPtr)		/* Path to new working directory */
 {
     CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
@@ -584,9 +584,9 @@ TclpObjChdir(pathPtr)
  */
 
 int
-TclpObjLstat(pathPtr, bufPtr)
-    Tcl_Obj *pathPtr;		/* Path of file to stat */
-    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
+TclpObjLstat(
+    Tcl_Obj *pathPtr,		/* Path of file to stat */
+    Tcl_StatBuf *bufPtr)	/* Filled with results of stat call. */
 {
     return TclOSlstat(Tcl_FSGetNativePath(pathPtr), bufPtr);
 }
@@ -613,8 +613,8 @@ TclpObjLstat(pathPtr, bufPtr)
  */
 
 ClientData
-TclpGetNativeCwd(clientData)
-    ClientData clientData;
+TclpGetNativeCwd(
+    ClientData clientData)
 {
     char buffer[MAXPATHLEN+1];
 
@@ -662,9 +662,9 @@ TclpGetNativeCwd(clientData)
  */
 
 CONST char *
-TclpGetCwd(interp, bufferPtr)
-    Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
-    Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled with
+TclpGetCwd(
+    Tcl_Interp *interp,		/* If non-NULL, used for error reporting. */
+    Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of current directory. */
 {
     char buffer[MAXPATHLEN+1];
@@ -678,7 +678,7 @@ TclpGetCwd(interp, bufferPtr)
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp,
 		    "error getting working directory name: ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    Tcl_PosixError(interp), NULL);
 	}
 	return NULL;
     }
@@ -706,9 +706,9 @@ TclpGetCwd(interp, bufferPtr)
  */
 
 char *
-TclpReadlink(path, linkPtr)
-    CONST char *path;		/* Path of file to readlink (UTF-8). */
-    Tcl_DString *linkPtr;	/* Uninitialized or free DString filled with
+TclpReadlink(
+    CONST char *path,		/* Path of file to readlink (UTF-8). */
+    Tcl_DString *linkPtr)	/* Uninitialized or free DString filled with
 				 * contents of link (UTF-8). */
 {
 #ifndef DJGPP
@@ -749,9 +749,9 @@ TclpReadlink(path, linkPtr)
  */
 
 int
-TclpObjStat(pathPtr, bufPtr)
-    Tcl_Obj *pathPtr;		/* Path of file to stat */
-    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
+TclpObjStat(
+    Tcl_Obj *pathPtr,		/* Path of file to stat */
+    Tcl_StatBuf *bufPtr)	/* Filled with results of stat call. */
 {
     CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
@@ -764,15 +764,18 @@ TclpObjStat(pathPtr, bufPtr)
 #ifdef S_IFLNK
 
 Tcl_Obj*
-TclpObjLink(pathPtr, toPtr, linkAction)
-    Tcl_Obj *pathPtr;
-    Tcl_Obj *toPtr;
-    int linkAction;
+TclpObjLink(
+    Tcl_Obj *pathPtr,
+    Tcl_Obj *toPtr,
+    int linkAction)
 {
     if (toPtr != NULL) {
 	CONST char *src = Tcl_FSGetNativePath(pathPtr);
 	CONST char *target = NULL;
-	if (src == NULL) return NULL;
+
+	if (src == NULL) {
+	    return NULL;
+	}
 
 	/*
 	 * If we're making a symbolic link and the path is relative, then we
@@ -873,7 +876,7 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	}
 	return toPtr;
     } else {
-	Tcl_Obj* linkPtr = NULL;
+	Tcl_Obj *linkPtr = NULL;
 
 	char link[MAXPATHLEN];
 	int length;
@@ -922,9 +925,9 @@ TclpObjLink(pathPtr, toPtr, linkAction)
  *---------------------------------------------------------------------------
  */
 
-Tcl_Obj*
-TclpFilesystemPathType(pathPtr)
-    Tcl_Obj* pathPtr;
+Tcl_Obj *
+TclpFilesystemPathType(
+    Tcl_Obj *pathPtr)
 {
     /*
      * All native paths are of the same type.
@@ -954,9 +957,9 @@ TclpFilesystemPathType(pathPtr)
  *---------------------------------------------------------------------------
  */
 
-Tcl_Obj*
-TclpNativeToNormalized(clientData)
-    ClientData clientData;
+Tcl_Obj *
+TclpNativeToNormalized(
+    ClientData clientData)
 {
     Tcl_DString ds;
     Tcl_Obj *objPtr;
@@ -985,18 +988,18 @@ TclpNativeToNormalized(clientData)
  *	The nativePath representation.
  *
  * Side effects:
- *	Memory will be allocated.  The path may need to be normalized.
+ *	Memory will be allocated. The path may need to be normalized.
  *
  *---------------------------------------------------------------------------
  */
 
 ClientData
-TclNativeCreateNativeRep(pathPtr)
-    Tcl_Obj* pathPtr;
+TclNativeCreateNativeRep(
+    Tcl_Obj *pathPtr)
 {
     char *nativePathPtr;
     Tcl_DString ds;
-    Tcl_Obj* validPathPtr;
+    Tcl_Obj *validPathPtr;
     int len;
     char *str;
 
@@ -1022,7 +1025,7 @@ TclNativeCreateNativeRep(pathPtr)
     len = Tcl_DStringLength(&ds) + sizeof(char);
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc((unsigned) len);
-    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), (size_t) len);
+    memcpy((void*)nativePathPtr, (void*)Tcl_DStringValue(&ds), (size_t) len);
 
     Tcl_DStringFree(&ds);
     return (ClientData)nativePathPtr;
@@ -1046,8 +1049,8 @@ TclNativeCreateNativeRep(pathPtr)
  */
 
 ClientData
-TclNativeDupInternalRep(clientData)
-    ClientData clientData;
+TclNativeDupInternalRep(
+    ClientData clientData)
 {
     char *copy;
     size_t len;
@@ -1063,7 +1066,7 @@ TclNativeDupInternalRep(clientData)
     len = sizeof(char) + (strlen((CONST char*) clientData) * sizeof(char));
 
     copy = (char *) ckalloc(len);
-    memcpy((VOID *) copy, (VOID *) clientData, len);
+    memcpy((void *) copy, (void *) clientData, len);
     return (ClientData)copy;
 }
 
@@ -1084,9 +1087,9 @@ TclNativeDupInternalRep(clientData)
  */
 
 int
-TclpUtime(pathPtr, tval)
-    Tcl_Obj *pathPtr;		/* File to modify */
-    struct utimbuf *tval;	/* New modification date structure */
+TclpUtime(
+    Tcl_Obj *pathPtr,		/* File to modify */
+    struct utimbuf *tval)	/* New modification date structure */
 {
     return utime(Tcl_FSGetNativePath(pathPtr), tval);
 }

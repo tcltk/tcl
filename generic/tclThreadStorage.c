@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.4.2.4 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.4.2.5 2005/12/02 18:42:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -51,7 +51,7 @@ static Tcl_HashTable *	ThreadStorageGetHashTable(Tcl_ThreadId id);
  * because these hash tables MAY be used by the threaded memory allocator.
  */
 
-Tcl_HashKeyType tclThreadStorageHashKeyType = {
+static Tcl_HashKeyType tclThreadStorageHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,		/* version */
     TCL_HASH_KEY_SYSTEM_HASH | TCL_HASH_KEY_RANDOMIZE_HASH,
 				        /* flags */

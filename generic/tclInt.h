@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.34 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.35 2005/12/02 18:42:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -68,7 +68,7 @@ typedef int ptrdiff_t;
 /*
  * Ensure WORDS_BIGENDIAN is defined correcly:
  * Needs to happen here in addition to configure to work with fat compiles on
- * Darwin (i.e. ppc and i386 at the same time).
+ * Darwin (where configure runs only once for multiple architectures).
  */
 
 #ifdef HAVE_SYS_TYPES_H
@@ -308,10 +308,13 @@ struct NamespacePathEntry {
  *		unit that refers to the namespace has been freed (i.e., when
  *		the namespace's refCount is 0), the namespace's storage will
  *		be freed.
+ * NS_KILLED    1 means that TclTeardownNamespace has already been called on
+ *              this namespace and it should not be called again [Bug 1355942]
  */
 
 #define NS_DYING	0x01
 #define NS_DEAD		0x02
+#define NS_KILLED       0x04
 
 /*
  * Flags passed to TclGetNamespaceForQualName:
@@ -896,7 +899,7 @@ typedef struct CallFrame {
  *----------------------------------------------------------------
  */
 
-typedef VOID **TclHandle;
+typedef void **TclHandle;
 
 /*
  *----------------------------------------------------------------
@@ -934,9 +937,9 @@ typedef struct MathFunc {
  * really internal and Tcl clients should use Tcl_GetThreadData.
  */
 
-MODULE_SCOPE VOID *	TclThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
+MODULE_SCOPE void *	TclThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
-			    VOID *data);
+			    void *data);
 
 /*
  * This is a convenience macro used to initialize a thread local storage ptr.
@@ -2099,6 +2102,7 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp* interp,
 			    LiteralTable* tablePtr);
+MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDiscardInterpState (Tcl_InterpState state);
 MODULE_SCOPE int	TclDoubleDigits(char* buf, double value, int* signum);
 MODULE_SCOPE int	TclEvalScriptTokens (Tcl_Interp *interp,
@@ -2210,8 +2214,8 @@ MODULE_SCOPE int	TclParseExpr (Tcl_Interp *interp, CONST char *string,
 MODULE_SCOPE int	TclParseHex(CONST char *src, int numBytes,
 			    Tcl_UniChar *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp* interp, Tcl_Obj* objPtr,
-			    CONST char* type, CONST char* string,
-			    size_t length, CONST char** endPtrPtr, int flags);
+			    CONST char *expected, CONST char* bytes,
+			    int numBytes, CONST char** endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, CONST char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
 #if 0
@@ -2278,13 +2282,13 @@ MODULE_SCOPE void	TclpReleaseFile(TclFile file);
 MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
 MODULE_SCOPE void	TclpUnloadFile(Tcl_LoadHandle loadHandle);
-MODULE_SCOPE VOID *	TclpThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
+MODULE_SCOPE void *	TclpThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclpThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
-			    VOID *data);
+			    void *data);
 MODULE_SCOPE void	TclpThreadExit(int status);
 MODULE_SCOPE int	TclpThreadGetStackSize(void);
 MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
-MODULE_SCOPE VOID	TclRememberJoinableThread(Tcl_ThreadId id);
+MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
@@ -2293,7 +2297,7 @@ MODULE_SCOPE void	TclSetBignumIntRep (Tcl_Obj *objPtr,
 			    mp_int *bignumValue);
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
-MODULE_SCOPE VOID	TclSignalExitThread(Tcl_ThreadId id, int result);
+MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int flags);
 MODULE_SCOPE void	TclTransferResult(Tcl_Interp *sourceInterp, int result,
@@ -2349,27 +2353,7 @@ MODULE_SCOPE int	Tcl_CdObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclChanTruncateObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockClicksObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockGetenvObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockMicrosecondsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockMillisecondsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockSecondsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockLocaltimeObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclClockMktimeObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+MODULE_SCOPE void	TclClockInit(Tcl_Interp*);
 MODULE_SCOPE int	TclClockOldscanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
@@ -2798,7 +2782,7 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 
 #  define TclFreeObjStorage(objPtr) \
 	Tcl_MutexLock(&tclObjMutex); \
-	(objPtr)->internalRep.otherValuePtr = (VOID *) tclFreeObjList; \
+	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList; \
 	tclFreeObjList = (objPtr); \
 	Tcl_MutexUnlock(&tclObjMutex)
 #endif
@@ -2844,7 +2828,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 	(objPtr)->length = 0; \
     } else { \
 	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((VOID *) (objPtr)->bytes, (VOID *) (bytePtr), \
+	memcpy((void *) (objPtr)->bytes, (void *) (bytePtr), \
 		(unsigned) (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -3164,10 +3148,10 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
 /*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to test for some special double values.
- * The ANSI C "prototypes" for these macros are: 
+ * The ANSI C "prototypes" for these macros are:
  *
- * MODULE_SCOPE int	TclIsInfinite _ANSI_ARGS_((double d));
- * MODULE_SCOPE int	TclIsNaN _ANSI_ARGS_((double d));
+ * MODULE_SCOPE int	TclIsInfinite(double d);
+ * MODULE_SCOPE int	TclIsNaN(double d);
  */
 
 #ifdef _MSC_VER

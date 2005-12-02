@@ -1,12 +1,449 @@
+2005-12-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Moved a tiny bit more of [clock format] from
+	run time to compile time, and fixed a l10n bug in the process.
+	[Bug 1371446]
+	* unix/Makefile.in: Made some changes to support a 'make' command
+	that is present on some antiquated versions of Solaris.
+	
+2005-12-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Continued rationalizing the code, eliminating
+	numerous redundant [mc] calls.  Added another time boost by
+	precompiling a [::format] command to do the bulk of the work
+	of [clock format].
+	
+2005-12-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/Makefile.in: Add remaining dependency info. While automated
+	maintenance of this information would be good, having it at all is
+	much better than a poke in the eye with a sharp stick...
+
+2005-12-01  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclClock.c: fix warning.
+
+	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset
+	* unix/configure: regen.
+
+2005-11-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/Makefile.in: Add dependency information relating to tclCompile.h
+	since when the list of opcodes changes it is usually useful to rebuild
+	everything that depends on it (but which is nonetheless a small
+	fraction of the total set of Tcl source files).
+
+	***POTENTIAL INCOMPATIBILITY*** for bytecode savers/loaders. See below.
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Arrange for very simple
+	[switch] invokations to be compiled into hash lookups into jump tables;
+	only a very specific kind of [switch] can be safely compiled this way,
+	but that happens to be the most common kind. This makes around 5-10%
+	difference to the speed of execution of clock.test.
+	* generic/tclExecute.c (TEBC:INST_JUMP_TABLE): New instruction to
+	allow for jumps to locations looked up in a hashtable. Requires a new
+	AuxData type, tclJumptableInfoType (supported by the functions
+	DupJumptableInfo and FreeJumptableInfo in tclCompCmds.c) so anything
+	that saves bytecode containing this *must* be updated!
+
+2005-11-30  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c: Fixed a bad refcount in previous commit that
+	led to a corrupted heap. Also silenced a warning that some
+	compilers gave about the excessively long constant for
+	JULIAN_SEC_POSIX_EPOCH.  Also fixed a bug where [clock format]
+	would fail in the :localtime zone for times before the Posix
+	Epoch.  Thanks to Miguel Sofer for pointing out all of these.
+	Also rationalized the code a little bit by moving parts of
+	[clock scan] into C, eliminating some code that was duplicated
+	in the C and Tcl layers.
+
+2005-11-29  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c:	Moved a big part of [clock format] down
+	* generic/tclClock.c:   to the C level in order to make it go faster.
+	* generic/tclInt.h:     Preliminary measurements suggest that it
+	* generic/clock.tcl:    more than doubles in speed with this change.
+
+2005-11-29  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Allow [lsearch -regexp] to
+	process REs that contain backreferences. This expensive mode of
+	operation is only used if the RE would otherwise cause a compilation
+	failure. [Bug 1366683]
+
+2005-11-28  Kevin Kenny  <kennykb@acm.org>
+
+	* tools/tclZIC.tcl (convertTimeOfDay): Corrected a typo that
+	caused wrong DST transitions in any time zone where the transition
+	is specified as local Standard Time (as opposed to wall-clock or
+	UTC).  (Also updated the code to be bignum-safe.)
+	* tests/clock.test (clock-51.1): Added regression test for the
+	above.
+	* library/tzdata: Updated to Olson's 'tzdata2005o' (changes
+	for Cuba, Nicaragua, Jordan, and Georgia) and regenerated.
+	Thanks to Paul Mackerras for reporting this problem.
+
+2005-11-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): add 64bit support, check for Tiger copyfile(),
+	add CFLAGS to SHLIB_LD to support passing -isysroot in env(CFLAGS) to
+	configure (flag can't be present twice, so can't be in both CFLAGS and
+	LDFLAGS during configure), don't use -prebind when deploying on 10.4,
+	define TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING (rdar://3171542).
+	(SC_ENABLE_LANGINFO, SC_TIME_HANDLER): add/fix caching, fix obsolete
+	autoconf macros. Sync with tk/unix/tcl.m4.
+
+	* unix/configure.in: fix obsolete autoconf macros, sync gratuitous
+	formatting/ordering differences with tk/unix/configure.in.
+
+	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make executable
+	linking the same as during configure (needed to avoid loosing any linker
+	relevant flags in CFLAGS, in particular flags that can't be in LDFLAGS).
+	Avoid concurrent linking of tclsh and compiling of tclTestInit.o or
+	xtTestInit.o during parallel make.
+	(checkstubs, checkdoc, checkexports): dependency and Darwin fixes
+	(dist): add new macosx files.
+
+	* unix/tclLoadDyld.c (TclpDlopen): use NSADDIMAGE_OPTION_WITH_SEARCHING
+	on second NSAddImage only. [Bug 1204237]
+	(TclGuessPackageName): should not be MODULE_SCOPE.
+	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for loading
+	universal (fat) bundles from memory.
+
+	* unix/tclUnixFCmd.c:
+	* macosx/tclMacOSXFCmd.c: ppc64 and endian (i386) fixes.
+	(TclMacOSXCopyFileAttributes): add support for new Tiger copyfile() API
+	to enable copying of xattrs & ACLs by [file copy].
+
+	* generic/tcl.h: add Darwin specifc configure overrides for TCL_WIDE
+	defines to support fat compiles of ppc and ppc64 at the same time,
+	(replaces Darwin CVS fix by emoy, rdar://3693001).
+	add/correct location of version numbers in macosx files.
+
+	* generic/tclInt.h: clarify fat compile comment.
+
+	* unix/tclUnixPort.h: add Darwin specifc configure overrides to support
+	fat compiles, where configure runs only once for multiple architectures
+	(replaces Darwin CVS fix by emoy, rdar://3693001).
+
+	* macosx/tclMacOSXBundle.c:
+	* macosx/tclMacOSXNotify.c:
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixPort.h: fix #include order to support compile time
+	override of HAVE_COREFOUNDATION in tclUnixPort.h when building for ppc64
+
+	* macosx/Tcl.pbproj/default.pbxuser (new file):
+	* macosx/Tcl.pbproj/jingham.pbxuser:
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* macosx/Tcl.xcode/default.pbxuser (new file):
+	* macosx/Tcl.xcode/project.pbxproj (new file):
+	* macosx/Tcl.xcodeproj/default.pbxuser (new file):
+	* macosx/Tcl.xcodeproj/project.pbxproj (new file): new/updated projects
+	for Xcode 2.2 on 10.4, Xcode 1.5 on 10.3 & ProjectBuilder on 10.2, with
+	native tcltest targets and support for universal (fat) compiles.
+
+	* macosx/README: clarification/cleanup, document new Xcode projects and
+	universal (fat) builds via CFLAGS (i.e. all of ppc ppc64 i386 at once).
+
+	* unix/Makefile.in:
+	* unix/aclocal.m4:
+	* unix/configure.in:
+	* unix/dltest/Makefile.in:
+	* macosx/configure.ac (new file): add support for inclusion of
+	unix/configure.in by macosx/configure.ac, allows generation of a config
+	headers enabled configure script in macosx (required by Xcode projects).
+
+	* macosx/GNUmakefile: rename from Makefile to avoid overwriting by
+	configure run in tcl/macosx, add support for reusing configure cache,
+	build target fixes, remove GENERIC_FLAGS override now handled by tcl.m4.
+
+	* generic/tcl.decls: add Tcl_Main declaration as comment to avoid
+	'checkstubs' target complaining about it missing from stubs.
+
+	* generic/regex.h:
+	* generic/tclDate.c:
+	* generic/tclEnv.c:
+	* generic/tclGetDate.y:
+	* generic/tclIOUtil.c:
+	* generic/tclObj.c:
+	* generic/tclStubInit.c:
+	* generic/tclStubLib.c:
+	* generic/tclPathObj.c:
+	* generic/tclThreadAlloc.c:
+	* generic/tclThreadStorage.c:
+	* generic/tclTrace.c:
+	* generic/tclVar.c:
+	* generic/tommath.h:
+	* tools/fix_tommath_h.tcl:
+	* unix/tclUnixFCmd.c: ensure externally visible symbols not contained in
+	stubs table are declared as MODULE_SCOPE (or as static if not used
+	outside of own source file). These changes allow 'make checkstubs' to
+	complete without error on Darwin with gcc 4.
+
+	* generic/rege_dfa.c (getvacant):
+	* generic/regexec.c (cfind):
+	* generic/tclCompExpr.c (CompileSubExpr):
+	* generic/tclNamesp.c (NamespaceEnsembleCmd):
+	* unix/tclUnixChan.c (TclUnixWaitForFile): initialise variables to
+	silence gcc 4 warnings.
+
+	* generic/tclExecute.c (TclExecuteByteCode): fix unused variable warning
+	when NO_WIDE_TYPE is defined.
+
+	* generic/regguts.h: only #define NDEBUG if not already #defined.
+
+	* unix/tclUnixNotfy.c:
+	* macosx/tclMacOSXNotify.c: sync whitespace & comments.
+
+	* unix/tclUnixPort.h:
+	* win/tclWinPort.h: remove declaration of obsolete&unused TclpMutex API.
+
+	* unix/configure:
+	* unix/tclConfig.h.in: regen.
+
+2005-11-21  Andreas Kupries <andreask@activestate.com>
+
+	* unix/Makefile.in (install-libraries): Updated Makefile to new
+	* win/Makefile.in (install-libraries):  version of the http
+	  package. This fixes the ifneeded/provide mismatch reported when
+	  trying to require http. Should we maybe try to automatically
+	  extract the version number from the http code to prevent future
+	  breakage ?
+
+	  This follows the update of the version number by dgp on Nov 15
+	  (No entry found in the ChangeLog).
+
+2005-11-20  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclStubLib.c: Don't set tclStubsPtr to 0 when
+	Tcl_PkgRequireEx() fails [Fix for #1091431 "Tcl_InitStubs failure
+	crashes wish"]
+
+2005-11-18  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-34.5): [Bug 1047286], added a second
+	test illustrating the role of "ns in callStack" in the ns's
+	visibility during deletion traces.
+
+2005-11-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n:  Restored several missing lines near the %w
+	format group so that %w and %W are documented with their
+	actual behaviour.  [Bug 1359183]
+
+2005-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr
+	until we netrieve next statePtr from it.
+
+2005-11-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclObj.c (GetBignumFromObj): replace NULL with
+	tclEmptyStringRep to stop memcpy from complaining in a debug build
+	(the corresponding branch is eliminated by the optimiser
+	otherwise).
+
+2005-11-18  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts'
+	  patch for [SF Tcl Bug 1359094]. This moves the retrieval of the
+	  next channel state to the end of the loop, as the called
+	  closeproc may close other channels, i.e. modify the list we are
+	  iterating, invalidating any pointer retrieved earlier.
+
+2005-11-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c:	Restored the SetListFromAny routine to
+	* generic/tclObj.c:	the "list" Tcl_ObjType, and restored the
+	Tcl_RegisterObjType() call for "list".  This addresses the needs
+	of some "bridge" extensions to examine whether the Tcl_ObjType of
+	a Tcl_Obj is that of the "list" Tcl_ObjType.
+
+2005-11-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* library/http/http.tcl (http::geturl): Improved syntactic validation
+	of URLs, and better error messages in some cases. [Bug 1358369]
+
+2005-11-17  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/namespace.test: fix comment
+
+2005-11-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:	More data in the "can't happen" Tcl_Panic to
+	aid debugging.
+
+	* generic/tclBasic.c (CallCommandTraces):	Save/restore the
+	interp result during traces to fix [Bug 1355342].
+
+2005-11-13  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/namespace.test: fix for [Bug 1354540] and [Bug 1355942]. The
+	new tests 7.3-6 and the modified 51.13 fail due to the unrelated [Bug
+	1355342]
+
+	* tests/trace.test: added tests 20.13-16 for [Bug 1355342]
+
+2005-11-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
+	* generic/tclObj.c (Tcl_GetCommandFromObj): more partial fixes for
+	[Bug 1354540] - making sure that cached references to a command being
+	deleted cannot be made reusable by a delete trace.
+
+2005-11-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_FindCommand): Do not find commands in dead
+	namespaces on the path. Partial fix for [Bug 1354540].
+
+2005-11-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	Revised TclParseNumber interface to enable
+	* generic/tclScan.c:	revision to the [scan] command implementation
+	* generic/tclStrToD.c:	to permit tests scan-4.44,55 to pass again.
+	[Bug 1348067].
+
+2005-11-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
+	* generic/tclObj.c (Tcl_GetCommandFromObj): bump the cmd epoch early
+	to insure that cached references to this command are invalidated.
+	Partial fix for [Bug 1352734] - at least insures that namespace-51.13
+	does not cause a panic. The test is still marked as knownbug, pending
+	resolution of what is actually the correct return value ([Bug
+	1354540])
+
+2005-11-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclTimer.c: Changed [after] so that it behaves correctly
+	* tests/timer.test:   with negative arguments [Bug 1350293] and
+	                      arguments that overflow a 32-bit word
+	                      [Bug 1350291].
+
+2005-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/compile.test:	Updated tests with changed behavior
+	* tests/execute.test:	due to addition of bignums.
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/parseExpr.test:
+	* tests/platform.test:
+	* tests/string.test:
+
+2005-11-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c (MAX_READDIR_UNLINK_THRESHOLD): reduce to 130
+	based on errors seen on OS X 10.3 with lots of links in a dir.
+	[Bug 1034337 followup]
+
+2005-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/Makefile.in (gdb-test): Added a new target to make it easier to
+	run the test suite inside a debugger.
+
+2005-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/compExpr-old.test:	Updated tests with changed behavior
+	due to addition of bignums.
+
+	* tests/expr.test:      Portable tests expr-46.13-18 [Bug 1341368]
+
+	* generic/tclPkg.c:	Corrected inconsistencies in the value returned
+	* tests/pkg.test:	by Tcl_PkgRequire(Ex) so that the returned
+	values will always agree with what is stored in the package database.
+	This way repeated calls to Tcl_PkgRequire(Ex) have the same results.
+	Thanks to Hemang Lavana.  [Bug 1162286].
+
+2005-11-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclTrace.c (TraceVarEx): Factor out the core of Tcl_TraceVar2
+	(TclTraceVariableObjCmd,TraceVarProc): Use the new internal API to
+	arrange for the clientData to be cleaned up at the same time as the
+	rest of the main trace record. This simplifies the code a bit at the
+	same time.
+
+2005-11-07  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-13.2-4): added tests to detect leak, see [Bug
+	1348775]. The recently added trace-8.9 test is now 13.4.
+
+2005-11-07  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/dict.test (dict-19.2): arrange for the stress testing code to
+	only stress test the dict code and not the trace code as well. [Bug
+	1342858]
+
+2005-11-05  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/trace.test (trace-8.9): added test to detect leak, see [Bug
+	1348775].
+
+2005-11-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinPort.h:  Applied [Patch 1267871] by Matt Newman for
+	* win/tclWinPipe.c:  extended error code support on Windows.
+	* tests/exec.test:   Tests for extended error codes.
+	* generic/tclPipe.c: Permit long codes (platform macros permitting).
+
+2005-11-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBinary.c:
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclIOCmd.c:
+	* generic/tclLink.c:
+	* generic/tclTest.c:
+	* generic/tclVar.c: fix for [Bug 1334947]. The functions TclPtrSetVar,
+	Tcl_ObjSetVar2 and Tcl_SetVar2Ex now always consume the newValuePtr
+	argument - i.e., they will free a 0-refCount object if they failed to
+	set the variable. Fixed all callers in the core.
+
+2005-11-04  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclGetDate.y: Added abbreviations for the Korean
+	* library/clock.tcl:    timezone. [Patch 1298737]
+	* generic/tclDate.c:    Regenerated.
+
+	* tools/findBadExternals.tcl: Added this script, which locates
+	external symbols that do not begin with 'Tcl' or 'tcl' and hence might
+	be in conflict with other link libraries. Thanks to George Peter
+	Staplin for the idea and the initial version of the script. [Bug
+	1263012]
+
+	* unix/Makefile.in: Trimmed a bunch of fat out of the tommath/
+	directory in 'make dist'. [RFE 1333318]
+
+	* unix/tcl.m4: Added code to enable [load] on LynxOS. Thanks to
+	heidibr@users.sf.net for the patch. [Bug 1163896]. Removed the last
+	vestiges of GNU dld from the Unix build [RFE 1071992].
+
+	* unix/tclLoadDld.c: Removed.
+	* unix/configure: Regenerated.
+
+2005-11-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+	* tests/trace.test: fix for [Bugs 1338280/1337229]; changed to use the
+	same approach as the 8.4 patch in the ticket (i.e., removed the patch
+	committed on 2005-31-10).
+
 2005-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* win/tclWin32Dll.c:   Applied patch #1256872 to provide unicode
+	* win/tclWin32Dll.c:   Applied [Patch 1256872] to provide unicode
 	* win/tclWinConsole.c: support in the console on suitable systems.
 	* win/tclWinInt.h:     Patch by Anton Kovalenko
 
 2005-11-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	Applied patch #1096916 to support building with MSVC 8.
+	Applied [Patch 1096916] to support building with MSVC 8.
 	* generic/regerror.c: Avoid use of reserved word.
 	* generic/tcl.h:      Select the right Tcl_Stat structure
 	* generic/tclDate.c:  Casts to handle 64 bit time_t case.
@@ -20,15 +457,15 @@
 
 2005-11-01  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclTrace.c (TclCheckExecutionTraces): Corrected mistaken
-        assumption that all command traces are set at the script level.
-        Report/fix from Jacques H. de Villiers. [Bug 1337941]
+	* generic/tclTrace.c (TclCheckExecutionTraces): Corrected mistaken
+	assumption that all command traces are set at the script level.
+	Report/fix from Jacques H. de Villiers. [Bug 1337941]
 
 	* tests/unixNotfy.test (1.1,2):	Update error message whitespace to
 	match changes in code.
 
-	* tests/expr-old.test (expr-32.52):     Use int(.) to restrict
-        result of left shift to the C long range.
+	* tests/expr-old.test (expr-32.52):     Use int(.) to restrict result
+	of left shift to the C long range.
 
 	* expr.test (expr-46.13):	Added test that illustrates
 	shortcoming of Patch 1340260.
@@ -143,7 +580,7 @@
 
 	* generic/tcl.h: Fixed bad definition of CRTEXPORT which should have
 	been CRTIMPORT rather. This broke compilation of generic/tclMain.c and
-	was probably introduced by mistage while applying the fix for [Bug
+	was probably introduced by mistake while applying the fix for [Bug
 	1256937] below.
 
 2005-10-14  Kevin Kenny  <kennykb@acm.org>
@@ -710,8 +1147,8 @@
 	* generic/tclIO.c: Moved Tcl_{Cut,Splice}Channel to
 	{Cut,Splice}Channel for internal use, and created new public functions
 	for Tcl_{Cut,Splice}Channel which walk the whole stack of
-	transformations and invoke the necessary thread actions. Added code
-	to Tcl_(Un)StackChannel to properly invoke the thread actions when
+	transformations and invoke the necessary thread actions. Added code to
+	Tcl_(Un)StackChannel to properly invoke the thread actions when
 	pushing and popping transformations on/from a channel.
 
 2005-08-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>

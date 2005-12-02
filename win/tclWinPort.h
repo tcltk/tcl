@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.9 2005/11/03 17:52:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.10 2005/12/02 18:43:11 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -240,15 +240,15 @@
 #endif /* TCL_UNION_WAIT */
 
 #ifndef WIFEXITED
-#   define WIFEXITED(stat)  (((*((int *) &(stat))) & 0xff) == 0)
+#   define WIFEXITED(stat)  (((*((int *) &(stat))) & 0xC0000000) == 0)
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat) (short)(((*((int *) &(stat))) >> 8) & 0xffff)
+#   define WEXITSTATUS(stat) (*((int *) &(stat)))
 #endif
 
 #ifndef WIFSIGNALED
-#   define WIFSIGNALED(stat) (((*((int *) &(stat)))) && ((*((int *) &(stat))) == ((*((int *) &(stat))) & 0x00ff)))
+#   define WIFSIGNALED(stat) ((*((int *) &(stat))) & 0xC0000000)
 #endif
 
 #ifndef WTERMSIG
@@ -256,7 +256,7 @@
 #endif
 
 #ifndef WIFSTOPPED
-#   define WIFSTOPPED(stat)  (((*((int *) &(stat))) & 0xff) == 0177)
+#   define WIFSTOPPED(stat)  0
 #endif
 
 #ifndef WSTOPSIG
@@ -519,25 +519,6 @@
  */
 
 #define TclpExit		exit
-
-/*
- * Platform specific mutex definition used by memory allocators.
- * These mutexes are statically allocated and explicitly initialized.
- * Most modules do not use this, but instead use Tcl_Mutex types and
- * Tcl_MutexLock and Tcl_MutexUnlock that are self-initializing.
- */
-
-#ifdef TCL_THREADS
-typedef CRITICAL_SECTION TclpMutex;
-MODULE_SCOPE void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
-MODULE_SCOPE void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
-MODULE_SCOPE void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
-#else /* !TCL_THREADS */
-typedef int TclpMutex;
-#define	TclpMutexInit(a)
-#define	TclpMutexLock(a)
-#define	TclpMutexUnlock(a)
-#endif /* TCL_THREADS */
 
 #ifdef TCL_WIDE_INT_TYPE
 MODULE_SCOPE Tcl_WideInt	strtoll _ANSI_ARGS_((CONST char *string,

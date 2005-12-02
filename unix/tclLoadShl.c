@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.13.4.2 2005/10/18 20:47:32 dgp Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.13.4.3 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include <dl.h>
@@ -44,14 +44,14 @@
  */
 
 int
-TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
+TclpDlopen(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;
+    Tcl_FSUnloadFileProc **unloadProcPtr)
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
@@ -117,14 +117,15 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
  *
  *----------------------------------------------------------------------
  */
-Tcl_PackageInitProc*
-TclpFindSymbol(interp, loadHandle, symbol)
-    Tcl_Interp *interp;
-    Tcl_LoadHandle loadHandle;
-    CONST char *symbol;
+
+Tcl_PackageInitProc *
+TclpFindSymbol(
+    Tcl_Interp *interp,
+    Tcl_LoadHandle loadHandle,
+    CONST char *symbol)
 {
     Tcl_DString newName;
-    Tcl_PackageInitProc *proc=NULL;
+    Tcl_PackageInitProc *proc = NULL;
     shl_t handle = (shl_t)loadHandle;
 
     /*
@@ -165,9 +166,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
  */
 
 void
-TclpUnloadFile(loadHandle)
-    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call to
-				 * TclpDlopen().  The loadHandle is a token
+TclpUnloadFile(
+    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
+				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
     shl_t handle;
@@ -187,7 +188,7 @@ TclpUnloadFile(loadHandle)
  * Results:
  *	Always returns 0 to indicate that we couldn't figure out a package
  *	name; generic code will then try to guess the package from the file
- *	name.  A return value of 1 would have meant that we figured out the
+ *	name. A return value of 1 would have meant that we figured out the
  *	package name and put it in bufPtr.
  *
  * Side effects:
@@ -197,10 +198,10 @@ TclpUnloadFile(loadHandle)
  */
 
 int
-TclGuessPackageName(fileName, bufPtr)
-    CONST char *fileName;	/* Name of file containing package (already
+TclGuessPackageName(
+    CONST char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
-    Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append package
+    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
 {
     return 0;

@@ -2,14 +2,14 @@
  * tclLoadNext.c --
  *
  *	This procedure provides a version of the TclLoadFile that works with
- *	NeXTs rld_* dynamic loading.  This file provided by Pedja Bogdanovich.
+ *	NeXTs rld_* dynamic loading. This file provided by Pedja Bogdanovich.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNext.c,v 1.11.4.1 2005/07/26 04:12:32 dgp Exp $
+ * RCS: @(#) $Id: tclLoadNext.c,v 1.11.4.2 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,14 +35,14 @@
  */
 
 int
-TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
+TclpDlopen(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;
+    Tcl_FSUnloadFileProc **unloadProcPtr)
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
@@ -58,7 +58,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     fileName = Tcl_GetString(pathPtr);
 
     /*
-     * First try the full path the user gave us.  This is particularly
+     * First try the full path the user gave us. This is particularly
      * important if the cwd is inside a vfs, and we are trying to load using a
      * relative path.
      */
@@ -111,25 +111,25 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
  *
  * Results:
  *	Returns a pointer to the function associated with 'symbol' if it is
- *	found.  Otherwise returns NULL and may leave an error message in the
+ *	found. Otherwise returns NULL and may leave an error message in the
  *	interp's result.
  *
  *----------------------------------------------------------------------
  */
 
-Tcl_PackageInitProc*
-TclpFindSymbol(interp, loadHandle, symbol)
-    Tcl_Interp *interp;
-    Tcl_LoadHandle loadHandle;
-    CONST char *symbol;
+Tcl_PackageInitProc *
+TclpFindSymbol(
+    Tcl_Interp *interp,
+    Tcl_LoadHandle loadHandle,
+    CONST char *symbol)
 {
-    Tcl_PackageInitProc *proc=NULL;
+    Tcl_PackageInitProc *proc = NULL;
     if (symbol) {
-	char sym[strlen(symbol)+2];
+	char sym[strlen(symbol) + 2];
 
 	sym[0] = '_';
 	sym[1] = 0;
-	strcat(sym,symbol);
+	strcat(sym, symbol);
 	rld_lookup(NULL, sym, (unsigned long *)&proc);
     }
     return proc;
@@ -140,7 +140,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
  *
  * TclpUnloadFile --
  *
- *	Unloads a dynamically loaded binary code file from memory.  Code
+ *	Unloads a dynamically loaded binary code file from memory. Code
  *	pointers in the formerly loaded file are no longer valid after calling
  *	this function.
  *
@@ -154,9 +154,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
  */
 
 void
-TclpUnloadFile(loadHandle)
-    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call to
-				 * TclpDlopen().  The loadHandle is a token
+TclpUnloadFile(
+    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
+				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
 }
@@ -172,7 +172,7 @@ TclpUnloadFile(loadHandle)
  * Results:
  *	Always returns 0 to indicate that we couldn't figure out a package
  *	name; generic code will then try to guess the package from the file
- *	name.  A return value of 1 would have meant that we figured out the
+ *	name. A return value of 1 would have meant that we figured out the
  *	package name and put it in bufPtr.
  *
  * Side effects:
@@ -182,10 +182,10 @@ TclpUnloadFile(loadHandle)
  */
 
 int
-TclGuessPackageName(fileName, bufPtr)
-    CONST char *fileName;	/* Name of file containing package (already
+TclGuessPackageName(
+    CONST char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
-    Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append package
+    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
 {
     return 0;

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.12 2005/07/26 04:12:26 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.13 2005/12/02 18:42:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -133,6 +133,41 @@ test namespace-7.2 {Tcl_DeleteNamespace, no active call frames in ns} {
     }
     list [test_ns_2::p] [namespace delete test_ns_2]
 } {::test_ns_2 {}}
+test namespace-7.3 {recursive Tcl_DeleteNamespace, active call frames in ns} {
+    # [Bug 1355942]
+    namespace eval test_ns_2 {
+        set x 1
+	trace add variable x unset "namespace delete [namespace current];#"
+	namespace delete [namespace current]
+    }
+} {}
+test namespace-7.4 {recursive Tcl_DeleteNamespace, active call frames in ns} {
+    # [Bug 1355942]
+    # Currently fails due to [Bug 1355342]
+    namespace eval test_ns_2 {
+        proc x {} {}
+	trace add command x delete "namespace delete [namespace current];#"
+	namespace delete [namespace current]
+    }
+} {}
+test namespace-7.5 {recursive Tcl_DeleteNamespace, no active call frames in ns} {
+    # [Bug 1355942]
+    namespace eval test_ns_2 {
+        set x 1
+	trace add variable x unset "namespace delete [namespace current];#"
+    }
+    namespace delete test_ns_2
+} {}
+test namespace-7.6 {recursive Tcl_DeleteNamespace, no active call frames in ns} {
+    # [Bug 1355942]
+    # Currently fails due to [Bug 1355342]
+    namespace eval test_ns_2 {
+        proc x {} {}
+	trace add command x delete "namespace delete [namespace current];#"
+    }
+    namespace delete test_ns_2
+} {}
+
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
@@ -2278,8 +2313,9 @@ test namespace-51.12 {name resolution path control} -body {
     catch {namespace delete ::test_ns_3}
     catch {namespace delete ::test_ns_4}
 }
-# Fails right now due to unrelated bug...
-test namespace-51.13 {name resolution path control} -constraints knownBug -body {
+
+test namespace-51.13 {name resolution path control} -body {
+    # Currently fails due to [Bug 1355342]
     set ::result {}
     namespace eval ::test_ns_1 {
 	proc foo {} {lappend ::result 1}
@@ -2302,8 +2338,8 @@ test namespace-51.13 {name resolution path control} -constraints knownBug -body 
 	}
 	bar
     }
-    # Should the result be "2 {} {2 3 1 1}" instead?
-} -result {2 {} {2 3 2 1}} -cleanup {
+    # Should the result be "2 {} {2 3 2 1}" instead?
+} -result {2 {} {2 3 1 1}} -cleanup {
     catch {namespace delete ::test_ns_1}
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}

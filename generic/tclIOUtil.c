@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.21 2005/11/03 17:52:08 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.22 2005/12/02 18:42:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -49,8 +49,8 @@ static void		FsRecacheFilesystemList(void);
  * they are not (and should not be) used anywhere else.
  */
 
-extern CONST char *		tclpFileAttrStrings[];
-extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
+MODULE_SCOPE CONST char *		tclpFileAttrStrings[];
+MODULE_SCOPE CONST TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
  * The following functions are obsolete string based APIs, and should be

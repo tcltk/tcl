@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.4 2005/07/26 04:12:19 dgp Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.5 2005/12/02 18:42:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -56,12 +56,12 @@ TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
  */
 
 typedef struct HandleStruct {
-    VOID *ptr;			/* Pointer to the memory block being tracked.
+    void *ptr;			/* Pointer to the memory block being tracked.
 				 * This field will become NULL when the memory
 				 * block is deleted. This field must be the
 				 * first in the structure. */
 #ifdef TCL_MEM_DEBUG
-    VOID *ptr2;			/* Backup copy of the above pointer used to
+    void *ptr2;			/* Backup copy of the above pointer used to
 				 * ensure that the contents of the handle are
 				 * not changed by anyone else. */
 #endif
@@ -87,12 +87,12 @@ typedef struct HandleStruct {
 
 	/* ARGSUSED */
 void
-TclFinalizePreserve()
+TclFinalizePreserve(void)
 {
     Tcl_MutexLock(&preserveMutex);
     if (spaceAvl != 0) {
         ckfree((char *) refArray);
-        refArray = (Reference *) NULL;
+        refArray = NULL;
         inUse = 0;
         spaceAvl = 0;
     }
@@ -119,8 +119,8 @@ TclFinalizePreserve()
  */
 
 void
-Tcl_Preserve(clientData)
-    ClientData clientData;	/* Pointer to malloc'ed block of memory. */
+Tcl_Preserve(
+    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
     int i;
@@ -154,7 +154,7 @@ Tcl_Preserve(clientData)
 
 	    new = (Reference *) ckalloc((unsigned)
 		    (2*spaceAvl*sizeof(Reference)));
-	    memcpy((VOID *) new, (VOID *) refArray,
+	    memcpy((void *) new, (void *) refArray,
                     spaceAvl*sizeof(Reference));
 	    ckfree((char *) refArray);
 	    refArray = new;
@@ -195,8 +195,8 @@ Tcl_Preserve(clientData)
  */
 
 void
-Tcl_Release(clientData)
-    ClientData clientData;	/* Pointer to malloc'ed block of memory. */
+Tcl_Release(
+    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
     int i;
@@ -274,9 +274,9 @@ Tcl_Release(clientData)
  */
 
 void
-Tcl_EventuallyFree(clientData, freeProc)
-    ClientData clientData;	/* Pointer to malloc'ed block of memory. */
-    Tcl_FreeProc *freeProc;	/* Function to actually do free. */
+Tcl_EventuallyFree(
+    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
+    Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;
     int i;
@@ -338,8 +338,8 @@ Tcl_EventuallyFree(clientData, freeProc)
  */
 
 TclHandle
-TclHandleCreate(ptr)
-    VOID *ptr;			/* Pointer to an arbitrary block of memory to
+TclHandleCreate(
+    void *ptr)			/* Pointer to an arbitrary block of memory to
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
@@ -374,8 +374,8 @@ TclHandleCreate(ptr)
  */
 
 void
-TclHandleFree(handle)
-    TclHandle handle;		/* Previously created handle associated with a
+TclHandleFree(
+    TclHandle handle)		/* Previously created handle associated with a
 				 * malloc'd block that is being deleted. The
 				 * handle is modified so that doubly
 				 * dereferencing it will give NULL. */
@@ -419,8 +419,8 @@ TclHandleFree(handle)
  */
 
 TclHandle
-TclHandlePreserve(handle)
-    TclHandle handle;		/* Declare an interest in the block of memory
+TclHandlePreserve(
+    TclHandle handle)		/* Declare an interest in the block of memory
 				 * referenced by this handle. */
 {
     HandleStruct *handlePtr;
@@ -460,8 +460,8 @@ TclHandlePreserve(handle)
  */
 
 void
-TclHandleRelease(handle)
-    TclHandle handle;		/* Unregister interest in the block of memory
+TclHandleRelease(
+    TclHandle handle)		/* Unregister interest in the block of memory
 				 * referenced by this handle. */
 {
     HandleStruct *handlePtr;

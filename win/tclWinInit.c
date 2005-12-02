@@ -1,4 +1,4 @@
-/* 
+/*
  * tclWinInit.c --
  *
  *	Contains the Windows-specific interpreter initialization functions.
@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.7 2005/07/26 04:12:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.8 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -126,7 +126,7 @@ static int		ToUtf(CONST WCHAR *wSrc, char *dst);
  */
 
 void
-TclpInitPlatform()
+TclpInitPlatform(void)
 {
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -166,16 +166,16 @@ TclpInitPlatform()
  *	None.
  *
  * Side effects:
- *	Sets the library path to an initial value.  
+ *	Sets the library path to an initial value.
  *
  *-------------------------------------------------------------------------
- */  
+ */
 
 void
-TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
-    char **valuePtr;
-    int *lengthPtr;
-    Tcl_Encoding *encodingPtr;
+TclpInitLibraryPath(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr;
@@ -284,7 +284,7 @@ AppendEnvironment(
 	TclWinNoBackslash(buf);
 	Tcl_SplitPath(buf, &pathc, &pathv);
 
-	/* 
+	/*
 	 * The lstrcmpi() will work even if pathv[pathc-1] is random UTF-8
 	 * chars because I know shortlib is ascii.
 	 */
@@ -330,10 +330,10 @@ AppendEnvironment(
  */
 
 static void
-InitializeDefaultLibraryDir(valuePtr, lengthPtr, encodingPtr)
-    char **valuePtr;
-    int *lengthPtr;
-    Tcl_Encoding *encodingPtr;
+InitializeDefaultLibraryDir(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
@@ -367,7 +367,7 @@ InitializeDefaultLibraryDir(valuePtr, lengthPtr, encodingPtr)
  *
  * ToUtf --
  *
- *	Convert a char string to a UTF string.  
+ *	Convert a char string to a UTF string.
  *
  * Results:
  *	None.
@@ -414,7 +414,7 @@ ToUtf(
  */
 
 void
-TclWinEncodingsCleanup()
+TclWinEncodingsCleanup(void)
 {
     TclWinResetInterfaceEncodings();
 }
@@ -444,10 +444,10 @@ TclWinEncodingsCleanup()
  */
 
 void
-TclpSetInitialEncodings()
+TclpSetInitialEncodings(void)
 {
     Tcl_DString encodingName;
-    
+
     TclpSetInterfaces();
     Tcl_SetSystemEncoding(NULL,
 	    TclpGetEncodingNameFromEnvironment(&encodingName));
@@ -455,7 +455,7 @@ TclpSetInitialEncodings()
 }
 
 void
-TclpSetInterfaces()
+TclpSetInterfaces(void)
 {
     int platformId, useWide;
 
@@ -466,8 +466,8 @@ TclpSetInterfaces()
 }
 
 CONST char *
-TclpGetEncodingNameFromEnvironment(bufPtr)
-    Tcl_DString *bufPtr;
+TclpGetEncodingNameFromEnvironment(
+    Tcl_DString *bufPtr)
 {
     Tcl_DStringInit(bufPtr);
     wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
@@ -492,8 +492,8 @@ TclpGetEncodingNameFromEnvironment(bufPtr)
  */
 
 void
-TclpSetVariables(interp)
-    Tcl_Interp *interp;		/* Interp to initialize. */
+TclpSetVariables(
+    Tcl_Interp *interp)		/* Interp to initialize. */
 {
     CONST char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
@@ -605,10 +605,10 @@ TclpSetVariables(interp)
  */
 
 int
-TclpFindVariable(name, lengthPtr)
-    CONST char *name;		/* Name of desired environment variable
+TclpFindVariable(
+    CONST char *name,		/* Name of desired environment variable
 				 * (UTF-8). */
-    int *lengthPtr;		/* Used to return length of name (for
+    int *lengthPtr)		/* Used to return length of name (for
 				 * successful searches) or number of non-NULL
 				 * entries in environ (for unsuccessful
 				 * searches). */

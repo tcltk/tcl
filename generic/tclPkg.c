@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.4.4 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.4.5 2005/12/02 18:42:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -261,6 +261,21 @@ Tcl_PkgRequireEx(
 	    break;
 	}
 
+	/* 
+	 * Check whether we're already attempting to load some version
+	 * of this package (circular dependency detection).
+	 */
+
+	if (pkgPtr->clientData != NULL) {
+	    Tcl_AppendResult(interp, "circular package dependency: ",
+		    "attempt to provide ", name, " ",
+		    (char *)(pkgPtr->clientData), " requires ", name, NULL);
+	    if (version != NULL) {
+		Tcl_AppendResult(interp, " ", version, NULL);
+	    }
+	    return NULL;
+	}
+
 	/*
 	 * The package isn't yet present. Search the list of available
 	 * versions and invoke the script for the best available version.
@@ -292,20 +307,68 @@ Tcl_PkgRequireEx(
 	     * script itself from deletion and (b) don't assume that bestPtr
 	     * will still exist when the script completes.
 	     */
-
+	    CONST char *versionToProvide = bestPtr->version;
 	    script = bestPtr->script;
+	    
+	    pkgPtr->clientData = (ClientData) versionToProvide;
 	    Tcl_Preserve((ClientData) script);
+	    Tcl_Preserve((ClientData) versionToProvide);
 	    code = Tcl_GlobalEval(interp, script);
 	    Tcl_Release((ClientData) script);
-	    if (code != TCL_OK) {
-		if (code == TCL_ERROR) {
-		    Tcl_AddErrorInfo(interp,
-			    "\n    (\"package ifneeded\" script)");
+
+	    pkgPtr = FindPackage(interp, name);
+	    if (code == TCL_OK) {
+		Tcl_ResetResult(interp);
+		if (pkgPtr->version == NULL) {
+		    code = TCL_ERROR;
+		    Tcl_AppendResult(interp, "attempt to provide package ",
+			    name, " ", versionToProvide,
+			    " failed: no version of package ", name,
+			    " provided", NULL);
+		} else if (0 != ComparePkgVersions(
+			pkgPtr->version, versionToProvide, NULL)) {
+		    code = TCL_ERROR;
+		    Tcl_AppendResult(interp, "attempt to provide package ",
+			    name, " ", versionToProvide, " failed: package ",
+			    name, " ", pkgPtr->version, " provided instead",
+			    NULL);
 		}
+	    } else if (code != TCL_ERROR) {
+		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "attempt to provide package ",
+			name, " ", versionToProvide, " failed: ",
+			"bad return code: ", Tcl_GetString(codePtr), NULL);
+		Tcl_DecrRefCount(codePtr);
+		code = TCL_ERROR;
+	    }
+
+	    if (code == TCL_ERROR) {
+		TclFormatToErrorInfo(interp,
+			"\n    (\"package ifneeded %s %s\" script)",
+			name, versionToProvide);
+	    }
+	    Tcl_Release((ClientData) versionToProvide);
+
+	    if (code != TCL_OK) {
+		/*
+		 * Take a non-TCL_OK code from the script as an
+		 * indication the package wasn't loaded properly,
+		 * so the package system should not remember an
+		 * improper load.
+		 *
+		 * This is consistent with our returning NULL.
+		 * If we're not willing to tell our caller we
+		 * got a particular version, we shouldn't store
+		 * that version for telling future callers either.
+		 */
+		if (pkgPtr->version != NULL) {
+		    ckfree(pkgPtr->version);
+		    pkgPtr->version = NULL;
+		}
+		pkgPtr->clientData = NULL;
 		return NULL;
 	    }
-	    Tcl_ResetResult(interp);
-	    pkgPtr = FindPackage(interp, name);
 	    break;
 	}
 
@@ -331,11 +394,17 @@ Tcl_PkgRequireEx(
 	    }
 	    code = Tcl_GlobalEval(interp, Tcl_DStringValue(&command));
 	    Tcl_DStringFree(&command);
-	    if (code != TCL_OK) {
-		if (code == TCL_ERROR) {
-		    Tcl_AddErrorInfo(interp,
-			    "\n    (\"package unknown\" script)");
-		}
+
+	    if ((code != TCL_OK) && (code != TCL_ERROR)) {
+		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "bad return code: ",
+			Tcl_GetString(codePtr), NULL);
+		Tcl_DecrRefCount(codePtr);
+		code = TCL_ERROR;
+	    }
+	    if (code == TCL_ERROR) {
+		Tcl_AddErrorInfo(interp, "\n    (\"package unknown\" script)");
 		return NULL;
 	    }
 	    Tcl_ResetResult(interp);
@@ -538,7 +607,7 @@ Tcl_PackageObjCmd(
 	    while (pkgPtr->availPtr != NULL) {
 		availPtr = pkgPtr->availPtr;
 		pkgPtr->availPtr = availPtr->nextPtr;
-		ckfree(availPtr->version);
+		Tcl_EventuallyFree((ClientData)availPtr->version, TCL_DYNAMIC);
 		Tcl_EventuallyFree((ClientData)availPtr->script, TCL_DYNAMIC);
 		ckfree((char *) availPtr);
 	    }
@@ -847,7 +916,7 @@ TclFreePackageInfo(
 	while (pkgPtr->availPtr != NULL) {
 	    availPtr = pkgPtr->availPtr;
 	    pkgPtr->availPtr = availPtr->nextPtr;
-	    ckfree(availPtr->version);
+	    Tcl_EventuallyFree((ClientData)availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree((ClientData)availPtr->script, TCL_DYNAMIC);
 	    ckfree((char *) availPtr);
 	}

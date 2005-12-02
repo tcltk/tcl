@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.9.14.4 2004/09/30 00:51:52 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.9.14.5 2005/12/02 18:42:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -21,7 +21,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # package list
 set i [interp create]
 interp eval $i [list set argv $argv]
-interp eval $i [list package require tcltest]
+interp eval $i [list package require tcltest 2]
 interp eval $i [list namespace import -force ::tcltest::*]
 interp eval $i {
 
@@ -130,22 +130,22 @@ test pkg-2.9 {Tcl_PkgRequire procedure, can't find suitable version} {
     package unknown {}
     list [catch {package require t} msg] $msg
 } {1 {can't find package t}}
-test pkg-2.10 {Tcl_PkgRequire procedure, error in ifneeded script} {
+test pkg-2.10 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test"}
     list [catch {package require t 2.1} msg] $msg $errorInfo
-} {1 {ifneeded test} {ifneeded test
+} -match glob -result {1 {ifneeded test} {ifneeded test
     while executing
 "error "ifneeded test""
-    ("package ifneeded" script)
+    ("package ifneeded*" script)
     invoked from within
 "package require t 2.1"}}
-test pkg-2.11 {Tcl_PkgRequire procedure, ifneeded script doesn't provide package} {
+test pkg-2.11 {Tcl_PkgRequire procedure, ifneeded script doesn't provide package} -body {
     package forget t
     package ifneeded t 2.1 "set x invoked"
     set x xxx
     list [catch {package require t 2.1} msg] $msg $x
-} {1 {can't find package t 2.1} invoked}
+} -match glob -result {1 * invoked}
 test pkg-2.12 {Tcl_PkgRequire procedure, self-deleting script} {
     package forget t
     package ifneeded t 1.2 "package forget t; set x 1.2; package provide t 1.2"
@@ -261,25 +261,207 @@ test pkg-2.24 {Tcl_PkgRequire procedure, version checks} {
     package provide t 2.3
     list [catch {package require -exact t 2.2} msg] $msg
 } {1 {version conflict for package "t": have 2.3, need 2.2}}
-test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} {
+test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test" EI}
     list [catch {package require t 2.1} msg] $msg $errorInfo
-} {1 {ifneeded test} {EI
-    ("package ifneeded" script)
+} -match glob -result {1 {ifneeded test} {EI
+    ("package ifneeded*" script)
     invoked from within
 "package require t 2.1"}}
-test pkg-2.26 {Tcl_PkgRequire procedure, error in ifneeded script} {
+test pkg-2.26 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; foreach x 1 {error "ifneeded test" EI}}
     list [catch {package require t 2.1} msg] $msg $errorInfo
-} {1 {ifneeded test} {EI
+} -match glob -result {1 {ifneeded test} {EI
     ("foreach" body line 1)
     invoked from within
 "foreach x 1 {error "ifneeded test" EI}"
-    ("package ifneeded" script)
+    ("package ifneeded*" script)
     invoked from within
 "package require t 2.1"}}
+test pkg-2.27 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package require foo 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {circular package dependency:*}
+test pkg-2.28 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package require foo 2}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {circular package dependency:*}
+test pkg-2.29 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+    package forget bar
+} -body {
+    package ifneeded foo 1 {package require bar 1; package provide foo 1}
+    package ifneeded bar 1 {package require foo 1; package provide bar 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package forget bar
+} -returnCodes error -match glob -result {circular package dependency:*}
+test pkg-2.30 {Tcl_PkgRequire: circular dependency} -setup {
+    package forget foo
+    package forget bar
+} -body {
+    package ifneeded foo 1 {package require bar 1; package provide foo 1}
+    package ifneeded foo 2 {package provide foo 2}
+    package ifneeded bar 1 {package require foo 2; package provide bar 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package forget bar
+} -returnCodes error -match glob -result {circular package dependency:*}
+test pkg-2.31 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 1; error foo}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result foo
+test pkg-2.32 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 1; error foo}
+    catch {package require foo 1}
+    package provide foo
+} -cleanup {
+    package forget foo
+} -result {}
+test pkg-2.33 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 2}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test pkg-2.34 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {package provide foo 1.1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test pkg-2.34.1 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1.1 {package provide foo 1}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test pkg-2.34.2 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1.1 {package provide foo 1}
+    package require foo 1.1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test pkg-2.35 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob -result {attempt to provide package * failed:*}
+test pkg-2.35.1 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {break}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test pkg-2.36 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {continue}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test pkg-2.37 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {return}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test pkg-2.38 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+} -body {
+    package ifneeded foo 1 {return -level 0 -code 10}
+    package require foo 1
+} -cleanup {
+    package forget foo
+} -returnCodes error -match glob \
+-result {attempt to provide package * failed: bad return code:*}
+test pkg-2.39 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {package provide foo 2 ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result *
+test pkg-2.40 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {break ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test pkg-2.41 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {continue ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test pkg-2.42 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {return ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
+test pkg-2.43 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
+    package forget foo
+    set saveUnknown [package unknown]
+    package unknown {return -level 0 -code 10 ;#}
+} -body {
+    package require foo 1
+} -cleanup {
+    package forget foo
+    package unknown $saveUnknown
+} -returnCodes error -match glob -result {bad return code:*}
 
 test pkg-3.1 {Tcl_PackageCmd procedure} {
     list [catch {package} msg] $msg
@@ -529,7 +711,7 @@ test pkg-4.1 {TclFreePackageInfo procedure} {
     }
     interp delete foo
 } {}
-test pkg-4.2 {TclFreePackageInfo procedure} {
+test pkg-4.2 {TclFreePackageInfo procedure} -body {
     interp create foo
     foo eval {
 	package ifneeded t 2.3 x
@@ -541,8 +723,8 @@ test pkg-4.2 {TclFreePackageInfo procedure} {
     proc kill {} {
 	interp delete foo
     }
-    list [catch {foo eval package require x 3.1} msg] $msg
-} {1 {can't find package x 3.1}}
+    foo eval package require x 3.1
+} -returnCodes error -match glob -result *
 
 test pkg-5.1 {CheckVersion procedure} {
     list [catch {package vcompare 1 2.1} msg] $msg

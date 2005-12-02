@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.16 2005/11/03 17:52:34 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.17 2005/12/02 18:43:11 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -1024,7 +1024,7 @@ TclpMatchInDirectory(
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "couldn't read directory \"",
 			Tcl_DStringValue(&dsOrig), "\": ",
-			Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
@@ -1916,7 +1916,7 @@ TclpGetCwd(
 	TclWinConvertError(GetLastError());
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "error getting working directory name: ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    Tcl_PosixError(interp), NULL);
 	}
 	return NULL;
     }

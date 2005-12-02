@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.11.2.3 2005/06/02 04:18:00 dgp Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.11.2.4 2005/12/02 18:42:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -382,6 +382,10 @@ test lsearch-16.1 {lsearch -regexp shared object} {
     set str a
     lsearch -regexp $str $str
 } 0
+# Bug 1366683
+test lsearch-16.2 {lsearch -regexp allows internal backrefs} {
+    lsearch -regexp {a aa b} {(.)\1}
+} 1
 
 test lsearch-17.1 {lsearch -index option, basic functionality} {
     lsearch -index 1 {{a c} {a b} {a a}} a

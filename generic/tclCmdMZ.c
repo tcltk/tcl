@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.22 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.23 2005/12/02 18:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -367,7 +367,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		Tcl_Obj *valuePtr;
 		valuePtr = Tcl_ObjSetVar2(interp, objv[i], NULL, newPtr, 0);
 		if (valuePtr == NULL) {
-		    Tcl_DecrRefCount(newPtr);
 		    Tcl_AppendResult(interp, "couldn't set variable \"",
 			    TclGetString(objv[i]), "\"", (char *) NULL);
 		    return TCL_ERROR;
@@ -2730,7 +2729,6 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 		TclNewObj(emptyObj);
 		if (Tcl_ObjSetVar2(interp, indexVarObj, NULL, emptyObj,
 			TCL_LEAVE_ERR_MSG) == NULL) {
-		    Tcl_DecrRefCount(emptyObj);
 		    return TCL_ERROR;
 		}
 	    }
@@ -2740,9 +2738,6 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 		}
 		if (Tcl_ObjSetVar2(interp, matchVarObj, NULL, emptyObj,
 			TCL_LEAVE_ERR_MSG) == NULL) {
-		    if (indexVarObj == NULL) {
-			Tcl_DecrRefCount(emptyObj);
-		    }
 		    return TCL_ERROR;
 		}
 	    }
@@ -2829,8 +2824,6 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	if (indexVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, indexVarObj, NULL, indicesObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_DecrRefCount(indicesObj);
-
 		/*
 		 * Careful! Check to see if we have allocated the list of
 		 * matched strings; if so (but there was an error assigning
@@ -2848,8 +2841,6 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	if (matchVarObj != NULL) {
 	    if (Tcl_ObjSetVar2(interp, matchVarObj, NULL, matchesObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_DecrRefCount(matchesObj);
-
 		/*
 		 * Unlike above, if indicesObj is non-NULL at this point, it
 		 * will have been written to a variable already and will hence

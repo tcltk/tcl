@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.8 2005/07/26 04:12:36 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.9 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -195,8 +195,8 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj);
 
-EXTERN int Registry_Init(Tcl_Interp *interp);
-EXTERN int Registry_Unload(Tcl_Interp *interp, int flags);
+EXTERN int		Registry_Init(Tcl_Interp *interp);
+EXTERN int		Registry_Unload(Tcl_Interp *interp, int flags);
 
 /*
  *----------------------------------------------------------------------
@@ -304,7 +304,8 @@ Registry_Unload(
  */
 
 static void
-DeleteCmd(ClientData clientData)
+DeleteCmd(
+    ClientData clientData)
 {
     Tcl_Interp *interp = clientData;
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, (ClientData)NULL);
@@ -337,8 +338,7 @@ RegistryObjCmd(
     char *errString = NULL;
 
     static CONST char *subcommands[] = {
-	"broadcast", "delete", "get", "keys", "set", "type", "values",
-	(char *) NULL
+	"broadcast", "delete", "get", "keys", "set", "type", "values", NULL
     };
     enum SubCmdIdx {
 	BroadcastIdx, DeleteIdx, GetIdx, KeysIdx, SetIdx, TypeIdx, ValuesIdx
@@ -1390,7 +1390,7 @@ static int
 BroadcastValue(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj * CONST objv[])	/* Argument values. */
+    Tcl_Obj *CONST objv[])	/* Argument values. */
 {
     LRESULT result, sendResult;
     UINT timeout = 3000;
@@ -1516,7 +1516,7 @@ AppendSystemError(
     }
 
     sprintf(id, "%ld", error);
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *) NULL);
+    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, NULL);
     Tcl_AppendToObj(resultPtr, msg, length);
     Tcl_SetObjResult(interp, resultPtr);
 

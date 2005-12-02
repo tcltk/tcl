@@ -1,15 +1,15 @@
-/* 
- * stub16.c 
+/*
+ * stub16.c
  *
  *	A helper program used for running 16-bit DOS applications under
  *	Windows 95.
  *
  * Copyright (c) 1996 by Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: stub16.c,v 1.4 1999/04/21 21:50:34 rjohnson Exp $
+ * RCS: @(#) $Id: stub16.c,v 1.4.36.1 2005/12/02 18:43:11 dgp Exp $
  */
 
 #define STRICT
@@ -18,32 +18,31 @@
 #include <stdio.h>
 
 static HANDLE		CreateTempFile(void);
-
+
 /*
  *---------------------------------------------------------------------------
  *
  * main
  *
- *	Entry point for the 32-bit console mode app used by Windows 95 to
- *	help run the 16-bit program specified on the command line.
+ *	Entry point for the 32-bit console mode app used by Windows 95 to help
+ *	run the 16-bit program specified on the command line.
  *
- *	1. EOF on a pipe that connects a detached 16-bit process and a
- *	32-bit process is never seen.  So, this process runs the 16-bit
- *	process _attached_, and then it is run detached from the calling
- *	32-bit process.  
- * 
- *	2. If a 16-bit process blocks reading from or writing to a pipe,
- *	it never wakes up, and eventually brings the whole system down
- *	with it if you try to kill the process.  This app simulates
- *	pipes.  If any of the stdio handles is a pipe, this program
- *	accumulates information into temp files and forwards it to or
- *	from the DOS application as appropriate.  This means that this
- *	program must receive EOF from a stdin pipe before it will actually
- *	start the DOS app, and the DOS app must finish generating stdout
- *	or stderr before the data will be sent to the next stage of the
- *	pipe.  If the stdio handles are not pipes, no accumulation occurs
- *	and the data is passed straight through to and from the DOS
- *	application.
+ *	1. EOF on a pipe that connects a detached 16-bit process and a 32-bit
+ *	process is never seen. So, this process runs the 16-bit process
+ *	_attached_, and then it is run detached from the calling 32-bit
+ *	process.
+ *
+ *	2. If a 16-bit process blocks reading from or writing to a pipe, it
+ *	never wakes up, and eventually brings the whole system down with it if
+ *	you try to kill the process. This app simulates pipes. If any of the
+ *	stdio handles is a pipe, this program accumulates information into
+ *	temp files and forwards it to or from the DOS application as
+ *	appropriate. This means that this program must receive EOF from a
+ *	stdin pipe before it will actually start the DOS app, and the DOS app
+ *	must finish generating stdout or stderr before the data will be sent
+ *	to the next stage of the pipe. If the stdio handles are not pipes, no
+ *	accumulation occurs and the data is passed straight through to and
+ *	from the DOS application.
  *
  * Results:
  *	None.
@@ -56,7 +55,7 @@ static HANDLE		CreateTempFile(void);
  */
 
 int
-main()
+main(void)
 {
     DWORD dwRead, dwWrite;
     char *cmdLine;
@@ -74,10 +73,10 @@ main()
 
     /*
      * Don't get command line from argc, argv, because the command line
-     * tokenizer will have stripped off all the escape sequences needed
-     * for quotes and backslashes, and then we'd have to put them all
-     * back in again.  Get the raw command line and parse off what we
-     * want ourselves.  The command line should be of the form:
+     * tokenizer will have stripped off all the escape sequences needed for
+     * quotes and backslashes, and then we'd have to put them all back in
+     * again. Get the raw command line and parse off what we want ourselves.
+     * The command line should be of the form:
      *
      * stub16.exe program arg1 arg2 ...
      */
@@ -125,7 +124,7 @@ main()
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    if (CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si, 
+    if (CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, 0, NULL, NULL, &si,
 	    &pi) == FALSE) {
 	goto cleanup;
     }
@@ -159,7 +158,7 @@ main()
 	}
     }
 
-cleanup:
+  cleanup:
     if (hFileInput != INVALID_HANDLE_VALUE) {
 	CloseHandle(hFileInput);
     }
@@ -177,7 +176,7 @@ cleanup:
 }
 
 static HANDLE
-CreateTempFile()
+CreateTempFile(void)
 {
     char name[MAX_PATH];
     SECURITY_ATTRIBUTES sa;
@@ -192,7 +191,7 @@ CreateTempFile()
     sa.nLength = sizeof(sa);
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = TRUE;
-    return CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, &sa, 
+    return CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, &sa,
 	    CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE,
 	    NULL);
 }

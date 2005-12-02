@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.10 2005/10/18 20:47:04 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.11 2005/12/02 18:42:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2233,7 +2233,7 @@ test binary-65.8 {largest significand} ieeeFloatingPoint {
     binary scan [binary format w 0x4350000000000000] q d
     set d
 } 18014398509481984.0
-test binary-65.8 {largest significand} ieeeFloatingPoint {
+test binary-65.9 {largest significand} ieeeFloatingPoint {
     binary scan [binary format w 0x4350000000000001] q d
     set d
 } 18014398509481988.0

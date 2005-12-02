@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.16 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.17 2005/12/02 18:42:08 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3843,7 +3843,6 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	}
 	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, 0);
 	if (valuePtr == NULL) {
-	    Tcl_DecrRefCount(newPtr);
 	    Tcl_AppendResult(interp, "couldn't set variable \"",
 		    Tcl_GetString(varPtr), "\"", NULL);
 	    return TCL_ERROR;

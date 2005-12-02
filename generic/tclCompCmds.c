@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.13 2005/11/03 17:52:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.14 2005/12/02 18:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -116,6 +116,8 @@
 
 static ClientData	DupForeachInfo(ClientData clientData);
 static void		FreeForeachInfo(ClientData clientData);
+static ClientData	DupJumptableInfo(ClientData clientData);
+static void		FreeJumptableInfo(ClientData clientData);
 static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -136,6 +138,12 @@ AuxDataType tclForeachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo		/* freeProc */
+};
+
+AuxDataType tclJumptableInfoType = {
+    "JumptableInfo",		/* name */
+    DupJumptableInfo,		/* dupProc */
+    FreeJumptableInfo		/* freeProc */
 };
 
 /*
@@ -3282,6 +3290,7 @@ TclCompileSwitchCmd(
     int savedStackDepth = envPtr->currStackDepth;
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
+    int isListedArms = 0;
     int i;
 
     /*
@@ -3321,6 +3330,7 @@ TclCompileSwitchCmd(
 	 * at time of writing). Note that -exact and -glob may only be given
 	 * at most once or we bail out (error case).
 	 */
+
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || size < 2) {
 	    return TCL_ERROR;
 	}
@@ -3420,6 +3430,7 @@ TclCompileSwitchCmd(
 	    return TCL_ERROR;
 	}
 
+	isListedArms = 1;
 	bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * numWords);
 	bodyToken = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numWords);
 
@@ -3538,6 +3549,181 @@ TclCompileSwitchCmd(
      */
 
     CompileTokens(envPtr, valueTokenPtr, interp);
+
+    /*
+     * Check if we can generate a jump table, since if so that's faster than
+     * doing an explicit compare with each body. Note that we're definitely
+     * over-conservative with determining whether we can do the jump table,
+     * but it handles the most common case well enough.
+     */
+
+    if (isListedArms && mode == Switch_Exact && !noCase) {
+	JumptableInfo *jtPtr;
+	int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
+	int mustGenerate, jumpToDefault;
+	Tcl_DString buffer;
+	Tcl_HashEntry *hPtr;
+
+	/*
+	 * Compile the switch by using a jump table, which is basically a
+	 * hashtable that maps from literal values to match against to the
+	 * offset (relative to the INST_JUMP_TABLE instruction) to jump to.
+	 * The jump table itself is independent of any invokation of the
+	 * bytecode, and as such is stored in an auxData block.
+	 *
+	 * Start by allocating the jump table itself, plus some workspace.
+	 */
+
+	jtPtr = (JumptableInfo *) ckalloc(sizeof(JumptableInfo));
+	Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
+	infoIndex = TclCreateAuxData((ClientData) jtPtr,
+		&tclJumptableInfoType, envPtr);
+	finalFixups = (int *) ckalloc(sizeof(int) * (numWords/2));
+	foundDefault = 0;
+	mustGenerate = 1;
+
+	/*
+	 * Next, issue the instruction to do the jump, together with what we
+	 * want to do if things do not work out (jump to either the default
+	 * clause or the "default" default, which just sets the result to
+	 * empty). Note that we will come back and rewrite the jump's offset
+	 * parameter when we know what it should be, and that all jumps we
+	 * issue are of the wide kind because that makes the code much easier
+	 * to debug!
+	 */
+
+	jumpLocation = CurrentOffset(envPtr);
+	TclEmitInstInt4(INST_JUMP_TABLE, infoIndex, envPtr);
+	jumpToDefault = CurrentOffset(envPtr);
+	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+
+	for (i=0 ; i<numWords ; i+=2) {
+	    /*
+	     * For each arm, we must first work out what to do with the match
+	     * term.
+	     */
+
+	    if (i!=numWords-2 || bodyToken[numWords-2]->size != 7 ||
+		    memcmp(bodyToken[numWords-2]->start, "default", 7)) {
+		/*
+		 * This is not a default clause, so insert the current
+		 * location as a target in the jump table (assuming it isn't
+		 * already there, which would indicate that this clause is
+		 * probably masked by an earlier one). Note that we use a
+		 * Tcl_DString here simply because the hash API does not let
+		 * us specify the string length.
+		 */
+
+		Tcl_DStringInit(&buffer);
+		Tcl_DStringAppend(&buffer, bodyToken[i]->start,
+			bodyToken[i]->size);
+		hPtr = Tcl_CreateHashEntry(&jtPtr->hashTable,
+			Tcl_DStringValue(&buffer), &isNew);
+		if (isNew) {
+		    /*
+		     * First time we've encountered this match clause, so it
+		     * must point to here.
+		     */
+
+		    Tcl_SetHashValue(hPtr, (ClientData)
+			    (CurrentOffset(envPtr) - jumpLocation));
+		}
+		Tcl_DStringFree(&buffer);
+	    } else {
+		/*
+		 * This is a default clause, so patch up the fallthrough from
+		 * the INST_JUMP_TABLE instruction to here.
+		 */
+
+		foundDefault = 1;
+		isNew = 1;
+		TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
+			envPtr->codeStart+jumpToDefault+1);
+	    }
+
+	    /*
+	     * Now, for each arm we must deal with the body of the clause.
+	     *
+	     * If this is a continuation body (never true of a final clause,
+	     * whether default or not) we're done because the next jump target
+	     * will also point here, so we advance to the next clause.
+	     */
+
+	    if (bodyToken[i+1]->size == 1 && bodyToken[i+1]->start[0] == '-') {
+		mustGenerate = 1;
+		continue;
+	    }
+
+	    /*
+	     * Also skip this arm if its only match clause is masked. (We
+	     * could probably be more aggressive about this, but that would be
+	     * much more difficult to get right.)
+	     */
+
+	    if (!isNew && !mustGenerate) {
+		continue;
+	    }
+	    mustGenerate = 0;
+
+	    /*
+	     * Compile the body of the arm.
+	     */
+
+	    TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
+
+	    /*
+	     * Compile a jump in to the end of the command if this body is
+	     * anything other than a user-supplied default arm (to either skip
+	     * over the remaining bodies or the code that generates an empty
+	     * result).
+	     */
+
+	    if (i+2 < numWords || !foundDefault) {
+		finalFixups[numRealBodies++] = CurrentOffset(envPtr);
+
+		/*
+		 * Easier by far to issue this jump as a fixed-width jump.
+		 * Otherwise we'd need to do a lot more (and more awkward)
+		 * rewriting when we fixed this all up.
+		 */
+
+		TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+	    }
+	}
+
+	/*
+	 * We're at the end. If we've not already done so through the
+	 * processing of a user-supplied default clause, add in a "default"
+	 * default clause now.
+	 */
+
+	if (!foundDefault) {
+	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
+		    envPtr->codeStart+jumpToDefault+1);
+	    PushLiteral(envPtr, "", 0);
+	}
+
+	/*
+	 * No more instructions to be issued; everything that needs to jump to
+	 * the end of the command is fixed up at this point.
+	 */
+
+	for (i=0 ; i<numRealBodies ; i++) {
+	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-finalFixups[i],
+		    envPtr->codeStart+finalFixups[i]+1);
+	}
+
+	/*
+	 * Clean up all our temporary space and return.
+	 */
+
+	ckfree((char *) finalFixups);
+	ckfree((char *) bodyToken);
+	if (bodyTokenArray != NULL) {
+	    ckfree((char *) bodyTokenArray);
+	}
+	return TCL_OK;
+    }
 
     /*
      * Generate a test for each arm.
@@ -3692,6 +3878,56 @@ TclCompileSwitchCmd(
 
     envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupJumptableInfo, FreeJumptableInfo --
+ *
+ *	Functions to duplicate and release a jump-table created for use with
+ *	the INST_JUMP_TABLE instruction.
+ *
+ * Results:
+ *	DupJumptableInfo: a copy of the jump-table
+ *	FreeJumptableInfo: none
+ *
+ * Side effects:
+ *	DupJumptableInfo: allocates memory
+ *	FreeJumptableInfo: releases memory
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ClientData
+DupJumptableInfo(
+    ClientData clientData)
+{
+    JumptableInfo *jtPtr = (JumptableInfo *) clientData;
+    JumptableInfo *newJtPtr = (JumptableInfo *)
+	    ckalloc(sizeof(JumptableInfo));
+    Tcl_HashEntry *hPtr, *newHPtr;
+    Tcl_HashSearch search;
+    int isNew;
+
+    Tcl_InitHashTable(&newJtPtr->hashTable, TCL_STRING_KEYS);
+    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
+    while (hPtr != NULL) {
+	newHPtr = Tcl_CreateHashEntry(&newJtPtr->hashTable,
+		Tcl_GetHashKey(&jtPtr->hashTable, hPtr), &isNew);
+	Tcl_SetHashValue(newHPtr, Tcl_GetHashValue(hPtr));
+    }
+    return (ClientData) newJtPtr;
+}
+
+static void
+FreeJumptableInfo(
+    ClientData clientData)
+{
+    JumptableInfo *jtPtr = (JumptableInfo *) clientData;
+
+    Tcl_DeleteHashTable(&jtPtr->hashTable);
+    ckfree((char *) jtPtr);
 }
 
 /*

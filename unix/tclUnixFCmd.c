@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.15 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.16 2005/12/02 18:43:11 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -128,6 +128,7 @@ enum {
     UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
 };
 
+MODULE_SCOPE CONST char *tclpFileAttrStrings[];
 CONST char *tclpFileAttrStrings[] = {
     "-group", "-owner", "-permissions",
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -139,6 +140,7 @@ CONST char *tclpFileAttrStrings[] = {
     NULL
 };
 
+MODULE_SCOPE CONST TclFileAttrProcs tclpFileAttrProcs[];
 CONST TclFileAttrProcs tclpFileAttrProcs[] = {
     {GetGroupAttribute, SetGroupAttribute},
     {GetOwnerAttribute, SetOwnerAttribute},
@@ -161,14 +163,14 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
  * a bug that makes readdir return NULL even though some directory entries
  * have not been processed.  The bug afflicts SunOS's readdir when applied to
  * ufs file systems and Darwin 6.5's (and OSX v.10.3.8's) HFS+.  JH found the
- * Darwin readdir to reset at 172, so 150 is chosen to be conservative.  We
+ * Darwin readdir to reset at 147, so 130 is chosen to be conservative.  We
  * can't do a general rewind on failure as NFS can create special files that
  * recreate themselves when you try and delete them.  8.4.8 added a solution
  * that was affected by a single such NFS file, this solution should not be
  * affected by less than THRESHOLD such files. [Bug 1034337]
  */
 
-#define MAX_READDIR_UNLINK_THRESHOLD 150
+#define MAX_READDIR_UNLINK_THRESHOLD 130
 
 /*
  * Declarations for local procedures defined in this file:
@@ -422,6 +424,9 @@ DoCopyFile(
 	if (symlink(link, dst) < 0) {			/* INTL: Native. */
 	    return TCL_ERROR;
 	}
+#ifdef MAC_OSX_TCL
+	TclMacOSXCopyFileAttributes(src, dst, &srcStatBuf);
+#endif
 	break;
     }
 #endif

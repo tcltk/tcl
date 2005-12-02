@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.8 2005/11/03 17:52:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.9 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -282,7 +282,6 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,		    /* wide seek proc */
     TcpThreadActionProc,    /* thread action proc */
 };
-
 
 /*
  *----------------------------------------------------------------------
@@ -306,7 +305,7 @@ static Tcl_ChannelType tcpChannelType = {
  */
 
 static void
-InitSockets()
+InitSockets(void)
 {
     DWORD id;
     WSADATA wsaData;
@@ -538,7 +537,7 @@ InitSockets()
 
     /* ARGSUSED */
 static int
-SocketsEnabled()
+SocketsEnabled(void)
 {
     int enabled;
     Tcl_MutexLock(&socketMutex);
@@ -567,8 +566,8 @@ SocketsEnabled()
 
     /* ARGSUSED */
 static void
-SocketExitHandler(clientData)
-    ClientData clientData;		/* Not used. */
+SocketExitHandler(
+    ClientData clientData)		/* Not used. */
 {
     Tcl_MutexLock(&socketMutex);
     if (winSock.hModule) {
@@ -606,8 +605,8 @@ SocketExitHandler(clientData)
 
     /* ARGSUSED */
 static void
-SocketThreadExitHandler(clientData)
-    ClientData clientData;		/* Not used. */
+SocketThreadExitHandler(
+    ClientData clientData)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr =
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
@@ -660,8 +659,8 @@ SocketThreadExitHandler(clientData)
  */
 
 int
-TclpHasSockets(interp)
-    Tcl_Interp *interp;
+TclpHasSockets(
+    Tcl_Interp *interp)
 {
     Tcl_MutexLock(&socketMutex);
     InitSockets();
@@ -695,9 +694,9 @@ TclpHasSockets(interp)
  */
 
 void
-SocketSetupProc(data, flags)
-    ClientData data;		/* Not used. */
-    int flags;			/* Event flags as passed to Tcl_DoOneEvent. */
+SocketSetupProc(
+    ClientData data,		/* Not used. */
+    int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SocketInfo *infoPtr;
     Tcl_Time blockTime = { 0, 0 };
@@ -740,9 +739,9 @@ SocketSetupProc(data, flags)
  */
 
 static void
-SocketCheckProc(data, flags)
-    ClientData data;		/* Not used. */
-    int flags;			/* Event flags as passed to Tcl_DoOneEvent. */
+SocketCheckProc(
+    ClientData data,		/* Not used. */
+    int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SocketInfo *infoPtr;
     SocketEvent *evPtr;
@@ -795,9 +794,9 @@ SocketCheckProc(data, flags)
  */
 
 static int
-SocketEventProc(evPtr, flags)
-    Tcl_Event *evPtr;		/* Event to service. */
-    int flags;			/* Flags that indicate what events to handle,
+SocketEventProc(
+    Tcl_Event *evPtr,		/* Event to service. */
+    int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
     SocketInfo *infoPtr;
@@ -925,9 +924,9 @@ SocketEventProc(evPtr, flags)
  */
 
 static int
-TcpBlockProc(instanceData, mode)
-    ClientData	instanceData;	/* The socket to block/un-block. */
-    int mode;			/* TCL_MODE_BLOCKING or
+TcpBlockProc(
+    ClientData instanceData,	/* The socket to block/un-block. */
+    int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
@@ -960,9 +959,9 @@ TcpBlockProc(instanceData, mode)
 
     /* ARGSUSED */
 static int
-TcpCloseProc(instanceData, interp)
-    ClientData instanceData;	/* The socket to close. */
-    Tcl_Interp *interp;		/* Unused. */
+TcpCloseProc(
+    ClientData instanceData,	/* The socket to close. */
+    Tcl_Interp *interp)		/* Unused. */
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     /* TIP #218 */
@@ -1016,8 +1015,8 @@ TcpCloseProc(instanceData, interp)
  */
 
 static SocketInfo *
-NewSocketInfo(socket)
-    SOCKET socket;
+NewSocketInfo(
+    SOCKET socket)
 {
     SocketInfo *infoPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1063,15 +1062,15 @@ NewSocketInfo(socket)
  */
 
 static SocketInfo *
-CreateSocket(interp, port, host, server, myaddr, myport, async)
-    Tcl_Interp *interp;		/* For error reporting; can be NULL. */
-    int port;			/* Port number to open. */
-    CONST char *host;		/* Name of host on which to open port. */
-    int server;			/* 1 if socket should be a server socket, else
+CreateSocket(
+    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
+    int port,			/* Port number to open. */
+    CONST char *host,		/* Name of host on which to open port. */
+    int server,			/* 1 if socket should be a server socket, else
 				 * 0 for a client socket. */
-    CONST char *myaddr;		/* Optional client-side address */
-    int myport;			/* Optional client-side port */
-    int async;			/* If nonzero, connect client socket
+    CONST char *myaddr,		/* Optional client-side address */
+    int myport,			/* Optional client-side port */
+    int async)			/* If nonzero, connect client socket
 				 * asynchronously. */
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
@@ -1234,7 +1233,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
     TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
     if (interp != NULL) {
 	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), (char *) NULL);
+		Tcl_PosixError(interp), NULL);
     }
     if (sock != INVALID_SOCKET) {
 	winSock.closesocket(sock);
@@ -1260,10 +1259,10 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
  */
 
 static int
-CreateSocketAddress(sockaddrPtr, host, port)
-    LPSOCKADDR_IN sockaddrPtr;	/* Socket address */
-    CONST char *host;		/* Host. NULL implies INADDR_ANY */
-    int port;			/* Port number */
+CreateSocketAddress(
+    LPSOCKADDR_IN sockaddrPtr,	/* Socket address */
+    CONST char *host,		/* Host. NULL implies INADDR_ANY */
+    int port)			/* Port number */
 {
     struct hostent *hostent;	/* Host database entry */
     struct in_addr addr;	/* For 64/32 bit madness */
@@ -1332,10 +1331,10 @@ CreateSocketAddress(sockaddrPtr, host, port)
  */
 
 static int
-WaitForSocketEvent(infoPtr, events, errorCodePtr)
-    SocketInfo *infoPtr;	/* Information about this socket. */
-    int events;			/* Events to look for. */
-    int *errorCodePtr;		/* Where to store errors? */
+WaitForSocketEvent(
+    SocketInfo *infoPtr,	/* Information about this socket. */
+    int events,			/* Events to look for. */
+    int *errorCodePtr)		/* Where to store errors? */
 {
     int result = 1;
     int oldMode;
@@ -1400,13 +1399,13 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
  */
 
 Tcl_Channel
-Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
-    Tcl_Interp *interp;		/* For error reporting; can be NULL. */
-    int port;			/* Port number to open. */
-    CONST char *host;		/* Host on which to open port. */
-    CONST char *myaddr;		/* Client-side address */
-    int myport;			/* Client-side port */
-    int async;			/* If nonzero, should connect client socket
+Tcl_OpenTcpClient(
+    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
+    int port,			/* Port number to open. */
+    CONST char *host,		/* Host on which to open port. */
+    CONST char *myaddr,		/* Client-side address */
+    int myport,			/* Client-side port */
+    int async)			/* If nonzero, should connect client socket
 				 * asynchronously. */
 {
     SocketInfo *infoPtr;
@@ -1461,8 +1460,8 @@ Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
  */
 
 Tcl_Channel
-Tcl_MakeTcpClientChannel(sock)
-    ClientData sock;		/* The socket to wrap up into a channel. */
+Tcl_MakeTcpClientChannel(
+    ClientData sock)		/* The socket to wrap up into a channel. */
 {
     SocketInfo *infoPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1515,14 +1514,14 @@ Tcl_MakeTcpClientChannel(sock)
  */
 
 Tcl_Channel
-Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
-    Tcl_Interp *interp;		/* For error reporting - may be NULL. */
-    int port;			/* Port number to open. */
-    CONST char *host;		/* Name of local host. */
-    Tcl_TcpAcceptProc *acceptProc;
+Tcl_OpenTcpServer(
+    Tcl_Interp *interp,		/* For error reporting - may be NULL. */
+    int port,			/* Port number to open. */
+    CONST char *host,		/* Name of local host. */
+    Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
-    ClientData acceptProcData;	/* Data for the callback. */
+    ClientData acceptProcData)	/* Data for the callback. */
 {
     SocketInfo *infoPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1574,8 +1573,8 @@ Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
  */
 
 static void
-TcpAccept(infoPtr)
-    SocketInfo *infoPtr;	/* Socket to accept. */
+TcpAccept(
+    SocketInfo *infoPtr)	/* Socket to accept. */
 {
     SOCKET newSocket;
     SocketInfo *newInfoPtr;
@@ -1682,11 +1681,11 @@ TcpAccept(infoPtr)
  */
 
 static int
-TcpInputProc(instanceData, buf, toRead, errorCodePtr)
-    ClientData instanceData;	/* The socket state. */
-    char *buf;			/* Where to store data. */
-    int toRead;			/* Maximum number of bytes to read. */
-    int *errorCodePtr;		/* Where to store error codes. */
+TcpInputProc(
+    ClientData instanceData,	/* The socket state. */
+    char *buf,			/* Where to store data. */
+    int toRead,			/* Maximum number of bytes to read. */
+    int *errorCodePtr)		/* Where to store error codes. */
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     int bytesRead;
@@ -1808,11 +1807,11 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
  */
 
 static int
-TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
-    ClientData instanceData;	/* The socket state. */
-    CONST char *buf;		/* Where to get data. */
-    int toWrite;		/* Maximum number of bytes to write. */
-    int *errorCodePtr;		/* Where to store error codes. */
+TcpOutputProc(
+    ClientData instanceData,	/* The socket state. */
+    CONST char *buf,		/* Where to get data. */
+    int toWrite,		/* Maximum number of bytes to write. */
+    int *errorCodePtr)		/* Where to store error codes. */
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     int bytesWritten;
@@ -1917,7 +1916,7 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
  */
 
 static int
-TcpSetOptionProc (
+TcpSetOptionProc(
     ClientData instanceData,	/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     CONST char *optionName,	/* Name of the option to set. */
@@ -2007,13 +2006,13 @@ TcpSetOptionProc (
  */
 
 static int
-TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
-    ClientData instanceData;	/* Socket state. */
-    Tcl_Interp *interp;		/* For error reporting - can be NULL */
-    CONST char *optionName;	/* Name of the option to retrieve the value
+TcpGetOptionProc(
+    ClientData instanceData,	/* Socket state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL */
+    CONST char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
 				 * values. */
-    Tcl_DString *dsPtr;		/* Where to store the computed value;
+    Tcl_DString *dsPtr)		/* Where to store the computed value;
 				 * initialized by caller. */
 {
     SocketInfo *infoPtr;
@@ -2040,7 +2039,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     infoPtr = (SocketInfo *) instanceData;
     sock = (int) infoPtr->socket;
-    if (optionName != (char *) NULL) {
+    if (optionName != NULL) {
 	len = strlen(optionName);
     }
 
@@ -2074,13 +2073,13 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 		    winSock.inet_ntoa(peername.sin_addr));
 
 	    if (peername.sin_addr.s_addr == 0) {
-		hostEntPtr = (struct hostent *) NULL;
+		hostEntPtr = NULL;
 	    } else {
 		hostEntPtr = winSock.gethostbyaddr(
 			(char *) &(peername.sin_addr),
 			sizeof(peername.sin_addr), AF_INET);
 	    }
-	    if (hostEntPtr != (struct hostent *) NULL) {
+	    if (hostEntPtr != NULL) {
 		Tcl_DStringAppendElement(dsPtr, hostEntPtr->h_name);
 	    } else {
 		Tcl_DStringAppendElement(dsPtr,
@@ -2105,7 +2104,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 		TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
 		if (interp) {
 		    Tcl_AppendResult(interp, "can't get peername: ",
-			    Tcl_PosixError(interp), (char *) NULL);
+			    Tcl_PosixError(interp), NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2122,13 +2121,13 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 	    Tcl_DStringAppendElement(dsPtr,
 		    winSock.inet_ntoa(sockname.sin_addr));
 	    if (sockname.sin_addr.s_addr == 0) {
-		hostEntPtr = (struct hostent *) NULL;
+		hostEntPtr = NULL;
 	    } else {
 		hostEntPtr = winSock.gethostbyaddr(
 			(char *) &(sockname.sin_addr),
 			sizeof(peername.sin_addr), AF_INET);
 	    }
-	    if (hostEntPtr != (struct hostent *) NULL) {
+	    if (hostEntPtr != NULL) {
 		Tcl_DStringAppendElement(dsPtr, hostEntPtr->h_name);
 	    } else {
 		Tcl_DStringAppendElement(dsPtr,
@@ -2145,7 +2144,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 	    if (interp) {
 		TclWinConvertWSAError((DWORD) winSock.WSAGetLastError());
 		Tcl_AppendResult(interp, "can't get sockname: ",
-			Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2220,9 +2219,9 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
  */
 
 static void
-TcpWatchProc(instanceData, mask)
-    ClientData instanceData;	/* The socket state. */
-    int mask;			/* Events of interest; an OR-ed combination of
+TcpWatchProc(
+    ClientData instanceData,	/* The socket state. */
+    int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
@@ -2272,10 +2271,10 @@ TcpWatchProc(instanceData, mask)
  */
 
 static int
-TcpGetHandleProc(instanceData, direction, handlePtr)
-    ClientData instanceData;	/* The socket state. */
-    int direction;		/* Not used. */
-    ClientData *handlePtr;	/* Where to store the handle.  */
+TcpGetHandleProc(
+    ClientData instanceData,	/* The socket state. */
+    int direction,		/* Not used. */
+    ClientData *handlePtr)	/* Where to store the handle.  */
 {
     SocketInfo *statePtr = (SocketInfo *) instanceData;
 
@@ -2300,7 +2299,8 @@ TcpGetHandleProc(instanceData, direction, handlePtr)
  */
 
 static DWORD WINAPI
-SocketThread(LPVOID arg)
+SocketThread(
+    LPVOID arg)
 {
     MSG msg;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)(arg);
@@ -2350,11 +2350,11 @@ SocketThread(LPVOID arg)
  */
 
 static LRESULT CALLBACK
-SocketProc(hwnd, message, wParam, lParam)
-    HWND hwnd;
-    UINT message;
-    WPARAM wParam;
-    LPARAM lParam;
+SocketProc(
+    HWND hwnd,
+    UINT message,
+    WPARAM wParam,
+    LPARAM lParam)
 {
     int event, error;
     SOCKET socket;
@@ -2501,7 +2501,7 @@ SocketProc(hwnd, message, wParam, lParam)
  */
 
 CONST char *
-Tcl_GetHostName()
+Tcl_GetHostName(void)
 {
     return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
 }
@@ -2521,10 +2521,10 @@ Tcl_GetHostName()
  */
 
 void
-InitializeHostName(valuePtr, lengthPtr, encodingPtr)
-    char **valuePtr;
-    int *lengthPtr;
-    Tcl_Encoding *encodingPtr;
+InitializeHostName(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
 {
     WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD length = sizeof(wbuf) / sizeof(WCHAR);
@@ -2581,8 +2581,12 @@ InitializeHostName(valuePtr, lengthPtr, encodingPtr)
  */
 
 int
-TclWinGetSockOpt(SOCKET s, int level, int optname, char * optval,
-	int FAR *optlen)
+TclWinGetSockOpt(
+    SOCKET s,
+    int level,
+    int optname,
+    char * optval,
+    int FAR *optlen)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2598,8 +2602,12 @@ TclWinGetSockOpt(SOCKET s, int level, int optname, char * optval,
 }
 
 int
-TclWinSetSockOpt(SOCKET s, int level, int optname, const char * optval,
-	int optlen)
+TclWinSetSockOpt(
+    SOCKET s,
+    int level,
+    int optname,
+    const char * optval,
+    int optlen)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2615,7 +2623,8 @@ TclWinSetSockOpt(SOCKET s, int level, int optname, const char * optval,
 }
 
 u_short
-TclWinNToHS(u_short netshort)
+TclWinNToHS(
+    u_short netshort)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2631,7 +2640,9 @@ TclWinNToHS(u_short netshort)
 }
 
 struct servent *
-TclWinGetServByName(const char * name, const char * proto)
+TclWinGetServByName(
+    const char *name,
+    const char *proto)
 {
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -2640,7 +2651,7 @@ TclWinGetServByName(const char * name, const char * proto)
      */
 
     if (!SocketsEnabled()) {
-	return (struct servent *) NULL;
+	return NULL;
     }
 
     return winSock.getservbyname(name, proto);
@@ -2663,9 +2674,9 @@ TclWinGetServByName(const char * name, const char * proto)
  */
 
 static void
-TcpThreadActionProc (instanceData, action)
-     ClientData instanceData;
-     int action;
+TcpThreadActionProc(
+    ClientData instanceData,
+    int action)
 {
     ThreadSpecificData *tsdPtr;
     SocketInfo *infoPtr = (SocketInfo *) instanceData;

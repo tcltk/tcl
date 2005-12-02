@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.8 2005/07/26 04:12:34 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.9 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -92,35 +92,31 @@ TCL_DECLARE_MUTEX(ddeMutex)
  * Forward declarations for functions defined later in this file.
  */
 
-static LRESULT CALLBACK	    DdeClientWindowProc _ANSI_ARGS_((
-				HWND hwnd, UINT uMsg, WPARAM wParam,
-				LPARAM lParam));
-static int		    DdeCreateClient _ANSI_ARGS_((
-				struct DdeEnumServices *es));
-static BOOL CALLBACK	    DdeEnumWindowsCallback _ANSI_ARGS_((
-				HWND hwndTarget, LPARAM lParam));
-static void		    DdeExitProc _ANSI_ARGS_((ClientData clientData));
-static int		    DdeGetServicesList _ANSI_ARGS_((Tcl_Interp *interp,
-				char *serviceName, char *topicName));
-static HDDEDATA CALLBACK    DdeServerProc _ANSI_ARGS_((UINT uType,
-				UINT uFmt, HCONV hConv, HSZ ddeTopic,
-				HSZ ddeItem, HDDEDATA hData, DWORD dwData1,
-				DWORD dwData2));
-static LRESULT		    DdeServicesOnAck _ANSI_ARGS_((HWND hwnd,
-				WPARAM wParam, LPARAM lParam));
-static void		    DeleteProc _ANSI_ARGS_((ClientData clientData));
-static Tcl_Obj *	    ExecuteRemoteObject _ANSI_ARGS_((
-				RegisteredInterp *riPtr,
-				Tcl_Obj *ddeObjectPtr));
-static int		    MakeDdeConnection _ANSI_ARGS_((Tcl_Interp *interp,
-				char *name, HCONV *ddeConvPtr));
-static void		    SetDdeError _ANSI_ARGS_((Tcl_Interp *interp));
-int			    Tcl_DdeObjCmd _ANSI_ARGS_((ClientData clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *CONST objv[]));
+static LRESULT CALLBACK	DdeClientWindowProc(HWND hwnd, UINT uMsg,
+			    WPARAM wParam, LPARAM lParam);
+static int		DdeCreateClient(struct DdeEnumServices *es);
+static BOOL CALLBACK	DdeEnumWindowsCallback(HWND hwndTarget, LPARAM lParam);
+static void		DdeExitProc(ClientData clientData);
+static int		DdeGetServicesList(Tcl_Interp *interp,
+			    char *serviceName, char *topicName);
+static HDDEDATA CALLBACK DdeServerProc(UINT uType, UINT uFmt, HCONV hConv,
+			    HSZ ddeTopic, HSZ ddeItem, HDDEDATA hData,
+			    DWORD dwData1, DWORD dwData2);
+static LRESULT		DdeServicesOnAck(HWND hwnd, WPARAM wParam,
+			    LPARAM lParam);
+static void		DeleteProc(ClientData clientData);
+static Tcl_Obj *	ExecuteRemoteObject(RegisteredInterp *riPtr,
+			    Tcl_Obj *ddeObjectPtr);
+static int		MakeDdeConnection(Tcl_Interp *interp, char *name,
+			    HCONV *ddeConvPtr);
+static void		SetDdeError(Tcl_Interp *interp);
 
-EXTERN int		    Dde_Init _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		    Dde_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
+int			Tcl_DdeObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+
+EXTERN int		Dde_Init(Tcl_Interp *interp);
+EXTERN int		Dde_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -139,8 +135,8 @@ EXTERN int		    Dde_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
  */
 
 int
-Dde_Init(interp)
-    Tcl_Interp *interp;
+Dde_Init(
+    Tcl_Interp *interp)
 {
     ThreadSpecificData *tsdPtr;
 
@@ -171,8 +167,8 @@ Dde_Init(interp)
  */
 
 int
-Dde_SafeInit(interp)
-    Tcl_Interp *interp;
+Dde_SafeInit(
+    Tcl_Interp *interp)
 {
     int result = Dde_Init(interp);
     if (result == TCL_OK) {
@@ -270,13 +266,13 @@ Initialize(void)
  */
 
 static char *
-DdeSetServerName(interp, name, exactName, handlerPtr)
-    Tcl_Interp *interp;
-    char *name;			/* The name that will be used to refer to the
+DdeSetServerName(
+    Tcl_Interp *interp,
+    char *name,			/* The name that will be used to refer to the
 				 * interpreter in later "send" commands. Must
 				 * be globally unique. */
-    int exactName;		/* Should we make a unique name? 0 = unique */
-    Tcl_Obj *handlerPtr;	/* Name of the optional proc/command to handle
+    int exactName,		/* Should we make a unique name? 0 = unique */
+    Tcl_Obj *handlerPtr)	/* Name of the optional proc/command to handle
 				 * incoming Dde eval's */
 {
     int suffix, offset;
@@ -435,8 +431,8 @@ DdeSetServerName(interp, name, exactName, handlerPtr)
  */
 
 static RegisteredInterp *
-DdeGetRegistrationPtr(interp)
-    Tcl_Interp *interp;
+DdeGetRegistrationPtr(
+    Tcl_Interp *interp)
 {
     RegisteredInterp *riPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -467,8 +463,8 @@ DdeGetRegistrationPtr(interp)
  */
 
 static void
-DeleteProc(clientData)
-    ClientData clientData;	/* The interp we are deleting passed as
+DeleteProc(
+    ClientData clientData)	/* The interp we are deleting passed as
 				 * ClientData. */
 {
     RegisteredInterp *riPtr = (RegisteredInterp *) clientData;
@@ -521,9 +517,9 @@ DeleteProc(clientData)
  */
 
 static Tcl_Obj *
-ExecuteRemoteObject(riPtr, ddeObjectPtr)
-    RegisteredInterp *riPtr;	    /* Info about this server. */
-    Tcl_Obj *ddeObjectPtr;	    /* The object to execute. */
+ExecuteRemoteObject(
+    RegisteredInterp *riPtr,	    /* Info about this server. */
+    Tcl_Obj *ddeObjectPtr)	    /* The object to execute. */
 {
     Tcl_Obj *returnPackagePtr;
     int result = TCL_OK;
@@ -552,7 +548,7 @@ ExecuteRemoteObject(riPtr, ddeObjectPtr)
 	result = Tcl_EvalObjEx(riPtr->interp, ddeObjectPtr, TCL_EVAL_GLOBAL);
     }
 
-    returnPackagePtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
+    returnPackagePtr = Tcl_NewListObj(0, NULL);
 
     Tcl_ListObjAppendElement(NULL, returnPackagePtr, Tcl_NewIntObj(result));
     Tcl_ListObjAppendElement(NULL, returnPackagePtr,
@@ -594,16 +590,17 @@ ExecuteRemoteObject(riPtr, ddeObjectPtr)
  */
 
 static HDDEDATA CALLBACK
-DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
-    UINT uType;			/* The type of DDE transaction we are
+DdeServerProc(
+    UINT uType,			/* The type of DDE transaction we are
 				 * performing. */
-    UINT uFmt;			/* The format that data is sent or received. */
-    HCONV hConv;		/* The conversation associated with the
+    UINT uFmt,			/* The format that data is sent or received. */
+    HCONV hConv,		/* The conversation associated with the
 				 * current transaction. */
-    HSZ ddeTopic, ddeItem;	/* String handles. Transaction-type
+    HSZ ddeTopic, HSZ ddeItem,	/* String handles. Transaction-type
 				 * dependent. */
-    HDDEDATA hData;		/* DDE data. Transaction-type dependent. */
-    DWORD dwData1, dwData2;	/* Transaction-dependent data. */
+    HDDEDATA hData,		/* DDE data. Transaction-type dependent. */
+    DWORD dwData1, DWORD dwData2)
+				/* Transaction-dependent data. */
 {
     Tcl_DString dString;
     int len;
@@ -852,8 +849,8 @@ DdeServerProc(uType, uFmt, hConv, ddeTopic, ddeItem, hData, dwData1, dwData2)
  */
 
 static void
-DdeExitProc(clientData)
-    ClientData clientData;	    /* Not used in this handler. */
+DdeExitProc(
+    ClientData clientData)	    /* Not used in this handler. */
 {
     DdeNameService(ddeInstance, NULL, 0, DNS_UNREGISTER);
     DdeUninitialize(ddeInstance);
@@ -878,10 +875,10 @@ DdeExitProc(clientData)
  */
 
 static int
-MakeDdeConnection(interp, name, ddeConvPtr)
-    Tcl_Interp *interp;		/* Used to report errors. */
-    char *name;			/* The connection to use. */
-    HCONV *ddeConvPtr;
+MakeDdeConnection(
+    Tcl_Interp *interp,		/* Used to report errors. */
+    char *name,			/* The connection to use. */
+    HCONV *ddeConvPtr)
 {
     HSZ ddeTopic, ddeService;
     HCONV ddeConv;
@@ -896,7 +893,7 @@ MakeDdeConnection(interp, name, ddeConvPtr)
     if (ddeConv == (HCONV) NULL) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "no registered server named \"",
-		    name, "\"", (char *) NULL);
+		    name, "\"", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -926,8 +923,8 @@ MakeDdeConnection(interp, name, ddeConvPtr)
  */
 
 static int
-DdeCreateClient(es)
-    struct DdeEnumServices *es;
+DdeCreateClient(
+    struct DdeEnumServices *es)
 {
     WNDCLASSEX wc;
     static const char *szDdeClientClassName = "TclEval client class";
@@ -950,11 +947,11 @@ DdeCreateClient(es)
 }
 
 static LRESULT CALLBACK
-DdeClientWindowProc(hwnd, uMsg, wParam, lParam)
-    HWND hwnd;			/* What window is the message for */
-    UINT uMsg;			/* The type of message received */
-    WPARAM wParam;
-    LPARAM lParam;		/* (Potentially) our local handle */
+DdeClientWindowProc(
+    HWND hwnd,			/* What window is the message for */
+    UINT uMsg,			/* The type of message received */
+    WPARAM wParam,
+    LPARAM lParam)		/* (Potentially) our local handle */
 {
     LRESULT lr = 0L;
 
@@ -980,10 +977,10 @@ DdeClientWindowProc(hwnd, uMsg, wParam, lParam)
 }
 
 static LRESULT
-DdeServicesOnAck(hwnd, wParam, lParam)
-    HWND hwnd;
-    WPARAM wParam;
-    LPARAM lParam;
+DdeServicesOnAck(
+    HWND hwnd,
+    WPARAM wParam,
+    LPARAM lParam)
 {
     HWND hwndRemote = (HWND)wParam;
     ATOM service = (ATOM)LOWORD(lParam);
@@ -1036,9 +1033,9 @@ DdeServicesOnAck(hwnd, wParam, lParam)
 }
 
 static BOOL CALLBACK
-DdeEnumWindowsCallback(hwndTarget, lParam)
-    HWND hwndTarget;
-    LPARAM lParam;
+DdeEnumWindowsCallback(
+    HWND hwndTarget,
+    LPARAM lParam)
 {
     LRESULT dwResult = 0;
     struct DdeEnumServices *es = (struct DdeEnumServices *) lParam;
@@ -1050,9 +1047,10 @@ DdeEnumWindowsCallback(hwndTarget, lParam)
 }
 
 static int
-DdeGetServicesList(interp, serviceName, topicName)
-    Tcl_Interp *interp;
-    char *serviceName, *topicName;
+DdeGetServicesList(
+    Tcl_Interp *interp,
+    char *serviceName,
+    char *topicName)
 {
     struct DdeEnumServices es;
 
@@ -1096,8 +1094,8 @@ DdeGetServicesList(interp, serviceName, topicName)
  */
 
 static void
-SetDdeError(interp)
-    Tcl_Interp *interp;	    /* The interp to put the message in. */
+SetDdeError(
+    Tcl_Interp *interp)	    /* The interp to put the message in. */
 {
     char *errorMessage;
 
@@ -1138,11 +1136,11 @@ SetDdeError(interp)
  */
 
 int
-Tcl_DdeObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Used only for deletion */
-    Tcl_Interp *interp;		/* The interp we are sending from */
-    int objc;			/* Number of arguments */
-    Tcl_Obj *CONST objv[];	/* The arguments */
+Tcl_DdeObjCmd(
+    ClientData clientData,	/* Used only for deletion */
+    Tcl_Interp *interp,		/* The interp we are sending from */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *CONST objv[])	/* The arguments */
 {
     static CONST char *ddeCommands[] = {
 	"servername", "execute", "poke", "request", "services", "eval",
@@ -1153,16 +1151,16 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	DDE_EVAL
     };
     static CONST char *ddeSrvOptions[] = {
-	"-force", "-handler", "--", (char *) NULL
+	"-force", "-handler", "--", NULL
     };
     enum DdeSrvOptions {
 	DDE_SERVERNAME_EXACT, DDE_SERVERNAME_HANDLER, DDE_SERVERNAME_LAST,
     };
     static CONST char *ddeExecOptions[] = {
-	"-async", (char *) NULL
+	"-async", NULL
     };
     static CONST char *ddeReqOptions[] = {
-	"-binary", (char *) NULL
+	"-binary", NULL
     };
 
     int index, i, length;

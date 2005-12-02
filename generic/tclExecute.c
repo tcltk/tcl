@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.29 2005/11/03 17:52:07 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.30 2005/12/02 18:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2363,7 +2363,9 @@ TclExecuteByteCode(
     {
 	Tcl_Obj *objPtr, *incrPtr;
 	int opnd, pcAdjustment;
+#ifndef NO_WIDE_TYPE
 	Tcl_WideInt w;
+#endif
 	long i;
 	char *part1, *part2;
 	Var *varPtr, *arrayPtr;
@@ -2609,25 +2611,23 @@ TclExecuteByteCode(
      * ---------------------------------------------------------
      */
 
-    case INST_JUMP1:
-	{
-	    int opnd;
+    case INST_JUMP1: {
+	int opnd;
 
-	    opnd = TclGetInt1AtPtr(pc+1);
-	    TRACE(("%d => new pc %u\n", opnd,
-			  (unsigned int)(pc + opnd - codePtr->codeStart)));
-	    NEXT_INST_F(opnd, 0, 0);
-	}
+	opnd = TclGetInt1AtPtr(pc+1);
+	TRACE(("%d => new pc %u\n", opnd,
+		(unsigned int)(pc + opnd - codePtr->codeStart)));
+	NEXT_INST_F(opnd, 0, 0);
+    }
 
-    case INST_JUMP4:
-	{
-	   int opnd;
+    case INST_JUMP4: {
+	int opnd;
 
-	   opnd = TclGetInt4AtPtr(pc+1);
-	   TRACE(("%d => new pc %u\n", opnd,
-			 (unsigned int)(pc + opnd - codePtr->codeStart)));
-	   NEXT_INST_F(opnd, 0, 0);
-	}
+	opnd = TclGetInt4AtPtr(pc+1);
+	TRACE(("%d => new pc %u\n", opnd,
+		(unsigned int)(pc + opnd - codePtr->codeStart)));
+	NEXT_INST_F(opnd, 0, 0);
+    }
 
     {
 	int jmpOffset[2];
@@ -2686,6 +2686,32 @@ TclExecuteByteCode(
 	}
 #endif
 	NEXT_INST_F(jmpOffset[b], 1, 0);
+    }
+
+    case INST_JUMP_TABLE: {
+	Tcl_HashEntry *hPtr;
+	JumptableInfo *jtPtr;
+	int opnd;
+
+	/*
+	 * Jump to location looked up in a hashtable; fall through to next
+	 * instr if lookup fails.
+	 */
+
+	opnd = TclGetInt4AtPtr(pc+1);
+	jtPtr = (JumptableInfo *) codePtr->auxDataArrayPtr[opnd].clientData;
+	TRACE(("%d => %.20s ", opnd, O2S(*tosPtr)));
+	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, Tcl_GetString(*tosPtr));
+	if (hPtr != NULL) {
+	    int jumpOffset = (int) Tcl_GetHashValue(hPtr);
+
+	    TRACE_APPEND(("found in table, new pc %u\n",
+		    (unsigned int)(pc - codePtr->codeStart + jumpOffset)));
+	    NEXT_INST_F(jumpOffset, 1, 0);
+	} else {
+	    TRACE_APPEND(("not found in table\n"));
+	    NEXT_INST_F(5, 1, 0);
+	}
     }
 
     /*
@@ -5513,10 +5539,7 @@ TclExecuteByteCode(
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
-		    int setEmptyStr = 0;
-
 		    if (valIndex >= listLen) {
-			setEmptyStr = 1;
 			TclNewObj(valuePtr);
 		    } else {
 			valuePtr = elements[valIndex];
@@ -5548,9 +5571,6 @@ TclExecuteByteCode(
 			if (value2Ptr == NULL) {
 			    TRACE_WITH_OBJ(("%u => ERROR init. index temp %d: ",
 				    opnd, varIndex), Tcl_GetObjResult(interp));
-			    if (setEmptyStr) {
-				TclDecrRefCount(valuePtr);
-			    }
 			    result = TCL_ERROR;
 			    goto checkForCatch;
 			}

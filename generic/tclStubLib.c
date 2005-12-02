@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.3 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.4 2005/12/02 18:42:08 dgp Exp $
  */
 
 /*
@@ -29,18 +29,18 @@
 
 /*
  * Ensure that Tcl_InitStubs is built as an exported symbol. The other stub
- * functions should be built as non-exported symbols.
+ * symbols should be built as non-exported symbols.
  */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
+MODULE_SCOPE TclStubs *tclStubsPtr;
+MODULE_SCOPE TclPlatStubs *tclPlatStubsPtr;
+MODULE_SCOPE TclIntStubs *tclIntStubsPtr;
+MODULE_SCOPE TclIntPlatStubs *tclIntPlatStubsPtr;
 
 TclStubs *tclStubsPtr = NULL;
 TclPlatStubs *tclPlatStubsPtr = NULL;
 TclIntStubs *tclIntStubsPtr = NULL;
 TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-
-static TclStubs *	HasStubSupport(Tcl_Interp *interp);
 
 static TclStubs *
 HasStubSupport(
@@ -80,15 +80,14 @@ HasStubSupport(
 #undef Tcl_InitStubs
 #endif
 
-CONST char *
+MODULE_SCOPE CONST char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
     CONST char *version,
     int exact)
 {
     CONST char *actualVersion = NULL;
-    TclStubs *tmp;
-    TclStubs **tmpp;
+    ClientData pkgData = NULL;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -101,17 +100,11 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    /*
-     * This is needed to satisfy GCC 3.3's strict aliasing rules.
-     */
-
-    tmpp = &tmp;
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact,
-	    (ClientData *) tmpp);
+    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact, &pkgData);
     if (actualVersion == NULL) {
-	tclStubsPtr = NULL;
 	return NULL;
     }
+    tclStubsPtr = (TclStubs*)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
@@ -125,11 +118,3 @@ Tcl_InitStubs(
 
     return actualVersion;
 }
-
-/*
- * Local Variables:
- * mode: c
- * c-basic-offset: 4
- * fill-column: 78
- * End:
- */

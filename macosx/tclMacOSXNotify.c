@@ -7,17 +7,18 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright 2001, Apple Computer, Inc.
- * Copyright 2005, Tcl Core Team.
+ * Copyright (c) 2005 Tcl Core Team.
+ * Copyright (c) 2005 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.4 2005/07/26 04:12:22 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.5 2005/12/02 18:42:52 dgp Exp $
  */
 
+#include "tclInt.h"
 #ifdef HAVE_COREFOUNDATION	/* Traditional unix select-based notifier is
 				 * in tclUnixNotfy.c */
-#include "tclInt.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <pthread.h>
 
@@ -233,7 +234,7 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  */
 
 ClientData
-Tcl_InitNotifier()
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -322,8 +323,8 @@ Tcl_InitNotifier()
  */
 
 void
-Tcl_FinalizeNotifier(clientData)
-    ClientData clientData;		/* Not used. */
+Tcl_FinalizeNotifier(
+    ClientData clientData)		/* Not used. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -350,7 +351,7 @@ Tcl_FinalizeNotifier(clientData)
 	 * and check for EOF in the notifier thread because if a background
 	 * child process was created with exec, select() would not register
 	 * the EOF on the pipe until the child processes had terminated. [Bug:
-	 * 4139]
+	 * 4139] [Bug: 1222872]
 	 */
 
 	write(triggerPipe, "q", 1);
@@ -401,8 +402,8 @@ Tcl_FinalizeNotifier(clientData)
  */
 
 void
-Tcl_AlertNotifier(clientData)
-    ClientData clientData;
+Tcl_AlertNotifier(
+    ClientData clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -434,8 +435,8 @@ Tcl_AlertNotifier(clientData)
  */
 
 void
-Tcl_SetTimer(timePtr)
-    Tcl_Time *timePtr;		/* Timeout value, may be NULL. */
+Tcl_SetTimer(
+    Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because
@@ -465,8 +466,8 @@ Tcl_SetTimer(timePtr)
  */
 
 void
-Tcl_ServiceModeHook(mode)
-    int mode;			/* Either TCL_SERVICE_ALL, or
+Tcl_ServiceModeHook(
+    int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
 }
@@ -488,15 +489,15 @@ Tcl_ServiceModeHook(mode)
  */
 
 void
-Tcl_CreateFileHandler(fd, mask, proc, clientData)
-    int fd;			/* Handle of stream to watch. */
-    int mask;			/* OR'ed combination of TCL_READABLE,
+Tcl_CreateFileHandler(
+    int fd,			/* Handle of stream to watch. */
+    int mask,			/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
 				 * conditions under which proc should be
 				 * called. */
-    Tcl_FileProc *proc;		/* Function to call for each
-				 * selected event. */
-    ClientData clientData;	/* Arbitrary data to pass to proc. */
+    Tcl_FileProc *proc,		/* Function to call for each selected
+				 * event. */
+    ClientData clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr;
@@ -565,8 +566,8 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
  */
 
 void
-Tcl_DeleteFileHandler(fd)
-    int fd;			/* Stream id for which to remove callback
+Tcl_DeleteFileHandler(
+    int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
     FileHandler *filePtr, *prevPtr;
@@ -658,9 +659,9 @@ Tcl_DeleteFileHandler(fd)
  */
 
 static int
-FileHandlerEventProc(evPtr, flags)
-    Tcl_Event *evPtr;		/* Event to service. */
-    int flags;			/* Flags that indicate what events to handle,
+FileHandlerEventProc(
+    Tcl_Event *evPtr,		/* Event to service. */
+    int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
     int mask;
@@ -727,8 +728,8 @@ FileHandlerEventProc(evPtr, flags)
  */
 
 int
-Tcl_WaitForEvent(timePtr)
-    Tcl_Time *timePtr;		/* Maximum block time, or NULL. */
+Tcl_WaitForEvent(
+    Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
@@ -906,8 +907,8 @@ Tcl_WaitForEvent(timePtr)
  */
 
 static void
-NotifierThreadProc(clientData)
-    ClientData clientData;	/* Not used. */
+NotifierThreadProc(
+    ClientData clientData)	/* Not used. */
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.7 2005/07/26 04:12:35 dgp Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.8 2005/12/02 18:43:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -81,7 +81,7 @@ static LRESULT CALLBACK		NotifierProc(HWND hwnd, UINT message,
  */
 
 ClientData
-Tcl_InitNotifier()
+Tcl_InitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     WNDCLASS class;
@@ -142,8 +142,8 @@ Tcl_InitNotifier()
  */
 
 void
-Tcl_FinalizeNotifier(clientData)
-    ClientData clientData;	/* Pointer to notifier data. */
+Tcl_FinalizeNotifier(
+    ClientData clientData)	/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -210,8 +210,8 @@ Tcl_FinalizeNotifier(clientData)
  */
 
 void
-Tcl_AlertNotifier(clientData)
-    ClientData clientData;	/* Pointer to thread data. */
+Tcl_AlertNotifier(
+    ClientData clientData)	/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -324,8 +324,8 @@ Tcl_SetTimer(
  */
 
 void
-Tcl_ServiceModeHook(mode)
-    int mode;			/* Either TCL_SERVICE_ALL, or
+Tcl_ServiceModeHook(
+    int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -538,8 +538,8 @@ Tcl_WaitForEvent(
  */
 
 void
-Tcl_Sleep(ms)
-    int ms;			/* Number of milliseconds to sleep. */
+Tcl_Sleep(
+    int ms)			/* Number of milliseconds to sleep. */
 {
     /*
      * Simply calling 'Sleep' for the requisite number of milliseconds can

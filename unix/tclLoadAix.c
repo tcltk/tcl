@@ -1,4 +1,4 @@
-/* 
+/*
  * tclLoadAix.c --
  *
  *	This file implements the dlopen and dlsym APIs under the AIX operating
@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: tclLoadAix.c,v 1.3.36.1 2005/07/26 04:12:32 dgp Exp $
+ * RCS: @(#) $Id: tclLoadAix.c,v 1.3.36.2 2005/12/02 18:43:11 dgp Exp $
  *
  * Note: this file has been altered from the original in a few ways in order
  * to work properly with Tcl.
@@ -95,8 +95,10 @@ static int readExports(ModulePtr);
 static void terminate(void);
 static void *findMain(void);
 
-VOID *
-dlopen(const char *path, int mode)
+void *
+dlopen(
+    const char *path,
+    int mode)
 {
     register ModulePtr mp;
     static void *mainModule;
@@ -122,7 +124,7 @@ dlopen(const char *path, int mode)
     for (mp = modList; mp; mp = mp->next) {
 	if (strcmp(mp->name, path) == 0) {
 	    mp->refCnt++;
-	    return (VOID *) mp;
+	    return (void *) mp;
 	}
     }
 
@@ -131,7 +133,7 @@ dlopen(const char *path, int mode)
 	errvalid++;
 	strcpy(errbuf, "calloc: ");
 	strcat(errbuf, strerror(errno));
-	return (VOID *) NULL;
+	return NULL;
     }
 
     mp->name = malloc((unsigned) (strlen(path) + 1));
@@ -169,7 +171,7 @@ dlopen(const char *path, int mode)
 	} else {
 	    strcat(errbuf, strerror(errno));
 	}
-	return (VOID *) NULL;
+	return NULL;
     }
 
     mp->refCnt = 1;
@@ -182,7 +184,7 @@ dlopen(const char *path, int mode)
 	errvalid++;
 	strcpy(errbuf, "loadbind: ");
 	strcat(errbuf, strerror(errno));
-	return (VOID *) NULL;
+	return NULL;
     }
 
     /*
@@ -202,7 +204,7 @@ dlopen(const char *path, int mode)
 
     if (readExports(mp) == -1) {
 	dlclose(mp);
-	return (VOID *) NULL;
+	return NULL;
     }
 
     /*
@@ -231,7 +233,7 @@ dlopen(const char *path, int mode)
 	errvalid = 0;
     }
 
-    return (VOID *) mp;
+    return (void *) mp;
 }
 
 /*
@@ -240,7 +242,8 @@ dlopen(const char *path, int mode)
  */
 
 static void
-caterr(char *s)
+caterr(
+    char *s)
 {
     register char *p = s;
 
@@ -276,8 +279,10 @@ caterr(char *s)
     }
 }
 
-VOID *
-dlsym(void *handle, const char *symbol)
+void *
+dlsym(
+    void *handle,
+    const char *symbol)
 {
     register ModulePtr mp = (ModulePtr)handle;
     register ExportPtr ep;
@@ -378,7 +383,8 @@ terminate(void)
  */
 
 static int
-readExports(ModulePtr mp)
+readExports(
+    ModulePtr mp)
 {
     LDFILE *ldp = NULL;
     SCNHDR sh, shdata;

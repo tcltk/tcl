@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.16 2005/11/03 17:52:07 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.17 2005/12/02 18:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1963,18 +1963,17 @@ DictIncrCmd(
 	    Tcl_DecrRefCount(incrPtr);
 	}
     }
-    Tcl_IncrRefCount(dictPtr);
     if (code == TCL_OK) {
 	Tcl_InvalidateStringRep(dictPtr);
 	valuePtr = Tcl_ObjSetVar2(interp, objv[2], NULL,
 		dictPtr, TCL_LEAVE_ERR_MSG);
 	if (valuePtr == NULL) {
 	    code = TCL_ERROR;
+	} else {
+	    Tcl_SetObjResult(interp, valuePtr);
 	}
-    }
-    Tcl_DecrRefCount(dictPtr);
-    if (code == TCL_OK) {
-	Tcl_SetObjResult(interp, valuePtr);
+    } else if (dictPtr->refCount == 0) {
+	Tcl_DecrRefCount(dictPtr);
     }
     return code;
 }
@@ -2056,10 +2055,8 @@ DictLappendCmd(
 	Tcl_InvalidateStringRep(dictPtr);
     }
 
-    Tcl_IncrRefCount(dictPtr);
     resultPtr = Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
-    TclDecrRefCount(dictPtr);
     if (resultPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2129,10 +2126,8 @@ DictAppendCmd(
 
     Tcl_DictObjPut(interp, dictPtr, objv[3], valuePtr);
 
-    Tcl_IncrRefCount(dictPtr);
     resultPtr = Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
-    TclDecrRefCount(dictPtr);
     if (resultPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2309,10 +2304,8 @@ DictSetCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_IncrRefCount(dictPtr);
     resultPtr = Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
-    TclDecrRefCount(dictPtr);
     if (resultPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2369,10 +2362,8 @@ DictUnsetCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_IncrRefCount(dictPtr);
     resultPtr = Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
-    TclDecrRefCount(dictPtr);
     if (resultPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2653,7 +2644,7 @@ DictUpdateCmd(
     Tcl_Obj *CONST *objv)
 {
     Tcl_Obj *dictPtr, *objPtr;
-    int i, result, dummy, allocdict = 0;
+    int i, result, dummy;
     Tcl_InterpState state;
 
     if (objc < 6 || objc & 1) {
@@ -2716,7 +2707,6 @@ DictUpdateCmd(
 
     if (Tcl_IsShared(dictPtr)) {
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocdict = 1;
     }
 
     /*
@@ -2741,9 +2731,6 @@ DictUpdateCmd(
     if (Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DiscardInterpState(state);
-	if (allocdict) {
-	    TclDecrRefCount(dictPtr);
-	}
 	return TCL_ERROR;
     }
 
@@ -2921,9 +2908,6 @@ DictWithCmd(
 
     if (Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
-	if (allocdict) {
-	    TclDecrRefCount(dictPtr);
-	}
 	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }

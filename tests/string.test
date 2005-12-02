@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.12 2005/11/03 17:52:27 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.13 2005/12/02 18:42:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -406,10 +406,13 @@ test string-6.35 {string is double, false} {
 test string-6.36 {string is double, false} {
     list [string is double -fail var "\n"] $var
 } {0 0}
-test string-6.37 {string is double, false on int overflow} knownBug {
+test string-6.37 {string is double, false on int overflow} {
     # Make it the largest int recognizable, with one more digit for overflow
+    # Since bignums arrived in Tcl 8.5, the sense of this test changed.
+    # Now integer values that exceed native limits become bignums, and
+    # bignums can convert to doubles without error.
     list [string is double -fail var [largest_int]0] $var
-} {0 -1}
+} {1 0}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39 {string is double, false} {
     # This test is non-portable because IRIX thinks 
