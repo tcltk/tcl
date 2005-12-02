@@ -2,7 +2,9 @@
 
 	* library/clock.tcl: Moved a tiny bit more of [clock format] from
 	run time to compile time, and fixed a l10n bug in the process.
-	[Bug 1371446]
+	[Bug 1371446]. Also, conditoned the call to SetupTimeZone to speed
+	the common case where TZData($timezone) already exists.
+	
 	* unix/Makefile.in: Made some changes to support a 'make' command
 	that is present on some antiquated versions of Solaris.
 	
