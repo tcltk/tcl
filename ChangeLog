@@ -1,12 +1,16 @@
-2005-12-01  Don Porter  <dgp@users.sourceforge.net>
+2005-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.12 TAGGED FOR RELEASE ***
+
+	* README: correct 2 urls
+
+2005-12-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:		Update changes for 8.4.12 release
 
 2005-12-01  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset.
+	* unix/tcl.m4 (Darwin): fixed error when MACOSX_DEPLOYMENT_TARGET unset
 	* unix/configure: regen.
 
 2005-11-29  Jeff Hobbs  <jeffh@ActiveState.com>
