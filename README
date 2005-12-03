@@ -5,7 +5,7 @@ README:  Tcl
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.49.2.13 2005/12/02 21:13:26 dgp Exp $
+RCS: @(#) $Id: README,v 1.49.2.14 2005/12/03 21:55:24 hobbs Exp $
 
 Contents
 --------
@@ -55,10 +55,10 @@ by clicking on the relevant version.
 	http://sourceforge.net/project/showfiles.php?group_id=10894
 
 Information about Tcl itself can be found at
-	http://www.tcl.tk/scripting/
+	http://www.tcl.tk/about/
 
 There have been many Tcl books on the market.  Many are mentioned in the Wiki:
-	http://wiki.tcl.tk/book/
+	http://wiki.tcl.tk/book
 
 2a. Unix Documentation
 ----------------------

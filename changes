@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.30 2005/12/01 18:29:46 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.31 2005/12/03 21:55:24 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6321,4 +6321,4 @@ Restores Tcl 8.4.9 behavior (porter)
 
 2005-11-29 (enhancement)[1369597] Win 64: --enable-64bit=amd64|ia64 (hobbs)
 
---- Released 8.4.12, Decemeber 1, 2005 --- See ChangeLog for details ---
+--- Released 8.4.12, Decemeber 3, 2005 --- See ChangeLog for details ---
