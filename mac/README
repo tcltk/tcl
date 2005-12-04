@@ -1,6 +1,18 @@
 Tcl 8.4 for Macintosh
 
-RCS: @(#) $Id: README,v 1.17 2002/03/04 23:26:03 hobbs Exp $
+RCS: @(#) $Id: README,v 1.17.2.1 2005/12/04 00:50:03 das Exp $
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Note that Tcl on Mac OS Classic is no longer supported and likely no longer
+compiles, the last release known to work is 8.4.2. The 'mac' source
+directory and all other Mac Classic code have been removed from Tk 8.5.
+
+The Mac OS X port of Tcl can be found in the 'macosx' source directory.
+
+The information and URLs below are known to be outdated and incorrect.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 1. Introduction
 ---------------

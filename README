@@ -5,7 +5,7 @@ README:  Tcl
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.49.2.14 2005/12/03 21:55:24 hobbs Exp $
+RCS: @(#) $Id: README,v 1.49.2.15 2005/12/04 00:50:03 das Exp $
 
 Contents
 --------
@@ -92,7 +92,7 @@ Windows help Tcl documentation will appear in the "Start" menu:
 3. Compiling and installing Tcl
 -------------------------------
 
-There are brief notes in the unix/README, win/README, and mac/README about
+There are brief notes in the unix/README, win/README, and macosx/README about
 compiling on these different platforms.  There is additional information
 about building Tcl from sources at
 
