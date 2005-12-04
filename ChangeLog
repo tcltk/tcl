@@ -1,6 +1,11 @@
-2005-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+2005-12-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.12 TAGGED FOR RELEASE ***
+
+	* README: refer to macosx/README instead of mac/README.
+	* mac/README: add note that mac classic port is no longer supported.
+
+2005-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README: correct 2 urls
 
