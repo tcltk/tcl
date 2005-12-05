@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.50 2005/12/05 08:19:37 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.51 2005/12/05 13:03:18 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -992,18 +992,15 @@ TraverseUnixTree(
 	result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_POSTD,
 		errorPtr);
     }
-
-  end:
-    if (errfile != NULL) {
-	if (errorPtr != NULL) {
-	    Tcl_ExternalToUtfDString(NULL, errfile, -1, errorPtr);
-	}
-	result = TCL_ERROR;
-    }
 #else /* HAVE_FTS */
     paths[0] = source;
     fts = fts_open((char**)paths, FTS_PHYSICAL|FTS_NOCHDIR|
-	    (doRewind ? FTS_NOSTAT : 0), NULL); /* no need to stat for delete */
+#ifdef HAVE_STRUCT_STAT64
+	    FTS_NOSTAT,				/* fts doesn't do stat64 */
+#else
+	    (doRewind ? FTS_NOSTAT : 0),	/* no need to stat for delete */
+#endif
+	    NULL);
     if (fts == NULL) {
 	errfile = source;
 	goto end;
@@ -1019,6 +1016,7 @@ TraverseUnixTree(
 	char * path = ent->fts_path + sourceLen;
 	unsigned short pathlen = ent->fts_pathlen - sourceLen;
 	int type;
+	Tcl_StatBuf *statBufPtr = NULL;
 	
 	if (info == FTS_DNR || info == FTS_ERR || info == FTS_NS) {
 	    errfile = ent->fts_path;
@@ -1039,7 +1037,18 @@ TraverseUnixTree(
 		type = DOTREE_F;
 		break;
 	}
-	result = (*traverseProc)(sourcePtr, targetPtr, ent->fts_statp, type,
+	if (!doRewind) { /* no need to stat for delete */
+#ifdef HAVE_STRUCT_STAT64
+	    statBufPtr = &statBuf;
+	    if (TclOSlstat(ent->fts_path, statBufPtr) != 0) {
+		errfile = ent->fts_path;
+		break;
+	    }
+#else
+	    statBufPtr = ent->fts_statp;
+#endif
+	}
+	result = (*traverseProc)(sourcePtr, targetPtr, statBufPtr, type,
 		errorPtr);
 	if (result != TCL_OK) {
 	    break;
@@ -1049,6 +1058,7 @@ TraverseUnixTree(
 	    Tcl_DStringSetLength(targetPtr, targetLen);
 	}
     }
+#endif /* HAVE_FTS */
 
   end:
     if (errfile != NULL) {
@@ -1057,10 +1067,11 @@ TraverseUnixTree(
 	}
 	result = TCL_ERROR;
     }
+#ifdef HAVE_FTS
     if (fts != NULL) {
 	fts_close(fts);
     }
-#endif /* HAVE_FTS */
+#endif
 
     return result;
 }
