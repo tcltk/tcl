@@ -1,6 +1,13 @@
-2005-12-04  Daniel Steffen  <das@users.sourceforge.net>
+2005-12-05  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.12 TAGGED FOR RELEASE ***
+
+	* unix/configure.in:	Revised fix for [Bug 1034337] from Daniel 
+	* unix/tclUnixFCmd.c:	Steffen.  Uses fts_*() routines.
+	* unix/configure:	autoconf-2.13
+	* changes:		Update changes for 8.4.12 release
+
+2005-12-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	* README: refer to macosx/README instead of mac/README.
 	* mac/README: add note that mac classic port is no longer supported.

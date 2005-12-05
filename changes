@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.31 2005/12/03 21:55:24 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.79.2.32 2005/12/05 15:10:32 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6276,8 +6276,6 @@ Restores Tcl 8.4.9 behavior (porter)
 
 2005-10-05 (bug fix)[979640] buffer overrun mixing putenv(), ::env (bold,hobbs)
 
-2005-10-07 (Darwin bug fix)[1034337] recursive file delete, MacOSX, NFS (hobbs)
-
 2005-10-13 (bug fix)[1284178] [format] accept all integer values (porter)
 
 2005-10-22 (bug fix)[1251791] optimization exposed wide/int difference(sofer)
@@ -6320,5 +6318,7 @@ Restores Tcl 8.4.9 behavior (porter)
 2005-11-29 (bug fix)[1366683] [lsearch -regexp] backrefs (cleverly,fellows)
 
 2005-11-29 (enhancement)[1369597] Win 64: --enable-64bit=amd64|ia64 (hobbs)
+
+2005-12-05 (Darwin bug fix)[1034337] NFS recursive file delete (steffen)
 
 --- Released 8.4.12, Decemeber 3, 2005 --- See ChangeLog for details ---
