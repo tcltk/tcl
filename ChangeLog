@@ -1,3 +1,10 @@
+2005-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure:     Use FTS file APIs on Darwin if available.
+	* unix/tcl.m4:        Addresses file delete issues in readdir noted
+	* unix/tclUnixFCmd.c: in [Bug 1034337]. (steffen)
+	Reduce on stat call in DoCopyFile. (steffen)
+
 2005-12-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c: Moved a tiny bit more of [clock format] from
