@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.7 2005/11/27 02:34:42 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.8 2005/12/05 15:10:33 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -55,6 +55,9 @@
 #ifndef NO_FSTATFS
 #include <sys/statfs.h>
 #endif
+#endif
+#ifdef HAVE_FTS
+#include <fts.h>
 #endif
 
 /*
@@ -147,7 +150,7 @@ static int		CopyFile _ANSI_ARGS_((CONST char *src,
 static int		CopyFileAtts _ANSI_ARGS_((CONST char *src,
 			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		DoCopyFile _ANSI_ARGS_((CONST char *srcPtr,
-			    CONST char *dstPtr));
+			    CONST char *dstPtr, CONST Tcl_StatBuf *statBufPtr));
 static int		DoCreateDirectory _ANSI_ARGS_((CONST char *pathPtr));
 static int		DoRemoveDirectory _ANSI_ARGS_((Tcl_DString *pathPtr,
 			    int recursive, Tcl_DString *errorPtr));
@@ -343,25 +346,26 @@ TclpObjCopyFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr), 
-		      Tcl_FSGetNativePath(destPathPtr));
-}
+    CONST char *src = Tcl_FSGetNativePath(srcPathPtr);
+    Tcl_StatBuf srcStatBuf;
 
-static int
-DoCopyFile(src, dst)
-    CONST char *src;	/* Pathname of file to be copied (native). */
-    CONST char *dst;	/* Pathname of file to copy to (native). */
-{
-    Tcl_StatBuf srcStatBuf, dstStatBuf;
-
-    /*
-     * Have to do a stat() to determine the filetype.
-     */
-    
     if (TclOSlstat(src, &srcStatBuf) != 0) {		/* INTL: Native. */
 	return TCL_ERROR;
     }
-    if (S_ISDIR(srcStatBuf.st_mode)) {
+
+    return DoCopyFile(src, Tcl_FSGetNativePath(destPathPtr), &srcStatBuf);
+}
+
+static int
+DoCopyFile(src, dst, statBufPtr)
+    CONST char *src;	/* Pathname of file to be copied (native). */
+    CONST char *dst;	/* Pathname of file to copy to (native). */
+    CONST Tcl_StatBuf *statBufPtr;
+			/* Used to determine filetype. */
+{
+    Tcl_StatBuf dstStatBuf;
+
+    if (S_ISDIR(statBufPtr->st_mode)) {
 	errno = EISDIR;
 	return TCL_ERROR;
     }
@@ -383,7 +387,7 @@ DoCopyFile(src, dst)
 	} 
     }
 
-    switch ((int) (srcStatBuf.st_mode & S_IFMT)) {
+    switch ((int) (statBufPtr->st_mode & S_IFMT)) {
 #ifndef DJGPP
         case S_IFLNK: {
 	    char link[MAXPATHLEN];
@@ -405,20 +409,20 @@ DoCopyFile(src, dst)
 #endif
         case S_IFBLK:
         case S_IFCHR: {
-	    if (mknod(dst, srcStatBuf.st_mode,		/* INTL: Native. */
-		    srcStatBuf.st_rdev) < 0) {
+	    if (mknod(dst, statBufPtr->st_mode,		/* INTL: Native. */
+		    statBufPtr->st_rdev) < 0) {
 		return TCL_ERROR;
 	    }
-	    return CopyFileAtts(src, dst, &srcStatBuf);
+	    return CopyFileAtts(src, dst, statBufPtr);
 	}
         case S_IFIFO: {
-	    if (mkfifo(dst, srcStatBuf.st_mode) < 0) {	/* INTL: Native. */
+	    if (mkfifo(dst, statBufPtr->st_mode) < 0) {	/* INTL: Native. */
 		return TCL_ERROR;
 	    }
-	    return CopyFileAtts(src, dst, &srcStatBuf);
+	    return CopyFileAtts(src, dst, statBufPtr);
 	}
         default: {
-	    return CopyFile(src, dst, &srcStatBuf);
+	    return CopyFile(src, dst, statBufPtr);
 	}
     }
     return TCL_OK;
@@ -832,9 +836,15 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
     CONST char *source, *errfile;
     int result, sourceLen;
     int targetLen;
+#ifndef HAVE_FTS
     int numProcessed = 0;
     Tcl_DirEntry *dirEntPtr;
     DIR *dirPtr;
+#else
+    CONST char *paths[2] = {NULL, NULL};
+    FTS *fts = NULL;
+    FTSENT *ent;
+#endif
 
     errfile = NULL;
     result = TCL_OK;
@@ -853,6 +863,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
 	return (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_F,
 		errorPtr);
     }
+#ifndef HAVE_FTS
     dirPtr = opendir(source);				/* INTL: Native. */
     if (dirPtr == NULL) {
 	/* 
@@ -938,6 +949,74 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
 	result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_POSTD,
 		errorPtr);
     }
+#else /* HAVE_FTS */
+    paths[0] = source;
+    fts = fts_open((char**)paths, FTS_PHYSICAL|FTS_NOCHDIR|
+#ifdef HAVE_STRUCT_STAT64
+	    FTS_NOSTAT,				/* fts doesn't do stat64 */
+#else
+	    (doRewind ? FTS_NOSTAT : 0),	/* no need to stat for delete */
+#endif
+	    NULL);
+    if (fts == NULL) {
+	errfile = source;
+	goto end;
+    }
+
+    sourceLen = Tcl_DStringLength(sourcePtr);
+    if (targetPtr != NULL) {
+	targetLen = Tcl_DStringLength(targetPtr);
+    }
+
+    while ((ent = fts_read(fts)) != NULL) {
+	unsigned short info = ent->fts_info;
+	char * path = ent->fts_path + sourceLen;
+	unsigned short pathlen = ent->fts_pathlen - sourceLen;
+	int type;
+	Tcl_StatBuf *statBufPtr = NULL;
+	
+	if (info == FTS_DNR || info == FTS_ERR || info == FTS_NS) {
+	    errfile = ent->fts_path;
+	    break;
+	}
+	Tcl_DStringAppend(sourcePtr, path, pathlen);
+	if (targetPtr != NULL) {
+	    Tcl_DStringAppend(targetPtr, path, pathlen);
+	}
+	switch (info) {
+	    case FTS_D:
+		type = DOTREE_PRED;
+		break;
+	    case FTS_DP:
+		type = DOTREE_POSTD;
+		break;
+	    default:
+		type = DOTREE_F;
+		break;
+	}
+	if (!doRewind) { /* no need to stat for delete */
+#ifdef HAVE_STRUCT_STAT64
+	    statBufPtr = &statBuf;
+	    if (TclOSlstat(ent->fts_path, statBufPtr) != 0) {
+		errfile = ent->fts_path;
+		break;
+	    }
+#else
+	    statBufPtr = ent->fts_statp;
+#endif
+	}
+	result = (*traverseProc)(sourcePtr, targetPtr, statBufPtr, type,
+		errorPtr);
+	if (result != TCL_OK) {
+	    break;
+	}
+	Tcl_DStringSetLength(sourcePtr, sourceLen);
+	if (targetPtr != NULL) {
+	    Tcl_DStringSetLength(targetPtr, targetLen);
+	}
+    }
+#endif /* HAVE_FTS */
+
     end:
     if (errfile != NULL) {
 	if (errorPtr != NULL) {
@@ -945,6 +1024,11 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
 	}
 	result = TCL_ERROR;
     }
+#ifdef HAVE_FTS
+    if (fts != NULL) {
+	fts_close(fts);
+    }
+#endif /* HAVE_FTS */
 
     return result;
 }
@@ -980,8 +1064,8 @@ TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
 {
     switch (type) {
 	case DOTREE_F:
-	    if (DoCopyFile(Tcl_DStringValue(srcPtr), 
-		    Tcl_DStringValue(dstPtr)) == TCL_OK) {
+	    if (DoCopyFile(Tcl_DStringValue(srcPtr), Tcl_DStringValue(dstPtr),
+		    statBufPtr) == TCL_OK) {
 		return TCL_OK;
 	    }
 	    break;
