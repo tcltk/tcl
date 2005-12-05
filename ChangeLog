@@ -1,9 +1,19 @@
+2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in: move check for fts API to configure.in and run it
+	* unix/tcl.m4:       on all platforms, since Linux glibc2 and *BSDs also
+	have this; using fts is more efficient than recursive opendir/readdir.
+	* unix/tclUnixFCmd.c (TraverseUnixTree): add support to fts code for
+	platforms with stat64.
+	* unix/configure:
+	* unix/tclConfig.h.in: regen.
+
 2005-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/configure:     Use FTS file APIs on Darwin if available.
+	* unix/configure:     Use fts file API on Darwin if available.
 	* unix/tcl.m4:        Addresses file delete issues in readdir noted
 	* unix/tclUnixFCmd.c: in [Bug 1034337]. (steffen)
-	Reduce on stat call in DoCopyFile. (steffen)
+	Remove redundant stat call for each file in DoCopyFile. (steffen)
 
 2005-12-02  Kevin B. Kenny  <kennykb@acm.org>
 
