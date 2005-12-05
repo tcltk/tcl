@@ -1497,6 +1497,17 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_CHECK_FUNCS(OSSpinLockLock)
 	    AC_CHECK_HEADERS(copyfile.h)
 	    AC_CHECK_FUNCS(copyfile)
+	    AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
+		AC_TRY_LINK([#include <sys/param.h>
+			#include <sys/stat.h>
+			#include <fts.h>], 
+		    [char*const p[2] = {"/", NULL};
+		    	FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
+			FTSENT *e = fts_read(f); fts_close(f);], 
+		    tcl_cv_api_fts=yes, tcl_cv_api_fts=no)])
+	    if test $tcl_cv_api_fts = yes; then
+		AC_DEFINE(HAVE_FTS, 1, [Do we have fts functions?])
+	    fi
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8",
