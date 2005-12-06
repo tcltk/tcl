@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.44 2005/12/06 08:06:58 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.45 2005/12/06 08:59:45 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -518,6 +518,8 @@ extern double strtod();
 #           define HAVE_PUTENV_THAT_COPIES 1
 #        endif /* __DARWIN_UNIX03 */
 #        define USE_TERMIOS 1
+#        undef USE_TERMIO
+#        undef USE_SGTTY
 #    endif /* defined(__DARWIN_UNIX03) */
 #endif /* __APPLE__ */
 
