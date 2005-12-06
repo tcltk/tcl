@@ -1,11 +1,11 @@
 2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
 
+	*** 8.4.12 TAGGED FOR RELEASE ***
+
 	* unix/tclUnixPort.h (Darwin): fix incorrect __DARWIN_UNIX03 configure
 	overrides that were originally copied from Darwin CVS (rdar://3693001).
 
 2005-12-05  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.12 TAGGED FOR RELEASE ***
 
 	* unix/configure.in:	Revised fix for [Bug 1034337] from Daniel 
 	* unix/tclUnixFCmd.c:	Steffen.  Uses fts_*() routines.
