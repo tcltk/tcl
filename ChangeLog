@@ -1,3 +1,8 @@
+2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixPort.h (Darwin): fix incorrect __DARWIN_UNIX03 configure
+	overrides that were originally copied from Darwin CVS (rdar://3693001).
+
 2005-12-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tools/tclZIC.tcl: Updated to reflect changes in calling sequence
