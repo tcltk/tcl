@@ -1,3 +1,10 @@
+2005-12-07  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/socket.n: Cross-referenced the socket documentation better to
+	the fconfigure documentation on the topic of asynch sockets.
+	* doc/fconfigure.n: Added keyword to documentation of -blocking option
+	so that people looking for "asynch" can find it as well.
+
 2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixPort.h (Darwin): fix incorrect __DARWIN_UNIX03 configure
@@ -10,7 +17,7 @@
 	* library/tzdata: Regenerated from Olson's tzdata2005p.tar.gz -
 	the 'systemv' changes appear not to affect Tcl's processing of the
 	dates.
-	
+
 2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure.in: move check for fts API to configure.in and run it
