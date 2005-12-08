@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.70 2005/11/04 22:38:38 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.71 2005/12/08 20:20:34 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -786,7 +786,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int index;
+    int index, value;
+    Tcl_StatBuf buf;
+    struct utimbuf tval;
 
     /*
      * This list of constants should match the fileOption string array below.
@@ -828,9 +830,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     }
 
     switch ((enum options) index) {
-    {
-	Tcl_StatBuf buf;
-	struct utimbuf tval;
 
     case FCMD_ATIME:
     case FCMD_MTIME:
@@ -883,7 +882,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	Tcl_SetObjResult(interp, Tcl_NewLongObj((long)
 		(index == FCMD_ATIME ? buf.st_atime : buf.st_mtime)));
 	return TCL_OK;
-    }
     case FCMD_ATTRIBUTES:
 	return TclFileAttrsCmd(interp, objc, objv);
     case FCMD_CHANNELS:
@@ -937,10 +935,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
     }
-    {
-	int value;
-	Tcl_StatBuf buf;
-
     case FCMD_ISDIRECTORY:
 	if (objc != 3) {
 	    goto only3Args;
@@ -980,7 +974,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	return TCL_OK;
-    }
     case FCMD_JOIN: {
 	Tcl_Obj *resObj;
 
@@ -1118,9 +1111,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	return TCL_OK;
     }
-    {
-	Tcl_StatBuf buf;
-
     case FCMD_LSTAT:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name varName");
@@ -1159,7 +1149,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		GetTypeFromMode((unsigned short) buf.st_mode), -1));
 	return TCL_OK;
-    }
     case FCMD_MKDIR:
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
