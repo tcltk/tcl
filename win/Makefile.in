@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.93 2005/11/21 17:19:56 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.94 2005/12/08 20:20:36 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -409,7 +409,7 @@ cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 $(CAT32): cat32.$(OBJEXT)
-	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LIBS) $(LDFLAGS_CONSOLE)
 
 # The following targets are configured by autoconf to generate either
 # a shared library or static library
