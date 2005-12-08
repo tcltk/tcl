@@ -388,6 +388,17 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT($do64bit)
 
+    # Cross-compiling options for Windows/CE builds
+
+    AC_MSG_CHECKING([if Windows/CE build is requested])
+    AC_ARG_ENABLE(wince,[  --enable-wince          enable Win/CE support (where applicable)], [doWince=$enableval], [doWince=no])
+    AC_MSG_RESULT($doWince)
+
+    AC_MSG_CHECKING([for Windows/CE celib directory])
+    AC_ARG_WITH(celib,[  --with-celib=DIR        use Windows/CE support library from DIR],
+	    CELIB_DIR=$withval, CELIB_DIR=NO_CELIB)
+    AC_MSG_RESULT([$CELIB_DIR])
+
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 
@@ -430,8 +441,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
     AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
-	if test "$do64bit" = "yes" ; then
-	    AC_MSG_WARN("64bit mode not supported with GCC on Windows")
+	if test "$do64bit" != "no" ; then
+	    AC_MSG_WARN([64bit mode not supported with GCC on Windows])
 	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
@@ -568,36 +579,52 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
 
-	# This is a 2-stage check to make sure we have the 64-bit SDK
-	# We have to know where the SDK is installed.
-	if test "$do64bit" = "yes" ; then
+ 	# This is a 2-stage check to make sure we have the 64-bit SDK
+ 	# We have to know where the SDK is installed.
+	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
+	# MACHINE is IX86 for LINK, but this is used by the manifest,
+	# which requires x86|amd64|ia64.
+	MACHINE="X86"
+	if test "$do64bit" != "no" ; then
 	    if test "x${MSSDK}x" = "xx" ; then
-		MSSDK="C:/Progra~1/Microsoft SDK"
+		MSSDK="C:/Progra~1/Microsoft Platform SDK"
 	    fi
 	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
-	    if test ! -d "${MSSDK}/bin/win64" ; then
-		AC_MSG_WARN("could not find 64-bit SDK to enable 64bit mode")
+	    PATH64=""
+	    case "$do64bit" in
+	      amd64|x64|yes)
+		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
+		;;
+	      ia64)
+		MACHINE="IA64"
+		PATH64="${MSSDK}/Bin/Win64"
+		;;
+	    esac
+	    if test ! -d "${PATH64}" ; then
+		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK to enable 64bit mode])
+		AC_MSG_WARN([Ensure latest Platform SDK is installed])
 		do64bit="no"
+	    else
+		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	    fi
 	fi
 
-	if test "$do64bit" = "yes" ; then
-	    # All this magic is necessary for the Win64 SDK RC1 - hobbs
+	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
 	    # TEA_PATH_NOSPACE to avoid this issue.
-	    CC="\"${MSSDK}/Bin/Win64/cl.exe\" \
-		-I\"${MSSDK}/Include/prerelease\" \
-		-I\"${MSSDK}/Include/Win64/crt\" \
-		-I\"${MSSDK}/Include/Win64/crt/sys\" \
-		-I\"${MSSDK}/Include\""
+	    CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
+		-I\"${MSSDK}/Include/crt\" -I\"${MSSDK}/Include/crt/sys\""
 	    RC="\"${MSSDK}/bin/rc.exe\""
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="-MACHINE:IA64 -LIBPATH:\"${MSSDK}/Lib/IA64\" \
-		-LIBPATH:\"${MSSDK}/Lib/Prerelease/IA64\" -nologo"
-	    LINKBIN="\"${MSSDK}/bin/win64/link.exe\""
+	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
+	    LINKBIN="\"${PATH64}/link.exe\""
+	    # Avoid 'unresolved external symbol __security_cookie' errors.
+	    # c.f. http://support.microsoft.com/?id=894573
+	    LIBS="user32.lib advapi32.lib bufferoverflowU.lib"
 	else
 	    RC="rc"
 	    # -Od - no optimization
@@ -607,10 +634,102 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
 	    lflags="-nologo"
 	    LINKBIN="link"
+	    LIBS="user32.lib advapi32.lib"
 	fi
 
-	LIBS="user32.lib advapi32.lib"
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib"
+	if test "$doWince" != "no" ; then
+	    # Set defaults for common evc4/PPC2003 setup
+	    # Currently Tcl requires 300+, possibly 420+ for sockets
+	    CEVERSION=420; 		# could be 211 300 301 400 420 ...
+	    TARGETCPU=ARMV4;	# could be ARMV4 ARM MIPS SH3 X86 ...
+	    ARCH=ARM;		# could be ARM MIPS X86EM ...
+	    PLATFORM="Pocket PC 2003"; # or "Pocket PC 2002"
+	    if test "$doWince" != "yes"; then
+		# If !yes then the user specified something
+		# Reset ARCH to allow user to skip specifying it
+		ARCH=
+		eval `echo $doWince | awk -F "," '{ \
+	if (length([$]1)) { printf "CEVERSION=\"%s\"\n", [$]1; \
+	if ([$]1 < 400)	  { printf "PLATFORM=\"Pocket PC 2002\"\n" } }; \
+	if (length([$]2)) { printf "TARGETCPU=\"%s\"\n", toupper([$]2) }; \
+	if (length([$]3)) { printf "ARCH=\"%s\"\n", toupper([$]3) }; \
+	if (length([$]4)) { printf "PLATFORM=\"%s\"\n", [$]4 }; \
+		}'`
+		if test "x${ARCH}" = "x" ; then
+		    ARCH=$TARGETCPU;
+		fi
+	    fi
+	    OSVERSION=WCE$CEVERSION;
+	    if test "x${WCEROOT}" = "x" ; then
+		WCEROOT="C:/Program Files/Microsoft eMbedded C++ 4.0"
+		if test ! -d "${WCEROOT}" ; then
+		    WCEROOT="C:/Program Files/Microsoft eMbedded Tools"
+		fi
+	    fi
+	    if test "x${SDKROOT}" = "x" ; then
+		SDKROOT="C:/Program Files/Windows CE Tools"
+		if test ! -d "${SDKROOT}" ; then
+		    SDKROOT="C:/Windows CE Tools"
+		fi
+	    fi
+	    # The space-based-path will work for the Makefile, but will
+	    # not work if AC_TRY_COMPILE is called.
+	    WCEROOT=`echo "$WCEROOT" | sed -e 's!\\\!/!g'`
+	    SDKROOT=`echo "$SDKROOT" | sed -e 's!\\\!/!g'`
+	    CELIB_DIR=`echo "$CELIB_DIR" | sed -e 's!\\\!/!g'`
+	    if test ! -d "${CELIB_DIR}/inc"; then
+		AC_MSG_ERROR([Invalid celib directory "${CELIB_DIR}"])
+	    fi
+	    if test ! -d "${SDKROOT}/${OSVERSION}/${PLATFORM}/Lib/${TARGETCPU}"\
+		-o ! -d "${WCEROOT}/EVC/${OSVERSION}/bin"; then
+		AC_MSG_ERROR([could not find PocketPC SDK or target compiler to enable WinCE mode [$CEVERSION,$TARGETCPU,$ARCH,$PLATFORM]])
+	    else
+		CEINCLUDE="${SDKROOT}/${OSVERSION}/${PLATFORM}/include"
+		if test -d "${CEINCLUDE}/${TARGETCPU}" ; then
+		    CEINCLUDE="${CEINCLUDE}/${TARGETCPU}"
+		fi
+		CELIBPATH="${SDKROOT}/${OSVERSION}/${PLATFORM}/Lib/${TARGETCPU}"
+	    fi
+	fi
+
+	if test "$doWince" != "no" ; then
+	    CEBINROOT="${WCEROOT}/EVC/${OSVERSION}/bin"
+	    if test "${TARGETCPU}" = "X86"; then
+		CC="${CEBINROOT}/cl.exe"
+	    else
+		CC="${CEBINROOT}/cl${ARCH}.exe"
+	    fi
+	    CC="\"${CC}\" -I\"${CELIB_DIR}/inc\" -I\"${CEINCLUDE}\""
+	    RC="\"${WCEROOT}/Common/EVC/bin/rc.exe\""
+	    arch=`echo ${ARCH} | awk '{print tolower([$]0)}'`
+	    defs="${ARCH} _${ARCH}_ ${arch} PALM_SIZE _MT _DLL _WINDOWS"
+	    for i in $defs ; do
+		AC_DEFINE_UNQUOTED($i)
+	    done
+#	    if test "${ARCH}" = "X86EM"; then
+#		AC_DEFINE_UNQUOTED(_WIN32_WCE_EMULATION)
+#	    fi
+	    AC_DEFINE_UNQUOTED(_WIN32_WCE, $CEVERSION)
+	    AC_DEFINE_UNQUOTED(UNDER_CE, $CEVERSION)
+	    CFLAGS_DEBUG="-nologo -Zi -Od"
+	    CFLAGS_OPTIMIZE="-nologo -O2"
+	    lversion=`echo ${CEVERSION} | sed -e 's/\(.\)\(..\)/\1\.\2/'`
+	    lflags="-nodefaultlib -MACHINE:${ARCH} -LIBPATH:\"${CELIBPATH}\" -subsystem:windowsce,${lversion} -nologo"
+	    LINKBIN="\"${CEBINROOT}/link.exe\""
+	    AC_SUBST(CELIB_DIR)
+	    if test "${CEVERSION}" -lt 400 ; then
+		LIBS="coredll.lib corelibc.lib winsock.lib"
+	    else
+		LIBS="coredll.lib corelibc.lib ws2.lib"
+	    fi
+	    # celib currently stuck at wce300 status
+	    #LIBS="$LIBS \${CELIB_DIR}/wince-${ARCH}-pocket-${OSVERSION}-release/celib.lib"
+	    LIBS="$LIBS \"\${CELIB_DIR}/wince-${ARCH}-pocket-wce300-release/celib.lib\""
+	    LIBS_GUI="commctrl.lib commdlg.lib"
+	else
+	    LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib"
+	fi
+
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
 	# link -lib only works when -lib is the first arg
 	STLIB_LD="${LINKBIN} -lib ${lflags}"
@@ -635,11 +754,16 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.
-	LDFLAGS_CONSOLE="-link -subsystem:console ${lflags}"
-	LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
+	if test "$doWince" != "no" -a "${TARGETCPU}" != "X86"; then
+	    LDFLAGS_CONSOLE="-link ${lflags}"
+	    LDFLAGS_WINDOW=${LDFLAGS_CONSOLE}
+	else
+	    LDFLAGS_CONSOLE="-link -subsystem:console ${lflags}"
+	    LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
+	fi
     fi
 
-    if test "$do64bit" = "yes" ; then
+    if test "$do64bit" != "no" ; then
 	AC_DEFINE(TCL_CFG_DO64BIT)
     fi
 
