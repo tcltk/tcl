@@ -1,3 +1,9 @@
+2005-12-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/lsearch.test (lsearch-10.8..10): If the -start is off the end,
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): searching should find
+	nothing at all. [Bug 1374778]
+
 2005-12-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in, win/makefile.vc: Add Win x64 and CE build support
