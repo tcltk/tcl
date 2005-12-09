@@ -1,3 +1,9 @@
+2005-12-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/lsearch.test (lsearch-10.8..10): If the -start is off the end,
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): searching should find
+	nothing at all. [Bug 1374778]
+
 2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.12 TAGGED FOR RELEASE ***
