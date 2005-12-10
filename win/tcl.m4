@@ -552,6 +552,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	#LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
 	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
+
+	# gcc under Windows supports only 32bit builds
+	MACHINE="X86"
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
