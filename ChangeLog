@@ -1,3 +1,11 @@
+2005-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Define MACHINE
+	for gcc builds. The lack of a definition of this
+	variable in the manifest file was causing a
+	runtime error in wish built with gcc.
+
 2005-12-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* tests/lsearch.test (lsearch-10.8..10): If the -start is off the end,
