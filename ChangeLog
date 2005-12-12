@@ -1,3 +1,9 @@
+2005-12-12  Reinhard Max  <max@suse.de>
+
+	* generic/tclExecute.c (ExprAbsFunc): fixed the abs(MIN_INT) case
+	so that it doesn't break on compilers that don't assume integers
+	to wrap around (e.g. gcc-4.1.0).
+
 2005-12-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* tests/lsearch.test (lsearch-10.8..10): If the -start is off the end,
