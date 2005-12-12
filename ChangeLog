@@ -1,3 +1,8 @@
+2005-12-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure: Fix sh quoting error reported in
+	bash-3.1+ [Bug 1377619] (schafer)
+
 2005-12-12  Reinhard Max  <max@suse.de>
 
 	* generic/tclExecute.c (ExprAbsFunc): fixed the abs(MIN_INT) case
