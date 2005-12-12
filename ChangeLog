@@ -1,9 +1,13 @@
+2005-12-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure: Fix sh quoting error reported in
+	bash-3.1+ [Bug 1377619] (schafer)
+
 2005-12-12  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/mathfunc.n: Changed two examples from the incorrect
 	'tcl::math::' to 'tcl::mathfunc::' [Bug 1378818]
-	
-	
+
 2005-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
