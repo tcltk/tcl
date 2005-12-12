@@ -1,3 +1,9 @@
+2005-12-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/mathfunc.n: Changed two examples from the incorrect
+	'tcl::math::' to 'tcl::mathfunc::' [Bug 1378818]
+	
+	
 2005-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
