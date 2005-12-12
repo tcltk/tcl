@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.17 2005/10/28 03:26:32 mdejong Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.18 2005/12/12 11:28:22 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -5074,8 +5074,7 @@ ExprAbsFunc(interp, eePtr, clientData)
     if (valuePtr->typePtr == &tclIntType) {
 	i = valuePtr->internalRep.longValue;
 	if (i < 0) {
-	    iResult = -i;
-	    if (iResult < 0) {
+	    if (i == LONG_MIN) {
 #ifdef TCL_WIDE_INT_IS_LONG
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"integer value too large to represent", -1));
@@ -5094,6 +5093,7 @@ ExprAbsFunc(interp, eePtr, clientData)
 #endif
 
 	    }
+	    iResult = -i;
 	} else {
 	    iResult = i;
 	}	    
