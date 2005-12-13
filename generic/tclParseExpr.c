@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.30 2005/10/31 15:59:41 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.31 2005/12/13 22:43:18 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1615,7 +1615,7 @@ GetLexeme(
     if ((c != '+') && (c != '-')) {
 	CONST char *end = infoPtr->lastChar;
 	CONST char* end2;
-	int code = TclParseNumber(NULL, NULL, NULL, src, (unsigned)(end-src),
+	int code = TclParseNumber(NULL, NULL, NULL, src, (int)(end-src),
 		&end2, 0);
 
 	if (code == TCL_OK) {

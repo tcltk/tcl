@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.102 2005/11/27 02:33:49 das Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.103 2005/12/13 22:43:18 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -149,7 +149,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int)); \
 	*temp = bignum; \
 	(objPtr)->internalRep.ptrAndLongRep.ptr = (void*) temp; \
-	(objPtr)->internalRep.ptrAndLongRep.value = -1; \
+	(objPtr)->internalRep.ptrAndLongRep.value = (unsigned long)(-1); \
     } else { \
 	if ((bignum).alloc > 0x7fff) { \
 	    mp_shrink(&(bignum)); \
