@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.80 2005/11/04 00:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.81 2005/12/13 22:43:18 kennykb Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -28,7 +28,8 @@
  * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
  */
 
-#define POSIX_EPOCH_AS_FILETIME		116444736000000000
+#define POSIX_EPOCH_AS_FILETIME		((Tcl_WideInt)116444736 \
+                                         * (Tcl_WideInt) 1000000000)
 
 /*
  * Declarations for 'link' related information. This information should come
@@ -1445,7 +1446,7 @@ TclpGetUserHome(
 	    if (domain != NULL) {
 		Tcl_DStringInit(&ds);
 		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = (*netGetDCNameProc)(NULL, wName,
+		badDomain = (netGetDCNameProc)(NULL, wName,
 			(LPBYTE *) &wDomain);
 		Tcl_DStringFree(&ds);
 		nameLen = domain - name;
@@ -1453,7 +1454,7 @@ TclpGetUserHome(
 	    if (badDomain == 0) {
 		Tcl_DStringInit(&ds);
 		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if ((*netUserGetInfoProc)(wDomain, wName, 1,
+		if ((netUserGetInfoProc)(wDomain, wName, 1,
 			(LPBYTE *) &uiPtr) == 0) {
 		    wHomeDir = uiPtr->usri1_home_dir;
 		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
@@ -1609,7 +1610,7 @@ NativeAccess(
 	     * to EACCES - just what we want!
 	     */
 
-	    TclWinConvertError(error);
+	    TclWinConvertError((DWORD)error);
 	    return -1;
 	}
 
@@ -2799,7 +2800,7 @@ TclpObjNormalizePath(
 				}
 			    }
 			    Tcl_DStringAppend(&dsNorm, nativePath,
-				    sizeof(WCHAR)*len);
+				    (int)(sizeof(WCHAR)*len));
 			    lastValidPathEnd = currentPathEndPosition;
 			}
 		    }

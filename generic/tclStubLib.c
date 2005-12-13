@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.11 2005/11/27 02:33:49 das Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.12 2005/12/13 22:43:18 kennykb Exp $
  */
 
 /*
@@ -36,11 +36,13 @@ MODULE_SCOPE TclStubs *tclStubsPtr;
 MODULE_SCOPE TclPlatStubs *tclPlatStubsPtr;
 MODULE_SCOPE TclIntStubs *tclIntStubsPtr;
 MODULE_SCOPE TclIntPlatStubs *tclIntPlatStubsPtr;
+MODULE_SCOPE TclTomMathStubs *tclTomMathStubsPtr;
 
 TclStubs *tclStubsPtr = NULL;
 TclPlatStubs *tclPlatStubsPtr = NULL;
 TclIntStubs *tclIntStubsPtr = NULL;
 TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
+TclTomMathStubs* tclTomMathStubsPtr = NULL;
 
 static TclStubs *
 HasStubSupport(
@@ -117,4 +119,64 @@ Tcl_InitStubs(
     }
 
     return actualVersion;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclTomMathInitStubs --
+ *
+ *	Initializes the Stubs table for Tcl's subset of libtommath
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * This procedure should not be called directly, but rather through
+ * the TclTomMath_InitStubs macro, to insure that the Stubs table
+ * matches the header files used in compilation.
+ *
+ * This procedure assumes that Tcl_InitStubs has been called first.
+ * Hence, it appears in Tcl's internal Stubs table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TclTomMathInitializeStubs
+#undef TclTomMathInitializeStubs
+#endif
+
+const char*
+TclTomMathInitializeStubs(
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    CONST char* version,	/* Tcl version needed */
+    int epoch,			/* Stubs table epoch from the header files */
+    int revision		/* Stubs table revision number from the
+				 * header files */
+) {
+    int exact = 0;
+    const char* packageName = "tcl::tommath";
+    const char* errMsg = NULL;
+    ClientData pkgClientData = NULL;
+    const char* actualVersion = 
+	Tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
+    TclTomMathStubs* stubsPtr = (TclTomMathStubs*) pkgClientData;
+    if (actualVersion == NULL) {
+	return NULL;
+    }
+    if (pkgClientData == NULL) {
+	errMsg = "missing stub täble pointer";
+    } else if ((stubsPtr->tclBN_epoch)() != epoch) {
+	errMsg = "epoch number mismatch";
+    } else if ((stubsPtr->tclBN_revision)() != revision) {
+	errMsg = "requires a later revision";
+    } else {
+	tclTomMathStubsPtr = stubsPtr;
+	return actualVersion;
+    }
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, "error loading ", packageName,
+		     " (requested version ", version,
+		     ", actual version ", actualVersion,
+		     "): ", errMsg, NULL);
+    return NULL;
 }

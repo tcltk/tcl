@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.21 2005/11/09 21:28:36 kennykb Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.22 2005/12/13 22:43:18 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -830,7 +830,7 @@ Tcl_AfterObjCmd(
      * to wait, or else index is the index of a subcommand.
      */
 
-    switch ((enum afterSubCmds) index) {
+    switch (index) {
     case -1: {
 	if (ms < 0) {
 	    ms = 0;

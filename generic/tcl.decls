@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.115 2005/11/27 02:33:48 das Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.116 2005/12/13 22:43:16 kennykb Exp $
 
 library tcl
 
@@ -2030,6 +2030,13 @@ declare 564 generic {
 declare 565 generic {
     void Tcl_GetChannelError (Tcl_Channel chan, Tcl_Obj** msg)
 }
+
+declare 566 generic {
+    const char*      TclTomMathInitializeStubs(Tcl_Interp* interp, 
+                        CONST char* version, int epoch, int revision)
+}
+
+  
 
 ##############################################################################
 

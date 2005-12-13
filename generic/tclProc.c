@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.82 2005/11/02 00:55:06 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.83 2005/12/13 22:43:18 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1171,7 +1171,7 @@ TclObjInterpProc(
      */
 
     localCt = procPtr->numCompiledLocals;
-    compiledLocals = (Var *) TclStackAlloc(interp, localCt*sizeof(Var));
+    compiledLocals = (Var *) TclStackAlloc(interp, (int)(localCt*sizeof(Var)));
     framePtr->numCompiledLocals = localCt;
     framePtr->compiledLocals = compiledLocals;
 

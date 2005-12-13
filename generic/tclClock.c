@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.49 2005/12/02 22:13:41 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.50 2005/12/13 22:43:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -422,7 +422,7 @@ ClockGetdatefieldsObjCmd(
     Tcl_DictObjPut((Tcl_Interp*) NULL, dict, literals[LIT_TZOFFSET],
 		   Tcl_NewIntObj(fields.tzOffset));
     Tcl_DictObjPut((Tcl_Interp*) NULL, dict, literals[LIT_JULIANDAY],
-		   Tcl_NewWideIntObj(fields.julianDay));
+		   Tcl_NewIntObj(fields.julianDay));
     Tcl_DictObjPut((Tcl_Interp*) NULL, dict, literals[LIT_GREGORIAN],
 		   Tcl_NewIntObj(fields.gregorian));
     Tcl_DictObjPut((Tcl_Interp*) NULL, dict, literals[LIT_ERA],

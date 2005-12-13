@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.261 2005/12/01 11:03:55 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.262 2005/12/13 22:43:17 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2864,9 +2864,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE void *	TclBNAlloc(size_t nBytes);
-MODULE_SCOPE void *	TclBNRealloc(void *oldBlock, size_t newNBytes);
-MODULE_SCOPE void	TclBNFree(void *block);
+MODULE_SCOPE int	TclTommath_Init(Tcl_Interp*);
 MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int* bignum,
 			    Tcl_WideInt initVal);
@@ -3027,6 +3025,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
 #include "tclPort.h"
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
+#include "tclTomMathDecls.h"
 
 #endif /* _TCLINT */
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.30 2005/11/18 15:58:18 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.31 2005/12/13 22:43:18 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -554,7 +554,7 @@ Tcl_ListObjAppendElement(
 	oldListRepPtr->refCount--;
 	listPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
     } else if (newSize) {
-	listRepPtr = (List *) ckrealloc((char *)listRepPtr, newSize);
+	listRepPtr = (List *) ckrealloc((char *)listRepPtr, (size_t)newSize);
 	listRepPtr->maxElemCount = newMax;
 	listPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
     }
