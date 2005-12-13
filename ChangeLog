@@ -1,3 +1,41 @@
+2005-12-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tcl.decls:    Added changes to export an additional
+	* generic/tclBasic.c:   Stubs table to represent the 'libtommath'
+	* generic/tclDecls.h:   routines that Tcl uses and export them
+	* generic/tclInt.decls: to callers.  Reran 'genstubs'
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclStubLib.c:
+	* generic/tclTomMath.decls:
+	* generic/tclTomMath.h:
+	* generic/tclTomMathDecls.h:
+	* generic/tclTomMathInterface.c:
+	* generic/tommath.h:
+	* tools/fix_tommath_h.tcl:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
+
+	* generic/tclClock.c:   Made changes to silence a number of
+	* generic/tclIO.c:	compiler warnings when building with
+	* generic/tclIORChan.c: mingw.
+	* generic/tclLink.c:
+	* generic/tclListObj.c:
+	* generic/tclObj.c:
+	* generic/tclParseExpr.c:
+	* generic/tclProc.c:
+	* generic/tclTimer.c:
+	* win/tclWinChan.c:
+	* win/tclWinConsole.c:
+	* win/tclWinDde.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinFile.c:
+	* win/tclWinReg.c:
+	* win/tclWinSock.c:
+	
 2005-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclExecute.c (TEBC:DICT_FIRST,DICT_DONE): Only decrease the
