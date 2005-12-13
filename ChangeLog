@@ -1,3 +1,10 @@
+2005-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclExecute.c (TEBC:DICT_FIRST,DICT_DONE): Only decrease the
+	references to the dictionary once the iteration completes. Do this by
+	storing the dict in the iterator context variable. [Bug 1379349]
+	Thanks to Ulrich Ring and Tobias Hippler for finding this.
+
 2005-12-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4, unix/configure: Fix sh quoting error reported in
@@ -11,10 +18,9 @@
 2005-12-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
-	* win/tcl.m4 (SC_CONFIG_CFLAGS): Define MACHINE
-	for gcc builds. The lack of a definition of this
-	variable in the manifest file was causing a
-	runtime error in wish built with gcc.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Define MACHINE for gcc builds. The
+	lack of a definition of this variable in the manifest file was causing
+	a runtime error in wish built with gcc.
 
 2005-12-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
@@ -53,8 +59,9 @@
 2005-12-05  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure.in: move check for fts API to configure.in and run it
-	* unix/tcl.m4:       on all platforms, since Linux glibc2 and *BSDs also
-	have this; using fts is more efficient than recursive opendir/readdir.
+	* unix/tcl.m4:       on all platforms, since Linux glibc2 and *BSDs
+	also have this; using fts is more efficient than a recursive
+	opendir/readdir.
 	* unix/tclUnixFCmd.c (TraverseUnixTree): add support to fts code for
 	platforms with stat64.
 	* unix/configure:
@@ -70,21 +77,21 @@
 2005-12-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c: Moved a tiny bit more of [clock format] from
-	* library/clock.tcl: run time to compile time, and fixed a l10n
-	bug in the process. [Bug 1371446]. Also, conditoned the call to
-	SetupTimeZone to speed the common case where TZData($timezone)
-	already exists, and achieved a puny speedup by making 
-	::tcl::clock::getenv not throw errors.
-	* unix/Makefile.in: Made some changes to support a 'make' command
-	that is present on some antiquated versions of Solaris.
-	
+	* library/clock.tcl: run time to compile time, and fixed a l10n bug in
+	the process. [Bug 1371446]. Also, conditoned the call to SetupTimeZone
+	to speed the common case where TZData($timezone) already exists, and
+	achieved a puny speedup by making ::tcl::clock::getenv not throw
+	errors.
+	* unix/Makefile.in: Made some changes to support a 'make' command that
+	is present on some antiquated versions of Solaris.
+
 2005-12-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Continued rationalizing the code, eliminating
-	numerous redundant [mc] calls.  Added another time boost by
-	precompiling a [::format] command to do the bulk of the work
-	of [clock format].
-	
+	numerous redundant [mc] calls. Added another time boost by
+	precompiling a [::format] command to do the bulk of the work of [clock
+	format].
+
 2005-12-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/Makefile.in: Add remaining dependency info. While automated
@@ -120,15 +127,14 @@
 
 2005-11-30  Kevin Kenny  <kennykb@acm.org>
 
-	* generic/tclClock.c: Fixed a bad refcount in previous commit that
-	led to a corrupted heap. Also silenced a warning that some
-	compilers gave about the excessively long constant for
-	JULIAN_SEC_POSIX_EPOCH.  Also fixed a bug where [clock format]
-	would fail in the :localtime zone for times before the Posix
-	Epoch.  Thanks to Miguel Sofer for pointing out all of these.
-	Also rationalized the code a little bit by moving parts of
-	[clock scan] into C, eliminating some code that was duplicated
-	in the C and Tcl layers.
+	* generic/tclClock.c: Fixed a bad refcount in previous commit that led
+	to a corrupted heap. Also silenced a warning that some compilers gave
+	about the excessively long constant for JULIAN_SEC_POSIX_EPOCH.  Also
+	fixed a bug where [clock format] would fail in the :localtime zone for
+	times before the Posix Epoch.  Thanks to Miguel Sofer for pointing out
+	all of these.  Also rationalized the code a little bit by moving parts
+	of [clock scan] into C, eliminating some code that was duplicated in
+	the C and Tcl layers.
 
 2005-11-29  Kevin Kenny  <kennykb@acm.org>
 
@@ -146,15 +152,14 @@
 
 2005-11-28  Kevin Kenny  <kennykb@acm.org>
 
-	* tools/tclZIC.tcl (convertTimeOfDay): Corrected a typo that
-	caused wrong DST transitions in any time zone where the transition
-	is specified as local Standard Time (as opposed to wall-clock or
-	UTC).  (Also updated the code to be bignum-safe.)
-	* tests/clock.test (clock-51.1): Added regression test for the
-	above.
-	* library/tzdata: Updated to Olson's 'tzdata2005o' (changes
-	for Cuba, Nicaragua, Jordan, and Georgia) and regenerated.
-	Thanks to Paul Mackerras for reporting this problem.
+	* tools/tclZIC.tcl (convertTimeOfDay): Corrected a typo that caused
+	wrong DST transitions in any time zone where the transition is
+	specified as local Standard Time (as opposed to wall-clock or UTC).
+	(Also updated the code to be bignum-safe.)
+	* tests/clock.test (clock-51.1): Added regression test for the above.
+	* library/tzdata: Updated to Olson's 'tzdata2005o' (changes for Cuba,
+	Nicaragua, Jordan, and Georgia) and regenerated. Thanks to Paul
+	Mackerras for reporting this problem.
 
 2005-11-27  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -169,19 +174,19 @@
 	* unix/configure.in: fix obsolete autoconf macros, sync gratuitous
 	formatting/ordering differences with tk/unix/configure.in.
 
-	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make executable
-	linking the same as during configure (needed to avoid loosing any linker
-	relevant flags in CFLAGS, in particular flags that can't be in LDFLAGS).
-	Avoid concurrent linking of tclsh and compiling of tclTestInit.o or
-	xtTestInit.o during parallel make.
+	* unix/Makefile.in: add CFLAGS to tclsh/tcltest link to make
+	executable linking the same as during configure (needed to avoid
+	loosing any linker relevant flags in CFLAGS, in particular flags that
+	can't be in LDFLAGS).  Avoid concurrent linking of tclsh and compiling
+	of tclTestInit.o or xtTestInit.o during parallel make.
 	(checkstubs, checkdoc, checkexports): dependency and Darwin fixes
 	(dist): add new macosx files.
 
 	* unix/tclLoadDyld.c (TclpDlopen): use NSADDIMAGE_OPTION_WITH_SEARCHING
 	on second NSAddImage only. [Bug 1204237]
 	(TclGuessPackageName): should not be MODULE_SCOPE.
-	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for loading
-	universal (fat) bundles from memory.
+	(TclpLoadMemory): ppc64 and endian (i386) fixes, add support for
+	loading universal (fat) bundles from memory.
 
 	* unix/tclUnixFCmd.c:
 	* macosx/tclMacOSXFCmd.c: ppc64 and endian (i386) fixes.
@@ -203,7 +208,8 @@
 	* macosx/tclMacOSXNotify.c:
 	* unix/tclUnixNotfy.c:
 	* unix/tclUnixPort.h: fix #include order to support compile time
-	override of HAVE_COREFOUNDATION in tclUnixPort.h when building for ppc64
+	override of HAVE_COREFOUNDATION in tclUnixPort.h when building for
+	ppc64
 
 	* macosx/Tcl.pbproj/default.pbxuser (new file):
 	* macosx/Tcl.pbproj/jingham.pbxuser:
@@ -223,12 +229,14 @@
 	* unix/configure.in:
 	* unix/dltest/Makefile.in:
 	* macosx/configure.ac (new file): add support for inclusion of
-	unix/configure.in by macosx/configure.ac, allows generation of a config
-	headers enabled configure script in macosx (required by Xcode projects).
+	unix/configure.in by macosx/configure.ac, allows generation of a
+	config headers enabled configure script in macosx (required by Xcode
+	projects).
 
 	* macosx/GNUmakefile: rename from Makefile to avoid overwriting by
 	configure run in tcl/macosx, add support for reusing configure cache,
-	build target fixes, remove GENERIC_FLAGS override now handled by tcl.m4.
+	build target fixes, remove GENERIC_FLAGS override now handled by
+	tcl.m4.
 
 	* generic/tcl.decls: add Tcl_Main declaration as comment to avoid
 	'checkstubs' target complaining about it missing from stubs.
@@ -248,8 +256,8 @@
 	* generic/tclVar.c:
 	* generic/tommath.h:
 	* tools/fix_tommath_h.tcl:
-	* unix/tclUnixFCmd.c: ensure externally visible symbols not contained in
-	stubs table are declared as MODULE_SCOPE (or as static if not used
+	* unix/tclUnixFCmd.c: ensure externally visible symbols not contained
+	in stubs table are declared as MODULE_SCOPE (or as static if not used
 	outside of own source file). These changes allow 'make checkstubs' to
 	complete without error on Darwin with gcc 4.
 
@@ -260,8 +268,8 @@
 	* unix/tclUnixChan.c (TclUnixWaitForFile): initialise variables to
 	silence gcc 4 warnings.
 
-	* generic/tclExecute.c (TclExecuteByteCode): fix unused variable warning
-	when NO_WIDE_TYPE is defined.
+	* generic/tclExecute.c (TclExecuteByteCode): fix unused variable
+	warning when NO_WIDE_TYPE is defined.
 
 	* generic/regguts.h: only #define NDEBUG if not already #defined.
 
@@ -269,7 +277,8 @@
 	* macosx/tclMacOSXNotify.c: sync whitespace & comments.
 
 	* unix/tclUnixPort.h:
-	* win/tclWinPort.h: remove declaration of obsolete&unused TclpMutex API.
+	* win/tclWinPort.h: remove declaration of obsolete&unused TclpMutex
+	API.
 
 	* unix/configure:
 	* unix/tclConfig.h.in: regen.
@@ -277,14 +286,13 @@
 2005-11-21  Andreas Kupries <andreask@activestate.com>
 
 	* unix/Makefile.in (install-libraries): Updated Makefile to new
-	* win/Makefile.in (install-libraries):  version of the http
-	  package. This fixes the ifneeded/provide mismatch reported when
-	  trying to require http. Should we maybe try to automatically
-	  extract the version number from the http code to prevent future
-	  breakage ?
+	* win/Makefile.in (install-libraries):  version of the http package.
+	This fixes the ifneeded/provide mismatch reported when trying to
+	require http. Should we maybe try to automatically extract the version
+	number from the http code to prevent future breakage ?
 
-	  This follows the update of the version number by dgp on Nov 15
-	  (No entry found in the ChangeLog).
+	This follows the update of the version number by dgp on Nov 15 (No
+	entry found in the ChangeLog).
 
 2005-11-20  Joe English  <jenglish@users.sourceforge.net>
 
@@ -294,35 +302,34 @@
 
 2005-11-18  Miguel Sofer <msofer@users.sf.net>
 
-	* tests/trace.test (trace-34.5): [Bug 1047286], added a second
-	test illustrating the role of "ns in callStack" in the ns's
-	visibility during deletion traces.
+	* tests/trace.test (trace-34.5): [Bug 1047286], added a second test
+	illustrating the role of "ns in callStack" in the ns's visibility
+	during deletion traces.
 
 2005-11-18  Kevin B. Kenny  <kennykb@acm.org>
 
-	* doc/clock.n:  Restored several missing lines near the %w
-	format group so that %w and %W are documented with their
-	actual behaviour.  [Bug 1359183]
+	* doc/clock.n: Restored several missing lines near the %w format group
+	so that %w and %W are documented with their actual behaviour. [Bug
+	1359183]
 
 2005-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr
-	until we netrieve next statePtr from it.
+	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr until we
+	netrieve next statePtr from it.
 
 2005-11-18  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclObj.c (GetBignumFromObj): replace NULL with
 	tclEmptyStringRep to stop memcpy from complaining in a debug build
-	(the corresponding branch is eliminated by the optimiser
-	otherwise).
+	(the corresponding branch is eliminated by the optimiser otherwise).
 
 2005-11-18  Andreas Kupries <andreask@activestate.com>
 
-	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts'
-	  patch for [SF Tcl Bug 1359094]. This moves the retrieval of the
-	  next channel state to the end of the loop, as the called
-	  closeproc may close other channels, i.e. modify the list we are
-	  iterating, invalidating any pointer retrieved earlier.
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts' patch
+	for [SF Tcl Bug 1359094]. This moves the retrieval of the next channel
+	state to the end of the loop, as the called closeproc may close other
+	channels, i.e. modify the list we are iterating, invalidating any
+	pointer retrieved earlier.
 
 2005-11-18  Don Porter  <dgp@users.sourceforge.net>
 
@@ -346,8 +353,8 @@
 	* generic/tclStrToD.c:	More data in the "can't happen" Tcl_Panic to
 	aid debugging.
 
-	* generic/tclBasic.c (CallCommandTraces):	Save/restore the
-	interp result during traces to fix [Bug 1355342].
+	* generic/tclBasic.c (CallCommandTraces): Save/restore the interp
+	result during traces to fix [Bug 1355342].
 
 2005-11-13  Miguel Sofer <msofer@users.sf.net>
 
