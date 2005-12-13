@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.181 2005/12/02 16:58:14 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.182 2005/12/13 22:43:18 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -351,6 +351,8 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclInt.h \
 	$(GENERIC_DIR)/tclIntDecls.h \
 	$(GENERIC_DIR)/tclIntPlatDecls.h \
+	$(GENERIC_DIR)/tclTomMath.h \
+	$(GENERIC_DIR)/tclTomMathDecls.h \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
@@ -676,14 +678,14 @@ gendate:
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 #	rm y.tab.c
 
-# The following target generates the file generic/tommath.h.
+# The following target generates the file generic/tclTomMath.h.
 # It needs to be run (and the results checked) after updating
 # to a new release of libtommath.
 
 gentommath_h:
 	$(TCL_EXE) "$(TOP_DIR)/tools/fix_tommath_h.tcl" \
 		"$(TOMMATH_DIR)/tommath.h" \
-		> "$(GENERIC_DIR)/tommath.h"
+		> "$(GENERIC_DIR)/tclTomMath.h"
 
 # The following target generates the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
@@ -762,7 +764,9 @@ install-libraries: libraries install-tzdata install-msgs
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h; \
+		$(GENERIC_DIR)/tclPlatDecls.h \
+		$(GENERIC_DIR)/tclTomMath.h \
+		$(GENERIC_DIR)/tclTomMathDecls.h ; \
 	    do \
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
@@ -1516,7 +1520,8 @@ $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 
 genstubs:
 	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
-		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls
+		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
+		$(GENERIC_DIR)/tclTomMath.decls
 
 #
 # Target to check that all exported functions have an entry in the stubs

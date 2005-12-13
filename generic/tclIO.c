@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.102 2005/11/18 19:38:38 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.103 2005/12/13 22:43:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -6023,7 +6023,7 @@ Tcl_TruncateChannel(
      * pre-read input data.
      */
 
-    if (Tcl_Seek(chan, 0, SEEK_CUR) == Tcl_LongAsWide(-1)) {
+    if (Tcl_Seek(chan, (Tcl_WideInt)0, SEEK_CUR) == Tcl_LongAsWide(-1)) {
 	return TCL_ERROR;
     }
 
