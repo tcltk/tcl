@@ -2354,7 +2354,9 @@
 				F96D3F2D08F272A7004A47F5,
 				F96D3F2E08F272A7004A47F5,
 				F96D3F2F08F272A7004A47F5,
+				F9903CAF094FAADA004613E9,
 				F96D3F3008F272A7004A47F5,
+				F9903CB0094FAADA004613E9,
 				F96D3F3108F272A7004A47F5,
 				F96D3F3208F272A7004A47F5,
 				F96D3F3308F272A7004A47F5,
@@ -7892,6 +7894,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "touch -t $(date -r $(expr $(date '+%s') + 5) '+%Y%m%d%H%M.%S') \"${TEMP_DIR}/stamp\"\n\n## Ensure other buildstyles are relinked next time they are built:\ncd \"${OBJROOT}/${PROJECT_NAME}.build\" &&\nfor d in $(find . -maxdepth 1 -type d -name '*.build' ! -name \"${PROJECT_TEMP_DIR##*/}\"); do\n    for v in ${BUILD_VARIANTS}; do\n        o=\"$d/${TARGET_NAME}.build/Objects-${v}\" &&\n        for a in ${ARCHS}; do touch -c -r \"${TEMP_DIR}/stamp\" \"$o/$a/tclAppInit.o\"; done\n    done\ndone\n";
+		};
+		F9903CAF094FAADA004613E9 = {
+			explicitFileType = text.script;
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			path = tclTomMath.decls;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		F9903CB0094FAADA004613E9 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = tclTomMathDecls.h;
+			refType = 4;
+			sourceTree = "<group>";
 		};
 		F9A3084B08F2D4CE00BAE1AB = {
 			isa = PBXFileReference;
