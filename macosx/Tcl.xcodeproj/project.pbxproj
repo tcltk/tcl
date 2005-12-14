@@ -901,6 +901,8 @@
 		F96D449808F272BA004A47F5 /* tclWinThrd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinThrd.c; sourceTree = "<group>"; };
 		F96D449908F272BA004A47F5 /* tclWinThrd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclWinThrd.h; sourceTree = "<group>"; };
 		F96D449A08F272BA004A47F5 /* tclWinTime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclWinTime.c; sourceTree = "<group>"; };
+		F9903CAF094FAADA004613E9 /* tclTomMath.decls */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tclTomMath.decls; sourceTree = "<group>"; };
+		F9903CB0094FAADA004613E9 /* tclTomMathDecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclTomMathDecls.h; sourceTree = "<group>"; };
 		F9A3084B08F2D4CE00BAE1AB /* tclsh8.5 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; name = tclsh8.5; path = ../tclsh8.5; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A3084E08F2D4F400BAE1AB /* Tcl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Tcl.framework; path = ../Tcl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -1279,7 +1281,9 @@
 				F96D3F2D08F272A7004A47F5 /* tclThreadStorage.c */,
 				F96D3F2E08F272A7004A47F5 /* tclThreadTest.c */,
 				F96D3F2F08F272A7004A47F5 /* tclTimer.c */,
+				F9903CAF094FAADA004613E9 /* tclTomMath.decls */,
 				F96D3F3008F272A7004A47F5 /* tclTomMath.h */,
+				F9903CB0094FAADA004613E9 /* tclTomMathDecls.h */,
 				F96D3F3108F272A7004A47F5 /* tclTomMathInterface.c */,
 				F96D3F3208F272A7004A47F5 /* tclTrace.c */,
 				F96D3F3308F272A7004A47F5 /* tclUniData.c */,
