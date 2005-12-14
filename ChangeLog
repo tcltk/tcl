@@ -1,3 +1,10 @@
+2005-12-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in: run check for fts API on all platforms, since Linux
+	glibc2 and *BSDs also have this and using fts is more efficient than
+	recursive opendir/readdir (sync with HEAD).
+	* unix/configure: regen.
+
 2005-12-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4, unix/configure: Fix sh quoting error reported in
