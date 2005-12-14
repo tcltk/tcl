@@ -7493,29 +7493,28 @@ EOF
 
 
 #--------------------------------------------------------------------
-# Check for support of fts functions on Darwin (readdir replacement)
+# Check for support of fts functions (readdir replacement)
 #--------------------------------------------------------------------
 
-if test "`uname -s`" = "Darwin" ; then
-    echo $ac_n "checking for fts""... $ac_c" 1>&6
-echo "configure:7502: checking for fts" >&5
+echo $ac_n "checking for fts""... $ac_c" 1>&6
+echo "configure:7501: checking for fts" >&5
 if eval "test \"`echo '$''{'tcl_cv_api_fts'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   
-	cat > conftest.$ac_ext <<EOF
-#line 7508 "configure"
+    cat > conftest.$ac_ext <<EOF
+#line 7507 "configure"
 #include "confdefs.h"
 #include <sys/param.h>
-		#include <sys/stat.h>
-		#include <fts.h>
+            #include <sys/stat.h>
+            #include <fts.h>
 int main() {
 char*const p[2] = {"/", NULL};
-		FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
-		FTSENT *e = fts_read(f); fts_close(f);
+            FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
+            FTSENT *e = fts_read(f); fts_close(f);
 ; return 0; }
 EOF
-if { (eval echo configure:7519: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:7518: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   tcl_cv_api_fts=yes
 else
@@ -7528,12 +7527,11 @@ rm -f conftest*
 fi
 
 echo "$ac_t""$tcl_cv_api_fts" 1>&6
-    if test $tcl_cv_api_fts = yes; then
-	cat >> confdefs.h <<\EOF
+if test $tcl_cv_api_fts = yes; then
+    cat >> confdefs.h <<\EOF
 #define HAVE_FTS 1
 EOF
 
-    fi
 fi
 
 #--------------------------------------------------------------------
@@ -7548,17 +7546,17 @@ fi
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:7552: checking for $ac_hdr" >&5
+echo "configure:7550: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 7557 "configure"
+#line 7555 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:7562: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:7560: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -7588,17 +7586,17 @@ done
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:7592: checking for $ac_hdr" >&5
+echo "configure:7590: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 7597 "configure"
+#line 7595 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:7602: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:7600: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -7625,7 +7623,7 @@ fi
 done
 
     echo $ac_n "checking FIONBIO vs. O_NONBLOCK for nonblocking I/O""... $ac_c" 1>&6
-echo "configure:7629: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
+echo "configure:7627: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
     if test -f /usr/lib/NextStep/software_version; then
 	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
     else
@@ -7705,7 +7703,7 @@ HTML_DIR='$(DISTDIR)/html'
 if test "`uname -s`" = "Darwin" ; then
     
     echo $ac_n "checking how to package libraries""... $ac_c" 1>&6
-echo "configure:7709: checking how to package libraries" >&5
+echo "configure:7707: checking how to package libraries" >&5
     # Check whether --enable-framework or --disable-framework was given.
 if test "${enable_framework+set}" = set; then
   enableval="$enable_framework"
