@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.22 2005/12/05 15:10:33 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.23 2005/12/14 02:10:21 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -436,21 +436,19 @@ fi
 SC_ENABLE_LANGINFO
 
 #--------------------------------------------------------------------
-# Check for support of fts functions on Darwin (readdir replacement)
+# Check for support of fts functions (readdir replacement)
 #--------------------------------------------------------------------
 
-if test "`uname -s`" = "Darwin" ; then
-    AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
-	AC_TRY_LINK([#include <sys/param.h>
-		#include <sys/stat.h>
-		#include <fts.h>], 
-	    [char*const p[2] = {"/", NULL};
-		FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
-		FTSENT *e = fts_read(f); fts_close(f);], 
-	    tcl_cv_api_fts=yes, tcl_cv_api_fts=no)])
-    if test $tcl_cv_api_fts = yes; then
-	AC_DEFINE(HAVE_FTS)
-    fi
+AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
+    AC_TRY_LINK([#include <sys/param.h>
+            #include <sys/stat.h>
+            #include <fts.h>], 
+        [char*const p[2] = {"/", NULL};
+            FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
+            FTSENT *e = fts_read(f); fts_close(f);], 
+        tcl_cv_api_fts=yes, tcl_cv_api_fts=no)])
+if test $tcl_cv_api_fts = yes; then
+    AC_DEFINE(HAVE_FTS, 1, [Do we have fts functions?])
 fi
 
 #--------------------------------------------------------------------
