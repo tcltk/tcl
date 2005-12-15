@@ -1,5 +1,8 @@
 2005-12-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclIOUtil.c: workaround gcc warning "comparison is always 
+	* generic/tclTest.c:   false due to limited range of data type".
+
 	* macosx/Tcl.xcode/project.pbxproj:
 	* macosx/Tcl.xcodeproj/project.pbxproj:
 	* unix/Makefile.in: add new tclTomMath* files.
