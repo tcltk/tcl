@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.23 2005/11/27 02:34:41 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.24 2005/12/15 04:08:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -144,8 +144,19 @@ Tcl_Stat(path, oldStyleBuf)
 #   define OUT_OF_RANGE(x) \
 	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
 	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
+#if defined(__GNUC__) && __GNUC__ >= 2
+/*
+ * Workaround gcc warning of "comparison is always false due to limited range of
+ * data type" in this macro by checking max type size, and when necessary ANDing
+ * with the complement of ULONG_MAX instead of the comparison:
+ */
+#   define OUT_OF_URANGE(x) \
+	((((Tcl_WideUInt)(~ (__typeof__(x)) 0)) > (Tcl_WideUInt)ULONG_MAX) && \
+	 (((Tcl_WideUInt)(x)) & ~(Tcl_WideUInt)ULONG_MAX))
+#else
 #   define OUT_OF_URANGE(x) \
 	(((Tcl_WideUInt)(x)) > (Tcl_WideUInt)ULONG_MAX)
+#endif
 
 	/*
 	 * Perform the result-buffer overflow check manually.
