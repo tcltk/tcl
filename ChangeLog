@@ -1,5 +1,8 @@
 2005-12-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclIOUtil.c: workaround gcc warning "comparison is always 
+	* generic/tclTest.c:   false due to limited range of data type".
+	
 	* unix/configure.in: run check for fts API on all platforms, since Linux
 	glibc2 and *BSDs also have this and using fts is more efficient than
 	recursive opendir/readdir (sync with HEAD).
