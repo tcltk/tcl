@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.223 2005/12/13 13:46:12 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.224 2005/12/18 22:41:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5951,7 +5951,7 @@ TclExecuteByteCode(
 	if (statePtr == NULL || statePtr->typePtr != &dictIteratorType) {
 	    Tcl_Panic("mis-issued dictNext!");
 	}
-	searchPtr = (Tcl_DictSearch *) statePtr->internalRep.otherValuePtr;
+	searchPtr = (Tcl_DictSearch *) statePtr->internalRep.twoPtrValue.ptr1;
 	Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
     pushDictIteratorResult:
 	if (done) {
@@ -5975,24 +5975,31 @@ TclExecuteByteCode(
 	if (statePtr == NULL) {
 	    Tcl_Panic("mis-issued dictDone!");
 	}
+
 	if (statePtr->typePtr == &dictIteratorType) {
+	    /*
+	     * First kill the search, and then release the reference to the
+	     * dictionary that we were holding.
+	     */
+
 	    searchPtr = (Tcl_DictSearch *)
 		    statePtr->internalRep.twoPtrValue.ptr1;
-	    dictPtr = (Tcl_Obj *) statePtr->internalRep.twoPtrValue.ptr2;
 	    Tcl_DictObjDone(searchPtr);
 	    ckfree((char *) searchPtr);
+
+	    dictPtr = (Tcl_Obj *) statePtr->internalRep.twoPtrValue.ptr2;
 	    Tcl_DecrRefCount(dictPtr);
+
+	    /*
+	     * Set the internal variable to an empty object to signify that we
+	     * don't hold an iterator.
+	     */
+
+	    Tcl_DecrRefCount(statePtr);
+	    TclNewObj(emptyPtr);
+	    compiledLocals[opnd].value.objPtr = emptyPtr;
+	    Tcl_IncrRefCount(emptyPtr);
 	}
-
-	/*
-	 * Set the internal variable to an empty object to signify that we
-	 * don't hold an iterator.
-	 */
-
-	Tcl_DecrRefCount(statePtr);
-	TclNewObj(emptyPtr);
-	compiledLocals[opnd].value.objPtr = emptyPtr;
-	Tcl_IncrRefCount(emptyPtr);
 	NEXT_INST_F(5, 0, 0);
     }
 
