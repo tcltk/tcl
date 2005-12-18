@@ -1,6 +1,13 @@
+2005-12-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileDictCmd): Ensure that we only do an
+	'endCatch' when there's a preceding 'beginCatch'. [Bug 1382528] Many
+	thanks to Anton Kovalenko for finding this and pointing out that it
+	was a catch stack handling problem!
+
 2005-12-14  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclIOUtil.c: workaround gcc warning "comparison is always 
+	* generic/tclIOUtil.c: workaround gcc warning "comparison is always
 	* generic/tclTest.c:   false due to limited range of data type".
 
 	* macosx/Tcl.xcode/project.pbxproj:
@@ -46,7 +53,7 @@
 	* win/tclWinFile.c:
 	* win/tclWinReg.c:
 	* win/tclWinSock.c:
-	
+
 2005-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclExecute.c (TEBC:DICT_FIRST,DICT_DONE): Only decrease the
