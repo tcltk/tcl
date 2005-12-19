@@ -1,3 +1,8 @@
+2005-12-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/Tcl.n: Clarify what is going on in variable substitution
+	following thread on comp.lang.tcl.
+
 2005-12-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileDictCmd): Ensure that we only do an
