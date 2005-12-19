@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.9 2003/02/01 19:48:23 kennykb Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.9.2.1 2005/12/19 10:09:50 dkf Exp $
 '\"
 .so man.macros
 .TH Tcl n "8.1" Tcl "Tcl Built-In Commands"
@@ -76,7 +76,8 @@ characters between them.
 There may be any number of command substitutions in a single word.
 Command substitution is not performed on words enclosed in braces.
 .IP "[7] \fBVariable substitution.\fR"
-If a word contains a dollar-sign (``$'') then Tcl performs \fIvariable
+If a word contains a dollar-sign (``$'') followed by one of the forms
+described below, then Tcl performs \fIvariable
 substitution\fR:  the dollar-sign and the following characters are
 replaced in the word by the value of a variable.
 Variable substitution may take any of the following forms:
