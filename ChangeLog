@@ -1,3 +1,18 @@
+2005-12-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	Modified [string is double] to use
+	* tests/string.test:	TclParseNumber() to parse trailing whitespace.
+	Ensures consistency, and makes it easier to cleanup after invalid
+	internal reps left behind by parsing [Bugs 1360432 1382287].
+	
+	* generic/tclParseExpr.c:	Added TCL_PARSE_NO_WHITESPACE to
+	* generic/tclScan.c:	TclParseNumber() calls since [scan] and
+	* tests/scan.test:	[expr] parsing don't want spaces in parsed
+	numbers.
+
+	* generic/tclInt.h:	Added TCL_PARSE_NO_WHITESPACE flag to the
+	* generic/tclStrToD.c:	TclParseNumber() interface.
+
 2005-12-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* doc/Tcl.n: Clarify what is going on in variable substitution

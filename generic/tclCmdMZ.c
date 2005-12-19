@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.133 2005/11/04 22:38:38 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.134 2005/12/19 19:03:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1544,8 +1544,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		failat = 0;
 	    } else {
 		failat = stop - string1;
-		string1 = stop;
-		chcomp = Tcl_UniCharIsSpace;
+		if (stop < end) {
+		    result = 0;
+		    TclFreeIntRep(objPtr);
+		    objPtr->typePtr = NULL;
+		}
 	    }
 	    break;
 	}
