@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.22 2005/11/12 04:08:05 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.23 2005/12/19 19:03:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -630,7 +630,7 @@ Tcl_ScanObjCmd(
     objIndex = 0;
     nconversions = 0;
     while (*format != '\0') {
-	int parseFlag = 0;
+	int parseFlag = TCL_PARSE_NO_WHITESPACE;
 	format += Tcl_UtfToUniChar(format, &ch);
 
 	flags = 0;
@@ -735,19 +735,19 @@ Tcl_ScanObjCmd(
 
 	case 'd':
 	    op = 'i';
-	    parseFlag = TCL_PARSE_DECIMAL_ONLY;
+	    parseFlag |= TCL_PARSE_DECIMAL_ONLY;
 	    break;
 	case 'i':
 	    op = 'i';
-	    parseFlag = TCL_PARSE_SCAN_PREFIXES;
+	    parseFlag |= TCL_PARSE_SCAN_PREFIXES;
 	    break;
 	case 'o':
 	    op = 'i';
-	    parseFlag = TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
+	    parseFlag |= TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
 	    break;
 	case 'x':
 	    op = 'i';
-	    parseFlag = TCL_PARSE_HEXADECIMAL_ONLY;
+	    parseFlag |= TCL_PARSE_HEXADECIMAL_ONLY;
 	    break;
 	case 'u':
 	    op = 'i';
@@ -955,7 +955,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_DECIMAL_ONLY)) {
+		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
