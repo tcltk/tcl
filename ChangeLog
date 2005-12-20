@@ -1,10 +1,15 @@
+2005-12-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclThreadAlloc.c (Tcl_GetMemoryInfo): Format values as longs
+	and not ints, so they are less likely to wrap on 64-bit machines.
+
 2005-12-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	Modified [string is double] to use
 	* tests/string.test:	TclParseNumber() to parse trailing whitespace.
 	Ensures consistency, and makes it easier to cleanup after invalid
 	internal reps left behind by parsing [Bugs 1360432 1382287].
-	
+
 	* generic/tclParseExpr.c:	Added TCL_PARSE_NO_WHITESPACE to
 	* generic/tclScan.c:	TclParseNumber() calls since [scan] and
 	* tests/scan.test:	[expr] parsing don't want spaces in parsed
