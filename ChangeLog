@@ -1,3 +1,8 @@
+2005-12-20  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclThreadAlloc.c (Tcl_GetMemoryInfo): Format values as longs
+	and not ints, so they are less likely to wrap on 64-bit machines.
+
 2005-12-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/Tcl.n: Clarify what is going on in variable substitution
