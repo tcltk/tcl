@@ -66,7 +66,7 @@ QUALCOMM Australia \\
 }
 }
 \maketitle
-This text has been placed in the public domain.  This text corresponds to the v0.36 release of the 
+This text has been placed in the public domain.  This text corresponds to the v0.37 release of the 
 LibTomMath project.
 
 \begin{alltt}
@@ -8808,70 +8808,73 @@ This algorithm initiates a temporary mp\_int with the value of the single digit 
 039        /* fix sign  */
 040        a->sign = c->sign = MP_NEG;
 041   
-042        return res;
-043     \}
+042        /* clamp */
+043        mp_clamp(c);
 044   
-045     /* old number of used digits in c */
-046     oldused = c->used;
+045        return res;
+046     \}
 047   
-048     /* sign always positive */
-049     c->sign = MP_ZPOS;
+048     /* old number of used digits in c */
+049     oldused = c->used;
 050   
-051     /* source alias */
-052     tmpa    = a->dp;
+051     /* sign always positive */
+052     c->sign = MP_ZPOS;
 053   
-054     /* destination alias */
-055     tmpc    = c->dp;
+054     /* source alias */
+055     tmpa    = a->dp;
 056   
-057     /* if a is positive */
-058     if (a->sign == MP_ZPOS) \{
-059        /* add digit, after this we're propagating
-060         * the carry.
-061         */
-062        *tmpc   = *tmpa++ + b;
-063        mu      = *tmpc >> DIGIT_BIT;
-064        *tmpc++ &= MP_MASK;
-065   
-066        /* now handle rest of the digits */
-067        for (ix = 1; ix < a->used; ix++) \{
-068           *tmpc   = *tmpa++ + mu;
-069           mu      = *tmpc >> DIGIT_BIT;
-070           *tmpc++ &= MP_MASK;
-071        \}
-072        /* set final carry */
-073        ix++;
-074        *tmpc++  = mu;
-075   
-076        /* setup size */
-077        c->used = a->used + 1;
-078     \} else \{
-079        /* a was negative and |a| < b */
-080        c->used  = 1;
-081   
-082        /* the result is a single digit */
-083        if (a->used == 1) \{
-084           *tmpc++  =  b - a->dp[0];
-085        \} else \{
-086           *tmpc++  =  b;
-087        \}
-088   
-089        /* setup count so the clearing of oldused
-090         * can fall through correctly
-091         */
-092        ix       = 1;
-093     \}
-094   
-095     /* now zero to oldused */
-096     while (ix++ < oldused) \{
-097        *tmpc++ = 0;
-098     \}
-099     mp_clamp(c);
-100   
-101     return MP_OKAY;
-102   \}
+057     /* destination alias */
+058     tmpc    = c->dp;
+059   
+060     /* if a is positive */
+061     if (a->sign == MP_ZPOS) \{
+062        /* add digit, after this we're propagating
+063         * the carry.
+064         */
+065        *tmpc   = *tmpa++ + b;
+066        mu      = *tmpc >> DIGIT_BIT;
+067        *tmpc++ &= MP_MASK;
+068   
+069        /* now handle rest of the digits */
+070        for (ix = 1; ix < a->used; ix++) \{
+071           *tmpc   = *tmpa++ + mu;
+072           mu      = *tmpc >> DIGIT_BIT;
+073           *tmpc++ &= MP_MASK;
+074        \}
+075        /* set final carry */
+076        ix++;
+077        *tmpc++  = mu;
+078   
+079        /* setup size */
+080        c->used = a->used + 1;
+081     \} else \{
+082        /* a was negative and |a| < b */
+083        c->used  = 1;
+084   
+085        /* the result is a single digit */
+086        if (a->used == 1) \{
+087           *tmpc++  =  b - a->dp[0];
+088        \} else \{
+089           *tmpc++  =  b;
+090        \}
+091   
+092        /* setup count so the clearing of oldused
+093         * can fall through correctly
+094         */
+095        ix       = 1;
+096     \}
+097   
+098     /* now zero to oldused */
+099     while (ix++ < oldused) \{
+100        *tmpc++ = 0;
+101     \}
+102     mp_clamp(c);
 103   
-104   #endif
-105   
+104     return MP_OKAY;
+105   \}
+106   
+107   #endif
+108   
 \end{alltt}
 \end{small}
 
@@ -9481,62 +9484,65 @@ as part of larger input without any significant problem.
 020     int     y, res, neg;
 021     char    ch;
 022   
-023     /* make sure the radix is ok */
-024     if (radix < 2 || radix > 64) \{
-025       return MP_VAL;
-026     \}
-027   
-028     /* if the leading digit is a 
-029      * minus set the sign to negative. 
-030      */
-031     if (*str == '-') \{
-032       ++str;
-033       neg = MP_NEG;
-034     \} else \{
-035       neg = MP_ZPOS;
-036     \}
-037   
-038     /* set the integer to the default of zero */
-039     mp_zero (a);
-040     
-041     /* process each digit of the string */
-042     while (*str) \{
-043       /* if the radix < 36 the conversion is case insensitive
-044        * this allows numbers like 1AB and 1ab to represent the same  value
-045        * [e.g. in hex]
-046        */
-047       ch = (char) ((radix < 36) ? toupper (*str) : *str);
-048       for (y = 0; y < 64; y++) \{
-049         if (ch == mp_s_rmap[y]) \{
-050            break;
-051         \}
-052       \}
-053   
-054       /* if the char was found in the map 
-055        * and is less than the given radix add it
-056        * to the number, otherwise exit the loop. 
-057        */
-058       if (y < radix) \{
-059         if ((res = mp_mul_d (a, (mp_digit) radix, a)) != MP_OKAY) \{
-060            return res;
-061         \}
-062         if ((res = mp_add_d (a, (mp_digit) y, a)) != MP_OKAY) \{
+023     /* zero the digit bignum */
+024     mp_zero(a);
+025   
+026     /* make sure the radix is ok */
+027     if (radix < 2 || radix > 64) \{
+028       return MP_VAL;
+029     \}
+030   
+031     /* if the leading digit is a 
+032      * minus set the sign to negative. 
+033      */
+034     if (*str == '-') \{
+035       ++str;
+036       neg = MP_NEG;
+037     \} else \{
+038       neg = MP_ZPOS;
+039     \}
+040   
+041     /* set the integer to the default of zero */
+042     mp_zero (a);
+043     
+044     /* process each digit of the string */
+045     while (*str) \{
+046       /* if the radix < 36 the conversion is case insensitive
+047        * this allows numbers like 1AB and 1ab to represent the same  value
+048        * [e.g. in hex]
+049        */
+050       ch = (char) ((radix < 36) ? toupper (*str) : *str);
+051       for (y = 0; y < 64; y++) \{
+052         if (ch == mp_s_rmap[y]) \{
+053            break;
+054         \}
+055       \}
+056   
+057       /* if the char was found in the map 
+058        * and is less than the given radix add it
+059        * to the number, otherwise exit the loop. 
+060        */
+061       if (y < radix) \{
+062         if ((res = mp_mul_d (a, (mp_digit) radix, a)) != MP_OKAY) \{
 063            return res;
 064         \}
-065       \} else \{
-066         break;
-067       \}
-068       ++str;
-069     \}
-070     
-071     /* set the sign only if a != 0 */
-072     if (mp_iszero(a) != 1) \{
-073        a->sign = neg;
-074     \}
-075     return MP_OKAY;
-076   \}
-077   #endif
-078   
+065         if ((res = mp_add_d (a, (mp_digit) y, a)) != MP_OKAY) \{
+066            return res;
+067         \}
+068       \} else \{
+069         break;
+070       \}
+071       ++str;
+072     \}
+073     
+074     /* set the sign only if a != 0 */
+075     if (mp_iszero(a) != 1) \{
+076        a->sign = neg;
+077     \}
+078     return MP_OKAY;
+079   \}
+080   #endif
+081   
 \end{alltt}
 \end{small}
 

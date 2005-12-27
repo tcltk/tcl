@@ -21,6 +21,9 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
   int     y, res, neg;
   char    ch;
 
+  /* zero the digit bignum */
+  mp_zero(a);
+
   /* make sure the radix is ok */
   if (radix < 2 || radix > 64) {
     return MP_VAL;
@@ -78,5 +81,5 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_read_radix.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.4 $ */
+/* $Date: 2005/12/27 17:59:38 $ */

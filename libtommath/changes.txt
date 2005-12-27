@@ -1,3 +1,9 @@
+November 18th, 2005
+v0.37  -- [Don Porter] reported on a TCL list [HEY SEND ME BUGREPORTS ALREADY!!!] that mp_add_d() would compute -0 with some inputs.  Fixed.
+       -- [rinick@gmail.com] reported the makefile.bcc was messed up.  Fixed.
+       -- [Kevin Kenny] reported some issues with mp_toradix_n().  Now it doesn't require a min of 3 chars of output.  
+       -- Made the make command renamable.  Wee
+
 August 1st, 2005
 v0.36  -- LTM_PRIME_2MSB_ON was fixed and the "OFF" flag was removed.
        -- [Peter LaDow] found a typo in the XREALLOC macro
