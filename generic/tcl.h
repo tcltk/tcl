@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.209 2005/12/08 20:20:11 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.210 2005/12/27 17:39:01 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -2385,6 +2385,8 @@ typedef unsigned long mp_digit;
 
 EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *version, int exact));
+EXTERN CONST char*	TclTomMathInitializeStubs(Tcl_Interp* interp,
+ 		            CONST char* version, int epoch, int revision);
 
 #ifndef USE_TCL_STUBS
 
@@ -2396,6 +2398,11 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
     Tcl_PkgRequire(interp, "Tcl", version, exact)
 
 #endif
+
+    /*
+     * TODO - tommath stubs export goes here!
+     */
+
 
 /*
  * Public functions that are not accessible via the stubs table.
