@@ -3,9 +3,13 @@
 #Tom St Denis
 
 #version of library 
-VERSION=0.36
+VERSION=0.37
 
 CFLAGS  +=  -I./ -Wall -W -Wshadow -Wsign-compare
+
+ifndef MAKE
+   MAKE=make
+endif
 
 ifndef IGNORE_SPEED
 
@@ -124,7 +128,7 @@ timing: $(LIBNAME)
 
 # makes the LTM book DVI file, requires tetex, perl and makeindex [part of tetex I think]
 docdvi: tommath.src
-	cd pics ; make 
+	cd pics ; MAKE=${MAKE} ${MAKE} 
 	echo "hello" > tommath.ind
 	perl booker.pl
 	latex tommath > /dev/null
@@ -141,7 +145,7 @@ poster: poster.tex
 docs:   docdvi
 	dvipdf tommath
 	rm -f tommath.log tommath.aux tommath.dvi tommath.idx tommath.toc tommath.lof tommath.ind tommath.ilg
-	cd pics ; make clean
+	cd pics ; MAKE=${MAKE} ${MAKE} clean
 	
 #LTM user manual
 mandvi: bn.tex
@@ -161,10 +165,10 @@ pretty:
 
 clean:
 	rm -f *.bat *.pdf *.o *.a *.obj *.lib *.exe *.dll etclib/*.o demo/demo.o test ltmtest mpitest mtest/mtest mtest/mtest.exe \
-        *.idx *.toc *.log *.aux *.dvi *.lof *.ind *.ilg *.ps *.log *.s mpi.c *.da *.dyn *.dpi tommath.tex `find -type f | grep [~] | xargs` *.lo *.la
+        *.idx *.toc *.log *.aux *.dvi *.lof *.ind *.ilg *.ps *.log *.s mpi.c *.da *.dyn *.dpi tommath.tex `find . -type f | grep [~] | xargs` *.lo *.la
 	rm -rf .libs
-	cd etc ; make clean
-	cd pics ; make clean
+	cd etc ; MAKE=${MAKE} ${MAKE} clean
+	cd pics ; MAKE=${MAKE} ${MAKE} clean
 
 #zipup the project (take that!)
 no_oops: clean
@@ -177,4 +181,5 @@ zipup: clean manual poster docs
 	cd .. ; rm -rf ltm* libtommath-$(VERSION) ; mkdir libtommath-$(VERSION) ; \
 	cp -R ./libtommath/* ./libtommath-$(VERSION)/ ; \
 	tar -c libtommath-$(VERSION)/* | bzip2 -9vvc > ltm-$(VERSION).tar.bz2 ; \
-	zip -9 -r ltm-$(VERSION).zip libtommath-$(VERSION)/*
+	zip -9 -r ltm-$(VERSION).zip libtommath-$(VERSION)/* ; \
+	mv -f ltm* ~ ; rm -rf libtommath-$(VERSION)
