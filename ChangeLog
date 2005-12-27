@@ -23,6 +23,7 @@
 	                  to Daylight Saving Time in Canada, plus
 			  redefinition of the Posix-style zones [e.g.,
 			  EST5EDT] to be locale-independent.)
+	* libtommath: Updated to Tom St.Denis's release 0.37.
 	
 2005-12-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
