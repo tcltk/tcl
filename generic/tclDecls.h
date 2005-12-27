@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.118 2005/12/13 22:43:17 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.119 2005/12/27 17:39:01 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3527,13 +3527,6 @@ EXTERN void		Tcl_SetChannelError _ANSI_ARGS_((Tcl_Channel chan,
 EXTERN void		Tcl_GetChannelError _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_Obj** msg));
 #endif
-#ifndef TclTomMathInitializeStubs_TCL_DECLARED
-#define TclTomMathInitializeStubs_TCL_DECLARED
-/* 566 */
-EXTERN const char*	TclTomMathInitializeStubs _ANSI_ARGS_((
-				Tcl_Interp* interp, CONST char* version, 
-				int epoch, int revision));
-#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4141,7 +4134,6 @@ typedef struct TclStubs {
     void (*tcl_GetChannelErrorInterp) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj** msg)); /* 563 */
     void (*tcl_SetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj* msg)); /* 564 */
     void (*tcl_GetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj** msg)); /* 565 */
-    const char* (*tclTomMathInitializeStubs) _ANSI_ARGS_((Tcl_Interp* interp, CONST char* version, int epoch, int revision)); /* 566 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6445,10 +6437,6 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetChannelError
 #define Tcl_GetChannelError \
 	(tclStubsPtr->tcl_GetChannelError) /* 565 */
-#endif
-#ifndef TclTomMathInitializeStubs
-#define TclTomMathInitializeStubs \
-	(tclStubsPtr->tclTomMathInitializeStubs) /* 566 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

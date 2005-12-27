@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.95 2005/12/13 22:43:18 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.96 2005/12/27 17:39:02 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -628,7 +628,9 @@ install-libraries: libraries install-tzdata install-msgs
 	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
 		"$(GENERIC_DIR)/tclPlatDecls.h" \
 		"$(GENERIC_DIR)/tclTomMath.h" \
-		"$(GENERIC_DIR)/tclTomMathDecls.h" ; \
+		"$(GENERIC_DIR)/tclTomMathDecls.h" \
+		"$(TOMMATH_DIR)/tommath_class.h" \
+		"$(TOMMATH_DIR)/tommath_superclass.h" ; \
 	    do \
 	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
