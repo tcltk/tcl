@@ -1,28 +1,37 @@
 2005-12-27  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tcl.decls: Destubbed TclTomMathInitializeStubs - it is in
-	* generic/tcl.h:     the stub library, notthe main shared
-			     library.
+	* generic/tcl.decls:  Destubbed TclTomMathInitializeStubs - it is in
+	* generic/tcl.h:      the stub library, notthe main shared
+	* generic/tclBasic.c: library.  Exported Tcl_InitBignumFromDouble.
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclStrToD.c:
+
 	* generic/tclDecls.h: 
 	* generic/tclStubLib.c:
 	* generic/tclStubInit.c: Regenerated.
+	
 	* generic/clock.tcl: Reverted to using the time zone abbreviation
 	                     and not its name to "stop the bleeding" on
 	                     Bug 1386377.  This is *not* a good long-term
 	                     solution, but there may not be one.
+	
 	* libtommath/bn_mp_sqrt.c: Improved the initial approximation to
 	                           the square root, roughly doubling the
 	                           speed of the routine.  (This is a local
 	                           change that needs to be communicated to
 	                           Tom.)
+	
 	* win/Makefile.in: Corrected a bug where tommath_class.h and
 	                   tommath_superclass.h were not installed, making
 	                   it impossible for client code to compile
 			   against the tommath stubs.
+	
 	* library/tzdata: Updated to Olson's tzdata2005r. (Latest changes
 	                  to Daylight Saving Time in Canada, plus
 			  redefinition of the Posix-style zones [e.g.,
 			  EST5EDT] to be locale-independent.)
+	
 	* libtommath: Updated to Tom St.Denis's release 0.37.
 	
 2005-12-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
