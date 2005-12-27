@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.263 2005/12/19 19:03:17 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.264 2005/12/27 20:14:09 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2082,8 +2082,6 @@ MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE int	TclInitBignumFromDouble(Tcl_Interp *interp, double d,
-			    mp_int *b);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(

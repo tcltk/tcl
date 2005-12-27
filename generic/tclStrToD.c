@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.18 2005/12/19 19:03:17 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.19 2005/12/27 20:14:09 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2214,7 +2214,7 @@ TclFinalizeDoubleConversion()
 /*
  *----------------------------------------------------------------------
  *
- * TclInitBignumFromDouble --
+ * Tcl_InitBignumFromDouble --
  *
  *	Extracts the integer part of a double and converts it to an arbitrary
  *	precision integer.
@@ -2223,14 +2223,14 @@ TclFinalizeDoubleConversion()
  *	None.
  *
  * Side effects:
- *	Initializes the bignum supplied, and stores the converted number * in
- *	it.
+ *	Initializes the bignum supplied, and stores the converted number 
+ *      in it.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclInitBignumFromDouble(
+Tcl_InitBignumFromDouble(
     Tcl_Interp *interp,		/* For error message */
     double d,			/* Number to convert */
     mp_int *b)			/* Place to store the result */
