@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.12 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.13 2005/12/27 17:39:02 kennykb Exp $
  */
 
 /*
@@ -135,9 +135,6 @@ Tcl_InitStubs(
  * the TclTomMath_InitStubs macro, to insure that the Stubs table
  * matches the header files used in compilation.
  *
- * This procedure assumes that Tcl_InitStubs has been called first.
- * Hence, it appears in Tcl's internal Stubs table.
- *
  *----------------------------------------------------------------------
  */
 
@@ -145,7 +142,7 @@ Tcl_InitStubs(
 #undef TclTomMathInitializeStubs
 #endif
 
-const char*
+MODULE_SCOPE CONST char*
 TclTomMathInitializeStubs(
     Tcl_Interp* interp,		/* Tcl interpreter */
     CONST char* version,	/* Tcl version needed */
