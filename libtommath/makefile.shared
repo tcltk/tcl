@@ -1,7 +1,7 @@
 #Makefile for GCC
 #
 #Tom St Denis
-VERSION=0:36
+VERSION=0:37
 
 CC = libtool --mode=compile gcc
 
@@ -80,11 +80,13 @@ bn_mp_prime_random_ex.o bn_mp_get_int.o bn_mp_sqrt.o bn_mp_is_square.o bn_mp_ini
 bn_mp_init_set_int.o bn_mp_invmod_slow.o bn_mp_prime_rabin_miller_trials.o \
 bn_mp_to_signed_bin_n.o bn_mp_to_unsigned_bin_n.o
 
+objs: $(OBJECTS)
+
 $(LIBNAME):  $(OBJECTS)
 	libtool --mode=link gcc *.lo -o $(LIBNAME) -rpath $(LIBPATH) -version-info $(VERSION)
-	libtool --mode=link gcc *.o -o $(LIBNAME_S)
-	ranlib $(LIBNAME_S)
-	libtool --mode=install install -c $(LIBNAME) $(LIBPATH)/$@
+
+install: $(LIBNAME)
+	libtool --mode=install install -c $(LIBNAME) $(LIBPATH)/$(LIBNAME)
 	install -d -g $(GROUP) -o $(USER) $(DESTDIR)$(INCPATH)
 	install -g $(GROUP) -o $(USER) $(HEADERS) $(DESTDIR)$(INCPATH)
 
