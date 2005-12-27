@@ -19,6 +19,10 @@
 	                   tommath_superclass.h were not installed, making
 	                   it impossible for client code to compile
 			   against the tommath stubs.
+	* library/tzdata: Updated to Olson's tzdata2005r. (Latest changes
+	                  to Daylight Saving Time in Canada, plus
+			  redefinition of the Posix-style zones [e.g.,
+			  EST5EDT] to be locale-independent.)
 	
 2005-12-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
