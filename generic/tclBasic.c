@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.185 2005/12/14 02:09:19 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.186 2005/12/27 20:14:08 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4316,7 +4316,7 @@ Tcl_ExprLongObj(
 
 	d = *((CONST double *)internalPtr);
 	Tcl_DecrRefCount(resultPtr);
-	if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	resultPtr = Tcl_NewBignumObj(&big);
@@ -5347,7 +5347,7 @@ ExprEntierFunc(
 	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
 	    mp_int big;
 
-	    if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
 	    }
@@ -5651,7 +5651,7 @@ ExprRoundFunc(
 	if ((intPart >= (double)max) || (intPart <= (double)min)) {
 	    mp_int big;
 
-	    if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
+	    if (Tcl_InitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
 	    }

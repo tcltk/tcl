@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.126 2005/12/27 17:39:02 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.127 2005/12/27 20:14:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1062,6 +1062,7 @@ TclStubs tclStubs = {
     Tcl_GetChannelErrorInterp, /* 563 */
     Tcl_SetChannelError, /* 564 */
     Tcl_GetChannelError, /* 565 */
+    Tcl_InitBignumFromDouble, /* 566 */
 };
 
 /* !END!: Do not edit above this line. */
