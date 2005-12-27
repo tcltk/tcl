@@ -40,6 +40,9 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
      /* fix sign  */
      a->sign = c->sign = MP_NEG;
 
+     /* clamp */
+     mp_clamp(c);
+
      return res;
   }
 
@@ -105,5 +108,5 @@ mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_add_d.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.3 $ */
+/* $Date: 2005/12/27 17:59:37 $ */
