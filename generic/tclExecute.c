@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.224 2005/12/18 22:41:19 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.225 2005/12/27 20:14:08 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3643,7 +3643,7 @@ TclExecuteByteCode(
 		    mp_clear(&big2);
 		    goto doubleCompare;
 		}
-		TclInitBignumFromDouble(NULL, d1, &big1);
+		Tcl_InitBignumFromDouble(NULL, d1, &big1);
 		goto bigCompare;
 	    }
 	    break;
@@ -3680,7 +3680,7 @@ TclExecuteByteCode(
 		    mp_clear(&big1);
 		    goto doubleCompare;
 		}
-		TclInitBignumFromDouble(NULL, d2, &big2);
+		Tcl_InitBignumFromDouble(NULL, d2, &big2);
 		goto bigCompare;
 	    case TCL_NUMBER_BIG:
 		if (Tcl_IsShared(value2Ptr)) {
