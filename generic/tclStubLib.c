@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.13 2005/12/27 17:39:02 kennykb Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.14 2005/12/31 02:58:00 kennykb Exp $
  */
 
 /*
@@ -161,7 +161,7 @@ TclTomMathInitializeStubs(
 	return NULL;
     }
     if (pkgClientData == NULL) {
-	errMsg = "missing stub täble pointer";
+	errMsg = "missing stub table pointer";
     } else if ((stubsPtr->tclBN_epoch)() != epoch) {
 	errMsg = "epoch number mismatch";
     } else if ((stubsPtr->tclBN_revision)() != revision) {
