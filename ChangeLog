@@ -1,3 +1,11 @@
+2006-01-04  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclAppInit.c: WIN32 native console signal handler removed.
+	This was found to be interfering with TWAPI extension one.  IMO,
+	special services such as signal handlers should best be done with
+	extensions to the core after discussions on c.l.t. about Roy
+	Terry's tclsh children of a real windows service shell.
+
 2005-12-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStubLib.c: Corrected a typo in "missing Stubs table
