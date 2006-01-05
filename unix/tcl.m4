@@ -810,6 +810,50 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 ])
 
 #--------------------------------------------------------------------
+# TCL_CONFIG_SYSTEM
+#
+#	Determine what the system is (some things cannot be easily checked
+#	on a feature-driven basis, alas). This can usually be done via the
+#	"uname" command, but there are a few systems, like Next, where
+#	this doesn't work.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Defines the following var:
+#
+#	system -	System/platform/version identification code.
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(TCL_CONFIG_SYSTEM, [
+    AC_MSG_CHECKING([system version])
+    AC_CACHE_VAL(tcl_cv_sys_version,[
+	if test -f /usr/lib/NextStep/software_version; then
+	    tcl_cv_sys_version=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+	else
+	    tcl_cv_sys_version=`uname -s`-`uname -r`
+	    if test "$?" -ne 0 ; then
+		AC_MSG_WARN([can't find uname command])
+		tcl_cv_sys_version=unknown
+	    else
+		# Special check for weird MP-RAS system (uname returns weird
+		# results, and the version is kept in special file).
+
+		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
+		    tcl_cv_sys_version=MP-RAS-`awk '{print $3}' /etc/.relid`
+		fi
+		if test "`uname -s`" = "AIX" ; then
+		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
+		fi
+	    fi
+	fi])
+    AC_MSG_RESULT($tcl_cv_sys_version)
+    system=$tcl_cv_sys_version
+])
+
+#--------------------------------------------------------------------
 # SC_CONFIG_CFLAGS
 #
 #	Try to determine the proper flags to pass to the compiler
@@ -940,30 +984,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_MSG_RESULT($do64bitVIS)
 
     # Step 1: set the variable "system" to hold the name and version number
-    # for the system.  This can usually be done via the "uname" command, but
-    # there are a few systems, like Next, where this doesn't work.
+    # for the system.
 
-    AC_MSG_CHECKING([system version (for dynamic loading)])
-    if test -f /usr/lib/NextStep/software_version; then
-	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
-    else
-	system=`uname -s`-`uname -r`
-	if test "$?" -ne 0 ; then
-	    AC_MSG_RESULT([unknown (can't find uname command)])
-	    system=unknown
-	else
-	    # Special check for weird MP-RAS system (uname returns weird
-	    # results, and the version is kept in special file).
-	
-	    if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		system=MP-RAS-`awk '{print $3}' /etc/.relid`
-	    fi
-	    if test "`uname -s`" = "AIX" ; then
-		system=AIX-`uname -v`.`uname -r`
-	    fi
-	    AC_MSG_RESULT($system)
-	fi
-    fi
+    TCL_CONFIG_SYSTEM
 
     # Step 2: check for existence of -ldl library.  This is needed because
     # Linux can use either -ldl or -ldld for dynamic loading.
@@ -2245,25 +2268,8 @@ AC_DEFUN(SC_PATH_X, [
 AC_DEFUN(SC_BLOCKING_STYLE, [
     AC_CHECK_HEADERS(sys/ioctl.h)
     AC_CHECK_HEADERS(sys/filio.h)
+    TCL_CONFIG_SYSTEM
     AC_MSG_CHECKING([FIONBIO vs. O_NONBLOCK for nonblocking I/O])
-    if test -f /usr/lib/NextStep/software_version; then
-	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
-    else
-	system=`uname -s`-`uname -r`
-	if test "$?" -ne 0 ; then
-	    system=unknown
-	else
-	    # Special check for weird MP-RAS system (uname returns weird
-	    # results, and the version is kept in special file).
-	
-	    if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		system=MP-RAS-`awk '{print $3}' /etc/.relid`
-	    fi
-	    if test "`uname -s`" = "AIX" ; then
-		system=AIX-`uname -v`.`uname -r`
-	    fi
-	fi
-    fi
     case $system in
 	# There used to be code here to use FIONBIO under AIX.  However, it
 	# was reported that FIONBIO doesn't work under AIX 3.2.5.  Since
