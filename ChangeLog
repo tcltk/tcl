@@ -1,52 +1,53 @@
-2006-01-04  David Gravereaux <davygrvy@pobox.com>
+2006-01-05  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
-	* win/tclAppInit.c: WIN32 native console signal handler removed.
-	This was found to be interfering with TWAPI extension one.  IMO,
-	special services such as signal handlers should best be done with
-	extensions to the core after discussions on c.l.t. about Roy
-	Terry's tclsh children of a real windows service shell.
+	* unix/tcl.m4 (TCL_CONFIG_SYSTEM): Factor out the code to determine
+	the operating system version number, as it was replicated in several
+	places.
+
+2006-01-04  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclAppInit.c: WIN32 native console signal handler removed. This
+	was found to be interfering with TWAPI extension one. IMO, special
+	services such as signal handlers should best be done with extensions
+	to the core after discussions on c.l.t. about Roy Terry's tclsh
+	children of a real windows service shell.
 
 2005-12-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStubLib.c: Corrected a typo in "missing Stubs table
 	pointer."
-	
+
 2005-12-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tcl.decls:  Destubbed TclTomMathInitializeStubs - it is in
-	* generic/tcl.h:      the stub library, notthe main shared
-	* generic/tclBasic.c: library.  Exported Tcl_InitBignumFromDouble.
+	* generic/tcl.h:      the stub library, not the main shared
+	* generic/tclBasic.c: library. Exported Tcl_InitBignumFromDouble.
 	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclStrToD.c:
 
-	* generic/tclDecls.h: 
+	* generic/tclDecls.h:
 	* generic/tclStubLib.c:
 	* generic/tclStubInit.c: Regenerated.
-	
-	* generic/clock.tcl: Reverted to using the time zone abbreviation
-	                     and not its name to "stop the bleeding" on
-	                     Bug 1386377.  This is *not* a good long-term
-	                     solution, but there may not be one.
-	
-	* libtommath/bn_mp_sqrt.c: Improved the initial approximation to
-	                           the square root, roughly doubling the
-	                           speed of the routine.  (This is a local
-	                           change that needs to be communicated to
-	                           Tom.)
-	
+
+	* generic/clock.tcl: Reverted to using the time zone abbreviation and
+	not its name to "stop the bleeding" on [Bug 1386377]. This is *not* a
+	good long-term solution, but there may not be one.
+
+	* libtommath/bn_mp_sqrt.c: Improved the initial approximation to the
+	square root, roughly doubling the speed of the routine.  (This is a
+	local change that needs to be communicated to Tom.)
+
 	* win/Makefile.in: Corrected a bug where tommath_class.h and
-	                   tommath_superclass.h were not installed, making
-	                   it impossible for client code to compile
-			   against the tommath stubs.
-	
-	* library/tzdata: Updated to Olson's tzdata2005r. (Latest changes
-	                  to Daylight Saving Time in Canada, plus
-			  redefinition of the Posix-style zones [e.g.,
-			  EST5EDT] to be locale-independent.)
-	
+	tommath_superclass.h were not installed, making it impossible for
+	client code to compile against the tommath stubs.
+
+	* library/tzdata: Updated to Olson's tzdata2005r. (Latest changes to
+	Daylight Saving Time in Canada, plus redefinition of the Posix-style
+	zones [e.g., EST5EDT] to be locale-independent.)
+
 	* libtommath: Updated to Tom St.Denis's release 0.37.
-	
+
 2005-12-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclThreadAlloc.c (Tcl_GetMemoryInfo): Format values as longs
@@ -413,7 +414,7 @@
 	* unix/configure:
 	* unix/tclConfig.h.in: regen.
 
-2005-11-21  Andreas Kupries <andreask@activestate.com>
+2005-11-21  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/Makefile.in (install-libraries): Updated Makefile to new
 	* win/Makefile.in (install-libraries):  version of the http package.
@@ -430,7 +431,7 @@
 	Tcl_PkgRequireEx() fails [Fix for #1091431 "Tcl_InitStubs failure
 	crashes wish"]
 
-2005-11-18  Miguel Sofer <msofer@users.sf.net>
+2005-11-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/trace.test (trace-34.5): [Bug 1047286], added a second test
 	illustrating the role of "ns in callStack" in the ns's visibility
@@ -447,13 +448,13 @@
 	* generic/tclIO.c (TclFinalizeIOSubsystem): preserve statePtr until we
 	netrieve next statePtr from it.
 
-2005-11-18  Miguel Sofer <msofer@users.sf.net>
+2005-11-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclObj.c (GetBignumFromObj): replace NULL with
 	tclEmptyStringRep to stop memcpy from complaining in a debug build
 	(the corresponding branch is eliminated by the optimiser otherwise).
 
-2005-11-18  Andreas Kupries <andreask@activestate.com>
+2005-11-18  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts' patch
 	for [SF Tcl Bug 1359094]. This moves the retrieval of the next channel
@@ -474,7 +475,7 @@
 	* library/http/http.tcl (http::geturl): Improved syntactic validation
 	of URLs, and better error messages in some cases. [Bug 1358369]
 
-2005-11-17  Miguel Sofer <msofer@users.sf.net>
+2005-11-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/namespace.test: fix comment
 
@@ -486,7 +487,7 @@
 	* generic/tclBasic.c (CallCommandTraces): Save/restore the interp
 	result during traces to fix [Bug 1355342].
 
-2005-11-13  Miguel Sofer <msofer@users.sf.net>
+2005-11-13  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h:
 	* generic/tclNamesp.c:
@@ -496,7 +497,7 @@
 
 	* tests/trace.test: added tests 20.13-16 for [Bug 1355342]
 
-2005-11-12  Miguel Sofer <msofer@users.sf.net>
+2005-11-12  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
 	* generic/tclObj.c (Tcl_GetCommandFromObj): more partial fixes for
@@ -515,7 +516,7 @@
 	* generic/tclStrToD.c:	to permit tests scan-4.44,55 to pass again.
 	[Bug 1348067].
 
-2005-11-11  Miguel Sofer <msofer@users.sf.net>
+2005-11-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):
 	* generic/tclObj.c (Tcl_GetCommandFromObj): bump the cmd epoch early
@@ -574,7 +575,7 @@
 	rest of the main trace record. This simplifies the code a bit at the
 	same time.
 
-2005-11-07  Miguel Sofer <msofer@users.sf.net>
+2005-11-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/trace.test (trace-13.2-4): added tests to detect leak, see [Bug
 	1348775]. The recently added trace-8.9 test is now 13.4.
@@ -585,7 +586,7 @@
 	only stress test the dict code and not the trace code as well. [Bug
 	1342858]
 
-2005-11-05  Miguel Sofer <msofer@users.sf.net>
+2005-11-05  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/trace.test (trace-8.9): added test to detect leak, see [Bug
 	1348775].
@@ -597,7 +598,7 @@
 	* tests/exec.test:   Tests for extended error codes.
 	* generic/tclPipe.c: Permit long codes (platform macros permitting).
 
-2005-11-04  Miguel Sofer <msofer@users.sf.net>
+2005-11-04  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBinary.c:
 	* generic/tclCmdAH.c:
@@ -635,7 +636,7 @@
 	* unix/tclLoadDld.c: Removed.
 	* unix/configure: Regenerated.
 
-2005-11-04  Miguel Sofer <msofer@users.sf.net>
+2005-11-04  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h:
 	* generic/tclNamesp.c:
@@ -679,7 +680,7 @@
 	* expr.test (expr-46.13):	Added test that illustrates
 	shortcoming of Patch 1340260.
 
-2005-10-31  Miguel Sofer <msofer@users.sf.net>
+2005-10-31  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclNamesp.c: fix for [Bugs 1338280/1337229]. Thanks Don.
 	* tests/trace.test: fix duplicate test numbers
@@ -691,7 +692,7 @@
 	non-error code paths better.
 	* tests/ioCmd.test (iocmd-8-19): Updated.
 
-2005-10-29  Miguel Sofer <msofer@users.sf.net>
+2005-10-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTrace.c (TraceVarProc): [Bug 1337229], partial fix.
 	Ensure that a second call with TCL_TRACE_DESTROYED does not lead to a
