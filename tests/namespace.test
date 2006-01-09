@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.2.8 2005/11/18 23:07:27 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.2.9 2006/01/09 18:34:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1006,6 +1006,9 @@ test namespace-25.8 {NamespaceEvalCmd, error in eval'd script} knownBug {
     invoked from within
 "namespace eval test_ns_1 error foo bar baz"}}
 catch {unset v}
+test namespace-25.9 {NamespaceEvalCmd, 545325} {
+    namespace eval test_ns_1 info level 0
+} {namespace eval test_ns_1 info level 0}
 
 test namespace-26.1 {NamespaceExportCmd, no args and new ns} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -1120,6 +1123,10 @@ test namespace-29.5 {NamespaceInscopeCmd, has lappend semantics} {
     list [namespace inscope test_ns_1 cmd x y z] \
          [namespace eval test_ns_1 [concat cmd [list x y z]]]
 } {{::test_ns_1::cmd: v=747, args=x y z} {::test_ns_1::cmd: v=747, args=x y z}}
+test namespace-29.6 {NamespaceInscopeCmd, 1400572} {
+    namespace inscope test_ns_1 {info level 0}
+} {namespace inscope test_ns_1 {info level 0}}
+
 
 test namespace-30.1 {NamespaceOriginCmd, bad args} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
