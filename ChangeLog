@@ -1,3 +1,8 @@
+2006-01-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclTrace.c: Stop exporting the guts of the trace command;
+	nothing outside this file needs to see it. [Bug 971336]
+
 2006-01-05  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/tcl.m4 (TCL_CONFIG_SYSTEM): Factor out the code to determine
