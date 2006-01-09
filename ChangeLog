@@ -1,3 +1,9 @@
+2006-01-09  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclNamesp.c (NamespaceInscopeCmd):    [namespace inscope]
+        * tests/namespace.test: commands were not reported by [info level]
+        [Bug 1400572].
+
 2006-01-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclTrace.c: Stop exporting the guts of the trace command;
