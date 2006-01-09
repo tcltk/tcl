@@ -1,3 +1,9 @@
+2006-01-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c (NamespaceInscopeCmd):	[namespace inscope]
+	* tests/namespace.test:	commands were not reported by [info level]
+	[Bug 1400572].
+
 2005-12-20  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclThreadAlloc.c (Tcl_GetMemoryInfo): Format values as longs
