@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.89 2005/11/27 02:33:49 das Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.90 2006/01/09 18:35:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3754,7 +3754,7 @@ NamespaceInscopeCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame *framePtr;
+    CallFrame *framePtr;
     int i, result;
 
     if (objc < 4) {
@@ -3780,11 +3780,13 @@ NamespaceInscopeCmd(
      * Make the specified namespace the current namespace.
      */
 
-    result = TclPushStackFrame(interp, &framePtr, namespacePtr,
-	    /*isProcCallFrame*/ 0);
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **)&framePtr,
+	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return result;
     }
+    framePtr->objc = objc;
+    framePtr->objv = objv;
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
