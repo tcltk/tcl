@@ -1,3 +1,11 @@
+2006-01-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure:    add caching, use AC_CACHE_CHECK instead of
+	* unix/configure.in: AC_CACHE_VAL where possible, consistent message
+	* unix/tcl.m4:       quoting, sync relevant tclconfig/tcl.m4 changes and
+	gratuitous formatting differences, fix SC_CONFIG_MANPAGES with default
+	argument, Darwin improvements to SC_LOAD_*CONFIG.
+	
 2006-01-09  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclNamesp.c (NamespaceInscopeCmd):    [namespace inscope]
@@ -69,7 +77,7 @@
 	* generic/tclCmdMZ.c:	Modified [string is double] to use
 	* tests/string.test:	TclParseNumber() to parse trailing whitespace.
 	Ensures consistency, and makes it easier to cleanup after invalid
-	internal reps left behind by parsing [Bugs 1360432 1382287].
+	internal reps left behind by parsing [Bugs 1360532 1382287].
 
 	* generic/tclParseExpr.c:	Added TCL_PARSE_NO_WHITESPACE to
 	* generic/tclScan.c:	TclParseNumber() calls since [scan] and
