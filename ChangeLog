@@ -1,3 +1,11 @@
+2006-01-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure:    add caching, use AC_CACHE_CHECK instead of
+	* unix/configure.in: AC_CACHE_VAL where possible, consistent message
+	* unix/tcl.m4:       quoting, sync relevant tclconfig/tcl.m4 and HEAD
+	changes and gratuitous formatting differences, fix SC_CONFIG_MANPAGES
+	with default argument, Darwin improvements to SC_LOAD_*CONFIG.
+	
 2006-01-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c (NamespaceInscopeCmd):	[namespace inscope]
