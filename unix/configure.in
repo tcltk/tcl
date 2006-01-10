@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.23 2005/12/14 02:10:21 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.24 2006/01/10 05:37:06 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -31,6 +31,7 @@ TCL_SRC_DIR=`cd $srcdir/..; pwd`
 #------------------------------------------------------------------------
 # Compress and/or soft link the manpages?
 #------------------------------------------------------------------------
+
 SC_CONFIG_MANPAGES([tcl])
 
 #------------------------------------------------------------------------
@@ -46,12 +47,11 @@ fi
 AC_PROG_CC
 
 #--------------------------------------------------------------------
-#	Supply substitutes for missing POSIX header files.  Special
-#	notes:
-#	    - stdlib.h doesn't define strtol, strtoul, or
-#	      strtod insome versions of SunOS
-#	    - some versions of string.h don't declare procedures such
-#	      as strstr
+# Supply substitutes for missing POSIX header files.  Special notes:
+#	- stdlib.h doesn't define strtol, strtoul, or
+#	  strtod insome versions of SunOS
+#	- some versions of string.h don't declare procedures such
+#	  as strstr
 # Do this early, otherwise an autoconf bug throws errors on configure
 #--------------------------------------------------------------------
 
@@ -68,9 +68,9 @@ if test -n "$GCC"; then
   OLDCC="$CC"  
   CC="$CC -pipe"
   AC_TRY_COMPILE(,,
-    AC_MSG_RESULT(yes),
+    AC_MSG_RESULT([yes]),
     CC="$OLDCC"
-    AC_MSG_RESULT(no))
+    AC_MSG_RESULT([no]))
 fi  
 fi
 
@@ -153,18 +153,14 @@ SC_SERIAL_PORT
 #	special flag.
 #--------------------------------------------------------------------
 
-AC_MSG_CHECKING([for fd_set in sys/types])
-AC_CACHE_VAL(tcl_cv_type_fd_set,
+AC_CACHE_CHECK([for fd_set in sys/types], tcl_cv_type_fd_set,
     AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
 	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no))
-AC_MSG_RESULT($tcl_cv_type_fd_set)
 tcl_ok=$tcl_cv_type_fd_set
-if test $tcl_cv_type_fd_set = no; then
-    AC_MSG_CHECKING([for fd_mask in sys/select])
-    AC_CACHE_VAL(tcl_cv_grep_fd_mask,
+if test $tcl_ok = no; then
+    AC_CACHE_CHECK([for fd_mask in sys/select], tcl_cv_grep_fd_mask,
 	AC_EGREP_HEADER(fd_mask, sys/select.h,
 	     tcl_cv_grep_fd_mask=present, tcl_cv_grep_fd_mask=missing))
-    AC_MSG_RESULT($tcl_cv_grep_fd_mask)
     if test $tcl_cv_grep_fd_mask = present; then
 	AC_DEFINE(HAVE_SYS_SELECT_H)
 	tcl_ok=yes
@@ -206,18 +202,15 @@ AC_CHECK_FUNC(memmove, , [AC_DEFINE(NO_MEMMOVE) AC_DEFINE(NO_STRING_H)])
 #--------------------------------------------------------------------
 dnl only run if AC_REPLACE_FUNCS(strstr) hasn't already added strstr.o
 if test "x${ac_cv_func_strstr}" = "xyes"; then
-    AC_MSG_CHECKING([proper strstr implementation])
-    AC_TRY_RUN([
-    extern int strstr();
-    int main()
-    {
-        exit(strstr("\0test", "test") ? 1 : 0);
-    }
-    ], tcl_ok=yes, tcl_ok=no, tcl_ok=no)
-    if test $tcl_ok = yes; then
-        AC_MSG_RESULT(yes)
-    else
-        AC_MSG_RESULT([broken, using substitute])
+    AC_CACHE_CHECK([proper strstr implementation], tcl_cv_strstr_unbroken, [
+	AC_TRY_RUN([
+	extern int strstr();
+	int main()
+	{
+	    exit(strstr("\0test", "test") ? 1 : 0);
+	}], tcl_cv_strstr_unbroken=ok, tcl_cv_strstr_unbroken=broken,
+	    tcl_cv_strstr_unbroken=broken)])
+    if test $tcl_cv_strstr_unbroken = broken; then
         LIBOBJS="$LIBOBJS strstr.o"
     fi
 fi
@@ -229,21 +222,27 @@ fi
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(strtoul, tcl_ok=1, tcl_ok=0)
-AC_TRY_RUN([
-extern int strtoul();
-int main()
-{
-    char *string = "0";
-    char *term;
-    int value;
-    value = strtoul(string, &term, 0);
-    if ((value != 0) || (term != (string+1))) {
-        exit(1);
-    }
-    exit(0);
-}], , tcl_ok=0, tcl_ok=0)
-if test "$tcl_ok" = 0; then
-    test -n "$verbose" && echo "	Adding strtoul.o."
+if test $tcl_ok = 1; then
+    AC_CACHE_CHECK([proper strtoul implementation], tcl_cv_strtoul_unbroken, [
+	AC_TRY_RUN([
+	extern int strtoul();
+	int main()
+	{
+	    char *string = "0";
+	    char *term;
+	    int value;
+	    value = strtoul(string, &term, 0);
+	    if ((value != 0) || (term != (string+1))) {
+		exit(1);
+	    }
+	    exit(0);
+	}], tcl_cv_strtoul_unbroken=ok , tcl_cv_strtoul_unbroken=broken,
+	    tcl_cv_strtoul_unbroken=broken)])
+    if test $tcl_cv_strtoul_unbroken = broken; then
+	tcl_ok=0
+    fi
+fi
+if test $tcl_ok = 0; then
     LIBOBJS="$LIBOBJS strtoul.o"
 fi
 
@@ -253,21 +252,27 @@ fi
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(strtod, tcl_ok=1, tcl_ok=0)
-AC_TRY_RUN([
-extern double strtod();
-int main()
-{
-    char *string = " +69";
-    char *term;
-    double value;
-    value = strtod(string, &term);
-    if ((value != 69) || (term != (string+4))) {
-	exit(1);
-    }
-    exit(0);
-}], , tcl_ok=0, tcl_ok=0)
-if test "$tcl_ok" = 0; then
-    test -n "$verbose" && echo "	Adding strtod.o."
+if test $tcl_ok = 1; then
+    AC_CACHE_CHECK([proper strtod implementation], tcl_cv_strtod_unbroken, [
+	AC_TRY_RUN([
+	extern double strtod();
+	int main()
+	{
+	    char *string = " +69";
+	    char *term;
+	    double value;
+	    value = strtod(string, &term);
+	    if ((value != 69) || (term != (string+4))) {
+		exit(1);
+	    }
+	    exit(0);
+	}], tcl_cv_strtod_unbroken=ok , tcl_cv_strtod_unbroken=broken,
+	    tcl_cv_strtod_unbroken=broken)])
+    if test $tcl_cv_strtod_unbroken = broken; then
+	tcl_ok=0
+    fi
+fi
+if test $tcl_ok = 0; then
     LIBOBJS="$LIBOBJS strtod.o"
 fi
 
@@ -290,8 +295,8 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
-AC_MSG_CHECKING([for socklen_t])
-AC_CACHE_VAL(ac_cv_type_socklen_t,[AC_EGREP_CPP(changequote(<<,>>)dnl
+AC_CACHE_CHECK([for socklen_t], ac_cv_type_socklen_t,
+    [AC_EGREP_CPP(changequote(<<,>>)dnl
 <<(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]>>dnl
 changequote([,]),[
     #include <sys/types.h>
@@ -301,7 +306,6 @@ changequote([,]),[
     #include <stddef.h>
     #endif
     ], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)])
-AC_MSG_RESULT($ac_cv_type_socklen_t)
 if test $ac_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, unsigned)
 fi
@@ -323,15 +327,13 @@ AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H)])
 #	the trick.
 #--------------------------------------------------------------------
 
-AC_MSG_CHECKING([union wait])
-AC_CACHE_VAL(tcl_cv_union_wait,
+AC_CACHE_CHECK([union wait], tcl_cv_union_wait,
     AC_TRY_LINK([#include <sys/types.h> 
 #include <sys/wait.h>], [
 union wait x;
 WIFEXITED(x);		/* Generates compiler error if WIFEXITED
 			 * uses an int. */
     ], tcl_cv_union_wait=yes, tcl_cv_union_wait=no))
-AC_MSG_RESULT($tcl_cv_union_wait)
 if test $tcl_cv_union_wait = no; then
     AC_DEFINE(NO_UNION_WAIT)
 fi
@@ -368,11 +370,9 @@ AC_CHECK_FUNC(BSDgettimeofday,
     [AC_DEFINE(HAVE_BSDGETTIMEOFDAY)], [
     AC_CHECK_FUNC(gettimeofday, , [AC_DEFINE(NO_GETTOD)])
 ])
-AC_MSG_CHECKING([for gettimeofday declaration])
-AC_CACHE_VAL(tcl_cv_grep_gettimeofday,
+AC_CACHE_CHECK([for gettimeofday declaration], tcl_cv_grep_gettimeofday,
     AC_EGREP_HEADER(gettimeofday, sys/time.h,
 	tcl_cv_grep_gettimeofday=present, tcl_cv_grep_gettimeofday=missing))
-AC_MSG_RESULT($tcl_cv_grep_gettimeofday)
 if test $tcl_cv_grep_gettimeofday = missing ; then
     AC_DEFINE(GETTOD_NOT_DECLARED)
 fi
@@ -384,13 +384,11 @@ fi
 #--------------------------------------------------------------------
 
 AC_C_CHAR_UNSIGNED
-AC_MSG_CHECKING([signed char declarations])
-AC_CACHE_VAL(tcl_cv_char_signed,
+AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed,
     AC_TRY_COMPILE(, [
 	signed char *p;
 	p = 0;
 	], tcl_cv_char_signed=yes, tcl_cv_char_signed=no))
-AC_MSG_RESULT($tcl_cv_char_signed)
 if test $tcl_cv_char_signed = yes; then
     AC_DEFINE(HAVE_SIGNED_CHAR)
 fi
@@ -399,8 +397,7 @@ fi
 #  Does putenv() copy or not?  We need to know to avoid memory leaks.
 #--------------------------------------------------------------------
 
-AC_MSG_CHECKING([for a putenv() that copies the buffer])
-AC_CACHE_VAL(tcl_cv_putenv_copy,
+AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy,
     AC_TRY_RUN([
 	#include <stdlib.h>
 	#define OURVAR "havecopy=yes"
@@ -424,7 +421,6 @@ AC_CACHE_VAL(tcl_cv_putenv_copy,
     tcl_cv_putenv_copy=yes,
     tcl_cv_putenv_copy=no)
 )
-AC_MSG_RESULT($tcl_cv_putenv_copy)
 if test $tcl_cv_putenv_copy = yes; then
     AC_DEFINE(HAVE_PUTENV_THAT_COPIES)
 fi
