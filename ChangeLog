@@ -1,3 +1,8 @@
+2006-01-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/error.test (error-7.0):	Test the timing of write traces
+	on ::errorInfo [Bug 1397843].
+
 2006-01-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure:    add caching, use AC_CACHE_CHECK instead of
