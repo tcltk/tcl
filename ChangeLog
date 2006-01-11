@@ -1,3 +1,14 @@
+2006-01-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Moved Tcl_LogCommandInfo from tclBasic.c to
+	* generic/tclNamesp.c:	tclNamesp.c to get access to identifier with
+	* tests/error.test (error-7.0):	file scope.  Added check for traces
+	on ::errorInfo, and when present fall back to contruction of the
+	stack trace in the variable so that write trace notification timings
+	are compatible with earlier Tcl releases.  This reduces, but does not
+	completely eliminate the ***POTENTIAL INCOMPATIBILITY*** created by
+	the 2004-10-15 commit.  [Bug 1397843].
+
 2006-01-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure:    add caching, use AC_CACHE_CHECK instead of
