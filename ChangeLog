@@ -1,3 +1,9 @@
+2006-01-12  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
+
+	* generic/tclPathObj.c (Tcl_FSGetInternalRep): backported
+	patch from core-8-4-branch. A freed pointer has been
+	overwritten causing all sorts of coredumps.
+ 
 2006-01-12  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* win/tclWinFile.c: fix to sharing violation [Bug 1366227]
