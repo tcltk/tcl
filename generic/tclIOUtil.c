@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.24 2005/12/15 04:08:26 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.25 2006/01/12 18:03:48 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -5863,12 +5863,16 @@ Tcl_FSGetInternalRep(pathObjPtr, fsPtr)
 
     if (srcFsPathPtr->nativePathPtr == NULL) {
 	Tcl_FSCreateInternalRepProc *proc;
-	proc = srcFsPathPtr->fsRecPtr->fsPtr->createInternalRepProc;
+	char *nativePathPtr;
 
+	proc = srcFsPathPtr->fsRecPtr->fsPtr->createInternalRepProc;
 	if (proc == NULL) {
 	    return NULL;
 	}
-	srcFsPathPtr->nativePathPtr = (*proc)(pathObjPtr);
+
+	nativePathPtr = (*proc)(pathObjPtr);
+	srcFsPathPtr  = (FsPath*) PATHOBJ(pathObjPtr);
+	srcFsPathPtr->nativePathPtr = nativePathPtr;
     }
 
     return srcFsPathPtr->nativePathPtr;
