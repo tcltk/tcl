@@ -1,3 +1,7 @@
+2006-01-12  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* win/tclWinFile.c: fix to sharing violation [Bug 1366227]
+
 2006-01-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Moved Tcl_LogCommandInfo from tclBasic.c to
