@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.81 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.82 2006/01/12 16:19:04 vincentdarley Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -2018,7 +2018,8 @@ NativeStat(
      * and if that isn't available, then on even simpler routines.
      */
     fileHandle = (tclWinProcs->createFileProc) (
-	nativePath, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+	nativePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 
+	NULL, OPEN_EXISTING,
 	FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (fileHandle != INVALID_HANDLE_VALUE) {
