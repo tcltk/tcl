@@ -1,3 +1,9 @@
+2006-01-16  Reinhard Max  <max@suse.de>
+
+        * generic/tclPipe.c (FileForRedirect): Prevent nameString from
+        being freed without having been initialized.
+        * tests/exec.test: Added a test for the above.
+
 2006-01-12  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
 
 	* generic/tclPathObj.c (Tcl_FSGetInternalRep): backported
