@@ -1,3 +1,8 @@
+2006-01-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c: fixed args handling for precompiled bodies
+	[Bug 1412695]; thanks to Uwe Traum.
+
 2006-01-16  Reinhard Max  <max@suse.de>
 
         * generic/tclPipe.c (FileForRedirect): Prevent nameString from
