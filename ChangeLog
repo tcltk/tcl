@@ -1,5 +1,8 @@
 2006-01-23  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclStringObj.c: fixed incorrect handling of internal rep
+	in Tcl_GetRange [Bug 1410553]. Thanks to twylite and Peter Spjuth.
+	
 	* generic/tclProc.c: fixed args handling for precompiled bodies
 	[Bug 1412695]; thanks to Uwe Traum.
 
