@@ -1,7 +1,9 @@
 2006-01-23  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclStringObj.c: fixed incorrect handling of internal rep
-	in Tcl_GetRange [Bug 1410553]. Thanks to twylite and Peter Spjuth.
+	* generic/tclStringObj.c (Tcl_GetRange): 
+	* tests/stringTest (string-12.21):fixed incorrect handling of
+	internal rep in Tcl_GetRange [Bug 1410553]. Thanks to twylite and
+	Peter Spjuth. 
 
 2006-01-16  Reinhard Max  <max@suse.de>
 

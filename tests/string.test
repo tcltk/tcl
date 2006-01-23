@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.36.2.5 2005/05/11 00:48:01 hobbs Exp $
+# RCS: @(#) $Id: string.test,v 1.36.2.6 2006/01/23 11:48:25 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1052,6 +1052,16 @@ test string-12.19 {string range, bytearray object} {
 test string-12.20 {string range, out of bounds indices} {
     string range \u00ff 0 1
 } \u00ff
+test string-12.21 {string range, unicode, bug 1410553} {
+    set buf {}
+    foreach ch "\x00 \x03 \x41" {
+	append buf $ch
+	if {$ch == "\x03"} {
+	    string length $buf
+	}
+    }
+    expr {[string range $buf end-1 end] eq "\x03\x41"}
+} 1
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg
