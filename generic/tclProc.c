@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.83 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.84 2006/01/23 11:01:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -457,12 +457,12 @@ TclCreateProc(
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
-		if ((i == numArgs - 1)
-			&& (localPtr->nameLength == 4)
-			&& (localPtr->name[0] == 'a')
-			&& (strcmp(localPtr->name, "args") == 0)) {
-		    localPtr->flags |= VAR_IS_ARGS;
-		}
+	    }
+	    if ((i == numArgs - 1)
+		    && (localPtr->nameLength == 4)
+		    && (localPtr->name[0] == 'a')
+		    && (strcmp(localPtr->name, "args") == 0)) {
+		localPtr->flags |= VAR_IS_ARGS;
 	    }
 
 	    localPtr = localPtr->nextPtr;
