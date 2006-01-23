@@ -1,22 +1,27 @@
+2006-01-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/string.test (string-12.21): Added test for [Bug 1410553] based
+	on original bug report.
+
 2006-01-23  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclStringObj.c: fixed incorrect handling of internal rep
-	in Tcl_GetRange [Bug 1410553]. Thanks to twylite and Peter Spjuth.
+	* generic/tclStringObj.c: fixed incorrect handling of internal rep in
+	Tcl_GetRange [Bug 1410553]. Thanks to twylite and Peter Spjuth.
 	
-	* generic/tclProc.c: fixed args handling for precompiled bodies
-	[Bug 1412695]; thanks to Uwe Traum.
+	* generic/tclProc.c: fixed args handling for precompiled bodies [Bug
+	1412695]; thanks to Uwe Traum.
 
 2006-01-16  Reinhard Max  <max@suse.de>
 
-        * generic/tclPipe.c (FileForRedirect): Prevent nameString from
-        being freed without having been initialized.
-        * tests/exec.test: Added a test for the above.
+	* generic/tclPipe.c (FileForRedirect): Prevent nameString from being
+	freed without having been initialized.
+	* tests/exec.test: Added a test for the above.
 
 2006-01-12  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
 
-	* generic/tclPathObj.c (Tcl_FSGetInternalRep): backported
-	patch from core-8-4-branch. A freed pointer has been
-	overwritten causing all sorts of coredumps.
+	* generic/tclPathObj.c (Tcl_FSGetInternalRep): backported patch from
+	core-8-4-branch. A freed pointer has been overwritten causing all
+	sorts of coredumps.
  
 2006-01-12  Vince Darley  <vincentdarley@sourceforge.net>
 
@@ -37,15 +42,15 @@
 
 	* unix/configure:    add caching, use AC_CACHE_CHECK instead of
 	* unix/configure.in: AC_CACHE_VAL where possible, consistent message
-	* unix/tcl.m4:       quoting, sync relevant tclconfig/tcl.m4 changes and
-	gratuitous formatting differences, fix SC_CONFIG_MANPAGES with default
-	argument, Darwin improvements to SC_LOAD_*CONFIG.
+	* unix/tcl.m4:       quoting, sync relevant tclconfig/tcl.m4 changes
+	and gratuitous formatting differences, fix SC_CONFIG_MANPAGES with
+	default argument, Darwin improvements to SC_LOAD_*CONFIG.
 	
 2006-01-09  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclNamesp.c (NamespaceInscopeCmd):    [namespace inscope]
-        * tests/namespace.test: commands were not reported by [info level]
-        [Bug 1400572].
+	* generic/tclNamesp.c (NamespaceInscopeCmd):    [namespace inscope]
+	* tests/namespace.test: commands were not reported by [info level]
+	[Bug 1400572].
 
 2006-01-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
