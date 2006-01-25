@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.8 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.9 2006/01/25 18:38:31 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -162,7 +162,7 @@ static double		SafeLdExp(double fraction, int exponent);
  *	The argument flags is an input that controls the numeric formats
  *	recognized by the parser.  The flag bits are:
  *
- *	 - TCL_PARSE_INTEGER_ONLY:	accept only integer values; reject
+ *	- TCL_PARSE_INTEGER_ONLY:	accept only integer values; reject
  *		strings that denote floating point values (or accept only the
  *		leading portion of them that are integer values).
  *	- TCL_PARSE_SCAN_PREFIXES:	ignore the prefixes 0b and 0o that are
@@ -177,6 +177,7 @@ static double		SafeLdExp(double fraction, int exponent);
  *		TCL_PARSE_INTEGER_ONLY.
  * 	- TCL_PARSE_DECIMAL_ONLY:	parse only in the decimal format, no
  *		matter whether a 0 prefix would normally force a different base.
+ *	- TCL_PARSE_NO_WHITESPACE:	reject any leading/trailing whitespace
  *
  *	The arguments interp and expected are inputs that control error message
  * 	generation.  If interp is NULL, no error message will be generated.
@@ -204,18 +205,15 @@ static double		SafeLdExp(double fraction, int exponent);
  *	to a terminating NUL byte).
  *
  *	When the parser determines that a partial string matches a format
- *	it is looking for, the value of endPtrPtr determines what happens.
+ *	it is looking for, the value of endPtrPtr determines what happens:
  *
- *	If endPtrPtr is NULL, then the remainder of the string is scanned
- *	and if it consists entirely of trailing whitespace, then TCL_OK is
- *	returned and objPtr internals are set as above.  If any non-whitespace
- *	is encountered, TCL_ERROR is returned, with error message generation
- *	as above.
+ *	- If endPtrPtr is NULL, then TCL_ERROR is returned, with error message
+ *		generation as above.
  *
- *	When the parser detects a partial string match and endPtrPtr is
- *	non-NULL, then TCL_OK is returned and objPtr internals are set as
- *	above.  Also, a pointer to the first character following the parsed
- *	numeric string is written to *endPtrPtr.
+ *	- If endPtrPtr is non-NULL, then TCL_OK is returned and objPtr
+ *		internals are set as above.  Also, a pointer to the first
+ *		character following the parsed numeric string is written
+ *		to *endPtrPtr.
  *
  *	In some cases where the string being scanned is the string rep of
  *	objPtr, this routine can leave objPtr in an inconsistent state
@@ -335,6 +333,9 @@ TclParseNumber(
 	     */
 
 	    if (isspace(UCHAR(c))) {
+		if (flags & TCL_PARSE_NO_WHITESPACE) {
+		    goto endgame;
+		}
 		break;
 	    } else if (c == '+') {
 		state = SIGNUM;
@@ -893,12 +894,14 @@ TclParseNumber(
 	/* Back up to the last accepting state in the lexer. */
 	p = acceptPoint;
 	len = acceptLen;
-	if (endPtrPtr == NULL) {
+	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
 	    /* Accept trailing whitespace */
 	    while (len != 0 && isspace(UCHAR(*p))) {
 		++p;
 		--len;
 	    }
+	}
+	if (endPtrPtr == NULL) {
 	    if ((len != 0) && ((numBytes > 0) || (*p != '\0'))) {
 		status = TCL_ERROR;
 	    }
@@ -2211,7 +2214,7 @@ TclFinalizeDoubleConversion()
 /*
  *----------------------------------------------------------------------
  *
- * TclInitBignumFromDouble --
+ * Tcl_InitBignumFromDouble --
  *
  *	Extracts the integer part of a double and converts it to an arbitrary
  *	precision integer.
@@ -2220,14 +2223,14 @@ TclFinalizeDoubleConversion()
  *	None.
  *
  * Side effects:
- *	Initializes the bignum supplied, and stores the converted number * in
- *	it.
+ *	Initializes the bignum supplied, and stores the converted number 
+ *      in it.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclInitBignumFromDouble(
+Tcl_InitBignumFromDouble(
     Tcl_Interp *interp,		/* For error message */
     double d,			/* Number to convert */
     mp_int *b)			/* Place to store the result */

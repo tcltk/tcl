@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.9 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.10 2006/01/25 18:38:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -79,15 +79,15 @@ typedef struct Block {
 
 typedef struct Bucket {
     Block *firstPtr;		/* First block available */
-    int numFree;		/* Number of blocks available */
+    long numFree;		/* Number of blocks available */
 
     /* All fields below for accounting only */
 
-    int numRemoves;		/* Number of removes from bucket */
-    int numInserts;		/* Number of inserts into bucket */
-    int numWaits;		/* Number of waits to acquire a lock */
-    int numLocks;		/* Number of locks acquired */
-    int totalAssigned;		/* Total space assigned to bucket */
+    long numRemoves;		/* Number of removes from bucket */
+    long numInserts;		/* Number of inserts into bucket */
+    long numWaits;		/* Number of waits to acquire a lock */
+    long numLocks;		/* Number of locks acquired */
+    long totalAssigned;		/* Total space assigned to bucket */
 } Bucket;
 
 /*
@@ -630,8 +630,8 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%d %d %d %d %d %d %d",
-		    (int) bucketInfo[n].blockSize,
+	    sprintf(buf, "%lu %ld %ld %ld %ld %ld %ld",
+		    (unsigned long) bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
 		    cachePtr->buckets[n].numInserts,

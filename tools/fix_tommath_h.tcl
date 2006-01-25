@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.2.2.3 2005/12/02 18:43:10 dgp Exp $
+# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.2.2.4 2006/01/25 18:38:48 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -16,48 +16,69 @@ set f [open [lindex $argv 0] r]
 set data [read $f]
 close $f
 
+set eat_endif 0
+set eat_semi 0
 foreach line [split $data \n] {
-    switch -regexp -- $line {
-	{#define BN_H_} {
-	    puts $line
-	    puts {}
-	    puts "\#ifdef TCL_TOMMATH"
-	    puts "\#include <tclTomMath.h>"
+    if { !$eat_semi && !$eat_endif } {
+	switch -regexp -- $line {
+	    {#define BN_H_} {
+		puts $line
+		puts {}
+		puts "\#include <tclTomMathDecls.h>"
+		puts "\#ifndef MODULE_SCOPE"
+		puts "\#define MODULE_SCOPE extern"
+		puts "\#endif"
+	    }
+	    {typedef.*mp_digit;} {
+		puts "\#ifndef MP_DIGIT_DECLARED"
+		puts $line
+		puts "\#define MP_DIGIT_DECLARED"
+		puts "\#endif"
+	    }
+	    {typedef struct} {
+		puts "\#ifndef MP_INT_DECLARED"
+		puts "\#define MP_INT_DECLARED"
+		puts "typedef struct mp_int mp_int;"
+		puts "\#endif"
+		puts "struct mp_int \{"
+	    }
+	    \}\ mp_int\; {
+		puts "\};"
+	    }
+	    {^(char|int|void)} {
+		puts "/*"
+		puts $line
+		set eat_semi 1
+		set after_semi "*/"
+	    }
+	    {^extern (int|const)} {
+		puts "\#if defined(BUILD_tcl) || !defined(_WIN32)"
+		puts [regsub {^extern} $line "MODULE_SCOPE"]
+		set eat_semi 1
+		set after_semi "\#endif"
+	    }
+	    {define heap macros} {
+		puts $line
+		puts "\#if 0 /* these are macros in tclTomMathDecls.h */"
+		set eat_endif 1
+	    }
+	    default {
+		puts $line
+	    }
+	}
+    } else {
+	puts $line
+    }
+    if {$eat_semi} {
+	if {[regexp {; *$} $line]} {
+	    puts $after_semi
+	    set eat_semi 0
+	}
+    }
+    if {$eat_endif} {
+	if {[regexp {^\#endif} $line]} {
 	    puts "\#endif"
-	    puts "\#ifndef TOMMATH_STORAGE_CLASS"
-	    puts "\#define TOMMATH_STORAGE_CLASS extern"
-	    puts "\#endif"
-	    puts "\#ifndef MODULE_SCOPE"
-	    puts "\#define MODULE_SCOPE extern"
-	    puts "\#endif"
-	}
-	{typedef.*mp_digit;} {
-	    puts "\#ifndef MP_DIGIT_DECLARED"
-	    puts $line
-	    puts "\#define MP_DIGIT_DECLARED"
-	    puts "\#endif"
-	}
-	{typedef struct} {
-	    puts "\#ifndef MP_INT_DECLARED"
-	    puts "\#define MP_INT_DECLARED"
-	    puts "typedef struct mp_int mp_int;"
-	    puts "\#endif"
-	    puts "struct mp_int \{"
-	}
-	\}\ mp_int\; {
-	    puts "\};"
-	}
-	{^(char|int|void) mp_(div_d|mul_d|clear|init|read_radix)\(} {
-	    puts "TOMMATH_STORAGE_CLASS $line"
-	}
-	{^(char|int|void)} {
-	    puts "TOMMATH_STORAGE_CLASS MODULE_SCOPE $line"
-	}
-	{^extern (int|const)} {
-	    puts [regsub {^extern} $line "MODULE_SCOPE"]
-	}
-	default {
-	    puts $line
+	    set eat_endif 0
 	}
     }
 }

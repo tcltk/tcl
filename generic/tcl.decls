@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.16 2005/12/02 18:42:06 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.17 2006/01/25 18:38:26 dgp Exp $
 
 library tcl
 
@@ -2030,6 +2030,14 @@ declare 564 generic {
 declare 565 generic {
     void Tcl_GetChannelError (Tcl_Channel chan, Tcl_Obj** msg)
 }
+
+# Additional conversion functions for bignum support
+
+declare 566 generic {
+    int Tcl_InitBignumFromDouble(Tcl_Interp* interp, double initval, 
+		mp_int *toInit)
+}
+  
 
 ##############################################################################
 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.9.2.3 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.9.2.4 2006/01/25 18:38:26 dgp Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -76,7 +76,16 @@ connection attempt succeeds or fails, if the socket is in blocking mode, the
 operation will wait until the connection is completed or fails. If the
 socket is in nonblocking mode and a \fBgets\fR or \fBflush\fR is done on
 the socket before the connection attempt succeeds or fails, the operation
-returns immediately and \fBfblocked\fR on the socket returns 1.
+returns immediately and \fBfblocked\fR on the socket returns 1. Synchronous
+client sockets may be switched (after they have connected) to operating in
+asynchronous mode using:
+.RS
+.CS
+\fBfconfigure \fIchan \fB\-blocking 0\fR
+.CE
+.PP
+See the \fBfconfigure\fR command for more details.
+.RE
 .SH "SERVER SOCKETS"
 .PP
 If the \fB\-server\fR option is specified then the new socket

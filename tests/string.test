@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.13 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.14 2006/01/25 18:38:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -661,6 +661,14 @@ test string-6.107 {string is integer, bad integers} {
     }
     set result
 } {1 1 0 0 0 1 0 0}
+test string-6.108 {string is double, Bug 1382287} {
+    set x 2turtledoves
+    string is double $x
+    string is double $x
+} 0
+test string-6.109 {string is double, Bug 1360532} {
+    string is double 1\u00a0
+} 0
 
 catch {rename largest_int {}}
 
@@ -1101,6 +1109,22 @@ test string-12.19 {string range, bytearray object} {
 test string-12.20 {string range, out of bounds indices} {
     string range \u00ff 0 1
 } \u00ff
+# Bug 1410553
+test string-12.21 {string range, regenerates correct reps, bug 1410553} {
+    set bytes "\x00 \x03 \x41"
+    set rxBuffer {}
+    foreach ch $bytes {
+	append rxBuffer $ch
+	if {$ch eq "\x03"} {
+	    string length $rxBuffer
+	}
+    }
+    set rxCRC [string range $rxBuffer end-1 end]
+    binary scan [join $bytes {}] "H*" input_hex
+    binary scan $rxBuffer "H*" rxBuffer_hex
+    binary scan $rxCRC "H*" rxCRC_hex
+    list $input_hex $rxBuffer_hex $rxCRC_hex
+} {000341 000341 0341}
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg

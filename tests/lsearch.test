@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.11.2.4 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.11.2.5 2006/01/25 18:38:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -317,6 +317,18 @@ test lsearch-10.7 {offset searching with an empty list} {
     # Stop bug #694232 from reocurring
     lsearch -start 0 {} x
 } -1
+test lsearch-10.8 {offset searching past the end of the list} {
+    # Stop [Bug 1374778] from reoccurring
+    lsearch -start 10 {a b c} c
+} -1
+test lsearch-10.9 {offset searching past the end of the list} {
+    # Stop [Bug 1374778] from reoccurring
+    lsearch -start 10 -all {a b c} c
+} {}
+test lsearch-10.10 {offset searching past the end of the list} {
+    # Stop [Bug 1374778] from reoccurring
+    lsearch -start 10 -inline {a b c} c
+} {}
 
 test lsearch-11.1 {negated searches} {
     lsearch -not {a a a b a a a} a

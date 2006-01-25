@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.14 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.15 2006/01/25 18:38:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -669,7 +669,7 @@ TclCompileDictCmd(
     } else if (size==3 && strncmp(cmd, "for", 3)==0) {
 	Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
 	int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
-	int infoIndex, jumpDisplacement, bodyTargetOffset, doneTargetOffset;
+	int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
 	int endTargetOffset;
 	const char **argv;
 	Tcl_DString buffer;
@@ -740,7 +740,7 @@ TclCompileDictCmd(
 
 	CompileWord(envPtr, dictTokenPtr, interp);
 	TclEmitInstInt4( INST_DICT_FIRST, infoIndex,		envPtr);
-	doneTargetOffset = CurrentOffset(envPtr);
+	emptyTargetOffset = CurrentOffset(envPtr);
 	TclEmitInstInt4( INST_JUMP_TRUE4, 0,			envPtr);
 
 	/*
@@ -795,16 +795,6 @@ TclCompileDictCmd(
 	TclEmitInstInt4( INST_DICT_NEXT, infoIndex,		envPtr);
 	jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
 	TclEmitInstInt4( INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
-
-	/*
-	 * Otherwise we're done (the jump after the DICT_FIRST points here)
-	 * and we need to pop the bogus key/value pair (pushed to keep stack
-	 * calculations easy!)
-	 */
-
-	jumpDisplacement = CurrentOffset(envPtr) - doneTargetOffset;
-	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
-		envPtr->codeStart + doneTargetOffset);
 	TclEmitOpcode(   INST_POP,				envPtr);
 	TclEmitOpcode(   INST_POP,				envPtr);
 
@@ -834,6 +824,19 @@ TclCompileDictCmd(
 	TclEmitInstInt4( INST_DICT_DONE, infoIndex,		envPtr);
 	TclEmitOpcode(   INST_END_CATCH,			envPtr);
 	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
+
+	/*
+	 * Otherwise we're done (the jump after the DICT_FIRST points here)
+	 * and we need to pop the bogus key/value pair (pushed to keep stack
+	 * calculations easy!) Note that we skip the END_CATCH. [Bug 1382528]
+	 */
+
+	jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
+	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
+		envPtr->codeStart + emptyTargetOffset);
+	TclEmitOpcode(   INST_POP,				envPtr);
+	TclEmitOpcode(   INST_POP,				envPtr);
+	TclEmitInstInt4( INST_DICT_DONE, infoIndex,		envPtr);
 
 	/*
 	 * Final stage of the command (normal case) is that we push an empty

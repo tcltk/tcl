@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.13 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.14 2006/01/25 18:38:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -18,7 +18,7 @@
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
  * is evaluated in Tcl_Init() prior to the built-in initialization script
- * above. This variable can be modified by the procedure below.
+ * above. This variable can be modified by the function below.
  */
 
 static char *tclPreInitScript = NULL;
@@ -181,7 +181,7 @@ typedef struct ScriptLimitCallbackKey {
 } ScriptLimitCallbackKey;
 
 /*
- * Prototypes for local static procedures:
+ * Prototypes for local static functions:
  */
 
 static int		AliasCreate(Tcl_Interp *interp,
@@ -276,7 +276,7 @@ TclSetPreInitScript(
  *
  * Tcl_Init --
  *
- *	This procedure is typically invoked by Tcl_AppInit procedures to find
+ *	This function is typically invoked by Tcl_AppInit functions to find
  *	and source the "init.tcl" script, which should exist somewhere on the
  *	Tcl library path.
  *
@@ -338,7 +338,7 @@ Tcl_Init(
      * will be set as the value of tcl_library.
      *
      * Note that this entire search mechanism can be bypassed by defining an
-     * alternate tclInit procedure before calling Tcl_Init().
+     * alternate tclInit function before calling Tcl_Init().
      */
 
     return Tcl_Eval(interp,
@@ -536,7 +536,7 @@ InterpInfoDeleteProc(
  *
  * Tcl_InterpObjCmd --
  *
- *	This procedure is invoked to process the "interp" Tcl command. See the
+ *	This function is invoked to process the "interp" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -1666,9 +1666,9 @@ AliasList(
  *
  * AliasObjCmd --
  *
- *	This is the procedure that services invocations of aliases in a slave
+ *	This is the function that services invocations of aliases in a slave
  *	interpreter. One such command exists for each alias. When invoked,
- *	this procedure redirects the invocation to the target command in the
+ *	this function redirects the invocation to the target command in the
  *	master interpreter as designated by the Alias record associated with
  *	this command.
  *

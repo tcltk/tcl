@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.9 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.10 2006/01/25 18:39:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -59,7 +59,7 @@ typedef struct DdeEnumServices {
     ATOM service;
     ATOM topic;
     HWND hwnd;
-};
+} DdeEnumServices;
 
 typedef struct ThreadSpecificData {
     Conversation *currentConversations;
@@ -953,7 +953,6 @@ DdeClientWindowProc(
     WPARAM wParam,
     LPARAM lParam)		/* (Potentially) our local handle */
 {
-    LRESULT lr = 0L;
 
     switch (uMsg) {
     case WM_CREATE: {
@@ -999,7 +998,7 @@ DdeServicesOnAck(
 	Tcl_Obj *matchPtr = Tcl_NewListObj(0, NULL);
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(es->interp);
 
-	GlobalGetAtomName((ATOM)service, sz, 255);
+	GlobalGetAtomName(service, sz, 255);
 	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(sz, -1));
 	GlobalGetAtomName(topic, sz, 255);
 	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(sz, -1));
@@ -1140,7 +1139,7 @@ Tcl_DdeObjCmd(
     ClientData clientData,	/* Used only for deletion */
     Tcl_Interp *interp,		/* The interp we are sending from */
     int objc,			/* Number of arguments */
-    Tcl_Obj *CONST objv[])	/* The arguments */
+    Tcl_Obj *CONST * objv)	/* The arguments */
 {
     static CONST char *ddeCommands[] = {
 	"servername", "execute", "poke", "request", "services", "eval",
@@ -1190,9 +1189,9 @@ Tcl_DdeObjCmd(
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
 	for (i = 2; i < objc; i++) {
-	    enum DdeSrvOptions argIndex;
+	    int argIndex;
 	    if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
-		    "option", 0, (int *) &argIndex) != TCL_OK) {
+		    "option", 0, &argIndex) != TCL_OK) {
 		/*
 		 * If it is the last argument, it might be a server name
 		 * instead of a bad argument.
@@ -1486,7 +1485,7 @@ Tcl_DdeObjCmd(
 	}
 
 	objc -= (async + 3);
-	((Tcl_Obj **) objv) += (async + 3);
+	objv += (async + 3);
 
 	/*
 	 * See if the target interpreter is local. If so, execute the command

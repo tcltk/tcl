@@ -1353,6 +1353,7 @@ TCL_SRC_DIR=`cd $srcdir/..; pwd`
 # Compress and/or soft link the manpages?
 #------------------------------------------------------------------------
 
+
     echo "$as_me:$LINENO: checking whether to use symlinks for manpages" >&5
 echo $ECHO_N "checking whether to use symlinks for manpages... $ECHO_C" >&6
     # Check whether --enable-man-symlinks or --disable-man-symlinks was given.
@@ -1400,7 +1401,7 @@ echo $ECHO_N "checking whether to add a package name suffix for the manpages... 
 if test "${enable_man_suffix+set}" = set; then
   enableval="$enable_man_suffix"
   case $enableval in
-	    yes) enableval="tcl";;
+	    yes) enableval="tcl" MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
 	esac
@@ -2854,7 +2855,7 @@ done
 
     echo "$as_me:$LINENO: checking dirent.h" >&5
 echo $ECHO_N "checking dirent.h... $ECHO_C" >&6
-    if test "${tcl_cv_dirent_h+set}" = set; then
+if test "${tcl_cv_dirent_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -2924,7 +2925,8 @@ fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 fi
-
+echo "$as_me:$LINENO: result: $tcl_cv_dirent_h" >&5
+echo "${ECHO_T}$tcl_cv_dirent_h" >&6
 
     if test $tcl_cv_dirent_h = no; then
 
@@ -2934,8 +2936,6 @@ _ACEOF
 
     fi
 
-    echo "$as_me:$LINENO: result: $tcl_ok" >&5
-echo "${ECHO_T}$tcl_ok" >&6
     if test "${ac_cv_header_float_h+set}" = set; then
   echo "$as_me:$LINENO: checking for float.h" >&5
 echo $ECHO_N "checking for float.h... $ECHO_C" >&6
@@ -4293,8 +4293,6 @@ fi
 #------------------------------------------------------------------------
 
 
-    echo "$as_me:$LINENO: checking for building with threads" >&5
-echo $ECHO_N "checking for building with threads... $ECHO_C" >&6
     # Check whether --enable-threads or --disable-threads was given.
 if test "${enable_threads+set}" = set; then
   enableval="$enable_threads"
@@ -4303,20 +4301,12 @@ else
   tcl_ok=no
 fi;
 
+    if test "${TCL_THREADS}" = 1; then
+	tcl_threaded_core=1;
+    fi
+
     if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
-	if test "${TCL_THREADS}" = 1; then
-	    echo "$as_me:$LINENO: result: yes (threaded core)" >&5
-echo "${ECHO_T}yes (threaded core)" >&6
-	else
-	    echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-	fi
 	TCL_THREADS=1
-
-cat >>confdefs.h <<\_ACEOF
-#define TCL_THREADS 1
-_ACEOF
-
 	# USE_THREAD_ALLOC tells us to try the special thread-based
 	# allocator that significantly reduces lock contention
 
@@ -4637,7 +4627,7 @@ else
   tcl_ok=no
 fi
 
-	    	if test "$tcl_ok" = "no"; then
+		if test "$tcl_ok" = "no"; then
 		    echo "$as_me:$LINENO: checking for pthread_mutex_init in -lc_r" >&5
 echo $ECHO_N "checking for pthread_mutex_init in -lc_r... $ECHO_C" >&6
 if test "${ac_cv_lib_c_r_pthread_mutex_init+set}" = set; then
@@ -4713,10 +4703,10 @@ fi
 			THREADS_LIBS=" -pthread"
 		    else
 			TCL_THREADS=0
-			{ echo "$as_me:$LINENO: WARNING: \"Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...\"" >&5
-echo "$as_me: WARNING: \"Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...\"" >&2;}
+			{ echo "$as_me:$LINENO: WARNING: Don't know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile..." >&5
+echo "$as_me: WARNING: Don't know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile..." >&2;}
 		    fi
-	    	fi
+		fi
 	    fi
 	fi
 
@@ -4931,7 +4921,7 @@ _ACEOF
 
 	    echo "$as_me:$LINENO: checking for pthread_attr_get_np declaration" >&5
 echo $ECHO_N "checking for pthread_attr_get_np declaration... $ECHO_C" >&6
-	    if test "${tcl_cv_grep_pthread_attr_get_np+set}" = set; then
+if test "${tcl_cv_grep_pthread_attr_get_np+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -4952,8 +4942,7 @@ fi
 rm -f conftest*
 
 fi
-
-	    echo "$as_me:$LINENO: result: $tcl_cv_grep_pthread_attr_get_np" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_grep_pthread_attr_get_np" >&5
 echo "${ECHO_T}$tcl_cv_grep_pthread_attr_get_np" >&6
 	    if test $tcl_cv_grep_pthread_attr_get_np = missing ; then
 
@@ -5067,7 +5056,7 @@ _ACEOF
 
 		echo "$as_me:$LINENO: checking for pthread_getattr_np declaration" >&5
 echo $ECHO_N "checking for pthread_getattr_np declaration... $ECHO_C" >&6
-		if test "${tcl_cv_grep_pthread_getattr_np+set}" = set; then
+if test "${tcl_cv_grep_pthread_getattr_np+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -5088,8 +5077,7 @@ fi
 rm -f conftest*
 
 fi
-
-		echo "$as_me:$LINENO: result: $tcl_cv_grep_pthread_getattr_np" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_grep_pthread_getattr_np" >&5
 echo "${ECHO_T}$tcl_cv_grep_pthread_getattr_np" >&6
 		if test $tcl_cv_grep_pthread_getattr_np = missing ; then
 
@@ -5103,9 +5091,28 @@ _ACEOF
 	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
+    fi
+    # Do checking message here to not mess up interleaved configure output
+    echo "$as_me:$LINENO: checking for building with threads" >&5
+echo $ECHO_N "checking for building with threads... $ECHO_C" >&6
+    if test "${TCL_THREADS}" = 1; then
+
+cat >>confdefs.h <<\_ACEOF
+#define TCL_THREADS 1
+_ACEOF
+
+	if test "${tcl_threaded_core}" = 1; then
+	    echo "$as_me:$LINENO: result: yes (threaded core)" >&5
+echo "${ECHO_T}yes (threaded core)" >&6
+	else
+	    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+	fi
+    else
 	echo "$as_me:$LINENO: result: no (default)" >&5
 echo "${ECHO_T}no (default)" >&6
     fi
+
 
 
 
@@ -5134,6 +5141,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
     fi
+
 
 #--------------------------------------------------------------------
 # Look for libraries that we will need when compiling the Tcl shell
@@ -6200,16 +6208,10 @@ echo $ECHO_N "checking if 64bit support is requested... $ECHO_C" >&6
     # Check whether --enable-64bit or --disable-64bit was given.
 if test "${enable_64bit+set}" = set; then
   enableval="$enable_64bit"
-
+  do64bit=$enableval
 else
-  enableval="no"
+  do64bit=no
 fi;
-
-    if test "$enableval" = "yes"; then
-	do64bit=yes
-    else
-	do64bit=no
-    fi
     echo "$as_me:$LINENO: result: $do64bit" >&5
 echo "${ECHO_T}$do64bit" >&6
 
@@ -6220,49 +6222,54 @@ echo $ECHO_N "checking if 64bit Sparc VIS support is requested... $ECHO_C" >&6
     # Check whether --enable-64bit-vis or --disable-64bit-vis was given.
 if test "${enable_64bit_vis+set}" = set; then
   enableval="$enable_64bit_vis"
-
+  do64bitVIS=$enableval
 else
-  enableval="no"
+  do64bitVIS=no
 fi;
-
-    if test "$enableval" = "yes"; then
-	# Force 64bit on with VIS
-	do64bit=yes
-	do64bitVIS=yes
-    else
-	do64bitVIS=no
-    fi
     echo "$as_me:$LINENO: result: $do64bitVIS" >&5
 echo "${ECHO_T}$do64bitVIS" >&6
 
-    # Step 1: set the variable "system" to hold the name and version number
-    # for the system.  This can usually be done via the "uname" command, but
-    # there are a few systems, like Next, where this doesn't work.
-
-    echo "$as_me:$LINENO: checking system version (for dynamic loading)" >&5
-echo $ECHO_N "checking system version (for dynamic loading)... $ECHO_C" >&6
-    if test -f /usr/lib/NextStep/software_version; then
-	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
-    else
-	system=`uname -s`-`uname -r`
-	if test "$?" -ne 0 ; then
-	    echo "$as_me:$LINENO: result: unknown (can't find uname command)" >&5
-echo "${ECHO_T}unknown (can't find uname command)" >&6
-	    system=unknown
-	else
-	    # Special check for weird MP-RAS system (uname returns weird
-	    # results, and the version is kept in special file).
-
-	    if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		system=MP-RAS-`awk '{print }' /etc/.relid'`
-	    fi
-	    if test "`uname -s`" = "AIX" ; then
-		system=AIX-`uname -v`.`uname -r`
-	    fi
-	    echo "$as_me:$LINENO: result: $system" >&5
-echo "${ECHO_T}$system" >&6
-	fi
+    if test "$do64bitVIS" = "yes"; then
+	# Force 64bit on with VIS
+	do64bit=yes
     fi
+
+    # Step 1: set the variable "system" to hold the name and version number
+    # for the system.
+
+
+    echo "$as_me:$LINENO: checking system version" >&5
+echo $ECHO_N "checking system version... $ECHO_C" >&6
+if test "${tcl_cv_sys_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	if test -f /usr/lib/NextStep/software_version; then
+	    tcl_cv_sys_version=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+	else
+	    tcl_cv_sys_version=`uname -s`-`uname -r`
+	    if test "$?" -ne 0 ; then
+		{ echo "$as_me:$LINENO: WARNING: can't find uname command" >&5
+echo "$as_me: WARNING: can't find uname command" >&2;}
+		tcl_cv_sys_version=unknown
+	    else
+		# Special check for weird MP-RAS system (uname returns weird
+		# results, and the version is kept in special file).
+
+		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
+		    tcl_cv_sys_version=MP-RAS-`awk '{print }' /etc/.relid`
+		fi
+		if test "`uname -s`" = "AIX" ; then
+		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
+		fi
+	    fi
+	fi
+
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_sys_version" >&5
+echo "${ECHO_T}$tcl_cv_sys_version" >&6
+    system=$tcl_cv_sys_version
+
 
     # Step 2: check for existence of -ldl library.  This is needed because
     # Linux can use either -ldl or -ldld for dynamic loading.
@@ -6413,9 +6420,14 @@ echo "$as_me: error: Required archive tool 'ar' not found on PATH." >&2;}
 	AIX-*)
 	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
 		# AIX requires the _r compiler when gcc isn't being used
-		if test "${CC}" != "cc_r" ; then
-		    CC=${CC}_r
-		fi
+		case "${CC}" in
+		    *_r)
+			# ok ...
+			;;
+		    *)
+			CC=${CC}_r
+			;;
+		esac
 		echo "$as_me:$LINENO: result: Using $CC for compiling with threads" >&5
 echo "${ECHO_T}Using $CC for compiling with threads" >&6
 	    fi
@@ -6794,19 +6806,19 @@ fi
 	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		if test "$GCC" = "yes" ; then
-		    hpux_arch=`gcc -dumpmachine`
+		    hpux_arch=`${CC} -dumpmachine`
 		    case $hpux_arch in
 			hppa64*)
 			    # 64-bit gcc in use.  Fix flags for GNU ld.
 			    do64bit_ok=yes
-			    SHLIB_LD="gcc -shared"
+			    SHLIB_LD="${CC} -shared"
 			    SHLIB_LD_LIBS='${LIBS}'
 			    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 			    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 			    ;;
 			*)
-			    { echo "$as_me:$LINENO: WARNING: \"64bit mode not supported with GCC on $system\"" >&5
-echo "$as_me: WARNING: \"64bit mode not supported with GCC on $system\"" >&2;}
+			    { echo "$as_me:$LINENO: WARNING: 64bit mode not supported with GCC on $system" >&5
+echo "$as_me: WARNING: 64bit mode not supported with GCC on $system" >&2;}
 			    ;;
 		    esac
 		else
@@ -7016,16 +7028,16 @@ _ACEOF
 	    ;;
 	Lynx*)
 	    SHLIB_CFLAGS="-fPIC"
-            SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
-            CFLAGS_OPTIMIZE=-02
+	    CFLAGS_OPTIMIZE=-02
 	    SHLIB_LD="${CC} -shared "
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
 	    LD_FLAGS="-Wl,--export-dynamic"
 	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-            LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-            ;;
+	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    ;;
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
 	    SHLIB_LD="cc -G"
@@ -7059,7 +7071,11 @@ _ACEOF
 	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 	    echo "$as_me:$LINENO: checking for ELF" >&5
 echo $ECHO_N "checking for ELF... $ECHO_C" >&6
-	    cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_ld_elf+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -7073,17 +7089,20 @@ cat >>conftest.$ac_ext <<_ACEOF
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "yes" >/dev/null 2>&1; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
+  tcl_cv_ld_elf=yes
 else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
-
+  tcl_cv_ld_elf=no
 fi
 rm -f conftest*
 
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_ld_elf" >&5
+echo "${ECHO_T}$tcl_cv_ld_elf" >&6
+	    if test $tcl_cv_ld_elf = yes; then
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
+	    else
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+	    fi
 
 	    # Ancient FreeBSD doesn't handle version numbers with dots.
 
@@ -7108,7 +7127,11 @@ rm -f conftest*
 	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
 	    echo "$as_me:$LINENO: checking for ELF" >&5
 echo $ECHO_N "checking for ELF... $ECHO_C" >&6
-	    cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_ld_elf+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -7122,17 +7145,20 @@ cat >>conftest.$ac_ext <<_ACEOF
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "yes" >/dev/null 2>&1; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-		 LDFLAGS=-Wl,-export-dynamic
+  tcl_cv_ld_elf=yes
 else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-		LDFLAGS=""
-
+  tcl_cv_ld_elf=no
 fi
 rm -f conftest*
 
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_ld_elf" >&5
+echo "${ECHO_T}$tcl_cv_ld_elf" >&6
+	    if test $tcl_cv_ld_elf = yes; then
+		LDFLAGS=-Wl,-export-dynamic
+	    else
+		LDFLAGS=""
+	    fi
 
 	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
@@ -8240,6 +8266,8 @@ echo "$as_me: WARNING: 64bit mode not supported with GCC < 3.2 on $system" >&2;}
 				CFLAGS="$CFLAGS -xarch=v9"
 			    	LDFLAGS_ARCH="-xarch=v9"
 			    fi
+			    # Solaris 64 uses this as well
+			    #LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH_64"
 			fi
 		elif test "$arch" = "amd64 i386" ; then
 		    if test "$GCC" = "yes" ; then
@@ -8291,11 +8319,15 @@ echo "$as_me: WARNING: 64bit mode not supported for $arch" >&2;}
 	    DL_LIBS="-ldl"
 	    # Some UNIX_SV* systems (unixware 1.1.2 for example) have linkers
 	    # that don't grok the -Bexport option.  Test that it does.
-	    hold_ldflags=$LDFLAGS
 	    echo "$as_me:$LINENO: checking for ld accepts -Bexport flag" >&5
 echo $ECHO_N "checking for ld accepts -Bexport flag... $ECHO_C" >&6
-	    LDFLAGS="$LDFLAGS -Wl,-Bexport"
-	    cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_ld_Bexport+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+		hold_ldflags=$LDFLAGS
+		LDFLAGS="$LDFLAGS -Wl,-Bexport"
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -8332,17 +8364,22 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  found=yes
+  tcl_cv_ld_Bexport=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-LDFLAGS=$hold_ldflags found=no
+tcl_cv_ld_Bexport=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-	    echo "$as_me:$LINENO: result: $found" >&5
-echo "${ECHO_T}$found" >&6
+	        LDFLAGS=$hold_ldflags
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_ld_Bexport" >&5
+echo "${ECHO_T}$tcl_cv_ld_Bexport" >&6
+	    if test $tcl_cv_ld_Bexport = yes; then
+		LDFLAGS="$LDFLAGS -Wl,-Bexport"
+	    fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -8408,11 +8445,7 @@ fi;
 		    ;;
 		Darwin-*)
 		    ;;
-		RISCos-*)
-		    ;;
 		SCO_SV-3.2*)
-		    ;;
-		ULTRIX-4.*)
 		    ;;
 		*)
 		    SHLIB_CFLAGS="-fPIC"
@@ -8687,6 +8720,7 @@ _ACEOF
 	tcl_flags="$tcl_flags _ISOC99_SOURCE"
     fi
 
+
     if test "${tcl_cv_flag__largefile64_source+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8791,6 +8825,7 @@ _ACEOF
 	tcl_flags="$tcl_flags _LARGEFILE64_SOURCE"
     fi
 
+
     if test "${tcl_cv_flag__largefile_source64+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8894,6 +8929,7 @@ _ACEOF
 
 	tcl_flags="$tcl_flags _LARGEFILE_SOURCE64"
     fi
+
     if test "x${tcl_flags}" = "x" ; then
 	echo "$as_me:$LINENO: result: none" >&5
 echo "${ECHO_T}none" >&6
@@ -8901,6 +8937,7 @@ echo "${ECHO_T}none" >&6
 	echo "$as_me:$LINENO: result: ${tcl_flags}" >&5
 echo "${ECHO_T}${tcl_flags}" >&6
     fi
+
 
 
     echo "$as_me:$LINENO: checking for 64-bit integer type" >&5
@@ -9027,7 +9064,7 @@ echo "${ECHO_T}${tcl_cv_type_64bit}" >&6
 	# Now check for auxiliary declarations
 	echo "$as_me:$LINENO: checking for struct dirent64" >&5
 echo $ECHO_N "checking for struct dirent64... $ECHO_C" >&6
-	if test "${tcl_cv_struct_dirent64+set}" = set; then
+if test "${tcl_cv_struct_dirent64+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -9078,7 +9115,8 @@ tcl_cv_struct_dirent64=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
+echo "$as_me:$LINENO: result: $tcl_cv_struct_dirent64" >&5
+echo "${ECHO_T}$tcl_cv_struct_dirent64" >&6
 	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -9086,12 +9124,10 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
-	echo "$as_me:$LINENO: result: ${tcl_cv_struct_dirent64}" >&5
-echo "${ECHO_T}${tcl_cv_struct_dirent64}" >&6
 
 	echo "$as_me:$LINENO: checking for struct stat64" >&5
 echo $ECHO_N "checking for struct stat64... $ECHO_C" >&6
-	if test "${tcl_cv_struct_stat64+set}" = set; then
+if test "${tcl_cv_struct_stat64+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -9142,7 +9178,8 @@ tcl_cv_struct_stat64=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
+echo "$as_me:$LINENO: result: $tcl_cv_struct_stat64" >&5
+echo "${ECHO_T}$tcl_cv_struct_stat64" >&6
 	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -9150,8 +9187,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 	fi
-	echo "$as_me:$LINENO: result: ${tcl_cv_struct_stat64}" >&5
-echo "${ECHO_T}${tcl_cv_struct_stat64}" >&6
 
 
 
@@ -9325,6 +9360,7 @@ echo "${ECHO_T}yes" >&6
 echo "${ECHO_T}no" >&6
 	fi
     fi
+
 
 #--------------------------------------------------------------------
 #	Check endianness because we can optimize comparisons of
@@ -10456,7 +10492,7 @@ done
 
     echo "$as_me:$LINENO: checking termios vs. termio vs. sgtty" >&5
 echo $ECHO_N "checking termios vs. termio vs. sgtty... $ECHO_C" >&6
-    if test "${tcl_cv_api_serial+set}" = set; then
+if test "${tcl_cv_api_serial+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -10739,7 +10775,8 @@ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftes
 fi
     fi
 fi
-
+echo "$as_me:$LINENO: result: $tcl_cv_api_serial" >&5
+echo "${ECHO_T}$tcl_cv_api_serial" >&6
     case $tcl_cv_api_serial in
 	termios)
 cat >>confdefs.h <<\_ACEOF
@@ -10757,8 +10794,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 ;;
     esac
-    echo "$as_me:$LINENO: result: $tcl_cv_api_serial" >&5
-echo "${ECHO_T}$tcl_cv_api_serial" >&6
 
 
 #--------------------------------------------------------------------
@@ -10822,14 +10857,13 @@ tcl_cv_type_fd_set=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 echo "$as_me:$LINENO: result: $tcl_cv_type_fd_set" >&5
 echo "${ECHO_T}$tcl_cv_type_fd_set" >&6
 tcl_ok=$tcl_cv_type_fd_set
-if test $tcl_cv_type_fd_set = no; then
+if test $tcl_ok = no; then
     echo "$as_me:$LINENO: checking for fd_mask in sys/select" >&5
 echo $ECHO_N "checking for fd_mask in sys/select... $ECHO_C" >&6
-    if test "${tcl_cv_grep_fd_mask+set}" = set; then
+if test "${tcl_cv_grep_fd_mask+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -10850,8 +10884,7 @@ fi
 rm -f conftest*
 
 fi
-
-    echo "$as_me:$LINENO: result: $tcl_cv_grep_fd_mask" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_grep_fd_mask" >&5
 echo "${ECHO_T}$tcl_cv_grep_fd_mask" >&6
     if test $tcl_cv_grep_fd_mask = present; then
 
@@ -11451,7 +11484,7 @@ done
 
     echo "$as_me:$LINENO: checking tm_tzadj in struct tm" >&5
 echo $ECHO_N "checking tm_tzadj in struct tm... $ECHO_C" >&6
-    if test "${tcl_cv_member_tm_tzadj+set}" = set; then
+if test "${tcl_cv_member_tm_tzadj+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -11500,8 +11533,7 @@ tcl_cv_member_tm_tzadj=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
-    echo "$as_me:$LINENO: result: $tcl_cv_member_tm_tzadj" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_member_tm_tzadj" >&5
 echo "${ECHO_T}$tcl_cv_member_tm_tzadj" >&6
     if test $tcl_cv_member_tm_tzadj = yes ; then
 
@@ -11513,7 +11545,7 @@ _ACEOF
 
     echo "$as_me:$LINENO: checking tm_gmtoff in struct tm" >&5
 echo $ECHO_N "checking tm_gmtoff in struct tm... $ECHO_C" >&6
-    if test "${tcl_cv_member_tm_gmtoff+set}" = set; then
+if test "${tcl_cv_member_tm_gmtoff+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -11562,8 +11594,7 @@ tcl_cv_member_tm_gmtoff=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
-    echo "$as_me:$LINENO: result: $tcl_cv_member_tm_gmtoff" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_member_tm_gmtoff" >&5
 echo "${ECHO_T}$tcl_cv_member_tm_gmtoff" >&6
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 
@@ -11579,7 +11610,7 @@ _ACEOF
     #
     echo "$as_me:$LINENO: checking long timezone variable" >&5
 echo $ECHO_N "checking long timezone variable... $ECHO_C" >&6
-    if test "${tcl_cv_timezone_long+set}" = set; then
+if test "${tcl_cv_timezone_long+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -11630,8 +11661,7 @@ tcl_cv_timezone_long=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
-    echo "$as_me:$LINENO: result: $tcl_cv_timezone_long" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_timezone_long" >&5
 echo "${ECHO_T}$tcl_cv_timezone_long" >&6
     if test $tcl_cv_timezone_long = yes ; then
 
@@ -11645,7 +11675,7 @@ _ACEOF
 	#
 	echo "$as_me:$LINENO: checking time_t timezone variable" >&5
 echo $ECHO_N "checking time_t timezone variable... $ECHO_C" >&6
-	if test "${tcl_cv_timezone_time+set}" = set; then
+if test "${tcl_cv_timezone_time+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -11696,8 +11726,7 @@ tcl_cv_timezone_time=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
-	echo "$as_me:$LINENO: result: $tcl_cv_timezone_time" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_timezone_time" >&5
 echo "${ECHO_T}$tcl_cv_timezone_time" >&6
 	if test $tcl_cv_timezone_time = yes ; then
 
@@ -12233,7 +12262,7 @@ fi
     if test "$tcl_ok" = 1; then
 	echo "$as_me:$LINENO: checking proper strstr implementation" >&5
 echo $ECHO_N "checking proper strstr implementation... $ECHO_C" >&6
-	if test "${tcl_cv_strstr_unbroken+set}" = set; then
+if test "${tcl_cv_strstr_unbroken+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test "$cross_compiling" = yes; then
@@ -12273,8 +12302,7 @@ fi
 rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 fi
-
-	echo "$as_me:$LINENO: result: $tcl_cv_strstr_unbroken" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_strstr_unbroken" >&5
 echo "${ECHO_T}$tcl_cv_strstr_unbroken" >&6
 	if test "$tcl_cv_strstr_unbroken" = "ok"; then
 	    tcl_ok=1
@@ -12293,6 +12321,7 @@ esac
 
 	USE_COMPAT=1
     fi
+
 
 #--------------------------------------------------------------------
 #	Check for strtoul function.  This is tricky because under some
@@ -12400,7 +12429,7 @@ fi
     if test "$tcl_ok" = 1; then
 	echo "$as_me:$LINENO: checking proper strtoul implementation" >&5
 echo $ECHO_N "checking proper strtoul implementation... $ECHO_C" >&6
-	if test "${tcl_cv_strtoul_unbroken+set}" = set; then
+if test "${tcl_cv_strtoul_unbroken+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test "$cross_compiling" = yes; then
@@ -12441,8 +12470,7 @@ fi
 rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 fi
-
-	echo "$as_me:$LINENO: result: $tcl_cv_strtoul_unbroken" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_strtoul_unbroken" >&5
 echo "${ECHO_T}$tcl_cv_strtoul_unbroken" >&6
 	if test "$tcl_cv_strtoul_unbroken" = "ok"; then
 	    tcl_ok=1
@@ -12461,6 +12489,7 @@ esac
 
 	USE_COMPAT=1
     fi
+
 
 #--------------------------------------------------------------------
 #	Check for the strtod function.  This is tricky because in some
@@ -12567,7 +12596,7 @@ fi
     if test "$tcl_ok" = 1; then
 	echo "$as_me:$LINENO: checking proper strtod implementation" >&5
 echo $ECHO_N "checking proper strtod implementation... $ECHO_C" >&6
-	if test "${tcl_cv_strtod_unbroken+set}" = set; then
+if test "${tcl_cv_strtod_unbroken+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test "$cross_compiling" = yes; then
@@ -12608,8 +12637,7 @@ fi
 rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 fi
-
-	echo "$as_me:$LINENO: result: $tcl_cv_strtod_unbroken" >&5
+echo "$as_me:$LINENO: result: $tcl_cv_strtod_unbroken" >&5
 echo "${ECHO_T}$tcl_cv_strtod_unbroken" >&6
 	if test "$tcl_cv_strtod_unbroken" = "ok"; then
 	    tcl_ok=1
@@ -12628,6 +12656,7 @@ esac
 
 	USE_COMPAT=1
     fi
+
 
 #--------------------------------------------------------------------
 #	Under Solaris 2.4, strtod returns the wrong value for the
@@ -12736,12 +12765,12 @@ fi
     if test "$tcl_strtod" = 1; then
 	echo "$as_me:$LINENO: checking for Solaris2.4/Tru64 strtod bugs" >&5
 echo $ECHO_N "checking for Solaris2.4/Tru64 strtod bugs... $ECHO_C" >&6
-	if test "${tcl_cv_strtod_buggy+set}" = set; then
+if test "${tcl_cv_strtod_buggy+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
 	    if test "$cross_compiling" = yes; then
-  tcl_cv_strtod_buggy=0
+  tcl_cv_strtod_buggy=buggy
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -12781,25 +12810,21 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  tcl_cv_strtod_buggy=1
+  tcl_cv_strtod_buggy=ok
 else
   echo "$as_me: program exited with status $ac_status" >&5
 echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 ( exit $ac_status )
-tcl_cv_strtod_buggy=0
+tcl_cv_strtod_buggy=buggy
 fi
 rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 fi
-
-	if test "$tcl_cv_strtod_buggy" = 1; then
-	    echo "$as_me:$LINENO: result: ok" >&5
-echo "${ECHO_T}ok" >&6
-	else
-	    echo "$as_me:$LINENO: result: buggy" >&5
-echo "${ECHO_T}buggy" >&6
+echo "$as_me:$LINENO: result: $tcl_cv_strtod_buggy" >&5
+echo "${ECHO_T}$tcl_cv_strtod_buggy" >&6
+	if test "$tcl_cv_strtod_buggy" = buggy; then
 	    case $LIBOBJS in
     "fixstrtod.$ac_objext"   | \
   *" fixstrtod.$ac_objext"   | \
@@ -13089,7 +13114,6 @@ fi
 rm -f conftest*
 
 fi
-
 echo "$as_me:$LINENO: result: $ac_cv_type_socklen_t" >&5
 echo "${ECHO_T}$ac_cv_type_socklen_t" >&6
 if test $ac_cv_type_socklen_t = no; then
@@ -13273,7 +13297,6 @@ fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 fi
-
 echo "$as_me:$LINENO: result: $tcl_cv_union_wait" >&5
 echo "${ECHO_T}$tcl_cv_union_wait" >&6
 if test $tcl_cv_union_wait = no; then
@@ -13777,7 +13800,6 @@ fi
 rm -f conftest*
 
 fi
-
 echo "$as_me:$LINENO: result: $tcl_cv_grep_gettimeofday" >&5
 echo "${ECHO_T}$tcl_cv_grep_gettimeofday" >&6
 if test $tcl_cv_grep_gettimeofday = missing ; then
@@ -13911,7 +13933,6 @@ tcl_cv_char_signed=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 echo "$as_me:$LINENO: result: $tcl_cv_char_signed" >&5
 echo "${ECHO_T}$tcl_cv_char_signed" >&6
 if test $tcl_cv_char_signed = yes; then
@@ -13984,7 +14005,6 @@ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftes
 fi
 
 fi
-
 echo "$as_me:$LINENO: result: $tcl_cv_putenv_copy" >&5
 echo "${ECHO_T}$tcl_cv_putenv_copy" >&6
 if test $tcl_cv_putenv_copy = yes; then
@@ -14438,6 +14458,77 @@ done
 
 
 #--------------------------------------------------------------------
+# Check for support of fts functions (readdir replacement)
+#--------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking for fts" >&5
+echo $ECHO_N "checking for fts... $ECHO_C" >&6
+if test "${tcl_cv_api_fts+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/param.h>
+            #include <sys/stat.h>
+            #include <fts.h>
+int
+main ()
+{
+char*const p[2] = {"/", NULL};
+            FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
+            FTSENT *e = fts_read(f); fts_close(f);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_api_fts=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_api_fts=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_fts" >&5
+echo "${ECHO_T}$tcl_cv_api_fts" >&6
+if test $tcl_cv_api_fts = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_FTS 1
+_ACEOF
+
+fi
+
+#--------------------------------------------------------------------
 #	The statements below check for systems where POSIX-style
 #	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented.
 #	On these systems (mostly older ones), use the old BSD-style
@@ -14745,26 +14836,41 @@ fi
 
 done
 
-    echo "$as_me:$LINENO: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
-echo $ECHO_N "checking FIONBIO vs. O_NONBLOCK for nonblocking I/O... $ECHO_C" >&6
-    if test -f /usr/lib/NextStep/software_version; then
-	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
-    else
-	system=`uname -s`-`uname -r`
-	if test "$?" -ne 0 ; then
-	    system=unknown
-	else
-	    # Special check for weird MP-RAS system (uname returns weird
-	    # results, and the version is kept in special file).
 
-	    if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		system=MP-RAS-`awk '{print }' /etc/.relid'`
-	    fi
-	    if test "`uname -s`" = "AIX" ; then
-		system=AIX-`uname -v`.`uname -r`
+    echo "$as_me:$LINENO: checking system version" >&5
+echo $ECHO_N "checking system version... $ECHO_C" >&6
+if test "${tcl_cv_sys_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	if test -f /usr/lib/NextStep/software_version; then
+	    tcl_cv_sys_version=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+	else
+	    tcl_cv_sys_version=`uname -s`-`uname -r`
+	    if test "$?" -ne 0 ; then
+		{ echo "$as_me:$LINENO: WARNING: can't find uname command" >&5
+echo "$as_me: WARNING: can't find uname command" >&2;}
+		tcl_cv_sys_version=unknown
+	    else
+		# Special check for weird MP-RAS system (uname returns weird
+		# results, and the version is kept in special file).
+
+		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
+		    tcl_cv_sys_version=MP-RAS-`awk '{print }' /etc/.relid`
+		fi
+		if test "`uname -s`" = "AIX" ; then
+		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
+		fi
 	    fi
 	fi
-    fi
+
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_sys_version" >&5
+echo "${ECHO_T}$tcl_cv_sys_version" >&6
+    system=$tcl_cv_sys_version
+
+    echo "$as_me:$LINENO: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
+echo $ECHO_N "checking FIONBIO vs. O_NONBLOCK for nonblocking I/O... $ECHO_C" >&6
     case $system in
 	# There used to be code here to use FIONBIO under AIX.  However, it
 	# was reported that FIONBIO doesn't work under AIX 3.2.5.  Since
@@ -14781,15 +14887,6 @@ _ACEOF
 echo "${ECHO_T}FIONBIO" >&6
 	    ;;
 	SunOS-4*)
-
-cat >>confdefs.h <<\_ACEOF
-#define USE_FIONBIO 1
-_ACEOF
-
-	    echo "$as_me:$LINENO: result: FIONBIO" >&5
-echo "${ECHO_T}FIONBIO" >&6
-	    ;;
-	ULTRIX-4.*)
 
 cat >>confdefs.h <<\_ACEOF
 #define USE_FIONBIO 1
@@ -14870,13 +14967,13 @@ fi;
 echo "${ECHO_T}framework" >&6
 	FRAMEWORK_BUILD=1
 	if test "${SHARED_BUILD}" = "0" ; then
-	    { echo "$as_me:$LINENO: WARNING: \"Frameworks can only be built if --enable-shared is yes\"" >&5
-echo "$as_me: WARNING: \"Frameworks can only be built if --enable-shared is yes\"" >&2;}
+	    { echo "$as_me:$LINENO: WARNING: Frameworks can only be built if --enable-shared is yes" >&5
+echo "$as_me: WARNING: Frameworks can only be built if --enable-shared is yes" >&2;}
 	    FRAMEWORK_BUILD=0
 	fi
 	if test $tcl_corefoundation = no; then
-	    { echo "$as_me:$LINENO: WARNING: \"Frameworks can only be used when CoreFoundation is available\"" >&5
-echo "$as_me: WARNING: \"Frameworks can only be used when CoreFoundation is available\"" >&2;}
+	    { echo "$as_me:$LINENO: WARNING: Frameworks can only be used when CoreFoundation is available" >&5
+echo "$as_me: WARNING: Frameworks can only be used when CoreFoundation is available" >&2;}
 	    FRAMEWORK_BUILD=0
 	fi
     else

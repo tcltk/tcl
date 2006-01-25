@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.9 2005/11/03 17:52:09 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.10 2006/01/25 18:38:31 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -636,7 +636,7 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
-    if (stringPtr->numChars == objPtr->length) {
+    if (objPtr->bytes && (stringPtr->numChars == objPtr->length)) {
 	char *str = Tcl_GetString(objPtr);
 
 	/*

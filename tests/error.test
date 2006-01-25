@@ -11,13 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.10.2.3 2005/08/02 16:38:17 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.10.2.4 2006/01/25 18:38:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
+namespace eval ::tcl::test::error {
 proc foo {} {
     global errorInfo
     set a [catch {format [error glorp2]} b]
@@ -219,6 +220,24 @@ test error-6.9 {catch must reset error state} {
     catch foo
     list $errorCode
 } {NONE}
+
+    test error-7.0 {Bug 1397843} -body {
+	variable cmds
+	proc EIWrite args {
+	    variable cmds
+	    lappend cmds [lindex [info level -2] 0]
+	}
+	proc BadProc {} {
+	    set i a
+	    incr i
+	}
+	trace add variable ::errorInfo write [namespace code EIWrite]
+	catch BadProc
+	trace remove variable ::errorInfo write [namespace code EIWrite]
+	set cmds
+    } -match glob -result {*BadProc*}
+}
+namespace delete ::tcl::test::error
 
 # cleanup
 catch {rename p ""}

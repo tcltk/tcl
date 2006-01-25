@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.10 2005/04/07 17:32:07 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.11 2006/01/25 18:38:47 dgp Exp $
 #
 
 package require tcltest 2
@@ -438,7 +438,7 @@ test basic-26.1 {Tcl_EvalObj: preserve object while evaling it} -setup {
     rename myHandler {}
 } -result "foo\n    while executing\n\"error foo\""
 
-test basic-26.2 {Tcl_EvalObjEx, pure-list branch: preserve "objv"} {
+test basic-26.2 {Tcl_EvalObjEx, pure-list branch: preserve "objv"} -body {
     #
     # Follow the pure-list branch in a manner that
     #   a - the pure-list internal rep is destroyed by shimmering
@@ -455,9 +455,13 @@ test basic-26.2 {Tcl_EvalObjEx, pure-list branch: preserve "objv"} {
 	error "BAD CALL"
     }
     catch {eval $SRC}
-} 1
+} -result 1 -cleanup {
+    rename foo {}
+    rename $::SRC {}
+    unset ::SRC
+}
 
-test basic-26.3 {Tcl_EvalObjEx, pure-list branch: preserve "objv"} {
+test basic-26.3 {Tcl_EvalObjEx, pure-list branch: preserve "objv"} -body {
     #
     # Follow the pure-list branch in a manner that
     #   a - the pure-list internal rep is destroyed by shimmering
@@ -473,7 +477,11 @@ test basic-26.3 {Tcl_EvalObjEx, pure-list branch: preserve "objv"} {
 	info level 0
     }
     catch {eval $SRC}
-} 0
+} -result 0 -cleanup {
+    rename foo {}
+    rename $::SRC {}
+    unset ::SRC
+}
 
 test basic-27.1 {Tcl_ExprLong} {emptyTest} {
 } {}

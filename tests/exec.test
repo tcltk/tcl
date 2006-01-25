@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.16.4.6 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.16.4.7 2006/01/25 18:38:48 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -402,7 +402,11 @@ test exec-10.20 {errors in exec invocation} {exec} {
 test exec-10.21 {errors in exec invocation} {exec} {
     list [catch {exec [interpreter] true | ~xyzzy_bad_user/x | false} msg] $msg
 } {1 {user "xyzzy_bad_user" doesn't exist}}
-
+test exec-10.22 {errors in exec invocation} \
+-constraints exec \
+-returnCodes 1 \
+-body {exec echo test > ~non_existent_user/foo/bar} \
+-result {user "non_existent_user" doesn't exist}
 # Commands in background.
 
 test exec-11.1 {commands in background} {exec} {

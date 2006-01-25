@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.37 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.38 2006/01/25 18:38:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -581,6 +581,10 @@ Tcl_CreateInterp(void)
 #undef Tcl_InitStubs
 #endif
     Tcl_InitStubs(interp, TCL_VERSION, 1);
+
+    if (TclTommath_Init(interp) != TCL_OK) {
+	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
 
     return interp;
 }
@@ -3580,66 +3584,6 @@ Tcl_EvalObjv(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LogCommandInfo --
- *
- *	This function is invoked after an error occurs in an interpreter. It
- *	adds information to iPtr->errorInfo field to describe the command that
- *	was being executed when the error occurred.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Information about the command is added to errorInfo and the line
- *	number stored internally in the interpreter is set.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_LogCommandInfo(
-    Tcl_Interp *interp,		/* Interpreter in which to log information. */
-    CONST char *script,		/* First character in script containing
-				 * command (must be <= command). */
-    CONST char *command,	/* First character in command that generated
-				 * the error. */
-    int length)			/* Number of bytes in command (-1 means use
-				 * all bytes up to first null byte). */
-{
-    register CONST char *p;
-    Interp *iPtr = (Interp *) interp;
-    int overflow, limit = 150;
-
-    if (iPtr->flags & ERR_ALREADY_LOGGED) {
-	/*
-	 * Someone else has already logged error information for this command;
-	 * we shouldn't add anything more.
-	 */
-
-	return;
-    }
-
-    /*
-     * Compute the line number where the error occurred.
-     */
-
-    iPtr->errorLine = 1;
-    for (p = script; p != command; p++) {
-	if (*p == '\n') {
-	    iPtr->errorLine++;
-	}
-    }
-
-    overflow = (length > limit);
-    TclFormatToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
-	    ((iPtr->errorInfo == NULL)
-	    ? "while executing" : "invoked from within"),
-	    (overflow ? limit : length), command, (overflow ? "..." : ""));
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalTokensStandard --
  *
  *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
@@ -4358,7 +4302,7 @@ Tcl_ExprLongObj(
 
 	d = *((CONST double *)internalPtr);
 	Tcl_DecrRefCount(resultPtr);
-	if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	resultPtr = Tcl_NewBignumObj(&big);
@@ -5387,7 +5331,7 @@ ExprEntierFunc(
 	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
 	    mp_int big;
 
-	    if (TclInitBignumFromDouble(interp, d, &big) != TCL_OK) {
+	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
 	    }
@@ -5691,7 +5635,7 @@ ExprRoundFunc(
 	if ((intPart >= (double)max) || (intPart <= (double)min)) {
 	    mp_int big;
 
-	    if (TclInitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
+	    if (Tcl_InitBignumFromDouble(interp, intPart, &big) != TCL_OK) {
 		/* Infinity */
 		return TCL_ERROR;
 	    }

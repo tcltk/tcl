@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.10 2005/12/02 18:42:36 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.11 2006/01/25 18:38:46 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -652,6 +652,7 @@ proc ::tcl::clock::Initialize {} {
 
 proc ::tcl::clock::format { args } {
 
+    variable TZData
     set format {}
 
     # Check the count of args
@@ -668,7 +669,7 @@ proc ::tcl::clock::format { args } {
     # Set defaults
 
     set clockval [lindex $args 0]
-    set format {%a %b %d %H:%M:%S %z %Y}
+    set format {%a %b %d %H:%M:%S %Z %Y}
     set gmt 0
     set locale C
     set timezone {}
@@ -724,9 +725,11 @@ proc ::tcl::clock::format { args } {
     if {$timezone eq ""} {
 	set timezone [GetSystemTimeZone]
     }
-    if {[catch {SetupTimeZone $timezone} retval opts]} {
-	dict unset opts -errorinfo
-	return -options $opts $retval
+    if {![info exists TZData($timezone)]} {
+	if {[catch {SetupTimeZone $timezone} retval opts]} {
+	    dict unset opts -errorinfo
+	    return -options $opts $retval
+	}
     }
     
     # Format the result
@@ -3084,9 +3087,9 @@ proc ::tcl::clock::GetSystemTimeZone {} {
     variable CachedSystemTimeZone
     variable TimeZoneBad
 
-    if { ![catch {getenv TCL_TZ} result] } {
+    if {[set result [getenv TCL_TZ]] ne {}} {
 	set timezone $result
-    } elseif { ![catch {getenv TZ} result] } {
+    } elseif {[set result [getenv TZ]] ne {}} {
 	set timezone $result
     } elseif { [info exists CachedSystemTimeZone] } {
 	set timezone $CachedSystemTimeZone

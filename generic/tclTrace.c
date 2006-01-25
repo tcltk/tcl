@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.16 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.17 2006/01/25 18:38:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -98,9 +98,9 @@ typedef struct {
 typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, int optionIndex,
 	int objc, Tcl_Obj *CONST objv[]);
 
-MODULE_SCOPE Tcl_TraceTypeObjCmd TclTraceVariableObjCmd;
-MODULE_SCOPE Tcl_TraceTypeObjCmd TclTraceCommandObjCmd;
-MODULE_SCOPE Tcl_TraceTypeObjCmd TclTraceExecutionObjCmd;
+static Tcl_TraceTypeObjCmd TraceVariableObjCmd;
+static Tcl_TraceTypeObjCmd TraceCommandObjCmd;
+static Tcl_TraceTypeObjCmd TraceExecutionObjCmd;
 
 /*
  * Each subcommand has a number of 'types' to which it can apply. Currently
@@ -113,9 +113,9 @@ static CONST char *traceTypeOptions[] = {
     "execution", "command", "variable", NULL
 };
 static Tcl_TraceTypeObjCmd *traceSubCmds[] = {
-    TclTraceExecutionObjCmd,
-    TclTraceCommandObjCmd,
-    TclTraceVariableObjCmd,
+    TraceExecutionObjCmd,
+    TraceCommandObjCmd,
+    TraceVariableObjCmd,
 };
 
 /*
@@ -364,7 +364,7 @@ Tcl_TraceObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclTraceExecutionObjCmd --
+ * TraceExecutionObjCmd --
  *
  *	Helper function for Tcl_TraceObjCmd; implements the [trace
  *	{add|remove|info} execution ...] subcommands. See the user
@@ -380,8 +380,8 @@ Tcl_TraceObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
-TclTraceExecutionObjCmd(
+static int
+TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     int optionIndex,		/* Add, info or remove */
     int objc,			/* Number of arguments. */
@@ -619,7 +619,7 @@ TclTraceExecutionObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclTraceCommandObjCmd --
+ * TraceCommandObjCmd --
  *
  *	Helper function for Tcl_TraceObjCmd; implements the [trace
  *	{add|info|remove} command ...] subcommands. See the user documentation
@@ -635,8 +635,8 @@ TclTraceExecutionObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
-TclTraceCommandObjCmd(
+static int
+TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     int optionIndex,		/* Add, info or remove */
     int objc,			/* Number of arguments. */
@@ -817,7 +817,7 @@ TclTraceCommandObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclTraceVariableObjCmd --
+ * TraceVariableObjCmd --
  *
  *	Helper function for Tcl_TraceObjCmd; implements the [trace
  *	{add|info|remove} variable ...] subcommands. See the user
@@ -833,8 +833,8 @@ TclTraceCommandObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
-TclTraceVariableObjCmd(
+static int
+TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     int optionIndex,		/* Add, info or remove */
     int objc,			/* Number of arguments. */

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.5 2005/11/03 17:52:08 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.6 2006/01/25 18:38:29 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1116,7 +1116,7 @@ ReflectInput(
     *errorCodePtr = EOK;
 
     if (bytec > 0) {
-	memcpy(buf, bytev, bytec);
+	memcpy(buf, bytev, (size_t)bytec);
     }
 
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
@@ -2248,7 +2248,7 @@ ForwardProc(
 		paramPtr->input.toRead = -1;
 	    } else {
 		if (bytec > 0) {
-		    memcpy(paramPtr->input.buf, bytev, bytec);
+		    memcpy(paramPtr->input.buf, bytev, (size_t)bytec);
 		}
 		paramPtr->input.toRead = bytec;
 	    }

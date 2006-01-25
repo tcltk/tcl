@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.35 2005/12/02 18:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.36 2006/01/25 18:38:29 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1946,6 +1946,8 @@ typedef struct ProcessGlobalValue {
 				/* Disable floating point parsing */
 #define TCL_PARSE_SCAN_PREFIXES		16
 				/* Use [scan] rules dealing with 0? prefixes */
+#define TCL_PARSE_NO_WHITESPACE		32
+				/* Reject leading/trailing whitespace */
 
 /*
  *----------------------------------------------------------------------
@@ -2166,8 +2168,6 @@ MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
 MODULE_SCOPE void	TclInitAlloc(void);
-MODULE_SCOPE int	TclInitBignumFromDouble(Tcl_Interp *interp, double d,
-			    mp_int *b);
 MODULE_SCOPE void	TclInitDbCkalloc(void);
 MODULE_SCOPE void	TclInitDoubleConversion(void);
 MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
@@ -3002,9 +3002,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE void *	TclBNAlloc(size_t nBytes);
-MODULE_SCOPE void *	TclBNRealloc(void *oldBlock, size_t newNBytes);
-MODULE_SCOPE void	TclBNFree(void *block);
+MODULE_SCOPE int	TclTommath_Init(Tcl_Interp*);
 MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
 MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int* bignum,
 			    Tcl_WideInt initVal);
@@ -3165,6 +3163,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
 #include "tclPort.h"
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
+#include "tclTomMathDecls.h"
 
 #endif /* _TCLINT */
 

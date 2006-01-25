@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.9 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.10 2006/01/25 18:39:59 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -447,7 +447,7 @@ InitSockets(void)
 #define WSA_VERSION_MINOR 1
 #define WSA_VERSION_REQD  MAKEWORD(WSA_VERSION_MAJOR, WSA_VERSION_MINOR)
 
-	if ((err = winSock.WSAStartup(WSA_VERSION_REQD, &wsaData)) != 0) {
+	if ((err = winSock.WSAStartup((WORD)WSA_VERSION_REQD, &wsaData)) != 0) {
 	    TclWinConvertWSAError(err);
 	    goto unloadLibrary;
 	}
@@ -966,7 +966,7 @@ TcpCloseProc(
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     /* TIP #218 */
     int errorCode = 0;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1019,7 +1019,7 @@ NewSocketInfo(
     SOCKET socket)
 {
     SocketInfo *infoPtr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
 
     infoPtr = (SocketInfo *) ckalloc((unsigned) sizeof(SocketInfo));
     infoPtr->channel = 0;
@@ -2050,7 +2050,7 @@ TcpGetOptionProc(
 	int ret;
 
 	optlen = sizeof(int);
-	ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
+	ret = TclWinGetSockOpt((int)sock, SOL_SOCKET, SO_ERROR,
 		(char *)&err, &optlen);
 	if (ret == SOCKET_ERROR) {
 	    err = winSock.WSAGetLastError();
@@ -2582,7 +2582,7 @@ InitializeHostName(
 
 int
 TclWinGetSockOpt(
-    SOCKET s,
+    int s,
     int level,
     int optname,
     char * optval,
@@ -2598,12 +2598,12 @@ TclWinGetSockOpt(
 	return SOCKET_ERROR;
     }
 
-    return winSock.getsockopt(s, level, optname, optval, optlen);
+    return winSock.getsockopt((SOCKET)s, level, optname, optval, optlen);
 }
 
 int
 TclWinSetSockOpt(
-    SOCKET s,
+    int s,
     int level,
     int optname,
     const char * optval,
@@ -2619,7 +2619,7 @@ TclWinSetSockOpt(
 	return SOCKET_ERROR;
     }
 
-    return winSock.setsockopt(s, level, optname, optval, optlen);
+    return winSock.setsockopt((SOCKET)s, level, optname, optval, optlen);
 }
 
 u_short

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.10 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.11 2006/01/25 18:39:59 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1233,7 +1233,7 @@ TraverseWinTree(
 {
     DWORD sourceAttr;
     TCHAR *nativeSource, *nativeTarget, *nativeErrfile;
-    int result, found, sourceLen, targetLen, oldSourceLen, oldTargetLen;
+    int result, found, sourceLen, targetLen = 0, oldSourceLen, oldTargetLen;
     HANDLE handle;
     WIN32_FIND_DATAT data;
 
@@ -1448,9 +1448,9 @@ TraversalCopy(
 	break;
     case DOTREE_PRED:
 	if (DoCreateDirectory(nativeDst) == TCL_OK) {
-	    DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
+	    DWORD attr = (tclWinProcs->getFileAttributesProc)(nativeSrc);
 
-	    if ((*tclWinProcs->setFileAttributesProc)(nativeDst,
+	    if ((tclWinProcs->setFileAttributesProc)(nativeDst,
 		    attr) != FALSE) {
 		return TCL_OK;
 	    }

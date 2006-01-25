@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.18 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.19 2006/01/25 18:38:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -457,12 +457,12 @@ TclCreateProc(
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
-		if ((i == numArgs - 1)
-			&& (localPtr->nameLength == 4)
-			&& (localPtr->name[0] == 'a')
-			&& (strcmp(localPtr->name, "args") == 0)) {
-		    localPtr->flags |= VAR_IS_ARGS;
-		}
+	    }
+	    if ((i == numArgs - 1)
+		    && (localPtr->nameLength == 4)
+		    && (localPtr->name[0] == 'a')
+		    && (strcmp(localPtr->name, "args") == 0)) {
+		localPtr->flags |= VAR_IS_ARGS;
 	    }
 
 	    localPtr = localPtr->nextPtr;
@@ -1171,7 +1171,7 @@ TclObjInterpProc(
      */
 
     localCt = procPtr->numCompiledLocals;
-    compiledLocals = (Var *) TclStackAlloc(interp, localCt*sizeof(Var));
+    compiledLocals = (Var *) TclStackAlloc(interp, (int)(localCt*sizeof(Var)));
     framePtr->numCompiledLocals = localCt;
     framePtr->compiledLocals = compiledLocals;
 

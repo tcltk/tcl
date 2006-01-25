@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.30 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.31 2006/01/25 18:38:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3653,7 +3653,7 @@ TclExecuteByteCode(
 		    mp_clear(&big2);
 		    goto doubleCompare;
 		}
-		TclInitBignumFromDouble(NULL, d1, &big1);
+		Tcl_InitBignumFromDouble(NULL, d1, &big1);
 		goto bigCompare;
 	    }
 	    break;
@@ -3690,7 +3690,7 @@ TclExecuteByteCode(
 		    mp_clear(&big1);
 		    goto doubleCompare;
 		}
-		TclInitBignumFromDouble(NULL, d2, &big2);
+		Tcl_InitBignumFromDouble(NULL, d2, &big2);
 		goto bigCompare;
 	    case TCL_NUMBER_BIG:
 		if (Tcl_IsShared(value2Ptr)) {
@@ -5932,7 +5932,6 @@ TclExecuteByteCode(
 	searchPtr = (Tcl_DictSearch *) ckalloc(sizeof(Tcl_DictSearch));
 	result = Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done);
-	Tcl_DecrRefCount(dictPtr);
 	if (result != TCL_OK) {
 	    ckfree((char *) searchPtr);
 	    cleanup = 0;
@@ -5940,7 +5939,8 @@ TclExecuteByteCode(
 	}
 	TclNewObj(statePtr);
 	statePtr->typePtr = &dictIteratorType;
-	statePtr->internalRep.otherValuePtr = (void *) searchPtr;
+	statePtr->internalRep.twoPtrValue.ptr1 = (void *) searchPtr;
+	statePtr->internalRep.twoPtrValue.ptr2 = (void *) dictPtr;
 	varPtr = compiledLocals + opnd;
 	if (varPtr->value.objPtr == NULL) {
 	    TclSetVarScalar(compiledLocals + opnd);
@@ -5961,7 +5961,7 @@ TclExecuteByteCode(
 	if (statePtr == NULL || statePtr->typePtr != &dictIteratorType) {
 	    Tcl_Panic("mis-issued dictNext!");
 	}
-	searchPtr = (Tcl_DictSearch *) statePtr->internalRep.otherValuePtr;
+	searchPtr = (Tcl_DictSearch *) statePtr->internalRep.twoPtrValue.ptr1;
 	Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
     pushDictIteratorResult:
 	if (done) {
@@ -5985,21 +5985,31 @@ TclExecuteByteCode(
 	if (statePtr == NULL) {
 	    Tcl_Panic("mis-issued dictDone!");
 	}
+
 	if (statePtr->typePtr == &dictIteratorType) {
-	    searchPtr = (Tcl_DictSearch *) statePtr->internalRep.otherValuePtr;
+	    /*
+	     * First kill the search, and then release the reference to the
+	     * dictionary that we were holding.
+	     */
+
+	    searchPtr = (Tcl_DictSearch *)
+		    statePtr->internalRep.twoPtrValue.ptr1;
 	    Tcl_DictObjDone(searchPtr);
 	    ckfree((char *) searchPtr);
+
+	    dictPtr = (Tcl_Obj *) statePtr->internalRep.twoPtrValue.ptr2;
+	    Tcl_DecrRefCount(dictPtr);
+
+	    /*
+	     * Set the internal variable to an empty object to signify that we
+	     * don't hold an iterator.
+	     */
+
+	    Tcl_DecrRefCount(statePtr);
+	    TclNewObj(emptyPtr);
+	    compiledLocals[opnd].value.objPtr = emptyPtr;
+	    Tcl_IncrRefCount(emptyPtr);
 	}
-
-	/*
-	 * Set the internal variable to an empty object to signify that we
-	 * don't hold an iterator.
-	 */
-
-	Tcl_DecrRefCount(statePtr);
-	TclNewObj(emptyPtr);
-	compiledLocals[opnd].value.objPtr = emptyPtr;
-	Tcl_IncrRefCount(emptyPtr);
 	NEXT_INST_F(5, 0, 0);
     }
 

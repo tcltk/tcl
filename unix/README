@@ -1,7 +1,7 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.24.4.1 2004/03/26 22:28:29 dgp Exp $
+RCS: @(#) $Id: README,v 1.24.4.2 2006/01/25 18:38:50 dgp Exp $
 
 This is the directory where you configure, compile, test, and install
 UNIX versions of Tcl.  This directory also contains source files for Tcl
@@ -82,6 +82,11 @@ How To Compile And Install Tcl:
 				should be reachable under several names.
 	--enable-man-compression=PROG
 				Compress the manpages using PROG.
+    Mac OS X only: 
+	--enable-framework	package Tcl as a framework.
+	--disable-corefoundation disable use of CoreFoundation API and revert to
+				standard select based notifier, required when
+				using naked fork (i.e. not followed by execve).
 
     Note: by default gcc will be used if it can be located on the PATH.
     if you want to use cc instead of gcc, set the CC environment variable

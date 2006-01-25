@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.8 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.9 2006/01/25 18:38:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -128,11 +128,10 @@ FileForRedirect(
 	    *skipPtr = 2;
 	}
 	name = Tcl_TranslateFileName(interp, spec, &nameString);
-	if (name != NULL) {
-	    file = TclpOpenFile(name, flags);
-	} else {
-	    file = NULL;
+	if (name == NULL) {
+	    return NULL;
 	}
+	file = TclpOpenFile(name, flags);
 	Tcl_DStringFree(&nameString);
 	if (file == NULL) {
 	    Tcl_AppendResult(interp, "couldn't ",

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.8 2005/11/03 17:52:07 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.9 2006/01/25 18:38:26 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -370,7 +370,9 @@ will return \fBabfdeghi\\000\\000j\fR.
 .PP
 The \fBbinary scan\fR command parses fields from a binary string,
 returning the number of conversions performed.  \fIString\fR gives the
-input to be parsed and \fIformatString\fR indicates how to parse it.
+input bytes to be parsed (one byte per character, and characters not
+representable as a byte have their high bits chopped)
+and \fIformatString\fR indicates how to parse it.
 Each \fIvarName\fR gives the name of a variable; when a field is
 scanned from \fIstring\fR the result is assigned to the corresponding
 variable.

@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.4 2005/12/02 18:43:10 dgp Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.5 2006/01/25 18:38:48 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -398,7 +398,8 @@ proc parseON {on} {
 
 proc onDayOfMonth {day year month} {
     set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
-	    [dict create era CE year $year month $month dayOfMonth $day]]
+	    [dict create era CE year $year month $month dayOfMonth $day] \
+		 2361222]
     return [dict get $date julianDay]
 }
 
@@ -431,7 +432,7 @@ proc onDayOfMonth {day year month} {
 
 proc onWeekdayInMonth {dayOfWeek relation dayOfMonth year month} {
     set date [::tcl::clock::GetJulianDayFromEraYearMonthDay [dict create \
-	    era CE year $year month $month dayOfMonth $dayOfMonth]]
+	    era CE year $year month $month dayOfMonth $dayOfMonth] 2361222]
     switch -exact -- $relation {
 	<= {
 	    return [::tcl::clock::WeekdayOnOrBefore $dayOfWeek \
@@ -469,7 +470,7 @@ proc onLastWeekdayInMonth {dayOfWeek year month} {
     # Find day 0 of the following month, which is the last day of
     # the current month.  Yes, it works to ask for day 0 of month 13!
     set date [::tcl::clock::GetJulianDayFromEraYearMonthDay [dict create \
-	    era CE year $year month $month dayOfMonth 0]]
+	    era CE year $year month $month dayOfMonth 0] 2361222]
     return [::tcl::clock::WeekdayOnOrBefore $dayOfWeek \
 	    [dict get $date julianDay]]
 }
@@ -986,7 +987,7 @@ proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
 
 	incr year
 	set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
-		[dict create era CE year $year month 1 dayOfMonth 1]]
+		[dict create era CE year $year month 1 dayOfMonth 1] 2361222]
 	set startSecs [expr {
 	    [dict get $date julianDay] * wide(86400) - 210866803200 
 		- $stdGMTOffset - $DSTOffset

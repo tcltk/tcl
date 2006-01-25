@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.18 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.19 2006/01/25 18:38:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3454,11 +3454,25 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    }
 	    return result;
 	}
-	if (offset > listc-1) {
-	    offset = listc-1;
-	}
 	if (offset < 0) {
 	    offset = 0;
+	}
+
+	/*
+	 * If the search started past the end of the list, we just return a
+	 * "did not match anything at all" result straight away. [Bug 1374778]
+	 */
+
+	if (offset > listc-1) {
+	    if (sortInfo.indexc > 1) {
+		ckfree((char *) sortInfo.indexv);
+	    }
+	    if (allMatches || inlineReturn) {
+		Tcl_ResetResult(interp);
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    }
+	    return TCL_OK;
 	}
     }
 

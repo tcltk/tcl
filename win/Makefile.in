@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.15 2005/12/02 18:43:11 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.16 2006/01/25 18:39:58 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -409,7 +409,7 @@ cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 $(CAT32): cat32.$(OBJEXT)
-	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LIBS) $(LDFLAGS_CONSOLE)
 
 # The following targets are configured by autoconf to generate either
 # a shared library or static library
@@ -542,14 +542,14 @@ gendate:
 	--no-lines \
 	$(GENERIC_DIR)/tclGetDate.y
 
-# The following target generates the file generic/tommath.h.
+# The following target generates the file generic/tclTomMath.h.
 # It needs to be run (and the results checked) after updating
 # to a new release of libtommath.
 
 gentommath_h:
 	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\fix_tommath_h.tcl" \
 		"$(TOMMATH_DIR_NATIVE)\tommath.h" \
-		> "$(GENERIC_DIR_NATIVE)\tommath.h"
+		> "$(GENERIC_DIR_NATIVE)\tclTomMath.h"
 
 install: all install-binaries install-libraries install-doc
 
@@ -626,7 +626,11 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing header files";
 	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
-		"$(GENERIC_DIR)/tclPlatDecls.h" ; \
+		"$(GENERIC_DIR)/tclPlatDecls.h" \
+		"$(GENERIC_DIR)/tclTomMath.h" \
+		"$(GENERIC_DIR)/tclTomMathDecls.h" \
+		"$(TOMMATH_DIR)/tommath_class.h" \
+		"$(TOMMATH_DIR)/tommath_superclass.h" ; \
 	    do \
 	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
@@ -747,4 +751,5 @@ genstubs:
 	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)\tcl.decls" \
-            "$(GENERIC_DIR_NATIVE)\tclInt.decls"
+            "$(GENERIC_DIR_NATIVE)\tclInt.decls" \
+	    "$(GENERIC_DIR_NATIVE)\tclTomMath.decls"

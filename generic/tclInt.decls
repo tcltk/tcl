@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.16 2005/10/18 20:46:19 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.17 2006/01/25 18:38:29 dgp Exp $
 
 library tcl
 
@@ -878,23 +878,6 @@ declare 218 generic {
     void TclPopStackFrame(Tcl_Interp *interp)
 }
 
-# Entries in tommath needed only by tcltest
-
-declare 219 generic {
-    int TclBN_mp_div_d(mp_int *a, mp_digit b, mp_int *c, mp_digit *d)
-}
-declare 220 generic {
-    int TclBN_mp_mul_d(mp_int *a, mp_digit b, mp_int *c)
-}
-declare 221 generic {
-    void TclBN_mp_clear(mp_int *a)
-}
-declare 222 generic {
-    int TclBN_mp_init(mp_int *a)
-}
-declare 223 generic {
-    int TclBN_mp_read_radix(mp_int *a, const char *str, int radix)
-}
 # for use in tclTest.c
 declare 224 generic {
     TclPlatformType *TclGetPlatform(void)
@@ -927,7 +910,7 @@ declare 2 win {
 	    CONST char *proto)
 }
 declare 3 win {
-    int TclWinGetSockOpt(SOCKET s, int level, int optname,
+    int TclWinGetSockOpt(int s, int level, int optname,
 	    char FAR *optval, int FAR *optlen)
 }
 declare 4 win {
@@ -941,7 +924,7 @@ declare 6 win {
     u_short TclWinNToHS(u_short ns)
 }
 declare 7 win {
-    int TclWinSetSockOpt(SOCKET s, int level, int optname,
+    int TclWinSetSockOpt(int s, int level, int optname,
 	    CONST char FAR *optval, int optlen)
 }
 declare 8 win {

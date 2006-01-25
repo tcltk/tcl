@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.23 2005/12/02 18:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.24 2006/01/25 18:38:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3754,7 +3754,7 @@ NamespaceInscopeCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame *framePtr;
+    CallFrame *framePtr;
     int i, result;
 
     if (objc < 4) {
@@ -3780,11 +3780,13 @@ NamespaceInscopeCmd(
      * Make the specified namespace the current namespace.
      */
 
-    result = TclPushStackFrame(interp, &framePtr, namespacePtr,
-	    /*isProcCallFrame*/ 0);
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **)&framePtr,
+	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return result;
     }
+    framePtr->objc = objc;
+    framePtr->objv = objv;
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
@@ -6629,6 +6631,87 @@ StringOfEnsembleCmdRep(
     objPtr->length = length;
     objPtr->bytes = ckalloc((unsigned) length+1);
     memcpy(objPtr->bytes, ensembleCmd->fullSubcmdName, (unsigned) length+1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LogCommandInfo --
+ *
+ *      This function is invoked after an error occurs in an interpreter. It
+ *      adds information to iPtr->errorInfo field to describe the command that
+ *      was being executed when the error occurred.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Information about the command is added to errorInfo and the line
+ *      number stored internally in the interpreter is set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_LogCommandInfo(
+    Tcl_Interp *interp,         /* Interpreter in which to log information. */
+    CONST char *script,         /* First character in script containing
+                                 * command (must be <= command). */
+    CONST char *command,        /* First character in command that generated
+                                 * the error. */
+    int length)                 /* Number of bytes in command (-1 means use
+                                 * all bytes up to first null byte). */
+{
+    register CONST char *p;
+    Interp *iPtr = (Interp *) interp;
+    int overflow, limit = 150;
+    Var *varPtr, *arrayPtr;
+
+    if (iPtr->flags & ERR_ALREADY_LOGGED) {
+	/*
+	 * Someone else has already logged error information for this command;
+	 * we shouldn't add anything more.
+	 */
+
+        return;
+    }
+
+    /*
+     * Compute the line number where the error occurred.
+     */
+
+    iPtr->errorLine = 1;
+    for (p = script; p != command; p++) {
+	if (*p == '\n') {
+	    iPtr->errorLine++;
+	}
+    }
+
+    overflow = (length > limit);
+    TclFormatToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
+	    ((iPtr->errorInfo == NULL)
+	    ? "while executing" : "invoked from within"),
+	    (overflow ? limit : length), command, (overflow ? "..." : ""));
+
+    varPtr = TclObjLookupVar(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
+	    NULL, 0, 0, &arrayPtr);
+    if ((varPtr == NULL) || (varPtr->tracePtr == NULL)) {
+	/* Should not happen */
+	return;
+    }
+    if (varPtr->tracePtr->traceProc != EstablishErrorInfoTraces) {
+	/*
+	 * The most recent trace set on ::errorInfo is not the one
+	 * the core itself puts on last.  This means some other code
+	 * is tracing the variable, and the additional trace(s) might
+	 * be write traces that expect the timing of writes to ::errorInfo
+	 * that existed Tcl releases before 8.5.  To satisfy that
+	 * compatibility need, we write the current -errorinfo value
+	 * to the ::errorInfo variable.
+	 */
+	Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
+		iPtr->errorInfo, TCL_GLOBAL_ONLY);
+    }
 }
 
 /*

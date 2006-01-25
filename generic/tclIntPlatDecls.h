@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20.2.6 2005/05/16 19:23:11 dgp Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20.2.7 2006/01/25 18:38:30 dgp Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -146,7 +146,7 @@ EXTERN struct servent *	 TclWinGetServByName _ANSI_ARGS_((CONST char * nm,
 #ifndef TclWinGetSockOpt_TCL_DECLARED
 #define TclWinGetSockOpt_TCL_DECLARED
 /* 3 */
-EXTERN int		TclWinGetSockOpt _ANSI_ARGS_((SOCKET s, int level, 
+EXTERN int		TclWinGetSockOpt _ANSI_ARGS_((int s, int level, 
 				int optname, char FAR * optval, 
 				int FAR * optlen));
 #endif
@@ -164,7 +164,7 @@ EXTERN u_short		TclWinNToHS _ANSI_ARGS_((u_short ns));
 #ifndef TclWinSetSockOpt_TCL_DECLARED
 #define TclWinSetSockOpt_TCL_DECLARED
 /* 7 */
-EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level, 
+EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((int s, int level, 
 				int optname, CONST char FAR * optval, 
 				int optlen));
 #endif
@@ -322,11 +322,11 @@ typedef struct TclIntPlatStubs {
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
     void (*tclWinConvertWSAError) _ANSI_ARGS_((DWORD errCode)); /* 1 */
     struct servent * (*tclWinGetServByName) _ANSI_ARGS_((CONST char * nm, CONST char * proto)); /* 2 */
-    int (*tclWinGetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, char FAR * optval, int FAR * optlen)); /* 3 */
+    int (*tclWinGetSockOpt) _ANSI_ARGS_((int s, int level, int optname, char FAR * optval, int FAR * optlen)); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) _ANSI_ARGS_((void)); /* 4 */
     void *reserved5;
     u_short (*tclWinNToHS) _ANSI_ARGS_((u_short ns)); /* 6 */
-    int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, CONST char FAR * optval, int optlen)); /* 7 */
+    int (*tclWinSetSockOpt) _ANSI_ARGS_((int s, int level, int optname, CONST char FAR * optval, int optlen)); /* 7 */
     unsigned long (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     void *reserved10;

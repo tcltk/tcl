@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.9 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.10 2006/01/25 18:39:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -818,7 +818,9 @@ GetValue(
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 	    if (regWinProcs->useWide) {
-		while (*((Tcl_UniChar *)p)++ != 0) {}
+		Tcl_UniChar* up = (Tcl_UniChar*) p;
+		while (*up++ != 0) {}
+		p = (char*) up;
 	    } else {
 		while (*p++ != '\0') {}
 	    }
@@ -1256,7 +1258,8 @@ SetValue(
     Tcl_Obj *dataObj,		/* Data to be written. */
     Tcl_Obj *typeObj)		/* Type of data to be written. */
 {
-    DWORD type, result;
+    int type;
+    DWORD result;
     HKEY key;
     int length;
     char *valueName;
@@ -1279,15 +1282,16 @@ SetValue(
     valueName = (char *) Tcl_WinUtfToTChar(valueName, length, &nameBuf);
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
-	DWORD value;
-	if (Tcl_GetIntFromObj(interp, dataObj, (int*) &value) != TCL_OK) {
+	int value;
+	if (Tcl_GetIntFromObj(interp, dataObj, &value) != TCL_OK) {
 	    RegCloseKey(key);
 	    Tcl_DStringFree(&nameBuf);
 	    return TCL_ERROR;
 	}
 
-	value = ConvertDWORD(type, value);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
+	value = ConvertDWORD((DWORD)type, (DWORD)value);
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+		(DWORD)type,
 		(BYTE*) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
@@ -1322,7 +1326,8 @@ SetValue(
 
 	Tcl_WinUtfToTChar(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
 		&buf);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, 
+                (DWORD)type,
 		(BYTE *) Tcl_DStringValue(&buf),
 		(DWORD) Tcl_DStringLength(&buf));
 	Tcl_DStringFree(&data);
@@ -1342,7 +1347,8 @@ SetValue(
 	}
 	length = Tcl_DStringLength(&buf) + 1;
 
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, 
+                (DWORD)type,
 		(BYTE*)data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
@@ -1353,7 +1359,8 @@ SetValue(
 	 */
 
 	data = Tcl_GetByteArrayFromObj(dataObj, &length);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, 
+                (DWORD)type,
 		(BYTE *)data, (DWORD) length);
     }
 

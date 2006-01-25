@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.4.4 2005/12/02 18:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.4.5 2006/01/25 18:38:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -575,13 +575,13 @@ ObjValue(
 	return Tcl_NewIntObj(linkPtr->lastValue.us);
     case TCL_LINK_UINT:
 	linkPtr->lastValue.ui = *(unsigned int *)(linkPtr->addr);
-	return Tcl_NewWideIntObj(linkPtr->lastValue.ui);
+	return Tcl_NewWideIntObj((Tcl_WideInt)(linkPtr->lastValue.ui));
     case TCL_LINK_LONG:
 	linkPtr->lastValue.l = *(long *)(linkPtr->addr);
 	return Tcl_NewWideIntObj(linkPtr->lastValue.l);
     case TCL_LINK_ULONG:
 	linkPtr->lastValue.ul = *(unsigned long *)(linkPtr->addr);
-	return Tcl_NewWideIntObj(linkPtr->lastValue.ul);
+	return Tcl_NewWideIntObj((Tcl_WideInt)(linkPtr->lastValue.ul));
     case TCL_LINK_FLOAT:
 	linkPtr->lastValue.f = *(float *)(linkPtr->addr);
 	return Tcl_NewDoubleObj(linkPtr->lastValue.f);

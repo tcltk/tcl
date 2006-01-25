@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.23 2005/12/02 18:43:10 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.24 2006/01/25 18:38:48 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -343,7 +343,8 @@ OBJS = ${GENERIC_OBJS} ${TOMMATH_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} \
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
-	$(GENERIC_DIR)/tclInt.decls
+	$(GENERIC_DIR)/tclInt.decls \
+	$(GENERIC_DIR)/tclTomMath.decls
 
 GENERIC_HDRS = \
 	$(GENERIC_DIR)/tcl.h \
@@ -351,6 +352,8 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclInt.h \
 	$(GENERIC_DIR)/tclIntDecls.h \
 	$(GENERIC_DIR)/tclIntPlatDecls.h \
+	$(GENERIC_DIR)/tclTomMath.h \
+	$(GENERIC_DIR)/tclTomMathDecls.h \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
@@ -676,14 +679,14 @@ gendate:
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 #	rm y.tab.c
 
-# The following target generates the file generic/tommath.h.
+# The following target generates the file generic/tclTomMath.h.
 # It needs to be run (and the results checked) after updating
 # to a new release of libtommath.
 
 gentommath_h:
 	$(TCL_EXE) "$(TOP_DIR)/tools/fix_tommath_h.tcl" \
 		"$(TOMMATH_DIR)/tommath.h" \
-		> "$(GENERIC_DIR)/tommath.h"
+		> "$(GENERIC_DIR)/tclTomMath.h"
 
 # The following target generates the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
@@ -762,7 +765,9 @@ install-libraries: libraries install-tzdata install-msgs
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h; \
+		$(GENERIC_DIR)/tclPlatDecls.h \
+		$(GENERIC_DIR)/tclTomMath.h \
+		$(GENERIC_DIR)/tclTomMathDecls.h ; \
 	    do \
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
@@ -1509,14 +1514,15 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 #
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
-		$(GENERIC_DIR)/tclInt.decls
+		$(GENERIC_DIR)/tclInt.decls $(GENERIC_DIR)/tclTomMath.decls
 	@echo "Warning: tclStubInit.c may be out of date."
 	@echo "Developers may want to run \"make genstubs\" to regenerate."
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
 	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
-		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls
+		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
+		$(GENERIC_DIR)/tclTomMath.decls
 
 #
 # Target to check that all exported functions have an entry in the stubs

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.8 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.9 2006/01/25 18:38:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -540,8 +540,27 @@ test dict-14.16 {dict for command in compilation context} {
     }
     dicttest
 } {a b c d e f}
-# There's probably a lot more tests to add here.  Really ought to use
-# a coverage tool for this job...
+test dict-14.17 {dict for command in compilation context} {
+    # Bug 1379349
+    proc dicttest {} {
+	set d [dict create a 1]		;# Dict must be unshared!
+	dict for {k v} $d {
+	    dict set d $k 0		;# Any modification will do
+	}
+	return $d
+    }
+    dicttest
+} {a 0}
+test dict-14.18 {dict for command in compilation context} {
+    # Bug 1382528
+    proc dicttest {} {
+	dict for {k v} {} {}		;# Note empty dict
+	catch { error foo }		;# Note compiled [catch]
+    }
+    dicttest
+} 1
+# There's probably a lot more tests to add here. Really ought to use a
+# coverage tool for this job...
 
 test dict-15.1 {dict set command} {
     set dictVar {}

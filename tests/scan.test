@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.14.4.4 2005/10/18 20:47:04 dgp Exp $
+# RCS: @(#) $Id: scan.test,v 1.14.4.5 2006/01/25 18:38:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -606,6 +606,12 @@ test scan-10.5 {miscellaneous tests} {
     set arr(2) {}
     list [catch {scan ab%c14 ab%%c%d arr(2)} msg] $msg $arr(2)
 } {0 1 14}
+test scan-10.6 {miscellaneous tests} {
+    scan 5a {%i%[a]}
+} {5 a}
+test scan-10.7 {miscellaneous tests} {
+    scan {5 a} {%i%[a]}
+} {5 {}}
 
 test scan-11.1 {alignment in results array (TCL_ALIGN)} {
     scan "123 13.6" "%s %f" a b
