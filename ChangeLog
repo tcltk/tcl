@@ -1,3 +1,8 @@
+2006-01-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixInit.c (TclpInitPlatform): Improved conditions on when
+	to update the FP rounding mode on FreeBSD, taken from FreeBSD port.
+
 2006-01-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/string.test (string-12.21): Added test for [Bug 1410553] based
@@ -7,7 +12,7 @@
 
 	* generic/tclStringObj.c: fixed incorrect handling of internal rep in
 	Tcl_GetRange [Bug 1410553]. Thanks to twylite and Peter Spjuth.
-	
+
 	* generic/tclProc.c: fixed args handling for precompiled bodies [Bug
 	1412695]; thanks to Uwe Traum.
 
@@ -22,7 +27,7 @@
 	* generic/tclPathObj.c (Tcl_FSGetInternalRep): backported patch from
 	core-8-4-branch. A freed pointer has been overwritten causing all
 	sorts of coredumps.
- 
+
 2006-01-12  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* win/tclWinFile.c: fix to sharing violation [Bug 1366227]
@@ -31,12 +36,12 @@
 
 	* generic/tclBasic.c:	Moved Tcl_LogCommandInfo from tclBasic.c to
 	* generic/tclNamesp.c:	tclNamesp.c to get access to identifier with
-	* tests/error.test (error-7.0):	file scope.  Added check for traces
-	on ::errorInfo, and when present fall back to contruction of the
-	stack trace in the variable so that write trace notification timings
-	are compatible with earlier Tcl releases.  This reduces, but does not
+	* tests/error.test (error-7.0): file scope. Added check for traces on
+	::errorInfo, and when present fall back to contruction of the stack
+	trace in the variable so that write trace notification timings are
+	compatible with earlier Tcl releases. This reduces, but does not
 	completely eliminate the ***POTENTIAL INCOMPATIBILITY*** created by
-	the 2004-10-15 commit.  [Bug 1397843].
+	the 2004-10-15 commit. [Bug 1397843].
 
 2006-01-10  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -45,7 +50,7 @@
 	* unix/tcl.m4:       quoting, sync relevant tclconfig/tcl.m4 changes
 	and gratuitous formatting differences, fix SC_CONFIG_MANPAGES with
 	default argument, Darwin improvements to SC_LOAD_*CONFIG.
-	
+
 2006-01-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c (NamespaceInscopeCmd):    [namespace inscope]
@@ -94,7 +99,7 @@
 	good long-term solution, but there may not be one.
 
 	* libtommath/bn_mp_sqrt.c: Improved the initial approximation to the
-	square root, roughly doubling the speed of the routine.  (This is a
+	square root, roughly doubling the speed of the routine. (This is a
 	local change that needs to be communicated to Tom.)
 
 	* win/Makefile.in: Corrected a bug where tommath_class.h and
@@ -120,9 +125,8 @@
 	internal reps left behind by parsing [Bugs 1360532 1382287].
 
 	* generic/tclParseExpr.c:	Added TCL_PARSE_NO_WHITESPACE to
-	* generic/tclScan.c:	TclParseNumber() calls since [scan] and
-	* tests/scan.test:	[expr] parsing don't want spaces in parsed
-	numbers.
+	* generic/tclScan.c:	TclParseNumber() calls since [scan] and [expr]
+	* tests/scan.test:	parsing don't want spaces in parsed numbers.
 
 	* generic/tclInt.h:	Added TCL_PARSE_NO_WHITESPACE flag to the
 	* generic/tclStrToD.c:	TclParseNumber() interface.
