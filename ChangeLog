@@ -1,3 +1,8 @@
+2006-01-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: Fixed silly bug in example. Thanks to Heiner Marxen
+	<heiner.marxen@unsel.de> for catching this! [Bug 1415725]
+
 2006-01-26  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/tclUnixChan.c (TclpOpenFileChannel): Tidy up and comment the
