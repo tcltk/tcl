@@ -1,3 +1,10 @@
+2006-01-26  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/tclUnixChan.c (TclpOpenFileChannel): Tidy up and comment the
+	mess to do with setting up serial channels. This (deliberately) breaks
+	a broken FreeBSD port, indicates what we're really doing, and reduces
+	the amount of conditional compilation sections for better maintenance.
+
 2006-01-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixInit.c (TclpInitPlatform): Improved conditions on when
