@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.266 2006/02/01 18:27:46 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.267 2006/02/01 19:26:02 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2244,6 +2244,9 @@ MODULE_SCOPE int	Tcl_AfterObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_AppendObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int	Tcl_ApplyObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_ArrayObjCmd(ClientData clientData,
