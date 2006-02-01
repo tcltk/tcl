@@ -1,5 +1,19 @@
 2006-02-01  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP#181 IMPLEMENTATION
+
+	* doc/Namespace.3:	New command [namespace unknown].  New public
+	* doc/namespace.n:	C routines Tcl_(Get|Set)NamespaceUnknownHandler.
+	* doc/unknown.n:	[Patch 958222].
+	* generic/tcl.decls:
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/namespace.test:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 	TIP#250 IMPLEMENTATION
 
 	* doc/namespace.n:	New command [namespace upvar].  [Patch 1275435]
