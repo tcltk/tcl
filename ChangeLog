@@ -1,3 +1,14 @@
+2006-02-01  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#250 IMPLEMENTATION
+
+	* doc/namespace.n:	New command [namespace upvar].  [Patch 1275435]
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+	* tests/namespace.test:
+	* tests/upvar.test:
+
 2006-01-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/dict.n: Fixed silly bug in example. Thanks to Heiner Marxen
