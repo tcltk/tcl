@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.85 2006/02/01 19:26:02 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.86 2006/02/01 20:17:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1893,15 +1893,15 @@ TclCompileNoOp(
  *
  */
 
-static void		DupLambdaInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
-			    Tcl_Obj *copyPtr));
-static void		FreeLambdaInternalRep _ANSI_ARGS_((
-    			    Tcl_Obj *objPtr));
-static int		SetLambdaFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
+static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
+			    Tcl_Obj *copyPtr);
+static void		FreeLambdaInternalRep(
+    			    Tcl_Obj *objPtr);
+static int		SetLambdaFromAny(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
 
 Tcl_ObjType lambdaType = {
-    "lambda",				/* name */
+    "lambdaExpr",				/* name */
     FreeLambdaInternalRep,	        /* freeIntRepProc */
     DupLambdaInternalRep,	        /* dupIntRepProc */
     (Tcl_UpdateStringProc *) NULL,	/* updateStringProc */
@@ -1909,7 +1909,7 @@ Tcl_ObjType lambdaType = {
 };
 
 /*
- * a Lambda Tcl_Obj has the form
+ * a lambdaType Tcl_Obj has the form
  *
  *  ptr1 is a *Proc:     pointer to a proc structure
  *  ptr2 is a *Tcl_Obj:  the lambda's namespace
@@ -1967,11 +1967,9 @@ SetLambdaFromAny(interp, objPtr)
     result = Tcl_ListObjGetElements(interp, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	errPtr = Tcl_NewStringObj("can't interpret \"",-1);
-	Tcl_IncrRefCount(errPtr);
 	Tcl_AppendObjToObj(errPtr, objPtr);
 	Tcl_AppendToObj(errPtr, "\" as a lambda expression", -1);
 	Tcl_SetObjResult(interp, errPtr);
-	Tcl_DecrRefCount(errPtr);
 	return TCL_ERROR;
     }
 
@@ -1987,9 +1985,9 @@ SetLambdaFromAny(interp, objPtr)
     
     if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr,
 		bodyPtr, &procPtr) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (parsing lambda expression \"");
-	Tcl_AddErrorInfo(interp, name);
-	Tcl_AddErrorInfo(interp, "\")");
+	TclFormatToErrorInfo(interp,
+		"\n    (parsing lambda expression \"%s\")",
+		Tcl_GetString(objPtr), NULL);
         return TCL_ERROR;
     }
     procPtr->refCount++;
@@ -2000,14 +1998,20 @@ SetLambdaFromAny(interp, objPtr)
      * as a global reference, or else global per default.
      */
     
-    nsObjPtr = Tcl_NewStringObj("::", 2);
-    Tcl_IncrRefCount(nsObjPtr);    
-
-    if (objc == 3) {
-	Tcl_AppendObjToObj(nsObjPtr, objv[2]);
+    if (objc == 2) {
+	nsObjPtr = Tcl_NewStringObj("::", 2);
+    } else {
+	char *nsName = Tcl_GetString(objv[2]);
+	if ((*nsName != ':') || (*(nsName+1) != ':')) {
+	    nsObjPtr = Tcl_NewStringObj("::", 2);
+	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
+	} else {
+	    nsObjPtr = objv[2];
+	}
     }
-	    	
-    
+
+    Tcl_IncrRefCount(nsObjPtr);
+
     /*
      * Free the list internalrep of objPtr - this will free argsPtr, but
      * bodyPtr retains a reference from the Proc structure. Then finish
@@ -2088,19 +2092,15 @@ Tcl_ApplyObjCmd(dummy, interp, objc, objv)
     if (result != TCL_OK) {
 	return result;
     }
+
     if (nsPtr == (Tcl_Namespace *) NULL) {
 	errPtr = Tcl_NewStringObj("cannot find namespace \"",-1);
-	Tcl_IncrRefCount(errPtr);
 	Tcl_AppendObjToObj(errPtr, nsObjPtr);
 	Tcl_AppendToObj(errPtr, "\"", -1);
 	Tcl_SetObjResult(interp, errPtr);
-	Tcl_DecrRefCount(errPtr);
 	return TCL_ERROR;
     }
-
-    /*
-      cmd = *((Command *) Tcl_GetCommandFromObj(interp, objv[0]));
-    */
+    
     cmd.nsPtr = (Namespace *) nsPtr;
 
     return ObjInterpProcEx((ClientData) procPtr, interp, objc, objv, 2);

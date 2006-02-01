@@ -1,3 +1,9 @@
+2006-02-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c: minor improvements to [apply]
+	* tests/apply.test: new tests; apply-5.1 currently fails to
+	indicate missing work in error reporting
+	
 2006-02-01  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#194 IMPLEMENTATION
