@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.91 2006/01/11 17:34:53 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.92 2006/02/01 17:48:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -227,6 +227,8 @@ static int		NamespacePathCmd(ClientData dummy, Tcl_Interp *interp,
 static int		NamespaceQualifiersCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
 static int		NamespaceTailCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]);
+static int		NamespaceUpvarCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		NamespaceWhichCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
@@ -2896,13 +2898,13 @@ Tcl_NamespaceObjCmd(
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
 	"inscope", "origin", "parent", "path", "qualifiers",
-	"tail", "which", NULL
+	"tail", "upvar", "which", NULL
     };
     enum NSSubCmdIdx {
 	NSChildrenIdx, NSCodeIdx, NSCurrentIdx, NSDeleteIdx, NSEnsembleIdx,
 	NSEvalIdx, NSExistsIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
 	NSInscopeIdx, NSOriginIdx, NSParentIdx, NSPathIdx, NSQualifiersIdx,
-	NSTailIdx, NSWhichIdx
+	NSTailIdx, NSUpvarIdx, NSWhichIdx
     };
     int index, result;
 
@@ -2969,6 +2971,9 @@ Tcl_NamespaceObjCmd(
 	break;
     case NSTailIdx:
 	result = NamespaceTailCmd(clientData, interp, objc, objv);
+	break;	
+    case NSUpvarIdx:
+	result = NamespaceUpvarCmd(clientData, interp, objc, objv);
 	break;
     case NSWhichIdx:
 	result = NamespaceWhichCmd(clientData, interp, objc, objv);
@@ -4326,6 +4331,81 @@ NamespaceTailCmd(
     if (p >= name) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(p, -1));
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NamespaceUpvarCmd --
+ *
+ *	Invoked to implement the "namespace upvar" command, that creates
+ *	variables in the current scope linked to variables in another
+ *	namespace. Handles the following syntax:
+ *
+ *	    namespace upvar ns otherVar myVar ?otherVar myVar ...?
+ *
+ * Results:
+ *	Returns TCL_OK if successful, and TCL_ERROR if anything goes wrong.
+ *
+ * Side effects:
+ *	Creates new variables in the current scope, linked to the
+ *      corresponding variables in the stipulated nmamespace.
+ *      If anything goes wrong, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NamespaceUpvarCmd(dummy, interp, objc, objv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    Tcl_Namespace *nsPtr;
+    int result;
+    Var *otherPtr, *arrayPtr;
+    char *myName;
+    CallFrame frame, *framePtr = &frame;
+    
+    if (objc < 5 || !(objc & 1)) {
+	Tcl_WrongNumArgs(interp, 2, objv, "ns otherVar myVar ?otherVar myVar ...?");
+	return TCL_ERROR;
+    }
+
+    result = TclGetNamespaceFromObj(interp, objv[2], &nsPtr);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    objc -= 3;
+    objv += 3;
+    
+    for (; objc>0 ; objc-=2, objv+=2) {
+	/*
+	 * Locate the other variable
+	 */
+	Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr, nsPtr, 0);
+	otherPtr = TclObjLookupVar(interp, objv[0], NULL,
+		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
+		/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	if (otherPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_PopCallFrame(interp);
+
+	/*
+	 * Create the new variable and link it to otherPtr
+	 */
+	
+	myName = TclGetString(objv[1]);
+	result = TclPtrMakeUpvar(interp, otherPtr, myName, 0, -1);
+	if (result != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
     return TCL_OK;
 }
 
