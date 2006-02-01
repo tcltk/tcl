@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.264 2005/12/27 20:14:09 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.265 2006/02/01 17:48:10 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2118,6 +2118,9 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
+MODULE_SCOPE int	TclPtrMakeUpvar (Tcl_Interp *interp,
+			    Var *otherP1Ptr, CONST char *myName,
+	                    int myFlags, int index);
 MODULE_SCOPE int	TclObjPrintf(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    CONST char *format, ...);
 MODULE_SCOPE int	TclParseBackslash(CONST char *src,

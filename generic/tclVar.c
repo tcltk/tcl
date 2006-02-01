@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.117 2005/11/27 02:33:49 das Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.118 2006/02/01 17:48:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3204,10 +3204,8 @@ ObjMakeUpvar(
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
-    Var *otherPtr, *varPtr, *arrayPtr;
+    Var *otherPtr, *arrayPtr;
     CallFrame *varFramePtr;
-    CONST char *errMsg;
-    CONST char *p;
 
     /*
      * Find "other" in "framePtr". If not looking up other in just the current
@@ -3229,30 +3227,74 @@ ObjMakeUpvar(
 	return TCL_ERROR;
     }
 
+    /*
+     * Check that we are not trying to create a namespace var linked to a
+     * local variable in a procedure. If we allowed this, the local
+     * variable in the shorter-lived procedure frame could go away leaving
+     * the namespace var's reference invalid.
+     */
+
+    if (index < 0) {
+	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
+		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
+			|| (varFramePtr == NULL)
+			|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+			|| (strstr(myName, "::") != NULL))) {
+	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
+		    myName, "\": upvar won't create namespace variable that ",
+		    "refers to procedure variable", NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    return TclPtrMakeUpvar(interp, otherPtr, myName, myFlags, index);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPtrMakeUpvar --
+ *
+ *	This procedure does all of the work of the "global" and "upvar"
+ *	commands.
+ *
+ * Results:
+ *	A standard Tcl completion code. If an error occurs then an error
+ *	message is left in iPtr->result.
+ *
+ * Side effects:
+ *	The variable given by myName is linked to the variable in framePtr
+ *	given by otherP1 and otherP2, so that references to myName are
+ *	redirected to the other variable like a symbolic link.
+ *
+ *----------------------------------------------------------------------
+ */
+ 
+int
+TclPtrMakeUpvar(interp, otherPtr, myName, myFlags, index)
+    Tcl_Interp *interp;		/* Interpreter containing variables. Used for
+				 * error messages, too. */
+    Var *otherPtr;              /* Pointer to the variable being linked-to */
+    CONST char *myName;		/* Name of variable which will refer to
+				 * otherP1/otherP2. Must be a scalar. */
+    int myFlags;		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+				 * indicates scope of myName. */
+    int index;			/* If the variable to be linked is an indexed
+				 * scalar, this is its index. Otherwise, -1 */
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+    Var *varPtr;
+    CONST char *errMsg;
+    CONST char *p;    
+    
     if (index >= 0) {
 	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
     } else {
-	/*
-	 * Check that we are not trying to create a namespace var linked to a
-	 * local variable in a procedure. If we allowed this, the local
-	 * variable in the shorter-lived procedure frame could go away leaving
-	 * the namespace var's reference invalid.
-	 */
-
-	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
-	    && ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
-		|| (varFramePtr == NULL)
-		|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
-		|| (strstr(myName, "::") != NULL))) {
-	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-		    myName, "\": upvar won't create namespace variable that ",
-		    "refers to procedure variable", NULL);
-	    return TCL_ERROR;
-	}
-
 	/*
 	 * Do not permit the new variable to look like an array reference, as
 	 * it will not be reachable in that case [Bug 600812, TIP 184]. The
