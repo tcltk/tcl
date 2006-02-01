@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.120 2005/12/27 20:14:08 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.121 2006/02/01 18:27:44 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3534,6 +3534,19 @@ EXTERN int		Tcl_InitBignumFromDouble _ANSI_ARGS_((
 				Tcl_Interp* interp, double initval, 
 				mp_int * toInit));
 #endif
+#ifndef Tcl_GetNamespaceUnknownHandler_TCL_DECLARED
+#define Tcl_GetNamespaceUnknownHandler_TCL_DECLARED
+/* 567 */
+EXTERN Tcl_Obj *	Tcl_GetNamespaceUnknownHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Namespace * nsPtr));
+#endif
+#ifndef Tcl_SetNamespaceUnknownHandler_TCL_DECLARED
+#define Tcl_SetNamespaceUnknownHandler_TCL_DECLARED
+/* 568 */
+EXTERN int		Tcl_SetNamespaceUnknownHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Namespace * nsPtr, 
+				Tcl_Obj * handlerPtr));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4142,6 +4155,8 @@ typedef struct TclStubs {
     void (*tcl_SetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj* msg)); /* 564 */
     void (*tcl_GetChannelError) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj** msg)); /* 565 */
     int (*tcl_InitBignumFromDouble) _ANSI_ARGS_((Tcl_Interp* interp, double initval, mp_int * toInit)); /* 566 */
+    Tcl_Obj * (*tcl_GetNamespaceUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Namespace * nsPtr)); /* 567 */
+    int (*tcl_SetNamespaceUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Namespace * nsPtr, Tcl_Obj * handlerPtr)); /* 568 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6449,6 +6464,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_InitBignumFromDouble
 #define Tcl_InitBignumFromDouble \
 	(tclStubsPtr->tcl_InitBignumFromDouble) /* 566 */
+#endif
+#ifndef Tcl_GetNamespaceUnknownHandler
+#define Tcl_GetNamespaceUnknownHandler \
+	(tclStubsPtr->tcl_GetNamespaceUnknownHandler) /* 567 */
+#endif
+#ifndef Tcl_SetNamespaceUnknownHandler
+#define Tcl_SetNamespaceUnknownHandler \
+	(tclStubsPtr->tcl_SetNamespaceUnknownHandler) /* 568 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

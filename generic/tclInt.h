@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.265 2006/02/01 17:48:10 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.266 2006/02/01 18:27:46 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -263,6 +263,9 @@ typedef struct Namespace {
     Tcl_Ensemble *ensembles;	/* List of structures that contain the details
 				 * of the ensembles that are implemented on
 				 * top of this namespace. */
+    Tcl_Obj *unknownHandlerPtr;	/* A script fragment to be used when command
+				 * resolution in this namespace fails. TIP
+				 * 181. */
     int commandPathLength;	/* The length of the explicit path. */
     NamespacePathEntry *commandPathArray;
 				/* The explicit path of the namespace as an

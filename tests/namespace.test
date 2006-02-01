@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.52 2006/02/01 17:48:12 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.53 2006/02/01 18:27:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -2403,6 +2403,96 @@ test namespace-51.15 {namespace resolution path control} -body {
     namespace delete ::test_ns_2
 }
 
+# TIP 181 - namespace unknown tests
+test namespace-52.1 {unknown: default handler ::unknown} {
+    set result [list [namespace eval foobar { namespace unknown }]]
+    lappend result [namespace eval :: { namespace unknown }]
+    namespace delete foobar
+    set result
+} {{} ::unknown}
+test namespace-52.2 {unknown: default resolution global} {
+    proc ::foo {} { return "GLOBAL" }
+    namespace eval ::bar { proc foo {} { return "NAMESPACE" } }
+    namespace eval ::bar::jim { proc test {} { foo } }
+    set result [::bar::jim::test]
+    namespace delete ::bar
+    rename ::foo {}
+    set result
+} {GLOBAL}
+test namespace-52.3 {unknown: default resolution local} {
+    proc ::foo {} { return "GLOBAL" }
+    namespace eval ::bar {
+	proc foo {} { return "NAMESPACE" }
+	proc test {} { foo }
+    }
+    set result [::bar::test]
+    namespace delete ::bar
+    rename ::foo {}
+    set result
+} {NAMESPACE}
+test namespace-52.4 {unknown: set handler} {
+    namespace eval foo {
+	namespace unknown [list dispatch]
+	proc dispatch {args} { return $args }
+	proc test {} {
+	    UnknownCmd a b c
+	}
+    }
+    set result [foo::test]
+    namespace delete foo
+    set result
+} {UnknownCmd a b c}
+test namespace-52.5 {unknown: search path before unknown is unaltered} {
+    proc ::test2 {args} { return "TEST2: $args" }
+    namespace eval foo {
+	namespace unknown [list dispatch]
+	proc dispatch {args} { return "UNKNOWN: $args" }
+	proc test1 {args} { return "TEST1: $args" }
+	proc test {} {
+	    set result [list [test1 a b c]]
+	    lappend result [test2 a b c]
+	    lappend result [test3 a b c]
+	    return $result
+	}
+    }
+    set result [foo::test]
+    namespace delete foo
+    rename ::test2 {}
+    set result
+} {{TEST1: a b c} {TEST2: a b c} {UNKNOWN: test3 a b c}}
+test namespace-52.6 {unknown: deleting handler restores default} {
+    rename ::unknown ::_unknown_orig
+    proc ::unknown {args} { return "DEFAULT: $args" }
+    namespace eval foo {
+	namespace unknown dummy
+	namespace unknown {}
+    }
+    set result [namespace eval foo { dummy a b c }]
+    rename ::unknown {}
+    rename ::_unknown_orig ::unknown
+    namespace delete foo
+    set result
+} {DEFAULT: dummy a b c}
+test namespace-52.7 {unknown: setting global unknown handler} {
+    proc ::myunknown {args} { return "MYUNKNOWN: $args" }
+    namespace eval :: { namespace unknown ::myunknown }
+    set result [namespace eval foo { dummy a b c }]
+    namespace eval :: { namespace unknown {} }
+    rename ::myunknown {}
+    namespace delete foo
+    set result
+} {MYUNKNOWN: dummy a b c}
+test namespace-52.8 {unknown: destroying and redefining global namespace} {
+    set i [interp create]
+    $i hide proc
+    $i hide namespace
+    $i hide return
+    $i invokehidden namespace delete ::
+    $i expose return
+    $i invokehidden proc unknown args { return "FINE" }
+    $i eval { foo bar bob }
+} {FINE}
+    
 # cleanup
 catch {rename cmd1 {}}
 catch {unset l}
