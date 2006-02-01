@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.118 2005/12/27 20:14:08 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.119 2006/02/01 18:27:43 dgp Exp $
 
 library tcl
 
@@ -2037,7 +2037,17 @@ declare 566 generic {
     int Tcl_InitBignumFromDouble(Tcl_Interp* interp, double initval, 
 		mp_int *toInit)
 }
-  
+
+# TIP 181
+declare 567 generic {
+    Tcl_Obj *Tcl_GetNamespaceUnknownHandler(Tcl_Interp *interp,
+        Tcl_Namespace *nsPtr)
+}
+declare 568 generic {
+    int Tcl_SetNamespaceUnknownHandler(
+        Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+        Tcl_Obj *handlerPtr)
+}
 
 ##############################################################################
 
@@ -2077,6 +2087,7 @@ declare 1 macosx {
 	    int maxPathLen,
 	    char *libraryPath)
 }
+
 
 ##############################################################################
 
