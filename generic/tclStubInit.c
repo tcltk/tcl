@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.127 2005/12/27 20:14:09 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.128 2006/02/01 18:27:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1063,6 +1063,8 @@ TclStubs tclStubs = {
     Tcl_SetChannelError, /* 564 */
     Tcl_GetChannelError, /* 565 */
     Tcl_InitBignumFromDouble, /* 566 */
+    Tcl_GetNamespaceUnknownHandler, /* 567 */
+    Tcl_SetNamespaceUnknownHandler, /* 568 */
 };
 
 /* !END!: Do not edit above this line. */

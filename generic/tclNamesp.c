@@ -12,6 +12,7 @@
  * Copyright (c) 1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2002-2005 Donal K. Fellows.
+ * Copyright (c) 2006 Neil Madden.
  *
  * Originally implemented by
  *   Michael J. McLennan
@@ -21,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.92 2006/02/01 17:48:11 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.93 2006/02/01 18:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -230,6 +231,9 @@ static int		NamespaceTailCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		NamespaceUpvarCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
+static int              NamespaceUnknownCmd(ClientData dummy, 
+                            Tcl_Interp *interp, int objc, 
+                            Tcl_Obj *CONST objv[]);
 static int		NamespaceWhichCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		SetNsNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -816,6 +820,7 @@ Tcl_CreateNamespace(
     nsPtr->compiledVarResProc = NULL;
     nsPtr->exportLookupEpoch = 0;
     nsPtr->ensembles = NULL;
+    nsPtr->unknownHandlerPtr = NULL;
     nsPtr->commandPathLength = 0;
     nsPtr->commandPathArray = NULL;
     nsPtr->commandPathSourceList = NULL;
@@ -914,6 +919,15 @@ Tcl_DeleteNamespace(
 	nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr->next;
 	ensemblePtr->next = ensemblePtr;
 	Tcl_DeleteCommandFromToken(nsPtr->interp, ensemblePtr->token);
+    }
+
+    /*
+     * If the namespace has a registered unknown handler (TIP 181), then free
+     * it here.
+     */
+    if (nsPtr->unknownHandlerPtr != NULL) {
+	Tcl_DecrRefCount(nsPtr->unknownHandlerPtr);
+        nsPtr->unknownHandlerPtr = NULL;
     }
 
     /*
@@ -2898,13 +2912,13 @@ Tcl_NamespaceObjCmd(
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
 	"inscope", "origin", "parent", "path", "qualifiers",
-	"tail", "upvar", "which", NULL
+	"tail", "unknown", "upvar", "which", NULL
     };
     enum NSSubCmdIdx {
 	NSChildrenIdx, NSCodeIdx, NSCurrentIdx, NSDeleteIdx, NSEnsembleIdx,
 	NSEvalIdx, NSExistsIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
 	NSInscopeIdx, NSOriginIdx, NSParentIdx, NSPathIdx, NSQualifiersIdx,
-	NSTailIdx, NSUpvarIdx, NSWhichIdx
+	NSTailIdx, NSUnknownIdx, NSUpvarIdx, NSWhichIdx
     };
     int index, result;
 
@@ -2974,6 +2988,9 @@ Tcl_NamespaceObjCmd(
 	break;	
     case NSUpvarIdx:
 	result = NamespaceUpvarCmd(clientData, interp, objc, objv);
+	break;
+    case NSUnknownIdx:
+	result = NamespaceUnknownCmd(clientData, interp, objc, objv);
 	break;
     case NSWhichIdx:
 	result = NamespaceWhichCmd(clientData, interp, objc, objv);
@@ -4268,6 +4285,168 @@ NamespaceQualifiersCmd(
     if (p >= name) {
 	length = p-name+1;
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(name, length));
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NamespaceUnknownCmd --
+ *
+ *	Invoked to implement the "namespace unknown" command (TIP 181) that
+ *	sets or queries a per-namespace unknown command handler. This handler
+ *	is called when command lookup fails (current and global ns). The
+ *	default handler for the global namespace is ::unknown. The default
+ *	handler for other namespaces is to call the global namespace unknown
+ *	handler. Passing an empty list results in resetting the handler to
+ *	its default.
+ *
+ *	    namespace unknown ?handler?
+ *
+ * Results:
+ *	Returns TCL_OK if successful, and TCL_ERROR if anything goes wrong.
+ *
+ * Side effects:
+ *	If no handler is specified, returns a result in the interpreter's
+ *	result object, otherwise it sets the unknown handler pointer in the
+ *	current namespace to the script fragment provided. If anything goes
+ *	wrong, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+NamespaceUnknownCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    Tcl_Namespace *currNsPtr;
+    Tcl_Obj *resultPtr;
+    int rc;
+
+    if (objc > 3) {
+	Tcl_WrongNumArgs(interp, 2, objv, "?script?");
+        return TCL_ERROR;
+    }
+
+    currNsPtr = Tcl_GetCurrentNamespace(interp);
+
+    if (objc == 2) {
+	/*
+	 * Introspection - return the current namespace handler.
+	 */
+	resultPtr = Tcl_GetNamespaceUnknownHandler(interp, currNsPtr);
+	if (resultPtr == NULL) {
+	    resultPtr = Tcl_NewObj();
+	}
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	rc = Tcl_SetNamespaceUnknownHandler(interp, currNsPtr, objv[2]);
+	if (rc == TCL_OK) {
+	    Tcl_SetObjResult(interp, objv[2]);
+	}
+	return rc;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetNamespaceUnknownHandler --
+ *
+ *	Returns the unknown command handler registered for the given
+ *	namespace.
+ *
+ * Results:
+ *	Returns the current unknown command handler, or NULL if none
+ *	exists for the namespace.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+Tcl_GetNamespaceUnknownHandler(interp, nsPtr)
+    Tcl_Interp *interp;		/* The interpreter in which the namespace
+				 * exists. */
+    Tcl_Namespace *nsPtr;	/* The namespace. */
+{
+    Namespace *currNsPtr = (Namespace *)nsPtr;
+
+    if (currNsPtr->unknownHandlerPtr == NULL &&
+	currNsPtr == ((Interp *)interp)->globalNsPtr) {
+	/* Default handler for global namespace is "::unknown". For all
+	 * other namespaces, it is NULL (which falls back on the global
+	 * unknown handler).
+	 */
+	currNsPtr->unknownHandlerPtr =
+	    Tcl_NewStringObj("::unknown", -1);
+	Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
+    }
+    return currNsPtr->unknownHandlerPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetNamespaceUnknownHandler --
+ *
+ *	Sets the unknown command handler for the given namespace to the
+ *	command prefix passed.
+ *
+ * Results:
+ *	Returns TCL_OK if successful, and TCL_ERROR if anything goes 
+ *	wrong.
+ *
+ * Side effects:
+ *	Sets the namespace unknown command handler. If the passed in
+ *	handler is NULL or an empty list, then the handler is reset to
+ *	its default. If an error occurs, then an error message is left
+ *	in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_SetNamespaceUnknownHandler(interp, nsPtr, handlerPtr)
+    Tcl_Interp *interp;		/* Interpreter in which the namespace 
+				 * exists. */
+    Tcl_Namespace *nsPtr;	/* Namespace which is being updated. */
+    Tcl_Obj *handlerPtr;	/* The new handler, or NULL to reset. */
+{
+    int lstlen;
+    Namespace *currNsPtr = (Namespace *)nsPtr;
+
+    if (currNsPtr->unknownHandlerPtr != NULL) {
+	/* Remove old handler first. */
+	Tcl_DecrRefCount(currNsPtr->unknownHandlerPtr);
+        currNsPtr->unknownHandlerPtr = NULL;
+    }
+    /*
+     * If NULL or an empty list is passed, then reset to the default
+     * handler.
+     */
+    if (handlerPtr == NULL) {
+	currNsPtr->unknownHandlerPtr = NULL;
+    } else {
+	if (Tcl_ListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+	    /* Not a list */
+	    return TCL_ERROR;
+	} else if (lstlen == 0) {
+	    /* Empty list - reset to default. */
+	    currNsPtr->unknownHandlerPtr = NULL;
+	} else {
+	    /* 
+	     * Increment ref count and store. The reference count is 
+	     * decremented either in the code above, or when the namespace 
+	     * is deleted.
+	     */
+	    Tcl_IncrRefCount(handlerPtr);
+	    currNsPtr->unknownHandlerPtr = handlerPtr;
+	}
     }
     return TCL_OK;
 }
