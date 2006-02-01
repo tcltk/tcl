@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.188 2006/02/01 18:27:43 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.189 2006/02/01 19:26:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -105,6 +105,7 @@ static CmdInfo builtInCmds[] = {
      */
 
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	1},
+    {"apply",	        Tcl_ApplyObjCmd,        NULL,                   1},
     {"array",		Tcl_ArrayObjCmd,	NULL,			1},
     {"binary",		Tcl_BinaryObjCmd,	NULL,			1},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	1},

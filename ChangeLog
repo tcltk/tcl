@@ -1,5 +1,16 @@
 2006-02-01  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP#194 IMPLEMENTATION
+
+	* doc/apply.n:	(New file)	New command [apply].  [Patch 944803].
+	* doc/uplevel.n:
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* tests/apply.test: (New file)
+	* tests/proc-old.test:
+	* tests/proc.test:
+	
 	TIP#181 IMPLEMENTATION
 
 	* doc/Namespace.3:	New command [namespace unknown].  New public
