@@ -10,12 +10,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.118 2006/02/01 17:48:11 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.119 2006/02/02 10:55:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1656,11 +1656,11 @@ TclPtrSetVar(
 		varPtr->value.objPtr = newValuePtr;
 		Tcl_IncrRefCount(newValuePtr);
 	    } else {
-		if (Tcl_IsShared(oldValuePtr)) {    /* append to copy */
+		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
 		    TclDecrRefCount(oldValuePtr);
 		    oldValuePtr = varPtr->value.objPtr;
-		    Tcl_IncrRefCount(oldValuePtr);  /* since var is ref */
+		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
 	    }
@@ -2043,7 +2043,7 @@ TclObjUnsetVar2(
  *
  * Side effects:
  *	If the arguments indicate a local or global variable in iPtr, it is
- *      unset and deleted.
+ *	unset and deleted.
  *
  *----------------------------------------------------------------------
  */
@@ -2125,7 +2125,7 @@ UnsetVarStruct(
 	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	}
 	for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
-	     activePtr = activePtr->nextPtr) {
+		activePtr = activePtr->nextPtr) {
 	    if (activePtr->varPtr == varPtr) {
 		activePtr->nextTracePtr = NULL;
 	    }
@@ -2143,7 +2143,7 @@ UnsetVarStruct(
     if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
 	/*
 	 * Deleting the elements of the array may cause traces to be fired on
-	 * those elements.  Before deleting them, bump the reference count of
+	 * those elements. Before deleting them, bump the reference count of
 	 * the array, so that if those trace procs make a global or upvar link
 	 * to the array, the array is not deleted when the call stack gets
 	 * popped (we will delete the array ourselves later in this function).
@@ -3249,7 +3249,6 @@ ObjMakeUpvar(
 
     return TclPtrMakeUpvar(interp, otherPtr, myName, myFlags, index);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -3270,17 +3269,17 @@ ObjMakeUpvar(
  *
  *----------------------------------------------------------------------
  */
- 
+
 int
-TclPtrMakeUpvar(interp, otherPtr, myName, myFlags, index)
-    Tcl_Interp *interp;		/* Interpreter containing variables. Used for
+TclPtrMakeUpvar(
+    Tcl_Interp *interp,		/* Interpreter containing variables. Used for
 				 * error messages, too. */
-    Var *otherPtr;              /* Pointer to the variable being linked-to */
-    CONST char *myName;		/* Name of variable which will refer to
+    Var *otherPtr,		/* Pointer to the variable being linked-to */
+    CONST char *myName,		/* Name of variable which will refer to
 				 * otherP1/otherP2. Must be a scalar. */
-    int myFlags;		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+    int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
-    int index;			/* If the variable to be linked is an indexed
+    int index)			/* If the variable to be linked is an indexed
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
@@ -3903,6 +3902,7 @@ SetArraySearchObj(
 
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &tclArraySearchType;
+    /* Do NOT optimize this address arithmetic! */
     objPtr->internalRep.twoPtrValue.ptr1 = (void *)(((char *)NULL) + id);
     objPtr->internalRep.twoPtrValue.ptr2 = (void *)(((char *)NULL) + offset);
     return TCL_OK;
@@ -4099,7 +4099,6 @@ TclDeleteNamespaceVars(
     }
     Tcl_DeleteHashTable(tablePtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
