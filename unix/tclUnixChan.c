@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.65 2006/01/26 09:30:52 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.66 2006/02/02 10:58:02 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -267,15 +267,13 @@ static void		TcpWatchProc(ClientData instanceData, int mask);
 static int		TtyCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
-#ifndef DIRECT_BAUD
-static int		TtyGetBaud(unsigned long speed);
-#endif
 static int		TtyGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr);
 #ifndef DIRECT_BAUD
+static int		TtyGetBaud(unsigned long speed);
 static unsigned long	TtyGetSpeed(int baud);
-#endif
+#endif /* DIRECT_BAUD */
 static FileState *	TtyInit(int fd, int initialize);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 #if BAD_TIP35_FLUSH
