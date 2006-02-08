@@ -1,3 +1,8 @@
+2006-02-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Encoding.3, doc/encoding.n: Updates due to review at request of
+	Don Porter. Mostly minor changes.
+
 2006-02-08  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#258 IMPLEMENTATION
