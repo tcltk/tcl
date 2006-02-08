@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.21 2006/02/08 21:41:27 dgp Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.22 2006/02/08 22:27:16 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -54,7 +54,7 @@ int
 .sp
 .VS 8.5
 const char *
-\fBTcl_GetEncodingNameFromEnvironment\fR(\fIbufPtr\fR)in
+\fBTcl_GetEncodingNameFromEnvironment\fR(\fIbufPtr\fR)
 .VE 8.5
 .sp
 void
@@ -76,7 +76,6 @@ const char *
 .sp
 void
 \fBTcl_SetDefaultEncodingDir\fR(\fIpath\fR)
-
 .SH ARGUMENTS
 .AS Tcl_EncodingState *dstWrotePtr in/out
 .AP Tcl_Interp *interp in
@@ -206,22 +205,17 @@ anywhere (i.e., it has been freed as many times as it has been gotten)
 and delete it from the database. 
 .PP
 .VS 8.5
-\fBTcl_GetEncodingFromObj\fR treats the string representation of \fIobjPtr\fR
-as an encoding name, and finds an encoding with that name, just as
-\fBTcl_GetEncoding\fR does.  When an encoding is found, its \fBTcl_Encoding\fB
-token is written to the storage pointed to by \fIencodingPtr\fR, and the value
-\fBTCL_OK\fR is returned.  In addition, a copy of the \fBTcl_Encoding\fR is
-kept as the internal representation of \fIobjPtr\fR.  If no such encoding is
-found, the value \fBTCL_ERROR\fR is returned, and no writing to
-\fI*encodingPtr\fR takes place.
-.PP
-The reference count of the \fBTcl_Encoding\fR token may be incremented twice,
-once for the reference written to \fI*encodingPtr\fR and once for the
-reference stored in \fIobjPtr\fR, if a reference is not already in place
-there.  The caller should call \fBTcl_FreeEncoding\fR on \fI*encodingPtr\fR
-when the token will no longer be used.  The usual mechanisms for freeing the
-internal representation of a \fBTcl_Obj\fR will take care of calling
-\fBTcl_FreeEncoding\fR on that reference at the appropriate time.
+\fBTcl_GetEncodingFromObj\fR treats the string representation of
+\fIobjPtr\fR as an encoding name, and finds an encoding with that
+name, just as \fBTcl_GetEncoding\fR does. When an encoding is found,
+it is cached within the \fBobjPtr\fR valuefor future reference, the
+\fBTcl_Encoding\fR token is written to the storage pointed to by
+\fIencodingPtr\fR, and the value \fBTCL_OK\fR is returned. If no such
+encoding is found, the value \fBTCL_ERROR\fR is returned, and no
+writing to \fB*\fR\fIencodingPtr\fR takes place. Just as with
+\fBTcl_GetEncoding\fR, the caller should call \fBTcl_FreeEncoding\fR
+on the resulting encoding token when that token will no longer be
+used.
 .VE 8.5
 .PP
 \fBTcl_ExternalToUtfDString\fR converts a source buffer \fIsrc\fR from the
@@ -466,7 +460,6 @@ list.  Since Tcl searches \fIsearchPath\fR for encoding data files in
 list order, these routines establish the ``default'' directory in which
 to find encoding data files.
 .VE 8.5
-
 .SH "ENCODING FILES"
 Space would prohibit precompiling into Tcl every possible encoding
 algorithm, so many encodings are stored on disk as dynamically-loadable
@@ -601,6 +594,3 @@ for its script library.  If the encoding file exists, but is
 malformed, an error message will be left in \fIinterp\fR.
 .SH KEYWORDS
 utf, encoding, convert
-
-
-
