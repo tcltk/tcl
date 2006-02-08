@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: encoding.n,v 1.6 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: encoding.n,v 1.7 2006/02/08 21:41:27 dgp Exp $
 '\" 
 .so man.macros
 .TH encoding n "8.1" Tcl "Tcl Built-In Commands"
@@ -40,6 +40,21 @@ The result is a sequence of bytes that represents the converted
 string.  Each byte is stored in the lower 8-bits of a Unicode
 character.  If \fIencoding\fR is not specified, the current
 system encoding is used.
+.TP
+\fBencoding dirs\fR ?\fIdirectoryList\fR?
+.VS 8.5
+Tcl can load encoding data files from the file system that describe
+additional encodings for it to work with.  This command
+sets the search path for \fB*.enc\fR encoding data files to
+the list of directories \fIdirectoryList\fR.  If
+\fIdirectoryList\fR is omitted then the command returns the
+current list of directories that make up the search path.
+If \fIdirectoryList\fR is present, but is not a valid Tcl
+list, an error is raised.  Any elements in \fIdirectoryList\fR
+that are not in fact readable directories in the filesystem are ignored
+without raising an error when searches for encoding data files
+take place.
+.VE 8.5
 .TP
 \fBencoding names\fR
 Returns a list containing the names of all of the encodings that are

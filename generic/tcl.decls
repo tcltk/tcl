@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.119 2006/02/01 18:27:43 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.120 2006/02/08 21:41:27 dgp Exp $
 
 library tcl
 
@@ -2047,6 +2047,22 @@ declare 568 generic {
     int Tcl_SetNamespaceUnknownHandler(
         Tcl_Interp *interp, Tcl_Namespace *nsPtr,
         Tcl_Obj *handlerPtr)
+}
+
+# TIP#258 Enhanced Interface for Encodings
+
+declare 569 generic {
+    int Tcl_GetEncodingFromObj(Tcl_Interp* interp, Tcl_Obj* objPtr,
+          Tcl_Encoding* encodingPtr)
+}
+declare 570 generic {
+    Tcl_Obj* Tcl_GetEncodingSearchPath(void)
+}
+declare 571 generic {
+    int Tcl_SetEncodingSearchPath(Tcl_Obj* searchPath)
+}
+declare 572 generic {
+    CONST char *Tcl_GetEncodingNameFromEnvironment(Tcl_DString* bufPtr)
 }
 
 ##############################################################################

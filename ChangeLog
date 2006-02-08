@@ -1,3 +1,26 @@
+2006-02-08  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#258 IMPLEMENTATION
+
+	* doc/Encoding.3:	New subcommand [encoding dirs].
+	* doc/encoding.n:	New routine Tcl_GetEncodingNameFromEnvironment.
+	* generic/tcl.decls:	Made public:
+	* generic/tclBasic.c:	TclGetEncodingFromObj
+	* generic/tclCmdAH.c:		-> Tcl_GetEncodingFromObj
+	* generic/tclEncoding.c:TclGetEncodingSearchPath 
+	* generic/tclInt.decls:		-> Tcl_GetEncodingSearchPath
+	* generic/tclInt.h:	TclSetEncodingSearchPath
+	* generic/tclTest.c:		-> Tcl_SetEncodingSearchPath
+	* library/init.tcl:	Removed commands:
+	* tests/cmdAH.test:		[tcl::unsupported::EncodingDirs]
+	* tests/encoding.test:		[testencoding path] (Tcltest)
+	* unix/tclUnixInit.c:	[Patch 1413934].
+	* win/tclWinInit.c:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
 2006-02-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c: minor improvements to [apply]
