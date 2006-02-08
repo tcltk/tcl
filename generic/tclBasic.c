@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.189 2006/02/01 19:26:01 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.190 2006/02/08 21:41:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -491,13 +491,6 @@ Tcl_CreateInterp(void)
 
     Tcl_CreateObjCommand(interp,	"::tcl::Bgerror",
 	    TclDefaultBgErrorHandlerObjCmd,	(ClientData) NULL, NULL);
-
-    /*
-     * Register the unsupported encoding search path command.
-     */
-
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::EncodingDirs",
-	    TclEncodingDirsObjCmd, NULL, NULL);
 
     /*
      * Register the builtin math functions.

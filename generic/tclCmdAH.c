@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.71 2005/12/08 20:20:34 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.72 2006/02/08 21:41:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,6 +24,9 @@
 
 static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
+static int		EncodingDirsObjCmd(ClientData dummy,
+				Tcl_Interp *interp, int objc,
+				Tcl_Obj *CONST objv[]);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
 static char *		GetTypeFromMode(int mode);
@@ -427,11 +430,11 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     int index;
 
     static CONST char *optionStrings[] = {
-	"convertfrom", "convertto", "names", "system",
+	"convertfrom", "convertto", "dirs", "names", "system",
 	NULL
     };
     enum options {
-	ENC_CONVERTFROM, ENC_CONVERTTO, ENC_NAMES, ENC_SYSTEM
+	ENC_CONVERTFROM, ENC_CONVERTTO, ENC_DIRS, ENC_NAMES, ENC_SYSTEM
     };
 
     if (objc < 2) {
@@ -456,7 +459,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 	    encoding = Tcl_GetEncoding(interp, NULL);
 	    data = objv[2];
 	} else if (objc == 4) {
-	    if (TclGetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
+	    if (Tcl_GetEncodingFromObj(interp, objv[2], &encoding) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    data = objv[3];
@@ -497,6 +500,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 	Tcl_FreeEncoding(encoding);
 	break;
     }
+    case ENC_DIRS:
+	return EncodingDirsObjCmd(dummy, interp, objc-1, objv+1);
     case ENC_NAMES:
 	if (objc > 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -523,7 +528,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * TclEncodingDirsObjCmd --
+ * EncodingDirsObjCmd --
  *
  *	This command manipulates the encoding search path.
  *
@@ -537,7 +542,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
  */
 
 int
-TclEncodingDirsObjCmd(dummy, interp, objc, objv)
+EncodingDirsObjCmd(dummy, interp, objc, objv)
     ClientData dummy;		/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
@@ -548,10 +553,10 @@ TclEncodingDirsObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	Tcl_SetObjResult(interp, TclGetEncodingSearchPath());
+	Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
 	return TCL_OK;
     }
-    if (TclSetEncodingSearchPath(objv[1]) == TCL_ERROR) {
+    if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
 	Tcl_AppendResult(interp, "expected directory list but got \"",
 		Tcl_GetString(objv[1]), "\"", NULL);
 	return TCL_ERROR;
