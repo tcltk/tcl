@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.68 2005/11/04 00:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.69 2006/02/08 21:41:28 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -450,7 +450,7 @@ TclpSetInitialEncodings(void)
 
     TclpSetInterfaces();
     Tcl_SetSystemEncoding(NULL,
-	    TclpGetEncodingNameFromEnvironment(&encodingName));
+	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
 }
 
@@ -466,7 +466,7 @@ TclpSetInterfaces(void)
 }
 
 CONST char *
-TclpGetEncodingNameFromEnvironment(
+Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
     Tcl_DStringInit(bufPtr);
