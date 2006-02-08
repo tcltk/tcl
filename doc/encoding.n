@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: encoding.n,v 1.7 2006/02/08 21:41:27 dgp Exp $
+'\" RCS: @(#) $Id: encoding.n,v 1.8 2006/02/08 22:27:16 dkf Exp $
 '\" 
 .so man.macros
 .TH encoding n "8.1" Tcl "Tcl Built-In Commands"
@@ -44,16 +44,14 @@ system encoding is used.
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .VS 8.5
 Tcl can load encoding data files from the file system that describe
-additional encodings for it to work with.  This command
-sets the search path for \fB*.enc\fR encoding data files to
-the list of directories \fIdirectoryList\fR.  If
-\fIdirectoryList\fR is omitted then the command returns the
-current list of directories that make up the search path.
-If \fIdirectoryList\fR is present, but is not a valid Tcl
-list, an error is raised.  Any elements in \fIdirectoryList\fR
-that are not in fact readable directories in the filesystem are ignored
-without raising an error when searches for encoding data files
-take place.
+additional encodings for it to work with. This command sets the search
+path for \fB*.enc\fR encoding data files to the list of directories
+\fIdirectoryList\fR. If \fIdirectoryList\fR is omitted then the
+command returns the current list of directories that make up the
+search path. It is an error for \fIdirectoryList\fR to not be a valid
+list. If, when a search for an encoding data file is happening, an
+element in \fIdirectoryList\fR does not refer to a readable,
+searchable directory, that element is ignored.
 .VE 8.5
 .TP
 \fBencoding names\fR
