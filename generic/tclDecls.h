@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.121 2006/02/01 18:27:44 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.122 2006/02/08 21:41:27 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3547,6 +3547,30 @@ EXTERN int		Tcl_SetNamespaceUnknownHandler _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Namespace * nsPtr, 
 				Tcl_Obj * handlerPtr));
 #endif
+#ifndef Tcl_GetEncodingFromObj_TCL_DECLARED
+#define Tcl_GetEncodingFromObj_TCL_DECLARED
+/* 569 */
+EXTERN int		Tcl_GetEncodingFromObj _ANSI_ARGS_((
+				Tcl_Interp* interp, Tcl_Obj* objPtr, 
+				Tcl_Encoding* encodingPtr));
+#endif
+#ifndef Tcl_GetEncodingSearchPath_TCL_DECLARED
+#define Tcl_GetEncodingSearchPath_TCL_DECLARED
+/* 570 */
+EXTERN Tcl_Obj*		Tcl_GetEncodingSearchPath _ANSI_ARGS_((void));
+#endif
+#ifndef Tcl_SetEncodingSearchPath_TCL_DECLARED
+#define Tcl_SetEncodingSearchPath_TCL_DECLARED
+/* 571 */
+EXTERN int		Tcl_SetEncodingSearchPath _ANSI_ARGS_((
+				Tcl_Obj* searchPath));
+#endif
+#ifndef Tcl_GetEncodingNameFromEnvironment_TCL_DECLARED
+#define Tcl_GetEncodingNameFromEnvironment_TCL_DECLARED
+/* 572 */
+EXTERN CONST char *	Tcl_GetEncodingNameFromEnvironment _ANSI_ARGS_((
+				Tcl_DString* bufPtr));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4157,6 +4181,10 @@ typedef struct TclStubs {
     int (*tcl_InitBignumFromDouble) _ANSI_ARGS_((Tcl_Interp* interp, double initval, mp_int * toInit)); /* 566 */
     Tcl_Obj * (*tcl_GetNamespaceUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Namespace * nsPtr)); /* 567 */
     int (*tcl_SetNamespaceUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Namespace * nsPtr, Tcl_Obj * handlerPtr)); /* 568 */
+    int (*tcl_GetEncodingFromObj) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* objPtr, Tcl_Encoding* encodingPtr)); /* 569 */
+    Tcl_Obj* (*tcl_GetEncodingSearchPath) _ANSI_ARGS_((void)); /* 570 */
+    int (*tcl_SetEncodingSearchPath) _ANSI_ARGS_((Tcl_Obj* searchPath)); /* 571 */
+    CONST char * (*tcl_GetEncodingNameFromEnvironment) _ANSI_ARGS_((Tcl_DString* bufPtr)); /* 572 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6472,6 +6500,22 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_SetNamespaceUnknownHandler
 #define Tcl_SetNamespaceUnknownHandler \
 	(tclStubsPtr->tcl_SetNamespaceUnknownHandler) /* 568 */
+#endif
+#ifndef Tcl_GetEncodingFromObj
+#define Tcl_GetEncodingFromObj \
+	(tclStubsPtr->tcl_GetEncodingFromObj) /* 569 */
+#endif
+#ifndef Tcl_GetEncodingSearchPath
+#define Tcl_GetEncodingSearchPath \
+	(tclStubsPtr->tcl_GetEncodingSearchPath) /* 570 */
+#endif
+#ifndef Tcl_SetEncodingSearchPath
+#define Tcl_SetEncodingSearchPath \
+	(tclStubsPtr->tcl_SetEncodingSearchPath) /* 571 */
+#endif
+#ifndef Tcl_GetEncodingNameFromEnvironment
+#define Tcl_GetEncodingNameFromEnvironment \
+	(tclStubsPtr->tcl_GetEncodingNameFromEnvironment) /* 572 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

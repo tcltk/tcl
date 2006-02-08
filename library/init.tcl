@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.84 2005/09/30 18:53:33 hobbs Exp $
+# RCS: @(#) $Id: init.tcl,v 1.85 2006/02/08 21:41:28 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -66,11 +66,13 @@ namespace eval tcl {
 	}
     }
 
-    variable Path [unsupported::EncodingDirs]
-    set Dir [file join $::tcl_library encoding]
-    if {$Dir ni $Path} {
-	lappend Path $Dir
-	unsupported::EncodingDirs $Path
+    if {![interp issafe]} {
+        variable Path [encoding dirs]
+        set Dir [file join $::tcl_library encoding]
+        if {$Dir ni $Path} {
+	    lappend Path $Dir
+	    encoding dirs $Path
+        }
     }
 
     # Set up the 'chan' ensemble (TIP #208).

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.267 2006/02/01 19:26:02 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.268 2006/02/08 21:41:27 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2066,8 +2066,6 @@ MODULE_SCOPE int	TclFormatToErrorInfo(Tcl_Interp *interp,
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
-MODULE_SCOPE int	TclGetEncodingFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE int	TclGetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
@@ -2295,9 +2293,6 @@ MODULE_SCOPE int	Tcl_DictObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclEncodingDirsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
