@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: apply.test,v 1.2 2006/02/01 20:17:28 msofer Exp $
+# RCS: @(#) $Id: apply.test,v 1.3 2006/02/09 16:42:55 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -104,7 +104,7 @@ test apply-3.3 {non-existing namespace} {
     list $res $msg
 } {1 {cannot find namespace "::NONEXIST::FOR::SURE"}}
 
-test apply-3.2 {non-existing namespace} {
+test apply-3.3 {non-existing namespace} {
     namespace eval ::NONEXIST::FOR::SURE {}
     set lambda [list x {set x 1} NONEXIST::FOR::SURE]
     apply $lambda x
