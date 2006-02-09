@@ -1,5 +1,15 @@
 2006-02-09  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP#215 IMPLEMENTATION
+
+	* doc/incr.n:		Revised [incr] to auto-initialize when varName
+	* generic/tclExecute.c:	argument is unset.  [Patch 1413115].
+	* generic/tclVar.c:
+	* tests/compile.test:
+	* tests/incr-old.test:
+	* tests/incr.test:
+	* tests/set.test:
+
 	* tests/main.test (Tcl_Main-6.7):	Improved robustness of
 	command auto-completion test. [Bug 1422736].
 
