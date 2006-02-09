@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.13.2.1 2005/04/28 05:34:40 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.13.2.2 2006/02/09 15:23:52 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -847,6 +847,7 @@ namespace eval ::tcl::test::main {
     } -body {
 	exec [interpreter] << {
 		proc foo\{ x {}
+		set ::auto_noexec xxx
 		set tcl_interactive 1
 		foo y} >& result
 	set f [open result]
