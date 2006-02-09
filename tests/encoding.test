@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.18.2.4 2005/04/29 22:40:43 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.18.2.5 2006/02/09 22:41:30 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -56,14 +56,14 @@ test encoding-2.1 {Tcl_FreeEncoding: refcount == 0} {
 } {8C}
 test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} {testencoding} {
     set system [encoding system]
-    set path [testencoding path]
+    set path [encoding dirs]
     encoding system shiftjis		;# incr ref count
-    testencoding path [list [pwd]]
+    encoding dirs [list [pwd]]
     set x [encoding convertto shiftjis \u4e4e]	;# old one found   
     encoding system identity
     lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
     encoding system identity
-    testencoding path $path
+    encoding dirs $path
     encoding system $system
     set x
 } "\u008c\u00c1 1 {unknown encoding \"shiftjis\"}"
@@ -88,20 +88,20 @@ test encoding-4.1 {Tcl_GetEncodingNames} {testencoding} {
     makeDirectory [file join tmp encoding]
     makeFile {} [file join tmp encoding junk.enc]
     makeFile {} [file join tmp encoding junk2.enc]
-    set path [testencoding path]
-    testencoding path {}
+    set path [encoding dirs]
+    encoding dirs {}
     catch {unset encodings}
     catch {unset x}
     foreach encoding [encoding names] {
 	set encodings($encoding) 1
     }
-    testencoding path [list [file join [pwd] encoding]]
+    encoding dirs [list [file join [pwd] encoding]]
     foreach encoding [encoding names] {
 	if {![info exists encodings($encoding)]} {
 	    lappend x $encoding
 	}
     }
-    testencoding path $path
+    encoding dirs $path
     cd [workingDirectory]
     removeFile [file join tmp encoding junk2.enc]
     removeFile [file join tmp encoding junk.enc]
@@ -209,11 +209,11 @@ proc viewable {str} {
 
 test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     set system [encoding system]
-    set path [testencoding path]
+    set path [encoding dirs]
     encoding system iso8859-1
-    testencoding path {}
+    encoding dirs {}
     set x [list [catch {encoding convertto jis0208 \u4e4e} msg] $msg]
-    testencoding path $path
+    encoding dirs $path
     encoding system $system
     lappend x [encoding convertto jis0208 \u4e4e]
 } {1 {unknown encoding "jis0208"} 8C}
@@ -234,10 +234,10 @@ test encoding-11.5.1 {LoadEncodingFile: escape file} {
 } [viewable "\x1b\$B8C\x1b(B"]
 test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     set system [encoding system]
-    set path [testencoding path]
+    set path [encoding dirs]
     encoding system identity
     cd [temporaryDirectory]
-    testencoding path [file join tmp encoding]
+    encoding dirs [file join tmp encoding]
     makeDirectory tmp
     makeDirectory [file join tmp encoding]
     set f [open [file join tmp encoding splat.enc] w]
@@ -249,7 +249,7 @@ test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     removeDirectory [file join tmp encoding]
     removeDirectory tmp
     cd [workingDirectory]
-    testencoding path $path
+    encoding dirs $path
     encoding system $system
     set x
 } {1 {invalid encoding file "splat"}}

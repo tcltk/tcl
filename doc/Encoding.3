@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.11.4.6 2004/10/28 18:46:08 dgp Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.11.4.7 2006/02/09 22:41:26 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -20,6 +20,11 @@ Tcl_Encoding
 .sp
 void
 \fBTcl_FreeEncoding\fR(\fIencoding\fR)
+.sp
+.VS 8.5
+int
+\fBTcl_GetEncodingFromObj\fR(\fIinterp, objPtr, encodingPtr\fR)
+.VE 8.5
 .sp
 char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
@@ -47,18 +52,30 @@ const char *
 int
 \fBTcl_SetSystemEncoding\fR(\fIinterp, name\fR)
 .sp
+.VS 8.5
+const char *
+\fBTcl_GetEncodingNameFromEnvironment\fR(\fIbufPtr\fR)
+.VE 8.5
+.sp
 void
 \fBTcl_GetEncodingNames\fR(\fIinterp\fR)
 .sp
 Tcl_Encoding
 \fBTcl_CreateEncoding\fR(\fItypePtr\fR)
 .sp
+.VS 8.5
+Tcl_Obj *
+\fBTcl_GetEncodingSearchPath\fR()
+.sp
+int
+\fBTcl_SetEncodingSearchPath\fR(\fIsearchPath\fR)
+.VE 8.5
+.sp
 const char *
 \fBTcl_GetDefaultEncodingDir\fR(\fIvoid\fR)
 .sp
 void
 \fBTcl_SetDefaultEncodingDir\fR(\fIpath\fR)
-
 .SH ARGUMENTS
 .AS Tcl_EncodingState *dstWrotePtr in/out
 .AP Tcl_Interp *interp in
@@ -69,6 +86,14 @@ Name of encoding to load.
 .AP Tcl_Encoding encoding in
 The encoding to query, free, or use for converting text.  If \fIencoding\fR is 
 NULL, the current system encoding is used.
+.AP Tcl_Obj *objPtr in
+.VS 8.5
+Name of encoding to get token for.
+.VE 8.5
+.AP Tcl_Encoding *encodingPtr out
+.VS 8.5
+Points to storage where encoding token is to be written.
+.VE 8.5
 .AP "const char" *src in
 For the \fBTcl_ExternalToUtf\fR functions, an array of bytes in the
 specified encoding that are to be converted to UTF-8.  For the
@@ -121,8 +146,16 @@ buffer as a result of the conversion.  May be NULL.
 .AP int *dstCharsPtr out
 Filled with the number of characters that correspond to the number of bytes
 stored in the output buffer.  May be NULL.
+.AP Tcl_DString *bufPtr out
+.VS 8.5
+Storage for the prescribed system encoding name.
+.VE 8.5
 .AP Tcl_EncodingType *typePtr in
 Structure that defines a new type of encoding.  
+.AP Tcl_Obj *searchPath in
+.VS 8.5
+List of filesystem directories in which to search for encoding data files.
+.VE 8.5
 .AP "const char" *path in
 A path to the location of the encoding file.  
 .BE
@@ -170,6 +203,20 @@ should be called to release it.  When an \fIencoding\fR is no longer in use
 anywhere (i.e., it has been freed as many times as it has been gotten)
 \fBTcl_FreeEncoding\fR will release all storage the encoding was using
 and delete it from the database. 
+.PP
+.VS 8.5
+\fBTcl_GetEncodingFromObj\fR treats the string representation of
+\fIobjPtr\fR as an encoding name, and finds an encoding with that
+name, just as \fBTcl_GetEncoding\fR does. When an encoding is found,
+it is cached within the \fBobjPtr\fR value for future reference, the
+\fBTcl_Encoding\fR token is written to the storage pointed to by
+\fIencodingPtr\fR, and the value \fBTCL_OK\fR is returned. If no such
+encoding is found, the value \fBTCL_ERROR\fR is returned, and no
+writing to \fB*\fR\fIencodingPtr\fR takes place. Just as with
+\fBTcl_GetEncoding\fR, the caller should call \fBTcl_FreeEncoding\fR
+on the resulting encoding token when that token will no longer be
+used.
+.VE 8.5
 .PP
 \fBTcl_ExternalToUtfDString\fR converts a source buffer \fIsrc\fR from the
 specified \fIencoding\fR into UTF-8.  The converted bytes are stored in 
@@ -277,6 +324,15 @@ procedure increments the reference count of the new system encoding,
 decrements the reference count of the old system encoding, and returns
 \fBTCL_OK\fR.
 .PP
+.VS 8.5
+\fBTcl_GetEncodingNameFromEnvironment\fR provides a means for the Tcl
+library to report the encoding name it believes to be the correct one
+to use as the system encoding, based on system calls and examination of
+the environment suitable for the platform.  It accepts \fIbufPtr\fR,
+a pointer to an uninitialized or freed \fBTcl_DString\fR and writes
+the encoding name to it.  The \fBTcl_DStringValue\fR is returned.
+.VE 8.5
+.PP
 \fBTcl_GetEncodingNames\fR sets the \fIinterp\fR result to a list
 consisting of the names of all the encodings that are currently defined
 or can be dynamically loaded, searching the encoding path specified by
@@ -376,13 +432,34 @@ This \fIfreeProc\fR function is called when the encoding is deleted.  The
 \fIclientData\fR parameter is the same as the \fIclientData\fR field
 specified to \fBTcl_CreateEncoding\fR when the encoding was created.  
 .PP
-
+.VS 8.5
+\fBTcl_GetEncodingSearchPath\fR and \fBTcl_SetEncodingSearchPath\fR
+are called to access and set the list of filesystem directories searched
+for encoding data files.  
+.PP
+The value returned by \fBTcl_GetEncodingSearchPath\fR
+is the value stored by the last successful call to
+\fBTcl_SetEncodingSearchPath\fR.  If no calls to
+\fBTcl_SetEncodingSearchPath\fR have occurred, Tcl will compute an initial
+value based on the environment.  There is one encoding search path for the
+entire process, shared by all threads in the process.
+.PP
+\fBTcl_SetEncodingSearchPath\fR stores \fIsearchPath\fR and returns
+\fBTCL_OK\fR, unless \fIsearchPath\fR is not a valid Tcl list, which
+causes \fBTCL_ERROR\fR to be returned.  The elements of \fIsearchPath\fR
+are not verified as existing readable filesystem directories.  When
+searching for encoding data files takes place, and non-existent or
+non-readable filesystem directories on the \fIsearchPath\fR are silently
+ignored.
+.PP
 \fBTcl_GetDefaultEncodingDir\fR and \fBTcl_SetDefaultEncodingDir\fR
-access and set the directory to use when locating the default encoding
-files.  If this value is not NULL, the \fBTclpInitLibraryPath\fR routine
-appends the path to the head of the search path, and uses this path as
-the first place to look into when trying to locate the encoding file.
-
+are obsolete interfaces best replaced with calls to
+\fBTcl_GetEncodingSearchPath\fR and \fBTcl_SetEncodingSearchPath\fR.
+They are called to access and set the first element of the \fIsearchPath\fR
+list.  Since Tcl searches \fIsearchPath\fR for encoding data files in
+list order, these routines establish the ``default'' directory in which
+to find encoding data files.
+.VE 8.5
 .SH "ENCODING FILES"
 Space would prohibit precompiling into Tcl every possible encoding
 algorithm, so many encodings are stored on disk as dynamically-loadable
@@ -517,6 +594,3 @@ for its script library.  If the encoding file exists, but is
 malformed, an error message will be left in \fIinterp\fR.
 .SH KEYWORDS
 utf, encoding, convert
-
-
-

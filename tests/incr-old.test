@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr-old.test,v 1.7.2.1 2004/12/09 23:01:08 dgp Exp $
+# RCS: @(#) $Id: incr-old.test,v 1.7.2.2 2006/02/09 22:41:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -47,11 +47,8 @@ test incr-old-2.2 {incr errors} {
 } {1 {wrong # args: should be "incr varName ?increment?"}}
 test incr-old-2.3 {incr errors} {
     catch {unset x}
-    list [catch {incr x} msg] $msg $errorInfo
-} {1 {can't read "x": no such variable} {can't read "x": no such variable
-    (reading value of variable to increment)
-    invoked from within
-"incr x"}}
+    incr x
+} 1
 test incr-old-2.4 {incr errors} {
     set x abc
     list [catch {incr x} msg] $msg $errorInfo

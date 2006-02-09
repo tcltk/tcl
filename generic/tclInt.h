@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.36 2006/01/25 18:38:29 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.37 2006/02/09 22:41:28 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -263,6 +263,9 @@ typedef struct Namespace {
     Tcl_Ensemble *ensembles;	/* List of structures that contain the details
 				 * of the ensembles that are implemented on
 				 * top of this namespace. */
+    Tcl_Obj *unknownHandlerPtr;	/* A script fragment to be used when command
+				 * resolution in this namespace fails. TIP
+				 * 181. */
     int commandPathLength;	/* The length of the explicit path. */
     NamespacePathEntry *commandPathArray;
 				/* The explicit path of the namespace as an
@@ -2147,8 +2150,6 @@ MODULE_SCOPE int	TclFormatToErrorInfo(Tcl_Interp *interp,
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
-MODULE_SCOPE int	TclGetEncodingFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE int	TclGetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
@@ -2204,6 +2205,9 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
+MODULE_SCOPE int	TclPtrMakeUpvar (Tcl_Interp *interp,
+			    Var *otherP1Ptr, CONST char *myName,
+	                    int myFlags, int index);
 MODULE_SCOPE int	TclObjPrintf(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    CONST char *format, ...);
 MODULE_SCOPE int	TclParseBackslash(CONST char *src,
@@ -2332,6 +2336,9 @@ MODULE_SCOPE int	Tcl_AfterObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_AppendObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int	Tcl_ApplyObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_ArrayObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
@@ -2378,9 +2385,6 @@ MODULE_SCOPE int	Tcl_DictObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	TclEncodingDirsObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);

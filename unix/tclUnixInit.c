@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.12 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.13 2006/02/09 22:41:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -17,7 +17,7 @@
 #include <langinfo.h>
 #endif
 #include <sys/resource.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && defined(__GNUC__)
 #   include <floatingpoint.h>
 #endif
 #if defined(__bsdi__)
@@ -387,7 +387,14 @@ TclpInitPlatform(void)
     (void) signal(SIGPIPE, SIG_IGN);
 #endif /* SIGPIPE */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && defined(__GNUC__)
+    /*
+     * Adjust the rounding mode to be more conventional. Note that FreeBSD
+     * only provides the __fpsetreg() used by the following two for the GNU
+     * Compiler. When using, say, Intel's icc they break. (Partially based on
+     * patch in BSD ports system from root@celsius.bychok.com)
+     */
+
     fpsetround(FP_RN);
     (void) fpsetmask(0L);
 #endif
@@ -564,7 +571,7 @@ TclpSetInitialEncodings(void)
 {
     Tcl_DString encodingName;
     Tcl_SetSystemEncoding(NULL,
-	    TclpGetEncodingNameFromEnvironment(&encodingName));
+	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
 }
 
@@ -598,7 +605,7 @@ SearchKnownEncodings(
 }
 
 CONST char *
-TclpGetEncodingNameFromEnvironment(
+Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
     CONST char *encoding;

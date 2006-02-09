@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.18 2006/01/25 18:38:31 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.19 2006/02/09 22:41:29 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1736,11 +1736,10 @@ TestencodingObjCmd(dummy, interp, objc, objv)
     char *string;
     TclEncoding *encodingPtr;
     static CONST char *optionStrings[] = {
-	"create",	"delete",	"path",
-	NULL
+	"create",	"delete",	NULL
     };
     enum options {
-	ENC_CREATE,	ENC_DELETE,	ENC_PATH
+	ENC_CREATE,	ENC_DELETE
     };
 
     if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
@@ -1785,14 +1784,6 @@ TestencodingObjCmd(dummy, interp, objc, objv)
 	    encoding = Tcl_GetEncoding(NULL, Tcl_GetString(objv[2]));
 	    Tcl_FreeEncoding(encoding);
 	    Tcl_FreeEncoding(encoding);
-	    break;
-	}
-	case ENC_PATH: {
-	    if (objc == 2) {
-		Tcl_SetObjResult(interp, TclGetEncodingSearchPath());
-	    } else {
-		TclSetEncodingSearchPath(objv[2]);
-	    }
 	    break;
 	}
     }

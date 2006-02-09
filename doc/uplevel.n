@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: uplevel.n,v 1.3.20.2 2004/10/28 18:46:17 dgp Exp $
+'\" RCS: @(#) $Id: uplevel.n,v 1.3.20.3 2006/02/09 22:41:26 dgp Exp $
 '\" 
 .so man.macros
 .TH uplevel n "" Tcl "Tcl Built-In Commands"
@@ -62,9 +62,9 @@ be used to obtain the level of the current procedure.
 constructs as Tcl procedures (for example, \fBuplevel\fR could
 be used to implement the \fBwhile\fR construct as a Tcl procedure).
 .PP
-\fBnamespace eval\fR is another way (besides procedure calls)
-that the Tcl naming context can change.
-It adds a call frame to the stack to represent the namespace context.
+The \fBnamespace eval\fR and \fBapply\fR commands offer other ways
+(besides procedure calls) that the Tcl naming context can change.
+They add a call frame to the stack to represent the namespace context.
 This means each \fBnamespace eval\fR command
 counts as another call level for \fBuplevel\fR and \fBupvar\fR commands.
 For example, \fBinfo level 1\fR will return a list
@@ -94,7 +94,7 @@ proc do {body while condition} {
 .CE
 
 .SH "SEE ALSO"
-namespace(n), upvar(n)
+apply(n), namespace(n), upvar(n)
 
 .SH KEYWORDS
 context, level, namespace, stack frame, variables

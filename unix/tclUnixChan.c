@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.17 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.18 2006/02/09 22:41:30 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -267,15 +267,13 @@ static void		TcpWatchProc(ClientData instanceData, int mask);
 static int		TtyCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
-#ifndef DIRECT_BAUD
-static int		TtyGetBaud(unsigned long speed);
-#endif
 static int		TtyGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr);
 #ifndef DIRECT_BAUD
+static int		TtyGetBaud(unsigned long speed);
 static unsigned long	TtyGetSpeed(int baud);
-#endif
+#endif /* DIRECT_BAUD */
 static FileState *	TtyInit(int fd, int initialize);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 #if BAD_TIP35_FLUSH
@@ -1766,9 +1764,6 @@ TclpOpenFileChannel(
     CONST char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_ChannelType *channelTypePtr;
-#ifdef SUPPORTS_TTY
-    int ctl_tty;
-#endif /* SUPPORTS_TTY */
 
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
     case O_RDONLY:
@@ -1800,15 +1795,10 @@ TclpOpenFileChannel(
 
     fd = TclOSopen(native, mode, permissions);
 
-#ifdef SUPPORTS_TTY
-    ctl_tty = (strcmp(native, "/dev/tty") == 0);
-#endif /* SUPPORTS_TTY */
-
     if (fd < 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "couldn't open \"",
-		    TclGetString(pathPtr), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_AppendResult(interp, "couldn't open \"", TclGetString(pathPtr),
+		    "\": ", Tcl_PosixError(interp), NULL);
 	}
 	return NULL;
     }
@@ -1823,13 +1813,19 @@ TclpOpenFileChannel(
     sprintf(channelName, "file%d", fd);
 
 #ifdef SUPPORTS_TTY
-    if (!ctl_tty && isatty(fd)) {
+    if (strcmp(native, "/dev/tty") != 0 && isatty(fd)) {
 	/*
-	 * Initialize the serial port to a set of sane parameters.  Especially
+	 * Initialize the serial port to a set of sane parameters. Especially
 	 * important if the remote device is set to echo and the serial port
 	 * driver was also set to echo -- as soon as a char were sent to the
 	 * serial port, the remote device would echo it, then the serial
 	 * driver would echo it back to the device, etc.
+	 *
+	 * Note that we do not do this if we're dealing with /dev/tty itself,
+	 * as that tends to cause Bad Things To Happen when you're working
+	 * interactively. Strictly a better check would be to see if the FD
+	 * being set up is a device and has the same major/minor as the
+	 * initial std FDs (beware reopening!) but that's nearly as messy.
 	 */
 
 	translation = "auto crlf";

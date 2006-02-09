@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.12 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.13 2006/02/09 22:41:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -274,7 +274,7 @@ static Tcl_ObjType EncodingType = {
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEncodingFromObj --
+ * Tcl_GetEncodingFromObj --
  *
  *	Writes to (*encodingPtr) the Tcl_Encoding value of (*objPtr), if
  *	possible, and returns TCL_OK. If no such encoding exists, TCL_ERROR is
@@ -291,7 +291,7 @@ static Tcl_ObjType EncodingType = {
  */
 
 int
-TclGetEncodingFromObj(
+Tcl_GetEncodingFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     Tcl_Encoding *encodingPtr)
@@ -350,7 +350,7 @@ DupEncodingIntRep(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetEncodingSearchPath --
+ * Tcl_GetEncodingSearchPath --
  *
  *	Keeps the per-thread copy of the encoding search path current with
  *	changes to the global copy.
@@ -362,7 +362,7 @@ DupEncodingIntRep(
  */
 
 Tcl_Obj *
-TclGetEncodingSearchPath(void)
+Tcl_GetEncodingSearchPath(void)
 {
     return TclGetProcessGlobalValue(&encodingSearchPath);
 }
@@ -370,7 +370,7 @@ TclGetEncodingSearchPath(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclSetEncodingSearchPath --
+ * Tcl_SetEncodingSearchPath --
  *
  *	Keeps the per-thread copy of the encoding search path current with
  *	changes to the global copy.
@@ -379,7 +379,7 @@ TclGetEncodingSearchPath(void)
  */
 
 int
-TclSetEncodingSearchPath(
+Tcl_SetEncodingSearchPath(
     Tcl_Obj *searchPath)
 {
     int dummy;
@@ -470,7 +470,7 @@ FillEncodingFileMap(void)
     int i, numDirs = 0;
     Tcl_Obj *map, *searchPath;
 
-    searchPath = TclGetEncodingSearchPath();
+    searchPath = Tcl_GetEncodingSearchPath();
     Tcl_IncrRefCount(searchPath);
     Tcl_ListObjLength(NULL, searchPath, &numDirs);
     map = Tcl_NewDictObj();
@@ -643,7 +643,7 @@ CONST char *
 Tcl_GetDefaultEncodingDir(void)
 {
     int numDirs;
-    Tcl_Obj *first, *searchPath = TclGetEncodingSearchPath();
+    Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
 
     Tcl_ListObjLength(NULL, searchPath, &numDirs);
     if (numDirs == 0) {
@@ -675,12 +675,12 @@ void
 Tcl_SetDefaultEncodingDir(
     CONST char *path)
 {
-    Tcl_Obj *searchPath = TclGetEncodingSearchPath();
+    Tcl_Obj *searchPath = Tcl_GetEncodingSearchPath();
     Tcl_Obj *directory = Tcl_NewStringObj(path, -1);
 
     searchPath = Tcl_DuplicateObj(searchPath);
     Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
-    TclSetEncodingSearchPath(searchPath);
+    Tcl_SetEncodingSearchPath(searchPath);
 }
 
 /*
@@ -1412,7 +1412,7 @@ OpenEncodingFileChannel(
 {
     Tcl_Obj *nameObj = Tcl_NewStringObj(name, -1);
     Tcl_Obj *fileNameObj = Tcl_DuplicateObj(nameObj);
-    Tcl_Obj *searchPath = Tcl_DuplicateObj(TclGetEncodingSearchPath());
+    Tcl_Obj *searchPath = Tcl_DuplicateObj(Tcl_GetEncodingSearchPath());
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
     Tcl_Obj **dir, *path, *directory = NULL;
     Tcl_Channel chan = NULL;
@@ -3211,7 +3211,7 @@ unilen(
  *
  *	This is the fallback routine that sets the default value of the
  *	encoding search path if the application has not set one via a call to
- *	TclSetEncodingSearchPath() by the first time the search path is needed
+ *	Tcl_SetEncodingSearchPath() by the first time the search path is needed
  *	to load encoding data.
  *
  *	The default encoding search path is produced by taking each directory

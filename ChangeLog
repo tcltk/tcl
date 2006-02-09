@@ -1,3 +1,105 @@
+2006-02-09  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#215 IMPLEMENTATION
+
+	* doc/incr.n:		Revised [incr] to auto-initialize when varName
+	* generic/tclExecute.c:	argument is unset.  [Patch 1413115].
+	* generic/tclVar.c:
+	* tests/compile.test:
+	* tests/incr-old.test:
+	* tests/incr.test:
+	* tests/set.test:
+
+	* tests/main.test (Tcl_Main-6.7):	Improved robustness of
+	command auto-completion test. [Bug 1422736].
+
+2006-02-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Encoding.3, doc/encoding.n: Updates due to review at request of
+	Don Porter. Mostly minor changes.
+
+2006-02-08  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#258 IMPLEMENTATION
+
+	* doc/Encoding.3:	New subcommand [encoding dirs].
+	* doc/encoding.n:	New routine Tcl_GetEncodingNameFromEnvironment.
+	* generic/tcl.decls:	Made public:
+	* generic/tclBasic.c:	TclGetEncodingFromObj
+	* generic/tclCmdAH.c:		-> Tcl_GetEncodingFromObj
+	* generic/tclEncoding.c:TclGetEncodingSearchPath 
+	* generic/tclInt.decls:		-> Tcl_GetEncodingSearchPath
+	* generic/tclInt.h:	TclSetEncodingSearchPath
+	* generic/tclTest.c:		-> Tcl_SetEncodingSearchPath
+	* library/init.tcl:	Removed commands:
+	* tests/cmdAH.test:		[tcl::unsupported::EncodingDirs]
+	* tests/encoding.test:		[testencoding path] (Tcltest)
+	* unix/tclUnixInit.c:	[Patch 1413934].
+	* win/tclWinInit.c:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
+2006-02-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c: minor improvements to [apply]
+	* tests/apply.test: new tests; apply-5.1 currently fails to
+	indicate missing work in error reporting
+	
+2006-02-01  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#194 IMPLEMENTATION
+
+	* doc/apply.n:	(New file)	New command [apply].  [Patch 944803].
+	* doc/uplevel.n:
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* tests/apply.test: (New file)
+	* tests/proc-old.test:
+	* tests/proc.test:
+	
+	TIP#181 IMPLEMENTATION
+
+	* doc/Namespace.3:	New command [namespace unknown].  New public
+	* doc/namespace.n:	C routines Tcl_(Get|Set)NamespaceUnknownHandler.
+	* doc/unknown.n:	[Patch 958222].
+	* generic/tcl.decls:
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/namespace.test:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	TIP#250 IMPLEMENTATION
+
+	* doc/namespace.n:	New command [namespace upvar].  [Patch 1275435]
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+	* tests/namespace.test:
+	* tests/upvar.test:
+
+2006-01-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: Fixed silly bug in example. Thanks to Heiner Marxen
+	<heiner.marxen@unsel.de> for catching this! [Bug 1415725]
+
+2006-01-26  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/tclUnixChan.c (TclpOpenFileChannel): Tidy up and comment the
+	mess to do with setting up serial channels. This (deliberately) breaks
+	a broken FreeBSD port, indicates what we're really doing, and reduces
+	the amount of conditional compilation sections for better maintenance.
+
+2006-01-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixInit.c (TclpInitPlatform): Improved conditions on when
+	to update the FP rounding mode on FreeBSD, taken from FreeBSD port.
+
 2006-01-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/string.test (string-12.21): Added test for [Bug 1410553] based
@@ -7,7 +109,7 @@
 
 	* generic/tclStringObj.c: fixed incorrect handling of internal rep in
 	Tcl_GetRange [Bug 1410553]. Thanks to twylite and Peter Spjuth.
-	
+
 	* generic/tclProc.c: fixed args handling for precompiled bodies [Bug
 	1412695]; thanks to Uwe Traum.
 
@@ -22,7 +124,7 @@
 	* generic/tclPathObj.c (Tcl_FSGetInternalRep): backported patch from
 	core-8-4-branch. A freed pointer has been overwritten causing all
 	sorts of coredumps.
- 
+
 2006-01-12  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* win/tclWinFile.c: fix to sharing violation [Bug 1366227]
@@ -31,12 +133,12 @@
 
 	* generic/tclBasic.c:	Moved Tcl_LogCommandInfo from tclBasic.c to
 	* generic/tclNamesp.c:	tclNamesp.c to get access to identifier with
-	* tests/error.test (error-7.0):	file scope.  Added check for traces
-	on ::errorInfo, and when present fall back to contruction of the
-	stack trace in the variable so that write trace notification timings
-	are compatible with earlier Tcl releases.  This reduces, but does not
+	* tests/error.test (error-7.0): file scope. Added check for traces on
+	::errorInfo, and when present fall back to contruction of the stack
+	trace in the variable so that write trace notification timings are
+	compatible with earlier Tcl releases. This reduces, but does not
 	completely eliminate the ***POTENTIAL INCOMPATIBILITY*** created by
-	the 2004-10-15 commit.  [Bug 1397843].
+	the 2004-10-15 commit. [Bug 1397843].
 
 2006-01-10  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -45,7 +147,7 @@
 	* unix/tcl.m4:       quoting, sync relevant tclconfig/tcl.m4 changes
 	and gratuitous formatting differences, fix SC_CONFIG_MANPAGES with
 	default argument, Darwin improvements to SC_LOAD_*CONFIG.
-	
+
 2006-01-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c (NamespaceInscopeCmd):    [namespace inscope]
@@ -94,7 +196,7 @@
 	good long-term solution, but there may not be one.
 
 	* libtommath/bn_mp_sqrt.c: Improved the initial approximation to the
-	square root, roughly doubling the speed of the routine.  (This is a
+	square root, roughly doubling the speed of the routine. (This is a
 	local change that needs to be communicated to Tom.)
 
 	* win/Makefile.in: Corrected a bug where tommath_class.h and
@@ -120,9 +222,8 @@
 	internal reps left behind by parsing [Bugs 1360532 1382287].
 
 	* generic/tclParseExpr.c:	Added TCL_PARSE_NO_WHITESPACE to
-	* generic/tclScan.c:	TclParseNumber() calls since [scan] and
-	* tests/scan.test:	[expr] parsing don't want spaces in parsed
-	numbers.
+	* generic/tclScan.c:	TclParseNumber() calls since [scan] and [expr]
+	* tests/scan.test:	parsing don't want spaces in parsed numbers.
 
 	* generic/tclInt.h:	Added TCL_PARSE_NO_WHITESPACE flag to the
 	* generic/tclStrToD.c:	TclParseNumber() interface.

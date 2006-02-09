@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.11.4.5 2004/09/30 00:51:52 dgp Exp $
+# RCS: @(#) $Id: proc.test,v 1.11.4.6 2006/02/09 22:41:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -101,12 +101,12 @@ test proc-1.7 {Tcl_ProcObjCmd, check that formal parameter names are not array e
             set z [expr $a(1)+$a(2)]
             puts "$z=z, $a(1)=$a(1)"
         }} msg] $msg
-} {1 {procedure "p" has formal parameter "a(1)" that is an array element}}
+} {1 {formal parameter "a(1)" is an array element}}
 test proc-1.8 {Tcl_ProcObjCmd, check that formal parameter names are simple names} {
     catch {rename p ""}
     list [catch {proc p {b:a b::a} { 
     }} msg] $msg
-} {1 {procedure "p" has formal parameter "b::a" that is not a simple name}}
+} {1 {formal parameter "b::a" is not a simple name}}
 
 test proc-2.1 {TclFindProc, simple proc name and proc not in namespace} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}

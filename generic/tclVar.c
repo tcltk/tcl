@@ -10,12 +10,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.21 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.22 2006/02/09 22:41:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1656,11 +1656,11 @@ TclPtrSetVar(
 		varPtr->value.objPtr = newValuePtr;
 		Tcl_IncrRefCount(newValuePtr);
 	    } else {
-		if (Tcl_IsShared(oldValuePtr)) {    /* append to copy */
+		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
 		    TclDecrRefCount(oldValuePtr);
 		    oldValuePtr = varPtr->value.objPtr;
-		    Tcl_IncrRefCount(oldValuePtr);  /* since var is ref */
+		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
 	    }
@@ -1780,7 +1780,7 @@ TclIncrObjVar2(
     part2 = ((part2Ptr == NULL)? NULL : TclGetString(part2Ptr));
 
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
-	    0, 1, &arrayPtr);
+	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
 		"\n    (reading value of variable to increment)", -1);
@@ -1839,11 +1839,11 @@ TclPtrIncrObjVar(
     register Tcl_Obj *varValuePtr, *newValuePtr = NULL;
     int duplicated, code;
 
+    varPtr->refCount++;
     varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags);
+    varPtr->refCount--;
     if (varValuePtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
+	varValuePtr = Tcl_NewIntObj(0);
     }
     if (Tcl_IsShared(varValuePtr)) {
 	duplicated = 1;
@@ -2043,7 +2043,7 @@ TclObjUnsetVar2(
  *
  * Side effects:
  *	If the arguments indicate a local or global variable in iPtr, it is
- *      unset and deleted.
+ *	unset and deleted.
  *
  *----------------------------------------------------------------------
  */
@@ -2125,7 +2125,7 @@ UnsetVarStruct(
 	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	}
 	for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
-	     activePtr = activePtr->nextPtr) {
+		activePtr = activePtr->nextPtr) {
 	    if (activePtr->varPtr == varPtr) {
 		activePtr->nextTracePtr = NULL;
 	    }
@@ -2143,7 +2143,7 @@ UnsetVarStruct(
     if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
 	/*
 	 * Deleting the elements of the array may cause traces to be fired on
-	 * those elements.  Before deleting them, bump the reference count of
+	 * those elements. Before deleting them, bump the reference count of
 	 * the array, so that if those trace procs make a global or upvar link
 	 * to the array, the array is not deleted when the call stack gets
 	 * popped (we will delete the array ourselves later in this function).
@@ -3204,10 +3204,8 @@ ObjMakeUpvar(
 				 * scalar, this is its index. Otherwise, -1 */
 {
     Interp *iPtr = (Interp *) interp;
-    Var *otherPtr, *varPtr, *arrayPtr;
+    Var *otherPtr, *arrayPtr;
     CallFrame *varFramePtr;
-    CONST char *errMsg;
-    CONST char *p;
 
     /*
      * Find "other" in "framePtr". If not looking up other in just the current
@@ -3229,30 +3227,73 @@ ObjMakeUpvar(
 	return TCL_ERROR;
     }
 
+    /*
+     * Check that we are not trying to create a namespace var linked to a
+     * local variable in a procedure. If we allowed this, the local
+     * variable in the shorter-lived procedure frame could go away leaving
+     * the namespace var's reference invalid.
+     */
+
+    if (index < 0) {
+	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
+		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
+			|| (varFramePtr == NULL)
+			|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+			|| (strstr(myName, "::") != NULL))) {
+	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
+		    myName, "\": upvar won't create namespace variable that ",
+		    "refers to procedure variable", NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    return TclPtrMakeUpvar(interp, otherPtr, myName, myFlags, index);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPtrMakeUpvar --
+ *
+ *	This procedure does all of the work of the "global" and "upvar"
+ *	commands.
+ *
+ * Results:
+ *	A standard Tcl completion code. If an error occurs then an error
+ *	message is left in iPtr->result.
+ *
+ * Side effects:
+ *	The variable given by myName is linked to the variable in framePtr
+ *	given by otherP1 and otherP2, so that references to myName are
+ *	redirected to the other variable like a symbolic link.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPtrMakeUpvar(
+    Tcl_Interp *interp,		/* Interpreter containing variables. Used for
+				 * error messages, too. */
+    Var *otherPtr,		/* Pointer to the variable being linked-to */
+    CONST char *myName,		/* Name of variable which will refer to
+				 * otherP1/otherP2. Must be a scalar. */
+    int myFlags,		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
+				 * indicates scope of myName. */
+    int index)			/* If the variable to be linked is an indexed
+				 * scalar, this is its index. Otherwise, -1 */
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+    Var *varPtr;
+    CONST char *errMsg;
+    CONST char *p;    
+    
     if (index >= 0) {
 	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
     } else {
-	/*
-	 * Check that we are not trying to create a namespace var linked to a
-	 * local variable in a procedure. If we allowed this, the local
-	 * variable in the shorter-lived procedure frame could go away leaving
-	 * the namespace var's reference invalid.
-	 */
-
-	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
-	    && ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
-		|| (varFramePtr == NULL)
-		|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
-		|| (strstr(myName, "::") != NULL))) {
-	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-		    myName, "\": upvar won't create namespace variable that ",
-		    "refers to procedure variable", NULL);
-	    return TCL_ERROR;
-	}
-
 	/*
 	 * Do not permit the new variable to look like an array reference, as
 	 * it will not be reachable in that case [Bug 600812, TIP 184]. The
@@ -3861,6 +3902,7 @@ SetArraySearchObj(
 
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &tclArraySearchType;
+    /* Do NOT optimize this address arithmetic! */
     objPtr->internalRep.twoPtrValue.ptr1 = (void *)(((char *)NULL) + id);
     objPtr->internalRep.twoPtrValue.ptr2 = (void *)(((char *)NULL) + offset);
     return TCL_OK;
@@ -4057,7 +4099,6 @@ TclDeleteNamespaceVars(
     }
     Tcl_DeleteHashTable(tablePtr);
 }
-
 
 /*
  *----------------------------------------------------------------------

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unknown.n,v 1.4.14.1 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: unknown.n,v 1.4.14.2 2006/02/09 22:41:26 dgp Exp $
 '\" 
 .so man.macros
 .TH unknown n "" Tcl "Tcl Built-In Commands"
@@ -23,15 +23,18 @@ This command is invoked by the Tcl interpreter whenever a script
 tries to invoke a command that doesn't exist.  The default implementation
 of \fBunknown\fR is a library procedure defined when Tcl initializes an
 interpreter.  You can override the default \fBunknown\fR to change its
-functionality.  Note that there is no default implementation of
-\fBunknown\fR in a safe interpreter.
+functionality, or you can register a new handler for individual namespaces
+using the \fBnamespace unknown\fR command.  Note that there is no default 
+implementation of \fBunknown\fR in a safe interpreter.
 .PP
 If the Tcl interpreter encounters a command name for which there
-is not a defined command, then Tcl checks for the existence of
-a command named \fBunknown\fR.
-If there is no such command, then the interpreter returns an
-error.
-If the \fBunknown\fR command exists, then it is invoked with
+is not a defined command (in either the current namespace, or the 
+global namespace), then Tcl checks for the existence of
+an unknown handler for the current namespace. By default, this
+handler is a command named \fB::unknown\fR.  If there is no such 
+command, then the interpreter returns an error.
+If the \fBunknown\fR command exists (or a new handler has been
+registered for the current namespace), then it is invoked with
 arguments consisting of the fully-substituted name and arguments
 for the original non-existent command.
 The \fBunknown\fR command typically does things like searching
@@ -87,7 +90,7 @@ proc \fBunknown\fR args {
 .CE
 
 .SH "SEE ALSO"
-info(n), proc(n), interp(n), library(n)
+info(n), proc(n), interp(n), library(n), namespace(n)
 
 .SH KEYWORDS
 error, non-existent command

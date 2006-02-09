@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.27.2.10 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.27.2.11 2006/02/09 22:41:30 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -250,13 +250,13 @@ test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     list [catch {p} msg] $msg
 } {1 {list must have an even number of elements}}
 test compile-11.5 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
-    proc p {} { set r [list foobar] ; incr foo }
+    proc p {} { set r [list foobar] ; incr foo bar baz}
     list [catch {p} msg] $msg
-} {1 {can't read "foo": no such variable}}
+} {1 {wrong # args: should be "incr varName ?increment?"}}
 test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
-    proc p {} { set r [list foobar] ; incr foo bogus }
+    proc p {} { set r [list foobar] ; incr}
     list [catch {p} msg] $msg
-} {1 {can't read "foo": no such variable}}
+} {1 {wrong # args: should be "incr varName ?increment?"}}
 test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     proc p {} { set r [list foobar] ; expr !a }
     list [catch {p} msg] $msg
