@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.225 2005/12/27 20:14:08 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.226 2006/02/09 17:34:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2403,7 +2403,7 @@ TclExecuteByteCode(
 	part1 = TclGetString(objPtr);
 
 	varPtr = TclObjLookupVar(interp, objPtr, part2,
-		TCL_LEAVE_ERR_MSG, "read", 0, 1, &arrayPtr);
+		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
 	if (varPtr == NULL) {
 	    Tcl_AddObjErrorInfo(interp,
 		    "\n    (reading value of variable to increment)", -1);

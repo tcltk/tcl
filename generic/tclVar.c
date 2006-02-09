@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.119 2006/02/02 10:55:05 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.120 2006/02/09 17:34:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1780,7 +1780,7 @@ TclIncrObjVar2(
     part2 = ((part2Ptr == NULL)? NULL : TclGetString(part2Ptr));
 
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
-	    0, 1, &arrayPtr);
+	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
 		"\n    (reading value of variable to increment)", -1);
@@ -1839,11 +1839,11 @@ TclPtrIncrObjVar(
     register Tcl_Obj *varValuePtr, *newValuePtr = NULL;
     int duplicated, code;
 
+    varPtr->refCount++;
     varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags);
+    varPtr->refCount--;
     if (varValuePtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
+	varValuePtr = Tcl_NewIntObj(0);
     }
     if (Tcl_IsShared(varValuePtr)) {
 	duplicated = 1;
