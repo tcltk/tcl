@@ -1,3 +1,8 @@
+2006-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:      Made several routines tolerant of
+        * generic/tclIOUtil.c:	interp == NULL arguments.  [Bug 1380662]
+
 2006-02-09  Don Porter  <dgp@users.sourceforge.net>
 
         * tests/main.test (Tcl_Main-6.7):       Improved robustness of
