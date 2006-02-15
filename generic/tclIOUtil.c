@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.127 2005/12/15 04:08:33 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.128 2006/02/15 15:43:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1906,7 +1906,9 @@ Tcl_PosixError(
 
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
-    Tcl_SetErrorCode(interp, "POSIX", id, msg, NULL);
+    if (interp) {
+	Tcl_SetErrorCode(interp, "POSIX", id, msg, NULL);
+    }
     return msg;
 }
 
