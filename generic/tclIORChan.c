@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.12 2005/12/13 22:43:17 kennykb Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.13 2006/02/15 15:43:55 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -844,6 +844,9 @@ UnmarshallErrorResult(
 
     if (Tcl_ListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
+    }
+    if (interp == NULL) {
+	return;
     }
 
     explicitResult = lc & 1;		/* Odd number of values? */
