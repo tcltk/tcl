@@ -1,3 +1,9 @@
+2006-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	Made several routines tolerant of
+	* generic/tclIORChan.c:	interp == NULL arguments.  [Bug 1380662]
+	* generic/tclIOUtil.c:
+
 2006-02-09  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#215 IMPLEMENTATION
