@@ -1,3 +1,8 @@
+2006-02-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIndexObj.c:	Disallow the "ambiguous" error message
+	* generic/indexObj.test:	when TCL_EXACT matching is requested.
+
 2006-02-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIO.c:      Made several routines tolerant of
