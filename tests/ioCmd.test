@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.25 2005/10/31 13:53:33 dkf Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.26 2006/02/16 20:25:07 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -665,12 +665,12 @@ test iocmd-21.11 {chan create, initialize failed, bad result, bogus method name}
     rename foo {}
     set msg
 } {Initialize failure: bad method "1": must be blocking, cget, cgetall, configure, finalize, initialize, read, seek, watch, or write}
-test iocmd-21.12 {chan create, initialize failed, bad result, ambiguous method name} {
+test iocmd-21.12 {chan create, initialize failed, bad result, bogus method name} {
     proc foo {args} {return {a b c}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: ambiguous method "c": must be blocking, cget, cgetall, configure, finalize, initialize, read, seek, watch, or write}
+} {Initialize failure: bad method "c": must be blocking, cget, cgetall, configure, finalize, initialize, read, seek, watch, or write}
 test iocmd-21.13 {chan create, initialize failed, bad result, required methods missing} {
     proc foo {args} {return {initialize finalize}}
     catch {chan create {r w} foo} msg
