@@ -1,3 +1,9 @@
+2006-02-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORChan.c:	Revised error message generation and handling
+	* tests/ioCmd.test:	of exceptional return codes in the channel
+	reflection layer.  [Bug 1372348].
+
 2006-02-16  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclIndexObj.c:	Disallow the "ambiguous" error message
