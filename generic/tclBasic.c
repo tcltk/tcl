@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.190 2006/02/08 21:41:27 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.191 2006/02/22 17:42:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3240,13 +3240,10 @@ TclEvalObjvInternal(
     int i;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
-    Namespace *currNsPtr = NULL;/* Used to check for and invoke any
-                                 * registered unknown command
-                                 * handler for the current namespace
-                                 * (see TIP 181). */
     int code = TCL_OK;
     int traceCode = TCL_OK;
     int checkTraces = 1;
+    int cmdEpoch;
 
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -3273,61 +3270,52 @@ TclEvalObjvInternal(
 
   reparseBecauseOfTraces:
     savedVarFramePtr = iPtr->varFramePtr;
+    /*
+     * Both INVOKE and GLOBAL flags dictate that command resolution
+     * happens in an [uplevel #0] context. (iPtr->varFramePtr == NULL)
+     */
     if (flags & (TCL_EVAL_INVOKE | TCL_EVAL_GLOBAL)) {
 	iPtr->varFramePtr = NULL;
     }
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-    /*
-     * Grab current namespace before restoring var frame, for unknown
-     * handler check below.
-     */
-    if (iPtr->varFramePtr != NULL && iPtr->varFramePtr->nsPtr != NULL) {
-        currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-        /* Note: assumes globalNsPtr can never be NULL. */
-        currNsPtr = iPtr->globalNsPtr;
-        if (currNsPtr == NULL) {
-            Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
-        }
-    }
-    iPtr->varFramePtr = savedVarFramePtr;
-
     if (cmdPtr == NULL) {
+	Namespace *currNsPtr = NULL;	/* Used to check for and invoke any
+					 * registered unknown command handler
+					 * for the current namespace
+					 * (TIP 181). */
         int newObjc, handlerObjc;
         Tcl_Obj **handlerObjv;
-        /*
-         * Check if there is an unknown handler registered for this namespace.
-         * Otherwise, use the global namespace unknown handler.
-         */
+
+	if (iPtr->varFramePtr != NULL) {
+	    currNsPtr = iPtr->varFramePtr->nsPtr;
+	}
+	if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
+	    currNsPtr = iPtr->globalNsPtr;
+	}
+	if (currNsPtr == NULL) {
+	    Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
+	}
         if (currNsPtr->unknownHandlerPtr == NULL) {
-            currNsPtr = iPtr->globalNsPtr;
-        }
-        if (currNsPtr == iPtr->globalNsPtr &&
-            currNsPtr->unknownHandlerPtr == NULL) {
             /* Global namespace has lost unknown handler, reset. */
-            currNsPtr->unknownHandlerPtr =
-                Tcl_NewStringObj("::unknown", -1);
+            currNsPtr->unknownHandlerPtr = Tcl_NewStringObj("::unknown", -1);
             Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
         }
-        if (Tcl_ListObjGetElements(interp,
-            currNsPtr->unknownHandlerPtr, &handlerObjc, &handlerObjv)
-            != TCL_OK) {
-            return TCL_ERROR;
-        }
+        Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+		&handlerObjc, &handlerObjv);
         newObjc = objc + handlerObjc;
 	newObjv = (Tcl_Obj **) ckalloc((unsigned)
                 (newObjc * sizeof(Tcl_Obj *)));
         /* Copy command prefix from unknown handler. */
         for (i = 0; i < handlerObjc; ++i) {
             newObjv[i] = handlerObjv[i];
+	    Tcl_IncrRefCount(newObjv[i]);
         }
         /* Add in command name and arguments. */
         for (i = objc-1; i >= 0; --i) {
             newObjv[i+handlerObjc] = objv[i];
         }
-	Tcl_IncrRefCount(newObjv[0]);
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
-        
+	iPtr->varFramePtr = savedVarFramePtr;
 	if (cmdPtr == NULL) {
 	    Tcl_AppendResult(interp, "invalid command name \"",
 		    TclGetString(objv[0]), "\"", NULL);
@@ -3335,20 +3323,23 @@ TclEvalObjvInternal(
 	} else {
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, newObjc, newObjv, command,
-			    length, 0);
+			    length, flags);
 	    iPtr->numLevels--;
 	}
-	Tcl_DecrRefCount(newObjv[0]);
+        for (i = 0; i < handlerObjc; ++i) {
+	    Tcl_DecrRefCount(newObjv[i]);
+        }
 	ckfree((char *) newObjv);
-	goto done;
+	return code;
     }
+    iPtr->varFramePtr = savedVarFramePtr;
 
     /*
      * Call trace functions if needed.
      */
 
+    cmdEpoch = cmdPtr->cmdEpoch;
     if ((checkTraces) && (command != NULL)) {
-	int cmdEpoch = cmdPtr->cmdEpoch;
 	cmdPtr->refCount++;
 
 	/*
@@ -3366,14 +3357,11 @@ TclEvalObjvInternal(
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
 	cmdPtr->refCount--;
-	if (cmdEpoch != cmdPtr->cmdEpoch) {
-	    /*
-	     * The command has been modified in some way.
-	     */
-
-	    checkTraces = 0;
-	    goto reparseBecauseOfTraces;
-	}
+    }
+    if (cmdEpoch != cmdPtr->cmdEpoch) {
+	/* The command has been modified in some way. */
+	checkTraces = 0;
+	goto reparseBecauseOfTraces;
     }
 
     /*
@@ -3384,6 +3372,11 @@ TclEvalObjvInternal(
     iPtr->cmdCount++;
     if (code == TCL_OK && traceCode == TCL_OK && !Tcl_LimitExceeded(interp)) {
 	savedVarFramePtr = iPtr->varFramePtr;
+	/*
+	 * Only the GLOBAL flag dictates command procedure exection (distinct
+	 * from command name resolution above) happens in an [uplevel #0]
+	 * context. (iPtr->varFramePtr == NULL) 
+	 */
 	if (flags & TCL_EVAL_GLOBAL) {
 	    iPtr->varFramePtr = NULL;
 	}
@@ -3438,8 +3431,6 @@ TclEvalObjvInternal(
     if (*(iPtr->result) != 0) {
 	(void) Tcl_GetObjResult(interp);
     }
-
-  done:
     return code;
 }
 
