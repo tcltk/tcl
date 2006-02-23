@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.15 2006/02/09 22:41:30 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.16 2006/02/23 14:45:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -2492,6 +2492,73 @@ test namespace-52.8 {unknown: destroying and redefining global namespace} {
     $i invokehidden proc unknown args { return "FINE" }
     $i eval { foo bar bob }
 } {FINE}
+test namespace-52.9 {unknown: refcounting} -setup {
+    proc this args {
+	unset args		;# stop sharing
+	set copy [namespace unknown]
+	string length $copy	;# shimmer away list rep
+	info level 0
+    }
+    set handler [namespace unknown]
+    namespace unknown {this is a test}
+    catch {rename noSuchCommand {}}
+} -body {
+    noSuchCommand
+} -cleanup {
+    namespace unknown $handler
+    rename this {}
+} -result {this is a test noSuchCommand}
+test namespace-52.10 {unknown: with TCL_EVAL_GLOBAL} -setup {
+    rename ::unknown unknown.save
+    proc ::unknown args {
+	set caller [uplevel 1 {namespace current}]
+	namespace eval $caller {
+	    variable foo
+	    return $foo
+	}
+    }
+    catch {rename ::noSuchCommand {}}
+} -body {
+    namespace eval :: {
+	variable foo SUCCESS
+    }
+    namespace eval test_ns_1 {
+	variable foo FAIL
+	testevalobjv 1 noSuchCommand
+    }
+} -cleanup {
+    unset -nocomplain ::foo
+    namespace delete test_ns_1
+    rename ::unknown {}
+    rename unknown.save ::unknown
+} -result SUCCESS
+test namespace-52.11 {unknown: with TCL_EVAL_INVOKE} -setup {
+    set handler [namespace eval :: {namespace unknown}]
+    namespace eval :: {namespace unknown unknown}
+    rename ::unknown unknown.save
+    namespace eval :: {
+	proc unknown args {
+	    return SUCCESS
+	}
+    }
+    catch {rename ::noSuchCommand {}}
+    set slave [interp create]
+} -body {
+    $slave alias bar noSuchCommand
+    namespace eval test_ns_1 {
+	namespace unknown unknown
+	proc unknown args {
+	    return FAIL
+	}
+	$slave eval bar
+    }
+} -cleanup {
+    interp delete $slave
+    namespace delete test_ns_1
+    rename ::unknown {}
+    rename unknown.save ::unknown
+    namespace eval :: [list namespace unknown $handler]
+} -result SUCCESS
     
 # cleanup
 catch {rename cmd1 {}}

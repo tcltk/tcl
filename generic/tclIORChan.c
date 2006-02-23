@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.6 2006/01/25 18:38:29 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.7 2006/02/23 14:45:10 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -399,10 +399,7 @@ static Tcl_Obj *	NextHandle(void);
 static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    CONST char *method, Tcl_Obj *argOneObj,
-			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr,
-			    int flags);
-
-#define INVOKE_NO_CAPTURE	0x01
+			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 /*
  * Global constant strings (messages). ==================
@@ -465,6 +462,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *resObj;		/* Result data for 'initialize' */
     int methods;		/* Bitmask for supported methods. */
     Channel *chanPtr;		/* 'chan' resolved to internal struct. */
+    Tcl_Obj *err;		/* Error message */
 
     /*
      * Syntax:   chan create MODE CMDPREFIX
@@ -535,14 +533,10 @@ TclChanCreateObjCmd(
      */
 
     modeObj = DecodeEventMask(mode);
-    result = InvokeTclMethod(rcPtr, "initialize", modeObj, NULL, &resObj,
-	    INVOKE_NO_CAPTURE);
+    result = InvokeTclMethod(rcPtr, "initialize", modeObj, NULL, &resObj);
     Tcl_DecrRefCount(modeObj);
     if (result != TCL_OK) {
-	Tcl_Obj *err = Tcl_NewStringObj("Initialize failure: ", -1);
-
-	Tcl_AppendObjToObj(err, resObj);
-	Tcl_SetObjResult(interp, err);
+	UnmarshallErrorResult(interp, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	goto error;
     }
@@ -554,17 +548,12 @@ TclChanCreateObjCmd(
      *   Compare open mode against optional r/w.
      */
 
-    Tcl_AppendResult(interp, "Initialize failure: ", NULL);
+    if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
 
-    if (Tcl_ListObjGetElements(interp, resObj, &listc, &listv) != TCL_OK) {
-	/*
-	 * The function above replaces my prefix in case of an error, so more
-	 * work for us to get the prefix back into the error message
-	 */
-
-	Tcl_Obj *err = Tcl_NewStringObj("Initialize failure: ", -1);
-
-	Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
+	err = Tcl_NewStringObj("chan handler \"", -1);
+	Tcl_AppendObjToObj(err, cmdObj);
+	Tcl_AppendToObj(err, " initialize\" returned non-list: ", -1);
+	Tcl_AppendObjToObj(err, resObj);
 	Tcl_SetObjResult(interp, err);
 	goto error;
     }
@@ -573,8 +562,9 @@ TclChanCreateObjCmd(
     while (listc > 0) {
 	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
-	    Tcl_Obj *err = Tcl_NewStringObj("Initialize failure: ", -1);
-
+	    err = Tcl_NewStringObj("chan handler \"", -1);
+	    Tcl_AppendObjToObj(err, cmdObj);
+	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
 	    Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
 	    Tcl_SetObjResult(interp, err);
 	    goto error;
@@ -585,29 +575,42 @@ TclChanCreateObjCmd(
     }
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-	Tcl_AppendResult(interp, "Not all required methods supported", NULL);
+	err = Tcl_NewStringObj("chan handler \"", -1);
+	Tcl_AppendObjToObj(err, cmdObj);
+	Tcl_AppendToObj(err, "\" does not support all required methods", -1);
+	Tcl_SetObjResult(interp, err);
 	goto error;
     }
 
     if ((mode & TCL_READABLE) && !HAS(methods, METH_READ)) {
-	Tcl_AppendResult(interp, "Reading not supported, but requested", NULL);
+	err = Tcl_NewStringObj("chan handler \"", -1);
+	Tcl_AppendObjToObj(err, cmdObj);
+	Tcl_AppendToObj(err, "\" lacks a \"read\" method", -1);
+	Tcl_SetObjResult(interp, err);
 	goto error;
     }
 
     if ((mode & TCL_WRITABLE) && !HAS(methods, METH_WRITE)) {
-	Tcl_AppendResult(interp, "Writing not supported, but requested", NULL);
+	err = Tcl_NewStringObj("chan handler \"", -1);
+	Tcl_AppendObjToObj(err, cmdObj);
+	Tcl_AppendToObj(err, "\" lacks a \"write\" method", -1);
+	Tcl_SetObjResult(interp, err);
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_CGET), HAS(methods, METH_CGETALL))) {
-	Tcl_AppendResult(interp,
-		"'cgetall' not supported, but should be, as 'cget' is", NULL);
+	err = Tcl_NewStringObj("chan handler \"", -1);
+	Tcl_AppendObjToObj(err, cmdObj);
+	Tcl_AppendToObj(err, "\" supports \"cget\" but not \"cgetall\"", -1);
+	Tcl_SetObjResult(interp, err);
 	goto error;
     }
 
     if (!IMPLIES(HAS(methods, METH_CGETALL), HAS(methods, METH_CGET))) {
-	Tcl_AppendResult(interp,
-		"'cget' not supported, but should be, as 'cgetall' is", NULL);
+	err = Tcl_NewStringObj("chan handler \"", -1);
+	Tcl_AppendObjToObj(err, cmdObj);
+	Tcl_AppendToObj(err, "\" supports \"cgetall\" but not \"cget\"", -1);
+	Tcl_SetObjResult(interp, err);
 	goto error;
     }
 
@@ -845,6 +848,9 @@ UnmarshallErrorResult(
     if (Tcl_ListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
+    if (interp == NULL) {
+	return;
+    }
 
     explicitResult = lc & 1;		/* Odd number of values? */
     numOptions = lc - explicitResult;
@@ -854,6 +860,7 @@ UnmarshallErrorResult(
     }
 
     (void) Tcl_SetReturnOptions(interp, Tcl_NewListObj(numOptions, lv));
+    ((Interp *)interp)->flags &= ~ERR_ALREADY_LOGGED;
 }
 
 int
@@ -1014,7 +1021,7 @@ ReflectClose(
 	}
     } else {
 #endif
-	result = InvokeTclMethod(rcPtr, "finalize", NULL, NULL, &resObj, 0);
+	result = InvokeTclMethod(rcPtr, "finalize", NULL, NULL, &resObj);
 	if ((result != TCL_OK) && (interp != NULL)) {
 	    Tcl_SetChannelErrorInterp(interp, resObj);
 	}
@@ -1097,7 +1104,7 @@ ReflectInput(
     /* ASSERT: rcPtr->mode & TCL_READABLE */
 
     toReadObj = Tcl_NewIntObj(toRead);
-    if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj, 0)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
@@ -1191,7 +1198,7 @@ ReflectOutput(
     /* ASSERT: rcPtr->mode & TCL_WRITABLE */
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
-    if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj, 0) != TCL_OK) {
+    if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
@@ -1281,7 +1288,7 @@ ReflectSeekWide(
     offObj = Tcl_NewWideIntObj(offset);
     baseObj = Tcl_NewStringObj((seekMode == SEEK_SET) ? "start" :
 	    ((seekMode == SEEK_CUR) ? "current" : "end"), -1);
-    if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj, 0)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj)!=TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
@@ -1391,8 +1398,7 @@ ReflectWatch(
 #endif
 
     maskObj = DecodeEventMask(mask);
-    (void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL,
-	    INVOKE_NO_CAPTURE);
+    (void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL);
     Tcl_DecrRefCount(maskObj);
 }
 
@@ -1446,8 +1452,7 @@ ReflectBlock(
 
     blockObj = Tcl_NewBooleanObj(!nonblocking);
 
-    if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj,
-	    0) != TCL_OK) {
+    if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	errorNum = EINVAL;
     } else {
@@ -1514,7 +1519,7 @@ ReflectSetOption(
 
     optionObj = Tcl_NewStringObj(optionName, -1);
     valueObj = Tcl_NewStringObj(newValue, -1);
-    result = InvokeTclMethod(rcPtr, "configure",optionObj,valueObj, &resObj,0);
+    result = InvokeTclMethod(rcPtr, "configure",optionObj,valueObj, &resObj);
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
     }
@@ -1606,7 +1611,7 @@ ReflectGetOption(
 	optionObj = Tcl_NewStringObj(optionName, -1);
     }
 
-    if (InvokeTclMethod(rcPtr, method, optionObj, NULL, &resObj, 0)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, method, optionObj, NULL, &resObj)!=TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	return TCL_ERROR;
@@ -1961,8 +1966,7 @@ InvokeTclMethod(
     CONST char *method,
     Tcl_Obj *argOneObj,		/* NULL'able */
     Tcl_Obj *argTwoObj,		/* NULL'able */
-    Tcl_Obj **resultObjPtr,	/* NULL'able */
-    int flags)
+    Tcl_Obj **resultObjPtr)	/* NULL'able */
 {
     int cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
@@ -2018,7 +2022,7 @@ InvokeTclMethod(
      */
 
     if (resultObjPtr) {
-	if ((result == TCL_OK) || (flags & INVOKE_NO_CAPTURE)) {
+	if (result == TCL_OK) {
 	    /*
 	     * Ok result taken as is, also if the caller requests that there
 	     * is no capture.
@@ -2029,9 +2033,27 @@ InvokeTclMethod(
 	    /*
 	     * Non-ok result is always treated as an error. We have to capture
 	     * the full state of the result, including additional options.
+	     *
+	     * This is complex and ugly, and would be completely unnecessary
+	     * if we only added support for a TCL_FORBID_EXCEPTIONS flag.
 	     */
+	    if (result != TCL_ERROR) {
+		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rcPtr->argv);
+		int cmdLen;
+		CONST char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
+		Tcl_Obj *msg = Tcl_NewObj();
 
-	    result = TCL_ERROR;
+		Tcl_IncrRefCount(cmd);
+		TclObjPrintf(NULL, msg, "chan handler returned bad code: %d",
+			result);
+		Tcl_ResetResult(rcPtr->interp);
+		Tcl_SetObjResult(rcPtr->interp, msg);
+		Tcl_LogCommandInfo(rcPtr->interp, cmdString, cmdString, cmdLen);
+		Tcl_DecrRefCount(cmd);
+		result = TCL_ERROR;
+	    }
+	    TclFormatToErrorInfo(rcPtr->interp,
+		    "\n    (chan handler subcommand \"%s\")", method);
 	    resObj = MarshallError(rcPtr->interp);
 	}
 	Tcl_IncrRefCount(resObj);
@@ -2212,8 +2234,7 @@ ForwardProc(
 	 * No parameters/results.
 	 */
 
-	if (InvokeTclMethod(rcPtr, "finalize", NULL, NULL, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "finalize", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
 
@@ -2229,8 +2250,7 @@ ForwardProc(
     case ForwardedInput: {
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
 
-	if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->input.toRead = -1;
 	} else {
@@ -2260,8 +2280,7 @@ ForwardProc(
 	Tcl_Obj *bufObj = Tcl_NewByteArrayObj((unsigned char *)
 		paramPtr->output.buf, paramPtr->output.toWrite);
 
-	if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->output.toWrite = -1;
 	} else {
@@ -2290,8 +2309,7 @@ ForwardProc(
 		(paramPtr->seek.seekMode==SEEK_SET) ? "start" :
 		(paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
 
-	if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->seek.offset = -1;
 	} else {
@@ -2320,8 +2338,7 @@ ForwardProc(
     case ForwardedWatch: {
 	Tcl_Obj *maskObj = DecodeEventMask(paramPtr->watch.mask);
 
-	(void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL,
-		INVOKE_NO_CAPTURE);
+	(void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL);
 	Tcl_DecrRefCount(maskObj);
 	break;
     }
@@ -2329,8 +2346,7 @@ ForwardProc(
     case ForwardedBlock: {
 	Tcl_Obj *blockObj = Tcl_NewBooleanObj(!paramPtr->block.nonblocking);
 
-	if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
 	break;
@@ -2340,8 +2356,7 @@ ForwardProc(
 	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->setOpt.name, -1);
 	Tcl_Obj *valueObj = Tcl_NewStringObj(paramPtr->setOpt.value, -1);
 
-	if (InvokeTclMethod(rcPtr, "configure", optionObj, valueObj, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "configure", optionObj, valueObj, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
 	break;
@@ -2354,8 +2369,7 @@ ForwardProc(
 
 	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->getOpt.name, -1);
 
-	if (InvokeTclMethod(rcPtr, "cget", optionObj, NULL, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "cget", optionObj, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	} else {
 	    Tcl_DStringAppend(paramPtr->getOpt.value, TclGetString(resObj),-1);
@@ -2368,8 +2382,7 @@ ForwardProc(
 	 * Retrieve all options.
 	 */
 
-	if (InvokeTclMethod(rcPtr, "cgetall", NULL, NULL, &resObj,
-		0) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, "cgetall", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	} else {
 	    /*

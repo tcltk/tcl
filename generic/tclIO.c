@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.20 2006/01/25 18:38:28 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.21 2006/02/23 14:45:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1272,8 +1272,10 @@ Tcl_StackChannel(
     }
 
     if (statePtr == NULL) {
-	Tcl_AppendResult(interp, "couldn't find state for channel \"",
-		Tcl_GetChannelName(prevChan), "\"", NULL);
+	if (interp) {
+	    Tcl_AppendResult(interp, "couldn't find state for channel \"",
+		    Tcl_GetChannelName(prevChan), "\"", NULL);
+	}
 	return (Tcl_Channel) NULL;
     }
 
@@ -1291,9 +1293,11 @@ Tcl_StackChannel(
      */
 
     if ((mask & (statePtr->flags & (TCL_READABLE | TCL_WRITABLE))) == 0) {
-	Tcl_AppendResult(interp,
-		"reading and writing both disallowed for channel \"",
-		Tcl_GetChannelName(prevChan), "\"", NULL);
+	if (interp) {
+	    Tcl_AppendResult(interp,
+		    "reading and writing both disallowed for channel \"",
+		    Tcl_GetChannelName(prevChan), "\"", NULL);
+	}
 	return (Tcl_Channel) NULL;
     }
 
@@ -1312,8 +1316,10 @@ Tcl_StackChannel(
 
 	if (Tcl_Flush((Tcl_Channel) prevChanPtr) != TCL_OK) {
 	    statePtr->csPtr = csPtr;
-	    Tcl_AppendResult(interp, "could not flush channel \"",
-		    Tcl_GetChannelName(prevChan), "\"", NULL);
+	    if (interp) {
+		Tcl_AppendResult(interp, "could not flush channel \"",
+			Tcl_GetChannelName(prevChan), "\"", NULL);
+	    }
 	    return (Tcl_Channel) NULL;
 	}
 
@@ -1462,7 +1468,7 @@ Tcl_UnstackChannel(
 		 * to the regular message if nothing was found in the
 		 * bypasses.
 		 */
-		if (!TclChanCaughtErrorBypass(interp, chan)) {
+		if (!TclChanCaughtErrorBypass(interp, chan) && interp) {
 		    Tcl_AppendResult(interp, "could not flush channel \"",
 			    Tcl_GetChannelName((Tcl_Channel) chanPtr), "\"",
 			    NULL);
@@ -2404,7 +2410,9 @@ CloseChannel(
 	    Tcl_DecrRefCount(statePtr->chanMsg);
 	    statePtr->chanMsg = NULL;
 	}
-	Tcl_SetChannelErrorInterp(interp,statePtr->unreportedMsg);
+	if (interp) {
+	    Tcl_SetChannelErrorInterp(interp,statePtr->unreportedMsg);
+	}
     }
     if (errorCode == 0) {
 	errorCode = result;
@@ -2736,8 +2744,10 @@ Tcl_Close(
     }
 
     if (statePtr->flags & CHANNEL_INCLOSE) {
-	Tcl_AppendResult(interp, "Illegal recursive call to close ",
-		"through close-handler of channel", NULL);
+	if (interp) {
+	    Tcl_AppendResult(interp, "Illegal recursive call to close ",
+		    "through close-handler of channel", NULL);
+	}
 	return TCL_ERROR;
     }
     statePtr->flags |= CHANNEL_INCLOSE;
@@ -7853,13 +7863,17 @@ TclCopyChannel(
     outStatePtr = outPtr->state;
 
     if (inStatePtr->csPtr) {
-	Tcl_AppendResult(interp, "channel \"",
-		Tcl_GetChannelName(inChan), "\" is busy", NULL);
+	if (interp) {
+	    Tcl_AppendResult(interp, "channel \"",
+		    Tcl_GetChannelName(inChan), "\" is busy", NULL);
+	}
 	return TCL_ERROR;
     }
     if (outStatePtr->csPtr) {
-	Tcl_AppendResult(interp, "channel \"",
-		Tcl_GetChannelName(outChan), "\" is busy", NULL);
+	if (interp) {
+	    Tcl_AppendResult(interp, "channel \"",
+		    Tcl_GetChannelName(outChan), "\" is busy", NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -8165,7 +8179,7 @@ CopyData(
      */
 
     total = csPtr->total;
-    if (cmdPtr) {
+    if (cmdPtr && interp) {
 	/*
 	 * Get a private copy of the command so we can mutate it by adding
 	 * arguments. Note that StopCopy frees our saved reference to the
@@ -8189,12 +8203,14 @@ CopyData(
 	Tcl_Release((ClientData) interp);
     } else {
 	StopCopy(csPtr);
-	if (errObj) {
-	    Tcl_SetObjResult(interp, errObj);
-	    result = TCL_ERROR;
-	} else {
-	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
+	if (interp) {
+	    if (errObj) {
+		Tcl_SetObjResult(interp, errObj);
+		result = TCL_ERROR;
+	    } else {
+		Tcl_ResetResult(interp);
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
+	    }
 	}
     }
     return result;

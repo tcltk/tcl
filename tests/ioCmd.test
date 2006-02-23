@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.17.2.6 2005/11/03 17:52:27 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.17.2.7 2006/02/23 14:45:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -628,79 +628,79 @@ test iocmd-21.4 {chan create, bad handler, not a list} {
 test iocmd-21.5 {chan create, bad handler, not a command} {
     catch {chan create {r w} foo} msg
     set msg
-} {Initialize failure: invalid command name "foo"}
+} {invalid command name "foo"}
 test iocmd-21.6 {chan create, initialize failed, bad signature} {
     proc foo {} {}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: wrong # args: should be "foo"}
+} {wrong # args: should be "foo"}
 test iocmd-21.7 {chan create, initialize failed, bad signature} {
     proc foo {} {}
     catch {chan create {r w} ::foo} msg
     rename foo {}
     set msg
-} {Initialize failure: wrong # args: should be "::foo"}
-test iocmd-21.8 {chan create, initialize failed, bad result, not a list} {
+} {wrong # args: should be "::foo"}
+test iocmd-21.8 {chan create, initialize failed, bad result, not a list} -body {
     proc foo {args} {return "\{"}
     catch {chan create {r w} foo} msg
     rename foo {}
-    set msg
-} {Initialize failure: unmatched open brace in list}
-test iocmd-21.9 {chan create, initialize failed, bad result, not a list} {
+    set ::errorInfo
+} -match glob -result {chan handler "foo initialize" returned non-list: *}
+test iocmd-21.9 {chan create, initialize failed, bad result, not a list} -body {
     proc foo {args} {return \{\{\}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: unmatched open brace in list}
-test iocmd-21.10 {chan create, initialize failed, bad result, empty list} {
+} -match glob -result {chan handler "foo initialize" returned non-list: *}
+test iocmd-21.10 {chan create, initialize failed, bad result, empty list} -body {
     proc foo {args} {}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: Not all required methods supported}
-test iocmd-21.11 {chan create, initialize failed, bad result, bogus method name} {
+} -match glob -result {*all required methods*}
+test iocmd-21.11 {chan create, initialize failed, bad result, bogus method name} -body {
     proc foo {args} {return 1}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: bad method "1": must be blocking, cget, cgetall, configure, finalize, initialize, read, seek, watch, or write}
-test iocmd-21.12 {chan create, initialize failed, bad result, ambiguous method name} {
+} -match glob -result {*bad method "1": must be *}
+test iocmd-21.12 {chan create, initialize failed, bad result, bogus method name} -body {
     proc foo {args} {return {a b c}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: ambiguous method "c": must be blocking, cget, cgetall, configure, finalize, initialize, read, seek, watch, or write}
-test iocmd-21.13 {chan create, initialize failed, bad result, required methods missing} {
+} -match glob -result {*bad method "c": must be *}
+test iocmd-21.13 {chan create, initialize failed, bad result, required methods missing} -body {
     proc foo {args} {return {initialize finalize}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: Not all required methods supported}
-test iocmd-21.14 {chan create, initialize failed, bad result, mode/handler mismatch} {
+} -match glob -result {*all required methods*}
+test iocmd-21.14 {chan create, initialize failed, bad result, mode/handler mismatch} -body {
     proc foo {args} {return {initialize finalize watch read}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: Writing not supported, but requested}
-test iocmd-21.15 {chan create, initialize failed, bad result, mode/handler mismatch} {
+} -match glob -result {*lacks a "write" method}
+test iocmd-21.15 {chan create, initialize failed, bad result, mode/handler mismatch} -body {
     proc foo {args} {return {initialize finalize watch write}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: Reading not supported, but requested}
-test iocmd-21.16 {chan create, initialize failed, bad result, cget(all) mismatch} {
+} -match glob -result {*lacks a "read" method}
+test iocmd-21.16 {chan create, initialize failed, bad result, cget(all) mismatch} -body {
     proc foo {args} {return {initialize finalize watch cget write read}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: 'cgetall' not supported, but should be, as 'cget' is}
-test iocmd-21.17 {chan create, initialize failed, bad result, cget(all) mismatch} {
+} -match glob -result {*supports "cget" but not "cgetall"}
+test iocmd-21.17 {chan create, initialize failed, bad result, cget(all) mismatch} -body {
     proc foo {args} {return {initialize finalize watch cgetall read write}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} {Initialize failure: 'cget' not supported, but should be, as 'cgetall' is}
+} -match glob -result {*supports "cgetall" but not "cget"}
 test iocmd-21.18 {chan create, initialize ok, creates channel} -match glob -body {
     proc foo {args} {
 	global  res
@@ -729,7 +729,7 @@ test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match g
     lappend res [file channel rc*]
     rename foo {}
     set res
-} -result {{} {initialize rc* {read write}} 1 {Initialize failure: Not all required methods supported} {}}
+} -result {{} {initialize rc* {read write}} 1 {*all required methods*} {}}
 
 # --- --- --- --------- --------- ---------
 # Helper commands to record the arguments to handler methods.
@@ -797,10 +797,11 @@ test iocmd-22.4 {chan finalize, for close, error, close error} -match glob -body
     set res {}
     proc foo {args} {track; oninit; error FOO}
     note [set c [chan create {r w} foo]]
-    note [catch {close $c} msg]; note $msg
+    note [catch {close $c} msg]; note $msg; note $::errorInfo
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 FOO}
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 FOO {FOO
+*"close $c"}}
 test iocmd-22.5 {chan finalize, for close, arbitrary result, ignored} -match glob -body {
     set res {}
     proc foo {args} {track; oninit; return SOMETHING}
@@ -816,7 +817,7 @@ test iocmd-22.6 {chan finalize, for close, break, close error} -match glob -body
     note [catch {close $c} msg]; note $msg
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 {}}
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
 test iocmd-22.7 {chan finalize, for close, continue, close error} -match glob -body {
     set res {}
     proc foo {args} {track; oninit; return -code 4}
@@ -824,7 +825,7 @@ test iocmd-22.7 {chan finalize, for close, continue, close error} -match glob -b
     note [catch {close $c} msg]; note $msg
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 {}}
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
 test iocmd-22.8 {chan finalize, for close, custom code, close error} -match glob -body {
     set res {}
     proc foo {args} {track; oninit; return -code 777 BANG}
@@ -832,7 +833,7 @@ test iocmd-22.8 {chan finalize, for close, custom code, close error} -match glob
     note [catch {close $c} msg]; note $msg
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 BANG}
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
 test iocmd-22.9 {chan finalize, for close, ignore level, close error} -match glob -body {
     set res {}
     proc foo {args} {track; oninit; return -level 5 -code 777 BANG}
@@ -840,7 +841,7 @@ test iocmd-22.9 {chan finalize, for close, ignore level, close error} -match glo
     note [catch {close $c} msg opt]; note $msg; note $opt
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}}
 
 # --- === *** ###########################
 # method read
@@ -903,7 +904,7 @@ test iocmd-23.5 {chan read, break return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!}
+} -result {{read rc* 4096} 1 *bad code*}
 test iocmd-23.6 {chan read, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -915,7 +916,7 @@ test iocmd-23.6 {chan read, continue return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!}
+} -result {{read rc* 4096} 1 *bad code*}
 test iocmd-23.7 {chan read, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -927,7 +928,7 @@ test iocmd-23.7 {chan read, custom return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!}
+} -result {{read rc* 4096} 1 *bad code*}
 test iocmd-23.8 {chan read, level is squashed} -match glob -body {
     set res {}
     proc foo {args} {
@@ -939,7 +940,7 @@ test iocmd-23.8 {chan read, level is squashed} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM! {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BOOM!}}
+} -result {{read rc* 4096} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
 
 # --- === *** ###########################
 # method write
@@ -1038,7 +1039,7 @@ test iocmd-24.9 {chan write, failed write, break return is error} -match glob -b
     close $c
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM!}
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*}
 test iocmd-24.10 {chan write, failed write, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return -code continue BOOM!}
@@ -1048,7 +1049,7 @@ test iocmd-24.10 {chan write, failed write, continue return is error} -match glo
     close $c
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM!}
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*}
 test iocmd-24.11 {chan write, failed write, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return -code 777 BOOM!}
@@ -1058,7 +1059,7 @@ test iocmd-24.11 {chan write, failed write, custom return is error} -match glob 
     close $c
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM!}
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*}
 test iocmd-24.12 {chan write, failed write, non-numeric return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return BANG}
@@ -1079,7 +1080,7 @@ test iocmd-24.13 {chan write, failed write, level is ignored} -match glob -body 
     close $c
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM! {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BOOM!}}
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}}
 
 # --- === *** ###########################
 # method cgetall
@@ -1161,7 +1162,7 @@ test iocmd-25.7 {chan configure, cgetall, break return is error} -match glob -bo
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BOOM!}
+} -result {{cgetall rc*} 1 *bad code*}
 test iocmd-25.8 {chan configure, cgetall, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1173,7 +1174,7 @@ test iocmd-25.8 {chan configure, cgetall, continue return is error} -match glob 
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BOOM!}
+} -result {{cgetall rc*} 1 *bad code*}
 test iocmd-25.9 {chan configure, cgetall, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1185,7 +1186,7 @@ test iocmd-25.9 {chan configure, cgetall, custom return is error} -match glob -b
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BOOM!}
+} -result {{cgetall rc*} 1 *bad code*}
 test iocmd-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1197,7 +1198,7 @@ test iocmd-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{cgetall rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cgetall"*}}
 
 # --- === *** ###########################
 # method configure
@@ -1245,7 +1246,7 @@ test iocmd-26.4 {chan configure, set option, break return is error} -match glob 
     close $c
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BOOM!}
+} -result {{configure rc* -rc-foo bar} 1 *bad code*}
 test iocmd-26.5 {chan configure, set option, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1257,7 +1258,7 @@ test iocmd-26.5 {chan configure, set option, continue return is error} -match gl
     close $c
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BOOM!}
+} -result {{configure rc* -rc-foo bar} 1 *bad code*}
 test iocmd-26.6 {chan configure, set option, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1269,7 +1270,7 @@ test iocmd-26.6 {chan configure, set option, custom return is error} -match glob
     close $c
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BOOM!}
+} -result {{configure rc* -rc-foo bar} 1 *bad code*}
 test iocmd-26.7 {chan configure, set option, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1281,7 +1282,7 @@ test iocmd-26.7 {chan configure, set option, level is ignored} -match glob -body
     close $c
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{configure rc* -rc-foo bar} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "configure"*}}
 
 # --- === *** ###########################
 # method cget
@@ -1330,7 +1331,7 @@ test iocmd-27.4 {chan configure, get option, continue return is error} -match gl
     close $c
     rename foo {}
     set res
-} -result {{cget rc* -rc-foo} 1 BOOM!}
+} -result {{cget rc* -rc-foo} 1 *bad code*}
 test iocmd-27.5 {chan configure, get option, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1342,7 +1343,7 @@ test iocmd-27.5 {chan configure, get option, custom return is error} -match glob
     close $c
     rename foo {}
     set res
-} -result {{cget rc* -rc-foo} 1 BOOM!}
+} -result {{cget rc* -rc-foo} 1 *bad code*}
 test iocmd-27.6 {chan configure, get option, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1354,7 +1355,7 @@ test iocmd-27.6 {chan configure, get option, level is ignored} -match glob -body
     close $c
     rename foo {}
     set res
-} -result {{cget rc* -rc-foo} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{cget rc* -rc-foo} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cget"*}}
 
 # --- === *** ###########################
 # method seek
@@ -1385,7 +1386,7 @@ test iocmd-28.3 {chan tell, break return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BOOM!}
+} -result {{seek rc* 0 current} 1 *bad code*}
 test iocmd-28.4 {chan tell, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -code continue BOOM!}
@@ -1394,7 +1395,7 @@ test iocmd-28.4 {chan tell, continue return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BOOM!}
+} -result {{seek rc* 0 current} 1 *bad code*}
 test iocmd-28.5 {chan tell, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -code 222 BOOM!}
@@ -1403,7 +1404,7 @@ test iocmd-28.5 {chan tell, custom return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BOOM!}
+} -result {{seek rc* 0 current} 1 *bad code*}
 test iocmd-28.6 {chan tell, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -level 11 -code 222 BANG}
@@ -1412,7 +1413,7 @@ test iocmd-28.6 {chan tell, level is ignored} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{seek rc* 0 current} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}}
 test iocmd-28.7 {chan tell, regular return} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return 88}
@@ -1466,7 +1467,7 @@ test iocmd-28.12 {chan seek, break return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BOOM!}
+} -result {{seek rc* 0 start} 1 *bad code*}
 test iocmd-28.13 {chan seek, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -code continue BOOM!}
@@ -1475,7 +1476,7 @@ test iocmd-28.13 {chan seek, continue return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BOOM!}
+} -result {{seek rc* 0 start} 1 *bad code*}
 test iocmd-28.14 {chan seek, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -code 99 BOOM!}
@@ -1484,7 +1485,7 @@ test iocmd-28.14 {chan seek, custom return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BOOM!}
+} -result {{seek rc* 0 start} 1 *bad code*}
 test iocmd-28.15 {chan seek, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -level 33 -code 99 BANG}
@@ -1493,7 +1494,7 @@ test iocmd-28.15 {chan seek, level is ignored} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{seek rc* 0 start} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}}
 test iocmd-28.16 {chan seek, bogus return, negative location} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -45}
@@ -1606,7 +1607,7 @@ test iocmd-29.7 {chan blocking, break return is error} -match glob -body {
     catch {close $c}
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BOOM!}
+} -result {{blocking rc* 0} 1 *bad code*}
 test iocmd-29.8 {chan blocking, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit blocking; onfinal; track; return -code continue BOOM!}
@@ -1615,7 +1616,7 @@ test iocmd-29.8 {chan blocking, continue return is error} -match glob -body {
     catch {close $c}
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BOOM!}
+} -result {{blocking rc* 0} 1 *bad code*}
 test iocmd-29.9 {chan blocking, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {oninit blocking; onfinal; track; return -code 44 BOOM!}
@@ -1624,7 +1625,7 @@ test iocmd-29.9 {chan blocking, custom return is error} -match glob -body {
     catch {close $c}
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BOOM!}
+} -result {{blocking rc* 0} 1 *bad code*}
 test iocmd-29.10 {chan blocking, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {oninit blocking; onfinal; track; return -level 99 -code 44 BANG}
@@ -1633,7 +1634,7 @@ test iocmd-29.10 {chan blocking, level is ignored} -match glob -body {
     catch {close $c}
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}}
+} -result {{blocking rc* 0} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "blocking"*}}
 test iocmd-29.11 {chan blocking, regular return ok, value ignored} -match glob -body {
     set res {}
     proc foo {args} {oninit blocking; onfinal; track; return BOGUS}
@@ -1904,7 +1905,7 @@ test iocmd.tf-22.6 {chan finalize, for close, break, close error} -match glob -b
     } c]
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 {}} \
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-22.7 {chan finalize, for close, continue, close error} -match glob -body {
     set res {}
@@ -1916,7 +1917,7 @@ test iocmd.tf-22.7 {chan finalize, for close, continue, close error} -match glob
     } c]
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 {}} \
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-22.8 {chan finalize, for close, custom code, close error} -match glob -body {
     set res {}
@@ -1928,7 +1929,7 @@ test iocmd.tf-22.8 {chan finalize, for close, custom code, close error} -match g
     } c]
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 BANG} \
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-22.9 {chan finalize, for close, ignore level, close error} -match glob -body {
     set res {}
@@ -1940,7 +1941,7 @@ test iocmd.tf-22.9 {chan finalize, for close, ignore level, close error} -match 
     } c]
     rename foo {}
     set res
-} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
@@ -2020,7 +2021,7 @@ test iocmd.tf-23.5 {chan read, break return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!} \
+} -result {{read rc* 4096} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-23.6 {chan read, continue return is error} -match glob -body {
     set res {}
@@ -2036,7 +2037,7 @@ test iocmd.tf-23.6 {chan read, continue return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!} \
+} -result {{read rc* 4096} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-23.7 {chan read, custom return is error} -match glob -body {
     set res {}
@@ -2052,7 +2053,7 @@ test iocmd.tf-23.7 {chan read, custom return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM!} \
+} -result {{read rc* 4096} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-23.8 {chan read, level is squashed} -match glob -body {
     set res {}
@@ -2068,7 +2069,7 @@ test iocmd.tf-23.8 {chan read, level is squashed} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{read rc* 4096} 1 BOOM! {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BOOM!}} \
+} -result {{read rc* 4096} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
@@ -2197,7 +2198,7 @@ test iocmd.tf-24.9 {chan write, failed write, break return is error} -match glob
     } c]
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM!} \
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-24.10 {chan write, failed write, continue return is error} -match glob -body {
     set res {}
@@ -2211,7 +2212,7 @@ test iocmd.tf-24.10 {chan write, failed write, continue return is error} -match 
     } c]
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM!} \
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-24.11 {chan write, failed write, custom return is error} -match glob -body {
     set res {}
@@ -2225,7 +2226,7 @@ test iocmd.tf-24.11 {chan write, failed write, custom return is error} -match gl
     } c]
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM!} \
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-24.12 {chan write, failed write, non-numeric return is error} -match glob -body {
     set res {}
@@ -2254,7 +2255,7 @@ test iocmd.tf-24.13 {chan write, failed write, level is ignored} -match glob -bo
     } c]
     rename foo {}
     set res
-} -result {{write rc* snarfsnarfsnarf} 1 BOOM! {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BOOM!}} \
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
@@ -2365,7 +2366,7 @@ test iocmd.tf-25.7 {chan configure, cgetall, break return is error} -match glob 
     } c]
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BOOM!} \
+} -result {{cgetall rc*} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-25.8 {chan configure, cgetall, continue return is error} -match glob -body {
     set res {}
@@ -2382,7 +2383,7 @@ test iocmd.tf-25.8 {chan configure, cgetall, continue return is error} -match gl
     } c]
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BOOM!} \
+} -result {{cgetall rc*} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-25.9 {chan configure, cgetall, custom return is error} -match glob -body {
     set res {}
@@ -2399,7 +2400,7 @@ test iocmd.tf-25.9 {chan configure, cgetall, custom return is error} -match glob
     } c]
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BOOM!} \
+} -result {{cgetall rc*} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
     set res {}
@@ -2417,7 +2418,7 @@ test iocmd.tf-25.10 {chan configure, cgetall, level is ignored} -match glob -bod
     } c]
     rename foo {}
     set res
-} -result {{cgetall rc*} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{cgetall rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cgetall"*}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
@@ -2480,7 +2481,7 @@ test iocmd.tf-26.4 {chan configure, set option, break return is error} -match gl
     } c]
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BOOM!} \
+} -result {{configure rc* -rc-foo bar} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-26.5 {chan configure, set option, continue return is error} -match glob -body {
     set res {}
@@ -2497,7 +2498,7 @@ test iocmd.tf-26.5 {chan configure, set option, continue return is error} -match
     } c]
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BOOM!} \
+} -result {{configure rc* -rc-foo bar} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-26.6 {chan configure, set option, custom return is error} -match glob -body {
     set res {}
@@ -2514,7 +2515,7 @@ test iocmd.tf-26.6 {chan configure, set option, custom return is error} -match g
     } c]
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BOOM!} \
+} -result {{configure rc* -rc-foo bar} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-26.7 {chan configure, set option, level is ignored} -match glob -body {
     set res {}
@@ -2532,7 +2533,7 @@ test iocmd.tf-26.7 {chan configure, set option, level is ignored} -match glob -b
     } c]
     rename foo {}
     set res
-} -result {{configure rc* -rc-foo bar} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{configure rc* -rc-foo bar} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "configure"*}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
@@ -2598,7 +2599,7 @@ test iocmd.tf-27.4 {chan configure, get option, continue return is error} -match
     } c]
     rename foo {}
     set res
-} -result {{cget rc* -rc-foo} 1 BOOM!} \
+} -result {{cget rc* -rc-foo} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-27.5 {chan configure, get option, custom return is error} -match glob -body {
     set res {}
@@ -2615,7 +2616,7 @@ test iocmd.tf-27.5 {chan configure, get option, custom return is error} -match g
     } c]
     rename foo {}
     set res
-} -result {{cget rc* -rc-foo} 1 BOOM!} \
+} -result {{cget rc* -rc-foo} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-27.6 {chan configure, get option, level is ignored} -match glob -body {
     set res {}
@@ -2633,7 +2634,7 @@ test iocmd.tf-27.6 {chan configure, get option, level is ignored} -match glob -b
     } c]
     rename foo {}
     set res
-} -result {{cget rc* -rc-foo} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{cget rc* -rc-foo} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cget"*}} \
     -constraints {testchannel testthread}
 
 # --- === *** ###########################
@@ -2678,7 +2679,7 @@ test iocmd.tf-28.3 {chan tell, break return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BOOM!} \
+} -result {{seek rc* 0 current} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.4 {chan tell, continue return is error} -match glob -body {
     set res {}
@@ -2692,7 +2693,7 @@ test iocmd.tf-28.4 {chan tell, continue return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BOOM!} \
+} -result {{seek rc* 0 current} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.5 {chan tell, custom return is error} -match glob -body {
     set res {}
@@ -2706,7 +2707,7 @@ test iocmd.tf-28.5 {chan tell, custom return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BOOM!} \
+} -result {{seek rc* 0 current} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.6 {chan tell, level is ignored} -match glob -body {
     set res {}
@@ -2721,7 +2722,7 @@ test iocmd.tf-28.6 {chan tell, level is ignored} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 current} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{seek rc* 0 current} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.7 {chan tell, regular return} -match glob -body {
     set res {}
@@ -2804,7 +2805,7 @@ test iocmd.tf-28.12 {chan seek, break return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BOOM!} \
+} -result {{seek rc* 0 start} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.13 {chan seek, continue return is error} -match glob -body {
     set res {}
@@ -2818,7 +2819,7 @@ test iocmd.tf-28.13 {chan seek, continue return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BOOM!} \
+} -result {{seek rc* 0 start} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.14 {chan seek, custom return is error} -match glob -body {
     set res {}
@@ -2832,7 +2833,7 @@ test iocmd.tf-28.14 {chan seek, custom return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BOOM!} \
+} -result {{seek rc* 0 start} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.15 {chan seek, level is ignored} -match glob -body {
     set res {}
@@ -2847,7 +2848,7 @@ test iocmd.tf-28.15 {chan seek, level is ignored} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{seek rc* 0 start} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{seek rc* 0 start} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}} \
     -constraints {testchannel testthread}
 test iocmd.tf-28.16 {chan seek, bogus return, negative location} -match glob -body {
     set res {}
@@ -3008,7 +3009,7 @@ test iocmd.tf-29.7 {chan blocking, break return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BOOM!} \
+} -result {{blocking rc* 0} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-29.8 {chan blocking, continue return is error} -match glob -body {
     set res {}
@@ -3022,7 +3023,7 @@ test iocmd.tf-29.8 {chan blocking, continue return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BOOM!} \
+} -result {{blocking rc* 0} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-29.9 {chan blocking, custom return is error} -match glob -body {
     set res {}
@@ -3036,7 +3037,7 @@ test iocmd.tf-29.9 {chan blocking, custom return is error} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BOOM!} \
+} -result {{blocking rc* 0} 1 *bad code*} \
     -constraints {testchannel testthread}
 test iocmd.tf-29.10 {chan blocking, level is ignored} -match glob -body {
     set res {}
@@ -3051,7 +3052,7 @@ test iocmd.tf-29.10 {chan blocking, level is ignored} -match glob -body {
     } c]
     rename foo {}
     set res
-} -result {{blocking rc* 0} 1 BANG {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo BANG}} \
+} -result {{blocking rc* 0} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "blocking"*}} \
     -constraints {testchannel testthread}
 test iocmd.tf-29.11 {chan blocking, regular return ok, value ignored} -match glob -body {
     set res {}

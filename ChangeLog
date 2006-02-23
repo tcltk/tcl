@@ -1,3 +1,26 @@
+2006-02-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Corrected a few bugs in how [namespace unknown]
+	* tests/namespace.test:	interacts with TCL_EVAL_* flags. [Patch 958222]
+
+2006-02-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIORChan.c:	Revised error message generation and handling
+	* tests/ioCmd.test:	of exceptional return codes in the channel
+	reflection layer.  [Bug 1372348].
+
+2006-02-16  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclIndexObj.c:	Disallow the "ambiguous" error message
+        * tests/indexObj.test:		when TCL_EXACT matching is requested.
+	* tests/ioCmd.test:
+
+2006-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	Made several routines tolerant of
+	* generic/tclIORChan.c:	interp == NULL arguments.  [Bug 1380662]
+	* generic/tclIOUtil.c:
+
 2006-02-09  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#215 IMPLEMENTATION
