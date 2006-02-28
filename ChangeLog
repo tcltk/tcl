@@ -1,3 +1,11 @@
+2006-02-28  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclBasic.c:	Corrections to be sure that TCL_EVAL_GLOBAL
+        * tests/namespace.test:	evaluations act the same as [uplevel #0]
+        * tests/parse.test:	evaluations, even when execution traces or
+        * tests/trace.test:	invocations of [::unknown] are present.
+	[Bug 1439836].
+
 2006-02-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Corrected a few bugs in how [namespace unknown]
