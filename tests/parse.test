@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.15.2.4 2005/04/07 17:32:08 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.15.2.5 2006/02/28 16:34:55 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -365,6 +365,40 @@ test parse-8.8 {Tcl_EvalObjv procedure, async handlers} -constraints {
 test parse-8.9 {Tcl_EvalObjv procedure, exceptional return} testevalobjv {
     list [catch {testevalobjv 0 error message} msg] $msg
 } {1 message}
+test parse-8.10 {Tcl_EvalObjv procedure, TCL_EVAL_GLOBAL} testevalobjv {
+    rename ::unknown unknown.save
+    proc ::unknown args {lappend ::info [info level]}
+    catch {rename ::noSuchCommand {}}
+    set ::info {}
+    namespace eval test_ns_1 {
+       testevalobjv 1 noSuchCommand
+       uplevel #0 noSuchCommand
+    }
+    namespace delete test_ns_1
+    rename ::unknown {}
+    rename unknown.save ::unknown
+    set ::info
+} {1 1}
+test parse-8.11 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} testevalobjv {
+    rename ::unknown unknown.save
+    proc ::unknown args {lappend ::info [info level]; uplevel 1 foo}
+    proc ::foo args {lappend ::info global}
+    catch {rename ::noSuchCommand {}}
+    set ::slave [interp create]
+    $::slave alias bar noSuchCommand
+    set ::info {}
+    namespace eval test_ns_1 {
+       proc foo args {lappend ::info namespace}
+       $::slave eval bar
+       testevalobjv 1 [list $::slave eval bar]
+       uplevel #0 [list $::slave eval bar]
+    }
+    namespace delete test_ns_1
+    rename ::foo {}
+    rename ::unknown {}
+    rename unknown.save ::unknown
+    set ::info
+} [subst {[set level 2; incr level [info level]] namespace 1 global 1 global}]
 
 test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
     catch {unset x}

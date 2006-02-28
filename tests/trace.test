@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.28.2.9 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.28.2.10 2006/02/28 16:34:55 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,6 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+testConstraint testevalobjv [llength [info commands testevalobjv]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -1593,6 +1594,38 @@ test trace-21.8 {trace execution: leavestep} {
     trace remove execution foo {leavestep} [list traceExecute foo]
     set info
 } {{foo {set b 3} 0 3 leavestep}}
+
+test trace-21.9 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
+    trace add execution foo enter soom
+    proc ::soom args {lappend ::info SUCCESS [info level]}
+    set ::info {}
+    namespace eval test_ns_1 {
+        proc soom args {lappend ::info FAIL [info level]}
+        # [testevalobjv 1 ...] ought to produce the same
+       # results as [uplevel #0 ...].
+        testevalobjv 1 foo x
+       uplevel #0 foo x
+    }
+    namespace delete test_ns_1
+    trace remove execution foo enter soom
+    set ::info
+} {SUCCESS 1 SUCCESS 1}
+    
+test trace-21.10 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
+    trace add execution foo leave soom
+    proc ::soom args {lappend ::info SUCCESS [info level]}
+    set ::info {}
+    namespace eval test_ns_1 {
+        proc soom args {lappend ::info FAIL [info level]}
+        # [testevalobjv 1 ...] ought to produce the same
+       # results as [uplevel #0 ...].
+        testevalobjv 1 foo x
+       uplevel #0 foo x
+    }
+    namespace delete test_ns_1
+    trace remove execution foo leave soom
+    set ::info
+} {SUCCESS 1 SUCCESS 1}
 
 proc factorial {n} {
     if {$n != 1} { return [expr {$n * [factorial [expr {$n -1 }]]}] }

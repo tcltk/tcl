@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.40 2006/02/23 14:45:02 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.41 2006/02/28 16:34:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3410,6 +3410,9 @@ TclEvalObjvInternal(
 	 * while loop one more time.
 	 */
 
+	if (flags & TCL_EVAL_GLOBAL) {
+	    iPtr->varFramePtr = NULL;
+	}
 	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
@@ -3418,6 +3421,7 @@ TclEvalObjvInternal(
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
+	iPtr->varFramePtr = savedVarFramePtr;
 	cmdPtr->refCount--;
     }
     if (cmdEpoch != cmdPtr->cmdEpoch) {
@@ -3462,6 +3466,9 @@ TclEvalObjvInternal(
      */
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
+	if (flags & TCL_EVAL_GLOBAL) {
+	    iPtr->varFramePtr = NULL;
+	}
 	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -3470,6 +3477,7 @@ TclEvalObjvInternal(
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
+	iPtr->varFramePtr = savedVarFramePtr;
     }
     TclCleanupCommand(cmdPtr);
 
