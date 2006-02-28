@@ -1,3 +1,10 @@
+2006-02-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Corrections to be sure that TCL_EVAL_GLOBAL
+	* tests/parse.test:	evaluations act the same as [uplevel #0]
+	* tests/trace.test:	evaluations, even when execution traces or
+	invocations of [::unknown] are present.  [Bug 1439836].
+
 2006-02-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIndexObj.c:	Disallow the "ambiguous" error message
