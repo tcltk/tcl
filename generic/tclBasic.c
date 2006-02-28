@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.19 2005/11/18 23:07:26 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.20 2006/02/28 15:44:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3034,7 +3034,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	        code = TCL_ERROR;
 	    } else {
 	        iPtr->numLevels++;
-	        code = TclEvalObjvInternal(interp, objc+1, newObjv, command, length, 0);
+	        code = TclEvalObjvInternal(interp, objc+1, newObjv,
+			command, length, flags);
 	        iPtr->numLevels--;
 	    }
 	    Tcl_DecrRefCount(newObjv[0]);
@@ -3053,6 +3054,10 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
              * any existing traces, then the set checkTraces to 0 and
              * go through this while loop one more time.
              */
+	    savedVarFramePtr = iPtr->varFramePtr;
+	    if (flags & TCL_EVAL_GLOBAL) {
+		iPtr->varFramePtr = NULL;
+	    }
             if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
                 traceCode = TclCheckInterpTraces(interp, command, length,
                                cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
@@ -3062,6 +3067,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
                 traceCode = TclCheckExecutionTraces(interp, command, length,
                                cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
             }
+	    iPtr->varFramePtr = savedVarFramePtr;
             cmdPtr->refCount--;
             if (cmdEpoch != cmdPtr->cmdEpoch) {
                 /* The command has been modified in some way */
@@ -3095,6 +3101,10 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
 	int saveErrFlags = iPtr->flags 
 		& (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED | ERROR_CODE_SET);
+	savedVarFramePtr = iPtr->varFramePtr;
+	if (flags & TCL_EVAL_GLOBAL) {
+	    iPtr->varFramePtr = NULL;
+	}
         if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
             traceCode = TclCheckExecutionTraces (interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -3103,6 +3113,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
             traceCode = TclCheckInterpTraces(interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
         }
+	iPtr->varFramePtr = savedVarFramePtr;
 	if (traceCode == TCL_OK) {
 	    iPtr->flags |= saveErrFlags;
 	}
