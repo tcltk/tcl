@@ -1,3 +1,9 @@
+2006-03-01  Reinhard Max  <max@suse.de>
+
+	* unix/installManPage: Fix the script for manpages that have
+	quotes around the .SH arguments, as doctools produces them
+	(Bug#1292145). Some minor cleanups and improvements.
+
 2006-02-28  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclBasic.c:	Corrections to be sure that TCL_EVAL_GLOBAL
