@@ -1,3 +1,10 @@
+2006-03-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/Makefile.in: convert _NATIVE paths to use / to avoid ".\"
+	path-as-escape issue.
+
+	* unix/tcl.m4, win/tcl.m4: []-quote ac_defun functions.
+
 2006-03-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* unix/tcl.m4:    Fix for tk bug #1334613 to sort out shared library
@@ -15,15 +22,15 @@
 	* generic/tclIndexObj.c:	Disallow the "ambiguous" error message
 	* tests/indexObj.test:		when TCL_EXACT matching is requested.
 
-2006-02-15  Don Porter  <dgp@users.sourceforge.net>
+2006-02-15  Don Porter	<dgp@users.sourceforge.net>
 
-	* generic/tclIO.c:      Made several routines tolerant of
-        * generic/tclIOUtil.c:	interp == NULL arguments.  [Bug 1380662]
+	* generic/tclIO.c:	Made several routines tolerant of
+	* generic/tclIOUtil.c:	interp == NULL arguments.  [Bug 1380662]
 
-2006-02-09  Don Porter  <dgp@users.sourceforge.net>
+2006-02-09  Don Porter	<dgp@users.sourceforge.net>
 
-        * tests/main.test (Tcl_Main-6.7):       Improved robustness of
-        command auto-completion test. [Bug 1422736].
+	* tests/main.test (Tcl_Main-6.7):	Improved robustness of
+	command auto-completion test. [Bug 1422736].
 
 2006-01-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -384,9 +391,9 @@
 
 2005-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-        * win/tclWin32Dll.c:   Backported Anton Kovalenko's patch #1256872
-        * win/tclWinConsole.c: to give unicode console support on
-        * win/tclWinInt.h:     suitable systems (eg: NT/XP)
+	* win/tclWin32Dll.c:   Backported Anton Kovalenko's patch #1256872
+	* win/tclWinConsole.c: to give unicode console support on
+	* win/tclWinInt.h:     suitable systems (eg: NT/XP)
 
 2005-11-01  Don Porter	<dgp@users.sourceforge.net>
 
