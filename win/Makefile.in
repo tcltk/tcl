@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.68.2.3 2005/11/30 00:15:39 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.68.2.4 2006/03/02 21:07:19 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -94,7 +94,7 @@ COMPILE_DEBUG_FLAGS =
 #COMPILE_DEBUG_FLAGS = -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 
 # Special compiler flags to use when building man2tcl on Windows.
-MAN2TCLFLAGS =		@MAN2TCLFLAGS@
+MAN2TCLFLAGS		= @MAN2TCLFLAGS@
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
@@ -105,11 +105,11 @@ COMPAT_DIR		= @srcdir@/../compat
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
 
-GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
-WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
-ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)' | sed 's!\\!/!g')
+WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)' | sed 's!\\!/!g')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
 
-LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
+LIBRARY_DIR		= $(ROOT_DIR_NATIVE)/library
 
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
