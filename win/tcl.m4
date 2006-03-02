@@ -17,7 +17,7 @@
 #		TCL_BIN_DIR	Full path to the tclConfig.sh file
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TCLCONFIG, [
+AC_DEFUN([SC_PATH_TCLCONFIG], [
     AC_MSG_CHECKING([the location of tclConfig.sh])
 
     if test -d ../../tcl8.4$1/win;  then
@@ -57,7 +57,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 #		TK_BIN_DIR	Full path to the tkConfig.sh file
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TKCONFIG, [
+AC_DEFUN([SC_PATH_TKCONFIG], [
     AC_MSG_CHECKING([the location of tkConfig.sh])
 
     if test -d ../../tk8.4$1/win;  then
@@ -99,7 +99,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 #
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LOAD_TCLCONFIG, [
+AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_MSG_CHECKING([for existence of $TCL_BIN_DIR/tclConfig.sh])
 
     if test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
@@ -168,7 +168,7 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 #		TK_BIN_DIR
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LOAD_TKCONFIG, [
+AC_DEFUN([SC_LOAD_TKCONFIG], [
     AC_MSG_CHECKING([for existence of $TK_BIN_DIR/tkConfig.sh])
 
     if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
@@ -205,7 +205,7 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 #		SHARED_BUILD	Value of 1 or 0
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_ENABLE_SHARED, [
+AC_DEFUN([SC_ENABLE_SHARED], [
     AC_MSG_CHECKING([how to build libraries])
     AC_ARG_ENABLE(shared,
 	[  --enable-shared         build and link with shared libraries [--enable-shared]],
@@ -245,7 +245,7 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 #		TCL_THREADS
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_ENABLE_THREADS, [
+AC_DEFUN([SC_ENABLE_THREADS], [
     AC_MSG_CHECKING(for building with threads)
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
 	[tcl_ok=$enableval], [tcl_ok=no])
@@ -292,7 +292,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 #
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_ENABLE_SYMBOLS, [
+AC_DEFUN([SC_ENABLE_SYMBOLS], [
     AC_MSG_CHECKING([for build with symbols])
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
@@ -377,7 +377,7 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #
 #--------------------------------------------------------------------
 
-AC_DEFUN(SC_CONFIG_CFLAGS, [
+AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # Step 0: Enable 64 bit support?
 
@@ -675,7 +675,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 #		TCL_BIN_DIR	Full path to the tcl build dir.
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_WITH_TCL, [
+AC_DEFUN([SC_WITH_TCL], [
     if test -d ../../tcl8.4$1/win;  then
 	TCL_BIN_DEFAULT=../../tcl8.4$1/win
     else
@@ -715,7 +715,7 @@ AC_DEFUN(SC_WITH_TCL, [
 #		TCLSH_PROG
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PROG_TCLSH, [
+AC_DEFUN([SC_PROG_TCLSH], [
     AC_MSG_CHECKING([for tclsh])
 
     AC_CACHE_VAL(ac_cv_path_tclsh, [
@@ -761,7 +761,7 @@ AC_DEFUN(SC_PROG_TCLSH, [
 #		BUILD_TCLSH
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_BUILD_TCLSH, [
+AC_DEFUN([SC_BUILD_TCLSH], [
     AC_MSG_CHECKING([for tclsh in Tcl build directory])
     BUILD_TCLSH=${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${TCL_DBGX}${EXEEXT}
     AC_MSG_RESULT($BUILD_TCLSH)
