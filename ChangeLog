@@ -1,3 +1,8 @@
+2006-03-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/tcl.m4:    Fix for tk bug #1334613 to sort out shared library
+	* unix/configure: issues on NetBSD. Regenerated configure script.
+
 2006-02-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Corrections to be sure that TCL_EVAL_GLOBAL
