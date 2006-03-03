@@ -1,4 +1,7 @@
-2006-03-02  Don Porter  <dgp@users.sourceforge.net>
+2006-03-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Revised yesterday's fix for [Bug 1379287]
+	to work on Windows.
 
 	* generic/tclObj.c:	Compatibility support for existing code that
 	calls Tcl_GetObjType("boolean").
