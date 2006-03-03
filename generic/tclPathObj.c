@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.49 2006/01/12 18:35:28 vasiljevic Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.50 2006/03/03 04:32:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -309,10 +309,18 @@ TclFSNormalizeAbsolutePath(
 		     * Either way, we now remove the last path element.
 		     */
 
-		    while (--curLen >= 0) {
+		    while (--curLen > 0) {
 			if (IsSeparatorOrNull(linkStr[curLen])) {
 			    Tcl_SetObjLength(retVal, curLen);
 			    break;
+			}
+		    }
+		    if (curLen == 0) {
+			/* Attempt to .. beyond root becomes root: "/" */
+			if (dirSep[3] != 0) {
+			    Tcl_SetObjLength(retVal, 0);
+			} else {
+			    Tcl_SetObjLength(retVal, 1);
 			}
 		    }
 		}
