@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.50 2006/03/03 04:32:11 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.51 2006/03/03 20:10:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -162,8 +162,9 @@ TclFSNormalizeAbsolutePath(
     int first = 1;		/* Set to zero once we've passed the first
 				 * directory separator - we can't use '..' to
 				 * remove the volume in a path. */
+    int rootOffset;
     Tcl_Obj *retVal = NULL;
-    dirSep = TclGetString(pathPtr);
+    oldDirSep = dirSep = TclGetString(pathPtr);
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 	if (dirSep[0] != 0 && dirSep[1] == ':' &&
@@ -191,6 +192,7 @@ TclFSNormalizeAbsolutePath(
      * since we will have to expand the link to be able to back up one level.
      */
 
+    rootOffset = dirSep - oldDirSep;
     while (*dirSep != 0) {
 	oldDirSep = dirSep;
 	if (!first) {
@@ -318,9 +320,9 @@ TclFSNormalizeAbsolutePath(
 		    if (curLen == 0) {
 			/* Attempt to .. beyond root becomes root: "/" */
 			if (dirSep[3] != 0) {
-			    Tcl_SetObjLength(retVal, 0);
+			    Tcl_SetObjLength(retVal, rootOffset);
 			} else {
-			    Tcl_SetObjLength(retVal, 1);
+			    Tcl_SetObjLength(retVal, rootOffset+1);
 			}
 		    }
 		}
