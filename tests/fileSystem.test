@@ -370,6 +370,76 @@ test filesystem-1.41 {file normalisation with repeated separators} {win} {
         set res "ok"
     }
 } {ok}
+test filesystem-1.42 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/..]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.42.1 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/../]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.43 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/foo/../..]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.43.1 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/foo/../../]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.44 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/foo/../../bar]
+    set b [file norm /bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.45 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/../../bar]
+    set b [file norm /bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.46 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/../bar]
+    set b [file norm /bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
 
 test filesystem-2.0 {new native path} {unix} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
