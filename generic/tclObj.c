@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.103 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.104 2006/03/03 06:53:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -214,8 +214,15 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-Tcl_ObjType tclBooleanType = {
+Tcl_ObjType oldBooleanType = {
     "boolean",				/* name */
+    NULL,				/* freeIntRepProc */
+    NULL,				/* dupIntRepProc */
+    NULL,				/* updateStringProc */
+    SetBooleanFromAny			/* setFromAnyProc */
+};
+Tcl_ObjType tclBooleanType = {
+    "booleanString",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
@@ -362,6 +369,9 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
+
+    /* For backward compatibility only ... */
+    Tcl_RegisterObjType(&oldBooleanType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
