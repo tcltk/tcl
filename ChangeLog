@@ -1,5 +1,10 @@
 2006-03-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclObj.c:	Compatibility support for existing code that
+	calls Tcl_GetObjType("boolean").
+
+2006-03-02  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclPathObj.c:		Fix for failed normalization of
 	* tests/fileSystem.test:	paths with /../ that lead back
 	to the root of the filesystem, like /foo/.. [Bug 1379287].
