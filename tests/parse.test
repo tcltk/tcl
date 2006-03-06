@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.22 2006/02/28 15:47:10 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.23 2006/03/06 21:56:34 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -398,7 +398,28 @@ test parse-8.11 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} testevalobjv {
     rename ::unknown {}
     rename unknown.save ::unknown
     set ::info
-} [subst {[set level 2; incr level [info level]] namespace 1 global 1 global}]
+} [subst {[set level 2; incr level [info level]] global 1 global 1 global}]
+test parse-8.12 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} {
+    set ::auto_index(noSuchCommand) {
+        proc noSuchCommand {} {lappend ::info global}
+    }
+    set ::auto_index(::[string trimleft [namespace current]::test_ns_1::noSuchCommand :]) [list \
+        proc [namespace current]::test_ns_1::noSuchCommand {} {
+            lappend ::info ns
+        }]
+    catch {rename ::noSuchCommand {}}
+    set ::slave [interp create]
+    $::slave alias bar noSuchCommand
+    set ::info {}
+    namespace eval test_ns_1 {
+        $::slave eval bar
+    }
+    namespace delete test_ns_1
+    interp delete $::slave
+    catch {rename ::noSuchCommand {}}
+    set ::info
+} global
+
 
 test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
     catch {unset x}
