@@ -1,3 +1,9 @@
+2006-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Revised handling of TCL_EVAL_* flags to
+	* tests/parse.test:	simplify TclEvalObjvInternal and to correct
+	the auto-loading of alias targets (parse-8.12).  [Bug 1444291].
+
 2006-03-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in: convert _NATIVE paths to use / to avoid ".\"
