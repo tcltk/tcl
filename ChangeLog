@@ -2,9 +2,6 @@
 
 	*** 8.4.13 TAGGED FOR RELEASE ***
 
-	* library/http/http.tcl:	Bump to version 2.5.3 to cover bug fix
-	* library/http/pkgIndex.tcl:	in URL parsing.  [Bug 1358369]
-
 	* README:		Bump version number to 8.4.13 and update
 	* changes:		changes to start prep for an 8.4.13 release.
 	* generic/tcl.h:
