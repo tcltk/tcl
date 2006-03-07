@@ -1,3 +1,16 @@
+2006-03-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:		Bump version number to 8.4.13 and update
+	* changes:		changes to start prep for an 8.4.13 release.
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure{.in}:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure{.in}:
+
+	* tests/parse.test:	Missing constraint
+
 2006-03-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Revised handling of TCL_EVAL_* flags to
