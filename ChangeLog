@@ -1,5 +1,7 @@
 2006-03-07  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Update in prep. for 8.5a4 release.
+
 	* unix/Makefile.in:	Package http 2.5.2 requires Tcl 8.4, so
 	* win/Makefile.in:	the *.tm installation has to be placed
 	in an "8.4" directory, not an "8.2" directory.
