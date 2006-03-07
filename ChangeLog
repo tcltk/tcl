@@ -1,9 +1,8 @@
 2006-03-07  Don Porter  <dgp@users.sourceforge.net>
 
-	* library/http/http.tcl:	Bump to version 2.5.3 to cover bug fix
-	* library/http/pkgIndex.tcl:	in URL parsing.  [Bug 1358369]
-	* unix/Makefile.in:
-	* win/Makefile.in:
+	* unix/Makefile.in:	Package http 2.5.2 requires Tcl 8.4, so
+	* win/Makefile.in:	the *.tm installation has to be placed
+	in an "8.4" directory, not an "8.2" directory.
 
 2006-03-06  Don Porter  <dgp@users.sourceforge.net>
 
