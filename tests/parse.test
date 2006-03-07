@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.11.2.4 2006/03/06 21:56:13 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.11.2.5 2006/03/07 05:30:24 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -219,6 +219,7 @@ test parse-7.1 {Tcl_FreeParse and ExpandTokenArray procedures} {
 } {- {$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) } 16 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 {}}
 
 testConstraint testevalobjv [llength [info commands testevalobjv]]
+testConstraint testevalex [llength [info commands testevalex]]
 test parse-8.1 {Tcl_EvalObjv procedure} testevalobjv {
     testevalobjv 0 concat this is a test
 } {this is a test}
