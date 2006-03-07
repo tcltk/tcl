@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.32 2005/12/05 15:10:32 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.33 2006/03/07 05:30:23 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6321,4 +6321,19 @@ Restores Tcl 8.4.9 behavior (porter)
 
 2005-12-05 (Darwin bug fix)[1034337] NFS recursive file delete (steffen)
 
---- Released 8.4.12, Decemeber 3, 2005 --- See ChangeLog for details ---
+--- Released 8.4.12, December 3, 2005 --- See ChangeLog for details ---
+
+2005-12-09 (bug fix)[137478] [lsearch -start $pastEnd] => -1 (fellows)
+
+2005-12-12 (bug fix)[1241572] correct [expr abs($LONG_MIN)] again (max)
+
+2005-12-12 (bug fix)[1377619] configure syntax error exposed in bash-3.1 (hobbs)
+
+2006-01-09 (bug fix)[1480572] [info level $l] => "namespace inscope" (porter)
+
+2006-01-23 (bug fix)[1410553] Tcl_GetRange Unicode confusion (twylite,spjuth)
+
+2006-03-06 (bug fix)[1430936,1444291] fix TCL_EVAL_{GLOBAL,INVOKE} handling
+when auto-loading or exec traces are present (porter)
+
+--- Released 8.4.13, March 17, 2006 --- See ChangeLog for details ---
