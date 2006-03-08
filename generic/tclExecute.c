@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.226 2006/02/09 17:34:41 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.227 2006/03/08 16:07:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2431,7 +2431,7 @@ TclExecuteByteCode(
 	}
 	TRACE(("%u \"%.30s\" (by %ld) => ", opnd, part2, i));
 	varPtr = TclLookupArrayElement(interp, part1, part2,
-		TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
+		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr);
 	if (varPtr == NULL) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    result = TCL_ERROR;
