@@ -1,3 +1,8 @@
+2006-03-07  Joe English  <jenglish@users.sourceforge.net>
+	* unix/tcl.m4: Set SHLIB_LD_FLAGS='${LIBS}' on NetBSD,
+	as per the other *BSD variants [Bug 1334613].
+	* unix/configure: Regenerated.
+
 2006-03-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Update in prep. for 8.5a4 release.
