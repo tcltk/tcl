@@ -1,3 +1,10 @@
+2006-02-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclPanic.c (Tcl_PanicVA): added an unconditional abort
+	at the end, to insure that a panic cannot return even if the
+	actual procedure was overriden by a Tcl_SetPanicProc() call. Bug
+	caught by looking at Coverity's analysis.
+
 2006-03-09  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* win/tclWinFile.c: fix to 'file writable' in certain XP
