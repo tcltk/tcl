@@ -1,3 +1,8 @@
+2006-03-09  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* win/tclWinFile.c: fix to 'file writable' in certain XP
+	directories.  Thanks to fvogel and jfg.  [Patch 1344540]
+
 2006-03-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Complete missing bit of TIP 215 implementation
