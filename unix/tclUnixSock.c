@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.14 2005/11/11 23:46:36 dkf Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.15 2006/03/10 17:33:24 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -156,6 +156,28 @@ TclpHasSockets(
     Tcl_Interp *interp)		/* Not used. */
 {
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizeSockets --
+ *
+ *	Performs per-thread socket subsystem finalization.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFinalizeSockets()
+{
+    return;
 }
 
 /*
