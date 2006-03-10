@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.61 2005/11/04 23:01:40 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.62 2006/03/10 17:34:35 vasiljevic Exp $
  */
 
 #include "tclWinInt.h"
@@ -187,7 +187,6 @@ static void		PipeCheckProc(ClientData clientData, int flags);
 static int		PipeClose2Proc(ClientData instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		PipeEventProc(Tcl_Event *evPtr, int flags);
-static void		PipeExitHandler(ClientData clientData);
 static int		PipeGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static void		PipeInit(void);
@@ -268,17 +267,16 @@ PipeInit(void)
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->firstPipePtr = NULL;
 	Tcl_CreateEventSource(PipeSetupProc, PipeCheckProc, NULL);
-	Tcl_CreateThreadExitHandler(PipeExitHandler, NULL);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * PipeExitHandler --
+ * TclpFinalizePipes --
  *
- *	This function is called to cleanup the pipe module before Tcl is
- *	unloaded.
+ *	This function is called from Tcl_FinalizeThread to finalize the
+ *	platform specific pipe subsystem.
  *
  * Results:
  *	None.
@@ -289,36 +287,15 @@ PipeInit(void)
  *----------------------------------------------------------------------
  */
 
-static void
-PipeExitHandler(
-    ClientData clientData)	/* Old window proc */
-{
-    Tcl_DeleteEventSource(PipeSetupProc, PipeCheckProc, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpFinalizePipes --
- *
- *	This function is called to cleanup the process list before Tcl is
- *	unloaded.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Resets the process list.
- *
- *----------------------------------------------------------------------
- */
-
 void
 TclpFinalizePipes(void)
 {
-    Tcl_MutexLock(&pipeMutex);
-    initialized = 0;
-    Tcl_MutexUnlock(&pipeMutex);
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    if (tsdPtr != NULL) {
+	Tcl_DeleteEventSource(PipeSetupProc, PipeCheckProc, NULL);
+    }
 }
 
 /*
