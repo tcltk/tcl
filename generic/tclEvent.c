@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.13 2005/08/16 15:23:56 kennykb Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28.2.14 2006/03/10 14:04:57 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -961,9 +961,9 @@ void
 Tcl_FinalizeThread()
 {
     ExitHandler *exitPtr;
-    ThreadSpecificData *tsdPtr =
-	    (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr;
 
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
 	tsdPtr->inExit = 1;
 
@@ -994,17 +994,17 @@ Tcl_FinalizeThread()
 	TclFinalizeAsync();
     }
 
-	/*
-	 * Blow away all thread local storage blocks.
+    /*
+     * Blow away all thread local storage blocks.
      *
      * Note that Tcl API allows creation of threads which do not use any
      * Tcl interp or other Tcl subsytems. Those threads might, however,
      * use thread local storage, so we must unconditionally finalize it.
      *
      * Fix [Bug #571002]
-	 */
+     */
 
-	TclFinalizeThreadData();
+    TclFinalizeThreadData();
 }
 
 /*
