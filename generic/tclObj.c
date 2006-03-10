@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.104 2006/03/03 06:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.105 2006/03/10 17:05:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2735,7 +2735,7 @@ Tcl_DbNewBignumObj(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
