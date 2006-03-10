@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.14 2002/04/08 09:03:17 das Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.14.2.1 2006/03/10 14:27:41 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -159,7 +159,6 @@ static void		SocketCheckProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
 static int		SocketEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
 			    int flags));
-static void		SocketExitHandler _ANSI_ARGS_((ClientData clientData));
 static void		SocketFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		SocketReady _ANSI_ARGS_((TcpState *statePtr));
 static void		SocketSetupProc _ANSI_ARGS_((ClientData clientData,
@@ -367,37 +366,36 @@ InitSockets()
 
     tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr == NULL) {
+	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->socketList = NULL;
 	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
-	Tcl_CreateThreadExitHandler(SocketExitHandler, (ClientData) NULL);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * SocketExitHandler --
+ * TclpFinalizeSockets --
  *
- *	Callback invoked during exit clean up to deinitialize the
- *	socket module.
+ *	Invoked during exit clean up to deinitialize the socket module.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Removed event source.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-SocketExitHandler(
-    ClientData clientData)              /* Not used. */
+void
+TclpFinalizeSockets()
 {
-    if (hasSockets) {
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    if (tsdPtr != NULL) {
 	Tcl_DeleteEventSource(SocketSetupProc, SocketCheckProc, NULL);
-	/* CleanUpExitProc();
-	TclMacDeleteExitToShellPatch(CleanUpExitProc); */
     }
 }
 
