@@ -1,3 +1,9 @@
+2006-03-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (ObjInterpProcEx): 
+	* tests/apply.test (apply-5.1): fix [apply] error messages
+	so that they quote the lambda expression [Bug 1447355]. 
+
 2006-03-10  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
 
   	-- Summary of changes fixing Tcl Bug #1437595 --
