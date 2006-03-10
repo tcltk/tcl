@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.104 2006/02/15 15:43:55 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.105 2006/03/10 17:32:51 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -179,6 +179,11 @@ TclFinalizeIOSubsystem(void)
     ChannelState *nextCSPtr;	/* Iterates over open channels. */
     ChannelState *statePtr;	/* state of channel stack */
 
+    /*
+     * Walk all channel state structures known to this thread and
+     * close corresponding channels.
+     */
+
     for (statePtr = tsdPtr->firstCSPtr; statePtr != NULL;
 	 statePtr = nextCSPtr) {
 	chanPtr = statePtr->topChanPtr;
@@ -250,6 +255,8 @@ TclFinalizeIOSubsystem(void)
 	nextCSPtr = statePtr->nextCSPtr;
 	Tcl_Release(statePtr);
     }
+
+    TclpFinalizeSockets();
     TclpFinalizePipes();
 }
 
