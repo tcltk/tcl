@@ -1,3 +1,23 @@
+2006-03-10  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
+
+  	-- Summary of changes fixing Tcl Bug #1437595 --
+
+	* generic/tclEvent.c: Cosmetic touches and identation
+	* generic/tclInt.h: Added TclpFinalizeSockets() call.
+
+	* generic/tclIO.c: Calls TclpFinalizeSockets() as part
+	of the TclFinalizeIOSubsystem().
+
+	* unix/tclUnixSock.c: Added no-op TclpFinalizeSockets().
+	
+	* win/tclWinPipe.c:
+	* win/tclWinSock.c: Finalization of the sockets/pipes 
+	is now solely done in TclpFinalizeSockets() and
+	TclpFinalizePipes() and not over the thread-exit handler,
+	because the order of actions the Tcl generic core will
+	impose may result in cores/hangs if the thread exit handler
+	tears down corresponding subsystem(s) too early.
+
 2006-03-10  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* win/tclWinFile.c: previous patch breaks tests, so removed.
