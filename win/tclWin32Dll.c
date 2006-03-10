@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.8 2005/11/03 11:53:59 patthoyts Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.9 2006/03/10 10:35:24 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -118,6 +118,11 @@ static TclWinProcs asciiProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime,
     NULL,
     NULL,
+    /* getLongPathNameProc */
+    NULL,
+    /* Security SDK - not available on 95,98,ME */
+    NULL, NULL, NULL, NULL, NULL, NULL,
+    /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
     (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleA    
 };
@@ -169,6 +174,11 @@ static TclWinProcs unicodeProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime,
     NULL,
     NULL,
+    /* getLongPathNameProc */
+    NULL,
+    /* Security SDK - will be filled in on NT,XP,2000,2003 */
+    NULL, NULL, NULL, NULL, NULL, NULL,
+    /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
     (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleW
 };
@@ -692,6 +702,36 @@ TclWinSetInterfaces(
 		  "GetVolumeNameForVolumeMountPointW");
 		FreeLibrary(hInstance);
 	    }
+	    hInstance = LoadLibraryA("advapi32");
+	    if (hInstance != NULL) {
+		tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
+			LPCTSTR lpFileName,
+			SECURITY_INFORMATION RequestedInformation,
+			PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			DWORD nLength, LPDWORD lpnLengthNeeded))
+			GetProcAddress(hInstance, "GetFileSecurityW");
+		tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
+			SECURITY_IMPERSONATION_LEVEL ImpersonationLevel))
+			GetProcAddress(hInstance, "ImpersonateSelf");
+		tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
+			HANDLE ThreadHandle, DWORD DesiredAccess,
+			BOOL OpenAsSelf, PHANDLE TokenHandle))
+			GetProcAddress(hInstance, "OpenThreadToken");
+		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void))
+			GetProcAddress(hInstance, "RevertToSelf");
+		tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
+			PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
+			GetProcAddress(hInstance, "MapGenericMask");
+		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
+			PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			HANDLE ClientToken, DWORD DesiredAccess,
+			PGENERIC_MAPPING GenericMapping,
+			PPRIVILEGE_SET PrivilegeSet,
+			LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess,
+			LPBOOL AccessStatus)) GetProcAddress(hInstance,
+			"AccessCheck");
+		FreeLibrary(hInstance);
+	    }
 	}
     } else {
 	tclWinProcs = &asciiProcs;
@@ -710,6 +750,7 @@ TclWinSetInterfaces(
 		  (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
 		  LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
 		  "FindFirstFileExA");
+		tclWinProcs->getLongPathNameProc = NULL;
 		tclWinProcs->getVolumeNameForVMPProc = 
 		  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
 		  DWORD)) GetProcAddress(hInstance, 
