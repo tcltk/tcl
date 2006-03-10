@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.18 2006/02/15 16:04:27 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.19 2006/03/10 14:12:14 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ TclInitIOSubsystem()
  *
  * TclFinalizeIOSubsystem --
  *
- *	Releases all resources used by this subsystem on a per-process 
+ *	Releases all resources used by this subsystem on a per-thread
  *	basis.  Closes all extant channels that have not already been 
  *	closed because they were not owned by any interp.  
  *
@@ -206,6 +206,11 @@ TclFinalizeIOSubsystem()
     Channel *chanPtr;			/* Iterates over open channels. */
     ChannelState *nextCSPtr;		/* Iterates over open channels. */
     ChannelState *statePtr;		/* state of channel stack */
+
+    /*
+     * Walk all channel state structures known to this thread and
+     * close corresponding channels.
+     */
 
     for (statePtr = tsdPtr->firstCSPtr; statePtr != (ChannelState *) NULL;
 	 statePtr = nextCSPtr) {
@@ -234,7 +239,9 @@ TclFinalizeIOSubsystem()
 	 * Preserve statePtr from disappearing until we can get the
 	 * nextCSPtr below.
 	 */
+
 	Tcl_Preserve(statePtr);
+
         if (statePtr->refCount <= 0) {
 
 	    /*
@@ -244,7 +251,9 @@ TclFinalizeIOSubsystem()
              */
 
             (void) Tcl_Close((Tcl_Interp *) NULL, (Tcl_Channel) chanPtr);
+
         } else {
+
             /*
              * The refcount is greater than zero, so flush the channel.
              */
@@ -274,13 +283,17 @@ TclFinalizeIOSubsystem()
             chanPtr->instanceData = (ClientData) NULL;
             statePtr->flags |= CHANNEL_DEAD;
         }
+
 	/*
 	 * We look for the next pointer now in case we had one closed on up
 	 * during the current channel's closeproc (eg: rechan extension)
 	 */
+
 	nextCSPtr = statePtr->nextCSPtr;
 	Tcl_Release(statePtr);
-   }
+    }
+
+    TclpFinalizeSockets();
     TclpFinalizePipes();
 }
 
