@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.21 2005/11/27 02:34:41 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.22 2006/03/10 14:09:02 vasiljevic Exp $
  */
 
 #ifndef _TCLINT
@@ -1742,6 +1742,7 @@ EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));
 EXTERN void		TclpFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutexPtr));
 EXTERN void		TclpFinalizePipes _ANSI_ARGS_((void));
+EXTERN void		TclpFinalizeSockets _ANSI_ARGS_((void));
 EXTERN void		TclpFinalizeThreadData _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN void		TclpFinalizeThreadDataKey _ANSI_ARGS_((
