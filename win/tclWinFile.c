@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.83 2006/03/09 11:30:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.84 2006/03/10 10:33:55 vincentdarley Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -188,7 +188,6 @@ static int		NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr,
 			    int checkLinks);
 static unsigned short	NativeStatMode(DWORD attr, int checkLinks, int isExec);
 static int		NativeIsExec(CONST TCHAR *path);
-static int 		NativeIsWritable(DWORD attr, CONST TCHAR *path);
 static int		NativeReadReparse(CONST TCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER* buffer);
 static int		NativeWriteReparse(CONST TCHAR *LinkDirectory,
@@ -1547,9 +1546,15 @@ NativeAccess(
 	return -1;
     }
 
-    if ((mode & W_OK) && !NativeIsWritable(attr, nativePath)) {
+    if ((mode & W_OK) 
+      && !(attr & FILE_ATTRIBUTE_DIRECTORY)
+	/* && (tclWinProcs->getFileSecurityProc == NULL) */
+      && (attr & FILE_ATTRIBUTE_READONLY)) {
 	/*
-	 * File is not writable.
+	 * We don't have the advanced 'getFileSecurityProc', and
+	 * our attributes say the file is not writable.  If we
+	 * do have 'getFileSecurityProc', we'll do a more
+	 * robust XP-related check below.
 	 */
 
 	Tcl_SetErrno(EACCES);
@@ -1585,8 +1590,8 @@ NativeAccess(
 	GENERIC_MAPPING genMap;
 	HANDLE hToken = NULL;
 	DWORD desiredAccess = 0;
-	DWORD grantedAccess;
-	BOOL accessYesNo;
+	DWORD grantedAccess = 0;
+	BOOL accessYesNo = FALSE;
 	PRIVILEGE_SET privSet;
 	DWORD privSetSize = sizeof(PRIVILEGE_SET);
 	int error;
@@ -1648,27 +1653,25 @@ NativeAccess(
 	    /*
 	     * Unable to perform security impersonation.
 	     */
-
+	    
 	    goto accessError;
 	}
 	if (!(*tclWinProcs->openThreadTokenProc)(GetCurrentThread (),
-			TOKEN_DUPLICATE | TOKEN_QUERY, FALSE, &hToken)) {
+		TOKEN_DUPLICATE | TOKEN_QUERY, FALSE, &hToken)) {
 	    /*
 	     * Unable to get current thread's token.
 	     */
-
+	    
 	    goto accessError;
 	}
+	
 	(*tclWinProcs->revertToSelfProc)();
-
-	memset (&genMap, 0x00, sizeof (GENERIC_MAPPING));
-
+	
 	/*
 	 * Setup desiredAccess according to the access priveleges we are
 	 * checking.
 	 */
 
-	genMap.GenericAll = 0;
 	if (mode & R_OK) {
 	    desiredAccess |= FILE_GENERIC_READ;
 	}
@@ -1679,6 +1682,12 @@ NativeAccess(
 	    desiredAccess |= FILE_GENERIC_EXECUTE;
 	}
 
+	memset (&genMap, 0x0, sizeof (GENERIC_MAPPING));
+	genMap.GenericRead = FILE_GENERIC_READ;
+	genMap.GenericWrite = FILE_GENERIC_WRITE;
+	genMap.GenericExecute = FILE_GENERIC_EXECUTE;
+	genMap.GenericAll = FILE_ALL_ACCESS;
+	
 	/*
 	 * Perform access check using the token.
 	 */
@@ -1708,6 +1717,15 @@ NativeAccess(
 	HeapFree(GetProcessHeap (), 0, sdPtr);
 	CloseHandle(hToken);
 	if (!accessYesNo) {
+	    Tcl_SetErrno(EACCES);
+	    return -1;
+	}
+	/*
+	 * For directories the above checks are ok.  For files, though,
+	 * we must still check the 'attr' value.
+	 */
+	if ((mode & W_OK)
+	  && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
 	}
@@ -1785,156 +1803,6 @@ NativeIsExec(
 	}
     }
     return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NativeIsWritable --
- *
- *     Determine if a path is writable. On Windows this requires more than a
- *     simple read only flag check for directories because Windows uses this
- *     as a flag to customize the folder options. [Bug 1193497]
- *
- * Results:
- *     1 = writable, 0 = not.
- *
- * Side effects:
- *     May smash the last error value (errors are just reported by this
- *     function as non-writable files).
- *
- *----------------------------------------------------------------------
- */
-static int
-NativeIsWritable(
-    DWORD attr,
-    CONST TCHAR *nativePath)
-{
-    BYTE *secDescPtr = 0;
-    DWORD secDescLen = 0;
-    HANDLE hToken = NULL;
-    BOOL isWritable = FALSE;
-
-    /*
-     * One time initialization, dynamically load Windows NT features
-     */
-
-    static const SECURITY_INFORMATION infoBits = OWNER_SECURITY_INFORMATION 
-      | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
-
-    static BOOL (WINAPI *getFileSecurityProc)(LPCSTR, SECURITY_INFORMATION, 
-      PSECURITY_DESCRIPTOR, DWORD, LPDWORD);
-    static BOOL (WINAPI *openProcessTokenProc)(HANDLE, DWORD, PHANDLE);
-    static BOOL (WINAPI *duplicateTokenProc)(HANDLE, SECURITY_IMPERSONATION_LEVEL, 
-      PHANDLE);
-    static VOID (WINAPI *mapGenericMaskProc)(PDWORD, PGENERIC_MAPPING);
-    static BOOL (WINAPI *accessCheckProc)(PSECURITY_DESCRIPTOR, HANDLE, DWORD, 
-      PGENERIC_MAPPING, PPRIVILEGE_SET, LPDWORD, LPDWORD, LPBOOL);
-
-    static int initialized = 0;
-
-    if (!initialized) {
-        TCL_DECLARE_MUTEX(writableMutex)
-        Tcl_MutexLock(&writableMutex);
-        if (!initialized) {
-            HINSTANCE hInstance = LoadLibrary("Advapi32");
-            if (hInstance != NULL) {
-                getFileSecurityProc = (BOOL (WINAPI *)(LPCSTR, 
-                  SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, DWORD, LPDWORD))
-                  GetProcAddress(hInstance, tclWinProcs->useWide ? 
-                  "GetFileSecurityW" : "GetFileSecurityA");
-                openProcessTokenProc = (BOOL (WINAPI *)(HANDLE, DWORD, 
-                  PHANDLE)) GetProcAddress(hInstance, "OpenProcessToken");
-                duplicateTokenProc = (BOOL (WINAPI *)(HANDLE, 
-                  SECURITY_IMPERSONATION_LEVEL, PHANDLE)) 
-                  GetProcAddress(hInstance, "DuplicateToken");
-                mapGenericMaskProc = (VOID (WINAPI *)(PDWORD, 
-                  PGENERIC_MAPPING)) GetProcAddress(hInstance, 
-                  "MapGenericMask");
-                accessCheckProc = (BOOL (WINAPI *)(PSECURITY_DESCRIPTOR,
-                  HANDLE, DWORD, PGENERIC_MAPPING, PPRIVILEGE_SET, 
-                  LPDWORD, LPDWORD, LPBOOL)) GetProcAddress(hInstance, 
-                  "AccessCheck");
-                if (getFileSecurityProc && openProcessTokenProc 
-                  && duplicateTokenProc && mapGenericMaskProc 
-                  && accessCheckProc) {
-                    initialized = 1;
-                }
-            }
-            if (!initialized)
-                initialized = -1;
-        }
-        Tcl_MutexUnlock(&writableMutex);
-    }
-
-    /*
-     * Windows NT features not available, default back to readonly flag
-     */
-    if (initialized < 0)
-        return attr & FILE_ATTRIBUTE_READONLY;
-
-    /*
-     * Read the security descriptor for the file or directory. Note the
-     * first call obtains the size of the security descriptor.
-     */
-
-    if (!getFileSecurityProc(nativePath, infoBits, NULL, 0, &secDescLen)) {
-        if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            DWORD secDescLen2 = 0;
-            secDescPtr = (BYTE *) ckalloc(secDescLen);
-            if (!getFileSecurityProc(nativePath, infoBits, secDescPtr, 
-              secDescLen, &secDescLen2) 
-              || (secDescLen < secDescLen2)) {
-                goto done;
-            }
-        } else {
-            goto done;
-        }
-    }
-
-    /*
-     * Get the security identity of the process and (if successful) use it
-     * with the security descriptor of the file to find out if the file really
-     * is writable.
-     */
-    if (openProcessTokenProc(GetCurrentProcess(), TOKEN_DUPLICATE, &hToken)) {
-        HANDLE hIToken = NULL;
-        BOOL status = duplicateTokenProc(hToken, SecurityIdentification, 
-          &hIToken);
-
-        CloseHandle(hToken);
-        if (status) {
-            PRIVILEGE_SET privilegeSet;
-            DWORD privilegeSetLength = sizeof(privilegeSet);
-            DWORD granted; /* unused */
-            DWORD accessDesired = ACCESS_WRITE;
-
-            /* Initialize generic mapping structure to map all. */
-            GENERIC_MAPPING GenericMapping;
-            memset(&GenericMapping, 0xff, sizeof(GENERIC_MAPPING));
-            GenericMapping.GenericRead = ACCESS_READ;
-            GenericMapping.GenericWrite = ACCESS_WRITE;
-            GenericMapping.GenericExecute = 0;
-            GenericMapping.GenericAll = ACCESS_READ | ACCESS_WRITE;
-            mapGenericMaskProc(&accessDesired, &GenericMapping);
-
-            accessCheckProc(secDescPtr, hIToken, accessDesired,
-              &GenericMapping, &privilegeSet, &privilegeSetLength, &granted, 
-              &isWritable);
-            CloseHandle(hIToken);
-        }
-    }
-
-    /*
-     * Release any temporary space we may be using and convert the writability
-     * value into a boolean for return.
-     */
-
-  done:
-    if (secDescPtr) {
-        ckfree(secDescPtr);
-    }
-    return isWritable != 0;
 }
 
 /*
