@@ -1,5 +1,8 @@
 2006-03-13  Don Porter  <dgp@users.sourceforge.net>
 
+        * generic/tclEncoding.c:        Report error when an escape encoding
+        is missing one of its sub-encodings [Bug 506653].
+
         * unix/configure.in:    Revert change from 2005-07-26 that sometimes
         * unix/configure:       added $prefix/share to the tcl_pkgPath.
         See [Patch 1231015].  autoconf-2.59.
