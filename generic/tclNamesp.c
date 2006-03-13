@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.94 2006/02/02 09:54:58 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.95 2006/03/13 17:02:27 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -3784,7 +3784,7 @@ NamespaceInscopeCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    CallFrame *framePtr;
+    CallFrame *framePtr, **framePtrPtr;
     int i, result;
 
     if (objc < 4) {
@@ -3810,7 +3810,8 @@ NamespaceInscopeCmd(
      * Make the specified namespace the current namespace.
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **)&framePtr,
+    framePtrPtr = &framePtr; /* This is needed to satisfy GCC's strict aliasing rules */
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **)framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return result;
