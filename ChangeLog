@@ -1,5 +1,11 @@
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
+	* doc/clock.n: Removed double-quotes around section title NAME. not needed.
+	* unix/installManpage: Reverted part to handle double-quotes in
+	  section NAME, chokes older sed installations.
+
+2006-03-14  Andreas Kupries <andreask@activestate.com>
+
 	* library/tm.tcl (::tcl::tm::Defaults): Fixed handling of
 	  environment variable TCLX.y_TM_PATH, bad variable reference. See
 	  [SF Tcl Bug 1448251]. Thanks to Julian Noble.
