@@ -1,5 +1,12 @@
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
+	* doc/fconfigure.n: Clarified that -translation is binary is
+	  reported as lf when queried, because it is identical to lf,
+	  except for the special additional behaviour when setting
+	  it. [Bug 666770].
+
+2006-03-14  Andreas Kupries <andreask@activestate.com>
+
 	* doc/clock.n: Removed double-quotes around section title NAME. not needed.
 	* unix/installManpage: Reverted part to handle double-quotes in
 	  section NAME, chokes older sed installations.
