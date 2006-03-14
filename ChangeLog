@@ -1,3 +1,14 @@
+2006-03-14  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* win/tclWinFile.c: updated patch to deal with 'file writable'
+	issues on Windows XP/2000.
+	* generic/tclTest.c:
+	* unix/tclUnixTest.c:
+	* win/tclWinTest.c:
+	* tests/fCmd,test: updated test suite to deal with correct
+	permissions setting and differences between XP/2000 and 95/98
+	3 tests still fail; to be dealt with shortly
+
 2006-03-13  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclEncoding.c:        Report error when an escape encoding
