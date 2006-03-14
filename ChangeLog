@@ -1,5 +1,12 @@
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
+	* doc/fconfigure.n: Clarified that -translation is binary is
+	  reported as lf when queried, because it is identical to lf,
+	  except for the special additional behaviour when setting
+	  it. [Bug 666770].
+
+2006-03-14  Andreas Kupries <andreask@activestate.com>
+
 	* win/tclWinPipe.c (Tcl_WaitPid): Backport of fix made to the head
 	  by David Gravereaux in 2004. See ChangeLog entry 2004-01-19.
 	  [Bug 1381436].
