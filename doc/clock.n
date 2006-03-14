@@ -5,7 +5,7 @@
 .so man.macros
 .TH "clock" n 8.5 Tcl "Tcl Built-In Commands"
 .BS
-.SH "NAME"
+.SH NAME
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
 package require \fBTcl 8.5\fR
