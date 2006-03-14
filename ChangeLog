@@ -1,3 +1,14 @@
+2006-03-14  Andreas Kupries <andreask@activestate.com>
+
+	* win/tclWinPipe.c (Tcl_WaitPid): Backport of fix made to the head
+	  by David Gravereaux in 2004. See ChangeLog entry 2004-01-19.
+	  [Bug 1381436].
+
+	  Fixed a thread-safety problem with the process list. The delayed
+	  cut operation after the wait was going stale by being outside
+	  the list lock. It now cuts within the lock and does a locked
+	  splice for when it needs to instead. [Bug 859820]
+
 2006-03-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEncoding.c:	Report error when an escape encoding

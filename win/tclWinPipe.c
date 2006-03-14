@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.16 2006/03/10 14:18:54 vasiljevic Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.17 2006/03/14 20:36:39 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -884,6 +884,8 @@ TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
     ProcInfo *infoPtr;
+
+    PipeInit();
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
@@ -2479,7 +2481,7 @@ Tcl_WaitPid(
     int *statPtr,
     int options)
 {
-    ProcInfo *infoPtr, **prevPtrPtr;
+    ProcInfo *infoPtr = NULL, **prevPtrPtr;
     DWORD flags;
     Tcl_Pid result;
     DWORD ret, exitCode;
@@ -2496,7 +2498,13 @@ Tcl_WaitPid(
     }
 
     /*
-     * Find the process on the process list.
+     * Find the process and cut it from the process list.
+     * SF Tcl Bug  859820, Backport of its fix.
+     * SF Tcl Bug 1381436, asking for the backport.
+     *     
+     * [x] Cutting the infoPtr after the closehandle allows the
+     * pointer to become stale. We do it here, and compensate if the
+     * process was not done yet.
      */
 
     Tcl_MutexLock(&pipeMutex);
@@ -2504,6 +2512,7 @@ Tcl_WaitPid(
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
 	 if (infoPtr->hProcess == (HANDLE) pid) {
+	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
     }
@@ -2533,6 +2542,14 @@ Tcl_WaitPid(
     if (ret == WAIT_TIMEOUT) {
 	*statPtr = 0;
 	if (options & WNOHANG) {
+	    /*
+	     * Re-insert the cut infoPtr back on the list.
+	     * See [x] for explanation.
+	     */
+	    Tcl_MutexLock(&pipeMutex);
+	    infoPtr->nextPtr = procList;
+	    procList = infoPtr;
+	    Tcl_MutexUnlock(&pipeMutex);
 	    return 0;
 	} else {
 	    result = 0;
@@ -2591,11 +2608,10 @@ Tcl_WaitPid(
     }
 
     /*
-     * Remove the process from the process list and close the process handle.
+     * Officially close the process handle.
      */
 
     CloseHandle(infoPtr->hProcess);
-    *prevPtrPtr = infoPtr->nextPtr;
     ckfree((char*)infoPtr);
 
     return result;
