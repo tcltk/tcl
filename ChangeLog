@@ -1,3 +1,8 @@
+2006-03-15  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* win/fCmd.test: add proper test constraints so the new
+	tests don't run on Unix.
+
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
 	* doc/fconfigure.n: Clarified that -translation is binary is
