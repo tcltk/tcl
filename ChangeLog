@@ -1,3 +1,13 @@
+2006-03-16  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclIOUtil.c (TclGetOpenMode): Added the flag O_APPEND to
+	  the list of POSIX modes used when opening a file for
+	  'a'ppend. This enables the proper automatic seek-to-end-on-write
+	  by the OS. See [Bug 680143] for longer discussion.
+
+	* tests/ioCmd.test (iocmd-13.7.*): Extended the testsuite to check
+	  the new handling of 'a'.
+
 2006-03-15  Andreas Kupries <andreask@activestate.com>
 
 	* tests/socket.test: Extended the timeout in socket-11.11 from 10
