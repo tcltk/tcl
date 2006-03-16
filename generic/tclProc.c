@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.88 2006/03/10 19:49:14 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.89 2006/03/16 09:56:46 das Exp $
  */
 
 #include "tclInt.h"
@@ -76,7 +76,7 @@ static Tcl_ObjType levelReferenceType = {
  * will execute within.
  */
 
-Tcl_ObjType lambdaType = {
+static Tcl_ObjType lambdaType = {
     "lambdaExpr",		/* name */
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
