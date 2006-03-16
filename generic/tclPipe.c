@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.2.4 2006/01/16 19:31:18 rmax Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.2.5 2006/03/16 00:35:58 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -508,7 +508,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
     int errorRelease = 0;
     CONST char *p;
     CONST char *nextArg;
-    int skip, lastBar, lastArg, i, j, atOK, flags, errorToOutput = 0;
+    int skip, lastBar, lastArg, i, j, atOK, flags, needCmd, errorToOutput = 0;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
@@ -546,6 +546,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 
     lastBar = -1;
     cmdCount = 1;
+    needCmd = 1;
     for (i = 0; i < argc; i++) {
 	errorToOutput = 0;
 	skip = 0;
@@ -565,6 +566,7 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    }
 	    lastBar = i;
 	    cmdCount++;
+	    needCmd = 1;
 	    break;
 
 	case '<':
@@ -706,6 +708,11 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 		}
 	    }
 	    break;
+
+	default:
+	  /* Got a command word, not a redirection */
+	  needCmd = 0;
+	  break;
 	}
 
 	if (skip != 0) {
@@ -715,6 +722,15 @@ TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    argc -= skip;
 	    i -= 1;
 	}
+    }
+
+    if (needCmd) {
+        /* We had a bar followed only by redirections. */
+
+        Tcl_SetResult(interp,
+		      "illegal use of | or |& in command",
+		      TCL_STATIC);
+	goto error;
     }
 
     if (inputFile == NULL) {
