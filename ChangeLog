@@ -1,9 +1,9 @@
 2006-03-16  Andreas Kupries <andreask@activestate.com>
 
+	* doc/open.n: Documented the changed behaviour of 'a'ppend mode.
+
 	* tests/io.test (io-43.1 io-44.[1234]): Rewritten to be
 	  self-contained with regard to setup and cleanup. [Bug 681793].
-
-2006-03-16  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclIOUtil.c (TclGetOpenMode): Added the flag O_APPEND to
 	  the list of POSIX modes used when opening a file for
