@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.105 2006/03/10 17:05:06 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.106 2006/03/16 09:56:46 das Exp $
  */
 
 #include "tclInt.h"
@@ -214,7 +214,7 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-Tcl_ObjType oldBooleanType = {
+static Tcl_ObjType oldBooleanType = {
     "boolean",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
