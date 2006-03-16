@@ -1,3 +1,4 @@
+# -*- tcl -*-
 # Functionality covered: operation of all IO commands, and all procedures
 # defined in generic/tclIO.c.
 #
@@ -12,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.40.2.10 2005/04/14 07:10:52 davygrvy Exp $
+# RCS: @(#) $Id: io.test,v 1.40.2.11 2006/03/16 19:12:32 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -5379,14 +5380,6 @@ test io-42.3 {Tcl_FileeventCmd: replacing, with NULL chars in script} {fileevent
     lappend result [fileevent $f readable]
 } {13 11 12 {}}
 
-#
-# Test fileevent on a pipe
-#
-if {[testConstraint openpipe]} {
-catch {set f2 [open "|[list cat -u]" r+]}
-catch {set f3 [open "|[list cat -u]" r+]}
-}
-
 test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {stdio unixExecs fileevent} {
     set result {}
     fileevent $f readable "script 1"
@@ -5398,7 +5391,10 @@ test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {stdio unixExecs f
     fileevent $f writable {}
     lappend result [fileevent $f readable] [fileevent $f writable]
 } {{script 1} {} {script 1} {write script} {} {write script} {} {}}
-test io-43.2 {Tcl_FileeventCmd: deleting when many present} {stdio unixExecs fileevent} {
+test io-43.2 {Tcl_FileeventCmd: deleting when many present} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     set result {}
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
     fileevent $f r "read f"
@@ -5411,9 +5407,15 @@ test io-43.2 {Tcl_FileeventCmd: deleting when many present} {stdio unixExecs fil
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
     fileevent $f r {}
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
-} {{} {} {} {read f} {read f2} {read f3} {read f} {} {read f3} {read f} {} {} {} {} {}}
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {{} {} {} {read f} {read f2} {read f3} {read f} {} {read f3} {read f} {} {} {} {} {}}
 
-test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs fileevent} {
+test io-44.1 {FileEventProc procedure: normal read event} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     fileevent $f2 readable [namespace code {
 	set x [gets $f2]; fileevent $f2 readable {}
     }]
@@ -5421,8 +5423,14 @@ test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs filee
     variable x initial
     vwait [namespace which -variable x]
     set x
-} {text}
-test io-44.2 {FileEventProc procedure: error in read event} {stdio unixExecs fileevent} {
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {text}
+test io-44.2 {FileEventProc procedure: error in read event} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     proc ::bgerror args "set [namespace which -variable x] \$args"
     fileevent $f2 readable {error bogus}
     puts $f2 text; flush $f2
@@ -5430,8 +5438,14 @@ test io-44.2 {FileEventProc procedure: error in read event} {stdio unixExecs fil
     vwait [namespace which -variable x]
     rename ::bgerror {}
     list $x [fileevent $f2 readable]
-} {bogus {}}
-test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs fileevent} {
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {bogus {}}
+test io-44.3 {FileEventProc procedure: normal write event} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     fileevent $f2 writable [namespace code {
 	lappend x "triggered"
 	incr count -1
@@ -5445,15 +5459,24 @@ test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs file
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
     set x
-} {initial triggered triggered triggered}
-test io-44.4 {FileEventProc procedure: eror in write event} {stdio unixExecs fileevent} {
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {initial triggered triggered triggered}
+test io-44.4 {FileEventProc procedure: eror in write event} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     proc ::bgerror args "set [namespace which -variable x] \$args"
     fileevent $f2 writable {error bad-write}
     variable x initial
     vwait [namespace which -variable x]
     rename ::bgerror {}
     list $x [fileevent $f2 writable]
-} {bad-write {}}
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {bad-write {}}
 test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fileevent} {
     set f4 [open "|[list [interpreter] $path(cat) << foo]" r]
     fileevent $f4 readable [namespace code {
@@ -5470,9 +5493,6 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fi
     close $f4
     set x
 } {initial foo eof}
-
-catch {close $f2}
-catch {close $f3}
 
 
 close $f
