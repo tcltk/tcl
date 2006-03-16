@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.6 2005/11/27 06:09:19 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.7 2006/03/16 09:15:50 das Exp $
  */
 
 #include "tclInt.h"
@@ -537,7 +537,7 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
 	if (objFileImageErrMsg != NULL) {
 	    Tcl_AppendResult(interp,
-		    "NSCreateObjectFileImageFromFile() error: ",
+		    "NSCreateObjectFileImageFromMemory() error: ",
 		    objFileImageErrMsg, (char *) NULL);
 	}
 	return TCL_ERROR;
