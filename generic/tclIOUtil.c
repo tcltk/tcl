@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.128 2006/02/15 15:43:55 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.129 2006/03/16 18:22:57 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1558,7 +1558,11 @@ TclGetOpenModeEx(
 	    mode = O_WRONLY|O_CREAT|O_TRUNC;
 	    break;
 	case 'a':
-	    mode = O_WRONLY|O_CREAT;
+	    /* [Bug 680143].
+	     * Added O_APPEND for proper automatic
+	     * seek-to-end-on-write by the OS.
+	     */
+	    mode = O_WRONLY|O_CREAT|O_APPEND;
 	    *seekFlagPtr = 1;
 	    break;
 	default:
