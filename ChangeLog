@@ -1,7 +1,20 @@
+2006-03-15  Andreas Kupries <andreask@activestate.com>
+
+	* tests/socket.test: Extended the timeout in socket-11.11 from 10
+	  to 40 seconds to allow for really slow machines. Also extended
+	  actual/expected results with value of variable 'done' to make it
+	  clearer when a test fails due to a timeout. [Bug 792159].
+
 2006-03-15  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* win/fCmd.test: add proper test constraints so the new
 	tests don't run on Unix.
+
+2006-03-14  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclPipe.c (TclCreatePipeline): Modified the processing
+	  of pipebars to fail if the last bar is followed only by
+	  redirections. [Bug 768659].
 
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
