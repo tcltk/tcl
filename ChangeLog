@@ -1,5 +1,10 @@
 2006-03-17  Joe Mistachkin <joe@mistachkin.com>
 
+	* unix/tclUnixPort.h: Include pthread.h prior to pthread_np.h
+	  [Bug 1444692]
+
+2006-03-17  Joe Mistachkin <joe@mistachkin.com>
+
 	* win/tclWinTest.c: Corrected typo of 'initializeMutex' that
 	  prevented successful compilation.
 
