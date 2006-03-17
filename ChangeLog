@@ -1,3 +1,8 @@
+2006-03-17  Joe Mistachkin <joe@mistachkin.com>
+
+	* win/tclWinTest.c: Corrected typo of 'initializeMutex' that
+	  prevented successful compilation.
+
 2006-03-16  Andreas Kupries <andreask@activestate.com>
 
 	* doc/open.n: Documented the changed behaviour of 'a'ppend mode.
