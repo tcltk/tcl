@@ -1,3 +1,11 @@
+2006-03-17  Andreas Kupries <andreask@activestate.com>
+
+	* doc/chan.n: Updated with documentation for the commands 'chan
+	  create' and 'chan postevent' (TIP #219).
+
+	* doc/refchan.n: New file. Documentation of the command handler
+	  API for reflected channels (TIP #219).
+
 2006-03-17  Joe Mistachkin <joe@mistachkin.com>
 
 	* unix/tclUnixPort.h: Include pthread.h prior to pthread_np.h
