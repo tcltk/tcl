@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.13 2006/03/14 19:34:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.14 2006/03/17 09:59:55 mistachkin Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -567,7 +567,7 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 
     static int initialized = 0;
     if (!initialized) {
-	TCL_DECLARE_MUTEX(initialzeMutex)
+	TCL_DECLARE_MUTEX(initializeMutex)
 	Tcl_MutexLock(&initializeMutex);
 	if (!initialized) {
 	    HINSTANCE hInstance = LoadLibrary("Advapi32");
@@ -604,7 +604,7 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 	    if (!initialized)
 		initialized = -1;
 	}
-	Tcl_MutexUnlock(&intializeMutex);
+	Tcl_MutexUnlock(&initializeMutex);
     }
 
     /* Process the chmod request */
