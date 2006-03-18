@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.50 2006/03/15 23:10:09 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.51 2006/03/18 18:15:13 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2381,6 +2381,21 @@ test fCmd-30.1 {file writable on 'My Documents'} {pc 2000orNewer} {
     }
     set res
 } {1}
+
+test fCmd-30.2 {file readable on 'NTUSER.DAT'} {pc 2000orNewer knownBug} {
+    # Apparently the OS has this file open with exclusive permissions
+    # Windows doesn't provide any way to determine that fact without
+    # actually trying to open the file (open NTUSER.dat r), which
+    # fails.  Hence this isn't really a knownBug in Tcl, but an OS
+    # limitation.  But, perhaps in the future that limitation will be
+    # lifted.
+    if {[file exists "~/NTUSER.DAT"]} {
+	set res [file readable "~/NTUSER.DAT"]
+    } else {
+	set res 0
+    }
+    set res
+} {0}
 
 # cleanup
 cleanup
