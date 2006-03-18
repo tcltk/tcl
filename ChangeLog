@@ -1,3 +1,12 @@
+2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* tests/fCmd.test: added knownBug test case for [Bug 1394972]
+
+	* tests/winFCmd.test:
+	* tests/tcltest.test: corrected tests to better account for
+	behaviour of writable/non-writable directories on Windows 2000/XP.
+	This, with the previous patches, closes [Bug 1193497]
+
 2006-03-17  Andreas Kupries <andreask@activestate.com>
 
 	* doc/chan.n: Updated with documentation for the commands 'chan
