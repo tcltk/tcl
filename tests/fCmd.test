@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.26.2.7 2005/10/07 22:35:03 hobbs Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.26.2.8 2006/03/19 22:47:30 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -20,6 +20,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
 tcltest::testConstraint testchmod [string equal testchmod [info commands testchmod]]
+testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
+testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
 
 # Several tests require need to match results against the unix username
 set user {}
@@ -890,7 +892,7 @@ test fCmd-10.2 {file copy: comprehensive: file to new name} {notRoot testchmod} 
     file copy tf2 tf4
     list [lsort [glob tf*]] [contents tf3] [contents tf4] [file writable tf3] [file writable tf4]
 } {{tf1 tf2 tf3 tf4} tf1 tf2 1 0}
-test fCmd-10.3 {file copy: comprehensive: dir to new name} {notRoot unixOrPc testchmod} {
+test fCmd-10.3 {file copy: comprehensive: dir to new name} {notRoot unixOrPc 95or98 testchmod} {
     cleanup
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
@@ -905,6 +907,20 @@ test fCmd-10.3 {file copy: comprehensive: dir to new name} {notRoot unixOrPc tes
     }
     set msg
 } [subst {{td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 0}]
+test fCmd-10.3.1 {file copy: comprehensive: dir to new name} {notRoot pc 2000orNewer testchmod} {
+    # On Windows with ACLs, copying a directory is defined like this
+    cleanup
+    file mkdir [file join td1 tdx]
+    file mkdir [file join td2 tdy]
+    testchmod 555 td2
+    file copy td1 td3
+    file copy td2 td4
+    set msg [list [lsort [glob td*]] [glob -directory td3 t*] \
+	    [glob -directory td4 t*] [file writable td3] [file writable td4]]
+    testchmod 755 td2
+    testchmod 755 td4
+    set msg
+} [subst {{td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 1}]
 test fCmd-10.4 {file copy: comprehensive: file to existing file} {notRoot testchmod} {
     cleanup
     createfile tf1
@@ -977,7 +993,7 @@ test fCmd-10.7 {file rename: comprehensive: file to new name and dir} {notRoot t
     [file writable [file join td1 tf3]] [file writable [file join td1 tf4]]
 } [subst {{tf1 tf2} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} \
-	{notRoot unixOrPc testchmod} {
+	{notRoot unixOrPc 95or98 testchmod} {
     cleanup
     file mkdir td1
     file mkdir td2
@@ -988,6 +1004,19 @@ test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} \
     list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
     [file writable [file join td3 td3]] [file writable [file join td3 td4]]
 } [subst {{td1 td2 td3} {[file join td3 td3] [file join td3 td4]} 1 0}]
+test fCmd-10.8.1 {file rename: comprehensive: dir to new name and dir} \
+	{notRoot pc 2000orNewer testchmod} {
+    # On Windows with ACLs, copying a directory is defined like this
+    cleanup
+    file mkdir td1
+    file mkdir td2
+    file mkdir td3
+    testchmod 555 td2
+    file copy td1 [file join td3 td3]
+    file copy td2 [file join td3 td4]
+    list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
+    [file writable [file join td3 td3]] [file writable [file join td3 td4]]
+} [subst {{td1 td2 td3} {[file join td3 td3] [file join td3 td4]} 1 1}]
 test fCmd-10.9 {file copy: comprehensive: source and target incompatible} \
 	{notRoot} {
     cleanup
