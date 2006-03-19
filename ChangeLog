@@ -1,3 +1,13 @@
+2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* generic/tclTest.c:
+	* win/tclWinFile.c:
+	* win/tclWinTest.c:
+	* tests/fCmd.test:
+	* tests/winFCmd.test:
+	* tests/tcltest.test: Backport of [file writable] fixes for
+	Windows from HEAD. [Bug 1193497]
+
 2006-03-16  Andreas Kupries <andreask@activestate.com>
 
 	* doc/open.n: Documented the changed behaviour of 'a'ppend mode.

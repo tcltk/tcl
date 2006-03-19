@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.14 2006/03/10 10:35:25 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.15 2006/03/19 22:47:30 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1342,8 +1342,7 @@ NativeAccess(
     }
 
     if ((mode & W_OK) 
-      && !(attr & FILE_ATTRIBUTE_DIRECTORY)
-	/* && (tclWinProcs->getFileSecurityProc == NULL) */
+      && (tclWinProcs->getFileSecurityProc == NULL)
       && (attr & FILE_ATTRIBUTE_READONLY)) {
 	/*
 	 * We don't have the advanced 'getFileSecurityProc', and
@@ -1520,6 +1519,7 @@ NativeAccess(
 	 * we must still check the 'attr' value.
 	 */
 	if ((mode & W_OK)
+	  && !(attr & FILE_ATTRIBUTE_DIRECTORY)
 	  && (attr & FILE_ATTRIBUTE_READONLY)) {
 	    Tcl_SetErrno(EACCES);
 	    return -1;
@@ -2610,7 +2610,6 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_DStringFree(&dsNorm);
     return nextCheckpoint;
 }
-
 
 /*
  *---------------------------------------------------------------------------
