@@ -8,14 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.14 2006/03/17 09:59:55 mistachkin Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.15 2006/03/19 22:44:17 vincentdarley Exp $
  */
 
 #define USE_COMPAT_CONST
 #include "tclInt.h"
 
 /*
- * For Testplaftorm_chmod on Windows
+ * For TestplatformChmod on Windows
  */
 #ifdef __WIN32__
 #include <aclapi.h>
@@ -501,6 +501,17 @@ TestExceptionCmd(
 static int 
 TestplatformChmod(CONST char *nativePath, int pmode)
 {
+    SID_IDENTIFIER_AUTHORITY userSidAuthority =
+    SECURITY_WORLD_SID_AUTHORITY;
+
+    typedef DWORD (WINAPI *getSidLengthRequiredDef) ( UCHAR );
+    typedef BOOL (WINAPI *initializeSidDef) ( PSID,
+    PSID_IDENTIFIER_AUTHORITY, BYTE );
+    typedef PDWORD (WINAPI *getSidSubAuthorityDef) ( PSID, DWORD );
+
+    static getSidLengthRequiredDef getSidLengthRequiredProc;
+    static initializeSidDef initializeSidProc;
+    static getSidSubAuthorityDef getSidSubAuthorityProc;
     static const char everyoneBuf[] = "EVERYONE";
     static const SECURITY_INFORMATION infoBits = OWNER_SECURITY_INFORMATION 
       | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
@@ -594,11 +605,19 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 		  GetProcAddress(hInstance, "GetSecurityDescriptorDacl");
 		lookupAccountNameProc = (lookupAccountNameADef)
 		  GetProcAddress(hInstance, "LookupAccountNameA");
+		getSidLengthRequiredProc = (getSidLengthRequiredDef)
+		  GetProcAddress(hInstance, "GetSidLengthRequired");
+		initializeSidProc = (initializeSidDef)
+		  GetProcAddress(hInstance, "InitializeSid");
+		getSidSubAuthorityProc = (getSidSubAuthorityDef)
+		  GetProcAddress(hInstance, "GetSidSubAuthority");
 		if (setNamedSecurityInfoProc && getAceProc
 		  && addAceProc && equalSidProc && addAccessDeniedAceProc
 		  && initializeAclProc && getLengthSidProc
 		  && getAclInformationProc && getSecurityDescriptorDaclProc
-		  && lookupAccountNameProc && getFileSecurityProc)
+		  && lookupAccountNameProc && getFileSecurityProc
+		  && getSidLengthRequiredProc && initializeSidProc
+		  && getSidSubAuthorityProc)
 		    initialized = 1;
 	    }
 	    if (!initialized)
@@ -647,7 +666,9 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     }
 
     /* Get the "Everyone" SID */
-    userSid = (SID *) ckalloc(userSidLen);
+    userSid = (SID*) ckalloc(getSidLengthRequiredProc(1));
+    initializeSidProc( userSid, &userSidAuthority, 1);
+    *(getSidSubAuthorityProc( userSid, 0)) = SECURITY_WORLD_RID;
     userDomain = (TCHAR *) ckalloc(userDomainLen);
     if (!lookupAccountNameProc(NULL, everyoneBuf, userSid, &userSidLen, 
 			       userDomain, &userDomainLen, &userSidUse)) {
