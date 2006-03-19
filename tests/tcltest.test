@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.2.10 2005/02/25 22:37:52 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.2.11 2006/03/19 22:47:30 vincentdarley Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -558,6 +558,7 @@ switch $tcl_platform(platform) {
     }
     default {
 	catch {file attributes $notWriteableDir -readonly 1}
+	catch {testchmod 000 $notWriteableDir}
     }
 }
 
