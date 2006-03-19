@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.49 2005/10/12 22:05:46 dkf Exp $
+# RCS: @(#) $Id: fileName.test,v 1.50 2006/03/19 23:04:24 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -689,8 +689,8 @@ test filename-11.4 {Tcl_GlobCmd} {
     list [catch {glob -nocomplain} msg] $msg
 } {1 {wrong # args: should be "glob ?switches? name ?name ...?"}}
 test filename-11.5 {Tcl_GlobCmd} {
-    list [catch {glob -nocomplain ~xyqrszzz} msg] $msg
-} {0 {}}
+    list [catch {glob -nocomplain * ~xyqrszzz} msg] $msg
+} {1 {user "xyqrszzz" doesn't exist}}
 test filename-11.6 {Tcl_GlobCmd} {
     list [catch {glob ~xyqrszzz} msg] $msg
 } {1 {user "xyqrszzz" doesn't exist}}
@@ -707,7 +707,7 @@ test filename-11.9 {Tcl_GlobCmd} {testsetplatform} {
 test filename-11.10 {Tcl_GlobCmd} {testsetplatform} {
     testsetplatform unix
     list [catch {glob -nocomplain ~\\xyqrszzz/bar} msg] $msg
-} {0 {}}
+} {1 {user "\xyqrszzz" doesn't exist}}
 test filename-11.11 {Tcl_GlobCmd} {testsetplatform} {
     testsetplatform unix
     list [catch {glob ~xyqrszzz\\/\\bar} msg] $msg
@@ -1370,11 +1370,20 @@ test filename-15.4 {unix specific no complain: no errors, good result} \
     # outser and welch users exists
     glob -nocomplain ~ouster ~foo ~welch
 } {/home/ouster /home/welch}
-test filename-15.4.1 {no complain: no errors, good result} {
+test filename-15.4.1 {no complain: errors, sequencing} {
+    # test used to fail because if an error occurs, the interp's result
+    # is reset... But, the sequence means we throw a different error
+    # first.
+    concat \
+      [list [catch {glob -nocomplain ~wontexist ~blahxyz ~} res1] $res1] \
+      [list [catch {glob -nocomplain ~ ~blahxyz ~wontexist} res2] $res2]
+} {1 {user "wontexist" doesn't exist} 1 {user "blahxyz" doesn't exist}}
+test filename-15.4.2 {no complain: errors, sequencing} {
     # test used to fail because if an error occurs, the interp's result
     # is reset... 
-    string equal [glob -nocomplain ~wontexist ~blah ~] \
-      [glob -nocomplain ~ ~blah ~wontexist]
+    string equal \
+      [list [catch {glob -nocomplain ~wontexist *} res1] $res1] \
+      [list [catch {glob -nocomplain * ~wontexist} res2] $res2]
 } {1}
 test filename-15.5 {unix specific globbing} {unix nonPortable} {
     glob ~ouster/.csh*

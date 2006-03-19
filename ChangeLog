@@ -1,5 +1,21 @@
 2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
 
+	* generic/tclFileName.c:
+	* doc/FileSystem.3:
+	* tests/fileName.test: Fix to [Bug 1084705] so that 
+	'glob -nocomplain' finally agrees with its documentation and
+	doesn't swallow genuine errors.
+
+        ***POTENTIAL INCOMPATIBILITY*** for scripts that assumed
+	'-nocomplain' removes the need for 'catch' to deal with
+	non-understood path names.
+
+	Small optimisation to implementation of pattern==NULL case
+	of TclGlob, and clarification to the documentation
+	[Tclvfs bug 1405317]
+
+2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
+
 	* tests/fCmd.test: added knownBug test case for [Bug 1394972]
 
 	* tests/winFCmd.test:
