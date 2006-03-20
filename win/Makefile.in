@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.98 2006/03/07 19:32:31 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.99 2006/03/20 19:12:02 andreas_kupries Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -616,7 +616,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.2 ../tcl8/8.3 ../tcl8/8.5; \
+	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.2 ../tcl8/8.3 ../tcl8/8.4 ../tcl8/8.5; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
