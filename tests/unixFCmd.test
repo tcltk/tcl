@@ -9,12 +9,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.21 2004/06/23 15:36:58 dkf Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.22 2006/03/20 11:39:03 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testchmod [llength [info commands testchmod]]
 
 # These tests really need to be run from a writable directory, which
 # it is assumed [temporaryDirectory] is.
@@ -51,7 +53,10 @@ proc cleanup {args} {
 	    set x [glob -directory $p tf* td*]
 	}
 	foreach file $x {
-	    if {[catch {file delete -force -- $file}]} {
+	    if {
+		[catch {file delete -force -- $file}]
+		&& [testConstraint testchmod]
+	    } then {
 		openup $file
 		file delete -force -- $file
 	    }
@@ -229,15 +234,14 @@ test unixFCmd-14.2 {GetPermissionsAttribute} {unix notRoot} {
 
 # Find a group that exists on this system, or else skip tests that require
 # groups
-set foundgroup 0
+testConstraint foundGroup 0
 if {$tcl_platform(platform) == "unix"} {
     catch {
 	set groupList [exec groups]
 	set group [lindex $groupList 0]
-	set foundgroup 1
+	testConstraint foundGroup 1
     }
 }
-testConstraint foundGroup $foundgroup
 
 #groups hard to test
 test unixFCmd-15.1 {SetGroupAttribute - invalid group} {unix notRoot} {
@@ -327,17 +331,15 @@ test unixFCmd-18.1 {Unix pwd} {nonPortable unix notRoot} {
 } {1 {error getting working directory name:}}
 
 # check whether -readonly attribute is supported
-set roattr 0
+testConstraint readonlyAttr 0
 if {$tcl_platform(platform) == "unix"} {
-    catch {file delete -force -- foo.test}
-    close [open foo.test w]
+    set f [makeFile "whatever"]
     catch {
-	file attributes foo.test -readonly
-	set roattr 1
+	file attributes $f -readonly
+	testConstraint readonlyAttr 1
     }
-    file delete -force -- foo.test
+    removeFile $f
 }
-testConstraint readonlyAttr $roattr
 
 test unixFCmd-19.1 {GetReadOnlyAttribute - file not found} {unix notRoot readonlyAttr} {
     catch {file delete -force -- foo.test}
@@ -370,3 +372,7 @@ cleanup
 cd $oldcwd
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
