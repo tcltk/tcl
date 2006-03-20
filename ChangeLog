@@ -1,123 +1,125 @@
+2006-03-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/cmdAH.test, tests/fCmd.test, tests/unixFCmd.test:
+	* tests/winFCmd.test: Cleanup of some test constraint handling, and a
+	few other minor issues.
+
 2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* generic/tclFileName.c:
 	* doc/FileSystem.3:
-	* tests/fileName.test: Fix to [Bug 1084705] so that 
-	'glob -nocomplain' finally agrees with its documentation and
-	doesn't swallow genuine errors.
+	* tests/fileName.test: Fix to [Bug 1084705] so that 'glob -nocomplain'
+	finally agrees with its documentation and doesn't swallow genuine
+	errors.
 
-        ***POTENTIAL INCOMPATIBILITY*** for scripts that assumed
-	'-nocomplain' removes the need for 'catch' to deal with
-	non-understood path names.
+	***POTENTIAL INCOMPATIBILITY*** for scripts that assumed '-nocomplain'
+	removes the need for 'catch' to deal with non-understood path names.
 
-	Small optimisation to implementation of pattern==NULL case
-	of TclGlob, and clarification to the documentation
-	[Tclvfs bug 1405317]
+	Small optimisation to implementation of pattern==NULL case of TclGlob,
+	and clarification to the documentation. [Tclvfs bug 1405317]
 
 2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* tests/fCmd.test: added knownBug test case for [Bug 1394972]
 
 	* tests/winFCmd.test:
-	* tests/tcltest.test: corrected tests to better account for
-	behaviour of writable/non-writable directories on Windows 2000/XP.
-	This, with the previous patches, closes [Bug 1193497]
+	* tests/tcltest.test: corrected tests to better account for behaviour
+	of writable/non-writable directories on Windows 2000/XP. This, with
+	the previous patches, closes [Bug 1193497]
 
 2006-03-17  Andreas Kupries <andreask@activestate.com>
 
 	* doc/chan.n: Updated with documentation for the commands 'chan
-	  create' and 'chan postevent' (TIP #219).
+	create' and 'chan postevent' (TIP #219).
 
-	* doc/refchan.n: New file. Documentation of the command handler
-	  API for reflected channels (TIP #219).
-
-2006-03-17  Joe Mistachkin <joe@mistachkin.com>
-
-	* unix/tclUnixPort.h: Include pthread.h prior to pthread_np.h
-	  [Bug 1444692]
+	* doc/refchan.n: New file. Documentation of the command handler API
+	for reflected channels (TIP #219).
 
 2006-03-17  Joe Mistachkin <joe@mistachkin.com>
 
-	* win/tclWinTest.c: Corrected typo of 'initializeMutex' that
-	  prevented successful compilation.
+	* unix/tclUnixPort.h: Include pthread.h prior to pthread_np.h [Bug
+	1444692]
+
+	* win/tclWinTest.c: Corrected typo of 'initializeMutex' that prevented
+	successful compilation.
 
 2006-03-16  Andreas Kupries <andreask@activestate.com>
 
 	* doc/open.n: Documented the changed behaviour of 'a'ppend mode.
 
-	* tests/io.test (io-43.1 io-44.[1234]): Rewritten to be
-	  self-contained with regard to setup and cleanup. [Bug 681793].
+	* tests/io.test (io-43.1 io-44.[1234]): Rewritten to be self-contained
+	with regard to setup and cleanup. [Bug 681793].
 
-	* generic/tclIOUtil.c (TclGetOpenMode): Added the flag O_APPEND to
-	  the list of POSIX modes used when opening a file for
-	  'a'ppend. This enables the proper automatic seek-to-end-on-write
-	  by the OS. See [Bug 680143] for longer discussion.
+	* generic/tclIOUtil.c (TclGetOpenMode): Added the flag O_APPEND to the
+	list of POSIX modes used when opening a file for 'a'ppend. This
+	enables the proper automatic seek-to-end-on-write by the OS. See [Bug
+	680143] for longer discussion.
 
-	* tests/ioCmd.test (iocmd-13.7.*): Extended the testsuite to check
-	  the new handling of 'a'.
+	* tests/ioCmd.test (iocmd-13.7.*): Extended the testsuite to check the
+	new handling of 'a'.
 
 2006-03-15  Andreas Kupries <andreask@activestate.com>
 
-	* tests/socket.test: Extended the timeout in socket-11.11 from 10
-	  to 40 seconds to allow for really slow machines. Also extended
-	  actual/expected results with value of variable 'done' to make it
-	  clearer when a test fails due to a timeout. [Bug 792159].
+	* tests/socket.test: Extended the timeout in socket-11.11 from 10 to
+	40 seconds to allow for really slow machines. Also extended
+	actual/expected results with value of variable 'done' to make it
+	clearer when a test fails due to a timeout. [Bug 792159].
 
 2006-03-15  Vince Darley  <vincentdarley@sourceforge.net>
 
-	* win/fCmd.test: add proper test constraints so the new
-	tests don't run on Unix.
+	* win/fCmd.test: add proper test constraints so the new tests don't
+	run on Unix.
 
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
-	* generic/tclPipe.c (TclCreatePipeline): Modified the processing
-	  of pipebars to fail if the last bar is followed only by
-	  redirections. [Bug 768659].
+	* generic/tclPipe.c (TclCreatePipeline): Modified the processing of
+	pipebars to fail if the last bar is followed only by redirections.
+	[Bug 768659]
 
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
-	* doc/fconfigure.n: Clarified that -translation is binary is
-	  reported as lf when queried, because it is identical to lf,
-	  except for the special additional behaviour when setting
-	  it. [Bug 666770].
+	* doc/fconfigure.n: Clarified that -translation is binary is reported
+	as lf when queried, because it is identical to lf, except for the
+	special additional behaviour when setting it. [Bug 666770].
 
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
-	* doc/clock.n: Removed double-quotes around section title NAME. not needed.
+	* doc/clock.n: Removed double-quotes around section title NAME. not
+	needed.
 	* unix/installManpage: Reverted part to handle double-quotes in
-	  section NAME, chokes older sed installations.
+	section NAME, chokes older sed installations.
 
 2006-03-14  Andreas Kupries <andreask@activestate.com>
 
-	* library/tm.tcl (::tcl::tm::Defaults): Fixed handling of
-	  environment variable TCLX.y_TM_PATH, bad variable reference. See
-	  [SF Tcl Bug 1448251]. Thanks to Julian Noble.
+	* library/tm.tcl (::tcl::tm::Defaults): Fixed handling of environment
+	variable TCLX.y_TM_PATH, bad variable reference. [Bug 1448251]. Thanks
+	to Julian Noble.
 
 2006-03-14  Vince Darley  <vincentdarley@sourceforge.net>
 
-	* win/tclWinFile.c: updated patch to deal with 'file writable'
-	issues on Windows XP/2000.
+	* win/tclWinFile.c: updated patch to deal with 'file writable' issues
+	on Windows XP/2000.
 	* generic/tclTest.c:
 	* unix/tclUnixTest.c:
 	* win/tclWinTest.c:
-	* tests/fCmd,test: updated test suite to deal with correct
-	permissions setting and differences between XP/2000 and 95/98
-	3 tests still fail; to be dealt with shortly
+	* tests/fCmd.test: updated test suite to deal with correct permissions
+	setting and differences between XP/2000 and 95/98 3 tests still fail;
+	to be dealt with shortly
 
 2006-03-13  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclEncoding.c:        Report error when an escape encoding
-        is missing one of its sub-encodings [Bug 506653].
+	* generic/tclEncoding.c: Report error when an escape encoding is
+	missing one of its sub-encodings [Bug 506653].
 
-        * unix/configure.in:    Revert change from 2005-07-26 that sometimes
-        * unix/configure:       added $prefix/share to the tcl_pkgPath.
-        See [Patch 1231015].  autoconf-2.59.
+	* unix/configure.in:    Revert change from 2005-07-26 that sometimes
+	* unix/configure:       added $prefix/share to the tcl_pkgPath. See
+	[Patch 1231015]. autoconf-2.59.
 
 2006-03-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclProc.c (ObjInterpProcEx): 
-	* tests/apply.test (apply-5.1): fix [apply] error messages
-	so that they quote the lambda expression [Bug 1447355]. 
+	* generic/tclProc.c (ObjInterpProcEx):
+	* tests/apply.test (apply-5.1): Fix [apply] error messages so that
+	they quote the lambda expression [Bug 1447355].
 
 2006-03-10  Zoran Vasiljevic  <vasiljevic@users.sourceforge.net>
 
@@ -126,18 +128,16 @@
 	* generic/tclEvent.c: Cosmetic touches and identation
 	* generic/tclInt.h: Added TclpFinalizeSockets() call.
 
-	* generic/tclIO.c: Calls TclpFinalizeSockets() as part
-	of the TclFinalizeIOSubsystem().
+	* generic/tclIO.c: Calls TclpFinalizeSockets() as part of the
+	TclFinalizeIOSubsystem().
 
 	* unix/tclUnixSock.c: Added no-op TclpFinalizeSockets().
-	
-	* win/tclWinPipe.c:
-	* win/tclWinSock.c: Finalization of the sockets/pipes 
-	is now solely done in TclpFinalizeSockets() and
-	TclpFinalizePipes() and not over the thread-exit handler,
-	because the order of actions the Tcl generic core will
-	impose may result in cores/hangs if the thread exit handler
-	tears down corresponding subsystem(s) too early.
+
+	* win/tclWinPipe.c, win/tclWinSock.c: Finalization of sockets/pipes is
+	now solely done in TclpFinalizeSockets() and TclpFinalizePipes() and
+	not over the thread-exit handler, because the order of actions the Tcl
+	generic core will impose may result in cores/hangs if the thread exit
+	handler tears down corresponding subsystem(s) too early.
 
 2006-03-10  Vince Darley  <vincentdarley@sourceforge.net>
 
@@ -145,9 +145,9 @@
 
 2006-03-09  Vince Darley  <vincentdarley@sourceforge.net>
 
-	* win/tclWinFile.c: fix to 'file writable' in certain XP
-	directories.  Thanks to fvogel and jfg.  [Patch 1344540]
-	Modified patch to make use of existing use of getSecurityProc.
+	* win/tclWinFile.c: fix to 'file writable' in certain XP directories.
+	Thanks to fvogel and jfg.  [Patch 1344540] Modified patch to make use
+	of existing use of getSecurityProc.
 
 2006-03-08  Don Porter  <dgp@users.sourceforge.net>
 
@@ -155,43 +155,44 @@
 	* tests/incr.test:
 
 2006-03-07  Joe English  <jenglish@users.sourceforge.net>
-	* unix/tcl.m4: Set SHLIB_LD_FLAGS='${LIBS}' on NetBSD,
-	as per the other *BSD variants [Bug 1334613].
+
+	* unix/tcl.m4: Set SHLIB_LD_FLAGS='${LIBS}' on NetBSD, as per the
+	other *BSD variants [Bug 1334613].
 	* unix/configure: Regenerated.
 
 2006-03-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Update in prep. for 8.5a4 release.
 
-	* unix/Makefile.in:	Package http 2.5.2 requires Tcl 8.4, so
-	* win/Makefile.in:	the *.tm installation has to be placed
-	in an "8.4" directory, not an "8.2" directory.
+	* unix/Makefile.in:	Package http 2.5.2 requires Tcl 8.4, so the
+	* win/Makefile.in:	*.tm installation has to be placed in an "8.4"
+	directory, not an "8.2" directory.
 
 2006-03-06  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclBasic.c:   Revised handling of TCL_EVAL_* flags to
-        * tests/parse.test:     simplify TclEvalObjvInternal and to correct
-        the auto-loading of alias targets (parse-8.12).  [Bug 1444291].
+	* generic/tclBasic.c:   Revised handling of TCL_EVAL_* flags to
+	* tests/parse.test:     simplify TclEvalObjvInternal and to correct
+	the auto-loading of alias targets (parse-8.12). [Bug 1444291]
 
 2006-03-03  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c:	Revised yesterday's fix for [Bug 1379287]
-	to work on Windows.
+	* generic/tclPathObj.c: Revised yesterday's fix for [Bug 1379287] to
+	work on Windows.
 
 	* generic/tclObj.c:	Compatibility support for existing code that
 	calls Tcl_GetObjType("boolean").
 
 2006-03-02  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c:		Fix for failed normalization of
-	* tests/fileSystem.test:	paths with /../ that lead back
-	to the root of the filesystem, like /foo/.. [Bug 1379287].
+	* generic/tclPathObj.c:		Fix for failed normalization of paths
+	* tests/fileSystem.test:	with /../ that lead back to the root
+	of the filesystem, like /foo/.. [Bug 1379287]
 
 2006-03-01  Reinhard Max  <max@suse.de>
 
-	* unix/installManPage: Fix the script for manpages that have
-	quotes around the .SH arguments, as doctools produces them
-	(Bug#1292145). Some minor cleanups and improvements.
+	* unix/installManPage: Fix the script for manpages that have quotes
+	around the .SH arguments, as doctools produces them [Bug 1292145].
+	Some minor cleanups and improvements.
 
 2006-02-28  Don Porter  <dgp@users.sourceforge.net>
 
@@ -210,7 +211,7 @@
 
 	* generic/tclIORChan.c:	Revised error message generation and handling
 	* tests/ioCmd.test:	of exceptional return codes in the channel
-	reflection layer.  [Bug 1372348].
+	reflection layer. [Bug 1372348]
 
 2006-02-16  Don Porter  <dgp@users.sourceforge.net>
 
@@ -253,7 +254,7 @@
 	* generic/tcl.decls:	Made public:
 	* generic/tclBasic.c:	TclGetEncodingFromObj
 	* generic/tclCmdAH.c:		-> Tcl_GetEncodingFromObj
-	* generic/tclEncoding.c:TclGetEncodingSearchPath 
+	* generic/tclEncoding.c:TclGetEncodingSearchPath
 	* generic/tclInt.decls:		-> Tcl_GetEncodingSearchPath
 	* generic/tclInt.h:	TclSetEncodingSearchPath
 	* generic/tclTest.c:		-> Tcl_SetEncodingSearchPath
@@ -270,9 +271,9 @@
 2006-02-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c: minor improvements to [apply]
-	* tests/apply.test: new tests; apply-5.1 currently fails to
-	indicate missing work in error reporting
-	
+	* tests/apply.test: new tests; apply-5.1 currently fails to indicate
+	missing work in error reporting
+
 2006-02-01  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#194 IMPLEMENTATION
@@ -285,7 +286,7 @@
 	* tests/apply.test: (New file)
 	* tests/proc-old.test:
 	* tests/proc.test:
-	
+
 	TIP#181 IMPLEMENTATION
 
 	* doc/Namespace.3:	New command [namespace unknown].  New public
@@ -916,8 +917,7 @@
 
 	* generic/tclTimer.c: Changed [after] so that it behaves correctly
 	* tests/timer.test:   with negative arguments [Bug 1350293] and
-	                      arguments that overflow a 32-bit word
-	                      [Bug 1350291].
+	arguments that overflow a 32-bit word. [Bug 1350291]
 
 2005-11-08  Don Porter  <dgp@users.sourceforge.net>
 
@@ -2194,8 +2194,7 @@
 
 	* tests/compExpr-old.test (compExpr-3.8): Made tests conditional on
 	* tests/expr.test (expr-3.8):             'unix' because they get
-						  stack overflows on Win32
-						  threaded builds,
+	stack overflows on Win32 threaded builds,
 
 2005-08-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 

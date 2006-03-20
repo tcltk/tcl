@@ -10,19 +10,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.51 2006/02/08 21:41:28 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.52 2006/03/20 11:39:03 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
-tcltest::testConstraint testchmod \
-	[string equal testchmod [info commands testchmod]]
+tcltest::testConstraint testchmod [llength [info commands testchmod]]
 tcltest::testConstraint testsetplatform \
-	[string equal testsetplatform [info commands testsetplatform]]
+	[llength [info commands testsetplatform]]
 tcltest::testConstraint testvolumetype \
-	[string equal testvolumetype [info commands testvolumetype]]
+	[llength [info commands testvolumetype]]
 tcltest::testConstraint linkDirectory [expr \
 	{$tcl_platform(platform) ne "windows" || \
 	([string index $tcl_platform(osVersion) 0] >= 5 \
@@ -847,10 +846,10 @@ removeDirectory $dirfile
 set dirfile [makeDirectory dir.file]
 set gorpfile [makeFile abcde gorp.file]
 
-test cmdAH-18.1 {Tcl_FileObjCmd: executable} {testchmod} {
+test cmdAH-18.1 {Tcl_FileObjCmd: executable} {} {
     list [catch {file executable a b} msg] $msg
 } {1 {wrong # args: should be "file executable name"}}
-test cmdAH-18.2 {Tcl_FileObjCmd: executable} {testchmod notRoot} {
+test cmdAH-18.2 {Tcl_FileObjCmd: executable} {notRoot} {
     file executable $gorpfile
 } 0
 test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
@@ -861,7 +860,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
     file exe $gorpfile
 } 1
 
-test cmdAH-18.5 {Tcl_FileObjCmd: executable} {win testchmod} {
+test cmdAH-18.5 {Tcl_FileObjCmd: executable} {win} {
     # On pc, must be a .exe, .com, etc.
 
     set x [file exe $gorpfile]
@@ -870,7 +869,7 @@ test cmdAH-18.5 {Tcl_FileObjCmd: executable} {win testchmod} {
     removeFile $gorpexe
     set x
 } {0 1}
-test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} {win testchmod} {
+test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} {win} {
     # On pc, must be a .exe, .com, etc.
 
     set x [file exe $gorpfile]
@@ -879,7 +878,7 @@ test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} {win testchmod} {
     removeFile $gorpexe
     set x
 } {0 1}
-test cmdAH-18.6 {Tcl_FileObjCmd: executable} {testchmod} {
+test cmdAH-18.6 {Tcl_FileObjCmd: executable} {} {
     # Directories are always executable.
 
     file exe $dirfile
