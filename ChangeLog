@@ -1,5 +1,12 @@
 2006-03-20  Andreas Kupries <andreask@activestate.com>
 
+	* win/Makefile.in (install-libraries): Generate tcl8/8.4 directory
+	  under Windows as well (cygwin Makefile). Related entry:
+	  2006-03-07, dgp. This moved the installation of http from 8.2 to
+	  8.4, partially. A fix of the required directory creation was
+	  done for unix on Mar 10, without entry in the Changelog. This
+	  entry is for the fix of the directory creation under Windows.
+
 	* unix/installManPage: There is always one even more broken
 	"sed". Moved the # comment starting character in the sed script to
 	the beginning of their respective lines. The AIX sed will not
