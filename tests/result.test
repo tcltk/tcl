@@ -19,8 +19,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Some tests require the testsaveresult command
 
-::tcltest::testConstraint testsaveresult \
-	[expr {[info commands testsaveresult] != {}}]
+testConstraint testsaveresult      [llength [info commands testsaveresult]]
+testConstraint testsetobjerrorcode [llength [info commands testsetobjerrorcode]]
+testConstraint testseterrorcode    [llength [info commands testseterrorcode]]
+testConstraint testreturn          [llength [info commands testreturn]]
 
 test result-1.1 {Tcl_SaveInterpResult} {testsaveresult} {
     testsaveresult small {set x 42} 0
@@ -65,9 +67,6 @@ test result-3.2 {Tcl_DiscardInterpResult} {testsaveresult} {
     testsaveresult free {set x 42} 1
 } {42}
 
-::tcltest::testConstraint testsetobjerrorcode \
-	[expr {[info commands testsetobjerrorcode] != {}}]
-
 test result-4.1 {Tcl_SetObjErrorCode - one arg} {testsetobjerrorcode} {
     catch {testsetobjerrorcode 1}
     list [set errorCode]
@@ -89,9 +88,6 @@ test result-4.5 {Tcl_SetObjErrorCode - five args} {testsetobjerrorcode} {
     list [set errorCode]
 } {{1 2 3 4 5}}
 
-::tcltest::testConstraint testseterrorcode \
-	[expr {[info commands testseterrorcode] != {}}]
-
 test result-5.1 {Tcl_SetErrorCode - one arg} testseterrorcode {
     catch {testseterrorcode 1}
     set errorCode
@@ -109,8 +105,6 @@ test result-5.4 {Tcl_SetErrorCode - two args, list quoting} testseterrorcode {
     set errorCode
 } {{a b} c}
 
-::tcltest::testConstraint testreturn \
-	[expr {[info commands testreturn] != {}}]
 test result-6.0 {Bug 1209759} -constraints testreturn -body {
     # Might panic if bug is not fixed.
     proc foo {} {testreturn}
@@ -123,5 +117,5 @@ test result-6.1 {Bug 1209759} -constraints testreturn -body {
 } -returnCodes ok -result {}
 
 # cleanup
-::tcltest::cleanupTests
+cleanupTests
 return
