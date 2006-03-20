@@ -26,19 +26,19 @@ test -z "$S" && S="$DIR/"
 # backticks which doesn't pass backslashes literally.
 #
 NAMES=`sed -n '
-                              # Look for a line, that starts with .SH NAME
-                              # optionally allow NAME to be surrounded
-                              # by quotes.
+#                               Look for a line, that starts with .SH NAME
+#                               optionally allow NAME to be surrounded
+#                               by quotes.
     /^\.SH NAME/{
-                              # Read next line
+#                               Read next line
 	n
-                              # Remove all commas ...
+#                               Remove all commas ...
 	s/,//g
-                              # ... and backslash-escaped spaces.
+#                               ... and backslash-escaped spaces.
 	s/\\\ //g
-                              # Delete from \- to the end of line
+#                               Delete from \- to the end of line
 	s/ \\\-.*//
-                              # print the result and exit
+#                               print the result and exit
 	p;q
     }' $MANPAGE`
 
