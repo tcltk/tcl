@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.19 2005/12/27 20:14:09 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.20 2006/03/21 20:03:06 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1250,6 +1250,7 @@ AccumulateDecimalDigit(
 	    n -= 256;
 	}
 	mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr);
+	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
     }
 
     return bignumFlag;
