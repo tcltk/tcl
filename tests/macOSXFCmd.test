@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: macOSXFCmd.test,v 1.3 2006/03/21 11:06:23 das Exp $
+# RCS: @(#) $Id: macOSXFCmd.test,v 1.4 2006/03/21 11:12:29 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -24,8 +24,7 @@ cd [temporaryDirectory]
 
 # check whether macosx file attributes are supported
 testConstraint macosxFileAttr 0
-if {$tcl_platform(platform) eq "unix" && \
-	$tcl_platform(os) eq "Darwin"} {
+if {[testConstraint unix] && $tcl_platform(os) eq "Darwin"} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]
     catch {
