@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.95 2006/02/08 21:41:27 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.96 2006/03/21 11:06:22 das Exp $
 
 library tcl
 
@@ -1095,5 +1095,11 @@ declare 16 macosx {
 declare 17 macosx {
     int TclMacOSXCopyFileAttributes(CONST char *src, CONST char *dst,
 	    CONST Tcl_StatBuf *statBufPtr)
+}
+
+declare 18 macosx {
+    int TclMacOSXMatchType(Tcl_Interp *interp, CONST char *pathName,
+	    CONST char *fileName, Tcl_StatBuf *statBufPtr,
+	    Tcl_GlobTypeData *types)
 }
 
