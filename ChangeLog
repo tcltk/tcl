@@ -1,5 +1,7 @@
 2006-03-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Updates for another RC.
+
 	* generic/tclStrToD.c:	One of the branches of AccumulateDecimalDigit
 	* tests/parseExpr.test:	did not.  [Bug 1451233]
 
