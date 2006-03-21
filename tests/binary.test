@@ -10,14 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.26 2005/12/02 17:34:03 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.27 2006/03/21 11:12:28 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
-::tcltest::testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
-::tcltest::testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
+testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
+testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
 
 test binary-0.1 {DupByteArrayInternalRep} {
     set hdr [binary format cc 0 0316]

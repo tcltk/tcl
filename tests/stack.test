@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.18 2004/06/23 00:24:43 dkf Exp $
+# RCS: @(#) $Id: stack.test,v 1.19 2006/03/21 11:12:29 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -23,19 +23,16 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # This doesn't catch all cases, for example threads of lower stacksize
 # can still squeak through.  A core check is really needed. -- JH
 
-if {[string equal $::tcl_platform(platform) "unix"]} {
+testConstraint minStack2400 1
+if {[testConstraint unix]} {
     set stackSize [exec /bin/sh -c "ulimit -s"]
     if {[string is integer $stackSize] && ($stackSize < 2400)} {
         puts stderr "WARNING: the default application stacksize of $stackSize\
                 may cause Tcl to\ncrash due to stack overflow before the\
                 recursion limit is reached.\nA minimum stacksize of 2400\
                 kbytes is recommended.\nSkipping infinite recursion test."
-        ::tcltest::testConstraint minStack2400 0
-    } else {
-        ::tcltest::testConstraint minStack2400 1
+        testConstraint minStack2400 0
     }
-} else {
-    ::tcltest::testConstraint minStack2400 1
 }
 
 test stack-1.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {

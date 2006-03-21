@@ -13,14 +13,19 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.31 2005/11/09 20:24:10 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.32 2006/03/21 11:12:29 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
-if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
+testConstraint testexprlong   [llength [info commands testexprlong]]
+testConstraint testexprdouble [llength [info commands testexprdouble]]
+testConstraint testexprstring [llength [info commands testexprstring]]
+testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
+
+if {[catch {expr T1()} msg] && $msg eq {unknown math function "T1"}} {
     testConstraint testmathfunctions 0
 } else {
     testConstraint testmathfunctions 1
@@ -82,7 +87,7 @@ proc testIEEE {} {
 	}
     }
 }
-::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
+testConstraint ieeeFloatingPoint [testIEEE]
 
 # First, test all of the integer operators individually.
 
@@ -1016,11 +1021,6 @@ test expr-old-36.16 {ExprLooksLikeInt procedure} {
     set x " 0xffffffffffffffffffffffffffffffffffffff  "
     expr {$x+1}
 } [expr 0x100000000000000000000000000000000000000]
-
-testConstraint testexprlong   [llength [info commands testexprlong]]
-testConstraint testexprdouble [llength [info commands testexprdouble]]
-testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
     testexprlong 4+1
