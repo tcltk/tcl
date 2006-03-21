@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.28 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.29 2006/03/21 11:06:22 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -295,6 +295,14 @@ EXTERN int		TclMacOSXCopyFileAttributes _ANSI_ARGS_((
 				CONST char * src, CONST char * dst, 
 				CONST Tcl_StatBuf * statBufPtr));
 #endif
+#ifndef TclMacOSXMatchType_TCL_DECLARED
+#define TclMacOSXMatchType_TCL_DECLARED
+/* 18 */
+EXTERN int		TclMacOSXMatchType _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * pathName, CONST char * fileName, 
+				Tcl_StatBuf * statBufPtr, 
+				Tcl_GlobTypeData * types));
+#endif
 #endif /* MAC_OSX_TCL */
 
 typedef struct TclIntPlatStubs {
@@ -354,6 +362,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXGetFileAttribute) _ANSI_ARGS_((Tcl_Interp * interp, int objIndex, Tcl_Obj * fileName, Tcl_Obj ** attributePtrPtr)); /* 15 */
     int (*tclMacOSXSetFileAttribute) _ANSI_ARGS_((Tcl_Interp * interp, int objIndex, Tcl_Obj * fileName, Tcl_Obj * attributePtr)); /* 16 */
     int (*tclMacOSXCopyFileAttributes) _ANSI_ARGS_((CONST char * src, CONST char * dst, CONST Tcl_StatBuf * statBufPtr)); /* 17 */
+    int (*tclMacOSXMatchType) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * pathName, CONST char * fileName, Tcl_StatBuf * statBufPtr, Tcl_GlobTypeData * types)); /* 18 */
 #endif /* MAC_OSX_TCL */
 } TclIntPlatStubs;
 
@@ -546,6 +555,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclMacOSXCopyFileAttributes
 #define TclMacOSXCopyFileAttributes \
 	(tclIntPlatStubsPtr->tclMacOSXCopyFileAttributes) /* 17 */
+#endif
+#ifndef TclMacOSXMatchType
+#define TclMacOSXMatchType \
+	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
 #endif
 #endif /* MAC_OSX_TCL */
 
