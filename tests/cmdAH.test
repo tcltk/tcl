@@ -10,22 +10,21 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.52 2006/03/20 11:39:03 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.53 2006/03/21 11:12:28 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
-tcltest::testConstraint testchmod [llength [info commands testchmod]]
-tcltest::testConstraint testsetplatform \
-	[llength [info commands testsetplatform]]
-tcltest::testConstraint testvolumetype \
-	[llength [info commands testvolumetype]]
-tcltest::testConstraint linkDirectory [expr \
-	{$tcl_platform(platform) ne "windows" || \
-	([string index $tcl_platform(osVersion) 0] >= 5 \
-	&& ([lindex [file system [temporaryDirectory]] 1] == "NTFS"))}]
+testConstraint testchmod       [llength [info commands testchmod]]
+testConstraint testsetplatform [llength [info commands testsetplatform]]
+testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint linkDirectory [expr {
+    ![testConstraint win] ||
+    ([string index $tcl_platform(osVersion) 0] >= 5
+     && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
+}]
 
 global env
 set cmdAHwd [pwd]
@@ -957,7 +956,7 @@ catch {file attributes $gorpfile -permissions 0765}
 # atime
 
 # avoid problems with non-local filesystems
-if {$::tcl_platform(platform) == "unix" && [file exists /tmp]} {
+if {[testConstraint unix] && [file exists /tmp]} {
     set file [makeFile "data" touch.me /tmp]
 } else {
     set file [makeFile "data" touch.me]
@@ -989,7 +988,7 @@ test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {unix} {
 test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} {win testvolumetype} {
     set old [pwd]
     cd $::tcltest::temporaryDirectory
-    if {![string equal "NTFS" [testvolumetype]]} {
+    if {"NTFS" ne [testvolumetype]} {
 	# Windows FAT doesn't understand atime, but NTFS does
 	# May also fail for Windows on NFS mounted disks
 	cd $old
@@ -1003,7 +1002,7 @@ test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} {win testvolumetype} {
     expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } 1
 
-if {$::tcl_platform(platform) == "unix" && [file exists /tmp]} {
+if {[testConstraint unix] && [file exists /tmp]} {
     removeFile touch.me /tmp
 } else {
     removeFile touch.me
@@ -1103,17 +1102,19 @@ proc waitForEvenSecondForFAT {} {
     # timings.  :^(
     # This procedure based on work by Helmut Giese
 
-    global tcl_platform
-    if {$tcl_platform(platform) ne "windows"} {return}
-    if {[lindex [file system [temporaryDirectory]] 1] == "NTFS"} {return}
-    # Assume non-NTFS means FAT{12,16,32} and hence in need of special help
-    set start [clock seconds]
-    while {1} {
-	set now [clock seconds]
-	if {$now!=$start && !($now & 1)} {
-	    return
+    if {
+	[testConstraint win]
+	&& [lindex [file system [temporaryDirectory]] 1] ne "NTFS"
+    } then {
+	# Assume non-NTFS means FAT{12,16,32} and hence in need of special help
+	set start [clock seconds]
+	while {1} {
+	    set now [clock seconds]
+	    if {$now!=$start && !($now & 1)} {
+		break
+	    }
+	    after 50
 	}
-	after 50
     }
 }
 set file [makeFile "data" touch.me]
@@ -1161,7 +1162,7 @@ test cmdAH-24.5 {Tcl_FileObjCmd: mtime} {
     # Under Unix, use a file in /tmp to avoid clock skew due to NFS.
     # On other platforms, just use a file in the local directory.
 
-    if {[string equal $tcl_platform(platform) "unix"]} {
+    if {[testConstraint unix]} {
 	set name /tmp/tcl.test.[pid]
     } else {
 	set name [file join [temporaryDirectory] tf]
@@ -1543,3 +1544,7 @@ cd $cmdAHwd
 
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
