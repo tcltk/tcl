@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.99 2006/03/13 20:42:21 dgp Exp $
+RCS: @(#) $Id: changes,v 1.100 2006/03/21 21:05:35 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6592,6 +6592,8 @@ Reduces the ***POTENTIAL INCOMPATIBILITY*** from 2005-05-17.
 2005-10-05 (bug fix)[979640] buffer overrun mixing putenv(), ::env (bold,hobbs)
 
 2005-10-08 (new feature)[TIP 237] unlimited range for integers (kenny,porter)
+***POTENTIAL INCOMPATIBILITY*** for any code that relies on implicit truncation
+of integer calculations to the range of a C long
 
 2005-10-14 (platform support)[1256937] MSVC++ static builds (thoyts)
 
@@ -6702,11 +6704,23 @@ when auto-loading or exec traces are present (porter)
 
 2006-03-10 (bug fix)[1437595] Win socket finalize with threads (vasiljevic)
 
-2005-03-13 (revert 2005-07-26 change) ${prefix}/share on ::tcl_pkgPath (porter)
+2006-03-13 (revert 2005-07-26 change) ${prefix}/share on ::tcl_pkgPath (porter)
+
+2006-03-14 (bug fix)[1448251] TCLX.y_TM_PATH handling (noble, kupries)
+
+2006-03-14 (bug fix)[768659] pipeline error when last command missing (kupries)
+
+2006-03-18 (bug fix)[1193497] Win porting of [file writable] (darley,vogel)
+
+2006-03-18 (bug fix)[1084705] [glob -nocomplain] silence empty result only,
+no other errors (darley)
+***POTENTIAL INCOMPATIBILITY***
+
+2006-03-21 (platform enhancement)[823329] HFS globbing support (steffen)
 
 (platform support) Use of _ANSI_ARGS_ purged.  ANSI compiler required (fellows)
 
 Documentation improvements [1211078,1190891,1292427,1277503,1104682,1359183,
-1415725]
+1415725,666770]
 
---- Released 8.5a4, March 17, 2006 --- See ChangeLog for details ---
+--- Released 8.5a4, March 30, 2006 --- See ChangeLog for details ---
