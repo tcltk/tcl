@@ -1,3 +1,7 @@
+2006-03-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/env.test:	Preserve case of saved env vars. [Bug 1409272]
+
 2006-03-21  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.decls:   implement globbing for HFS creator & type
