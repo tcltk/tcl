@@ -13,21 +13,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.70 2006/03/16 19:12:17 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.71 2006/03/21 11:12:29 dkf Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
 namespace eval ::tcl::test::io {
-
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::interpreter
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-    namespace import ::tcltest::viewFile
+    namespace import ::tcltest::*
 
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint exec             [llength [info commands exec]]
@@ -37,6 +30,7 @@ testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
+testConstraint testthread       [llength [info commands testthread]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -46,6 +40,8 @@ testConstraint largefileSupport 0
 # if "umask" cannot be run, the tests will be skipped.
 set umaskValue 0
 testConstraint umask [expr {![catch {set umaskValue [exec /bin/sh -c umask]}]}]
+
+testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
 
 # set up a long data file for some of the following tests
 
@@ -5279,7 +5275,6 @@ test io-40.15 {POSIX open access modes: RDWR} {
     close $f
     lappend x [viewFile test3]
 } {zzy abzzy}
-testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
 test io-40.16 {tilde substitution in open} -constraints makeFileInHome -setup {
     makeFile {Some text} _test_ ~
 } -body {
@@ -7159,8 +7154,6 @@ test io-70.0 {Cutting & Splicing channels} {testchannel} {
 # without duplication. Maybe placement into a proc which transforms to
 # nop after the first call, and placement of its defintion in a
 # central location.
-
-testConstraint testthread [expr {[info commands testthread] != {}}]
 
 if {[testConstraint testthread]} {
     testthread errorproc ThreadError

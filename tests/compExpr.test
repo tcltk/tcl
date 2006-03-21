@@ -8,14 +8,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr.test,v 1.9 2005/05/10 18:35:17 kennykb Exp $
+# RCS: @(#) $Id: compExpr.test,v 1.10 2006/03/21 11:12:29 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
+if {[catch {expr T1()} msg] && $msg eq {unknown math function "T1"}} {
     testConstraint testmathfunctions 0
 } else {
     testConstraint testmathfunctions 1
