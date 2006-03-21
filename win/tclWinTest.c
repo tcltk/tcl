@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.15 2006/03/19 22:44:17 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.16 2006/03/21 09:46:00 vincentdarley Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -512,7 +512,6 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     static getSidLengthRequiredDef getSidLengthRequiredProc;
     static initializeSidDef initializeSidProc;
     static getSidSubAuthorityDef getSidSubAuthorityProc;
-    static const char everyoneBuf[] = "EVERYONE";
     static const SECURITY_INFORMATION infoBits = OWNER_SECURITY_INFORMATION 
       | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
     static const DWORD readOnlyMask = FILE_DELETE_CHILD | FILE_ADD_FILE 
@@ -537,7 +536,6 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     SID *userSid = 0;
     DWORD userDomainLen = 32;
     TCHAR *userDomain = 0;
-    SID_NAME_USE userSidUse;
 
     DWORD attr;
 
@@ -665,24 +663,10 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 	}
     }
 
-    /* Get the "Everyone" SID */
+    /* Get the World SID */
     userSid = (SID*) ckalloc(getSidLengthRequiredProc(1));
     initializeSidProc( userSid, &userSidAuthority, 1);
     *(getSidSubAuthorityProc( userSid, 0)) = SECURITY_WORLD_RID;
-    userDomain = (TCHAR *) ckalloc(userDomainLen);
-    if (!lookupAccountNameProc(NULL, everyoneBuf, userSid, &userSidLen, 
-			       userDomain, &userDomainLen, &userSidUse)) {
-	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-	    ckfree((char *)userSid);
-	    userSid = (SID *) ckalloc(userSidLen);
-	    ckfree(userDomain);
-	    userDomain = (TCHAR *) ckalloc(userDomainLen);
-	    if (!lookupAccountNameProc(NULL, everyoneBuf, userSid, 
-	      &userSidLen, userDomain, &userDomainLen, &userSidUse))
-		goto done;
-	} else
-	    goto done;
-    }
 
     /* If curAclPresent == false then curAcl and curAclDefaulted not valid */
     if (!getSecurityDescriptorDaclProc(secDesc, &curAclPresent, 
