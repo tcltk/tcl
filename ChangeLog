@@ -1,5 +1,7 @@
 2006-03-22  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.4.13 TAGGED FOR RELEASE ***
+
 	* changes:	updates for another RC.
 
 2006-03-18  Vince Darley  <vincentdarley@sourceforge.net>
@@ -97,8 +99,6 @@
 	bug still outstanding.
 
 2006-03-07  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.13 TAGGED FOR RELEASE ***
 
 	* README:		Bump version number to 8.4.13 and update
 	* changes:		changes to start prep for an 8.4.13 release.
