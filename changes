@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.37 2006/03/13 20:41:52 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.38 2006/03/22 14:12:02 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6340,4 +6340,10 @@ when auto-loading or exec traces are present (porter)
 
 2005-03-13 (revert 2005-07-26 change) ${prefix}/share on ::tcl_pkgPath (porter)
 
---- Released 8.4.13, March 17, 2006 --- See ChangeLog for details ---
+2006-03-14 (bug fix)[1381436,859820] threadsafe Tcl_WaitPid (gravereaux,kupries)
+
+2006-03-14 (bug fix)[768659] pipeline error when last command missing (kupries)
+
+2006-03-18 (bug fix)[1193497] Win porting of [file writable] (darley,vogel)
+
+--- Released 8.4.13, March 30, 2006 --- See ChangeLog for details ---
