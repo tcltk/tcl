@@ -1,3 +1,9 @@
+2006-03-22  Reinhard Max  <max@suse.de>
+
+	* tests/stack.test: Run the stack tests in subshells, so that they
+	are reported as failed tests rather than bugs in the test suite if
+	the recursion causes a segfault.	
+	
 2006-03-21  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5a4 TAGGED FOR RELEASE ***
