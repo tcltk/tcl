@@ -1,5 +1,8 @@
 2006-03-23  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c:	Merged INST_EXPON handling in with the other
+	binary operators that operate on all number types (INST_ADD, etc.).
+
 	* tests/env.test:	With case preserved (see 2006-03-21 commit)
 	be sure to do case-insensitive filtering.  [Bug 1457065]
 
