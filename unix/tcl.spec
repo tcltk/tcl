@@ -1,19 +1,17 @@
-# $Id: tcl.spec,v 1.23 2005/06/07 14:03:53 dkf Exp $
+# $Id: tcl.spec,v 1.24 2006/03/23 16:39:19 rmax Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
-%define version 8.5a4
-%define directory /usr/local
+%{!?directory:%define directory /usr/local}
 
-Summary: Tcl scripting language development environment
-Name: tcl
-Version: %{version}
-Release: 1
-Copyright: BSD
-Group: Development/Languages
-Source: http://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
-URL: http://www.tcl.tk/
-Packager: Carina
-Buildroot: /var/tmp/%{name}%{version}
+Name:          tcl
+Summary:       Tcl scripting language development environment
+Version:       8.5a4
+Release:       2
+License:       BSD
+Group:         Development/Languages
+Source:        http://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
+URL:           http://www.tcl.tk/
+Buildroot:     /var/tmp/%{name}%{version}
 
 %description
 The Tcl (Tool Command Language) provides a powerful platform for
@@ -25,26 +23,28 @@ can also be used for a variety of web-related tasks and for creating
 powerful command languages for applications.
 
 %prep
+%setup -q -n %{name}%{version}
 
 %build
-./configure --prefix %{directory} --exec-prefix %{directory}
-make CFLAGS=$RPM_OPT_FLAGS
+cd unix
+CFLAGS="%optflags" ./configure \
+	--prefix=%{directory} \
+	--exec-prefix=%{directory} \
+	--libdir=%{directory}/%{_lib}
+make 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-make INSTALL_ROOT=$RPM_BUILD_ROOT install
+cd unix
+make INSTALL_ROOT=%{buildroot} install
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %buildroot
 
-# to create the tcl files list, comment out tk in the install section above,
-# then run "rpm -bi" then do a find from the build root directory,
-# and remove the files in specific directories which suffice by themselves,
-# then to create the files list for tk, uncomment tk, comment out tcl,
-# then rm -rf $RPM_BUILD_ROOT then rpm --short-circuit -bi then redo a find,
-# and remove the files in specific directories which suffice by themselves.
 %files
 %defattr(-,root,root)
+%if %{_lib} != lib
+%{directory}/%{_lib}
+%endif
 %{directory}/lib
 %{directory}/bin
 %{directory}/include
