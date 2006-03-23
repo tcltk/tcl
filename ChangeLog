@@ -1,3 +1,7 @@
+2006-03-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/expr.test:	Nan self-inquality test silenced. [Bug 761471]
+
 2006-03-22  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.13 TAGGED FOR RELEASE ***
