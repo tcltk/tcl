@@ -1,3 +1,9 @@
+2006-03-23  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.spec: Cleaned up and completed the spec file.
+			 An RPM can now be built from the tcl source
+			 distribution with "rpmbuild -tb <tarball>".
+
 2006-03-22  Reinhard Max  <max@suse.de>
 
 	* tests/stack.test: Run the stack tests in subshells, so that they
