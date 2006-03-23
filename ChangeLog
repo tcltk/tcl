@@ -1,3 +1,8 @@
+2006-03-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/env.test:	With case preserved (see 2006-03-21 commit)
+	be sure to do case-insensitive filtering.  [Bug 1457065]
+
 2006-03-23  Reinhard Max  <max@suse.de>
 
 	* unix/tcl.spec: Cleaned up and completed the spec file.
