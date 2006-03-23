@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.227 2006/03/08 16:07:42 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.228 2006/03/23 22:28:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4406,6 +4406,7 @@ TclExecuteByteCode(
     }
 #endif
 
+    case INST_EXPON:
     case INST_ADD:
     case INST_SUB:
     case INST_DIV:
@@ -4489,6 +4490,13 @@ TclExecuteByteCode(
 		 */
 
 		dResult = d1 / d2;
+		break;
+	    case INST_EXPON:
+		if (d1==0.0 && d2<0.0) {
+		    TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
+		    goto exponOfZero;
+		}
+		dResult = pow(d1, d2);
 		break;
 	    default:
 		/* Unused, here to silence compiler warning. */
@@ -4614,6 +4622,9 @@ TclExecuteByteCode(
 		    wResult -= 1;
 		}
 		break;
+	    case INST_EXPON:
+		/* TODO: Implement calculation for narrow integer types */
+		goto overflow;
 	    default:
 		/* Unused, here to silence compiler warning. */
 		wResult = 0;
@@ -4677,6 +4688,61 @@ TclExecuteByteCode(
 		}
 		mp_clear(&bigRemainder);
 		break;
+	    case INST_EXPON:
+		if (mp_iszero(&big2)) {
+		    /* Anything to the zero power is 1 */
+		    mp_clear(&big1);
+		    mp_clear(&big2);
+		    objResultPtr = eePtr->constants[1];
+		    NEXT_INST_F(1, 2, 1);
+		}
+		if (mp_iszero(&big1)) {
+		    if (mp_cmp_d(&big2, 0) == MP_LT) {
+			TRACE(("%s %s => EXPONENT OF ZERO\n", O2S(valuePtr),
+			    O2S(value2Ptr)));
+			mp_clear(&big1);
+			mp_clear(&big2);
+			goto exponOfZero;
+		    }
+		    mp_clear(&big1);
+		    mp_clear(&big2);
+		    objResultPtr = eePtr->constants[0];
+		    NEXT_INST_F(1, 2, 1);
+		}
+		if (mp_cmp_d(&big2, 0) == MP_LT) {
+		    switch (mp_cmp_d(&big1, 1)) {
+		    case MP_GT:
+			objResultPtr = eePtr->constants[0];
+			break;
+		    case MP_EQ:
+			objResultPtr = eePtr->constants[1];
+			break;
+		    case MP_LT:
+			mp_add_d(&big1, 1, &big1);
+			if (mp_cmp_d(&big1, 0) == MP_LT) {
+			    objResultPtr = eePtr->constants[0];
+			    break;
+			}
+			mp_mod_2d(&big2, 1, &big2);
+			if (mp_iszero(&big2)) {
+			    objResultPtr = eePtr->constants[1];
+			} else {
+			    TclNewIntObj(objResultPtr, -1);
+			}
+		    }
+		    mp_clear(&big1);
+		    mp_clear(&big2);
+		    NEXT_INST_F(1, 2, 1);
+		}
+		if (big2.used > 1) {
+		    Tcl_SetObjResult(interp,
+			    Tcl_NewStringObj("exponent too large", -1));
+		    mp_clear(&big1);
+		    mp_clear(&big2);
+		    goto checkForCatch;
+		}
+		mp_expt_d(&big1, big2.dp[0], &bigResult);
+		break;
 	    }
 	    mp_clear(&big1);
 	    mp_clear(&big2);
@@ -4691,8 +4757,7 @@ TclExecuteByteCode(
 	}
     }
 
-    case INST_MOD:
-    case INST_EXPON: {
+    case INST_MOD: {
 	/*
 	 * Operands must be numeric and ints get converted to floats if
 	 * necessary. We compute value op value2.
@@ -5006,15 +5071,6 @@ TclExecuteByteCode(
 		|| value2Ptr->typePtr == &tclDoubleType) {
 	    /* At least one of the values is floating-point, so perform
 	     * floating point calculations */
-	    switch (*pc) {
-	    case INST_EXPON:
-		if (d1==0.0 && d2<0.0) {
-		    TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
-		    goto exponOfZero;
-		}
-		dResult = pow(d1, d2);
-		break;
-	    case INST_MOD:
 		if (valuePtr->typePtr == &tclDoubleType) {
 		    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 			    O2S(value2Ptr), O2S(valuePtr), (valuePtr->typePtr?
@@ -5028,26 +5084,6 @@ TclExecuteByteCode(
 		}
 		result = TCL_ERROR;
 		goto checkForCatch;
-	    }
-#ifndef ACCEPT_NAN
-	    /*
-	     * Check now for IEEE floating-point error.
-	     */
-
-	    if (TclIsNaN(dResult)) {
-		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
-			O2S(valuePtr), O2S(value2Ptr)));
-		TclExprFloatError(interp, dResult);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-#endif
-	    if (Tcl_IsShared(valuePtr)) {
-		TclNewDoubleObj(objResultPtr, dResult);
-		NEXT_INST_F(1, 2, 1);
-	    }
-	    TclSetDoubleObj(valuePtr, dResult);
-	    NEXT_INST_F(1, 1, 0);
 	} else {
 	    /* Both values are some kind of integer */
 	    /* TODO: optimize use of narrower native integers */
@@ -5056,8 +5092,6 @@ TclExecuteByteCode(
 	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
 	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
 	    mp_init(&bigResult);
-	    switch (*pc) {
-	    case INST_MOD:
 		if (mp_iszero(&big2)) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
 			    O2S(value2Ptr)));
@@ -5077,63 +5111,6 @@ TclExecuteByteCode(
 		    mp_copy(&bigRemainder, &bigResult);
 		}
 		mp_clear(&bigRemainder);
-		break;
-	    case INST_EXPON:
-		if (mp_iszero(&big2)) {
-		    /* Anything to the zero power is 1 */
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    objResultPtr = eePtr->constants[1];
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (mp_iszero(&big1)) {
-		    if (mp_cmp_d(&big2, 0) == MP_LT) {
-			TRACE(("%s %s => EXPONENT OF ZERO\n", O2S(valuePtr),
-			    O2S(value2Ptr)));
-			mp_clear(&big1);
-			mp_clear(&big2);
-			goto exponOfZero;
-		    }
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    objResultPtr = eePtr->constants[0];
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
-		    switch (mp_cmp_d(&big1, 1)) {
-		    case MP_GT:
-			objResultPtr = eePtr->constants[0];
-			break;
-		    case MP_EQ:
-			objResultPtr = eePtr->constants[1];
-			break;
-		    case MP_LT:
-			mp_add_d(&big1, 1, &big1);
-			if (mp_cmp_d(&big1, 0) == MP_LT) {
-			    objResultPtr = eePtr->constants[0];
-			    break;
-			}
-			mp_mod_2d(&big2, 1, &big2);
-			if (mp_iszero(&big2)) {
-			    objResultPtr = eePtr->constants[1];
-			} else {
-			    TclNewIntObj(objResultPtr, -1);
-			}
-		    }
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (big2.used > 1) {
-		    Tcl_SetObjResult(interp,
-			    Tcl_NewStringObj("exponent too large", -1));
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    goto checkForCatch;
-		}
-		mp_expt_d(&big1, big2.dp[0], &bigResult);
-		break;
-	    }
 	    mp_clear(&big1);
 	    mp_clear(&big2);
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
