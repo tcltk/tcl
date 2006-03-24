@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.230 2006/03/24 18:20:37 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.231 2006/03/24 19:05:40 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4576,14 +4576,14 @@ TclExecuteByteCode(
 	    switch (type2) {
 	    case TCL_NUMBER_LONG: {
 		negativeExponent = (l2 < 0);
-		oddExponent = (l2 & 1);
+		oddExponent = (int) (l2 & 1);
 		break;
 	    }
 #ifndef NO_WIDE_TYPE
 	    case TCL_NUMBER_WIDE: {
 		Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
 		negativeExponent = (w2 < 0);
-		oddExponent = (w2 & (Tcl_WideInt)1);
+		oddExponent = (int) (w2 & (Tcl_WideInt)1);
 		break;
 	    }
 #endif
