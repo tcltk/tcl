@@ -1,3 +1,9 @@
+2006-03-24  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Added a couple
+	of missing casts to 'int' that were affecting compilablity
+	on VC6.
+	
 2006-03-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Revised INST_EXPON implementation to do
