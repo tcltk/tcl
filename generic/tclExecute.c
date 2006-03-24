@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.228 2006/03/23 22:28:43 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.229 2006/03/24 00:52:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -4764,9 +4764,9 @@ TclExecuteByteCode(
 	 */
 
 	double d1, d2;
-	double dResult = 0.0;		/* Init. avoids compiler warning. */
 	Tcl_Obj *valuePtr,*value2Ptr;
 #if 0
+	double dResult = 0.0;		/* Init. avoids compiler warning. */
 	Tcl_ObjType *t1Ptr, *t2Ptr;
 	long i = 0, i2 = 0, quot;	/* Init. avoids compiler warning. */
 	long iResult = 0;		/* Init. avoids compiler warning. */
