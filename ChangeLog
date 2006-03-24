@@ -1,5 +1,11 @@
 2006-03-23  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c:	Revised INST_EXPON implementation to do
+	calculations in native types as much as possible, moving to mp_ints
+	only when necessary.
+
+2006-03-23  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclExecute.c:	Merged INST_EXPON handling in with the other
 	binary operators that operate on all number types (INST_ADD, etc.).
 
