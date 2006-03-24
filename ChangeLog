@@ -4,7 +4,10 @@
 	of missing casts to 'int' that were affecting compilablity
 	on VC6.
 	
-2006-03-23  Don Porter  <dgp@users.sourceforge.net>
+2006-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c: Reverted latest change [Bug 506653] since
+	it reportedly killed test performance on Windows.
 
 	* generic/tclExecute.c:	Revised INST_EXPON implementation to do
 	calculations in native types as much as possible, moving to mp_ints
