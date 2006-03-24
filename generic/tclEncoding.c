@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.40 2006/03/13 20:57:39 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.41 2006/03/24 21:11:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1564,9 +1564,6 @@ LoadEncodingFile(
     }
     if ((encoding == NULL) && (interp != NULL)) {
 	Tcl_AppendResult(interp, "invalid encoding file \"", name, "\"", NULL);
-	if (ch == 'E') {
-	    Tcl_AppendResult(interp, " or missing sub-encoding", NULL);
-	}
     }
     Tcl_Close(NULL, chan);
 
@@ -1882,7 +1879,7 @@ LoadEscapeEncoding(
     CONST char *name,		/* Name for new encoding. */
     Tcl_Channel chan)		/* File containing new encoding. */
 {
-    int i, missingSubEncoding = 0;
+    int i;
     unsigned int size;
     Tcl_DString escapeData;
     char init[16], final[16];
@@ -1927,25 +1924,17 @@ LoadEscapeEncoding(
 		est.name[sizeof(est.name) - 1] = '\0';
 
 		/*
-		 * Load the subencodings first so we're never stuck
-		 * trying to use a half-loaded system encoding to
-		 * open/read a *.enc file.
+		 * To avoid infinite recursion in [encoding system iso2022-*]
 		 */
 
-		est.encodingPtr = (Encoding *) Tcl_GetEncoding(NULL, est.name);
-		if ((est.encodingPtr == NULL) 
-			|| (est.encodingPtr->toUtfProc != TableToUtfProc)) {
-		    missingSubEncoding = 1;
-		}
+		Tcl_GetEncoding(NULL, est.name);
+
+		est.encodingPtr = NULL;
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
 	    }
 	}
 	ckfree((char *) argv);
 	Tcl_DStringFree(&lineString);
-    }
-    if (missingSubEncoding) {
-	Tcl_DStringFree(&escapeData);
-	return NULL;
     }
 
     size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
@@ -3173,11 +3162,6 @@ GetTableEncoding(
     encodingPtr = subTablePtr->encodingPtr;
 
     if (encodingPtr == NULL) {
-	/*
-	 * Now that escape encodings load their sub-encodings first, and
-	 * fail to load if any sub-encodings are missing, this branch should
-	 * never happen.  
-	 */
 	encodingPtr = (Encoding *) Tcl_GetEncoding(NULL, subTablePtr->name);
 	if ((encodingPtr == NULL)
 		|| (encodingPtr->toUtfProc != TableToUtfProc)) {
