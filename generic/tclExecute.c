@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.229 2006/03/24 00:52:07 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.230 2006/03/24 18:20:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -417,11 +417,6 @@ static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
-#if 0
-static Tcl_WideInt	ExponWide(Tcl_WideInt w, Tcl_WideInt w2,
-			    int *errExpon);
-static long		ExponLong(long i, long i2, int *errExpon);
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -4566,6 +4561,104 @@ TclExecuteByteCode(
 	    NEXT_INST_F(1, 1, 0);
 	}
 
+	/* Following section assumes BIGNUM_AUTO_NARROW */
+	if (*pc == INST_EXPON) {
+	    long l2 = 0;
+	    int oddExponent = 0, negativeExponent = 0;
+	    if (type2 == TCL_NUMBER_LONG) {
+		l2 = *((CONST long *)ptr2);
+		if (l2 == 0) {
+		    /* Anything to the zero power is 1 */
+		    objResultPtr = eePtr->constants[1];
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+	    switch (type2) {
+	    case TCL_NUMBER_LONG: {
+		negativeExponent = (l2 < 0);
+		oddExponent = (l2 & 1);
+		break;
+	    }
+#ifndef NO_WIDE_TYPE
+	    case TCL_NUMBER_WIDE: {
+		Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
+		negativeExponent = (w2 < 0);
+		oddExponent = (w2 & (Tcl_WideInt)1);
+		break;
+	    }
+#endif
+	    case TCL_NUMBER_BIG: {
+		mp_int big2;
+		if (Tcl_IsShared(value2Ptr)) {
+		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		}
+		negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
+		mp_mod_2d(&big2, 1, &big2);
+		oddExponent = !mp_iszero(&big2);
+		mp_clear(&big2);
+		break;
+	    }
+	    }
+
+	    if (negativeExponent) {
+		if (type1 == TCL_NUMBER_LONG) {
+		    long l1 = *((CONST long *)ptr1);
+		    switch (l1) {
+		    case 0:
+			/* zero to a negative power is div by zero error */
+			TRACE(("%s %s => EXPONENT OF ZERO\n", O2S(valuePtr),
+			    O2S(value2Ptr)));
+			goto exponOfZero;
+		    case -1:
+			if (oddExponent) {
+			    TclNewIntObj(objResultPtr, -1);
+			} else {
+			    objResultPtr = eePtr->constants[1];
+			}
+			NEXT_INST_F(1, 2, 1);
+		    case 1:
+			/* 1 to any power is 1 */
+			objResultPtr = eePtr->constants[1];
+			NEXT_INST_F(1, 2, 1);
+		    }
+		}
+		/* Integers with magnitude greater than 1 raise to a negative
+		 * power yield the answer zero (see TIP 123) */
+		objResultPtr = eePtr->constants[0];
+		NEXT_INST_F(1, 2, 1);
+	    }
+
+	    if (type1 == TCL_NUMBER_LONG) {
+		long l1 = *((CONST long *)ptr1);
+		switch (l1) {
+		case 0:
+		    /* zero to a positive power is zero */
+		    objResultPtr = eePtr->constants[0];
+		    NEXT_INST_F(1, 2, 1);
+		case 1:
+		    /* 1 to any power is 1 */
+		    objResultPtr = eePtr->constants[1];
+		    NEXT_INST_F(1, 2, 1);
+		case -1:
+		    if (oddExponent) {
+			TclNewIntObj(objResultPtr, -1);
+		    } else {
+			objResultPtr = eePtr->constants[1];
+		    }
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+
+	    if (type2 != TCL_NUMBER_LONG) {
+		result = TCL_ERROR;
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("exponent too large", -1));
+		goto checkForCatch;
+	    }
+	}
+
 	if ((*pc != INST_MULT)
 		&& (type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	    Tcl_WideInt w1, w2, wResult;
@@ -4623,8 +4716,29 @@ TclExecuteByteCode(
 		}
 		break;
 	    case INST_EXPON:
-		/* TODO: Implement calculation for narrow integer types */
-		goto overflow;
+		if (w2 & 1) {
+		    wResult = w1;
+		} else {
+		    wResult = Tcl_LongAsWide(1);
+		}
+		w1 *= w1;
+		w2 /= 2;
+		for (; w2>Tcl_LongAsWide(1) ; w1*=w1,w2/=2) {
+		    if (w1 < 0) {
+			goto overflow;
+		    }
+		    if (w2 & 1) {
+			wResult *= w1;
+			if (wResult < 0) {
+			    goto overflow;
+			}
+		    }
+		}
+		wResult *=  w1;
+		if (wResult < 0) {
+		    goto overflow;
+		}
+		break;
 	    default:
 		/* Unused, here to silence compiler warning. */
 		wResult = 0;
@@ -4689,51 +4803,6 @@ TclExecuteByteCode(
 		mp_clear(&bigRemainder);
 		break;
 	    case INST_EXPON:
-		if (mp_iszero(&big2)) {
-		    /* Anything to the zero power is 1 */
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    objResultPtr = eePtr->constants[1];
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (mp_iszero(&big1)) {
-		    if (mp_cmp_d(&big2, 0) == MP_LT) {
-			TRACE(("%s %s => EXPONENT OF ZERO\n", O2S(valuePtr),
-			    O2S(value2Ptr)));
-			mp_clear(&big1);
-			mp_clear(&big2);
-			goto exponOfZero;
-		    }
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    objResultPtr = eePtr->constants[0];
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
-		    switch (mp_cmp_d(&big1, 1)) {
-		    case MP_GT:
-			objResultPtr = eePtr->constants[0];
-			break;
-		    case MP_EQ:
-			objResultPtr = eePtr->constants[1];
-			break;
-		    case MP_LT:
-			mp_add_d(&big1, 1, &big1);
-			if (mp_cmp_d(&big1, 0) == MP_LT) {
-			    objResultPtr = eePtr->constants[0];
-			    break;
-			}
-			mp_mod_2d(&big2, 1, &big2);
-			if (mp_iszero(&big2)) {
-			    objResultPtr = eePtr->constants[1];
-			} else {
-			    TclNewIntObj(objResultPtr, -1);
-			}
-		    }
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    NEXT_INST_F(1, 2, 1);
-		}
 		if (big2.used > 1) {
 		    Tcl_SetObjResult(interp,
 			    Tcl_NewStringObj("exponent too large", -1));
@@ -7313,143 +7382,6 @@ StringForResultCode(
     return buf;
 }
 #endif /* TCL_COMPILE_DEBUG */
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * ExponWide --
- *
- *	Procedure to return w**w2 as wide integer
- *
- * Results:
- *	Return value is w to the power w2, unless the computation makes no
- *	sense mathematically. In that case *errExpon is set to 1.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_WideInt
-ExponWide(
-    Tcl_WideInt w,		/* The value that must be exponentiated */
-    Tcl_WideInt w2,		/* The exponent */
-    int *errExpon)		/* Error code */
-{
-    Tcl_WideInt result;
-
-    *errExpon = 0;
-
-    /*
-     * Check for possible errors and simple/edge cases
-     */
-
-    if (w == 0) {
-	if (w2 < 0) {
-	    *errExpon = 1;
-	    return W0;
-	} else if (w2 > 0) {
-	    return W0;
-	}
-	return Tcl_LongAsWide(1); /* By definition and analysis */
-    } else if (w < -1) {
-	if (w2 < 0) {
-	    return W0;
-	} else if (w2 == 0) {
-	    return Tcl_LongAsWide(1);
-	}
-    } else if (w == -1) {
-	return (w2 & 1) ? Tcl_LongAsWide(-1) :  Tcl_LongAsWide(1);
-    } else if ((w == 1) || (w2 == 0)) {
-	return Tcl_LongAsWide(1);
-    } else if (w>1 && w2<0) {
-	return W0;
-    }
-
-    /*
-     * The general case.
-     */
-
-    result = Tcl_LongAsWide(1);
-    for (; w2>Tcl_LongAsWide(1) ; w*=w,w2/=2) {
-	if (w2 & 1) {
-	    result *= w;
-	}
-    }
-    return result * w;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ExponLong --
- *
- *	Procedure to return i**i2 as long integer
- *
- * Results:
- *	Return value is i to the power i2, unless the computation makes no
- *	sense mathematically. In that case *errExpon is set to 1.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static long
-ExponLong(
-    long i,			/* The value that must be exponentiated */
-    long i2,			/* The exponent */
-    int *errExpon)		/* Error code */
-{
-    long result;
-
-    *errExpon = 0;
-
-    /*
-     * Check for possible errors and simple cases
-     */
-
-    if (i == 0) {
-	if (i2 < 0) {
-	    *errExpon = 1;
-	    return 0L;
-	} else if (i2 > 0) {
-	    return 0L;
-	}
-	/*
-	 * By definition and analysis, 0**0 is 1.
-	 */
-	return 1L;
-    } else if (i < -1) {
-	if (i2 < 0) {
-	    return 0L;
-	} else if (i2 == 0) {
-	    return 1L;
-	}
-    } else if (i == -1) {
-	return (i2&1) ? -1L : 1L;
-    } else if ((i == 1) || (i2 == 0)) {
-	return 1L;
-    } else if (i > 1 && i2 < 0) {
-	return 0L;
-    }
-
-    /*
-     * The general case
-     */
-
-    result = 1;
-    for (; i2>1 ; i*=i,i2/=2) {
-	if (i2 & 1) {
-	    result *= i;
-	}
-    }
-    return result * i;
-}
-#endif
 
 /*
  * Local Variables:
