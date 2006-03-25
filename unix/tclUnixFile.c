@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.48 2006/03/21 11:06:24 das Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.49 2006/03/25 01:47:56 das Exp $
  */
 
 #include "tclInt.h"
@@ -1080,6 +1080,9 @@ TclNativeCreateNativeRep(
 	 */
 
 	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (validPathPtr == NULL) {
+	    return NULL;
+	}
     } else {
 	/*
 	 * Make sure the normalized path is set.
