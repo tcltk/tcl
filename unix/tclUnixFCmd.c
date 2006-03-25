@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.51 2005/12/05 13:03:18 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.52 2006/03/25 01:32:11 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -527,11 +527,11 @@ TclUnixCopyFile(
 
     buffer = ckalloc(blockSize);
     while (1) {
-	nread = read(srcFd, buffer, blockSize);
-	if ((nread == -1) || (nread == 0)) {
+	nread = (size_t) read(srcFd, buffer, blockSize);
+	if ((nread == (size_t) -1) || (nread == 0)) {
 	    break;
 	}
-	if (write(dstFd, buffer, nread) != nread) {
+	if ((size_t) write(dstFd, buffer, nread) != nread) {
 	    nread = (size_t) -1;
 	    break;
 	}
@@ -539,7 +539,7 @@ TclUnixCopyFile(
 
     ckfree(buffer);
     close(srcFd);
-    if ((close(dstFd) != 0) || (nread == -1)) {
+    if ((close(dstFd) != 0) || (nread == (size_t) -1)) {
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
