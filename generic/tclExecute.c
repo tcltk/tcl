@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.231 2006/03/24 19:05:40 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.232 2006/03/25 16:58:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4715,7 +4715,8 @@ TclExecuteByteCode(
 		    wResult -= 1;
 		}
 		break;
-	    case INST_EXPON:
+	    case INST_EXPON: {
+		int wasNegative;
 		if (w2 & 1) {
 		    wResult = w1;
 		} else {
@@ -4724,21 +4725,24 @@ TclExecuteByteCode(
 		w1 *= w1;
 		w2 /= 2;
 		for (; w2>Tcl_LongAsWide(1) ; w1*=w1,w2/=2) {
+		    wasNegative = (wResult < 0);
 		    if (w1 < 0) {
 			goto overflow;
 		    }
 		    if (w2 & 1) {
 			wResult *= w1;
-			if (wResult < 0) {
+			if (wasNegative != (wResult < 0)) {
 			    goto overflow;
 			}
 		    }
 		}
+		wasNegative = (wResult < 0);
 		wResult *=  w1;
-		if (wResult < 0) {
+		if (wasNegative != (wResult < 0)) {
 		    goto overflow;
 		}
 		break;
+	    }
 	    default:
 		/* Unused, here to silence compiler warning. */
 		wResult = 0;
