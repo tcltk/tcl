@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.66 2006/02/02 10:58:02 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.67 2006/03/25 01:58:20 das Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3183,6 +3183,7 @@ TclUnixWaitForFile(
 
     if (fd >= FD_SETSIZE) {
 	Tcl_Panic("TclWaitForFile can't handle file id %d", fd);
+	return 0;
     }
     memset((void *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));
