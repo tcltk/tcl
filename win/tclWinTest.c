@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.16 2006/03/21 09:46:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.17 2006/03/27 23:28:19 patthoyts Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -22,12 +22,19 @@
 #endif
 
 /*
+ * MinGW 3.4.2 does not define this.
+ */
+#ifndef INHERITED_ACE
+#define INHERITED_ACE (0x10)
+#endif
+
+/*
  * Forward declarations of functions defined later in this file:
  */
 
 int			TclplatformtestInit(Tcl_Interp *interp);
 static int		TesteventloopCmd(ClientData dummy, Tcl_Interp *interp,
-			    int argc, char **argv);
+			    int argc, CONST84 char **argv);
 static int		TestvolumetypeCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
@@ -40,7 +47,7 @@ static int		TestwincpuidCmd(ClientData dummy, Tcl_Interp* interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		TestplatformChmod(CONST char *nativePath, int pmode);
 static int		TestchmodCmd(ClientData dummy,
-			    Tcl_Interp *interp, int argc, CONST char **argv);
+			    Tcl_Interp *interp, int argc, CONST84 char **argv);
 
 /*
  *----------------------------------------------------------------------
@@ -106,7 +113,7 @@ TesteventloopCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
-    char **argv)		/* Argument strings. */
+    CONST84 char **argv)	/* Argument strings. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
@@ -145,7 +152,7 @@ TesteventloopCmd(
 		 * and start unwinding.
 		 */
 
-		PostQuitMessage(msg.wParam);
+		PostQuitMessage((int)msg.wParam);
 		break;
 	    }
 	    TranslateMessage(&msg);
@@ -502,7 +509,7 @@ static int
 TestplatformChmod(CONST char *nativePath, int pmode)
 {
     SID_IDENTIFIER_AUTHORITY userSidAuthority =
-    SECURITY_WORLD_SID_AUTHORITY;
+    { SECURITY_WORLD_SID_AUTHORITY };
 
     typedef DWORD (WINAPI *getSidLengthRequiredDef) ( UCHAR );
     typedef BOOL (WINAPI *initializeSidDef) ( PSID,
@@ -532,9 +539,7 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 
     WORD j;
   
-    DWORD userSidLen = 4096;
     SID *userSid = 0;
-    DWORD userDomainLen = 32;
     TCHAR *userDomain = 0;
 
     DWORD attr;
@@ -653,7 +658,8 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
 	    DWORD secDescLen2 = 0;
 	    secDesc = (BYTE *) ckalloc(secDescLen);
-	    if (!getFileSecurityProc(nativePath, infoBits, secDesc, 
+	    if (!getFileSecurityProc(nativePath, infoBits,
+				     (PSECURITY_DESCRIPTOR)secDesc, 
 				     secDescLen, &secDescLen2) 
 		|| (secDescLen < secDescLen2)) {
 		goto done;
@@ -664,8 +670,8 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     }
 
     /* Get the World SID */
-    userSid = (SID*) ckalloc(getSidLengthRequiredProc(1));
-    initializeSidProc( userSid, &userSidAuthority, 1);
+    userSid = (SID*) ckalloc(getSidLengthRequiredProc((UCHAR)1));
+    initializeSidProc( userSid, &userSidAuthority, (BYTE)1);
     *(getSidSubAuthorityProc( userSid, 0)) = SECURITY_WORLD_RID;
 
     /* If curAclPresent == false then curAcl and curAclDefaulted not valid */
@@ -775,7 +781,7 @@ TestchmodCmd(dummy, interp, argc, argv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
     int argc;				/* Number of arguments. */
-    CONST char **argv;			/* Argument strings. */
+    CONST84 char **argv;			/* Argument strings. */
 {
     int i, mode;
     char *rest;
@@ -800,7 +806,7 @@ TestchmodCmd(dummy, interp, argc, argv)
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
-	if (TestplatformChmod(translated, (unsigned) mode) != 0) {
+	if (TestplatformChmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    NULL);
 	    return TCL_ERROR;
