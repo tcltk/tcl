@@ -18,7 +18,9 @@
 	* generic/tclExecute.c:	Merge INST_MOD computation in with the
 	INST_?SHIFT instructions, which also operate only on two integral
 	values.  Also corrected flaw that made INST_BITNOT of wide values
-	require mp_int calculations.
+	require mp_int calculations.  Also corrected type that missed
+	optimized handling of the tclBooleanType by the TclGetBooleanFromObj
+	macro.
 
 	*** 8.5a4 TAGGED FOR RELEASE ***
 
