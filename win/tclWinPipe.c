@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.62 2006/03/10 17:34:35 vasiljevic Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.63 2006/03/27 18:08:51 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -210,7 +210,7 @@ static void		PipeThreadActionProc(ClientData instanceData,
 
 static Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TCL_CLOSE2PROC,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
@@ -225,6 +225,7 @@ static Tcl_ChannelType pipeChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     PipeThreadActionProc,	/* thread action proc */
+    NULL,                       /* truncate */
 };
 
 /*
