@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.5 2006/03/27 23:14:19 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.6 2006/03/27 23:30:54 patthoyts Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -26,7 +26,7 @@
  */
 #ifndef INHERITED_ACE
 #define INHERITED_ACE (0x10)
-#endif // INHERITED_ACE
+#endif
 
 /*
  * Forward declarations of procedures defined later in this file:
