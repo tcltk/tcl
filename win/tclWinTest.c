@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.4 2006/03/21 09:45:46 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.5 2006/03/27 23:14:19 patthoyts Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -22,11 +22,18 @@
 #endif
 
 /*
+ * MinGW 3.4.2 does not define this.
+ */
+#ifndef INHERITED_ACE
+#define INHERITED_ACE (0x10)
+#endif // INHERITED_ACE
+
+/*
  * Forward declarations of procedures defined later in this file:
  */
 int		TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
 static int	TesteventloopCmd _ANSI_ARGS_((ClientData dummy,
-	Tcl_Interp *interp, int argc, char **argv));
+	Tcl_Interp *interp, int argc, CONST84 char **argv));
 static int	TestvolumetypeCmd _ANSI_ARGS_((ClientData dummy,
 	Tcl_Interp *interp, int objc,
 	Tcl_Obj *CONST objv[]));
@@ -46,7 +53,7 @@ static int	TestwincpuidCmd _ANSI_ARGS_(( ClientData dummy,
 static int	TestplatformChmod _ANSI_ARGS_((CONST char *nativePath, 
 						 int pmode));
 static int	TestchmodCmd _ANSI_ARGS_((ClientData dummy,
-		  Tcl_Interp *interp, int argc, CONST char **argv));
+		  Tcl_Interp *interp, int argc, CONST84 char **argv));
 
 
 /*
@@ -75,21 +82,19 @@ TclplatformtestInit(interp)
      */
 
     Tcl_CreateCommand(interp, "testchmod", TestchmodCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+		      (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+		      (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+			 (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd,
-            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+			 (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testwincpuid", TestwincpuidCmd,
 			 (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
-    Tcl_CreateObjCommand( interp,
-			  "testwinsleep",
-			  TestwinsleepCmd,
-			  (ClientData) 0,
-			  (Tcl_CmdDeleteProc *) NULL );
-    Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd,
+			 (ClientData) 0, (Tcl_CmdDeleteProc *) NULL );
+    Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd,
+			 (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     return TCL_OK;
 }
 
@@ -116,7 +121,7 @@ TesteventloopCmd(clientData, interp, argc, argv)
     ClientData clientData;		/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
     int argc;				/* Number of arguments. */
-    char **argv;			/* Argument strings. */
+    CONST84 char **argv;		/* Argument strings. */
 {
     static int *framePtr = NULL; /* Pointer to integer on stack frame of
 				  * innermost invocation of the "wait"
@@ -155,7 +160,7 @@ TesteventloopCmd(clientData, interp, argc, argv)
 		 * and start unwinding.
 		 */
 
-		PostQuitMessage(msg.wParam);
+		PostQuitMessage((int)msg.wParam);
 		break;
 	    }
 	    TranslateMessage(&msg);
@@ -519,7 +524,7 @@ static int
 TestplatformChmod(CONST char *nativePath, int pmode)
 {
     SID_IDENTIFIER_AUTHORITY userSidAuthority =
-    SECURITY_WORLD_SID_AUTHORITY;
+    { SECURITY_WORLD_SID_AUTHORITY };
 
     typedef DWORD (WINAPI *getSidLengthRequiredDef) ( UCHAR );
     typedef BOOL (WINAPI *initializeSidDef) ( PSID,
@@ -549,10 +554,8 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 
     WORD j;
   
-    DWORD userSidLen = 4096;
     SID *userSid = 0;
-    DWORD userDomainLen = 32;
-    TCHAR *userDomain = 0;
+    TCHAR *userDomain = NULL;
 
     DWORD attr;
 
@@ -670,7 +673,8 @@ TestplatformChmod(CONST char *nativePath, int pmode)
 	if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
 	    DWORD secDescLen2 = 0;
 	    secDesc = (BYTE *) ckalloc(secDescLen);
-	    if (!getFileSecurityProc(nativePath, infoBits, secDesc, 
+	    if (!getFileSecurityProc(nativePath, infoBits,
+				     (PSECURITY_DESCRIPTOR)secDesc, 
 				     secDescLen, &secDescLen2) 
 		|| (secDescLen < secDescLen2)) {
 		goto done;
@@ -681,13 +685,13 @@ TestplatformChmod(CONST char *nativePath, int pmode)
     }
 
     /* Get the World SID */
-    userSid = (SID*) ckalloc(getSidLengthRequiredProc(1));
-    initializeSidProc( userSid, &userSidAuthority, 1);
+    userSid = (SID*) ckalloc(getSidLengthRequiredProc((UCHAR)1));
+    initializeSidProc( userSid, &userSidAuthority, (BYTE)1);
     *(getSidSubAuthorityProc( userSid, 0)) = SECURITY_WORLD_RID;
 
     /* If curAclPresent == false then curAcl and curAclDefaulted not valid */
     if (!getSecurityDescriptorDaclProc(secDesc, &curAclPresent, 
-      &curAcl, &curAclDefaulted))
+				       &curAcl, &curAclDefaulted))
 	goto done;
 
     if (!curAclPresent || !curAcl) {
@@ -792,7 +796,7 @@ TestchmodCmd(dummy, interp, argc, argv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
     int argc;				/* Number of arguments. */
-    CONST char **argv;			/* Argument strings. */
+    CONST84 char **argv;		/* Argument strings. */
 {
     int i, mode;
     char *rest;
@@ -817,7 +821,7 @@ TestchmodCmd(dummy, interp, argc, argv)
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
-	if (TestplatformChmod(translated, (unsigned) mode) != 0) {
+	if (TestplatformChmod(translated, mode) != 0) {
 	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    NULL);
 	    return TCL_ERROR;
