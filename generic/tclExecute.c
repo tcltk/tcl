@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.233 2006/03/27 22:50:34 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.234 2006/03/27 23:12:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -312,7 +312,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 #define TclGetBooleanFromObj(interp, objPtr, boolPtr)			\
     ((((objPtr)->typePtr == &tclIntType)				\
-	|| ((objPtr)->typePtr == &tclIntType))				\
+	|| ((objPtr)->typePtr == &tclBooleanType))			\
 	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
