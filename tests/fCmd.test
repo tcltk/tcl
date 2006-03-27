@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.54 2006/03/21 14:34:11 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.55 2006/03/27 18:56:25 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -928,7 +928,7 @@ test fCmd-10.3 {file copy: comprehensive: dir to new name} {notRoot unixOrPc 95o
     testchmod 755 td4
     set msg
 } [subst {{td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 0}]
-test fCmd-10.3.1 {file copy: comprehensive: dir to new name} {notRoot pc 2000orNewer testchmod} {
+test fCmd-10.3.1 {file copy: comprehensive: dir to new name} {notRoot win 2000orNewer testchmod} {
     # On Windows with ACLs, copying a directory is defined like this
     cleanup
     file mkdir [file join td1 tdx]
@@ -1024,7 +1024,7 @@ test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} \
     [file writable [file join td3 td3]] [file writable [file join td3 td4]]
 } [subst {{td1 td2 td3} {[file join td3 td3] [file join td3 td4]} 1 0}]
 test fCmd-10.8.1 {file rename: comprehensive: dir to new name and dir} \
-	{notRoot pc 2000orNewer testchmod} {
+	{notRoot win 2000orNewer testchmod} {
     # On Windows with ACLs, copying a directory is defined like this
     cleanup
     file mkdir td1
@@ -2370,7 +2370,7 @@ removeFile abc.file
 removeDirectory abc2.dir
 removeDirectory abc.dir
 
-test fCmd-30.1 {file writable on 'My Documents'} {pc 2000orNewer} {
+test fCmd-30.1 {file writable on 'My Documents'} {win 2000orNewer} {
     # Would be good to localise this name, since this test will only
     # function on english-speaking windows otherwise
     if {[file exists "~/My Documents"]} {
@@ -2381,7 +2381,7 @@ test fCmd-30.1 {file writable on 'My Documents'} {pc 2000orNewer} {
     set res
 } {1}
 
-test fCmd-30.2 {file readable on 'NTUSER.DAT'} {pc 2000orNewer knownBug} {
+test fCmd-30.2 {file readable on 'NTUSER.DAT'} {win 2000orNewer knownBug} {
     # Apparently the OS has this file open with exclusive permissions
     # Windows doesn't provide any way to determine that fact without
     # actually trying to open the file (open NTUSER.dat r), which
