@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.33 2005/10/31 13:53:33 dkf Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.34 2006/03/27 18:08:51 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -205,7 +205,7 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
 
 static Tcl_ChannelType serialChannelType = {
     "serial",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     SerialCloseProc,		/* Close proc. */
     SerialInputProc,		/* Input proc. */
     SerialOutputProc,		/* Output proc. */
@@ -220,6 +220,7 @@ static Tcl_ChannelType serialChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     SerialThreadActionProc,	/* thread action proc */
+    NULL,                       /* truncate */
 };
 
 /*
