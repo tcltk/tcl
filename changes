@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.101 2006/03/27 16:13:56 dgp Exp $
+RCS: @(#) $Id: changes,v 1.102 2006/03/27 16:48:16 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6718,7 +6718,7 @@ no other errors (darley)
 
 2006-03-21 (platform enhancement)[823329] HFS globbing support (steffen)
 
-2006-03-23 (platform suppirt) updated tcl.spec file (max)
+2006-03-23 (platform support) updated tcl.spec file (max)
 
 (platform support) Use of _ANSI_ARGS_ purged.  ANSI compiler required (fellows)
 
