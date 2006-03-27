@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.210 2005/12/27 17:39:01 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.211 2006/03/27 18:08:50 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -1516,6 +1516,7 @@ typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData cli
 #define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
 #define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
 #define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
+#define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
  * TIP #218: Channel Actions, Ids for Tcl_DriverThreadActionProc
@@ -1667,12 +1668,16 @@ typedef struct Tcl_ChannelType {
     /*
      * Only valid in TCL_CHANNEL_VERSION_4 channels or later
      * TIP #218, Channel Thread Actions
-     * TIP #208 (part relating to truncation)
      */
     Tcl_DriverThreadActionProc *threadActionProc;
 				/* Function to call to notify the driver of
 				 * thread specific activity for a channel. May
 				 * be NULL. */
+
+    /*
+     * Only valid in TCL_CHANNEL_VERSION_5 channels or later
+     * TIP #208, File Truncation
+     */
     Tcl_DriverTruncateProc *truncateProc;
 				/* Function to call to truncate the underlying
 				 * file to a particular length. May be NULL if
