@@ -1,3 +1,7 @@
+2006-03-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinTest.c:     Fixes for bug #1456373 (mingw-gcc issue)
+
 2006-03-27  Andreas Kupries <andreask@activestate.com>
 
 	* doc/CrtChannel.3:    Added TCL_CHANNEL_VERSION_5, made it
