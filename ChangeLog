@@ -1,3 +1,9 @@
+2006-03-27  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5a4 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for another RC.
+
 2006-03-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Corrections to INST_EXPON detection of
@@ -39,8 +45,6 @@
 	the recursion causes a segfault.	
 	
 2006-03-21  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5a4 TAGGED FOR RELEASE ***
 
 	* changes:	Updates for another RC.
 
