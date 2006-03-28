@@ -141,7 +141,7 @@
 				PREFIX = /usr/local;
 				PRODUCT_NAME = tcltest;
 				TCL_LIBRARY = "${LIBDIR}/tcl${VERSION}";
-				TCL_PACKAGE_PATH = "\"${LIBDIR} ${PREFIX}/share\"";
+				TCL_PACKAGE_PATH = "\"${LIBDIR}\"";
 				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				VERSION = 8.5;
 				WARNING_CFLAGS = "-Wall -Wno-implicit-int";

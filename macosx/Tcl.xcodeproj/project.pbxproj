@@ -2119,7 +2119,7 @@
 				PRODUCT_NAME = tcltest;
 				SEPARATE_STRIP = YES;
 				TCL_LIBRARY = "${LIBDIR}/tcl${VERSION}";
-				TCL_PACKAGE_PATH = "\"${LIBDIR} ${PREFIX}/share\"";
+				TCL_PACKAGE_PATH = "\"${LIBDIR}\"";
 				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				VERSION = 8.5;
 				WARNING_CFLAGS = (
@@ -2218,7 +2218,7 @@
 				PRODUCT_NAME = tcltest;
 				SEPARATE_STRIP = YES;
 				TCL_LIBRARY = "${LIBDIR}/tcl${VERSION}";
-				TCL_PACKAGE_PATH = "\"${LIBDIR} ${PREFIX}/share\"";
+				TCL_PACKAGE_PATH = "\"${LIBDIR}\"";
 				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				VERSION = 8.5;
 				WARNING_CFLAGS = (
@@ -2265,7 +2265,7 @@
 				PRODUCT_NAME = tcltest;
 				SEPARATE_STRIP = YES;
 				TCL_LIBRARY = "${LIBDIR}/tcl${VERSION}";
-				TCL_PACKAGE_PATH = "\"${LIBDIR} ${PREFIX}/share\"";
+				TCL_PACKAGE_PATH = "\"${LIBDIR}\"";
 				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				VERSION = 8.5;
 				WARNING_CFLAGS = (
@@ -2312,7 +2312,7 @@
 				PRODUCT_NAME = tcltest;
 				SEPARATE_STRIP = YES;
 				TCL_LIBRARY = "${LIBDIR}/tcl${VERSION}";
-				TCL_PACKAGE_PATH = "\"${LIBDIR} ${PREFIX}/share\"";
+				TCL_PACKAGE_PATH = "\"${LIBDIR}\"";
 				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				VERSION = 8.5;
 				WARNING_CFLAGS = (
