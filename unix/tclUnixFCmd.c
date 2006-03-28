@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.8 2005/12/05 15:10:33 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.9 2006/03/28 10:47:09 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1821,9 +1821,17 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    nativePath = Tcl_UtfToExternalDString(NULL, path, 
 						  lastDir - path, &ds);
 	    if (Realpath(nativePath, normPath) != NULL) {
-		nextCheckpoint = lastDir - path;
-		goto wholeStringOk;
+		if (*nativePath != '/' && *normPath == '/') {
+		    /*
+		     * realpath has transformed a relative path into an
+		     * absolute path, we do not know how to handle this.
+		     */
+		} else {
+		    nextCheckpoint = lastDir - path;
+		    goto wholeStringOk;
+		}
 	    }
+	    Tcl_DStringFree(&ds);
 	}
     }
     /* Else do it the slow way */
