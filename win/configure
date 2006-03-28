@@ -1482,6 +1482,10 @@ fi
 
     SHLIB_SUFFIX=".dll"
 
+    # MACHINE is IX86 for LINK, but this is used by the manifest,
+    # which requires x86|amd64|ia64.
+    MACHINE="X86"
+
     # Check for a bug in gcc's windres that causes the
     # compile to fail when a Windows native path is
     # passed into windres. The mingw toolchain requires
@@ -1496,9 +1500,9 @@ fi
 	echo "END" >> $conftest
 
 	echo $ac_n "checking for Windows native path bug in windres""... $ac_c" 1>&6
-echo "configure:1500: checking for Windows native path bug in windres" >&5
+echo "configure:1504: checking for Windows native path bug in windres" >&5
 	cyg_conftest=`$CYGPATH $conftest`
-	if { ac_try='$RC -o conftest.res.o $cyg_conftest'; { (eval echo configure:1502: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } ; then
+	if { ac_try='$RC -o conftest.res.o $cyg_conftest'; { (eval echo configure:1506: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } ; then
 	    echo "$ac_t""no" 1>&6
 	else
 	    echo "$ac_t""yes" 1>&6
@@ -1517,7 +1521,7 @@ echo "configure:1500: checking for Windows native path bug in windres" >&5
     # set various compiler flags depending on whether we are using gcc or cl
 
     echo $ac_n "checking compiler flags""... $ac_c" 1>&6
-echo "configure:1521: checking compiler flags" >&5
+echo "configure:1525: checking compiler flags" >&5
     if test "${GCC}" = "yes" ; then
 	if test "$do64bit" != "no" ; then
 	    echo "configure: warning: "64bit mode not supported with GCC on Windows"" 1>&2
@@ -1660,9 +1664,6 @@ echo "configure:1521: checking compiler flags" >&5
 	# This is a 2-stage check to make sure we have the 64-bit SDK
 	# We have to know where the SDK is installed.
 	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
-	# MACHINE is IX86 for LINK, but this is used by the manifest,
-	# which requires x86|amd64|ia64.
-	MACHINE="X86"
 	if test "$do64bit" != "no" ; then
 	    if test "x${MSSDK}x" = "xx" ; then
 		MSSDK="C:/Progra~1/Microsoft Platform SDK"
@@ -1758,7 +1759,7 @@ echo "configure:1521: checking compiler flags" >&5
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:1762: checking for build with symbols" >&5
+echo "configure:1763: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -1818,7 +1819,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1822: checking how to run the C preprocessor" >&5
+echo "configure:1823: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1833,13 +1834,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1837 "configure"
+#line 1838 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1843: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1844: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1850,13 +1851,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1854 "configure"
+#line 1855 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1860: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1861: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1867,13 +1868,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1871 "configure"
+#line 1872 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1877: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1878: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1899,17 +1900,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1903: checking for errno.h" >&5
+echo "configure:1904: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1908 "configure"
+#line 1909 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1913: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1914: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
