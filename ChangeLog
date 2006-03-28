@@ -1,3 +1,9 @@
+2006-03-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinConsole.c: revert 2005-11-03 [Patch 1256872] change
+	to add win32 unicode console support as it broke the ability to
+	modify the encoding to the console.
+
 2006-03-28  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixFCmd.c (TclpObjNormalizePath): deal with *BSD/Darwin
