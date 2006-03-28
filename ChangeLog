@@ -1,3 +1,15 @@
+2006-03-28  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcode/default.pbxuser:     add '-singleproc 1' cli arg to
+	* macosx/Tcl.xcodeproj/default.pbxuser: tcltest to ease test debugging.
+	
+	* macosx/Tcl.xcode/project.pbxproj:     removed $prefix/share from
+	* macosx/Tcl.xcodeproj/project.pbxproj: TCL_PACKAGE_PATH as per change
+	to unix/configure.in of 2006-03-13.
+
+	* unix/tclUnixFCmd.c (TclpObjNormalizePath): deal with *BSD/Darwin
+	realpath() converting relative paths into absolute paths. [Bug 1064247]
+
 2006-03-28  Vince Darley  <vincentdarley@sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to nativeFilesystemRecord comparisons
