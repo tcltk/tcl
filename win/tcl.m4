@@ -392,6 +392,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     SHLIB_SUFFIX=".dll"
 
+    # MACHINE is IX86 for LINK, but this is used by the manifest,
+    # which requires x86|amd64|ia64.
+    MACHINE="X86"
+
     # Check for a bug in gcc's windres that causes the
     # compile to fail when a Windows native path is
     # passed into windres. The mingw toolchain requires
@@ -568,9 +572,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	# This is a 2-stage check to make sure we have the 64-bit SDK
 	# We have to know where the SDK is installed.
 	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
-	# MACHINE is IX86 for LINK, but this is used by the manifest,
-	# which requires x86|amd64|ia64.
-	MACHINE="X86"
 	if test "$do64bit" != "no" ; then
 	    if test "x${MSSDK}x" = "xx" ; then
 		MSSDK="C:/Progra~1/Microsoft Platform SDK"
