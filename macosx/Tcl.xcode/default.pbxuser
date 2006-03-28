@@ -28,9 +28,11 @@
 		activeArgIndices = (
 			NO,
 			NO,
+			NO,
 		);
 		argumentStrings = (
 			"${SRCROOT}/../../tcl/tests/all.tcl",
+			"-singleproc 1",
 			"-verbose \"\"",
 		);
 		configStateDict = {
