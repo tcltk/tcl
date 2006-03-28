@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11.2.2 2005/11/03 11:53:59 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.2.3 2006/03/28 21:02:37 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -186,70 +186,6 @@ static Tcl_ChannelType consoleChannelType = {
     NULL,                       /* wide seek proc */
     ConsoleThreadActionProc,    /* thread action proc */
 };
-
-/*
- *----------------------------------------------------------------------
- *
- * readConsoleBytes --
- *
- *	Wrapper for ReadConsole{A,W}, that takes and returns number of 
- *	bytes instead of number of TCHARS
- *
- * Results:
- *	FALSE if there was a problem else TRUE
- *
- * Side effects:
- *	Reads characters from the console.
- *
- *----------------------------------------------------------------------
- */
-
-static BOOL
-readConsoleBytes(HANDLE hConsole, LPVOID lpBuffer, 
-    DWORD nbytes, LPDWORD nbytesread)
-{
-    DWORD ntchars;
-    BOOL result;
-    int tcharsize;
-    tcharsize = tclWinProcs->useWide? 2 : 1;
-    result = tclWinProcs->readConsoleProc(
-	hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
-    if (nbytesread)
-        *nbytesread = (ntchars*tcharsize);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * writeConsoleBytes --
- *
- *	Wrapper for WriteConsole{A,W}, that takes and returns number of 
- *	bytes instead of number of TCHARS
- *
- * Results:
- *	FALSE if there was a problem else TRUE
- *
- * Side effects:
- *	Writes characters from the console.
- *
- *----------------------------------------------------------------------
- */
-
-static BOOL
-writeConsoleBytes(HANDLE hConsole, const VOID *lpBuffer,
-    DWORD nbytes, LPDWORD nbyteswritten)
-{
-    DWORD ntchars;
-    BOOL result;
-    int tcharsize;
-    tcharsize = tclWinProcs->useWide? 2 : 1;
-    result = tclWinProcs->writeConsoleProc(
-	hConsole, lpBuffer, nbytes / tcharsize, &ntchars, NULL);
-    if (nbyteswritten)
-        *nbyteswritten = (ntchars*tcharsize);
-    return result;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -769,8 +705,8 @@ ConsoleInputProc(
      * at least one byte is available or an EOF occurs.
      */
 
-    if (readConsoleBytes(infoPtr->handle, (LPVOID) buf,
-			 (DWORD) bufSize, &count) == TRUE) {
+    if (ReadConsole(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &count,
+		    (LPOVERLAPPED) NULL) == TRUE) {
 	buf[count] = '\0';
 	return count;
     }
@@ -856,8 +792,8 @@ ConsoleOutputProc(
 	 * This avoids an unnecessary copy.
 	 */
 
-	if (writeConsoleBytes(infoPtr->handle, (LPVOID) buf, (DWORD) toWrite,
-		&bytesWritten) == FALSE) {
+	if (WriteFile(infoPtr->handle, (LPVOID) buf, (DWORD) toWrite,
+		&bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
 	    TclWinConvertError(GetLastError());
 	    goto error;
 	}
@@ -1208,8 +1144,8 @@ ConsoleReaderThread(LPVOID arg)
 	 * Look for data on the console, but first ignore any events
 	 * that are not KEY_EVENTs 
 	 */
-	if (readConsoleBytes(handle, infoPtr->buffer, CONSOLE_BUFFER_SIZE,
-		(LPDWORD) &infoPtr->bytesRead) != FALSE) {
+	if (ReadConsoleA(handle, infoPtr->buffer, CONSOLE_BUFFER_SIZE,
+		(LPDWORD) &infoPtr->bytesRead, NULL) != FALSE) {
 	    /*
 	     * Data was stored in the buffer.
 	     */
@@ -1304,7 +1240,7 @@ ConsoleWriterThread(LPVOID arg)
 	 */
 
 	while (toWrite > 0) {
-	    if (writeConsoleBytes(handle, buf, toWrite, &count) == FALSE) {
+	    if (WriteConsoleA(handle, buf, toWrite, &count, NULL) == FALSE) {
 		infoPtr->writeError = GetLastError();
 		break;
 	    } else {
@@ -1431,10 +1367,7 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
-    if (tclWinProcs->useWide)
-	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", "unicode");
-    else
-	Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
 
     return infoPtr->channel;
 }
