@@ -1,3 +1,8 @@
+2006-03-28  Vince Darley  <vincentdarley@sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to nativeFilesystemRecord comparisons
+	(lesser part of [Bug 1064247])
+
 2006-03-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWinTest.c:     Fixes for bug #1456373 (mingw-gcc issue)
