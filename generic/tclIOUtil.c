@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.27 2006/03/16 18:23:22 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.28 2006/03/28 10:44:52 das Exp $
  */
 
 #include "tclInt.h"
@@ -612,7 +612,7 @@ FsRecacheFilesystemList(void)
     /*
      * Code below operates on shared data. We
      * are already called under mutex lock so   
-     * we can safely proceede.
+     * we can safely proceed.
      */
 
     /* Locate tail of the global filesystem list */
