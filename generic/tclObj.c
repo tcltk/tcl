@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.106 2006/03/16 09:56:46 das Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.107 2006/03/29 15:09:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2733,6 +2733,12 @@ Tcl_DbNewBignumObj(
  *	result.
  *
  *----------------------------------------------------------------------
+ */
+
+/*
+ * TODO: Consider a smarter Tcl_GetBignumAndClearObj() that doesn't
+ * require caller to check for a shared Tcl_Obj, but falls back to
+ * Tcl_GetBignumFromObj() when sharing is an issue.
  */
 
 static int
