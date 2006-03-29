@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.99 2006/03/20 19:12:02 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.100 2006/03/29 23:02:42 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -109,12 +109,12 @@ COMPAT_DIR		= @srcdir@/../compat
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
 
-GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
-TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
-WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
-ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's/\\*$$//' )
+GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)' | sed 's!\\!/!g')
+TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)' | sed 's!\\!/!g')
+WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)' | sed 's!\\!/!g')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
 
-LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
+LIBRARY_DIR   = $(ROOT_DIR_NATIVE)/library
 
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
