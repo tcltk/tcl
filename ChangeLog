@@ -1,5 +1,8 @@
 2006-03-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinPipe.c (TclpCreateProcess): change panics to Tcl
+	errors and do proper refcounting of noe objPtr. [bug 1194429]
+
 	* unix/tcl.m4, win/tcl.m4: []-quote AC_DEFUN functions.
 
 2006-03-28  Daniel Steffen  <das@users.sourceforge.net>

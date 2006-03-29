@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.63 2006/03/27 18:08:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.64 2006/03/29 01:22:49 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1173,6 +1173,10 @@ TclpCreateProcess(
 	     * The helper app should be located in the same directory as the
 	     * tcl dll.
 	     */
+	    Tcl_Obj *tclExePtr, *pipeDllPtr;
+	    char *start, *end;
+	    int i, fileExists;
+	    Tcl_DString pipeDll;
 
 	    if (createFlags != 0) {
 		startInfo.wShowWindow = SW_HIDE;
@@ -1180,41 +1184,44 @@ TclpCreateProcess(
 		createFlags = CREATE_NEW_CONSOLE;
 	    }
 
-	    {
-		Tcl_Obj *tclExePtr, *pipeDllPtr;
-		int i, fileExists;
-		char *start,*end;
-		Tcl_DString pipeDll;
-
-		Tcl_DStringInit(&pipeDll);
-		Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
-		tclExePtr = TclGetObjNameOfExecutable();
-		start = Tcl_GetStringFromObj(tclExePtr, &i);
-		for (end = start + (i-1); end > start; end--) {
-		    if (*end == '/') {
-			break;
-		    }
+	    Tcl_DStringInit(&pipeDll);
+	    Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
+	    tclExePtr = TclGetObjNameOfExecutable();
+	    Tcl_IncrRefCount(tclExePtr);
+	    start = Tcl_GetStringFromObj(tclExePtr, &i);
+	    for (end = start + (i-1); end > start; end--) {
+		if (*end == '/') {
+		    break;
 		}
-		if (*end != '/') {
-		    Tcl_Panic("no / in executable path name");
-		}
-		i = (end - start) + 1;
-		pipeDllPtr = Tcl_NewStringObj(start, i);
-		Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
-		Tcl_IncrRefCount(pipeDllPtr);
-		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
-		    Tcl_Panic("Tcl_FSConvertToPathType failed");
-		}
-		fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
-		if (!fileExists) {
-		    Tcl_Panic("Tcl pipe dll \"%s\" not found",
-			Tcl_DStringValue(&pipeDll));
-		}
-		Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
+	    }
+	    if (*end != '/') {
+		Tcl_AppendResult(interp, "no / in executable path name \"",
+			start, "\"", (char *) NULL);
+		Tcl_DecrRefCount(tclExePtr);
+		Tcl_DStringFree(&pipeDll);
+		goto end;
+	    }
+	    i = (end - start) + 1;
+	    pipeDllPtr = Tcl_NewStringObj(start, i);
+	    Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
+	    Tcl_IncrRefCount(pipeDllPtr);
+	    if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
+		Tcl_Panic("Tcl_FSConvertToPathType failed");
+	    }
+	    fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
+	    if (!fileExists) {
+		Tcl_AppendResult(interp, "Tcl pipe dll \"",
+			Tcl_DStringValue(&pipeDll), "\" not found",
+			(char *) NULL);
 		Tcl_DecrRefCount(tclExePtr);
 		Tcl_DecrRefCount(pipeDllPtr);
 		Tcl_DStringFree(&pipeDll);
+		goto end;
 	    }
+	    Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
+	    Tcl_DecrRefCount(tclExePtr);
+	    Tcl_DecrRefCount(pipeDllPtr);
+	    Tcl_DStringFree(&pipeDll);
 	}
     }
 
