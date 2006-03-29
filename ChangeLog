@@ -4,6 +4,9 @@
 
 	* changes:	Updates for another RC.
 
+	* generic/tclPathObj.c:	 More fixes for path normalization when /../
+	* tests/fileSystem.test: tries to go beyond root.[Bug 1379287]
+
 	* generic/tclExecute.c:	Revised INST_MOD implementation to do
 	calculations in native types as much as possible, moving to mp_ints
 	only when necessary.
