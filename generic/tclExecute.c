@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.234 2006/03/27 23:12:59 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.235 2006/03/29 16:04:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3700,7 +3700,7 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr  = *(tosPtr - 1);
 	ClientData ptr1, ptr2;
 	int invalid, shift, type1, type2;
-	long l;
+	long l1, l2;
 
 	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
@@ -3725,20 +3725,144 @@ TclExecuteByteCode(
 	}
 
 	if (*pc == INST_MOD) {
-	    /* Both values are some kind of integer */
-	    /* TODO: optimize use of narrower native integers */
-	    mp_int big1, big2, bigResult, bigRemainder;
-
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    mp_init(&bigResult);
-		if (mp_iszero(&big2)) {
+	    /* Following section assumes BIGNUM_AUTO_NARROW */
+	    /* TODO: Attempts to re-use unshared operands on stack */
+	    if (type2 == TCL_NUMBER_LONG) {
+		l2 = *((CONST long *)ptr2);
+		if (l2 == 0) {
 		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
 			    O2S(value2Ptr)));
-		    mp_clear(&big1);
-		    mp_clear(&big2);
 		    goto divideByZero;
 		}
+		if ((l2 == 1) || (l2 == -1)) {
+		    /* Div. by |1| always yields remainder of 0 */
+		    objResultPtr = eePtr->constants[0];
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+	    if (type1 == TCL_NUMBER_LONG) {
+		l1 = *((CONST long *)ptr1);
+		if (l1 == 0) {
+		    /* 0 % (non-zero) always yields remainder of 0 */
+		    objResultPtr = eePtr->constants[0];
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		if (type2 == TCL_NUMBER_LONG) {
+		    /* Both operands are long; do native calculation */
+		    long lRemainder, lQuotient = l1 / l2;
+
+		    /* Force Tcl's integer division rules */
+		    /* TODO: examine for logic simplification */
+		    if (((lQuotient < 0) || ((lQuotient == 0) &&
+			    ((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
+			    ((lQuotient * l2) != l1)) {
+			lQuotient -= 1;
+		    }
+		    lRemainder = l1 - l2*lQuotient;
+		    TclNewLongObj(objResultPtr, lRemainder);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		/*
+		 * first operand fits in long; second does not, so the second
+		 * has greater magnitude than first.  No need to divide to
+		 * determine the remainder.
+		 */
+#ifndef NO_WIDE_TYPE
+		if (type2 == TCL_NUMBER_WIDE) {
+		    Tcl_WideInt wResult, w2 = *((CONST Tcl_WideInt *)ptr2);
+
+		    if ((l1 > 0) ^ (w2 > (Tcl_WideInt)0)) {
+			/* Arguments are opposite sign; remainder is sum */
+			objResultPtr = Tcl_NewWideIntObj(w2+(Tcl_WideInt)l1);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    /* Arguments are same sign; remainder is first operand */
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+#endif
+		{
+		    mp_int big2;
+		    if (Tcl_IsShared(value2Ptr)) {
+			Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		    } else {
+			Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		    }
+
+		    /* TODO: internals intrusion */
+		    if ((l1 > 0) ^ big2.sign) {
+			/* Arguments are opposite sign; remainder is sum */
+			mp_int big1;
+			TclBNInitBignumFromLong(&big1, l1);
+			mp_add(&big2, &big1, &big2);
+			objResultPtr = Tcl_NewBignumObj(&big2);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    /* Arguments are same sign; remainder is first operand */
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+	    }
+#ifndef NO_WIDE_TYPE
+	    if (type1 == TCL_NUMBER_WIDE) {
+		Tcl_WideInt w1 = *((CONST Tcl_WideInt *)ptr1);
+		if (type2 != TCL_NUMBER_BIG) {
+		    Tcl_WideInt w2, wQuotient, wRemainder;
+
+		    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+		    wQuotient = w1 / w2;
+
+		    /* Force Tcl's integer division rules */
+		    /* TODO: examine for logic simplification */
+		    if (((wQuotient < ((Tcl_WideInt) 0)) 
+			    || ((wQuotient == ((Tcl_WideInt) 0))
+			    && ((w1 < ((Tcl_WideInt) 0)
+			    && w2 > ((Tcl_WideInt) 0))
+			    || (w1 > ((Tcl_WideInt) 0) 
+			    && w2 < ((Tcl_WideInt) 0))))) &&
+			    ((wQuotient * w2) != w1)) {
+			wQuotient -= (Tcl_WideInt) 1;
+		    }
+		    wRemainder = w1 - w2*wQuotient;
+		    objResultPtr = Tcl_NewWideIntObj(wRemainder);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		{
+		    mp_int big2;
+		    if (Tcl_IsShared(value2Ptr)) {
+			Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		    } else {
+			Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		    }
+
+		    /* TODO: internals intrusion */
+		    if ((w1 > ((Tcl_WideInt) 0)) ^ big2.sign) {
+			/* Arguments are opposite sign; remainder is sum */
+			mp_int big1;
+			TclBNInitBignumFromWideInt(&big1, w1);
+			mp_add(&big2, &big1, &big2);
+			objResultPtr = Tcl_NewBignumObj(&big2);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    /* Arguments are same sign; remainder is first operand */
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+	    }
+#endif
+	    {
+		mp_int big1, big2, bigResult, bigRemainder;
+
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		mp_init(&bigResult);
 		mp_init(&bigRemainder);
 		mp_div(&big1, &big2, &bigResult, &bigRemainder);
 		if (!mp_iszero(&bigRemainder)
@@ -3749,17 +3873,18 @@ TclExecuteByteCode(
 		}
 		mp_copy(&bigRemainder, &bigResult);
 		mp_clear(&bigRemainder);
-	    mp_clear(&big1);
-	    mp_clear(&big2);
-	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_NewBignumObj(&bigResult);
-		TRACE(("%s\n", O2S(objResultPtr)));
-		NEXT_INST_F(1, 2, 1);
+		mp_clear(&big1);
+		mp_clear(&big2);
+		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		if (Tcl_IsShared(valuePtr)) {
+		    objResultPtr = Tcl_NewBignumObj(&bigResult);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		Tcl_SetBignumObj(valuePtr, &bigResult);
+		TRACE(("%s\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 1, 0);
 	    }
-	    Tcl_SetBignumObj(valuePtr, &bigResult);
-	    TRACE(("%s\n", O2S(valuePtr)));
-	    NEXT_INST_F(1, 1, 0);
 	}
 
 	/* reject negative shift argument */
@@ -3813,10 +3938,10 @@ TclExecuteByteCode(
 	    /* Handle shifts within the native long range */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if ((type1 == TCL_NUMBER_LONG) && (shift < CHAR_BIT*sizeof(long))
-		    && (l = *((CONST long *)ptr1))
-		    && !(((l>0) ? l : ~l)
+		    && (l1 = *((CONST long *)ptr1))
+		    && !(((l1>0) ? l1 : ~l1)
 			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
-		TclNewLongObj(objResultPtr, (l<<shift));
+		TclNewLongObj(objResultPtr, (l1<<shift));
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
 	    }
@@ -3879,15 +4004,15 @@ TclExecuteByteCode(
 	    shift = (int)(*((CONST long *)ptr2));
 	    /* Handle shifts within the native long range */
 	    if (type1 == TCL_NUMBER_LONG) {
-		long l = *((CONST long *)ptr1);
+		l1 = *((CONST long *)ptr1);
 		if (shift >= CHAR_BIT*sizeof(long)) {
-		    if (l >= (long)0) {
+		    if (l1 >= (long)0) {
 			objResultPtr = eePtr->constants[0];
 		    } else {
 			TclNewIntObj(objResultPtr, -1);
 		    }
 		} else {
-		    TclNewLongObj(objResultPtr, (l >> shift));
+		    TclNewLongObj(objResultPtr, (l1 >> shift));
 		}
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
@@ -4566,6 +4691,7 @@ TclExecuteByteCode(
 	}
 
 	/* Following section assumes BIGNUM_AUTO_NARROW */
+	/* TODO: Attempts to re-use unshared operands on stack */
 	if (*pc == INST_EXPON) {
 	    long l2 = 0;
 	    int oddExponent = 0, negativeExponent = 0;
