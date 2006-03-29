@@ -1,5 +1,9 @@
 2006-03-29  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5a4 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for another RC.
+
 	* generic/tclExecute.c:	Revised INST_MOD implementation to do
 	calculations in native types as much as possible, moving to mp_ints
 	only when necessary.
@@ -55,8 +59,6 @@
 	require mp_int calculations.  Also corrected type that missed
 	optimized handling of the tclBooleanType by the TclGetBooleanFromObj
 	macro.
-
-	*** 8.5a4 TAGGED FOR RELEASE ***
 
 	* changes:	Updates for another RC.
 
