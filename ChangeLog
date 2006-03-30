@@ -1,3 +1,7 @@
+2006-03-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: remove unused var and silence gcc warning
+	
 2006-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in: convert _NATIVE paths to use / to avoid ".\"
