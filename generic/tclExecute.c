@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.235 2006/03/29 16:04:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.236 2006/03/30 01:03:24 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3700,7 +3700,7 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr  = *(tosPtr - 1);
 	ClientData ptr1, ptr2;
 	int invalid, shift, type1, type2;
-	long l1, l2;
+	long l1;
 
 	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
@@ -3727,6 +3727,9 @@ TclExecuteByteCode(
 	if (*pc == INST_MOD) {
 	    /* Following section assumes BIGNUM_AUTO_NARROW */
 	    /* TODO: Attempts to re-use unshared operands on stack */
+
+	    long l2 = 0; /* silence gcc warning */
+	    
 	    if (type2 == TCL_NUMBER_LONG) {
 		l2 = *((CONST long *)ptr2);
 		if (l2 == 0) {
@@ -3772,7 +3775,7 @@ TclExecuteByteCode(
 		 */
 #ifndef NO_WIDE_TYPE
 		if (type2 == TCL_NUMBER_WIDE) {
-		    Tcl_WideInt wResult, w2 = *((CONST Tcl_WideInt *)ptr2);
+		    Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
 
 		    if ((l1 > 0) ^ (w2 > (Tcl_WideInt)0)) {
 			/* Arguments are opposite sign; remainder is sum */
