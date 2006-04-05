@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.61 2006/03/21 11:12:28 dkf Exp $
+# RCS: @(#) $Id: clock.test,v 1.62 2006/04/05 15:17:39 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -34907,8 +34907,8 @@ test clock-33.5a {clock tests, millisecond timing test} {
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
-    list [catch { clock clicks {} } msg] $msg
-} {1 {bad option "": must be -milliseconds or -microseconds}}
+    list [catch { clock clicks ? } msg] $msg
+} {1 {bad option "?": must be -milliseconds or -microseconds}}
 test clock-33.7 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks - } msg] $msg
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
