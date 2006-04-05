@@ -1,8 +1,8 @@
 2006-04-05  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): Allow empty
-	strings to be matched by the Tcl_GetIndexFromObj machinery, but only
-	ever exactly. [Bug 1464039]
+	strings to be matched by the Tcl_GetIndexFromObj machinery, in
+	the same manner as any other key. [Bug 1464039]
 
 2006-04-03  Andreas Kupries <andreask@activestate.com>
 
