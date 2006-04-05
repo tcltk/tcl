@@ -1,5 +1,9 @@
 2006-04-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/reg/pkgIndex.tcl:	Long overlooked bump to registry package
+	* win/tclWinReg.c:		version 1.1.4 (should have been done
+	for the Tcl 8.4.8 release!)
+
 	* library/dde/pkgIndex.tcl:	Long overlooked bump to dde package
 	* win/tclWinDde.c:		version 1.2.4 (should have been done
 	for the Tcl 8.4.8 release!)
