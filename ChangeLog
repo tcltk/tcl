@@ -1,3 +1,9 @@
+2006-04-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/dde/pkgIndex.tcl:	Long overlooked bump to dde package
+	* win/tclWinDde.c:		version 1.2.4 (should have been done
+	for the Tcl 8.4.8 release!)
+
 2006-04-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): Allow empty
