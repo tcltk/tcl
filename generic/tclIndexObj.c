@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.2.3 2006/04/05 13:20:09 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.2.4 2006/04/05 15:17:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -227,13 +227,9 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	}
     }
     /*
-     * Check if we were instructed to disallow abbreviations. Note that we do
-     * not allow the empty string as an abbreviation of anything; it is only
-     * processed by this function as a non-error case if the table of strings
-     * has an entry in it that is itself an empty string. This only matters in
-     * the case where the table has a singleton entry.
+     * Check if we were instructed to disallow abbreviations. 
      */
-    if ((flags & TCL_EXACT) || (key[0] == '\0') || (numAbbrev != 1)) {
+    if ((flags & TCL_EXACT) || (numAbbrev != 1)) {
 	goto error;
     }
 
