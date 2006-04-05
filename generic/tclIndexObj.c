@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.28 2006/02/16 20:25:07 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.29 2006/04/05 12:48:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -165,7 +165,7 @@ Tcl_GetIndexFromObjStruct(
     int flags,			/* 0 or TCL_EXACT */
     int *indexPtr)		/* Place to store resulting integer index. */
 {
-    int index, length, i, numAbbrev;
+    int index, idx, numAbbrev;
     char *key, *p1;
     CONST char *p2;
     CONST char * CONST *entryPtr;
@@ -185,21 +185,13 @@ Tcl_GetIndexFromObjStruct(
     }
 
     /*
-     * Lookup the value of the object in the table.  Accept unique
+     * Lookup the value of the object in the table. Accept unique
      * abbreviations unless TCL_EXACT is set in flags.
      */
 
-    key = Tcl_GetStringFromObj(objPtr, &length);
+    key = TclGetString(objPtr);
     index = -1;
     numAbbrev = 0;
-
-    /*
-     * The key should not be empty, otherwise it's not a match.
-     */
-
-    if (key[0] == '\0') {
-	goto error;
-    }
 
     /*
      * Scan the table looking for one of:
@@ -208,11 +200,11 @@ Tcl_GetIndexFromObjStruct(
      *  - Several abbreviations (never allowed, but overridden by exact match)
      */
 
-    for (entryPtr = tablePtr, i = 0; *entryPtr != NULL;
-	    entryPtr = NEXT_ENTRY(entryPtr, offset), i++) {
+    for (entryPtr = tablePtr, idx = 0; *entryPtr != NULL;
+	    entryPtr = NEXT_ENTRY(entryPtr, offset), idx++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
-		index = i;
+		index = idx;
 		goto done;
 	    }
 	}
@@ -226,15 +218,19 @@ Tcl_GetIndexFromObjStruct(
 	     */
 
 	    numAbbrev++;
-	    index = i;
+	    index = idx;
 	}
     }
 
     /*
-     * Check if we were instructed to disallow abbreviations.
+     * Check if we were instructed to disallow abbreviations. Note that we do
+     * not allow the empty string as an abbreviation of anything; it is only
+     * processed by this function as a non-error case if the table of strings
+     * has an entry in it that is itself an empty string. This only matters in
+     * the case where the table has a singleton entry.
      */
 
-    if ((flags & TCL_EXACT) || (numAbbrev != 1)) {
+    if ((flags & TCL_EXACT) || (key[0] == '\0') || (numAbbrev != 1)) {
 	goto error;
     }
 
@@ -270,7 +266,7 @@ Tcl_GetIndexFromObjStruct(
 
 	TclNewObj(resultPtr);
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_AppendStringsToObj(resultPtr, (numAbbrev > 1) && 
+	Tcl_AppendStringsToObj(resultPtr, (numAbbrev > 1) &&
 		!(flags & TCL_EXACT) ? "ambiguous " : "bad ", msg, " \"", key,
 		"\": must be ", STRING_AT(tablePtr, offset, 0), NULL);
 	for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
