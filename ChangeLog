@@ -5,8 +5,9 @@
 	* win/tclWinDde.c:	Bump to version 1.3.2.  [RFE 1366195]
 	* library/dde/pkgIndex.tcl:
 
-	* library/reg/pkgIndex.tcl:	Bump to registry 1.1.6
-	* win/tclWinReg.c:
+	* library/reg/pkgIndex.tcl:	Bump to registry 1.2 because
+	* win/tclWinReg.c:	Registry_Unload() is a new public routine
+	* win/Makefile.in:	compared to the 1.1.* releases.
 
 	* win/configure.in:	Bump package version numbers.
 	* win/configure:	autoconf 2.59
