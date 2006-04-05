@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.7.18.1 2006/02/16 20:21:54 dgp Exp $
+# RCS: @(#) $Id: indexObj.test,v 1.7.18.2 2006/04/05 13:20:14 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -43,6 +43,12 @@ test indexObj-1.6 {forced exact match} {
 test indexObj-1.7 {forced exact match} {
     testindexobj 1 0 x abc def xalb xyz alm x
 } {5}
+test indexObj-1.8 {exact match of empty values} {
+    testindexobj 1 1 {} a aa aaa {} b bb bbb
+} 3
+test indexObj-1.9 {exact match of empty values} {
+    testindexobj 1 0 {} a aa aaa {} b bb bbb
+} 3
 
 test indexObj-2.1 {no match} {
     list [catch {testindexobj 1 1 dddd abc def xalb xyz alm x} msg] $msg
@@ -62,6 +68,12 @@ test indexObj-2.5 {omit error message} {
 test indexObj-2.6 {TCL_EXACT => no "ambiguous" error message} {
     list [catch {testindexobj 1 0 d dumb daughter a c} msg] $msg
 } {1 {bad token "d": must be dumb, daughter, a, or c}}
+test indexObj-2.7 {exact match of empty values} {
+    list [catch {testindexobj 1 1 {} a b c} msg] $msg
+} {1 {ambiguous token "": must be a, b, or c}}
+test indexObj-2.8 {exact match of empty values: singleton case} {
+    list [catch {testindexobj 1 1 {} a} msg] $msg
+} {1 {bad token "": must be a}}
 
 test indexObj-3.1 {cache result to skip next lookup} {
     testindexobj check 42
@@ -114,15 +126,3 @@ test indexObj-6.4 {Tcl_GetIndexFromObjStruct} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
