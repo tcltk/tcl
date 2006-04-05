@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.2.2 2006/02/16 20:21:54 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.2.3 2006/04/05 13:20:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -171,7 +171,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     int flags;			/* 0 or TCL_EXACT */
     int *indexPtr;		/* Place to store resulting integer index. */
 {
-    int index, length, i, numAbbrev;
+    int index, i, numAbbrev;
     char *key, *p1;
     CONST char *p2;
     CONST char * CONST *entryPtr;
@@ -195,18 +195,10 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
      * abbreviations unless TCL_EXACT is set in flags.
      */
 
-    key = Tcl_GetStringFromObj(objPtr, &length);
+    key = TclGetString(objPtr);
     index = -1;
     numAbbrev = 0;
 
-    /*
-     * The key should not be empty, otherwise it's not a match.
-     */
-    
-    if (key[0] == '\0') {
-	goto error;
-    }
-    
     /*
      * Scan the table looking for one of:
      *  - An exact match (always preferred)
@@ -235,9 +227,13 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	}
     }
     /*
-     * Check if we were instructed to disallow abbreviations.
+     * Check if we were instructed to disallow abbreviations. Note that we do
+     * not allow the empty string as an abbreviation of anything; it is only
+     * processed by this function as a non-error case if the table of strings
+     * has an entry in it that is itself an empty string. This only matters in
+     * the case where the table has a singleton entry.
      */
-    if ((flags & TCL_EXACT) || (numAbbrev != 1)) {
+    if ((flags & TCL_EXACT) || (key[0] == '\0') || (numAbbrev != 1)) {
 	goto error;
     }
 
