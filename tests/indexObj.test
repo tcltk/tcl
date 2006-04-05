@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.7.18.2 2006/04/05 13:20:14 dkf Exp $
+# RCS: @(#) $Id: indexObj.test,v 1.7.18.3 2006/04/05 15:17:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -72,8 +72,11 @@ test indexObj-2.7 {exact match of empty values} {
     list [catch {testindexobj 1 1 {} a b c} msg] $msg
 } {1 {ambiguous token "": must be a, b, or c}}
 test indexObj-2.8 {exact match of empty values: singleton case} {
-    list [catch {testindexobj 1 1 {} a} msg] $msg
+    list [catch {testindexobj 1 0 {} a} msg] $msg
 } {1 {bad token "": must be a}}
+test indexObj-2.9 {non-exact match of empty values: singleton case} {
+    testindexobj 1 1 {} a
+} 0
 
 test indexObj-3.1 {cache result to skip next lookup} {
     testindexobj check 42
