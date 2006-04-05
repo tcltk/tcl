@@ -1,29 +1,33 @@
+2006-04-05  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): Allow empty
+	strings to be matched by the Tcl_GetIndexFromObj machinery, but only
+	ever exactly. [Bug 1464039]
+
 2006-04-03  Andreas Kupries <andreask@activestate.com>
 
-	* generic/tclIO.c (ReadChars): Added check and panic and
-	  commentary to a piece of code which relies on BUFFER_PADDING to
-	  create enough space at the beginning of each buffer for the
-	  insertion of partial multi-byte data at the beginning of a
-	  buffer. To explain why this code is ok, and as precaution if
-	  someone twiddled the BUFFER_PADDING into uselessness.
-	
-	* generic/tclIO.c (ReadChars): [SF Tcl Bug 1462248]. Added code to
-	  temporarily suppress the use of TCL_ENCODING_END set when eof
-	  was reached while the buffer we are converting is not truly the
-	  last buffer in the queue. Together with the Utf bug below it was
-	  possible to completely bollox the buffer data structures,
-	  eventually crashing Tcl.
+	* generic/tclIO.c (ReadChars): Added check, panic and commentary to
+	piece of code which relies on BUFFER_PADDING to create enough space at
+	the beginning of each buffer for the insertion of partial multibyte
+	data at the beginning of a buffer. Commentary explains why this code
+	is OK, and the panic is as a precaution if someone twiddled the
+	BUFFER_PADDING into uselessness.
 
-	* generic/tclEncoding.c (UtfToUtfProc): Fixed problem where the
-	  function accessed memory beyond the end of the input
-	  buffer. When TCL_ENCODING_END is set and the last bytes of the
-	  buffer start a multi-byte sequence. This bug contributed to [SF
-	  Tcl Bug 1462248].
+	* generic/tclIO.c (ReadChars): [Bug 1462248].  Temporarily suppress
+	the use of TCL_ENCODING_END set when EOF was reached while the buffer
+	we are converting is not truly the last buffer in the queue. Together
+	with the Utf bug below it was possible to completely wreck the buffer
+	data structures, eventually crashing Tcl.
+
+	* generic/tclEncoding.c (UtfToUtfProc): Stop accessing memory beyond
+	the end of the input buffer when TCL_ENCODING_END is set and the last
+	bytes of the buffer start a multi-byte sequence. This bug contributed
+	to [Bug 1462248].
 
 2006-03-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: remove unused var and silence gcc warning
-	
+
 2006-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in: convert _NATIVE paths to use / to avoid ".\"
@@ -53,7 +57,7 @@
 
 	* macosx/Tcl.xcode/default.pbxuser:     add '-singleproc 1' cli arg to
 	* macosx/Tcl.xcodeproj/default.pbxuser: tcltest to ease test debugging.
-	
+
 	* macosx/Tcl.xcode/project.pbxproj:     removed $prefix/share from
 	* macosx/Tcl.xcodeproj/project.pbxproj: TCL_PACKAGE_PATH as per change
 	to unix/configure.in of 2006-03-13.
@@ -1016,8 +1020,8 @@
 2005-11-18  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Pat Thoyts' patch
-	for [SF Tcl Bug 1359094]. This moves the retrieval of the next channel
-	state to the end of the loop, as the called closeproc may close other
+	for [Bug 1359094]. This moves the retrieval of the next channel state
+	to the end of the loop, as the called closeproc may close other
 	channels, i.e. modify the list we are iterating, invalidating any
 	pointer retrieved earlier.
 
