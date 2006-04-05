@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.69 2006/02/08 21:41:28 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.70 2006/04/05 16:32:44 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -470,7 +470,9 @@ Tcl_GetEncodingNameFromEnvironment(
     Tcl_DString *bufPtr)
 {
     Tcl_DStringInit(bufPtr);
+    Tcl_DStringSetLength(&bufPtr, 2+TCL_INTEGER_SPACE);
     wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
+    Tcl_DStringSetLength(&bufPtr, strlen(Tcl_DStringValue(bufPtr)));
     return Tcl_DStringValue(bufPtr);
 }
 
