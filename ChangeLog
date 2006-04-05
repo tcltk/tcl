@@ -2,15 +2,15 @@
 
 	* generic/tclIO.c (ReadChars): Added check and panic and
 	  commentary to a piece of code which relies on BUFFER_PADDING to
-	  create enough space at the beginning of each buffer forthe
+	  create enough space at the beginning of each buffer for the
 	  insertion of partial multi-byte data at the beginning of a
 	  buffer. To explain why this code is ok, and as precaution if
 	  someone twiddled the BUFFER_PADDING into uselessness.
 	
-	* generic/tclIO.c (ReadChars): [SF Tcl Bug 1462248]. Added code
+	* generic/tclIO.c (ReadChars): [SF Tcl Bug 1462248]. Added code to
 	  temporarily suppress the use of TCL_ENCODING_END set when eof
 	  was reached while the buffer we are converting is not truly the
-	  last buffer in the queue. together with the Utf bug below it was
+	  last buffer in the queue. Together with the Utf bug below it was
 	  possible to completely bollox the buffer data structures,
 	  eventually crashing Tcl.
 
