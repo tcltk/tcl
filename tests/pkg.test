@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.9.12.3 2005/12/02 17:17:13 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.9.12.4 2006/04/05 01:42:16 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -351,7 +351,7 @@ test pkg-2.34 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
     package require foo 1
 } -cleanup {
     package forget foo
-} -match glob -result 1.1 -errorOutput {attempt to provide package * failed:*}
+} -result 1.1
 test pkg-2.34.1 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
     package forget foo
 } -body {
@@ -359,7 +359,7 @@ test pkg-2.34.1 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
     package require foo 1
 } -cleanup {
     package forget foo
-} -match glob -result 1 -errorOutput {attempt to provide package * failed:*}
+} -result 1
 test pkg-2.34.2 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
     package forget foo
 } -body {
