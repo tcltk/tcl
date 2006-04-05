@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.53 2006/03/27 18:08:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.54 2006/04/05 16:32:45 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -2564,6 +2564,8 @@ InitializeHostName(
 	if (winSock.gethostname(Tcl_DStringValue(&ds),
 		Tcl_DStringLength(&ds)) == 0) {
 	    Tcl_DStringSetLength(&ds, 0);
+	} else {
+	    Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
 	}
     }
 
