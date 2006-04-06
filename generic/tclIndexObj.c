@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.30 2006/04/05 15:17:39 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.31 2006/04/06 18:57:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -226,7 +226,7 @@ Tcl_GetIndexFromObjStruct(
      * Check if we were instructed to disallow abbreviations.
      */
 
-    if ((flags & TCL_EXACT) || (numAbbrev != 1)) {
+    if ((flags & TCL_EXACT) || (key[0] == '\0') || (numAbbrev != 1)) {
 	goto error;
     }
 
