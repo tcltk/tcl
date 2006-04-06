@@ -1,3 +1,8 @@
+2006-04-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Revised fix for the [Bug 1379287] family
+	of path normalization bugs.
+
 2006-04-06  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: removed TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
