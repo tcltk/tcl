@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.33 2006/03/21 18:30:54 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.34 2006/04/06 18:19:25 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -25,7 +25,7 @@ testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
-if {[catch {expr T1()} msg] && $msg eq {unknown math function "T1"}} {
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
     testConstraint testmathfunctions 0
 } else {
     testConstraint testmathfunctions 1
