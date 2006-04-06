@@ -1,3 +1,11 @@
+2006-04-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct):	It seems
+	* tests/indexObj.test:	there are extensions that rely on the prior
+	* doc/GetIndex.3:	 behavior that the empty string cannot succeed
+	as a unique prefix matcher, so I'm restoring Donal Fellow's solution.
+	Added mention of this detail to the documentation.  [Bug 1464039]
+
 2006-04-06  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: removed TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
