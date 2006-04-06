@@ -1,5 +1,14 @@
 2006-04-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/compExpr-old.test:	Updated testmathfunctions constraint
+	* tests/compExpr.test:		to post-TIP-232 world.
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/info.test:
+
+	* tests/indexObj.test:	Corrected other test errors revealed by
+	* tests/upvar.test:	testing outside the tcltest application.
+
 	* generic/tclPathObj.c:	Revised fix for the [Bug 1379287] family
 	of path normalization bugs.
 
