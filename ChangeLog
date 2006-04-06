@@ -1,5 +1,11 @@
 2006-04-06  Don Porter  <dgp@users.sourceforge.net>
 
+        * generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct):    It seems
+        * tests/indexObj.test:  there are extensions that rely on the prior
+        * doc/GetIndex.3:        behavior that the empty string cannot succeed
+        as a unique prefix matcher, so I'm restoring Donal Fellow's solution.
+        Added mention of this detail to the documentation.  [Bug 1464039]
+
 	* tests/compExpr-old.test:	Updated testmathfunctions constraint
 	* tests/compExpr.test:		to post-TIP-232 world.
 	* tests/expr-old.test:
