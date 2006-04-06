@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.7.18.3 2006/04/05 15:17:06 dgp Exp $
+# RCS: @(#) $Id: indexObj.test,v 1.7.18.4 2006/04/06 18:57:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -75,8 +75,12 @@ test indexObj-2.8 {exact match of empty values: singleton case} {
     list [catch {testindexobj 1 0 {} a} msg] $msg
 } {1 {bad token "": must be a}}
 test indexObj-2.9 {non-exact match of empty values: singleton case} {
-    testindexobj 1 1 {} a
-} 0
+    # NOTE this is a special case.  Although the empty string is a
+    # unique prefix, we have an established history of rejecting
+    # empty lookup keys, requiring any unique prefix match to have
+    # at least one character.
+    list [catch {testindexobj 1 1 {} a} msg] $msg
+} {1 {bad token "": must be a}}
 
 test indexObj-3.1 {cache result to skip next lookup} {
     testindexobj check 42
