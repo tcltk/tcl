@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.53 2006/03/29 22:19:11 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.54 2006/04/06 16:43:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -158,14 +158,12 @@ TclFSNormalizeAbsolutePath(
 				 * of normalization. */
 {
     ClientData clientData = NULL;
-    CONST char *dirSep, *oldDirSep, *path;
+    CONST char *dirSep, *oldDirSep;
     int first = 1;		/* Set to zero once we've passed the first
 				 * directory separator - we can't use '..' to
 				 * remove the volume in a path. */
-    int rootOffset = -1;
-    int unc = 0;
     Tcl_Obj *retVal = NULL;
-    path = dirSep = TclGetString(pathPtr);
+    dirSep = TclGetString(pathPtr);
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 	if (dirSep[0] != 0 && dirSep[1] == ':' &&
@@ -178,7 +176,6 @@ TclFSNormalizeAbsolutePath(
 	     * since the first two segments are actually inseparable.
 	     */
 
-	    unc = 1;
 	    dirSep += 2;
 	    dirSep += FindSplitPos(dirSep, '/');
 	    if (*dirSep != 0) {
@@ -195,17 +192,11 @@ TclFSNormalizeAbsolutePath(
      */
 
     while (*dirSep != 0) {
-	if ((rootOffset == -1) && IsSeparatorOrNull(dirSep[0])) {
-	    rootOffset = dirSep - path;
-	}
 	oldDirSep = dirSep;
 	if (!first) {
 	    dirSep++;
 	}
 	dirSep += FindSplitPos(dirSep, '/');
-	if (rootOffset == -1) {
-	    rootOffset = dirSep - path;
-	}
 	if (dirSep[0] == 0 || dirSep[1] == 0) {
 	    if (retVal != NULL) {
 		Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
@@ -224,8 +215,9 @@ TclFSNormalizeAbsolutePath(
 		 */
 
 		if (retVal == NULL) {
+		    CONST char *path = TclGetString(pathPtr);
 		    retVal = Tcl_NewStringObj(path, dirSep - path
-				    + (rootOffset == dirSep - path));
+			    + (dirSep == path));
 		    Tcl_IncrRefCount(retVal);
 		}
 		dirSep += 2;
@@ -245,8 +237,9 @@ TclFSNormalizeAbsolutePath(
 		 */
 
 		if (retVal == NULL) {
+		    CONST char *path = TclGetString(pathPtr);
 		    retVal = Tcl_NewStringObj(path, dirSep - path
-				    + (rootOffset == dirSep - path));
+			    + (dirSep == path));
 		    Tcl_IncrRefCount(retVal);
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
@@ -316,31 +309,27 @@ TclFSNormalizeAbsolutePath(
 
 		    /*
 		     * Either way, we now remove the last path element.
+		     * (but not the first character of the path)
 		     */
 
-		    while (--curLen > 0) {
+		    while (--curLen >= 0) {
 			if (IsSeparatorOrNull(linkStr[curLen])) {
-			    Tcl_SetObjLength(retVal, curLen);
+			    if (curLen) {
+				Tcl_SetObjLength(retVal, curLen);
+			    } else {
+				Tcl_SetObjLength(retVal, 1);
+			    }
 			    break;
 			}
-		    }
-		    if (curLen == 0) {
-			/* Attempt to .. beyond root becomes root: "/" */
-			if ((dirSep[3] != 0) || unc) {
-			    Tcl_SetObjLength(retVal, rootOffset);
-			} else {
-			    Tcl_SetObjLength(retVal, rootOffset+1);
-			}
-		    }
-		} else {
-		    if ((dirSep[3] != 0) || unc) {
-			Tcl_SetObjLength(retVal, rootOffset);
-		    } else {
-			Tcl_SetObjLength(retVal, rootOffset+1);
 		    }
 		}
 		dirSep += 3;
 		oldDirSep = dirSep;
+
+		if ((curLen == 0) && (dirSep[0] != 0)) {
+		    Tcl_SetObjLength(retVal, 0);
+		}
+		
 		if (dirSep[0] != 0 && dirSep[1] == '.') {
 		    goto again;
 		}
