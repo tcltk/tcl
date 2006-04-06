@@ -1629,8 +1629,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 		[Are we to override what our default encoding is?])
 	    AC_DEFINE(MODULE_SCOPE, __private_extern__, [Linker support for module scope symbols])
 	    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1, [Can this platform load code from memory?])
-	    AC_DEFINE(TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING, 1,
-		[Use better emulation of non-blocking channels for channels without BlockModeProc?])
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)

@@ -1,3 +1,10 @@
+2006-04-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4: removed TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
+	define on Darwin. [Bug 1457515]
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
 2006-04-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinInit.c:	More careful calls to Tcl_DStringSetLength()
@@ -20,7 +27,7 @@
 
 2006-04-03  Andreas Kupries <andreask@activestate.com>
 
-	* generic/tclIO.c (ReadChars): Added check, panic and commentary to
+	* generic/tclIO.c (ReadChars): Added check, panic and commentary to a
 	piece of code which relies on BUFFER_PADDING to create enough space at
 	the beginning of each buffer for the insertion of partial multibyte
 	data at the beginning of a buffer. Commentary explains why this code
