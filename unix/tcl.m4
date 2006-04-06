@@ -1613,7 +1613,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(USE_VFORK)
 	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8")
 	    AC_DEFINE(TCL_LOAD_FROM_MEMORY)
-	    AC_DEFINE(TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING)
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)
