@@ -1,5 +1,7 @@
 2006-04-07  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5a4 TAGGED FOR RELEASE ***
+
 	* generic/tclPathObj.c:	Yet another revised fix for the [Bug 1379287]
 	* tests/fileSystem.test:	family of path normalization bugs.
 
@@ -85,8 +87,6 @@
 	path-as-escape issue.
 
 2006-03-29  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5a4 TAGGED FOR RELEASE ***
 
 	* changes:	Updates for another RC.
 
