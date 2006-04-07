@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.54 2006/04/06 16:43:03 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.55 2006/04/07 14:05:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -213,12 +213,16 @@ TclFSNormalizeAbsolutePath(
 		/*
 		 * Need to skip '.' in the path.
 		 */
+		int curLen;
 
 		if (retVal == NULL) {
 		    CONST char *path = TclGetString(pathPtr);
-		    retVal = Tcl_NewStringObj(path, dirSep - path
-			    + (dirSep == path));
+		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
+		}
+		Tcl_GetStringFromObj(retVal, &curLen);
+		if (curLen == 0) {
+		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		dirSep += 2;
 		oldDirSep = dirSep;
@@ -238,9 +242,12 @@ TclFSNormalizeAbsolutePath(
 
 		if (retVal == NULL) {
 		    CONST char *path = TclGetString(pathPtr);
-		    retVal = Tcl_NewStringObj(path, dirSep - path
-			    + (dirSep == path));
+		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
+		}
+		Tcl_GetStringFromObj(retVal, &curLen);
+		if (curLen == 0) {
+		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
 		    link = Tcl_FSLink(retVal, NULL, 0);
