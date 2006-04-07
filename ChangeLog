@@ -1,3 +1,8 @@
+2006-04-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Yet another revised fix for the [Bug 1379287]
+	* tests/fileSystem.test:	family of path normalization bugs.
+
 2006-04-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclRegexp.c (FinalizeRegexp): full reset data to
