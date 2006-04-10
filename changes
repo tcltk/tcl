@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.38 2006/03/22 14:12:02 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.39 2006/04/10 17:34:26 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6346,4 +6346,24 @@ when auto-loading or exec traces are present (porter)
 
 2006-03-18 (bug fix)[1193497] Win porting of [file writable] (darley,vogel)
 
---- Released 8.4.13, March 30, 2006 --- See ChangeLog for details ---
+2006-03-28 (bug fix)[1064247] BSD: path normalization with realpath() (steffen)
+
+2006-03-28 (revert 2005-11-03 feature) Unicode console support (hobbs)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2006-04-03 (bug fix)[1462248] crash reading utf-8 chars spanning multiple
+buffers at end of file (kraft,kupries)
+
+2006-04-04 (revert 2005-11-08)[1162286] [package ifneeded] warns (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2006-04-05 (bug fix)[1464039] Tcl_GetIndexFromObj: empty key (fellows)
+
+2006-04-05 (bug fix) overdue dde, registry  patchelevel increments (porter)
+=> dde 1.2.4
+=> registry 1.1.4
+
+2006-04-06 (bug fix)[1457515] TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
+removed (steffen)
+
+--- Released 8.4.13, April 14, 2006 --- See ChangeLog for details ---
