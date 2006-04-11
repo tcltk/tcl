@@ -1,3 +1,8 @@
+2006-04-11  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclTrace.c:   Stop some interference between enter traces
+        * tests/trace.test:     and enterstep traces.  [Bug 1458266]
+
 2006-04-07  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5a4 TAGGED FOR RELEASE ***
