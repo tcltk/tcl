@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.32 2006/01/09 09:31:58 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.33 2006/04/11 14:37:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1789,7 +1789,7 @@ TraceExecutionProc(
 	if (call) {
 	    Tcl_DString cmd;
 	    Tcl_DString sub;
-	    int i;
+	    int i, saveInterpFlags;
 
 	    Tcl_DStringInit(&cmd);
 	    Tcl_DStringAppend(&cmd, tcmdPtr->command, (int)tcmdPtr->length);
@@ -1852,8 +1852,9 @@ TraceExecutionProc(
 	     * returns.
 	     */
 
-	    tcmdPtr->flags |= TCL_TRACE_EXEC_IN_PROGRESS;
+	    saveInterpFlags = iPtr->flags;
 	    iPtr->flags    |= INTERP_TRACE_IN_PROGRESS;
+	    tcmdPtr->flags |= TCL_TRACE_EXEC_IN_PROGRESS;
 	    tcmdPtr->refCount++;
 
 	    /*
@@ -1864,7 +1865,12 @@ TraceExecutionProc(
 
 	    traceCode = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
 	    tcmdPtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
-	    iPtr->flags    &= ~INTERP_TRACE_IN_PROGRESS;
+
+	    /* 
+	     * Restore the interp tracing flag to prevent cmd traces
+	     * from affecting interp traces.
+	     */
+	    iPtr->flags = saveInterpFlags;
 	    if (tcmdPtr->flags == 0) {
 		flags |= TCL_TRACE_DESTROYED;
 	    }
