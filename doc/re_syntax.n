@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.3 1999/07/14 19:09:36 jpeek Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.3.32.1 2006/04/12 02:19:53 das Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -279,8 +279,8 @@ Standard character classes are:
 .PP
 .RS
 .ne 5
-.nf
 .ta 3c
+.nf
 \fBalpha\fR	A letter. 
 \fBupper\fR	An upper-case letter. 
 \fBlower\fR	A lower-case letter. 
