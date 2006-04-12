@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.39 2006/04/10 17:34:26 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.40 2006/04/12 15:20:16 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6366,4 +6366,6 @@ buffers at end of file (kraft,kupries)
 2006-04-06 (bug fix)[1457515] TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
 removed (steffen)
 
---- Released 8.4.13, April 14, 2006 --- See ChangeLog for details ---
+2006-04-11 (bug fix)[1458266] enter/enterstep trace interference (leunissen)
+
+--- Released 8.4.13, April 19, 2006 --- See ChangeLog for details ---
