@@ -1188,6 +1188,7 @@ proc output-directive {line} {
 		{expr:MATH FUNCTIONS} -
 		{history:DESCRIPTION} -
 		{history:HISTORY REVISION} -
+		{re_syntax:BRACKET EXPRESSIONS} -
 		{switch:DESCRIPTION} -
 		{upvar:DESCRIPTION} {
 		    return;			# fix.me
