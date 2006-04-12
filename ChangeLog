@@ -1,11 +1,15 @@
+2006-04-12  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.4.13 TAGGED FOR RELEASE ***
+
+	* changes:	updates for another RC.
+
 2006-04-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	Stop some interference between enter traces
 	* tests/trace.test:	and enterstep traces.  [Bug 1458266]
 
 2006-04-10  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.13 TAGGED FOR RELEASE ***
 
 	* changes:	updates for another RC.
 
