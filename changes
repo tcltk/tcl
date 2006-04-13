@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.103 2006/03/29 16:34:54 dgp Exp $
+RCS: @(#) $Id: changes,v 1.104 2006/04/13 21:17:46 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6659,7 +6659,7 @@ For loading bytecode compiled and saved by earlier 8.5alpha releases
 
 2005-12-08 (platform support) Win x64 build (hobbs)
 
-2005-12-09 (bug fix)[137478] [lsearch -start $pastEnd] => -1 (fellows)
+2005-12-09 (bug fix)[1374778] [lsearch -start $pastEnd] => -1 (fellows)
 
 2005-12-12 (bug fix)[1377619] configure syntax error exposed in bash-3.1 (hobbs)
 
