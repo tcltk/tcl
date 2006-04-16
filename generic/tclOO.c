@@ -1,3 +1,16 @@
+/*
+ * tclOO.c --
+ *
+ *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
+ *
+ * Copyright (c) 2005 by Donal K. Fellows
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ *
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.2 2006/04/16 21:24:10 dkf Exp $
+ */
+
 #include <tclInt.h>
 
 #define ALLOC_CHUNK 8
@@ -5,18 +18,22 @@
 struct Class;
 struct Object;
 struct Method;
+//struct Foundation;
 
 typedef struct Method {
+    Tcl_Obj *bodyObj;
     Proc *procPtr;
     int epoch;
     int flags;
+    int formalc;
+    Tcl_Obj **formalv;
 } Method;
 
 typedef struct Object {
     Namespace *nsPtr;			/* This object's tame namespace. */
-    Tcl_Command *command;		/* Reference to this object's public
+    Tcl_Command command;		/* Reference to this object's public
 					 * command. */
-    Tcl_Command *myCommand;		/* Reference to this object's internal
+    Tcl_Command myCommand;		/* Reference to this object's internal
 					 * command. */
     struct Class *selfCls;		/* This object's class. */
     Tcl_HashTable methods;		/* Tcl_Obj (method name) to Method*
@@ -71,7 +88,36 @@ typedef struct {
     int filterLength;
 } CallContext;
 
-#define OO_UNKNOWN_METHOD 1
+#define OO_UNKNOWN_METHOD	1
+#define PUBLIC_METHOD		2
+
+/*
+ * Function declarations.
+ */
+
+static Object *		AllocObject(Tcl_Interp *interp);
+static int		InvokeContext(Tcl_Interp *interp, Object *oPtr,
+			    CallContext *contextPtr, int objc,
+			    Tcl_Obj *const *objv);
+static int		CmpStr(const void *ptr1, const void *ptr2);
+static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv, int publicOnly);
+static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
+			    Tcl_HashTable *namesPtr);
+static CallContext *	GetCallContext(Foundation *fPtr, Object *oPtr,
+			    Tcl_Obj *methodNameObj);
+static void		AddSimpleChainToCallContext(Object *oPtr,
+			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
+			    int isFilter);
+static void		AddSimpleClassChainToCallContext(Class *classPtr,
+			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
+			    int isFilter);
+static void		AddMethodToCallChain(Tcl_HashTable *methodTablePtr,
+			    Tcl_Obj *methodObj, CallContext *contextPtr,
+			    int isFilter);
+static void		ObjNameChangedTrace(ClientData clientData,
+			    Tcl_Interp *interp, const char *oldName,
+			    const char *newName, int flags);
 
 /*
  * ----------------------------------------------------------------------
@@ -97,7 +143,8 @@ AllocObject(Tcl_Interp *interp)
 	char objName[5+TCL_INTEGER_SPACE];
 
 	sprintf(objName, "::oo%d", ++fPtr->nsCount);
-	oPtr->nsPtr = Tcl_CreateNamespace(interp, objName, NULL, NULL);
+	oPtr->nsPtr = (Namespace *) Tcl_CreateNamespace(interp, objName,
+		NULL, NULL);
     } while (oPtr->nsPtr == NULL);
     TclSetNsPath(oPtr->nsPtr, 1, &fPtr->helpersNs);
     oPtr->selfCls = fPtr->objectCls;
@@ -109,10 +156,10 @@ AllocObject(Tcl_Interp *interp)
      * Initialize the traces.
      */
 
-    oPtr->command = Tcl_CreateEnsemble(interp, "", oPtr->nsPtr,
-	    TCL_ENSEMBLE_PREFIX);
-    oPtr->myCommand = Tcl_CreateEnsemble(interp, "my", oPtr->nsPtr,
-	    TCL_ENSEMBLE_PREFIX);
+    oPtr->command = Tcl_CreateEnsemble(interp, "",
+	    (Tcl_Namespace *) oPtr->nsPtr, TCL_ENSEMBLE_PREFIX);
+    oPtr->myCommand = Tcl_CreateEnsemble(interp, "my",
+	    (Tcl_Namespace *) oPtr->nsPtr, TCL_ENSEMBLE_PREFIX);
     TclNewObj(cmdnameObj);
     Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
@@ -121,6 +168,21 @@ AllocObject(Tcl_Interp *interp)
     Tcl_DecrRefCount(cmdnameObj);
 
     return oPtr;
+}
+
+static void
+ObjNameChangedTrace(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    const char *oldName,
+    const char *newName,
+    int flags)
+{
+    Object *oPtr = (Object *) clientData;
+
+    /*
+     * Not quite sure what to do here...
+     */
 }
 
 /*
@@ -177,14 +239,14 @@ AllocClass(Tcl_Interp *interp, Object *useThisObj)
 static Object *
 NewInstance(
     Tcl_Interp *interp,
-    Class *classPtr,
+    Class *clsPtr,
     char *name,
     int objc,
     Tcl_Obj *objv)
 {
     Object *oPtr = AllocObject(interp);
 
-    oPtr->selfCls = classPtr;
+    oPtr->selfCls = clsPtr;
     if (clsPtr->instancesSize == 0) {
 	clsPtr->instancesSize = ALLOC_CHUNK;
 	clsPtr->instances = (Object **)
@@ -196,7 +258,7 @@ NewInstance(
     }
     clsPtr->instances[clsPtr->numInstances++] = oPtr;
 
-    if (name != null) {
+    if (name != NULL) {
 	Tcl_Obj *cmdnameObj;
 
 	TclNewObj(cmdnameObj);
@@ -225,7 +287,7 @@ NewMethod(
     register Method *mPtr;
     Tcl_HashEntry *hPtr;
     int isNew, argsc;
-    Tcl_Obj *const *argsv;
+    Tcl_Obj **argsv;
 
     if (Tcl_ListObjGetElements(interp, argsObj, &argsc, &argsv) != TCL_OK) {
 	return NULL;
@@ -263,7 +325,7 @@ NewMethod(
     mPtr->flags = 0;
     return mPtr;
 }
-^L
+
 static int
 PublicObjectCmd(
     ClientData clientData,
@@ -320,7 +382,7 @@ InvokeContext(
     CallFrame *framePtr, **framePtrPtr;
 
 #error This function should have much in common with TclObjInterpProc
-
+    /*
     mInvokePtr = contextPtr->callChain[0];
     result = TclProcCompileProc(interp, mInvokePtr->mPtr->procPtr,
 	    mInvokePtr->mPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method",
@@ -335,8 +397,10 @@ InvokeContext(
     if (result != TCL_OK) {
 	return result;
     }
+    */
 
-#error ...
+    Tcl_Panic("not yet implemented");
+    return TCL_ERROR;
 }
 
 static int
@@ -348,7 +412,7 @@ GetSortedMethodList(
     Tcl_HashTable names;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
-    int isNew, numUnique, i;
+    int isNew, i;
     const char **strings;
 
     Tcl_InitObjHashTable(&names);
@@ -381,7 +445,7 @@ GetSortedMethodList(
 	hPtr = Tcl_NextHashEntry(&hSearch);
     }
 
-    qsort(strings, names.numEntries, sizeof(char *), CmpStr);
+    qsort(strings, (unsigned) names.numEntries, sizeof(char *), CmpStr);
 
     /*
      * Reuse 'i' to save the size of the list until we're ready to return it.
@@ -422,7 +486,7 @@ AddClassMethodNames(
 	hPtr = Tcl_FirstHashEntry(&clsPtr->classMethods, &hSearch);
 	while (hPtr != NULL) {
 	    Tcl_Obj *namePtr = (Tcl_Obj *)
-		    Tcl_GetHashKey(&clsPtr->methods, hPtr);
+		    Tcl_GetHashKey(&clsPtr->classMethods, hPtr);
 	    Method *methodPtr = Tcl_GetHashValue(hPtr);
 
 	    if (!publicOnly || methodPtr->flags & PUBLIC_METHOD) {
@@ -442,7 +506,7 @@ AddClassMethodNames(
 
 static CallContext *
 GetCallContext(
-    Foundation *fPtr;
+    Foundation *fPtr,
     Object *oPtr,
     Tcl_Obj *methodNameObj)
 {
@@ -531,11 +595,11 @@ AddMethodToCallChain(
     CallContext *contextPtr,
     int isFilter)
 {
-    Method *mPtr,
+    Method *mPtr;
     Tcl_HashEntry *hPtr;
     int i;
 
-    hPtr = Tcl_FindHashEntry(methodTablePtr, methodObj);
+    hPtr = Tcl_FindHashEntry(methodTablePtr, (char *) methodObj);
     if (hPtr == NULL) {
 	return;
     }
@@ -547,8 +611,8 @@ AddMethodToCallChain(
      */
 
     for (i=contextPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
-	if (contextPtr->callChain[i].mPtr == mPtr
-		&& contextPtr->callChain[i].isFilter == isFilter) {
+	if (contextPtr->callChain[i]->mPtr == mPtr
+		&& contextPtr->callChain[i]->isFilter == isFilter) {
 	    int j;
 
 	    /*
@@ -561,7 +625,8 @@ AddMethodToCallChain(
 	    for (j=i+1 ; j<contextPtr->numCallChain ; j++) {
 		contextPtr->callChain[j-1] = contextPtr->callChain[j];
 	    }
-	    contextPtr->callChain[j-1] = mPtr;
+	    contextPtr->callChain[j-1]->mPtr = mPtr;
+	    contextPtr->callChain[j-1]->isFilter = isFilter;
 	    return;
 	}
     }
@@ -573,17 +638,19 @@ AddMethodToCallChain(
      */
 
     if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke) * (contextPtr->numCallChain+1));
+	contextPtr->callChain = (struct MInvoke **)
+		ckalloc(sizeof(struct MInvoke *) * (contextPtr->numCallChain+1));
 	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
 		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
     } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
+	contextPtr->callChain = (struct MInvoke **)
 		ckrealloc((char *) contextPtr->callChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
+		sizeof(struct MInvoke *) * (contextPtr->numCallChain + 1));
     }
-    contextPtr->callChain[contextPtr->numCallChain].mPtr = mPtr;
-    contextPtr->callChain[contextPtr->numCallChain++].isFilter = isFilter;
+    contextPtr->callChain[contextPtr->numCallChain] = (struct MInvoke *)
+	    ckalloc(sizeof(struct MInvoke));
+    contextPtr->callChain[contextPtr->numCallChain]->mPtr = mPtr;
+    contextPtr->callChain[contextPtr->numCallChain++]->isFilter = isFilter;
 }
 
 /*

@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.93 2006/02/01 18:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.93.2.1 2006/04/16 21:24:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -251,8 +251,6 @@ static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		UnlinkNsPath(Namespace *nsPtr);
-static void		SetNsPath(Namespace *nsPtr, int pathLength,
-			    Tcl_Namespace *pathAry[]);
 
 /*
  * This structure defines a Tcl object type that contains a namespace
@@ -3776,7 +3774,7 @@ NamespaceInscopeCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    CallFrame *framePtr;
+    CallFrame *framePtr, **framePtrPtr;
     int i, result;
 
     if (objc < 4) {
@@ -3802,7 +3800,8 @@ NamespaceInscopeCmd(
      * Make the specified namespace the current namespace.
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **)&framePtr,
+    framePtrPtr = &framePtr;
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return result;
@@ -4080,7 +4079,7 @@ NamespacePathCmd(
      * Now we have the list of valid namespaces, install it as the path.
      */
 
-    SetNsPath(nsPtr, nsObjc, namespaceList);
+    TclSetNsPath(nsPtr, nsObjc, namespaceList);
 
     result = TCL_OK;
   badNamespace:
@@ -4093,7 +4092,7 @@ NamespacePathCmd(
 /*
  *----------------------------------------------------------------------
  *
- * SetNsPath --
+ * TclSetNsPath --
  *
  *	Sets the namespace command name resolution path to the given list of
  *	namespaces. If the list is empty (of zero length) the path is set to
@@ -4111,8 +4110,8 @@ NamespacePathCmd(
  */
 
 /* EXPOSE ME? */
-static void
-SetNsPath(
+void
+TclSetNsPath(
     Namespace *nsPtr,		/* Namespace whose path is to be set. */
     int pathLength,		/* Length of pathAry */
     Tcl_Namespace *pathAry[])	/* Array of namespaces that are the path. */
