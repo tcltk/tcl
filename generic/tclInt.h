@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.267.2.1 2006/04/16 21:24:10 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.267.2.2 2006/04/17 23:24:21 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -892,10 +892,12 @@ typedef struct CallFrame {
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
+    void *methodChain;		/* TODO: Docme */
+    int methodChainIdx;		/* TODO: Docme */
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
-#define FRAME_IS_METHOD	0x2
+#define FRAME_IS_METHOD	0x2	/* TODO: Docme */
 
 /*
  *----------------------------------------------------------------

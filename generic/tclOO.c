@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.2 2006/04/16 21:24:10 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.3 2006/04/17 23:24:21 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -95,29 +95,55 @@ typedef struct {
  * Function declarations.
  */
 
-static Object *		AllocObject(Tcl_Interp *interp);
-static int		InvokeContext(Tcl_Interp *interp, Object *oPtr,
-			    CallContext *contextPtr, int objc,
-			    Tcl_Obj *const *objv);
-static int		CmpStr(const void *ptr1, const void *ptr2);
-static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv, int publicOnly);
+static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
+static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr);
 static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
 			    Tcl_HashTable *namesPtr);
-static CallContext *	GetCallContext(Foundation *fPtr, Object *oPtr,
-			    Tcl_Obj *methodNameObj);
+static void		AddMethodToCallChain(Tcl_HashTable *methodTablePtr,
+			    Tcl_Obj *methodObj, CallContext *contextPtr,
+			    int isFilter);
 static void		AddSimpleChainToCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
 			    int isFilter);
 static void		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
 			    int isFilter);
-static void		AddMethodToCallChain(Tcl_HashTable *methodTablePtr,
-			    Tcl_Obj *methodObj, CallContext *contextPtr,
-			    int isFilter);
+static int		CmpStr(const void *ptr1, const void *ptr2);
+static CallContext *	GetCallContext(Foundation *fPtr, Object *oPtr,
+			    Tcl_Obj *methodNameObj);
+static int		InvokeContext(Tcl_Interp *interp, Object *oPtr,
+			    CallContext *contextPtr, int idx, int objc,
+			    Tcl_Obj *const *objv);
+static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv, int publicOnly);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
+
+void
+Oo_Init(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+    Foundation *fPtr;
+
+    fPtr = iPtr->ooFoundation = (Foundation *) ckalloc(sizeof(Foundation));
+
+    fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::Object"));
+    fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::Class"));
+#error Splice together classes
+    fPtr->definerCls = AllocClass(interp,
+	    AllocObject(interp, "::oo::Definer"));
+    fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::Struct"));
+#error Allocate Definer and Struct less magically?
+
+    fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
+	    NULL);
+    fPtr->epoch = 0;
+    fPtr->nsCount = 0;
+    fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
+    Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -131,7 +157,9 @@ static void		ObjNameChangedTrace(ClientData clientData,
  */
 
 static Object *
-AllocObject(Tcl_Interp *interp)
+AllocObject(
+    Tcl_Interp *interp,
+    const char *nameStr)
 {
     Object *oPtr;
     Interp *iPtr = (Interp *) interp;
@@ -156,7 +184,7 @@ AllocObject(Tcl_Interp *interp)
      * Initialize the traces.
      */
 
-    oPtr->command = Tcl_CreateEnsemble(interp, "",
+    oPtr->command = Tcl_CreateEnsemble(interp, (nameStr ? nameStr : ""),
 	    (Tcl_Namespace *) oPtr->nsPtr, TCL_ENSEMBLE_PREFIX);
     oPtr->myCommand = Tcl_CreateEnsemble(interp, "my",
 	    (Tcl_Namespace *) oPtr->nsPtr, TCL_ENSEMBLE_PREFIX);
@@ -197,7 +225,9 @@ ObjNameChangedTrace(
  */
 
 static Class *
-AllocClass(Tcl_Interp *interp, Object *useThisObj)
+AllocClass(
+    Tcl_Interp *interp,
+    Object *useThisObj)
 {
     Class *clsPtr;
     Interp *iPtr = (Interp *) interp;
@@ -205,7 +235,7 @@ AllocClass(Tcl_Interp *interp, Object *useThisObj)
 
     clsPtr = (Class *) ckalloc(sizeof(Class));
     if (useThisObj == NULL) {
-	clsPtr->thisPtr = AllocObject(interp);
+	clsPtr->thisPtr = AllocObject(interp, NULL);
     } else {
 	clsPtr->thisPtr = useThisObj;
     }
@@ -244,7 +274,7 @@ NewInstance(
     int objc,
     Tcl_Obj *objv)
 {
-    Object *oPtr = AllocObject(interp);
+    Object *oPtr = AllocObject(interp, NULL);
 
     oPtr->selfCls = clsPtr;
     if (clsPtr->instancesSize == 0) {
@@ -356,6 +386,7 @@ ObjectCmd(
 {
     Interp *iPtr = (Interp *) interp;
     CallContext *contextPtr;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "method ?arg ...?");
@@ -366,7 +397,10 @@ ObjectCmd(
     // TODO: Cache contexts
     contextPtr = GetCallContext(iPtr->ooFoundation, oPtr, objv[1]);
 
-    return InvokeContext(interp, oPtr, contextPtr, objc, objv);
+    Tcl_Preserve(contextPtr);
+    result = InvokeContext(interp, oPtr, contextPtr, 0, objc, objv);
+    Tcl_Release(contextPtr);
+    return result;
 }
 
 static int
@@ -374,6 +408,7 @@ InvokeContext(
     Tcl_Interp *interp,
     Object *oPtr,
     CallContext *contextPtr,
+    int idx,
     int objc,
     Tcl_Obj *const *objv)
 {
@@ -381,9 +416,7 @@ InvokeContext(
     struct MInvoke *mInvokePtr;
     CallFrame *framePtr, **framePtrPtr;
 
-#error This function should have much in common with TclObjInterpProc
-    /*
-    mInvokePtr = contextPtr->callChain[0];
+    mInvokePtr = contextPtr->callChain[idx];
     result = TclProcCompileProc(interp, mInvokePtr->mPtr->procPtr,
 	    mInvokePtr->mPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method",
 	    TclGetString(objv[1]));
@@ -397,9 +430,12 @@ InvokeContext(
     if (result != TCL_OK) {
 	return result;
     }
-    */
+    framePtr->methodChain = contextPtr;
+    framePtr->methodChainIdx = 0;
 
+#error This function should have much in common with TclObjInterpProc
     Tcl_Panic("not yet implemented");
+
     return TCL_ERROR;
 }
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.210 2005/12/27 17:39:01 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.210.2.1 2006/04/17 23:24:20 dkf Exp $
  */
 
 #ifndef _TCL
@@ -953,6 +953,8 @@ typedef struct Tcl_CallFrame {
     char *dummy8;
     int dummy9;
     char* dummy10;
+    void* dummy11;
+    int dummy12;
 } Tcl_CallFrame;
 
 /*
