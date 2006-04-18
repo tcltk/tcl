@@ -1,3 +1,8 @@
+2006-04-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/IntObj.3: Minor review fixes, including better documentation of
+	the behaviour of Tcl_GetBignumAndClearObj.
+
 2006-04-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/IntObj.3:	Documentation changes to account for TIP 237 changes.
