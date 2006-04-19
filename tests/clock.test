@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.62 2006/04/05 15:17:39 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.63 2006/04/19 16:43:03 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35481,6 +35481,19 @@ test clock-51.1 {correct conversion of times in Sydney} {
     }
     set result
 } {01:59:59 03:00:00 12:59:59 13:00:00}
+
+test clock-52.1 {Posix timezone and conversion on last Sunday} {
+    # Martin Lemburg reported a bug where if tzdata is missing, then
+    # times are converted incorrectly in locales where DST conversion
+    # happens in the last (nominal 5th) week of a month.
+    set result {}
+    set timezone <MEZ>-01:00:00<MESZ>-02:00:00,M3.5.0/02:00:00,M10.5.0/01:00:00
+    foreach t {1143334799 1143334800} {
+	lappend result [clock format $t -format %H:%M:%S -timezone $timezone] \
+	    [clock format $t -format %H:%M:%S -timezone :Europe/Berlin]
+    }
+    set result
+} {01:59:59 01:59:59 03:00:00 03:00:00}
 
 # cleanup
 

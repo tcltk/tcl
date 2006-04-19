@@ -1,3 +1,11 @@
+2006-04-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Fixed a bug with Daylight Saving Time and
+	Posix time zone specifiers reported by Martin Lemburg in
+	http://groups.google.com/group/comp.lang.tcl/browse_thread/thread/9a8b15a4dfc0b7a0
+	(and not at SourceForge).
+	* tests/clock.test: Added test case for the above bug.
+	
 2006-04-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/IntObj.3: Minor review fixes, including better documentation of
