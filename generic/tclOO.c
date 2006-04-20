@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.3 2006/04/17 23:24:21 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.4 2006/04/20 22:12:37 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -30,20 +30,23 @@ typedef struct Method {
 } Method;
 
 typedef struct Object {
-    Namespace *nsPtr;			/* This object's tame namespace. */
-    Tcl_Command command;		/* Reference to this object's public
-					 * command. */
-    Tcl_Command myCommand;		/* Reference to this object's internal
-					 * command. */
-    struct Class *selfCls;		/* This object's class. */
-    Tcl_HashTable methods;		/* Tcl_Obj (method name) to Method*
-					 * mapping. */
-    int numMixins;			/* Number of classes mixed into this
-					 * object. */
-    struct Class **mixins;		/* References to classes mixed into
-					 * this object. */
+    Namespace *nsPtr;		/* This object's tame namespace. */
+    Tcl_Command command;	/* Reference to this object's public
+				 * command. */
+    Tcl_Command myCommand;	/* Reference to this object's internal
+				 * command. */
+    struct Class *selfCls;	/* This object's class. */
+    Tcl_HashTable methods;	/* Tcl_Obj (method name) to Method*
+				 * mapping. */
+    int numMixins;		/* Number of classes mixed into this
+				 * object. */
+    struct Class **mixins;	/* References to classes mixed into this
+				 * object. */
     int numFilters;
     Tcl_Obj **filterObjs;
+    struct Class *classPtr;	/* All classes have this non-NULL; it points
+				 * to the class structure. Everything else has
+				 * this NULL. */
 } Object;
 
 typedef struct Class {
@@ -97,6 +100,7 @@ typedef struct {
 
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr);
+#if 0
 static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
 			    Tcl_HashTable *namesPtr);
 static void		AddMethodToCallChain(Tcl_HashTable *methodTablePtr,
@@ -116,29 +120,73 @@ static int		InvokeContext(Tcl_Interp *interp, Object *oPtr,
 			    Tcl_Obj *const *objv);
 static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int publicOnly);
+#endif
+static Object *		NewInstance(Tcl_Interp *interp, Class *clsPtr,
+			    char *name, int objc, Tcl_Obj *const *objv);
+static Method *		NewMethod(Tcl_Interp *interp, Object *oPtr,
+			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+			    Tcl_Obj *bodyObj);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
+
+static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassNew(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 
 void
-Oo_Init(
+OO_Init(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
     Foundation *fPtr;
+    Tcl_DString ds;
 
     fPtr = iPtr->ooFoundation = (Foundation *) ckalloc(sizeof(Foundation));
-
-    fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::Object"));
-    fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::Class"));
-#error Splice together classes
-    fPtr->definerCls = AllocClass(interp,
-	    AllocObject(interp, "::oo::Definer"));
-    fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::Struct"));
-#error Allocate Definer and Struct less magically?
-
+    Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
+    Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
+
+    fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
+    fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
+    fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
+    fPtr->objectCls->numSuperclasses = 0;
+    ckfree((char *) fPtr->objectCls->superclasses);
+    fPtr->objectCls->superclasses = NULL;
+    fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, fPtr->classCls->thisPtr->nsPtr->fullName, -1);
+    Tcl_DStringAppend(&ds, "::create", -1);
+    Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds), ClassCreate, NULL,
+	     NULL);
+    Tcl_DStringFree(&ds);
+    Tcl_DStringAppend(&ds, fPtr->classCls->thisPtr->nsPtr->fullName, -1);
+    Tcl_DStringAppend(&ds, "::new", -1);
+    Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds), ClassNew, NULL, NULL);
+    Tcl_DStringFree(&ds);
+
+    /*
+     * TODO: finish splicing "object" and "class" together.
+     * Need to create the following methods:
+     *	- object::eval
+     *	- object::destroy
+     *	- object::variable
+     *	- class::create
+     *	- class::new
+     */
+
+    fPtr->definerCls = AllocClass(interp,
+	    AllocObject(interp, "::oo::definer"));
+    fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
+
+    /*
+     * TODO: set up 'definer' and 'struct' less magically by evaluating a Tcl
+     * script.
+     */
+
     fPtr->epoch = 0;
     fPtr->nsCount = 0;
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
@@ -168,9 +216,9 @@ AllocObject(
 
     oPtr = (Object *) ckalloc(sizeof(Object));
     do {
-	char objName[5+TCL_INTEGER_SPACE];
+	char objName[10 + TCL_INTEGER_SPACE];
 
-	sprintf(objName, "::oo%d", ++fPtr->nsCount);
+	sprintf(objName, "::oo::Obj%d", ++fPtr->nsCount);
 	oPtr->nsPtr = (Namespace *) Tcl_CreateNamespace(interp, objName,
 		NULL, NULL);
     } while (oPtr->nsPtr == NULL);
@@ -179,6 +227,7 @@ AllocObject(
     Tcl_InitObjHashTable(&oPtr->methods);
     oPtr->numMixins = 0;
     oPtr->mixins = NULL;
+    oPtr->classPtr = NULL;
 
     /*
      * Initialize the traces.
@@ -191,9 +240,10 @@ AllocObject(
     TclNewObj(cmdnameObj);
     Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
-	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjNameChangedTrace,
-	    (ClientData) oPtr);
+	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjNameChangedTrace, oPtr);
     Tcl_DecrRefCount(cmdnameObj);
+
+#error push and pop object context on invoke
 
     return oPtr;
 }
@@ -206,11 +256,19 @@ ObjNameChangedTrace(
     const char *newName,
     int flags)
 {
-    Object *oPtr = (Object *) clientData;
+    Object *oPtr = clientData;
 
-    /*
-     * Not quite sure what to do here...
-     */
+    if (newName == NULL) {
+	Tcl_DeleteNamespace((Tcl_Namespace *) oPtr->nsPtr);
+
+	/*
+	 * What else to do to delete an object?
+	 */
+    } else {
+	/*
+	 * Not quite sure what to do here...
+	 */
+    }
 }
 
 /*
@@ -240,6 +298,7 @@ AllocClass(
 	clsPtr->thisPtr = useThisObj;
     }
     clsPtr->thisPtr->selfCls = fPtr->classCls;
+    clsPtr->thisPtr->classPtr = clsPtr;
     clsPtr->flags = 0;
     clsPtr->numSuperclasses = 1;
     clsPtr->superclasses = (Class **) ckalloc(sizeof(Class *));
@@ -272,9 +331,10 @@ NewInstance(
     Class *clsPtr,
     char *name,
     int objc,
-    Tcl_Obj *objv)
+    Tcl_Obj *const *objv)
 {
     Object *oPtr = AllocObject(interp, NULL);
+    Class *classPtr;
 
     oPtr->selfCls = clsPtr;
     if (clsPtr->instancesSize == 0) {
@@ -300,6 +360,28 @@ NewInstance(
 	    return NULL;
 	}
 	Tcl_DecrRefCount(cmdnameObj);
+    }
+
+    /*
+     * Check to see if we're really creating a class. If so, allocate the
+     * class structure as well.
+     */
+
+    for (classPtr=clsPtr ; classPtr->numSuperclasses>0 ;
+	    classPtr=classPtr->superclasses[0]) { //FIXME: Multiple inheritance
+	Foundation *fPtr = ((Interp *) interp)->ooFoundation;
+
+	if (classPtr == fPtr->classCls) {
+	    /*
+	     * Is a class, so attach a class structure. Note that the
+	     * AllocClass function splices the structure into the object, so
+	     * we don't have to.
+	     */
+
+	    AllocClass(interp, oPtr);
+	    oPtr->selfCls = clsPtr; // Repatch
+	    break;
+	}
     }
 
     return oPtr;
@@ -356,6 +438,7 @@ NewMethod(
     return mPtr;
 }
 
+#if 0
 static int
 PublicObjectCmd(
     ClientData clientData,
@@ -363,7 +446,7 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return ObjectCmd((Object *) clientData, interp, objc, objv, 1);
+    return ObjectCmd(clientData, interp, objc, objv, 1);
 }
 
 static int
@@ -373,7 +456,7 @@ PrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return ObjectCmd((Object *) clientData, interp, objc, objv, 0);
+    return ObjectCmd(clientData, interp, objc, objv, 0);
 }
 
 static int
@@ -687,6 +770,64 @@ AddMethodToCallChain(
 	    ckalloc(sizeof(struct MInvoke));
     contextPtr->callChain[contextPtr->numCallChain]->mPtr = mPtr;
     contextPtr->callChain[contextPtr->numCallChain++]->isFilter = isFilter;
+}
+#endif
+
+static int
+ClassCreate(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = NULL; // TODO: Get object context!
+    Class *clsPtr = oPtr->classPtr;
+    Object *newObjPtr;
+
+    if (clsPtr == NULL) {
+	Tcl_Obj *cmdnameObj;
+
+	TclNewObj(cmdnameObj);
+	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
+	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
+		"\" is not a class", NULL);
+	Tcl_DecrRefCount(cmdnameObj);
+	return TCL_ERROR;
+    }
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "create ?arg ...?");
+	return TCL_ERROR;
+    }
+    newObjPtr = NewInstance(interp, clsPtr, TclGetString(objv[1]),
+	    objc-2, objv+2);
+    Tcl_GetCommandFullName(interp, oPtr->command, Tcl_GetObjResult(interp));
+    return TCL_OK;
+}
+
+static int
+ClassNew(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = NULL; // TODO: Get object context!
+    Class *clsPtr = oPtr->classPtr;
+    Object *newObjPtr;
+
+    if (clsPtr == NULL) {
+	Tcl_Obj *cmdnameObj;
+
+	TclNewObj(cmdnameObj);
+	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
+	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
+		"\" is not a class", NULL);
+	Tcl_DecrRefCount(cmdnameObj);
+	return TCL_ERROR;
+    }
+    newObjPtr = NewInstance(interp, clsPtr, NULL, objc-1, objv+1);
+    Tcl_GetCommandFullName(interp, oPtr->command, Tcl_GetObjResult(interp));
+    return TCL_OK;
 }
 
 /*
