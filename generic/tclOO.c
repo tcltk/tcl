@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.4 2006/04/20 22:12:37 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.5 2006/04/23 23:08:08 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -47,6 +47,8 @@ typedef struct Object {
     struct Class *classPtr;	/* All classes have this non-NULL; it points
 				 * to the class structure. Everything else has
 				 * this NULL. */
+    Tcl_Interp *interp;		/* The interpreter (for the PushObject and
+				 * PopObject callbacks. */
 } Object;
 
 typedef struct Class {
@@ -65,6 +67,11 @@ typedef struct Class {
     struct Method *destructorPtr;
 } Class;
 
+typedef struct ObjectStack {
+    Object *oPtr;
+    struct ObjectStack *nextPtr;
+} ObjectStack;
+
 typedef struct Foundation {
     struct Class *objectCls;
     struct Class *classCls;
@@ -74,6 +81,7 @@ typedef struct Foundation {
     int epoch;
     int nsCount;
     Tcl_Obj *unknownMethodNameObj;
+    ObjectStack *objStack;	// should this be in stack frames?
 } Foundation;
 
 #define CALL_CHAIN_STATIC_SIZE 4
@@ -126,9 +134,12 @@ static Object *		NewInstance(Tcl_Interp *interp, Class *clsPtr,
 static Method *		NewMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 			    Tcl_Obj *bodyObj);
+static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
+static void		PushObject(ClientData clientData);
+static void		PopObject(ClientData clientData);
 
 static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -149,6 +160,7 @@ OO_Init(
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
 
+    fPtr->objStack = NULL;
     fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
     fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
@@ -191,6 +203,11 @@ OO_Init(
     fPtr->nsCount = 0;
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
+
+    /*
+     * TODO: arrange for iPtr->ooFoundation to be torn down when the
+     * interpreter is deleted.
+     */
 }
 
 /*
@@ -220,7 +237,7 @@ AllocObject(
 
 	sprintf(objName, "::oo::Obj%d", ++fPtr->nsCount);
 	oPtr->nsPtr = (Namespace *) Tcl_CreateNamespace(interp, objName,
-		NULL, NULL);
+		oPtr, ObjectNamespaceDeleted);
     } while (oPtr->nsPtr == NULL);
     TclSetNsPath(oPtr->nsPtr, 1, &fPtr->helpersNs);
     oPtr->selfCls = fPtr->objectCls;
@@ -228,6 +245,7 @@ AllocObject(
     oPtr->numMixins = 0;
     oPtr->mixins = NULL;
     oPtr->classPtr = NULL;
+    oPtr->interp = interp;
 
     /*
      * Initialize the traces.
@@ -235,15 +253,15 @@ AllocObject(
 
     oPtr->command = Tcl_CreateEnsemble(interp, (nameStr ? nameStr : ""),
 	    (Tcl_Namespace *) oPtr->nsPtr, TCL_ENSEMBLE_PREFIX);
+    TclEnsembleSetCallbacks(oPtr->command, PushObject, PopObject, oPtr);
     oPtr->myCommand = Tcl_CreateEnsemble(interp, "my",
 	    (Tcl_Namespace *) oPtr->nsPtr, TCL_ENSEMBLE_PREFIX);
+    TclEnsembleSetCallbacks(oPtr->myCommand, PushObject, PopObject, oPtr);
     TclNewObj(cmdnameObj);
     Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
 	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjNameChangedTrace, oPtr);
     Tcl_DecrRefCount(cmdnameObj);
-
-#error push and pop object context on invoke
 
     return oPtr;
 }
@@ -269,6 +287,54 @@ ObjNameChangedTrace(
 	 * Not quite sure what to do here...
 	 */
     }
+}
+
+static void
+PushObject(
+    ClientData clientData)
+{
+    Object *oPtr = clientData;
+    Foundation *fPtr = ((Interp *) oPtr->interp)->ooFoundation;
+    ObjectStack *stkPtr;
+
+    stkPtr = (ObjectStack *) ckalloc(sizeof(struct ObjectStack));
+    stkPtr->oPtr = oPtr;
+    stkPtr->nextPtr = fPtr->objStack;
+    fPtr->objStack = stkPtr;
+}
+
+static void
+PopObject(
+    ClientData clientData)
+{
+    Object *oPtr = clientData;
+    Foundation *fPtr = ((Interp *) oPtr->interp)->ooFoundation;
+    ObjectStack *stkPtr = fPtr->objStack;
+
+    if (stkPtr == NULL || stkPtr->oPtr != oPtr) {
+	Tcl_Panic("stack management failure");
+    }
+    fPtr->objStack = stkPtr->nextPtr;
+    ckfree((char *) stkPtr);
+}
+
+static void
+ObjectNamespaceDeleted(
+    ClientData clientData)
+{
+    Object *oPtr = clientData;
+
+    /*
+     * Splice the object out of its context.
+     */
+
+    //TODO
+
+    /*
+     * Delete the object structure itself.
+     */
+
+    ckfree((char *) oPtr);
 }
 
 /*
@@ -383,6 +449,8 @@ NewInstance(
 	    break;
 	}
     }
+
+    // TODO: call constructors with objc/objv
 
     return oPtr;
 }
@@ -780,11 +848,16 @@ ClassCreate(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = NULL; // TODO: Get object context!
-    Class *clsPtr = oPtr->classPtr;
-    Object *newObjPtr;
+    Foundation *fPtr = ((Interp *) interp)->ooFoundation;
+    ObjectStack *stkPtr = fPtr->objStack;
+    Object *oPtr, *newObjPtr;
 
-    if (clsPtr == NULL) {
+    if (stkPtr == NULL) {
+	Tcl_AppendResult(interp, "not an object context", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = stkPtr->oPtr;
+    if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj;
 
 	TclNewObj(cmdnameObj);
@@ -798,7 +871,7 @@ ClassCreate(
 	Tcl_WrongNumArgs(interp, 1, objv, "create ?arg ...?");
 	return TCL_ERROR;
     }
-    newObjPtr = NewInstance(interp, clsPtr, TclGetString(objv[1]),
+    newObjPtr = NewInstance(interp, oPtr->classPtr, TclGetString(objv[1]),
 	    objc-2, objv+2);
     Tcl_GetCommandFullName(interp, oPtr->command, Tcl_GetObjResult(interp));
     return TCL_OK;
@@ -811,11 +884,16 @@ ClassNew(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = NULL; // TODO: Get object context!
-    Class *clsPtr = oPtr->classPtr;
-    Object *newObjPtr;
+    Foundation *fPtr = ((Interp *) interp)->ooFoundation;
+    ObjectStack *stkPtr = fPtr->objStack;
+    Object *oPtr, *newObjPtr;
 
-    if (clsPtr == NULL) {
+    if (stkPtr == NULL) {
+	Tcl_AppendResult(interp, "not an object context", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = stkPtr->oPtr;
+    if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj;
 
 	TclNewObj(cmdnameObj);
@@ -825,7 +903,7 @@ ClassNew(
 	Tcl_DecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
-    newObjPtr = NewInstance(interp, clsPtr, NULL, objc-1, objv+1);
+    newObjPtr = NewInstance(interp, oPtr->classPtr, NULL, objc-1, objv+1);
     Tcl_GetCommandFullName(interp, oPtr->command, Tcl_GetObjResult(interp));
     return TCL_OK;
 }

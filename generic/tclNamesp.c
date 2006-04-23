@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.93.2.1 2006/04/16 21:24:10 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.93.2.2 2006/04/23 23:08:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -119,6 +119,17 @@ typedef struct EnsembleConfig {
 				 * field. */
     int flags;			/* ORed combo of ENS_DEAD and
 				 * TCL_ENSEMBLE_PREFIX. */
+    TclEnsembleCallbackProc enterProc;
+				/* Function to call immediately before
+				 * dispatch of a particular ensemble command
+				 * or its unknown callback, or NULL if no such
+				 * callback is to be performed. */
+    TclEnsembleCallbackProc leaveProc;
+				/* Function to call immediately after dispatch
+				 * of a particular ensemble command or its
+				 * unknown callback, or NULL if no such
+				 * callback is to be performed. */
+    ClientData clientData;	/* Data for the above two callbacks. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
 
@@ -5472,6 +5483,9 @@ Tcl_CreateEnsemble(
     ensemblePtr->subcmdList = NULL;
     ensemblePtr->subcommandDict = NULL;
     ensemblePtr->flags = flags;
+    ensemblePtr->enterProc = NULL;
+    ensemblePtr->leaveProc = NULL;
+    ensemblePtr->clientData = NULL;
     ensemblePtr->unknownHandler = NULL;
     ensemblePtr->token = Tcl_CreateObjCommand(interp, name,
 	    NsEnsembleImplementationCmd, (ClientData)ensemblePtr,
@@ -5940,6 +5954,26 @@ Tcl_GetEnsembleNamespace(
     return TCL_OK;
 }
 
+void
+TclEnsembleSetCallbacks(
+    Tcl_Command ensemble,
+    TclEnsembleCallbackProc enterProc,
+    TclEnsembleCallbackProc leaveProc,
+    ClientData clientData)
+{
+    Command *cmdPtr = (Command *) ensemble;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	Tcl_Panic("command is not an ensemble");
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    ensemblePtr->enterProc = enterProc;
+    ensemblePtr->leaveProc = leaveProc;
+    ensemblePtr->clientData = clientData;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6216,7 +6250,12 @@ NsEnsembleImplementationCmd(
     {
 	Interp *iPtr = (Interp *) interp;
 	int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+	TclEnsembleCallbackProc leaveProc = ensemblePtr->leaveProc;
+	ClientData cbClientData = ensemblePtr->clientData;
 
+	if (ensemblePtr->enterProc != NULL) {
+	    ensemblePtr->enterProc(cbClientData);
+	}
 	Tcl_ListObjGetElements(NULL, prefixObj, &prefixObjc, &prefixObjv);
 	if (isRootEnsemble) {
 	    iPtr->ensembleRewrite.sourceObjs = objv;
@@ -6243,6 +6282,9 @@ NsEnsembleImplementationCmd(
 	    iPtr->ensembleRewrite.numRemovedObjs = 0;
 	    iPtr->ensembleRewrite.numInsertedObjs = 0;
 	}
+	if (leaveProc != NULL) {
+	    leaveProc(cbClientData);
+	}
 	return result;
     }
 
@@ -6257,6 +6299,8 @@ NsEnsembleImplementationCmd(
     if (ensemblePtr->unknownHandler != NULL && reparseCount++ < 1) {
 	int paramc, i;
 	Tcl_Obj **paramv, *unknownCmd, *ensObj;
+	TclEnsembleCallbackProc leaveProc = ensemblePtr->leaveProc;
+	ClientData cbClientData = ensemblePtr->clientData;
 
 	unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
 	TclNewObj(ensObj);
@@ -6268,7 +6312,13 @@ NsEnsembleImplementationCmd(
 	Tcl_ListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
 	Tcl_Preserve(ensemblePtr);
 	Tcl_IncrRefCount(unknownCmd);
+	if (ensemblePtr->enterProc != NULL) {
+	    ensemblePtr->enterProc(cbClientData);
+	}
 	result = Tcl_EvalObjv(interp, paramc, paramv, 0);
+	if (leaveProc != NULL) {
+	    leaveProc(cbClientData);
+	}
 	if (result == TCL_OK) {
 	    prefixObj = Tcl_GetObjResult(interp);
 	    Tcl_IncrRefCount(prefixObj);
