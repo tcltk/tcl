@@ -1,3 +1,12 @@
+2006-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/DoubleObj.3:	More doc updates for TIP 237.
+	* doc/scan.n:
+
+	* generic/tclScan.c:	[scan $s %u] is documented to accept only
+	* tests/scan.test:	decimal formatted integers.  Fixed code to
+	match.
+
 2006-04-19  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclStrToD.c: Added code to support the "middle endian"
