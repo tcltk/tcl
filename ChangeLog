@@ -1,6 +1,7 @@
 2006-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/DoubleObj.3:	More doc updates for TIP 237.
+	* doc/format.n:
 	* doc/scan.n:
 
 	* generic/tclScan.c:	[scan $s %u] is documented to accept only
