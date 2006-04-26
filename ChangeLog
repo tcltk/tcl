@@ -1,8 +1,11 @@
 2006-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/DoubleObj.3:	More doc updates for TIP 237.
+	* doc/expr.n:
 	* doc/format.n:
+	* doc/mathfunc.n:
 	* doc/scan.n:
+	* doc/string.n:
 
 	* generic/tclScan.c:	[scan $s %u] is documented to accept only
 	* tests/scan.test:	decimal formatted integers.  Fixed code to
