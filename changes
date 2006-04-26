@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.104 2006/04/13 21:17:46 dgp Exp $
+RCS: @(#) $Id: changes,v 1.105 2006/04/26 13:50:07 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6722,9 +6722,25 @@ no other errors (darley)
 
 2006-03-28 (bug fix)[1064247] BSD: path normalization with realpath() (steffen)
 
+2006-04-03 (bug fix)[1462248] crash reading utf-8 chars spanning multiple
+buffers at end of file (kraft,kupries)
+
+2006-04-05 (bug fix)[1464039] Tcl_GetIndexFromObj: empty key (fellows)
+
+2006-04-05 (bug fix) overdue dde, registry  patchelevel increments (porter)
+=> dde 1.3.2
+=> registry 1.2
+
+2006-04-06 (bug fix)[1457515] TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
+removed (steffen)
+
+2006-04-11 (bug fix)[1458266] enter/enterstep trace interference (leunissen)
+
+2006-04-12 (feature change)[1376892] revised definition of [:print:] (fellows)
+
 (platform support) Use of _ANSI_ARGS_ purged.  ANSI compiler required (fellows)
 
 Documentation improvements [1211078,1190891,1292427,1277503,1104682,1359183,
 1415725,666770]
 
---- Released 8.5a4, March 30, 2006 --- See ChangeLog for details ---
+--- Released 8.5a4, April 27, 2006 --- See ChangeLog for details ---
