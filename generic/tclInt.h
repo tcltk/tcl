@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.269 2006/03/10 17:32:06 vasiljevic Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.270 2006/04/26 13:42:43 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2116,6 +2116,7 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp* interp, Tcl_Obj* listPtr,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
+MODULE_SCOPE int	TclNokia770Doubles();
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
