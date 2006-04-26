@@ -1,5 +1,9 @@
 2006-04-26  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5a4 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for another RC.
+
 	* generic/tclBinary.c:	Revised the handling of the Q and q format
 	* generic/tclInt.h:	specifiers for [binary] to account for the
 	* generic/tclStrToD.c:	"middle endian" floating point format used
@@ -52,8 +56,6 @@
 	* tests/trace.test:     and enterstep traces.  [Bug 1458266]
 
 2006-04-07  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5a4 TAGGED FOR RELEASE ***
 
 	* generic/tclPathObj.c:	Yet another revised fix for the [Bug 1379287]
 	* tests/fileSystem.test:	family of path normalization bugs.
