@@ -1,3 +1,10 @@
+2006-04-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBinary.c:	Revised the handling of the Q and q format
+	* generic/tclInt.h:	specifiers for [binary] to account for the
+	* generic/tclStrToD.c:	"middle endian" floating point format used
+	in Nokia N770.
+
 2006-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/DoubleObj.3:	More doc updates for TIP 237.

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.21 2006/04/19 16:43:02 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.22 2006/04/26 13:42:43 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2702,6 +2702,22 @@ Nokia770Twiddle(
     return (((w >> 32) & 0xffffffff) | (w << 32));
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNokia770Doubles --
+ *
+ * 	Transpose the two words of a number for Nokia 770 floating
+ *	point handling.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclNokia770Doubles()
+{
+    return n770_fp;
+}
 /*
  * Local Variables:
  * mode: c
