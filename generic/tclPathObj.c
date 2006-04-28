@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.19 2006/01/25 18:38:31 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.20 2006/04/28 16:09:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -213,11 +213,16 @@ TclFSNormalizeAbsolutePath(
 		/*
 		 * Need to skip '.' in the path.
 		 */
+		int curLen;
 
 		if (retVal == NULL) {
 		    CONST char *path = TclGetString(pathPtr);
 		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
+		}
+		Tcl_GetStringFromObj(retVal, &curLen);
+		if (curLen == 0) {
+		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		dirSep += 2;
 		oldDirSep = dirSep;
@@ -239,6 +244,10 @@ TclFSNormalizeAbsolutePath(
 		    CONST char *path = TclGetString(pathPtr);
 		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
+		}
+		Tcl_GetStringFromObj(retVal, &curLen);
+		if (curLen == 0) {
+		    Tcl_AppendToObj(retVal, dirSep, 1);
 		}
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
 		    link = Tcl_FSLink(retVal, NULL, 0);
@@ -307,17 +316,27 @@ TclFSNormalizeAbsolutePath(
 
 		    /*
 		     * Either way, we now remove the last path element.
+		     * (but not the first character of the path)
 		     */
 
 		    while (--curLen >= 0) {
 			if (IsSeparatorOrNull(linkStr[curLen])) {
-			    Tcl_SetObjLength(retVal, curLen);
+			    if (curLen) {
+				Tcl_SetObjLength(retVal, curLen);
+			    } else {
+				Tcl_SetObjLength(retVal, 1);
+			    }
 			    break;
 			}
 		    }
 		}
 		dirSep += 3;
 		oldDirSep = dirSep;
+
+		if ((curLen == 0) && (dirSep[0] != 0)) {
+		    Tcl_SetObjLength(retVal, 0);
+		}
+		
 		if (dirSep[0] != 0 && dirSep[1] == '.') {
 		    goto again;
 		}

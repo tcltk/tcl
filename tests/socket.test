@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.9 2005/11/03 17:52:27 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.10 2006/04/28 16:09:43 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1304,12 +1304,12 @@ test socket-11.11 {testing spurious events} {socket doTestsWithRemoteServer} {
     }
     set c [socket $remoteServerIP 2836]
     fileevent $c readable "readlittle $c"
-    set timer [after 10000 "set done timed_out"]
+    set timer [after 40000 "set done timed_out"]
     vwait done
     after cancel $timer
     sendCommand {close $socket10_13_test_server}
-    list $spurious $len
-} {0 2690}
+    list $spurious $len $done
+} {0 2690 1}
 
 test socket-11.12 {testing EOF stickyness} {socket doTestsWithRemoteServer} {
     set counter 0

@@ -10,33 +10,31 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.14.2.4 2004/10/28 18:47:17 dgp Exp $
+# RCS: @(#) $Id: registry.test,v 1.14.2.5 2006/04/28 16:09:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-if {$tcl_platform(platform) == "windows"} {
-    if [catch {
+testConstraint reg 0
+if {[testConstraint win]} {
+    catch {
 	# Is the registry extension already static to this shell?
 	if [catch {load {} Registry; set ::reglib {}}] {
 	    # try the location given to use on the commandline to tcltest
 	    ::tcltest::loadTestedCommands
 	    load $::reglib Registry
 	}
-	::tcltest::testConstraint reg 1
-    }] {
-	::tcltest::testConstraint reg 0
+	testConstraint reg 1
     }
 }
 
 # determine the current locale
-testConstraint english [expr {[llength [info commands testlocale]]
-	&& [string match "English*" [testlocale all ""]]
+testConstraint english [expr {
+    [llength [info commands testlocale]]
+    && [string match "English*" [testlocale all ""]]
 }]
-
-set hostname [info hostname]
 
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
@@ -202,6 +200,7 @@ test registry-4.2 {GetKeyNames} {win reg} {
     set result
 } {baz}
 test registry-4.3 {GetKeyNames: remote key} {win reg nonPortable english} {
+    set hostname [info hostname]
     registry set \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar\\baz
     set result [registry keys \\\\gaspode\\HKEY_CLASSES_ROOT\\TclFoobar]
     registry delete \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar
@@ -471,6 +470,7 @@ test registry-7.3 {GetValueNames} {win reg} {
     set result
 } {{} baz blat}
 test registry-7.4 {GetValueNames: remote key} {win reg nonPortable english} {
+    set hostname [info hostname]
     registry set \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar baz blat
     set result [registry values \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar]
     registry delete \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar
@@ -598,6 +598,5 @@ test registry-12.5 {BroadcastValue} {win reg} {
 } {0 {1 0}}
 
 # cleanup
-unset hostname
 ::tcltest::cleanupTests
 return

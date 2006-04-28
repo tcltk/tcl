@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.21 2006/02/23 14:45:07 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.22 2006/04/28 16:09:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -179,6 +179,11 @@ TclFinalizeIOSubsystem(void)
     ChannelState *nextCSPtr;	/* Iterates over open channels. */
     ChannelState *statePtr;	/* state of channel stack */
 
+    /*
+     * Walk all channel state structures known to this thread and
+     * close corresponding channels.
+     */
+
     for (statePtr = tsdPtr->firstCSPtr; statePtr != NULL;
 	 statePtr = nextCSPtr) {
 	chanPtr = statePtr->topChanPtr;
@@ -250,6 +255,8 @@ TclFinalizeIOSubsystem(void)
 	nextCSPtr = statePtr->nextCSPtr;
 	Tcl_Release(statePtr);
     }
+
+    TclpFinalizeSockets();
     TclpFinalizePipes();
 }
 
@@ -4931,6 +4938,7 @@ ReadChars(
     ChannelBuffer *bufPtr;
     char *src, *dst;
     Tcl_EncodingState oldState;
+    int encEndFlagSuppressed = 0;
 
     factor = *factorPtr;
     offset = *offsetPtr;
@@ -4979,6 +4987,54 @@ ReadChars(
     }
     dst = objPtr->bytes + offset;
 
+    /*
+     * SF Tcl Bug 1462248
+     * The cause of the crash reported in the referenced bug is this:
+     *
+     * - ReadChars, called with a single buffer, with a incomplete
+     *   multi-byte character at the end (only the first byte of it).
+     * - Encoding translation fails, asks for more data
+     * - Data is read, and eof is reached, TCL_ENCODING_END (TEE) is set.
+     * - ReadChar is called again, converts the first buffer, but due
+     *   to TEE it does not check for incomplete multi-byte data, and the
+     *   character just after the end of the first buffer is a valid
+     *   completion of the multi-byte header in the actual buffer. The
+     *   conversion reads more characters from the buffer then present.
+     *   This causes nextRemoved to overshoot nextAdded and the next
+     *   reads compute a negative srcLen, cause further translations to
+     *   fail, causing copying of data into the next buffer using bad
+     *   arguments, causing the mecpy for to eventually fail.
+     *
+     * In the end it is a memory access bug spiraling out of control
+     * if the conditions are _just so_. And ultimate cause is that TEE
+     * is given to a conversion where it should not. TEE signals that
+     * this is the last buffer. Except in our case it is not.
+     *
+     * My solution is to suppress TEE if the first buffer is not the
+     * last. We will eventually need it given that EOF has been
+     * reached, but not right now. This is what the new flag
+     * "endEncSuppressFlag" is for.
+     *
+     * The bug in 'Tcl_Utf2UtfProc' where it read from memory behind
+     * the actual buffer has been fixed as well, and fixes the problem
+     * with the crash too, but this would still allow the generic
+     * layer to accidentially break a multi-byte sequence if the
+     * conditions are just right, because again the ExternalToUtf
+     * would be successful where it should not.
+     */
+
+    if ((statePtr->inputEncodingFlags & TCL_ENCODING_END) &&
+	(bufPtr->nextPtr != NULL)) {
+
+        /* TEE is set for a buffer which is not the last. Squash it
+	 * for now, and restore it later, before yielding control to
+	 * our caller.
+	 */
+
+        statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+        encEndFlagSuppressed = 1;
+    }
+
     oldState = statePtr->inputEncodingState;
     if (statePtr->flags & INPUT_NEED_NL) {
 	/*
@@ -5004,12 +5060,21 @@ ReadChars(
 	}
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
 	*offsetPtr += 1;
+
+	if (encEndFlagSuppressed) {
+	    statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+	}
 	return 1;
     }
 
     Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
 	    dstNeeded + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
+
+    if (encEndFlagSuppressed) {
+        statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+    }
+
     if (srcRead == 0) {
 	/*
 	 * Not enough bytes in src buffer to make a complete char. Copy the
@@ -5039,6 +5104,23 @@ ReadChars(
 	    }
 	    return -1;
 	}
+
+	/* Space is made at the beginning of the buffer to copy the
+	 * previous unused bytes there. Check first if the buffer we
+	 * are using actually has enough space at its beginning for
+	 * the data we are copying. Because if not we will write over the
+	 * buffer management information, especially the 'nextPtr'.
+	 *
+	 * Note that the BUFFER_PADDING (See AllocChannelBuffer) is
+	 * used to prevent exactly this situation. I.e. it should
+	 * never happen. Therefore it is ok to panic should it happen
+	 * despite the precautions.
+	 */
+
+	if (nextPtr->nextRemoved - srcLen < 0) {
+	    Tcl_Panic ("Buffer Underflow, BUFFER_PADDING not enough");
+	}
+
 	nextPtr->nextRemoved -= srcLen;
 	memcpy((VOID *) (nextPtr->buf + nextPtr->nextRemoved), (VOID *) src,
 		(size_t) srcLen);
@@ -9256,6 +9338,8 @@ Tcl_ChannelVersion(
 	return TCL_CHANNEL_VERSION_3;
     } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_4) {
 	return TCL_CHANNEL_VERSION_4;
+    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_5) {
+	return TCL_CHANNEL_VERSION_5;
     } else {
 	/*
 	 * In <v2 channel versions, the version field is occupied by the
@@ -9946,7 +10030,7 @@ Tcl_DriverTruncateProc *
 Tcl_ChannelTruncateProc(
     Tcl_ChannelType *chanTypePtr)	/* Pointer to channel type. */
 {
-    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_5)) {
 	return chanTypePtr->truncateProc;
     } else {
 	return NULL;

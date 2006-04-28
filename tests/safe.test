@@ -10,7 +10,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.3 2004/12/09 23:01:10 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.4 2006/04/28 16:09:43 dgp Exp $
+
+package require Tcl 8.5
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -156,28 +158,25 @@ test safe-5.1 {test auto-loading in safe interpreters} {
 } {0 -1}
 
 # test safe interps 'information leak'
-proc SI {} {
-    global I
-    set I [interp create -safe];
-}
-proc DI {} {
-    global I;
-    interp delete $I;
+proc SafeEval {script} {
+    # Helper procedure that ensures the safe interp is cleaned up even if
+    # there is a failure in the script.
+    set SafeInterp [interp create -safe]
+    catch {$SafeInterp eval $script} msg opts
+    interp delete $SafeInterp
+    return -options $opts $msg
 }
 
 test safe-6.1 {test safe interpreters knowledge of the world} {
-    SI; set r [lsort [$I eval {info globals}]]; DI; set r
+    lsort [SafeEval {info globals}]
 } {tcl_interactive tcl_patchLevel tcl_platform tcl_version}
 test safe-6.2 {test safe interpreters knowledge of the world} {
-    SI; set r [$I eval {info script}]; DI; set r
+    SafeEval {info script}
 } {}
 test safe-6.3 {test safe interpreters knowledge of the world} {
-    SI
-    set r [lsort [$I eval {array names tcl_platform}]]
-    DI
+    set r [lsort [SafeEval {array names tcl_platform}]]
     # If running a windows-debug shell, remove the "debug" element from r.
-    if {$tcl_platform(platform) == "windows" && \
-	    [lsearch $r "debug"] != -1} {
+    if {[testConstraint win] && ("debug" in $r)} {
 	set r [lreplace $r 1 1]
     }
     set threaded [lsearch $r "threaded"]

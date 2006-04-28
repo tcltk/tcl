@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: apply.test,v 1.4.2.2 2006/02/09 22:41:30 dgp Exp $
+# RCS: @(#) $Id: apply.test,v 1.4.2.3 2006/04/28 16:09:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -132,7 +132,7 @@ test apply-5.1 {runtime error in lambda expression} {
 } {1 {foo
     while executing
 "error foo"
-    (procedure "apply" line 1) CHECK & MODIFY
+    (procedure "apply {{} {error foo}}" line 1)
     invoked from within
 "apply $lambda"}}
 

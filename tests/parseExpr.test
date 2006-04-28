@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.10.4.7 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.10.4.8 2006/04/28 16:09:42 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -83,7 +83,7 @@ proc testIEEE {} {
 	}
     }
 }
-::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
+testConstraint ieeeFloatingPoint [testIEEE]
 
 ######################################################################
 
@@ -620,7 +620,7 @@ test parseExpr-16.4 {GetLexeme procedure, integer lexeme} testexprparser {
 test parseExpr-16.5 {GetLexeme procedure, integer lexeme too big} {testexprparser wideIs32bit} {
     list [catch {testexprparser {12345678901234567890} -1} msg] $msg
 } {1 {integer value too large to represent}}
-test parseExpr-16.6 {GetLexeme procedure, bad integer lexeme} -constraints {testexprparser} -body {
+test parseExpr-16.6 {GetLexeme procedure, bad integer lexeme} -constraints {testexprparser knownBug} -body {
     testexprparser {0999} -1
 } -returnCodes error -match glob -result {*invalid octal number*}
 test parseExpr-16.7 {GetLexeme procedure, double lexeme} testexprparser {
@@ -755,6 +755,16 @@ test parseExpr-19.1 {TclParseInteger: [Bug 648441]} {
     # If Bug 648441 is not fixed, "0x" will be seen as floating point 0.0
     list [catch {expr 0x} result] $result
 } [list 1 {syntax error in expression "0x": extra tokens at end of expression}]
+
+test parseExpr-20.1 {Bug 1451233} {
+    expr 1000000000000000000042
+} 1000000000000000000042
+test parseExpr-20.2 {Bug 1451233} {
+    expr 10000000000000000000420000000042
+} 10000000000000000000420000000042
+test parseExpr-20.3 {Bug 1451233} {
+    expr 10000000000000000000020000000002
+} 10000000000000000000020000000002
 
 # cleanup
 ::tcltest::cleanupTests

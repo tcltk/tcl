@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: IntObj.3,v 1.3.4.3 2005/04/07 17:31:59 dgp Exp $
+'\" RCS: @(#) $Id: IntObj.3,v 1.3.4.4 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
-.TH Tcl_IntObj 3 8.0 Tcl "Tcl Library Procedures"
+.TH Tcl_IntObj 3 8.5 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj \- manipulate Tcl objects as integers and wide integers
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_GetBignumAndClearObj \- manipulate Tcl objects as integer values
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -38,92 +38,113 @@ int
 .sp
 int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
+.sp
+.sp
+.VS 8.5
+\fB#include <tclTomMath.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_NewBignumObj\fR(\fIbigValue\fR)
+.sp
+\fBTcl_SetBignumObj\fR(\fIobjPtr, bigValue\fR)
+.sp
+int
+\fBTcl_GetBignumFromObj\fR(\fIinterp, objPtr, bigValue\fR)
+.sp
+int
+\fBTcl_GetBignumAndClearObj\fR(\fIinterp, objPtr, bigValue\fR)
+.VE 8.5
 .SH ARGUMENTS
 .AS Tcl_WideInt longValue in/out
 .AP int intValue in
-Integer value used to initialize or set an integer object.
+Integer value used to initialize or set a Tcl object.
 .AP long longValue in
-Long integer value used to initialize or set an integer object.
+Long integer value used to initialize or set a Tcl object.
 .AP Tcl_WideInt wideValue in
-Wide integer value (minimum 64-bits wide where supported by the
-compiler) used to initialize or set a wide integer object.
+Wide integer value used to initialize or set a Tcl object.
 .AP Tcl_Obj *objPtr in/out
-For \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, and
-\fBTcl_SetWideIntObj\fR, this points to the object to be converted to
-integer type.  For \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
-and \fBTcl_GetWideIntFromObj\fR, this refers to the object from which
-to get an integer or long integer value; if \fIobjPtr\fR does not
-already point to an integer object (or a wide integer object in the
-case of \fBTcl_SetWideIntObj\fR and \fBTcl_GetWideIntFromObj\fR), an
-attempt will be made to convert it to one.
+For \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
+and \fBTcl_SetBignumObj\fR, this points to the object in which to store an
+integral value.  For \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_GetBignumAndClearObj\fR, this refers to the object from which
+to retrieve an integral value.
 .AP Tcl_Interp *interp in/out
-If an error occurs during conversion,
-an error message is left in the interpreter's result object
-unless \fIinterp\fR is NULL.
+When non-NULL, an error message is left here when integral value
+retrieval fails.
 .AP int *intPtr out
-Points to place to store the integer value
-obtained by \fBTcl_GetIntFromObj\fR from \fIobjPtr\fR.
+Points to place to store the integer value retrieved from \fIobjPtr\fR.
 .AP long *longPtr out
-Points to place to store the long integer value
-obtained by \fBTcl_GetLongFromObj\fR from \fIobjPtr\fR.
+Points to place to store the long integer value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
-Points to place to store the wide integer value
-obtained by \fBTcl_GetWideIntFromObj\fR from \fIobjPtr\fR.
+Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
+.AP mp_int *bigValue in/out
+.VS 8.5
+Points to a multi-precision integer structure declared by the LibTomMath
+library.
+.VE 8.5
 .BE
 
 .SH DESCRIPTION
 .PP
-These procedures are used to create, modify, and read
-integer and wide integer Tcl objects from C code.
-\fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR,
-\fBTcl_SetIntObj\fR, and \fBTcl_SetLongObj\fR
-create a new object of integer type
-or modify an existing object to have integer type,
-and \fBTcl_NewWideIntObj\fR and \fBTcl_SetWideIntObj\fR create a new
-object of wide integer type or modify an existing object to have wide
-integer type. 
-\fBTcl_NewIntObj\fR and \fBTcl_SetIntObj\fR set the object to have the
-integer value given by \fIintValue\fR,
-\fBTcl_NewLongObj\fR and \fBTcl_SetLongObj\fR
-set the object to have the
-long integer value given by \fIlongValue\fR,
-and \fBTcl_NewWideIntObj\fR and \fBTcl_SetWideIntObj\fR set the object
-to have the wide integer value given by \fIwideValue\fR.
-\fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR and \fBTcl_NewWideIntObj\fR
-return a pointer to a newly created object with reference count zero.
-These procedures set the object's type to be integer
-and assign the integer value to the object's internal representation
-\fIlongValue\fR or \fIwideValue\fR member (as appropriate).
-\fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR
-and \fBTcl_SetWideIntObj\fR
-invalidate any old string representation and,
-if the object is not already an integer object,
-free any old internal representation.
+.VS 8.5
+These procedures are used to create, modify, and read Tcl objects
+that hold integral values.  
 .PP
-\fBTcl_GetIntFromObj\fR and \fBTcl_GetLongFromObj\fR
-attempt to return an integer value from the Tcl object \fIobjPtr\fR,
-and \fBTcl_GetWideIntFromObj\fR attempts to return a wide integer
-value from the Tcl object \fIobjPtr\fR.
-If the object is not already an integer object,
-or a wide integer object in the case of \fBTcl_GetWideIntFromObj\fR
-they will attempt to convert it to one.
-If an error occurs during conversion, they return \fBTCL_ERROR\fR
-and leave an error message in the interpreter's result object
-unless \fIinterp\fR is NULL.
-Also, if the long integer held in the object's internal representation
-\fIlongValue\fR member can not be represented in a (non-long) integer,
-\fBTcl_GetIntFromObj\fR returns \fBTCL_ERROR\fR
-and leaves an error message in the interpreter's result object
-unless \fIinterp\fR is NULL.
-Otherwise, all three procedures return \fBTCL_OK\fR and
-store the integer, long integer value
-or wide integer in the address given by \fIintPtr\fR, \fIlongPtr\fR
-and \fIwidePtr\fR
-respectively.  If the object is not already an integer or wide integer
-object, the conversion will free any old internal representation.
-
+The different routines exist to accomodate different integral types in C
+with which values might be exchanged.  The C integral types for which Tcl
+provides value exchange routines are \fBint\fR, \fBlong int\fR,
+\fBTcl_WideInt\fR, and \fBmp_int\fR.  The \fBint\fR and \fBlong int\fR types
+are provided by the C language standard.  The \fBTcl_WideInt\fR type is a
+typedef defined to be whatever signed integral type covers at least the
+64-bit integer range (-9223372036854775809 to 9223372036854775807).  Depending
+on the platform and the C compiler, the actual type might be
+\fBlong int\fR, \fBlong long int\fR, \fBint64\fR, or something else.
+The \fBmp_int\fR type is a multiple-precision integer type defined
+by the LibTomMath multiple-precision integer library.  
+.PP
+The \fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR, \fBTcl_NewWideIntObj\fR,
+and \fBTcl_NewBignumObj\fR routines each create and return a new
+Tcl object initialized to the integral value of the argument.  The
+returned Tcl object is unshared.
+.PP
+The \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
+and \fBTcl_SetBignumObj\fR routines each set the value of an existing
+Tcl object pointed to by \fIobjPtr\fR to the integral value provided
+by the other argument.  The \fIobjPtr\fR argument must point to an
+unshared Tcl object.  Any attempt to set the value of a shared Tcl object
+violates Tcl's copy-on-write policy.  Any existing string representation
+or internal representation in the unshared Tcl object will be freed
+as a consequence of setting the new value.
+.PP
+The \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_GetBignumAndClearObj\fR routines attempt to retrieve an integral
+value of the appropriate type from the Tcl object \fIobjPtr\fR.  If the
+attempt succeeds, then \fBTCL_OK\fR is returned, and the value is
+written to the storage provided by the caller.  The attempt might
+fail if \fIobjPtr\fR does not hold an integral value, or if the
+value exceeds the range of the target type.  If the attempt fails,
+then \fBTCL_ERROR\fR is returned, and if \fIinterp\fR is non-NULL,
+an error message is left in \fIinterp\fR.  The \fBTcl_ObjType\fR
+of \fIobjPtr\fR may be changed to make subsequent calls to the
+same routine more efficient. Unlike the other functions,
+\fBTcl_GetBignumAndClearObj\fR may set the content of the Tcl object
+\fIobjPtr\fR to an empty string in the process of retrieving the
+multiple-precision integer value.
+.PP
+The choice between \fBTcl_GetBignumFromObj\fR and
+\fBTcl_GetBignumAndClearObj\fR is governed by how the caller will
+continue to use \fIobjPtr\fR.  If after the \fBmp_int\fR value
+is retrieved from \fIobjPtr\fR, the caller will make no more
+use of \fIobjPtr\fR, and in addition if \fIobjPtr\fR is unshared,
+then using \fBTcl_GetBignumAndClearObj\fR requires less copying
+to get the same job done, and should be more efficient.  If
+\fIobjPtr\fR is shared, or if anything later in the caller requires
+\fIobjPtr\fR to continue to hold the same value, then
+\fBTcl_GetBignumFromObj\fR must be chosen.
+.VE 8.5
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
-
 .SH KEYWORDS
 integer, integer object, integer type, internal representation, object, object type, string representation

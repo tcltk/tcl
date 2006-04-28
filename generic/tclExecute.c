@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.32 2006/02/09 22:41:28 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.33 2006/04/28 16:09:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -252,49 +252,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
 
-#if 0
-/*
- * Macro to read a string containing either a wide or an int and decide which
- * it is while decoding it at the same time.  This enforces the policy that
- * integer constants between LONG_MIN and LONG_MAX (inclusive) are represented
- * by normal longs, and integer constants outside that range are represented
- * by wide ints.
- *
- * GET_WIDE_OR_INT is the same as REQUIRE_WIDE_OR_INT except it never
- * generates an error message.
- */
-
-#define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
-    (resultVar) = Tcl_GetWideIntFromObj(interp, (objPtr), &(wideVar));	\
-    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
-	    && (wideVar) <= Tcl_LongAsWide(LONG_MAX)) {			\
-	(objPtr)->typePtr = &tclIntType;				\
-	(objPtr)->internalRep.longValue = (longVar)			\
-		= Tcl_WideAsLong(wideVar);				\
-    }
-#define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
-    (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
-	    &(wideVar));						\
-    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
-	    && (wideVar) <= Tcl_LongAsWide(LONG_MAX)) {			\
-	(objPtr)->typePtr = &tclIntType;				\
-	(objPtr)->internalRep.longValue = (longVar)			\
-		= Tcl_WideAsLong(wideVar);				\
-    }
-#endif
-
-/*
- * Combined with REQUIRE_WIDE_OR_INT, this gets a long value from an obj.
- */
-
-#if 0
-#define W0	Tcl_LongAsWide(0)
-/*
- * For tracing that uses wide values.
- */
-#define LLD				"%" TCL_LL_MODIFIER "d"
-#endif
-
 /*
  * Macro used in this file to save a function call for common uses of
  * TclGetNumberFromObj(). The ANSI C "prototype" is:
@@ -355,7 +312,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 #define TclGetBooleanFromObj(interp, objPtr, boolPtr)			\
     ((((objPtr)->typePtr == &tclIntType)				\
-	|| ((objPtr)->typePtr == &tclIntType))				\
+	|| ((objPtr)->typePtr == &tclBooleanType))			\
 	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
@@ -417,11 +374,6 @@ static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
-#if 0
-static Tcl_WideInt	ExponWide(Tcl_WideInt w, Tcl_WideInt w2,
-			    int *errExpon);
-static long		ExponLong(long i, long i2, int *errExpon);
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2441,7 +2393,7 @@ TclExecuteByteCode(
 	}
 	TRACE(("%u \"%.30s\" (by %ld) => ", opnd, part2, i));
 	varPtr = TclLookupArrayElement(interp, part1, part2,
-		TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
+		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr);
 	if (varPtr == NULL) {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    result = TCL_ERROR;
@@ -3751,13 +3703,14 @@ TclExecuteByteCode(
 	NEXT_INST_F(0, 2, 1);
     }
 
+    case INST_MOD:
     case INST_LSHIFT:
     case INST_RSHIFT: {
 	Tcl_Obj *value2Ptr = *tosPtr;
 	Tcl_Obj *valuePtr  = *(tosPtr - 1);
 	ClientData ptr1, ptr2;
 	int invalid, shift, type1, type2;
-	long l;
+	long l1;
 
 	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
@@ -3779,6 +3732,172 @@ TclExecuteByteCode(
 		    value2Ptr->typePtr->name : "null")));
 	    IllegalExprOperandType(interp, pc, value2Ptr);
 	    goto checkForCatch;
+	}
+
+	if (*pc == INST_MOD) {
+	    /* Following section assumes BIGNUM_AUTO_NARROW */
+	    /* TODO: Attempts to re-use unshared operands on stack */
+
+	    long l2 = 0; /* silence gcc warning */
+	    
+	    if (type2 == TCL_NUMBER_LONG) {
+		l2 = *((CONST long *)ptr2);
+		if (l2 == 0) {
+		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
+			    O2S(value2Ptr)));
+		    goto divideByZero;
+		}
+		if ((l2 == 1) || (l2 == -1)) {
+		    /* Div. by |1| always yields remainder of 0 */
+		    objResultPtr = eePtr->constants[0];
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+	    if (type1 == TCL_NUMBER_LONG) {
+		l1 = *((CONST long *)ptr1);
+		if (l1 == 0) {
+		    /* 0 % (non-zero) always yields remainder of 0 */
+		    objResultPtr = eePtr->constants[0];
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		if (type2 == TCL_NUMBER_LONG) {
+		    /* Both operands are long; do native calculation */
+		    long lRemainder, lQuotient = l1 / l2;
+
+		    /* Force Tcl's integer division rules */
+		    /* TODO: examine for logic simplification */
+		    if (((lQuotient < 0) || ((lQuotient == 0) &&
+			    ((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
+			    ((lQuotient * l2) != l1)) {
+			lQuotient -= 1;
+		    }
+		    lRemainder = l1 - l2*lQuotient;
+		    TclNewLongObj(objResultPtr, lRemainder);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		/*
+		 * first operand fits in long; second does not, so the second
+		 * has greater magnitude than first.  No need to divide to
+		 * determine the remainder.
+		 */
+#ifndef NO_WIDE_TYPE
+		if (type2 == TCL_NUMBER_WIDE) {
+		    Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
+
+		    if ((l1 > 0) ^ (w2 > (Tcl_WideInt)0)) {
+			/* Arguments are opposite sign; remainder is sum */
+			objResultPtr = Tcl_NewWideIntObj(w2+(Tcl_WideInt)l1);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    /* Arguments are same sign; remainder is first operand */
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+#endif
+		{
+		    mp_int big2;
+		    if (Tcl_IsShared(value2Ptr)) {
+			Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		    } else {
+			Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		    }
+
+		    /* TODO: internals intrusion */
+		    if ((l1 > 0) ^ big2.sign) {
+			/* Arguments are opposite sign; remainder is sum */
+			mp_int big1;
+			TclBNInitBignumFromLong(&big1, l1);
+			mp_add(&big2, &big1, &big2);
+			objResultPtr = Tcl_NewBignumObj(&big2);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    /* Arguments are same sign; remainder is first operand */
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+	    }
+#ifndef NO_WIDE_TYPE
+	    if (type1 == TCL_NUMBER_WIDE) {
+		Tcl_WideInt w1 = *((CONST Tcl_WideInt *)ptr1);
+		if (type2 != TCL_NUMBER_BIG) {
+		    Tcl_WideInt w2, wQuotient, wRemainder;
+
+		    Tcl_GetWideIntFromObj(NULL, value2Ptr, &w2);
+		    wQuotient = w1 / w2;
+
+		    /* Force Tcl's integer division rules */
+		    /* TODO: examine for logic simplification */
+		    if (((wQuotient < ((Tcl_WideInt) 0)) 
+			    || ((wQuotient == ((Tcl_WideInt) 0))
+			    && ((w1 < ((Tcl_WideInt) 0)
+			    && w2 > ((Tcl_WideInt) 0))
+			    || (w1 > ((Tcl_WideInt) 0) 
+			    && w2 < ((Tcl_WideInt) 0))))) &&
+			    ((wQuotient * w2) != w1)) {
+			wQuotient -= (Tcl_WideInt) 1;
+		    }
+		    wRemainder = w1 - w2*wQuotient;
+		    objResultPtr = Tcl_NewWideIntObj(wRemainder);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		{
+		    mp_int big2;
+		    if (Tcl_IsShared(value2Ptr)) {
+			Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		    } else {
+			Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		    }
+
+		    /* TODO: internals intrusion */
+		    if ((w1 > ((Tcl_WideInt) 0)) ^ big2.sign) {
+			/* Arguments are opposite sign; remainder is sum */
+			mp_int big1;
+			TclBNInitBignumFromWideInt(&big1, w1);
+			mp_add(&big2, &big1, &big2);
+			objResultPtr = Tcl_NewBignumObj(&big2);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    /* Arguments are same sign; remainder is first operand */
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+	    }
+#endif
+	    {
+		mp_int big1, big2, bigResult, bigRemainder;
+
+		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
+		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		mp_init(&bigResult);
+		mp_init(&bigRemainder);
+		mp_div(&big1, &big2, &bigResult, &bigRemainder);
+		if (!mp_iszero(&bigRemainder)
+			&& (bigRemainder.sign != big2.sign)) {
+		    /* Convert to Tcl's integer division rules */
+		    mp_sub_d(&bigResult, 1, &bigResult);
+		    mp_add(&bigRemainder, &big2, &bigRemainder);
+		}
+		mp_copy(&bigRemainder, &bigResult);
+		mp_clear(&bigRemainder);
+		mp_clear(&big1);
+		mp_clear(&big2);
+		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		if (Tcl_IsShared(valuePtr)) {
+		    objResultPtr = Tcl_NewBignumObj(&bigResult);
+		    TRACE(("%s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(1, 2, 1);
+		}
+		Tcl_SetBignumObj(valuePtr, &bigResult);
+		TRACE(("%s\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 1, 0);
+	    }
 	}
 
 	/* reject negative shift argument */
@@ -3832,10 +3951,10 @@ TclExecuteByteCode(
 	    /* Handle shifts within the native long range */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if ((type1 == TCL_NUMBER_LONG) && (shift < CHAR_BIT*sizeof(long))
-		    && (l = *((CONST long *)ptr1))
-		    && !(((l>0) ? l : ~l)
+		    && (l1 = *((CONST long *)ptr1))
+		    && !(((l1>0) ? l1 : ~l1)
 			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
-		TclNewLongObj(objResultPtr, (l<<shift));
+		TclNewLongObj(objResultPtr, (l1<<shift));
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
 	    }
@@ -3855,20 +3974,6 @@ TclExecuteByteCode(
 		    NEXT_INST_F(1, 2, 1);
 		}
 	    }
-
-/*
-	    if ((type1 == TCL_NUMBER_LONG) && (shift < CHAR_BIT*sizeof(long))
-		    && (l = *((CONST long *)ptr1))
-		    && !(((l>0) ? l : ~l)
-			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
-		TclNewLongObj(objResultPtr, (l<<shift));
-		TRACE(("%s\n", O2S(objResultPtr)));
-		NEXT_INST_F(1, 2, 1);
-	    }
-*/
-
-
-
 	} else {
 	    /* Quickly force large right shifts to 0 or -1 */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -3912,15 +4017,15 @@ TclExecuteByteCode(
 	    shift = (int)(*((CONST long *)ptr2));
 	    /* Handle shifts within the native long range */
 	    if (type1 == TCL_NUMBER_LONG) {
-		long l = *((CONST long *)ptr1);
+		l1 = *((CONST long *)ptr1);
 		if (shift >= CHAR_BIT*sizeof(long)) {
-		    if (l >= (long)0) {
+		    if (l1 >= (long)0) {
 			objResultPtr = eePtr->constants[0];
 		    } else {
 			TclNewIntObj(objResultPtr, -1);
 		    }
 		} else {
-		    TclNewLongObj(objResultPtr, (l >> shift));
+		    TclNewLongObj(objResultPtr, (l1 >> shift));
 		}
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
@@ -4204,6 +4309,28 @@ TclExecuteByteCode(
     }
 
 #if 0
+/*
+ * Macro to read a string containing either a wide or an int and decide which
+ * it is while decoding it at the same time.  This enforces the policy that
+ * integer constants between LONG_MIN and LONG_MAX (inclusive) are represented
+ * by normal longs, and integer constants outside that range are represented
+ * by wide ints.
+ */
+
+#define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
+    (resultVar) = Tcl_GetWideIntFromObj(interp, (objPtr), &(wideVar));	\
+    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
+	    && (wideVar) <= Tcl_LongAsWide(LONG_MAX)) {			\
+	(objPtr)->typePtr = &tclIntType;				\
+	(objPtr)->internalRep.longValue = (longVar)			\
+		= Tcl_WideAsLong(wideVar);				\
+    }
+
+#define W0	Tcl_LongAsWide(0)
+/*
+ * For tracing that uses wide values.
+ */
+#define LLD				"%" TCL_LL_MODIFIER "d"
     case INST_MOD:
     {
 	/*
@@ -4416,6 +4543,7 @@ TclExecuteByteCode(
     }
 #endif
 
+    case INST_EXPON:
     case INST_ADD:
     case INST_SUB:
     case INST_DIV:
@@ -4500,6 +4628,13 @@ TclExecuteByteCode(
 
 		dResult = d1 / d2;
 		break;
+	    case INST_EXPON:
+		if (d1==0.0 && d2<0.0) {
+		    TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
+		    goto exponOfZero;
+		}
+		dResult = pow(d1, d2);
+		break;
 	    default:
 		/* Unused, here to silence compiler warning. */
 		dResult = 0;
@@ -4568,6 +4703,105 @@ TclExecuteByteCode(
 	    NEXT_INST_F(1, 1, 0);
 	}
 
+	/* Following section assumes BIGNUM_AUTO_NARROW */
+	/* TODO: Attempts to re-use unshared operands on stack */
+	if (*pc == INST_EXPON) {
+	    long l2 = 0;
+	    int oddExponent = 0, negativeExponent = 0;
+	    if (type2 == TCL_NUMBER_LONG) {
+		l2 = *((CONST long *)ptr2);
+		if (l2 == 0) {
+		    /* Anything to the zero power is 1 */
+		    objResultPtr = eePtr->constants[1];
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+	    switch (type2) {
+	    case TCL_NUMBER_LONG: {
+		negativeExponent = (l2 < 0);
+		oddExponent = (int) (l2 & 1);
+		break;
+	    }
+#ifndef NO_WIDE_TYPE
+	    case TCL_NUMBER_WIDE: {
+		Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
+		negativeExponent = (w2 < 0);
+		oddExponent = (int) (w2 & (Tcl_WideInt)1);
+		break;
+	    }
+#endif
+	    case TCL_NUMBER_BIG: {
+		mp_int big2;
+		if (Tcl_IsShared(value2Ptr)) {
+		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
+		} else {
+		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
+		}
+		negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
+		mp_mod_2d(&big2, 1, &big2);
+		oddExponent = !mp_iszero(&big2);
+		mp_clear(&big2);
+		break;
+	    }
+	    }
+
+	    if (negativeExponent) {
+		if (type1 == TCL_NUMBER_LONG) {
+		    long l1 = *((CONST long *)ptr1);
+		    switch (l1) {
+		    case 0:
+			/* zero to a negative power is div by zero error */
+			TRACE(("%s %s => EXPONENT OF ZERO\n", O2S(valuePtr),
+			    O2S(value2Ptr)));
+			goto exponOfZero;
+		    case -1:
+			if (oddExponent) {
+			    TclNewIntObj(objResultPtr, -1);
+			} else {
+			    objResultPtr = eePtr->constants[1];
+			}
+			NEXT_INST_F(1, 2, 1);
+		    case 1:
+			/* 1 to any power is 1 */
+			objResultPtr = eePtr->constants[1];
+			NEXT_INST_F(1, 2, 1);
+		    }
+		}
+		/* Integers with magnitude greater than 1 raise to a negative
+		 * power yield the answer zero (see TIP 123) */
+		objResultPtr = eePtr->constants[0];
+		NEXT_INST_F(1, 2, 1);
+	    }
+
+	    if (type1 == TCL_NUMBER_LONG) {
+		long l1 = *((CONST long *)ptr1);
+		switch (l1) {
+		case 0:
+		    /* zero to a positive power is zero */
+		    objResultPtr = eePtr->constants[0];
+		    NEXT_INST_F(1, 2, 1);
+		case 1:
+		    /* 1 to any power is 1 */
+		    objResultPtr = eePtr->constants[1];
+		    NEXT_INST_F(1, 2, 1);
+		case -1:
+		    if (oddExponent) {
+			TclNewIntObj(objResultPtr, -1);
+		    } else {
+			objResultPtr = eePtr->constants[1];
+		    }
+		    NEXT_INST_F(1, 2, 1);
+		}
+	    }
+
+	    if (type2 != TCL_NUMBER_LONG) {
+		result = TCL_ERROR;
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("exponent too large", -1));
+		goto checkForCatch;
+	    }
+	}
+
 	if ((*pc != INST_MULT)
 		&& (type1 != TCL_NUMBER_BIG) && (type2 != TCL_NUMBER_BIG)) {
 	    Tcl_WideInt w1, w2, wResult;
@@ -4624,6 +4858,35 @@ TclExecuteByteCode(
 		    wResult -= 1;
 		}
 		break;
+	    case INST_EXPON: {
+		/* TODO: smarter overflow detection ? */
+		int wasNegative;
+		if (w2 & 1) {
+		    wResult = w1;
+		} else {
+		    wResult = Tcl_LongAsWide(1);
+		}
+		w1 *= w1;
+		w2 /= 2;
+		for (; w2>Tcl_LongAsWide(1) ; w1*=w1,w2/=2) {
+		    wasNegative = (wResult < 0);
+		    if (w1 < 0) {
+			goto overflow;
+		    }
+		    if (w2 & 1) {
+			wResult *= w1;
+			if (wasNegative != (wResult < 0)) {
+			    goto overflow;
+			}
+		    }
+		}
+		wasNegative = (wResult < 0);
+		wResult *=  w1;
+		if (wasNegative != (wResult < 0)) {
+		    goto overflow;
+		}
+		break;
+	    }
 	    default:
 		/* Unused, here to silence compiler warning. */
 		wResult = 0;
@@ -4682,458 +4945,9 @@ TclExecuteByteCode(
 		    mp_sub_d(&bigResult, 1, &bigResult);
 		    mp_add(&bigRemainder, &big2, &bigRemainder);
 		}
-		if (*pc == INST_MOD) {
-		    mp_copy(&bigRemainder, &bigResult);
-		}
-		mp_clear(&bigRemainder);
-		break;
-	    }
-	    mp_clear(&big1);
-	    mp_clear(&big2);
-	    if (Tcl_IsShared(valuePtr)) {
-		objResultPtr = Tcl_NewBignumObj(&bigResult);
-		TRACE(("%s\n", O2S(objResultPtr)));
-		NEXT_INST_F(1, 2, 1);
-	    }
-	    Tcl_SetBignumObj(valuePtr, &bigResult);
-	    TRACE(("%s\n", O2S(valuePtr)));
-	    NEXT_INST_F(1, 1, 0);
-	}
-    }
-
-    case INST_MOD:
-    case INST_EXPON: {
-	/*
-	 * Operands must be numeric and ints get converted to floats if
-	 * necessary. We compute value op value2.
-	 */
-
-	double d1, d2;
-	double dResult = 0.0;		/* Init. avoids compiler warning. */
-	Tcl_Obj *valuePtr,*value2Ptr;
-#if 0
-	Tcl_ObjType *t1Ptr, *t2Ptr;
-	long i = 0, i2 = 0, quot;	/* Init. avoids compiler warning. */
-	long iResult = 0;		/* Init. avoids compiler warning. */
-	int doDouble = 0;		/* 1 if doing floating arithmetic */
-	Tcl_WideInt w, w2, wquot;
-	Tcl_WideInt wResult = W0;	/* Init. avoids compiler warning. */
-	int doWide = 0;			/* 1 if doing wide arithmetic. */
-	int length;
-
-	value2Ptr = *tosPtr;
-	valuePtr  = *(tosPtr - 1);
-	t1Ptr = valuePtr->typePtr;
-	t2Ptr = value2Ptr->typePtr;
-
-	if (t1Ptr == &tclIntType) {
-	    i = valuePtr->internalRep.longValue;
-	} else if (t1Ptr == &tclWideIntType) {
-	    TclGetWide(w,valuePtr);
-	} else if ((t1Ptr == &tclDoubleType) && (valuePtr->bytes == NULL)) {
-	    /*
-	     * We can only use the internal rep directly if there is no string
-	     * rep. Otherwise the string rep might actually look like an
-	     * integer, which is preferred.
-	     */
-
-	    d1 = valuePtr->internalRep.doubleValue;
-	} else {
-	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	    if (TclLooksLikeInt(s, length)) {
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
-	    } else {
-		result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-			valuePtr, &d1);
-	    }
-	    if (result != TCL_OK) {
-		TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
-			s, O2S(valuePtr),
-			(valuePtr->typePtr? valuePtr->typePtr->name: "null")));
-		IllegalExprOperandType(interp, pc, valuePtr);
-		goto checkForCatch;
-	    }
-	    t1Ptr = valuePtr->typePtr;
-	}
-
-	if (t2Ptr == &tclIntType) {
-	    i2 = value2Ptr->internalRep.longValue;
-	} else if (t2Ptr == &tclWideIntType) {
-	    TclGetWide(w2,value2Ptr);
-	} else if ((t2Ptr == &tclDoubleType) && (value2Ptr->bytes == NULL)) {
-	    /*
-	     * We can only use the internal rep directly if there is no string
-	     * rep.  Otherwise the string rep might actually look like an
-	     * integer, which is preferred.
-	     */
-
-	    d2 = value2Ptr->internalRep.doubleValue;
-	} else {
-	    char *s = Tcl_GetStringFromObj(value2Ptr, &length);
-	    if (TclLooksLikeInt(s, length)) {
-		GET_WIDE_OR_INT(result, value2Ptr, i2, w2);
-	    } else {
-		result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-			value2Ptr, &d2);
-	    }
-	    if (result != TCL_OK) {
-		TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
-			O2S(value2Ptr), s,
-			(value2Ptr->typePtr?
-			    value2Ptr->typePtr->name : "null")));
-		IllegalExprOperandType(interp, pc, value2Ptr);
-		goto checkForCatch;
-	    }
-	    t2Ptr = value2Ptr->typePtr;
-	}
-
-	if ((t1Ptr == &tclDoubleType) || (t2Ptr == &tclDoubleType)) {
-	    /*
-	     * Do double arithmetic.
-	     */
-	    doDouble = 1;
-	    if (t1Ptr == &tclIntType) {
-		d1 = i;		/* promote value 1 to double */
-	    } else if (t2Ptr == &tclIntType) {
-		d2 = i2;	/* promote value 2 to double */
-	    } else if (t1Ptr == &tclWideIntType) {
-		d1 = Tcl_WideAsDouble(w);
-	    } else if (t2Ptr == &tclWideIntType) {
-		d2 = Tcl_WideAsDouble(w2);
-	    }
-	    switch (*pc) {
-	    case INST_ADD:
-		dResult = d1 + d2;
-		break;
-	    case INST_SUB:
-		dResult = d1 - d2;
-		break;
-	    case INST_MULT:
-		dResult = d1 * d2;
-		break;
-	    case INST_EXPON:
-		if (d1==0.0 && d2<0.0) {
-		    TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
-		    goto exponOfZero;
-		}
-		dResult = pow(d1, d2);
-		break;
-	    }
-
-	    /*
-	     * Check now for IEEE floating-point error.
-	     */
-
-	    if (IS_NAN(dResult)) {
-		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
-			O2S(valuePtr), O2S(value2Ptr)));
-		TclExprFloatError(interp, dResult);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	} else if ((t1Ptr == &tclWideIntType) || (t2Ptr == &tclWideIntType)) {
-	    /*
-	     * Do wide integer arithmetic.
-	     */
-	    doWide = 1;
-	    if (t1Ptr == &tclIntType) {
-		w = Tcl_LongAsWide(i);
-	    } else if (t2Ptr == &tclIntType) {
-		w2 = Tcl_LongAsWide(i2);
-	    }
-	    switch (*pc) {
-	    case INST_ADD:
-		wResult = w + w2;
-		break;
-	    case INST_SUB:
-		wResult = w - w2;
-		break;
-	    case INST_MULT:
-		wResult = w * w2;
-		break;
-	    case INST_DIV:
-		/*
-		 * When performing integer division, protect against integer
-		 * overflow. Round towards zero when the quotient is positive,
-		 * otherwise round towards -Infinity.
-		 */
-		if (w2 == W0) {
-		    TRACE((LLD" "LLD" => DIVIDE BY ZERO\n", w, w2));
-		    goto divideByZero;
-		}
-		if (w == LLONG_MIN && w2 == -1) {
-		    /* Avoid integer overflow on (LLONG_MIN / -1) */
-		    wquot = LLONG_MIN;
-		} else {
-		    wquot = w / w2;
-		    /*
-		     * Round down to a smaller negative number if there is a
-		     * remainder and the quotient is negative or zero and the
-		     * signs don't match.  Note that we don't use a modulus to
-		     * find the remainder since it is not well defined in C
-		     * when the divisor is negative.
-		     */
-		    if (((wquot < 0) || ((wquot == 0) &&
-			    ((w < 0 && w2 > 0) || (w > 0 && w2 < 0)))) &&
-			    ((wquot * w2) != w)) {
-			wquot -= 1;
-		    }
-		}
-		wResult = wquot;
-		break;
-	    case INST_EXPON: {
-		int errExpon;
-
-		wResult = ExponWide(w, w2, &errExpon);
-		if (errExpon) {
-		    TRACE((LLD" "LLD" => EXPONENT OF ZERO\n", w, w2));
-		    goto exponOfZero;
-		}
-		break;
-	    }
-	    }
-	} else {
-	    /*
-	     * Do integer arithmetic.
-	     */
-	    switch (*pc) {
-	    case INST_ADD:
-		iResult = i + i2;
-		break;
-	    case INST_SUB:
-		iResult = i - i2;
-		break;
-	    case INST_MULT:
-		iResult = i * i2;
-		break;
-	    case INST_DIV:
-		/*
-		 * When performing integer division, protect against integer
-		 * overflow. Round towards zero when the quotient is positive,
-		 * otherwise round towards -Infinity.
-		 */
-		if (i2 == 0) {
-		    TRACE(("%ld %ld => DIVIDE BY ZERO\n", i, i2));
-		    goto divideByZero;
-		}
-		if (i == LONG_MIN && i2 == -1) {
-		    /* Avoid integer overflow on (LONG_MIN / -1) */
-		    quot = LONG_MIN;
-		} else {
-		    quot = i / i2;
-		    /*
-		     * Round down to a smaller negative number if there is a
-		     * remainder and the quotient is negative or zero and the
-		     * signs don't match.  Note that we don't use a modulus to
-		     * find the remainder since it is not well defined in C
-		     * when the divisor is negative.
-		     */
-		    if (((quot < 0) || ((quot == 0) &&
-			    ((i<0 && i2>0) || (i>0 && i2<0)))) &&
-			    ((quot * i2) != i)) {
-			quot -= 1;
-		    }
-		}
-		iResult = quot;
-		break;
-	    case INST_EXPON: {
-		int errExpon;
-
-		iResult = ExponLong(i, i2, &errExpon);
-		if (errExpon) {
-		    TRACE(("%ld %ld => EXPONENT OF ZERO\n", i, i2));
-		    goto exponOfZero;
-		}
-		break;
-	    }
-	    }
-	}
-
-	/*
-	 * Reuse the valuePtr object already on stack if possible.
-	 */
-
-	if (Tcl_IsShared(valuePtr)) {
-	    if (doDouble) {
-		TclNewDoubleObj(objResultPtr, dResult);
-		TRACE(("%.6g %.6g => %.6g\n", d1, d2, dResult));
-	    } else if (doWide) {
-		TclNewWideIntObj(objResultPtr, wResult);
-		TRACE((LLD" "LLD" => "LLD"\n", w, w2, wResult));
-	    } else {
-		TclNewLongObj(objResultPtr, iResult);
-		TRACE(("%ld %ld => %ld\n", i, i2, iResult));
-	    }
-	    NEXT_INST_F(1, 2, 1);
-	} else {	    /* reuse the valuePtr object */
-	    if (doDouble) { /* NB: stack top is off by 1 */
-		TRACE(("%.6g %.6g => %.6g\n", d1, d2, dResult));
-		TclSetDoubleObj(valuePtr, dResult);
-	    } else if (doWide) {
-		TRACE((LLD" "LLD" => "LLD"\n", w, w2, wResult));
-		TclSetWideIntObj(valuePtr, wResult);
-	    } else {
-		TRACE(("%ld %ld => %ld\n", i, i2, iResult));
-		TclSetLongObj(valuePtr, iResult);
-	    }
-	    NEXT_INST_F(1, 1, 0);
-	}
-#else
-	value2Ptr = *tosPtr;
-	valuePtr = *(tosPtr - 1);
-	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d1);
-	if (result != TCL_OK) {
-#ifdef ACCEPT_NAN
-	    if (valuePtr->typePtr == &tclDoubleType) {
-		/* NaN first argument -> result is also NaN */
-		result = TCL_OK;
-		NEXT_INST_F(1, 1, 0);
-	    }
-#endif
-	    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
-		    O2S(value2Ptr), O2S(valuePtr),
-		    (valuePtr->typePtr? valuePtr->typePtr->name: "null")));
-	    IllegalExprOperandType(interp, pc, valuePtr);
-	    goto checkForCatch;
-	}
-	result = Tcl_GetDoubleFromObj(NULL, value2Ptr, &d2);
-	if (result != TCL_OK) {
-#ifdef ACCEPT_NAN
-	    if (value2Ptr->typePtr == &tclDoubleType) {
-		/* NaN second argument -> result is also NaN */
-		objResultPtr = value2Ptr;
-		result = TCL_OK;
-		NEXT_INST_F(1, 2, 1);
-	    }
-#endif
-	    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
-		    O2S(value2Ptr), O2S(valuePtr),
-		    (value2Ptr->typePtr? value2Ptr->typePtr->name: "null")));
-	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    goto checkForCatch;
-	}
-	if (valuePtr->typePtr == &tclDoubleType
-		|| value2Ptr->typePtr == &tclDoubleType) {
-	    /* At least one of the values is floating-point, so perform
-	     * floating point calculations */
-	    switch (*pc) {
-	    case INST_EXPON:
-		if (d1==0.0 && d2<0.0) {
-		    TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
-		    goto exponOfZero;
-		}
-		dResult = pow(d1, d2);
-		break;
-	    case INST_MOD:
-		if (valuePtr->typePtr == &tclDoubleType) {
-		    TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
-			    O2S(value2Ptr), O2S(valuePtr), (valuePtr->typePtr?
-			    valuePtr->typePtr->name: "null")));
-		    IllegalExprOperandType(interp, pc, valuePtr);
-		} else {
-		    TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
-			    O2S(value2Ptr), O2S(valuePtr), (value2Ptr->typePtr?
-			    value2Ptr->typePtr->name: "null")));
-		    IllegalExprOperandType(interp, pc, value2Ptr);
-		}
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-#ifndef ACCEPT_NAN
-	    /*
-	     * Check now for IEEE floating-point error.
-	     */
-
-	    if (TclIsNaN(dResult)) {
-		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
-			O2S(valuePtr), O2S(value2Ptr)));
-		TclExprFloatError(interp, dResult);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-#endif
-	    if (Tcl_IsShared(valuePtr)) {
-		TclNewDoubleObj(objResultPtr, dResult);
-		NEXT_INST_F(1, 2, 1);
-	    }
-	    TclSetDoubleObj(valuePtr, dResult);
-	    NEXT_INST_F(1, 1, 0);
-	} else {
-	    /* Both values are some kind of integer */
-	    /* TODO: optimize use of narrower native integers */
-	    mp_int big1, big2, bigResult, bigRemainder;
-
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    mp_init(&bigResult);
-	    switch (*pc) {
-	    case INST_MOD:
-		if (mp_iszero(&big2)) {
-		    TRACE(("%s %s => DIVIDE BY ZERO\n", O2S(valuePtr),
-			    O2S(value2Ptr)));
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    goto divideByZero;
-		}
-		mp_init(&bigRemainder);
-		mp_div(&big1, &big2, &bigResult, &bigRemainder);
-		if (!mp_iszero(&bigRemainder)
-			&& (bigRemainder.sign != big2.sign)) {
-		    /* Convert to Tcl's integer division rules */
-		    mp_sub_d(&bigResult, 1, &bigResult);
-		    mp_add(&bigRemainder, &big2, &bigRemainder);
-		}
-		if (*pc == INST_MOD) {
-		    mp_copy(&bigRemainder, &bigResult);
-		}
 		mp_clear(&bigRemainder);
 		break;
 	    case INST_EXPON:
-		if (mp_iszero(&big2)) {
-		    /* Anything to the zero power is 1 */
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    objResultPtr = eePtr->constants[1];
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (mp_iszero(&big1)) {
-		    if (mp_cmp_d(&big2, 0) == MP_LT) {
-			TRACE(("%s %s => EXPONENT OF ZERO\n", O2S(valuePtr),
-			    O2S(value2Ptr)));
-			mp_clear(&big1);
-			mp_clear(&big2);
-			goto exponOfZero;
-		    }
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    objResultPtr = eePtr->constants[0];
-		    NEXT_INST_F(1, 2, 1);
-		}
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
-		    switch (mp_cmp_d(&big1, 1)) {
-		    case MP_GT:
-			objResultPtr = eePtr->constants[0];
-			break;
-		    case MP_EQ:
-			objResultPtr = eePtr->constants[1];
-			break;
-		    case MP_LT:
-			mp_add_d(&big1, 1, &big1);
-			if (mp_cmp_d(&big1, 0) == MP_LT) {
-			    objResultPtr = eePtr->constants[0];
-			    break;
-			}
-			mp_mod_2d(&big2, 1, &big2);
-			if (mp_iszero(&big2)) {
-			    objResultPtr = eePtr->constants[1];
-			} else {
-			    TclNewIntObj(objResultPtr, -1);
-			}
-		    }
-		    mp_clear(&big1);
-		    mp_clear(&big2);
-		    NEXT_INST_F(1, 2, 1);
-		}
 		if (big2.used > 1) {
 		    Tcl_SetObjResult(interp,
 			    Tcl_NewStringObj("exponent too large", -1));
@@ -5146,7 +4960,6 @@ TclExecuteByteCode(
 	    }
 	    mp_clear(&big1);
 	    mp_clear(&big2);
-	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_NewBignumObj(&bigResult);
 		TRACE(("%s\n", O2S(objResultPtr)));
@@ -5156,7 +4969,6 @@ TclExecuteByteCode(
 	    TRACE(("%s\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 1, 0);
 	}
-#endif
     }
 
     case INST_LNOT: {
@@ -5203,7 +5015,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F(1, 0, 0);
 	}
 #ifndef NO_WIDE_TYPE
-	if (type == TCL_NUMBER_LONG) {
+	if (type == TCL_NUMBER_WIDE) {
 	    Tcl_WideInt w = *((CONST Tcl_WideInt *)ptr);
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_NewWideIntObj(~w);
@@ -7346,143 +7158,6 @@ StringForResultCode(
     return buf;
 }
 #endif /* TCL_COMPILE_DEBUG */
-#if 0
-
-/*
- *----------------------------------------------------------------------
- *
- * ExponWide --
- *
- *	Procedure to return w**w2 as wide integer
- *
- * Results:
- *	Return value is w to the power w2, unless the computation makes no
- *	sense mathematically. In that case *errExpon is set to 1.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_WideInt
-ExponWide(
-    Tcl_WideInt w,		/* The value that must be exponentiated */
-    Tcl_WideInt w2,		/* The exponent */
-    int *errExpon)		/* Error code */
-{
-    Tcl_WideInt result;
-
-    *errExpon = 0;
-
-    /*
-     * Check for possible errors and simple/edge cases
-     */
-
-    if (w == 0) {
-	if (w2 < 0) {
-	    *errExpon = 1;
-	    return W0;
-	} else if (w2 > 0) {
-	    return W0;
-	}
-	return Tcl_LongAsWide(1); /* By definition and analysis */
-    } else if (w < -1) {
-	if (w2 < 0) {
-	    return W0;
-	} else if (w2 == 0) {
-	    return Tcl_LongAsWide(1);
-	}
-    } else if (w == -1) {
-	return (w2 & 1) ? Tcl_LongAsWide(-1) :  Tcl_LongAsWide(1);
-    } else if ((w == 1) || (w2 == 0)) {
-	return Tcl_LongAsWide(1);
-    } else if (w>1 && w2<0) {
-	return W0;
-    }
-
-    /*
-     * The general case.
-     */
-
-    result = Tcl_LongAsWide(1);
-    for (; w2>Tcl_LongAsWide(1) ; w*=w,w2/=2) {
-	if (w2 & 1) {
-	    result *= w;
-	}
-    }
-    return result * w;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ExponLong --
- *
- *	Procedure to return i**i2 as long integer
- *
- * Results:
- *	Return value is i to the power i2, unless the computation makes no
- *	sense mathematically. In that case *errExpon is set to 1.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static long
-ExponLong(
-    long i,			/* The value that must be exponentiated */
-    long i2,			/* The exponent */
-    int *errExpon)		/* Error code */
-{
-    long result;
-
-    *errExpon = 0;
-
-    /*
-     * Check for possible errors and simple cases
-     */
-
-    if (i == 0) {
-	if (i2 < 0) {
-	    *errExpon = 1;
-	    return 0L;
-	} else if (i2 > 0) {
-	    return 0L;
-	}
-	/*
-	 * By definition and analysis, 0**0 is 1.
-	 */
-	return 1L;
-    } else if (i < -1) {
-	if (i2 < 0) {
-	    return 0L;
-	} else if (i2 == 0) {
-	    return 1L;
-	}
-    } else if (i == -1) {
-	return (i2&1) ? -1L : 1L;
-    } else if ((i == 1) || (i2 == 0)) {
-	return 1L;
-    } else if (i > 1 && i2 < 0) {
-	return 0L;
-    }
-
-    /*
-     * The general case
-     */
-
-    result = 1;
-    for (; i2>1 ; i*=i,i2/=2) {
-	if (i2 & 1) {
-	    result *= i;
-	}
-    }
-    return result * i;
-}
-#endif
 
 /*
  * Local Variables:

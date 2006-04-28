@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.7.20.3 2006/02/23 14:45:27 dgp Exp $
+# RCS: @(#) $Id: indexObj.test,v 1.7.20.4 2006/04/28 16:09:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -38,6 +38,12 @@ test indexObj-1.6 {forced exact match} testindexobj {
 test indexObj-1.7 {forced exact match} testindexobj {
     testindexobj 1 0 x abc def xalb xyz alm x
 } {5}
+test indexObj-1.8 {exact match of empty values} testindexobj {
+    testindexobj 1 1 {} a aa aaa {} b bb bbb
+} 3
+test indexObj-1.9 {exact match of empty values} testindexobj {
+    testindexobj 1 0 {} a aa aaa {} b bb bbb
+} 3
 
 test indexObj-2.1 {no match} testindexobj {
     list [catch {testindexobj 1 1 dddd abc def xalb xyz alm x} msg] $msg
@@ -54,9 +60,22 @@ test indexObj-2.4 {ambiguous value} testindexobj {
 test indexObj-2.5 {omit error message} testindexobj {
     list [catch {testindexobj 0 1 d x} msg] $msg
 } {1 {}}
-test indexObj-2.6 {TCL_EXACT => no "ambiguous" error message} {
+test indexObj-2.6 {TCL_EXACT => no "ambiguous" error message} testindexobj {
     list [catch {testindexobj 1 0 d dumb daughter a c} msg] $msg
 } {1 {bad token "d": must be dumb, daughter, a, or c}}
+test indexObj-2.7 {exact match of empty values} testindexobj {
+    list [catch {testindexobj 1 1 {} a b c} msg] $msg
+} {1 {ambiguous token "": must be a, b, or c}}
+test indexObj-2.8 {exact match of empty values: singleton case} testindexobj {
+    list [catch {testindexobj 1 0 {} a} msg] $msg
+} {1 {bad token "": must be a}}
+test indexObj-2.9 {non-exact match of empty values: singleton case} testindexobj {
+    # NOTE this is a special case.  Although the empty string is a
+    # unique prefix, we have an established history of rejecting
+    # empty lookup keys, requiring any unique prefix match to have
+    # at least one character.
+    list [catch {testindexobj 1 1 {} a} msg] $msg
+} {1 {bad token "": must be a}}
 
 test indexObj-3.1 {cache result to skip next lookup} testindexobj {
     testindexobj check 42
@@ -114,3 +133,7 @@ test indexObj-6.4 {Tcl_GetIndexFromObjStruct} testindexobj {
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

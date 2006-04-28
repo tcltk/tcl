@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.10 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.11 2006/04/28 16:09:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1413,7 +1413,8 @@ GetFormatSpec(
  *
  * NeedReversing --
  *
- *	This routine determines, if bytes of a number need to be reversed.
+ *	This routine determines, if bytes of a number need to be re-ordered,
+ *	and returns a numeric code indicating the re-ordering to be done.
  *	This depends on the endiannes of the machine and the desired format.
  *	It is in effect a table (whose contents depend on the endianness of
  *	the system) describing whether a value needs reversing or not. Anyone
@@ -1423,7 +1424,10 @@ GetFormatSpec(
  *	Windows) don't need to do anything.
  *
  * Results:
- *	1 if reversion is required, 0 if not.
+ * 	0	No re-ordering needed.
+ * 	1	Reverse the bytes:	01234567 <-> 76543210 (little to big)
+ * 	2	Apply this re-ordering: 01234567 <-> 45670123 (Nokia to little)
+ * 	3	Apply this re-ordering: 01234567 <-> 32107654 (Nokia to big)
  *
  * Side effects:
  *	None
@@ -1448,12 +1452,11 @@ NeedReversing(
     case 'n':
     case 't':
     case 'm':
-	/* f+d: reverse if we're little-endian */
+	/* f: reverse if we're little-endian */
     case 'Q':
     case 'R':
 #else /* !WORDS_BIGENDIAN */
 	/* small endian floats: reverse if we're big-endian */
-    case 'q':
     case 'r':
 #endif /* WORDS_BIGENDIAN */
 	return 0;
@@ -1467,8 +1470,7 @@ NeedReversing(
     case 'n':
     case 't':
     case 'm':
-	/* f+d: reverse if we're little-endian */
-    case 'Q':
+	/* f: reverse if we're little-endian */
     case 'R':
 #endif /* WORDS_BIGENDIAN */
 	/* small endian ints: always reverse */
@@ -1476,6 +1478,24 @@ NeedReversing(
     case 's':
     case 'w':
 	return 1;
+
+#ifndef WORDS_BIGENDIAN
+    /*
+     * The Q and q formats need special handling to account for the
+     * unusual byte ordering of 8-byte floats on Nokia 770 systems, which
+     * claim to be little-endian, but also reverse word order.
+     */
+    case 'Q':
+	if (TclNokia770Doubles()) {
+	    return 3;
+	}
+	return 1;
+    case 'q':
+	if (TclNokia770Doubles()) {
+	    return 2;
+	}
+	return 0;
+#endif
     }
 
     Tcl_Panic("unexpected fall-through");
@@ -1508,7 +1528,11 @@ CopyNumber(
     unsigned int length,	/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
 {
-    if (NeedReversing(type)) {
+    switch (NeedReversing(type)) {
+    case 0: 
+	memcpy(to, from, length);
+	break;
+    case 1: {
 	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
 	unsigned char *toPtr = (unsigned char *) to;
 
@@ -1530,8 +1554,36 @@ CopyNumber(
 	    toPtr[7] = fromPtr[0];
 	    break;
 	}
-    } else {
-	memcpy(to, from, length);
+	break;
+    }
+    case 2: {
+	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
+	unsigned char *toPtr = (unsigned char *) to;
+
+	toPtr[0] = fromPtr[4];
+	toPtr[1] = fromPtr[5];
+	toPtr[2] = fromPtr[6];
+	toPtr[3] = fromPtr[7];
+	toPtr[4] = fromPtr[0];
+	toPtr[5] = fromPtr[1];
+	toPtr[6] = fromPtr[2];
+	toPtr[7] = fromPtr[3];
+	break;
+    }
+    case 3: {
+	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
+	unsigned char *toPtr = (unsigned char *) to;
+
+	toPtr[0] = fromPtr[3];
+	toPtr[1] = fromPtr[2];
+	toPtr[2] = fromPtr[1];
+	toPtr[3] = fromPtr[0];
+	toPtr[4] = fromPtr[7];
+	toPtr[5] = fromPtr[6];
+	toPtr[6] = fromPtr[5];
+	toPtr[7] = fromPtr[4];
+	break;
+    }
     }
 }
 

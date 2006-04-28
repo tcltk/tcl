@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetIndex.3,v 1.10.4.5 2005/04/07 17:31:59 dgp Exp $
+'\" RCS: @(#) $Id: GetIndex.3,v 1.10.4.6 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -60,7 +60,7 @@ an object must be one of a predefined set of values.
 \fIObjPtr\fR is compared against each of
 the strings in \fItablePtr\fR to find a match.  A match occurs if
 \fIobjPtr\fR's string value is identical to one of the strings in
-\fItablePtr\fR, or if it is a unique abbreviation
+\fItablePtr\fR, or if it is a non-empty unique abbreviation
 for exactly one of the strings in \fItablePtr\fR and the
 \fBTCL_EXACT\fR flag was not specified; in either case
 the index of the matching entry is stored at \fI*indexPtr\fR

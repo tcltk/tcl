@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.9 2005/06/22 21:12:05 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.10 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -22,9 +22,10 @@ expr \- Evaluate an expression
 .PP
 Concatenates \fIarg\fRs (adding separator spaces between them),
 evaluates the result as a Tcl expression, and returns the value.
-The operators permitted in Tcl expressions are a subset of
-the operators permitted in C expressions, and they have the
-same meaning and precedence as the corresponding C operators.
+The operators permitted in Tcl expressions include a subset of
+the operators permitted in C expressions.  For those operators
+common to both Tcl and C, Tcl applies the same meaning and precedence
+as the corresponding C operators.
 Expressions almost always yield numeric results
 (integer or floating-point values).
 For example, the expression
@@ -34,7 +35,8 @@ For example, the expression
 evaluates to 14.2.
 Tcl expressions differ from C expressions in the way that
 operands are specified.  Also, Tcl expressions support
-non-numeric operands and string comparisons.
+non-numeric operands and string comparisons, as well as some
+additional operators not found in C.
 .SS OPERANDS
 .PP
 A Tcl expression consists of a combination of operands, operators,
@@ -42,25 +44,28 @@ and parentheses.
 White space may be used between the operands and operators and
 parentheses; it is ignored by the expression's instructions.
 Where possible, operands are interpreted as integer values.
-Integer values may be specified in decimal (the normal case), in octal (if the
-first character of the operand is \fB0\fR), or in hexadecimal (if the first
-two characters of the operand are \fB0x\fR).
+.VS 8.5
+Integer values may be specified in decimal (the normal case), in binary
+(if the first two characters of the operand are \fB0b\fR), in octal
+(if the first two characters of the operand are \fB0o\fR), or in hexadecimal
+(if the first two characters of the operand are \fB0x\fR).  For
+compatibility with older Tcl releases, an octal integer value is also
+indicated simply when the first character of the operand is \fB0\fR,
+whether or not the second character is also \fBo\fR.
 If an operand does not have one of the integer formats given
 above, then it is treated as a floating-point number if that is
-possible.  Floating-point numbers may be specified in any of the
-ways accepted by an ANSI-compliant C compiler (except that the
-\fBf\fR, \fBF\fR, \fBl\fR, and \fBL\fR suffixes will not be permitted in
-most installations).  For example, all of the
+possible.  Floating-point numbers may be specified in any of several
+common formats making use of the decimal digits, the decimal point \fB.\fR,
+the characters \fBe\fR or \fBE\fR indicating scientific notation, and
+the sign characters \fB+\fR or \fB-\fR.  For example, all of the
 following are valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
+Also recognized as floating point values are the strings \fBInf\fR
+and \fBNaN\fR making use of any case for each character.
+.VE 8.5
 If no numeric interpretation is possible (note that all literal
 operands that are not numeric or boolean must be quoted with either
 braces or with double quotes), then an operand is left as a string
 (and only a limited set of operators may be applied to it).
-.PP
-On 32-bit systems, integer values MAX_INT (0x7FFFFFFF) and MIN_INT
-(-0x80000000) will be represented as 32-bit values, and integer values
-outside that range will be represented as 64-bit values (if that is
-possible at all.)
 .PP
 Operands may be specified in any of the following ways:
 .IP [1]
@@ -235,16 +240,23 @@ available by default.
 .VE 8.5
 .SS "TYPES, OVERFLOW, AND PRECISION"
 .PP
-All internal computations involving integers are done with the C type
-\fIlong\fR, and all internal computations involving floating-point are
+.VS 8.5
+All internal computations involving integers are done calling on the
+LibTomMath multiple precision integer library as required so that all
+integer calculations are performed exactly.  Note that in Tcl releases
+prior to 8.5, integer calculations were performed with one of the C types
+\fIlong int\fR or \fITcl_WideInt\fR, causing implicit range truncation
+in those calculations where values overflowed the range of those types.
+Any code that relied on these implicit trunctions will need to explicitly
+add \fBint()\fR or \fBwide()\fR function calls to expressions at the points
+where such truncation is required to take place.
+.VE 8.5
+.PP
+All internal computations involving floating-point are
 done with the C type \fIdouble\fR.
 When converting a string to floating-point, exponent overflow is
-detected and results in a Tcl error.
-For conversion to integer from string, detection of overflow depends
-on the behavior of some routines in the local C library, so it should
-be regarded as unreliable.
-In any case, integer overflow and underflow are generally not detected
-reliably for intermediate results.  Floating-point overflow and underflow
+detected and results in the \fIdouble\fR value of \fBInf\fR or
+\fB-Inf\fR as appropriate.  Floating-point overflow and underflow
 are detected to the degree supported by the hardware, which is generally
 pretty reliable.
 .PP
@@ -276,10 +288,12 @@ although the expression evaluator tries to do comparisons as integer
 or floating-point when it can,
 except in the case of the \fBeq\fR and \fBne\fR operators.
 If one of the operands of a comparison is a string and the other
-has a numeric value, the numeric operand is converted back to
-a string using the C \fIsprintf\fR format specifier
-\fB%d\fR for integers and \fB%g\fR for floating-point values.
-For example, the commands
+has a numeric value, a canonical string representation of the numeric
+operand value is generated to compare with the string operand.
+Canonical string representation for integer values is a decimal string
+format.  Canonical string representation for floating-point values
+is that produced by the \fB%g\fR format specifier of Tcl's
+\fBformat\fR command.  For example, the commands
 .CS
 \fBexpr {"0x03" > "2"}\fR
 \fBexpr {"0y" < "0x12"}\fR

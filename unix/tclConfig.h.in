@@ -289,10 +289,6 @@
 /* Is Tcl built as a framework? */
 #undef TCL_FRAMEWORK
 
-/* Use better emulation of non-blocking channels for channels without
-   BlockModeProc? */
-#undef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
-
 /* Can this platform load code from memory? */
 #undef TCL_LOAD_FROM_MEMORY
 

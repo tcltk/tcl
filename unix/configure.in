@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.16 2006/01/25 18:39:58 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.17 2006/04/28 16:10:45 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -565,13 +565,6 @@ elif test "$prefix/lib" != "$libdir"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"
-fi
-
-# If a system share directory like /usr/local/share already exists, then add
-# it to the package search path.
-
-if test -d "${prefix}/share" ; then
-    TCL_PACKAGE_PATH="${TCL_PACKAGE_PATH} ${prefix}/share"
 fi
 
 #--------------------------------------------------------------------

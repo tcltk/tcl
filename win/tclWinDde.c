@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.10 2006/01/25 18:39:59 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.11 2006/04/28 16:10:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -81,7 +81,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.3.1"
+#define TCL_DDE_VERSION		"1.3.2"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	"$TCLEVAL$EXECUTE$RESULT"
@@ -377,6 +377,8 @@ DdeSetServerName(
 		}
 	    }
 	}
+	Tcl_DStringSetLength(&dString,
+		offset + strlen(Tcl_DStringValue(&dString)+offset));
     }
 
     /*

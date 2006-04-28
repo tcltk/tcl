@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: mathfunc.n,v 1.2.2.7 2006/01/25 18:38:26 dgp Exp $
+'\" RCS: @(#) $Id: mathfunc.n,v 1.2.2.8 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
 .TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
@@ -37,6 +37,10 @@ package require \fBTcl 8.5\fR
 .br
 \fB::tcl::mathfunc::double\fR \fIarg\fR
 .br
+.VS 8.5
+\fB::tcl::mathfunc::entier\fR \fIarg\fR
+.br
+.VE 8.5
 \fB::tcl::mathfunc::exp\fR \fIarg\fR
 .br
 \fB::tcl::mathfunc::floor\fR \fIarg\fR
@@ -93,12 +97,12 @@ of which work solely with floating-point numbers unless otherwise noted:
 .ta 3c 6c 9c
 \fBabs\fR	\fBacos\fR	\fBasin\fR	\fBatan\fR
 \fBatan2\fR	\fBbool\fR	\fBceil\fR	\fBcos\fR
-\fBcosh\fR	\fBdouble\fR	\fBexp\fR	\fBfloor\fR
-\fBfmod\fR	\fBhypot\fR	\fBint\fR	\fBlog\fR
-\fBlog10\fR	\fBmax\fR	\fBmin\fR	\fBpow\fR
-\fBrand\fR	\fBround\fR	\fBsin\fR	\fBsinh\fR
-\fBsqrt\fR	\fBsrand\fR	\fBtan\fR	\fBtanh\fR
-\fBwide\fR
+\fBcosh\fR	\fBdouble\fR	\fBentier\fR	\fBexp\fR
+\fBfloor\fR	\fBfmod\fR	\fBhypot\fR	\fBint\fR
+\fBlog\fR	\fBlog10\fR	\fBmax\fR	\fBmin\fR
+\fBpow\fR	\fBrand\fR	\fBround\fR	\fBsin\fR
+\fBsinh\fR	\fBsqrt\fR	\fBsrand\fR	\fBtan\fR
+\fBtanh\fR	\fBwide\fR
 .DE
 .PP
 .TP
@@ -124,7 +128,7 @@ radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
 than \fI0\fR, this is equivalent to \fBatan(\fIy/x\fB)\fR.
 .TP
 \fBbool(\fIarg\fB)\fR
-Accepts any numerical value, or any string acceptable to
+Accepts any numeric value, or any string acceptable to
 \fBstring is boolean\fR, and returns the corresponding 
 boolean value \fB0\fR or \fB1\fR.  Non-zero numbers are true.
 Other numbers are false.  Non-numeric strings produce boolean value in
@@ -132,7 +136,8 @@ agreement with \fBstring is true\fR and \fBstring is false\fR.
 .TP
 \fBceil(\fIarg\fB)\fR
 Returns the smallest integral floating-point value (i.e. with a zero
-fractional part) not less than \fIarg\fR.
+fractional part) not less than \fIarg\fR.  The argument may be any
+numeric value.
 .TP
 \fBcos(\fIarg\fB)\fR
 Returns the cosine of \fIarg\fR, measured in radians.
@@ -142,16 +147,28 @@ Returns the hyperbolic cosine of \fIarg\fR.  If the result would cause
 an overflow, an error is returned.
 .TP
 \fBdouble(\fIarg\fB)\fR
+The argument may be any numeric value,
 If \fIarg\fR is a floating-point value, returns \fIarg\fR, otherwise converts
-\fIarg\fR to floating-point and returns the converted value.
+\fIarg\fR to floating-point and returns the converted value.  May return
+\fBInf\fR or \fB-Inf\fR when the argument is a numeric value that exceeds
+the floating-point range.
 .TP
+\fBentier(\fIarg\fB)\fR
+.VS 8.5
+The argument may be any numeric value.  The integer part of \fIarg\fR
+is determined and returned.  The integer range returned by this function
+is unlimited, unlike functions \fBint()\fR and \fBwide()\fR which
+truncate their range to fit in particular storage widths.
+.TP
+.VE 8.5
 \fBexp(\fIarg\fB)\fR
 Returns the exponential of \fIarg\fR, defined as \fIe\fR**\fIarg\fR.
 If the result would cause an overflow, an error is returned.
 .TP
 \fBfloor(\fIarg\fB)\fR
 Returns the largest integral floating-point value (i.e. with a zero
-fractional part) not greater than \fIarg\fR.
+fractional part) not greater than \fIarg\fR.  The argument may be
+any numeric value.
 .TP
 \fBfmod(\fIx, y\fB)\fR
 Returns the floating-point remainder of the division of \fIx\fR by
@@ -162,11 +179,11 @@ Computes the length of the hypotenuse of a right-angled triangle
 \fBsqrt(\fIx\fR*\fIx\fR+\fIy\fR*\fIy\fB)\fR.
 .TP
 \fBint(\fIarg\fB)\fR
-If \fIarg\fR is an integer value of the same width as the machine
-word, returns \fIarg\fR, otherwise
-converts \fIarg\fR to an integer (of the same size as a machine word,
-i.e. 32-bits on 32-bit systems, and 64-bits on 64-bit systems) by
-truncation and returns the converted value.
+The argument may be any numeric value.  The integer part of \fIarg\fR
+is determined, and then the low order bits of that integer value up
+to the machine word size are returned as an integer value.  For reference,
+the number of bytes in the machine word are stored in
+\fBtcl_platform(wordSize)\fR.
 .TP
 \fBlog(\fIarg\fB)\fR
 Returns the natural logarithm of \fIarg\fR.  \fIArg\fR must be a
@@ -177,10 +194,12 @@ Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a
 positive value.
 .TP
 \fBmax(\fIarg\fB, \fI...\fB)\fR
-Returns the maximum value of all given numeric arguments.
+Accepts one or more numeric arguments.  Returns the one argument
+with the greatest value.
 .TP
 \fBmin(\fIarg\fB, \fI...\fB)\fR
-Returns the minimum value of all given numeric arguments.
+Accepts one or more numeric arguments.  Returns the one argument
+with the least value.
 .TP
 \fBpow(\fIx, y\fB)\fR
 Computes the value of \fIx\fR raised to the power \fIy\fR.  If \fIx\fR
@@ -207,11 +226,15 @@ Returns the hyperbolic sine of \fIarg\fR.  If the result would cause
 an overflow, an error is returned.
 .TP
 \fBsqrt(\fIarg\fB)\fR
-Returns the square root of \fIarg\fR.  \fIArg\fR must be non-negative.
+The argument may be any non-negative numeric value.  Returns a floating-point
+value that is the square root of \fIarg\fR.  May return \fBInf\fR when the
+argument is a numeric value that exceeds the square of the maximum value of
+the floating-point range.
 .TP
 \fBsrand(\fIarg\fB)\fR
-The \fIarg\fR, which must be an integer, is used to reset the seed for
-the random number generator of \fBrand\fR.  Returns the first random
+The \fIarg\fR, which must be an integer value acceptable to
+\fBstring is integer\fR (that is, a 32-bit integer), is used to reset the
+seed for the random number generator of \fBrand\fR.  Returns the first random
 number (see \fBrand()\fR) from that seed.  Each interpreter has its own seed.
 .TP
 \fBtan(\fIarg\fB)\fR
@@ -221,8 +244,9 @@ Returns the tangent of \fIarg\fR, measured in radians.
 Returns the hyperbolic tangent of \fIarg\fR.
 .TP
 \fBwide(\fIarg\fB)\fR
-Converts \fIarg\fR to an integer value at least 64-bits wide (by sign-extension
-if \fIarg\fR is a 32-bit number) if it is not one already.
+The argument may be any numeric value.  The integer part of \fIarg\fR
+is determined, and then the low order 64 bits of that integer value
+are returned as an integer value.  
 .PP
 In addition to these predefined functions, applications may
 define additional functions by using \fBproc\fR (or any other method,
@@ -230,7 +254,7 @@ such as \fBinterp alias\fR or \fBTcl_CreateObjCommand\fR) to define
 new commands in the \fBtcl::mathfunc\fR namespace.  In addition, an
 obsolete interface named \fBTcl_CreateMathFunc\fR() is available to
 extensions that are written in C. The latter interface is not recommended
-for new implementations..
+for new implementations.
 .SH "SEE ALSO"
 expr(n), namespace(n)
 .SH "COPYRIGHT"

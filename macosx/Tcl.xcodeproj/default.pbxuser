@@ -30,10 +30,12 @@
 		activeArgIndices = (
 			NO,
 			NO,
+			NO,
 		);
 		argumentStrings = (
 			"${SRCROOT}/../../tcl/tests/all.tcl",
-			"-verbose \"\"",
+			"-singleproc 1",
+			"-verbose \"bet\"",
 		);
 		autoAttachOnCrash = 1;
 		configStateDict = {

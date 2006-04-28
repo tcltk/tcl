@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.11 2006/01/25 18:39:59 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.12 2006/04/28 16:10:50 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -103,7 +103,7 @@ static int		FileTruncateProc(ClientData instanceData,
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */

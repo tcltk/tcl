@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: async.test,v 1.5.26.3 2004/05/27 14:29:17 dgp Exp $
+# RCS: @(#) $Id: async.test,v 1.5.26.4 2006/04/28 16:09:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,8 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testasync [llength [info commands testasync]]
-
-tcltest::testConstraint threaded [expr {
+testConstraint threaded [expr {
     [info exists ::tcl_platform(threaded)] && $::tcl_platform(threaded)
 }]
 

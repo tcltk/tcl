@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.11 2006/01/25 18:38:31 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.12 2006/04/28 16:09:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -751,6 +751,7 @@ Tcl_ScanObjCmd(
 	    break;
 	case 'u':
 	    op = 'i';
+	    parseFlag |= TCL_PARSE_DECIMAL_ONLY;
 	    flags |= SCAN_UNSIGNED;
 	    break;
 

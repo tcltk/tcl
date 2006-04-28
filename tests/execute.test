@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.13.4.7 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.13.4.8 2006/04/28 16:09:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -27,14 +27,13 @@ catch {unset x}
 catch {unset y}
 catch {unset msg}
 
-::tcltest::testConstraint testobj \
-	[expr {[info commands testobj] != {} \
-	&& [info commands testdoubleobj] != {} \
-	&& [info commands teststringobj] != {} \
-	&& [info commands testobj] != {}}]
+testConstraint testobj [expr {
+    [llength [info commands testobj]]
+    && [llength [info commands testdoubleobj]]
+    && [llength [info commands teststringobj]]
+}]
 
-::tcltest::testConstraint longIs32bit \
-	[expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {int(0x80000000) < 0}]
 
 # Tests for the omnibus TclExecuteByteCode function:
 
@@ -775,3 +774,7 @@ catch {unset y}
 catch {unset msg}
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

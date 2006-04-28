@@ -7,12 +7,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10.6.6 2005/05/16 19:23:19 dgp Exp $
+# RCS: @(#) $Id: util.test,v 1.10.6.7 2006/04/28 16:09:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testdstring [llength [info commands testdstring]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -70,7 +72,7 @@ proc testIEEE {} {
 	}
     }
 }
-::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
+testConstraint ieeeFloatingPoint [testIEEE]
 
 proc convertDouble { x } {
     variable ieeeValues
@@ -81,6 +83,7 @@ proc convertDouble { x } {
     }
     return $result
 }
+
 
 test util-1.1 {TclFindElement procedure - binary element in middle of list} {
     lindex {0 foo\x00help 1} 1
@@ -102,7 +105,6 @@ test util-3.1 {Tcl_ScanCountedElement procedure - don't leave unmatched braces} 
     # have the property that it can be enclosing in curly braces to make
     # an embedded sub-list.  If this property doesn't hold, then
     # Tcl_DStringStartSublist doesn't work.
-
     set x {}
     lappend x "# \\\{ \\"
     concat $x [llength "{$x}"]
@@ -141,6 +143,7 @@ test util-3.5.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
     rename #\{ {}
     set result
 } {#}
+
 test util-4.1 {Tcl_ConcatObj - backslash-space at end of argument} {
     concat a {b\ } c
 } {a b\  c}
@@ -191,7 +194,6 @@ test util-5.8 {Tcl_StringMatch} {
 } 1
 test util-5.9 {Tcl_StringMatch: UTF-8} {
     # skip one character in string
-
     Wrapper_Tcl_StringMatch a?c a\u4e4fc
 } 1
 test util-5.10 {Tcl_StringMatch} {
@@ -205,19 +207,16 @@ test util-5.12 {Tcl_StringMatch} {
 } 1
 test util-5.13 {Tcl_StringMatch: UTF-8} {
     # string += Tcl_UtfToUniChar(string, &ch);
-
     Wrapper_Tcl_StringMatch "\[\u4e4fxy\]bc" "\u4e4fbc"
 } 1
 test util-5.14 {Tcl_StringMatch} {
     # if ((*pattern == ']') || (*pattern == '\0'))
     # badly formed pattern
-
     Wrapper_Tcl_StringMatch {[]} {[]}
 } 0
 test util-5.15 {Tcl_StringMatch} {
     # if ((*pattern == ']') || (*pattern == '\0'))
     # badly formed pattern
-
     Wrapper_Tcl_StringMatch {[} {[}
 } 0
 test util-5.16 {Tcl_StringMatch} {
@@ -226,19 +225,16 @@ test util-5.16 {Tcl_StringMatch} {
 test util-5.17 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # get 1 UTF-8 character
-
     Wrapper_Tcl_StringMatch "a\[a\u4e4fc]c" "a\u4e4fc"
 } 1
 test util-5.18 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance: wrong answer would match on UTF trail byte of \u4e4f
-
     Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [bytestring a\u008fc]
 } 0
 test util-5.19 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance.
-
     Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} "acc"
 } 1
 test util-5.20 {Tcl_StringMatch} {
@@ -319,7 +315,6 @@ test util-5.44 {Tcl_StringMatch: skip correct number of ']'} {
 test util-5.45 {Tcl_StringMatch} {
     # if (*pattern == '\0')
     # badly formed pattern, still treats as a set
-
     Wrapper_Tcl_StringMatch {[a} a
 } 1
 test util-5.46 {Tcl_StringMatch} {
@@ -373,7 +368,6 @@ test util-6.4 {Tcl_PrintDouble - using tcl_precision} -setup {
 } -cleanup {
     set tcl_precision $old_precision
 } -result {x1.1234}
-
 test util-6.5 {Tcl_PrintDouble - make sure there's a decimal point} {
     concat x[expr 2.0]
 } {x2.0}
@@ -440,9 +434,6 @@ test util-8.1 {TclNeedSpace - correct UTF8 handling} {
     interp delete \u5420
     set result
 } "\u5420 foo"
-
-testConstraint testdstring [expr {[info commands testdstring] != {}}]
-
 test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
     # Bug 411825
     # This tests the same bug as the previous test, but

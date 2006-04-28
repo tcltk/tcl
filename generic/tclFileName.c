@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.17 2005/11/03 17:52:08 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.18 2006/04/28 16:09:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1610,9 +1610,7 @@ Tcl_GlobObjCmd(
  *	occurred in globbing. After a normal return the result in interp (set
  *	by DoGlob) holds all of the file names given by the pattern and
  *	pathPrefix arguments. After an error the result in interp will hold
- *	an error message, unless the 'TCL_GLOBMODE_NO_COMPLAIN' flag was
- *	given, in which case an error results in a TCL_OK return leaving the
- *	interpreter's result unmodified.
+ *	an error message.
  *
  * Side effects:
  *	The 'pattern' is written to.
@@ -1681,22 +1679,10 @@ TclGlob(
 
 	    c = *tail;
 	    *tail = '\0';
-	    if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-		/*
-		 * We will ignore any error message here, and we don't want to
-		 * mess up the interpreter's result.
-		 */
-		head = DoTildeSubst(NULL, start+1, &buffer);
-	    } else {
-		head = DoTildeSubst(interp, start+1, &buffer);
-	    }
+	    head = DoTildeSubst(interp, start+1, &buffer);
 	    *tail = c;
 	    if (head == NULL) {
-		if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-		    return TCL_OK;
-		} else {
-		    return TCL_ERROR;
-		}
+		return TCL_ERROR;
 	    }
 	    if (head != Tcl_DStringValue(&buffer)) {
 		Tcl_DStringAppend(&buffer, head, -1);
@@ -1773,11 +1759,7 @@ TclGlob(
 
 		if (cwd == NULL) {
 		    Tcl_DecrRefCount(temp);
-		    if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-			return TCL_OK;
-		    } else {
-			return TCL_ERROR;
-		    }
+		    return TCL_ERROR;
 		}
 		pathPrefix = Tcl_NewStringObj(Tcl_GetString(cwd), 3);
 		Tcl_DecrRefCount(cwd);
@@ -1854,10 +1836,30 @@ TclGlob(
 
     if (*tail == '\0' && pathPrefix != NULL) {
 	/*
-	 * An empty pattern
+	 * An empty pattern.  This means 'pathPrefix' is actually
+	 * a full path of a file/directory we want to simply check
+	 * for existence and type.
 	 */
-	result = Tcl_FSMatchInDirectory(interp, filenamesObj, pathPrefix,
-		NULL, types);
+	if (types == NULL) {
+	    /* 
+	     * We just want to check for existence.  In this case we
+	     * make it easy on Tcl_FSMatchInDirectory and its
+	     * sub-implementations by not bothering them (even though
+	     * they should support this situation) and we just use the
+	     * simple existence check with Tcl_FSAccess.
+	     */
+	    if (Tcl_FSAccess(pathPrefix, F_OK) == 0) {
+		Tcl_ListObjAppendElement(interp, filenamesObj, pathPrefix);
+	    }
+	    result = TCL_OK;
+	} else {
+	    /* 
+	     * We want to check for the correct type.  Tcl_FSMatchInDirectory
+	     * is documented to do this for us, if we give it a NULL pattern.
+	     */
+	    result = Tcl_FSMatchInDirectory(interp, filenamesObj, pathPrefix,
+		    NULL, types);
+	}
     } else {
 	result = DoGlob(interp, filenamesObj, separators, pathPrefix,
 		globFlags & TCL_GLOBMODE_DIR, tail, types);
@@ -1869,11 +1871,6 @@ TclGlob(
 
     if (result != TCL_OK) {
 	TclDecrRefCount(filenamesObj);
-	if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-	    /* Put back the old result and reset the return code */
-	    Tcl_SetObjResult(interp, savedResultObj);
-	    result = TCL_OK;
-	}
 	TclDecrRefCount(savedResultObj);
 	if (pathPrefix != NULL) {
 	    Tcl_DecrRefCount(pathPrefix);

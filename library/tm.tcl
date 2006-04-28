@@ -323,7 +323,7 @@ proc ::tcl::tm::Defaults {} {
 	set sep ":"
     }
     for {set n $minor} {$n >= 0} {incr n -1} {
-	set ev TCL${major}.{$n}_TM_PATH
+	set ev TCL${major}.${n}_TM_PATH
 	if {[info exists env($ev)]} {
 	    foreach p [split $env($ev) $sep] {
 		path add $p

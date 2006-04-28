@@ -5,12 +5,12 @@
  *	subcommands of the "file" command.
  *
  * Copyright (c) 2003 Tcl Core Team.
- * Copyright (c) 2003-2005 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2003-2006 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.4 2005/12/02 18:42:52 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.5 2006/04/28 16:09:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -57,9 +57,19 @@ enum {
 
 typedef u_int32_t OSType;
 
-static int		Tcl_GetOSTypeFromObj(Tcl_Interp *interp,
+static int		GetOSTypeFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, OSType *osTypePtr);
-static Tcl_Obj *	Tcl_NewOSTypeStringObj(CONST OSType newOSType);
+static Tcl_Obj *	NewOSTypeObj(CONST OSType newOSType);
+static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
+
+static Tcl_ObjType tclOSTypeType = {
+    "osType",				/* name */
+    NULL,				/* freeIntRepProc */
+    NULL,				/* dupIntRepProc */
+    UpdateStringOfOSType,		/* updateStringProc */
+    SetOSTypeFromAny			/* setFromAnyProc */
+};
 
 enum {
    kIsInvisible = 0x4000,
@@ -152,11 +162,11 @@ TclMacOSXGetFileAttribute(
 
     switch (objIndex) {
     case MACOSX_CREATOR_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewOSTypeStringObj(
+	*attributePtrPtr = NewOSTypeObj(
 		OSSwapBigToHostInt32(finder->creator));
 	break;
     case MACOSX_TYPE_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewOSTypeStringObj(
+	*attributePtrPtr = NewOSTypeObj(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
@@ -248,13 +258,13 @@ TclMacOSXSetFileAttribute(
 
 	switch (objIndex) {
 	case MACOSX_CREATOR_ATTRIBUTE:
-	    if (Tcl_GetOSTypeFromObj(interp, attributePtr, &t) != TCL_OK) {
+	    if (GetOSTypeFromObj(interp, attributePtr, &t) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    finder->creator = OSSwapHostToBigInt32(t);
 	    break;
 	case MACOSX_TYPE_ATTRIBUTE:
-	    if (Tcl_GetOSTypeFromObj(interp, attributePtr, &t) != TCL_OK) {
+	    if (GetOSTypeFromObj(interp, attributePtr, &t) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    finder->type = OSSwapHostToBigInt32(t);
@@ -359,7 +369,7 @@ TclMacOSXCopyFileAttributes(
     if (copyfile(src, dst, NULL, COPYFILE_XATTR |
 	    (S_ISLNK(statBufPtr->st_mode) ? COPYFILE_NOFOLLOW_SRC :
 		                            COPYFILE_ACL)) < 0) {
-        return TCL_ERROR;
+	return TCL_ERROR;
     }
     return TCL_OK;
 #elif defined(HAVE_GETATTRLIST)
@@ -426,7 +436,74 @@ TclMacOSXCopyFileAttributes(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetOSTypeFromObj --
+ * TclMacOSXMatchType --
+ *
+ *	This routine is used by the globbing code to check if a file
+ *	matches a given mac type and/or creator code.
+ *
+ * Results:
+ *	The return value is 1, 0 or -1 indicating whether the file
+ *	matches the given criteria, does not match them, or an error
+ *	occurred (in wich case an error is left in interp).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMacOSXMatchType(
+    Tcl_Interp *interp,       /* Interpreter to receive errors. */
+    CONST char *pathName,     /* Native path to check. */
+    CONST char *fileName,     /* Native filename to check. */
+    Tcl_StatBuf *statBufPtr,  /* Stat info for file to check */
+    Tcl_GlobTypeData *types)  /* Type description to match against. */
+{
+#ifdef HAVE_GETATTRLIST
+    struct attrlist alist;
+    fileinfobuf finfo;
+    finderinfo *finder = (finderinfo*)(&finfo.data);
+    OSType osType;
+
+    bzero(&alist, sizeof(struct attrlist));
+    alist.bitmapcount = ATTR_BIT_MAP_COUNT;
+    alist.commonattr = ATTR_CMN_FNDRINFO;
+    if (getattrlist(pathName, &alist, &finfo, sizeof(fileinfobuf), 0) != 0) {
+	return 0;
+    }
+    if ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
+	    !((finder->fdFlags & kFinfoIsInvisible) || (*fileName == '.'))) {
+	return 0;
+    }
+    if (S_ISDIR(statBufPtr->st_mode) && (types->macType || types->macCreator)) {
+	/* Directories don't support types or creators */
+	return 0;
+    }
+    if (types->macType) {
+	if (GetOSTypeFromObj(interp, types->macType, &osType) != TCL_OK) {
+	    return -1;
+	}
+	if (osType != OSSwapBigToHostInt32(finder->type)) {
+	    return 0;
+	}
+    }
+    if (types->macCreator) {
+	if (GetOSTypeFromObj(interp, types->macCreator, &osType) != TCL_OK) {
+	    return -1;
+	}
+	if (osType != OSSwapBigToHostInt32(finder->creator)) {
+	    return 0;
+	}
+    }
+#endif
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetOSTypeFromObj --
  *
  *	Attempt to return an OSType from the Tcl object "objPtr".
  *
@@ -441,10 +518,69 @@ TclMacOSXCopyFileAttributes(
  */
 
 static int
-Tcl_GetOSTypeFromObj(
+GetOSTypeFromObj(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* The object from which to get an OSType. */
     OSType *osTypePtr)		/* Place to store resulting OSType. */
+{
+    int result = TCL_OK;
+
+    if (objPtr->typePtr != &tclOSTypeType) {
+	result = tclOSTypeType.setFromAnyProc(interp, objPtr);
+    };
+    *osTypePtr = (OSType) objPtr->internalRep.longValue;
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NewOSTypeObj --
+ *
+ *	Create a new OSType object.
+ *
+ * Results:
+ *	The newly created OSType object is returned, it has ref count 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+NewOSTypeObj(
+    CONST OSType osType)    /* OSType used to initialize the new object. */
+{
+    Tcl_Obj *objPtr;
+
+    TclNewObj(objPtr);
+    Tcl_InvalidateStringRep(objPtr);
+    objPtr->internalRep.longValue = (long) osType;
+    objPtr->typePtr = &tclOSTypeType;
+    return objPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetOSTypeFromAny --
+ *
+ *	Attempts to force the internal representation for a Tcl object to
+ *	tclOSTypeType, specifically.
+ *
+ * Results:
+ *	The return value is a standard object Tcl result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetOSTypeFromAny(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
     char *string;
     int length, result = TCL_OK;
@@ -459,13 +595,17 @@ Tcl_GetOSTypeFromObj(
 		string, "\": ", NULL);
 	result = TCL_ERROR;
     } else {
+	OSType osType;
 	char string[4] = {'\0','\0','\0','\0'};
 	memcpy(string, Tcl_DStringValue(&ds),
 		(size_t) Tcl_DStringLength(&ds));
-	*osTypePtr = (OSType) string[0] << 24 |
-	             (OSType) string[1] << 16 |
-	             (OSType) string[2] <<  8 |
-	             (OSType) string[3];
+	osType = (OSType) string[0] << 24 |
+		 (OSType) string[1] << 16 |
+		 (OSType) string[2] <<  8 |
+		 (OSType) string[3];
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep.longValue = (long) osType;
+	objPtr->typePtr = &tclOSTypeType;
     }
     Tcl_DStringFree(&ds);
     Tcl_FreeEncoding(encoding);
@@ -475,39 +615,42 @@ Tcl_GetOSTypeFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NewOSTypeStringObj --
+ * UpdateStringOfOSType --
  *
- *	Create a new OSType string object.
+ *	Update the string representation for an OSType object. Note: This
+ *	function does not free an existing old string rep so storage will be
+ *	lost if this has not already been done.
  *
  * Results:
- *	The newly created string object is returned, it has ref count 0.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	The object's string is set to a valid string that results from the
+ *	OSType-to-string conversion.
  *
  *----------------------------------------------------------------------
  */
 
-static Tcl_Obj *
-Tcl_NewOSTypeStringObj(
-    CONST OSType newOSType)    /* OSType used to initialize the new object. */
+static void
+UpdateStringOfOSType(
+    register Tcl_Obj *objPtr)	/* OSType object whose string rep to update. */
 {
     char string[5];
-    Tcl_Obj *resultPtr;
+    OSType osType = (OSType) objPtr->internalRep.longValue;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
 
-    string[0] = (char) (newOSType >> 24);
-    string[1] = (char) (newOSType >> 16);
-    string[2] = (char) (newOSType >>  8);
-    string[3] = (char) (newOSType);
+    string[0] = (char) (osType >> 24);
+    string[1] = (char) (osType >> 16);
+    string[2] = (char) (osType >>  8);
+    string[3] = (char) (osType);
     string[4] = '\0';
     Tcl_ExternalToUtfDString(encoding, string, -1, &ds);
-    resultPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
-	    Tcl_DStringLength(&ds));
+    objPtr->bytes = ckalloc((unsigned) Tcl_DStringLength(&ds) + 1);
+    strcpy(objPtr->bytes, Tcl_DStringValue(&ds));
+    objPtr->length = Tcl_DStringLength(&ds);
     Tcl_DStringFree(&ds);
     Tcl_FreeEncoding(encoding);
-    return resultPtr;
 }
 
 /*

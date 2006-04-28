@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.7 2005/07/05 15:09:04 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.8 2006/04/28 16:09:07 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6492,4 +6492,255 @@ Can support [load] from memory as well (steffen)
 
 Documentation improvements [1075433,1085127,1117017,1124160,1149605,etc.]
 
---- Released 8.5a3, June 4, 2004 --- See ChangeLog for details ---
+--- Released 8.5a3, June 4, 2005 --- See ChangeLog for details ---
+
+2005-06-06 (bug fix)[1213678] Windows/gcc: crash in stack.test (kenny)
+
+2005-06-07 (new feature)[TIP 208] [chan] and [chan truncate] (fellows)
+
+2005-06-07 (revert) Restored registration of "procbody" Tcl_ObjType (porter)
+Reduces the ***POTENTIAL INCOMPATIBILITY*** from 2005-05-17.
+
+2005-06-13 (bug fix)[1217375,1219176] [file mkdir] race (diekhans,darley)
+
+2005-06-14 (bug fix)[1220058] [namespace delete] crash (duquette,fellows)
+
+2005-06-17 (bug fix)[1221395] Tcl_LimitSetTime able to break [vwait] (fellows)
+
+2005-06-18 (bug fix)[1154163] [format %h] on 64-bit OS's (kraft,fellows)
+
+2005-06-21 (bug fix)[1201035,1224585] execution trace crashes (porter)
+
+2005-06-21 (bug fix)[1194458] Windows: [file split] (kenny,porter)
+
+2005-06-22 (bug fix)[1225727] Windows: pipe finalization crash (kenny)
+
+2005-06-22 (bug fix)[1225571] Windows: [file pathtype] buffer overflow (thoyts)
+
+2005-06-22 (bug fix)[1225044] Windows: UMR in pipe close (kenny)
+
+2005-06-23 (bug fix)[1225957] Windows/gcc: crashes in assembler code (kenny)
+
+2005-06-24 (bug fix) make Tcl_Preserve safe in Tk exit handlers (kenny)
+
+2005-07-01 (bug fix)[1222872] notifier spurious wake-up protection (vasiljevic)
+
+2005-07-05 (bug fix)[1230597] allow idempotent [namespace import] (porter)
+
+2005-07-15 (bug fix)[1237907] localtime() => NULL => crash (kenny)
+
+2005-07-21 (dropped support) IRIX 4, RISCos, Ultrix, and ancient BSD (kenny)
+***POTENTIAL INCOMPATIBILITY***
+
+2005-07-22 (enhancement)[1237755] 8.4 features in script library (fradin,porter)
+
+2005-07-24 (new feature) configure macros SC_PROG_TCLSH, SC_BUILD_TCLSH (dejong) 
+2005-07-26 (bug fix)[1047286] cmd delete traces during namespace delete (porter)
+
+2005-07-26 (new unix feature)[1231015] ${prefix}/share on ::tcl_pkgPath (dejong)
+***POTENTIAL INCOMPATIBILITY***
+
+2005-07-27 (bug fix)[1214462] [unknown] can return exceptions (porter)
+
+2005-07-27 (new feature) value of ::tcl_precision now kept per-thread (porter)
+***POTENTIAL INCOMPATIBILITY***
+
+2005-07-28 (unix bug fix)[1245953] O_APPEND for >> redirection (fellows)
+
+2005-07-29 (bug fix)[1247135] [info globals] return only existing vars (fellows)
+
+2005-07-30 (new Darwin feature) TCL_LOAD_FROM_MEMORY configuration (steffen)
+
+2005-08-05 (bug fix)[1241572] correct [expr abs($LONG_MIN)] (kenny)
+
+2005-08-05 (Solaris bug fix)[1252475] recognize cp1251 encoding (wagner,fellows)
+
+2005-08-11 (config options) eliminated USE_THREAD_STORAGE option (kenny)
+
+2005-08-23 (toolchain support) autoconf-2.59 now required (dejong)
+
+2005-08-24 (new feature)[TIP 219] reflected channels ([chan create]) (kupries)
+
+2005-08-25 (bug fix)[1267380] [lrepeat] buffer overflow prevention (fellows)
+
+2005-08-26 (bug fix) fix [namespace ensemble] crashes in Snit (fellows)
+
+2005-08-29 (bug fix)[1275043] restore round() away from zero (kenny)
+
+2005-08-29 (bug fix)[1189657] correct [tcl::tm::roots] (porter)
+
+2005-09-07 (bug fix)[1283976] invalid [format %c -1] result (porter)
+
+2005-09-08 (new feature)[1242844][TIP 254] new types for Tcl_LinkVar (fellows)
+
+2005-09-07 (toolchain support) deprecate TCL_VARARGS*; stdarg.h assumed (porter)
+***POTENTIAL INCOMPATIBILITY***
+
+2005-09-15 (RHEL bug fix)[1287638] support open >2GB files RHEL 3 (palan)
+
+2005-09-08 (new feature)[TIP 255] [expr min()] and [expr max()] (hobbs)
+
+2005-09-30 (bug fix)[1306162] $argv encoding and list formatting (porter)
+
+2005-10-04 (bug fix)[1067708] [fconfigure -ttycontrol] leak (hobbs)
+
+2005-10-04 (bug fix)[1182373] [http::mapReply] update to RFC 3986 (aho,hobbs)
+=> http 2.5.2
+
+2005-10-04 (HPUX bug fix)[1204237] shl_load() and DYNAMIC_PATH (collins,hobbs)
+
+2005-10-05 (bug fix)[979640] buffer overrun mixing putenv(), ::env (bold,hobbs)
+
+2005-10-08 (new feature)[TIP 237] unlimited range for integers (kenny,porter)
+***POTENTIAL INCOMPATIBILITY*** for any code that relies on implicit truncation
+of integer calculations to the range of a C long
+
+2005-10-14 (platform support)[1256937] MSVC++ static builds (thoyts)
+
+2005-10-19 (bug fix)[1331475] [dict append] crash (bills,sofer)
+
+2005-10-20 (bug fix)[1333036] [lset] shared sublist handling (sofer)
+
+2005-10-23 (bug fix)[1335006] memleack in [glob] (melbardis,darley)
+
+2005-10-23 (bug fix)[1325803] Win: [file stat] on links (bonilla,darley)
+
+2005-11-01 (bug fix)[1337941] Tcl_TraceCommand() -> crash (devilliers,porter)
+
+2005-11-02 (platform support)[1256937] MSVC 8 support (thoyts)
+
+2005-11-03 (new Win NT/XP feature) Unicode console support (kovalenko,thoyts)
+
+2005-11-04 (bug fix)[1337229,1338280] [namespace delete] / unset traces (sofer)
+
+2005-11-04 (enhancement) Korean timezone abbreviations (kenny)
+
+2005-11-04 (platform support)[1163896] LynxOS [load] (heidibr)
+
+2005-11-04 (bug fix)[1334947] value refcount error in var setting (sofer)
+
+2005-11-04 (Win enhancement)[1267871] extended exit codes (newman,thoyts)
+
+2005-11-07 (bug fix)[1348775] unset trace memory leak (sofer)
+
+2005-11-08 (bug fix)[1162286] [package require] checks that the script
+registered by [package ifneeded] provides the version it claims (lavana,porter)
+*** POTENTIAL INCOMPATIBILITY ***
+
+2005-11-09 (bug fix)[1350293,1350291] [after $negative $script] fixed (kenny)
+
+2005-11-12 (bug fix)[1352734,1354540,1355942,1355342] [namespace delete] 
+issues with [namespace path] and command delete traces (sofer,fellows)
+
+2005-11-18 (bug fix)[1358369] URL parsing standards compliance (wu,fellows)
+=> http 2.5.2
+
+2005-11-18 (revert) Restored registration of "list" Tcl_ObjType (porter)
+Reduces the ***POTENTIAL INCOMPATIBILITY*** from 2005-05-17.
+
+2005-11-18 (bug fix)[1359094] Tclkit crash (thoyts, kupries)
+
+2005-11-20 (bug fix)[1091431] Tcl_InitStubs failure crashes wish (english)
+
+2005-11-27 (platform support) Darwin 64bit, Tiger copyfile(), and
+Max OSX universal binaries support (steffen)
+
+2005-11-28 (bug fix) [clock] DST transition error (mackerras,kenny)
+
+2005-11-29 (bug fix)[1366683] [lsearch -regexp] backrefs (cleverly,fellows)
+
+2005-11-30 (performance) recoded portions of [clock] in C (kenny)
+
+2005-11-30 (enhancement) improved bytecode compiling of [switch] (fellows)
+*** POTENTIAL INCOMPATIBILITY ***
+For loading bytecode compiled and saved by earlier 8.5alpha releases
+
+2005-12-05 (Darwin bug fix)[1034337] NFS recursive file delete (steffen)
+
+2005-12-08 (platform support) Win x64 build (hobbs)
+
+2005-12-09 (bug fix)[1374778] [lsearch -start $pastEnd] => -1 (fellows)
+
+2005-12-12 (bug fix)[1377619] configure syntax error exposed in bash-3.1 (hobbs)
+
+2005-12-13 (bug fix)[1379349] [dict for] CoW error (ring,hippler,fellows)
+
+2005-12-18 (bug fix)[1382528] [dict for {k v} {} {}] crash (kovalenko,fellows)
+
+2005-12-27 clock tzdata updated to Olson's tzdata2005r (kenny)
+
+2005-12-27 libtommath updated to release 0.37 (kenny)
+
+2006-01-09 (bug fix)[1480572] [info level $l] => "namespace inscope" (porter)
+
+2006-01-11 (compat support)[1397843] when ::errorInfo is traced, fall back to
+old pattern of stack trace construction (porter).
+Reduces the ***POTENTIAL INCOMPATIBILITY*** from 2004-10-05.
+
+2006-01-12 (bug fix)[1366227] Win: [file stat] sharing violation (darley)
+
+2006-01-23 (bug fix)[1410553] Tcl_GetRange Unicode confusion (twylite,spjuth)
+
+2006-01-23 (bug fix)[1412695] args handling in precompiled procs (traum,sofer)
+
+2006-02-01 (new feature)[1275435][TIP 250] [namespace upvar] (sofer)
+
+2006-02-01 (new feature)[958222][TIP 181] [namespace unknown] (madden)
+
+2006-02-01 (new feature)[944803][TIP 194] [apply] (mistachkin)
+
+2006-02-08 (new feature)[1413934][TIP 258] [encoding dirs], etc. (porter)
+
+2006-02-09 (new feature)[1413115][TIP 215] auto-init [incr] (leitgeb)
+
+2006-03-02 (bug fix)[1379287] norm of paths with /../ back to root (porter)
+
+2006-03-03 (compat support) Restored registration of a "boolean" Tcl_ObjType
+(porter)
+Reduces the ***POTENTIAL INCOMPATIBILITY*** from 2005-05-17.
+
+2006-03-06 (bug fix)[1439836,1444291] fix TCL_EVAL_{GLOBAL,INVOKE} handling
+when auto-loading or exec traces are present (porter)
+
+2006-03-10 (bug fix)[1437595] Win socket finalize with threads (vasiljevic)
+
+2006-03-13 (revert 2005-07-26 change) ${prefix}/share on ::tcl_pkgPath (porter)
+
+2006-03-14 (bug fix)[1448251] TCLX.y_TM_PATH handling (noble, kupries)
+
+2006-03-14 (bug fix)[768659] pipeline error when last command missing (kupries)
+
+2006-03-18 (bug fix)[1193497] Win porting of [file writable] (darley,vogel)
+
+2006-03-18 (bug fix)[1084705] [glob -nocomplain] silence empty result only,
+no other errors (darley)
+***POTENTIAL INCOMPATIBILITY***
+
+2006-03-21 (platform enhancement)[823329] HFS globbing support (steffen)
+
+2006-03-23 (platform support) updated tcl.spec file (max)
+
+2006-03-28 (bug fix)[1064247] BSD: path normalization with realpath() (steffen)
+
+2006-04-03 (bug fix)[1462248] crash reading utf-8 chars spanning multiple
+buffers at end of file (kraft,kupries)
+
+2006-04-05 (bug fix)[1464039] Tcl_GetIndexFromObj: empty key (fellows)
+
+2006-04-05 (bug fix) overdue dde, registry  patchelevel increments (porter)
+=> dde 1.3.2
+=> registry 1.2
+
+2006-04-06 (bug fix)[1457515] TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
+removed (steffen)
+
+2006-04-11 (bug fix)[1458266] enter/enterstep trace interference (leunissen)
+
+2006-04-12 (feature change)[1376892] revised definition of [:print:] (fellows)
+
+(platform support) Use of _ANSI_ARGS_ purged.  ANSI compiler required (fellows)
+
+Documentation improvements [1211078,1190891,1292427,1277503,1104682,1359183,
+1415725,666770]
+
+--- Released 8.5a4, April 27, 2006 --- See ChangeLog for details ---

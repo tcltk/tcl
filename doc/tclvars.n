@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.9 2005/10/18 20:46:17 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.10 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -246,6 +246,7 @@ when converting floating-point values to strings.  It defaults
 to 0.  \fIApplications should not change this value;\fR it is
 provided for compatibility with legacy code.
 .PP
+.RS
 The default value of 0 is special, meaning that Tcl should
 convert numbers using as few digits as possible while still
 distinguishing any floating point number from its nearest
@@ -254,16 +255,20 @@ for \fItcl_precision\fR in that an inexact number like \fI1.4\fR
 will convert as \fI1.4\fR rather than \fI1.3999999999999999\fR
 even though the latter is nearer to the exact value of the
 binary number.
+.RE
 .VE 8.5
 .PP
+.RS
 17 digits is ``perfect'' for IEEE floating-point in that it allows
 double-precision values to be converted to strings and back to
 binary with no loss of information.  However, using 17 digits prevents
 any rounding, which produces longer, less intuitive results.  For example,
 \fBexpr 1.4\fR returns 1.3999999999999999 with \fBtcl_precision\fR
 set to 17, vs. 1.4 if \fBtcl_precision\fR is 12.
+.RE
+.PP
 .RS
-All interpreters in a process share a single \fBtcl_precision\fR value:
+All interpreters in a thread share a single \fBtcl_precision\fR value:
 changing it in one interpreter will affect all other interpreters as
 well.  However, safe interpreters are not allowed to modify the
 variable.
@@ -291,8 +296,10 @@ tracking down suspected problems with the Tcl compiler.
 It is also occasionally useful when converting
 existing code to use Tcl8.0.
 .PP
+.RS
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
+.RE
 .TP
 \fBtcl_traceExec\fR
 The value of this variable can be set to control
@@ -316,8 +323,10 @@ and interpreter.
 It is also occasionally useful when converting
 code to use Tcl8.0.
 .PP
+.RS
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
+.RE
 .TP
 \fBtcl_wordchars\fR
 The value of this variable is a regular expression that can be set to

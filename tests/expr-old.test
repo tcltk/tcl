@@ -13,14 +13,19 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.17.2.10 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.17.2.11 2006/04/28 16:09:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
-if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
+testConstraint testexprlong   [llength [info commands testexprlong]]
+testConstraint testexprdouble [llength [info commands testexprdouble]]
+testConstraint testexprstring [llength [info commands testexprstring]]
+testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
+
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
     testConstraint testmathfunctions 0
 } else {
     testConstraint testmathfunctions 1
@@ -82,7 +87,7 @@ proc testIEEE {} {
 	}
     }
 }
-::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
+testConstraint ieeeFloatingPoint [testIEEE]
 
 # First, test all of the integer operators individually.
 
@@ -953,7 +958,7 @@ test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
         list [catch {expr T1(4)} msg] $msg
     } -match glob -result {1 {too many arguments for math function*}}
 
-test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
+test expr-old-36.1 {ExprLooksLikeInt procedure} -constraints knownBug -body {
     expr 0289
 } -returnCodes error -match glob -result {*invalid octal number*}
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
@@ -1016,11 +1021,6 @@ test expr-old-36.16 {ExprLooksLikeInt procedure} {
     set x " 0xffffffffffffffffffffffffffffffffffffff  "
     expr {$x+1}
 } [expr 0x100000000000000000000000000000000000000]
-
-testConstraint testexprlong   [llength [info commands testexprlong]]
-testConstraint testexprdouble [llength [info commands testexprdouble]]
-testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
     testexprlong 4+1
@@ -1118,7 +1118,7 @@ test expr-old-37.24 {Tcl_ExprDouble handles overflows that look like int} \
 	testexprdouble 17976931348623165[string repeat 0 292]
     } {This is a result: Inf}
 test expr-old-37.25 {Tcl_ExprDouble and NaN} \
-    {ieeeFloatingPoint testexprdouble} {
+    {knownBug ieeeFloatingPoint testexprdouble} {
 	list [catch {testexprdouble 0.0/0.0} result] $result
     } {1 {floating point value is Not a Number}}
     

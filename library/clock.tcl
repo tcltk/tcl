@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.11 2006/01/25 18:38:46 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.12 2006/04/28 16:09:39 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3947,12 +3947,12 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 	# Time was specified as a day of the week within a month
 
 	dict set date month [dict get $z ${bound}Month]
-	dict set date dayOfWeekInMonth [dict get $z ${bound}WeekOfMonth]
-	set dow [dict get $z ${bound}DayOfWeek]
-	if { $dow >= 5 } {
-	    set dow -1
+	dict set date dayOfWeek [dict get $z ${bound}DayOfWeek]
+	set dowim [dict get $z ${bound}WeekOfMonth]
+	if { $dowim >= 5 } {
+	    set dowim -1
 	}
-	dict set date dayOfWeek $dow
+	dict set date dayOfWeekInMonth $dowim
 	set date [GetJulianDayFromEraYearMonthWeekDay $date[set date {}] 2361222]
 
     }

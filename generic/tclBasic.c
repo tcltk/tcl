@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.41 2006/02/28 16:34:54 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.42 2006/04/28 16:09:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3309,6 +3309,7 @@ TclEvalObjvInternal(
     int traceCode = TCL_OK;
     int checkTraces = 1;
     int cmdEpoch;
+    Namespace *savedNsPtr = NULL;
 
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -3318,6 +3319,15 @@ TclEvalObjvInternal(
 	return TCL_OK;
     }
 
+    /* Configure evaluation context to match the requested flags */
+    savedVarFramePtr = iPtr->varFramePtr;
+    if (flags & TCL_EVAL_GLOBAL) {
+	iPtr->varFramePtr = NULL;
+    } else if ((flags & TCL_EVAL_INVOKE) && iPtr->varFramePtr) {
+	savedNsPtr = iPtr->varFramePtr->nsPtr;
+	iPtr->varFramePtr->nsPtr = iPtr->globalNsPtr;
+    }
+
     /*
      * Find the function to execute this command. If there isn't one, then see
      * if there is an unknown command handler registered for this namespace.
@@ -3325,23 +3335,11 @@ TclEvalObjvInternal(
      * the original command words as arguments. Then call ourselves
      * recursively to execute it.
      *
-     * If caller requests, or if we're resolving the target end of an
-     * interpeter alias (TCL_EVAL_INVOKE), be sure to do command name
-     * resolution in the global namespace.
-     *
      * If any execution traces rename or delete the current command, we may
      * need (at most) two passes here.
      */
 
   reparseBecauseOfTraces:
-    savedVarFramePtr = iPtr->varFramePtr;
-    /*
-     * Both INVOKE and GLOBAL flags dictate that command resolution
-     * happens in an [uplevel #0] context. (iPtr->varFramePtr == NULL)
-     */
-    if (flags & (TCL_EVAL_INVOKE | TCL_EVAL_GLOBAL)) {
-	iPtr->varFramePtr = NULL;
-    }
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
     if (cmdPtr == NULL) {
 	Namespace *currNsPtr = NULL;	/* Used to check for and invoke any
@@ -3380,21 +3378,25 @@ TclEvalObjvInternal(
             newObjv[i+handlerObjc] = objv[i];
         }
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
-	iPtr->varFramePtr = savedVarFramePtr;
 	if (cmdPtr == NULL) {
 	    Tcl_AppendResult(interp, "invalid command name \"",
 		    TclGetString(objv[0]), "\"", NULL);
 	    code = TCL_ERROR;
 	} else {
-	    code = TEOVI(interp, newObjc, newObjv, command, length, flags);
+	    code = TEOVI(interp, newObjc, newObjv, command, length, 0);
 	}
         for (i = 0; i < handlerObjc; ++i) {
 	    Tcl_DecrRefCount(newObjv[i]);
         }
 	ckfree((char *) newObjv);
-	return code;
+	if (savedNsPtr) {
+	    iPtr->varFramePtr->nsPtr = savedNsPtr;
+	}
+	goto done;
     }
-    iPtr->varFramePtr = savedVarFramePtr;
+    if (savedNsPtr) {
+	iPtr->varFramePtr->nsPtr = savedNsPtr;
+    }
 
     /*
      * Call trace functions if needed.
@@ -3410,9 +3412,6 @@ TclEvalObjvInternal(
 	 * while loop one more time.
 	 */
 
-	if (flags & TCL_EVAL_GLOBAL) {
-	    iPtr->varFramePtr = NULL;
-	}
 	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
@@ -3421,7 +3420,6 @@ TclEvalObjvInternal(
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
-	iPtr->varFramePtr = savedVarFramePtr;
 	cmdPtr->refCount--;
     }
     if (cmdEpoch != cmdPtr->cmdEpoch) {
@@ -3437,22 +3435,12 @@ TclEvalObjvInternal(
     cmdPtr->refCount++;
     iPtr->cmdCount++;
     if (code == TCL_OK && traceCode == TCL_OK && !Tcl_LimitExceeded(interp)) {
-	savedVarFramePtr = iPtr->varFramePtr;
-	/*
-	 * Only the GLOBAL flag dictates command procedure exection (distinct
-	 * from command name resolution above) happens in an [uplevel #0]
-	 * context. (iPtr->varFramePtr == NULL) 
-	 */
-	if (flags & TCL_EVAL_GLOBAL) {
-	    iPtr->varFramePtr = NULL;
-	}
 	if (!(flags & TCL_EVAL_INVOKE) &&
 		(iPtr->ensembleRewrite.sourceObjs != NULL) &&
 		!Tcl_IsEnsemble((Tcl_Command) cmdPtr)) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	}
 	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
-	iPtr->varFramePtr = savedVarFramePtr;
     }
     if (Tcl_AsyncReady()) {
 	code = Tcl_AsyncInvoke(interp, code);
@@ -3466,9 +3454,6 @@ TclEvalObjvInternal(
      */
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	if (flags & TCL_EVAL_GLOBAL) {
-	    iPtr->varFramePtr = NULL;
-	}
 	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -3477,7 +3462,6 @@ TclEvalObjvInternal(
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
-	iPtr->varFramePtr = savedVarFramePtr;
     }
     TclCleanupCommand(cmdPtr);
 
@@ -3501,6 +3485,9 @@ TclEvalObjvInternal(
     if (*(iPtr->result) != 0) {
 	(void) Tcl_GetObjResult(interp);
     }
+
+    done:
+    iPtr->varFramePtr = savedVarFramePtr;
     return code;
 }
 

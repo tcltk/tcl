@@ -11,15 +11,8 @@
 
 package require tcltest 2
 namespace eval ::tcl::test::fileSystem {
+    namespace import ::tcltest::*
 
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::makeDirectory
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeDirectory
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-    
     catch {
 	file delete -force link.file
 	file delete -force dir.link
@@ -39,7 +32,7 @@ makeFile "test file in directory" [file join dir.dir inside.file]
 
 testConstraint unusedDrive 0
 set drive {}
-if {$::tcl_platform(platform) eq "windows"} {
+if {[testConstraint win]} {
     set vols [string map [list :/ {}] [file volumes]]
     for {set i 0} {$i < 26} {incr i} {
 	set drive [format %c [expr {$i + 65}]]
@@ -54,7 +47,7 @@ if {$::tcl_platform(platform) eq "windows"} {
 
 testConstraint moreThanOneDrive 0
 set drives [list]
-if {$::tcl_platform(platform) eq "windows"} {
+if {[testConstraint win]} {
     set dir [pwd]
     foreach vol [file volumes] {
         if {![catch {cd $vol}]} {
@@ -281,7 +274,7 @@ test filesystem-1.32 {link normalisation: link near filesystem root} {testsetpla
 test filesystem-1.33 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform windows
     set res [file normalize C:/../bar]
-    if {$::tcl_platform(platform) == "unix"} {
+    if {[testConstraint unix]} {
 	# Some unices go further in normalizing this -- not really
 	# a problem since this is a Windows test
 	regexp {C:/bar$} $res res
@@ -363,6 +356,136 @@ test filesystem-1.40 {file normalisation with repeated separators} {
 test filesystem-1.41 {file normalisation with repeated separators} {win} {
     set a [file norm foo\\\\\\bar]
     set b [file norm foo/bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.42 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/..]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.42.1 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/../]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.43 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/foo/../..]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.43.1 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/foo/../../]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.44 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/foo/../../bar]
+    set b [file norm /bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.45 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/../../bar]
+    set b [file norm /bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.46 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /xxx/../bar]
+    set b [file norm /bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.47 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /..]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.48 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /../]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.49 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /.]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.50 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /./]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.51 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /../..]
+    set b [file norm /]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+test filesystem-1.51.1 {file normalisation .. beyond root (Bug 1379287)} {
+    set a [file norm /../../]
+    set b [file norm /]
     
     if {![string equal $a $b]} {
         set res "Paths should be equal: $a , $b"
@@ -832,7 +955,6 @@ test filesystem-8.3 {path objects and empty string} {
     set anchor ""
     set dst foo
     set res $dst
-
     set yyy [file split $anchor]
     set dst [file join  $anchor $dst]
     lappend res $dst $yyy

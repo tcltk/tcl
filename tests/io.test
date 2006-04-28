@@ -13,21 +13,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.12 2005/09/12 15:44:42 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.13 2006/04/28 16:09:41 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
 namespace eval ::tcl::test::io {
-
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::interpreter
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-    namespace import ::tcltest::viewFile
+    namespace import ::tcltest::*
 
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint exec             [llength [info commands exec]]
@@ -37,6 +30,7 @@ testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
+testConstraint testthread       [llength [info commands testthread]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -46,6 +40,8 @@ testConstraint largefileSupport 0
 # if "umask" cannot be run, the tests will be skipped.
 set umaskValue 0
 testConstraint umask [expr {![catch {set umaskValue [exec /bin/sh -c umask]}]}]
+
+testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
 
 # set up a long data file for some of the following tests
 
@@ -5279,7 +5275,6 @@ test io-40.15 {POSIX open access modes: RDWR} {
     close $f
     lappend x [viewFile test3]
 } {zzy abzzy}
-testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
 test io-40.16 {tilde substitution in open} -constraints makeFileInHome -setup {
     makeFile {Some text} _test_ ~
 } -body {
@@ -5344,13 +5339,6 @@ test io-42.3 {Tcl_FileeventCmd: replacing, with NULL chars in script} {fileevent
     lappend result [fileevent $f readable]
 } {13 11 12 {}}
 
-#
-# Test fileevent on a pipe
-#
-if {[testConstraint openpipe]} {
-    catch {set f2 [open "|[list cat -u]" r+]}
-    catch {set f3 [open "|[list cat -u]" r+]}
-}
 
 test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {stdio unixExecs fileevent} {
     set result {}
@@ -5363,7 +5351,10 @@ test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {stdio unixExecs f
     fileevent $f writable {}
     lappend result [fileevent $f readable] [fileevent $f writable]
 } {{script 1} {} {script 1} {write script} {} {write script} {} {}}
-test io-43.2 {Tcl_FileeventCmd: deleting when many present} {stdio unixExecs fileevent} {
+test io-43.2 {Tcl_FileeventCmd: deleting when many present} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     set result {}
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
     fileevent $f r "read f"
@@ -5376,9 +5367,15 @@ test io-43.2 {Tcl_FileeventCmd: deleting when many present} {stdio unixExecs fil
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
     fileevent $f r {}
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
-} {{} {} {} {read f} {read f2} {read f3} {read f} {} {read f3} {read f} {} {} {} {} {}}
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {{} {} {} {read f} {read f2} {read f3} {read f} {} {read f3} {read f} {} {} {} {} {}}
 
-test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs fileevent} {
+test io-44.1 {FileEventProc procedure: normal read event} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     fileevent $f2 readable [namespace code {
 	set x [gets $f2]; fileevent $f2 readable {}
     }]
@@ -5386,10 +5383,15 @@ test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs filee
     variable x initial
     vwait [namespace which -variable x]
     set x
-} {text}
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {text}
 test io-44.2 {FileEventProc procedure: error in read event} -constraints {
-    stdio unixExecs fileevent
+    stdio unixExecs fileevent openpipe
 } -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
     proc myHandler {msg options} {
 	variable x $msg
     }
@@ -5403,8 +5405,13 @@ test io-44.2 {FileEventProc procedure: error in read event} -constraints {
     list $x [fileevent $f2 readable]
 } -cleanup {
     interp bgerror {} $handler
+    catch {close $f2}
+    catch {close $f3}
 } -result {bogus {}}
-test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs fileevent} {
+test io-44.3 {FileEventProc procedure: normal write event} -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
+} -constraints {stdio unixExecs fileevent openpipe} -body {
     fileevent $f2 writable [namespace code {
 	lappend x "triggered"
 	incr count -1
@@ -5418,10 +5425,15 @@ test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs file
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
     set x
-} {initial triggered triggered triggered}
+} -cleanup {
+    catch {close $f2}
+    catch {close $f3}
+} -result {initial triggered triggered triggered}
 test io-44.4 {FileEventProc procedure: eror in write event} -constraints {
-    stdio unixExecs fileevent
+    stdio unixExecs fileevent openpipe
 } -setup {
+    set f2 [open "|[list cat -u]" r+]
+    set f3 [open "|[list cat -u]" r+]
     proc myHandler {msg options} {
 	variable x $msg
     }
@@ -5434,6 +5446,8 @@ test io-44.4 {FileEventProc procedure: eror in write event} -constraints {
     list $x [fileevent $f2 writable]
 } -cleanup {
     interp bgerror {} $handler
+    catch {close $f2}
+    catch {close $f3}
 } -result {bad-write {}}
 test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fileevent} {
     set f4 [open "|[list [interpreter] $path(cat) << foo]" r]
@@ -5452,8 +5466,6 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fi
     set x
 } {initial foo eof}
 
-catch {close $f2}
-catch {close $f3}
 close $f
 makeFile "foo bar" foo
 
@@ -7142,8 +7154,6 @@ test io-70.0 {Cutting & Splicing channels} {testchannel} {
 # without duplication. Maybe placement into a proc which transforms to
 # nop after the first call, and placement of its defintion in a
 # central location.
-
-testConstraint testthread [expr {[info commands testthread] != {}}]
 
 if {[testConstraint testthread]} {
     testthread errorproc ThreadError

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.18 2005/11/03 17:52:07 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.19 2006/04/28 16:09:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1015,6 +1015,7 @@ void
 Tcl_FinalizeThread(void)
 {
     ExitHandler *exitPtr;
+    ThreadSpecificData *tsdPtr;
 
     /*
      * We use TclThreadDataKeyGet here, rather than Tcl_GetThreadData, because
@@ -1022,9 +1023,7 @@ Tcl_FinalizeThread(void)
      * initialized already.
      */
 
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
-	    TclThreadDataKeyGet(&dataKey);
-
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr != NULL) {
 	tsdPtr->inExit = 1;
 

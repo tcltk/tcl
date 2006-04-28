@@ -1,16 +1,16 @@
 # This file tests the tclWinFile.c file.
 #
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.10.2.5 2005/10/18 20:47:04 dgp Exp $
+# RCS: @(#) $Id: winFile.test,v 1.10.2.6 2006/04/28 16:09:43 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -18,20 +18,15 @@ if {[catch {package require tcltest 2.0.2}]} {
 }
 namespace import -force ::tcltest::*
 
-if {[info commands ::testvolumetype] == ""} {
-    tcltest::testConstraint notNTFS 0
-} else {
-    if {![string equal "NTFS" [testvolumetype]]} {
-	tcltest::testConstraint notNTFS 0
-    } else {
-	tcltest::testConstraint notNTFS 1
-    }
+testConstraint testvolumetype [llength [info commands testvolumetype]]
+testConstraint notNTFS 0
+testConstraint win2000 0
+
+if {[testConstraint testvolumetype]} {
+    testConstraint notNTFS [expr {[testvolumetype] eq "NTFS"}]
 }
-if {[string equal $::tcl_platform(os) "Windows NT"] &&
-	    $::tcl_platform(osVersion) >= 5.0} {
-    tcltest::testConstraint win2000 1
-} else {
-    tcltest::testConstraint win2000 0
+if {[testConstraint nt] && $::tcl_platform(osVersion) >= 5.0} {
+    testConstraint win2000 1
 }
 
 test winFile-1.1 {TclpGetUserHome} {win} {
@@ -78,7 +73,7 @@ test winFile-2.2 {TclpMatchFiles: case sensitivity} {win} {
     set result
 } {globlower globlower}
 
-test winFile-3.1 {file system} {win} {
+test winFile-3.1 {file system} {win testvolumetype} {
     set res "volume types ok"
     foreach vol [file volumes] {
 	# Have to catch in case there is a removable drive (CDROM, floppy)
@@ -230,5 +225,5 @@ test winFile-4.4 {
 file delete $fname
 
 # cleanup
-::tcltest::cleanupTests
+cleanupTests
 return

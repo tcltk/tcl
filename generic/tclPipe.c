@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.9 2006/01/25 18:38:31 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.10 2006/04/28 16:09:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -485,7 +485,7 @@ TclCreatePipeline(
     int errorRelease = 0;
     CONST char *p;
     CONST char *nextArg;
-    int skip, lastBar, lastArg, i, j, atOK, flags, errorToOutput = 0;
+    int skip, lastBar, lastArg, i, j, atOK, flags, needCmd, errorToOutput = 0;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
@@ -523,6 +523,7 @@ TclCreatePipeline(
 
     lastBar = -1;
     cmdCount = 1;
+    needCmd = 1;
     for (i = 0; i < argc; i++) {
 	errorToOutput = 0;
 	skip = 0;
@@ -541,6 +542,7 @@ TclCreatePipeline(
 	    }
 	    lastBar = i;
 	    cmdCount++;
+	    needCmd = 1;
 	    break;
 
 	case '<':
@@ -683,6 +685,11 @@ TclCreatePipeline(
 		}
 	    }
 	    break;
+
+	default:
+	  /* Got a command word, not a redirection */
+	  needCmd = 0;
+	  break;
 	}
 
 	if (skip != 0) {
@@ -692,6 +699,15 @@ TclCreatePipeline(
 	    argc -= skip;
 	    i -= 1;
 	}
+    }
+
+    if (needCmd) {
+	/* We had a bar followed only by redirections. */
+
+        Tcl_SetResult(interp,
+		      "illegal use of | or |& in command",
+		      TCL_STATIC);
+	goto error;
     }
 
     if (inputFile == NULL) {

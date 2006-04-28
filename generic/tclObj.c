@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.28 2006/01/25 18:38:31 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.29 2006/04/28 16:09:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -214,8 +214,15 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-Tcl_ObjType tclBooleanType = {
+static Tcl_ObjType oldBooleanType = {
     "boolean",				/* name */
+    NULL,				/* freeIntRepProc */
+    NULL,				/* dupIntRepProc */
+    NULL,				/* updateStringProc */
+    SetBooleanFromAny			/* setFromAnyProc */
+};
+Tcl_ObjType tclBooleanType = {
+    "booleanString",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
@@ -363,6 +370,9 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclTokensType);
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
+
+    /* For backward compatibility only ... */
+    Tcl_RegisterObjType(&oldBooleanType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -2726,7 +2736,13 @@ Tcl_DbNewBignumObj(
  *----------------------------------------------------------------------
  */
 
-int
+/*
+ * TODO: Consider a smarter Tcl_GetBignumAndClearObj() that doesn't
+ * require caller to check for a shared Tcl_Obj, but falls back to
+ * Tcl_GetBignumFromObj() when sharing is an issue.
+ */
+
+static int
 GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.7 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.8 2006/04/28 16:10:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -80,6 +80,8 @@ static int		TestalarmCmd(ClientData dummy,
 static int		TestgotsigCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static void		AlarmHandler(int signum);
+static int		TestchmodCmd(ClientData dummy,
+			    Tcl_Interp *interp, int argc, CONST char **argv);
 
 /*
  *----------------------------------------------------------------------
@@ -102,6 +104,8 @@ int
 TclplatformtestInit(
     Tcl_Interp *interp)		/* Interpreter to add commands to. */
 {
+    Tcl_CreateCommand(interp, "testchmod", TestchmodCmd,
+	    (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testfilehandler", TestfilehandlerCmd,
             (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testfilewait", TestfilewaitCmd,
@@ -671,5 +675,64 @@ TestgotsigCmd(
 {
     Tcl_AppendResult(interp, gotsig, NULL);
     gotsig = "0";
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TestchmodCmd --
+ *
+ *	Implements the "testchmod" cmd.  Used when testing "file" command.
+ *	The only attribute used by the Windows platform is the user write
+ *	flag; if this is not set, the file is made read-only.  Otehrwise, the
+ *	file is made read-write.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Changes permissions of specified files.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+TestchmodCmd(dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    CONST char **argv;			/* Argument strings. */
+{
+    int i, mode;
+    char *rest;
+
+    if (argc < 2) {
+	usage:
+	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		" mode file ?file ...?", NULL);
+	return TCL_ERROR;
+    }
+
+    mode = (int) strtol(argv[1], &rest, 8);
+    if ((rest == argv[1]) || (*rest != '\0')) {
+	goto usage;
+    }
+
+    for (i = 2; i < argc; i++) {
+	Tcl_DString buffer;
+	CONST char *translated;
+
+	translated = Tcl_TranslateFileName(interp, argv[i], &buffer);
+	if (translated == NULL) {
+	    return TCL_ERROR;
+	}
+	if (chmod(translated, (unsigned) mode) != 0) {
+	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
+		    NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_DStringFree(&buffer);
+    }
     return TCL_OK;
 }

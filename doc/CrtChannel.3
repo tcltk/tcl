@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.8 2005/10/18 20:46:17 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.9 2006/04/28 16:09:08 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -384,10 +384,12 @@ a pointer to the string.
 The \fIversion\fR field should be set to the version of the structure
 that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
 \fBTCL_CHANNEL_VERSION_3\fR must be set to specifiy the \fIwideSeekProc\fR member.
+\fBTCL_CHANNEL_VERSION_4\fR must be set to specifiy the \fIthreadActionProc\fR member
+(includes \fIwideSeekProc\fR).
 .VS 8.5
-\fBTCL_CHANNEL_VERSION_4\fR must be set to specifiy the
-\fIthreadActionProc\fR and \fItruncateProc\fR members (includes
-\fIwideSeekProc\fR).
+\fBTCL_CHANNEL_VERSION_5\fR must be set to specifiy the
+\fItruncateProc\fR members (includes
+\fIwideSeekProc\fR and \fIthreadActionProc\fR).
 .VE 8.5
 If it is not set to any of these, then this
 \fBTcl_ChannelType\fR is assumed to have the original structure.  See
@@ -398,8 +400,9 @@ least \fBTCL_CHANNEL_VERSION_2\fR to function correctly.
 This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
 one of
 .VS 8.5
-\fBTCL_CHANNEL_VERSION_4\fR,
+\fBTCL_CHANNEL_VERSION_5\fR,
 .VE 8.5
+\fBTCL_CHANNEL_VERSION_4\fR,
 \fBTCL_CHANNEL_VERSION_3\fR,
 \fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
 .SS BLOCKMODEPROC

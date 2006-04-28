@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.10 2006/01/25 18:38:31 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.11 2006/04/28 16:09:12 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2194,6 +2194,7 @@ TclAppendFormattedObjs(
 	    char *bytes;
 
 	    if (Tcl_GetDoubleFromObj(interp, segment, &d) != TCL_OK) {
+		/* TODO: Figure out ACCEPT_NAN here */
 		goto error;
 	    }
 	    *p++ = '%';

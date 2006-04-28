@@ -9,13 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.9 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.10 2006/04/28 16:10:49 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
-static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
+static int NativeMatchType(Tcl_Interp *interp, CONST char* nativeEntry,
+	CONST char* nativeName, Tcl_GlobTypeData *types);
 
 /*
  *---------------------------------------------------------------------------
@@ -208,6 +209,7 @@ TclpMatchInDirectory(
 {
     CONST char *native;
     Tcl_Obj *fileNamePtr;
+    int matchResult = 0;
 
     if (types != NULL && types->type == TCL_GLOB_TYPE_MOUNT) {
 	/*
@@ -226,19 +228,24 @@ TclpMatchInDirectory(
 	/*
 	 * Match a file directly.
 	 */
+	Tcl_Obj *tailPtr;
+	CONST char *nativeTail;
 
 	native = (CONST char*) Tcl_FSGetNativePath(pathPtr);
-	if (NativeMatchType(native, types)) {
+	tailPtr = TclPathPart(interp, pathPtr, TCL_PATH_TAIL);
+	nativeTail = (CONST char*) Tcl_FSGetNativePath(tailPtr);
+	matchResult = NativeMatchType(interp, native, nativeTail, types);
+	if (matchResult == 1) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
+	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
-	return TCL_OK;
     } else {
 	DIR *d;
 	Tcl_DirEntry *entryPtr;
 	CONST char *dirName;
 	int dirLength;
-	int matchHidden;
+	int matchHidden, matchHiddenPat;
 	int nativeDirLen;
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
@@ -305,10 +312,10 @@ TclpMatchInDirectory(
 	 * Check to see if -type or the pattern requests hidden files.
 	 */
 
-	matchHidden = ((types && (types->perm & TCL_GLOB_PERM_HIDDEN))
-		|| ((pattern[0] == '.')
-		|| ((pattern[0] == '\\') && (pattern[1] == '.'))));
-
+	matchHiddenPat = (pattern[0] == '.')
+		|| ((pattern[0] == '\\') && (pattern[1] == '.'));
+	matchHidden = matchHiddenPat 
+		|| (types && (types->perm & TCL_GLOB_PERM_HIDDEN));
 	while ((entryPtr = TclOSreaddir(d)) != NULL) {	/* INTL: Native. */
 	    Tcl_DString utfDs;
 	    CONST char *utfname;
@@ -321,7 +328,12 @@ TclpMatchInDirectory(
 	    if (*entryPtr->d_name == '.') {
 		if (!matchHidden) continue;
 	    } else {
+#ifdef MAC_OSX_TCL
+		if (matchHiddenPat) continue;
+		/* Also need to check HFS hidden flag in TclMacOSXMatchType. */
+#else
 		if (matchHidden) continue;
+#endif
 	    }
 
 	    /*
@@ -337,7 +349,9 @@ TclpMatchInDirectory(
 		if (types != NULL) {
 		    Tcl_DStringSetLength(&ds, nativeDirLen);
 		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
-		    typeOk = NativeMatchType(native, types);
+		    matchResult = NativeMatchType(interp, native,
+			    entryPtr->d_name, types);
+		    typeOk = (matchResult == 1);
 		}
 		if (typeOk) {
 		    Tcl_ListObjAppendElement(interp, resultPtr,
@@ -346,19 +360,47 @@ TclpMatchInDirectory(
 		}
 	    }
 	    Tcl_DStringFree(&utfDs);
+	    if (matchResult < 0) {
+		break;
+	    }
 	}
 
 	closedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);
+    }
+    if (matchResult < 0) {
+	return TCL_ERROR;
+    } else {
 	return TCL_OK;
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeMatchType --
+ *
+ *	This routine is used by the globbing code to check if a file
+ *	matches a given type description.
+ *
+ * Results:
+ *	The return value is 1, 0 or -1 indicating whether the file
+ *	matches the given criteria, does not match them, or an error
+ *	occurred (in wich case an error is left in interp).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
 NativeMatchType(
+    Tcl_Interp *interp,       /* Interpreter to receive errors. */
     CONST char *nativeEntry,  /* Native path to check. */
+    CONST char *nativeName,   /* Native filename to check. */
     Tcl_GlobTypeData *types)  /* Type description to match against. */
 {
     Tcl_StatBuf buf;
@@ -405,6 +447,10 @@ NativeMatchType(
 			(access(nativeEntry, W_OK) != 0)) ||
 		((types->perm & TCL_GLOB_PERM_X) &&
 			(access(nativeEntry, X_OK) != 0))
+#ifndef MAC_OSX_TCL
+		|| ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
+			(*nativeName != '.'))
+#endif
 		) {
 		return 0;
 	    }
@@ -454,7 +500,7 @@ NativeMatchType(
 		if (types->type & TCL_GLOB_TYPE_LINK) {
 		    if (TclOSlstat(nativeEntry, &buf) == 0) {
 			if (S_ISLNK(buf.st_mode)) {
-			    return 1;
+			    goto filetypeOK;
 			}
 		    }
 		}
@@ -462,6 +508,29 @@ NativeMatchType(
 		return 0;
 	    }
 	}
+    filetypeOK: ;
+#ifdef MAC_OSX_TCL
+	if (types->macType != NULL || types->macCreator != NULL ||
+		(types->perm & TCL_GLOB_PERM_HIDDEN)) {
+	    int matchResult;
+
+	    if (types->perm == 0 && types->type == 0) {
+		/*
+		 * We haven't yet done a stat on the file.
+		 */
+
+		if (TclOSstat(nativeEntry, &buf) != 0) {
+		    return 0;
+		}
+	    }
+
+	    matchResult = TclMacOSXMatchType(interp, nativeEntry, nativeName,
+		    &buf, types);
+	    if (matchResult != 1) {
+		return matchResult;
+	    }
+	}
+#endif
     }
     return 1;
 }
@@ -1011,6 +1080,9 @@ TclNativeCreateNativeRep(
 	 */
 
 	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (validPathPtr == NULL) {
+	    return NULL;
+	}
     } else {
 	/*
 	 * Make sure the normalized path is set.

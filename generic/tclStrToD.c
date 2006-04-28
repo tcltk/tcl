@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.9 2006/01/25 18:38:31 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.10 2006/04/28 16:09:12 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -118,6 +118,13 @@ static CONST double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0e+128,
     1.0e+256
 };
+static int n770_fp;		/* Flag is 1 on Nokia N770 floating point.
+				 * Nokia's floating point has the words
+				 * reversed: if big-endian is 7654 3210,
+				 * and little-endian is       0123 4567,
+				 * then Nokia's FP is         4567 0123;
+				 * little-endian within the 32-bit words
+				 * but big-endian between them. */
 
 /*
  * Static functions defined in this file.
@@ -134,6 +141,7 @@ static double		MakeLowPrecisionDouble(int signum,
 			    Tcl_WideUInt significand, int nSigDigs,
 			    int exponent);
 static double		MakeNaN(int signum, Tcl_WideUInt tag);
+static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
 static double		Pow10TimesFrExp(int exponent, double fraction,
 			    int *machexp);
 static double		RefineApproximation(double approx,
@@ -1250,6 +1258,7 @@ AccumulateDecimalDigit(
 	    n -= 256;
 	}
 	mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr);
+	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
     }
 
     return bignumFlag;
@@ -1507,7 +1516,9 @@ MakeNaN(
     } else {
 	theNaN.iv |= ((Tcl_WideUInt) NAN_START) << 48;
     }
-
+    if (n770_fp) {
+	theNaN.iv = Nokia770Twiddle(theNaN.iv);
+    }
     return theNaN.dv;
 }
 #endif
@@ -1988,9 +1999,15 @@ AbsoluteValue(
 	double dv;
     } bitwhack;
     bitwhack.dv = v;
+    if (n770_fp) {
+	bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
+    }
     if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
 	*signum = 1;
 	bitwhack.iv &= ~((Tcl_WideUInt) 1 << 63);
+	if (n770_fp) {
+	    bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
+	}
 	v = bitwhack.dv;
     } else {
 	*signum = 0;
@@ -2113,6 +2130,13 @@ TclInitDoubleConversion(void)
     Tcl_WideUInt u;
     double d;
 
+#ifdef IEEE_FLOATING_POINT
+    union {
+	double dv;
+	Tcl_WideUInt iv;
+    } bitwhack;
+#endif
+
     /*
      * Initialize table of powers of 10 expressed as wide integers.
      */
@@ -2182,6 +2206,25 @@ TclInitDoubleConversion(void)
 	    * log((double) FLT_RADIX) / log(10.));
     mantDIGIT = (mantBits + DIGIT_BIT-1) / DIGIT_BIT;
     log10_DIGIT_MAX = (int) floor(DIGIT_BIT * log(2.) / log(10.));
+
+    /*
+     * Nokia 770's software-emulated floating point is "middle endian":
+     * the bytes within a 32-bit word are little-endian (like the native
+     * integers), but the two words of a 'double' are presented most
+     * significant word first.
+     */
+
+#ifdef IEEE_FLOATING_POINT
+    bitwhack.dv = 1.000000238418579;
+				/* 3ff0 0000 4000 0000 */
+    if ((bitwhack.iv >> 32) == 0x3ff00000) {
+	n770_fp = 0;
+    } else if ((bitwhack.iv & 0xffffffff) == 0x3ff00000) {
+	n770_fp = 1;
+    } else {
+	Tcl_Panic("unknown floating point word order on this machine.");
+    }
+#endif
 }
 
 /*
@@ -2622,6 +2665,9 @@ TclFormatNaN(
     } bitwhack;
 
     bitwhack.dv = value;
+    if (n770_fp) {
+	bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
+    }
     if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
 	bitwhack.iv &= ~ ((Tcl_WideUInt) 1 << 63);
 	*buffer++ = '-';
@@ -2638,6 +2684,40 @@ TclFormatNaN(
 #endif /* IEEE_FLOATING_POINT */
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nokia770Twiddle --
+ *
+ * 	Transpose the two words of a number for Nokia 770 floating
+ *	point handling.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_WideUInt
+Nokia770Twiddle(
+    Tcl_WideUInt w		/* Number to transpose */
+) {
+    return (((w >> 32) & 0xffffffff) | (w << 32));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNokia770Doubles --
+ *
+ * 	Transpose the two words of a number for Nokia 770 floating
+ *	point handling.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclNokia770Doubles()
+{
+    return n770_fp;
+}
 /*
  * Local Variables:
  * mode: c

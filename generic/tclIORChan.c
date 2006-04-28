@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.7 2006/02/23 14:45:10 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.8 2006/04/28 16:09:11 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -58,21 +58,23 @@ static int		ReflectSetOption(ClientData clientData,
  */
 
 static Tcl_ChannelType tclRChannelType = {
-    "tclrchannel",	/* Type name.					*/
-    TCL_CHANNEL_VERSION_3,
-    ReflectClose,	/* Close channel, clean instance data		*/
-    ReflectInput,	/* Handle read request				*/
-    ReflectOutput,	/* Handle write request				*/
-    ReflectSeek,	/* Move location of access point.    NULL'able	*/
-    ReflectSetOption,	/* Set options.			     NULL'able	*/
-    ReflectGetOption,	/* Get options.			     NULL'able	*/
-    ReflectWatch,	/* Initialize notifier				*/
-    NULL,		/* Get OS handle from the channel.   NULL'able	*/
-    NULL,		/* No close2 support.		     NULL'able	*/
-    ReflectBlock,	/* Set blocking/nonblocking.	     NULL'able	*/
-    NULL,		/* Flush channel. Not used by core.  NULL'able	*/
-    NULL,		/* Handle events.		     NULL'able	*/
-    ReflectSeekWide	/* Move access point (64 bit).	     NULL'able	*/
+    "tclrchannel",         /* Type name.                                  */
+    TCL_CHANNEL_VERSION_5, /* v5 channel */
+    ReflectClose,          /* Close channel, clean instance data          */
+    ReflectInput,          /* Handle read request                         */
+    ReflectOutput,         /* Handle write request                        */
+    ReflectSeek,           /* Move location of access point.   NULL'able  */
+    ReflectSetOption,      /* Set options.                     NULL'able  */
+    ReflectGetOption,      /* Get options.                     NULL'able  */
+    ReflectWatch,          /* Initialize notifier                         */
+    NULL,                  /* Get OS handle from the channel.  NULL'able  */
+    NULL,                  /* No close2 support.               NULL'able  */
+    ReflectBlock,          /* Set blocking/nonblocking.        NULL'able  */
+    NULL,                  /* Flush channel. Not used by core. NULL'able  */
+    NULL,                  /* Handle events.                   NULL'able  */
+    ReflectSeekWide,       /* Move access point (64 bit).      NULL'able  */
+    NULL,                  /* thread action */
+    NULL,                  /* truncate */
 };
 
 /*

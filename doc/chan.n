@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.2.4.2 2005/06/22 21:12:05 dgp Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.2.4.3 2006/04/28 16:09:08 dgp Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -14,7 +14,6 @@ chan \- Read, write and manipulate channels
 .SH SYNOPSIS
 \fBchan \fIoption\fR ?\fIarg arg ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command provides several operations for reading from, writing to
@@ -41,7 +40,7 @@ deletes all existing file-events registered on the channel.
 .RS
 .PP
 As part of closing the channel, all buffered output is flushed to the
-channel's outpuot device, any buffered input is discarded, the
+channel's output device, any buffered input is discarded, the
 underlying operating system resource is closed and \fIchannelId\fR
 becomes unavailable for future use.
 .PP
@@ -320,6 +319,67 @@ to the output encoding. The behaviour of the system for bytes which
 are not valid UTF-8 characters is undefined in this case.
 .RE
 .TP
+\fBchan create \fImode cmdPrefix\fR
+.
+This subcommand creates a new script level channel using the command
+prefix \fIcmdPrefix\fR as its handler. Any such channel is called a
+\fBreflected\fR channel. The specified command prefix, \fBcmdPrefix\fR,
+must be a non-empty list, and should provide the API described in the
+\fBreflectedchan\fR manual page. The handle of the new channel is
+returned as the result of the \fBchan create\fR command, and the
+channel is open. Use either \fBclose\fR or \fBchan close\fR to remove
+the channel.
+.RS
+The argument \fImode\fR specifies if the new channel is opened for
+reading, writing, or both. It has to be a list containing any of the
+strings "\fBread\fR" or "\fBwrite\fR". The list must have at least one
+element, as a channel you can neither write to nor read from makes no
+sense. The handler command for the new channel must support the chosen
+mode, or an error is thrown.
+.PP
+The command prefix is executed in the global namespace, at the top of
+call stack, following the appending of arguments as described in the
+\fBreflectedchan\fR manual page. Command resolution happens at the
+time of the call. Renaming the command, or destroying it means that
+the next call of a handler method may fail, causing the channel
+command invoking the handler to fail as well. Depending on the
+subcommand being invoked, the error message may not be able to explain
+the reason for that failure.
+.PP
+Every channel created with this subcommand knows which interpreter it
+was created in, and only ever executes its handler command in that
+interpreter, even if the channel was shared with and/or was moved into
+a different interpreter. Each reflected channel also knows the thread
+it was created in, and executes its handler command only in that
+thread, even if the channel was moved into a different thread. To this
+end all invokations of the handler are forwarded to the original
+thread by posting special events to it. This means that the original
+thread (i.e. the thread that executed the \fBchan create\fR command)
+must have an active event loop, i.e. it must be able to process such
+events. Otherwise the thread sending them will \fIblock
+indefinitely\fR. Deadlock may occur.
+.PP
+Note that this permits the creation of a channel whose two endpoints
+live in two different threads, providing a stream-oriented bridge
+between these threads. In other words, we can provide a way for
+regular stream communication between threads instead of having to send
+commands.
+.PP
+When a thread or interpreter is deleted, all channels created with
+this subcommand and using this thread/interpreter as their computing
+base are deleted as well, in all interpreters they have been shared
+with or moved into, and in whatever thread they have been transfered
+to. While this pulls the rug out under the other thread(s) and/or
+interpreter(s), this cannot be avoided. Trying to use such a channel
+will cause the generation of a regular error about unknown channel
+handles.
+.PP
+This subcommand is \fBsafe\fR and made accessible to safe
+interpreters.  While it arranges for the execution of arbitrary Tcl
+code the system also makes sure that the code is always executed
+within the safe interpreter.
+.RE
+.TP
 \fBchan eof \fIchannelId\fR
 .
 Test whether the last input operation on the channel called
@@ -432,6 +492,41 @@ the partial-line-but-nonblocking case can be distinguished with the
 Produces a list of all channel names. If \fIpattern\fR is specified,
 only those channel names that match it (according to the rules of
 \fBstring match\fR) will be returned.
+.TP
+\fBchan postevent \fIchannel eventspec\fR
+.
+This subcommand is used by command handlers specified with \fBchan
+create\fR. It notifies the channel represented by the handle
+\fIchannel\fR that the event(s) listed in the \fIeventspec\fR have
+occurred. The argument has to be a list containing any of the strings
+"\fBread\fR" and "\fBwrite\fR". The list must contain at least one
+element as it does not make sense to invoke the command if there are
+no events to post.
+.RS
+Note that this subcommand can only be used with channel handles that
+were created/opened by \fBchan create\fR. All other channels will
+cause this subcommand to report an error.
+.PP
+As only the Tcl level of a channel, i.e. its command handler, should
+post events to it we also restrict the usage of this command to the
+interpreter that created the channel. In other words, posting events
+to a reflected channel from an interpreter that does not contain it's
+implementation is not allowed. Attempting to post an event from any
+other interpreter will cause this subcommand to report an error.
+.PP
+Another restriction is that it is not possible to post events that the
+I/O core has not registered an interest in. Trying to do so will cause
+the method to throw an error. See the command handler method
+\fBwatch\fR described in \fBreflectedchan\fR, the document specifying
+the API of command handlers for reflected channels.
+.PP
+This command is \fBsafe\fR and made accessible to safe interpreters.
+It can trigger the execution of \fBchan event\fR handlers, whether in the
+current interpreter or in other interpreters or other threads, even
+where the event is posted from a safe interpreter and listened for by
+a trusted interpreter. \fBChan event\fR handlers are \fIalways\fR
+executed in the interpreter that set them up.
+.RE
 .TP
 \fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
 .
@@ -578,11 +673,9 @@ Sets the byte length of the underlying data stream for the channel
 named \fIchannelId\fR to be \fIlength\fR (or to the current byte
 offset within the underlying data stream if \fIlength\fR is
 omitted). The channel is flushed before truncation.
-
 .SH "SEE ALSO"
 close(n), eof(n), fblocked(n), fconfigure(n), fcopy(n), file(n),
 fileevent(n), flush(n), gets(n), open(n), puts(n), read(n), seek(n),
-socket(n), tell(n)
-
+socket(n), tell(n), reflectedchan(n)
 .SH KEYWORDS
 channel, input, output, events, offset

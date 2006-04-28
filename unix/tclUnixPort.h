@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.13 2006/01/25 18:39:58 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.14 2006/04/28 16:10:50 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -580,6 +580,7 @@ EXTERN char *          	TclpInetNtoa(struct in_addr);
  * Assume it is in pthread_np.h if it isn't in pthread.h. [Bug 1064882]
  * We might need to revisit this in the future. :^(
  */
+#	    include <pthread.h>
 #	    include <pthread_np.h>
 #	endif
 #   else

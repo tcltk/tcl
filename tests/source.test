@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: source.test,v 1.8.4.4 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: source.test,v 1.8.4.5 2006/04/28 16:09:43 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
@@ -20,12 +20,7 @@ if {[catch {package require tcltest 2.1}]} {
 }
 
 namespace eval ::tcl::test::source {
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::customMatch
+    namespace import ::tcltest::*
 
 test source-1.1 {source command} -setup {
     set x "old x value"
@@ -42,7 +37,6 @@ test source-1.1 {source command} -setup {
 } -cleanup {
     removeFile source.file
 } -result {22 33 44}
-
 test source-1.2 {source command} -setup {
     set sourcefile [makeFile {list result} source.file]
 } -body {
@@ -50,7 +44,6 @@ test source-1.2 {source command} -setup {
 } -cleanup {
     removeFile source.file
 } -result result
-
 test source-1.3 {source command} -setup {
     set sourcefile [makeFile {} source.file]
     set fd [open $sourcefile w]
@@ -94,7 +87,6 @@ test source-2.3 {source error conditions} -setup {
     (file "*source.file" line 3)
     invoked from within
 "source $sourcefile"}]
-
 test source-2.4 {source error conditions} -setup {
     set sourcefile [makeFile {break} source.file]
 } -body {
@@ -102,7 +94,6 @@ test source-2.4 {source error conditions} -setup {
 } -cleanup {
     removeFile source.file
 } -returnCodes break
-
 test source-2.5 {source error conditions} -setup {
     set sourcefile [makeFile {continue} source.file]
 } -body {
@@ -110,7 +101,6 @@ test source-2.5 {source error conditions} -setup {
 } -cleanup {
     removeFile source.file
 } -returnCodes continue
-
 test source-2.6 {source error conditions} -setup {
     set sourcefile [makeFile {} _non_existent_]
     removeFile _non_existent_
@@ -119,7 +109,6 @@ test source-2.6 {source error conditions} -setup {
 } -match listGlob -result [list 1 \
 	{couldn't read file "*_non_existent_": no such file or directory} \
 	{POSIX ENOENT {no such file or directory}}]
-
 
 test source-3.1 {return in middle of source file} -setup {
     set sourcefile [makeFile {
@@ -135,7 +124,6 @@ test source-3.1 {return in middle of source file} -setup {
 } -cleanup {
     removeFile source.file
 } -result {new-x old-y allDone}
-
 test source-3.2 {return with special code etc.} -setup {
     set sourcefile [makeFile {
 	set x new-x
@@ -147,7 +135,6 @@ test source-3.2 {return with special code etc.} -setup {
 } -cleanup {
     removeFile source.file
 } -returnCodes break -result {Silly result}
-
 test source-3.3 {return with special code etc.} -setup {
     set sourcefile [makeFile {
 	set x new-x
@@ -161,7 +148,6 @@ test source-3.3 {return with special code etc.} -setup {
 } -result {1 {Simulated error} {Simulated error
     while executing
 "source $sourcefile"} NONE}
-
 test source-3.4 {return with special code etc.} -setup {
     set sourcefile [makeFile {
 	set x new-x
@@ -175,7 +161,6 @@ test source-3.4 {return with special code etc.} -setup {
 } -result {1 {} {Simulated errorInfo stuff
     invoked from within
 "source $sourcefile"} NONE}
-
 test source-3.5 {return with special code etc.} -setup {
     set sourcefile [makeFile {
 	set x new-x
@@ -191,7 +176,6 @@ test source-3.5 {return with special code etc.} -setup {
     invoked from within
 "source $sourcefile"} {a b c}}
 
-
 test source-6.1 {source is binary ok} -setup {
     # Note [makeFile] writes in the system encoding.
     # [source] defaults to reading in the system encoding.
@@ -203,7 +187,6 @@ test source-6.1 {source is binary ok} -setup {
 } -cleanup {
     removeFile source.file
 } -result 5
-
 test source-6.2 {source skips everything after Ctrl-Z: Bug 2040} -setup {
     set sourcefile [makeFile "set x ab\32c" source.file]
 } -body {
@@ -228,7 +211,6 @@ test source-7.1 {source -encoding test} -setup {
 } -cleanup {
     removeFile source.file
 } -result correct
-
 test source-7.2 {source -encoding test} -setup {
     # This tests for bad interactions between [source -encoding]
     # and use of the Control-Z character (\u001A) as a cross-platform
@@ -248,12 +230,10 @@ test source-7.2 {source -encoding test} -setup {
 } -cleanup {
     removeFile source.file
 } -result correct
-
 test source-7.3 {source -encoding: syntax} -body {
     # Have to spell out the -encoding option
     source -e utf-8 no_file
 } -returnCodes 1 -match glob -result {bad option*}
-
 test source-7.4 {source -encoding: syntax} -setup {
     set sourcefile [makeFile {} source.file]
 } -body {
@@ -261,7 +241,6 @@ test source-7.4 {source -encoding: syntax} -setup {
 } -cleanup {
     removeFile source.file
 } -returnCodes 1 -match glob -result {unknown encoding*}
-
 test source-7.5 {source -encoding: correct operation} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
@@ -276,7 +255,6 @@ test source-7.5 {source -encoding: correct operation} -setup {
     removeFile source.file
     rename \u20ac {}
 } -result foo
-
 test source-7.6 {source -encoding: mismatch encoding error} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile

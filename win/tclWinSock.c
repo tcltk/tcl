@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.10 2006/01/25 18:39:59 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.11 2006/04/28 16:10:51 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -249,7 +249,6 @@ static void		TcpThreadActionProc(ClientData instanceData,
 static Tcl_EventCheckProc	SocketCheckProc;
 static Tcl_EventProc		SocketEventProc;
 static Tcl_EventSetupProc	SocketSetupProc;
-static Tcl_ExitProc		SocketThreadExitHandler;
 static Tcl_DriverBlockModeProc	TcpBlockProc;
 static Tcl_DriverCloseProc	TcpCloseProc;
 static Tcl_DriverSetOptionProc	TcpSetOptionProc;
@@ -266,7 +265,7 @@ static Tcl_DriverGetHandleProc	TcpGetHandleProc;
 
 static Tcl_ChannelType tcpChannelType = {
     "tcp",		    /* Type name. */
-    TCL_CHANNEL_VERSION_4,  /* v4 channel */
+    TCL_CHANNEL_VERSION_5,  /* v5 channel */
     TcpCloseProc,	    /* Close proc. */
     TcpInputProc,	    /* Input proc. */
     TcpOutputProc,	    /* Output proc. */
@@ -281,6 +280,7 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,		    /* handler proc. */
     NULL,		    /* wide seek proc */
     TcpThreadActionProc,    /* thread action proc */
+    NULL,                   /* truncate */
 };
 
 /*
@@ -292,7 +292,7 @@ static Tcl_ChannelType tcpChannelType = {
  *	and set up the winSock function table. If successful, registers the
  *	event window for the socket notifier code.
  *
- *	Assumes Mutex is held.
+ *	Assumes socketMutex is held.
  *
  * Results:
  *	None.
@@ -477,43 +477,41 @@ InitSockets(void)
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->socketList = NULL;
-	tsdPtr->hwnd = NULL;
-
-	tsdPtr->threadId = Tcl_GetCurrentThread();
-
+	tsdPtr->hwnd       = NULL;
+	tsdPtr->threadId   = Tcl_GetCurrentThread();
 	tsdPtr->readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (tsdPtr->readyEvent == NULL) {
+	    goto unloadLibrary;
+	}
 	tsdPtr->socketListLock = CreateEvent(NULL, FALSE, TRUE, NULL);
+	if (tsdPtr->socketListLock == NULL) {
+	    goto unloadLibrary;
+	}
 	tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread,
 		tsdPtr, 0, &id);
-	SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST);
-
 	if (tsdPtr->socketThread == NULL) {
 	    goto unloadLibrary;
 	}
 
+	SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST);
 
 	/*
-	 * Wait for the thread to signal that the window has been created and
-	 * is ready to go. Timeout after twenty seconds.
+	 * Wait for the thread to signal when the window has
+	 * been created and if it is ready to go.
 	 */
 
-	if (WaitForSingleObject(tsdPtr->readyEvent, 20000) == WAIT_TIMEOUT) {
-	    goto unloadLibrary;
-	}
+	WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
 
 	if (tsdPtr->hwnd == NULL) {
-	    goto unloadLibrary;
+	    goto unloadLibrary; /* Trouble creating the window */
 	}
 
 	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
-	Tcl_CreateThreadExitHandler(SocketThreadExitHandler, NULL);
     }
     return;
 
   unloadLibrary:
-    if (tsdPtr != NULL && tsdPtr->hwnd != NULL) {
-	SocketThreadExitHandler(0);
-    }
+    TclpFinalizeSockets();
     FreeLibrary(winSock.hModule);
     winSock.hModule = NULL;
     return;
@@ -571,12 +569,13 @@ SocketExitHandler(
 {
     Tcl_MutexLock(&socketMutex);
     if (winSock.hModule) {
+
 	/*
 	 * Make sure the socket event handling window is cleaned-up for, at
 	 * most, this thread.
 	 */
 
-	SocketThreadExitHandler(clientData);
+	TclpFinalizeSockets();
 	UnregisterClass("TclSocket", TclWinGetTclInstance());
 	winSock.WSACleanup();
 	FreeLibrary(winSock.hModule);
@@ -589,50 +588,50 @@ SocketExitHandler(
 /*
  *----------------------------------------------------------------------
  *
- * SocketThreadExitHandler --
+ * TclpFinalizeSockets --
  *
- *	Callback invoked during thread clean up to delete the socket event
- *	source.
+ *	This function is called from Tcl_FinalizeThread to finalize
+ *	the platform specific socket subsystem.
+ *	Also, it may be called from within this module to cleanup
+ *	the state if unable to initialize the sockets subsystem.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Delete the event source.
+ *	Deletes the event source and destroys the socket thread.
  *
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
-static void
-SocketThreadExitHandler(
-    ClientData clientData)	/* Not used. */
+void
+TclpFinalizeSockets()
 {
-    ThreadSpecificData *tsdPtr =
-	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr;
 
-    if (tsdPtr != NULL && tsdPtr->socketThread != NULL) {
-	DWORD exitCode;
-
-	GetExitCodeThread(tsdPtr->socketThread, &exitCode);
-	if (exitCode == STILL_ACTIVE) {
-	    PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
-
-	    /*
-	     * Wait for the thread to close. This ensures that we are
-	     * completely cleaned up before we leave this function. If
-	     * Tcl_Finalize was called from DllMain, the thread is in a paused
-	     * state so we need to timeout and continue.
-	     */
-
-	    WaitForSingleObject(tsdPtr->socketThread, 100);
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    if (tsdPtr != NULL) {
+	if (tsdPtr->socketThread != NULL) {
+	    if (tsdPtr->hwnd != NULL) {
+		PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
+		/*
+		 * Wait for the thread to exit. This ensures that we are
+		 * completely cleaned up before we leave this function.
+		 */
+		WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+		tsdPtr->hwnd = NULL;
+	    }
+	    CloseHandle(tsdPtr->socketThread);
+	    tsdPtr->socketThread = NULL;
 	}
-	CloseHandle(tsdPtr->socketThread);
-	tsdPtr->socketThread = NULL;
-	CloseHandle(tsdPtr->readyEvent);
-	CloseHandle(tsdPtr->socketListLock);
-
-	Tcl_DeleteThreadExitHandler(SocketThreadExitHandler, NULL);
+	if (tsdPtr->readyEvent != NULL) {
+	    CloseHandle(tsdPtr->readyEvent);
+	    tsdPtr->readyEvent = NULL;
+	}
+	if (tsdPtr->socketListLock != NULL) {
+	    CloseHandle(tsdPtr->socketListLock);
+	    tsdPtr->socketListLock = NULL;
+	}
 	Tcl_DeleteEventSource(SocketSetupProc, SocketCheckProc, NULL);
     }
 }
@@ -2305,15 +2304,22 @@ SocketThread(
     MSG msg;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)(arg);
 
+    /*
+     * Create a dummy window receiving socket events.
+     */
+
     tsdPtr->hwnd = CreateWindow("TclSocket", "TclSocket",
 	    WS_TILED, 0, 0, 0, 0, NULL, NULL, windowClass.hInstance, arg);
 
     /*
-     * Signal the main thread that the window has been created and that the
-     * socket thread is ready to go.
+     * Signalize thread creator that we are done creating the window.
      */
 
     SetEvent(tsdPtr->readyEvent);
+
+    /*
+     * If unable to create the window, exit this thread immediately.
+     */
 
     if (tsdPtr->hwnd == NULL) {
 	return 1;
@@ -2321,11 +2327,19 @@ SocketThread(
 
     /*
      * Process all messages on the socket window until WM_QUIT.
+     * This threads exits only when instructed to do so by the
+     * call to PostMessage(SOCKET_TERMINATE) in TclpFinalizeSockets().
      */
 
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
 	DispatchMessage(&msg);
     }
+
+    /*
+     * This releases waiters on thread exit in TclpFinalizeSockets()
+     */
+
+    SetEvent(tsdPtr->readyEvent);
 
     return msg.wParam;
 }
@@ -2550,6 +2564,8 @@ InitializeHostName(
 	if (winSock.gethostname(Tcl_DStringValue(&ds),
 		Tcl_DStringLength(&ds)) == 0) {
 	    Tcl_DStringSetLength(&ds, 0);
+	} else {
+	    Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
 	}
     }
 
@@ -2704,7 +2720,7 @@ TcpThreadActionProc(
 	SocketInfo **nextPtrPtr;
 	int removed = 0;
 
-	tsdPtr	= TCL_TSD_INIT(&dataKey);
+	tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	/*
 	 * TIP #218, Bugfix: All access to socketList has to be protected by
@@ -2713,7 +2729,7 @@ TcpThreadActionProc(
 
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	for (nextPtrPtr = &(tsdPtr->socketList); (*nextPtrPtr) != NULL;
-	     nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == infoPtr) {
 		(*nextPtrPtr) = infoPtr->nextPtr;
 		removed = 1;

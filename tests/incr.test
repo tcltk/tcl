@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr.test,v 1.9.2.4 2006/02/09 22:41:30 dgp Exp $
+# RCS: @(#) $Id: incr.test,v 1.9.2.5 2006/04/28 16:09:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -513,6 +513,13 @@ test incr-3.2 {increment by wide amount: command route} {
     set x 0
     $z x 123123123123
 } 123123123123
+
+test incr-4.1 {increment non-existing array element [Bug 1445454]} -body {
+    proc x {} {incr a(1)}
+    x
+} -cleanup {
+    rename x {}
+} -result 1
 
 # cleanup
 ::tcltest::cleanupTests

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.15.2.5 2006/02/28 16:34:55 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.15.2.6 2006/04/28 16:09:42 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -16,18 +16,15 @@ if {[catch {package require tcltest 2.0.2}]} {
 }
 
 namespace eval ::tcl::test::parse {
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::bytestring
+    namespace import ::tcltest::*
 
-    testConstraint testparser [llength [info commands testparser]]
-    testConstraint testevalobjv [llength [info commands testevalobjv]]
-    testConstraint testevalex [llength [info commands testevalex]]
-    testConstraint testparsevarname [llength [info commands testparsevarname]]
-    testConstraint testparsevar [llength [info commands testparsevar]]
-    testConstraint testasync [llength [info commands testasync]]
-    testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+testConstraint testparser [llength [info commands testparser]]
+testConstraint testevalobjv [llength [info commands testevalobjv]]
+testConstraint testevalex [llength [info commands testevalex]]
+testConstraint testparsevarname [llength [info commands testparsevarname]]
+testConstraint testparsevar [llength [info commands testparsevar]]
+testConstraint testasync [llength [info commands testasync]]
+testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 
 test parse-1.1 {Tcl_ParseCommand procedure, computing string length} testparser {
     testparser [bytestring "foo\0 bar"] -1
@@ -398,7 +395,28 @@ test parse-8.11 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} testevalobjv {
     rename ::unknown {}
     rename unknown.save ::unknown
     set ::info
-} [subst {[set level 2; incr level [info level]] namespace 1 global 1 global}]
+} [subst {[set level 2; incr level [info level]] global 1 global 1 global}]
+test parse-8.12 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} {
+    set ::auto_index(noSuchCommand) {
+        proc noSuchCommand {} {lappend ::info global}
+    }
+    set ::auto_index(::[string trimleft [namespace current]::test_ns_1::noSuchCommand :]) [list \
+        proc [namespace current]::test_ns_1::noSuchCommand {} {
+            lappend ::info ns
+        }]
+    catch {rename ::noSuchCommand {}}
+    set ::slave [interp create]
+    $::slave alias bar noSuchCommand
+    set ::info {}
+    namespace eval test_ns_1 {
+        $::slave eval bar
+    }
+    namespace delete test_ns_1
+    interp delete $::slave
+    catch {rename ::noSuchCommand {}}
+    set ::info
+} global
+
 
 test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
     catch {unset x}
@@ -1024,7 +1042,7 @@ test parse-19.4 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
     interp delete i
 } -returnCodes error -match glob -result {too many nested*}
 
-    cleanupTests
+cleanupTests
 }
 
 namespace delete ::tcl::test::parse

@@ -7063,7 +7063,7 @@ _ACEOF
 	    # NetBSD/SPARC needs -fPIC, -fpic will not do.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -7946,11 +7946,6 @@ _ACEOF
 
 cat >>confdefs.h <<\_ACEOF
 #define TCL_LOAD_FROM_MEMORY 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING 1
 _ACEOF
 
 	    # prior to Darwin 7, realpath is not threadsafe, so don't
@@ -15066,13 +15061,6 @@ elif test "$prefix/lib" != "$libdir"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"
-fi
-
-# If a system share directory like /usr/local/share already exists, then add
-# it to the package search path.
-
-if test -d "${prefix}/share" ; then
-    TCL_PACKAGE_PATH="${TCL_PACKAGE_PATH} ${prefix}/share"
 fi
 
 #--------------------------------------------------------------------

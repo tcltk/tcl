@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.13 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.14 2006/04/28 16:10:51 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -187,7 +187,6 @@ static void		PipeCheckProc(ClientData clientData, int flags);
 static int		PipeClose2Proc(ClientData instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		PipeEventProc(Tcl_Event *evPtr, int flags);
-static void		PipeExitHandler(ClientData clientData);
 static int		PipeGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static void		PipeInit(void);
@@ -211,7 +210,7 @@ static void		PipeThreadActionProc(ClientData instanceData,
 
 static Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TCL_CLOSE2PROC,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
@@ -226,6 +225,7 @@ static Tcl_ChannelType pipeChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     PipeThreadActionProc,	/* thread action proc */
+    NULL,                       /* truncate */
 };
 
 /*
@@ -268,17 +268,16 @@ PipeInit(void)
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->firstPipePtr = NULL;
 	Tcl_CreateEventSource(PipeSetupProc, PipeCheckProc, NULL);
-	Tcl_CreateThreadExitHandler(PipeExitHandler, NULL);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * PipeExitHandler --
+ * TclpFinalizePipes --
  *
- *	This function is called to cleanup the pipe module before Tcl is
- *	unloaded.
+ *	This function is called from Tcl_FinalizeThread to finalize the
+ *	platform specific pipe subsystem.
  *
  * Results:
  *	None.
@@ -289,36 +288,15 @@ PipeInit(void)
  *----------------------------------------------------------------------
  */
 
-static void
-PipeExitHandler(
-    ClientData clientData)	/* Old window proc */
-{
-    Tcl_DeleteEventSource(PipeSetupProc, PipeCheckProc, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpFinalizePipes --
- *
- *	This function is called to cleanup the process list before Tcl is
- *	unloaded.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Resets the process list.
- *
- *----------------------------------------------------------------------
- */
-
 void
 TclpFinalizePipes(void)
 {
-    Tcl_MutexLock(&pipeMutex);
-    initialized = 0;
-    Tcl_MutexUnlock(&pipeMutex);
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    if (tsdPtr != NULL) {
+	Tcl_DeleteEventSource(PipeSetupProc, PipeCheckProc, NULL);
+    }
 }
 
 /*
@@ -1195,6 +1173,10 @@ TclpCreateProcess(
 	     * The helper app should be located in the same directory as the
 	     * tcl dll.
 	     */
+	    Tcl_Obj *tclExePtr, *pipeDllPtr;
+	    char *start, *end;
+	    int i, fileExists;
+	    Tcl_DString pipeDll;
 
 	    if (createFlags != 0) {
 		startInfo.wShowWindow = SW_HIDE;
@@ -1202,41 +1184,44 @@ TclpCreateProcess(
 		createFlags = CREATE_NEW_CONSOLE;
 	    }
 
-	    {
-		Tcl_Obj *tclExePtr, *pipeDllPtr;
-		int i, fileExists;
-		char *start,*end;
-		Tcl_DString pipeDll;
-
-		Tcl_DStringInit(&pipeDll);
-		Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
-		tclExePtr = TclGetObjNameOfExecutable();
-		start = Tcl_GetStringFromObj(tclExePtr, &i);
-		for (end = start + (i-1); end > start; end--) {
-		    if (*end == '/') {
-			break;
-		    }
+	    Tcl_DStringInit(&pipeDll);
+	    Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
+	    tclExePtr = TclGetObjNameOfExecutable();
+	    Tcl_IncrRefCount(tclExePtr);
+	    start = Tcl_GetStringFromObj(tclExePtr, &i);
+	    for (end = start + (i-1); end > start; end--) {
+		if (*end == '/') {
+		    break;
 		}
-		if (*end != '/') {
-		    Tcl_Panic("no / in executable path name");
-		}
-		i = (end - start) + 1;
-		pipeDllPtr = Tcl_NewStringObj(start, i);
-		Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
-		Tcl_IncrRefCount(pipeDllPtr);
-		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
-		    Tcl_Panic("Tcl_FSConvertToPathType failed");
-		}
-		fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
-		if (!fileExists) {
-		    Tcl_Panic("Tcl pipe dll \"%s\" not found",
-			Tcl_DStringValue(&pipeDll));
-		}
-		Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
+	    }
+	    if (*end != '/') {
+		Tcl_AppendResult(interp, "no / in executable path name \"",
+			start, "\"", (char *) NULL);
+		Tcl_DecrRefCount(tclExePtr);
+		Tcl_DStringFree(&pipeDll);
+		goto end;
+	    }
+	    i = (end - start) + 1;
+	    pipeDllPtr = Tcl_NewStringObj(start, i);
+	    Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
+	    Tcl_IncrRefCount(pipeDllPtr);
+	    if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
+		Tcl_Panic("Tcl_FSConvertToPathType failed");
+	    }
+	    fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
+	    if (!fileExists) {
+		Tcl_AppendResult(interp, "Tcl pipe dll \"",
+			Tcl_DStringValue(&pipeDll), "\" not found",
+			(char *) NULL);
 		Tcl_DecrRefCount(tclExePtr);
 		Tcl_DecrRefCount(pipeDllPtr);
 		Tcl_DStringFree(&pipeDll);
+		goto end;
 	    }
+	    Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
+	    Tcl_DecrRefCount(tclExePtr);
+	    Tcl_DecrRefCount(pipeDllPtr);
+	    Tcl_DStringFree(&pipeDll);
 	}
     }
 

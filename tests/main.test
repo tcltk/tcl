@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.13.4.4 2006/02/09 22:41:30 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.13.4.5 2006/04/28 16:09:42 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -8,15 +8,7 @@ if {[catch {package require tcltest 2.0.2}]} {
 }
 
 namespace eval ::tcl::test::main {
-
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-    namespace import ::tcltest::interpreter
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::temporaryDirectory
-    namespace import ::tcltest::workingDirectory
+    namespace import ::tcltest::*
 
     # Is [exec] defined?
     testConstraint exec [llength [info commands exec]]
@@ -615,8 +607,7 @@ namespace eval ::tcl::test::main {
 	after cancel $id
 	set wait
     } -cleanup {
-	if {[string equal timeout $wait]
-		&& [string equal unix $::tcl_platform(platform)]} {
+	if {[string equal timeout $wait] && [testConstraint unix]} {
 	    exec kill [pid $f]
 	}
 	close $f
@@ -639,8 +630,7 @@ namespace eval ::tcl::test::main {
 	after cancel $id
 	set wait
     } -cleanup {
-	if {[string equal timeout $wait]
-		&& [string equal unix $::tcl_platform(platform)]} {
+	if {[string equal timeout $wait] && [testConstraint unix]} {
 	    exec kill [pid $f]
 	}
 	close $f

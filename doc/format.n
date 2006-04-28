@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.7.4.4 2005/04/07 17:32:00 dgp Exp $
+'\" RCS: @(#) $Id: format.n,v 1.7.4.5 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -19,9 +19,8 @@ format \- Format a string in the style of sprintf
 
 .SH INTRODUCTION
 .PP
-This command generates a formatted string in the same way as the
-ANSI C \fBsprintf\fR procedure (it uses \fBsprintf\fR in its
-implementation).
+This command generates a formatted string in a fashion similar to the
+ANSI C \fBsprintf\fR procedure.
 \fIFormatString\fR indicates how to format the result, using
 \fB%\fR conversion specifiers as in \fBsprintf\fR, and the additional
 arguments, if any, provide values to be substituted into the result.
@@ -44,7 +43,7 @@ of all of the conversion specifiers in \fIformatString\fR.
 .PP
 Each conversion specifier may contain up to six different parts:
 an XPG3 position specifier,
-a set of flags, a minimum field width, a precision, a length modifier,
+a set of flags, a minimum field width, a precision, a size modifier,
 and a conversion character.
 Any of these fields may be omitted except for the conversion character.
 The fields that are present must appear in the order given above.
@@ -94,7 +93,7 @@ has a decimal point.
 For \fBg\fR and \fBG\fR conversions it specifies that 
 trailing zeroes should not be removed.
 .PP
-The third portion of a conversion specifier is a number giving a
+The third portion of a conversion specifier is a decimal number giving a
 minimum field width for this conversion.
 It is typically used to make columns line up in tabular printouts.
 If the converted argument contains fewer characters than the
@@ -106,7 +105,7 @@ may be used to specify padding with zeroes on the left or with
 spaces on the right, respectively.
 If the minimum field width is specified as \fB*\fR rather than
 a number, then the next argument to the \fBformat\fR command
-determines the minimum field width; it must be a numeric string.
+determines the minimum field width; it must be an integer value.
 .PP
 The fourth portion of a conversion specifier is a precision,
 which consists of a period followed by a number.
@@ -125,15 +124,19 @@ If the precision is specified with \fB*\fR rather than a number
 then the next argument to the \fBformat\fR command determines the precision;
 it must be a numeric string.
 .PP
-The fifth part of a conversion specifier is a length modifier,
-which must be \fBh\fR or \fBl\fR.
-If it is \fBh\fR it specifies that the numeric value should be
-truncated to a 16-bit value before converting.
-This option is rarely useful.
-If it is \fBl\fR it specifies that the numeric value should be (at
-least) a 64-bit value.  If neither \fBh\fR nor \fBl\fR are present,
-numeric values are interpreted as being values of the width of the
-native machine word, as described by \fBtcl_platform(wordSize)\fR.
+The fifth part of a conversion specifier is a size modifier,
+which must be \fBll\fR, \fBh\fR, or \fBl\fR.
+If it is \fBll\fR it specifies that an integer value is taken
+without truncation for conversion to a formatted substring.
+If it is \fBh\fR it specifies that an integer value is
+truncated to a 16-bit range before converting.  This option is rarely useful.
+If it is \fBl\fR it specifies that the integer value is 
+truncated to the same range as that produced by the \fBwide()\fR
+function of the \fBexpr\fR command (at least a 64-bit range).
+If neither \fBh\fR nor \fBl\fR are present, the integer value is
+truncated to the same range as that produced by the \fBint()\fR
+function of the \fBexpr\fR command (at least a 32-bit range, but
+determined by the value of \fBtcl_platform(wordSize)\fR).
 .PP
 The last thing in a conversion specifier is an alphabetic character
 that determines what kind of conversion to perform.
@@ -146,9 +149,7 @@ Convert integer to signed decimal string.
 Convert integer to unsigned decimal string.
 .TP 10
 \fBi\fR
-Convert integer to signed decimal string;  the integer may either be
-in decimal, in octal (with a leading \fB0\fR) or in hexadecimal
-(with a leading \fB0x\fR).
+Convert integer to signed decimal string (equivalent to \fBd\fR).
 .TP 10
 \fBo\fR
 Convert integer to unsigned octal string.
@@ -164,13 +165,13 @@ Convert integer to the Unicode character it represents.
 No conversion; just insert string.
 .TP 10
 \fBf\fR
-Convert floating-point number to signed decimal string of 
+Convert number to signed decimal string of 
 the form \fIxx.yyy\fR, where the number of \fIy\fR's is determined by 
 the precision (default: 6).
 If the precision is 0 then no decimal point is output.
 .TP 10
-\fBe\fR or \fBe\fR
-Convert floating-point number to scientific notation in the 
+\fBe\fR or \fBE\fR
+Convert number to scientific notation in the 
 form \fIx.yyy\fBe\(+-\fIzz\fR, where the number of \fIy\fR's is determined 
 by the precision (default: 6).
 If the precision is 0 then no decimal point is output.
@@ -179,37 +180,26 @@ printed instead of \fBe\fR.
 .TP 10
 \fBg\fR or \fBG\fR
 If the exponent is less than \-4 or greater than or equal to the 
-precision, then convert floating-point number as for \fB%e\fR or 
+precision, then convert number as for \fB%e\fR or 
 \fB%E\fR.
 Otherwise convert as for \fB%f\fR.
 Trailing zeroes and a trailing decimal point are omitted.
 .TP 10
 \fB%\fR
 No conversion: just insert \fB%\fR.
-.LP
-For the numerical conversions the argument being converted must
-be an integer or floating-point string; format converts the argument
-to binary and then converts it back to a string according to 
-the conversion specifier.
 .SH "DIFFERENCES FROM ANSI SPRINTF"
 .PP
 The behavior of the format command is the same as the
 ANSI C \fBsprintf\fR procedure except for the following
 differences:
 .IP [1]
-\fB%p\fR and \fB%n\fR specifiers are not currently supported.
+\fB%p\fR and \fB%n\fR specifiers are not supported.
 .IP [2]
-For \fB%c\fR conversions the argument must be a decimal string,
+For \fB%c\fR conversions the argument must be an integer value,
 which will then be converted to the corresponding character value.
 .IP [3]
-The \fBl\fR modifier
-is ignored for real values and on 64-bit platforms, which are always
-converted as if the \fBl\fR modifier were present (i.e. the types
-\fBdouble\fR and \fBlong\fR are used for the internal representation
-of real and integer values, respectively).
-If the \fBh\fR modifier is specified then integer values are truncated
-to \fBshort\fR before conversion.  Both \fBh\fR and \fBl\fR modifiers
-are ignored on all other conversions.
+The size modifiers are ignored when formatting floating-point values.
+The \fBll\fR modifier has no \fBsprintf\fR counterpart.
 .SH EXAMPLES
 Convert the output of \fBtime\fR into seconds to an accuracy of
 hundredths of a second:

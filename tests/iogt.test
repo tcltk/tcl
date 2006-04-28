@@ -10,21 +10,16 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.7.4.3 2005/04/29 22:40:45 dgp Exp $
+# RCS: @(#) $Id: iogt.test,v 1.7.4.4 2006/04/28 16:09:42 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
     return
 }
 namespace eval ::tcl::test::iogt {
+    namespace import ::tcltest::*
 
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::test
-    namespace import ::tcltest::testConstraint
-
-    testConstraint testchannel [llength [info commands testchannel]]
+testConstraint testchannel [llength [info commands testchannel]]
 
 set path(dummy) [makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
 } dummy]
@@ -881,10 +876,6 @@ query/maxRead {} -1
 delete/read {} *ignored*
 flush/write {} {}
 delete/write {} *ignored*}
-
-
-
-
 
 proc constX {op data} {
     # replace anything coming in with a same-length string of x'es.

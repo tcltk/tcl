@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.17.2.7 2006/02/23 14:45:27 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.17.2.8 2006/04/28 16:09:42 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -502,6 +502,38 @@ test iocmd-13.8 {errors in open command} {
 test iocmd-13.9 {errors in open command} {
     list [catch {open $path(test1) r++} msg] $msg
 } {1 {illegal access mode "r++"}}
+
+test iocmd-13.10.1 {open for append, a mode} -setup {
+    set log   [makeFile {} out]
+    set chans {}
+} -body {
+    foreach i { 0 1 2 3 4 5 6 7 8 9 } {
+	puts [set ch [open $log a]] $i
+	lappend chans $ch
+    }
+    foreach ch $chans {catch {close $ch}}
+    lsort [split [string trim [viewFile out]] \n]
+} -cleanup {
+    removeFile out
+    # Ensure that channels are gone, even if body failed to do so
+    foreach ch $chans {catch {close $ch}}
+} -result {0 1 2 3 4 5 6 7 8 9}
+
+test iocmd-13.10.2 {open for append, O_APPEND} -setup {
+    set log   [makeFile {} out]
+    set chans {}
+} -body {
+    foreach i { 0 1 2 3 4 5 6 7 8 9 } {
+	puts [set ch [open $log {WRONLY CREAT APPEND}]] $i
+	lappend chans $ch
+    }
+    foreach ch $chans {catch {close $ch}}
+    lsort [split [string trim [viewFile out]] \n]
+} -cleanup {
+    removeFile out
+    # Ensure that channels are gone, even if body failed to do so
+    foreach ch $chans {catch {close $ch}}
+} -result {0 1 2 3 4 5 6 7 8 9}
 
 test iocmd-14.1 {file id parsing errors} {
     list [catch {eof gorp} msg] $msg $errorCode

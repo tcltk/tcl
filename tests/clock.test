@@ -11,30 +11,25 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.15 2005/12/02 18:42:52 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.16 2006/04/28 16:09:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-if { $::tcl_platform(platform) eq {windows} } {
-    if { [catch { package require registry 1.1 }] } {
-	
+if {[testConstraint win]} {
+    if {[catch {package require registry 1.1}]} {
 	# HIDEOUS KLUDGE: [package require registry 1.1] has failed.
 	# This failure likely means that we're running in Tcl's build
 	# directory instead of the install directory.  We recover by
 	# trying to load tclreg*.dll directly.
-	
-	if { [catch { 
-	    load [lindex \
-		      [glob -directory \
-			   [file join \
-				[pwd] \
-				[file dirname [info nameofexecutable]]] \
-			   tclReg*.dll] \
-		      0] registry
-	}] } {
+
+	if {[catch {
+	    load [lindex [glob -directory \
+		    [file join [pwd] [file dirname [info nameofexecutable]]] \
+		    tclReg*.dll] 0] registry
+	}]} then {
 	    # Still no registry!
 	    namespace eval ::tcl::clock [set NoRegistry {}]
 	}
@@ -42,9 +37,9 @@ if { $::tcl_platform(platform) eq {windows} } {
 }
 package require msgcat 1.4
 
-::tcltest::testConstraint detroit \
+testConstraint detroit \
     [expr {![catch {clock format 0 -timezone :America/Detroit -format %z}]}]
-::tcltest::testConstraint y2038 \
+testConstraint y2038 \
     [expr {[clock format 2158894800 -format %z -timezone :America/Detroit] eq {-0400}}]
 
 # TEST PLAN
@@ -34912,8 +34907,8 @@ test clock-33.5a {clock tests, millisecond timing test} {
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
-    list [catch { clock clicks {} } msg] $msg
-} {1 {bad option "": must be -milliseconds or -microseconds}}
+    list [catch { clock clicks ? } msg] $msg
+} {1 {bad option "?": must be -milliseconds or -microseconds}}
 test clock-33.7 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks - } msg] $msg
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
@@ -35486,6 +35481,19 @@ test clock-51.1 {correct conversion of times in Sydney} {
     }
     set result
 } {01:59:59 03:00:00 12:59:59 13:00:00}
+
+test clock-52.1 {Posix timezone and conversion on last Sunday} {
+    # Martin Lemburg reported a bug where if tzdata is missing, then
+    # times are converted incorrectly in locales where DST conversion
+    # happens in the last (nominal 5th) week of a month.
+    set result {}
+    set timezone <MEZ>-01:00:00<MESZ>-02:00:00,M3.5.0/02:00:00,M10.5.0/01:00:00
+    foreach t {1143334799 1143334800} {
+	lappend result [clock format $t -format %H:%M:%S -timezone $timezone] \
+	    [clock format $t -format %H:%M:%S -timezone :Europe/Berlin]
+    }
+    set result
+} {01:59:59 01:59:59 03:00:00 03:00:00}
 
 # cleanup
 

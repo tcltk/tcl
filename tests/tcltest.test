@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.4.9 2005/02/24 22:34:55 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.4.10 2006/04/28 16:09:43 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -551,13 +551,14 @@ set notWriteableDir [file join [temporaryDirectory] notwriteable]
 makeDirectory notreadable
 makeDirectory notwriteable
 
-switch $tcl_platform(platform) {
+switch -- $tcl_platform(platform) {
     "unix" {
 	file attributes $notReadableDir -permissions 00333
 	file attributes $notWriteableDir -permissions 00555
     }
     default {
 	catch {file attributes $notWriteableDir -readonly 1}
+	catch {testchmod 000 $notWriteableDir}
     }
 }
 

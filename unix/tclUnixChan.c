@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.18 2006/02/09 22:41:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.19 2006/04/28 16:10:47 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -298,7 +298,7 @@ static Tcl_Channel	MakeTcpClientChannelMode(ClientData tcpSocket,
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
@@ -328,7 +328,7 @@ static Tcl_ChannelType fileChannelType = {
 
 static Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TtyCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
 #if BAD_TIP35_FLUSH
@@ -358,7 +358,7 @@ static Tcl_ChannelType ttyChannelType = {
 
 static Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
-    TCL_CHANNEL_VERSION_4,	/* v4 channel */
+    TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TcpCloseProc,		/* Close proc. */
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
@@ -3183,6 +3183,7 @@ TclUnixWaitForFile(
 
     if (fd >= FD_SETSIZE) {
 	Tcl_Panic("TclWaitForFile can't handle file id %d", fd);
+	/* must never get here, or readyMasks overrun will occur below */
     }
     memset((void *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));

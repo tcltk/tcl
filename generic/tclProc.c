@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.20 2006/02/09 22:41:29 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.21 2006/04/28 16:09:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -76,7 +76,7 @@ static Tcl_ObjType levelReferenceType = {
  * will execute within.
  */
 
-Tcl_ObjType lambdaType = {
+static Tcl_ObjType lambdaType = {
     "lambdaExpr",		/* name */
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
@@ -1405,7 +1405,22 @@ ObjInterpProcEx(
     }
 
     if (result != TCL_OK) {
-	result = ProcessProcResultCode(interp, procName, nameLen, result);
+	if (skip == 1) {
+	    result = ProcessProcResultCode(interp, procName, nameLen, result);
+	} else {
+	    /*
+	     * Use a 'procName' that contains the first skip elements of objv
+	     * for error reporting. This insures that we do not see just
+	     * 'apply', but also the lambda expression that caused the error.
+	     */
+	     
+	    Tcl_Obj *namePtr;
+
+	    namePtr = Tcl_NewListObj(skip, objv);
+	    procName = Tcl_GetStringFromObj(namePtr, &nameLen);
+	    result = ProcessProcResultCode(interp, procName, nameLen, result);
+	    TclDecrRefCount(namePtr);
+	}
     }
 
     /*

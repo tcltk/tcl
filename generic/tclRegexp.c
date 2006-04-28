@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.5 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.6 2006/04/28 16:09:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1014,7 +1014,13 @@ FinalizeRegexp(
 	    FreeRegexp(regexpPtr);
 	}
 	ckfree(tsdPtr->patterns[i]);
+	tsdPtr->patterns[i] = NULL;
     }
+    /*
+     * We may find ourselves reinitialized if another finalization routine
+     * invokes regexps.
+     */
+    tsdPtr->initialized = 0;
 }
 
 /*

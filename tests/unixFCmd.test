@@ -9,12 +9,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.19.2.2 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.19.2.3 2006/04/28 16:09:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testchmod [llength [info commands testchmod]]
 
 # These tests really need to be run from a writable directory, which
 # it is assumed [temporaryDirectory] is.
@@ -23,7 +25,7 @@ cd [temporaryDirectory]
 
 # Several tests require need to match results against the unix username
 set user {}
-if {$tcl_platform(platform) == "unix"} {
+if {[testConstraint unix]} {
     catch {set user [exec whoami]}
     if {$user == ""} {
 	catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
@@ -31,6 +33,28 @@ if {$tcl_platform(platform) == "unix"} {
     if {$user == ""} {
 	set user "root"
     }
+}
+
+# Find a group that exists on this system, or else skip tests that require
+# groups
+testConstraint foundGroup 0
+if {[testConstraint unix]} {
+    catch {
+	set groupList [exec groups]
+	set group [lindex $groupList 0]
+	testConstraint foundGroup 1
+    }
+}
+
+# check whether -readonly attribute is supported
+testConstraint readonlyAttr 0
+if {[testConstraint unix]} {
+    set f [makeFile "whatever" probe]
+    catch {
+	file attributes $f -readonly
+	testConstraint readonlyAttr 1
+    }
+    removeFile probe
 }
 
 proc openup {path} {
@@ -51,7 +75,10 @@ proc cleanup {args} {
 	    set x [glob -directory $p tf* td*]
 	}
 	foreach file $x {
-	    if {[catch {file delete -force -- $file}]} {
+	    if {
+		[catch {file delete -force -- $file}]
+		&& [testConstraint testchmod]
+	    } then {
 		openup $file
 		file delete -force -- $file
 	    }
@@ -120,6 +147,7 @@ test unixFCmd-1.9 {Checking EINTR Bug} {unix notRoot nonPortable} {
     catch {close $pipe}
     list $line [testgotsig]
 } {h 1}
+
 test unixFCmd-2.1 {TclpCopyFile: target exists: lstat(dst) == 0} \
 	{unix notRoot} {
     cleanup
@@ -227,18 +255,6 @@ test unixFCmd-14.2 {GetPermissionsAttribute} {unix notRoot} {
 	    [file delete -force -- foo.test]
 } {0 {}}
 
-# Find a group that exists on this system, or else skip tests that require
-# groups
-set foundgroup 0
-if {$tcl_platform(platform) == "unix"} {
-    catch {
-	set groupList [exec groups]
-	set group [lindex $groupList 0]
-	set foundgroup 1
-    }
-}
-testConstraint foundGroup $foundgroup
-
 #groups hard to test
 test unixFCmd-15.1 {SetGroupAttribute - invalid group} {unix notRoot} {
     catch {file delete -force -- foo.test}
@@ -326,19 +342,6 @@ test unixFCmd-18.1 {Unix pwd} {nonPortable unix notRoot} {
     set r
 } {1 {error getting working directory name:}}
 
-# check whether -readonly attribute is supported
-set roattr 0
-if {$tcl_platform(platform) == "unix"} {
-    catch {file delete -force -- foo.test}
-    close [open foo.test w]
-    catch {
-	file attributes foo.test -readonly
-	set roattr 1
-    }
-    file delete -force -- foo.test
-}
-testConstraint readonlyAttr $roattr
-
 test unixFCmd-19.1 {GetReadOnlyAttribute - file not found} {unix notRoot readonlyAttr} {
     catch {file delete -force -- foo.test}
     list [catch {file attributes foo.test -readonly} msg] $msg
@@ -370,3 +373,7 @@ cleanup
 cd $oldcwd
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

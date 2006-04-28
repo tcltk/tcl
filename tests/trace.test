@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.28.2.10 2006/02/28 16:34:55 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.28.2.11 2006/04/28 16:09:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2390,6 +2390,43 @@ test trace-34.5 {Bug 1047286} {
     namespace eval ::foo namespace delete ::foo
     set x
 } {::foo::bar exists: }
+
+test trace-34.6 {Bug 1458266} -setup {
+    proc dummy {} {}
+    proc stepTraceHandler {cmdString args} {
+        variable log
+        append log "[expr {[info level] - 1}]: [lindex [split $cmdString] 0]\n"
+        dummy
+        isTracedInside_2
+    }
+    proc cmdTraceHandler {cmdString args} {
+        # silent
+    }
+    proc isTracedInside_1 {} {
+        isTracedInside_2
+    }
+    proc isTracedInside_2 {} {
+        set x 2
+    }
+} -body {
+    variable log {}
+    trace add execution isTracedInside_1 enterstep stepTraceHandler
+    trace add execution isTracedInside_2 enterstep stepTraceHandler
+    isTracedInside_1
+    variable first $log
+    set log {}
+    trace add execution dummy enter cmdTraceHandler
+    isTracedInside_1
+    variable second $log
+    expr {($first eq $second) ? "ok" : "\n$first\nand\n\n$second\ndiffer"}
+} -cleanup {
+    unset -nocomplain log first second
+    rename dummy {}
+    rename stepTraceHandler {}
+    rename cmdTraceHandler {}
+    rename isTracedInside_1 {}
+    rename isTracedInside_2 {}
+} -result ok
 
 test trace-35.1 {527164: Keep -errorinfo of traces} -setup {
     unset -nocomplain x y

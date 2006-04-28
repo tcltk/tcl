@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.17.2.7 2005/04/29 22:40:13 dgp Exp $
+'\" RCS: @(#) $Id: open.n,v 1.17.2.8 2006/04/28 16:09:08 dgp Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -55,7 +55,7 @@ If it doesn't exist, create a new file.
 \fBa\fR
 Open the file for writing only.  If the file doesn't exist,
 create a new empty file.
-Set the initial access position  to the end of the file.
+Set the file pointer to the end of the file prior to each write.
 .TP 15
 \fBa+\fR
 Open the file for reading and writing.  If the file doesn't exist,
@@ -85,8 +85,8 @@ Open the file for both reading and writing.
 .TP 15
 \fBAPPEND\fR
 Set the file pointer to the end of the file prior to each write.
-.TP 15
 .VS 8.5
+.TP 15
 \fBBINARY\fR
 Configure the opened channed with the \fB-translation binary\fR option.
 .VE 8.5
