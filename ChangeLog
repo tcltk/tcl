@@ -1,3 +1,8 @@
+2006-05-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (ExprSrandFunc):	Restore acceptance of wide
+	* tests/expr-old.test: integer values by srand() [Bug 1480509].
+
 2006-04-12  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.13 TAGGED FOR RELEASE ***
@@ -1365,7 +1370,7 @@
 	* generic/tclUtil.c (TclGetIntForIndex): intreps of numeric types
 	with simpler calls of Tcl_GetIntFromObj and Tcl_GetLongFromObj,
 	now that those routines are better behaved wrt shimmering.
-	[Patch 1177219]
+	[Patch 1177129]
 
 2005-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
