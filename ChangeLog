@@ -1,3 +1,10 @@
+2006-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclMain.c (Tcl_Main):		Corrected flaw that required
+	* tests/main.test: (Tcl_Main-4.5):	processing of one interactive
+	command before passing control to the loop routine registered with
+	Tcl_SetMainLoop() [Bug 1481986].
+
 2006-05-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.4.14
