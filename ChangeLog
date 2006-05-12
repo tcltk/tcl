@@ -1,25 +1,29 @@
+2006-05-13  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclEvent.c (HandleBgErrors): fix leak. [Coverity issue 86]
+
 2006-05-05  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclMain.c (Tcl_Main):         Corrected flaw that required
-        * tests/main.test: (Tcl_Main-4.5):      processing of one interactive
-        command before passing control to the loop routine registered with
-        Tcl_SetMainLoop() [Bug 1481986].
+	* generic/tclMain.c (Tcl_Main):		Corrected flaw that required
+	* tests/main.test: (Tcl_Main-4.5):	processing of one interactive
+	command before passing control to the loop routine registered with
+	Tcl_SetMainLoop() [Bug 1481986].
 
 2006-05-04  Don Porter  <dgp@users.sourceforge.net>
 
-        * README:               Bump version number to 8.5a5
-        * generic/tcl.h:
-        * tools/tcl.wse.in:
-        * unix/configure.in:
-        * unix/tcl.spec:
-        * win/README.binary:
-        * win/configure.in:
+	* README:		Bump version number to 8.5a5
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure.in:
 
-        * unix/configure:       autoconf-2.59
-        * win/configure:
+	* unix/configure:	autoconf-2.59
+	* win/configure:
 
-        * generic/tclBasic.c (ExprSrandFunc): Restore acceptance of wide/big
-        * doc/mathfunc.n: integer values by srand() [Bug 1480509].
+	* generic/tclBasic.c (ExprSrandFunc): Restore acceptance of wide/big
+	* doc/mathfunc.n: integer values by srand() [Bug 1480509].
 
 2006-04-26  Don Porter  <dgp@users.sourceforge.net>
 
