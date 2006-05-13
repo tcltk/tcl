@@ -1,3 +1,12 @@
+2006-05-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclProc.c (ProcCompileProc):  When a bump of the compile
+        epoch forces the re-compile of a proc body, take care not to
+        overwrite any Proc struct that may be referred to on the active
+        call stack.  This fixes [Bug 148218].  Note that the fix will not be
+        effective for code that calls the private routine TclProcCompileProc()
+        directly.
+
 2006-05-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclMain.c (Tcl_Main):		Corrected flaw that required
