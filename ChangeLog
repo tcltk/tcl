@@ -1,5 +1,10 @@
 2006-05-13  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclFileName.c (TclDoGlob):	Disabled the partial
+	normalization done by the recursive glob routine, since changing the
+	precise string of the pathname broke [glob] on some Tcl_Filesystems.
+	[Bug 943995]
+
 	* generic/tclProc.c (ProcCompileProc):  When a bump of the compile
         epoch forces the re-compile of a proc body, take care not to
         overwrite any Proc struct that may be referred to on the active
