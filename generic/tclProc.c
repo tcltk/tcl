@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.4 2006/05/13 17:17:11 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.5 2006/05/15 16:07:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1257,7 +1257,8 @@ ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
 
 	    new->iPtr = procPtr->iPtr;
 	    new->refCount = 1;
-	    token = (Tcl_Command) new->cmdPtr = procPtr->cmdPtr;
+	    new->cmdPtr = procPtr->cmdPtr;
+	    token = (Tcl_Command) new->cmdPtr;
 	    new->bodyPtr = Tcl_DuplicateObj(bodyPtr);
 	    bodyPtr = new->bodyPtr;
 	    Tcl_IncrRefCount(bodyPtr);
