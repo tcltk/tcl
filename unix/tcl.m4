@@ -949,7 +949,7 @@ AC_DEFUN([SC_CONFIG_SYSTEM], [
 		# results, and the version is kept in special file).
 
 		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		    tcl_cv_sys_version=MP-RAS-`awk '{print $3}' /etc/.relid`
+		    tcl_cv_sys_version=MP-RAS-`awk '{print $[3]}' /etc/.relid`
 		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
