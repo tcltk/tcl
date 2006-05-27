@@ -1,3 +1,17 @@
+2006-05-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: implemented pthread_atfork() handler that
+	* unix/tcl.m4 (Darwin):     recreates CoreFoundation state and notifier
+	thread in the child after a fork(). Note that pthread_atfork() is
+	available starting with Tiger only. Because vfork() is used by the core
+	on Darwin, [exec]/[open] are not affected by this fix, only extensions
+	or embedders that call fork() directly (such as TclX). However, this
+	only makes fork() safe from corefoundation tcl with --disable-threads;
+	as on all platforms, forked children may deadlock in threaded tcl due to
+	the potential for stale locked mutexes in the child. [Patch 923072]
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
 2006-05-24  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/tcl.m4 (SC_CONFIG_SYSTEM): Fixed quoting of command script to
