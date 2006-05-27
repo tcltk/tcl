@@ -1,3 +1,21 @@
+2006-05-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: implemented pthread_atfork() handler that
+	* unix/tcl.m4 (Darwin):     recreates CoreFoundation state and notifier
+	thread in the child after a fork(). Note that pthread_atfork() is
+	available starting with Tiger only. Because vfork() is used by the core
+	on Darwin, [exec]/[open] are not affected by this fix, only extensions
+	or embedders that call fork() directly (such as TclX). However, this
+	only makes fork() safe from corefoundation tcl with --disable-threads;
+	as on all platforms, forked children may deadlock in threaded tcl due to
+	the potential for stale locked mutexes in the child. [Patch 923072]
+	* unix/configure: autoconf-2.59
+
+2006-05-24  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/tcl.m4 (SC_CONFIG_SYSTEM): Fixed quoting of command script to
+	awk; it was a rarely used branch, but it was wrong. [Bug 1494160]
+
 2006-05-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c (TclDoGlob):	Disabled the partial
@@ -5,12 +23,12 @@
 	precise string of the pathname broke [glob] on some Tcl_Filesystems.
 	[Bug 943995]
 
-	* generic/tclProc.c (ProcCompileProc):  When a bump of the compile
-        epoch forces the re-compile of a proc body, take care not to
-        overwrite any Proc struct that may be referred to on the active
-        call stack.  This fixes [Bug 148218].  Note that the fix will not be
-        effective for code that calls the private routine TclProcCompileProc()
-        directly.
+	* generic/tclProc.c (ProcCompileProc):	When a bump of the compile
+	epoch forces the re-compile of a proc body, take care not to
+	overwrite any Proc struct that may be referred to on the active
+	call stack.  This fixes [Bug 148218].  Note that the fix will not be
+	effective for code that calls the private routine TclProcCompileProc()
+	directly.
 
 2006-05-05  Don Porter  <dgp@users.sourceforge.net>
 
