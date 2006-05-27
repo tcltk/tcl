@@ -76,6 +76,9 @@
 /* Define to 1 if you have the `OSSpinLockLock' function. */
 #undef HAVE_OSSPINLOCKLOCK
 
+/* Define to 1 if you have the `pthread_atfork' function. */
+#undef HAVE_PTHREAD_ATFORK
+
 /* Do we want a BSD-like thread-attribute interface? */
 #undef HAVE_PTHREAD_ATTR_GET_NP
 
