@@ -1548,17 +1548,17 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    if test $do64bit = yes; then
-	        do64bit_ok=yes
-	        CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+		do64bit_ok=yes
+		CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
 	    fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
-	        hold_ldflags=$LDFLAGS
-	        LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
-	        AC_TRY_LINK(, [int i;], tcl_cv_ld_single_module=yes, tcl_cv_ld_single_module=no)
-	        LDFLAGS=$hold_ldflags])
+		hold_ldflags=$LDFLAGS
+		LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
+		AC_TRY_LINK(, [int i;], tcl_cv_ld_single_module=yes, tcl_cv_ld_single_module=no)
+		LDFLAGS=$hold_ldflags])
 	    if test $tcl_cv_ld_single_module = yes; then
-	        SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
+		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
 	    fi
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
@@ -1570,43 +1570,44 @@ dnl AC_CHECK_TOOL(AR, ar)
 		LDFLAGS="$LDFLAGS -prebind"
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
-	        hold_ldflags=$LDFLAGS
-	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
-	        AC_TRY_LINK(, [int i;], tcl_cv_ld_search_paths_first=yes, tcl_cv_ld_search_paths_first=no)
-	        LDFLAGS=$hold_ldflags])
+		hold_ldflags=$LDFLAGS
+		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
+		AC_TRY_LINK(, [int i;], tcl_cv_ld_search_paths_first=yes, tcl_cv_ld_search_paths_first=no)
+		LDFLAGS=$hold_ldflags])
 	    if test $tcl_cv_ld_search_paths_first = yes; then
-	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
+		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
 	    fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
 	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    PLAT_SRCS=\$\(MAC\_OSX_SRCS\)
-            AC_MSG_CHECKING([whether to use CoreFoundation])
-            AC_ARG_ENABLE(corefoundation, [  --enable-corefoundation use CoreFoundation API [--enable-corefoundation]],
-                [tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
-            AC_MSG_RESULT([$tcl_corefoundation])
-            if test $tcl_corefoundation = yes; then
-                AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
-                    hold_libs=$LIBS; hold_cflags=$CFLAGS
-                    if test $do64bit_ok = no ; then
-                        # remove -arch ppc64 from CFLAGS while testing presence
-                        # of CF, otherwise all archs will have CF disabled.
-                        # CF for ppc64 is disabled in tclUnixPort.h instead.
-                        CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
-                    fi
-                    LIBS="$LIBS -framework CoreFoundation"
-                    AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
-                        [CFBundleRef b = CFBundleGetMainBundle();], 
-                        tcl_cv_lib_corefoundation=yes, tcl_cv_lib_corefoundation=no)
-                    LIBS=$hold_libs; CFLAGS=$hold_cflags])
-                if test $tcl_cv_lib_corefoundation = yes; then
-                    LIBS="$LIBS -framework CoreFoundation"
-                    AC_DEFINE(HAVE_COREFOUNDATION)
-                fi
+	    AC_MSG_CHECKING([whether to use CoreFoundation])
+	    AC_ARG_ENABLE(corefoundation, [  --enable-corefoundation use CoreFoundation API [--enable-corefoundation]],
+		[tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
+	    AC_MSG_RESULT([$tcl_corefoundation])
+	    if test $tcl_corefoundation = yes; then
+		AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
+		    hold_libs=$LIBS; hold_cflags=$CFLAGS
+		    if test $do64bit_ok = no ; then
+			# remove -arch ppc64 from CFLAGS while testing presence
+			# of CF, otherwise all archs will have CF disabled.
+			# CF for ppc64 is disabled in tclUnixPort.h instead.
+			CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
+		    fi
+		    LIBS="$LIBS -framework CoreFoundation"
+		    AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
+			[CFBundleRef b = CFBundleGetMainBundle();], 
+			tcl_cv_lib_corefoundation=yes, tcl_cv_lib_corefoundation=no)
+		    LIBS=$hold_libs; CFLAGS=$hold_cflags])
+		if test $tcl_cv_lib_corefoundation = yes; then
+		    LIBS="$LIBS -framework CoreFoundation"
+		    AC_DEFINE(HAVE_COREFOUNDATION)
+		    AC_CHECK_HEADERS(libkern/OSAtomic.h)
+		    AC_CHECK_FUNCS(OSSpinLockLock)
+		    AC_CHECK_FUNCS(pthread_atfork)
+		fi
 	    fi
-	    AC_CHECK_HEADERS(libkern/OSAtomic.h)
-	    AC_CHECK_FUNCS(OSSpinLockLock)
 	    AC_CHECK_HEADERS(copyfile.h)
 	    AC_CHECK_FUNCS(copyfile)
 	    AC_DEFINE(MAC_OSX_TCL)
@@ -1617,8 +1618,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # use it when threads are enabled, c.f. bug # 711232:
 	    AC_CHECK_FUNC(realpath)
 	    if test $ac_cv_func_realpath = yes -a "${TCL_THREADS}" = 1 \
-	            -a `uname -r | awk -F. '{print [$]1}'` -lt 7 ; then
-	        ac_cv_func_realpath=no
+		    -a `uname -r | awk -F. '{print [$]1}'` -lt 7 ; then
+		ac_cv_func_realpath=no
 	    fi
 	    ;;
 	NEXTSTEP-*)
