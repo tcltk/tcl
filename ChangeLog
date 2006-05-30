@@ -1,3 +1,8 @@
+2006-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.h (Tcl_DecrRefCount): use if/else construct to allow
+	placement in unbraced outer if/else conditions. (jcw)
+
 2006-05-27  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c: implemented pthread_atfork() handler that
