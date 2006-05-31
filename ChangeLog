@@ -1,3 +1,10 @@
+2006-05-31  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclNamesp.c (NamespaceInscopeCmd): revert [Bug 1400572]
+	fix of 2006-01-09 for [namespace inscope] as it seems to mess with
+	itcl scope decoding.  Leaving namespace-29.6 test failure until
+	final cause it determined.
+
 2006-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tcl.h (Tcl_DecrRefCount): use if/else construct to allow
