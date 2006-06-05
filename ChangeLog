@@ -1,3 +1,9 @@
+2006-06-05  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/Alloc.3: Added documentation of promise that Tcl_Realloc(NULL,x)
+	is the same as Tcl_Alloc(x), as discussed in comp.lang.tcl. Also fixed
+	nonsense sentence to say something meaningful.
+
 2006-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tcl.h (Tcl_DecrRefCount): use if/else construct to allow
