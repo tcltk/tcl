@@ -1,3 +1,8 @@
+2006-06-06  Don Porter  <dgp@users.sourceforge.net>
+
+        * doc/GetStdChan.3:     Added recommendation that each call to
+        Tcl_SetStdChannel() be accompanied by a call to Tcl_RegisterChannel().
+
 2006-05-31  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclNamesp.c (NamespaceInscopeCmd): revert [Bug 1400572]
