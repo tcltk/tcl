@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.12 2005/11/03 17:52:08 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.13 2006/06/06 17:10:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -487,85 +487,85 @@ Tcl_Main(
     inChannel = Tcl_GetStdChannel(TCL_STDIN);
     outChannel = Tcl_GetStdChannel(TCL_STDOUT);
     while ((inChannel != (Tcl_Channel) NULL) && !Tcl_InterpDeleted(interp)) {
-	if (tty) {
-	    Prompt(interp, &prompt);
-	    if (Tcl_InterpDeleted(interp)) {
-		break;
+	if (mainLoopProc == NULL) {
+	    if (tty) {
+		Prompt(interp, &prompt);
+		if (Tcl_InterpDeleted(interp)) {
+		    break;
+		}
+		if (Tcl_LimitExceeded(interp)) {
+		    break;
+		}
+		inChannel = Tcl_GetStdChannel(TCL_STDIN);
+		if (inChannel == (Tcl_Channel) NULL) {
+		    break;
+		}
 	    }
-	    if (Tcl_LimitExceeded(interp)) {
-		break;
-	    }
-	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
-	    if (inChannel == (Tcl_Channel) NULL) {
-		break;
-	    }
-	}
-	if (Tcl_IsShared(commandPtr)) {
-	    Tcl_DecrRefCount(commandPtr);
-	    commandPtr = Tcl_DuplicateObj(commandPtr);
-	    Tcl_IncrRefCount(commandPtr);
-	}
-	length = Tcl_GetsObj(inChannel, commandPtr);
-	if (length < 0) {
-	    if (Tcl_InputBlocked(inChannel)) {
-		/*
-		 * This can only happen if stdin has been set to non-blocking.
-		 * In that case cycle back and try again. This sets up a tight
-		 * polling loop (since we have no event loop running). If this
-		 * causes bad CPU hogging, we might try toggling the blocking
-		 * on stdin instead.
-		 */
-
-		continue;
-	    }
-
-	    /*
-	     * Either EOF, or an error on stdin; we're done
-	     */
-
-	    break;
-	}
-
-	if (!TclObjCommandComplete(commandPtr)) {
-	    /*
-	     * Add the newline removed by Tcl_GetsObj back to the string.
-	     */
-
 	    if (Tcl_IsShared(commandPtr)) {
 		Tcl_DecrRefCount(commandPtr);
 		commandPtr = Tcl_DuplicateObj(commandPtr);
 		Tcl_IncrRefCount(commandPtr);
 	    }
-	    Tcl_AppendToObj(commandPtr, "\n", 1);
-	    prompt = PROMPT_CONTINUE;
-	    continue;
-	}
+	    length = Tcl_GetsObj(inChannel, commandPtr);
+	    if (length < 0) {
+		if (Tcl_InputBlocked(inChannel)) {
+		    /*
+		     * This can only happen if stdin has been set to
+		     * non-blocking.  In that case cycle back and try again.
+		     * This sets up a tight polling loop (since we have no
+		     * event loop running). If this causes bad CPU hogging,
+		     * we might try toggling the blocking on stdin instead.
+		     */
 
-	prompt = PROMPT_START;
-	code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
-	inChannel = Tcl_GetStdChannel(TCL_STDIN);
-	outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-	errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	Tcl_DecrRefCount(commandPtr);
-	commandPtr = Tcl_NewObj();
-	Tcl_IncrRefCount(commandPtr);
-	if (code != TCL_OK) {
-	    if (errChannel) {
-		Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
-		Tcl_WriteChars(errChannel, "\n", 1);
-	    }
-	} else if (tty) {
-	    resultPtr = Tcl_GetObjResult(interp);
-	    Tcl_IncrRefCount(resultPtr);
-	    Tcl_GetStringFromObj(resultPtr, &length);
-	    if ((length > 0) && outChannel) {
-		Tcl_WriteObj(outChannel, resultPtr);
-		Tcl_WriteChars(outChannel, "\n", 1);
-	    }
-	    Tcl_DecrRefCount(resultPtr);
-	}
+		    continue;
+		}
 
-	if (mainLoopProc != NULL) {
+		/*
+		 * Either EOF, or an error on stdin; we're done
+		 */
+
+		break;
+	    }
+
+	    if (!TclObjCommandComplete(commandPtr)) {
+		/*
+		 * Add the newline removed by Tcl_GetsObj back to the string.
+		 */
+
+		if (Tcl_IsShared(commandPtr)) {
+		    Tcl_DecrRefCount(commandPtr);
+		    commandPtr = Tcl_DuplicateObj(commandPtr);
+		    Tcl_IncrRefCount(commandPtr);
+		}
+		Tcl_AppendToObj(commandPtr, "\n", 1);
+		prompt = PROMPT_CONTINUE;
+		continue;
+	    }
+
+	    prompt = PROMPT_START;
+	    code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
+	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
+	    outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
+	    Tcl_DecrRefCount(commandPtr);
+	    commandPtr = Tcl_NewObj();
+	    Tcl_IncrRefCount(commandPtr);
+	    if (code != TCL_OK) {
+		if (errChannel) {
+		    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+		    Tcl_WriteChars(errChannel, "\n", 1);
+		}
+ 	    } else if (tty) {
+		resultPtr = Tcl_GetObjResult(interp);
+		Tcl_IncrRefCount(resultPtr);
+		Tcl_GetStringFromObj(resultPtr, &length);
+		if ((length > 0) && outChannel) {
+		    Tcl_WriteObj(outChannel, resultPtr);
+		    Tcl_WriteChars(outChannel, "\n", 1);
+		}
+		Tcl_DecrRefCount(resultPtr);
+	    }
+	} else {	/* (mainLoopProc != NULL) */
 	    /*
 	     * If a main loop has been defined while running interactively, we
 	     * want to start a fileevent based prompt by establishing a
@@ -635,55 +635,55 @@ Tcl_Main(
 	 * If everything has gone OK so far, call the main loop proc, if it
 	 * exists. Packages (like Tk) can set it to start processing events at
 	 * this point.
-	 */
+		 */
 
-	(*mainLoopProc)();
-	mainLoopProc = NULL;
-    }
-    if (commandPtr != NULL) {
-	Tcl_DecrRefCount(commandPtr);
-    }
+		(*mainLoopProc)();
+		mainLoopProc = NULL;
+	    }
+	    if (commandPtr != NULL) {
+		Tcl_DecrRefCount(commandPtr);
+	    }
 
-    /*
-     * Rather than calling exit, invoke the "exit" command so that users can
-     * replace "exit" with some other command to do additional cleanup on
-     * exit. The Tcl_EvalObjEx call should never return.
-     */
+	    /*
+	     * Rather than calling exit, invoke the "exit" command so that users can
+	     * replace "exit" with some other command to do additional cleanup on
+	     * exit. The Tcl_EvalObjEx call should never return.
+	     */
 
-    if (!Tcl_InterpDeleted(interp)) {
-	if (!Tcl_LimitExceeded(interp)) {
-	    Tcl_Obj *cmd = Tcl_NewObj();
-	    TclObjPrintf(NULL, cmd, "exit %d", exitCode);
-	    Tcl_IncrRefCount(cmd);
-	    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
-	    Tcl_DecrRefCount(cmd);
+	    if (!Tcl_InterpDeleted(interp)) {
+		if (!Tcl_LimitExceeded(interp)) {
+		    Tcl_Obj *cmd = Tcl_NewObj();
+		    TclObjPrintf(NULL, cmd, "exit %d", exitCode);
+		    Tcl_IncrRefCount(cmd);
+		    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
+		    Tcl_DecrRefCount(cmd);
+		}
+
+		/*
+		 * If Tcl_EvalObjEx returns, trying to eval [exit], something unusual
+		 * is happening. Maybe interp has been deleted; maybe [exit] was
+		 * redefined, maybe we've blown up because of an exceeded limit. We
+		 * still want to cleanup and exit.
+		 */
+
+		if (!Tcl_InterpDeleted(interp)) {
+		    Tcl_DeleteInterp(interp);
+		}
+	    }
+	    Tcl_SetStartupScript(NULL, NULL);
+
+	    /*
+	     * If we get here, the master interp has been deleted. Allow its
+	     * destruction with the last matching Tcl_Release.
+	     */
+
+	    Tcl_Release((ClientData) interp);
+	    Tcl_Exit(exitCode);
 	}
-
+	
 	/*
-	 * If Tcl_EvalObjEx returns, trying to eval [exit], something unusual
-	 * is happening. Maybe interp has been deleted; maybe [exit] was
-	 * redefined, maybe we've blown up because of an exceeded limit. We
-	 * still want to cleanup and exit.
-	 */
-
-	if (!Tcl_InterpDeleted(interp)) {
-	    Tcl_DeleteInterp(interp);
-	}
-    }
-    Tcl_SetStartupScript(NULL, NULL);
-
-    /*
-     * If we get here, the master interp has been deleted. Allow its
-     * destruction with the last matching Tcl_Release.
-     */
-
-    Tcl_Release((ClientData) interp);
-    Tcl_Exit(exitCode);
-}
-
-/*
- *---------------------------------------------------------------
- *
+	 *---------------------------------------------------------------
+	 *
  * Tcl_SetMainLoop --
  *
  *	Sets an alternative main loop function.

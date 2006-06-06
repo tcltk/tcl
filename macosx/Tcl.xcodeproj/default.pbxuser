@@ -2,7 +2,6 @@
 {
 	08FB7793FE84155DC02AAC07 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
-		activeBuildStyle = 014CEA520018CE5811CA2923 /* Development */;
 		activeExecutable = F9E61D1C090A4282002B3151 /* tclsh */;
 		activeTarget = F9E61D16090A3E94002B3151 /* Tcl */;
 		codeSenseManager = F944EB9D08F798180049FDD4 /* Code sense */;
@@ -65,7 +64,7 @@
 		customDataFormattersEnabled = 1;
 		debuggerPlugin = GDBDebugging;
 		disassemblyDisplayState = 0;
-		dylibVariantSuffix = _debug;
+		dylibVariantSuffix = "";
 		enableDebugStr = 0;
 		environmentEntries = (
 			{

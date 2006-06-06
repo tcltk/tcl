@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.2.4.3 2006/04/28 16:09:08 dgp Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.2.4.4 2006/06/06 17:10:13 dgp Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -493,11 +493,11 @@ Produces a list of all channel names. If \fIpattern\fR is specified,
 only those channel names that match it (according to the rules of
 \fBstring match\fR) will be returned.
 .TP
-\fBchan postevent \fIchannel eventspec\fR
+\fBchan postevent \fIchannelId eventSpec\fR
 .
 This subcommand is used by command handlers specified with \fBchan
 create\fR. It notifies the channel represented by the handle
-\fIchannel\fR that the event(s) listed in the \fIeventspec\fR have
+\fIchannelId\fR that the event(s) listed in the \fIeventSpec\fR have
 occurred. The argument has to be a list containing any of the strings
 "\fBread\fR" and "\fBwrite\fR". The list must contain at least one
 element as it does not make sense to invoke the command if there are
@@ -606,12 +606,12 @@ most serial ports are comparatively slow; it is entirely possible to
 get a \fBreadable\fR event for each character read from them. Care
 must be taken when using \fBchan read\fR on blocking serial ports:
 .TP
-\fBchan read \fIchannelId numChars\fR 
+\fBchan read \fIchannelId numChars\fR
 .
 In this form \fBchan read\fR blocks until \fInumChars\fR have been
 received from the serial port.
 .TP
-\fBchan read \fIchannelId\fR 
+\fBchan read \fIchannelId\fR
 .
 In this form \fBchan read\fR blocks until the reception of the
 end-of-file character, see \fBchan configure -eofchar\fR. If there no

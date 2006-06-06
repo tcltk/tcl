@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.42 2006/04/28 16:09:08 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.43 2006/06/06 17:10:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5707,9 +5707,20 @@ ExprSrandFunc(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetLongFromObj(interp, objv[1], &i) != TCL_OK) {
-	/* TODO: more ::errorInfo here? or in caller? */
-	return TCL_ERROR;
+    if (Tcl_GetLongFromObj(NULL, objv[1], &i) != TCL_OK) {
+	Tcl_Obj *objPtr;
+	mp_int big;
+
+	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
+	    /* TODO: more ::errorInfo here? or in caller? */
+	    return TCL_ERROR;
+	}
+
+	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
+	objPtr = Tcl_NewBignumObj(&big);
+	Tcl_IncrRefCount(objPtr);
+	Tcl_GetLongFromObj(NULL, objPtr, &i);
+	Tcl_DecrRefCount(objPtr);
     }
 
     /*

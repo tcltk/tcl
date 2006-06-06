@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Alloc.3,v 1.8.4.1 2004/09/08 23:02:32 dgp Exp $
+'\" RCS: @(#) $Id: Alloc.3,v 1.8.4.2 2006/06/06 17:10:13 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Alloc 3 7.5 Tcl "Tcl Library Procedures"
@@ -69,15 +69,17 @@ further allocation.
 \fBTcl_Realloc\fR changes the size of the block pointed to by
 \fIptr\fR to \fIsize\fR bytes and returns a pointer to the new block.
 The contents will be unchanged up to the lesser of the new and old
-sizes.  The returned location may be different from \fIptr\fR.
+sizes.  The returned location may be different from \fIptr\fR.  If
+\fIptr\fR is NULL, this is equivalent to calling \fBTcl_Alloc\fR with
+just the \fIsize\fR argument.
 .PP
 \fBTcl_AttemptAlloc\fR and \fBTcl_AttemptRealloc\fR are identical in
 function to \fBTcl_Alloc\fR and \fBTcl_Realloc\fR, except that
 \fBTcl_AttemptAlloc\fR and \fBTcl_AttemptRealloc\fR will not cause the Tcl
 interpreter to \fBpanic\fR if the memory allocation fails.  If the
 allocation fails, these functions will return NULL.  Note that on some
-platforms, attempting to allocate a block of memory will also cause
-these functions to return NULL.
+platforms, but not all, attempting to allocate a zero-sized block of
+memory will also cause these functions to return NULL.
 .PP
 The procedures \fBckalloc\fR, \fBckfree\fR, \fBckrealloc\fR,
 \fBattemptckalloc\fR, and \fBattemptckrealloc\fR are implemented

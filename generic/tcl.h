@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.29 2006/04/28 16:09:08 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.30 2006/06/06 17:10:14 dgp Exp $
  */
 
 #ifndef _TCL
@@ -63,10 +63,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   5
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  4
+#define TCL_RELEASE_SERIAL  5
 
 #define TCL_VERSION	    "8.5"
-#define TCL_PATCH_LEVEL	    "8.5a4"
+#define TCL_PATCH_LEVEL	    "8.5a5"
 
 /*
  * The following definitions set up the proper options for Windows compilers.
@@ -844,8 +844,11 @@ int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 #else
 #   define Tcl_IncrRefCount(objPtr) \
 	++(objPtr)->refCount
+    /*
+     * Use empty if ; else to handle use in unbraced outer if/else conditions
+     */
 #   define Tcl_DecrRefCount(objPtr) \
-	if (--(objPtr)->refCount <= 0) TclFreeObj(objPtr)
+	if (--(objPtr)->refCount > 0) ; else TclFreeObj(objPtr)
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
 #endif

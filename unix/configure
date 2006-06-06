@@ -1332,7 +1332,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL="a4"
+TCL_PATCH_LEVEL="a5"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -6257,7 +6257,7 @@ echo "$as_me: WARNING: can't find uname command" >&2;}
 		# results, and the version is kept in special file).
 
 		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		    tcl_cv_sys_version=MP-RAS-`awk '{print }' /etc/.relid`
+		    tcl_cv_sys_version=MP-RAS-`awk '{print $3}' /etc/.relid`
 		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`
@@ -7194,8 +7194,8 @@ echo "${ECHO_T}$tcl_cv_ld_elf" >&6
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    if test $do64bit = yes; then
-	        do64bit_ok=yes
-	        CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+		do64bit_ok=yes
+		CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
 	    fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    echo "$as_me:$LINENO: checking if ld accepts -single_module flag" >&5
@@ -7204,9 +7204,9 @@ if test "${tcl_cv_ld_single_module+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-	        hold_ldflags=$LDFLAGS
-	        LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
-	        cat >conftest.$ac_ext <<_ACEOF
+		hold_ldflags=$LDFLAGS
+		LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -7252,12 +7252,12 @@ tcl_cv_ld_single_module=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-	        LDFLAGS=$hold_ldflags
+		LDFLAGS=$hold_ldflags
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_ld_single_module" >&5
 echo "${ECHO_T}$tcl_cv_ld_single_module" >&6
 	    if test $tcl_cv_ld_single_module = yes; then
-	        SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
+		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
 	    fi
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
@@ -7274,9 +7274,9 @@ if test "${tcl_cv_ld_search_paths_first+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-	        hold_ldflags=$LDFLAGS
-	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
-	        cat >conftest.$ac_ext <<_ACEOF
+		hold_ldflags=$LDFLAGS
+		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
+		cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -7322,45 +7322,45 @@ tcl_cv_ld_search_paths_first=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-	        LDFLAGS=$hold_ldflags
+		LDFLAGS=$hold_ldflags
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_ld_search_paths_first" >&5
 echo "${ECHO_T}$tcl_cv_ld_search_paths_first" >&6
 	    if test $tcl_cv_ld_search_paths_first = yes; then
-	        LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
+		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
 	    fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
 	    PLAT_OBJS='${MAC_OSX_OBJS}'
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
-            echo "$as_me:$LINENO: checking whether to use CoreFoundation" >&5
+	    echo "$as_me:$LINENO: checking whether to use CoreFoundation" >&5
 echo $ECHO_N "checking whether to use CoreFoundation... $ECHO_C" >&6
-            # Check whether --enable-corefoundation or --disable-corefoundation was given.
+	    # Check whether --enable-corefoundation or --disable-corefoundation was given.
 if test "${enable_corefoundation+set}" = set; then
   enableval="$enable_corefoundation"
   tcl_corefoundation=$enableval
 else
   tcl_corefoundation=yes
 fi;
-            echo "$as_me:$LINENO: result: $tcl_corefoundation" >&5
+	    echo "$as_me:$LINENO: result: $tcl_corefoundation" >&5
 echo "${ECHO_T}$tcl_corefoundation" >&6
-            if test $tcl_corefoundation = yes; then
-                echo "$as_me:$LINENO: checking for CoreFoundation.framework" >&5
+	    if test $tcl_corefoundation = yes; then
+		echo "$as_me:$LINENO: checking for CoreFoundation.framework" >&5
 echo $ECHO_N "checking for CoreFoundation.framework... $ECHO_C" >&6
 if test "${tcl_cv_lib_corefoundation+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
-                    hold_libs=$LIBS; hold_cflags=$CFLAGS
-                    if test $do64bit_ok = no ; then
-                        # remove -arch ppc64 from CFLAGS while testing presence
-                        # of CF, otherwise all archs will have CF disabled.
-                        # CF for ppc64 is disabled in tclUnixPort.h instead.
-                        CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
-                    fi
-                    LIBS="$LIBS -framework CoreFoundation"
-                    cat >conftest.$ac_ext <<_ACEOF
+		    hold_libs=$LIBS; hold_cflags=$CFLAGS
+		    if test $do64bit_ok = no ; then
+			# remove -arch ppc64 from CFLAGS while testing presence
+			# of CF, otherwise all archs will have CF disabled.
+			# CF for ppc64 is disabled in tclUnixPort.h instead.
+			CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
+		    fi
+		    LIBS="$LIBS -framework CoreFoundation"
+		    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -7406,19 +7406,17 @@ tcl_cv_lib_corefoundation=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-                    LIBS=$hold_libs; CFLAGS=$hold_cflags
+		    LIBS=$hold_libs; CFLAGS=$hold_cflags
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_lib_corefoundation" >&5
 echo "${ECHO_T}$tcl_cv_lib_corefoundation" >&6
-                if test $tcl_cv_lib_corefoundation = yes; then
-                    LIBS="$LIBS -framework CoreFoundation"
+		if test $tcl_cv_lib_corefoundation = yes; then
+		    LIBS="$LIBS -framework CoreFoundation"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_COREFOUNDATION 1
 _ACEOF
 
-                fi
-	    fi
 
 for ac_header in libkern/OSAtomic.h
 do
@@ -7671,6 +7669,110 @@ _ACEOF
 fi
 done
 
+
+for ac_func in pthread_atfork
+do
+as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ac_func" >&5
+echo $ECHO_N "checking for $ac_func... $ECHO_C" >&6
+if eval "test \"\${$as_ac_var+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+char (*f) () = $ac_func;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != $ac_func;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  eval "$as_ac_var=yes"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+eval "$as_ac_var=no"
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_var'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_var'}'`" >&6
+if test `eval echo '${'$as_ac_var'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+		fi
+	    fi
 
 for ac_header in copyfile.h
 do
@@ -8042,8 +8144,8 @@ echo "$as_me:$LINENO: result: $ac_cv_func_realpath" >&5
 echo "${ECHO_T}$ac_cv_func_realpath" >&6
 
 	    if test $ac_cv_func_realpath = yes -a "${TCL_THREADS}" = 1 \
-	            -a `uname -r | awk -F. '{print $1}'` -lt 7 ; then
-	        ac_cv_func_realpath=no
+		    -a `uname -r | awk -F. '{print $1}'` -lt 7 ; then
+		ac_cv_func_realpath=no
 	    fi
 	    ;;
 	NEXTSTEP-*)
@@ -14851,7 +14953,7 @@ echo "$as_me: WARNING: can't find uname command" >&2;}
 		# results, and the version is kept in special file).
 
 		if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		    tcl_cv_sys_version=MP-RAS-`awk '{print }' /etc/.relid`
+		    tcl_cv_sys_version=MP-RAS-`awk '{print $3}' /etc/.relid`
 		fi
 		if test "`uname -s`" = "AIX" ; then
 		    tcl_cv_sys_version=AIX-`uname -v`.`uname -r`

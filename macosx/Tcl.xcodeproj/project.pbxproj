@@ -163,21 +163,6 @@
 		F9E61D32090A48FA002B3151 /* bn_mp_unsigned_bin_size.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CC08F272B3004A47F5 /* bn_mp_unsigned_bin_size.c */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXBuildStyle section */
-		014CEA520018CE5811CA2923 /* Development */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-			};
-			name = Development;
-		};
-		014CEA530018CE5811CA2923 /* Deployment */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-			};
-			name = Deployment;
-		};
-/* End PBXBuildStyle section */
-
 /* Begin PBXFileReference section */
 		8DD76FB20486AB0100D96B5E /* tcltest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tcltest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F966C07408F2820D005CB29B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
@@ -1823,8 +1808,6 @@
 			buildConfigurationList = F95CC8AB09158F3100EA5ACE /* Build configuration list for PBXLegacyTarget "Tcl" */;
 			buildPhases = (
 			);
-			buildSettings = {
-			};
 			buildToolPath = /bin/bash;
 			buildWorkingDirectory = "${SRCROOT}";
 			dependencies = (
@@ -1846,8 +1829,6 @@
 			);
 			buildRules = (
 			);
-			buildSettings = {
-			};
 			dependencies = (
 			);
 			name = tcltest;
@@ -1862,12 +1843,6 @@
 		08FB7793FE84155DC02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = F95CC8B509158F3100EA5ACE /* Build configuration list for PBXProject "Tcl" */;
-			buildSettings = {
-			};
-			buildStyles = (
-				014CEA520018CE5811CA2923 /* Development */,
-				014CEA530018CE5811CA2923 /* Deployment */,
-			);
 			hasScannedForEncodings = 1;
 			mainGroup = 08FB7794FE84155DC02AAC07 /* Tcl */;
 			projectDirPath = "";
@@ -2188,6 +2163,7 @@
 				BINDIR = "${PREFIX}/bin";
 				CONFIGURE_ARGS = "--enable-threads ${CONFIGURE_ARGS}";
 				DEAD_CODE_STRIPPING = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				GCC_DEBUGGING_SYMBOLS = default;
 				GCC_DYNAMIC_NO_PIC = YES;
@@ -2282,6 +2258,7 @@
 				BINDIR = "${PREFIX}/bin";
 				CONFIGURE_ARGS = "--enable-threads ${CONFIGURE_ARGS}";
 				DEAD_CODE_STRIPPING = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				GCC_DEBUGGING_SYMBOLS = default;
 				GCC_DYNAMIC_NO_PIC = YES;

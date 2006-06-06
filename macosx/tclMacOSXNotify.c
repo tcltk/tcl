@@ -8,12 +8,12 @@
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright 2001, Apple Computer, Inc.
  * Copyright (c) 2005 Tcl Core Team.
- * Copyright (c) 2005 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2005-2006 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.5 2005/12/02 18:42:52 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.6 2006/06/06 17:10:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -216,6 +216,13 @@ static pthread_t notifierThread;
 
 static void	NotifierThreadProc(ClientData clientData);
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+
+#ifdef HAVE_PTHREAD_ATFORK
+static int	atForkInit = 0;
+static void	AtForkPrepare(void);
+static void	AtForkParent(void);
+static void	AtForkChild(void);
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -225,7 +232,7 @@ static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
  *	Initializes the platform specific notifier state.
  *
  * Results:
- *	Returns a handle to the notifier state for this thread..
+ *	Returns a handle to the notifier state for this thread.
  *
  * Side effects:
  *	None.
@@ -265,6 +272,20 @@ Tcl_InitNotifier(void)
      */
 
     LOCK_NOTIFIER_INIT;
+#ifdef HAVE_PTHREAD_ATFORK
+    /*
+     * Install pthread_atfork handlers to reinstall the notifier thread in the
+     * child of a fork.
+     */
+
+    if (!atForkInit) {
+	int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
+	if (result) { 
+	    Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
+	}
+	atForkInit = 1;
+    }
+#endif
     if (notifierCount == 0) {
 	int fds[2], status, result;
 	pthread_attr_t attr;
@@ -1058,6 +1079,94 @@ NotifierThreadProc(
     }
     pthread_exit (0);
 }
+
+#ifdef HAVE_PTHREAD_ATFORK
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkPrepare --
+ *
+ *	Lock the notifier in preparation for a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkPrepare(void)
+{
+    LOCK_NOTIFIER_INIT;
+    LOCK_NOTIFIER;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkParent --
+ *
+ *	Unlock the notifier in the parent after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkParent(void)
+{
+    UNLOCK_NOTIFIER;
+    UNLOCK_NOTIFIER_INIT;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkChild --
+ *
+ *	Unlock and reinstall the notifier in the child after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkChild(void)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    UNLOCK_NOTIFIER;
+    UNLOCK_NOTIFIER_INIT;
+    if (tsdPtr->runLoop) {
+	tsdPtr->runLoop = NULL;
+	CFRunLoopSourceInvalidate(tsdPtr->runLoopSource);
+	CFRelease(tsdPtr->runLoopSource);
+	tsdPtr->runLoopSource = NULL;
+    }
+    if (notifierCount > 0) {
+	notifierCount = 0;
+	/* Note that Tcl_FinalizeNotifier does not use its clientData
+	 * parameter, so discard return value of Tcl_InitNotifier here and
+	 * leave stale clientData in tclNotify.c's ThreadSpecificData.
+	 */
+	Tcl_InitNotifier();
+    }
+}
+#endif /* HAVE_PTHREAD_ATFORK */
+
 #endif /* HAVE_COREFOUNDATION */
 
 /*

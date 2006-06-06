@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.19 2006/04/28 16:09:09 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.20 2006/06/06 17:10:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,6 +221,7 @@ HandleBgErrors(
 	Tcl_DecrRefCount(errPtr->returnOpts);
 	assocPtr->firstBgPtr = errPtr->nextPtr;
 	ckfree((char *) errPtr);
+	ckfree((char *) tempObjv);
 
 	if (code == TCL_BREAK) {
 	    /*

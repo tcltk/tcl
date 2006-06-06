@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.21 2006/04/28 16:09:12 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.22 2006/06/06 17:10:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -37,6 +37,10 @@ static int		ProcessProcResultCode(Tcl_Interp *interp,
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		TclCompileNoOp(Tcl_Interp *interp, Tcl_Parse *parsePtr,
 			    struct CompileEnv *envPtr);
+static int		ProcCompileProc (Tcl_Interp *interp, Proc *procPtr,
+			    Tcl_Obj *bodyPtr, Namespace *nsPtr, 
+			    CONST char *description, CONST char *procName,
+			    Proc **procPtrPtr);
 
 /*
  * The ProcBodyObjType type
@@ -1156,7 +1160,7 @@ ObjInterpProcEx(
     int skip)			/* Number of initial arguments to be skipped,
 				 * ie, words in the "command name" */ 
 {
-    register Proc *procPtr = (Proc *) clientData;
+    Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame *framePtr, **framePtrPtr;
     register Var *varPtr;
@@ -1179,8 +1183,8 @@ ObjInterpProcEx(
      * local variables are found while compiling.
      */
 
-    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
-	    "body of proc", procName);
+    result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
+	    "body of proc", procName, &procPtr);
 
     if (result != TCL_OK) {
 	return result;
@@ -1475,11 +1479,29 @@ TclProcCompileProc(
     CONST char *description,	/* string describing this body of code. */
     CONST char *procName)	/* Name of this procedure. */
 {
+    return ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
+	    procName, NULL);
+}
+
+static int
+ProcCompileProc(
+    Tcl_Interp *interp,		/* Interpreter containing procedure. */
+    Proc *procPtr,		/* Data associated with procedure. */
+    Tcl_Obj *bodyPtr,		/* Body of proc. (Usually procPtr->bodyPtr,
+ 				 * but could be any code fragment compiled in
+ 				 * the context of this procedure.) */
+    Namespace *nsPtr,		/* Namespace containing procedure. */
+    CONST char *description,	/* string describing this body of code. */
+    CONST char *procName,	/* Name of this procedure. */
+    Proc **procPtrPtr)		/* Points to storage where a replacement
+				 * (Proc *) value may be written. */
+{
     Interp *iPtr = (Interp*)interp;
-    int result;
+    int i, result;
     Tcl_CallFrame *framePtr;
     Proc *saveProcPtr;
     ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
+    CompiledLocal *localPtr;
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -1542,6 +1564,63 @@ TclProcCompileProc(
  	 */
 
  	saveProcPtr = iPtr->compiledProcPtr;
+
+	if (procPtrPtr != NULL && procPtr->refCount > 1) {
+	    Tcl_Command token;
+	    Tcl_CmdInfo info;
+	    Proc *new = (Proc *) ckalloc(sizeof(Proc));
+
+	    new->iPtr = procPtr->iPtr;
+	    new->refCount = 1;
+	    new->cmdPtr = procPtr->cmdPtr;
+	    token = (Tcl_Command) new->cmdPtr;
+	    new->bodyPtr = Tcl_DuplicateObj(bodyPtr);
+	    bodyPtr = new->bodyPtr;
+	    Tcl_IncrRefCount(bodyPtr);
+	    new->numArgs = procPtr->numArgs;
+
+	    new->numCompiledLocals = new->numArgs;
+	    new->firstLocalPtr = NULL;
+	    new->lastLocalPtr = NULL;
+	    localPtr = procPtr->firstLocalPtr;
+	    for (i = 0; i < new->numArgs; i++, localPtr = localPtr->nextPtr) {
+		CompiledLocal *copy = (CompiledLocal *) ckalloc((unsigned)
+			(sizeof(CompiledLocal) -sizeof(localPtr->name)
+			+ localPtr->nameLength + 1));
+		if (new->firstLocalPtr == NULL) {
+		    new->firstLocalPtr = new->lastLocalPtr = copy;
+		} else {
+		    new->lastLocalPtr->nextPtr = copy;
+		    new->lastLocalPtr = copy;
+		}
+		copy->nextPtr = NULL;
+		copy->nameLength = localPtr->nameLength;
+		copy->frameIndex = localPtr->frameIndex;
+		copy->flags = localPtr->flags;
+		copy->defValuePtr = localPtr->defValuePtr;
+		if (copy->defValuePtr) {
+		    Tcl_IncrRefCount(copy->defValuePtr);
+		}
+		copy->resolveInfo = localPtr->resolveInfo;
+		strcpy(copy->name, localPtr->name);
+	    }
+
+	    /* Reset the ClientData */
+	    Tcl_GetCommandInfoFromToken(token, &info);
+	    if (info.objClientData == (ClientData) procPtr) {
+		info.objClientData = (ClientData) new;
+	    }
+	    if (info.clientData == (ClientData) procPtr) {
+		info.clientData = (ClientData) new;
+	    }
+	    if (info.deleteData == (ClientData) procPtr) {
+		info.deleteData = (ClientData) new;
+	    }
+	    Tcl_SetCommandInfoFromToken(token, &info);
+
+	    procPtr->refCount--;
+	    *procPtrPtr = procPtr = new;
+	}
  	iPtr->compiledProcPtr = procPtr;
 
  	result = TclPushStackFrame(interp, &framePtr,
