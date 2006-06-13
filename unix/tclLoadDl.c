@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.13 2002/10/10 12:25:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.13.2.1 2006/06/13 22:54:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -90,9 +90,15 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     }
     
     if (handle == NULL) {
+	/*
+	 * Write the string to a variable first to work around a compiler bug
+	 * in the Sun Forte 6 compiler. [Bug 1503729]
+	 */
+
+	CONST char *errorStr = dlerror();
+
 	Tcl_AppendResult(interp, "couldn't load file \"", 
-			 Tcl_GetString(pathPtr),
-			 "\": ", dlerror(), (char *) NULL);
+		Tcl_GetString(pathPtr), "\": ", errorStr, (char *) NULL);
 	return TCL_ERROR;
     }
 
