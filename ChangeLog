@@ -1,3 +1,9 @@
+2006-06-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixPort.h (Darwin): support for MAC_OS_X_VERSION_MAX_ALLOWED
+	define from AvailabilityMacros.h: override configure detection and only
+	use API available in the indicated OS version or earlier.
+
 2006-06-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/regerror.c:   Enable building Tcl with Microsoft's
