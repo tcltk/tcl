@@ -9,9 +9,11 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1 2002/03/27 21:15:43 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.1.4.1 2006/06/14 15:21:15 patthoyts Exp $
  * ----------------------------------------------------------------------------
  */
+
+#define _CRT_SECURE_NO_DEPRECATE
 #include <windows.h>
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "kernel32.lib")
@@ -40,6 +42,19 @@ main (int argc, char *argv[])
     char msg[300];
     DWORD dwWritten;
     int chars;
+
+    /*
+     * Make sure children (cl.exe and link.exe) are kept quiet.
+     */
+
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+
+    /*
+     * Make sure the compiler and linker aren't affected by the outside world.
+     */
+
+    SetEnvironmentVariable("CL", "");
+    SetEnvironmentVariable("LINK", "");
 
     if (argc > 1 && *argv[1] == '-') {
 	switch (*(argv[1]+1)) {
@@ -90,11 +105,11 @@ CheckForCompilerFeature (const char *option)
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     SECURITY_ATTRIBUTES sa;
-    DWORD threadID;
+    DWORD threadID, n;
     char msg[300];
     BOOL ok;
     HANDLE hProcess, h, pipeThreads[2];
-    char cmdline[100];
+    char cmdline[256];
 
     hProcess = GetCurrentProcess();
 
@@ -122,11 +137,16 @@ CheckForCompilerFeature (const char *option)
 	    0, TRUE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
 
     /* base command line */
-    strcpy(cmdline, "cl.exe -nologo -c -TC -Fdtemp ");
+    n = GetEnvironmentVariable("CC", cmdline, 255);
+    cmdline[n] = 0;
+    if (n == 0)
+	strcpy(cmdline, "cl.exe");
+    strncat(cmdline, " -nologo -c -TC -Zs -X ", 255);
+
     /* append our option for testing */
     strcat(cmdline, option);
     /* filename to compile, which exists, but is nothing and empty. */
-    strcat(cmdline, " nul");
+    strcat(cmdline, " .\\nul");
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -175,8 +195,28 @@ CheckForCompilerFeature (const char *option)
     CloseHandle(pipeThreads[0]);
     CloseHandle(pipeThreads[1]);
 
-    /* look for the commandline warning code in both streams. */
-    return !(strstr(Out.buffer, "D4002") != NULL || strstr(Err.buffer, "D4002") != NULL);
+#ifdef _DEBUG
+    {
+	DWORD err = 0;
+	strcat(cmdline, "\n");
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), cmdline, 
+	    strlen(cmdline), &err, NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), Out.buffer, 
+	    strlen(Out.buffer), &err,NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), Err.buffer,
+	    strlen(Err.buffer), &err,NULL);
+    }
+#endif
+
+    /*
+     * Look for the commandline warning code in both streams.
+     *  - in MSVC 6 & 7 we get D4002, in MSVC 8 we get D9002.
+     */
+    
+    return !(strstr(Out.buffer, "D4002") != NULL
+             || strstr(Err.buffer, "D4002") != NULL
+             || strstr(Out.buffer, "D9002") != NULL
+             || strstr(Err.buffer, "D9002") != NULL);
 }
 
 int

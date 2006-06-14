@@ -1,3 +1,14 @@
+2006-06-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/regerror.c:   Enable building Tcl with Microsoft's
+	* generic/tcl.h:        latest compiler offering (VS2005). 
+	* generic/tclDate.c:    We have to handle a number of oddities
+	* tests/env.test:       as they have deprecated most of the 
+	* win/makefile.vc:      standard C library and now generate 
+	* win/nmakehlp.c:       manifest files to be linked into the
+	* win/rules.vc:         binaries. SF bug #1424909
+	* win/tclWinTime.c:
+
 2006-06-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclLoadDl.c (TclpDlopen): Workaround for a compiler bug in Sun
