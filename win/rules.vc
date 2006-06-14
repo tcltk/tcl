@@ -11,7 +11,7 @@
 # Copyright (c) 2003 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.11.2.1 2006/06/14 15:21:15 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.11.2.2 2006/06/14 15:24:19 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -268,9 +268,9 @@ DBGX	    =
 SUFX	    = $(SUFX:g=)
 !endif
 
-!if $(VCVER) > 6
-BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
-!endif
+#!if $(VCVER) > 6
+#BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
+#!endif
 
 TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 
