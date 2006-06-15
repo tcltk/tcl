@@ -1,3 +1,7 @@
+2006-06-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:		changes to start prep for an 8.4.14 release.
+
 2006-06-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixPort.h (Darwin): support for MAC_OS_X_VERSION_MAX_ALLOWED
@@ -65,7 +69,7 @@
 	* generic/tclProc.c (ProcCompileProc):	When a bump of the compile
 	epoch forces the re-compile of a proc body, take care not to
 	overwrite any Proc struct that may be referred to on the active
-	call stack.  This fixes [Bug 148218].  Note that the fix will not be
+	call stack.  This fixes [Bug 1482718].  Note that the fix will not be
 	effective for code that calls the private routine TclProcCompileProc()
 	directly.
 
