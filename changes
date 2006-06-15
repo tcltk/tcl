@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.41 2006/04/13 21:16:54 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.42 2006/06/15 18:09:11 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6329,7 +6329,7 @@ Restores Tcl 8.4.9 behavior (porter)
 
 2005-12-12 (bug fix)[1377619] configure syntax error exposed in bash-3.1 (hobbs)
 
-2006-01-09 (bug fix)[1480572] [info level $l] => "namespace inscope" (porter)
+2006-01-09 (bug fix)[1400572] [info level $l] => "namespace inscope" (porter)
 
 2006-01-23 (bug fix)[1410553] Tcl_GetRange Unicode confusion (twylite,spjuth)
 
@@ -6369,3 +6369,19 @@ removed (steffen)
 2006-04-11 (bug fix)[1458266] enter/enterstep trace interference (leunissen)
 
 --- Released 8.4.13, April 19, 2006 --- See ChangeLog for details ---
+
+2006-05-04 (bug fix)[1480509] srand() accept wide input (porter,afredd)
+
+2006-05-05 (bug fix)[1481986] interactive Tcl_Main blocks main loop (porter,lin)
+
+2006-05-13 (bug fix)[1482718] proc re-compile: preserve the previous
+bytecode while references still on the stack (porter,ryazanov)
+
+2006-05-13 (bug fix)[943995] fixed [glob] on VFS (porter)
+
+2006-05-31 (revert 2006-01-09)[1400572] namespace inscope & info level (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2006-06-14 (platform support)[1424909] MS VS2005 support (thoyts)
+
+--- Released 8.4.13, June XX, 2006 --- See ChangeLog for details ---
