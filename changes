@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.42 2006/06/15 18:09:11 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.43 2006/06/15 18:11:22 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6384,4 +6384,4 @@ bytecode while references still on the stack (porter,ryazanov)
 
 2006-06-14 (platform support)[1424909] MS VS2005 support (thoyts)
 
---- Released 8.4.13, June XX, 2006 --- See ChangeLog for details ---
+--- Released 8.4.14, June XX, 2006 --- See ChangeLog for details ---
