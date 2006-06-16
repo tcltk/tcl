@@ -6,13 +6,13 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-19/99 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.270 2006/04/26 13:42:43 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.271 2006/06/16 18:35:55 dgp Exp $
  */
 
 #ifndef _TCLINT
