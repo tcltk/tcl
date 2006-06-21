@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.103 2006/06/21 03:10:40 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.104 2006/06/21 20:44:59 das Exp $
  */
 
 #define TCL_TEST
@@ -212,11 +212,31 @@ static int		TestopenfilechannelprocCmd(
 			    CONST char **argv);
 static int		TeststatprocCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
-#endif
 static int		PretendTclpAccess(CONST char *path, int mode);
 static int		TestAccessProc1(CONST char *path, int mode);
 static int		TestAccessProc2(CONST char *path, int mode);
 static int		TestAccessProc3(CONST char *path, int mode);
+static Tcl_Channel	PretendTclpOpenFileChannel(
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions);
+static Tcl_Channel	TestOpenFileChannelProc1(
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions);
+static Tcl_Channel	TestOpenFileChannelProc2(
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions);
+static Tcl_Channel	TestOpenFileChannelProc3(
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions);
+static int		PretendTclpStat(CONST char *path,
+			    struct stat *buf);
+static int		TestStatProc1(CONST char *path,
+			    struct stat *buf);
+static int		TestStatProc2(CONST char *path,
+			    struct stat *buf);
+static int		TestStatProc3(CONST char *path,
+			    struct stat *buf);
+#endif
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TestcmdinfoCmd(ClientData dummy,
@@ -301,18 +321,6 @@ static int		TestsetmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TestexitmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
-static Tcl_Channel	PretendTclpOpenFileChannel(
-			    Tcl_Interp *interp, CONST char *fileName,
-			    CONST char *modeString, int permissions);
-static Tcl_Channel	TestOpenFileChannelProc1(
-			    Tcl_Interp *interp, CONST char *fileName,
-			    CONST char *modeString, int permissions);
-static Tcl_Channel	TestOpenFileChannelProc2(
-			    Tcl_Interp *interp, CONST char *fileName,
-			    CONST char *modeString, int permissions);
-static Tcl_Channel	TestOpenFileChannelProc3(
-			    Tcl_Interp *interp, CONST char *fileName,
-			    CONST char *modeString, int permissions);
 static int		TestpanicCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TestparserObjCmd(ClientData dummy,
@@ -349,14 +357,6 @@ static int		TestsetplatformCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TeststaticpkgCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
-static int		PretendTclpStat(CONST char *path,
-			    struct stat *buf);
-static int		TestStatProc1(CONST char *path,
-			    struct stat *buf);
-static int		TestStatProc2(CONST char *path,
-			    struct stat *buf);
-static int		TestStatProc3(CONST char *path,
-			    struct stat *buf);
 static int		TesttranslatefilenameCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TestupvarCmd(ClientData dummy,
