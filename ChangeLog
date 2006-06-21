@@ -1,5 +1,24 @@
 2006-06-20  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclIOUtil.c:	Changed default configuration to
+	* generic/tclInt.decls:	#undef USE_OBSOLETE_FS_HOOKS which disables
+	* generic/tclTest.c:	access to the Tcl 8.3 internal routines for
+	hooking into filesystem operations.  Everyone ought to have migrated
+	to Tcl_Filesystems by now.
+	***POTENTIAL INCOMPATIBILITY*** for any code still stuck in the
+	pre-Tcl_Filesystem era.
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclStrToD.c:	Removed dead code that permitted disabling
+	of recognition of the new 0b and 0o numeric formats.
+
+	* generic/tclExecute.c:	Removed dead code that implemented alternative
+	* generic/tclObj.c:	design where numeric values did not
+	automatically narrow to the smallest Tcl_ObjType required to hold
+	them.
+
 	* generic/tclCmdAH.c:	Removed dead code that was old implementation
 	of [format].
 
