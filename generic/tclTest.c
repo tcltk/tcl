@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.102 2006/03/14 19:34:27 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.103 2006/06/21 03:10:40 dgp Exp $
  */
 
 #define TCL_TEST
@@ -203,8 +203,16 @@ static void		ObjTraceDeleteProc(ClientData clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
+#undef USE_OBSOLETE_FS_HOOKS
+#ifdef USE_OBSOLETE_FS_HOOKS
 static int		TestaccessprocCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
+static int		TestopenfilechannelprocCmd(
+			    ClientData dummy, Tcl_Interp *interp, int argc,
+			    CONST char **argv);
+static int		TeststatprocCmd(ClientData dummy,
+			    Tcl_Interp *interp, int argc, CONST char **argv);
+#endif
 static int		PretendTclpAccess(CONST char *path, int mode);
 static int		TestAccessProc1(CONST char *path, int mode);
 static int		TestAccessProc2(CONST char *path, int mode);
@@ -337,9 +345,6 @@ static int		TestseterrorcodeCmd(ClientData dummy,
 static int		TestsetobjerrorcodeCmd(
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
-static int		TestopenfilechannelprocCmd(
-			    ClientData dummy, Tcl_Interp *interp, int argc,
-			    CONST char **argv);
 static int		TestsetplatformCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TeststaticpkgCmd(ClientData dummy,
@@ -352,8 +357,6 @@ static int		TestStatProc2(CONST char *path,
 			    struct stat *buf);
 static int		TestStatProc3(CONST char *path,
 			    struct stat *buf);
-static int		TeststatprocCmd(ClientData dummy,
-			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TesttranslatefilenameCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv);
 static int		TestupvarCmd(ClientData dummy,
@@ -576,8 +579,14 @@ Tcltest_Init(
 	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
 	    TestGetIndexFromObjStructObjCmd, (ClientData) 0, NULL);
+#ifdef USE_OBSOLETE_FS_HOOKS
     Tcl_CreateCommand(interp, "testaccessproc", TestaccessprocCmd, (ClientData) 0,
 	    NULL);
+    Tcl_CreateCommand(interp, "testopenfilechannelproc",
+    	    TestopenfilechannelprocCmd, (ClientData) 0, NULL);
+    Tcl_CreateCommand(interp, "teststatproc", TeststatprocCmd, (ClientData) 0,
+	    NULL);
+#endif
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testchannel", TestChannelCmd,
             (ClientData) 0, NULL);
@@ -641,8 +650,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, (ClientData) 0,
 	    NULL);
-    Tcl_CreateCommand(interp, "testopenfilechannelproc",
-    	    TestopenfilechannelprocCmd, (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    (ClientData) 0, NULL);
@@ -677,8 +684,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, (ClientData) 0, NULL);
     Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
     Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
-    Tcl_CreateCommand(interp, "teststatproc", TeststatprocCmd, (ClientData) 0,
-	    NULL);
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, (ClientData) 0,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -4962,6 +4967,7 @@ TestsaveresultFree(blockPtr)
 {
     freeCount++;
 }
+#ifdef USE_OBSOLETE_FS_HOOKS
 
 /*
  *----------------------------------------------------------------------
@@ -5154,6 +5160,7 @@ TestStatProc3(path, buf)
     buf->st_size = 3456;
     return ((strstr(path, "testStat3%.fil") == NULL) ? -1 : 0);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -5271,6 +5278,7 @@ TestexitmainloopCmd (dummy, interp, argc, argv)
   exitMainLoop = 1;
   return TCL_OK;
 }
+#ifdef USE_OBSOLETE_FS_HOOKS
 
 /*
  *----------------------------------------------------------------------
@@ -5576,6 +5584,7 @@ TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
 	return (NULL);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
