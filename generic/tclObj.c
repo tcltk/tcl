@@ -12,15 +12,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.107 2006/03/29 15:09:04 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.108 2006/06/21 03:10:39 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tommath.h"
 #include <float.h>
-
-#define BIGNUM_AUTO_NARROW 1
 
 /*
  * Table of all object types.
@@ -1300,11 +1298,7 @@ Tcl_GetBooleanFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
-#ifdef BIGNUM_AUTO_NARROW
 	    *boolPtr = 1;
-#else
-	    *boolPtr = ((objPtr->internalRep.ptrAndLongRep.value & 0x7fff)!=0);
-#endif
 	    return TCL_OK;
 	}
 #ifndef NO_WIDE_TYPE
@@ -1358,22 +1352,14 @@ SetBooleanFromAny(
 	    goto badBoolean;
 	}
 
-#ifdef BIGNUM_AUTO_NARROW
 	if (objPtr->typePtr == &tclBignumType) {
 	    goto badBoolean;
 	}
-#else
-	/*
-	 * TODO: Consider tests to discover values 0 and 1 while preserving
-	 * pure bignum. For now, pass through string rep.
-	 */
-#endif
 
 #ifndef NO_WIDE_TYPE
-	/*
-	 * TODO: Consider tests to discover values 0 and 1 while preserving
-	 * pure wide. For now, pass through string rep.
-	 */
+	if (objPtr->typePtr == &tclWideIntType) {
+	    goto badBoolean;
+	}
 #endif
 
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -2607,11 +2593,7 @@ UpdateStringOfBignum(
     if (status != MP_OKAY) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
-    if (size == 3
-#ifndef BIGNUM_AUTO_NARROW
-	    && bignumVal.used > 1
-#endif
-	    ) {
+    if (size == 3) {
 	/*
 	 * mp_radix_size() returns 3 when more than INT_MAX bytes would be
 	 * needed to hold the string rep (because mp_radix_size ignores
@@ -2889,7 +2871,6 @@ Tcl_SetBignumObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetBignumObj called with shared object");
     }
-#ifdef BIGNUM_AUTO_NARROW
     if (bignumValue->used
 	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
@@ -2938,7 +2919,6 @@ Tcl_SetBignumObj(
 	return;
     }
   tooLargeForWide:
-#endif
 #endif
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);
