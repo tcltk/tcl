@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.271 2006/06/16 18:35:55 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.272 2006/07/05 05:34:44 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2137,8 +2137,7 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, CONST char *string,
 #if 0
 MODULE_SCOPE int	TclParseInteger(CONST char *string, int numBytes);
 #endif
-MODULE_SCOPE int	TclParseWhiteSpace(CONST char *src,
-			    int numBytes, Tcl_Parse *parsePtr, char *typePtr);
+MODULE_SCOPE int	TclParseAllWhiteSpace(CONST char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
