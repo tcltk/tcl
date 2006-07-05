@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.7.4.5 2006/04/28 16:09:08 dgp Exp $
+'\" RCS: @(#) $Id: format.n,v 1.7.4.6 2006/07/05 21:29:10 dgp Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -201,6 +201,13 @@ which will then be converted to the corresponding character value.
 The size modifiers are ignored when formatting floating-point values.
 The \fBll\fR modifier has no \fBsprintf\fR counterpart.
 .SH EXAMPLES
+Convert the numeric value of a UNICODE character to the character
+itself:
+.CS
+set value 120
+set char [\fBformat\fR %c $value]
+.CE
+.PP
 Convert the output of \fBtime\fR into seconds to an accuracy of
 hundredths of a second:
 .CS

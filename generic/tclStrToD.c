@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.10 2006/04/28 16:09:12 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.11 2006/07/05 21:29:15 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -29,18 +29,11 @@
 #include <tommath.h>
 
 /*
- * Define TIP_114_FORMATS to accept 0b and 0o for binary and octal strings.
- * Define KILL_OCTAL as well as TIP_114_FORMATS to suppress interpretation of
- * numbers with leading zero as octal. (Ceterum censeo: numeros octonarios
- * delendos esse.)
+ * Define KILL_OCTAL to suppress interpretation of numbers with leading zero
+ * as octal. (Ceterum censeo: numeros octonarios delendos esse.)
  */
 
-#define	TIP_114_FORMATS
 #undef	KILL_OCTAL
-
-#ifndef TIP_114_FORMATS
-#undef	KILL_OCTAL
-#endif
 
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
@@ -262,9 +255,7 @@ TclParseNumber(
 {
     enum State {
 	INITIAL, SIGNUM, ZERO, ZERO_X, 
-#ifdef TIP_114_FORMATS
 	ZERO_O, ZERO_B, BINARY,
-#endif
 	HEXADECIMAL, OCTAL, BAD_OCTAL, DECIMAL, 
 	LEADING_RADIX_POINT, FRACTION,
 	EXPONENT_START, EXPONENT_SIGNUM, EXPONENT,
@@ -310,9 +301,7 @@ TclParseNumber(
     char d = 0;			/* Last hexadecimal digit scanned; initialized
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
-#ifdef TIP_114_FORMATS
     int explicitOctal = 0;
-#endif
 
 #define ALL_BITS	(~(Tcl_WideUInt)0)
 #define MOST_BITS	(ALL_BITS >> 1)
@@ -411,7 +400,6 @@ TclParseNumber(
 	    if (flags & TCL_PARSE_HEXADECIMAL_ONLY) {
 		goto zerox;
 	    }
-#ifdef TIP_114_FORMATS 
 	    if (flags & TCL_PARSE_SCAN_PREFIXES) {
 		goto zeroo;
 	    }
@@ -427,7 +415,6 @@ TclParseNumber(
 #ifdef KILL_OCTAL
 	    goto decimal;
 #endif
-#endif
 	    /* FALLTHROUGH */
 
 	case OCTAL:
@@ -440,10 +427,8 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-#ifdef TIP_114_FORMATS
 	    /* FALLTHROUGH */
 	case ZERO_O:
-#endif
 	zeroo:
 	    if (c == '0') {
 		++numTrailZeros;
@@ -495,7 +480,6 @@ TclParseNumber(
 	    /* FALLTHROUGH */
 
 	case BAD_OCTAL:
-#ifdef TIP_114_FORMATS
 	    if (explicitOctal) {
 		/*
 		 * No forgiveness for bad digits in explicitly octal
@@ -504,7 +488,6 @@ TclParseNumber(
 
 		goto endgame;
 	    }
-#endif
 	    if (flags & TCL_PARSE_INTEGER_ONLY) {
 		/*
 		 * No seeking floating point when parsing only integer.
@@ -604,7 +587,6 @@ TclParseNumber(
 	    state = HEXADECIMAL;
 	    break;
 
-#ifdef TIP_114_FORMATS
 	case BINARY:
 	    acceptState = state;
 	    acceptPoint = p;
@@ -644,7 +626,6 @@ TclParseNumber(
 	    numTrailZeros = 0;
 	    state = BINARY;
 	    break;
-#endif
 
 	case DECIMAL:
 	    /*
@@ -928,10 +909,8 @@ TclParseNumber(
 	case SIGNUM:
 	case BAD_OCTAL:
 	case ZERO_X:
-#ifdef TIP_114_FORMATS
 	case ZERO_O:
 	case ZERO_B:
-#endif
 	case LEADING_RADIX_POINT:
 	case EXPONENT_START:
 	case EXPONENT_SIGNUM:
@@ -948,7 +927,6 @@ TclParseNumber(
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
 
-#ifdef TIP_114_FORMATS
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
@@ -965,7 +943,6 @@ TclParseNumber(
 		}
 	    }
 	    goto returnInteger;
-#endif
 
 	case HEXADECIMAL:
 	    /*

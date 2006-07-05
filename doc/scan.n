@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.9.4.5 2006/04/28 16:09:08 dgp Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.9.4.6 2006/07/05 21:29:10 dgp Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -194,6 +194,12 @@ modifier has no \fBsscanf\fR counterpart.
 If the end of the input string is reached before any conversions have been
 performed and no variables are given, an empty string is returned.
 .SH EXAMPLES
+Convert a UNICODE character to its numeric value:
+.CS
+set char "x"
+set value [\fBscan\fR $char %c]
+.CE
+.PP
 Parse a simple color specification of the form \fI#RRGGBB\fR using
 hexadecimal conversions with substring sizes:
 .CS

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.16 2005/11/03 17:52:08 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.17 2006/07/05 21:29:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -204,6 +204,8 @@ static int		ParseTokens(CONST char *src, int numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static int		ParseVarName(Tcl_Interp *interp, CONST char *start,
 			    int numBytes, Tcl_Parse *parsePtr, int flags);
+static int		ParseWhiteSpace(CONST char *src, int numBytes,
+			    Tcl_Parse *parsePtr, char *typePtr);
 
 /*
  * Prototypes for the Tokens object type.
@@ -500,7 +502,6 @@ ParseScript(script, numBytes, flags, parsePtr)
 	errorTokenPtr->numComponents = parsePtr->errorType;
     }
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -673,7 +674,7 @@ ParseCommand(
 	 * sequence: it should be treated just like white space.
 	 */
 
-	scanned = TclParseWhiteSpace(src, numBytes, parsePtr, &type);
+	scanned = ParseWhiteSpace(src, numBytes, parsePtr, &type);
 	src += scanned;
 	numBytes -= scanned;
 	if (numBytes == 0) {
@@ -738,8 +739,7 @@ ParseCommand(
 		    )
 		/* Is the prefix */
 		&& (numBytes > 0)
-		&& (TclParseWhiteSpace(termPtr, numBytes, parsePtr,
-			    &type) == 0)
+		&& (ParseWhiteSpace(termPtr, numBytes, parsePtr, &type) == 0)
 		&& (type != TYPE_COMMAND_END)
 		/* Non-whitespace follows */
 		) {
@@ -783,7 +783,7 @@ ParseCommand(
 	 * word), and (b) check for the end of the command.
 	 */
 
-	scanned = TclParseWhiteSpace(src, numBytes, parsePtr, &type);
+	scanned = ParseWhiteSpace(src, numBytes, parsePtr, &type);
 	if (scanned) {
 	    src += scanned;
 	    numBytes -= scanned;
@@ -831,10 +831,10 @@ ParseCommand(
 /*
  *----------------------------------------------------------------------
  *
- * TclParseWhiteSpace --
+ * ParseWhiteSpace --
  *
- *	Scans up to numBytes bytes starting at src, consuming white space as
- *	defined by Tcl's parsing rules.
+ *	Scans up to numBytes bytes starting at src, consuming white space
+ *	between words as defined by Tcl's parsing rules.
  *
  * Results:
  *	Returns the number of bytes recognized as white space. Records at
@@ -848,8 +848,8 @@ ParseCommand(
  *----------------------------------------------------------------------
  */
 
-int
-TclParseWhiteSpace(
+static int
+ParseWhiteSpace(
     CONST char *src,		/* First character to parse. */
     register int numBytes,	/* Max number of bytes to scan. */
     Tcl_Parse *parsePtr,	/* Information about parse in progress.
@@ -889,6 +889,38 @@ TclParseWhiteSpace(
     return (p - src);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclParseAllWhiteSpace --
+ *
+ *	Scans up to numBytes bytes starting at src, consuming all white space
+ *	including the command-terminating newline characters.
+ *
+ * Results:
+ *	Returns the number of bytes recognized as white space. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclParseAllWhiteSpace(
+    CONST char *src,		/* First character to parse. */
+    int numBytes)		/* Max number of byes to scan */
+{
+    Tcl_Parse dummy;	/* Since we know ParseWhiteSpace() generates
+			 * no tokens, there's no need for a call to
+			 * Tcl_FreeParse() in this routine */
+    char type;
+    CONST char *p = src;
+    do {
+	int scanned = ParseWhiteSpace(p, numBytes, &dummy, &type);
+	p += scanned;
+	numBytes -= scanned;
+    } while (numBytes && (*p == '\n') && (p++, --numBytes));
+    return (p-src);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1152,11 +1184,9 @@ ParseComment(
 	char type;
 	int scanned;
 
-	do {
-	    scanned = TclParseWhiteSpace(p, numBytes, parsePtr, &type);
-	    p += scanned;
-	    numBytes -= scanned;
-	} while (numBytes && (*p == '\n') && (p++,numBytes--));
+	scanned = TclParseAllWhiteSpace(p, numBytes);
+	p += scanned;
+	numBytes -= scanned;
 
 	if ((numBytes == 0) || (*p != '#')) {
 	    break;
@@ -1167,7 +1197,7 @@ ParseComment(
 
 	while (numBytes) {
 	    if (*p == '\\') {
-		scanned = TclParseWhiteSpace(p, numBytes, parsePtr, &type);
+		scanned = ParseWhiteSpace(p, numBytes, parsePtr, &type);
 		if (scanned) {
 		    p += scanned;
 		    numBytes -= scanned;

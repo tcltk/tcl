@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.20 2006/02/09 22:41:28 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.21 2006/07/05 21:29:11 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -43,18 +43,8 @@
  */
 
 /* Slot 0 is reserved */
-#ifndef TclAccessDeleteProc_TCL_DECLARED
-#define TclAccessDeleteProc_TCL_DECLARED
-/* 1 */
-EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((
-				TclAccessProc_ * proc));
-#endif
-#ifndef TclAccessInsertProc_TCL_DECLARED
-#define TclAccessInsertProc_TCL_DECLARED
-/* 2 */
-EXTERN int		TclAccessInsertProc _ANSI_ARGS_((
-				TclAccessProc_ * proc));
-#endif
+/* Slot 1 is reserved */
+/* Slot 2 is reserved */
 #ifndef TclAllocateFreeObjects_TCL_DECLARED
 #define TclAllocateFreeObjects_TCL_DECLARED
 /* 3 */
@@ -345,18 +335,8 @@ EXTERN int		TclObjInvoke _ANSI_ARGS_((Tcl_Interp * interp,
 				int objc, Tcl_Obj *CONST objv[], int flags));
 #endif
 /* Slot 65 is reserved */
-#ifndef TclOpenFileChannelDeleteProc_TCL_DECLARED
-#define TclOpenFileChannelDeleteProc_TCL_DECLARED
-/* 66 */
-EXTERN int		TclOpenFileChannelDeleteProc _ANSI_ARGS_((
-				TclOpenFileChannelProc_ * proc));
-#endif
-#ifndef TclOpenFileChannelInsertProc_TCL_DECLARED
-#define TclOpenFileChannelInsertProc_TCL_DECLARED
-/* 67 */
-EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
-				TclOpenFileChannelProc_ * proc));
-#endif
+/* Slot 66 is reserved */
+/* Slot 67 is reserved */
 /* Slot 68 is reserved */
 #ifndef TclpAlloc_TCL_DECLARED
 #define TclpAlloc_TCL_DECLARED
@@ -492,16 +472,8 @@ EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock,
 #endif
 #endif /* __WIN32__ */
 /* Slot 105 is reserved */
-#ifndef TclStatDeleteProc_TCL_DECLARED
-#define TclStatDeleteProc_TCL_DECLARED
-/* 106 */
-EXTERN int		TclStatDeleteProc _ANSI_ARGS_((TclStatProc_ * proc));
-#endif
-#ifndef TclStatInsertProc_TCL_DECLARED
-#define TclStatInsertProc_TCL_DECLARED
-/* 107 */
-EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ * proc));
-#endif
+/* Slot 106 is reserved */
+/* Slot 107 is reserved */
 #ifndef TclTeardownNamespace_TCL_DECLARED
 #define TclTeardownNamespace_TCL_DECLARED
 /* 108 */
@@ -1049,8 +1021,8 @@ typedef struct TclIntStubs {
     struct TclIntStubHooks *hooks;
 
     void *reserved0;
-    int (*tclAccessDeleteProc) _ANSI_ARGS_((TclAccessProc_ * proc)); /* 1 */
-    int (*tclAccessInsertProc) _ANSI_ARGS_((TclAccessProc_ * proc)); /* 2 */
+    void *reserved1;
+    void *reserved2;
     void (*tclAllocateFreeObjects) _ANSI_ARGS_((void)); /* 3 */
     void *reserved4;
 #if !defined(__WIN32__) /* UNIX */
@@ -1124,8 +1096,8 @@ typedef struct TclIntStubs {
     int (*tclObjInterpProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[])); /* 63 */
     int (*tclObjInvoke) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags)); /* 64 */
     void *reserved65;
-    int (*tclOpenFileChannelDeleteProc) _ANSI_ARGS_((TclOpenFileChannelProc_ * proc)); /* 66 */
-    int (*tclOpenFileChannelInsertProc) _ANSI_ARGS_((TclOpenFileChannelProc_ * proc)); /* 67 */
+    void *reserved66;
+    void *reserved67;
     void *reserved68;
     char * (*tclpAlloc) _ANSI_ARGS_((unsigned int size)); /* 69 */
     void *reserved70;
@@ -1169,8 +1141,8 @@ typedef struct TclIntStubs {
     int (*tclSockMinimumBuffers) _ANSI_ARGS_((int sock, int size)); /* 104 */
 #endif /* __WIN32__ */
     void *reserved105;
-    int (*tclStatDeleteProc) _ANSI_ARGS_((TclStatProc_ * proc)); /* 106 */
-    int (*tclStatInsertProc) _ANSI_ARGS_((TclStatProc_ * proc)); /* 107 */
+    void *reserved106;
+    void *reserved107;
     void (*tclTeardownNamespace) _ANSI_ARGS_((Namespace * nsPtr)); /* 108 */
     int (*tclUpdateReturnInfo) _ANSI_ARGS_((Interp * iPtr)); /* 109 */
     void *reserved110;
@@ -1306,14 +1278,8 @@ extern TclIntStubs *tclIntStubsPtr;
  */
 
 /* Slot 0 is reserved */
-#ifndef TclAccessDeleteProc
-#define TclAccessDeleteProc \
-	(tclIntStubsPtr->tclAccessDeleteProc) /* 1 */
-#endif
-#ifndef TclAccessInsertProc
-#define TclAccessInsertProc \
-	(tclIntStubsPtr->tclAccessInsertProc) /* 2 */
-#endif
+/* Slot 1 is reserved */
+/* Slot 2 is reserved */
 #ifndef TclAllocateFreeObjects
 #define TclAllocateFreeObjects \
 	(tclIntStubsPtr->tclAllocateFreeObjects) /* 3 */
@@ -1510,14 +1476,8 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclObjInvoke) /* 64 */
 #endif
 /* Slot 65 is reserved */
-#ifndef TclOpenFileChannelDeleteProc
-#define TclOpenFileChannelDeleteProc \
-	(tclIntStubsPtr->tclOpenFileChannelDeleteProc) /* 66 */
-#endif
-#ifndef TclOpenFileChannelInsertProc
-#define TclOpenFileChannelInsertProc \
-	(tclIntStubsPtr->tclOpenFileChannelInsertProc) /* 67 */
-#endif
+/* Slot 66 is reserved */
+/* Slot 67 is reserved */
 /* Slot 68 is reserved */
 #ifndef TclpAlloc
 #define TclpAlloc \
@@ -1621,14 +1581,8 @@ extern TclIntStubs *tclIntStubsPtr;
 #endif
 #endif /* __WIN32__ */
 /* Slot 105 is reserved */
-#ifndef TclStatDeleteProc
-#define TclStatDeleteProc \
-	(tclIntStubsPtr->tclStatDeleteProc) /* 106 */
-#endif
-#ifndef TclStatInsertProc
-#define TclStatInsertProc \
-	(tclIntStubsPtr->tclStatInsertProc) /* 107 */
-#endif
+/* Slot 106 is reserved */
+/* Slot 107 is reserved */
 #ifndef TclTeardownNamespace
 #define TclTeardownNamespace \
 	(tclIntStubsPtr->tclTeardownNamespace) /* 108 */

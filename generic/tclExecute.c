@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.33 2006/04/28 16:09:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.34 2006/07/05 21:29:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3735,7 +3735,6 @@ TclExecuteByteCode(
 	}
 
 	if (*pc == INST_MOD) {
-	    /* Following section assumes BIGNUM_AUTO_NARROW */
 	    /* TODO: Attempts to re-use unshared operands on stack */
 
 	    long l2 = 0; /* silence gcc warning */
@@ -4703,7 +4702,6 @@ TclExecuteByteCode(
 	    NEXT_INST_F(1, 1, 0);
 	}
 
-	/* Following section assumes BIGNUM_AUTO_NARROW */
 	/* TODO: Attempts to re-use unshared operands on stack */
 	if (*pc == INST_EXPON) {
 	    long l2 = 0;

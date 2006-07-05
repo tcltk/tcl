@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.30 2006/04/28 16:09:13 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.31 2006/07/05 21:29:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -77,8 +77,8 @@ TclIntStubs tclIntStubs = {
     TCL_STUB_MAGIC,
     NULL,
     NULL, /* 0 */
-    TclAccessDeleteProc, /* 1 */
-    TclAccessInsertProc, /* 2 */
+    NULL, /* 1 */
+    NULL, /* 2 */
     TclAllocateFreeObjects, /* 3 */
     NULL, /* 4 */
 #if !defined(__WIN32__) /* UNIX */
@@ -152,8 +152,8 @@ TclIntStubs tclIntStubs = {
     TclObjInterpProc, /* 63 */
     TclObjInvoke, /* 64 */
     NULL, /* 65 */
-    TclOpenFileChannelDeleteProc, /* 66 */
-    TclOpenFileChannelInsertProc, /* 67 */
+    NULL, /* 66 */
+    NULL, /* 67 */
     NULL, /* 68 */
     TclpAlloc, /* 69 */
     NULL, /* 70 */
@@ -197,8 +197,8 @@ TclIntStubs tclIntStubs = {
     TclSockMinimumBuffers, /* 104 */
 #endif /* __WIN32__ */
     NULL, /* 105 */
-    TclStatDeleteProc, /* 106 */
-    TclStatInsertProc, /* 107 */
+    NULL, /* 106 */
+    NULL, /* 107 */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
     NULL, /* 110 */

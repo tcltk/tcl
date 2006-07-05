@@ -6,13 +6,13 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-19/99 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.38 2006/04/28 16:09:11 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.39 2006/07/05 21:29:11 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2229,8 +2229,7 @@ MODULE_SCOPE int	TclParseInteger(CONST char *string, int numBytes);
 MODULE_SCOPE Tcl_Token *TclParseScript (CONST char *script, int numBytes,
 			    int flags, Tcl_Token **lastTokenPtrPtr,
 			    CONST char **termPtr);
-MODULE_SCOPE int	TclParseWhiteSpace(CONST char *src,
-			    int numBytes, Tcl_Parse *parsePtr, char *typePtr);
+MODULE_SCOPE int	TclParseAllWhiteSpace(CONST char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);

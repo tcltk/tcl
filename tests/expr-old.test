@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.17.2.11 2006/04/28 16:09:41 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.17.2.12 2006/07/05 21:29:15 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -958,7 +958,7 @@ test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
         list [catch {expr T1(4)} msg] $msg
     } -match glob -result {1 {too many arguments for math function*}}
 
-test expr-old-36.1 {ExprLooksLikeInt procedure} -constraints knownBug -body {
+test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0289
 } -returnCodes error -match glob -result {*invalid octal number*}
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
@@ -1118,7 +1118,7 @@ test expr-old-37.24 {Tcl_ExprDouble handles overflows that look like int} \
 	testexprdouble 17976931348623165[string repeat 0 292]
     } {This is a result: Inf}
 test expr-old-37.25 {Tcl_ExprDouble and NaN} \
-    {knownBug ieeeFloatingPoint testexprdouble} {
+    {ieeeFloatingPoint testexprdouble} {
 	list [catch {testexprdouble 0.0/0.0} result] $result
     } {1 {floating point value is Not a Number}}
     

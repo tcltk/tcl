@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.14 2006/04/28 16:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.15 2006/07/05 21:29:16 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -502,25 +502,42 @@ extern double strtod();
 #define TclpPanic ((Tcl_PanicProc *) NULL)
 
 /*
- * Darwin specifc configure overrides (to support fat compiles, where
- * configure runs only once for multiple architectures):
+ * Darwin specifc configure overrides.
  */
 
 #ifdef __APPLE__
+/* 
+ * Support for fat compiles: configure runs only once for multiple architectures
+ */
 #   ifdef __LP64__
 #       undef HAVE_COREFOUNDATION
 #    endif /* __LP64__ */
 #   include <sys/cdefs.h>
-#   if defined(__DARWIN_UNIX03)
+#   ifdef __DARWIN_UNIX03
 #       if __DARWIN_UNIX03
 #           undef HAVE_PUTENV_THAT_COPIES
-#        else /* !__DARWIN_UNIX03 */
+#       else
 #           define HAVE_PUTENV_THAT_COPIES 1
-#        endif /* __DARWIN_UNIX03 */
-#        define USE_TERMIOS 1
-#        undef USE_TERMIO
-#        undef USE_SGTTY
-#    endif /* defined(__DARWIN_UNIX03) */
+#       endif
+#       define USE_TERMIOS 1
+#       undef USE_TERMIO
+#       undef USE_SGTTY
+#   endif /* __DARWIN_UNIX03 */
+/*
+ * Support for MAC_OS_X_VERSION_MAX_ALLOWED define from AvailabilityMacros.h:
+ * only use API available in the indicated OS version or earlier.
+ */
+#   ifdef MAC_OS_X_VERSION_MAX_ALLOWED
+#       if MAC_OS_X_VERSION_MAX_ALLOWED < 1040
+#           undef HAVE_OSSPINLOCKLOCK
+#           undef HAVE_PTHREAD_ATFORK
+#           undef HAVE_COPYFILE
+#       endif
+#       if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
+#           define NO_REALPATH 1
+#           undef HAVE_LANGINFO
+#       endif
+#   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
 #endif /* __APPLE__ */
 
 /*

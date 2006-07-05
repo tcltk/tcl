@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.25 2006/04/28 16:09:11 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.26 2006/07/05 21:29:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -240,7 +240,7 @@ Tcl_EvalFile(
  * support, I suggest all these hooks are removed.
  */
 
-#define USE_OBSOLETE_FS_HOOKS
+#undef USE_OBSOLETE_FS_HOOKS
 
 #ifdef USE_OBSOLETE_FS_HOOKS
 
@@ -807,9 +807,11 @@ TclFinalizeFilesystem(void)
      * filesystem is likely to fail.
      */
 
+#ifdef USE_OBSOLETE_FS_HOOKS
     statProcList = NULL;
     accessProcList = NULL;
     openFileChannelProcList = NULL;
+#endif
 #ifdef __WIN32__
     TclWinEncodingsCleanup();
 #endif
@@ -2148,9 +2150,9 @@ Tcl_FSOpenFileChannel(
 				 * what modes to create it? */
 {
     Tcl_Filesystem *fsPtr;
-#ifdef USE_OBSOLETE_FS_HOOKS
     Tcl_Channel retVal = NULL;
 
+#ifdef USE_OBSOLETE_FS_HOOKS
     /*
      * Call each of the "Tcl_OpenFileChannel" functions in succession. A
      * non-NULL return value indicates the particular function has succeeded.

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.19 2006/04/28 16:09:11 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.20 2006/07/05 21:29:11 dgp Exp $
 
 library tcl
 
@@ -29,12 +29,12 @@ interface tclInt
 #declare 0 generic {
 #    int TclAccess(CONST char *path, int mode)
 #}
-declare 1 generic {
-    int TclAccessDeleteProc(TclAccessProc_ *proc)
-}
-declare 2 generic {
-    int TclAccessInsertProc(TclAccessProc_ *proc)
-}
+#declare 1 generic {
+#    int TclAccessDeleteProc(TclAccessProc_ *proc)
+#}
+#declare 2 generic {
+#    int TclAccessInsertProc(TclAccessProc_ *proc)
+#}
 declare 3 generic {
     void TclAllocateFreeObjects(void)
 }
@@ -278,12 +278,12 @@ declare 64 generic {
 #    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
 #	    Tcl_Obj *CONST objv[], int flags)
 #}
-declare 66 generic {
-    int TclOpenFileChannelDeleteProc(TclOpenFileChannelProc_ *proc)
-}
-declare 67 generic {
-    int TclOpenFileChannelInsertProc(TclOpenFileChannelProc_ *proc)
-}
+#declare 66 generic {
+#    int TclOpenFileChannelDeleteProc(TclOpenFileChannelProc_ *proc)
+#}
+#declare 67 generic {
+#    int TclOpenFileChannelInsertProc(TclOpenFileChannelProc_ *proc)
+#}
 # Replaced by Tcl_FSAccess in 8.4:
 #declare 68 generic {
 #    int TclpAccess(CONST char *path, int mode)
@@ -425,12 +425,12 @@ declare 104 {unix win} {
 #declare 105 generic {
 #    int TclStat(CONST char *path, Tcl_StatBuf *buf)
 #}
-declare 106 generic {
-    int TclStatDeleteProc(TclStatProc_ *proc)
-}
-declare 107 generic {
-    int TclStatInsertProc(TclStatProc_ *proc)
-}
+#declare 106 generic {
+#    int TclStatDeleteProc(TclStatProc_ *proc)
+#}
+#declare 107 generic {
+#    int TclStatInsertProc(TclStatProc_ *proc)
+#}
 declare 108 generic {
     void TclTeardownNamespace(Namespace *nsPtr)
 }
