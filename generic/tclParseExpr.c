@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.33 2006/07/05 05:34:45 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.34 2006/07/05 20:42:15 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2293,6 +2293,8 @@ Tcl_ParseExpr(
 		code = Tcl_ParseQuotedString(interp, start, numBytes,
 			&scratch, 1, &end);
 		if (code != TCL_OK) {
+		    scanned = scratch.term - start;
+		    scanned += (scanned < numBytes);
 		    continue;
 		}
 		scanned = end - start;
@@ -2310,6 +2312,8 @@ Tcl_ParseExpr(
 	    case VARIABLE:
 		code = Tcl_ParseVarName(interp, start, numBytes, &scratch, 1);
 		if (code != TCL_OK) {
+		    scanned = scratch.term - start;
+		    scanned += (scanned < numBytes);
 		    continue;
 		}
 		tokenPtr = scratch.tokenPtr + nodePtr->token + 1;
@@ -2356,11 +2360,13 @@ Tcl_ParseExpr(
 			break;
 		    }
 		}
-		if (code != TCL_OK) {
-		    continue;
-		}
 		end = start;
 		start = tokenPtr->start;
+		if (code != TCL_OK) {
+		    scanned = parsePtr->term - start;
+		    scanned += (scanned < numBytes);
+		    continue;
+		}
 		scanned = end - start;
 		tokenPtr->size = scanned;
 		scratch.numTokens++;
