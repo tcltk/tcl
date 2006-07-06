@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.15 2006/07/05 21:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.16 2006/07/06 13:34:41 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2398,7 +2398,7 @@ TclParseExpr(
 			    &term);
 		    int numTokens = 1 + (int) (lastTokenPtr - appendTokens);
 
-		    TclGrowParseTokenArray(&scratch, numTokens);
+		    TclGrowParseTokenArray(&scratch, numTokens + 1);
 		    tokenPtr = scratch.tokenPtr + scratch.numTokens;
 		    tokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
 		    tokenPtr->size = term - (start + scanned) + 2;
