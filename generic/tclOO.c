@@ -8,13 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.6 2006/07/10 01:17:32 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.7 2006/07/10 23:24:24 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
-void			TclOOInit(Tcl_Interp *interp);
 Tcl_Method		Tcl_OONewMethod(Tcl_Interp *interp, Tcl_Object object,
 			    Tcl_Obj *nameObj, int isPublic,
 			    Tcl_OOMethodCallProc callProc,
@@ -26,6 +25,31 @@ Tcl_Method		Tcl_OONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
 			    ClientData clientData,
 			    Tcl_OOMethodDeleteProc deleteProc);
 
+static const struct {
+    const char *name;
+    Tcl_ObjCmdProc *objProc;
+    int flag;
+} defineCmds[] = {
+    {"constructor", TclOODefineConstructorObjCmd, 0},
+    {"copy", TclOODefineCopyObjCmd, 0},
+    {"destructor", TclOODefineDestructorObjCmd, 0},
+    {"export", TclOODefineExportObjCmd, 0},
+    {"self.export", TclOODefineExportObjCmd, 1},
+    {"filter", TclOODefineFilterObjCmd, 0},
+    {"self.filter", TclOODefineFilterObjCmd, 1},
+    {"forward", TclOODefineForwardObjCmd, 0},
+    {"self.forward", TclOODefineForwardObjCmd, 1},
+    {"method", TclOODefineMethodObjCmd, 0},
+    {"self.method", TclOODefineMethodObjCmd, 1},
+    {"mixin", TclOODefineMixinObjCmd, 0},
+    {"self.mixin", TclOODefineMixinObjCmd, 1},
+    {"parameter", TclOODefineParameterObjCmd, 0},
+    {"superclass", TclOODefineSuperclassObjCmd, 0},
+    {"unexport", TclOODefineUnexportObjCmd, 0},
+    {"self.unexport", TclOODefineUnexportObjCmd, 1},
+    {"self.class", TclOODefineSelfClassObjCmd, 0},
+    {NULL, NULL, 0}
+};
 
 #define ALLOC_CHUNK 8
 
@@ -105,12 +129,25 @@ TclOOInit(
 {
     Interp *iPtr = (Interp *) interp;
     Foundation *fPtr;
+    int i;
+    Tcl_DString buffer;
 
     fPtr = iPtr->ooFoundation = (Foundation *) ckalloc(sizeof(Foundation));
     Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
-    Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
+    fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
+
+    Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
+	    NULL);
+    Tcl_DStringInit(&buffer);
+    for (i=0 ; defineCmds[i].name ; i++) {
+	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
+	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
+	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
+		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
+	Tcl_DStringFree(&buffer);
+    }
 
     fPtr->objStack = NULL;
     fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
@@ -548,7 +585,7 @@ InvokeProcedureMethod(
     if (result != TCL_OK) {
 	return result;
     }
-    framePtr->methodChain = contextPtr;
+    framePtr->ooContextPtr = contextPtr;
     // TODO: Call the procedure!
 }
 
@@ -1261,7 +1298,6 @@ ObjectLinkVar(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr = contextPtr->oPtr;
     int i;
 
@@ -1269,13 +1305,12 @@ ObjectLinkVar(
 	Tcl_WrongNumArgs(interp, 2, objv, "varName ?varName ...?");
 	return TCL_ERROR;
     }
-    Tcl_DStringInit(&buffer);
     for (i=2 ; i<objc ; i++) {
 	Var *varPtr, *aryPtr;
 	Tcl_Obj *tmpObjPtr;
 
 	if (strstr("::", TclGetString(objv[i])) == NULL) {
-	    Tcl_AppendResult("variable name \"", TclGetString(objv[i]),
+	    Tcl_AppendResult(interp, "variable name \"", TclGetString(objv[i]),
 		    "\" illegal: must not contain namespace separator", NULL);
 	    return TCL_ERROR;
 	}

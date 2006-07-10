@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.1 2006/07/10 01:17:32 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.2 2006/07/10 23:24:24 dkf Exp $
  */
 
 struct Class;
@@ -92,6 +92,7 @@ typedef struct Foundation {
     struct Class *classCls;
     struct Class *definerCls;
     struct Class *structCls;
+    Tcl_Namespace *defineNs;
     Tcl_Namespace *helpersNs;
     int epoch;
     int nsCount;
