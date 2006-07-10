@@ -1,3 +1,8 @@
+2006-07-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIO.c (Tcl_CreateChannel): allow Tcl std channel
+	inheritance to be #defined out (default remains in).
+
 2006-06-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:		changes to start prep for an 8.4.14 release.
@@ -26,8 +31,8 @@
 
 2006-06-06  Don Porter  <dgp@users.sourceforge.net>
 
-        * doc/GetStdChan.3:     Added recommendation that each call to
-        Tcl_SetStdChannel() be accompanied by a call to Tcl_RegisterChannel().
+	* doc/GetStdChan.3:	Added recommendation that each call to
+	Tcl_SetStdChannel() be accompanied by a call to Tcl_RegisterChannel().
 
 2006-05-31  Jeff Hobbs  <jeffh@ActiveState.com>
 
