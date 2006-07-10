@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.210.2.1 2006/04/17 23:24:20 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.210.2.2 2006/07/10 01:17:31 dkf Exp $
  */
 
 #ifndef _TCL
@@ -504,6 +504,7 @@ typedef struct Tcl_Interp {
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
+typedef struct Tcl_Class_ *Tcl_Class;
 typedef struct Tcl_Command_ *Tcl_Command;
 typedef struct Tcl_Condition_ *Tcl_Condition;
 typedef struct Tcl_Dict_ *Tcl_Dict;
@@ -512,7 +513,9 @@ typedef struct Tcl_Encoding_ *Tcl_Encoding;
 typedef struct Tcl_Event Tcl_Event;
 typedef struct Tcl_InterpState_ *Tcl_InterpState;
 typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
+typedef struct Tcl_Method_ *Tcl_Method;
 typedef struct Tcl_Mutex_ *Tcl_Mutex;
+typedef struct Tcl_Object_ *Tcl_Object;
 typedef struct Tcl_Pid_ *Tcl_Pid;
 typedef struct Tcl_RegExp_ *Tcl_RegExp;
 typedef struct Tcl_ThreadDataKey_ *Tcl_ThreadDataKey;
