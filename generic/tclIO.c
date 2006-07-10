@@ -10,13 +10,17 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.20 2006/04/05 00:06:03 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.21 2006/07/10 23:01:06 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclIO.h"
 #include <assert.h>
+
+#ifndef TCL_INHERIT_STD_CHANNELS
+#define TCL_INHERIT_STD_CHANNELS 1
+#endif
 
 
 /*
@@ -1247,7 +1251,7 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
      * Install this channel in the first empty standard channel slot, if
      * the channel was previously closed explicitly.
      */
-
+#if TCL_INHERIT_STD_CHANNELS
     if ((tsdPtr->stdinChannel == NULL) &&
 	    (tsdPtr->stdinInitialized == 1)) {
 	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDIN);
@@ -1260,7 +1264,8 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
 	    (tsdPtr->stderrInitialized == 1)) {
 	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDERR);
         Tcl_RegisterChannel((Tcl_Interp *) NULL, (Tcl_Channel) chanPtr);
-    } 
+    }
+#endif
     return (Tcl_Channel) chanPtr;
 }
 
