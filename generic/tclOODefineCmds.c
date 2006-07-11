@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.1 2006/07/10 23:24:24 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.2 2006/07/11 10:01:40 dkf Exp $
  */
 
 #include "tclInt.h"
