@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.7 2006/07/10 23:24:24 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.8 2006/07/12 00:21:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -122,6 +122,9 @@ static int		ObjectLinkVar(ClientData clientData,Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
 static int		ObjectUnknown(ClientData clientData,Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+
+static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 
 void
 TclOOInit(
@@ -138,6 +141,8 @@ TclOOInit(
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
 
+    Tcl_CreateObjCommand(interp, "::oo::Helpers::next", NextObjCmd, NULL,
+	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
     Tcl_DStringInit(&buffer);
@@ -1355,6 +1360,83 @@ ObjectLinkVar(
 	}
     }
     return TCL_OK;
+}
+
+static int
+NextObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    CallContext *contextPtr;
+    int index, result;
+
+    /*
+     * Start with sanity checks on the calling context and the method context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_AppendResult(interp, TclGetString(objv[0]),
+		" may only be called from inside a method", NULL);
+	return TCL_ERROR;
+    }
+
+    contextPtr = framePtr->ooContextPtr;
+
+    index = contextPtr->index;
+    if (index+1 >= contextPtr->numCallChain) {
+	Tcl_AppendResult(interp, "no superclass method implementation", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Advance to the next method implementation in the chain in the method
+     * call context while we process the body.
+     */
+
+    contextPtr->index = index+1;
+
+    /*
+     * Invoke the (advanced) method call context. This might need some
+     * temporary space for building the array of arguments (it only doesn't in
+     * the no-arg case).
+     */
+
+    if (objc == 1) {
+	result = InvokeContext(interp, contextPtr, 2, framePtr->objv);
+    } else {
+	Tcl_Obj **tmpObjs = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * (objc+1));
+
+	tmpObjs[0] = framePtr->objv[0];
+	tmpObjs[1] = framePtr->objv[1];
+	memcpy(tmpObjs+2, objv+1, (unsigned) objc-1);
+
+	result = InvokeContext(interp, contextPtr, objc+1, objv);
+	ckfree((char *) tmpObjs);
+    }
+
+    /*
+     * Restore the call chain context index as we've finished the inner invoke
+     * and want to operate in the outer context again.
+     */
+
+    contextPtr->index = index;
+
+    /*
+     * If an error happened, add information about this to the trace.
+     */
+
+    if (result == TCL_ERROR) {
+	// TODO: Better error info for filters
+	TclFormatToErrorInfo(interp,
+		"\n    (superclass implementation of %s method)",
+		TclGetString(framePtr->objv[1]));
+    }
+
+    return result;
 }
 
 /*
