@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.8 2006/07/12 00:21:26 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.9 2006/07/12 15:32:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -24,6 +24,13 @@ Tcl_Method		Tcl_OONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
 			    Tcl_OOMethodCallProc callProc,
 			    ClientData clientData,
 			    Tcl_OOMethodDeleteProc deleteProc);
+
+MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
+			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+			    Tcl_Obj *bodyObj);
+MODULE_SCOPE Method *	TclNewForwardMethod(Tcl_Interp *interp, Object *oPtr,
+			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+			    Tcl_Obj *bodyObj);
 
 static const struct {
     const char *name;
@@ -52,6 +59,93 @@ static const struct {
 };
 
 #define ALLOC_CHUNK 8
+
+//struct Class;
+//struct Object;
+//struct Method;
+////struct Foundation;
+//
+//typedef struct Method {
+//    Tcl_Obj *bodyObj;
+//    Proc *procPtr;
+//    int epoch;
+//    int flags;
+//    int formalc;
+//    Tcl_Obj **formalv;
+//} Method;
+//
+//typedef struct Object {
+//    Namespace *nsPtr;		/* This object's tame namespace. */
+//    Tcl_Command command;	/* Reference to this object's public
+//				 * command. */
+//    Tcl_Command myCommand;	/* Reference to this object's internal
+//				 * command. */
+//    struct Class *selfCls;	/* This object's class. */
+//    Tcl_HashTable methods;	/* Tcl_Obj (method name) to Method*
+//				 * mapping. */
+//    int numMixins;		/* Number of classes mixed into this
+//				 * object. */
+//    struct Class **mixins;	/* References to classes mixed into this
+//				 * object. */
+//    int numFilters;
+//    Tcl_Obj **filterObjs;
+//    struct Class *classPtr;	/* All classes have this non-NULL; it points
+//				 * to the class structure. Everything else has
+//				 * this NULL. */
+//    Tcl_Interp *interp;		/* The interpreter (for the PushObject and
+//				 * PopObject callbacks. */
+//} Object;
+//
+//struct Class {
+//    struct Object *thisPtr;
+//    int flags;
+//    int numSuperclasses;
+//    struct Class **superclasses;
+//    int numSubclasses;
+//    struct Class **subclasses;
+//    int subclassesSize;
+//    int numInstances;
+//    struct Object **instances;
+//    int instancesSize;
+//    Tcl_HashTable classMethods;
+//    struct Method *constructorPtr;
+//    struct Method *destructorPtr;
+//};
+
+//typedef struct ObjectStack {
+//    Object *oPtr;
+//    struct ObjectStack *nextPtr;
+//} ObjectStack;
+//
+//typedef struct Foundation {
+//    struct Class *objectCls;
+//    struct Class *classCls;
+//    struct Class *definerCls;
+//    struct Class *structCls;
+//    Tcl_Namespace *helpersNs;
+//    int epoch;
+//    int nsCount;
+//    Tcl_Obj *unknownMethodNameObj;
+//    ObjectStack *objStack;	// should this be in stack frames?
+//} Foundation;
+//
+//#define CALL_CHAIN_STATIC_SIZE 4
+//
+//struct MInvoke {
+//    Method *mPtr;
+//    int isFilter;
+//};
+//struct CallContext {
+//    int epoch;
+//    int flags;
+//    int numCallChain;
+//    struct MInvoke **callChain;
+//    struct MInvoke *staticCallChain[CALL_CHAIN_STATIC_SIZE];
+//    int filterLength;
+//};
+//
+//#define OO_UNKNOWN_METHOD	1
+//#define PUBLIC_METHOD		2
 
 /*
  * Function declarations.
@@ -86,9 +180,6 @@ static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_HashTable *cachePtr);
 static Object *		NewInstance(Tcl_Interp *interp, Class *clsPtr,
 			    char *name, int objc, Tcl_Obj *const *objv);
-static Method *		NewProcMethod(Tcl_Interp *interp, Object *oPtr,
-			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
-			    Tcl_Obj *bodyObj);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -474,6 +565,7 @@ Tcl_OONewMethod(
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	Tcl_SetHashValue(hPtr, mPtr);
+	//TODO: Put a reference to the name in the Method struct
     } else {
 	mPtr = Tcl_GetHashValue(hPtr);
 	if (mPtr->deletePtr != NULL) {
@@ -510,6 +602,7 @@ Tcl_OONewClassMethod(
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	Tcl_SetHashValue(hPtr, mPtr);
+	//TODO: Put a reference to the name in the Method struct
     } else {
 	mPtr = Tcl_GetHashValue(hPtr);
 	if (mPtr->deletePtr != NULL) {
@@ -527,8 +620,8 @@ Tcl_OONewClassMethod(
     return (Tcl_Method) mPtr;
 }
 
-static Method *
-NewProcMethod(
+Method *
+TclNewProcMethod(
     Tcl_Interp *interp,
     Object *oPtr,
     int isPublic,
@@ -591,7 +684,11 @@ InvokeProcedureMethod(
 	return result;
     }
     framePtr->ooContextPtr = contextPtr;
-    // TODO: Call the procedure!
+    framePtr->objc = objc;
+    framePtr->objv = objv;	/* ref counts for args are incremented below */
+    framePtr->procPtr = procPtr;
+
+    return TclObjInterpProcCore(interp, framePtr, objv[1]/*TODO:Fixme*/, 2);
 }
 
 static void
@@ -613,8 +710,8 @@ DeleteProcedureMethod(
     ckfree((char *) pmPtr);
 }
 
-static Method *
-NewForwardMethod(
+Method *
+TclNewForwardMethod(
     Tcl_Interp *interp,
     Object *oPtr,
     int isPublic,
@@ -632,6 +729,20 @@ NewForwardMethod(
 		NULL);
 	return NULL;
     }
+//    mPtr->epoch = ((Interp *) interp)->ooFoundation->epoch;
+//    mPtr->bodyObj = bodyObj;
+//    Tcl_IncrRefCount(bodyObj);
+//    mPtr->flags = 0;
+//    return mPtr;
+//
+//    if (TclCreateProc(interp, oPtr->nsPtr, TclGetString(nameObj), argsObj,
+//	    bodyObj, &mPtr->procPtr) != TCL_OK) {
+//	Tcl_AddErrorInfo(interp, "\n    (creating method \"");
+//	Tcl_AddErrorInfo(interp, TclGetString(nameObj));
+//	Tcl_AddErrorInfo(interp, "\")");
+//	return NULL;
+//    }
+//    procPtr->isMethod = 1;
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
@@ -803,13 +914,12 @@ InvokeContext(
     if (result != TCL_OK) {
 	return result;
     }
-    framePtr->methodChain = contextPtr;
-    framePtr->methodChainIdx = 0;
+    framePtr->ooContextPtr = contextPtr;
+    framePtr->objc = objc;
+    framePtr->objv = objv;	/* ref counts for args are incremented below */
+    framePtr->procPtr = procPtr;
 
-#error This function should have much in common with TclObjInterpProc
-    Tcl_Panic("not yet implemented");
-
-    return TCL_ERROR;
+    return TclObjInterpProcCore(interp, framePtr, objv[1]/*FIXME*/, 2);
 }
 #endif /* WRONG_BUT_KEPT_FOR_NOTES */
 

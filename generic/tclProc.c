@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.86 2006/02/01 20:17:28 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.86.2.1 2006/07/12 15:32:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1118,10 +1118,9 @@ TclObjInterpProc(
 				 * procedure. */
     Tcl_Obj *CONST objv[])	/* Argument value objects. */
 {
-
     return ObjInterpProcEx(clientData, interp, objc, objv, /*skip*/ 1);
 }
-	
+
 static int
 ObjInterpProcEx(
     ClientData clientData, 	/* Record describing procedure to be
@@ -1131,24 +1130,13 @@ ObjInterpProcEx(
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *CONST objv[],	/* Argument value objects. */
-    int skip)                   /* Number of initial arguments to be skipped,
-				 * ie, words in the "command name" */ 
+    int skip)			/* Number of initial arguments to be skipped,
+				 * i.e., words in the "command name" */
 {
     register Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame *framePtr, **framePtrPtr;
-    register Var *varPtr;
-    register CompiledLocal *localPtr;
-    char *procName;
-    int nameLen, localCt, numArgs, argCt, i, imax, result;
-    Var *compiledLocals;
-    Tcl_Obj *CONST *argObjs;
-
-    /*
-     * Get the procedure's name.
-     */
-
-    procName = Tcl_GetStringFromObj(objv[0], &nameLen);
+    int result;
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -1158,12 +1146,11 @@ ObjInterpProcEx(
      */
 
     result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
-	    "body of proc", procName);
+	    "body of proc", TclGetString(objv[0]));
 
     if (result != TCL_OK) {
 	return result;
     }
-
 
     /*
      * Set up and push a new call frame for the new procedure invocation.
@@ -1181,10 +1168,28 @@ ObjInterpProcEx(
 	return result;
     }
 
-
     framePtr->objc = objc;
     framePtr->objv = objv;	/* ref counts for args are incremented below */
     framePtr->procPtr = procPtr;
+
+    return TclObjInterpProcCore(interp, framePtr, objv[0], skip);
+}
+
+static int
+TclObjInterpProcCore(
+    register Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    CallFrame *framePtr,
+    Tcl_Obj *procNameObj,
+    int skip)			/* Number of initial arguments to be skipped,
+				 * i.e., words in the "command name" */
+{
+    register Proc *procPtr = framePtr->procPtr;
+    register Var *varPtr;
+    register CompiledLocal *localPtr;
+    int localCt, numArgs, argCt, i, imax, result;
+    Var *compiledLocals;
+    Tcl_Obj *CONST *argObjs;
 
     /*
      * Create the "compiledLocals" array. Make sure it is large enough to hold
@@ -1205,8 +1210,8 @@ ObjInterpProcEx(
      */
 
     numArgs = procPtr->numArgs;
-    argCt = objc-skip; /* set it to the number of args to the proc */
-    argObjs = &objv[skip];
+    argCt = framePtr->objc-skip; /* set it to the number of args to the proc */
+    argObjs = &framePtr->objv[skip];
     varPtr = framePtr->compiledLocals;
     localPtr = procPtr->firstLocalPtr;
     if (numArgs == 0) {
@@ -1290,7 +1295,7 @@ ObjInterpProcEx(
 
     incorrectArgs:
 	codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;
-	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+	InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
 
 	/*
 	 * Build up desired argument list for Tcl_WrongNumArgs
@@ -1300,9 +1305,9 @@ ObjInterpProcEx(
 		ckalloc(sizeof(Tcl_Obj *) * (unsigned)(numArgs+1));
 
 #ifdef AVOID_HACKS_FOR_ITCL
-	desiredObjs[0] = objv[0];
+	desiredObjs[0] = framePtr->objv[0];
 #else
-	desiredObjs[0] = Tcl_NewListObj(skip, objv);
+	desiredObjs[0] = Tcl_NewListObj(skip, framePtr->objv);
 #endif /* AVOID_HACKS_FOR_ITCL */
 
 	localPtr = procPtr->firstLocalPtr;
@@ -1356,7 +1361,7 @@ ObjInterpProcEx(
 	ByteCode *codePtr = (ByteCode *)
 		procPtr->bodyPtr->internalRep.otherValuePtr;
 
-	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+	InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
     }
 
     /*
@@ -1366,8 +1371,8 @@ ObjInterpProcEx(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 1) {
 	fprintf(stdout, "Calling proc ");
-	for (i = 0; i < objc; i++) {
-	    TclPrintObject(stdout, objv[i], 15);
+	for (i = 0; i < framePtr->objc; i++) {
+	    TclPrintObject(stdout, framePtr->objv[i], 15);
 	    fprintf(stdout, " ");
 	}
 	fprintf(stdout, "\n");
@@ -1383,6 +1388,9 @@ ObjInterpProcEx(
     }
 
     if (result != TCL_OK) {
+	int nameLen;
+	char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+
 	result = ProcessProcResultCode(interp, procName, nameLen, result);
     }
 
