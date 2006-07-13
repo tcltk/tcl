@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.9 2006/07/12 15:32:27 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.10 2006/07/13 00:23:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -29,8 +29,8 @@ MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 			    Tcl_Obj *bodyObj);
 MODULE_SCOPE Method *	TclNewForwardMethod(Tcl_Interp *interp, Object *oPtr,
-			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
-			    Tcl_Obj *bodyObj);
+			    int isPublic, Tcl_Obj *nameObj,
+			    Tcl_Obj *prefixObj);
 
 static const struct {
     const char *name;
@@ -686,7 +686,7 @@ InvokeProcedureMethod(
     framePtr->ooContextPtr = contextPtr;
     framePtr->objc = objc;
     framePtr->objv = objv;	/* ref counts for args are incremented below */
-    framePtr->procPtr = procPtr;
+    framePtr->procPtr = pmPtr->procPtr;
 
     return TclObjInterpProcCore(interp, framePtr, objv[1]/*TODO:Fixme*/, 2);
 }
