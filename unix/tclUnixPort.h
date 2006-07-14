@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.47 2006/06/14 21:11:35 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.48 2006/07/14 16:28:50 andreas_kupries Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -506,6 +506,11 @@ extern double strtod();
  */
 
 #ifdef __APPLE__
+/*
+ * Translate the symbolic values for MAC_OS_X_VERSION_MAX_ALLOWED to
+ * the numbers used in the comparisons below.
+ */
+#include <AvailabilityMacros.h>
 /* 
  * Support for fat compiles: configure runs only once for multiple architectures
  */
