@@ -1,3 +1,10 @@
+2006-07-13  Andreas Kupries <andreask@activestate.com>
+
+	* unix/tclUnixPort.h: Added the inclusion of
+	  <AvailabilityMacros.h>. The missing header caused the upcoming
+	  #if conditions to wrongly exclude realpath, causing file
+	  normalize to ignore symbolic links in the path.
+
 2006-07-11  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclAsync.c: Made Tcl_AsyncDelete() more tolerant
