@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.8 2006/03/21 11:06:23 das Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.9 2006/07/20 06:18:37 das Exp $
  */
 
 #include "tclInt.h"
@@ -21,7 +21,7 @@
 #include <libkern/OSByteOrder.h>
 #endif
 
-/* Darwin 8 copyfile API */
+/* Darwin 8 copyfile API. */
 #ifdef HAVE_COPYFILE
 #ifdef HAVE_COPYFILE_H
 #include <copyfile.h>
@@ -30,8 +30,14 @@ int copyfile(const char *from, const char *to, void *state, uint32_t flags);
 #define COPYFILE_ACL            (1<<0)
 #define COPYFILE_XATTR          (1<<2)
 #define COPYFILE_NOFOLLOW_SRC   (1<<18)
-#endif
-#endif
+#endif /* HAVE_COPYFILE_H */
+#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+/* Support for weakly importing copyfile. */
+#define WEAK_IMPORT_COPYFILE
+extern int copyfile(const char *from, const char *to, void *state,
+                    uint32_t flags) WEAK_IMPORT_ATTRIBUTE;
+#endif /* HAVE_WEAK_IMPORT */
+#endif /* HAVE_COPYFILE */
 
 #include <libkern/OSByteOrder.h>
 
@@ -365,14 +371,22 @@ TclMacOSXCopyFileAttributes(
     CONST Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
-#if defined(HAVE_COPYFILE)
+#ifdef WEAK_IMPORT_COPYFILE
+    if (copyfile != NULL) {
+#endif
+#ifdef HAVE_COPYFILE
     if (copyfile(src, dst, NULL, COPYFILE_XATTR |
 	    (S_ISLNK(statBufPtr->st_mode) ? COPYFILE_NOFOLLOW_SRC :
 		                            COPYFILE_ACL)) < 0) {
 	return TCL_ERROR;
     }
     return TCL_OK;
-#elif defined(HAVE_GETATTRLIST)
+#endif /* HAVE_COPYFILE */
+#ifdef WEAK_IMPORT_COPYFILE
+    } else {
+#endif
+#if !defined(HAVE_COPYFILE) || defined(WEAK_IMPORT_COPYFILE)
+#ifdef HAVE_GETATTRLIST
     struct attrlist alist;
     fileinfobuf finfo;
     off_t *rsrcForkSize = (off_t*)(&finfo.data);
@@ -430,6 +444,10 @@ TclMacOSXCopyFileAttributes(
     return TCL_OK;
 #else
     return TCL_ERROR;
+#endif /* HAVE_GETATTRLIST */
+#endif /* !defined(HAVE_COPYFILE) || defined(WEAK_IMPORT_COPYFILE) */
+#ifdef WEAK_IMPORT_COPYFILE
+    }
 #endif
 }
 

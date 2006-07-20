@@ -7,14 +7,21 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.63 2006/02/08 21:41:28 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.64 2006/07/20 06:18:38 das Exp $
  */
 
 #include "tclInt.h"
 #include <stddef.h>
 #include <locale.h>
 #ifdef HAVE_LANGINFO
-#include <langinfo.h>
+#   include <langinfo.h>
+#   ifdef __APPLE__
+#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+	    /* Support for weakly importing nl_langinfo on Darwin. */
+#           define WEAK_IMPORT_NL_LANGINFO
+	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
+#       endif
+#    endif
 #endif
 #include <sys/resource.h>
 #if defined(__FreeBSD__) && defined(__GNUC__)
@@ -331,6 +338,17 @@ static int		GetStackSize(size_t *stackSizePtr);
 static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 			    int maxPathLen, char *tclLibPath);
 #endif /* HAVE_COREFOUNDATION */
+#if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
+	defined(TCL_THREADS) && defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED < 1030))
+/*
+ * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
+ * initialize release global at startup from uname().
+ */
+#define GET_DARWIN_RELEASE 1
+MODULE_SCOPE long tclMacOSXDarwinRelease;
+long tclMacOSXDarwinRelease = 0;
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -425,6 +443,15 @@ TclpInitPlatform(void)
      */
 
     setlocale(LC_NUMERIC, "C");
+
+#ifdef GET_DARWIN_RELEASE
+    {
+	struct utsname name;
+	if (!uname(&name)) {
+	    tclMacOSXDarwinRelease = strtol(name.release, NULL, 10);
+	}
+    }
+#endif
 }
 
 /*
@@ -620,7 +647,11 @@ Tcl_GetEncodingNameFromEnvironment(
      */
 
 #ifdef HAVE_LANGINFO
-    if (setlocale(LC_CTYPE, "") != NULL) {
+    if (
+#ifdef WEAK_IMPORT_NL_LANGINFO
+	    nl_langinfo != NULL &&
+#endif
+	    setlocale(LC_CTYPE, "") != NULL) {
 	Tcl_DString ds;
 
 	/*
