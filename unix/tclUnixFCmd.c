@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.9 2006/03/28 10:47:09 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.10 2006/07/20 06:21:46 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -189,6 +189,22 @@ Realpath(path, resolved)
 #define Realpath realpath
 #endif
 
+#ifndef NO_REALPATH
+#if defined(__APPLE__) && defined(TCL_THREADS) && \
+	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+/*
+ * prior to Darwin 7, realpath is not threadsafe, c.f. bug 711232;
+ * if we might potentially be running on pre-10.3 OSX,
+ * check Darwin release at runtime before using realpath.
+ */
+extern long tclMacOSXDarwinRelease;
+#define haveRealpath (tclMacOSXDarwinRelease >= 7)
+#else
+#define haveRealpath 1
+#endif
+#endif /* NO_REALPATH */
+
 
 /*
  *---------------------------------------------------------------------------
@@ -266,7 +282,7 @@ DoRenameFile(src, dst)
      * conditionally compiled because realpath() not defined on all systems.
      */
 
-    if (errno == EINVAL) {
+    if (errno == EINVAL && haveRealpath) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
 	DIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
@@ -402,6 +418,9 @@ DoCopyFile(src, dst, statBufPtr)
 		return TCL_ERROR;
 	    }
 #ifdef HAVE_COPYFILE
+#ifdef WEAK_IMPORT_COPYFILE
+	    if (copyfile != NULL)
+#endif
 	    copyfile(src, dst, NULL, COPYFILE_XATTR|COPYFILE_NOFOLLOW_SRC);
 #endif
 	    break;
@@ -1206,6 +1225,9 @@ CopyFileAtts(src, dst, statBufPtr)
 	return TCL_ERROR;
     }
 #ifdef HAVE_COPYFILE
+#ifdef WEAK_IMPORT_COPYFILE
+    if (copyfile != NULL)
+#endif
     copyfile(src, dst, NULL, COPYFILE_XATTR|COPYFILE_ACL);
 #endif
     return TCL_OK;
@@ -1815,7 +1837,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 
 #ifndef NO_REALPATH
     /* For speed, try to get the entire path in one go */
-    if (nextCheckpoint == 0) {
+    if (nextCheckpoint == 0 && haveRealpath) {
         char *lastDir = strrchr(currentPathEndPosition, '/');
 	if (lastDir != NULL) {
 	    nativePath = Tcl_UtfToExternalDString(NULL, path, 
@@ -1869,57 +1891,59 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
      * have 'realpath'.
      */
 #ifndef NO_REALPATH
-    /* 
-     * If we only had '/foo' or '/' then we never increment nextCheckpoint
-     * and we don't need or want to go through 'Realpath'.  Also, on some
-     * platforms, passing an empty string to 'Realpath' will give us the
-     * normalized pwd, which is not what we want at all!
-     */
-    if (nextCheckpoint == 0) return 0;
-    
-    nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
-    if (Realpath(nativePath, normPath) != NULL) {
-	int newNormLen;
-	wholeStringOk:
-	newNormLen = strlen(normPath);
-	if ((newNormLen == Tcl_DStringLength(&ds))
-		&& (strcmp(normPath, nativePath) == 0)) {
-	    /* String is unchanged */
-	    Tcl_DStringFree(&ds);
-	    if (path[nextCheckpoint] != '\0') {
-		nextCheckpoint++;
-	    }
-	    return nextCheckpoint;
-	}
+    if (haveRealpath) {
+	/* 
+	 * If we only had '/foo' or '/' then we never increment nextCheckpoint
+	 * and we don't need or want to go through 'Realpath'.  Also, on some
+	 * platforms, passing an empty string to 'Realpath' will give us the
+	 * normalized pwd, which is not what we want at all!
+	 */
+	if (nextCheckpoint == 0) return 0;
 	
-	/* 
-	 * Free up the native path and put in its place the
-	 * converted, normalized path.
-	 */
-	Tcl_DStringFree(&ds);
-	Tcl_ExternalToUtfDString(NULL, normPath, (int) newNormLen, &ds);
-
-	if (path[nextCheckpoint] != '\0') {
-	    /* not at end, append remaining path */
-	    int normLen = Tcl_DStringLength(&ds);
-	    Tcl_DStringAppend(&ds, path + nextCheckpoint,
-		    pathLen - nextCheckpoint);
+	nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
+	if (Realpath(nativePath, normPath) != NULL) {
+	    int newNormLen;
+	    wholeStringOk:
+	    newNormLen = strlen(normPath);
+	    if ((newNormLen == Tcl_DStringLength(&ds))
+		    && (strcmp(normPath, nativePath) == 0)) {
+		/* String is unchanged */
+		Tcl_DStringFree(&ds);
+		if (path[nextCheckpoint] != '\0') {
+		    nextCheckpoint++;
+		}
+		return nextCheckpoint;
+	    }
+	    
 	    /* 
-	     * We recognise up to and including the directory
-	     * separator.
-	     */	
-	    nextCheckpoint = normLen + 1;
-	} else {
-	    /* We recognise the whole string */ 
-	    nextCheckpoint = Tcl_DStringLength(&ds);
+	     * Free up the native path and put in its place the
+	     * converted, normalized path.
+	     */
+	    Tcl_DStringFree(&ds);
+	    Tcl_ExternalToUtfDString(NULL, normPath, (int) newNormLen, &ds);
+    
+	    if (path[nextCheckpoint] != '\0') {
+		/* not at end, append remaining path */
+		int normLen = Tcl_DStringLength(&ds);
+		Tcl_DStringAppend(&ds, path + nextCheckpoint,
+			pathLen - nextCheckpoint);
+		/* 
+		 * We recognise up to and including the directory
+		 * separator.
+		 */	
+		nextCheckpoint = normLen + 1;
+	    } else {
+		/* We recognise the whole string */ 
+		nextCheckpoint = Tcl_DStringLength(&ds);
+	    }
+	    /* 
+	     * Overwrite with the normalized path.
+	     */
+	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
+		    Tcl_DStringLength(&ds));
 	}
-	/* 
-	 * Overwrite with the normalized path.
-	 */
-	Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
-		Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
     }
-    Tcl_DStringFree(&ds);
 #endif	/* !NO_REALPATH */
 
     return nextCheckpoint;
