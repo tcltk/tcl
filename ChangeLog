@@ -1,3 +1,38 @@
+2006-07-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier, Tcl_WaitForEvent): create
+	notifier thread lazily upon first call to Tcl_WaitForEvent() rather than
+	in Tcl_InitNotifier(). Allows calling exeve() in processes where the
+	event loop has not yet been run (Darwin's execve() fails in processes
+	with more than one thread), in particular allows embedders to call
+	fork() followed by execve(), previously the pthread_atfork() child
+	handler's call to Tcl_InitNotifier() would immediately recreate the
+	notifier thread in the child after a fork.
+
+	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier):     add support for
+	* unix/tclUnixFCmd.c (DoRenameFile, CopyFileAtts): weakly importing
+	* unix/tclUnixInit.c (TclpSetInitialEncodings):    symbols not available
+	on OSX 10.2 or 10.3, enables binaires built on later OSX versions to run
+	on earlier ones.
+	* macosx/README: document how to enable weak-linking; cleanup.
+	* unix/tclUnixPort.h: add support for weak-linking; conditionalize
+	AvailabilityMacros.h inclusion; only disable realpath on 10.2 or earlier
+	when threads are enabled.
+	* unix/tclLoadDyld.c (TclpLoadMemoryGetBuffer): change runtime Darwin
+	* unix/tclUnixInit.c (TclpInitPlatform):        release check to use
+	                                                global initialized once.
+	* unix/tclUnixFCmd.c (DoRenameFile, TclpObjNormalizePath): add runtime
+	Darwin release check to determine if realpath is threadsafe.
+	* unix/configure.in: add check on Darwin for compiler support of weak
+	* unix/tcl.m4:       import and for AvailabilityMacros.h header; move
+	Darwin specific checks & defines that are only relevant to the tcl build
+	out of tcl.m4; restrict framework option to Darwin; cleanup quoting.
+	* unix/configure: autoconf-2.13
+
+	* unix/tclLoadDyld.c (TclpLoadMemory):
+	* unix/tclUnixPipe.c (TclpCreateProcess): fix signed-with-unsigned
+	comparison and other warnings from gcc4 -Wextra.
+
 2006-07-13  Andreas Kupries <andreask@activestate.com>
 
 	* unix/tclUnixPort.h: Added the inclusion of

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.11 2006/07/14 16:20:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.12 2006/07/20 06:21:46 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -509,11 +509,6 @@ extern double strtod();
  */
 
 #ifdef __APPLE__
-/*
- * Translate the symbolic values for MAC_OS_X_VERSION_MAX_ALLOWED to
- * the numbers used in the comparisons below.
- */
-#include <AvailabilityMacros.h>
 /* 
  * Support for fat compiles: configure runs only once for multiple architectures
  */
@@ -531,6 +526,25 @@ extern double strtod();
 #       undef USE_TERMIO
 #       undef USE_SGTTY
 #   endif /* __DARWIN_UNIX03 */
+/* 
+ * Include AvailabilityMacros.h here (when available) to ensure any symbolic
+ * MAC_OS_X_VERSION_* constants passed on the command line are translated.
+ */
+#   ifdef HAVE_AVAILABILITYMACROS_H
+#       include <AvailabilityMacros.h>
+#   endif
+/* 
+ * Support for weak import.
+ */
+#   ifdef HAVE_WEAK_IMPORT
+#       if !defined(HAVE_AVAILABILITYMACROS_H) || !defined(MAC_OS_X_VERSION_MIN_REQUIRED)
+#           undef HAVE_WEAK_IMPORT
+#       else
+#           ifndef WEAK_IMPORT_ATTRIBUTE
+#               define WEAK_IMPORT_ATTRIBUTE __attribute__((weak_import))
+#           endif
+#       endif
+#   endif /* HAVE_WEAK_IMPORT */
 /*
  * Support for MAC_OS_X_VERSION_MAX_ALLOWED define from AvailabilityMacros.h:
  * only use API available in the indicated OS version or earlier.
@@ -542,14 +556,17 @@ extern double strtod();
 #           undef HAVE_COPYFILE
 #       endif
 #       if MAC_OS_X_VERSION_MAX_ALLOWED < 1030
-#           define NO_REALPATH 1
+#           ifdef TCL_THREADS
+		/* prior to 10.3, realpath is not threadsafe, c.f. bug 711232 */
+#               define NO_REALPATH 1
+#           endif
 #           undef HAVE_LANGINFO
 #       endif
 #   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
 #endif /* __APPLE__ */
 
 /*
- * Darwin 8 copyfile API
+ * Darwin 8 copyfile API.
  */
 
 #ifdef HAVE_COPYFILE
@@ -560,8 +577,14 @@ int copyfile(const char *from, const char *to, void *state, uint32_t flags);
 #define COPYFILE_ACL            (1<<0)
 #define COPYFILE_XATTR          (1<<2)
 #define COPYFILE_NOFOLLOW_SRC   (1<<18)
-#endif
-#endif
+#endif /* HAVE_COPYFILE_H */
+#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+/* Support for weakly importing copyfile. */
+#define WEAK_IMPORT_COPYFILE
+extern int copyfile(const char *from, const char *to, void *state,
+                    uint32_t flags) WEAK_IMPORT_ATTRIBUTE;
+#endif /* HAVE_WEAK_IMPORT */
+#endif /* HAVE_COPYFILE */
 
 /*
  *---------------------------------------------------------------------------
