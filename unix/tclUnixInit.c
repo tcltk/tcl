@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.12 2006/01/25 23:06:16 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.13 2006/07/20 06:21:46 das Exp $
  */
 
 #if defined(HAVE_COREFOUNDATION)
@@ -17,7 +17,14 @@
 #include "tclPort.h"
 #include <locale.h>
 #ifdef HAVE_LANGINFO
-#include <langinfo.h>
+#   include <langinfo.h>
+#   ifdef __APPLE__
+#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+	    /* Support for weakly importing nl_langinfo on Darwin. */
+#           define WEAK_IMPORT_NL_LANGINFO
+	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
+#       endif
+#    endif
 #endif
 #if defined(__FreeBSD__) && defined(__GNUC__)
 #   include <floatingpoint.h>
@@ -151,6 +158,16 @@ static int		MacOSXGetLibraryPath _ANSI_ARGS_((
 			    Tcl_Interp *interp, int maxPathLen,
 			    char *tclLibPath));
 #endif /* HAVE_COREFOUNDATION */
+#if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
+	defined(TCL_THREADS) && defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED < 1030))
+/*
+ * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
+ * initialize release global at startup from uname().
+ */
+#define GET_DARWIN_RELEASE 1
+long tclMacOSXDarwinRelease = 0;
+#endif
 
 
 /*
@@ -221,6 +238,15 @@ TclpInitPlatform()
      * Find local symbols. Don't report an error if we fail.
      */
     (void) dlopen (NULL, RTLD_NOW);			/* INTL: Native. */
+#endif
+
+#ifdef GET_DARWIN_RELEASE
+    {
+	struct utsname name;
+	if (!uname(&name)) {
+	    tclMacOSXDarwinRelease = strtol(name.release, NULL, 10);
+	}
+    }
 #endif
 }
 
@@ -510,7 +536,11 @@ TclpSetInitialEncodings()
 	 * but this does not work on some systems (e.g. Linux/i386 RH 5.0).
 	 */
 #ifdef HAVE_LANGINFO
-	if (setlocale(LC_CTYPE, "") != NULL) {
+	if (
+#ifdef WEAK_IMPORT_NL_LANGINFO
+		nl_langinfo != NULL &&
+#endif
+		setlocale(LC_CTYPE, "") != NULL) {
 	    Tcl_DString ds;
 
 	    /*
