@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.33 2006/03/27 18:08:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.34 2006/07/20 06:17:39 das Exp $
  */
 
 #include "tclInt.h"
@@ -395,7 +395,7 @@ TclpCreateProcess(
 				 * process. */
 {
     TclFile errPipeIn, errPipeOut;
-    int joinThisError, count, status, fd;
+    int count, status, fd;
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *dsArray;
     char **newArgv;
@@ -428,9 +428,10 @@ TclpCreateProcess(
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
     }
 
-    joinThisError = errorFile && (errorFile == outputFile);
     pid = fork();
     if (pid == 0) {
+	int joinThisError = errorFile && (errorFile == outputFile);
+
 	fd = GetFd(errPipeOut);
 
 	/*

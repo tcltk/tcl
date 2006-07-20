@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.237 2006/06/21 03:10:38 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.238 2006/07/20 06:17:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -3939,7 +3939,7 @@ TclExecuteByteCode(
 	    }
 	    /* Handle shifts within the native long range */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	    if ((type1 == TCL_NUMBER_LONG) && (shift < CHAR_BIT*sizeof(long))
+	    if ((type1 == TCL_NUMBER_LONG) && ((size_t)shift < CHAR_BIT*sizeof(long))
 		    && (l1 = *((CONST long *)ptr1))
 		    && !(((l1>0) ? l1 : ~l1)
 			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
@@ -3951,7 +3951,7 @@ TclExecuteByteCode(
 	    /* Handle shifts within the native wide range */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if ((type1 != TCL_NUMBER_BIG)
-		    && (shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
+		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		Tcl_WideInt w;
 
 		TclGetWideIntFromObj(NULL, valuePtr, &w);
@@ -4007,7 +4007,7 @@ TclExecuteByteCode(
 	    /* Handle shifts within the native long range */
 	    if (type1 == TCL_NUMBER_LONG) {
 		l1 = *((CONST long *)ptr1);
-		if (shift >= CHAR_BIT*sizeof(long)) {
+		if ((size_t)shift >= CHAR_BIT*sizeof(long)) {
 		    if (l1 >= (long)0) {
 			objResultPtr = eePtr->constants[0];
 		    } else {
@@ -4023,7 +4023,7 @@ TclExecuteByteCode(
 	    /* Handle shifts within the native wide range */
 	    if (type1 == TCL_NUMBER_WIDE) {
 		Tcl_WideInt w = *((CONST Tcl_WideInt *)ptr1);
-		if (shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
+		if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
 		    if (w >= (Tcl_WideInt)0) {
 			objResultPtr = eePtr->constants[0];
 		    } else {
