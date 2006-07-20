@@ -560,33 +560,33 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_FRAMEWORK], [
-    AC_MSG_CHECKING([how to package libraries])
-    AC_ARG_ENABLE(framework,
-	AC_HELP_STRING([--enable-framework],
-	    [package shared libraries in MacOSX frameworks (default: off)]),
-	[tcl_ok=$enableval], [tcl_ok=no])
-
-    if test "${enable_framework+set}" = set; then
-	enableval="$enable_framework"
-	tcl_ok=$enableval
-    else
-	tcl_ok=no
-    fi
-
-    if test "$tcl_ok" = "yes" ; then
-	AC_MSG_RESULT([framework])
-	FRAMEWORK_BUILD=1
-	if test "${SHARED_BUILD}" = "0" ; then
-	    AC_MSG_WARN([Frameworks can only be built if --enable-shared is yes])
+    if test "`uname -s`" = "Darwin" ; then
+	AC_MSG_CHECKING([how to package libraries])
+	AC_ARG_ENABLE(framework,
+	    AC_HELP_STRING([--enable-framework],
+		[package shared libraries in MacOSX frameworks (default: off)]),
+	    [enable_framework=$enableval], [enable_framework=no])
+	if test $enable_framework = yes; then
+	    if test $SHARED_BUILD = 0; then
+		AC_MSG_WARN([Frameworks can only be built if --enable-shared is yes])
+		enable_framework=no
+	    fi
+	    if test $tcl_corefoundation = no; then
+		AC_MSG_WARN([Frameworks can only be used when CoreFoundation is available])
+		enable_framework=no
+	    fi
+	fi
+	if test $enable_framework = yes; then
+	    AC_MSG_RESULT([framework])
+	    FRAMEWORK_BUILD=1
+	else
+	    if test $SHARED_BUILD = 1; then
+		AC_MSG_RESULT([shared library])
+	    else
+		AC_MSG_RESULT([static library])
+	    fi
 	    FRAMEWORK_BUILD=0
 	fi
-	if test $tcl_corefoundation = no; then
-	    AC_MSG_WARN([Frameworks can only be used when CoreFoundation is available])
-	    FRAMEWORK_BUILD=0
-	fi
-    else
-	AC_MSG_RESULT([standard shared library])
-	FRAMEWORK_BUILD=0
     fi
 ])
 
@@ -683,10 +683,10 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 	    AC_DEFINE(HAVE_PTHREAD_ATTR_GET_NP, 1,
 		[Do we want a BSD-like thread-attribute interface?])
 	    AC_CACHE_CHECK([for pthread_attr_get_np declaration],
-		tcl_cv_grep_pthread_attr_get_np,
+		tcl_cv_grep_pthread_attr_get_np, [
 		AC_EGREP_HEADER(pthread_attr_get_np, pthread.h,
 		    tcl_cv_grep_pthread_attr_get_np=present,
-		    tcl_cv_grep_pthread_attr_get_np=missing))
+		    tcl_cv_grep_pthread_attr_get_np=missing)])
 	    if test $tcl_cv_grep_pthread_attr_get_np = missing ; then
 		AC_DEFINE(ATTRGETNP_NOT_DECLARED, 1,
 		    [Is pthread_attr_get_np() declared in <pthread.h>?])
@@ -697,10 +697,10 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 		AC_DEFINE(HAVE_PTHREAD_GETATTR_NP, 1,
 		    [Do we want a Linux-like thread-attribute interface?])
 		AC_CACHE_CHECK([for pthread_getattr_np declaration],
-		    tcl_cv_grep_pthread_getattr_np,
+		    tcl_cv_grep_pthread_getattr_np, [
 		    AC_EGREP_HEADER(pthread_getattr_np, pthread.h,
 			tcl_cv_grep_pthread_getattr_np=present,
-			tcl_cv_grep_pthread_getattr_np=missing))
+			tcl_cv_grep_pthread_getattr_np=missing)])
 		if test $tcl_cv_grep_pthread_getattr_np = missing ; then
 		    AC_DEFINE(GETATTRNP_NOT_DECLARED, 1,
 			[Is pthread_getattr_np declared in <pthread.h>?])
@@ -1596,7 +1596,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_MSG_CHECKING([whether to use CoreFoundation])
 	    AC_ARG_ENABLE(corefoundation,
 		AC_HELP_STRING([--enable-corefoundation],
-		    [use CoreFoundation API on MacOSX (default: yes)]),
+		    [use CoreFoundation API on MacOSX (default: on)]),
 		[tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
 	    AC_MSG_RESULT([$tcl_corefoundation])
 	    if test $tcl_corefoundation = yes; then
@@ -1616,29 +1616,14 @@ dnl AC_CHECK_TOOL(AR, ar)
 		if test $tcl_cv_lib_corefoundation = yes; then
 		    LIBS="$LIBS -framework CoreFoundation"
 		    AC_DEFINE(HAVE_COREFOUNDATION, 1, 
-			[Do we have access to Darwin CoreFoundation.framework ?])
-		    AC_CHECK_HEADERS(libkern/OSAtomic.h)
-		    AC_CHECK_FUNCS(OSSpinLockLock)
-		    AC_CHECK_FUNCS(pthread_atfork)
+			[Do we have access to Darwin CoreFoundation.framework?])
+		else
+		    tcl_corefoundation=no
 		fi
 	    fi
-	    AC_CHECK_HEADERS(copyfile.h)
-	    AC_CHECK_FUNCS(copyfile)
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
-	    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
-	    AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",
-		[Are we to override what our default encoding is?])
 	    AC_DEFINE(MODULE_SCOPE, __private_extern__,
 		[Linker support for module scope symbols])
-	    AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
-		[Can this platform load code from memory?])
-	    # prior to Darwin 7, realpath is not threadsafe, so don't
-	    # use it when threads are enabled, c.f. bug # 711232:
-	    AC_CHECK_FUNC(realpath)
-	    if test $ac_cv_func_realpath = yes -a "${TCL_THREADS}" = 1 \
-		    -a `uname -r | awk -F. '{print [$]1}'` -lt 7 ; then
-		ac_cv_func_realpath=no
-	    fi
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
@@ -1912,8 +1897,8 @@ dnl AC_CHECK_TOOL(AR, ar)
     # Step 4: disable dynamic loading if requested via a command-line switch.
 
     AC_ARG_ENABLE(load,
-	AC_HELP_STRING([--disable-load],
-	    [disallow dynamic loading and "load" command (default: enabled)]),
+	AC_HELP_STRING([--enable-load],
+	    [allow dynamic loading and "load" command (default: on)]),
 	[tcl_ok=$enableval], [tcl_ok=yes])
     if test "$tcl_ok" = "no"; then
 	DL_OBJS=""
@@ -2202,7 +2187,7 @@ int main() {
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_MISSING_POSIX_HEADERS], [
-    AC_CACHE_CHECK([dirent.h], tcl_cv_dirent_h,
+    AC_CACHE_CHECK([dirent.h], tcl_cv_dirent_h, [
     AC_TRY_LINK([#include <sys/types.h>
 #include <dirent.h>], [
 #ifndef _POSIX_SOURCE
@@ -2222,7 +2207,7 @@ d = opendir("foobar");
 entryPtr = readdir(d);
 p = entryPtr->d_name;
 closedir(d);
-], tcl_cv_dirent_h=yes, tcl_cv_dirent_h=no))
+], tcl_cv_dirent_h=yes, tcl_cv_dirent_h=no)])
 
     if test $tcl_cv_dirent_h = no; then
 	AC_DEFINE(NO_DIRENT_H, 1, [Do we have <dirent.h>?])
@@ -2416,16 +2401,16 @@ AC_DEFUN([SC_TIME_HANDLER], [
 
     AC_CHECK_FUNCS(gmtime_r localtime_r mktime)
 
-    AC_CACHE_CHECK([tm_tzadj in struct tm], tcl_cv_member_tm_tzadj,
+    AC_CACHE_CHECK([tm_tzadj in struct tm], tcl_cv_member_tm_tzadj, [
 	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_tzadj;],
-	    tcl_cv_member_tm_tzadj=yes, tcl_cv_member_tm_tzadj=no))
+	    tcl_cv_member_tm_tzadj=yes, tcl_cv_member_tm_tzadj=no)])
     if test $tcl_cv_member_tm_tzadj = yes ; then
 	AC_DEFINE(HAVE_TM_TZADJ, 1, [Should we use the tm_tzadj field of struct tm?])
     fi
 
-    AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff,
+    AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
 	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
-	    tcl_cv_member_tm_gmtoff=yes, tcl_cv_member_tm_gmtoff=no))
+	    tcl_cv_member_tm_gmtoff=yes, tcl_cv_member_tm_gmtoff=no)])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
     fi
@@ -2434,24 +2419,24 @@ AC_DEFUN([SC_TIME_HANDLER], [
     # Its important to include time.h in this check, as some systems
     # (like convex) have timezone functions, etc.
     #
-    AC_CACHE_CHECK([long timezone variable], tcl_cv_timezone_long,
+    AC_CACHE_CHECK([long timezone variable], tcl_cv_timezone_long, [
 	AC_TRY_COMPILE([#include <time.h>],
 	    [extern long timezone;
 	    timezone += 1;
 	    exit (0);],
-	    tcl_cv_timezone_long=yes, tcl_cv_timezone_long=no))
+	    tcl_cv_timezone_long=yes, tcl_cv_timezone_long=no)])
     if test $tcl_cv_timezone_long = yes ; then
 	AC_DEFINE(HAVE_TIMEZONE_VAR, 1, [Should we use the global timezone variable?])
     else
 	#
 	# On some systems (eg IRIX 6.2), timezone is a time_t and not a long.
 	#
-	AC_CACHE_CHECK([time_t timezone variable], tcl_cv_timezone_time,
+	AC_CACHE_CHECK([time_t timezone variable], tcl_cv_timezone_time, [
 	    AC_TRY_COMPILE([#include <time.h>],
 		[extern time_t timezone;
 		timezone += 1;
 		exit (0);],
-		tcl_cv_timezone_time=yes, tcl_cv_timezone_time=no))
+		tcl_cv_timezone_time=yes, tcl_cv_timezone_time=no)])
 	if test $tcl_cv_timezone_time = yes ; then
 	    AC_DEFINE(HAVE_TIMEZONE_VAR, 1, [Should we use the global timezone variable?])
 	fi
