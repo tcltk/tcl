@@ -1871,7 +1871,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "## tcl configure shell script phase\n\ncd \"${TCL_SRCROOT}\"/macosx &&\nif [ configure.ac -nt configure -o ../unix/configure.in -nt configure -o ../unix/tcl.m4 -nt configure -o ../unix/aclocal.m4 -nt configure ]; then\n    echo \"Running autoconf & autoheader in tcl/macosx\"\n    rm -rf autom4te.cache\n    ${AUTOCONF:-/usr/bin/autoconf} && ${AUTOHEADER:-/usr/bin/autoheader}\n    rm -rf autom4te.cache\nfi\n\ncd \"${DERIVED_FILE_DIR}\" && mkdir -p tcl && cd tcl &&\nif [ \"${TCL_SRCROOT}\"/macosx/configure -nt config.status ]; then\n    \"${TCL_SRCROOT}\"/macosx/configure --cache-file=../config.cache --prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} --mandir=${MANDIR} --includedir=${INCLUDEDIR} --disable-shared ${CONFIGURE_ARGS}\nelse\n    ./config.status\nfi\n";
+			shellScript = "## tcl configure shell script phase\n\ncd \"${TCL_SRCROOT}\"/macosx &&\nif [ configure.ac -nt configure -o ../unix/configure.in -nt configure -o ../unix/tcl.m4 -nt configure -o ../unix/aclocal.m4 -nt configure ]; then\n    echo \"Running autoconf & autoheader in tcl/macosx\"\n    rm -rf autom4te.cache\n    ${AUTOCONF:-/usr/bin/autoconf} && ${AUTOHEADER:-/usr/bin/autoheader}\n    rm -rf autom4te.cache\nfi\n\ncd \"${DERIVED_FILE_DIR}\" && mkdir -p tcl && cd tcl &&\nif [ \"${TCL_SRCROOT}\"/macosx/configure -nt config.status ]; then\n    echo \"Configuring tcl\"\n    \"${TCL_SRCROOT}\"/macosx/configure --cache-file=../config.cache --prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} --mandir=${MANDIR} --includedir=${INCLUDEDIR} --disable-shared ${CONFIGURE_ARGS}\nelse\n    ./config.status\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -2084,7 +2084,6 @@
 				INCLUDEDIR = "${PREFIX}/include";
 				INSTALL_PATH = "${BINDIR}";
 				LIBDIR = "${PREFIX}/lib";
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				MANDIR = "${PREFIX}/man";
 				OTHER_LDFLAGS = "-headerpad_max_install_names";
 				PER_ARCH_CFLAGS_ppc = "-mcpu=G3 -mtune=G4";
@@ -2100,6 +2099,9 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wno-implicit-int",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
 				);
 				ZERO_LINK = NO;
 			};
@@ -2111,6 +2113,7 @@
 				CFLAGS = "-arch ppc -arch ppc64 -arch i386 -isysroot ${SDKROOT} -mmacosx-version-min=10.4";
 				CONFIGURE_ARGS = "--disable-symbols";
 				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
+				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
 			name = ReleaseUniversal;
@@ -2184,7 +2187,6 @@
 				INCLUDEDIR = "${PREFIX}/include";
 				INSTALL_PATH = "${BINDIR}";
 				LIBDIR = "${PREFIX}/lib";
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				MANDIR = "${PREFIX}/man";
 				OTHER_LDFLAGS = "-headerpad_max_install_names";
 				PER_ARCH_CFLAGS_ppc = "-mcpu=G3 -mtune=G4";
@@ -2200,6 +2202,9 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wno-implicit-int",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
 				);
 				ZERO_LINK = YES;
 			};
@@ -2231,7 +2236,6 @@
 				INCLUDEDIR = "${PREFIX}/include";
 				INSTALL_PATH = "${BINDIR}";
 				LIBDIR = "${PREFIX}/lib";
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				MANDIR = "${PREFIX}/man";
 				OTHER_LDFLAGS = "-headerpad_max_install_names";
 				PER_ARCH_CFLAGS_ppc = "-mcpu=G3 -mtune=G4";
@@ -2247,6 +2251,9 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wno-implicit-int",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
 				);
 				ZERO_LINK = NO;
 			};
@@ -2279,7 +2286,6 @@
 				INCLUDEDIR = "${PREFIX}/include";
 				INSTALL_PATH = "${BINDIR}";
 				LIBDIR = "${PREFIX}/lib";
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				MANDIR = "${PREFIX}/man";
 				OTHER_LDFLAGS = "-headerpad_max_install_names";
 				PER_ARCH_CFLAGS_ppc = "-mcpu=G3 -mtune=G4";
@@ -2295,6 +2301,9 @@
 				WARNING_CFLAGS = (
 					"-Wall",
 					"-Wno-implicit-int",
+					"-Wextra",
+					"-Wno-unused-parameter",
+					"-Wno-missing-field-initializers",
 				);
 				ZERO_LINK = NO;
 			};
@@ -2305,6 +2314,7 @@
 			buildSettings = {
 				CONFIGURE_ARGS = "--enable-symbols";
 				GCC_PREPROCESSOR_DEFINITIONS = "__private_extern__=extern";
+				MACOSX_DEPLOYMENT_TARGET = 10.2;
 			};
 			name = Debug;
 		};
@@ -2313,6 +2323,7 @@
 			buildSettings = {
 				CONFIGURE_ARGS = "--disable-symbols";
 				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
+				MACOSX_DEPLOYMENT_TARGET = 10.2;
 			};
 			name = Release;
 		};
@@ -2321,6 +2332,7 @@
 			buildSettings = {
 				CONFIGURE_ARGS = "--enable-symbols";
 				GCC_PREPROCESSOR_DEFINITIONS = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.2;
 			};
 			name = DebugNoFixZL;
 		};
