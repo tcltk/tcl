@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.31 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.32 2006/07/20 06:17:39 das Exp $
  */
 
 #include "tclInt.h"
@@ -90,7 +90,7 @@ NewListIntRep(
      * requires API changes to fix.
      */
 
-    if (objc > INT_MAX/sizeof(Tcl_Obj *)) {
+    if ((size_t)objc > INT_MAX/sizeof(Tcl_Obj *)) {
 	return NULL;
     }
 
