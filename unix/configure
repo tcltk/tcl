@@ -7019,7 +7019,7 @@ _ACEOF
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
-	   SHLIB_LD="${CC} -shared"
+	    SHLIB_LD="${CC} -shared"
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -13582,7 +13582,8 @@ echo $ECHO_N "checking whether to use nl_langinfo... $ECHO_C" >&6
 	if test "${tcl_cv_langinfo_h+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  cat >conftest.$ac_ext <<_ACEOF
+
+	    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
