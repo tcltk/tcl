@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.34 2006/07/05 20:42:15 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.35 2006/07/20 06:17:39 das Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2107,7 +2107,7 @@ Tcl_ParseExpr(
     Tcl_Obj *msg = NULL;
     unsigned char precedence;
     CONST char *space, *operand, *end;
-    int scanned, size, limit = 25, code = TCL_OK;
+    int scanned = 0, size, limit = 25, code = TCL_OK;
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);

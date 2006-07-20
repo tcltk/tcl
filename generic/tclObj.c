@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.108 2006/06/21 03:10:39 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.109 2006/07/20 06:17:39 das Exp $
  */
 
 #include "tclInt.h"
@@ -158,7 +158,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.ptrAndLongRep.value == -1) { \
+    if ((objPtr)->internalRep.ptrAndLongRep.value == (unsigned long)(-1)) { \
 	(bignum) = *((mp_int *) ((objPtr)->internalRep.ptrAndLongRep.ptr)); \
     } else { \
 	(bignum).dp = (mp_digit*) (objPtr)->internalRep.ptrAndLongRep.ptr; \
@@ -2171,7 +2171,7 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if (big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
 		    / DIGIT_BIT) {
 		unsigned long value = 0, numBytes = sizeof(long);
 		long scratch;
@@ -2470,8 +2470,8 @@ Tcl_GetWideIntFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if (big.used <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1)
-		    / DIGIT_BIT) {
+	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(Tcl_WideInt)
+		     + DIGIT_BIT - 1) / DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
 		unsigned long numBytes = sizeof(Tcl_WideInt);
 		Tcl_WideInt scratch;
@@ -2524,7 +2524,7 @@ FreeBignum(
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if (objPtr->internalRep.ptrAndLongRep.value < 0) {
+    if ((long)(objPtr->internalRep.ptrAndLongRep.value) < 0) {
 	ckfree((char *)objPtr->internalRep.ptrAndLongRep.ptr);
     }
 }
@@ -2871,7 +2871,7 @@ Tcl_SetBignumObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetBignumObj called with shared object");
     }
-    if (bignumValue->used
+    if ((size_t)(bignumValue->used)
 	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
 	long scratch;
@@ -2895,7 +2895,7 @@ Tcl_SetBignumObj(
     }
   tooLargeForLong:
 #ifndef NO_WIDE_TYPE
-    if (bignumValue->used
+    if ((size_t)(bignumValue->used)
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
 	unsigned long numBytes = sizeof(Tcl_WideInt);
