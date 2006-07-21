@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.110 2006/07/21 10:47:19 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.111 2006/07/21 14:56:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -111,8 +111,13 @@ typedef struct PendingObjData {
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
 #define PushObjToDelete(contextPtr,objPtr) \
-    /* The string rep is already invalidated so we can use the bytes value \
-     * for our pointer chain: push onto the head of the stack. */ \
+    /* Invalidate the string rep first so we can use the bytes value \
+     * for our pointer chain. */ \
+    if (((objPtr)->bytes != NULL) \
+	    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+	ckfree((char *) (objPtr)->bytes); \
+    } \
+    /* Now push onto the head of the stack. */ \
     (objPtr)->bytes = (char *) ((contextPtr)->deletionStack); \
     (contextPtr)->deletionStack = (objPtr)
 #define PopObjToDelete(contextPtr,objPtrVar) \
@@ -844,13 +849,6 @@ TclFreeObj(
 	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
 
-    /* Invalidate the string rep first so we can use the bytes value 
-     * for our pointer chain, and signal an obj deletion (as opposed
-     * to shimmering) with 'length == -1' */ 
-    
-    TclInvalidateStringRep(objPtr);
-    objPtr->length = -1;
-
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
     } else {
@@ -859,6 +857,7 @@ TclFreeObj(
 	    typePtr->freeIntRepProc(objPtr);
 	    ObjDeletionUnlock(context);
 	}
+	TclInvalidateStringRep(objPtr);
 
 	Tcl_MutexLock(&tclObjMutex);
 	ckfree((char *) objPtr);
@@ -924,6 +923,9 @@ TclFreeObj(
 	    objPtr->typePtr->freeIntRepProc(objPtr);
 	    ObjDeletionUnlock(context);
 
+	    if (objPtr->bytes && (objPtr->bytes != tclEmptyStringRep)) {
+		ckfree((char *) objPtr->bytes);
+	    }
 	    TclFreeObjStorage(objPtr);
 	    TclIncrObjsFreed();
 	    ObjDeletionLock(context);
