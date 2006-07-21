@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.238 2006/07/20 06:17:38 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.239 2006/07/21 10:47:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1791,7 +1791,7 @@ TclExecuteByteCode(
 	     */
 
 	    DECACHE_STACK_INFO();
-	    Tcl_ResetResult(interp);
+	    /*Tcl_ResetResult(interp);*/
 	    result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 	    CACHE_STACK_INFO();
 
@@ -1890,7 +1890,7 @@ TclExecuteByteCode(
 
 	objPtr = *tosPtr;
 	DECACHE_STACK_INFO();
-	Tcl_ResetResult(interp);
+	/*Tcl_ResetResult(interp);*/
 	result = Tcl_ExprObj(interp, objPtr, &valuePtr);
 	CACHE_STACK_INFO();
 	if (result != TCL_OK) {
@@ -5205,17 +5205,21 @@ TclExecuteByteCode(
     }
 
     case INST_BREAK:
+	/*
 	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
 	CACHE_STACK_INFO();
+	*/
 	result = TCL_BREAK;
 	cleanup = 0;
 	goto processExceptionReturn;
 
     case INST_CONTINUE:
+	/*
 	DECACHE_STACK_INFO();
 	Tcl_ResetResult(interp);
 	CACHE_STACK_INFO();
+	*/
 	result = TCL_CONTINUE;
 	cleanup = 0;
 	goto processExceptionReturn;
@@ -5411,6 +5415,7 @@ TclExecuteByteCode(
 
     case INST_END_CATCH:
 	catchTop--;
+	Tcl_ResetResult(interp);
 	result = TCL_OK;
 	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
@@ -5474,7 +5479,7 @@ TclExecuteByteCode(
 	    goto checkForCatch;
 	}
 	if (objResultPtr == NULL) {
-	    Tcl_ResetResult(interp);
+	    /*Tcl_ResetResult(interp);*/
 	    Tcl_AppendResult(interp, "key \"", TclGetString(*tosPtr),
 		    "\" not known in dictionary", NULL);
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
