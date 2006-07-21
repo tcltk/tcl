@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.273 2006/07/21 10:47:19 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.274 2006/07/21 14:56:14 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2624,20 +2624,15 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL
 
-/* Invalidate the string rep first so we can use the bytes value \
- * for our pointer chain, and signal an obj deletion (as opposed \
- * to shimmering) with 'length == -1' */ \
-
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	if ((objPtr)->bytes \
-	        && ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
-        (objPtr)->length = -1; \
 	if ((objPtr)->typePtr && (objPtr)->typePtr->freeIntRepProc) { \
 	    TclFreeObj(objPtr); \
 	} else { \
+	    if ((objPtr)->bytes \
+		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+		ckfree((char *) (objPtr)->bytes); \
+	    } \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} \
