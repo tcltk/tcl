@@ -1,4 +1,10 @@
+2006-07-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinSock.c:	Correct un-initialized Tcl_DString.  Thanks
+	to afredd. [Bug 1518166]
+
 2006-07-21  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclExecute.c:
 	* tests/execute.test (execute-9.1): dgp's fix for [Bug 1522803].
 
