@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.239 2006/07/21 10:47:18 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.240 2006/07/26 21:56:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4858,7 +4858,7 @@ TclExecuteByteCode(
 		w2 /= 2;
 		for (; w2>Tcl_LongAsWide(1) ; w1*=w1,w2/=2) {
 		    wasNegative = (wResult < 0);
-		    if (w1 < 0) {
+		    if (w1 <= 0) {
 			goto overflow;
 		    }
 		    if (w2 & 1) {
@@ -4869,6 +4869,9 @@ TclExecuteByteCode(
 		    }
 		}
 		wasNegative = (wResult < 0);
+		if (w1 <= 0) {
+		    goto overflow;
+		}
 		wResult *=  w1;
 		if (wasNegative != (wResult < 0)) {
 		    goto overflow;

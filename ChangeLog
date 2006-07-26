@@ -1,3 +1,9 @@
+2006-07-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Corrected flawed overflow detection in
+	* tests/expr.test:	INST_EXPON that caused [expr 2**64]
+	to return 0 instead of the same value as [expr 1<<64].
+
 2006-07-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinSock.c:	Correct un-initialized Tcl_DString.  Thanks
