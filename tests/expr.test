@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.55 2006/07/05 05:34:45 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.56 2006/07/26 21:56:35 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1032,6 +1032,10 @@ test expr-23.39 {INST_EXPON: big integer} {
     expr 1[string repeat 0 30]**2
 } 1[string repeat 0 60]
 test expr-23.40 {INST_EXPON: overflow to big integer} {expr {(-10)**3}} -1000
+test expr-23.41 {INST_EXPON: overflow to big integer} {expr 2**64} [expr 1<<64]
+test expr-23.41 {INST_EXPON: overflow to big integer} {expr 4**32} [expr 1<<64]
+test expr-23.41 {INST_EXPON: overflow to big integer} {expr 16**16} [expr 1<<64]
+test expr-23.41 {INST_EXPON: overflow to big integer} {expr 256**8} [expr 1<<64]
 
 # Some compilers get this wrong; ensure that we work around it correctly
 test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
