@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.64 2006/07/30 18:58:55 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.65 2006/07/30 19:15:42 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36023,6 +36023,24 @@ test clock-53.1 {%EC %Ey} {
     clock format 0 -gmt true -locale en_US_roman -format %EC%Ey
 } mcmlxx
 
+# Test that glob-special characters can be handled in [clock]
+
+test clock-54.1 {glob specials in [clock format]} \
+    -setup {
+	clock format 0 -gmt 1 -format %Y
+    } \
+    -body {
+	clock format 0 -gmt 1 -format {*[%Y%m%d]*}
+    } \
+    -result {*[19700101]*}
+test clock-54.2 {glob specials in [clock scan]} \
+    -setup {
+	clock scan 1970 -gmt 1 -format %Y
+    } \
+    -body {
+	clock scan {*[19700101]*} -format {*[%Y%m%d]*} -gmt 1
+    } \
+    -result 0
 
 # cleanup
 
