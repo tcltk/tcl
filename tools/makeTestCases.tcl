@@ -370,49 +370,74 @@ proc testcases3 { f2 } {
 	set dow [expr { ( $secs / 86400  + 4 ) % 7}]
 	switch -exact $dow {
 	    0 {
+		# Year starts on a Sunday.
+		# Prior year started on a Friday or Saturday, and was
+		# a 52-week year.
+		# 1 January is ISO week 52 of the prior year. 2 January
+		# begins ISO week 1 of the current year.
+		# 1 January is week 1 according to %U. According to %W,
+		# week 1 begins on 2 January
 		testISO $f2 $ym1 52 1 [expr { $secs - 6*86400 }]
 		testISO $f2 $ym1 52 6 [expr { $secs - 86400 }]
 		testISO $f2 $ym1 52 7 $secs
 		testISO $f2 $y 1 1 [expr { $secs + 86400 }]
+		testISO $f2 $y 1 6 [expr { $secs + 6*86400}]
 		testISO $f2 $y 1 7 [expr { $secs + 7*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 8*86400 }]
 	    }
 	    1 {
+		# Year starts on a Monday.
+		# Previous year started on a Saturday or Sunday, and was
+		# a 52-week year.
+		# 1 January is ISO week 1 of the current year
+		# According to %U, it's week 0 until 7 January
+		# 1 January is week 1 according to %W
 		testISO $f2 $ym1 52 1 [expr { $secs - 7*86400 }]
+		testISO $f2 $ym1 52 6 [expr {$secs - 2*86400}]
 		testISO $f2 $ym1 52 7 [expr { $secs - 86400 }]
 		testISO $f2 $y 1 1 $secs
+		testISO $f2 $y 1 6 [expr {$secs + 5*86400}]
 		testISO $f2 $y 1 7 [expr { $secs + 6*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 7*86400 }]
 	    }
 	    2 {
+		# Year starts on a Tuesday.
 		testISO $f2 $ym1 52 1 [expr { $secs - 8*86400 }]
+		testISO $f2 $ym1 52 6 [expr {$secs - 3*86400}]
 		testISO $f2 $ym1 52 7 [expr { $secs - 2*86400 }]
 		testISO $f2 $y 1 1 [expr { $secs - 86400 }]
 		testISO $f2 $y 1 2 $secs
+		testISO $f2 $y 1 6 [expr {$secs + 4*86400}]
 		testISO $f2 $y 1 7 [expr { $secs + 5*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 6*86400 }]
 	    }
 	    3 {
 		testISO $f2 $ym1 52 1 [expr { $secs - 9*86400 }]
+		testISO $f2 $ym1 52 6 [expr {$secs - 4*86400}]
 		testISO $f2 $ym1 52 7 [expr { $secs - 3*86400 }]
 		testISO $f2 $y 1 1 [expr { $secs - 2*86400 }]
 		testISO $f2 $y 1 3 $secs
+		testISO $f2 $y 1 6 [expr {$secs + 3*86400}]
 		testISO $f2 $y 1 7 [expr { $secs + 4*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 5*86400 }]
 	    }
 	    4 {
 		testISO $f2 $ym1 52 1 [expr { $secs - 10*86400 }]
+		testISO $f2 $ym1 52 6 [expr {$secs - 5*86400}]
 		testISO $f2 $ym1 52 7 [expr { $secs - 4*86400 }]
 		testISO $f2 $y 1 1 [expr { $secs - 3*86400 }]
 		testISO $f2 $y 1 4 $secs
+		testISO $f2 $y 1 6 [expr {$secs + 2*86400}]
 		testISO $f2 $y 1 7 [expr { $secs + 3*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 4*86400 }]
 	    }
 	    5 {
 		testISO $f2 $ym1 53 1 [expr { $secs - 4*86400 }]
 		testISO $f2 $ym1 53 5 $secs
+		testISO $f2 $ym1 53 6 [expr {$secs + 86400}]
 		testISO $f2 $ym1 53 7 [expr { $secs + 2*86400 }]
 		testISO $f2 $y 1 1 [expr { $secs + 3*86400 }]
+		testISO $f2 $y 1 6 [expr {$secs + 8*86400}]
 		testISO $f2 $y 1 7 [expr { $secs + 9*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 10*86400 }]
 	    }
@@ -428,6 +453,7 @@ proc testcases3 { f2 } {
 		    testISO $f2 $ym1 52 7 [expr { $secs + 86400 }]
 		}		    
 		testISO $f2 $y 1 1 [expr { $secs + 2*86400 }]
+		testISO $f2 $y 1 6 [expr { $secs + 7*86400 }]
 		testISO $f2 $y 1 7 [expr { $secs + 8*86400 }]
 		testISO $f2 $y 2 1 [expr { $secs + 9*86400 }]
 	    }
@@ -445,11 +471,13 @@ proc testISO { f2 G V u secs } {
     set shortdays {Sun Mon Tue Wed Thu Fri Sat Sun}
     
     puts $f2 "test clock-3.[incr case] {ISO week-based calendar [format %04d-W%02d-%d $G $V $u]} {"
-    puts $f2 "    clock format $secs -format {%a %A %g %G %u %V %w} -gmt true; \# $G-W[format %02d $V]-$u"
+    puts $f2 "    clock format $secs -format {%a %A %g %G %u %U %V %w %W} -gmt true; \# $G-W[format %02d $V]-$u"
     puts $f2 "} {[lindex $shortdays $u] [lindex $longdays $u]\
              [format %02d [expr { $G % 100 }]] $G\
              $u\
-             [format %02d $V] [expr { $u % 7 }]}"
+             [clock format $secs -format %U -gmt true]\
+             [format %02d $V] [expr { $u % 7 }]\
+             [clock format $secs -format %W -gmt true]}"
     
 }
 
