@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.30 2006/04/19 16:43:03 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.31 2006/07/30 18:58:55 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -889,7 +889,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 				     {
 					 set date [GetLocaleEra \
 						       $date[set date {}] \
-						       @LOCALE_ERAS@]}]
+						       @LOCALE_ERAS@]}] \n
 			    set didLocaleEra 1
 			}
 			if {!$didLocaleNumerals} {
@@ -1061,7 +1061,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 					/ 7 }]
 			}
 			append formatString %02d
-			append substituents { $Wweeknumber}
+			append substituents { $WweekNumber}
 		    }
 		    y {			# The two-digit year of the century
 			append formatString %02d
