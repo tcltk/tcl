@@ -1,3 +1,10 @@
+2006-07-30  Kevin Kenny  <kennykb@acm.org>
+
+	* tests/clock.test: Allowed UTC as a synonym for GMT in two
+	tests that indirectly invoke 'strftime' with the result of
+	'gmtime' to fix a bogus test failure on FreeBSD systems.
+	[Bug 1513489].
+	
 2006-07-30  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/AppInit.3: Fix typo [Bug 1496886]
