@@ -1,7 +1,9 @@
 2006-07-30  Kevin Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Corrected syntax errors in generated code for
-	%EC, %Ey, and %W format groups [Bug 1505383].
+	%EC, %Ey, and %W format groups [Bug 1505383]. Corrected a bug
+	in cache management for format strings containing [glob]
+	metacharacters [Bug 1494664].
 	* tools/makeTestCases.tcl: Added code to make sure that %U and %V
 	format groups are included in the tests. (The code depends on
 	%U and %V formatting working correctly when 'makeTestCases.tcl'
