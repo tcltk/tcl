@@ -1,3 +1,7 @@
+2006-07-30  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/AppInit.3: Fix typo [Bug 1496886]
+
 2006-07-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier, Tcl_WaitForEvent): create
