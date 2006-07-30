@@ -1,3 +1,13 @@
+2006-07-30  Kevin Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Corrected syntax errors in generated code for
+	%EC, %Ey, and %W format groups [Bug 1505383].
+	* tools/makeTestCases.tcl: Added code to make sure that %U and %V
+	format groups are included in the tests. (The code depends on
+	%U and %V formatting working correctly when 'makeTestCases.tcl'
+	is run, rather than making a completely independent check.)
+	* tests/clock.test: Rebuilt with new test cases.
+	
 2006-07-30  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/AppInit.3: Fix typo [Bug 1496886]
