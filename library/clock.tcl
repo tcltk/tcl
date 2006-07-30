@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.31 2006/07/30 18:58:55 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.32 2006/07/30 19:15:41 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -757,7 +757,7 @@ proc ::tcl::clock::format { args } {
 proc ::tcl::clock::ParseClockFormatFormat {format locale} {
 
     set procName [namespace current]::formatproc'$format'$locale
-    if {[info procs $procName] != {}} {
+    if {[namespace which $procName] != {}} {
 	return $procName
     }
 
@@ -1563,7 +1563,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
     # the existing recognizer if it has.
 
     set procName [namespace current]::scanproc'$formatString'$locale
-    if { [info procs $procName] != {} } {
+    if { [namespace which $procName] != {} } {
 	return $procName
     }
 
