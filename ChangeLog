@@ -1,3 +1,10 @@
+2006-07-31  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (ConvertLocalToUTCUsingC):
+	Corrected a regression that caused dates before 1969 to be
+	one day off in the :localtime time zone if TZ is not set.
+	[Bug 1531530]
+	
 2006-07-30  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (GetJulianDayFromEraYearMonthDay):
