@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.52 2006/07/31 03:27:12 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.53 2006/07/31 15:44:06 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -792,14 +792,15 @@ ConvertLocalToUTCUsingC(
     struct tm timeVal;
     int localErrno;
     int secondOfDay;
+    Tcl_WideInt jsec;
 
     /*
      * Convert the given time to a date.
      */
 
-    fields->julianDay = (int) ((fields->localSeconds + JULIAN_SEC_POSIX_EPOCH)
-	    / SECONDS_PER_DAY);
-    secondOfDay = (int)(fields->localSeconds % SECONDS_PER_DAY);
+    jsec = fields->localSeconds + JULIAN_SEC_POSIX_EPOCH;
+    fields->julianDay = (int) (jsec / SECONDS_PER_DAY);
+    secondOfDay = (int)(jsec % SECONDS_PER_DAY);
     if (secondOfDay < 0) {
 	secondOfDay += SECONDS_PER_DAY;
 	--fields->julianDay;
