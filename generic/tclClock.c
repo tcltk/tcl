@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.51 2006/02/01 23:34:38 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.52 2006/07/31 03:27:12 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -370,7 +370,7 @@ ClockConvertlocaltoutcObjCmd(
  *		tzOffset - Time zone offset in seconds east of Greenwich
  *		tzName - Time zone name
  *		julianDay - Julian Day Number in the local time zone
- *
+v *
  *----------------------------------------------------------------------
  */
 
@@ -799,6 +799,11 @@ ConvertLocalToUTCUsingC(
 
     fields->julianDay = (int) ((fields->localSeconds + JULIAN_SEC_POSIX_EPOCH)
 	    / SECONDS_PER_DAY);
+    secondOfDay = (int)(fields->localSeconds % SECONDS_PER_DAY);
+    if (secondOfDay < 0) {
+	secondOfDay += SECONDS_PER_DAY;
+	--fields->julianDay;
+    }
     GetGregorianEraYearDay(fields, changeover);
     GetMonthDay(fields);
 
@@ -809,10 +814,6 @@ ConvertLocalToUTCUsingC(
     timeVal.tm_year = fields->year - 1900;
     timeVal.tm_mon = fields->month - 1;
     timeVal.tm_mday = fields->dayOfMonth;
-    secondOfDay = (int)(fields->localSeconds % SECONDS_PER_DAY);
-    if (secondOfDay < 0) {
-	secondOfDay += SECONDS_PER_DAY;
-    }
     timeVal.tm_hour = (secondOfDay / 3600) % 24;
     timeVal.tm_min = (secondOfDay / 60) % 60;
     timeVal.tm_sec = secondOfDay % 60;
@@ -1213,6 +1214,10 @@ GetGregorianEraYearDay(
 	day = jday - JDAY_1_JAN_1_CE_GREGORIAN;
 	n = day / FOUR_CENTURIES;
 	day %= FOUR_CENTURIES;
+	if (day < 0) {
+	    day += FOUR_CENTURIES;
+	    --n;
+	}
 	year += 400 * n;
 
 	/*
@@ -1248,7 +1253,11 @@ GetGregorianEraYearDay(
      */
 
     n = day / FOUR_YEARS;
-    day %= 1461;
+    day %= FOUR_YEARS;
+    if (day < 0) {
+	day += FOUR_YEARS;
+	--n;
+    }
     year += 4 * n;
 
     /*
@@ -1271,7 +1280,7 @@ GetGregorianEraYearDay(
      * store era/year/day back into fields.
      */
 
-    if (year < 0) {
+    if (year <= 0) {
 	fields->era = BCE;
 	fields->year = 1 - year;
     } else {
@@ -1388,6 +1397,7 @@ GetJulianDayFromEraYearMonthDay(
     int year;  int ym1;
     int month; int mm1;
     int q; int r;
+    int ym1o4; int ym1o100; int ym1o400;
 
     if (fields->era == BCE) {
 	year = 1 - fields->year;
@@ -1428,13 +1438,25 @@ GetJulianDayFromEraYearMonthDay(
      * Try an initial conversion in the Gregorian calendar.
      */
 
+    ym1o4 = ym1 / 4;
+    if (ym1 % 4 < 0) {
+	--ym1o4;
+    }
+    ym1o100 = ym1 / 100;
+    if (ym1 % 100 < 0) {
+	--ym1o100;
+    }
+    ym1o400 = ym1 / 400;
+    if (ym1 % 400 < 0) {
+	--ym1o400;
+    }
     fields->julianDay = JDAY_1_JAN_1_CE_GREGORIAN - 1
 	    + fields->dayOfMonth
 	    + daysInPriorMonths[IsGregorianLeapYear(fields)][month - 1]
 	    + (ONE_YEAR * ym1)
-	    + (ym1 / 4)
-	    - (ym1 / 100)
-	    + (ym1 / 400);
+	    + ym1o4
+	    - ym1o100
+	    + ym1o400;
 
     /*
      * If the resulting date is before the Gregorian changeover, convert in
@@ -1447,7 +1469,7 @@ GetJulianDayFromEraYearMonthDay(
 		+ fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
 		+ (365 * ym1)
-		+ (ym1 / 4);
+	        + ym1o4;
     }
 }
 
@@ -1509,6 +1531,9 @@ WeekdayOnOrBefore(
     int julianDay		/* Reference date */
 ) {
     int k = (dayOfWeek + 6) % 7;
+    if (k < 0) {
+	k += 7;
+    }
     return julianDay - ((julianDay - k) % 7);
 }
 

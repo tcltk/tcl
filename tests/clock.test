@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.65 2006/07/30 19:15:42 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.66 2006/07/31 03:27:13 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -216,6 +216,8 @@ namespace eval ::tcl::clock {
 	LOCALE_DATE_FORMAT {die %Od mensis %Om annoque %EY}
 	LOCALE_TIME_FORMAT {%OH h %OM m %OS s}
 	LOCALE_DATE_TIME_FORMAT {%Ex %EX}
+	BCE {Before Christ}
+	CE {Anno Domini}
     }
 }
 
@@ -36041,6 +36043,43 @@ test clock-54.2 {glob specials in [clock scan]} \
 	clock scan {*[19700101]*} -format {*[%Y%m%d]*} -gmt 1
     } \
     -result 0
+
+test clock-55.1 {Common Era} {
+    clock format -62135769600 -gmt 1 -format {%d %m %Y %EE}
+} {01 01 0001 C.E.}
+test clock-55.2 {Common Era} {
+    clock format -62135769600 -gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} {01 01 0001 Anno Domini}
+test clock-55.3 {Before the Common Era} {
+    clock format -62135769601 -gmt 1 -format {%d %m %Y %EE}
+} {31 12 0001 B.C.E.}
+test clock-55.4 {Before the Common Era} {
+    clock format -62135769601 -gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} {31 12 0001 Before Christ}
+test clock-55.5 {Common Era} {
+    clock scan {01 01 0001 C.E.} \
+	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} -62135769600
+test clock-55.6 {Common Era} {
+    clock scan {01 01 0001 A.D.} \
+	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} -62135769600
+test clock-55.7 {Common Era} {
+    clock scan {01 01 0001 Anno Domini} \
+	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} -62135769600
+test clock-55.8 {Before the Common Era} {
+    clock scan {31 12 0001 B.C.E.} \
+	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} -62135856000
+test clock-55.9 {Common Era} {
+    clock scan {31 12 0001 B.C.} \
+	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} -62135856000
+test clock-55.10 {Common Era} {
+    clock scan {31 12 0001 Before Christ} \
+	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
+} -62135856000
 
 # cleanup
 
