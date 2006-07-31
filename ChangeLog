@@ -1,14 +1,21 @@
 2006-07-30  Kevin Kenny  <kennykb@acm.org>
 
+	* generic/tclClock.c (GetJulianDayFromEraYearMonthDay):
+	Corrected several errors in converting dates before the
+	Common Era.  [Bug 1426279]
 	* library/clock.tcl: Corrected syntax errors in generated code for
 	%EC, %Ey, and %W format groups [Bug 1505383]. Corrected a bug
 	in cache management for format strings containing [glob]
-	metacharacters [Bug 1494664].
+	metacharacters [Bug 1494664]. Corrected several errors in
+	formatting/scanning of years prior to the Common Era, and
+	added the missing %EE format group to indicate the era.
 	* tools/makeTestCases.tcl: Added code to make sure that %U and %V
 	format groups are included in the tests. (The code depends on
 	%U and %V formatting working correctly when 'makeTestCases.tcl'
-	is run, rather than making a completely independent check.)
-	* tests/clock.test: Rebuilt with new test cases.
+	is run, rather than making a completely independent check.) Added
+	tests for [glob] metacharacters in strings.  Added tests for
+	years prior to the Common Era.
+	* tests/clock.test: Rebuilt with new test cases for all the above.
 	
 2006-07-30  Joe English  <jenglish@users.sourceforge.net>
 
