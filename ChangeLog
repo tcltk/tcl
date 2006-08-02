@@ -1,10 +1,26 @@
+2006-08-03  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixPipe.c (TclpCreateProcess): for USE_VFORK: ensure standard
+	channels are initialized before vfork() so that the child doesn't
+	potentially corrupt global state in the parent's address space.
+
+	* tests/compExpr-old.test: add 'oldExprParser' constraint to all tests
+	* tests/compExpr.test:     that depend on the exact format of the error
+	* tests/compile.test:      messages of the pre-2006-07-05 expression
+	* tests/expr-old.test:     parser. The constraint is on by default (i.e.
+	* tests/expr.test:         those test still fail), but it can be turned
+	* tests/for.test:          off by passing '-constraints newExprParser'
+	* tests/if.test:           to tcltest, which will skip the 196 failing
+	* tests/parseExpr.test:    tests in the testsuite that are caused by
+	* tests/while.test:        the new expression parser error messages.
+
 2006-07-31  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ConvertLocalToUTCUsingC):
 	Corrected a regression that caused dates before 1969 to be
 	one day off in the :localtime time zone if TZ is not set.
 	[Bug 1531530]
-	
+
 2006-07-30  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (GetJulianDayFromEraYearMonthDay):
@@ -44,7 +60,7 @@
 	* generic/tclExecute.c:
 	* tests/execute.test (execute-9.1): dgp's fix for [Bug 1522803].
 
-2006-07-20   Daniel Steffen  <das@users.sourceforge.net>
+2006-07-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c (Tcl_InitNotifier, Tcl_WaitForEvent): create
 	notifier thread lazily upon first call to Tcl_WaitForEvent() rather than
