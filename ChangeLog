@@ -1,3 +1,9 @@
+2006-08-03  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixPipe.c (TclpCreateProcess): for USE_VFORK: ensure standard
+	channels are initialized before vfork() so that the child doesn't
+	potentially corrupt global state in the parent's address space.
+
 2006-07-30  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/clock.test: Allowed UTC as a synonym for GMT in two
