@@ -9,12 +9,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.12 2005/06/20 07:49:11 mdejong Exp $
+# RCS: @(#) $Id: for.test,v 1.13 2006/08/02 20:03:37 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+# Constraint set on tests that depend on the exact format of the error messages
+# of the pre-2006/07/05 expression parser (-DOLD_EXPR_PARSER=1)
+testConstraint oldExprParser [expr {![testConstraint newExprParser]}]
 
 # Basic "for" operation.
 
@@ -659,7 +663,7 @@ test for-6.6 {Tcl_ForObjCmd: error in initial command} -body {
     ("for" initial command)
     invoked from within
 "$z {set} {$i < 5} {incr i} {body}"}}
-test for-6.7 {Tcl_ForObjCmd: error in test expression} -match glob -body {
+test for-6.7 {Tcl_ForObjCmd: error in test expression} -constraints {oldExprParser} -match glob -body {
     set z for
     list [catch {$z {set i 0} {i < 5} {incr i} {body}} msg] $msg $errorInfo
 } -result {1 {syntax error in expression "i < 5": * preceding $*} {syntax error in expression "i < 5": * preceding $*
