@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.53 2006/07/31 15:44:06 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.54 2006/08/02 20:01:39 das Exp $
  */
 
 #include "tclInt.h"
@@ -370,7 +370,7 @@ ClockConvertlocaltoutcObjCmd(
  *		tzOffset - Time zone offset in seconds east of Greenwich
  *		tzName - Time zone name
  *		julianDay - Julian Day Number in the local time zone
-v *
+ *
  *----------------------------------------------------------------------
  */
 
