@@ -1,3 +1,8 @@
+2006-08-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c:	Replace buffer copy in for loop
+	with call to memcpy().  Thanks to afredd. [Patch 1530262]
+
 2006-08-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixPipe.c (TclpCreateProcess): for USE_VFORK: ensure standard
