@@ -1,5 +1,8 @@
 2006-08-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* generic/tclCmdIL.c (Tcl_LassignObjCmd): Make the wrong#args message a
+	bit more consistent with those used elsewhere. [Bug 1534628]
+
 	* generic/tclDictObj.c (DictForCmd): Stop crash when attempting to
 	iterate over an invalid dictionary. [Bug 1531184]
 
