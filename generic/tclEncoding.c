@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.42 2006/04/05 00:18:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.43 2006/08/09 18:12:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2028,9 +2028,7 @@ BinaryProc(
     *srcReadPtr = srcLen;
     *dstWrotePtr = srcLen;
     *dstCharsPtr = srcLen;
-    for ( ; --srcLen >= 0; ) {
-	*dst++ = *src++;
-    }
+    memcpy((void *) dst, (void *) src, (size_t) srcLen);
     return result;
 }
 
