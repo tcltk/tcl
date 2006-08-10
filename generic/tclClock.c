@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.55 2006/08/10 12:15:30 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.56 2006/08/10 13:07:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -234,7 +234,7 @@ void
 TclClockInit(
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
-    struct ClockCommand *clockCmdPtr;
+    const struct ClockCommand *clockCmdPtr;
     char cmdName[50];		/* Buffer large enough to hold the string
 				 *::tcl::clock::GetJulianDayFromEraYearMonthDay
 				 * plus a terminating NULL. */
@@ -262,7 +262,7 @@ TclClockInit(
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	data->refCount++;
-	Tcl_CreateObjCmd(interp, cmdName, clockCmdPtr->objCmdProc, data,
+	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
 		ClockDeleteCmdProc);
     }
 }
