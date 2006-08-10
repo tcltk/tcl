@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.27 2005/11/01 15:30:52 dkf Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.28 2006/08/10 12:15:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -61,7 +61,7 @@ TclInitLiteralTable(
 				 * supplied by the caller. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4)
-    Tcl_Panic("TclInitLiteralTable: TCL_SMALL_HASH_TABLE is %d, not 4\n",
+    Tcl_Panic("TclInitLiteralTable: TCL_SMALL_HASH_TABLE is %d, not 4",
 	    TCL_SMALL_HASH_TABLE);
 #endif
 

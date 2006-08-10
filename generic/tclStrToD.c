@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.24 2006/07/20 06:17:39 das Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.25 2006/08/10 12:15:31 dkf Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2199,7 +2199,7 @@ TclInitDoubleConversion(void)
     } else if ((bitwhack.iv & 0xffffffff) == 0x3ff00000) {
 	n770_fp = 1;
     } else {
-	Tcl_Panic("unknown floating point word order on this machine.");
+	Tcl_Panic("unknown floating point word order on this machine");
     }
 #endif
 }

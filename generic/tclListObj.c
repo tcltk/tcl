@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.32 2006/07/20 06:17:39 das Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.33 2006/08/10 12:15:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -176,7 +176,7 @@ Tcl_NewListObj(
 
     listRepPtr = NewListIntRep(objc, objv);
     if (!listRepPtr) {
-	Tcl_Panic("Not enough memory to create the list\n");
+	Tcl_Panic("Not enough memory to allocate list");
     }
 
     /*
@@ -248,7 +248,7 @@ Tcl_DbNewListObj(
 
     listRepPtr = NewListIntRep(objc, objv);
     if (!listRepPtr) {
-	Tcl_Panic("Not enough memory to create the list\n");
+	Tcl_Panic("Not enough memory to allocate list");
     }
 
     /*
@@ -310,7 +310,7 @@ Tcl_SetListObj(
     List *listRepPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetListObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetListObj");
     }
 
     /*
@@ -441,7 +441,7 @@ Tcl_ListObjAppendList(
     Tcl_Obj **objv;
 
     if (Tcl_IsShared(listPtr)) {
-	Tcl_Panic("Tcl_ListObjAppendList called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
     result = Tcl_ListObjLength(interp, listPtr, &listLen);
@@ -500,7 +500,7 @@ Tcl_ListObjAppendElement(
     int numElems, numRequired, newMax, newSize, i;
 
     if (Tcl_IsShared(listPtr)) {
-	Tcl_Panic("Tcl_ListObjAppendElement called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
     }
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
@@ -744,7 +744,7 @@ Tcl_ListObjReplace(
     int isShared;
 
     if (Tcl_IsShared(listPtr)) {
-	Tcl_Panic("Tcl_ListObjReplace called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
     if (listPtr->typePtr != &tclListType) {
 	int length;
@@ -1320,7 +1320,7 @@ TclListObjSetElement(
      */
 
     if (Tcl_IsShared(listPtr)) {
-	Tcl_Panic("Tcl_ListObjSetElement called with shared object");
+	Tcl_Panic("%s called with shared object", "TclListObjSetElement");
     }
     if (listPtr->typePtr != &tclListType) {
 	int length;
