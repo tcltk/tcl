@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.240 2006/07/26 21:56:34 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.241 2006/08/10 12:15:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -153,14 +153,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	switch (nCleanup) {\
 	    case 1: goto cleanup1_pushObjResultPtr;\
 	    case 2: goto cleanup2_pushObjResultPtr;\
-	    default: Tcl_Panic("ERROR: bad usage of macro NEXT_INST_F");\
+	    default: Tcl_Panic("bad usage of macro NEXT_INST_F");\
 	}\
     } else {\
 	pc += (pcAdjustment);\
 	switch (nCleanup) {\
 	    case 1: goto cleanup1;\
 	    case 2: goto cleanup2;\
-	    default: Tcl_Panic("ERROR: bad usage of macro NEXT_INST_F");\
+	    default: Tcl_Panic("bad usage of macro NEXT_INST_F");\
 	}\
     }
 
@@ -502,7 +502,7 @@ TclDeleteExecEnv(
     if (eePtr->stackPtr[-1] == (Tcl_Obj *) ((char *) 1)) {
 	ckfree((char *) (eePtr->stackPtr-1));
     } else {
-	Tcl_Panic("ERROR: freeing an execEnv whose stack is still in use.\n");
+	Tcl_Panic("freeing an execEnv whose stack is still in use");
     }
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
@@ -1040,7 +1040,7 @@ TclIncrObj(
     mp_int value, incr;
 
     if (Tcl_IsShared(valuePtr)) {
-	Tcl_Panic("shared object passed to TclIncrObj");
+	Tcl_Panic("%s called with shared object", "TclIncrObj");
     }
 
     if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {

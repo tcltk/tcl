@@ -1,3 +1,14 @@
+2006-08-10  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	Misc patches to make code more efficient. [Bug 1530474] (afredd)
+	* generic/*.c, macosx/tclMacOSXNotify.c, unix/tclUnixNotfy.c,
+	* win/tclWinThrd.c: Tidy up invokations of Tcl_Panic() to promote
+	string constant sharing and consistent style.
+	* generic/tclBasic.c (Tcl_CreateInterp): More efficient handling of
+	* generic/tclClock.c (TclClockInit):     registration of commands not
+						 in global namespace.
+	* generic/tclVar.c (Tcl_UnsetObjCmd): Remove unreachable clause.
+
 2006-08-09  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclEncoding.c:        Replace buffer copy in for loop
