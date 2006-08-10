@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.8 2005/11/07 15:12:26 dkf Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.9 2006/08/10 12:15:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -292,7 +292,7 @@ Tcl_EventuallyFree(
 	    continue;
 	}
 	if (refPtr->mustFree) {
-	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x\n",
+	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x",
 		    clientData);
         }
         refPtr->mustFree = 1;
