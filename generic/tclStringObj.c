@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.54 2006/07/20 06:17:39 das Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.55 2006/08/10 12:15:31 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -698,7 +698,7 @@ Tcl_SetStringObj(
      */
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetStringObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetStringObj");
     }
 
     /*
@@ -749,7 +749,7 @@ Tcl_SetObjLength(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetObjLength called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
     }
     SetStringFromAny(NULL, objPtr);
 
@@ -865,7 +865,7 @@ Tcl_AttemptSetObjLength(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_AttemptSetObjLength called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
     SetStringFromAny(NULL, objPtr);
 
@@ -1054,7 +1054,7 @@ TclAppendLimitedToObj(
     int toCopy = 0;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("TclAppendLimitedToObj called with shared object");
+	Tcl_Panic("%s called with shared object", "TclAppendLimitedToObj");
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1156,7 +1156,7 @@ Tcl_AppendUnicodeToObj(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_AppendUnicodeToObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendUnicodeToObj");
     }
 
     if (length == 0) {
@@ -1533,7 +1533,7 @@ Tcl_AppendStringsToObjVA(
     int nargs, i;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_AppendStringsToObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendStringsToObj");
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1715,7 +1715,7 @@ TclAppendFormattedObjs(
     };
 
     if (Tcl_IsShared(appendObj)) {
-	Tcl_Panic("TclAppendFormattedObjs called with shared object");
+	Tcl_Panic("%s called with shared object", "TclAppendFormattedObjs");
     }
     Tcl_GetStringFromObj(appendObj, &originalLength);
 
