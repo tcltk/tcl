@@ -1,3 +1,9 @@
+2006-08-11  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclNamesp.c: Improvements in buffer management to make
+	namespace creation faster. Plus selected other minor improvements to
+	code quality. [Patch 1352382]
+
 2006-08-10  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	Misc patches to make code more efficient. [Bug 1530474] (afredd)
