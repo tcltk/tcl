@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.96 2006/08/11 13:50:23 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.97 2006/08/11 15:16:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -858,6 +858,14 @@ Tcl_CreateNamespace(
 	    Tcl_DStringAppend(buffPtr, ancestorPtr->name, -1);
 	    Tcl_DStringAppend(buffPtr, Tcl_DStringValue(namePtr),
 		    Tcl_DStringLength(namePtr));
+
+	    /*
+	     * Clear the unwanted buffer or we end up appending to previous
+	     * results, making the namespace fullNames of nested namespaces
+	     * very wrong (and strange).
+	     */
+
+	    Tcl_DStringSetLength(namePtr, 0);
 
 	    /*
 	     * Now swap the buffer pointers so that we build in the other
