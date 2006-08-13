@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.3 2006/07/11 10:01:40 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.4 2006/08/13 21:35:57 dkf Exp $
  */
 
 struct Class;
@@ -119,6 +119,22 @@ typedef struct CallContext {
 
 #define OO_UNKNOWN_METHOD	1
 #define PUBLIC_METHOD		2
+
+MODULE_SCOPE Object *	TclGetObjectFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
+			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+			    Tcl_Obj *bodyObj);
+MODULE_SCOPE Method *	TclNewForwardMethod(Tcl_Interp *interp, Object *oPtr,
+			    int isPublic, Tcl_Obj *nameObj,
+			    Tcl_Obj *prefixObj);
+MODULE_SCOPE Method *	TclNewProcClassMethod(Tcl_Interp *interp, Class *cPtr,
+			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+			    Tcl_Obj *bodyObj);
+MODULE_SCOPE Method *	TclNewForwardClassMethod(Tcl_Interp *interp,
+			    Class *cPtr, int isPublic, Tcl_Obj *nameObj,
+			    Tcl_Obj *prefixObj);
+MODULE_SCOPE void	TclDeleteMethod(Method *method);
 
 /*
  * Local Variables:

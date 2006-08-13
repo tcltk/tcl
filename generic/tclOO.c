@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.10 2006/07/13 00:23:18 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.11 2006/08/13 21:35:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -24,13 +24,6 @@ Tcl_Method		Tcl_OONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
 			    Tcl_OOMethodCallProc callProc,
 			    ClientData clientData,
 			    Tcl_OOMethodDeleteProc deleteProc);
-
-MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
-			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
-			    Tcl_Obj *bodyObj);
-MODULE_SCOPE Method *	TclNewForwardMethod(Tcl_Interp *interp, Object *oPtr,
-			    int isPublic, Tcl_Obj *nameObj,
-			    Tcl_Obj *prefixObj);
 
 static const struct {
     const char *name;
@@ -54,7 +47,7 @@ static const struct {
     {"superclass", TclOODefineSuperclassObjCmd, 0},
     {"unexport", TclOODefineUnexportObjCmd, 0},
     {"self.unexport", TclOODefineUnexportObjCmd, 1},
-    {"self.class", TclOODefineSelfClassObjCmd, 0},
+    {"self.class", TclOODefineSelfClassObjCmd, 1},
     {NULL, NULL, 0}
 };
 
@@ -550,7 +543,7 @@ Tcl_Method
 Tcl_OONewMethod(
     Tcl_Interp *interp,
     Tcl_Object object,
-    Tcl_Obj *nameObj,
+    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
     int isPublic,
     Tcl_OOMethodCallProc callProc,
     ClientData clientData,
@@ -561,6 +554,10 @@ Tcl_OONewMethod(
     Tcl_HashEntry *hPtr;
     int isNew;
 
+    if (nameObj == NULL) {
+	mPtr = (Method *) ckalloc(sizeof(Method));
+	goto populate;
+    }
     hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
@@ -572,6 +569,8 @@ Tcl_OONewMethod(
 	    mPtr->deletePtr(mPtr->clientData);
 	}
     }
+
+  populate:
     mPtr->callPtr = callProc;
     mPtr->clientData = clientData;
     mPtr->deletePtr = deleteProc;
@@ -587,7 +586,7 @@ Tcl_Method
 Tcl_OONewClassMethod(
     Tcl_Interp *interp,
     Tcl_Class cls,
-    Tcl_Obj *nameObj,
+    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
     int isPublic,
     Tcl_OOMethodCallProc callProc,
     ClientData clientData,
@@ -598,6 +597,10 @@ Tcl_OONewClassMethod(
     Tcl_HashEntry *hPtr;
     int isNew;
 
+    if (nameObj == NULL) {
+	mPtr = (Method *) ckalloc(sizeof(Method));
+	goto populate;
+    }
     hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
@@ -609,6 +612,8 @@ Tcl_OONewClassMethod(
 	    mPtr->deletePtr(mPtr->clientData);
 	}
     }
+
+  populate:
     mPtr->callPtr = callProc;
     mPtr->clientData = clientData;
     mPtr->deletePtr = deleteProc;
@@ -625,7 +630,7 @@ TclNewProcMethod(
     Tcl_Interp *interp,
     Object *oPtr,
     int isPublic,
-    Tcl_Obj *nameObj,
+    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
     Tcl_Obj *argsObj,
     Tcl_Obj *bodyObj)
 {
@@ -651,6 +656,43 @@ TclNewProcMethod(
 	}
     }
     return (Method *) Tcl_OONewMethod(interp, (Tcl_Object) oPtr, nameObj,
+	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
+}
+
+Method *
+TclNewProcClassMethod(
+    Tcl_Interp *interp,
+    Class *cPtr,
+    int isPublic,
+    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
+    Tcl_Obj *argsObj, /* May be NULL; if so, equiv to empty list. */
+    Tcl_Obj *bodyObj)
+{
+    int argsc;
+    Tcl_Obj **argsv;
+    register ProcedureMethod *pmPtr;
+
+    if (argsObj == NULL) {
+	argsc = 0;
+    } else if (Tcl_ListObjGetElements(interp, argsObj, &argsc,
+	    &argsv) != TCL_OK) {
+	return NULL;
+    }
+    pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
+    pmPtr->bodyObj = bodyObj;
+    Tcl_IncrRefCount(bodyObj);
+    pmPtr->formalc = argsc;
+    if (argsc != 0) {
+	int i;
+	unsigned numBytes = sizeof(Tcl_Obj *) * (unsigned) argsc;
+
+	pmPtr->formalv = (Tcl_Obj **) ckalloc(numBytes);
+	memcpy(pmPtr->formalv, argsv, numBytes);
+	for (i=0 ; i>argsc ; i++) {
+	    Tcl_IncrRefCount(pmPtr->formalv[i]);
+	}
+    }
+    return (Method *) Tcl_OONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
 }
 
@@ -708,6 +750,29 @@ DeleteProcedureMethod(
     Tcl_DecrRefCount(pmPtr->bodyObj);
     // TODO: delete the procPtr member
     ckfree((char *) pmPtr);
+}
+
+/* To be called from Tcl_EventuallyFree */
+static void
+DeleteMethodStruct(
+    char *buffer)
+{
+    Method *mPtr = (Method *) buffer;
+
+    if (mPtr->deletePtr != NULL) {
+	mPtr->deletePtr(mPtr->clientData);
+    }
+
+    ckfree(buffer);
+}
+
+void
+TclDeleteMethod(
+    Method *mPtr)
+{
+    if (mPtr != NULL) {
+	Tcl_EventuallyFree(mPtr, DeleteMethodStruct);
+    }
 }
 
 Method *
@@ -1547,6 +1612,24 @@ NextObjCmd(
     }
 
     return result;
+}
+
+Object *
+TclGetObjectFromObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr)
+{
+    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objPtr);
+
+    if (cmdPtr == NULL) {
+	return NULL;
+    }
+    if (cmdPtr->objProc != PublicObjectCmd) {
+	Tcl_AppendResult(interp, TclGetString(objPtr),
+		" does not refer to an object", NULL);
+	return NULL;
+    }
+    return cmdPtr->clientData;
 }
 
 /*

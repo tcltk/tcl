@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.2 2006/07/11 10:01:40 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.3 2006/08/13 21:35:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -72,6 +72,8 @@ TclOODefineObjCmd(
 	 * refcount after eval'ing it.
 	 */
 
+	// TODO: Leverage the arg rewriting mechanism used by ensembles
+
 	objPtr = Tcl_NewListObj(objc-2, objv+2);
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
 
@@ -88,6 +90,474 @@ TclOODefineObjCmd(
     return result;
 }
 
+int
+TclOODefineConstructorObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+    Class *clsPtr;
+    int bodyLength;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arguments body");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Extract and validate the context, which is the class that we wish to
+     * modify.
+     */
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "only classes may have constructors defined",
+		NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+
+    (void) Tcl_GetStringFromObj(objv[2], &bodyLength);
+    if (bodyLength > 0) {
+	/*
+	 * Create the method structure.
+	 */
+
+	Method *mPtr;
+
+	mPtr = TclNewProcClassMethod(interp, clsPtr, 1, NULL, objv[1],
+		objv[2]);
+	if (mPtr == NULL) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Place the method structure in the class record. Note that we might
+	 * not immediately delete the constructor as this might be being done
+	 * during execution of the constructor itself.
+	 */
+
+	TclDeleteMethod(clsPtr->constructorPtr);
+	clsPtr->constructorPtr = mPtr;
+    } else {
+	/*
+	 * Delete the constructor method record and set the field in the class
+	 * record to NULL.
+	 */
+
+	TclDeleteMethod(clsPtr->constructorPtr);
+	clsPtr->constructorPtr = NULL;
+    }
+
+    return TCL_OK;
+}
+
+int
+TclOODefineCopyObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?targetName?");
+	return TCL_ERROR;
+    }
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineDestructorObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+    Class *clsPtr;
+    int bodyLength;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "body");
+	return TCL_ERROR;
+    }
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "only classes may have destructors defined",
+		NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+
+    (void) Tcl_GetStringFromObj(objv[1], &bodyLength);
+    if (bodyLength > 0) {
+	/*
+	 * Create the method structure.
+	 */
+
+	Method *mPtr;
+
+	mPtr = TclNewProcClassMethod(interp, clsPtr, 1, NULL, NULL, objv[1]);
+	if (mPtr == NULL) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Place the method structure in the class record. Note that we might
+	 * not immediately delete the destructor as this might be being done
+	 * during execution of the destructor itself.
+	 */
+
+	TclDeleteMethod(clsPtr->destructorPtr);
+	clsPtr->destructorPtr = mPtr;
+    } else {
+	/*
+	 * Delete the destructor method record and set the field in the class
+	 * record to NULL.
+	 */
+
+	TclDeleteMethod(clsPtr->destructorPtr);
+	clsPtr->destructorPtr = NULL;
+    }
+
+    return TCL_OK;
+}
+
+int
+TclOODefineExportObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isSelfExport = (clientData != NULL);
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "pattern ?pattern ...?");
+	return TCL_ERROR;
+    }
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    isSelfExport |= (oPtr->classPtr == NULL);
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineFilterObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isSelfFilter = (clientData != NULL);
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    isSelfFilter |= (oPtr->classPtr == NULL);
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineForwardObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isSelfForward = (clientData != NULL);
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    isSelfForward |= (oPtr->classPtr == NULL);
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineMethodObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isSelfMethod = (clientData != NULL);
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+    int bodyLength;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
+	return TCL_ERROR;
+    }
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    isSelfMethod |= (oPtr->classPtr == NULL);
+
+    (void) Tcl_GetStringFromObj(objv[3], &bodyLength);
+    if (bodyLength > 0) {
+	/*
+	 * Create the method structure.
+	 */
+
+	Method *mPtr;
+	int isPublic = Tcl_StringMatch(Tcl_GetString(objv[1]), "[a-z]*");
+
+	if (isSelfMethod) {
+	    mPtr = TclNewProcMethod(interp, oPtr, isPublic, objv[1], objv[2],
+		    objv[3]);
+	} else {
+	    mPtr = TclNewProcClassMethod(interp, oPtr->classPtr, isPublic,
+		    objv[1], objv[2], objv[3]);
+	}
+	if (mPtr == NULL) {
+	    return TCL_ERROR;
+	}
+    } else {
+	/*
+	 * Delete the method structure from the appropriate hash table.
+	 */
+
+	Tcl_HashEntry *hPtr;
+
+	if (isSelfMethod) {
+	    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *)objv[1]);
+	} else {
+	    hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
+		    (char *)objv[1]);
+	}
+	if (hPtr != NULL) {
+	    Method *mPtr = (Method *) Tcl_GetHashValue(hPtr);
+
+	    Tcl_DeleteHashEntry(hPtr);
+	    TclDeleteMethod(mPtr);
+	}
+    }
+
+    return TCL_OK;
+}
+
+int
+TclOODefineMixinObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isSelfMixin = (clientData != NULL);
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    isSelfMixin |= (oPtr->classPtr == NULL);
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineParameterObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineSelfClassObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineSuperclassObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "only classes may have superclasses defined",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclOODefineUnexportObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    int isSelfUnexport = (clientData != NULL);
+    Interp *iPtr = (Interp *) interp;
+    Object *oPtr;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "pattern ?pattern ...?");
+	return TCL_ERROR;
+    }
+
+    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return TCL_ERROR;
+    }
+    oPtr = TclGetObjectFromObj(interp,
+	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    isSelfUnexport |= (oPtr->classPtr == NULL);
+
+    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
+    return TCL_ERROR;
+}
 
 /*
  * Local Variables:
