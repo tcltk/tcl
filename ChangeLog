@@ -1,3 +1,8 @@
+2006-08-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* library/clock.tcl (::tcl::clock::add): Added missing braces to
+	clockval validation code. Pointed out on comp.lang.tcl.
+
 2006-08-11  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclNamesp.c: Improvements in buffer management to make

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.33 2006/07/31 03:27:13 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.34 2006/08/14 10:01:06 dkf Exp $
 #
 #----------------------------------------------------------------------
 
@@ -4341,7 +4341,7 @@ proc ::tcl::clock::add { clockval args } {
              ?number units?...\
              ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\""
     }
-    if { [catch { expr wide($clockval) } result] } {
+    if { [catch { expr {wide($clockval)} } result] } {
 	return -code error $result
     }
 
