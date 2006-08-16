@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.11 2006/08/13 21:35:57 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.12 2006/08/16 20:51:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -812,6 +812,33 @@ TclNewForwardMethod(
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_OONewMethod(interp, (Tcl_Object) oPtr, nameObj,
+	    isPublic, &InvokeForwardMethod, fmPtr, &DeleteForwardMethod);
+}
+
+Method *
+TclNewForwardClassMethod(
+    Tcl_Interp *interp,
+    Class *cPtr,
+    int isPublic,
+    Tcl_Obj *nameObj,
+    Tcl_Obj *prefixObj)
+{
+    int prefixLen;
+    register ForwardMethod *fmPtr;
+
+    if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
+	return NULL;
+    }
+    if (prefixLen < 1) {
+	Tcl_AppendResult(interp, "method forward prefix must be non-empty",
+		NULL);
+	return NULL;
+    }
+
+    fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
+    fmPtr->prefixObj = prefixObj;
+    Tcl_IncrRefCount(prefixObj);
+    return (Method *) Tcl_OONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &InvokeForwardMethod, fmPtr, &DeleteForwardMethod);
 }
 

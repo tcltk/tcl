@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.3 2006/08/13 21:35:57 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.4 2006/08/16 20:51:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -331,6 +331,14 @@ TclOODefineForwardObjCmd(
     int isSelfForward = (clientData != NULL);
     Interp *iPtr = (Interp *) interp;
     Object *oPtr;
+    Method *mPtr;
+    int isPublic;
+    Tcl_Obj *prefixObj;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name cmdName ?arg ...?");
+	return TCL_ERROR;
+    }
 
     if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
 	Tcl_AppendResult(interp, "this command may only be called from within "
@@ -343,9 +351,24 @@ TclOODefineForwardObjCmd(
 	return TCL_ERROR;
     }
     isSelfForward |= (oPtr->classPtr == NULL);
+    isPublic = Tcl_StringMatch(Tcl_GetString(objv[1]), "[a-z]*");
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    /*
+     * Create the method structure.
+     */
+
+    prefixObj = Tcl_NewListObj(objc-2, objv+2);
+    if (isSelfForward) {
+	mPtr = TclNewForwardMethod(interp, oPtr, isPublic, objv[1], prefixObj);
+    } else {
+	mPtr = TclNewForwardClassMethod(interp, oPtr->classPtr, isPublic,
+		objv[1], prefixObj);
+    }
+    if (mPtr == NULL) {
+	Tcl_DecrRefCount(prefixObj);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 int
@@ -467,6 +490,10 @@ TclOODefineParameterObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
+
+    /*
+     * Must nail down the semantics of this!
+     */
 
     Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
     return TCL_ERROR;
