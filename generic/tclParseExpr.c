@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.35 2006/07/20 06:17:39 das Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.36 2006/08/16 17:56:30 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -1981,7 +1981,6 @@ LogSyntaxError(
 
 typedef struct ExprNode {
     unsigned char lexeme;	/* Code that identifies the type of this node */
-    unsigned char precedence;	/* Precedence for operator nodes */
     int left;		/* Index of the left operand of this operator node */
     int right;		/* Index of the right operand of this operator node */
     int parent;		/* Index of the operator of this operand node */
@@ -2058,7 +2057,6 @@ static void		GenerateTokens(ExprNode *nodes, Tcl_Parse *scratchPtr,
 				Tcl_Parse *parsePtr);
 static int		ParseLexeme(CONST char *start, int numBytes,
 				unsigned char *lexemePtr);
-static unsigned char	PrecedenceOf(unsigned char operand);
 
 
 /*
@@ -2108,6 +2106,13 @@ Tcl_ParseExpr(
     unsigned char precedence;
     CONST char *space, *operand, *end;
     int scanned = 0, size, limit = 25, code = TCL_OK;
+    static unsigned char prec[80] = {
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
+	13, 13, 12, 12,	8,  7,	12, 12,	17, 12,	12, 3,	1,  0,	0,  0,
+	0,  18,	18, 18,	2,  4,	18, 18,	0,  0,	0,  0,	0,  0,	0,  0,
+    };
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
@@ -2119,7 +2124,6 @@ Tcl_ParseExpr(
     /* Initialize the parse tree with the special "START" node */
 
     nodes->lexeme = START;
-    nodes->precedence = PrecedenceOf(START);
     nodes->left = -1;
     nodes->right = -1;
     nodes->parent = -1;
@@ -2379,7 +2383,6 @@ Tcl_ParseExpr(
 
 	    nodePtr->left = -1;
 	    nodePtr->right = -1;
-	    nodePtr->precedence = 0;
 	    nodePtr->parent = -1;
 	    lastOrphanPtr = nodePtr;
 	    nodesUsed++;
@@ -2404,7 +2407,6 @@ Tcl_ParseExpr(
 		code = TCL_ERROR;
 		continue;
 	    }
-	    nodePtr->precedence = PrecedenceOf(nodePtr->lexeme);
 	    nodePtr->left = -1;
 	    nodePtr->right = -1;
 	    nodePtr->parent = -1;
@@ -2434,7 +2436,6 @@ Tcl_ParseExpr(
 		     * case accept it as an argument list for a function */
 		    scanned = 0;
 		    nodePtr->lexeme = EMPTY;
-		    nodePtr->precedence = 0;
 		    nodePtr->left = -1;
 		    nodePtr->right = -1;
 		    nodePtr->parent = -1;
@@ -2450,11 +2451,11 @@ Tcl_ParseExpr(
 		continue;
 	    }
 
-	    precedence = PrecedenceOf(nodePtr->lexeme);
+	    precedence = prec[nodePtr->lexeme];
 
 	    if ((NODE_TYPE & lastNodePtr->lexeme) != LEAF) {
 		msg = Tcl_NewObj();
-		if (lastNodePtr->precedence > precedence) {
+		if (prec[lastNodePtr->lexeme] > precedence) {
 		    if (lastNodePtr->lexeme == OPEN_PAREN) {
 			lastOrphanPtr = lastNodePtr;
 			msg = Tcl_NewStringObj("unbalanced open paren", -1);
@@ -2496,12 +2497,12 @@ Tcl_ParseExpr(
 		}
 		otherPtr--;
 
-		if (otherPtr->precedence < precedence) {
+		if (prec[otherPtr->lexeme] < precedence) {
 		    break;
 		}
 
 		/* Special association rules for the ternary operators */
-		if (otherPtr->precedence == precedence) {
+		if (prec[otherPtr->lexeme] == precedence) {
 		    if ((otherPtr->lexeme == QUESTION) 
 			    && (lastOrphanPtr->lexeme != COLON)) {
 			break;
@@ -2585,7 +2586,6 @@ Tcl_ParseExpr(
 	    }
 
 	    /* Link orphan as left operand of new node */
-	    nodePtr->precedence = PrecedenceOf(nodePtr->lexeme);
 	    nodePtr->right = -1;
 	    nodePtr->parent = -1;
 
@@ -2634,13 +2634,13 @@ Tcl_ParseExpr(
 		    subexpr = scratch.tokenPtr[lastOrphanPtr->token].start;
 		    lastOrphanPtr--;
 		} else {
-		    precedence = lastOrphanPtr->precedence;
+		    precedence = prec[lastOrphanPtr->lexeme];
 		    while (lastOrphanPtr->left >= 0) {
 			lastOrphanPtr = nodes + lastOrphanPtr->left;
 		    }
 		    subexpr = scratch.tokenPtr[lastOrphanPtr->token].start;
 		    lastOrphanPtr--;
-		    if (lastOrphanPtr->precedence >= precedence) {
+		    if (prec[lastOrphanPtr->lexeme] >= precedence) {
 			continue;
 		    }
 		}
@@ -2816,68 +2816,6 @@ GenerateTokens(
 
 	}
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PrecedenceOf --
- *
- * 	Utility routine that returns the precedence level of an operator.
- *
- * Results:
- * 	Returns an unsigned char value. Greater value indicates greater
- * 	operator precedence.  
- *
- *----------------------------------------------------------------------
- */
-
-static unsigned char
-PrecedenceOf(
-    unsigned char operator)		
-{
-    switch (operator) {
-    case NOT:	case BIT_NOT:	case UNARY_PLUS:	case UNARY_MINUS:
-    case FUNCTION:
-	return 18;
-    case EXPON:
-	return 17;
-    case MULT:	case DIVIDE:	case MOD:
-	return 16;
-    case BINARY_PLUS:		case BINARY_MINUS:
-	return 15;
-    case LEFT_SHIFT:		case RIGHT_SHIFT:
-	return 14;
-    case LESS:	case LEQ:	case GREATER:		case GEQ:
-	return 13;
-    case EQUAL:	case NEQ:	case IN_LIST:		case NOT_IN_LIST:
-    case STREQ:	case STRNEQ:
-	return 12;
-    case BIT_AND:
-	return 11;
-    case BIT_XOR:
-	return 10;
-    case BIT_OR:
-	return 9;
-    case AND:
-	return 8;
-    case OR:
-	return 7;
-    case COLON:	case QUESTION:
-	return 6;
-    case COMMA:
-	return 5;
-    case OPEN_PAREN:
-	return 4;
-    case CLOSE_PAREN:
-	return 3;
-    case START:
-	return 2;
-    case END:
-	return 1;
-    }
-    /* NOT REACHED */
-    return 0;
 }
 
 /*
