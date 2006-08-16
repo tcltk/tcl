@@ -1,3 +1,8 @@
+2006-08-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Replace PrecedenceOf() function
+	with prec[] static array.
+
 2006-08-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* library/clock.tcl (::tcl::clock::add): Added missing braces to
