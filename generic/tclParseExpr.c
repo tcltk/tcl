@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.36 2006/08/16 17:56:30 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.37 2006/08/17 17:43:38 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2102,10 +2102,10 @@ Tcl_ParseExpr(
     int nodesAvailable = NUM_STATIC_NODES;
     int nodesUsed = 0;
     Tcl_Parse scratch;		/* Parsing scratch space */
-    Tcl_Obj *msg = NULL;
+    Tcl_Obj *msg = NULL, *post = NULL;
     unsigned char precedence;
-    CONST char *space, *operand, *end;
-    int scanned = 0, size, limit = 25, code = TCL_OK;
+    CONST char *space, *operand, *end, *mark = "_@_";
+    int scanned = 0, size, limit = 25, code = TCL_OK, insertMark = 0;
     static unsigned char prec[80] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
@@ -2184,16 +2184,16 @@ Tcl_ParseExpr(
 	    switch (nodePtr->lexeme) {
 	    case INVALID:
 		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg,
-			"invalid character \"%.*s\" in expression",
-			scanned, start);
+		TclObjPrintf(NULL, msg, "invalid character \"%.*s%s\"",
+			(scanned < limit) ? scanned : limit - 3, start,
+			(scanned < limit) ? "" : "...");
 		code = TCL_ERROR;
 		continue;
 	    case INCOMPLETE:
 		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg,
-			"incomplete operator \"%.*s\" in expression",
-			scanned, start);
+		TclObjPrintf(NULL, msg, "incomplete operator \"%.*s%s\"",
+			(scanned < limit) ? scanned : limit - 3, start,
+			(scanned < limit) ? "" : "...");
 		code = TCL_ERROR;
 		continue;
 	    case BAREWORD:
@@ -2209,13 +2209,19 @@ Tcl_ParseExpr(
 			nodePtr->lexeme = BOOLEAN;
 		    } else {
 			msg = Tcl_NewObj();
-			TclObjPrintf(NULL, msg,
-				"invalid bareword \"%.*s\" in expression",
-				scanned, start);
-			Tcl_AppendToObj(msg,
-				"\n    (prepend $ for variable; ", -1);
-			Tcl_AppendToObj(msg,
-				"append argument list for function call)", -1);
+			TclObjPrintf(NULL, msg, "invalid bareword \"%.*s%s\"",
+				(scanned < limit) ? scanned : limit - 3, start,
+				(scanned < limit) ? "" : "...");
+			post = Tcl_NewObj();
+			TclObjPrintf(NULL, post,
+				"should be \"$%.*s%s\" or \"{%.*s%s}\"",
+				(scanned < limit) ? scanned : limit - 3,
+				start, (scanned < limit) ? "" : "...",
+				(scanned < limit) ? scanned : limit - 3,
+				start, (scanned < limit) ? "" : "...");
+			TclObjPrintf(NULL, post, " or \"%.*s%s(...)\" ?",
+				(scanned < limit) ? scanned : limit - 3,
+				start, (scanned < limit) ? "" : "...");
 			continue;
 		    }
 		}
@@ -2236,37 +2242,14 @@ Tcl_ParseExpr(
 	case LEAF:
 
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
-		msg = Tcl_NewStringObj("missing operator ", -1);
-		while (lastNodePtr->parent >= 0) {
-		    lastNodePtr = nodes + lastNodePtr->parent;
-		}
-		while (lastNodePtr->left >= 0) {
-		    lastNodePtr = nodes + lastNodePtr->left;
-		}
+		msg = Tcl_NewObj();
+		TclObjPrintf(NULL, msg, "missing operator at %s", mark);
+		scanned = 0;
+		insertMark = 1;
 		operand = scratch.tokenPtr[lastNodePtr->token].start;
-		size = space - operand;
-		switch (nodePtr->lexeme) {
-		case NUMBER:
-		case BOOLEAN:
-		    TclObjPrintf(NULL, msg,
-			    "between operands \"%s%.*s\" and \"%.*s%s\"",
-			    (size < limit) ? "" : "...",
-			    (size < limit) ? size : limit - 3,
-			    (size < limit) ? operand : operand+size+3-limit,
-			    (scanned < limit) ? scanned : limit - 3,
-			    (scanned < limit) ? start : start+scanned+3-limit,
-			    (scanned < limit) ? "" : "...");
-		    if ((operand[0] == '0')
-			    && TclCheckBadOctal(NULL, operand)) {
-			Tcl_AppendToObj(msg,
-			        "\n    (looks like invalid octal number)", -1);
-		    }
-		    break;
-		default:
-		    TclObjPrintf(NULL, msg, "following operand \"%s%.*s\"",
-			    (size < limit) ? "" : "...",
-			    (size < limit) ? size : limit - 3,
-			    (size < limit) ? operand : operand+size+3-limit);
+		if ((operand[0] == '0') && TclCheckBadOctal(NULL, operand)) {
+		    post = Tcl_NewStringObj(
+			    "looks like invalid octal number", -1);
 		}
 		code = TCL_ERROR;
 		continue;
@@ -2322,8 +2305,7 @@ Tcl_ParseExpr(
 		}
 		tokenPtr = scratch.tokenPtr + nodePtr->token + 1;
 		if (tokenPtr->type != TCL_TOKEN_VARIABLE) {
-		    msg = Tcl_NewStringObj(
-			    "invalid character \"$\" in expression", -1);
+		    msg = Tcl_NewStringObj("invalid character \"$\"", -1);
 		    code = TCL_ERROR;
 		    continue;
 		}
@@ -2391,19 +2373,9 @@ Tcl_ParseExpr(
 	case UNARY:
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
 		msg = Tcl_NewObj();
-		while (lastNodePtr->parent >= 0) {
-		    lastNodePtr = nodes + lastNodePtr->parent;
-		}
-		while (lastNodePtr->left >= 0) {
-		    lastNodePtr = nodes + lastNodePtr->left;
-		}
-		operand = scratch.tokenPtr[lastNodePtr->token].start;
-		size = space - operand;
-		TclObjPrintf(NULL, msg,
-			"missing operator following operand \"%s%.*s\"",
-			(size < limit) ? "" : "...",
-			(size < limit) ? size : limit - 3,
-			(size < limit) ? operand : operand+size+3-limit);
+		TclObjPrintf(NULL, msg, "missing operator at %s", mark);
+		scanned = 0;
+		insertMark = 1;
 		code = TCL_ERROR;
 		continue;
 	    }
@@ -2446,7 +2418,10 @@ Tcl_ParseExpr(
 		    break;
 
 		}
-		msg = Tcl_NewStringObj("empty subexpression", -1);
+		msg = Tcl_NewObj();
+		TclObjPrintf(NULL, msg, "empty subexpression at %s", mark);
+		scanned = 0;
+		insertMark = 1;
 		code = TCL_ERROR;
 		continue;
 	    }
@@ -2454,7 +2429,6 @@ Tcl_ParseExpr(
 	    precedence = prec[nodePtr->lexeme];
 
 	    if ((NODE_TYPE & lastNodePtr->lexeme) != LEAF) {
-		msg = Tcl_NewObj();
 		if (prec[lastNodePtr->lexeme] > precedence) {
 		    if (lastNodePtr->lexeme == OPEN_PAREN) {
 			lastOrphanPtr = lastNodePtr;
@@ -2463,7 +2437,11 @@ Tcl_ParseExpr(
 			continue;
 		    }
 		    if (lastNodePtr->lexeme == COMMA) {
-			msg = Tcl_NewStringObj("missing function argument", -1);
+			msg = Tcl_NewObj();
+			TclObjPrintf(NULL, msg,
+				"missing function argument at %s", mark);
+			scanned = 0;
+			insertMark = 1;
 			code = TCL_ERROR;
 			continue;
 		    }
@@ -2472,18 +2450,20 @@ Tcl_ParseExpr(
 			code = TCL_ERROR;
 			continue;
 		    }
+		    msg = Tcl_NewObj();
 		    operand = scratch.tokenPtr[lastNodePtr->token].start;
 		    size = space - operand;
-		    TclObjPrintf(NULL, msg,
-			"missing right operand following operator \"%.*s\"",
-			size, operand);
+		    TclObjPrintf(NULL, msg, "missing operand at %s", mark);
+		    scanned = 0;
+		    insertMark = 1;
 		} else {
 		    if (nodePtr->lexeme == CLOSE_PAREN) {
 			msg = Tcl_NewStringObj("unbalanced close paren", -1);
 		    } else {
-			TclObjPrintf(NULL, msg,
-				"missing left operand before operator \"%.*s\"",
-				scanned, start);
+			msg = Tcl_NewObj();
+			TclObjPrintf(NULL, msg, "missing operand at %s", mark);
+			scanned = 0;
+			insertMark = 1;
 		    }
 		}
 		code = TCL_ERROR;
@@ -2523,9 +2503,11 @@ Tcl_ParseExpr(
 		}
 		if ((otherPtr->lexeme == QUESTION)
 			&& (lastOrphanPtr->lexeme != COLON)) {
-		    msg = Tcl_NewStringObj(
-			    "missing operator \":\" in ternary conditional",
-			    -1);
+		    msg = Tcl_NewObj();
+		    TclObjPrintf(NULL, msg,
+			    "missing operator \":\" at %s", mark);
+		    scanned = 0;
+		    insertMark = 1;
 		    code = TCL_ERROR;
 		    break;
 		}
@@ -2625,40 +2607,37 @@ Tcl_ParseExpr(
 		Tcl_DecrRefCount(msg);
 	    }
 	} else {
-	    CONST char *subexpr = NULL;
 	    if (msg == NULL) {
 		msg = Tcl_GetObjResult(interp);
 	    }
-	    while (lastOrphanPtr != nodes) {
-		if (lastOrphanPtr->lexeme == OPEN_PAREN) {
-		    subexpr = scratch.tokenPtr[lastOrphanPtr->token].start;
-		    lastOrphanPtr--;
-		} else {
-		    precedence = prec[lastOrphanPtr->lexeme];
-		    while (lastOrphanPtr->left >= 0) {
-			lastOrphanPtr = nodes + lastOrphanPtr->left;
-		    }
-		    subexpr = scratch.tokenPtr[lastOrphanPtr->token].start;
-		    lastOrphanPtr--;
-		    if (prec[lastOrphanPtr->lexeme] >= precedence) {
-			continue;
-		    }
-		}
-		size = start + scanned - subexpr;
-		if ((subexpr > scratch.string)
-			|| ((start + scanned < scratch.end)
-			&& (size < limit))) {
-		    TclObjPrintf(NULL, msg,
-			    "\n    (parsing subexpression \"%.*s%s\")",
-			    (size < limit) ? size : limit - 3, subexpr,
-			    (size < limit) ? "" : "...");
-		}
+	    TclObjPrintf(NULL, msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
+		    ((start - limit) < scratch.string) ? "" : "...",
+		    ((start - limit) < scratch.string)
+		    ? (start - scratch.string)
+		    : (start - Tcl_UtfPrev(start-limit, scratch.string)),
+		    ((start - limit) < scratch.string) 
+		    ? scratch.string
+		    : Tcl_UtfPrev(start-limit, scratch.string),
+		    (scanned < limit) ? scanned : limit - 3, start,
+		    (scanned < limit) ? "" : "...",
+		    insertMark ? mark : "",
+		    (start + scanned + limit > scratch.end)
+		    ? scratch.end - (start + scanned)
+		    : Tcl_UtfPrev(start+scanned+limit, start+scanned)
+		    - (start + scanned), start + scanned,
+		    (start + scanned + limit > scratch.end) ? "" : "..."
+		    );
+	    if (post != NULL) {
+		Tcl_AppendToObj(msg, ";\n", -1);
+		Tcl_AppendObjToObj(msg, post);
+		Tcl_DecrRefCount(post);
 	    }
-	    numBytes = scratch.end - scratch.string;
-	    TclObjPrintf(NULL, msg, "\n    (parsing expression \"%.*s%s\")",
-		    (numBytes < limit) ? numBytes : limit - 3, scratch.string,
-		    (numBytes < limit) ? "" : "...");
 	    Tcl_SetObjResult(interp, msg);
+	    numBytes = scratch.end - scratch.string;
+	    TclFormatToErrorInfo(interp,
+		    "\n    (parsing expression \"%.*s%s\")",
+		    (numBytes < limit) ? numBytes : limit - 3,
+		    scratch.string, (numBytes < limit) ? "" : "...");
 	}
     }
 
