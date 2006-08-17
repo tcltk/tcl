@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.94 2006/08/10 12:15:31 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.95 2006/08/17 17:43:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1604,6 +1604,7 @@ TclCompileExprWords(
 	if (TclCompileExpr(interp, script, numBytes, envPtr) == TCL_OK) {
 	    return;
 	}
+	Tcl_ResetResult(interp);
 	envPtr->numCommands = savedNumCmds;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
     }
