@@ -33,6 +33,10 @@
 	* generic/tclLink.c (LinkTraceProc): fix 64-bit signed-with-unsigned
 	comparison warning from gcc4 -Wextra.
 
+	* unix/tclUnixChan.c (TclUnixWaitForFile): with timeout < 0, if select()
+	returns early (e.g. due to a signal), call it again instead of returning
+	a timeout result. Fixes intermittent event-13.8 failures.
+
 2006-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:		Revised the new set of expression
