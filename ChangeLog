@@ -13,6 +13,10 @@
 	
 	* macosx/README: updates for x86_64 support and Xcode 2.3.
 
+	* unix/tclUnixChan.c (TclUnixWaitForFile): with timeout < 0, if select()
+	returns early (e.g. due to a signal), call it again instead of returning
+	a timeout result. Fixes intermittent event-13.8 failures.
+
 2006-08-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEncoding.c:	Replace buffer copy in for loop
