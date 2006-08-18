@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.16 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.17 2006/08/18 07:45:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -474,7 +474,7 @@ LinkTraceProc(
 
     case TCL_LINK_ULONG:
 	if (Tcl_GetWideIntFromObj(interp, valueObj, &valueWide) != TCL_OK
-		|| valueWide < 0 || valueWide > ULONG_MAX) {
+		|| valueWide < 0 || (Tcl_WideUInt) valueWide > ULONG_MAX) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
 	    return "variable must have unsigned long value";

@@ -196,6 +196,9 @@
 /* Linker support for module scope symbols */
 #undef MODULE_SCOPE
 
+/* Is Darwin CoreFoundation unavailable for 64-bit? */
+#undef NO_COREFOUNDATION_64
+
 /* Do we have <dirent.h>? */
 #undef NO_DIRENT_H
 

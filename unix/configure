@@ -7198,7 +7198,21 @@ echo "${ECHO_T}$tcl_cv_ld_elf" >&6
 	    SHLIB_CFLAGS="-fno-common"
 	    if test $do64bit = yes; then
 		do64bit_ok=yes
-		CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+		case `arch` in
+		    ppc)
+			CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5";;
+		    i386)
+			CFLAGS="$CFLAGS -arch x86_64";;
+		    *)
+			{ echo "$as_me:$LINENO: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
+echo "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;}
+			do64bit_ok=no;;
+		esac
+	    else
+		# Check for combined 32-bit and 64-bit fat build
+		echo "$CFLAGS " | grep -E -q -- '-arch (ppc64|x86_64) ' && \
+		    echo "$CFLAGS " | grep -E -q -- '-arch (ppc|i386) ' && \
+		    fat_32_64=yes
 	    fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    echo "$as_me:$LINENO: checking if ld accepts -single_module flag" >&5
@@ -7267,8 +7281,8 @@ echo "${ECHO_T}$tcl_cv_ld_single_module" >&6
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
 	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
-	    test -z "${MACOSX_DEPLOYMENT_TARGET}" || \
-		test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print $2}'`" -lt 4 && \
+	    test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F '10\\.' '{print int($2)}'`" -lt 4 -a \
+		"`echo "${CFLAGS}" | awk -F '-mmacosx-version-min=10\\.' '{print int($2)}'`" -lt 4 && \
 		LDFLAGS="$LDFLAGS -prebind"
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    echo "$as_me:$LINENO: checking if ld accepts -search_paths_first flag" >&5
@@ -7356,11 +7370,11 @@ if test "${tcl_cv_lib_corefoundation+set}" = set; then
 else
 
 		    hold_libs=$LIBS; hold_cflags=$CFLAGS
-		    if test $do64bit_ok = no ; then
-			# remove -arch ppc64 from CFLAGS while testing presence
-			# of CF, otherwise all archs will have CF disabled.
-			# CF for ppc64 is disabled in tclUnixPort.h instead.
-			CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
+		    if test "$fat_32_64" = yes; then
+			# On Tiger there is no 64-bit CF, so remove 64-bit archs
+			# from CFLAGS while testing for presence of CF.
+			# 64-bit CF is disabled in tclUnixPort.h if necessary.
+			CFLAGS="`echo "$CFLAGS " | sed -e 's/-arch ppc64 / /g' -e 's/-arch x86_64 / /g'`"
 		    fi
 		    LIBS="$LIBS -framework CoreFoundation"
 		    cat >conftest.$ac_ext <<_ACEOF
@@ -7422,6 +7436,73 @@ _ACEOF
 
 		else
 		    tcl_corefoundation=no
+		fi
+		if test "$fat_32_64" = yes -a $tcl_corefoundation = yes; then
+		    echo "$as_me:$LINENO: checking for 64-bit CoreFoundation" >&5
+echo $ECHO_N "checking for 64-bit CoreFoundation... $ECHO_C" >&6
+if test "${tcl_cv_lib_corefoundation_64+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+			hold_cflags=$CFLAGS
+			CFLAGS="`echo "$CFLAGS " | sed -e 's/-arch ppc / /g' -e 's/-arch i386 / /g'`"
+			cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <CoreFoundation/CoreFoundation.h>
+int
+main ()
+{
+CFBundleRef b = CFBundleGetMainBundle();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_lib_corefoundation_64=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_lib_corefoundation_64=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+			CFLAGS=$hold_cflags
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_lib_corefoundation_64" >&5
+echo "${ECHO_T}$tcl_cv_lib_corefoundation_64" >&6
+		    if test $tcl_cv_lib_corefoundation_64 = no; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NO_COREFOUNDATION_64 1
+_ACEOF
+
+		    fi
 		fi
 	    fi
 
