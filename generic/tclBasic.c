@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.189 2006/02/01 19:26:01 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.189.2.1 2006/08/18 22:28:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -532,11 +532,16 @@ Tcl_CreateInterp(void)
 #endif
 
     /*
-     * TIP #59: Make embedded configuration information
-     * available.
+     * TIP #59: Make embedded configuration information available.
      */
 
     TclInitEmbeddedConfigurationInformation(interp);
+
+    /*
+     * TIP #257: Install the OO engine (for testing).
+     */
+
+    TclOOInit(interp);
 
     /*
      * Compute the byte order of this machine.

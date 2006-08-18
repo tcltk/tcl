@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.4 2006/08/13 21:35:57 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.5 2006/08/18 22:28:44 dkf Exp $
  */
 
 struct Class;
@@ -135,6 +135,9 @@ MODULE_SCOPE Method *	TclNewForwardClassMethod(Tcl_Interp *interp,
 			    Class *cPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
 MODULE_SCOPE void	TclDeleteMethod(Method *method);
+MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
+			    CallFrame *framePtr, Tcl_Obj *procNameObj,
+			    int skip);
 
 /*
  * Local Variables:

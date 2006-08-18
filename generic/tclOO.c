@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.12 2006/08/16 20:51:21 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.13 2006/08/18 22:28:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1036,8 +1036,8 @@ GetSortedMethodList(
 
 	if (!publicOnly || methodPtr->flags & PUBLIC_METHOD) {
 	    (void) Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
-	    hPtr = Tcl_NextHashEntry(&hSearch);
 	}
+	hPtr = Tcl_NextHashEntry(&hSearch);
     }
 
     AddClassMethodNames(oPtr->selfCls, publicOnly, &names);
@@ -1103,8 +1103,8 @@ AddClassMethodNames(
 
 	    if (!publicOnly || methodPtr->flags & PUBLIC_METHOD) {
 		(void) Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
-		hPtr = Tcl_NextHashEntry(&hSearch);
 	    }
+	    hPtr = Tcl_NextHashEntry(&hSearch);
 	}
     }
     if (clsPtr->numSuperclasses != 0) {
