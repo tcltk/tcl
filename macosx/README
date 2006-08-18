@@ -1,7 +1,7 @@
 Tcl Mac OS X README 
 -----------------
 
-RCS: @(#) $Id: README,v 1.8 2006/07/21 06:02:48 das Exp $
+RCS: @(#) $Id: README,v 1.9 2006/08/18 07:45:31 das Exp $
 
 This is the README file for the Mac OS X/Darwin version of Tcl.
 
@@ -94,9 +94,9 @@ take care to only use the project matching your DevTools and OS version:
 	target useful for debugging, this target's 'Development' buildstyle
 	has ZeroLink and Fix&Continue enabled, use the 'DevelNoFixZL' buildstyle
 	if you need a debug build without these features.
-    * Tcl.xcodeproj for Xcode 2.2 on 10.4, this additionally has a
+    * Tcl.xcodeproj for Xcode 2.3 on 10.4, this additionally has a
 	'ReleaseUniversal'configuration which builds both the 'Tcl' and the
-	'tcltest' targets as universal binaries for ppc, ppc64 and i386.
+	'tcltest' targets as universal binaries for ppc, ppc64, i386 and x86_64.
 Notes about the native targets of the Xcode projects:
     * the Xcode projects refer to the tcl source directory with a relative path
 	of ../../tcl to the project location, if your source directory is named
@@ -115,14 +115,15 @@ Notes about the native targets of the Xcode projects:
 	env vars AUTOCONF and AUTOHEADER to their true locations if necessary.
 
 - To build universal binaries outside of Tcl.xcodeproj, set CFLAGS as follows:
-    export CFLAGS="-arch ppc -arch ppc64 -arch i386 \
+    export CFLAGS="-arch ppc -arch ppc64 -arch i386 -arch x86_64 \
 	-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
-This requires Mac OS X 10.4 and Xcode 2.2 (_not_ Xcode 2.1) and will work on any
-of the architectures (on intel Macs, the -isysroot is not required). Note that
-it is not possible to configure correctly if the current architecture is not
-present in CFLAGS (i.e. -arch `arch` must always be there). Universal builds of
-Tcl TEA extensions are also possible with CFLAGS set as above, they will be
-[load]able by universal as well as thin binaries of Tcl.
+This requires Mac OS X 10.4 and Xcode 2.3 (or Xcode 2.2 if -arch x86_64 is
+omitted, but _not_ Xcode 2.1) and will work on any of the architectures (on
+intel Macs, the -isysroot may not be required). Note that it is not possible to
+configure universal builds correctly if the current architecture is not present
+in CFLAGS  (i.e. -arch `arch` must be there).
+Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
+above, they will be [load]able by universal as well as thin binaries of Tcl.
 
 - To enable weak-linking, set the MACOSX_DEPLOYMENT_TARGET environment variable
 to the minimal OS version (>= 10.2) the binaries should be able to run on, e.g:

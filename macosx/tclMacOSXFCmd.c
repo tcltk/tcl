@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.9 2006/07/20 06:18:37 das Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.10 2006/08/18 07:45:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -25,18 +25,24 @@
 #ifdef HAVE_COPYFILE
 #ifdef HAVE_COPYFILE_H
 #include <copyfile.h>
-#else
+#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+/* Support for weakly importing copyfile. */
+#define WEAK_IMPORT_COPYFILE
+extern int copyfile(const char *from, const char *to, copyfile_state_t state,
+		    copyfile_flags_t flags) WEAK_IMPORT_ATTRIBUTE;
+#endif /* HAVE_WEAK_IMPORT */
+#else /* HAVE_COPYFILE_H */
 int copyfile(const char *from, const char *to, void *state, uint32_t flags);
 #define COPYFILE_ACL            (1<<0)
 #define COPYFILE_XATTR          (1<<2)
 #define COPYFILE_NOFOLLOW_SRC   (1<<18)
-#endif /* HAVE_COPYFILE_H */
 #if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
 /* Support for weakly importing copyfile. */
 #define WEAK_IMPORT_COPYFILE
 extern int copyfile(const char *from, const char *to, void *state,
                     uint32_t flags) WEAK_IMPORT_ATTRIBUTE;
 #endif /* HAVE_WEAK_IMPORT */
+#endif /* HAVE_COPYFILE_H */
 #endif /* HAVE_COPYFILE */
 
 #include <libkern/OSByteOrder.h>

@@ -1560,7 +1560,20 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_CFLAGS="-fno-common"
 	    if test $do64bit = yes; then
 		do64bit_ok=yes
-		CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+		case `arch` in
+		    ppc)
+			CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5";;
+		    i386)
+			CFLAGS="$CFLAGS -arch x86_64";;
+		    *)
+			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`])
+			do64bit_ok=no;;
+		esac
+	    else
+		# Check for combined 32-bit and 64-bit fat build
+		echo "$CFLAGS " | grep -E -q -- '-arch (ppc64|x86_64) ' && \
+		    echo "$CFLAGS " | grep -E -q -- '-arch (ppc|i386) ' && \
+		    fat_32_64=yes
 	    fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
@@ -1576,8 +1589,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
 	    # Don't use -prebind when building for Mac OS X 10.4 or later only:
-	    test -z "${MACOSX_DEPLOYMENT_TARGET}" || \
-		test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F. '{print [$]2}'`" -lt 4 && \
+	    test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F '10\\.' '{print int([$]2)}'`" -lt 4 -a \
+		"`echo "${CFLAGS}" | awk -F '-mmacosx-version-min=10\\.' '{print int([$]2)}'`" -lt 4 && \
 		LDFLAGS="$LDFLAGS -prebind"
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag], tcl_cv_ld_search_paths_first, [
@@ -1602,11 +1615,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test $tcl_corefoundation = yes; then
 		AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
 		    hold_libs=$LIBS; hold_cflags=$CFLAGS
-		    if test $do64bit_ok = no ; then
-			# remove -arch ppc64 from CFLAGS while testing presence
-			# of CF, otherwise all archs will have CF disabled.
-			# CF for ppc64 is disabled in tclUnixPort.h instead.
-			CFLAGS="`echo "$CFLAGS" | sed -e 's/-arch ppc64/-arch ppc/'`"
+		    if test "$fat_32_64" = yes; then
+			# On Tiger there is no 64-bit CF, so remove 64-bit archs
+			# from CFLAGS while testing for presence of CF.
+			# 64-bit CF is disabled in tclUnixPort.h if necessary.
+			CFLAGS="`echo "$CFLAGS " | sed -e 's/-arch ppc64 / /g' -e 's/-arch x86_64 / /g'`"
 		    fi
 		    LIBS="$LIBS -framework CoreFoundation"
 		    AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
@@ -1619,6 +1632,19 @@ dnl AC_CHECK_TOOL(AR, ar)
 			[Do we have access to Darwin CoreFoundation.framework?])
 		else
 		    tcl_corefoundation=no
+		fi
+		if test "$fat_32_64" = yes -a $tcl_corefoundation = yes; then
+		    AC_CACHE_CHECK([for 64-bit CoreFoundation], tcl_cv_lib_corefoundation_64, [
+			hold_cflags=$CFLAGS
+			CFLAGS="`echo "$CFLAGS " | sed -e 's/-arch ppc / /g' -e 's/-arch i386 / /g'`"
+			AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
+			    [CFBundleRef b = CFBundleGetMainBundle();], 
+			    tcl_cv_lib_corefoundation_64=yes, tcl_cv_lib_corefoundation_64=no)
+			CFLAGS=$hold_cflags])
+		    if test $tcl_cv_lib_corefoundation_64 = no; then
+			AC_DEFINE(NO_COREFOUNDATION_64, 1,
+			    [Is Darwin CoreFoundation unavailable for 64-bit?])
+		    fi
 		fi
 	    fi
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
