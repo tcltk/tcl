@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.69 2006/03/27 18:08:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.70 2006/08/18 11:23:22 das Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3253,6 +3253,9 @@ TclUnixWaitForFile(
 	}
 	if (timeout == 0) {
 	    break;
+	}
+	if (timeout < 0) {
+	    continue;
 	}
 
 	/*
