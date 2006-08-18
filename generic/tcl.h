@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.25 2006/06/14 15:21:14 patthoyts Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.26 2006/08/18 07:45:42 das Exp $
  */
 
 #ifndef _TCL
@@ -341,6 +341,7 @@ typedef long LONG;
 #	define TCL_WIDE_INT_TYPE long long
 #	undef TCL_WIDE_INT_IS_LONG
 #    endif /* __LP64__ */
+#    undef HAVE_STRUCT_STAT64
 #endif /* __APPLE__ */
 
 /*

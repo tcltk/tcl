@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.12 2006/07/20 06:21:46 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.13 2006/08/18 07:45:43 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -512,9 +512,9 @@ extern double strtod();
 /* 
  * Support for fat compiles: configure runs only once for multiple architectures
  */
-#   ifdef __LP64__
+#   if defined(__LP64__) && defined (NO_COREFOUNDATION_64)
 #       undef HAVE_COREFOUNDATION
-#    endif /* __LP64__ */
+#    endif /* __LP64__ && NO_COREFOUNDATION_64 */
 #   include <sys/cdefs.h>
 #   ifdef __DARWIN_UNIX03
 #       if __DARWIN_UNIX03
@@ -550,6 +550,9 @@ extern double strtod();
  * only use API available in the indicated OS version or earlier.
  */
 #   ifdef MAC_OS_X_VERSION_MAX_ALLOWED
+#       if MAC_OS_X_VERSION_MAX_ALLOWED < 1050 && defined(__LP64__)
+#           undef HAVE_COREFOUNDATION
+#       endif
 #       if MAC_OS_X_VERSION_MAX_ALLOWED < 1040
 #           undef HAVE_OSSPINLOCKLOCK
 #           undef HAVE_PTHREAD_ATFORK
@@ -563,6 +566,17 @@ extern double strtod();
 #           undef HAVE_LANGINFO
 #       endif
 #   endif /* MAC_OS_X_VERSION_MAX_ALLOWED */
+#   if defined(HAVE_COREFOUNDATION) && defined(__LP64__) && \
+	    defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+#       warning "Weak import of 64-bit CoreFoundation is not supported, will not run on Mac OS X < 10.5."
+#   endif
+/*
+ * At present, using vfork() instead of fork() causes execve() to fail
+ * intermittently on Darwin x86_64. rdar://4685553
+ */
+#   if defined(__x86_64__) && !defined(FIXED_RDAR_4685553)
+#       undef USE_VFORK
+#   endif /* __x86_64__ */
 #endif /* __APPLE__ */
 
 /*
@@ -572,18 +586,24 @@ extern double strtod();
 #ifdef HAVE_COPYFILE
 #ifdef HAVE_COPYFILE_H
 #include <copyfile.h>
-#else
+#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+/* Support for weakly importing copyfile. */
+#define WEAK_IMPORT_COPYFILE
+extern int copyfile(const char *from, const char *to, copyfile_state_t state,
+		    copyfile_flags_t flags) WEAK_IMPORT_ATTRIBUTE;
+#endif /* HAVE_WEAK_IMPORT */
+#else /* HAVE_COPYFILE_H */
 int copyfile(const char *from, const char *to, void *state, uint32_t flags);
 #define COPYFILE_ACL            (1<<0)
 #define COPYFILE_XATTR          (1<<2)
 #define COPYFILE_NOFOLLOW_SRC   (1<<18)
-#endif /* HAVE_COPYFILE_H */
 #if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
 /* Support for weakly importing copyfile. */
 #define WEAK_IMPORT_COPYFILE
 extern int copyfile(const char *from, const char *to, void *state,
                     uint32_t flags) WEAK_IMPORT_ATTRIBUTE;
 #endif /* HAVE_WEAK_IMPORT */
+#endif /* HAVE_COPYFILE_H */
 #endif /* HAVE_COPYFILE */
 
 /*
