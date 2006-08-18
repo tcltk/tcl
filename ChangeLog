@@ -1,3 +1,18 @@
+2006-08-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): add support for --enable-64bit on x86_64, for
+	universal builds including x86_64, for 64-bit CoreFoundation on Leopard
+	and for use of -mmacosx-version-min instead of MACOSX_DEPLOYMENT_TARGET.
+	* unix/configure: autoconf-2.13
+
+	* generic/tcl.h:      add fixes for building on Leopard and support for
+	* unix/tclUnixPort.h: 64-bit CoreFoundation on Leopard.
+
+	* unix/tclUnixPort.h: on Darwin x86_64, disable use of vfork as it
+	causes execve to fail intermittently. (rdar://4685553)
+	
+	* macosx/README: updates for x86_64 support and Xcode 2.3.
+
 2006-08-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEncoding.c:	Replace buffer copy in for loop
