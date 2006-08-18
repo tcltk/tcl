@@ -1,7 +1,7 @@
 Tcl Mac OS X README 
 -----------------
 
-RCS: @(#) $Id: README,v 1.1.2.6 2006/07/21 06:02:59 das Exp $
+RCS: @(#) $Id: README,v 1.1.2.7 2006/08/18 07:45:42 das Exp $
 
 This is the README file for the Mac OS X/Darwin version of Tcl.
 
@@ -87,17 +87,18 @@ The Mac OS X specific configure flags are --enable-framework and
 select based notifier).
 
 - It is also possible to build with Apple's IDE via the tcl/macosx/Tcl.pbproj
-project, this simply calls through to the tcl/macosx/GNUMakefile.
+project, this simply calls through to the tcl/macosx/Makefile.
 
 - To build universal binaries, set CFLAGS as follows:
-    export CFLAGS="-arch ppc -arch ppc64 -arch i386 \
+    export CFLAGS="-arch ppc -arch ppc64 -arch i386 -arch x86_64 \
 	-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
-This requires Mac OS X 10.4 and Xcode 2.2 (_not_ Xcode 2.1) and will work on any
-of the architectures (on intel Macs, the -isysroot is not required). Note that
-it is not possible to configure correctly if the current architecture is not
-present in CFLAGS (i.e. -arch `arch` must always be there). Universal builds of
-Tcl TEA extensions are also possible with CFLAGS set as above, they will be
-[load]able by universal as well as thin binaries of Tcl.
+This requires Mac OS X 10.4 and Xcode 2.3 (or Xcode 2.2 if -arch x86_64 is
+omitted, but _not_ Xcode 2.1) and will work on any of the architectures (on
+intel Macs, the -isysroot may not be required). Note that it is not possible to
+configure universal builds correctly if the current architecture is not present
+in CFLAGS  (i.e. -arch `arch` must be there).
+Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
+above, they will be [load]able by universal as well as thin binaries of Tcl.
 
 - To enable weak-linking, set the MACOSX_DEPLOYMENT_TARGET environment variable
 to the minimal OS version (>= 10.2) the binaries should be able to run on, e.g:
