@@ -30,10 +30,12 @@
 			NO,
 			NO,
 			NO,
+			NO,
 		);
 		argumentStrings = (
 			"${SRCROOT}/../../tcl/tests/all.tcl",
 			"-singleproc 1",
+			"-constraints newExprParser",
 			"-verbose \"bet\"",
 		);
 		autoAttachOnCrash = 1;
@@ -71,6 +73,11 @@
 				active = YES;
 				name = TCL_LIBRARY;
 				value = "${SRCROOT}/../../tcl/library";
+			},
+			{
+				active = NO;
+				name = TCLLIBPATH;
+				value = /Library/Tcl;
 			},
 			{
 				active = NO;

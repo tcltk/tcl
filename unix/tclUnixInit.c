@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.64 2006/07/20 06:18:38 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.65 2006/08/18 07:45:32 das Exp $
  */
 
 #include "tclInt.h"
@@ -480,21 +480,9 @@ TclpInitLibraryPath(
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
     CONST char *str;
-    Tcl_DString buffer, ds;
-    int pathc;
-    CONST char **pathv;
-    char installLib[LIBRARY_SIZE];
+    Tcl_DString buffer;
 
-    Tcl_DStringInit(&ds);
     pathPtr = Tcl_NewObj();
-
-    /*
-     * Initialize the substrings used when locating an executable. The
-     * installLib variable computes the path as though the executable is
-     * installed.
-     */
-
-    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
@@ -508,6 +496,21 @@ TclpInitLibraryPath(
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
+	Tcl_DString ds;
+	int pathc;
+	CONST char **pathv;
+	char installLib[LIBRARY_SIZE];
+
+	Tcl_DStringInit(&ds);
+
+	/*
+	 * Initialize the substrings used when locating an executable. The
+	 * installLib variable computes the path as though the executable is
+	 * installed.
+	 */
+
+	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+
 	/*
 	 * If TCL_LIBRARY is set, search there.
 	 */
@@ -537,7 +540,7 @@ TclpInitLibraryPath(
     /*
      * Finally, look for the library relative to the compiled-in path. This is
      * needed when users install Tcl with an exec-prefix that is different
-     * from the prtefix.
+     * from the prefix.
      */
 
     {

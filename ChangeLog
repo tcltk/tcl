@@ -1,3 +1,38 @@
+2006-08-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): add support for --enable-64bit on x86_64, for
+	universal builds including x86_64, for 64-bit CoreFoundation on Leopard
+	and for use of -mmacosx-version-min instead of MACOSX_DEPLOYMENT_TARGET.
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
+	* generic/tcl.h:          add fixes for building on Leopard and support
+	* unix/tclUnixPort.h:     for 64-bit CoreFoundation on Leopard.
+	* macosx/tclMacOSXFCmd.c:
+
+	* unix/tclUnixPort.h: on Darwin x86_64, disable use of vfork as it
+	causes execve to fail intermittently. (rdar://4685553)
+	
+	* generic/tclTomMath.h: on Darwin 64-bit, for now disable use of 128-bit
+	arithmetic through __attribute__ ((mode(TI))), as it leads to link
+	errors due to missing fallbacks. (rdar://4685527)
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add x86_64 to universal build,
+	switch native release targets to use DWARF with dSYM, Xcode 3.0 changes.
+	* macosx/README: updates for x86_64 and Xcode 2.3.
+
+	* macosx/Tcl.xcodeproj/default.pbxuser: add test suite target that runs
+	* macosx/Tcl.xcodeproj/project.pbxproj: the tcl test suite at build time
+	 and shows clickable test suite errors in the GUI build window.
+
+	* tests/macOSXFCmd.test: fix use of deprecated resource fork paths.
+
+	* unix/tclUnixInit.c (TclpInitLibraryPath): move code that is only
+	needed when TCL_LIBRARY is defined to run only in that case.
+
+	* generic/tclLink.c (LinkTraceProc): fix 64-bit signed-with-unsigned
+	comparison warning from gcc4 -Wextra.
+
 2006-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:		Revised the new set of expression
@@ -58,7 +93,7 @@
 	* tests/compExpr.test:     that depend on the exact format of the error
 	* tests/compile.test:      messages of the pre-2006-07-05 expression
 	* tests/expr-old.test:     parser. The constraint is on by default (i.e
-	* tests/expr.test:         those test still fail), but it can be turned
+	* tests/expr.test:         those tests still fail), but can be turned
 	* tests/for.test:          off by passing '-constraints newExprParser'
 	* tests/if.test:           to tcltest, which will skip the 196 failing
 	* tests/parseExpr.test:    tests in the testsuite that are caused by
