@@ -9,11 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.4 2006/08/16 20:51:21 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.5 2006/08/19 16:58:45 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
+
+static Object *		GetContext(Tcl_Interp *interp);
 
 int
 TclOODefineObjCmd(
@@ -25,14 +27,20 @@ TclOODefineObjCmd(
     CallFrame *framePtr, **framePtrPtr;
     Foundation *fPtr = ((Interp *) interp)->ooFoundation;
     int result;
+    Object *oPtr;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objectName arg ?arg ...?");
 	return TCL_ERROR;
     }
 
+    oPtr = TclGetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
     /*
-     * Make the object's namespace the current namespace and evaluate the
+     * Make the oo::define namespace the current namespace and evaluate the
      * command(s).
      */
 
@@ -43,7 +51,7 @@ TclOODefineObjCmd(
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
-    framePtr->ooContextPtr = objv[1];
+    framePtr->ooContextPtr = oPtr;
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
@@ -90,6 +98,21 @@ TclOODefineObjCmd(
     return result;
 }
 
+static Object *
+GetContext(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    if ((iPtr->framePtr == NULL)
+	    || (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
+	Tcl_AppendResult(interp, "this command may only be called from within "
+		"the context of the ::oo::define command", NULL);
+	return NULL;
+    }
+    return (Object *) iPtr->framePtr->ooContextPtr;
+}
+
 int
 TclOODefineConstructorObjCmd(
     ClientData clientData,
@@ -97,7 +120,6 @@ TclOODefineConstructorObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
     Class *clsPtr;
     int bodyLength;
@@ -112,13 +134,7 @@ TclOODefineConstructorObjCmd(
      * modify.
      */
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -171,7 +187,6 @@ TclOODefineCopyObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
 
     if (objc > 2) {
@@ -179,13 +194,7 @@ TclOODefineCopyObjCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -201,7 +210,6 @@ TclOODefineDestructorObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
     Class *clsPtr;
     int bodyLength;
@@ -211,13 +219,7 @@ TclOODefineDestructorObjCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -270,7 +272,6 @@ TclOODefineExportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfExport = (clientData != NULL);
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
 
     if (objc < 2) {
@@ -278,13 +279,7 @@ TclOODefineExportObjCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -302,16 +297,9 @@ TclOODefineFilterObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfFilter = (clientData != NULL);
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -329,7 +317,6 @@ TclOODefineForwardObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfForward = (clientData != NULL);
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
     Method *mPtr;
     int isPublic;
@@ -340,13 +327,7 @@ TclOODefineForwardObjCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -379,7 +360,6 @@ TclOODefineMethodObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfMethod = (clientData != NULL);
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
     int bodyLength;
 
@@ -388,13 +368,7 @@ TclOODefineMethodObjCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -451,16 +425,8 @@ TclOODefineMixinObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfMixin = (clientData != NULL);
-    Interp *iPtr = (Interp *) interp;
-    Object *oPtr;
+    Object *oPtr = GetContext(interp);
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -477,16 +443,8 @@ TclOODefineParameterObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
-    Object *oPtr;
+    Object *oPtr = GetContext(interp);
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -506,16 +464,8 @@ TclOODefineSelfClassObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
-    Object *oPtr;
+    Object *oPtr = GetContext(interp);
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -531,16 +481,8 @@ TclOODefineSuperclassObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Interp *iPtr = (Interp *) interp;
-    Object *oPtr;
+    Object *oPtr = GetContext(interp);
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -562,7 +504,6 @@ TclOODefineUnexportObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfUnexport = (clientData != NULL);
-    Interp *iPtr = (Interp *) interp;
     Object *oPtr;
 
     if (objc < 2) {
@@ -570,13 +511,7 @@ TclOODefineUnexportObjCmd(
 	return TCL_ERROR;
     }
 
-    if (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
-	return TCL_ERROR;
-    }
-    oPtr = TclGetObjectFromObj(interp,
-	    (Tcl_Obj *) iPtr->framePtr->ooContextPtr);
+    oPtr = GetContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }

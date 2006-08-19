@@ -1,0 +1,36 @@
+# This file contains a collection of tests for Tcl's built-in object system.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 2006 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: oo.test,v 1.1.2.1 2006/08/19 16:58:45 dkf Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test oo-1.1 {basic test of OO functionality: no classes} {
+    set result {}
+    lappend result [oo::object create foo]
+    lappend result [oo::define foo {
+	method bar args {
+	    global result
+	    lappend result {expand}$args
+	    return [llength $args]
+	}
+    }]
+    lappend result [foo bar a b c]
+    lappend result [foo destroy] [info commands foo]
+} {::foo {} a b c 3 {} {}}
+
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

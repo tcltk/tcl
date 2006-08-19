@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.5 2006/08/18 22:28:44 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.6 2006/08/19 16:58:45 dkf Exp $
  */
 
 struct Class;
@@ -31,10 +31,7 @@ typedef struct Method {
 } Method;
 
 typedef struct ProcedureMethod {
-    Tcl_Obj *bodyObj;
     Proc *procPtr;
-    int formalc;
-    Tcl_Obj **formalv;
 } ProcedureMethod;
 
 typedef struct ForwardMethod {

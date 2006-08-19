@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.13 2006/08/18 22:28:44 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.14 2006/08/19 16:58:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -320,6 +320,8 @@ AllocObject(
     Tcl_InitObjHashTable(&oPtr->methods);
     Tcl_InitObjHashTable(&oPtr->publicContextCache);
     Tcl_InitObjHashTable(&oPtr->privateContextCache);
+    oPtr->numFilters = 0;
+    oPtr->filterObjs = NULL;
     oPtr->numMixins = 0;
     oPtr->mixins = NULL;
     oPtr->classPtr = NULL;
@@ -642,18 +644,10 @@ TclNewProcMethod(
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    pmPtr->bodyObj = bodyObj;
-    Tcl_IncrRefCount(bodyObj);
-    pmPtr->formalc = argsc;
-    if (argsc != 0) {
-	int i;
-	unsigned numBytes = sizeof(Tcl_Obj *) * (unsigned) argsc;
-
-	pmPtr->formalv = (Tcl_Obj **) ckalloc(numBytes);
-	memcpy(pmPtr->formalv, argsv, numBytes);
-	for (i=0 ; i>argsc ; i++) {
-	    Tcl_IncrRefCount(pmPtr->formalv[i]);
-	}
+    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+	    &pmPtr->procPtr) != TCL_OK) {
+	ckfree((char *) pmPtr);
+	return NULL;
     }
     return (Method *) Tcl_OONewMethod(interp, (Tcl_Object) oPtr, nameObj,
 	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
@@ -679,18 +673,10 @@ TclNewProcClassMethod(
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    pmPtr->bodyObj = bodyObj;
-    Tcl_IncrRefCount(bodyObj);
-    pmPtr->formalc = argsc;
-    if (argsc != 0) {
-	int i;
-	unsigned numBytes = sizeof(Tcl_Obj *) * (unsigned) argsc;
-
-	pmPtr->formalv = (Tcl_Obj **) ckalloc(numBytes);
-	memcpy(pmPtr->formalv, argsv, numBytes);
-	for (i=0 ; i>argsc ; i++) {
-	    Tcl_IncrRefCount(pmPtr->formalv[i]);
-	}
+    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+	    &pmPtr->procPtr) != TCL_OK) {
+	ckfree((char *) pmPtr);
+	return NULL;
     }
     return (Method *) Tcl_OONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
@@ -708,7 +694,10 @@ InvokeProcedureMethod(
     int result, flags = FRAME_IS_METHOD;
     CallFrame *framePtr, **framePtrPtr;
     Object *oPtr = contextPtr->oPtr;
+    Command cmd;
 
+    cmd.nsPtr = oPtr->nsPtr;
+    pmPtr->procPtr->cmdPtr = &cmd;
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method",
 	    TclGetString(objv[1]));
@@ -739,16 +728,7 @@ DeleteProcedureMethod(
 {
     register ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
 
-    if (pmPtr->formalc != 0) {
-	int i;
-
-	for (i=0 ; i>pmPtr->formalc ; i++) {
-	    Tcl_DecrRefCount(pmPtr->formalv[i]);
-	}
-	ckfree((char *) pmPtr->formalv);
-    }
-    Tcl_DecrRefCount(pmPtr->bodyObj);
-    // TODO: delete the procPtr member
+    TclProcDeleteProc(pmPtr->procPtr);
     ckfree((char *) pmPtr);
 }
 
@@ -1349,7 +1329,8 @@ ClassCreate(
     }
     newObjPtr = NewInstance(interp, oPtr->classPtr, TclGetString(objv[2]),
 	    objc-3, objv+3);
-    Tcl_GetCommandFullName(interp, oPtr->command, Tcl_GetObjResult(interp));
+    Tcl_GetCommandFullName(interp, newObjPtr->command,
+	    Tcl_GetObjResult(interp));
     return TCL_OK;
 }
 
@@ -1374,7 +1355,8 @@ ClassNew(
 	return TCL_ERROR;
     }
     newObjPtr = NewInstance(interp, oPtr->classPtr, NULL, objc-2, objv+2);
-    Tcl_GetCommandFullName(interp, oPtr->command, Tcl_GetObjResult(interp));
+    Tcl_GetCommandFullName(interp, newObjPtr->command,
+	    Tcl_GetObjResult(interp));
     return TCL_OK;
 }
 
@@ -1648,15 +1630,13 @@ TclGetObjectFromObj(
 {
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objPtr);
 
-    if (cmdPtr == NULL) {
-	return NULL;
-    }
-    if (cmdPtr->objProc != PublicObjectCmd) {
+    if (cmdPtr == NULL || cmdPtr->objProc != PublicObjectCmd) {
 	Tcl_AppendResult(interp, TclGetString(objPtr),
 		" does not refer to an object", NULL);
 	return NULL;
     }
-    return cmdPtr->clientData;
+    //printf("TclGetObjectFromObj(%s)->oPtr:%p\n",TclGetString(objPtr),cmdPtr->clientData);
+    return cmdPtr->objClientData;
 }
 
 /*
