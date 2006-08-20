@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.1 2006/08/19 16:58:45 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.2 2006/08/20 12:20:20 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -27,6 +27,22 @@ test oo-1.1 {basic test of OO functionality: no classes} {
     lappend result [foo bar a b c]
     lappend result [foo destroy] [info commands foo]
 } {::foo {} a b c 3 {} {}}
+
+test oo-2.1 {basic test of OO functionality: constructor} -setup {
+    # This is a bit complex because it needs to run in a sub-interp as
+    # we're modifying the root object class's constructor
+    interp create subinterp
+} -body {
+    subinterp eval {
+	oo::define oo::object constructor {} {
+	    lappend ::result [info level 0]
+	}
+	lappend result 1
+	lappend result 2 [oo::object create foo]
+    }
+} -cleanup {
+    interp delete subinterp
+} -result {1 {oo::object create foo} 2 ::foo}
 
 cleanupTests
 return

@@ -3,12 +3,12 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005 by Donal K. Fellows
+ * Copyright (c) 2005-2006 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.15 2006/08/19 17:22:57 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.16 2006/08/20 12:20:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -151,9 +151,8 @@ static int		DeclareClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Tcl_OOMethodCallProc callProc);
 static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
 			    Tcl_HashTable *namesPtr);
-static void		AddMethodToCallChain(Tcl_HashTable *methodTablePtr,
-			    Tcl_Obj *methodObj, CallContext *contextPtr,
-			    int isFilter, int isPublic);
+static void		AddMethodToCallChain(Method *mPtr,
+			    CallContext *contextPtr, int isFilter, int flags);
 static void		AddSimpleChainToCallContext(Object *oPtr,
 			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
 			    int isFilter, int isPublic);
@@ -163,7 +162,7 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DeleteContext(CallContext *contextPtr);
 static CallContext *	GetCallContext(Foundation *fPtr, Object *oPtr,
-			    Tcl_Obj *methodNameObj, int isPublic,
+			    Tcl_Obj *methodNameObj, int flags,
 			    Tcl_HashTable *cachePtr);
 static int		InvokeContext(Tcl_Interp *interp,
 			    CallContext *contextPtr, int objc,
@@ -172,7 +171,8 @@ static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int publicOnly,
 			    Tcl_HashTable *cachePtr);
 static Object *		NewInstance(Tcl_Interp *interp, Class *clsPtr,
-			    char *name, int objc, Tcl_Obj *const *objv);
+			    char *name, int objc, Tcl_Obj *const *objv,
+			    int skip);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -476,10 +476,12 @@ NewInstance(
     Class *clsPtr,
     char *name,
     int objc,
-    Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv,
+    int skip)
 {
     Object *oPtr = AllocObject(interp, NULL);
     Class *classPtr;
+    CallContext *contextPtr;
 
     oPtr->selfCls = clsPtr;
     if (clsPtr->instancesSize == 0) {
@@ -529,7 +531,23 @@ NewInstance(
 	}
     }
 
-    // TODO: call constructors with objc/objv
+    contextPtr = GetCallContext(((Interp *)interp)->ooFoundation, oPtr, NULL,
+	    CONSTRUCTOR, NULL);
+    if (contextPtr != NULL) {
+	int result;
+
+	Tcl_Preserve(oPtr);
+	contextPtr->flags |= CONSTRUCTOR;
+	contextPtr->skip = skip;
+	result = InvokeContext(interp, contextPtr, objc, objv);
+	DeleteContext(contextPtr);
+	Tcl_Release(oPtr);
+	if (result != TCL_OK) {
+	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
+	    return NULL;
+	}
+	Tcl_ResetResult(interp);
+    }
 
     return oPtr;
 }
@@ -650,12 +668,14 @@ TclNewProcMethod(
     int argsc;
     Tcl_Obj **argsv;
     register ProcedureMethod *pmPtr;
+    const char *procName;
 
     if (Tcl_ListObjGetElements(interp, argsObj, &argsc, &argsv) != TCL_OK) {
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+    procName = (nameObj == NULL ? "<constructor>" : TclGetString(nameObj));
+    if (TclCreateProc(interp, NULL, procName, argsObj, bodyObj,
 	    &pmPtr->procPtr) != TCL_OK) {
 	ckfree((char *) pmPtr);
 	return NULL;
@@ -676,6 +696,7 @@ TclNewProcClassMethod(
     int argsc;
     Tcl_Obj **argsv;
     register ProcedureMethod *pmPtr;
+    const char *procName;
 
     if (argsObj == NULL) {
 	argsc = 0;
@@ -684,7 +705,8 @@ TclNewProcClassMethod(
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
+    procName = (nameObj == NULL ? "<constructor>" : TclGetString(nameObj));
+    if (TclCreateProc(interp, NULL, procName, argsObj, bodyObj,
 	    &pmPtr->procPtr) != TCL_OK) {
 	ckfree((char *) pmPtr);
 	return NULL;
@@ -706,12 +728,21 @@ InvokeProcedureMethod(
     CallFrame *framePtr, **framePtrPtr;
     Object *oPtr = contextPtr->oPtr;
     Command cmd;
+    const char *namePtr;
 
     cmd.nsPtr = oPtr->nsPtr;
     pmPtr->procPtr->cmdPtr = &cmd;
+    if (contextPtr->flags & CONSTRUCTOR) {
+	namePtr = "<constructor>";
+	flags |= FRAME_IS_CONSTRUCTOR;
+    } else if (contextPtr->flags & DESTRUCTOR) {
+	namePtr = "<destructor>";
+	flags |= FRAME_IS_DESTRUCTOR;
+    } else {
+	namePtr = TclGetString(objv[1]);
+    }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
-	    pmPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method",
-	    TclGetString(objv[1]));
+	    pmPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method", namePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -730,7 +761,8 @@ InvokeProcedureMethod(
     framePtr->objv = objv;	/* ref counts for args are incremented below */
     framePtr->procPtr = pmPtr->procPtr;
 
-    return TclObjInterpProcCore(interp, framePtr, objv[1]/*TODO:Fixme*/, 2);
+    return TclObjInterpProcCore(interp, framePtr, objv[1]/*TODO:Fixme*/,
+	    contextPtr->skip);
 }
 
 static void
@@ -914,8 +946,8 @@ ObjectCmd(
     }
 
     // How to differentiate public and private call-chains?
-    contextPtr = GetCallContext(iPtr->ooFoundation, oPtr, objv[1], publicOnly,
-	    cachePtr);
+    contextPtr = GetCallContext(iPtr->ooFoundation, oPtr, objv[1],
+	    (publicOnly ? PUBLIC_METHOD : 0), cachePtr);
     if (contextPtr == NULL) {
 	Tcl_AppendResult(interp, "impossible to invoke method \"",
 		TclGetString(objv[1]),
@@ -1112,18 +1144,22 @@ GetCallContext(
     Foundation *fPtr,
     Object *oPtr,
     Tcl_Obj *methodNameObj,
-    int isPublic,
+    int flags,
     Tcl_HashTable *cachePtr)
 {
     CallContext *contextPtr;
     int i, count;
     Tcl_HashEntry *hPtr;
 
-    hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
-    if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
-	contextPtr = Tcl_GetHashValue(hPtr);
-	Tcl_SetHashValue(hPtr, NULL);
-	return contextPtr;
+    if (flags & (CONSTRUCTOR | DESTRUCTOR)) {
+	hPtr = NULL;
+    } else {
+	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
+	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
+	    contextPtr = Tcl_GetHashValue(hPtr);
+	    Tcl_SetHashValue(hPtr, NULL);
+	    return contextPtr;
+	}
     }
     contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
     contextPtr->numCallChain = 0;
@@ -1131,23 +1167,32 @@ GetCallContext(
     contextPtr->filterLength = 0;
     contextPtr->epoch = 0; /* TODO: fix to real epoch */
     contextPtr->flags = 0;
-    if (isPublic) {
-	contextPtr->flags |= PUBLIC_METHOD;
+    contextPtr->skip = 2;
+    if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR)) {
+	contextPtr->flags |=
+		flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR);
     }
     contextPtr->oPtr = oPtr;
     contextPtr->index = 0;
 
-    for (i=0 ; i<oPtr->numFilters ; i++) {
-	AddSimpleChainToCallContext(oPtr, oPtr->filterObjs[i], contextPtr, 1,
-		0);
+    if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
+	for (i=0 ; i<oPtr->numFilters ; i++) {
+	    AddSimpleChainToCallContext(oPtr, oPtr->filterObjs[i], contextPtr,
+		     1, 0);
+	}
     }
     count = contextPtr->filterLength = contextPtr->numCallChain;
-    AddSimpleChainToCallContext(oPtr, methodNameObj, contextPtr, 0, isPublic);
+    AddSimpleChainToCallContext(oPtr, methodNameObj, contextPtr, 0, flags);
     if (count == contextPtr->numCallChain) {
 	/*
-	 * Method does not actually exist.
+	 * Method does not actually exist. If we're dealing with constructors
+	 * or destructors, this isn't a problem.
 	 */
 
+	if (flags & (CONSTRUCTOR | DESTRUCTOR)) {
+	    DeleteContext(contextPtr);
+	    return NULL;
+	}
 	AddSimpleChainToCallContext(oPtr, fPtr->unknownMethodNameObj,
 		contextPtr, 0, 0);
 	contextPtr->flags |= OO_UNKNOWN_METHOD;
@@ -1156,7 +1201,7 @@ GetCallContext(
 	    DeleteContext(contextPtr);
 	    return NULL;
 	}
-    } else {
+    } else if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
 	if (hPtr == NULL) {
 	    hPtr = Tcl_CreateHashEntry(cachePtr, (char *) methodNameObj, &i);
 	}
@@ -1171,11 +1216,11 @@ AddSimpleChainToCallContext(
     Tcl_Obj *methodNameObj,
     CallContext *contextPtr,
     int isFilter,
-    int isPublic)
+    int flags)
 {
     int i;
 
-    if (isPublic) {
+    if (flags & PUBLIC_METHOD) {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&oPtr->methods,
 		(char *) methodNameObj);
 
@@ -1187,14 +1232,21 @@ AddSimpleChainToCallContext(
 	    }
 	}
     }
-    AddMethodToCallChain(&oPtr->methods, methodNameObj, contextPtr, isFilter,
-	    isPublic);
-    for (i=0 ; i<oPtr->numMixins ; i++) {
-	AddSimpleClassChainToCallContext(oPtr->mixins[i], methodNameObj,
-		contextPtr, isFilter, isPublic);
+    if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
+	Tcl_HashEntry *hPtr;
+
+	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
+	if (hPtr != NULL) {
+	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr, isFilter,
+		    flags);
+	}
+	for (i=0 ; i<oPtr->numMixins ; i++) {
+	    AddSimpleClassChainToCallContext(oPtr->mixins[i], methodNameObj,
+		    contextPtr, isFilter, flags);
+	}
     }
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, contextPtr,
-	    isFilter, isPublic);
+	    isFilter, flags);
 }
 
 static void
@@ -1203,7 +1255,7 @@ AddSimpleClassChainToCallContext(
     Tcl_Obj *methodNameObj,
     CallContext *contextPtr,
     int isFilter,
-    int isPublic)
+    int flags)
 {
     int i;
 
@@ -1213,10 +1265,27 @@ AddSimpleClassChainToCallContext(
      */
 
     do {
-	AddMethodToCallChain(&classPtr->classMethods, methodNameObj,
-		contextPtr, isFilter, isPublic);
-	if (classPtr->numSuperclasses != 1) {
-	    if (classPtr->numSuperclasses == 0) {
+	register int numSuper;
+
+	if (flags & CONSTRUCTOR) {
+	    AddMethodToCallChain(classPtr->constructorPtr, contextPtr,
+		    isFilter, flags);
+	} else if (flags & DESTRUCTOR) {
+	    AddMethodToCallChain(classPtr->destructorPtr, contextPtr,
+		    isFilter, flags);
+	} else {
+	    Tcl_HashEntry *hPtr;
+
+	    hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
+		    (char *) methodNameObj);
+	    if (hPtr != NULL) {
+		AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr,
+			isFilter, flags);
+	    }
+	}
+	numSuper = classPtr->numSuperclasses;
+	if (numSuper != 1) {
+	    if (numSuper == 0) {
 		return;
 	    }
 	    break;
@@ -1226,27 +1295,18 @@ AddSimpleClassChainToCallContext(
 
     for (i=0 ; i<classPtr->numSuperclasses ; i++) {
 	AddSimpleClassChainToCallContext(classPtr->superclasses[i],
-		methodNameObj, contextPtr, isFilter, isPublic);
+		methodNameObj, contextPtr, isFilter, flags);
     }
 }
 
 static void
 AddMethodToCallChain(
-    Tcl_HashTable *methodTablePtr,
-    Tcl_Obj *methodObj,
+    Method *mPtr,
     CallContext *contextPtr,
     int isFilter,
-    int isPublic)
+    int flags)
 {
-    Method *mPtr;
-    Tcl_HashEntry *hPtr;
     int i;
-
-    hPtr = Tcl_FindHashEntry(methodTablePtr, (char *) methodObj);
-    if (hPtr == NULL) {
-	return;
-    }
-    mPtr = (Method *) Tcl_GetHashValue(hPtr);
 
     /*
      * Return if this is just an entry used to record whether this is a public
@@ -1254,7 +1314,7 @@ AddMethodToCallChain(
      * the call chain.
      */
 
-    if (mPtr->callPtr == NULL) {
+    if (mPtr == NULL || mPtr->callPtr == NULL) {
 	return;
     }
 
@@ -1262,7 +1322,7 @@ AddMethodToCallChain(
      * Ignore public calls of private methods.
      */
 
-    if (isPublic && !(mPtr->flags & PUBLIC_METHOD)) {
+    if ((flags & PUBLIC_METHOD) && !(mPtr->flags & PUBLIC_METHOD)) {
 	return;
     }
 
@@ -1339,7 +1399,10 @@ ClassCreate(
 	return TCL_ERROR;
     }
     newObjPtr = NewInstance(interp, oPtr->classPtr, TclGetString(objv[2]),
-	    objc-3, objv+3);
+	    objc, objv, 3);
+    if (newObjPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_GetCommandFullName(interp, newObjPtr->command,
 	    Tcl_GetObjResult(interp));
     return TCL_OK;
@@ -1365,7 +1428,10 @@ ClassNew(
 	Tcl_DecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
-    newObjPtr = NewInstance(interp, oPtr->classPtr, NULL, objc-2, objv+2);
+    newObjPtr = NewInstance(interp, oPtr->classPtr, NULL, objc, objv, 2);
+    if (newObjPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_GetCommandFullName(interp, newObjPtr->command,
 	    Tcl_GetObjResult(interp));
     return TCL_OK;

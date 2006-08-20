@@ -4,12 +4,12 @@
  *	This file contains the implementation of the ::oo::define command,
  *	part of the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005 by Donal K. Fellows
+ * Copyright (c) 2006 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.5 2006/08/19 16:58:45 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.6 2006/08/20 12:20:20 dkf Exp $
  */
 
 #include "tclInt.h"

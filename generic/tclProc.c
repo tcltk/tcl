@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.86.2.2 2006/08/18 22:28:44 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.86.2.3 2006/08/20 12:20:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -28,7 +28,7 @@ static int              ObjInterpProcEx(ClientData clientData,
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		ProcBodyFree(Tcl_Obj *objPtr);
 static int		ProcessProcResultCode(Tcl_Interp *interp,
-			    char *procName, int nameLen, int returnCode,
+			    Tcl_Obj *procNameObj, int returnCode,
 			    int isMethod);
 static int		TclCompileNoOp(Tcl_Interp *interp, Tcl_Parse *parsePtr,
 			    struct CompileEnv *envPtr);
@@ -1214,7 +1214,8 @@ TclObjInterpProcCore(
     int localCt, numArgs, argCt, i, imax, result;
     Var *compiledLocals;
     Tcl_Obj *const *argObjs;
-    int isMethod = (framePtr->ooContextPtr != NULL);
+    int isMethod = (framePtr->isProcCallFrame &
+	    (FRAME_IS_METHOD | FRAME_IS_CONSTRUCTOR | FRAME_IS_DESTRUCTOR));
 
     /*
      * Create the "compiledLocals" array. Make sure it is large enough to hold
@@ -1413,11 +1414,7 @@ TclObjInterpProcCore(
     }
 
     if (result != TCL_OK) {
-	int nameLen;
-	char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
-
-	result = ProcessProcResultCode(interp, procName, nameLen, result,
-		isMethod);
+	result = ProcessProcResultCode(interp, procNameObj, result, isMethod);
     }
 
     /*
@@ -1600,11 +1597,11 @@ static int
 ProcessProcResultCode(
     Tcl_Interp *interp,		/* The interpreter in which the procedure was
 				 * called and returned returnCode. */
-    char *procName,		/* Name of the procedure. Used for error
+    Tcl_Obj *procNameObj,	/* Name of the procedure. Used for error
 				 * messages and trace information. */
-    int nameLen,		/* Number of bytes in procedure's name. */
     int returnCode,		/* The unexpected result code. */
-    int isMethod)		/* Whether this is a method. */
+    int isMethod)		/* Whether this is a procedure, method,
+				 * constructor or destructor. */
 {
     Interp *iPtr = (Interp *) interp;
     int overflow, limit = 60;
@@ -1624,10 +1621,24 @@ ProcessProcResultCode(
 		((returnCode == TCL_BREAK) ? "break" : "continue"),
 		"\" outside of a loop", NULL);
     }
-    overflow = (nameLen > limit);
-    TclFormatToErrorInfo(interp, "\n    (%s \"%.*s%s\" line %d)",
-	    (isMethod ? "method" : "procedure"), (overflow ? limit : nameLen),
-	    procName, (overflow ? "..." : ""), interp->errorLine);
+    if (isMethod & FRAME_IS_CONSTRUCTOR) {
+	// TODO: incorporate declaring class name
+	TclFormatToErrorInfo(interp, "\n    (constructor line %d)",
+		interp->errorLine);
+    } else if (isMethod & FRAME_IS_DESTRUCTOR) {
+	// TODO: incorporate declaring class name
+	TclFormatToErrorInfo(interp, "\n    (destructor line %d)",
+		interp->errorLine);
+    } else {
+	int nameLen;
+	const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+
+	overflow = (nameLen > limit);
+	TclFormatToErrorInfo(interp, "\n    (%s \"%.*s%s\" line %d)",
+		(isMethod ? "method" : "procedure"),
+		(overflow ? limit : nameLen), procName,
+		(overflow ? "..." : ""), interp->errorLine);
+    }
     return TCL_ERROR;
 }
 
