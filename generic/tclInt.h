@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.267.2.7 2006/08/20 12:20:20 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.267.2.8 2006/08/20 18:11:23 dgp Exp $
  */
 
 #ifndef _TCLINT
