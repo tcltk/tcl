@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.9 2006/08/10 12:15:32 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.10 2006/08/21 01:08:03 das Exp $
  */
 
 #include "tclInt.h"
@@ -237,6 +237,14 @@ static OSSpinLock notifierLock = 0;
 static pthread_t notifierThread;
 
 /*
+ * Custom run loop mode containing only the run loop source for the
+ * notifier thread.
+ */
+
+static const CFStringRef tclEventsOnlyRunLoopMode =
+	CFSTR("com.tcltk.tclEventsOnlyRunLoopMode");
+
+/*
  * Static routines defined in this file.
  */
 
@@ -304,6 +312,7 @@ Tcl_InitNotifier(void)
 	    Tcl_Panic("Tcl_InitNotifier: could not create CFRunLoopSource");
 	}
 	CFRunLoopAddSource(runLoop, runLoopSource, kCFRunLoopCommonModes);
+	CFRunLoopAddSource(runLoop, runLoopSource, tclEventsOnlyRunLoopMode);
 	tsdPtr->runLoopSource = runLoopSource;
 	tsdPtr->runLoop = runLoop;
     }
@@ -897,14 +906,27 @@ Tcl_WaitForEvent(
 
     if (!tsdPtr->eventReady) {
 	CFTimeInterval waitTime;
+	CFStringRef runLoopMode;
 
 	if (myTimePtr == NULL) {
 	    waitTime = 1.0e10; /* Wait forever, as per CFRunLoop.c */
 	} else {
 	    waitTime = myTimePtr->sec + 1.0e-6 * myTimePtr->usec;
 	}
+	/*
+	 * If the run loop is already running (e.g. if Tcl_WaitForEvent was
+	 * called recursively), re-run it in a custom run loop mode containing
+	 * only the source for the notifier thread, otherwise wakeups from other
+	 * sources added to the common run loop modes might get lost.
+	 */
+	if ((runLoopMode = CFRunLoopCopyCurrentMode(tsdPtr->runLoop))) {
+	    CFRelease(runLoopMode);
+	    runLoopMode = tclEventsOnlyRunLoopMode;
+	} else {
+	    runLoopMode = kCFRunLoopDefaultMode;
+	}
 	UNLOCK_NOTIFIER;
-	CFRunLoopRunInMode(kCFRunLoopDefaultMode, waitTime, TRUE);
+	CFRunLoopRunInMode(runLoopMode, waitTime, TRUE);
 	LOCK_NOTIFIER;
     }
     tsdPtr->eventReady = 0;
