@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.143 2006/07/20 06:18:38 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.144 2006/08/21 01:08:42 das Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -438,6 +438,8 @@ if test "`uname -s`" = "Darwin" ; then
 	[Are we to override what our default encoding is?])
     AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
 	[Can this platform load code from memory?])
+    AC_DEFINE(TCL_WIDE_CLICKS, 1,
+	[Does this platform have wide high-resolution clicks?])
     AC_CHECK_HEADERS(AvailabilityMacros.h)
     if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	AC_CACHE_CHECK([if weak import is available], tcl_cv_cc_weak_import, [

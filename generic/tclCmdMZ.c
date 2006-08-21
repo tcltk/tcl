@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.134 2005/12/19 19:03:16 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.135 2006/08/21 01:08:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -2921,7 +2921,11 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     register int i, result;
     int count;
     double totalMicroSec;
+#ifndef TCL_WIDE_CLICKS
     Tcl_Time start, stop;
+#else
+    Tcl_WideInt start, stop;
+#endif
 
     if (objc == 2) {
 	count = 1;
@@ -2937,17 +2941,25 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
 
     objPtr = objv[1];
     i = count;
+#ifndef TCL_WIDE_CLICKS
     Tcl_GetTime(&start);
+#else
+    start = TclpGetWideClicks();
+#endif
     while (i-- > 0) {
 	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
     }
+#ifndef TCL_WIDE_CLICKS
     Tcl_GetTime(&stop);
-
-    totalMicroSec = (((double) (stop.sec - start.sec))*1.0e6
-	    + (stop.usec - start.usec));
+    totalMicroSec = ((double) (stop.sec - start.sec))*1.0e6
+	    + (stop.usec - start.usec);
+#else
+    stop = TclpGetWideClicks();
+    totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
+#endif
 
     if (count <= 1) {
 	/*
@@ -2961,7 +2973,7 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
 
     /*
      * Construct the result as a list because many programs have always parsed
-     * at such (extracting the first element, typically).
+     * as such (extracting the first element, typically).
      */
 
     objs[1] = Tcl_NewStringObj("microseconds", -1);
