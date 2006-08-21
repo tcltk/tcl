@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.13 2006/08/18 07:45:43 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.14 2006/08/21 05:37:26 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -509,7 +509,7 @@ extern double strtod();
  */
 
 #ifdef __APPLE__
-/* 
+/*
  * Support for fat compiles: configure runs only once for multiple architectures
  */
 #   if defined(__LP64__) && defined (NO_COREFOUNDATION_64)
@@ -522,18 +522,24 @@ extern double strtod();
 #       else
 #           define HAVE_PUTENV_THAT_COPIES 1
 #       endif
-#       define USE_TERMIOS 1
-#       undef USE_TERMIO
-#       undef USE_SGTTY
 #   endif /* __DARWIN_UNIX03 */
-/* 
+/*
+ * The termios configure test program relies on the configure script being run
+ * from a terminal, which is not the case e.g. when configuring from Xcode.
+ * Since termios is known to be present on all Mac OS X releases since 10.0,
+ * override the configure defines for serial API here. [Bug 497147]
+ */
+#   define USE_TERMIOS 1
+#   undef  USE_TERMIO
+#   undef  USE_SGTTY
+/*
  * Include AvailabilityMacros.h here (when available) to ensure any symbolic
  * MAC_OS_X_VERSION_* constants passed on the command line are translated.
  */
 #   ifdef HAVE_AVAILABILITYMACROS_H
 #       include <AvailabilityMacros.h>
 #   endif
-/* 
+/*
  * Support for weak import.
  */
 #   ifdef HAVE_WEAK_IMPORT
