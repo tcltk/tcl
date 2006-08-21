@@ -9,13 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.6 2006/08/20 12:20:20 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.7 2006/08/21 21:34:56 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
-static Object *		GetContext(Tcl_Interp *interp);
+static Object *		GetDefineCmdContext(Tcl_Interp *interp);
 
 int
 TclOODefineObjCmd(
@@ -99,7 +99,7 @@ TclOODefineObjCmd(
 }
 
 static Object *
-GetContext(
+GetDefineCmdContext(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
@@ -134,7 +134,7 @@ TclOODefineConstructorObjCmd(
      * modify.
      */
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -194,7 +194,7 @@ TclOODefineCopyObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -219,7 +219,7 @@ TclOODefineDestructorObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -273,20 +273,43 @@ TclOODefineExportObjCmd(
 {
     int isSelfExport = (clientData != NULL);
     Object *oPtr;
+    Method *mPtr;
+    Tcl_HashEntry *hPtr;
+    Class *cPtr;
+    int i, isNew;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "pattern ?pattern ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    isSelfExport |= (oPtr->classPtr == NULL);
+    cPtr = oPtr->classPtr;
+    isSelfExport |= (cPtr == NULL);
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    for (i=1 ; i<objc ; i++) {
+	if (isSelfExport) {
+	    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) objv[i],
+		    &isNew);
+	} else {
+	    hPtr = Tcl_CreateHashEntry(&cPtr->classMethods, (char *) objv[i],
+		    &isNew);
+	}
+
+	if (isNew) {
+	    mPtr = (Method *) ckalloc(sizeof(Method));
+	    memset(mPtr, 0, sizeof(Method));
+	    Tcl_SetHashValue(hPtr, mPtr);
+	} else {
+	    mPtr = Tcl_GetHashValue(hPtr);
+	}
+	mPtr->flags |= PUBLIC_METHOD;
+    }
+    ((Interp *)interp)->ooFoundation->epoch++;
+    return TCL_OK;
 }
 
 int
@@ -299,7 +322,7 @@ TclOODefineFilterObjCmd(
     int isSelfFilter = (clientData != NULL);
     Object *oPtr;
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -327,12 +350,12 @@ TclOODefineForwardObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
     isSelfForward |= (oPtr->classPtr == NULL);
-    isPublic = Tcl_StringMatch(Tcl_GetString(objv[1]), "[a-z]*");
+    isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*");
 
     /*
      * Create the method structure.
@@ -346,7 +369,7 @@ TclOODefineForwardObjCmd(
 		objv[1], prefixObj);
     }
     if (mPtr == NULL) {
-	Tcl_DecrRefCount(prefixObj);
+	TclDecrRefCount(prefixObj);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -368,7 +391,7 @@ TclOODefineMethodObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -381,7 +404,7 @@ TclOODefineMethodObjCmd(
 	 */
 
 	Method *mPtr;
-	int isPublic = Tcl_StringMatch(Tcl_GetString(objv[1]), "[a-z]*");
+	int isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*");
 
 	if (isSelfMethod) {
 	    mPtr = TclNewProcMethod(interp, oPtr, isPublic, objv[1], objv[2],
@@ -425,7 +448,7 @@ TclOODefineMixinObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfMixin = (clientData != NULL);
-    Object *oPtr = GetContext(interp);
+    Object *oPtr = GetDefineCmdContext(interp);
 
     if (oPtr == NULL) {
 	return TCL_ERROR;
@@ -443,7 +466,7 @@ TclOODefineParameterObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = GetContext(interp);
+    Object *oPtr = GetDefineCmdContext(interp);
 
     if (oPtr == NULL) {
 	return TCL_ERROR;
@@ -464,7 +487,7 @@ TclOODefineSelfClassObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = GetContext(interp);
+    Object *oPtr = GetDefineCmdContext(interp);
 
     if (oPtr == NULL) {
 	return TCL_ERROR;
@@ -481,7 +504,7 @@ TclOODefineSuperclassObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = GetContext(interp);
+    Object *oPtr = GetDefineCmdContext(interp);
 
     if (oPtr == NULL) {
 	return TCL_ERROR;
@@ -505,20 +528,43 @@ TclOODefineUnexportObjCmd(
 {
     int isSelfUnexport = (clientData != NULL);
     Object *oPtr;
+    Method *mPtr;
+    Tcl_HashEntry *hPtr;
+    Class *cPtr;
+    int i, isNew;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "pattern ?pattern ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
 	return TCL_ERROR;
     }
 
-    oPtr = GetContext(interp);
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
+    cPtr = oPtr->classPtr;
     isSelfUnexport |= (oPtr->classPtr == NULL);
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    for (i=1 ; i<objc ; i++) {
+	if (isSelfUnexport) {
+	    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) objv[i],
+		    &isNew);
+	} else {
+	    hPtr = Tcl_CreateHashEntry(&cPtr->classMethods, (char *) objv[i],
+		    &isNew);
+	}
+
+	if (isNew) {
+	    mPtr = (Method *) ckalloc(sizeof(Method));
+	    memset(mPtr, 0, sizeof(Method));
+	    Tcl_SetHashValue(hPtr, mPtr);
+	} else {
+	    mPtr = Tcl_GetHashValue(hPtr);
+	}
+	mPtr->flags &= ~PUBLIC_METHOD;
+    }
+    ((Interp *)interp)->ooFoundation->epoch++;
+    return TCL_OK;
 }
 
 /*

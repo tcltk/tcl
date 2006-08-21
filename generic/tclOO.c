@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.17 2006/08/21 15:55:00 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.18 2006/08/21 21:34:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -230,7 +230,7 @@ TclOOInit(
 	Tcl_DStringFree(&buffer);
     }
 
-    fPtr->objStack = NULL;
+    //fPtr->objStack = NULL;
     fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
     fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
@@ -245,17 +245,6 @@ TclOOInit(
     DeclareClassMethod(interp, fPtr->objectCls, "variable", 0, ObjectLinkVar);
     DeclareClassMethod(interp, fPtr->classCls, "create", 1, ClassCreate);
     DeclareClassMethod(interp, fPtr->classCls, "new", 1, ClassNew);
-
-    /*
-     * TODO: finish splicing "object" and "class" together.
-     * Need to create the following methods:
-     *	- object::destroy
-     *	- object::eval
-     *	- object::unknown
-     *	- object::variable
-     *	- class::create
-     *	- class::new
-     */
 
     fPtr->definerCls = AllocClass(interp,
 	    AllocObject(interp, "::oo::definer"));
@@ -328,7 +317,6 @@ AllocObject(
     oPtr->numMixins = 0;
     oPtr->mixins = NULL;
     oPtr->classPtr = NULL;
-    oPtr->interp = interp;
 
     /*
      * Initialize the traces.
@@ -360,7 +348,7 @@ AllocObject(
     TclNewObj(cmdnameObj);
     Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
-	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjNameChangedTrace, oPtr);
+	    TCL_TRACE_DELETE, ObjNameChangedTrace, oPtr);
     TclDecrRefCount(cmdnameObj);
 
     return oPtr;
@@ -371,43 +359,35 @@ ObjNameChangedTrace(
     ClientData clientData,
     Tcl_Interp *interp,
     const char *oldName,
-    const char *newName,
+    const char *newName, /* always NULL */
     int flags)
 {
     Object *oPtr = clientData;
+    CallContext *contextPtr = GetCallContext(((Interp *)interp)->ooFoundation,
+	    oPtr, NULL, DESTRUCTOR, NULL);
 
-    if (newName == NULL) {
-	CallContext *contextPtr = GetCallContext(
-		((Interp *)interp)->ooFoundation, oPtr, NULL, DESTRUCTOR,
-		NULL);
+    if (contextPtr != NULL) {
+	int result;
+	Tcl_InterpState state;
 
-	if (contextPtr != NULL) {
-	    int result;
-	    Tcl_InterpState state;
-
-	    Tcl_Preserve(oPtr);
-	    contextPtr->flags |= DESTRUCTOR;
-	    contextPtr->skip = 0;
-	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = InvokeContext(interp, contextPtr, 0, NULL);
-	    if (result != TCL_OK) {
-		Tcl_BackgroundError(interp);
-	    }
-	    (void) Tcl_RestoreInterpState(interp, state);
-	    DeleteContext(contextPtr);
-	    Tcl_Release(oPtr);
+	Tcl_Preserve(oPtr);
+	contextPtr->flags |= DESTRUCTOR;
+	contextPtr->skip = 0;
+	state = Tcl_SaveInterpState(interp, TCL_OK);
+	result = InvokeContext(interp, contextPtr, 0, NULL);
+	if (result != TCL_OK) {
+	    Tcl_BackgroundError(interp);
 	}
-
-	Tcl_DeleteNamespace((Tcl_Namespace *) oPtr->nsPtr);
-
-	/*
-	 * What else to do to delete an object?
-	 */
-    } else {
-	/*
-	 * Not quite sure what to do here...
-	 */
+	(void) Tcl_RestoreInterpState(interp, state);
+	DeleteContext(contextPtr);
+	Tcl_Release(oPtr);
     }
+
+    Tcl_DeleteNamespace((Tcl_Namespace *) oPtr->nsPtr);
+
+    /*
+     * What else to do to delete an object?
+     */
 }
 
 static void
@@ -618,7 +598,7 @@ Tcl_OONewMethod(
     mPtr->callPtr = callProc;
     mPtr->clientData = clientData;
     mPtr->deletePtr = deleteProc;
-    mPtr->epoch = ((Interp *) interp)->ooFoundation->epoch;
+    mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
     if (isPublic) {
 	mPtr->flags |= PUBLIC_METHOD;
@@ -661,11 +641,12 @@ Tcl_OONewClassMethod(
     mPtr->callPtr = callProc;
     mPtr->clientData = clientData;
     mPtr->deletePtr = deleteProc;
-    mPtr->epoch = ((Interp *) interp)->ooFoundation->epoch;
+    mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
     if (isPublic) {
 	mPtr->flags |= PUBLIC_METHOD;
     }
+
     return (Tcl_Method) mPtr;
 }
 
@@ -674,9 +655,9 @@ TclNewProcMethod(
     Tcl_Interp *interp,
     Object *oPtr,
     int isPublic,
-    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
-    Tcl_Obj *argsObj,
-    Tcl_Obj *bodyObj)
+    Tcl_Obj *nameObj,		/* Must not be NULL. */
+    Tcl_Obj *argsObj,		/* Must not be NULL. */
+    Tcl_Obj *bodyObj)		/* Must not be NULL. */
 {
     int argsc;
     Tcl_Obj **argsv;
@@ -687,7 +668,7 @@ TclNewProcMethod(
 	return NULL;
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    procName = (nameObj == NULL ? "<constructor>" : TclGetString(nameObj));
+    procName = TclGetString(nameObj);
     if (TclCreateProc(interp, NULL, procName, argsObj, bodyObj,
 	    &pmPtr->procPtr) != TCL_OK) {
 	ckfree((char *) pmPtr);
@@ -904,7 +885,7 @@ InvokeForwardMethod(
     Tcl_Obj *const *objv)
 {
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
-    Tcl_Obj **argObjs;
+    Tcl_Obj **argObjs, **prefixObjs;
     int numPrefixes, result;
 
     /*
@@ -914,10 +895,10 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
-    Tcl_ListObjLength(NULL, fmPtr->prefixObj, &numPrefixes);
+    Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (numPrefixes + objc-2));
-    Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &argObjs);
-    memcpy(argObjs + numPrefixes, objv + 2, (objc-2)*sizeof(Tcl_Obj *));
+    memcpy(argObjs, prefixObjs, numPrefixes * sizeof(Tcl_Obj *));
+    memcpy(argObjs + numPrefixes, objv + 2, (objc-2) * sizeof(Tcl_Obj *));
 
     // TODO: Apply invoke magic (see [namespace ensemble])
     result = Tcl_EvalObjv(interp, numPrefixes + objc - 2, argObjs, 0);
@@ -1027,46 +1008,29 @@ InvokeContext(
     Tcl_Obj *const *objv)
 {
     Method *mPtr = contextPtr->callChain[contextPtr->index]->mPtr;
+    int result, isFirst = (contextPtr->index == 0);
 
-    return mPtr->callPtr(mPtr->clientData, interp, contextPtr, objc, objv);
+    if (isFirst) {
+	int i;
+
+	for (i=0 ; i<contextPtr->numCallChain ; i++) {
+	    Tcl_Preserve(contextPtr->callChain[i]->mPtr);
+	}
+    }
+
+    result = mPtr->callPtr(mPtr->clientData, interp, contextPtr, objc, objv);
+
     // TODO: Better annotation of stack trace?
-}
-
-#ifdef WRONG_BUT_KEPT_FOR_NOTES
-static int
-InvokeContext(
-    Tcl_Interp *interp,
-    Object *oPtr,
-    CallContext *contextPtr,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    int result;
-    struct MInvoke *mInvokePtr;
-    CallFrame *framePtr, **framePtrPtr;
 
-    mInvokePtr = contextPtr->callChain[idx];
-    result = TclProcCompileProc(interp, mInvokePtr->mPtr->procPtr,
-	    mInvokePtr->mPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method",
-	    TclGetString(objv[1]));
-    if (result != TCL_OK) {
-	return result;
+    if (isFirst) {
+	int i;
+
+	for (i=0 ; i<contextPtr->numCallChain ; i++) {
+	    Tcl_Release(contextPtr->callChain[i]->mPtr);
+	}
     }
-
-    framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
-	    (Tcl_Namespace *) oPtr->nsPtr, FRAME_IS_METHOD);
-    if (result != TCL_OK) {
-	return result;
-    }
-    framePtr->ooContextPtr = contextPtr;
-    framePtr->objc = objc;
-    framePtr->objv = objv;	/* ref counts for args are incremented below */
-    framePtr->procPtr = procPtr;
-
-    return TclObjInterpProcCore(interp, framePtr, objv[1]/*FIXME*/, 2);
+    return result;
 }
-#endif /* WRONG_BUT_KEPT_FOR_NOTES */
 
 static int
 GetSortedMethodList(
@@ -1083,14 +1047,16 @@ GetSortedMethodList(
     Tcl_InitObjHashTable(&names);
 
     hPtr = Tcl_FirstHashEntry(&oPtr->methods, &hSearch);
-    while (hPtr != NULL) {
+    for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
 	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
 	Method *methodPtr = Tcl_GetHashValue(hPtr);
 
-	if (!publicOnly || methodPtr->flags & PUBLIC_METHOD) {
-	    (void) Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+	hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+	if (isNew) {
+	    int isWanted = (!publicOnly || methodPtr->flags & PUBLIC_METHOD);
+
+	    Tcl_SetHashValue(hPtr, (int) isWanted);
 	}
-	hPtr = Tcl_NextHashEntry(&hSearch);
     }
 
     AddClassMethodNames(oPtr->selfCls, publicOnly, &names);
@@ -1106,17 +1072,19 @@ GetSortedMethodList(
     while (hPtr != NULL) {
 	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&names, hPtr);
 
-	strings[i++] = TclGetString(namePtr);
+	if (!publicOnly || (int) Tcl_GetHashValue(hPtr)) {
+	    strings[i++] = TclGetString(namePtr);
+	}
 	hPtr = Tcl_NextHashEntry(&hSearch);
     }
 
-    qsort(strings, (unsigned) names.numEntries, sizeof(char *), CmpStr);
-
     /*
-     * Reuse 'i' to save the size of the list until we're ready to return it.
+     * Note that 'i' may well be less than names.numEntries when we are
+     * dealing with public method names.
      */
 
-    i = names.numEntries;
+    qsort(strings, (unsigned) i, sizeof(char *), CmpStr);
+
     Tcl_DeleteHashTable(&names);
     *stringsPtr = strings;
     return i;
@@ -1141,24 +1109,35 @@ AddClassMethodNames(
 {
     /*
      * Scope these declarations so that the compiler can stand a good chance
-     * of making the recursive step highly efficient.
+     * of making the recursive step highly efficient. We also hand-implement
+     * the tail-recursive case using a while loop; C compilers typically
+     * cannot do tail-recursion optimization usefully.
      */
-    {
+
+    while (1) {
 	Tcl_HashEntry *hPtr;
 	Tcl_HashSearch hSearch;
 	int isNew;
 
 	hPtr = Tcl_FirstHashEntry(&clsPtr->classMethods, &hSearch);
-	while (hPtr != NULL) {
+	for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
 	    Tcl_Obj *namePtr = (Tcl_Obj *)
 		    Tcl_GetHashKey(&clsPtr->classMethods, hPtr);
 	    Method *methodPtr = Tcl_GetHashValue(hPtr);
 
-	    if (!publicOnly || methodPtr->flags & PUBLIC_METHOD) {
-		(void) Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
+	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
+	    if (isNew) {
+		int isWanted = (!publicOnly
+			|| methodPtr->flags & PUBLIC_METHOD);
+
+		Tcl_SetHashValue(hPtr, (int) isWanted);
 	    }
-	    hPtr = Tcl_NextHashEntry(&hSearch);
 	}
+
+	if (clsPtr->numSuperclasses != 1) {
+	    break;
+	}
+	clsPtr = clsPtr->superclasses[0];
     }
     if (clsPtr->numSuperclasses != 0) {
 	int i;
@@ -1188,14 +1167,17 @@ GetCallContext(
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    contextPtr = Tcl_GetHashValue(hPtr);
 	    Tcl_SetHashValue(hPtr, NULL);
-	    return contextPtr;
+	    if (contextPtr->epoch == fPtr->epoch) {
+		return contextPtr;
+	    }
+	    DeleteContext(contextPtr);
 	}
     }
     contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
     contextPtr->numCallChain = 0;
     contextPtr->callChain = contextPtr->staticCallChain;
     contextPtr->filterLength = 0;
-    contextPtr->epoch = 0; /* TODO: fix to real epoch */
+    contextPtr->epoch = fPtr->epoch;
     contextPtr->flags = 0;
     contextPtr->skip = 2;
     if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR)) {
@@ -1259,6 +1241,8 @@ AddSimpleChainToCallContext(
 
 	    if (!(mPtr->flags & PUBLIC_METHOD)) {
 		return;
+	    } else {
+		flags &= ~PUBLIC_METHOD;
 	    }
 	}
     }
@@ -1390,7 +1374,7 @@ AddMethodToCallChain(
 
     if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
 	contextPtr->callChain = (struct MInvoke **)
-		ckalloc(sizeof(struct MInvoke *) * (contextPtr->numCallChain+1));
+		ckalloc(sizeof(struct MInvoke *)*(contextPtr->numCallChain+1));
 	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
 		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
     } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
@@ -1538,9 +1522,10 @@ ObjectEval(
 
 	// TODO: fix trace
 	TclFormatToErrorInfo(interp,
-		"\n    (in namespace eval \"%.*s%s\" script line %d)",
-		(overflow ? limit : length), oPtr->nsPtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine);
+		"\n    (in %s eval \"%.*s%s\" script line %d)",
+		TclGetString(objv[0]), (overflow ? limit : length),
+		oPtr->nsPtr->fullName, (overflow ? "..." : ""),
+		interp->errorLine);
     }
 
     /*
@@ -1742,7 +1727,6 @@ TclGetObjectFromObj(
 		" does not refer to an object", NULL);
 	return NULL;
     }
-    //printf("TclGetObjectFromObj(%s)->oPtr:%p\n",TclGetString(objPtr),cmdPtr->clientData);
     return cmdPtr->objClientData;
 }
 

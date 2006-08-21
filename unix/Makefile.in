@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.183.2.3 2006/07/11 10:00:46 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.183.2.4 2006/08/21 21:34:56 dkf Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -935,6 +935,7 @@ TCLREHDRS=$(GENERIC_DIR)/tclRegexp.h
 COMPILEHDR=$(GENERIC_DIR)/tclCompile.h
 FSHDR=$(GENERIC_DIR)/tclFileSystem.h
 IOHDR=$(GENERIC_DIR)/tclIO.h
+OOHDR=$(GENERIC_DIR)/tclOO.h
 MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
@@ -1065,10 +1066,10 @@ tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
 
-tclOO.o: $(GENERIC_DIR)/tclOO.c
+tclOO.o: $(GENERIC_DIR)/tclOO.c $(OOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
 
-tclOODefineCmds.o: $(GENERIC_DIR)/tclOODefineCmds.c
+tclOODefineCmds.o: $(GENERIC_DIR)/tclOODefineCmds.c $(OOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOODefineCmds.c
 
 tclLoad.o: $(GENERIC_DIR)/tclLoad.c

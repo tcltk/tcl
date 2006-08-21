@@ -9,7 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.7 2006/08/20 12:20:20 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.8 2006/08/21 21:34:56 dkf Exp $
+ */
+
+/*
+ * Forward declarations.
  */
 
 struct Class;
@@ -18,9 +22,19 @@ struct Method;
 struct CallContext;
 //struct Foundation;
 
+/*
+ * The types of callbacks used in method implementations.
+ */
+
 typedef int (*Tcl_OOMethodCallProc)(ClientData clientData, Tcl_Interp *interp,
 	struct CallContext *contextPtr, int objc, Tcl_Obj *const *objv);
 typedef void (*Tcl_OOMethodDeleteProc)(ClientData clientData);
+
+/*
+ * The data that needs to be stored per method. This record is used to collect
+ * information about all sorts of methods, including forwards, constructors
+ * and destructors.
+ */
 
 typedef struct Method {
     Tcl_OOMethodCallProc callPtr;
@@ -30,14 +44,25 @@ typedef struct Method {
     int flags;
 } Method;
 
+/*
+ * Procedure-like methods have the following extra information.
+ */
+
 typedef struct ProcedureMethod {
     Proc *procPtr;
 } ProcedureMethod;
+
+/*
+ * Forwarded methods have the following extra information.
+ */
 
 typedef struct ForwardMethod {
     Tcl_Obj *prefixObj;
 } ForwardMethod;
 
+/*
+ * Now, the definition of what an object actually is.
+ */
 
 typedef struct Object {
     Namespace *nsPtr;		/* This object's tame namespace. */
@@ -57,11 +82,14 @@ typedef struct Object {
     struct Class *classPtr;	/* All classes have this non-NULL; it points
 				 * to the class structure. Everything else has
 				 * this NULL. */
-    Tcl_Interp *interp;		/* The interpreter (for the PushObject and
-				 * PopObject callbacks. */
     Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
     Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
 } Object;
+
+/*
+ * And the definition of a class. Note that every class also has an associated
+ * object, through which it is manipulated.
+ */
 
 typedef struct Class {
     struct Object *thisPtr;
@@ -79,23 +107,46 @@ typedef struct Class {
     struct Method *destructorPtr;
 } Class;
 
-typedef struct ObjectStack {
-    Object *oPtr;
-    struct ObjectStack *nextPtr;
-} ObjectStack;
+/*
+ * The foundation of the object system within an interpreter contains
+ * references to the key classes and namespaces, together with a few other
+ * useful bits and pieces. Probably ought to eventually go in the Interp
+ * structure itself.
+ */
+
+//typedef struct ObjectStack {
+//    Object *oPtr;
+//    struct ObjectStack *nextPtr;
+//} ObjectStack;
 
 typedef struct Foundation {
-    struct Class *objectCls;
-    struct Class *classCls;
-    struct Class *definerCls;
-    struct Class *structCls;
-    Tcl_Namespace *defineNs;
-    Tcl_Namespace *helpersNs;
+    struct Class *objectCls;	/* The root of the object system. */
+    struct Class *classCls;	/* The class of all classes. */
+    struct Class *definerCls;	/* A metaclass that includes methods that make
+				 * classes more convenient to work with at a
+				 * cost of bloat. */
+    struct Class *structCls;	/* A metaclass that includes methods that make
+				 * it easier to build data-oriented
+				 * classes. */
+    Tcl_Namespace *defineNs;	/* Namespace containing special commands for
+				 * manipulating objects and classes. The
+				 * "oo::define" command acts as a special kind
+				 * of ensemble for this namespace. */
+    Tcl_Namespace *helpersNs;	/* Namespace containing the commands that are
+				 * only valid when executing inside a
+				 * procedural method. */
     int epoch;
     int nsCount;
     Tcl_Obj *unknownMethodNameObj;
-    ObjectStack *objStack;	// should this be in stack frames?
+    //ObjectStack *objStack;	// should this be in stack frames?
 } Foundation;
+
+/*
+ * A call context structure is built when a method is called. They contain the
+ * chain of method implementations that are to be invoked by a particular
+ * call, and the process of calling walks the chain, with the [next] command
+ * proceeding to the next entry in the chain.
+ */
 
 #define CALL_CHAIN_STATIC_SIZE 4
 
@@ -115,10 +166,19 @@ typedef struct CallContext {
     int filterLength;
 } CallContext;
 
+/*
+ * Bits for the 'flags' field of the call context.
+ */
+
 #define OO_UNKNOWN_METHOD	1
 #define PUBLIC_METHOD		2
 #define CONSTRUCTOR		4
 #define DESTRUCTOR		8
+
+/*
+ * Private definitions, some of which perhaps ought to be exposed properly or
+ * maybe just put in the internal stubs table.
+ */
 
 MODULE_SCOPE Object *	TclGetObjectFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
