@@ -1,3 +1,17 @@
+2006-08-21  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (Tcl_WaitForEvent): if the run loop is
+	already running (e.g. if Tcl_WaitForEvent was called recursively),
+	re-run it in a custom run loop mode containing only the source for the
+	notifier thread, otherwise wakeups from other sources added to the
+	common run loop modes might get lost; sync panic msg changes from HEAD.
+
+	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): on 64-bit Darwin,
+	pthread_cond_timedwait() appears to have a bug that causes it to wait
+	forever when passed an absolute time which has already been exceeded by
+	the system time; as a workaround, when given a very brief timeout, just
+	do a poll on that platform. [Bug 1457797]
+
 2006-08-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (Darwin): add support for --enable-64bit on x86_64, for
