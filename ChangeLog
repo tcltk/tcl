@@ -1,3 +1,8 @@
+2006-08-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:	Revisions to complete the thread finalization
+	of the cwdPathPtr.  [Bug 1536142]
+
 2006-08-21  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c (Tcl_WaitForEvent): if the run loop is

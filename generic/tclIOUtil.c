@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.29 2006/03/28 10:52:38 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.30 2006/08/21 14:56:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -546,6 +546,7 @@ FsThrExitProc(cd)
     /* Trash the cwd copy */
     if (tsdPtr->cwdPathPtr != NULL) {
 	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+	tsdPtr->cwdPathPtr = NULL;
     }
     /* Trash the filesystems cache */
     fsRecPtr = tsdPtr->filesystemList;
@@ -556,6 +557,7 @@ FsThrExitProc(cd)
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
+    tsdPtr->initialized = 0;
 }
 
 int 
