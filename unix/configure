@@ -14564,6 +14564,11 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 
+cat >>confdefs.h <<\_ACEOF
+#define TCL_WIDE_CLICKS 1
+_ACEOF
+
+
 for ac_header in AvailabilityMacros.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
