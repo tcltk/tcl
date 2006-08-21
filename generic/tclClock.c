@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.56 2006/08/10 13:07:43 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.57 2006/08/21 01:08:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -1689,7 +1689,12 @@ ClockClicksObjCmd(
 	break;
     case CLICKS_NATIVE:
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
-		TclpGetClicks()));
+#ifndef TCL_WIDE_CLICKS
+		TclpGetClicks()
+#else
+		TclpGetWideClicks()
+#endif
+		));
 	break;
     case CLICKS_MICROS:
 	Tcl_GetTime(&now);

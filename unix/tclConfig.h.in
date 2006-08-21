@@ -316,6 +316,9 @@
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS
 
+/* Does this platform have wide high-resolution clicks? */
+#undef TCL_WIDE_CLICKS
+
 /* Are wide integers to be implemented with C 'long's? */
 #undef TCL_WIDE_INT_IS_LONG
 
