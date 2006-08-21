@@ -1,3 +1,8 @@
+2006-08-21  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclIOUtil.c:  Revisions to complete the thread finalization
+        of the cwdPathPtr.  [Bug 1536142]
+
 2006-08-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* win/Makefile.in (gdb): Make this target work so that debugging an

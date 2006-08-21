@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.132 2006/06/21 03:10:39 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.133 2006/08/21 14:56:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -470,6 +470,7 @@ FsThrExitProc(
 
     if (tsdPtr->cwdPathPtr != NULL) {
 	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+	tsdPtr->cwdPathPtr = NULL;
     }
     if (tsdPtr->cwdClientData != NULL) {
 	NativeFreeInternalRep(tsdPtr->cwdClientData);
@@ -487,6 +488,7 @@ FsThrExitProc(
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
+    tsdPtr->initialized = 0;
 }
 
 int
