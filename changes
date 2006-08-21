@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.44 2006/06/15 22:33:31 das Exp $
+RCS: @(#) $Id: changes,v 1.79.2.45 2006/08/21 02:36:27 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6379,12 +6379,22 @@ bytecode while references still on the stack (porter,ryazanov)
 
 2006-05-13 (bug fix)[943995] fixed [glob] on VFS (porter)
 
-2006-05-13 (bug fix)[923072] Darwin: made unthreaded CoreFoundation notifier
+2006-05-27 (bug fix)[923072] Darwin: made unthreaded CoreFoundation notifier
 naked-fork safe on Tiger (steffen)
 
 2006-05-31 (revert 2006-01-09)[1400572] namespace inscope & info level (porter)
         *** POTENTIAL INCOMPATIBILITY ***
 
 2006-06-14 (platform support)[1424909] MS VS2005 support (thoyts)
+
+2006-07-20 (platform support) Mac OS X weak linking (steffen)
+
+2006-07-20 (bug fix) Darwin: execve() works iff event loop not yet run (steffen)
+
+2006-08-18 (platform support) Darwin x86_64 (steffen)
+
+2006-08-21 (bug fix)[1457797] Darwin 64-bit notifier hang (steffen)
+
+2006-08-21 (bug fix) Darwin: recursively called event loop (steffen)
 
 --- Released 8.4.14, June XX, 2006 --- See ChangeLog for details ---
