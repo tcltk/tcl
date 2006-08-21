@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.37 2006/08/17 17:43:38 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.38 2006/08/21 17:15:21 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2219,7 +2219,7 @@ Tcl_ParseExpr(
 				start, (scanned < limit) ? "" : "...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
-			TclObjPrintf(NULL, post, " or \"%.*s%s(...)\" ?",
+			TclObjPrintf(NULL, post, " or \"%.*s%s(...)\" or ...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
 			continue;
@@ -2244,13 +2244,18 @@ Tcl_ParseExpr(
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
 		msg = Tcl_NewObj();
 		TclObjPrintf(NULL, msg, "missing operator at %s", mark);
+		operand = scratch.tokenPtr[lastNodePtr->token].start;
+		if (operand[0] == '0') {
+		    Tcl_Obj *copy = Tcl_NewStringObj(operand,
+			    start + scanned - operand);
+		    if (TclCheckBadOctal(NULL, Tcl_GetString(copy))) {
+			post = Tcl_NewStringObj(
+				"looks like invalid octal number", -1);
+		    }
+		    Tcl_DecrRefCount(copy);
+		}
 		scanned = 0;
 		insertMark = 1;
-		operand = scratch.tokenPtr[lastNodePtr->token].start;
-		if ((operand[0] == '0') && TclCheckBadOctal(NULL, operand)) {
-		    post = Tcl_NewStringObj(
-			    "looks like invalid octal number", -1);
-		}
 		code = TCL_ERROR;
 		continue;
 	    }
