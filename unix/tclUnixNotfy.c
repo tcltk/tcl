@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.14 2005/11/27 02:34:42 das Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.15 2006/08/21 01:08:10 das Exp $
  */
 
 #include "tclInt.h"
@@ -715,6 +715,16 @@ Tcl_WaitForEvent(timePtr)
 
     waitForFiles = (tsdPtr->numFdBits > 0);
     if (timePtr != NULL && timePtr->sec == 0 && timePtr->usec == 0) {
+#if defined(__APPLE__) && defined(__LP64__)
+	    /*
+	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have a bug
+	     * that causes it to wait forever when passed an absolute time which
+	     * has already been exceeded by the system time; as a workaround,
+	     * when given a very brief timeout, just do a poll. [Bug 1457797]
+	     */
+	    || timePtr->usec < 10
+#endif
+	    )) {
 	/*
 	 * Cannot emulate a polling select with a polling condition variable.
 	 * Instead, pretend to wait for files and tell the notifier
