@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.16 2006/08/20 12:20:20 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.17 2006/08/21 15:55:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -53,11 +53,6 @@ static const struct {
 
 #define ALLOC_CHUNK 8
 
-//struct Class;
-//struct Object;
-//struct Method;
-////struct Foundation;
-//
 //typedef struct Method {
 //    Tcl_Obj *bodyObj;
 //    Proc *procPtr;
@@ -136,9 +131,6 @@ static const struct {
 //    struct MInvoke *staticCallChain[CALL_CHAIN_STATIC_SIZE];
 //    int filterLength;
 //};
-//
-//#define OO_UNKNOWN_METHOD	1
-//#define PUBLIC_METHOD		2
 
 /*
  * Function declarations.
@@ -369,7 +361,7 @@ AllocObject(
     Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
 	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjNameChangedTrace, oPtr);
-    Tcl_DecrRefCount(cmdnameObj);
+    TclDecrRefCount(cmdnameObj);
 
     return oPtr;
 }
@@ -385,6 +377,27 @@ ObjNameChangedTrace(
     Object *oPtr = clientData;
 
     if (newName == NULL) {
+	CallContext *contextPtr = GetCallContext(
+		((Interp *)interp)->ooFoundation, oPtr, NULL, DESTRUCTOR,
+		NULL);
+
+	if (contextPtr != NULL) {
+	    int result;
+	    Tcl_InterpState state;
+
+	    Tcl_Preserve(oPtr);
+	    contextPtr->flags |= DESTRUCTOR;
+	    contextPtr->skip = 0;
+	    state = Tcl_SaveInterpState(interp, TCL_OK);
+	    result = InvokeContext(interp, contextPtr, 0, NULL);
+	    if (result != TCL_OK) {
+		Tcl_BackgroundError(interp);
+	    }
+	    (void) Tcl_RestoreInterpState(interp, state);
+	    DeleteContext(contextPtr);
+	    Tcl_Release(oPtr);
+	}
+
 	Tcl_DeleteNamespace((Tcl_Namespace *) oPtr->nsPtr);
 
 	/*
@@ -502,11 +515,11 @@ NewInstance(
 	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
 	if (TclRenameCommand(interp, TclGetString(cmdnameObj),
 		name) != TCL_OK) {
-	    Tcl_DecrRefCount(cmdnameObj);
+	    TclDecrRefCount(cmdnameObj);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	    return NULL;
 	}
-	Tcl_DecrRefCount(cmdnameObj);
+	TclDecrRefCount(cmdnameObj);
     }
 
     /*
@@ -693,23 +706,31 @@ TclNewProcClassMethod(
     Tcl_Obj *argsObj, /* May be NULL; if so, equiv to empty list. */
     Tcl_Obj *bodyObj)
 {
-    int argsc;
-    Tcl_Obj **argsv;
+    int argsLen;		/* -1 => delete argsObj before exit */
     register ProcedureMethod *pmPtr;
     const char *procName;
 
     if (argsObj == NULL) {
-	argsc = 0;
-    } else if (Tcl_ListObjGetElements(interp, argsObj, &argsc,
-	    &argsv) != TCL_OK) {
+	argsLen = -1;
+	TclNewObj(argsObj);
+	Tcl_IncrRefCount(argsObj);
+	procName = "<destructor>";
+    } else if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
+    } else {
+	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
     }
     pmPtr = (ProcedureMethod *) ckalloc(sizeof(ProcedureMethod));
-    procName = (nameObj == NULL ? "<constructor>" : TclGetString(nameObj));
     if (TclCreateProc(interp, NULL, procName, argsObj, bodyObj,
 	    &pmPtr->procPtr) != TCL_OK) {
+	if (argsLen == -1) {
+	    TclDecrRefCount(argsObj);
+	}
 	ckfree((char *) pmPtr);
 	return NULL;
+    }
+    if (argsLen == -1) {
+	TclDecrRefCount(argsObj);
     }
     return (Method *) Tcl_OONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
@@ -729,17 +750,23 @@ InvokeProcedureMethod(
     Object *oPtr = contextPtr->oPtr;
     Command cmd;
     const char *namePtr;
+    Tcl_Obj *nameObj;
 
     cmd.nsPtr = oPtr->nsPtr;
     pmPtr->procPtr->cmdPtr = &cmd;
     if (contextPtr->flags & CONSTRUCTOR) {
 	namePtr = "<constructor>";
 	flags |= FRAME_IS_CONSTRUCTOR;
+	nameObj = Tcl_NewStringObj("<constructor>", -1);
+	Tcl_IncrRefCount(nameObj);
     } else if (contextPtr->flags & DESTRUCTOR) {
 	namePtr = "<destructor>";
 	flags |= FRAME_IS_DESTRUCTOR;
+	nameObj = Tcl_NewStringObj("<destructor>", -1);
+	Tcl_IncrRefCount(nameObj);
     } else {
-	namePtr = TclGetString(objv[1]);
+	nameObj = objv[contextPtr->skip-1];
+	namePtr = TclGetString(nameObj);
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method", namePtr);
@@ -761,8 +788,11 @@ InvokeProcedureMethod(
     framePtr->objv = objv;	/* ref counts for args are incremented below */
     framePtr->procPtr = pmPtr->procPtr;
 
-    return TclObjInterpProcCore(interp, framePtr, objv[1]/*TODO:Fixme*/,
-	    contextPtr->skip);
+    result = TclObjInterpProcCore(interp, framePtr, nameObj, contextPtr->skip);
+    if (contextPtr->flags & (CONSTRUCTOR | DESTRUCTOR)) {
+	TclDecrRefCount(nameObj);
+    }
+    return result;
 }
 
 static void
@@ -1391,7 +1421,7 @@ ClassCreate(
 	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
-	Tcl_DecrRefCount(cmdnameObj);
+	TclDecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
     if (objc < 3) {
@@ -1425,7 +1455,7 @@ ClassNew(
 	Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
 	Tcl_AppendResult(interp, "object \"", TclGetString(cmdnameObj),
 		"\" is not a class", NULL);
-	Tcl_DecrRefCount(cmdnameObj);
+	TclDecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
     newObjPtr = NewInstance(interp, oPtr->classPtr, NULL, objc, objv, 2);
