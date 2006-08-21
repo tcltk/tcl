@@ -45,7 +45,7 @@
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: add x86_64 to universal build,
 	switch native release targets to use DWARF with dSYM, Xcode 3.0 changes.
-	* macosx/README: updates for x86_64 and Xcode 2.3.
+	* macosx/README: updates for x86_64 and Xcode 2.4.
 
 	* macosx/Tcl.xcodeproj/default.pbxuser: add test suite target that runs
 	* macosx/Tcl.xcodeproj/project.pbxproj: the tcl test suite at build time
