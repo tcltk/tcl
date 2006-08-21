@@ -1,3 +1,8 @@
+2006-08-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* win/Makefile.in (gdb): Make this target work so that debugging an
+	msys build is possible.
+
 2006-08-21  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c (Tcl_WaitForEvent): if the run loop is
@@ -28,7 +33,7 @@
 
 	* unix/tcl.m4 (Darwin): add support for --enable-64bit on x86_64, for
 	universal builds including x86_64, for 64-bit CoreFoundation on Leopard
-	and for use of -mmacosx-version-min instead of MACOSX_DEPLOYMENT_TARGET.
+	and for use of -mmacosx-version-min instead of MACOSX_DEPLOYMENT_TARGET
 	* unix/configure: autoconf-2.59
 	* unix/tclConfig.h.in: autoheader-2.59
 
@@ -38,18 +43,18 @@
 
 	* unix/tclUnixPort.h: on Darwin x86_64, disable use of vfork as it
 	causes execve to fail intermittently. (rdar://4685553)
-	
-	* generic/tclTomMath.h: on Darwin 64-bit, for now disable use of 128-bit
-	arithmetic through __attribute__ ((mode(TI))), as it leads to link
-	errors due to missing fallbacks. (rdar://4685527)
+
+	* generic/tclTomMath.h: on Darwin 64-bit, for now disable use of
+	128-bit arithmetic through __attribute__ ((mode(TI))), as it leads to
+	link errors due to missing fallbacks. (rdar://4685527)
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: add x86_64 to universal build,
-	switch native release targets to use DWARF with dSYM, Xcode 3.0 changes.
+	switch native release targets to use DWARF with dSYM, Xcode 3.0 changes
 	* macosx/README: updates for x86_64 and Xcode 2.4.
 
 	* macosx/Tcl.xcodeproj/default.pbxuser: add test suite target that runs
-	* macosx/Tcl.xcodeproj/project.pbxproj: the tcl test suite at build time
-	 and shows clickable test suite errors in the GUI build window.
+	* macosx/Tcl.xcodeproj/project.pbxproj: the tcl test suite at build
+	time and shows clickable test suite errors in the GUI build window.
 
 	* tests/macOSXFCmd.test: fix use of deprecated resource fork paths.
 
@@ -59,19 +64,19 @@
 	* generic/tclLink.c (LinkTraceProc): fix 64-bit signed-with-unsigned
 	comparison warning from gcc4 -Wextra.
 
-	* unix/tclUnixChan.c (TclUnixWaitForFile): with timeout < 0, if select()
-	returns early (e.g. due to a signal), call it again instead of returning
-	a timeout result. Fixes intermittent event-13.8 failures.
+	* unix/tclUnixChan.c (TclUnixWaitForFile): with timeout < 0, if
+	select() returns early (e.g. due to a signal), call it again instead of
+	returning a timeout result. Fixes intermittent event-13.8 failures.
 
 2006-08-17  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompile.c:		Revised the new set of expression
-	* generic/tclParseExpr.c:	parse error messages.
+	* generic/tclCompile.c:		Revised the new set of expression parse
+	* generic/tclParseExpr.c:	error messages.
 
 2006-08-16  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclParseExpr.c:	Replace PrecedenceOf() function
-	with prec[] static array.
+	* generic/tclParseExpr.c:	Replace PrecedenceOf() function with
+	prec[] static array.
 
 2006-08-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
