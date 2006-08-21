@@ -12,6 +12,10 @@
 	the system time; as a workaround, when given a very brief timeout, just
 	do a poll on that platform. [Bug 1457797]
 
+	* unix/tclUnixPort.h (Darwin): override potentially faulty configure
+	detection of termios availability in all cases, since termios is known
+	to be present on all Mac OS X releases since 10.0. [Bug 497147]
+
 2006-08-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (Darwin): add support for --enable-64bit on x86_64, for
