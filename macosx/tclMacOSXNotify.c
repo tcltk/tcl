@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.8 2006/08/21 01:08:10 das Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.9 2006/08/21 03:50:53 das Exp $
  */
 
 #include "tclInt.h"
@@ -242,8 +242,14 @@ static pthread_t notifierThread;
  * notifier thread.
  */
 
-static const CFStringRef tclEventsOnlyRunLoopMode =
-	CFSTR("com.tcltk.tclEventsOnlyRunLoopMode");
+#ifndef TCL_EVENTS_ONLY_RUN_LOOP_MODE
+#define TCL_EVENTS_ONLY_RUN_LOOP_MODE "com.tcltk.tclEventsOnlyRunLoopMode"
+#endif
+#ifdef __CONSTANT_CFSTRINGS__
+#define tclEventsOnlyRunLoopMode CFSTR(TCL_EVENTS_ONLY_RUN_LOOP_MODE)
+#else
+static CFStringRef tclEventsOnlyRunLoopMode = NULL;
+#endif
 
 /*
  * Static routines defined in this file.
@@ -294,6 +300,12 @@ Tcl_InitNotifier(void)
      */
     if (pthread_once(&spinLockLockInitControl, SpinLockLockInit)) {
 	Tcl_Panic("Tcl_InitNotifier: pthread_once failed");
+    }
+#endif
+
+#ifndef __CONSTANT_CFSTRINGS__
+    if (!tclEventsOnlyRunLoopMode) {
+	tclEventsOnlyRunLoopMode = CFSTR(TCL_EVENTS_ONLY_RUN_LOOP_MODE);
     }
 #endif
 
