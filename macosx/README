@@ -1,7 +1,7 @@
 Tcl Mac OS X README 
 -----------------
 
-RCS: @(#) $Id: README,v 1.1.2.7 2006/08/18 07:45:42 das Exp $
+RCS: @(#) $Id: README,v 1.1.2.8 2006/08/21 06:10:03 das Exp $
 
 This is the README file for the Mac OS X/Darwin version of Tcl.
 
@@ -92,7 +92,7 @@ project, this simply calls through to the tcl/macosx/Makefile.
 - To build universal binaries, set CFLAGS as follows:
     export CFLAGS="-arch ppc -arch ppc64 -arch i386 -arch x86_64 \
 	-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
-This requires Mac OS X 10.4 and Xcode 2.3 (or Xcode 2.2 if -arch x86_64 is
+This requires Mac OS X 10.4 and Xcode 2.4 (or Xcode 2.2 if -arch x86_64 is
 omitted, but _not_ Xcode 2.1) and will work on any of the architectures (on
 intel Macs, the -isysroot may not be required). Note that it is not possible to
 configure universal builds correctly if the current architecture is not present

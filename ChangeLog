@@ -29,7 +29,7 @@
 	* unix/tclUnixPort.h: on Darwin x86_64, disable use of vfork as it
 	causes execve to fail intermittently. (rdar://4685553)
 	
-	* macosx/README: updates for x86_64 support and Xcode 2.3.
+	* macosx/README: updates for x86_64 support and Xcode 2.4.
 
 	* unix/tclUnixChan.c (TclUnixWaitForFile): with timeout < 0, if select()
 	returns early (e.g. due to a signal), call it again instead of returning
