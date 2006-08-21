@@ -3,6 +3,10 @@
         * generic/tclIOUtil.c:  Revisions to complete the thread finalization
         of the cwdPathPtr.  [Bug 1536142]
 
+	* generic/tclParseExpr.c:	Revised mistaken call to
+	TclCheckBadOctal(), so both [expr 08] and [expr 08z] have same
+	additional info in error message.
+
 2006-08-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* win/Makefile.in (gdb): Make this target work so that debugging an
