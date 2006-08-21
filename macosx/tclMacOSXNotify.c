@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.7 2006/07/20 06:21:42 das Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.8 2006/08/21 01:08:10 das Exp $
  */
 
 #include "tclInt.h"
@@ -180,7 +180,7 @@ static void SpinLockLockInit(void) {
     lockLock   = OSSpinLockLock   != NULL ? OSSpinLockLock   : _spin_lock;
     lockUnlock = OSSpinLockUnlock != NULL ? OSSpinLockUnlock : _spin_unlock;
     if (lockLock == NULL || lockUnlock == NULL) {
-	Tcl_Panic("SpinLockLockInit: no spinlock API available.");
+	Tcl_Panic("SpinLockLockInit: no spinlock API available");
     }
 }
 #define SpinLockLock(p) 	lockLock(p)
@@ -238,6 +238,14 @@ static OSSpinLock notifierLock = 0;
 static pthread_t notifierThread;
 
 /*
+ * Custom run loop mode containing only the run loop source for the
+ * notifier thread.
+ */
+
+static const CFStringRef tclEventsOnlyRunLoopMode =
+	CFSTR("com.tcltk.tclEventsOnlyRunLoopMode");
+
+/*
  * Static routines defined in this file.
  */
 
@@ -285,7 +293,7 @@ Tcl_InitNotifier(void)
      * Initialize support for weakly imported spinlock API.
      */
     if (pthread_once(&spinLockLockInitControl, SpinLockLockInit)) {
-	Tcl_Panic("Tcl_InitNotifier: pthread_once failed.");
+	Tcl_Panic("Tcl_InitNotifier: pthread_once failed");
     }
 #endif
 
@@ -302,9 +310,10 @@ Tcl_InitNotifier(void)
 	runLoopSourceContext.info = tsdPtr;
 	runLoopSource = CFRunLoopSourceCreate(NULL, 0, &runLoopSourceContext);
 	if (!runLoopSource) {
-	    Tcl_Panic("Tcl_InitNotifier: could not create CFRunLoopSource.");
+	    Tcl_Panic("Tcl_InitNotifier: could not create CFRunLoopSource");
 	}
 	CFRunLoopAddSource(runLoop, runLoopSource, kCFRunLoopCommonModes);
+	CFRunLoopAddSource(runLoop, runLoopSource, tclEventsOnlyRunLoopMode);
 	tsdPtr->runLoopSource = runLoopSource;
 	tsdPtr->runLoop = runLoop;
     }
@@ -322,8 +331,8 @@ Tcl_InitNotifier(void)
 #endif
 	    !atForkInit) {
 	int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
-	if (result) { 
-	    Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed.");
+	if (result) {
+	    Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
 	}
 	atForkInit = 1;
     }
@@ -336,18 +345,18 @@ Tcl_InitNotifier(void)
 	 */
 
 	if (pipe(fds) != 0) {
-	    Tcl_Panic("Tcl_InitNotifier: could not create trigger pipe.");
+	    Tcl_Panic("Tcl_InitNotifier: could not create trigger pipe");
 	}
 
 	status = fcntl(fds[0], F_GETFL);
 	status |= O_NONBLOCK;
 	if (fcntl(fds[0], F_SETFL, status) < 0) {
-	    Tcl_Panic("Tcl_InitNotifier: could not make receive pipe non blocking.");
+	    Tcl_Panic("Tcl_InitNotifier: could not make receive pipe non blocking");
 	}
 	status = fcntl(fds[1], F_GETFL);
 	status |= O_NONBLOCK;
 	if (fcntl(fds[1], F_SETFL, status) < 0) {
-	    Tcl_Panic("Tcl_InitNotifier: could not make trigger pipe non blocking.");
+	    Tcl_Panic("Tcl_InitNotifier: could not make trigger pipe non blocking");
 	}
 
 	receivePipe = fds[0];
@@ -358,7 +367,7 @@ Tcl_InitNotifier(void)
 	 * interfering with fork() followed immediately by execve()
 	 * (cannot execve() when more than one thread is present).
 	 */
-	
+
 	notifierThread = 0;
     }
     notifierCount++;
@@ -403,7 +412,7 @@ Tcl_FinalizeNotifier(clientData)
 	int result;
 
 	if (triggerPipe < 0) {
-	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized.");
+	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
 	}
 
 	/*
@@ -423,7 +432,7 @@ Tcl_FinalizeNotifier(clientData)
 	if (notifierThread) {
 	    result = pthread_join(notifierThread, NULL);
 	    if (result) {
-		Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread.");
+		Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread");
 	    }
 	    notifierThread = 0;
 	}
@@ -824,7 +833,7 @@ Tcl_WaitForEvent(timePtr)
 		(void * (*)(void *))NotifierThreadProc, NULL);
 	pthread_attr_destroy(&attr);
 	if (result || !notifierThread) {
-	    Tcl_Panic("Tcl_WaitForEvent: unable to start notifier thread.");
+	    Tcl_Panic("Tcl_WaitForEvent: unable to start notifier thread");
 	}
     }
     UNLOCK_NOTIFIER_INIT;
@@ -877,14 +886,27 @@ Tcl_WaitForEvent(timePtr)
 
     if (!tsdPtr->eventReady) {
 	CFTimeInterval waitTime;
+	CFStringRef runLoopMode;
 
 	if (timePtr == NULL) {
 	    waitTime = 1.0e10; /* Wait forever, as per CFRunLoop.c */
 	} else {
 	    waitTime = timePtr->sec + 1.0e-6 * timePtr->usec;
 	}
+	/*
+	 * If the run loop is already running (e.g. if Tcl_WaitForEvent was
+	 * called recursively), re-run it in a custom run loop mode containing
+	 * only the source for the notifier thread, otherwise wakeups from other
+	 * sources added to the common run loop modes might get lost.
+	 */
+	if ((runLoopMode = CFRunLoopCopyCurrentMode(tsdPtr->runLoop))) {
+	    CFRelease(runLoopMode);
+	    runLoopMode = tclEventsOnlyRunLoopMode;
+	} else {
+	    runLoopMode = kCFRunLoopDefaultMode;
+	}
 	UNLOCK_NOTIFIER;
-	CFRunLoopRunInMode(kCFRunLoopDefaultMode, waitTime, TRUE);
+	CFRunLoopRunInMode(runLoopMode, waitTime, TRUE);
 	LOCK_NOTIFIER;
     }
     tsdPtr->eventReady = 0;
@@ -1204,14 +1226,16 @@ AtForkChild(void)
     }
     if (notifierCount > 0) {
 	notifierCount = 0;
+
 	/*
-	 * Assume that the return value of Tcl_InitNotifier() in the child
-	 * will be identical to the one stored as clientData in tclNotify.c's
-	 * ThreadSpecificData by the parent's TclInitNotifier(), so discard
-	 * the return value here. This assumption may require the fork() to
-	 * be executed in the main thread of the parent, otherwise
-	 * Tcl_AlertNotifier() may break in the child.
+	 * Assume that the return value of Tcl_InitNotifier in the child will
+	 * be identical to the one stored as clientData in tclNotify.c's
+	 * ThreadSpecificData by the parent's TclInitNotifier, so discard the
+	 * return value here. This assumption may require the fork() to be
+	 * executed in the main thread of the parent, otherwise
+	 * Tcl_AlertNotifier may break in the child.
 	 */
+
 	Tcl_InitNotifier();
     }
 }
