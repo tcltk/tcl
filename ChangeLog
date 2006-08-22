@@ -1,3 +1,10 @@
+2006-08-22  Andreas Kupries <andreask@activestate.com>
+
+	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): Fixed broken if syntax
+	  committed 2006-08-21 by Daniel. The broken syntax is visible to
+	  all unix platforms, but not on OSX for machines which
+	  HAVE_COREFOUNDATION.
+
 2006-08-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:	Revisions to complete the thread finalization
