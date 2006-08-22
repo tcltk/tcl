@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.15 2006/08/21 01:08:10 das Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.16 2006/08/22 17:45:02 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -714,7 +714,7 @@ Tcl_WaitForEvent(timePtr)
     Tcl_MutexLock(&notifierMutex);
 
     waitForFiles = (tsdPtr->numFdBits > 0);
-    if (timePtr != NULL && timePtr->sec == 0 && timePtr->usec == 0) {
+    if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
 #if defined(__APPLE__) && defined(__LP64__)
 	    /*
 	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have a bug
