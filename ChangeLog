@@ -7,6 +7,16 @@
 	TclCheckBadOctal(), so both [expr 08] and [expr 08z] have same
 	additional info in error message.
 
+	* tests/compExpr-old.test:	Update existing tests to not fail
+	* tests/compExpr.test:		with the new expr parser.
+	* tests/compile.test:
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/for.test:
+	* tests/if.test:
+	* tests/parseExpr.test:
+	* tests/while.test:
+
 2006-08-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* win/Makefile.in (gdb): Make this target work so that debugging an
