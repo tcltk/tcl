@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.8 2006/08/21 21:34:56 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.9 2006/08/22 10:50:52 dkf Exp $
  */
 
 /*
@@ -82,9 +82,13 @@ typedef struct Object {
     struct Class *classPtr;	/* All classes have this non-NULL; it points
 				 * to the class structure. Everything else has
 				 * this NULL. */
+    int flags;
     Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
     Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
 } Object;
+
+#define OBJECT_DELETED	1	/* Flag to say that an object has been
+				 * destroyed. */
 
 /*
  * And the definition of a class. Note that every class also has an associated

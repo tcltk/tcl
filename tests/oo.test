@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.3 2006/08/21 15:55:00 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.4 2006/08/22 10:50:52 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -55,10 +55,45 @@ test oo-3.1 {basic test of OO functionality: destructor} -setup {
 	}
 	lappend result 1 [oo::object create foo]
 	lappend result 2 [rename foo {}]
+	oo::define oo::object destructor {}
+	return $result
     }
 } -cleanup {
     interp delete subinterp
 } -result {1 ::foo died 2 {}}
+test oo-3.2 {basic test of OO functionality: destructor} -setup {
+    # This is a bit complex because it needs to run in a sub-interp as
+    # we're modifying the root object class's constructor
+    interp create subinterp
+} -constraints knownBug -body {
+    subinterp eval {
+	oo::define oo::object destructor {
+	    lappend ::result died
+	}
+	lappend result 1 [oo::object create foo]
+	lappend result 2 [rename foo {}]
+	# KnownBug: Failure to remove the destructor makes odd things happen!
+    }
+} -cleanup {
+    interp delete subinterp
+} -result {1 ::foo died 2 {}}
+
+test oo-4.1 {basic test of OO functionality: export} {
+    set o [oo::object new]
+    set result {}
+    oo::define $o method Foo {} {lappend ::result Foo; return}
+    lappend result [catch {$o Foo} msg] $msg
+    oo::define $o export Foo
+    lappend result [$o Foo] [$o destroy]
+} {1 {unknown method "Foo": must be destroy} Foo {} {}}
+test oo-4.2 {basic test of OO functionality: unexport} {
+    set o [oo::object new]
+    set result {}
+    oo::define $o method foo {} {lappend ::result foo; return}
+    lappend result [$o foo]
+    oo::define $o unexport foo
+    lappend result [catch {$o foo} msg] $msg [$o destroy]
+} {foo {} 1 {unknown method "foo": must be destroy} {}}
 
 cleanupTests
 return
