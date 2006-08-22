@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.7 2006/08/21 21:34:56 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.8 2006/08/22 23:36:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -488,8 +488,14 @@ TclOODefineSelfClassObjCmd(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = GetDefineCmdContext(interp);
+    Foundation *fPtr = ((Interp *)interp)->ooFoundation;
 
     if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr == fPtr->objectCls->thisPtr) {
+	Tcl_AppendResult(interp,
+		"may not modify the class of the root object", NULL);
 	return TCL_ERROR;
     }
 
@@ -504,8 +510,25 @@ TclOODefineSuperclassObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = GetDefineCmdContext(interp);
+    Object *oPtr, *o2Ptr;
+    Foundation *fPtr = ((Interp *)interp)->ooFoundation;
 
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?className ...?");
+	return TCL_ERROR;
+    }
+    // TODO: multi-inheritance
+    if (objc != 2) {
+	Tcl_AppendResult(interp, "multiple inheritance not yet implemented",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Get the class to operate on.
+     */
+
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -514,9 +537,41 @@ TclOODefineSuperclassObjCmd(
 		NULL);
 	return TCL_ERROR;
     }
+    if (oPtr == fPtr->objectCls->thisPtr) {
+	Tcl_AppendResult(interp,
+		"may not modify the superclass of the root object", NULL);
+	return TCL_ERROR;
+    }
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    /*
+     * Parse the argument to get the class to use.
+     */
+
+    o2Ptr = TclGetObjectFromObj(interp, objv[1]);
+    if (o2Ptr == NULL) {
+	return TCL_ERROR;
+    }
+    if (o2Ptr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "only a class can be a superclass", NULL);
+	return TCL_ERROR;
+    }
+
+    // TODO: Circularity check
+
+    if (oPtr->classPtr->numSuperclasses == 0) {
+	oPtr->classPtr->superclasses = (Class **) ckalloc(sizeof(Class *));
+	oPtr->classPtr->superclasses[0] = o2Ptr->classPtr;
+	oPtr->classPtr->numSuperclasses = 1;
+    } else if (oPtr->classPtr->numSuperclasses == 1) {
+	oPtr->classPtr->superclasses[0] = o2Ptr->classPtr;
+    } else {
+	// fixme
+    }
+    fPtr->epoch++;
+
+    // TODO: Splice out/in from superclass's subclass list.
+
+    return TCL_OK;
 }
 
 int
