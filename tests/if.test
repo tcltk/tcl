@@ -10,16 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.9 2006/08/02 20:03:37 das Exp $
+# RCS: @(#) $Id: if.test,v 1.10 2006/08/22 04:03:24 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-
-# Constraint set on tests that depend on the exact format of the error messages
-# of the pre-2006/07/05 expression parser (-DOLD_EXPR_PARSER=1)
-testConstraint oldExprParser [expr {![testConstraint newExprParser]}]
 
 # Basic "if" operation.
 
@@ -30,10 +26,13 @@ test if-1.1 {TclCompileIfCmd: missing if/elseif test} {
 test if-1.2 {TclCompileIfCmd: error in if/elseif test} {
     list [catch {if {[error "error in condition"]} foo} msg] $msg
 } {1 {error in condition}}
-test if-1.3 {TclCompileIfCmd: error in if/elseif test} -constraints {oldExprParser} -body {
+test if-1.3 {TclCompileIfCmd: error in if/elseif test} -body {
     list [catch {if {1+}} msg] $msg $errorInfo
-} -match glob -result {1 {syntax error in expression "1+": premature end of expression} {syntax error in expression "1+": premature end of expression*
-    while *ing
+} -result {1 {missing operand at _@_
+in expression "1+_@_"} {missing operand at _@_
+in expression "1+_@_"
+    (parsing expression "1+")
+    invoked from within
 "if {1+}"}}
 test if-1.4 {TclCompileIfCmd: if/elseif test in braces} {
     set a {}
@@ -177,11 +176,14 @@ test if-2.3 {TclCompileIfCmd: missing expression after "elseif"} {
     catch {if 1<2 {set a 1} elseif} msg 
     set msg
 } {wrong # args: no expression after "elseif" argument}
-test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} -constraints {oldExprParser} -body {
+test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} -body {
     set a {}
     list [catch {if 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
-} -match glob -result {1 {syntax error in expression "1>": premature end of expression} {syntax error in expression "1>": premature end of expression*
-    while *ing
+} -result {1 {missing operand at _@_
+in expression "1>_@_"} {missing operand at _@_
+in expression "1>_@_"
+    (parsing expression "1>")
+    invoked from within
 "if 3>4 {set a 1} elseif {1>}"}}
 test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long "elseif" body} {
     catch {unset i}
@@ -505,11 +507,14 @@ test if-5.2 {if cmd with computed command names: error in if/elseif test} {
     set z if
     list [catch {$z {[error "error in condition"]} foo} msg] $msg
 } {1 {error in condition}}
-test if-5.3 {if cmd with computed command names: error in if/elseif test} {oldExprParser} {
+test if-5.3 {if cmd with computed command names: error in if/elseif test} {
     set z if
     list [catch {$z {1+}} msg] $msg $errorInfo
-} {1 {syntax error in expression "1+": premature end of expression} {syntax error in expression "1+": premature end of expression
-    while executing
+} {1 {missing operand at _@_
+in expression "1+_@_"} {missing operand at _@_
+in expression "1+_@_"
+    (parsing expression "1+")
+    invoked from within
 "$z {1+}"}}
 test if-5.4 {if cmd with computed command names: if/elseif test in braces} {
     set z if
@@ -672,12 +677,15 @@ test if-6.3 {if cmd with computed command names: missing expression after "elsei
     catch {$z 1<2 {set a 1} elseif} msg 
     set msg
 } {wrong # args: no expression after "elseif" argument}
-test if-6.4 {if cmd with computed command names: error in expression after "elseif"} {oldExprParser} {
+test if-6.4 {if cmd with computed command names: error in expression after "elseif"} {
     set z if
     set a {}
     list [catch {$z 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
-} {1 {syntax error in expression "1>": premature end of expression} {syntax error in expression "1>": premature end of expression
-    while executing
+} {1 {missing operand at _@_
+in expression "1>_@_"} {missing operand at _@_
+in expression "1>_@_"
+    (parsing expression "1>")
+    invoked from within
 "$z 3>4 {set a 1} elseif {1>}"}}
 test if-6.5 {if cmd with computed command names: test jumpFalse instruction replacement after long "elseif" body} {
     set z if
@@ -1086,7 +1094,7 @@ test if-10.5 {substituted control words} {
     set elseif elseif; proc elseif {} {return badelseif}
     list [catch {if 1 $then {if 0 {} $elseif 1 {if 0 {} $else {list ok}}}} a] $a
 } {0 ok}
-test if-10.6 {double invocation of variable traces} {oldExprParser} {
+test if-10.6 {double invocation of variable traces} {
     set iftracecounter 0
     proc iftraceproc {args} {
        upvar #0 iftracecounter counter
@@ -1104,7 +1112,9 @@ test if-10.6 {double invocation of variable traces} {oldExprParser} {
     list [catch {if "$iftracevar + 20" {}} a] $a \
         [catch {if "$iftracevar + 20" {}} b] $b \
         [unset iftracevar iftracecounter]
-} {1 {syntax error in expression "1 oops 10 + 20": extra tokens at end of expression} 0 {} {}}
+} {1 {invalid bareword "oops"
+in expression "1 oops 10 + 20";
+should be "$oops" or "{oops}" or "oops(...)" or ...} 0 {} {}}
 
 # cleanup
 ::tcltest::cleanupTests
