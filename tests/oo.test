@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.4 2006/08/22 10:50:52 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.5 2006/08/22 14:37:48 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -94,6 +94,14 @@ test oo-4.2 {basic test of OO functionality: unexport} {
     oo::define $o unexport foo
     lappend result [catch {$o foo} msg] $msg [$o destroy]
 } {foo {} 1 {unknown method "foo": must be destroy} {}}
+
+test oo-5.1 {OO: manipulation of classes as objects} {
+    set o [oo::object new]
+    oo::define oo::object self.method foo {} {error "do not run"}
+    catch {$o foo} result
+    oo::define oo::object self.method foo {} {}
+    return $result
+} {unknown method "foo": must be destroy}
 
 cleanupTests
 return
