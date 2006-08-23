@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.22 2006/08/23 15:42:57 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.23 2006/08/23 23:35:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -52,85 +52,6 @@ static const struct {
 };
 
 #define ALLOC_CHUNK 8
-
-//typedef struct Method {
-//    Tcl_Obj *bodyObj;
-//    Proc *procPtr;
-//    int epoch;
-//    int flags;
-//    int formalc;
-//    Tcl_Obj **formalv;
-//} Method;
-//
-//typedef struct Object {
-//    Namespace *nsPtr;		/* This object's tame namespace. */
-//    Tcl_Command command;	/* Reference to this object's public
-//				 * command. */
-//    Tcl_Command myCommand;	/* Reference to this object's internal
-//				 * command. */
-//    struct Class *selfCls;	/* This object's class. */
-//    Tcl_HashTable methods;	/* Tcl_Obj (method name) to Method*
-//				 * mapping. */
-//    int numMixins;		/* Number of classes mixed into this
-//				 * object. */
-//    struct Class **mixins;	/* References to classes mixed into this
-//				 * object. */
-//    int numFilters;
-//    Tcl_Obj **filterObjs;
-//    struct Class *classPtr;	/* All classes have this non-NULL; it points
-//				 * to the class structure. Everything else has
-//				 * this NULL. */
-//    Tcl_Interp *interp;		/* The interpreter (for the PushObject and
-//				 * PopObject callbacks. */
-//} Object;
-//
-//struct Class {
-//    struct Object *thisPtr;
-//    int flags;
-//    int numSuperclasses;
-//    struct Class **superclasses;
-//    int numSubclasses;
-//    struct Class **subclasses;
-//    int subclassesSize;
-//    int numInstances;
-//    struct Object **instances;
-//    int instancesSize;
-//    Tcl_HashTable classMethods;
-//    struct Method *constructorPtr;
-//    struct Method *destructorPtr;
-//};
-
-//typedef struct ObjectStack {
-//    Object *oPtr;
-//    struct ObjectStack *nextPtr;
-//} ObjectStack;
-//
-//typedef struct Foundation {
-//    struct Class *objectCls;
-//    struct Class *classCls;
-//    struct Class *definerCls;
-//    struct Class *structCls;
-//    Tcl_Namespace *helpersNs;
-//    int epoch;
-//    int nsCount;
-//    Tcl_Obj *unknownMethodNameObj;
-//    ObjectStack *objStack;	// should this be in stack frames?
-//} Foundation;
-//
-//#define CALL_CHAIN_STATIC_SIZE 4
-//
-//struct MInvoke {
-//    Method *mPtr;
-//    int isFilter;
-//};
-//struct CallContext {
-//    int epoch;
-//    int flags;
-//    int numCallChain;
-//    struct MInvoke **callChain;
-//    struct MInvoke *staticCallChain[CALL_CHAIN_STATIC_SIZE];
-//    int filterLength;
-//};
 
 /*
  * Function declarations.
@@ -836,20 +757,7 @@ TclNewForwardMethod(
 		NULL);
 	return NULL;
     }
-//    mPtr->epoch = ((Interp *) interp)->ooFoundation->epoch;
-//    mPtr->bodyObj = bodyObj;
-//    Tcl_IncrRefCount(bodyObj);
-//    mPtr->flags = 0;
-//    return mPtr;
-//
-//    if (TclCreateProc(interp, oPtr->nsPtr, TclGetString(nameObj), argsObj,
-//	    bodyObj, &mPtr->procPtr) != TCL_OK) {
-//	Tcl_AddErrorInfo(interp, "\n    (creating method \"");
-//	Tcl_AddErrorInfo(interp, TclGetString(nameObj));
-//	Tcl_AddErrorInfo(interp, "\")");
-//	return NULL;
-//    }
-//    procPtr->isMethod = 1;
+
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
