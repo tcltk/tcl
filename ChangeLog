@@ -1,3 +1,10 @@
+2006-08-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Minimal collection of new tests
+	* tests/parseExpr.test:		testing the error messages of the
+	new expr parser.  Several bug fixes and code simplifications that
+	appeared during that effort.
+
 2006-08-21  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclIOUtil.c:  Revisions to complete the thread finalization
