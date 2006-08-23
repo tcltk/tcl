@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.19 2006/08/22 10:50:52 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.20 2006/08/23 09:29:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -889,7 +889,7 @@ InvokeForwardMethod(
 {
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, result;
+    int numPrefixes, result, skip = contextPtr->skip;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -899,12 +899,12 @@ InvokeForwardMethod(
      */
 
     Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
-    argObjs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (numPrefixes + objc-2));
+    argObjs = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * (numPrefixes+objc-skip));
     memcpy(argObjs, prefixObjs, numPrefixes * sizeof(Tcl_Obj *));
-    memcpy(argObjs + numPrefixes, objv + 2, (objc-2) * sizeof(Tcl_Obj *));
+    memcpy(argObjs + numPrefixes, objv+skip, (objc-skip) * sizeof(Tcl_Obj *));
 
     // TODO: Apply invoke magic (see [namespace ensemble])
-    result = Tcl_EvalObjv(interp, numPrefixes + objc - 2, argObjs, 0);
+    result = Tcl_EvalObjv(interp, numPrefixes + objc - skip, argObjs, 0);
     ckfree((char *) argObjs);
     return result;
 }
@@ -1651,7 +1651,7 @@ NextObjCmd(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
-    int index, result;
+    int index, result, skip;
 
     /*
      * Start with sanity checks on the calling context and the method context.
@@ -1666,6 +1666,7 @@ NextObjCmd(
     contextPtr = framePtr->ooContextPtr;
 
     index = contextPtr->index;
+    skip = contextPtr->skip;
     if (index+1 >= contextPtr->numCallChain) {
 	Tcl_AppendResult(interp, "no superclass method implementation", NULL);
 	return TCL_ERROR;
@@ -1673,10 +1674,16 @@ NextObjCmd(
 
     /*
      * Advance to the next method implementation in the chain in the method
-     * call context while we process the body.
+     * call context while we process the body. However, need to adjust the
+     * argument-skip control because we're guaranteed to have a single prefix
+     * arg (i.e., 'next') and not the variable amount that can happen because
+     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
+     * all) come through the same code. From here on, the skip is always 1.
      */
 
     contextPtr->index = index+1;
+    contextPtr->skip = 1;
 
     /*
      * Invoke the (advanced) method call context. This might need some
@@ -1684,18 +1691,7 @@ NextObjCmd(
      * the no-arg case).
      */
 
-    if (objc == 1) {
-	result = InvokeContext(interp, contextPtr, 2, framePtr->objv);
-    } else {
-	Tcl_Obj **tmpObjs = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * (objc+1));
-
-	tmpObjs[0] = framePtr->objv[0];
-	tmpObjs[1] = framePtr->objv[1];
-	memcpy(tmpObjs+2, objv+1, (unsigned) objc-1);
-
-	result = InvokeContext(interp, contextPtr, objc+1, objv);
-	ckfree((char *) tmpObjs);
-    }
+    result = InvokeContext(interp, contextPtr, objc, objv);
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -1703,6 +1699,7 @@ NextObjCmd(
      */
 
     contextPtr->index = index;
+    contextPtr->skip = skip;
 
     /*
      * If an error happened, add information about this to the trace.

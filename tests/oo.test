@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.8 2006/08/22 23:36:19 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.9 2006/08/23 09:29:58 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -134,20 +134,14 @@ test oo-7.1 {OO: inheritance 101} -setup {
     subClass destroy
     superClass destroy
 } -result {1 {unknown method "doit": must be create, destroy or new} ok}
-test oo-7.2 {OO: inheritance 101} -constraints knownBug -setup {
+test oo-7.2 {OO: inheritance 101} -setup {
     oo::class create superClass
     oo::class create subClass
     subClass create instance
 } -body {
-    # This crashes; don't know why yet
-    oo::define superClass method doit x {lappend ::result | $x |}
-    oo::define subClass {
-	superclass superClass
-	method doit x {lappend ::result - $x -; next [incr x]}
-    }
-    oo::define instance method doit x {
-	lappend ::result = $x =; next [incr x]
-    }
+    oo::define superClass method doit x {lappend ::result |$x|}
+    oo::define subClass superclass superClass
+    oo::define instance method doit x {lappend ::result =$x=; next [incr x]}
     set result {}
     instance doit 1
     return $result
@@ -155,7 +149,26 @@ test oo-7.2 {OO: inheritance 101} -constraints knownBug -setup {
     instance destroy
     subClass destroy
     superClass destroy
-} -result {= 1 = - 2 - | 3 |}
+} -result {=1= |2|}
+test oo-7.3 {OO: inheritance 101} -setup {
+    oo::class create superClass
+    oo::class create subClass
+    subClass create instance
+} -body {
+    oo::define superClass method doit x {lappend ::result |$x|}
+    oo::define subClass {
+	superclass superClass
+	method doit x {lappend ::result -$x-; next [incr x]}
+    }
+    oo::define instance method doit x {lappend ::result =$x=; next [incr x]}
+    set result {}
+    instance doit 1
+    return $result
+} -cleanup {
+    instance destroy
+    subClass destroy
+    superClass destroy
+} -result {=1= -2- |3|}
 
 cleanupTests
 return
