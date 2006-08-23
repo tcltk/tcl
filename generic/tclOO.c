@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.21 2006/08/23 14:38:40 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.22 2006/08/23 15:42:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -204,7 +204,7 @@ static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 
-void
+int
 TclOOInit(
     Tcl_Interp *interp)
 {
@@ -267,6 +267,8 @@ TclOOInit(
      * TODO: arrange for iPtr->ooFoundation to be torn down when the
      * interpreter is deleted.
      */
+
+    return TCL_OK;
 }
 
 /*
