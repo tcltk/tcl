@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.9 2006/08/23 09:29:58 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.10 2006/08/23 23:43:01 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -169,6 +169,18 @@ test oo-7.3 {OO: inheritance 101} -setup {
     subClass destroy
     superClass destroy
 } -result {=1= -2- |3|}
+
+test oo-8.1 {OO: global must work in methods} {
+    oo::object create foo
+    oo::define foo method bar x {global result; lappend result $x}
+    set result {}
+    foo bar this
+    foo bar is
+    lappend result a
+    foo bar test
+    foo destroy
+    return $result
+} {this is a test}
 
 cleanupTests
 return
