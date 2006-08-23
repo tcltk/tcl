@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.20 2006/08/23 09:29:58 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.21 2006/08/23 14:38:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -201,6 +201,8 @@ static int		ObjectUnknown(ClientData clientData,Tcl_Interp *interp,
 
 static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
+static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
 
 void
 TclOOInit(
@@ -216,8 +218,9 @@ TclOOInit(
     fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
-
     Tcl_CreateObjCommand(interp, "::oo::Helpers::next", NextObjCmd, NULL,
+	    NULL);
+    Tcl_CreateObjCommand(interp, "::oo::Helpers::self", SelfObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
@@ -1713,6 +1716,69 @@ NextObjCmd(
     }
 
     return result;
+}
+
+static int
+SelfObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    static const char *subcmds[] = {
+	"caller", "class", "filter", "method", "namespace", "next", "object",
+	"target", NULL
+    };
+    enum SelfCmds {
+	SELF_CALLER, SELF_CLASS, SELF_FILTER, SELF_METHOD, SELF_NS, SELF_NEXT,
+	SELF_OBJECT, SELF_TARGET
+    };
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *framePtr = iPtr->varFramePtr;
+    CallContext *contextPtr;
+    int index;
+
+    /*
+     * Start with sanity checks on the calling context and the method context.
+     */
+
+    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	Tcl_AppendResult(interp, TclGetString(objv[0]),
+		" may only be called from inside a method", NULL);
+	return TCL_ERROR;
+    }
+
+    contextPtr = framePtr->ooContextPtr;
+
+    /*
+     * Now we do "conventional" argument parsing for a while. Note that no
+     * subcommand takes arguments.
+     */
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand");
+	return TCL_ERROR;
+    }
+    if (objc == 1) {
+	index = SELF_OBJECT;
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "subcommand", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch ((enum SelfCmds) index) {
+    case SELF_OBJECT:
+	Tcl_GetCommandFullName(interp, contextPtr->oPtr->command,
+		Tcl_GetObjResult(interp));
+	return TCL_OK;
+    case SELF_NS:
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(contextPtr->oPtr->nsPtr->fullName, -1));
+	return TCL_OK;
+    default:
+	Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
+	return TCL_ERROR;
+    }
 }
 
 Object *
