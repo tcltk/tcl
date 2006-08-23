@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.24 2006/08/22 04:03:24 dgp Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.25 2006/08/23 21:31:55 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -734,6 +734,183 @@ test parseExpr-20.2 {Bug 1451233} {
 test parseExpr-20.3 {Bug 1451233} {
     expr 10000000000000000000020000000002
 } 10000000000000000000020000000002
+
+test parseExpr-21.1 {error messages} -body {
+    expr @
+} -returnCodes error -result {invalid character "@"
+in expression "@"}
+test parseExpr-21.2 {error messages} -body {
+    expr =
+} -returnCodes error -result {incomplete operator "="
+in expression "="}
+test parseExpr-21.3 {error messages} -body {
+    expr x
+} -returnCodes error -result {invalid bareword "x"
+in expression "x";
+should be "$x" or "{x}" or "x(...)" or ...}
+test parseExpr-21.4 {error messages} -body {
+    expr abcdefghijklmnopqrstuvwxyz
+} -returnCodes error -result {invalid bareword "abcdefghijklmnopqrstuv..."
+in expression "abcdefghijklmnopqrstuv...";
+should be "$abcdefghijklmnopqrstuv..." or "{abcdefghijklmnopqrstuv...}" or "abcdefghijklmnopqrstuv...(...)" or ...}
+test parseExpr-21.5 {error messages} -body {
+    expr {[][]}
+} -returnCodes error -result {missing operator at _@_
+in expression "[]_@_[]"}
+test parseExpr-21.6 {error messages} -body {
+    expr {0 0}
+} -returnCodes error -result {missing operator at _@_
+in expression "0 _@_0"}
+test parseExpr-21.7 {error messages} -body {
+    expr {08}
+} -returnCodes error -result {missing operator at _@_
+in expression "0_@_8";
+looks like invalid octal number}
+test parseExpr-21.8 {error messages} -body {
+    expr {08x}
+} -returnCodes error -result {missing operator at _@_
+in expression "0_@_8x";
+looks like invalid octal number}
+test parseExpr-21.9 {error messages} -body {
+    expr {"} 
+} -returnCodes error -result {missing "
+in expression """}
+test parseExpr-21.10 {error messages} -body {
+    expr \{ 
+} -returnCodes error -result "missing close-brace
+in expression \"\{\""
+test parseExpr-21.11 {error messages} -body {
+    expr $
+} -returnCodes error -result {invalid character "$"
+in expression "$"}
+test parseExpr-21.12 {error messages} -body {
+    expr {$(}
+} -returnCodes error -result {missing )
+in expression "$("}
+test parseExpr-21.13 {error messages} -body {
+    expr {[""x]}
+} -returnCodes error -result {extra characters after close-quote
+in expression "[""x]"}
+test parseExpr-21.14 {error messages} -body {
+    expr {[}
+} -returnCodes error -result {missing close-bracket
+in expression "["}
+test parseExpr-21.15 {error messages} -body {
+    expr 0~0
+} -returnCodes error -result {missing operator at _@_
+in expression "0_@_~0"}
+test parseExpr-21.16 {error messages} -body {
+    expr ()
+} -returnCodes error -result {empty subexpression at _@_
+in expression "(_@_)"}
+test parseExpr-21.17 {error messages} -body {
+    expr (
+} -returnCodes error -result {unbalanced open paren
+in expression "("}
+test parseExpr-21.18 {error messages} -body {
+    expr a(0,)
+} -returnCodes error -result {missing function argument at _@_
+in expression "a(0,_@_)"}
+test parseExpr-21.19 {error messages} -body {
+    expr {}
+} -returnCodes error -result {empty expression
+in expression ""}
+test parseExpr-21.20 {error messages} -body {
+    expr )
+} -returnCodes error -result {unbalanced close paren
+in expression ")"}
+test parseExpr-21.21 {error messages} -body {
+    expr a(,0)
+} -returnCodes error -result {missing function argument at _@_
+in expression "a(_@_,0)"}
+test parseExpr-21.22 {error messages} -body {
+    expr 0&|0
+} -returnCodes error -result {missing operand at _@_
+in expression "0&_@_|0"}
+test parseExpr-21.23 {error messages} -body {
+    expr 0^^0
+} -returnCodes error -result {missing operand at _@_
+in expression "0^_@_^0"}
+test parseExpr-21.24 {error messages} -body {
+    expr 0|&0
+} -returnCodes error -result {missing operand at _@_
+in expression "0|_@_&0"}
+test parseExpr-21.25 {error messages} -body {
+    expr a(1+,0)
+} -returnCodes error -result {missing operand at _@_
+in expression "a(1+_@_,0)"}
+test parseExpr-21.26 {error messages} -body {
+    expr (0
+} -returnCodes error -result {unbalanced open paren
+in expression "(0"}
+test parseExpr-21.27 {error messages} -body {
+    expr 0?0
+} -returnCodes error -result {missing operator ":" at _@_
+in expression "0?0_@_"}
+test parseExpr-21.28 {error messages} -body {
+    expr 0:0
+} -returnCodes error -result {unexpected operator ":" without preceding "?"
+in expression "0:0"}
+test parseExpr-21.29 {error messages} -body {
+    expr 0)
+} -returnCodes error -result {unbalanced close paren
+in expression "0)"}
+test parseExpr-21.30 {error messages} -body {
+    expr 0,
+} -returnCodes error -result {unexpected "," outside function argument list
+in expression "0,"}
+test parseExpr-21.31 {error messages} -body {
+    expr 0,0
+} -returnCodes error -result {unexpected "," outside function argument list
+in expression "0,0"}
+test parseExpr-21.32 {error messages} -body {
+    expr (0,0)
+} -returnCodes error -result {unexpected "," outside function argument list
+in expression "(0,0)"}
+test parseExpr-21.33 {error messages} -body {
+    expr a(0:0,0)
+} -returnCodes error -result {unexpected operator ":" without preceding "?"
+in expression "a(0:0,0)"}
+test parseExpr-21.34 {error messages} -body {
+    expr {"abcdefghijklmnopqrstuvwxyz"@0}
+} -returnCodes error -result {invalid character "@"
+in expression "...fghijklmnopqrstuvwxyz"@0"}
+test parseExpr-21.35 {error messages} -body {
+    expr {0@"abcdefghijklmnopqrstuvwxyz"}
+} -returnCodes error -result {invalid character "@"
+in expression "0@"abcdefghijklmnopqrstu..."}
+test parseExpr-21.36 {error messages} -body {
+    expr {"abcdefghijklmnopqrstuvwxyz"@"abcdefghijklmnopqrstuvwxyz"}
+} -returnCodes error -result {invalid character "@"
+in expression "...fghijklmnopqrstuvwxyz"@"abcdefghijklmnopqrstu..."}
+test parseExpr-21.37 {error messages} -body {
+    expr [format {"%s" @ 0} [string repeat \u00a7 25]]
+} -returnCodes error -result [format {invalid character "@"
+in expression "...%s" @ 0"} [string repeat \u00a7 10]]
+test parseExpr-21.38 {error messages} -body {
+    expr [format {0 @ "%s"} [string repeat \u00a7 25]]
+} -returnCodes error -result [format {invalid character "@"
+in expression "0 @ "%s..."} [string repeat \u00a7 10]]
+test parseExpr-21.39 {error messages} -body {
+    expr [format {"%s" @ "%s"} [string repeat \u00a7 25] [string repeat \u00a7 25]]
+} -returnCodes error -result [format {invalid character "@"
+in expression "...%s" @ "%s..."} [string repeat \u00a7 10] [string repeat \u00a7 10]]
+test parseExpr-21.40 {error messages} -body {
+    catch {expr {"abcdefghijklmnopqrstuvwxyz"@0}} m o
+    dict get $o -errorinfo
+} -result {invalid character "@"
+in expression "...fghijklmnopqrstuvwxyz"@0"
+    (parsing expression ""abcdefghijklmnopqrstu...")
+    invoked from within
+"expr {"abcdefghijklmnopqrstuvwxyz"@0}"}
+test parseExpr-21.41 {error messages} -body {
+    catch {expr [format {"%s" @ 0} [string repeat \u00a7 25]]} m o
+    dict get $o -errorinfo
+} -result [format {invalid character "@"
+in expression "...%s" @ 0"
+    (parsing expression ""%s...")
+    invoked from within
+"expr [format {"%%s" @ 0} [string repeat \u00a7 25]]"} [string repeat \u00a7 10] [string repeat \u00a7 10]]
 
 # cleanup
 ::tcltest::cleanupTests

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.38 2006/08/21 17:15:21 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.39 2006/08/23 21:31:55 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2104,8 +2104,9 @@ Tcl_ParseExpr(
     Tcl_Parse scratch;		/* Parsing scratch space */
     Tcl_Obj *msg = NULL, *post = NULL;
     unsigned char precedence;
-    CONST char *space, *operand, *end, *mark = "_@_";
-    int scanned = 0, size, limit = 25, code = TCL_OK, insertMark = 0;
+    CONST char *end, *mark = "_@_";
+    int scanned = 0, code = TCL_OK, insertMark = 0;
+    CONST int limit = 25;
     static unsigned char prec[80] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
@@ -2141,9 +2142,9 @@ Tcl_ParseExpr(
 	 */
 	if (nodesUsed >= nodesAvailable) {
 	    int lastOrphanIdx = lastOrphanPtr - nodes;
+	    int size = nodesUsed * 2;
 	    ExprNode *newPtr;
 
-	    size = nodesUsed * 2;
 	    if (nodes == staticNodes) {
 		nodes = NULL;
 	    }
@@ -2171,7 +2172,6 @@ Tcl_ParseExpr(
 
 	/* Skip white space between lexemes */
 
-	space = start;		/* Remember where last lexeme ended */
 	scanned = TclParseAllWhiteSpace(start, numBytes);
 	start += scanned;
 	numBytes -= scanned;
@@ -2184,16 +2184,14 @@ Tcl_ParseExpr(
 	    switch (nodePtr->lexeme) {
 	    case INVALID:
 		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg, "invalid character \"%.*s%s\"",
-			(scanned < limit) ? scanned : limit - 3, start,
-			(scanned < limit) ? "" : "...");
+		TclObjPrintf(NULL, msg,
+			"invalid character \"%.*s\"", scanned, start);
 		code = TCL_ERROR;
 		continue;
 	    case INCOMPLETE:
 		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg, "incomplete operator \"%.*s%s\"",
-			(scanned < limit) ? scanned : limit - 3, start,
-			(scanned < limit) ? "" : "...");
+		TclObjPrintf(NULL, msg,
+			"incomplete operator \"%.*s\"", scanned, start);
 		code = TCL_ERROR;
 		continue;
 	    case BAREWORD:
@@ -2242,9 +2240,11 @@ Tcl_ParseExpr(
 	case LEAF:
 
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
+		CONST char *operand =
+			scratch.tokenPtr[lastNodePtr->token].start;
+
 		msg = Tcl_NewObj();
 		TclObjPrintf(NULL, msg, "missing operator at %s", mark);
-		operand = scratch.tokenPtr[lastNodePtr->token].start;
 		if (operand[0] == '0') {
 		    Tcl_Obj *copy = Tcl_NewStringObj(operand,
 			    start + scanned - operand);
@@ -2436,40 +2436,34 @@ Tcl_ParseExpr(
 	    if ((NODE_TYPE & lastNodePtr->lexeme) != LEAF) {
 		if (prec[lastNodePtr->lexeme] > precedence) {
 		    if (lastNodePtr->lexeme == OPEN_PAREN) {
-			lastOrphanPtr = lastNodePtr;
 			msg = Tcl_NewStringObj("unbalanced open paren", -1);
-			code = TCL_ERROR;
-			continue;
-		    }
-		    if (lastNodePtr->lexeme == COMMA) {
+		    } else if (lastNodePtr->lexeme == COMMA) {
 			msg = Tcl_NewObj();
 			TclObjPrintf(NULL, msg,
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
-			code = TCL_ERROR;
-			continue;
-		    }
-		    if (lastNodePtr->lexeme == START) {
+		    } else if (lastNodePtr->lexeme == START) {
 			msg = Tcl_NewStringObj("empty expression", -1);
-			code = TCL_ERROR;
-			continue;
 		    }
-		    msg = Tcl_NewObj();
-		    operand = scratch.tokenPtr[lastNodePtr->token].start;
-		    size = space - operand;
-		    TclObjPrintf(NULL, msg, "missing operand at %s", mark);
-		    scanned = 0;
-		    insertMark = 1;
 		} else {
 		    if (nodePtr->lexeme == CLOSE_PAREN) {
 			msg = Tcl_NewStringObj("unbalanced close paren", -1);
-		    } else {
+		    } else if ((nodePtr->lexeme == COMMA)
+			    && (lastNodePtr->lexeme == OPEN_PAREN)
+			    && (lastNodePtr[-1].lexeme == FUNCTION)) {
 			msg = Tcl_NewObj();
-			TclObjPrintf(NULL, msg, "missing operand at %s", mark);
+			TclObjPrintf(NULL, msg,
+				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
 		    }
+		}
+		if (msg == NULL) {
+		    msg = Tcl_NewObj();
+		    TclObjPrintf(NULL, msg, "missing operand at %s", mark);
+		    scanned = 0;
+		    insertMark = 1;
 		}
 		code = TCL_ERROR;
 		continue;
@@ -2524,15 +2518,6 @@ Tcl_ParseExpr(
 		    code = TCL_ERROR;
 		    break;
 		}
-		if ((lastOrphanPtr->lexeme == COMMA)
-			&& ((otherPtr->lexeme != OPEN_PAREN)
-			|| (otherPtr[-1].lexeme != FUNCTION)) ) {
-		    msg = Tcl_NewStringObj(
-			    "unexpected \",\" outside function argument list",
-			    -1);
-		    code = TCL_ERROR;
-		    break;
-		}
 
 		/* Link orphan as right operand of otherPtr */
 		otherPtr->right = lastOrphanPtr - nodes;
@@ -2562,6 +2547,14 @@ Tcl_ParseExpr(
 		}
 		/* Create no node for a CLOSE_PAREN lexeme */
 		break;
+	    }
+
+	    if ((nodePtr->lexeme == COMMA) && ((otherPtr->lexeme != OPEN_PAREN)
+		    || (otherPtr[-1].lexeme != FUNCTION))) {
+		msg = Tcl_NewStringObj(
+			"unexpected \",\" outside function argument list", -1);
+		code = TCL_ERROR;
+		continue;
 	    }
 
 	    if (lastOrphanPtr->lexeme == COLON) {
@@ -2619,16 +2612,16 @@ Tcl_ParseExpr(
 		    ((start - limit) < scratch.string) ? "" : "...",
 		    ((start - limit) < scratch.string)
 		    ? (start - scratch.string)
-		    : (start - Tcl_UtfPrev(start-limit, scratch.string)),
+		    : (start - Tcl_UtfPrev(start+1-limit+3, scratch.string)),
 		    ((start - limit) < scratch.string) 
 		    ? scratch.string
-		    : Tcl_UtfPrev(start-limit, scratch.string),
+		    : Tcl_UtfPrev(start+1-limit+3, scratch.string),
 		    (scanned < limit) ? scanned : limit - 3, start,
 		    (scanned < limit) ? "" : "...",
 		    insertMark ? mark : "",
 		    (start + scanned + limit > scratch.end)
 		    ? scratch.end - (start + scanned)
-		    : Tcl_UtfPrev(start+scanned+limit, start+scanned)
+		    : Tcl_UtfPrev(start+scanned+limit-3+1, start+scanned)
 		    - (start + scanned), start + scanned,
 		    (start + scanned + limit > scratch.end) ? "" : "..."
 		    );
