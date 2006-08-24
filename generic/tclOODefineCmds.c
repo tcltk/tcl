@@ -9,13 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.8 2006/08/22 23:36:19 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.9 2006/08/24 23:56:10 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
 static Object *		GetDefineCmdContext(Tcl_Interp *interp);
+static int		IsReachable(Class *targetPtr, Class *startPtr);
 
 int
 TclOODefineObjCmd(
@@ -512,15 +513,11 @@ TclOODefineSuperclassObjCmd(
 {
     Object *oPtr, *o2Ptr;
     Foundation *fPtr = ((Interp *)interp)->ooFoundation;
+    Class **superclasses;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?className ...?");
-	return TCL_ERROR;
-    }
-    // TODO: multi-inheritance
-    if (objc != 2) {
-	Tcl_AppendResult(interp, "multiple inheritance not yet implemented",
-		NULL);
 	return TCL_ERROR;
     }
 
@@ -544,34 +541,67 @@ TclOODefineSuperclassObjCmd(
     }
 
     /*
-     * Parse the argument to get the class to use.
+     * Allocate some working space.
      */
 
-    o2Ptr = TclGetObjectFromObj(interp, objv[1]);
-    if (o2Ptr == NULL) {
-	return TCL_ERROR;
-    }
-    if (o2Ptr->classPtr == NULL) {
-	Tcl_AppendResult(interp, "only a class can be a superclass", NULL);
-	return TCL_ERROR;
+    superclasses = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+
+    /*
+     * Parse the arguments to get the class to use as superclasses.
+     */
+
+    for (i=0 ; i<objc-1 ; i++) {
+	o2Ptr = TclGetObjectFromObj(interp, objv[i+1]);
+	if (o2Ptr == NULL) {
+	    ckfree((char *) superclasses);
+	    return TCL_ERROR;
+	}
+	if (o2Ptr->classPtr == NULL) {
+	    ckfree((char *) superclasses);
+	    Tcl_AppendResult(interp, "only a class can be a superclass", NULL);
+	    return TCL_ERROR;
+	}
+	if (IsReachable(oPtr->classPtr, o2Ptr->classPtr)) {
+	    ckfree((char *) superclasses);
+	    Tcl_AppendResult(interp,
+		    "attempt to form circular dependency graph", NULL);
+	    return TCL_ERROR;
+	}
+	superclasses[i] = o2Ptr->classPtr;
     }
 
-    // TODO: Circularity check
+    /*
+     * Install the list of superclasses into the class.
+     */
 
-    if (oPtr->classPtr->numSuperclasses == 0) {
-	oPtr->classPtr->superclasses = (Class **) ckalloc(sizeof(Class *));
-	oPtr->classPtr->superclasses[0] = o2Ptr->classPtr;
-	oPtr->classPtr->numSuperclasses = 1;
-    } else if (oPtr->classPtr->numSuperclasses == 1) {
-	oPtr->classPtr->superclasses[0] = o2Ptr->classPtr;
-    } else {
-	// fixme
+    if (oPtr->classPtr->numSuperclasses != 0) {
+	// TODO: Splice out from old superclasses' subclass list.
+
+	ckfree((char *) oPtr->classPtr->superclasses);
     }
+    oPtr->classPtr->superclasses = superclasses;
+    oPtr->classPtr->numSuperclasses = objc-1;
+    // TODO: Splice into new superclasses' subclass list.
     fPtr->epoch++;
 
-    // TODO: Splice out/in from superclass's subclass list.
-
     return TCL_OK;
+}
+
+static int
+IsReachable(
+    Class *targetPtr,
+    Class *startPtr)
+{
+    int i;
+
+    for (i=0 ; i<startPtr->numSuperclasses ; i++) {
+	if (startPtr->superclasses[i] == targetPtr) {
+	    return 1;
+	} else if (IsReachable(targetPtr, startPtr->superclasses[i])) {
+	    return 1;
+	}
+    }
+    return 0;
 }
 
 int

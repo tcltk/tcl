@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.9 2006/08/22 10:50:52 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.10 2006/08/24 23:56:10 dkf Exp $
  */
 
 /*
@@ -40,6 +40,9 @@ typedef struct Method {
     Tcl_OOMethodCallProc callPtr;
     ClientData clientData;
     Tcl_OOMethodDeleteProc deletePtr;
+    Tcl_Obj *namePtr;
+    struct Object *declaringObjectPtr;
+    struct Class *declaringClassPtr;
     int epoch;
     int flags;
 } Method;
@@ -165,8 +168,8 @@ typedef struct CallContext {
     int index;
     int skip;
     int numCallChain;
-    struct MInvoke **callChain;
-    struct MInvoke *staticCallChain[CALL_CHAIN_STATIC_SIZE];
+    struct MInvoke *callChain;
+    struct MInvoke staticCallChain[CALL_CHAIN_STATIC_SIZE];
     int filterLength;
 } CallContext;
 

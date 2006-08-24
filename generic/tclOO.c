@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.23 2006/08/23 23:35:33 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.24 2006/08/24 23:56:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -508,13 +508,15 @@ Tcl_OONewMethod(
 
     if (nameObj == NULL) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
+	mPtr->namePtr = NULL;
 	goto populate;
     }
     hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
+	mPtr->namePtr = nameObj;
+	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
-	//TODO: Put a reference to the name in the Method struct
     } else {
 	mPtr = Tcl_GetHashValue(hPtr);
 	if (mPtr->deletePtr != NULL) {
@@ -528,6 +530,8 @@ Tcl_OONewMethod(
     mPtr->deletePtr = deleteProc;
     mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
+    mPtr->declaringObjectPtr = oPtr;
+    mPtr->declaringClassPtr = NULL;
     if (isPublic) {
 	mPtr->flags |= PUBLIC_METHOD;
     }
@@ -551,13 +555,15 @@ Tcl_OONewClassMethod(
 
     if (nameObj == NULL) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
+	mPtr->namePtr = NULL;
 	goto populate;
     }
     hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
+	mPtr->namePtr = nameObj;
+	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
-	//TODO: Put a reference to the name in the Method struct
     } else {
 	mPtr = Tcl_GetHashValue(hPtr);
 	if (mPtr->deletePtr != NULL) {
@@ -571,6 +577,8 @@ Tcl_OONewClassMethod(
     mPtr->deletePtr = deleteProc;
     mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
+    mPtr->declaringObjectPtr = NULL;
+    mPtr->declaringClassPtr = clsPtr;
     if (isPublic) {
 	mPtr->flags |= PUBLIC_METHOD;
     }
@@ -683,7 +691,7 @@ InvokeProcedureMethod(
 	return result;
     }
 
-    if (contextPtr->callChain[contextPtr->index]->isFilter) {
+    if (contextPtr->callChain[contextPtr->index].isFilter) {
 	flags |= FRAME_IS_FILTER;
     }
     framePtrPtr = &framePtr;
@@ -724,6 +732,9 @@ DeleteMethodStruct(
 
     if (mPtr->deletePtr != NULL) {
 	mPtr->deletePtr(mPtr->clientData);
+    }
+    if (mPtr->namePtr != NULL) {
+	TclDecrRefCount(mPtr->namePtr);
     }
 
     ckfree(buffer);
@@ -905,11 +916,6 @@ static void
 DeleteContext(
     CallContext *contextPtr)
 {
-    int i;
-
-    for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	ckfree((char *) contextPtr->callChain[i]);
-    }
     if (contextPtr->callChain != contextPtr->staticCallChain) {
 	ckfree((char *) contextPtr->callChain);
     }
@@ -923,14 +929,14 @@ InvokeContext(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Method *mPtr = contextPtr->callChain[contextPtr->index]->mPtr;
+    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
     int result, isFirst = (contextPtr->index == 0);
 
     if (isFirst) {
 	int i;
 
 	for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	    Tcl_Preserve(contextPtr->callChain[i]->mPtr);
+	    Tcl_Preserve(contextPtr->callChain[i].mPtr);
 	}
     }
 
@@ -942,7 +948,7 @@ InvokeContext(
 	int i;
 
 	for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	    Tcl_Release(contextPtr->callChain[i]->mPtr);
+	    Tcl_Release(contextPtr->callChain[i].mPtr);
 	}
     }
     return result;
@@ -1187,45 +1193,43 @@ AddSimpleClassChainToCallContext(
     int isFilter,
     int flags)
 {
-    int i;
-
     /*
      * We hard-code the tail-recursive form. It's by far the most common case
      * *and* it is much more gentle on the stack.
      */
 
-    do {
-	register int numSuper;
+  tailRecurse:
+    if (flags & CONSTRUCTOR) {
+	AddMethodToCallChain(classPtr->constructorPtr, contextPtr, isFilter,
+		flags);
+    } else if (flags & DESTRUCTOR) {
+	AddMethodToCallChain(classPtr->destructorPtr, contextPtr, isFilter,
+		flags);
+    } else {
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
+		(char *) methodNameObj);
 
-	if (flags & CONSTRUCTOR) {
-	    AddMethodToCallChain(classPtr->constructorPtr, contextPtr,
-		    isFilter, flags);
-	} else if (flags & DESTRUCTOR) {
-	    AddMethodToCallChain(classPtr->destructorPtr, contextPtr,
-		    isFilter, flags);
-	} else {
-	    Tcl_HashEntry *hPtr;
+	if (hPtr != NULL) {
+	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr, isFilter,
+		    flags);
+	}
+    }
 
-	    hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
-		    (char *) methodNameObj);
-	    if (hPtr != NULL) {
-		AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr,
-			isFilter, flags);
-	    }
-	}
-	numSuper = classPtr->numSuperclasses;
-	if (numSuper != 1) {
-	    if (numSuper == 0) {
-		return;
-	    }
-	    break;
-	}
+    switch (classPtr->numSuperclasses) {
+    case 1:
 	classPtr = classPtr->superclasses[0];
-    } while (1);
+	goto tailRecurse;
+    default:
+    {
+	int i;
 
-    for (i=0 ; i<classPtr->numSuperclasses ; i++) {
-	AddSimpleClassChainToCallContext(classPtr->superclasses[i],
-		methodNameObj, contextPtr, isFilter, flags);
+	for (i=0 ; i<classPtr->numSuperclasses ; i++) {
+	    AddSimpleClassChainToCallContext(classPtr->superclasses[i],
+		    methodNameObj, contextPtr, isFilter, flags);
+	}
+    }
+    case 0:
+	return;
     }
 }
 
@@ -1262,10 +1266,8 @@ AddMethodToCallChain(
      */
 
     for (i=contextPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
-	if (contextPtr->callChain[i]->mPtr == mPtr
-		&& contextPtr->callChain[i]->isFilter == isFilter) {
-	    int j;
-
+	if (contextPtr->callChain[i].mPtr == mPtr
+		&& contextPtr->callChain[i].isFilter == isFilter) {
 	    /*
 	     * Call chain semantics states that methods come as *late* in the
 	     * call chain as possible. This is done by copying down the
@@ -1273,11 +1275,11 @@ AddMethodToCallChain(
 	     * method invokations in the call chain; it just rearranges them.
 	     */
 
-	    for (j=i+1 ; j<contextPtr->numCallChain ; j++) {
-		contextPtr->callChain[j-1] = contextPtr->callChain[j];
+	    for (; i+1<contextPtr->numCallChain ; i++) {
+		contextPtr->callChain[i] = contextPtr->callChain[i+1];
 	    }
-	    contextPtr->callChain[j-1]->mPtr = mPtr;
-	    contextPtr->callChain[j-1]->isFilter = isFilter;
+	    contextPtr->callChain[i].mPtr = mPtr;
+	    contextPtr->callChain[i].isFilter = isFilter;
 	    return;
 	}
     }
@@ -1289,19 +1291,18 @@ AddMethodToCallChain(
      */
 
     if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke **)
-		ckalloc(sizeof(struct MInvoke *)*(contextPtr->numCallChain+1));
+	contextPtr->callChain = (struct MInvoke *)
+		ckalloc(sizeof(struct MInvoke) * (contextPtr->numCallChain+1));
 	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
 		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
     } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke **)
+	contextPtr->callChain = (struct MInvoke *)
 		ckrealloc((char *) contextPtr->callChain,
-		sizeof(struct MInvoke *) * (contextPtr->numCallChain + 1));
+		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
     }
-    contextPtr->callChain[contextPtr->numCallChain] = (struct MInvoke *)
-	    ckalloc(sizeof(struct MInvoke));
-    contextPtr->callChain[contextPtr->numCallChain]->mPtr = mPtr;
-    contextPtr->callChain[contextPtr->numCallChain++]->isFilter = isFilter;
+    contextPtr->callChain[contextPtr->numCallChain].mPtr = mPtr;
+    contextPtr->callChain[contextPtr->numCallChain].isFilter = isFilter;
+    contextPtr->numCallChain++;
 }
 
 static int
@@ -1685,6 +1686,40 @@ SelfObjCmd(
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(contextPtr->oPtr->nsPtr->fullName, -1));
 	return TCL_OK;
+    case SELF_CLASS: {
+	Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	Object *declarerPtr;
+
+	if (mPtr->declaringClassPtr != NULL) {
+	    declarerPtr = mPtr->declaringClassPtr->thisPtr;
+	} else if (mPtr->declaringObjectPtr != NULL) {
+	    declarerPtr = mPtr->declaringObjectPtr;
+	} else {
+	    /*
+	     * This should be unreachable code.
+	     */
+
+	    Tcl_AppendResult(interp, "method without declarer!", NULL);
+	    return TCL_ERROR;
+	}
+
+	Tcl_GetCommandFullName(interp, declarerPtr->command,
+		Tcl_GetObjResult(interp));
+
+	return TCL_OK;
+    }
+    case SELF_METHOD: {
+	Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+
+	if (contextPtr->flags & CONSTRUCTOR) {
+	    Tcl_AppendResult(interp, "<constructor>", NULL);
+	} else if (contextPtr->flags & DESTRUCTOR) {
+	    Tcl_AppendResult(interp, "<destructor>", NULL);
+	} else {
+	    Tcl_SetObjResult(interp, mPtr->namePtr);
+	}
+	return TCL_OK;
+    }
     default:
 	Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
 	return TCL_ERROR;
