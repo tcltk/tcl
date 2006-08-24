@@ -1,8 +1,8 @@
 # created by ../tools/tclZIC.tcl - do not edit
 
 set TZData(:America/Scoresbysund) {
-    {-9223372036854775808 -5340 0 LMT}
-    {-1686090660 -7200 0 CGT}
+    {-9223372036854775808 -5272 0 LMT}
+    {-1686090728 -7200 0 CGT}
     {323841600 -3600 0 CGST}
     {338961600 -7200 0 CGT}
     {354679200 0 0 EGST}
