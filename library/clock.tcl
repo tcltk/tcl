@@ -13,36 +13,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.34 2006/08/14 10:01:06 dkf Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.35 2006/08/24 21:47:49 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
 # We must have message catalogs that support the root locale, and
-# we need access to the Registry on Windows systems.  We also need
-# Tcl 8.5 dictionaries.
+# we need access to the Registry on Windows systems.
 
 uplevel \#0 {
     package require msgcat 1.4
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
-
-	    # HIDEOUS KLUDGE: [package require registry 1.1] has failed.
-	    # This failure likely means that we're running in Tcl's build
-	    # directory instead of the install directory.  We recover by
-	    # trying to load tclreg*.dll directly.
-
-	    if { [catch { 
-		load [lindex \
-			  [glob -directory \
-			       [file join \
-				    [pwd] \
-				    [file dirname [info nameofexecutable]]] \
-			       tclReg*.dll] \
-			  0] registry
-	    }] } {
-		# Still no registry!
-		namespace eval ::tcl::clock [list variable NoRegistry {}]
-	    }
+	    namespace eval ::tcl::clock [list variable NoRegistry {}]
 	}
     }
 }
