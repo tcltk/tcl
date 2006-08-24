@@ -2391,7 +2391,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-constraints newExprParser -verbose bet";
+				TCLTEST_OPTIONS = "-verbose bet";
 				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
@@ -2401,7 +2401,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-constraints newExprParser -verbose bet";
+				TCLTEST_OPTIONS = "-verbose bet";
 				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
@@ -2411,7 +2411,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-constraints newExprParser -verbose bet";
+				TCLTEST_OPTIONS = "-verbose bet";
 				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
@@ -2421,7 +2421,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-constraints newExprParser -verbose bet";
+				TCLTEST_OPTIONS = "-verbose bet";
 				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
