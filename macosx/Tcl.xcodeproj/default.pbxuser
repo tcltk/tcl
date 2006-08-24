@@ -30,12 +30,10 @@
 			NO,
 			NO,
 			NO,
-			NO,
 		);
 		argumentStrings = (
 			"${SRCROOT}/../../tcl/tests/all.tcl",
 			"-singleproc 1",
-			"-constraints newExprParser",
 			"-verbose \"bet\"",
 		);
 		autoAttachOnCrash = 1;
