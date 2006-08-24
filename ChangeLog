@@ -1,3 +1,13 @@
+2006-08-24  Kevin Kenny  <kennykb@acm.org>
+
+	* library/tzdata: Regenerated, including several new files,
+	from Olson's tzdata2006j.
+	* library/clock.tcl: 
+	* tests/clock.test: Removed an early testing hack that allowed
+	loading 'registry' from the build tree rather than an installed
+	one.  This is a workaround for [Bug 15232730], which remains open
+	because it's a symptom of a deeper underlying problem.
+	
 2006-08-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c:	Minimal collection of new tests
