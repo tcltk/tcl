@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.66 2006/07/31 03:27:13 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.67 2006/08/24 21:47:50 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -20,19 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 if {[testConstraint win]} {
     if {[catch {package require registry 1.1}]} {
-	# HIDEOUS KLUDGE: [package require registry 1.1] has failed.
-	# This failure likely means that we're running in Tcl's build
-	# directory instead of the install directory.  We recover by
-	# trying to load tclreg*.dll directly.
-
-	if {[catch {
-	    load [lindex [glob -directory \
-		    [file join [pwd] [file dirname [info nameofexecutable]]] \
-		    tclReg*.dll] 0] registry
-	}]} then {
-	    # Still no registry!
-	    namespace eval ::tcl::clock [set NoRegistry {}]
-	}
+	namespace eval ::tcl::clock {variable NoRegistry {}}
     }
 }
 package require msgcat 1.4
@@ -35194,6 +35182,8 @@ test clock-31.1 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	::tcl::clock::ClearCaches
     } \
     -body {
@@ -35203,6 +35193,7 @@ test clock-31.1 {system locale} \
 	namespace eval ::tcl::clock {
 	    rename registry {}
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	::tcl::clock::ClearCaches
     } \
     -result [clock format 0 -timezone :UTC -locale current \
@@ -35214,6 +35205,8 @@ test clock-31.2 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	::tcl::clock::ClearCaches
     } \
     -body {
@@ -35223,6 +35216,7 @@ test clock-31.2 {system locale} \
 	namespace eval ::tcl::clock {
 	    rename registry {}
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	::tcl::clock::ClearCaches
     } \
     -result [clock format 0 -timezone :UTC -locale current \
@@ -35234,6 +35228,8 @@ test clock-31.3 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	::tcl::clock::ClearCaches
     } \
     -body {
@@ -35243,6 +35239,7 @@ test clock-31.3 {system locale} \
 	namespace eval ::tcl::clock {
 	    rename registry {}
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	::tcl::clock::ClearCaches
     } \
     -result [clock format 0 -timezone :UTC -locale current \
@@ -35254,6 +35251,8 @@ test clock-31.4 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35277,6 +35276,7 @@ test clock-31.4 {system locale} \
 	if { [info exists oldTZ] } {
 	    set env(TZ) $oldTZ
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	::tcl::clock::ClearCaches
     } \
     -result [clock format 0 -locale current -timezone EST5 \
@@ -35288,6 +35288,8 @@ test clock-31.5 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35305,6 +35307,7 @@ test clock-31.5 {system locale} \
 	namespace eval ::tcl::clock {
 	    rename registry {}
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	if { [info exists oldTclTZ] } {
 	    set env(TCL_TZ) $oldTclTZ
 	}
@@ -35322,6 +35325,8 @@ test clock-31.6 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35339,6 +35344,7 @@ test clock-31.6 {system locale} \
 	namespace eval ::tcl::clock {
 	    rename registry {}
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	if { [info exists oldTclTZ] } {
 	    set env(TCL_TZ) $oldTclTZ
 	}
@@ -35930,6 +35936,8 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	set noreg [info exists ::tcl::clock::NoRegistry]
+	if {$noreg} {unset ::tcl::clock::NoRegistry}
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
 	    unset env(TZ)
@@ -35954,6 +35962,7 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	namespace eval ::tcl::clock {
 	    rename registry {}
 	}
+	if {$noreg} {set ::tcl::clock::NoRegistry {}}
 	if { [info exists oldTclTZ] } {
 	    set env(TCL_TZ) $oldTclTZ
 	}
