@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.97 2006/08/11 15:16:21 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.98 2006/08/26 13:00:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4600,6 +4600,18 @@ NamespaceUpvarCmd(
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (nsPtr == NULL) {
+	/*
+	 * The namespace does not exist, leave an error message.
+	 */
+
+	Tcl_Obj *resPtr;
+
+	TclNewObj(resPtr);
+	TclFormatObj(NULL, resPtr, "namespace \"%s\" does not exist", objv[2]);
+	Tcl_SetObjResult(interp, resPtr);
+	return TCL_ERROR;
+    }
 
     objc -= 3;
     objv += 3;
@@ -4613,10 +4625,10 @@ NamespaceUpvarCmd(
 	otherPtr = TclObjLookupVar(interp, objv[0], NULL,
 		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
 		/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	Tcl_PopCallFrame(interp);
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_PopCallFrame(interp);
 
 	/*
 	 * Create the new variable and link it to otherPtr

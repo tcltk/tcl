@@ -1,3 +1,11 @@
+2006-08-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* doc/namespace.n:
+	* generic/tclNamesp.c:
+	* tests/upvar.test: bugfix, docs clarification and new tests for
+	[namespace upvar] as follow up to [Bug 1546833], reported by Will
+	Duquette. 
+	
 2006-08-24  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata: Regenerated, including several new files,
