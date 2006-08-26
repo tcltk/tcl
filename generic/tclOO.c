@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.24 2006/08/24 23:56:10 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.25 2006/08/26 22:15:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -124,6 +124,8 @@ static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
+static void		RemoveFromInstances(Object *oPtr, Class *cPtr);
+static void		RemoveFromSubclasses(Class *subPtr, Class *superPtr);
 
 int
 TclOOInit(
@@ -158,9 +160,9 @@ TclOOInit(
     fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
     fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
-    fPtr->objectCls->numSuperclasses = 0;
-    ckfree((char *) fPtr->objectCls->superclasses);
-    fPtr->objectCls->superclasses = NULL;
+    fPtr->objectCls->superclasses.num = 0;
+    ckfree((char *) fPtr->objectCls->superclasses.list);
+    fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
 
     DeclareClassMethod(interp, fPtr->objectCls, "destroy", 1, ObjectDestroy);
@@ -238,10 +240,10 @@ AllocObject(
     Tcl_InitObjHashTable(&oPtr->methods);
     Tcl_InitObjHashTable(&oPtr->publicContextCache);
     Tcl_InitObjHashTable(&oPtr->privateContextCache);
-    oPtr->numFilters = 0;
-    oPtr->filterObjs = NULL;
-    oPtr->numMixins = 0;
-    oPtr->mixins = NULL;
+    oPtr->filters.num = 0;
+    oPtr->filters.list = NULL;
+    oPtr->mixins.num = 0;
+    oPtr->mixins.list = NULL;
     oPtr->classPtr = NULL;
     oPtr->flags = 0;
 
@@ -310,6 +312,25 @@ ObjNameChangedTrace(
 	DeleteContext(contextPtr);
     }
 
+    if (oPtr->classPtr != NULL) {
+	int i;
+
+	for (i=0 ; i<oPtr->classPtr->subclasses.num ; i++) {
+	    Class *subPtr = oPtr->classPtr->subclasses.list[i];
+
+	    if (subPtr->thisPtr) {
+		Tcl_DeleteCommandFromToken(interp, subPtr->thisPtr->command);
+	    }
+	}
+	for (i=0 ; i<oPtr->classPtr->instances.num ; i++) {
+	    Object *instPtr = oPtr->classPtr->instances.list[i];
+
+	    if (!(instPtr->flags & OBJECT_DELETED)) {
+		Tcl_DeleteCommandFromToken(interp, instPtr->command);
+	    }
+	}
+    }
+
     Tcl_DeleteNamespace((Tcl_Namespace *) oPtr->nsPtr);
     Tcl_Release(oPtr);
 
@@ -323,18 +344,127 @@ ObjectNamespaceDeleted(
     ClientData clientData)
 {
     Object *oPtr = clientData;
+    Class *cPtr;
+    int i;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
 
     /*
-     * Splice the object out of its context.
+     * Instruct everyone to no longer use any allocated fields of the object.
      */
 
-    //TODO
+    if (!(oPtr->flags & OBJECT_DELETED)) {
+	fprintf(stderr,
+		"warning: object ns deleted before command; memory leaked\n");
+    }
+    oPtr->flags |= OBJECT_DELETED;
+
+    /*
+     * Splice the object out of its context. After this, we must *not* call
+     * methods on the object.
+     */
+
+    RemoveFromInstances(oPtr, oPtr->selfCls);
+    for (i=0 ; i<oPtr->mixins.num ; i++) {
+	RemoveFromInstances(oPtr, oPtr->mixins.list[i]);
+    }
+    if (i) {
+	ckfree((char *)oPtr->mixins.list);
+    }
+    for (i=0 ; i<oPtr->filters.num ; i++) {
+	TclDecrRefCount(oPtr->filters.list[i]);
+    }
+    if (i) {
+	ckfree((char *)oPtr->filters.list);
+    }
+    for (hPtr = Tcl_FirstHashEntry(&oPtr->methods, &search);
+	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	TclDeleteMethod(Tcl_GetHashValue(hPtr));
+    }
+    Tcl_DeleteHashTable(&oPtr->methods);
+    for (hPtr = Tcl_FirstHashEntry(&oPtr->publicContextCache, &search);
+	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	CallContext *contextPtr = Tcl_GetHashValue(hPtr);
+
+	if (contextPtr) {
+	    DeleteContext(contextPtr);
+	}
+    }
+    Tcl_DeleteHashTable(&oPtr->publicContextCache);
+    for (hPtr = Tcl_FirstHashEntry(&oPtr->privateContextCache, &search);
+	    hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	CallContext *contextPtr = Tcl_GetHashValue(hPtr);
+
+	if (contextPtr) {
+	    DeleteContext(contextPtr);
+	}
+    }
+    Tcl_DeleteHashTable(&oPtr->privateContextCache);
+
+    cPtr = oPtr->classPtr;
+    if (cPtr != NULL) {
+	cPtr->thisPtr = NULL;
+
+	for (i=0 ; i<cPtr->superclasses.num ; i++) {
+	    RemoveFromSubclasses(cPtr, cPtr->superclasses.list[i]);
+	}
+	ckfree((char *) cPtr->superclasses.list);
+	ckfree((char *) cPtr->subclasses.list);
+	ckfree((char *) cPtr->instances.list);
+
+	for (hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
+		hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	    TclDeleteMethod(Tcl_GetHashValue(hPtr));
+	}
+	Tcl_DeleteHashTable(&cPtr->classMethods);
+	TclDeleteMethod(cPtr->constructorPtr);
+	TclDeleteMethod(cPtr->destructorPtr);
+	Tcl_EventuallyFree(cPtr, TCL_DYNAMIC);
+    }
 
     /*
      * Delete the object structure itself.
      */
 
     Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+}
+
+static void
+RemoveFromInstances(
+    Object *oPtr,
+    Class *cPtr)
+{
+    int i;
+
+    for (i=0 ; i<cPtr->instances.num ; i++) {
+	if (oPtr == cPtr->instances.list[i]) {
+	    if (i+1 < cPtr->instances.num) {
+		cPtr->instances.list[i] =
+			cPtr->instances.list[cPtr->instances.num-1];
+	    }
+	    cPtr->instances.list[--cPtr->instances.num] = NULL;
+	    break;
+	}
+    }
+}
+
+static void
+RemoveFromSubclasses(
+    Class *subPtr,
+    Class *superPtr)
+{
+    int i;
+
+    for (i=0 ; i<superPtr->subclasses.num ; i++) {
+	if (subPtr == superPtr->subclasses.list[i]) {
+	    if (i+1 < superPtr->subclasses.num) {
+		superPtr->subclasses.list[i] =
+			superPtr->subclasses.list[superPtr->subclasses.num-1];
+	    }
+	    superPtr->subclasses.list[--superPtr->subclasses.num] = NULL;
+	    break;
+	}
+    }
 }
 
 /*
@@ -366,15 +496,15 @@ AllocClass(
     clsPtr->thisPtr->selfCls = fPtr->classCls;
     clsPtr->thisPtr->classPtr = clsPtr;
     clsPtr->flags = 0;
-    clsPtr->numSuperclasses = 1;
-    clsPtr->superclasses = (Class **) ckalloc(sizeof(Class *));
-    clsPtr->superclasses[0] = fPtr->objectCls;
-    clsPtr->numSubclasses = 0;
-    clsPtr->subclasses = NULL;
-    clsPtr->subclassesSize = 0;
-    clsPtr->numInstances = 0;
-    clsPtr->instances = NULL;
-    clsPtr->instancesSize = 0;
+    clsPtr->superclasses.num = 1;
+    clsPtr->superclasses.list = (Class **) ckalloc(sizeof(Class *));
+    clsPtr->superclasses.list[0] = fPtr->objectCls;
+    clsPtr->subclasses.num = 0;
+    clsPtr->subclasses.list = NULL;
+    clsPtr->subclasses.size = 0;
+    clsPtr->instances.num = 0;
+    clsPtr->instances.list = NULL;
+    clsPtr->instances.size = 0;
     Tcl_InitObjHashTable(&clsPtr->classMethods);
     clsPtr->constructorPtr = NULL;
     clsPtr->destructorPtr = NULL;
@@ -401,20 +531,20 @@ NewInstance(
     int skip)
 {
     Object *oPtr = AllocObject(interp, NULL);
-    Class *classPtr;
     CallContext *contextPtr;
 
     oPtr->selfCls = clsPtr;
-    if (clsPtr->instancesSize == 0) {
-	clsPtr->instancesSize = ALLOC_CHUNK;
-	clsPtr->instances = (Object **)
+    if (clsPtr->instances.size == 0) {
+	clsPtr->instances.size = ALLOC_CHUNK;
+	clsPtr->instances.list = (Object **)
 		ckalloc(sizeof(Object *) * ALLOC_CHUNK);
-    } else if (clsPtr->numInstances == clsPtr->instancesSize) {
-	clsPtr->instancesSize += ALLOC_CHUNK;
-	clsPtr->instances = (Object **) ckrealloc((char *) clsPtr->instances,
-		sizeof(Object *) * clsPtr->instancesSize);
+    } else if (clsPtr->instances.num == clsPtr->instances.size) {
+	clsPtr->instances.size += ALLOC_CHUNK;
+	clsPtr->instances.list = (Object **)
+		ckrealloc((char *) clsPtr->instances.list,
+		sizeof(Object *) * clsPtr->instances.size);
     }
-    clsPtr->instances[clsPtr->numInstances++] = oPtr;
+    clsPtr->instances.list[clsPtr->instances.num++] = oPtr;
 
     if (name != NULL) {
 	Tcl_Obj *cmdnameObj;
@@ -435,21 +565,16 @@ NewInstance(
      * class structure as well.
      */
 
-    for (classPtr=clsPtr ; classPtr->numSuperclasses>0 ;
-	    classPtr=classPtr->superclasses[0]) { //TODO: fix multiple inheritance
-	Foundation *fPtr = ((Interp *) interp)->ooFoundation;
+    if (TclOOIsReachable((((Interp *) interp)->ooFoundation)->classCls,
+	    clsPtr)) {
+	/*
+	 * Is a class, so attach a class structure. Note that the AllocClass
+	 * function splices the structure into the object, so we don't have
+	 * to.
+	 */
 
-	if (classPtr == fPtr->classCls) {
-	    /*
-	     * Is a class, so attach a class structure. Note that the
-	     * AllocClass function splices the structure into the object, so
-	     * we don't have to.
-	     */
-
-	    AllocClass(interp, oPtr);
-	    oPtr->selfCls = clsPtr; // Repatch
-	    break;
-	}
+	AllocClass(interp, oPtr);
+	oPtr->selfCls = clsPtr; // Repatch
     }
 
     contextPtr = GetCallContext(((Interp *)interp)->ooFoundation, oPtr, NULL,
@@ -895,7 +1020,8 @@ ObjectCmd(
 
     Tcl_Preserve(oPtr);
     result = InvokeContext(interp, contextPtr, objc, objv);
-    if (!(contextPtr->flags & OO_UNKNOWN_METHOD)) {
+    if (!(contextPtr->flags & OO_UNKNOWN_METHOD)
+	    && !(oPtr->flags & OBJECT_DELETED)) {
 	Tcl_HashEntry *hPtr;
 
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) objv[1]);
@@ -1056,16 +1182,17 @@ AddClassMethodNames(
 	    }
 	}
 
-	if (clsPtr->numSuperclasses != 1) {
+	if (clsPtr->superclasses.num != 1) {
 	    break;
 	}
-	clsPtr = clsPtr->superclasses[0];
+	clsPtr = clsPtr->superclasses.list[0];
     }
-    if (clsPtr->numSuperclasses != 0) {
+    if (clsPtr->superclasses.num != 0) {
 	int i;
 
-	for (i=0 ; i<clsPtr->numSuperclasses ; i++) {
-	    AddClassMethodNames(clsPtr->superclasses[i], publicOnly, namesPtr);
+	for (i=0 ; i<clsPtr->superclasses.num ; i++) {
+	    AddClassMethodNames(clsPtr->superclasses.list[i], publicOnly,
+		    namesPtr);
 	}
     }
 }
@@ -1110,9 +1237,9 @@ GetCallContext(
     contextPtr->index = 0;
 
     if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
-	for (i=0 ; i<oPtr->numFilters ; i++) {
-	    AddSimpleChainToCallContext(oPtr, oPtr->filterObjs[i], contextPtr,
-		     1, 0);
+	for (i=0 ; i<oPtr->filters.num ; i++) {
+	    AddSimpleChainToCallContext(oPtr, oPtr->filters.list[i],
+		    contextPtr, 1, 0);
 	}
     }
     count = contextPtr->filterLength = contextPtr->numCallChain;
@@ -1176,9 +1303,9 @@ AddSimpleChainToCallContext(
 	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr, isFilter,
 		    flags);
 	}
-	for (i=0 ; i<oPtr->numMixins ; i++) {
-	    AddSimpleClassChainToCallContext(oPtr->mixins[i], methodNameObj,
-		    contextPtr, isFilter, flags);
+	for (i=0 ; i<oPtr->mixins.num ; i++) {
+	    AddSimpleClassChainToCallContext(oPtr->mixins.list[i],
+		    methodNameObj, contextPtr, isFilter, flags);
 	}
     }
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, contextPtr,
@@ -1215,16 +1342,16 @@ AddSimpleClassChainToCallContext(
 	}
     }
 
-    switch (classPtr->numSuperclasses) {
+    switch (classPtr->superclasses.num) {
     case 1:
-	classPtr = classPtr->superclasses[0];
+	classPtr = classPtr->superclasses.list[0];
 	goto tailRecurse;
     default:
     {
 	int i;
 
-	for (i=0 ; i<classPtr->numSuperclasses ; i++) {
-	    AddSimpleClassChainToCallContext(classPtr->superclasses[i],
+	for (i=0 ; i<classPtr->superclasses.num ; i++) {
+	    AddSimpleClassChainToCallContext(classPtr->superclasses.list[i],
 		    methodNameObj, contextPtr, isFilter, flags);
 	}
     }
@@ -1739,6 +1866,29 @@ TclGetObjectFromObj(
 	return NULL;
     }
     return cmdPtr->objClientData;
+}
+
+int
+TclOOIsReachable(
+    Class *targetPtr,
+    Class *startPtr)
+{
+    int i;
+
+  tailRecurse:
+    if (startPtr == targetPtr) {
+	return 1;
+    }
+    if (startPtr->superclasses.num == 1) {
+	startPtr = startPtr->superclasses.list[0];
+	goto tailRecurse;
+    }
+    for (i=0 ; i<startPtr->superclasses.num ; i++) {
+	if (TclOOIsReachable(targetPtr, startPtr->superclasses.list[i])) {
+	    return 1;
+	}
+    }
+    return 0;
 }
 
 /*

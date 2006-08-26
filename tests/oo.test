@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.11 2006/08/24 23:56:10 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.12 2006/08/26 22:15:49 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -130,7 +130,6 @@ test oo-7.1 {OO: inheritance 101} -setup {
     instance doit ok
     return $result
 } -cleanup {
-    instance destroy
     subClass destroy
     superClass destroy
 } -result {1 {unknown method "doit": must be create, destroy or new} ok}
@@ -146,7 +145,6 @@ test oo-7.2 {OO: inheritance 101} -setup {
     instance doit 1
     return $result
 } -cleanup {
-    instance destroy
     subClass destroy
     superClass destroy
 } -result {=1= |2|}
@@ -165,10 +163,61 @@ test oo-7.3 {OO: inheritance 101} -setup {
     instance doit 1
     return $result
 } -cleanup {
-    instance destroy
     subClass destroy
     superClass destroy
 } -result {=1= -2- |3|}
+test oo-7.4 {OO: inheritance from oo::class} -body {
+    oo::class create meta
+    oo::define meta {
+	superclass oo::class
+	self.unexport create new
+	self.method make {x {definitions {}}} {
+	    if {![string match ::* $x]} {
+		set ns [uplevel 1 {::namespace current}]
+		set x ${ns}::$x
+	    }
+	    set o [my create $x]
+	    lappend ::result "made $o"
+	    oo::define $o $definitions
+	    return $o
+	}
+    }
+    set result [list [catch {meta create foo} msg] $msg]
+    lappend result [meta make classinstance {
+	lappend ::result "in definition script in [namespace current]"
+    }]
+    lappend result [classinstance create instance]
+} -cleanup {
+    catch {classinstance destroy}
+    catch {meta destroy}
+} -result {1 {unknown method "create": must be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
+test oo-7.5 {OO: inheritance from oo::class in the secondary chain} -body {
+    oo::class create other
+    oo::class create meta
+    oo::define meta {
+	superclass other oo::class
+	self.unexport create new
+	self.method make {x {definitions {}}} {
+	    if {![string match ::* $x]} {
+		set ns [uplevel 1 {::namespace current}]
+		set x ${ns}::$x
+	    }
+	    set o [my create $x]
+	    lappend ::result "made $o"
+	    oo::define $o $definitions
+	    return $o
+	}
+    }
+    set result [list [catch {meta create foo} msg] $msg]
+    lappend result [meta make classinstance {
+	lappend ::result "in definition script in [namespace current]"
+    }]
+    lappend result [classinstance create instance]
+} -cleanup {
+    catch {classinstance destroy}
+    catch {meta destroy}
+    catch {other destroy}
+} -result {1 {unknown method "create": must be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
@@ -205,17 +254,42 @@ test oo-9.1 {OO: multiple inheritance} -setup {
     set result {}
     lappend result [foo test]
 } -cleanup {
-    foo destroy
     D destroy
     C destroy
     B destroy
+    A destroy
+} -result {D B C A ok}
+test oo-9.2 {OO: multiple inheritance} -constraints knownBug -setup {
+    oo::class create A
+    oo::class create B
+    oo::class create C
+    oo::class create D
+    D create foo
+} -body {
+# superclass splicing wrong
+    oo::define A method test {} {lappend ::result A; return ok}
+    oo::define B {
+	superclass A
+	method test {} {lappend ::result B; next}
+    }
+    oo::define C {
+	superclass A
+	method test {} {lappend ::result C; next}
+    }
+    oo::define D {
+	superclass B C
+	method test {} {lappend ::result D; next}
+    }
+    set result {}
+    lappend result [foo test]
+} -cleanup {
     A destroy
 } -result {D B C A ok}
 
 test oo-10.1 {OO: recursive invoke and modify} -setup {
     [oo::class create C] create O
 } -cleanup {
-    O destroy; C destroy
+    C destroy
 } -body {
     oo::define C method foo x {
 	lappend ::result $x;
@@ -235,6 +309,27 @@ test oo-10.1 {OO: recursive invoke and modify} -setup {
     O foo 2
     return $result
 } -result {-2- 2 -1- 1 0}
+
+test oo-11.1 {OO: cleanup} {
+    oo::object create foo
+    set result [list [catch {oo::object create foo} msg] $msg]
+    lappend result [foo destroy] [oo::object create foo] [foo destroy]
+} {1 {can't rename to "foo": command already exists} {} ::foo {}}
+test oo-11.2 {OO: cleanup} {
+    oo::class create bar
+    bar create foo
+    set result [list [catch {bar create foo} msg] $msg]
+    lappend result [bar destroy] [oo::object create foo] [foo destroy]
+} {1 {can't rename to "foo": command already exists} {} ::foo {}}
+# superclass splicing/desplicing wrong/incomplete
+test oo-11.3 {OO: cleanup} knownBug {
+    oo::class create bar0
+    oo::class create bar
+    oo::define bar superclass bar0
+    bar create foo
+    set result [list [catch {bar create foo} msg] $msg]
+    lappend result [bar0 destroy] [oo::object create foo] [foo destroy]
+} {1 {can't rename to "foo": command already exists} {} ::foo {}}
 
 cleanupTests
 return

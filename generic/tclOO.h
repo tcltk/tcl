@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.10 2006/08/24 23:56:10 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.11 2006/08/26 22:15:49 dkf Exp $
  */
 
 /*
@@ -76,12 +76,14 @@ typedef struct Object {
     struct Class *selfCls;	/* This object's class. */
     Tcl_HashTable methods;	/* Tcl_Obj (method name) to Method*
 				 * mapping. */
-    int numMixins;		/* Number of classes mixed into this
-				 * object. */
-    struct Class **mixins;	/* References to classes mixed into this
-				 * object. */
-    int numFilters;
-    Tcl_Obj **filterObjs;
+    struct {			/* Classes mixed into this object. */
+	int num;
+	struct Class **list;
+    } mixins;
+    struct {
+	int num;
+	Tcl_Obj **list;
+    } filters;
     struct Class *classPtr;	/* All classes have this non-NULL; it points
 				 * to the class structure. Everything else has
 				 * this NULL. */
@@ -101,14 +103,20 @@ typedef struct Object {
 typedef struct Class {
     struct Object *thisPtr;
     int flags;
-    int numSuperclasses;
-    struct Class **superclasses;
-    int numSubclasses;
-    struct Class **subclasses;
-    int subclassesSize;
-    int numInstances;
-    struct Object **instances;
-    int instancesSize;
+    struct {
+	int num;
+	struct Class **list;
+    } superclasses;
+    struct {
+	int num;
+	struct Class **list;
+	int size;
+    } subclasses;
+    struct {
+	int num;
+	struct Object **list;
+	int size;
+    } instances;
     Tcl_HashTable classMethods;
     struct Method *constructorPtr;
     struct Method *destructorPtr;
@@ -205,6 +213,8 @@ MODULE_SCOPE void	TclDeleteMethod(Method *method);
 MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *procNameObj,
 			    int skip);
+// Expose this one?
+MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
 
 /*
  * Local Variables:
