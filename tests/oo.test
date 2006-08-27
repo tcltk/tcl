@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.12 2006/08/26 22:15:49 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.13 2006/08/27 14:33:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -65,14 +65,13 @@ test oo-3.2 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
     # we're modifying the root object class's constructor
     interp create subinterp
-} -constraints knownBug -body {
+} -body {
     subinterp eval {
 	oo::define oo::object destructor {
 	    lappend ::result died
 	}
 	lappend result 1 [oo::object create foo]
 	lappend result 2 [rename foo {}]
-	# KnownBug: Failure to remove the destructor makes odd things happen!
     }
 } -cleanup {
     interp delete subinterp
@@ -218,6 +217,35 @@ test oo-7.5 {OO: inheritance from oo::class in the secondary chain} -body {
     catch {meta destroy}
     catch {other destroy}
 } -result {1 {unknown method "create": must be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
+test oo-7.6 {OO: inheritance 101 - overridden methods should be oblivious} -setup {
+    oo::class create Aclass
+    oo::class create Bclass
+    Bclass create Binstance
+} -body {
+    oo::define Aclass {
+	method incr {var step} {
+	    upvar 1 $var v
+	    ::incr v $step
+	}
+    }
+    oo::define Bclass {
+	superclass Aclass
+	method incr {var {step 1}} {
+	    global result
+	    lappend result $var $step
+	    set r [next $var $step]
+	    lappend result returning:$r
+	    return $r
+	}
+    }
+    set result {}
+    set x 10
+    lappend result x=$x
+    lappend result [Binstance incr x]
+    lappend result x=$x
+} -result {x=10 x 1 returning:11 11 x=11} -cleanup {
+    Aclass destroy
+}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
@@ -259,14 +287,13 @@ test oo-9.1 {OO: multiple inheritance} -setup {
     B destroy
     A destroy
 } -result {D B C A ok}
-test oo-9.2 {OO: multiple inheritance} -constraints knownBug -setup {
+test oo-9.2 {OO: multiple inheritance} -setup {
     oo::class create A
     oo::class create B
     oo::class create C
     oo::class create D
     D create foo
 } -body {
-# superclass splicing wrong
     oo::define A method test {} {lappend ::result A; return ok}
     oo::define B {
 	superclass A
@@ -292,7 +319,7 @@ test oo-10.1 {OO: recursive invoke and modify} -setup {
     C destroy
 } -body {
     oo::define C method foo x {
-	lappend ::result $x;
+	lappend ::result $x
 	if {$x} {
 	    [self object] foo [incr x -1]
 	}
@@ -314,22 +341,85 @@ test oo-11.1 {OO: cleanup} {
     oo::object create foo
     set result [list [catch {oo::object create foo} msg] $msg]
     lappend result [foo destroy] [oo::object create foo] [foo destroy]
-} {1 {can't rename to "foo": command already exists} {} ::foo {}}
+} {1 {can't create object "foo": command already exists with that name} {} ::foo {}}
 test oo-11.2 {OO: cleanup} {
     oo::class create bar
     bar create foo
     set result [list [catch {bar create foo} msg] $msg]
     lappend result [bar destroy] [oo::object create foo] [foo destroy]
-} {1 {can't rename to "foo": command already exists} {} ::foo {}}
-# superclass splicing/desplicing wrong/incomplete
-test oo-11.3 {OO: cleanup} knownBug {
+} {1 {can't create object "foo": command already exists with that name} {} ::foo {}}
+test oo-11.3 {OO: cleanup} {
     oo::class create bar0
     oo::class create bar
     oo::define bar superclass bar0
     bar create foo
     set result [list [catch {bar create foo} msg] $msg]
     lappend result [bar0 destroy] [oo::object create foo] [foo destroy]
-} {1 {can't rename to "foo": command already exists} {} ::foo {}}
+} {1 {can't create object "foo": command already exists with that name} {} ::foo {}}
+test oo-11.4 {OO: cleanup} {
+    oo::class create bar0
+    oo::class create bar1
+    oo::define bar1 superclass bar0
+    oo::class create bar2
+    oo::define bar2 {
+	superclass bar0
+	destructor {lappend ::result destroyed}
+    }
+    oo::class create bar
+    oo::define bar superclass bar1 bar2
+    bar create foo
+    set result [list [catch {bar create foo} msg] $msg]
+    lappend result [bar0 destroy] [oo::object create foo] [foo destroy] \
+	[oo::object create bar2] [bar2 destroy]
+} {1 {can't create object "foo": command already exists with that name} destroyed {} ::foo {} ::bar2 {}}
+
+test oo-12.1 {OO: filters} {
+    oo::class create Aclass
+    Aclass create Aobject
+    oo::define Aclass {
+	method concatenate args {
+	    global result
+	    lappend result {expand}$args
+	    join $args {}
+	}
+	method logFilter args {
+	    global result
+	    lappend result "calling [self object]->[self method] $args"
+	    set r [next {expand}$args]
+	    lappend result "result=$r"
+	    return $r
+	}
+    }
+    oo::define Aobject filter logFilter
+    set result {}
+    lappend result [Aobject concatenate 1 2 3 4 5]
+    Aclass destroy
+    return $result
+} {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 12345}
+test oo-12.2 {OO: filters} knownBug {
+    oo::class create Aclass
+    Aclass create Aobject
+    oo::define Aclass {
+	method concatenate args {
+	    global result
+	    lappend result {expand}$args
+	    join $args {}
+	}
+	method logFilter args {
+	    global result
+	    lappend result "calling [self object]->[self method] $args"
+	    set r [next {expand}$args]
+	    lappend result "result=$r"
+	    return $r
+	}
+    }
+    oo::define Aobject filter logFilter
+    set result {}
+    lappend result [Aobject concatenate 1 2 3 4 5]
+    Aobject destroy
+    Aclass destroy
+    return $result
+} {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 12345}
 
 cleanupTests
 return

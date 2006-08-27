@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.10 2006/08/26 22:15:49 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.11 2006/08/27 14:33:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -321,6 +321,7 @@ TclOODefineFilterObjCmd(
 {
     int isSelfFilter = (clientData != NULL);
     Object *oPtr;
+    int i;
 
     oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
@@ -328,8 +329,40 @@ TclOODefineFilterObjCmd(
     }
     isSelfFilter |= (oPtr->classPtr == NULL);
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    if (!isSelfFilter) {
+	Tcl_AppendResult(interp, "class filters not implemented", NULL);
+	return TCL_ERROR;
+    }
+
+    if (oPtr->filters.num) {
+	for (i=0 ; i<oPtr->filters.num ; i++) {
+	    TclDecrRefCount(oPtr->filters.list[i]);
+	}
+    }
+    if (objc == 1) {
+	// deleting filters
+	ckfree((char *) oPtr->filters.list);
+	oPtr->filters.list = NULL;
+	oPtr->filters.num = 0;
+    } else {
+	// creating filters
+	Tcl_Obj **filters;
+
+	if (oPtr->filters.num == 0) {
+	    filters = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (objc-1));
+	} else {
+	    filters = (Tcl_Obj **) ckrealloc((char *) oPtr->filters.list,
+		    sizeof(Tcl_Obj *) * (objc-1));
+	}
+	for (i=1 ; i<objc ; i++) {
+	    filters[i-1] = objv[i];
+	    Tcl_IncrRefCount(objv[i]);
+	}
+	oPtr->filters.list = filters;
+	oPtr->filters.num = objc-1;
+    }
+    ((Interp *)interp)->ooFoundation->epoch++;
+    return TCL_OK;
 }
 
 int
@@ -513,7 +546,7 @@ TclOODefineSuperclassObjCmd(
     Object *oPtr, *o2Ptr;
     Foundation *fPtr = ((Interp *)interp)->ooFoundation;
     Class **superclasses;
-    int i;
+    int i, j;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?className ...?");
@@ -558,6 +591,13 @@ TclOODefineSuperclassObjCmd(
 	    Tcl_AppendResult(interp, "only a class can be a superclass", NULL);
 	    goto failedAfterAlloc;
 	}
+	for (j=0 ; j<i ; j++) {
+	    if (superclasses[j] == o2Ptr->classPtr) {
+		Tcl_AppendResult(interp,
+			"class should only be a direct superclass once", NULL);
+		goto failedAfterAlloc;
+	    }
+	}
 	if (TclOOIsReachable(oPtr->classPtr, o2Ptr->classPtr)) {
 	    Tcl_AppendResult(interp,
 		    "attempt to form circular dependency graph", NULL);
@@ -569,17 +609,24 @@ TclOODefineSuperclassObjCmd(
     }
 
     /*
-     * Install the list of superclasses into the class.
+     * Install the list of superclasses into the class. Note that this also
+     * involves splicing the class out of the superclasses' subclass list that
+     * it used to be a member of and splicing it into the new superclasses'
+     * subclass list.
      */
 
     if (oPtr->classPtr->superclasses.num != 0) {
-	// TODO: Splice out from old superclasses' subclass list.
-
+	for (i=0 ; i<oPtr->classPtr->superclasses.num ; i++) {
+	    TclOORemoveFromSubclasses(oPtr->classPtr,
+		    oPtr->classPtr->superclasses.list[i]);
+	}
 	ckfree((char *) oPtr->classPtr->superclasses.list);
+    }
+    for (i=0 ; i<objc-1 ; i++) {
+	TclOOAddToSubclasses(oPtr->classPtr, superclasses[i]);
     }
     oPtr->classPtr->superclasses.list = superclasses;
     oPtr->classPtr->superclasses.num = objc-1;
-    // TODO: Splice into new superclasses' subclass list.
     fPtr->epoch++;
 
     return TCL_OK;
