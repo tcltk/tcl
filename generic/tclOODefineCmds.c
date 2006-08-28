@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.12 2006/08/28 15:53:59 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.13 2006/08/28 23:37:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -187,7 +187,10 @@ TclOODefineCopyObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr;
+    Object *oPtr, *o2Ptr;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    int i;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?targetName?");
@@ -199,8 +202,79 @@ TclOODefineCopyObjCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    /*
+     * Create a new object of the correct class. Note that constructors are
+     * not called. Also note that we must resolve the object name ourselves
+     * because we do not want to create the object in the current namespace,
+     * but rather in the context of the namespace of the caller of the overall
+     * [oo::define] command.
+     */
+
+    {
+	char *name;
+	Tcl_DString buffer;
+
+	if (objc == 1) {
+	    name = NULL;
+	} else {
+	    name = TclGetString(objv[1]);
+	    Tcl_DStringInit(&buffer);
+	    if (name[0]!=':' || name[1]!=':') {
+		Interp *iPtr = (Interp *) interp;
+		CallFrame *callerFramePtr = iPtr->varFramePtr->callerVarPtr;
+
+		if (callerFramePtr != NULL) {
+		    Tcl_DStringAppend(&buffer,
+			    callerFramePtr->nsPtr->fullName, -1);
+		}
+		Tcl_DStringAppend(&buffer, "::", 2);
+		Tcl_DStringAppend(&buffer, name, -1);
+		name = Tcl_DStringValue(&buffer);
+	    }
+	}
+	o2Ptr = TclOONewInstance(interp, oPtr->selfCls, name, -1, NULL, -1);
+	if (name != NULL) {
+	    Tcl_DStringFree(&buffer);
+	}
+    }
+    if (o2Ptr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Copy the methods, mixins and filters.
+     */
+
+    hPtr = Tcl_FirstHashEntry(&oPtr->methods, &search);
+    for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_Obj *keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
+	Method *mPtr = Tcl_GetHashValue(hPtr);
+
+	TclOONewMethod(interp, (Tcl_Object) o2Ptr, keyPtr,
+		mPtr->flags & PUBLIC_METHOD, mPtr->callPtr, mPtr->clientData,
+		mPtr->deletePtr); // TODO: need to clone the clientData
+    }
+    o2Ptr->mixins.num = oPtr->mixins.num;
+    o2Ptr->mixins.list = (Class **) ckalloc(sizeof(Class*) * oPtr->mixins.num);
+    memcpy(o2Ptr->mixins.list, oPtr->mixins.list,
+	    sizeof(Class *) * oPtr->mixins.num);
+    o2Ptr->filters.num = oPtr->filters.num;
+    o2Ptr->filters.list = (Tcl_Obj **)
+	    ckalloc(sizeof(Tcl_Obj *) * oPtr->filters.num);
+    memcpy(o2Ptr->filters.list, oPtr->filters.list,
+	    sizeof(Tcl_Obj *) * oPtr->filters.num);
+    for (i=0 ; i<o2Ptr->filters.num ; i++) {
+	Tcl_IncrRefCount(o2Ptr->filters.list[i]);
+    }
+
+    //TODO: clone the class part (if present)
+
+    /*
+     * Return the name of the cloned object.
+     */
+
+    Tcl_GetCommandFullName(interp, o2Ptr->command, Tcl_GetObjResult(interp));
+    return TCL_OK;
 }
 
 int

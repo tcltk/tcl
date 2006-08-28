@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.14 2006/08/28 15:53:59 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.15 2006/08/28 23:37:51 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -464,6 +464,26 @@ test oo-14.1 {OO: mixins} {
     oo::define fooTest2 mixin
     lappend result [Bclass destroy] [info command fooTest*] [Aclass destroy]
 } {1 {unknown method "?": must be bar, boo or destroy} {::fooTest in bar} {::fooTest in boo} {::fooTest2 in bar} {::fooTest2 in boo} {} fooTest2 {}}
+
+test oo-15.1 {OO: object cloning} {
+    oo::class create Aclass
+    oo::define Aclass method test {} {lappend ::result [self object]->test}
+    Aclass create Ainstance
+    set result {}
+    Ainstance test
+    oo::define Ainstance copy Binstance
+    Binstance test
+    Ainstance test
+    Ainstance destroy
+    namespace eval foo {
+	oo::define Binstance copy Cinstance
+	Cinstance test
+    }
+    Aclass destroy
+    namespace delete foo
+    lappend result [info commands Binstance]
+} {::Ainstance->test ::Binstance->test ::Ainstance->test ::foo::Cinstance->test {}}
+# Anything involving methods or classes is not cloned correctly yet.
 
 cleanupTests
 return

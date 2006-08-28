@@ -8,23 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.27 2006/08/28 15:53:59 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.28 2006/08/28 23:37:51 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 #include <assert.h>
-
-Tcl_Method		Tcl_OONewMethod(Tcl_Interp *interp, Tcl_Object object,
-			    Tcl_Obj *nameObj, int isPublic,
-			    Tcl_OOMethodCallProc callProc,
-			    ClientData clientData,
-			    Tcl_OOMethodDeleteProc deleteProc);
-Tcl_Method		Tcl_OONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
-			    Tcl_Obj *nameObj, int isPublic,
-			    Tcl_OOMethodCallProc callProc,
-			    ClientData clientData,
-			    Tcl_OOMethodDeleteProc deleteProc);
 
 static const struct {
     const char *name;
@@ -84,9 +73,6 @@ static int		InvokeContext(Tcl_Interp *interp,
 static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int publicOnly,
 			    Tcl_HashTable *cachePtr);
-static Object *		NewInstance(Tcl_Interp *interp, Class *clsPtr,
-			    char *name, int objc, Tcl_Obj *const *objv,
-			    int skip);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -590,19 +576,19 @@ AllocClass(
 /*
  * ----------------------------------------------------------------------
  *
- * NewInstance --
+ * TclOONewInstance --
  *
  *	Allocate a new instance of an object.
  *
  * ----------------------------------------------------------------------
  */
 
-static Object *
-NewInstance(
+Object *
+TclOONewInstance(
     Tcl_Interp *interp,
     Class *clsPtr,
     char *name,
-    int objc,
+    int objc, // -ve means don't call constructor
     Tcl_Obj *const *objv,
     int skip)
 {
@@ -646,22 +632,24 @@ NewInstance(
 	oPtr->selfCls = clsPtr; // Repatch
     }
 
-    contextPtr = GetCallContext(((Interp *)interp)->ooFoundation, oPtr, NULL,
-	    CONSTRUCTOR, NULL);
-    if (contextPtr != NULL) {
-	int result;
+    if (objc >= 0) {
+	contextPtr = GetCallContext(((Interp *)interp)->ooFoundation, oPtr,
+		NULL, CONSTRUCTOR, NULL);
+	if (contextPtr != NULL) {
+	    int result;
 
-	Tcl_Preserve(oPtr);
-	contextPtr->flags |= CONSTRUCTOR;
-	contextPtr->skip = skip;
-	result = InvokeContext(interp, contextPtr, objc, objv);
-	DeleteContext(contextPtr);
-	Tcl_Release(oPtr);
-	if (result != TCL_OK) {
-	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
-	    return NULL;
+	    Tcl_Preserve(oPtr);
+	    contextPtr->flags |= CONSTRUCTOR;
+	    contextPtr->skip = skip;
+	    result = InvokeContext(interp, contextPtr, objc, objv);
+	    DeleteContext(contextPtr);
+	    Tcl_Release(oPtr);
+	    if (result != TCL_OK) {
+		Tcl_DeleteCommandFromToken(interp, oPtr->command);
+		return NULL;
+	    }
+	    Tcl_ResetResult(interp);
 	}
-	Tcl_ResetResult(interp);
     }
 
     return oPtr;
@@ -679,14 +667,14 @@ DeclareClassMethod(
 
     TclNewStringObj(namePtr, name, strlen(name));
     Tcl_IncrRefCount(namePtr);
-    Tcl_OONewClassMethod(interp, (Tcl_Class) clsPtr, namePtr, isPublic,
+    TclOONewClassMethod(interp, (Tcl_Class) clsPtr, namePtr, isPublic,
 	    callPtr, NULL, NULL);
     TclDecrRefCount(namePtr);
     return TCL_OK;
 }
 
 Tcl_Method
-Tcl_OONewMethod(
+TclOONewMethod(
     Tcl_Interp *interp,
     Tcl_Object object,
     Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
@@ -733,7 +721,7 @@ Tcl_OONewMethod(
 }
 
 Tcl_Method
-Tcl_OONewClassMethod(
+TclOONewClassMethod(
     Tcl_Interp *interp,
     Tcl_Class cls,
     Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
@@ -804,7 +792,7 @@ TclNewProcMethod(
 	ckfree((char *) pmPtr);
 	return NULL;
     }
-    return (Method *) Tcl_OONewMethod(interp, (Tcl_Object) oPtr, nameObj,
+    return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, nameObj,
 	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
 }
 
@@ -843,7 +831,7 @@ TclNewProcClassMethod(
     if (argsLen == -1) {
 	TclDecrRefCount(argsObj);
     }
-    return (Method *) Tcl_OONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
+    return (Method *) TclOONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
 }
 
@@ -966,7 +954,7 @@ TclNewForwardMethod(
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
-    return (Method *) Tcl_OONewMethod(interp, (Tcl_Object) oPtr, nameObj,
+    return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, nameObj,
 	    isPublic, &InvokeForwardMethod, fmPtr, &DeleteForwardMethod);
 }
 
@@ -993,7 +981,7 @@ TclNewForwardClassMethod(
     fmPtr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
-    return (Method *) Tcl_OONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
+    return (Method *) TclOONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &InvokeForwardMethod, fmPtr, &DeleteForwardMethod);
 }
 
@@ -1529,8 +1517,8 @@ ClassCreate(
 	Tcl_WrongNumArgs(interp, 2, objv, "objectName ?arg ...?");
 	return TCL_ERROR;
     }
-    newObjPtr = NewInstance(interp, oPtr->classPtr, TclGetString(objv[2]),
-	    objc, objv, 3);
+    newObjPtr = TclOONewInstance(interp, oPtr->classPtr,
+	    TclGetString(objv[2]), objc, objv, 3);
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1559,7 +1547,7 @@ ClassNew(
 	TclDecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
-    newObjPtr = NewInstance(interp, oPtr->classPtr, NULL, objc, objv, 2);
+    newObjPtr = TclOONewInstance(interp, oPtr->classPtr, NULL, objc, objv, 2);
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }
