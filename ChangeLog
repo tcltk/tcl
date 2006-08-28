@@ -1,5 +1,12 @@
 2006-08-28  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Revised ObjPrintfVA to take care
+	* generic/tclParseExpr.c:	to copy only whole characters when
+	doing %s formatting.  This relieves callers of TclObjPrintf() and
+	TclFormatToErrorInfo() from needing to fix arguments to character
+	boundaries.  Tcl_ParseExpr() simplified by taking advantage.
+	[Bug 1547786]
+
 	* generic/tclStringObj.c:	Corrected TclFormatObj's failure
 	to count up the number of arguments required by examining the
 	format string.  [Bug 1547681]
