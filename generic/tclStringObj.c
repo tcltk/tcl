@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.55 2006/08/10 12:15:31 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.56 2006/08/28 14:13:22 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2314,12 +2314,19 @@ FormatObjVA(
 {
     int code, objc;
     Tcl_Obj **objv, *element, *list = Tcl_NewObj();
+    CONST char *p = format;
 
     Tcl_IncrRefCount(list);
-    element = va_arg(argList, Tcl_Obj *);
-    while (element != NULL) {
-	Tcl_ListObjAppendElement(NULL, list, element);
+    while (*p != '\0') {
+	if (*p++ != '%') {
+	    continue;
+	}
+	if (*p == '%') {
+	    continue;
+	}
+	p++;
 	element = va_arg(argList, Tcl_Obj *);
+	Tcl_ListObjAppendElement(NULL, list, element);
     }
     Tcl_ListObjGetElements(NULL, list, &objc, &objv);
     code = TclAppendFormattedObjs(interp, objPtr, format, objc, objv);
