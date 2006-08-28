@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.57 2006/08/21 01:08:41 das Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.58 2006/08/28 04:13:32 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -1666,6 +1666,11 @@ ClockClicksObjCmd(
     };
     int index = CLICKS_NATIVE;
     Tcl_Time now;
+#ifndef TCL_WIDE_CLICKS
+    unsigned long clicks;
+#else
+    Tcl_WideInt clicks;
+#endif
 
     switch (objc) {
     case 1:
@@ -1688,13 +1693,13 @@ ClockClicksObjCmd(
 		now.sec * 1000 + now.usec / 1000 ) );
 	break;
     case CLICKS_NATIVE:
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
 #ifndef TCL_WIDE_CLICKS
-		TclpGetClicks()
+	clicks = TclpGetClicks();
 #else
-		TclpGetWideClicks()
+	clicks = TclpGetWideClicks();
 #endif
-		));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
+		clicks ) );
 	break;
     case CLICKS_MICROS:
 	Tcl_GetTime(&now);
