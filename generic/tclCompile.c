@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.95 2006/08/17 17:43:38 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.96 2006/08/28 08:47:05 das Exp $
  */
 
 #include "tclInt.h"
@@ -2930,8 +2930,8 @@ TclPrintByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout,
-	    "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
-	    codePtr->structureSize,
+	    "  Code %ld = header %ld+inst %d+litObj %ld+exc %ld+aux %ld+cmdMap %d\n",
+	    (unsigned long) codePtr->structureSize,
 	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
 	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
