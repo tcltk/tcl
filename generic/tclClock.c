@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.58 2006/08/28 04:13:32 mistachkin Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.59 2006/08/28 08:48:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -1666,11 +1666,6 @@ ClockClicksObjCmd(
     };
     int index = CLICKS_NATIVE;
     Tcl_Time now;
-#ifndef TCL_WIDE_CLICKS
-    unsigned long clicks;
-#else
-    Tcl_WideInt clicks;
-#endif
 
     switch (objc) {
     case 1:
@@ -1689,18 +1684,18 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
-		now.sec * 1000 + now.usec / 1000 ) );
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
+		now.sec * 1000 + now.usec / 1000));
 	break;
-    case CLICKS_NATIVE:
+    case CLICKS_NATIVE: {
 #ifndef TCL_WIDE_CLICKS
-	clicks = TclpGetClicks();
+	unsigned long clicks = TclpGetClicks();
 #else
-	clicks = TclpGetWideClicks();
+	Tcl_WideInt clicks = TclpGetWideClicks();
 #endif
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
-		clicks ) );
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) clicks));
 	break;
+    }
     case CLICKS_MICROS:
 	Tcl_GetTime(&now);
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
