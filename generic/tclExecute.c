@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.241 2006/08/10 12:15:31 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.242 2006/08/28 08:47:05 das Exp $
  */
 
 #include "tclInt.h"
@@ -6266,8 +6266,8 @@ PrintByteCodeInfo(
 	    0.0);
 
 #ifdef TCL_COMPILE_STATS
-    fprintf(stdout, "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
-	    codePtr->structureSize,
+    fprintf(stdout, "  Code %ld = header %ld+inst %d+litObj %ld+exc %ld+aux %ld+cmdMap %d\n",
+	    (unsigned long) codePtr->structureSize,
 	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
 	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
@@ -6818,7 +6818,7 @@ EvalStatsCmd(
 	    statsPtr->totalByteCodeBytes);
     fprintf(stdout, "    Literal bytes		%.6g\n",
 	    totalLiteralBytes);
-    fprintf(stdout, "      table %d + bkts %d + entries %ld + objects %ld + strings %.6g\n",
+    fprintf(stdout, "      table %ld + bkts %ld + entries %ld + objects %ld + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    statsPtr->numLiteralsCreated * sizeof(LiteralEntry),
@@ -6839,7 +6839,7 @@ EvalStatsCmd(
 	    statsPtr->currentByteCodeBytes);
     fprintf(stdout, "    Literal bytes		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %d + bkts %d + entries %d + objects %d + strings %.6g\n",
+    fprintf(stdout, "      table %ld + bkts %ld + entries %ld + objects %ld + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),
@@ -6933,7 +6933,7 @@ EvalStatsCmd(
 	    (sharingBytesSaved * 100.0) / (objBytesIfUnshared + strBytesIfUnshared));
     fprintf(stdout, "    Bytes with sharing		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %d + bkts %d + entries %d + objects %d + strings %.6g\n",
+    fprintf(stdout, "      table %ld + bkts %ld + entries %ld + objects %ld + strings %.6g\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),
@@ -6948,7 +6948,7 @@ EvalStatsCmd(
     fprintf(stdout, "  Literal mgmt overhead	 	%ld (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    (literalMgmtBytes * 100.0) / currentLiteralBytes);
-    fprintf(stdout, "    table %d + buckets %d + entries %d\n",
+    fprintf(stdout, "    table %ld + buckets %ld + entries %ld\n",
 	    sizeof(LiteralTable),
 	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
 	    iPtr->literalTable.numEntries * sizeof(LiteralEntry));
