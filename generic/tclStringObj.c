@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.56 2006/08/28 14:13:22 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.57 2006/08/28 16:05:32 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2392,7 +2392,7 @@ ObjPrintfVA(
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
 	int size = 0, seekingConversion = 1, gotPrecision = 0;
-	int lastNum = -1, numBytes = -1;
+	int lastNum = -1;
 
 	if (*p++ != '%') {
 	    continue;
@@ -2408,26 +2408,39 @@ ObjPrintfVA(
 		seekingConversion = 0;
 		break;
 	    case 's': {
-		char *bytes = va_arg(argList, char *);
+		CONST char *q, *end, *bytes = va_arg(argList, char *);
 		seekingConversion = 0;
-		if (gotPrecision) {
-		    char *end = bytes + lastNum;
-		    char *q = bytes;
-		    while ((q < end) && (*q != '\0')) {
-			q++;
-		    }
-		    numBytes = (int)(q - bytes);
-		}
-		Tcl_ListObjAppendElement(NULL, list,
-			Tcl_NewStringObj(bytes , numBytes));
 
 		/*
-		 * We took no more than numBytes bytes from the (char *). In
-		 * turn, [format] will take no more than numBytes characters
-		 * from the Tcl_Obj. Since numBytes characters must be no less
-		 * than numBytes bytes, the character limit will have no
-		 * effect and we can just pass it through.
+		 * The buffer to copy characters from starts at bytes
+		 * and ends at either the first NUL byte, or after
+		 * lastNum bytes, when caller has indicated a limit.  
 		 */
+
+		end = bytes;
+		while ((!gotPrecision || lastNum--) && (*end != '\0')) {
+		    end++;
+		}
+
+		/*
+		 * Within that buffer, we trim both ends if needed so that
+		 * we copy only whole characters, and avoid copying any
+		 * partial multi-byte characters.
+		 */
+
+		q = Tcl_UtfPrev(end, bytes);
+		if (!Tcl_UtfCharComplete(q, (int)(end - q))) {
+		    end = q;
+		}
+
+		q = bytes + TCL_UTF_MAX;
+		while ((bytes < end) && (bytes < q)
+			&& ((*bytes & 0xC0) == 0x80)) {
+		    bytes++;
+		}
+
+		Tcl_ListObjAppendElement(NULL, list,
+			Tcl_NewStringObj(bytes , (int)(end - bytes)));
 
 		break;
 	    }
