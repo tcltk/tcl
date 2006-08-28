@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.11 2006/08/27 14:33:17 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.12 2006/08/28 15:53:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -308,7 +308,11 @@ TclOODefineExportObjCmd(
 	}
 	mPtr->flags |= PUBLIC_METHOD;
     }
-    ((Interp *)interp)->ooFoundation->epoch++;
+    if (isSelfExport) {
+	oPtr->epoch++;
+    } else {
+	((Interp *)interp)->ooFoundation->epoch++;
+    }
     return TCL_OK;
 }
 
@@ -361,7 +365,7 @@ TclOODefineFilterObjCmd(
 	oPtr->filters.list = filters;
 	oPtr->filters.num = objc-1;
     }
-    ((Interp *)interp)->ooFoundation->epoch++;
+    oPtr->epoch++; // always per-object
     return TCL_OK;
 }
 
@@ -477,19 +481,66 @@ int
 TclOODefineMixinObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    const int objc,
     Tcl_Obj *const *objv)
 {
     int isSelfMixin = (clientData != NULL);
     Object *oPtr = GetDefineCmdContext(interp);
+    Class **mixins;
+    int i;
 
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
     isSelfMixin |= (oPtr->classPtr == NULL);
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    if (!isSelfMixin) {
+	Tcl_AppendResult(interp,
+		"setting class-wide mixins not yet supported", NULL);
+	return TCL_ERROR;
+    }
+
+    if (objc == 1) {
+	if (oPtr->mixins.num != 0) {
+	    mixins = oPtr->mixins.list;
+	    for (i=0 ; i<oPtr->mixins.num ; i++) {
+		TclOORemoveFromInstances(oPtr, mixins[i]);
+	    }
+	    ckfree((char *) mixins);
+	    oPtr->mixins.num = 0;
+	}
+    } else {
+	mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+	for (i=1 ; i<objc ; i++) {
+	    Object *o2Ptr;
+
+	    o2Ptr = TclGetObjectFromObj(interp, objv[i]);
+	    if (o2Ptr == NULL) {
+	    freeAndError:
+		ckfree((char *) mixins);
+		return TCL_ERROR;
+	    }
+	    if (o2Ptr->classPtr == NULL) {
+		Tcl_AppendResult(interp, "may only mix in classes; \"",
+			TclGetString(objv[i]), "\" is not a class", NULL);
+		goto freeAndError;
+	    }
+	    mixins[i-1] = o2Ptr->classPtr;
+	}
+	if (oPtr->mixins.num != 0) {
+	    for (i=0 ; i<oPtr->mixins.num ; i++) {
+		TclOORemoveFromInstances(oPtr, oPtr->mixins.list[i]);
+	    }
+	    ckfree((char *) oPtr->mixins.list);
+	}
+	oPtr->mixins.num = objc-1;
+	oPtr->mixins.list = mixins;
+	for (i=0 ; i<objc-1 ; i++) {
+	    TclOOAddToInstances(oPtr, mixins[i]);
+	}
+    }
+    oPtr->epoch++;
+    return TCL_OK;
 }
 
 int
@@ -520,9 +571,14 @@ TclOODefineSelfClassObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = GetDefineCmdContext(interp);
+    Object *oPtr, *o2Ptr;
     Foundation *fPtr = ((Interp *)interp)->ooFoundation;
 
+    /*
+     * Parse the context to get the object to operate on.
+     */
+
+    oPtr = GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -531,9 +587,59 @@ TclOODefineSelfClassObjCmd(
 		"may not modify the class of the root object", NULL);
 	return TCL_ERROR;
     }
+    if (oPtr == fPtr->classCls->thisPtr) {
+	Tcl_AppendResult(interp,
+		"may not modify the class of the class of classes", NULL);
+	return TCL_ERROR;
+    }
 
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
+    /*
+     * Parse the argument to get the class to set the object's class to.
+     */
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
+	return TCL_ERROR;
+    }
+    o2Ptr = TclGetObjectFromObj(interp, objv[1]);
+    if (o2Ptr == NULL) {
+	return TCL_ERROR;
+    }
+    if (o2Ptr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "the class of an object must be a class",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Apply semantic checks. In particular, classes and non-classes are not
+     * interchangable (too complicated to do the conversion!) so we must
+     * produce an error if any attempt is made to swap from one to the other.
+     */
+
+    if ((oPtr->classPtr == NULL) == TclOOIsReachable(fPtr->classCls,
+	    o2Ptr->classPtr)) {
+	Tcl_AppendResult(interp, "may not change a ",
+		(oPtr->classPtr==NULL ? "non-" : ""), "class object into a ",
+		(oPtr->classPtr==NULL ? "" : "non-"), "class object", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Set the object's class.
+     */
+
+    if (oPtr->selfCls != o2Ptr->classPtr) {
+	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+	oPtr->selfCls = o2Ptr->classPtr;
+	TclOOAddToInstances(oPtr, oPtr->selfCls);
+	if (oPtr->classPtr != NULL) {
+	    fPtr->epoch++;
+	} else {
+	    oPtr->epoch++;
+	}
+    }
+    return TCL_OK;
 }
 
 int
@@ -676,7 +782,11 @@ TclOODefineUnexportObjCmd(
 	}
 	mPtr->flags &= ~PUBLIC_METHOD;
     }
-    ((Interp *)interp)->ooFoundation->epoch++;
+    if (isSelfUnexport) {
+	oPtr->epoch++;
+    } else {
+	((Interp *)interp)->ooFoundation->epoch++;
+    }
     return TCL_OK;
 }
 

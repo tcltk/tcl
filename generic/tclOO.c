@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.26 2006/08/27 14:33:17 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.27 2006/08/28 15:53:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -125,7 +125,6 @@ static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static void		RemoveFromInstances(Object *oPtr, Class *cPtr);
 
 int
 TclOOInit(
@@ -395,9 +394,9 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    RemoveFromInstances(oPtr, oPtr->selfCls);
+    TclOORemoveFromInstances(oPtr, oPtr->selfCls);
     for (i=0 ; i<oPtr->mixins.num ; i++) {
-	RemoveFromInstances(oPtr, oPtr->mixins.list[i]);
+	TclOORemoveFromInstances(oPtr, oPtr->mixins.list[i]);
     }
     if (i) {
 	ckfree((char *)oPtr->mixins.list);
@@ -465,8 +464,8 @@ ObjectNamespaceDeleted(
     Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
 }
 
-static void
-RemoveFromInstances(
+void
+TclOORemoveFromInstances(
     Object *oPtr,
     Class *cPtr)
 {
@@ -476,16 +475,17 @@ RemoveFromInstances(
 	if (oPtr == cPtr->instances.list[i]) {
 	    if (i+1 < cPtr->instances.num) {
 		cPtr->instances.list[i] =
-			cPtr->instances.list[cPtr->instances.num-1];
+			cPtr->instances.list[cPtr->instances.num - 1];
 	    }
-	    cPtr->instances.list[--cPtr->instances.num] = NULL;
+	    cPtr->instances.list[cPtr->instances.num - 1] = NULL;
+	    cPtr->instances.num--;
 	    break;
 	}
     }
 }
 
-static void
-AddToInstances(
+void
+TclOOAddToInstances(
     Object *oPtr,
     Class *cPtr)
 {
@@ -610,7 +610,7 @@ NewInstance(
     CallContext *contextPtr;
 
     oPtr->selfCls = clsPtr;
-    AddToInstances(oPtr, clsPtr);
+    TclOOAddToInstances(oPtr, clsPtr);
 
     if (name != NULL) {
 	Tcl_Obj *cmdnameObj;
@@ -1077,7 +1077,6 @@ ObjectCmd(
 	return TCL_ERROR;
     }
 
-    // How to differentiate public and private call-chains?
     contextPtr = GetCallContext(iPtr->ooFoundation, oPtr, objv[1],
 	    (publicOnly ? PUBLIC_METHOD : 0), cachePtr);
     if (contextPtr == NULL) {
@@ -1177,6 +1176,9 @@ GetSortedMethodList(
     }
 
     AddClassMethodNames(oPtr->selfCls, publicOnly, &names);
+    for (i=0 ; i<oPtr->mixins.num ; i++) {
+	AddClassMethodNames(oPtr->mixins.list[i], publicOnly, &names);
+    }
 
     if (names.numEntries == 0) {
 	Tcl_DeleteHashTable(&names);
@@ -1285,7 +1287,8 @@ GetCallContext(
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    contextPtr = Tcl_GetHashValue(hPtr);
 	    Tcl_SetHashValue(hPtr, NULL);
-	    if (contextPtr->epoch == fPtr->epoch) {
+	    if ((contextPtr->globalEpoch == fPtr->epoch)
+		    && (contextPtr->localEpoch == oPtr->epoch)) {
 		return contextPtr;
 	    }
 	    DeleteContext(contextPtr);
@@ -1295,7 +1298,8 @@ GetCallContext(
     contextPtr->numCallChain = 0;
     contextPtr->callChain = contextPtr->staticCallChain;
     contextPtr->filterLength = 0;
-    contextPtr->epoch = fPtr->epoch;
+    contextPtr->globalEpoch = fPtr->epoch;
+    contextPtr->localEpoch = oPtr->epoch;
     contextPtr->flags = 0;
     contextPtr->skip = 2;
     if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR)) {
@@ -1326,7 +1330,7 @@ GetCallContext(
 	AddSimpleChainToCallContext(oPtr, fPtr->unknownMethodNameObj,
 		contextPtr, 0, 0);
 	contextPtr->flags |= OO_UNKNOWN_METHOD;
-	contextPtr->epoch = -1;
+	contextPtr->globalEpoch = -1;
 	if (count == contextPtr->numCallChain) {
 	    DeleteContext(contextPtr);
 	    return NULL;

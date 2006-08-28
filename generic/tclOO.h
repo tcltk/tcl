@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.12 2006/08/27 14:33:17 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.13 2006/08/28 15:53:59 dkf Exp $
  */
 
 /*
@@ -74,8 +74,8 @@ typedef struct Object {
     Tcl_Command myCommand;	/* Reference to this object's internal
 				 * command. */
     struct Class *selfCls;	/* This object's class. */
-    Tcl_HashTable methods;	/* Tcl_Obj (method name) to Method*
-				 * mapping. */
+    Tcl_HashTable methods;	/* Object-local Tcl_Obj (method name) to
+				 * Method* mapping. */
     struct {			/* Classes mixed into this object. */
 	int num;
 	struct Class **list;
@@ -88,6 +88,9 @@ typedef struct Object {
 				 * to the class structure. Everything else has
 				 * this NULL. */
     int flags;
+    int epoch;			/* Per-object epoch, incremented when the way
+				 * an object should resolve call chains is
+				 * changed. */
     Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
     Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
 } Object;
@@ -169,7 +172,8 @@ struct MInvoke {
 };
 typedef struct CallContext {
     Object *oPtr;
-    int epoch;
+    int globalEpoch;
+    int localEpoch;
     int flags;
     int index;
     int skip;
@@ -213,7 +217,9 @@ MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
 			    int skip);
 // Expose this one?
 MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
+MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *cPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
+MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *cPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 
