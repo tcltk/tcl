@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.98 2006/08/26 13:00:39 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.99 2006/08/28 04:13:32 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -4608,7 +4608,7 @@ NamespaceUpvarCmd(
 	Tcl_Obj *resPtr;
 
 	TclNewObj(resPtr);
-	TclFormatObj(NULL, resPtr, "namespace \"%s\" does not exist", objv[2]);
+	TclFormatObj(NULL, resPtr, "namespace \"%s\" does not exist", objv[2], NULL);
 	Tcl_SetObjResult(interp, resPtr);
 	return TCL_ERROR;
     }
