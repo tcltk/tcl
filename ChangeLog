@@ -3,10 +3,6 @@
 	* generic/tclClock.c (ClockClicksObjCmd): Fix nested macro breakage
 	with TCL_MEM_DEBUG enabled. [Bug 1547662]
 
-	* generic/tclNamesp.c (NamespaceUpvarCmd): Fix panic with TCL_MEM_DEBUG
-	enabled caused by incorrect usage of TclFormatObj (missing trailing
-	NULL argument). [Bug 1547681]
-
 2006-08-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/namespace.n:
