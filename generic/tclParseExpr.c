@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.42 2006/08/29 19:09:48 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.43 2006/08/29 19:11:28 dgp Exp $
  */
 
 #define OLD_EXPR_PARSER 0
@@ -2404,7 +2404,7 @@ Tcl_ParseExpr(
 	    break;
 
 	case BINARY: {
-	    ExprNode *otherPtr;
+	    ExprNode *otherPtr = NULL;
 
 	    if ((nodePtr->lexeme == CLOSE_PAREN)
 		    && (lastNodePtr->lexeme == OPEN_PAREN)) {
