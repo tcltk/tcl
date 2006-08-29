@@ -7,12 +7,17 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.17 2006/08/29 13:09:50 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.18 2006/08/29 14:47:11 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+test oo-0.1 {basic test of OO's ability to clean up its initial state} {
+    interp create t
+    interp delete t
+} {}
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}

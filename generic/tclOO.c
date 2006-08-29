@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.30 2006/08/29 11:01:05 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.31 2006/08/29 14:47:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -42,6 +42,7 @@ static const struct {
 };
 
 #define ALLOC_CHUNK 8
+#define ROOT_OBJECT 0x1000
 
 /*
  * Function declarations.
@@ -145,6 +146,7 @@ TclOOInit(
     fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
     fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
+    fPtr->objectCls->thisPtr->flags |= ROOT_OBJECT;
     fPtr->objectCls->superclasses.num = 0;
     ckfree((char *) fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
@@ -277,26 +279,30 @@ ObjNameChangedTrace(
     const char *newName, /* always NULL */
     int flags)
 {
+    Interp *iPtr = (Interp *) interp;
     Object *oPtr = clientData;
     Class *cPtr = NULL;
-    CallContext *contextPtr = GetCallContext(((Interp *)interp)->ooFoundation,
-	    oPtr, NULL, DESTRUCTOR, NULL);
 
     Tcl_Preserve(oPtr);
     oPtr->flags |= OBJECT_DELETED;
-    if (contextPtr != NULL && !Tcl_InterpDeleted(interp)) {
-	int result;
-	Tcl_InterpState state;
+    if (!Tcl_InterpDeleted(interp)) {
+	CallContext *contextPtr = GetCallContext(iPtr->ooFoundation, oPtr,
+		NULL, DESTRUCTOR, NULL);
 
-	contextPtr->flags |= DESTRUCTOR;
-	contextPtr->skip = 0;
-	state = Tcl_SaveInterpState(interp, TCL_OK);
-	result = InvokeContext(interp, contextPtr, 0, NULL);
-	if (result != TCL_OK) {
-	    Tcl_BackgroundError(interp);
+	if (contextPtr != NULL) {
+	    int result;
+	    Tcl_InterpState state;
+
+	    contextPtr->flags |= DESTRUCTOR;
+	    contextPtr->skip = 0;
+	    state = Tcl_SaveInterpState(interp, TCL_OK);
+	    result = InvokeContext(interp, contextPtr, 0, NULL);
+	    if (result != TCL_OK) {
+		Tcl_BackgroundError(interp);
+	    }
+	    (void) Tcl_RestoreInterpState(interp, state);
+	    DeleteContext(contextPtr);
 	}
-	(void) Tcl_RestoreInterpState(interp, state);
-	DeleteContext(contextPtr);
     }
 
     if (oPtr->classPtr != NULL) {
@@ -380,7 +386,9 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+    if (!(oPtr->flags & ROOT_OBJECT)) {
+	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
+    }
     for (i=0 ; i<oPtr->mixins.num ; i++) {
 	TclOORemoveFromInstances(oPtr, oPtr->mixins.list[i]);
     }
@@ -418,7 +426,7 @@ ObjectNamespaceDeleted(
     Tcl_DeleteHashTable(&oPtr->privateContextCache);
 
     cPtr = oPtr->classPtr;
-    if (cPtr != NULL) {
+    if (cPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
 	cPtr->flags |= OBJECT_DELETED;
 
 	for (i=0 ; i<cPtr->superclasses.num ; i++) {
