@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.65 2006/08/18 07:45:32 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.66 2006/08/29 05:33:36 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -54,22 +54,14 @@
  * Values used to compute how much space is really available for Tcl's use for
  * the stack.
  *
- * NOTE: Now I have some idea why the maximum stack size must be divided by 64
- * on FreeBSD with threads enabled to get a reasonably correct value.
- *
  * The getrlimit() function is documented to return the maximum stack size in
- * bytes. However, with threads enabled, the pthread library does bad things
- * to the stack size limits. First, the limits cannot be changed. Second, they
- * appear to be reported incorrectly by a factor of about 64.
+ * bytes. However, with threads enabled, the pthread library on some platforms
+ * does bad things to the stack size limits. First, the limits cannot be
+ * changed. Second, they appear to be sometimes reported incorrectly.
  *
  * The defines below may need to be adjusted if more platforms have this
  * broken behavior with threads enabled.
  */
-
-#if defined(__FreeBSD__)
-#   define TCL_MAGIC_STACK_DIVISOR	64
-#   define TCL_RESERVED_STACK_PAGES	3
-#endif
 
 #ifndef TCL_MAGIC_STACK_DIVISOR
 #define TCL_MAGIC_STACK_DIVISOR		1

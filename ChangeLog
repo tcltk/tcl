@@ -1,3 +1,9 @@
+2006-08-29  Joe Mistachkin  <joe@mistachkin.com>
+
+	* unix/tclUnixInit.c: Fixed the issue (typo) that was causing
+	* unix/tclUnixThrd.c (TclpThreadGetStackSize): stack.test to
+	fail on FreeBSD (and possibly other Unix platforms).
+
 2006-08-29  Colin McCormack  <coldstore@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:     Added test for NULL return 
