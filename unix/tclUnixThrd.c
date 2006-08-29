@@ -215,7 +215,7 @@ TclpThreadExit(
 int
 TclpThreadGetStackSize(void)
 {
-#if defined(HAVE_PTHREAD_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
+#if defined(HAVE_PTHREAD_ATTR_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
     pthread_attr_t threadAttr;	/* This will hold the thread attributes for
 				 * the current thread. */
     size_t stackSize;
