@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.31 2006/08/29 14:47:11 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.32 2006/08/29 15:21:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -78,6 +78,7 @@ static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjNameChangedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
+static void		ReleaseClassContents(Tcl_Interp *interp, Object *oPtr);
 
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -306,48 +307,7 @@ ObjNameChangedTrace(
     }
 
     if (oPtr->classPtr != NULL) {
-	int i, n;
-	Class **subs;
-	Object **insts;
-
-	cPtr = oPtr->classPtr;
-	Tcl_Preserve(cPtr);
-
-	/*
-	 * Must empty list now so that things happen in the correct order.
-	 */
-
-	subs = cPtr->subclasses.list;
-	n = cPtr->subclasses.num;
-	cPtr->subclasses.list = NULL;
-	cPtr->subclasses.num = 0;
-	cPtr->subclasses.size = 0;
-	for (i=0 ; i<n ; i++) {
-	    Tcl_Preserve(subs[i]);
-	}
-	for (i=0 ; i<n ; i++) {
-	    if (!(subs[i]->flags & OBJECT_DELETED)) {
-		Tcl_DeleteCommandFromToken(interp, subs[i]->thisPtr->command);
-	    }
-	    Tcl_Release(subs[i]);
-	}
-	ckfree((char *) subs);
-
-	insts = cPtr->instances.list;
-	n = cPtr->instances.num;
-	cPtr->instances.list = NULL;
-	cPtr->instances.num = 0;
-	cPtr->instances.size = 0;
-	for (i=0 ; i<n ; i++) {
-	    Tcl_Preserve(insts[i]);
-	}
-	for (i=0 ; i<n ; i++) {
-	    if (!(insts[i]->flags & OBJECT_DELETED)) {
-		Tcl_DeleteCommandFromToken(interp, insts[i]->command);
-	    }
-	    Tcl_Release(insts[i]);
-	}
-	ckfree((char *) insts);
+	ReleaseClassContents(interp, oPtr);
     }
 
     Tcl_DeleteNamespace((Tcl_Namespace *) oPtr->nsPtr);
@@ -359,6 +319,55 @@ ObjNameChangedTrace(
     /*
      * What else to do to delete an object?
      */
+}
+
+static void
+ReleaseClassContents(
+    Tcl_Interp *interp,
+    Object *oPtr)
+{
+    int i, n;
+    Class *cPtr, **subs;
+    Object **insts;
+
+    cPtr = oPtr->classPtr;
+    Tcl_Preserve(cPtr);
+
+    /*
+     * Must empty list now so that things happen in the correct order.
+     */
+
+    subs = cPtr->subclasses.list;
+    n = cPtr->subclasses.num;
+    cPtr->subclasses.list = NULL;
+    cPtr->subclasses.num = 0;
+    cPtr->subclasses.size = 0;
+    for (i=0 ; i<n ; i++) {
+	Tcl_Preserve(subs[i]);
+    }
+    for (i=0 ; i<n ; i++) {
+	if (!(subs[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	    Tcl_DeleteCommandFromToken(interp, subs[i]->thisPtr->command);
+	}
+	Tcl_Release(subs[i]);
+    }
+    ckfree((char *) subs);
+
+    insts = cPtr->instances.list;
+    n = cPtr->instances.num;
+    cPtr->instances.list = NULL;
+    cPtr->instances.num = 0;
+    cPtr->instances.size = 0;
+    for (i=0 ; i<n ; i++) {
+	Tcl_Preserve(insts[i]);
+    }
+    for (i=0 ; i<n ; i++) {
+	if (!(insts[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	    Tcl_DeleteCommandFromToken(interp, insts[i]->command);
+	}
+	Tcl_Release(insts[i]);
+    }
+    ckfree((char *) insts);
 }
 
 static void
@@ -376,8 +385,10 @@ ObjectNamespaceDeleted(
      */
 
     if (!(oPtr->flags & OBJECT_DELETED)) {
-	fprintf(stderr,
-		"warning: object ns deleted before command; memory leaked\n");
+	Tcl_Preserve(oPtr);
+	if (oPtr->classPtr != NULL) {
+	    ReleaseClassContents(NULL, oPtr);
+	}
     }
     oPtr->flags |= OBJECT_DELETED;
 
@@ -455,7 +466,12 @@ ObjectNamespaceDeleted(
      * Delete the object structure itself.
      */
 
-    Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+    if (!(oPtr->flags & OBJECT_DELETED)) {
+	Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+	Tcl_Release(oPtr);
+    } else {
+	Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
+    }
 }
 
 void
