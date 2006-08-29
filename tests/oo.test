@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.16 2006/08/29 11:01:05 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.17 2006/08/29 13:09:50 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -27,6 +27,15 @@ test oo-1.1 {basic test of OO functionality: no classes} {
     lappend result [foo bar a b c]
     lappend result [foo destroy] [info commands foo]
 } {::foo {} a b c 3 {} {}}
+test oo-1.2 {basic test of OO functionality: no classes} -body {
+    oo::define oo::object method missingArgs
+} -returnCodes 1 -result "wrong # args: should be \"oo::define oo::object method name args body\""
+test oo-1.3 {basic test of OO functionality: no classes} {
+    catch {oo::define oo::object method missingArgs}
+    set errorInfo
+} "wrong # args: should be \"oo::define oo::object method name args body\"
+    while executing
+\"oo::define oo::object method missingArgs\""
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as

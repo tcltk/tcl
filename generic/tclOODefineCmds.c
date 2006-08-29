@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.13 2006/08/28 23:37:51 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.14 2006/08/29 13:09:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -72,22 +72,55 @@ TclOODefineObjCmd(
 		    (overflow ? "..." : ""), interp->errorLine);
 	}
     } else {
-	Tcl_Obj *objPtr;
+	Tcl_Obj *objPtr, *obj2Ptr, **objs;
+	Interp *iPtr = (Interp *) interp;
+	Tcl_Command cmd;
+	int dummy;
 
 	/*
-	 * More than one argument: make a list of them, then evaluate the
-	 * result. Tcl_EvalObjEx will delete the object when it decrements its
-	 * refcount after eval'ing it.
+	 * More than one argument: fire them through the ensemble processing
+	 * engine so that everything appears to be good and proper in error
+	 * messages. Note that we cannot just concatenate and send through
+	 * Tcl_EvalObjEx, as that doesn't do ensemble processing, and we
+	 * cannot go through Tcl_EvalObjv without the extra work to pre-find
+	 * the command, as that finds command names in the wrong namespace at
+	 * the moment. Ugly!
 	 */
 
-	// TODO: Leverage the arg rewriting mechanism used by ensembles
-
-	objPtr = Tcl_NewListObj(objc-2, objv+2);
-	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
-
-	if (result == TCL_ERROR) {
-	    TclFormatToErrorInfo(interp, "\n    (in ::oo::define command)");
+	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
+	    iPtr->ensembleRewrite.sourceObjs = objv;
+	    iPtr->ensembleRewrite.numRemovedObjs = 3;
+	    iPtr->ensembleRewrite.numInsertedObjs = 1;
+	} else {
+	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	    if (ni < 3) {
+		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
+	    } else {
+		iPtr->ensembleRewrite.numInsertedObjs -= 2;
+	    }
 	}
+
+	/*
+	 * Build the list of arguments using a Tcl_Obj as a workspace. See
+	 * comments above for why these contortions are necessary.
+	 */
+
+	TclNewObj(objPtr);
+	TclNewObj(obj2Ptr);
+	cmd = Tcl_FindCommand(interp, TclGetString(objv[2]), fPtr->defineNs,
+		TCL_NAMESPACE_ONLY);
+	if (cmd == NULL) {
+	    /* punt this case! */
+	    Tcl_AppendObjToObj(obj2Ptr, objv[2]);
+	} else {
+	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
+	}
+	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
+	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
+
+	result = Tcl_EvalObjv(interp, objc-2, objs, TCL_EVAL_INVOKE);
+	TclDecrRefCount(objPtr);
     }
 
     /*
