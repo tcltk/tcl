@@ -12,10 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.40 2006/08/28 16:05:32 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.41 2006/08/29 19:04:56 dgp Exp $
  */
 
-#define OLD_EXPR_PARSER 0
+#define OLD_EXPR_PARSER 1
 #if OLD_EXPR_PARSER
 
 #include "tclInt.h"
@@ -2470,9 +2470,14 @@ Tcl_ParseExpr(
 	    }
 
 	    while (1) {
-		otherPtr = lastOrphanPtr;
-		while (otherPtr->left >= 0) {
-		    otherPtr = nodes + otherPtr->left;
+
+		if (lastOrphanPtr->parent >= 0) {
+		    otherPtr = nodes + lastOrphanPtr->parent;
+		} else if (lastOrphanPtr->left >= 0) {
+		    Tcl_Panic("Tcl_ParseExpr: left closure programming error");
+		} else {
+		    lastOrphanPtr->parent = lastOrphanPtr - nodes;
+		    otherPtr = lastOrphanPtr;
 		}
 		otherPtr--;
 
@@ -2567,7 +2572,6 @@ Tcl_ParseExpr(
 
 	    /* Link orphan as left operand of new node */
 	    nodePtr->right = -1;
-	    nodePtr->parent = -1;
 
 	    if (scratch.numTokens >= scratch.tokensAvailable) {
 		TclExpandTokenArray(&scratch);
@@ -2581,6 +2585,7 @@ Tcl_ParseExpr(
 	    scratch.numTokens++;
 
 	    nodePtr->left = lastOrphanPtr - nodes;
+	    nodePtr->parent = lastOrphanPtr->parent;
 	    lastOrphanPtr->parent = nodePtr - nodes;
 	    lastOrphanPtr = nodePtr;
 	    nodesUsed++;
