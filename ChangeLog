@@ -1,3 +1,11 @@
+2006-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Use the "parent" field of
+	orphan ExprNodes to store the closure of left pointers.  This
+	lets us avoid repeated re-scanning leftward for the left
+	boundary of subexpressions, which in worst case led to near
+	O(N^2) runtime.
+
 2006-08-29  Joe Mistachkin  <joe@mistachkin.com>
 
 	* unix/tclUnixInit.c: Fixed the issue (typo) that was causing
