@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.133 2006/08/21 14:56:48 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.134 2006/08/29 00:36:57 coldstore Exp $
  */
 
 #include "tclInt.h"
@@ -1234,6 +1234,7 @@ FsAddMountsToGlobResult(
 	    int len, mlen;
 	    CONST char *path;
 	    CONST char *mount;
+	    Tcl_Obj *norm;
 
 	    /*
 	     * We know mElt is absolute normalized and lies inside pathPtr, so
@@ -1242,18 +1243,19 @@ FsAddMountsToGlobResult(
 	     */
 
 	    mount = Tcl_GetStringFromObj(mElt, &mlen);
-	    path = Tcl_GetStringFromObj(Tcl_FSGetNormalizedPath(NULL, pathPtr),
-		    &len);
-	    if (path[len-1] == '/') {
-		/*
-		 * Deal with the root of the volume.
-		 */
+	    norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	    if (norm != NULL) {
+		path = Tcl_GetStringFromObj(norm, &len);
+		if (path[len-1] == '/') {
+		    /*
+		     * Deal with the root of the volume.
+		     */
 
-		len--;
+		    len--;
+		}
+		mElt = TclNewFSPathObj(pathPtr, mount + len + 1, mlen - len);
+		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    }
-	    mElt = TclNewFSPathObj(pathPtr, mount + len + 1, mlen - len);
-	    Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
-
 	    /*
 	     * No need to increment gLength, since we don't want to compare
 	     * mounts against mounts.
