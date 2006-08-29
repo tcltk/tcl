@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.96 2006/08/28 08:47:05 das Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.97 2006/08/29 06:28:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -2930,13 +2930,13 @@ TclPrintByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout,
-	    "  Code %ld = header %ld+inst %d+litObj %ld+exc %ld+aux %ld+cmdMap %d\n",
+	    "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
 	    (unsigned long) codePtr->structureSize,
-	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
+	    (unsigned long) (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
-	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (codePtr->numExceptRanges * sizeof(ExceptionRange)),
-	    (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (unsigned long) (codePtr->numExceptRanges * sizeof(ExceptionRange)),
+	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
