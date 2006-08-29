@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.15 2006/08/28 23:37:51 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.16 2006/08/29 11:01:05 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -246,6 +246,37 @@ test oo-7.6 {OO: inheritance 101 - overridden methods should be oblivious} -setu
 } -result {x=10 x 1 returning:11 11 x=11} -cleanup {
     Aclass destroy
 }
+test oo-7.7 {OO: inheritance and errorInfo} -constraints knownBug -setup {
+    oo::class create A
+    oo::class create B
+    B create c
+} -body {
+    oo::define A method foo {} {error foo!}
+    oo::define B {
+	superclass A
+	method foo {} { next }
+    }
+    oo::define c method foo {} { next }
+    catch {c ?} msg
+    set result [list $msg]
+    catch {c foo} msg
+    lappend result $msg $errorInfo
+} -cleanup {
+    A destroy
+} -result {{unknown method "?": must be destroy or foo} foo! {foo!
+    while executing
+"error foo!"
+    (method "foo" line 1)
+    ("::A" implementation of "foo" method)
+    invoked from within
+"next "
+    (method "foo" line 1)
+    ("::B" implementation of "foo" method)
+    invoked from within
+"next "
+    (method "foo" line 1)
+    invoked from within
+"c foo"}}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
@@ -396,9 +427,10 @@ test oo-12.1 {OO: filters} {
     Aclass destroy
     return $result
 } {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 12345}
-test oo-12.2 {OO: filters} knownBug {
+test oo-12.2 {OO: filters} -setup {
     oo::class create Aclass
     Aclass create Aobject
+} -body {
     oo::define Aclass {
 	method concatenate args {
 	    global result
@@ -415,11 +447,10 @@ test oo-12.2 {OO: filters} knownBug {
     }
     oo::define Aobject filter logFilter
     set result {}
-    lappend result [Aobject concatenate 1 2 3 4 5]
-    Aobject destroy
+    lappend result [Aobject concatenate 1 2 3 4 5] [Aobject destroy]
+} -cleanup {
     Aclass destroy
-    return $result
-} {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 12345}
+} -result {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 {calling ::Aobject->logFilter } result= 12345 {}}
 
 test oo-13.1 {OO: changing an object's class} {
     oo::class create Aclass

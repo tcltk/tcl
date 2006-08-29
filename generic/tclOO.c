@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.29 2006/08/29 09:06:59 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.30 2006/08/29 11:01:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -996,6 +996,8 @@ InvokeForwardMethod(
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
     Tcl_Obj **argObjs, **prefixObjs;
     int numPrefixes, result, skip = contextPtr->skip;
+    Interp *iPtr = (Interp *) interp;
+    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1009,8 +1011,22 @@ InvokeForwardMethod(
     memcpy(argObjs, prefixObjs, numPrefixes * sizeof(Tcl_Obj *));
     memcpy(argObjs + numPrefixes, objv+skip, (objc-skip) * sizeof(Tcl_Obj *));
 
-    // TODO: Apply invoke magic (see [namespace ensemble])
-    result = Tcl_EvalObjv(interp, numPrefixes + objc - skip, argObjs, 0);
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = objv;
+	iPtr->ensembleRewrite.numRemovedObjs = skip;
+	iPtr->ensembleRewrite.numInsertedObjs = numPrefixes;
+    } else {
+	int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	if (ni < skip) {
+	    iPtr->ensembleRewrite.numRemovedObjs += skip - ni;
+	    iPtr->ensembleRewrite.numInsertedObjs += numPrefixes - 1;
+	} else {
+	    iPtr->ensembleRewrite.numInsertedObjs += numPrefixes - skip;
+	}
+    }
+
+    result = Tcl_EvalObjv(interp, numPrefixes + objc - skip, argObjs,
+	    TCL_EVAL_INVOKE);
     ckfree((char *) argObjs);
     return result;
 }
@@ -1513,12 +1529,13 @@ ClassCreate(
 	TclDecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objectName ?arg ...?");
+    if (objc-contextPtr->skip < 1) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv,
+		"objectName ?arg ...?");
 	return TCL_ERROR;
     }
     newObjPtr = TclOONewInstance(interp, oPtr->classPtr,
-	    TclGetString(objv[2]), objc, objv, 3);
+	    TclGetString(objv[2]), objc, objv, contextPtr->skip+1);
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1547,7 +1564,8 @@ ClassNew(
 	TclDecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
-    newObjPtr = TclOONewInstance(interp, oPtr->classPtr, NULL, objc, objv, 2);
+    newObjPtr = TclOONewInstance(interp, oPtr->classPtr, NULL, objc, objv,
+	    contextPtr->skip);
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1564,8 +1582,8 @@ ObjectDestroy(
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, "");
+    if (objc-contextPtr->skip != 0) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_DeleteCommandFromToken(interp, contextPtr->oPtr->command);
@@ -1584,8 +1602,8 @@ ObjectEval(
     CallFrame *framePtr, **framePtrPtr;
     int result;
 
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "arg ?arg ...?");
+    if (objc-contextPtr->skip < 1) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1687,8 +1705,9 @@ ObjectLinkVar(
     Object *oPtr = contextPtr->oPtr;
     int i;
 
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "varName ?varName ...?");
+    if (objc-contextPtr->skip < 1) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv,
+		"varName ?varName ...?");
 	return TCL_ERROR;
     }
     for (i=2 ; i<objc ; i++) {
