@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.14.3 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.14.4 2006/08/29 16:19:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -270,20 +270,29 @@ Tcl_AsyncDelete(
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
     AsyncHandler *prevPtr;
 
+    /*
+     * Conservatively check the existence of the linked list of
+     * registered handlers, as we may come at this point even
+     * when the TSD's for the current thread have been already
+     * garbage-collected.
+     */
+
     Tcl_MutexLock(&tsdPtr->asyncMutex);
-    if (tsdPtr->firstHandler == asyncPtr) {
-	tsdPtr->firstHandler = asyncPtr->nextPtr;
-	if (tsdPtr->firstHandler == NULL) {
-	    tsdPtr->lastHandler = NULL;
-	}
-    } else {
-	prevPtr = tsdPtr->firstHandler;
-	while (prevPtr->nextPtr != asyncPtr) {
-	    prevPtr = prevPtr->nextPtr;
-	}
-	prevPtr->nextPtr = asyncPtr->nextPtr;
-	if (tsdPtr->lastHandler == asyncPtr) {
-	    tsdPtr->lastHandler = prevPtr;
+    if (tsdPtr->firstHandler != NULL ) {
+	if (tsdPtr->firstHandler == asyncPtr) {
+	    tsdPtr->firstHandler = asyncPtr->nextPtr;
+	    if (tsdPtr->firstHandler == NULL) {
+		tsdPtr->lastHandler = NULL;
+	    }
+	} else {
+	    prevPtr = tsdPtr->firstHandler;
+	    while (prevPtr->nextPtr != asyncPtr) {
+		prevPtr = prevPtr->nextPtr;
+	    }
+	    prevPtr->nextPtr = asyncPtr->nextPtr;
+	    if (tsdPtr->lastHandler == asyncPtr) {
+		tsdPtr->lastHandler = prevPtr;
+	    }
 	}
     }
     Tcl_MutexUnlock(&tsdPtr->asyncMutex);

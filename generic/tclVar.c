@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.22 2006/02/09 22:41:29 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.23 2006/08/29 16:19:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2208,11 +2208,7 @@ Tcl_UnsetObjCmd(
     register int i, flags = TCL_LEAVE_ERR_MSG;
     register char *name;
 
-    if (objc < 1) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-nocomplain? ?--? ?varName varName ...?");
-	return TCL_ERROR;
-    } else if (objc == 1) {
+    if (objc == 1) {
 	/*
 	 * Do nothing if no arguments supplied, so as to match command
 	 * documentation.
@@ -3290,7 +3286,7 @@ TclPtrMakeUpvar(
     
     if (index >= 0) {
 	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
-	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
+	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
     } else {
@@ -4536,7 +4532,7 @@ static void
 PanicOnUpdateVarName(
     Tcl_Obj *objPtr)
 {
-    Tcl_Panic("ERROR: updateStringProc of type %s should not be called.",
+    Tcl_Panic("%s of type %s should not be called", "updateStringProc",
 	    objPtr->typePtr->name);
 }
 
@@ -4545,7 +4541,7 @@ PanicOnSetVarName(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
 {
-    Tcl_Panic("ERROR: setFromAnyProc of type %s should not be called.",
+    Tcl_Panic("%s of type %s should not be called", "setFromAnyProc",
 	    objPtr->typePtr->name);
     return TCL_ERROR;
 }
@@ -4664,7 +4660,7 @@ UpdateParsedVarName(
 	 * This is a parsed scalar name: what is it doing here?
 	 */
 
-	Tcl_Panic("ERROR: scalar parsedVarName without a string rep.\n");
+	Tcl_Panic("scalar parsedVarName without a string rep");
     }
 
     part1 = Tcl_GetStringFromObj(arrayPtr, &len1);

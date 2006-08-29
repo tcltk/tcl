@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.10 2006/01/25 18:38:32 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.11 2006/08/29 16:19:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -735,12 +735,12 @@ Ptr2Block(
 
     blockPtr = (((Block *) ptr) - 1);
     if (blockPtr->magicNum1 != MAGIC || blockPtr->magicNum2 != MAGIC) {
-	Tcl_Panic("alloc: invalid block: %p: %x %x\n",
+	Tcl_Panic("alloc: invalid block: %p: %x %x",
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2);
     }
 #if RCHECK
     if (((unsigned char *) ptr)[blockPtr->reqSize] != MAGIC) {
-	Tcl_Panic("alloc: invalid block: %p: %x %x %x\n",
+	Tcl_Panic("alloc: invalid block: %p: %x %x %x",
 		blockPtr, blockPtr->magicNum1, blockPtr->magicNum2,
 		((unsigned char *) ptr)[blockPtr->reqSize]);
     }
@@ -1009,7 +1009,7 @@ TclFinalizeThreadAlloc(void)
 void
 TclFinalizeThreadAlloc(void)
 {
-    Tcl_Panic("TclFinalizeThreadAlloc called when threaded memory allocator not in use.");
+    Tcl_Panic("TclFinalizeThreadAlloc called when threaded memory allocator not in use");
 }
 #endif /* TCL_THREADS */
 

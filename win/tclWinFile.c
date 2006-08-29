@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.19 2006/04/28 16:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.20 2006/08/29 16:19:48 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -2483,13 +2483,11 @@ TclpObjLink(
     int linkAction)
 {
     if (toPtr != NULL) {
+	toPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
+    }
+    if (toPtr != NULL) {
 	int res;
-#if 0
 	TCHAR *LinkTarget = (TCHAR *) Tcl_FSGetNativePath(toPtr);
-#else
-	TCHAR *LinkTarget = (TCHAR *) Tcl_FSGetNativePath(
-		Tcl_FSGetNormalizedPath(NULL, toPtr));
-#endif
 	TCHAR *LinkSource = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
@@ -3256,12 +3254,18 @@ TclNativeCreateNativeRep(
 	 */
 
 	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (validPathPtr == NULL) {
+	    return NULL;
+	}
     } else {
 	/*
 	 * Make sure the normalized path is set.
 	 */
 
 	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (validPathPtr == NULL) {
+	    return NULL;
+	}
 	Tcl_IncrRefCount(validPathPtr);
     }
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.39 2006/07/05 21:29:11 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.40 2006/08/29 16:19:28 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2324,6 +2324,10 @@ MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
 MODULE_SCOPE void	TclInitThreadStorage(void);
 MODULE_SCOPE void	TclpFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
+#ifdef TCL_WIDE_CLICKS
+MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
+MODULE_SCOPE Tcl_WideInt TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
+#endif
 
 /*
  *----------------------------------------------------------------

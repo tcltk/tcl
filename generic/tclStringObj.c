@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.11 2006/04/28 16:09:12 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.12 2006/08/29 16:19:30 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -698,7 +698,7 @@ Tcl_SetStringObj(
      */
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetStringObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetStringObj");
     }
 
     /*
@@ -749,7 +749,7 @@ Tcl_SetObjLength(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetObjLength called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
     }
     SetStringFromAny(NULL, objPtr);
 
@@ -865,7 +865,7 @@ Tcl_AttemptSetObjLength(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_AttemptSetObjLength called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
     SetStringFromAny(NULL, objPtr);
 
@@ -1054,7 +1054,7 @@ TclAppendLimitedToObj(
     int toCopy = 0;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("TclAppendLimitedToObj called with shared object");
+	Tcl_Panic("%s called with shared object", "TclAppendLimitedToObj");
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1156,7 +1156,7 @@ Tcl_AppendUnicodeToObj(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_AppendUnicodeToObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendUnicodeToObj");
     }
 
     if (length == 0) {
@@ -1533,7 +1533,7 @@ Tcl_AppendStringsToObjVA(
     int nargs, i;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_AppendStringsToObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendStringsToObj");
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1715,7 +1715,7 @@ TclAppendFormattedObjs(
     };
 
     if (Tcl_IsShared(appendObj)) {
-	Tcl_Panic("TclAppendFormattedObjs called with shared object");
+	Tcl_Panic("%s called with shared object", "TclAppendFormattedObjs");
     }
     Tcl_GetStringFromObj(appendObj, &originalLength);
 
@@ -2145,7 +2145,7 @@ TclAppendFormattedObjs(
 		    int digitOffset;
 
 		    if (useBig) {
-			if (shift<CHAR_BIT*sizeof(Tcl_WideUInt)-DIGIT_BIT) {
+			if ((size_t)shift<CHAR_BIT*sizeof(Tcl_WideUInt)-DIGIT_BIT) {
 			    bits |= (((Tcl_WideUInt)big.dp[index++]) << shift);
 			    shift += DIGIT_BIT;
 			}
@@ -2314,12 +2314,19 @@ FormatObjVA(
 {
     int code, objc;
     Tcl_Obj **objv, *element, *list = Tcl_NewObj();
+    CONST char *p = format;
 
     Tcl_IncrRefCount(list);
-    element = va_arg(argList, Tcl_Obj *);
-    while (element != NULL) {
-	Tcl_ListObjAppendElement(NULL, list, element);
+    while (*p != '\0') {
+	if (*p++ != '%') {
+	    continue;
+	}
+	if (*p == '%') {
+	    continue;
+	}
+	p++;
 	element = va_arg(argList, Tcl_Obj *);
+	Tcl_ListObjAppendElement(NULL, list, element);
     }
     Tcl_ListObjGetElements(NULL, list, &objc, &objv);
     code = TclAppendFormattedObjs(interp, objPtr, format, objc, objv);
@@ -2385,7 +2392,7 @@ ObjPrintfVA(
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
 	int size = 0, seekingConversion = 1, gotPrecision = 0;
-	int lastNum = -1, numBytes = -1;
+	int lastNum = -1;
 
 	if (*p++ != '%') {
 	    continue;
@@ -2401,26 +2408,39 @@ ObjPrintfVA(
 		seekingConversion = 0;
 		break;
 	    case 's': {
-		char *bytes = va_arg(argList, char *);
+		CONST char *q, *end, *bytes = va_arg(argList, char *);
 		seekingConversion = 0;
-		if (gotPrecision) {
-		    char *end = bytes + lastNum;
-		    char *q = bytes;
-		    while ((q < end) && (*q != '\0')) {
-			q++;
-		    }
-		    numBytes = (int)(q - bytes);
-		}
-		Tcl_ListObjAppendElement(NULL, list,
-			Tcl_NewStringObj(bytes , numBytes));
 
 		/*
-		 * We took no more than numBytes bytes from the (char *). In
-		 * turn, [format] will take no more than numBytes characters
-		 * from the Tcl_Obj. Since numBytes characters must be no less
-		 * than numBytes bytes, the character limit will have no
-		 * effect and we can just pass it through.
+		 * The buffer to copy characters from starts at bytes
+		 * and ends at either the first NUL byte, or after
+		 * lastNum bytes, when caller has indicated a limit.  
 		 */
+
+		end = bytes;
+		while ((!gotPrecision || lastNum--) && (*end != '\0')) {
+		    end++;
+		}
+
+		/*
+		 * Within that buffer, we trim both ends if needed so that
+		 * we copy only whole characters, and avoid copying any
+		 * partial multi-byte characters.
+		 */
+
+		q = Tcl_UtfPrev(end, bytes);
+		if (!Tcl_UtfCharComplete(q, (int)(end - q))) {
+		    end = q;
+		}
+
+		q = bytes + TCL_UTF_MAX;
+		while ((bytes < end) && (bytes < q)
+			&& ((*bytes & 0xC0) == 0x80)) {
+		    bytes++;
+		}
+
+		Tcl_ListObjAppendElement(NULL, list,
+			Tcl_NewStringObj(bytes , (int)(end - bytes)));
 
 		break;
 	    }

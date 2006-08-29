@@ -74,6 +74,11 @@
 			},
 			{
 				active = NO;
+				name = TCLLIBPATH;
+				value = /Library/Tcl;
+			},
+			{
+				active = NO;
 				name = DYLD_PRINT_LIBRARIES;
 			},
 		);

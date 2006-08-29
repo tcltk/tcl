@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: macOSXFCmd.test,v 1.1.2.2 2006/04/28 16:09:42 dgp Exp $
+# RCS: @(#) $Id: macOSXFCmd.test,v 1.1.2.3 2006/08/29 16:19:35 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -106,7 +106,7 @@ test macOSXFCmd-2.7 {MacOSXSetFileAttribute - rsrclength} {macosxFileAttr notRoo
     catch {file delete -force -- foo.test}
     close [open foo.test w]
     catch {
-	set f [open foo.test/rsrc w]
+	set f [open foo.test/..namedfork/rsrc w]
 	fconfigure $f -translation lf -eofchar {}
 	puts -nonewline $f "foo"
 	close $f
@@ -123,7 +123,7 @@ test macOSXFCmd-3.1 {MacOSXCopyFileAttributes} {macosxFileAttr notRoot} {
     close [open foo.test w]
     catch {
 	file attributes foo.test -creator FOOC -type FOOT -hidden 1
-	set f [open foo.test/rsrc w]
+	set f [open foo.test/..namedfork/rsrc w]
 	fconfigure $f -translation lf -eofchar {}
 	puts -nonewline $f "foo"
 	close $f

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.43 2006/06/06 17:10:14 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.44 2006/08/29 16:19:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -200,39 +200,40 @@ static CmdInfo builtInCmds[] = {
  */
 
 typedef struct {
-    CONST char* name;		/* Name of the function */
-    Tcl_ObjCmdProc* objCmdProc;	/* Function that evaluates the function */
+    CONST char *name;		/* Name of the function. The full name is
+				 * "::tcl::mathfunc::<name>".  */
+    Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
     ClientData clientData;	/* Client data for the function */
 } BuiltinFuncDef;
 static BuiltinFuncDef BuiltinFuncTable[] = {
-    { "::tcl::mathfunc::abs",	ExprAbsFunc,	NULL 			},
-    { "::tcl::mathfunc::acos",	ExprUnaryFunc,	(ClientData) acos 	},
-    { "::tcl::mathfunc::asin",	ExprUnaryFunc,	(ClientData) asin 	},
-    { "::tcl::mathfunc::atan",	ExprUnaryFunc,	(ClientData) atan 	},
-    { "::tcl::mathfunc::atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
-    { "::tcl::mathfunc::bool",	ExprBoolFunc,	NULL			},
-    { "::tcl::mathfunc::ceil",	ExprCeilFunc,	NULL		 	},
-    { "::tcl::mathfunc::cos",	ExprUnaryFunc,	(ClientData) cos 	},
-    { "::tcl::mathfunc::cosh",	ExprUnaryFunc,	(ClientData) cosh	},
-    { "::tcl::mathfunc::double",ExprDoubleFunc,	NULL			},
-    { "::tcl::mathfunc::entier",ExprEntierFunc,	NULL			},
-    { "::tcl::mathfunc::exp",	ExprUnaryFunc,	(ClientData) exp	},
-    { "::tcl::mathfunc::floor",	ExprFloorFunc,	NULL		 	},
-    { "::tcl::mathfunc::fmod",	ExprBinaryFunc,	(ClientData) fmod	},
-    { "::tcl::mathfunc::hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
-    { "::tcl::mathfunc::int",	ExprIntFunc,	NULL			},
-    { "::tcl::mathfunc::log",	ExprUnaryFunc,	(ClientData) log 	},
-    { "::tcl::mathfunc::log10",	ExprUnaryFunc,	(ClientData) log10 	},
-    { "::tcl::mathfunc::pow",	ExprBinaryFunc,	(ClientData) pow 	},
-    { "::tcl::mathfunc::rand",	ExprRandFunc,	NULL			},
-    { "::tcl::mathfunc::round",	ExprRoundFunc,	NULL			},
-    { "::tcl::mathfunc::sin",	ExprUnaryFunc,	(ClientData) sin 	},
-    { "::tcl::mathfunc::sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
-    { "::tcl::mathfunc::sqrt",	ExprSqrtFunc,	NULL		 	},
-    { "::tcl::mathfunc::srand",	ExprSrandFunc,	NULL			},
-    { "::tcl::mathfunc::tan",	ExprUnaryFunc,	(ClientData) tan 	},
-    { "::tcl::mathfunc::tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
-    { "::tcl::mathfunc::wide",	ExprWideFunc,	NULL		 	},
+    { "abs",	ExprAbsFunc,	NULL 			},
+    { "acos",	ExprUnaryFunc,	(ClientData) acos 	},
+    { "asin",	ExprUnaryFunc,	(ClientData) asin 	},
+    { "atan",	ExprUnaryFunc,	(ClientData) atan 	},
+    { "atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
+    { "bool",	ExprBoolFunc,	NULL			},
+    { "ceil",	ExprCeilFunc,	NULL		 	},
+    { "cos",	ExprUnaryFunc,	(ClientData) cos 	},
+    { "cosh",	ExprUnaryFunc,	(ClientData) cosh	},
+    { "double",	ExprDoubleFunc,	NULL			},
+    { "entier",	ExprEntierFunc,	NULL			},
+    { "exp",	ExprUnaryFunc,	(ClientData) exp	},
+    { "floor",	ExprFloorFunc,	NULL		 	},
+    { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
+    { "hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
+    { "int",	ExprIntFunc,	NULL			},
+    { "log",	ExprUnaryFunc,	(ClientData) log 	},
+    { "log10",	ExprUnaryFunc,	(ClientData) log10 	},
+    { "pow",	ExprBinaryFunc,	(ClientData) pow 	},
+    { "rand",	ExprRandFunc,	NULL			},
+    { "round",	ExprRoundFunc,	NULL			},
+    { "sin",	ExprUnaryFunc,	(ClientData) sin 	},
+    { "sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
+    { "sqrt",	ExprSqrtFunc,	NULL		 	},
+    { "srand",	ExprSrandFunc,	NULL			},
+    { "tan",	ExprUnaryFunc,	(ClientData) tan 	},
+    { "tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
+    { "wide",	ExprWideFunc,	NULL		 	},
     { NULL, NULL, NULL }
 };
 
@@ -262,8 +263,7 @@ Tcl_CreateInterp(void)
     Command *cmdPtr;
     BuiltinFuncDef *builtinFuncPtr;
     const CmdInfo *cmdInfoPtr;
-    Tcl_Namespace* mathfuncNSPtr;
-    int i;
+    Tcl_Namespace *mathfuncNSPtr;
     union {
 	char c[sizeof(short)];
 	short s;
@@ -271,6 +271,7 @@ Tcl_CreateInterp(void)
 #ifdef TCL_COMPILE_STATS
     ByteCodeStats *statsPtr;
 #endif /* TCL_COMPILE_STATS */
+    char mathFuncName[32];
 
     TclInitSubsystems();
 
@@ -383,10 +384,8 @@ Tcl_CreateInterp(void)
     statsPtr->currentSrcBytes = 0.0;
     statsPtr->currentByteCodeBytes = 0.0;
     (void) memset(statsPtr->srcCount, 0, sizeof(statsPtr->srcCount));
-    (void) memset(statsPtr->byteCodeCount, 0,
-	    sizeof(statsPtr->byteCodeCount));
-    (void) memset(statsPtr->lifetimeCount, 0,
-	    sizeof(statsPtr->lifetimeCount));
+    (void) memset(statsPtr->byteCodeCount, 0, sizeof(statsPtr->byteCodeCount));
+    (void) memset(statsPtr->lifetimeCount, 0, sizeof(statsPtr->lifetimeCount));
 
     statsPtr->currentInstBytes = 0.0;
     statsPtr->currentLitBytes = 0.0;
@@ -437,7 +436,7 @@ Tcl_CreateInterp(void)
 
 	if ((cmdInfoPtr->objProc == NULL)
 		&& (cmdInfoPtr->compileProc == NULL)) {
-	    Tcl_Panic("Tcl_CreateInterp: builtin command with NULL object command proc and a NULL compile proc\n");
+	    Tcl_Panic("builtin command with NULL object command proc and a NULL compile proc");
 	}
 
 	hPtr = Tcl_CreateHashEntry(&iPtr->globalNsPtr->cmdTable,
@@ -484,34 +483,29 @@ Tcl_CreateInterp(void)
      * implemented as commands in the ::tcl::mathfunc namespace.
      */
 
-
     /*
      * Register the default [interp bgerror] handler.
      */
 
-    Tcl_CreateObjCommand(interp,	"::tcl::Bgerror",
-	    TclDefaultBgErrorHandlerObjCmd,	(ClientData) NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::Bgerror",
+	    TclDefaultBgErrorHandlerObjCmd, NULL, NULL);
 
     /*
      * Register the builtin math functions.
      */
 
-    mathfuncNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc",
-	    (ClientData) NULL, NULL);
+    mathfuncNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathfunc", NULL, NULL);
     if (mathfuncNSPtr == NULL) {
 	Tcl_Panic("Can't create math function namespace");
     }
-    i = 0;
-    for (;;) {
-	CONST char* tail;
-	builtinFuncPtr = &(BuiltinFuncTable[i++]);
-	if (builtinFuncPtr->name == NULL) {
-	    break;
-	}
-	Tcl_CreateObjCommand(interp, builtinFuncPtr->name,
+    strcpy(mathFuncName, "::tcl::mathfunc::");
+#define MATH_FUNC_PREFIX_LEN 17 /* == strlen("::tcl::mathfunc::") */
+    for (builtinFuncPtr = BuiltinFuncTable; builtinFuncPtr->name != NULL;
+	    builtinFuncPtr++) {
+	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
+	Tcl_CreateObjCommand(interp, mathFuncName,
 		builtinFuncPtr->objCmdProc, builtinFuncPtr->clientData, NULL);
-	tail = builtinFuncPtr->name + strlen("::tcl::mathfunc::");
-	Tcl_Export(interp, mathfuncNSPtr, tail, 0);
+	Tcl_Export(interp, mathfuncNSPtr, builtinFuncPtr->name, 0);
     }
 
     /*

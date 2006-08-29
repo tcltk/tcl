@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.11 2006/01/25 18:39:59 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.12 2006/08/29 16:19:48 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -925,8 +925,12 @@ TclpObjCopyDirectory(
     int ret;
 
     normSrcPtr = Tcl_FSGetNormalizedPath(NULL,srcPathPtr);
-    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
     normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
+    if ((normSrcPtr == NULL) || (normDestPtr == NULL)) {
+	return TCL_ERROR;
+    }
+
+    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
     Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
@@ -996,6 +1000,9 @@ TclpObjRemoveDirectory(
 
 	Tcl_DString native;
 	normPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (normPtr == NULL) {
+	    return TCL_ERROR;
+	}
 	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.14.8.6 2005/06/02 04:17:59 dgp Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.14.8.7 2006/08/29 16:19:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -440,7 +440,7 @@ test cmdIL-6.1 {lassign command syntax} -body {
     testLassign
 } -returnCodes 1 -cleanup {
     rename testLassign {}
-} -result {wrong # args: should be "lassign list varname ?varname ...?"}
+} -result {wrong # args: should be "lassign list varName ?varName ...?"}
 test cmdIL-6.2 {lassign command syntax} -body {
     proc testLassign {} {
 	lassign x
@@ -448,7 +448,7 @@ test cmdIL-6.2 {lassign command syntax} -body {
     testLassign
 } -returnCodes 1 -cleanup {
     rename testLassign {}
-} -result {wrong # args: should be "lassign list varname ?varname ...?"}
+} -result {wrong # args: should be "lassign list varName ?varName ...?"}
 test cmdIL-6.3 {lassign command} -body {
     proc testLassign {} {
 	set x FAIL
@@ -571,7 +571,7 @@ test cmdIL-6.13 {lassign command syntax} -body {
     testLassign
 } -returnCodes 1 -cleanup {
     rename testLassign {}
-} -result {wrong # args: should be "lassign list varname ?varname ...?"}
+} -result {wrong # args: should be "lassign list varName ?varName ...?"}
 test cmdIL-6.14 {lassign command syntax} -body {
     proc testLassign {} {
 	set lassign lassign
@@ -580,7 +580,7 @@ test cmdIL-6.14 {lassign command syntax} -body {
     testLassign
 } -returnCodes 1 -cleanup {
     rename testLassign {}
-} -result {wrong # args: should be "lassign list varname ?varname ...?"}
+} -result {wrong # args: should be "lassign list varName ?varName ...?"}
 test cmdIL-6.15 {lassign command} -body {
     proc testLassign {} {
 	set lassign lassign

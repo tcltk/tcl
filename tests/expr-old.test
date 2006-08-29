@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.17.2.12 2006/07/05 21:29:15 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.17.2.13 2006/08/29 16:19:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -495,12 +495,12 @@ test expr-old-25.20 {type conversions} {expr 10.0} 10.0
 test expr-old-26.1 {error conditions} {
     list [catch {expr 2+"a"} msg] $msg
 } {1 {can't use non-numeric string as operand of "+"}}
-test expr-old-26.2 {error conditions} {
-    list [catch {expr 2+4*} msg] $msg
-} {1 {syntax error in expression "2+4*": premature end of expression}}
-test expr-old-26.3 {error conditions} {
-    list [catch {expr 2+4*(} msg] $msg
-} {1 {syntax error in expression "2+4*(": premature end of expression}}
+test expr-old-26.2 {error conditions} -body {
+    expr 2+4*
+} -returnCodes error -match glob -result *
+test expr-old-26.3 {error conditions} -body {
+    expr 2+4*(
+} -returnCodes error -match glob -result *
 catch {unset _non_existent_}
 test expr-old-26.4 {error conditions} {
     list [catch {expr 2+$_non_existent_} msg] $msg
@@ -512,9 +512,9 @@ test expr-old-26.5 {error conditions} {
 test expr-old-26.6 {error conditions} {
     list [catch {expr {2+[set a]}} msg] $msg
 } {1 {can't use non-numeric string as operand of "+"}}
-test expr-old-26.7 {error conditions} {
-    list [catch {expr {2+(4}} msg] $msg
-} {1 {syntax error in expression "2+(4": looking for close parenthesis}}
+test expr-old-26.7 {error conditions} -body {
+    expr {2+(4}
+} -returnCodes error -match glob -result *
 test expr-old-26.8 {error conditions} {
     list [catch {expr 2/0} msg] $msg $errorCode
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
@@ -527,33 +527,33 @@ test expr-old-26.10a {error conditions} !ieeeFloatingPoint {
 test expr-old-26.10b {error conditions} ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg
 } {0 Inf}
-test expr-old-26.11 {error conditions} {
-    list [catch {expr 2#} msg] $msg
-} {1 {syntax error in expression "2#": extra tokens at end of expression}}
+test expr-old-26.11 {error conditions} -body {
+    expr 2#
+} -returnCodes error -match glob -result *
 test expr-old-26.12 {error conditions} -body {
-    list [catch {expr a.b} msg] $msg
-} -match glob -result {1 {syntax error in expression "a.b": * preceding $*}}
+    expr a.b
+} -returnCodes error -match glob -result *
 test expr-old-26.13 {error conditions} {
     list [catch {expr {"a"/"b"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "/"}}
-test expr-old-26.14 {error conditions} {
-    list [catch {expr 2:3} msg] $msg
-} {1 {syntax error in expression "2:3": extra tokens at end of expression}}
+test expr-old-26.14 {error conditions} -body {
+    expr 2:3
+} -returnCodes error -match glob -result *
 test expr-old-26.15 {error conditions} -body {
-    list [catch {expr a@b} msg] $msg
-} -match glob -result {1 {syntax error in expression "a@b": * preceding $*}}
+    expr a@b
+} -returnCodes error -match glob -result *
 test expr-old-26.16 {error conditions} {
     list [catch {expr a[b} msg] $msg
 } {1 {missing close-bracket}}
 test expr-old-26.17 {error conditions} -body {
-    list [catch {expr a`b} msg] $msg
-} -match glob -result {1 {syntax error in expression "a`b": * preceding $*}}
-test expr-old-26.18 {error conditions} {
-    list [catch {expr \"a\"\{b} msg] $msg
-} {1 syntax\ error\ in\ expression\ \"\"a\"\{b\":\ extra\ tokens\ at\ end\ of\ expression}
+    expr a`b
+} -returnCodes error -match glob -result *
+test expr-old-26.18 {error conditions} -body {
+    expr \"a\"\{b
+} -returnCodes error -match glob -result *
 test expr-old-26.19 {error conditions} -body {
-    list [catch {expr a} msg] $msg
-} -match glob -result {1 {syntax error in expression "a": * preceding $*}}
+    expr a
+} -returnCodes error -match glob -result *
 test expr-old-26.20 {error conditions} {
     list [catch expr msg] $msg
 } {1 {wrong # args: should be "expr arg ?arg ...?"}}
@@ -602,11 +602,11 @@ test expr-old-27.10 {cancelled evaluation} {
     list [catch {expr {($x > 0) ? round(log($x)) : 0}} msg] $msg
 } {0 0}
 test expr-old-27.11 {cancelled evaluation} -body {
-    list [catch {expr {0 && foo}} msg] $msg
-} -match glob -result {1 {syntax error in expression "0 && foo": * preceding $*}}
+    expr {0 && foo}
+} -returnCodes error -match glob -result *
 test expr-old-27.12 {cancelled evaluation} -body {
-    list [catch {expr {0 ? 1 : foo}} msg] $msg
-} -match glob -result {1 {syntax error in expression "0 ? 1 : foo": * preceding $*}}
+    expr {0 ? 1 : foo}
+} -returnCodes error -match glob -result *
 
 # Tcl_ExprBool as used in "if" statements
 
@@ -681,9 +681,9 @@ test expr-old-29.1 {braces} {expr {{abc}}} abc
 test expr-old-29.2 {braces} {expr {{00010}}} 8
 test expr-old-29.3 {braces} {expr {{3.1200000}}} 3.12
 test expr-old-29.4 {braces} {expr {{a{b}{1 {2 3}}c}}} "a{b}{1 {2 3}}c"
-test expr-old-29.5 {braces} {
-    list [catch {expr "\{abc"} msg] $msg
-} {1 {missing close-brace}}
+test expr-old-29.5 {braces} -body {
+    expr "\{abc"
+} -returnCodes error -match glob -result *
 
 # Very long values
 
@@ -704,15 +704,15 @@ test expr-old-30.2 {long values} {
 test expr-old-31.1 {multiple arguments to expr command} {
     expr 4 + ( 6 *12) -3
 } 73
-test expr-old-31.2 {multiple arguments to expr command} {
-    list [catch {expr 2 + (3 + 4} msg] $msg
-} {1 {syntax error in expression "2 + (3 + 4": looking for close parenthesis}}
-test expr-old-31.3 {multiple arguments to expr command} {
-    list [catch {expr 2 + 3 +} msg] $msg
-} {1 {syntax error in expression "2 + 3 +": premature end of expression}}
-test expr-old-31.4 {multiple arguments to expr command} {
-    list [catch {expr 2 + 3 )} msg] $msg
-} {1 {syntax error in expression "2 + 3 )": extra tokens at end of expression}}
+test expr-old-31.2 {multiple arguments to expr command} -body {
+    expr 2 + (3 + 4
+} -returnCodes error -match glob -result *
+test expr-old-31.3 {multiple arguments to expr command} -body {
+    expr 2 + 3 +
+} -returnCodes error -match glob -result *
+test expr-old-31.4 {multiple arguments to expr command} -body {
+    expr 2 + 3 )
+} -returnCodes error -match glob -result *
 
 # Math functions
 
@@ -903,20 +903,20 @@ test expr-old-34.1 {errors in math functions} -body {
     list [catch {expr func_2(1.0)} msg] $msg
 } -match glob -result {1 {* "*func_2"}}
 test expr-old-34.2 {errors in math functions} -body {
-    list [catch {expr func|(1.0)} msg] $msg
-} -match glob -result {1 {syntax error in expression "func|(1.0)": * preceding $*}}
+    expr func|(1.0)
+} -returnCodes error -match glob -result *
 test expr-old-34.3 {errors in math functions} {
     list [catch {expr {hypot("a b", 2.0)}} msg] $msg
 } {1 {expected floating-point number but got "a b"}}
-test expr-old-34.4 {errors in math functions} {
-    list [catch {expr hypot(1.0 2.0)} msg] $msg
-} {1 {syntax error in expression "hypot(1.0 2.0)": missing close parenthesis at end of function call}}
-test expr-old-34.5 {errors in math functions} {
-    list [catch {expr hypot(1.0, 2.0} msg] $msg
-} {1 {syntax error in expression "hypot(1.0, 2.0": missing close parenthesis at end of function call}}
-test expr-old-34.6 {errors in math functions} {
-    list [catch {expr hypot(1.0 ,} msg] $msg
-} {1 {syntax error in expression "hypot(1.0 ,": premature end of expression}}
+test expr-old-34.4 {errors in math functions} -body {
+    expr hypot(1.0 2.0)
+} -returnCodes error -match glob -result *
+test expr-old-34.5 {errors in math functions} -body {
+    expr hypot(1.0, 2.0
+} -returnCodes error -match glob -result *
+test expr-old-34.6 {errors in math functions} -body {
+    expr hypot(1.0 ,
+} -returnCodes error -match glob -result *
 test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
 } -match glob -result {1 {too few arguments for math function*}}
@@ -991,7 +991,7 @@ test expr-old-36.9 {ExprLooksLikeInt procedure} {
 } {0 240.0}
 test expr-old-36.10 {ExprLooksLikeInt procedure} -body {
     expr 78e
-} -returnCodes error -match glob -result {syntax error in expression "78e"*}
+} -returnCodes error -match glob -result *
 
 # test for [Bug #542588]
 test expr-old-36.11 {ExprLooksLikeInt procedure} {
@@ -1122,10 +1122,10 @@ test expr-old-37.25 {Tcl_ExprDouble and NaN} \
 	list [catch {testexprdouble 0.0/0.0} result] $result
     } {1 {floating point value is Not a Number}}
     
-test expr-old-38.1 {Verify Tcl_ExprString's basic operation} testexprstring {
+test expr-old-38.1 {Verify Tcl_ExprString's basic operation} -constraints {testexprstring} -body {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
-} {5 10.2 1 {syntax error in expression "1+": premature end of expression}}
+} -match glob -result {5 10.2 1 *}
 test expr-old-38.2 {Tcl_ExprString} testexprstring {
     # This one is "magical"
     testexprstring {}

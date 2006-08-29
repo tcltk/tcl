@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.20 2006/04/28 16:09:12 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.21 2006/08/29 16:19:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1599,7 +1599,9 @@ Tcl_FSGetTranslatedPath(
 	retObj = srcFsPathPtr->translatedPathPtr;
     }
 
-    Tcl_IncrRefCount(retObj);
+    if (retObj != NULL) {
+	Tcl_IncrRefCount(retObj);
+    }
     return retObj;
 }
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.12 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.13 2006/08/29 16:19:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -333,7 +333,7 @@ CompileSubExpr(
     char buffer[TCL_UTF_MAX];
 
     if (exprTokenPtr->type != TCL_TOKEN_SUB_EXPR) {
-	Tcl_Panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR\n",
+	Tcl_Panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR",
 		exprTokenPtr->type);
     }
     code = TCL_OK;
@@ -504,14 +504,14 @@ CompileSubExpr(
 	    break;
 
 	default:
-	    Tcl_Panic("CompileSubExpr: unexpected operator %d requiring special treatment\n",
+	    Tcl_Panic("CompileSubExpr: unexpected operator %d requiring special treatment",
 		    opIndex);
 	} /* end switch on operator requiring special treatment */
 	infoPtr->hasOperators = 1;
 	break;
 
     default:
-	Tcl_Panic("CompileSubExpr: unexpected token type %d\n",
+	Tcl_Panic("CompileSubExpr: unexpected token type %d",
 		tokenPtr->type);
     }
 

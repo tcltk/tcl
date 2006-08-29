@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.13.4.8 2006/04/28 16:09:41 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.13.4.9 2006/08/29 16:19:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -759,6 +759,20 @@ test execute-8.3 {Stack restoration} -body {
  } -cleanup {
      interp recursionlimit {} $limit
  } -result {too many nested evaluations (infinite loop?)}
+
+test execute-9.1 {Interp result resetting [Bug 1522803]} {
+    set c 0
+    catch {
+	catch {set foo}
+	expr {1/$c}
+    }
+    if {[string match *foo* $::errorInfo]} {
+	set result "Bad errorInfo: $::errorInfo"
+    } else {
+	set result SUCCESS
+    }
+    set result
+} SUCCESS
 
 # cleanup
 if {[info commands testobj] != {}} {

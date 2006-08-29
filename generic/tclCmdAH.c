@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.21 2006/07/05 21:29:10 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.22 2006/08/29 16:19:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1784,12 +1784,12 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    result = Tcl_ListObjGetElements(interp, argObjv[1+i*2],
 		    &varcList[i], &varvList[i]);
 	    if (result != TCL_OK) {
-		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert variable list %d to a list object\n", i);
+		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert variable list %d to a list object", i);
 	    }
 	    result = Tcl_ListObjGetElements(interp, argObjv[2+i*2],
 		    &argcList[i], &argvList[i]);
 	    if (result != TCL_OK) {
-		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object\n", i);
+		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object", i);
 	    }
 
 	    for (v=0 ; v<varcList[i] ; v++) {

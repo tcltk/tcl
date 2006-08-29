@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.8 2006/04/28 16:09:07 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.9 2006/08/29 16:19:24 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6744,3 +6744,27 @@ Documentation improvements [1211078,1190891,1292427,1277503,1104682,1359183,
 1415725,666770]
 
 --- Released 8.5a4, April 27, 2006 --- See ChangeLog for details ---
+
+2006-05-04 (bug fix)[1480509] srand() accept wide input (porter,afredd)
+
+2006-05-05 (bug fix)[1481986] interactive Tcl_Main blocks main loop (porter,lin)
+
+2006-05-13 (bug fix)[1482718] proc re-compile: preserve the previous
+bytecode while references still on the stack (porter,ryazanov)
+
+2006-05-27 (bug fix)[923072] Darwin: made unthreaded CoreFoundation notifier
+naked-fork safe on Tiger (steffen)
+
+2006-07-20 (platform support) Mac OS X weak linking (steffen)
+
+2006-07-20 (bug fix) Darwin: execve() works iff event loop not yet run (steffen)
+
+2006-08-18 (platform support) Darwin x86_64 (steffen)
+
+2006-08-21 (bug fix)[1457797] Darwin 64-bit notifier hang (steffen)
+
+2006-08-21 (bug fix) Darwin: recursively called event loop (steffen)
+
+2006-08-21 (enhancement) Darwin: nanosec resolution clicks and [time] (steffen)
+
+--- Released 8.5a5, June XX, 2006 --- See ChangeLog for details ---

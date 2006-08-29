@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.11 2006/04/28 16:10:51 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.12 2006/08/29 16:19:48 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -2551,21 +2551,23 @@ InitializeHostName(
 
 	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *) wbuf, -1, &ds));
 
-    } else if (TclpHasSockets(NULL) == TCL_OK) {
-	/*
-	 * Buffer length of 255 copied slavishly from previous version of this
-	 * routine. Presumably there's a more "correct" macro value for a
-	 * properly sized buffer for a gethostname() call. Maintainers are
-	 * welcome to supply it.
-	 */
-
+    } else {
 	Tcl_DStringInit(&ds);
-	Tcl_DStringSetLength(&ds, 255);
-	if (winSock.gethostname(Tcl_DStringValue(&ds),
-		Tcl_DStringLength(&ds)) == 0) {
-	    Tcl_DStringSetLength(&ds, 0);
-	} else {
-	    Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
+	if (TclpHasSockets(NULL) == TCL_OK) {
+	    /*
+	     * Buffer length of 255 copied slavishly from previous version
+	     * of this routine. Presumably there's a more "correct" macro
+	     * value for a properly sized buffer for a gethostname() call.
+	     * Maintainers are welcome to supply it.
+	     */
+
+	    Tcl_DStringSetLength(&ds, 255);
+	    if (winSock.gethostname(Tcl_DStringValue(&ds),
+		    Tcl_DStringLength(&ds)) == 0) {
+		Tcl_DStringSetLength(&ds, 0);
+	    } else {
+		Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
+	    }
 	}
     }
 

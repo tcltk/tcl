@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.11 2005/12/02 18:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.12 2006/08/29 16:19:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -852,7 +852,7 @@ Tcl_ExecObjCmd(
 
     argv = argStorage;
     argc = objc - skip;
-    if ((argc + 1) > sizeof(argv) / sizeof(argv[0])) {
+    if ((size_t)(argc + 1) > sizeof(argv) / sizeof(argv[0])) {
 	argv = (CONST char **) ckalloc((unsigned)(argc + 1) * sizeof(char *));
     }
 

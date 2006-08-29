@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.7 2006/04/28 16:10:47 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.8 2006/08/29 16:19:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -34,11 +34,7 @@ typedef struct Tcl_DyldLoadHandle {
 } Tcl_DyldLoadHandle;
 
 #ifdef TCL_LOAD_FROM_MEMORY
-typedef struct ThreadSpecificData {
-    int haveLoadMemory;
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
+MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif
 
 /*
@@ -389,23 +385,13 @@ TclpLoadMemoryGetBuffer(
     Tcl_Interp *interp,		/* Used for error reporting. */
     int size)			/* Size of desired buffer. */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     void *buffer = NULL;
 
-    if (!tsdPtr->haveLoadMemory) {
-	/*
-	 * NSCreateObjectFileImageFromMemory is available but always fails
-	 * prior to Darwin 7.
-	 */
-
-	struct utsname name;
-
-	if (!uname(&name)) {
-	    long release = strtol(name.release, NULL, 10);
-	    tsdPtr->haveLoadMemory = (release >= 7) ? 1 : -1;
-	}
-    }
-    if (tsdPtr->haveLoadMemory > 0) {
+    /*
+     * NSCreateObjectFileImageFromMemory is available but always fails
+     * prior to Darwin 7.
+     */
+    if (tclMacOSXDarwinRelease >= 7) {
 	/*
 	 * We must allocate the buffer using vm_allocate, because
 	 * NSCreateObjectFileImageFromMemory will dispose of it using
@@ -478,14 +464,14 @@ TclpLoadMemory(
 	#define mh_size  sizeof(struct mach_header_64)
 #endif
 	
-	if (codeSize >= sizeof(struct fat_header)
+	if ((size_t) codeSize >= sizeof(struct fat_header)
 		&& fh->magic == OSSwapHostToBigInt32(FAT_MAGIC)) {
 	    /*
 	     * Fat binary, try to find mach_header for our architecture
 	     */
 	    uint32_t fh_nfat_arch = OSSwapBigToHostInt32(fh->nfat_arch);
 	    
-	    if (codeSize >= sizeof(struct fat_header) + 
+	    if ((size_t) codeSize >= sizeof(struct fat_header) + 
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
 		void *fatarchs = buffer + sizeof(struct fat_header);
 		CONST NXArchInfo *arch = NXGetLocalArchInfo();

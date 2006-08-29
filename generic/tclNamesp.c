@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.26 2006/04/28 16:09:12 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.27 2006/08/29 16:19:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -180,73 +180,73 @@ typedef struct EnsembleCmdRep {
 static void		DeleteImportedCmd(ClientData clientData);
 static int		DoImport(Tcl_Interp *interp,
 			    Namespace *nsPtr, Tcl_HashEntry *hPtr,
-			    CONST char *cmdName, CONST char *pattern,
+			    const char *cmdName, const char *pattern,
 			    Namespace *importNsPtr, int allowOverwrite);
 static void		DupNsNameInternalRep(Tcl_Obj *objPtr,Tcl_Obj *copyPtr);
 static char *		ErrorCodeRead(ClientData clientData,Tcl_Interp *interp,
-			    CONST char *name1, CONST char *name2, int flags);
+			    const char *name1, const char *name2, int flags);
 static char *		ErrorInfoRead(ClientData clientData,Tcl_Interp *interp,
-			    CONST char *name1, CONST char *name2, int flags);
+			    const char *name1, const char *name2, int flags);
 static char *		EstablishErrorCodeTraces(ClientData clientData,
-			    Tcl_Interp *interp, CONST char *name1,
-			    CONST char *name2, int flags);
+			    Tcl_Interp *interp, const char *name1,
+			    const char *name2, int flags);
 static char *		EstablishErrorInfoTraces(ClientData clientData,
-			    Tcl_Interp *interp, CONST char *name1,
-			    CONST char *name2, int flags);
+			    Tcl_Interp *interp, const char *name1,
+			    const char *name2, int flags);
 static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
 static int		InvokeImportedCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceChildrenCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceCodeCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceCurrentCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceDeleteCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceEnsembleCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceEvalCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceExistsCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceExportCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceForgetCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static void		NamespaceFree(Namespace *nsPtr);
 static int		NamespaceImportCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceInscopeCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceOriginCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceParentCmd(ClientData dummy,Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespacePathCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceQualifiersCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceTailCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceUpvarCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-static int		NamespaceUnknownCmd(ClientData dummy, 
-			    Tcl_Interp *interp, int objc, 
-			    Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
+static int		NamespaceUnknownCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		NamespaceWhichCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		SetNsNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfNsName(Tcl_Obj *objPtr);
 static int		NsEnsembleImplementationCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
-static int		NsEnsembleStringOrder(CONST VOID *strPtr1,
-			    CONST VOID *strPtr2);
+static int		NsEnsembleStringOrder(const void *strPtr1,
+			    const void *strPtr2);
 static void		DeleteEnsembleConfig(ClientData clientData);
 static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
 			    EnsembleConfig *ensemblePtr,
-			    CONST char *subcmdName, Tcl_Obj *prefixObjPtr);
+			    const char *subcmdName, Tcl_Obj *prefixObjPtr);
 static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
@@ -271,9 +271,9 @@ Tcl_ObjType tclNsNameType = {
 
 /*
  * This structure defines a Tcl object type that contains a reference to an
- * ensemble subcommand (e.g. the "length" in [string length ab]) It is used to
- * cache the mapping between the subcommand itself and the real command that
- * implements it.
+ * ensemble subcommand (e.g. the "length" in [string length ab]). It is used
+ * to cache the mapping between the subcommand itself and the real command
+ * that implements it.
  */
 
 static Tcl_ObjType ensembleCmdType = {
@@ -584,8 +584,8 @@ static char *
 EstablishErrorCodeTraces(
     ClientData clientData,
     Tcl_Interp *interp,
-    CONST char *name1,
-    CONST char *name2,
+    const char *name1,
+    const char *name2,
     int flags)
 {
     Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
@@ -616,8 +616,8 @@ static char *
 ErrorCodeRead(
     ClientData clientData,
     Tcl_Interp *interp,
-    CONST char *name1,
-    CONST char *name2,
+    const char *name1,
+    const char *name2,
     int flags)
 {
     Interp *iPtr = (Interp *)interp;
@@ -651,8 +651,8 @@ static char *
 EstablishErrorInfoTraces(
     ClientData clientData,
     Tcl_Interp *interp,
-    CONST char *name1,
-    CONST char *name2,
+    const char *name1,
+    const char *name2,
     int flags)
 {
     Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
@@ -683,8 +683,8 @@ static char *
 ErrorInfoRead(
     ClientData clientData,
     Tcl_Interp *interp,
-    CONST char *name1,
-    CONST char *name2,
+    const char *name1,
+    const char *name2,
     int flags)
 {
     Interp *iPtr = (Interp *)interp;
@@ -723,7 +723,7 @@ Tcl_CreateNamespace(
     Tcl_Interp *interp,		/* Interpreter in which a new namespace is
 				 * being created. Also used for error
 				 * reporting. */
-    CONST char *name,		/* Name for the new namespace. May be a
+    const char *name,		/* Name for the new namespace. May be a
 				 * qualified name with names of ancestor
 				 * namespaces separated by "::"s. */
     ClientData clientData,	/* One-word value to store with namespace. */
@@ -736,10 +736,11 @@ Tcl_CreateNamespace(
     register Namespace *nsPtr, *ancestorPtr;
     Namespace *parentPtr, *dummy1Ptr, *dummy2Ptr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
-    CONST char *simpleName;
+    const char *simpleName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
-    int newEntry;
+    Tcl_DString *namePtr, *buffPtr;
+    int newEntry, nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -846,22 +847,41 @@ Tcl_CreateNamespace(
 
     Tcl_DStringInit(&buffer1);
     Tcl_DStringInit(&buffer2);
-    for (ancestorPtr = nsPtr;  ancestorPtr != NULL;
+    namePtr = &buffer1;
+    buffPtr = &buffer2;
+    for (ancestorPtr = nsPtr; ancestorPtr != NULL;
 	    ancestorPtr = ancestorPtr->parentPtr) {
 	if (ancestorPtr != globalNsPtr) {
-	    Tcl_DStringAppend(&buffer1, "::", 2);
-	    Tcl_DStringAppend(&buffer1, ancestorPtr->name, -1);
-	}
-	Tcl_DStringAppend(&buffer1, Tcl_DStringValue(&buffer2), -1);
+	    register Tcl_DString *tempPtr = namePtr;
 
-	Tcl_DStringSetLength(&buffer2, 0);
-	Tcl_DStringAppend(&buffer2, Tcl_DStringValue(&buffer1), -1);
-	Tcl_DStringSetLength(&buffer1, 0);
+	    Tcl_DStringAppend(buffPtr, "::", 2);
+	    Tcl_DStringAppend(buffPtr, ancestorPtr->name, -1);
+	    Tcl_DStringAppend(buffPtr, Tcl_DStringValue(namePtr),
+		    Tcl_DStringLength(namePtr));
+
+	    /*
+	     * Clear the unwanted buffer or we end up appending to previous
+	     * results, making the namespace fullNames of nested namespaces
+	     * very wrong (and strange).
+	     */
+
+	    Tcl_DStringSetLength(namePtr, 0);
+
+	    /*
+	     * Now swap the buffer pointers so that we build in the other
+	     * buffer. This is faster than repeated copying back and forth
+	     * between buffers.
+	     */
+
+	    namePtr = buffPtr;
+	    buffPtr = tempPtr;
+	}
     }
 
-    name = Tcl_DStringValue(&buffer2);
-    nsPtr->fullName = (char *) ckalloc((unsigned) (strlen(name)+1));
-    strcpy(nsPtr->fullName, name);
+    name = Tcl_DStringValue(namePtr);
+    nameLen = Tcl_DStringLength(namePtr);
+    nsPtr->fullName = (char *) ckalloc((unsigned) (nameLen+1));
+    memcpy(nsPtr->fullName, name, (unsigned) nameLen + 1);
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
@@ -1205,7 +1225,7 @@ Tcl_Export(
     Tcl_Namespace *namespacePtr,/* Points to the namespace from which commands
 				 * are to be exported. NULL for the current
 				 * namespace. */
-    CONST char *pattern,	/* String pattern indicating which commands to
+    const char *pattern,	/* String pattern indicating which commands to
 				 * export. This pattern may not include any
 				 * namespace qualifiers; only commands in the
 				 * specified namespace may be exported. */
@@ -1215,7 +1235,7 @@ Tcl_Export(
 #define INIT_EXPORT_PATTERNS 5
     Namespace *nsPtr, *exportNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    CONST char *simplePattern;
+    const char *simplePattern;
     char *patternCpy;
     int neededElems, len, i;
 
@@ -1294,7 +1314,7 @@ Tcl_Export(
 	size_t newBytes = numNewElems * sizeof(char *);
 	char **newPtr = (char **) ckalloc((unsigned) newBytes);
 
-	memcpy((void *) newPtr, (void *) nsPtr->exportArrayPtr, currBytes);
+	memcpy(newPtr, nsPtr->exportArrayPtr, currBytes);
 	ckfree((char *) nsPtr->exportArrayPtr);
 	nsPtr->exportArrayPtr = (char **) newPtr;
 	nsPtr->maxExportPatterns = numNewElems;
@@ -1306,7 +1326,7 @@ Tcl_Export(
 
     len = strlen(pattern);
     patternCpy = (char *) ckalloc((unsigned) (len + 1));
-    strcpy(patternCpy, pattern);
+    memcpy(patternCpy, pattern, (unsigned) len + 1);
 
     nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
     nsPtr->numExportPatterns++;
@@ -1412,7 +1432,7 @@ Tcl_Import(
     Tcl_Namespace *namespacePtr,/* Points to the namespace into which the
 				 * commands are to be imported. NULL for the
 				 * current namespace. */
-    CONST char *pattern,	/* String pattern indicating which commands to
+    const char *pattern,	/* String pattern indicating which commands to
 				 * import. This pattern should be qualified by
 				 * the name of the namespace from which to
 				 * import the command(s). */
@@ -1422,7 +1442,7 @@ Tcl_Import(
 				 * conflicts with an existing one. */
 {
     Namespace *nsPtr, *importNsPtr, *dummyPtr;
-    CONST char *simplePattern;
+    const char *simplePattern;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
@@ -1547,8 +1567,8 @@ DoImport(
     Tcl_Interp *interp,
     Namespace *nsPtr,
     Tcl_HashEntry *hPtr,
-    CONST char *cmdName,
-    CONST char *pattern,
+    const char *cmdName,
+    const char *pattern,
     Namespace *importNsPtr,
     int allowOverwrite)
 {
@@ -1689,11 +1709,11 @@ Tcl_ForgetImport(
     Tcl_Namespace *namespacePtr,/* Points to the namespace from which
 				 * previously imported commands should be
 				 * removed. NULL for current namespace. */
-    CONST char *pattern)	/* String pattern indicating which imported
+    const char *pattern)	/* String pattern indicating which imported
 				 * commands to remove. */
 {
     Namespace *nsPtr, *sourceNsPtr, *dummyPtr;
-    CONST char *simplePattern;
+    const char *simplePattern;
     char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1859,7 +1879,7 @@ InvokeImportedCmd(
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* The argument objects. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
 {
     register ImportedCmdData *dataPtr = (ImportedCmdData *) clientData;
     register Command *realCmdPtr = dataPtr->realCmdPtr;
@@ -2005,7 +2025,7 @@ int
 TclGetNamespaceForQualName(
     Tcl_Interp *interp,		/* Interpreter in which to find the namespace
 				 * containing qualName. */
-    CONST char *qualName,	/* A namespace-qualified name of an command,
+    const char *qualName,	/* A namespace-qualified name of an command,
 				 * variable, or namespace. */
     Namespace *cxtNsPtr,	/* The namespace in which to start the search
 				 * for qualName's namespace. If NULL start
@@ -2034,7 +2054,7 @@ TclGetNamespaceForQualName(
 				 * namespace if TCL_GLOBAL_ONLY was specified,
 				 * or the current namespace if cxtNsPtr was
 				 * NULL. */
-    CONST char **simpleNamePtr) /* Address where function stores the simple
+    const char **simpleNamePtr) /* Address where function stores the simple
 				 * name at end of the qualName, or NULL if
 				 * qualName is "::" or the flag
 				 * TCL_FIND_ONLY_NS was specified. */
@@ -2043,8 +2063,8 @@ TclGetNamespaceForQualName(
     Namespace *nsPtr = cxtNsPtr;
     Namespace *altNsPtr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
-    CONST char *start, *end;
-    CONST char *nsName;
+    const char *start, *end;
+    const char *nsName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer;
     int len;
@@ -2262,7 +2282,7 @@ Tcl_Namespace *
 Tcl_FindNamespace(
     Tcl_Interp *interp,		/* The interpreter in which to find the
 				 * namespace. */
-    CONST char *name,		/* Namespace name. If it starts with "::",
+    const char *name,		/* Namespace name. If it starts with "::",
 				 * will be looked up in global namespace.
 				 * Else, looked up first in contextNsPtr
 				 * (current namespace if contextNsPtr is
@@ -2277,7 +2297,7 @@ Tcl_FindNamespace(
 				 * TCL_LEAVE_ERR_MSG flags. */
 {
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
-    CONST char *dummy;
+    const char *dummy;
 
     /*
      * Find the namespace(s) that contain the specified namespace name. Add
@@ -2320,7 +2340,7 @@ Tcl_Command
 Tcl_FindCommand(
     Tcl_Interp *interp,		/* The interpreter in which to find the
 				 * command and to report errors. */
-    CONST char *name,		/* Command's name. If it starts with "::",
+    const char *name,		/* Command's name. If it starts with "::",
 				 * will be looked up in global namespace.
 				 * Else, looked up first in contextNsPtr
 				 * (current namespace if contextNsPtr is
@@ -2342,7 +2362,7 @@ Tcl_FindCommand(
     Namespace *cxtNsPtr;
     register Tcl_HashEntry *entryPtr;
     register Command *cmdPtr;
-    CONST char *simpleName;
+    const char *simpleName;
     int result;
 
     /*
@@ -2507,7 +2527,7 @@ Tcl_Var
 Tcl_FindNamespaceVar(
     Tcl_Interp *interp,		/* The interpreter in which to find the
 				 * variable. */
-    CONST char *name,		/* Variable's name. If it starts with "::",
+    const char *name,		/* Variable's name. If it starts with "::",
 				 * will be looked up in global namespace.
 				 * Else, looked up first in contextNsPtr
 				 * (current namespace if contextNsPtr is
@@ -2528,7 +2548,7 @@ Tcl_FindNamespaceVar(
     Interp *iPtr = (Interp*)interp;
     ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
-    CONST char *simpleName;
+    const char *simpleName;
     Tcl_HashEntry *entryPtr;
     Var *varPtr;
     register int search;
@@ -2741,7 +2761,7 @@ TclResetShadowedCmdRefs(
 	    size_t newBytes = newSize * sizeof(Namespace *);
 	    Namespace **newPtr = (Namespace **) ckalloc((unsigned) newBytes);
 
-	    memcpy((void *) newPtr, (void *) trailPtr, currBytes);
+	    memcpy(newPtr, trailPtr, currBytes);
 	    if (trailPtr != trailStorage) {
 		ckfree((char *) trailPtr);
 	    }
@@ -2910,9 +2930,9 @@ Tcl_NamespaceObjCmd(
     ClientData clientData,	/* Arbitrary value passed to cmd. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static CONST char *subCmds[] = {
+    static const char *subCmds[] = {
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
 	"inscope", "origin", "parent", "path", "qualifiers",
@@ -2989,7 +3009,7 @@ Tcl_NamespaceObjCmd(
 	break;
     case NSTailIdx:
 	result = NamespaceTailCmd(clientData, interp, objc, objv);
-	break;	
+	break;
     case NSUpvarIdx:
 	result = NamespaceUpvarCmd(clientData, interp, objc, objv);
 	break;
@@ -3029,7 +3049,7 @@ NamespaceChildrenCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
     Namespace *nsPtr, *childNsPtr;
@@ -3145,7 +3165,7 @@ NamespaceCodeCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
@@ -3192,7 +3212,7 @@ NamespaceCodeCmd(
 
     currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     if (currNsPtr == (Namespace *) Tcl_GetGlobalNamespace(interp)) {
-	objPtr = Tcl_NewStringObj("::", -1);
+	objPtr = Tcl_NewStringObj("::", 2);
     } else {
 	objPtr = Tcl_NewStringObj(currNsPtr->fullName, -1);
     }
@@ -3230,7 +3250,7 @@ NamespaceCurrentCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Namespace *currNsPtr;
 
@@ -3293,7 +3313,7 @@ NamespaceDeleteCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
     char *name;
@@ -3307,7 +3327,7 @@ NamespaceDeleteCmd(
     /*
      * Destroying one namespace may cause another to be destroyed. Break this
      * into two passes: first check to make sure that all namespaces on the
-     * command line are valid, and report any errors. 
+     * command line are valid, and report any errors.
      */
 
     for (i = 2;  i < objc;  i++) {
@@ -3368,7 +3388,7 @@ NamespaceEvalCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
@@ -3477,7 +3497,7 @@ NamespaceExistsCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
 
@@ -3539,7 +3559,7 @@ NamespaceExportCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *currNsPtr = (Namespace*) Tcl_GetCurrentNamespace(interp);
     char *pattern, *string;
@@ -3639,7 +3659,7 @@ NamespaceForgetCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *pattern;
     register int i, result;
@@ -3700,7 +3720,7 @@ NamespaceImportCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int allowOverwrite = 0;
     char *string, *pattern;
@@ -3781,7 +3801,7 @@ NamespaceInscopeCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
@@ -3901,7 +3921,7 @@ NamespaceOriginCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Command command, origCommand;
     Tcl_Obj *resultPtr;
@@ -3960,7 +3980,7 @@ NamespaceParentCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *nsPtr;
     int result;
@@ -4026,7 +4046,7 @@ NamespacePathCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     int i, nsObjc, result = TCL_ERROR;
@@ -4262,7 +4282,7 @@ NamespaceQualifiersCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register char *name, *p;
     int length;
@@ -4330,7 +4350,7 @@ NamespaceUnknownCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *currNsPtr;
     Tcl_Obj *resultPtr;
@@ -4462,7 +4482,7 @@ Tcl_SetNamespaceUnknownHandler(
 
 	currNsPtr->unknownHandlerPtr = NULL;
     } else {
-	/* 
+	/*
 	 * Increment ref count and store. The reference count is decremented
 	 * either in the code above, or when the namespace is deleted.
 	 */
@@ -4504,7 +4524,7 @@ NamespaceTailCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register char *name, *p;
 
@@ -4562,14 +4582,14 @@ NamespaceUpvarCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *nsPtr;
     int result;
     Var *otherPtr, *arrayPtr;
     char *myName;
     CallFrame frame, *framePtr = &frame;
-    
+
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 2, objv,
 		"ns otherVar myVar ?otherVar myVar ...?");
@@ -4580,10 +4600,22 @@ NamespaceUpvarCmd(
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (nsPtr == NULL) {
+	/*
+	 * The namespace does not exist, leave an error message.
+	 */
+
+	Tcl_Obj *resPtr;
+
+	TclNewObj(resPtr);
+	TclFormatObj(NULL, resPtr, "namespace \"%s\" does not exist", objv[2]);
+	Tcl_SetObjResult(interp, resPtr);
+	return TCL_ERROR;
+    }
 
     objc -= 3;
     objv += 3;
-    
+
     for (; objc>0 ; objc-=2, objv+=2) {
 	/*
 	 * Locate the other variable
@@ -4593,10 +4625,10 @@ NamespaceUpvarCmd(
 	otherPtr = TclObjLookupVar(interp, objv[0], NULL,
 		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
 		/*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	Tcl_PopCallFrame(interp);
 	if (otherPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	Tcl_PopCallFrame(interp);
 
 	/*
 	 * Create the new variable and link it to otherPtr
@@ -4639,9 +4671,9 @@ NamespaceWhichCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static CONST char *opts[] = {
+    static const char *opts[] = {
 	"-command", "-variable", NULL
     };
     int lookupType = 0;
@@ -4808,7 +4840,7 @@ SetNsNameFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     char *name;
-    CONST char *dummy;
+    const char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
 
@@ -4887,18 +4919,16 @@ UpdateStringOfNsName(
 {
     ResolvedNsName *resNamePtr =
 	    (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
-    register Namespace *nsPtr;
     char *name = "";
-    int length;
+    int length = 0;
 
     if ((resNamePtr != NULL)
 	    && (resNamePtr->nsId == resNamePtr->nsPtr->nsId)) {
-	nsPtr = resNamePtr->nsPtr;
-	if (nsPtr->flags & NS_DEAD) {
-	    nsPtr = NULL;
-	}
-	if (nsPtr != NULL) {
+	register Namespace *nsPtr = resNamePtr->nsPtr;
+
+	if (nsPtr != NULL && !(nsPtr->flags & NS_DEAD)) {
 	    name = nsPtr->fullName;
+	    length = strlen(name);
 	}
     }
 
@@ -4907,12 +4937,11 @@ UpdateStringOfNsName(
      * internal rep is NULL.
      */
 
-    length = strlen(name);
     if (length == 0) {
 	objPtr->bytes = tclEmptyStringRep;
     } else {
 	objPtr->bytes = (char *) ckalloc((unsigned) (length + 1));
-	memcpy((void *) objPtr->bytes, (void *) name, (unsigned) length);
+	memcpy(objPtr->bytes, name, (unsigned) length);
 	objPtr->bytes[length] = '\0';
     }
     objPtr->length = length;
@@ -4945,23 +4974,23 @@ NamespaceEnsembleCmd(
     ClientData dummy,
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     Namespace *nsPtr;
     Tcl_Command token;
-    static CONST char *subcommands[] = {
+    static const char *subcommands[] = {
 	"configure", "create", "exists", NULL
     };
     enum EnsSubcmds {
 	ENS_CONFIG, ENS_CREATE, ENS_EXISTS
     };
-    static CONST char *createOptions[] = {
+    static const char *createOptions[] = {
 	"-command", "-map", "-prefixes", "-subcommands", "-unknown", NULL
     };
     enum EnsCreateOpts {
 	CRT_CMD, CRT_MAP, CRT_PREFIX, CRT_SUBCMDS, CRT_UNKNOWN
     };
-    static CONST char *configOptions[] = {
+    static const char *configOptions[] = {
 	"-map", "-namespace", "-prefixes", "-subcommands", "-unknown", NULL
     };
     enum EnsConfigOpts {
@@ -5237,11 +5266,8 @@ NamespaceEnsembleCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_MAP], -1));
 	    Tcl_GetEnsembleMappingDict(NULL, token, &tmpObj);
-	    if (tmpObj != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
-	    } else {
-		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
-	    }
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -namespace option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
@@ -5262,21 +5288,15 @@ NamespaceEnsembleCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_SUBCMDS], -1));
 	    Tcl_GetEnsembleSubcommandList(NULL, token, &tmpObj);
-	    if (tmpObj != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
-	    } else {
-		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
-	    }
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    /* -unknown option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_UNKNOWN], -1));
 	    Tcl_GetEnsembleUnknownHandler(NULL, token, &tmpObj);
-	    if (tmpObj != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
-	    } else {
-		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
-	    }
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    (tmpObj != NULL) ? tmpObj : Tcl_NewObj());
 
 	    Tcl_SetObjResult(interp, resultObj);
 	    return TCL_OK;
@@ -5461,7 +5481,7 @@ NamespaceEnsembleCmd(
 Tcl_Command
 Tcl_CreateEnsemble(
     Tcl_Interp *interp,
-    CONST char *name,
+    const char *name,
     Tcl_Namespace *namespacePtr,
     int flags)
 {
@@ -6082,7 +6102,7 @@ NsEnsembleImplementationCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     EnsembleConfig *ensemblePtr = (EnsembleConfig *) clientData;
 				/* The ensemble itself. */
@@ -6264,7 +6284,7 @@ NsEnsembleImplementationCmd(
 	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
 		TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(prefixObj);
-	ckfree((char *)tempObjv);
+	ckfree((char *) tempObjv);
 	if (isRootEnsemble) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	    iPtr->ensembleRewrite.numRemovedObjs = 0;
@@ -6423,7 +6443,7 @@ static void
 MakeCachedEnsembleCommand(
     Tcl_Obj *objPtr,
     EnsembleConfig *ensemblePtr,
-    CONST char *subcommandName,
+    const char *subcommandName,
     Tcl_Obj *prefixObjPtr)
 {
     register EnsembleCmdRep *ensembleCmd;
@@ -6526,7 +6546,7 @@ DeleteEnsembleConfig(
      */
 
     if (ensemblePtr->subcommandTable.numEntries != 0) {
-	ckfree((char *)ensemblePtr->subcommandArrayPtr);
+	ckfree((char *) ensemblePtr->subcommandArrayPtr);
     }
     hEnt = Tcl_FirstHashEntry(&ensemblePtr->subcommandTable, &search);
     while (hEnt != NULL) {
@@ -6595,7 +6615,7 @@ BuildEnsembleConfig(
 
 	Tcl_HashSearch search;
 
-	ckfree((char *)ensemblePtr->subcommandArrayPtr);
+	ckfree((char *) ensemblePtr->subcommandArrayPtr);
 	hPtr = Tcl_FirstHashEntry(hash, &search);
 	while (hPtr != NULL) {
 	    Tcl_Obj *prefixObj = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
@@ -6808,10 +6828,10 @@ BuildEnsembleConfig(
 
 static int
 NsEnsembleStringOrder(
-    CONST void *strPtr1,
-    CONST void *strPtr2)
+    const void *strPtr1,
+    const void *strPtr2)
 {
-    return strcmp(*(CONST char **)strPtr1, *(CONST char **)strPtr2);
+    return strcmp(*(const char **)strPtr1, *(const char **)strPtr2);
 }
 
 /*
@@ -6847,7 +6867,7 @@ FreeEnsembleCmdRep(
 	    && (ensembleCmd->nsPtr->flags & NS_DEAD)) {
 	NamespaceFree(ensembleCmd->nsPtr);
     }
-    ckfree((char *)ensembleCmd);
+    ckfree((char *) ensembleCmd);
 }
 
 /*
@@ -6944,14 +6964,14 @@ StringOfEnsembleCmdRep(
 void
 Tcl_LogCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to log information. */
-    CONST char *script,		/* First character in script containing
+    const char *script,		/* First character in script containing
 				 * command (must be <= command). */
-    CONST char *command,	/* First character in command that generated
+    const char *command,	/* First character in command that generated
 				 * the error. */
     int length)			/* Number of bytes in command (-1 means use
 				 * all bytes up to first null byte). */
 {
-    register CONST char *p;
+    register const char *p;
     Interp *iPtr = (Interp *) interp;
     int overflow, limit = 150;
     Var *varPtr, *arrayPtr;

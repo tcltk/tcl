@@ -13,36 +13,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.12 2006/04/28 16:09:39 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.13 2006/08/29 16:19:31 dgp Exp $
 #
 #----------------------------------------------------------------------
 
 # We must have message catalogs that support the root locale, and
-# we need access to the Registry on Windows systems.  We also need
-# Tcl 8.5 dictionaries.
+# we need access to the Registry on Windows systems.
 
 uplevel \#0 {
     package require msgcat 1.4
     if { $::tcl_platform(platform) eq {windows} } {
 	if { [catch { package require registry 1.1 }] } {
-
-	    # HIDEOUS KLUDGE: [package require registry 1.1] has failed.
-	    # This failure likely means that we're running in Tcl's build
-	    # directory instead of the install directory.  We recover by
-	    # trying to load tclreg*.dll directly.
-
-	    if { [catch { 
-		load [lindex \
-			  [glob -directory \
-			       [file join \
-				    [pwd] \
-				    [file dirname [info nameofexecutable]]] \
-			       tclReg*.dll] \
-			  0] registry
-	    }] } {
-		# Still no registry!
-		namespace eval ::tcl::clock [list variable NoRegistry {}]
-	    }
+	    namespace eval ::tcl::clock [list variable NoRegistry {}]
 	}
     }
 }
@@ -395,21 +377,34 @@ proc ::tcl::clock::Initialize {} {
 
 	{ julianDay } 1 {}
 
-	{ century yearOfCentury month dayOfMonth } 2 {
+	{ era century yearOfCentury month dayOfMonth } 2 {
+	    dict set date year [expr { 100 * [dict get $date century]
+				       + [dict get $date yearOfCentury] }]
+	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
+			  $changeover]
+	}
+	{ era century yearOfCentury dayOfYear } 2 {
+	    dict set date year [expr { 100 * [dict get $date century]
+				       + [dict get $date yearOfCentury] }]
+	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
+			  $changeover]
+	}
+
+	{ century yearOfCentury month dayOfMonth } 3 {
 	    dict set date era CE
 	    dict set date year [expr { 100 * [dict get $date century]
 				       + [dict get $date yearOfCentury] }]
 	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
 			  $changeover]
 	}
-	{ century yearOfCentury dayOfYear } 2 {
+	{ century yearOfCentury dayOfYear } 3 {
 	    dict set date era CE
 	    dict set date year [expr { 100 * [dict get $date century]
 				       + [dict get $date yearOfCentury] }]
 	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
 			  $changeover]
 	}
-	{ iso8601Century iso8601YearOfCentury iso8601Week dayOfWeek } 2 {
+	{ iso8601Century iso8601YearOfCentury iso8601Week dayOfWeek } 3 {
 	    dict set date era CE
 	    dict set date iso8601Year \
 		[expr { 100 * [dict get $date iso8601Century]
@@ -418,19 +413,19 @@ proc ::tcl::clock::Initialize {} {
 			 $changeover]
 	}
 
-	{ yearOfCentury month dayOfMonth } 3 {
+	{ yearOfCentury month dayOfMonth } 4 {
 	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
 	    dict set date era CE
 	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
 			  $changeover]
 	}
-	{ yearOfCentury dayOfYear } 3 {
+	{ yearOfCentury dayOfYear } 4 {
 	    set date [InterpretTwoDigitYear $date[set date {}] $baseTime]
 	    dict set date era CE
 	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
 			  $changeover]
 	}
-	{ iso8601YearOfCentury iso8601Week dayOfWeek } 3 {
+	{ iso8601YearOfCentury iso8601Week dayOfWeek } 4 {
 	    set date [InterpretTwoDigitYear \
 			  $date[set date {}] $baseTime \
 			  iso8601YearOfCentury iso8601Year]
@@ -439,40 +434,40 @@ proc ::tcl::clock::Initialize {} {
 			 $changeover]
 	}
 
-	{ month dayOfMonth } 4 {
+	{ month dayOfMonth } 5 {
 	    set date [AssignBaseYear $date[set date {}] \
 			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
 			  $changeover]
 	}
-	{ dayOfYear } 4 {
+	{ dayOfYear } 5 {
 	    set date [AssignBaseYear $date[set date {}] \
 			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearDay $date[set date {}] \
 			 $changeover]
 	}
-	{ iso8601Week dayOfWeek } 4 {
+	{ iso8601Week dayOfWeek } 5 {
 	    set date [AssignBaseIso8601Year $date[set date {}] \
 			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
 			 $changeover]
 	}
 
-	{ dayOfMonth } 5 {
+	{ dayOfMonth } 6 {
 	    set date [AssignBaseMonth $date[set date {}] \
 			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearMonthDay $date[set date {}] \
 			  $changeover]
 	}
 
-	{ dayOfWeek } 6 {
+	{ dayOfWeek } 7 {
 	    set date [AssignBaseWeek $date[set date {}] \
 			  $baseTime $timeZone $changeover]
 	    set date [GetJulianDayFromEraYearWeekDay $date[set date {}] \
 			 $changeover]
 	}
 
-	{} 7 {
+	{} 8 {
 	    set date [AssignBaseJulianDay $date[set date {}] \
 			  $baseTime $timeZone $changeover]
 	}
@@ -757,7 +752,7 @@ proc ::tcl::clock::format { args } {
 proc ::tcl::clock::ParseClockFormatFormat {format locale} {
 
     set procName [namespace current]::formatproc'$format'$locale
-    if {[info procs $procName] != {}} {
+    if {[namespace which $procName] != {}} {
 	return $procName
     }
 
@@ -889,7 +884,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 				     {
 					 set date [GetLocaleEra \
 						       $date[set date {}] \
-						       @LOCALE_ERAS@]}]
+						       @LOCALE_ERAS@]}] \n
 			    set didLocaleEra 1
 			}
 			if {!$didLocaleNumerals} {
@@ -1061,7 +1056,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 					/ 7 }]
 			}
 			append formatString %02d
-			append substituents { $Wweeknumber}
+			append substituents { $WweekNumber}
 		    }
 		    y {			# The two-digit year of the century
 			append formatString %02d
@@ -1093,6 +1088,15 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 	    percentE {			# Character following %E
 		set state {}
 		switch -exact -- $char {
+		    E {
+			append formatString %s
+			append substituents { } \
+			    [string map \
+				 [list @BCE@ [list [mc BCE]] \
+				      @CE@ [list [mc CE]]] \
+				      {[dict get {BCE @BCE@ CE @CE@} \
+					    [dict get $date era]]}]
+		    }
 		    C {			# Locale-dependent era
 			append formatString %s
 			append substituents { [dict get $date localeEra]}
@@ -1563,7 +1567,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
     # the existing recognizer if it has.
 
     set procName [namespace current]::scanproc'$formatString'$locale
-    if { [info procs $procName] != {} } {
+    if { [namespace which $procName] != {} } {
 	return $procName
     }
 
@@ -1874,6 +1878,22 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 			foreach { regex lookup } [UniquePrefixRegexp $d] break
 			append re (?: $regex )
 		        
+		    }
+		    E {
+			set l {}
+			dict set l [mc BCE] BCE
+			dict set l [mc CE] CE
+			dict set l B.C.E. BCE
+			dict set l C.E. CE
+			dict set l B.C. BCE
+			dict set l A.D. CE
+			foreach {regex lookup} [UniquePrefixRegexp $l] break
+			append re ( $regex )
+			dict set fieldSet era [incr fieldCount]
+			append postcode "dict set date era \["\
+			    "dict get " [list $lookup] " \$field" \
+			    [incr captureCount] \
+			    "\]\n"
 		    }
 		    y {			# Locale-dependent year of the era
 			foreach {regex lookup} \
@@ -4007,7 +4027,7 @@ proc ::tcl::clock::DeterminePosixDSTTime { z bound y } {
 proc ::tcl::clock::GetLocaleEra { date etable } {
 
     set index [BSearch $etable [dict get $date localSeconds]]
-    if { $index < 0 } {
+    if { $index < 0} {
 	dict set date localeEra \
 	    [::format %02d [expr { [dict get $date year] / 100 }]]
 	dict set date localeYear \
@@ -4225,6 +4245,9 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 
 proc ::tcl::clock::BSearch { list key } {
 
+    if {[llength $list] == 0} {
+	return -1
+    }
     if { $key < [lindex $list 0 0] } {
 	return -1
     }
@@ -4300,7 +4323,7 @@ proc ::tcl::clock::add { clockval args } {
              ?number units?...\
              ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\""
     }
-    if { [catch { expr wide($clockval) } result] } {
+    if { [catch { expr {wide($clockval)} } result] } {
 	return -code error $result
     }
 

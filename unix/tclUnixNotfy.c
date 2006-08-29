@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.14 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.15 2006/08/29 16:19:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -278,7 +278,7 @@ Tcl_FinalizeNotifier(
 	int result;
 
 	if (triggerPipe < 0) {
-	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized.");
+	    Tcl_Panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
 	}
 
 	/*
@@ -300,7 +300,7 @@ Tcl_FinalizeNotifier(
 
 	result = Tcl_JoinThread(notifierThread, NULL);
 	if (result) {
-	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread.");
+	    Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier thread");
 	}
     }
 
@@ -740,7 +740,17 @@ Tcl_WaitForEvent(
     Tcl_MutexLock(&notifierMutex);
 
     waitForFiles = (tsdPtr->numFdBits > 0);
-    if (myTimePtr != NULL && myTimePtr->sec == 0 && myTimePtr->usec == 0) {
+    if (myTimePtr != NULL && myTimePtr->sec == 0 && (myTimePtr->usec == 0
+#if defined(__APPLE__) && defined(__LP64__)
+	    /*
+	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have a bug
+	     * that causes it to wait forever when passed an absolute time which
+	     * has already been exceeded by the system time; as a workaround,
+	     * when given a very brief timeout, just do a poll. [Bug 1457797]
+	     */
+	    || myTimePtr->usec < 10
+#endif
+	    )) {
 	/*
 	 * Cannot emulate a polling select with a polling condition variable.
 	 * Instead, pretend to wait for files and tell the notifier thread
@@ -903,7 +913,7 @@ NotifierThreadProc(
     char buf[2];
 
     if (pipe(fds) != 0) {
-	Tcl_Panic("NotifierThreadProc: could not create trigger pipe.");
+	Tcl_Panic("NotifierThreadProc: could not create trigger pipe");
     }
 
     receivePipe = fds[0];
@@ -912,19 +922,19 @@ NotifierThreadProc(
     status = fcntl(receivePipe, F_GETFL);
     status |= O_NONBLOCK;
     if (fcntl(receivePipe, F_SETFL, status) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking.");
+	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking");
     }
     status = fcntl(fds[1], F_GETFL);
     status |= O_NONBLOCK;
     if (fcntl(fds[1], F_SETFL, status) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking.");
+	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
     }
 #else
     if (ioctl(receivePipe, (int) FIONBIO, &status) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking.");
+	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking");
     }
     if (ioctl(fds[1], (int) FIONBIO, &status) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking.");
+	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
     }
 #endif /* FIONBIO */
 

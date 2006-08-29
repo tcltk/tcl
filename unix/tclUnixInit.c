@@ -7,14 +7,21 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.13 2006/02/09 22:41:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.14 2006/08/29 16:19:47 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <stddef.h>
 #include <locale.h>
 #ifdef HAVE_LANGINFO
-#include <langinfo.h>
+#   include <langinfo.h>
+#   ifdef __APPLE__
+#       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
+	    /* Support for weakly importing nl_langinfo on Darwin. */
+#           define WEAK_IMPORT_NL_LANGINFO
+	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
+#       endif
+#    endif
 #endif
 #include <sys/resource.h>
 #if defined(__FreeBSD__) && defined(__GNUC__)
@@ -47,22 +54,14 @@
  * Values used to compute how much space is really available for Tcl's use for
  * the stack.
  *
- * NOTE: Now I have some idea why the maximum stack size must be divided by 64
- * on FreeBSD with threads enabled to get a reasonably correct value.
- *
  * The getrlimit() function is documented to return the maximum stack size in
- * bytes. However, with threads enabled, the pthread library does bad things
- * to the stack size limits. First, the limits cannot be changed. Second, they
- * appear to be reported incorrectly by a factor of about 64.
+ * bytes. However, with threads enabled, the pthread library on some platforms
+ * does bad things to the stack size limits. First, the limits cannot be
+ * changed. Second, they appear to be sometimes reported incorrectly.
  *
  * The defines below may need to be adjusted if more platforms have this
  * broken behavior with threads enabled.
  */
-
-#if defined(__FreeBSD__)
-#   define TCL_MAGIC_STACK_DIVISOR	64
-#   define TCL_RESERVED_STACK_PAGES	3
-#endif
 
 #ifndef TCL_MAGIC_STACK_DIVISOR
 #define TCL_MAGIC_STACK_DIVISOR		1
@@ -331,6 +330,17 @@ static int		GetStackSize(size_t *stackSizePtr);
 static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 			    int maxPathLen, char *tclLibPath);
 #endif /* HAVE_COREFOUNDATION */
+#if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
+	defined(TCL_THREADS) && defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED < 1030))
+/*
+ * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
+ * initialize release global at startup from uname().
+ */
+#define GET_DARWIN_RELEASE 1
+MODULE_SCOPE long tclMacOSXDarwinRelease;
+long tclMacOSXDarwinRelease = 0;
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -425,6 +435,15 @@ TclpInitPlatform(void)
      */
 
     setlocale(LC_NUMERIC, "C");
+
+#ifdef GET_DARWIN_RELEASE
+    {
+	struct utsname name;
+	if (!uname(&name)) {
+	    tclMacOSXDarwinRelease = strtol(name.release, NULL, 10);
+	}
+    }
+#endif
 }
 
 /*
@@ -453,21 +472,9 @@ TclpInitLibraryPath(
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
     CONST char *str;
-    Tcl_DString buffer, ds;
-    int pathc;
-    CONST char **pathv;
-    char installLib[LIBRARY_SIZE];
+    Tcl_DString buffer;
 
-    Tcl_DStringInit(&ds);
     pathPtr = Tcl_NewObj();
-
-    /*
-     * Initialize the substrings used when locating an executable. The
-     * installLib variable computes the path as though the executable is
-     * installed.
-     */
-
-    sprintf(installLib, "lib/tcl%s", TCL_VERSION);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
@@ -481,6 +488,21 @@ TclpInitLibraryPath(
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
+	Tcl_DString ds;
+	int pathc;
+	CONST char **pathv;
+	char installLib[LIBRARY_SIZE];
+
+	Tcl_DStringInit(&ds);
+
+	/*
+	 * Initialize the substrings used when locating an executable. The
+	 * installLib variable computes the path as though the executable is
+	 * installed.
+	 */
+
+	sprintf(installLib, "lib/tcl%s", TCL_VERSION);
+
 	/*
 	 * If TCL_LIBRARY is set, search there.
 	 */
@@ -510,7 +532,7 @@ TclpInitLibraryPath(
     /*
      * Finally, look for the library relative to the compiled-in path. This is
      * needed when users install Tcl with an exec-prefix that is different
-     * from the prtefix.
+     * from the prefix.
      */
 
     {
@@ -620,7 +642,11 @@ Tcl_GetEncodingNameFromEnvironment(
      */
 
 #ifdef HAVE_LANGINFO
-    if (setlocale(LC_CTYPE, "") != NULL) {
+    if (
+#ifdef WEAK_IMPORT_NL_LANGINFO
+	    nl_langinfo != NULL &&
+#endif
+	    setlocale(LC_CTYPE, "") != NULL) {
 	Tcl_DString ds;
 
 	/*

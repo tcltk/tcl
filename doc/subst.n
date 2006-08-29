@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.5.4.2 2005/04/07 17:32:01 dgp Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.5.4.3 2006/08/29 16:19:25 dgp Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -100,17 +100,17 @@ when processing text using \fIsubst\fR.  For example, the script
 .CE
 returns ``\fBabc,\fR'', not ``\fBabc,,def\fR'' and the script
 .CS
-\fBsubst\fR {abc,[continue;expr 1+2],def}
+\fBsubst\fR {abc,[continue;expr {1+2}],def}
 .CE
 returns ``\fBabc,,def\fR'', not ``\fBabc,3,def\fR''.
 .PP
 Other exceptional return codes substitute the returned value
 .CS
-\fBsubst\fR {abc,[return foo;expr 1+2],def}
+\fBsubst\fR {abc,[return foo;expr {1+2}],def}
 .CE
 returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR'' and
 .CS
-\fBsubst\fR {abc,[return -code 10 foo;expr 1+2],def}
+\fBsubst\fR {abc,[return -code 10 foo;expr {1+2}],def}
 .CE
 also returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR''.
 

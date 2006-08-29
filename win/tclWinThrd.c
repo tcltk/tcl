@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.10 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.11 2006/08/29 16:19:48 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -912,7 +912,7 @@ TclpGetAllocCache(void)
 
     result = TlsGetValue(tlsKey);
     if ((result == NULL) && (GetLastError() != NO_ERROR)) {
-	Tcl_Panic("TlsGetValue failed from TclpGetAllocCache!");
+	Tcl_Panic("TlsGetValue failed from TclpGetAllocCache");
     }
     return result;
 }
@@ -924,7 +924,7 @@ TclpSetAllocCache(
     BOOL success;
     success = TlsSetValue(tlsKey, ptr);
     if (!success) {
-	Tcl_Panic("TlsSetValue failed from TclpSetAllocCache!");
+	Tcl_Panic("TlsSetValue failed from TclpSetAllocCache");
     }
 }
 
@@ -943,7 +943,7 @@ TclpFreeAllocCache(
 	TclFreeAllocCache(ptr);
 	success = TlsSetValue(tlsKey, NULL);
 	if (!success) {
-	    Tcl_Panic("TlsSetValue failed from TclpFreeAllocCache!");
+	    Tcl_Panic("TlsSetValue failed from TclpFreeAllocCache");
 	}
     } else if (once) {
 	/*
@@ -953,7 +953,7 @@ TclpFreeAllocCache(
 
 	success = TlsFree(tlsKey);
 	if (!success) {
-	    Tcl_Panic("TlsFree failed from TclpFreeAllocCache!");
+	    Tcl_Panic("TlsFree failed from TclpFreeAllocCache");
 	}
 	once = 0; /* reset for next time. */
     }

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.26 2006/07/05 21:29:11 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.27 2006/08/29 16:19:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -470,6 +470,7 @@ FsThrExitProc(
 
     if (tsdPtr->cwdPathPtr != NULL) {
 	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+	tsdPtr->cwdPathPtr = NULL;
     }
     if (tsdPtr->cwdClientData != NULL) {
 	NativeFreeInternalRep(tsdPtr->cwdClientData);
@@ -487,6 +488,7 @@ FsThrExitProc(
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
+    tsdPtr->initialized = 0;
 }
 
 int
@@ -1232,6 +1234,7 @@ FsAddMountsToGlobResult(
 	    int len, mlen;
 	    CONST char *path;
 	    CONST char *mount;
+	    Tcl_Obj *norm;
 
 	    /*
 	     * We know mElt is absolute normalized and lies inside pathPtr, so
@@ -1240,18 +1243,19 @@ FsAddMountsToGlobResult(
 	     */
 
 	    mount = Tcl_GetStringFromObj(mElt, &mlen);
-	    path = Tcl_GetStringFromObj(Tcl_FSGetNormalizedPath(NULL, pathPtr),
-		    &len);
-	    if (path[len-1] == '/') {
-		/*
-		 * Deal with the root of the volume.
-		 */
+	    norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	    if (norm != NULL) {
+		path = Tcl_GetStringFromObj(norm, &len);
+		if (path[len-1] == '/') {
+		    /*
+		     * Deal with the root of the volume.
+		     */
 
-		len--;
+		    len--;
+		}
+		mElt = TclNewFSPathObj(pathPtr, mount + len + 1, mlen - len);
+		Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    }
-	    mElt = TclNewFSPathObj(pathPtr, mount + len + 1, mlen - len);
-	    Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
-
 	    /*
 	     * No need to increment gLength, since we don't want to compare
 	     * mounts against mounts.

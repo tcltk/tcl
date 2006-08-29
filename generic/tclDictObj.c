@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.17 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.18 2006/08/29 16:19:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -732,7 +732,7 @@ Tcl_DictObjPut(
     int isNew;
 
     if (Tcl_IsShared(dictPtr)) {
-	Tcl_Panic("Tcl_DictObjPut called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_DictObjPut");
     }
 
     if (dictPtr->typePtr != &tclDictType) {
@@ -833,7 +833,7 @@ Tcl_DictObjRemove(
     Tcl_HashEntry *hPtr;
 
     if (Tcl_IsShared(dictPtr)) {
-	Tcl_Panic("Tcl_DictObjRemove called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_DictObjRemove");
     }
 
     if (dictPtr->typePtr != &tclDictType) {
@@ -1107,10 +1107,10 @@ Tcl_DictObjPutKeyList(
     int isNew;
 
     if (Tcl_IsShared(dictPtr)) {
-	Tcl_Panic("Tcl_DictObjPutKeyList called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_DictObjPutKeyList");
     }
     if (keyc < 1) {
-	Tcl_Panic("Tcl_DictObjPutKeyList called with empty key list");
+	Tcl_Panic("%s called with empty key list", "Tcl_DictObjPutKeyList");
     }
 
     dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1,keyv, DICT_PATH_CREATE);
@@ -1164,10 +1164,10 @@ Tcl_DictObjRemoveKeyList(
     Tcl_HashEntry *hPtr;
 
     if (Tcl_IsShared(dictPtr)) {
-	Tcl_Panic("Tcl_DictObjRemoveKeyList called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_DictObjRemoveKeyList");
     }
     if (keyc < 1) {
-	Tcl_Panic("Tcl_DictObjRemoveKeyList called with empty key list");
+	Tcl_Panic("%s called with empty key list", "Tcl_DictObjRemoveKeyList");
     }
 
     dictPtr = TclTraceDictPath(interp, dictPtr, keyc-1,keyv, DICT_PATH_UPDATE);
@@ -2182,6 +2182,11 @@ DictForCmd(
     valueVarObj = varv[1];
     scriptObj = objv[4];
 
+    if (Tcl_DictObjFirst(interp, objv[3], &search, &keyObj, &valueObj,
+	    &done) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
     /*
      * Make sure that these objects (which we need throughout the body of the
      * loop) don't vanish. Note that the dictionary internal rep is locked
@@ -2192,12 +2197,7 @@ DictForCmd(
     Tcl_IncrRefCount(valueVarObj);
     Tcl_IncrRefCount(scriptObj);
 
-    result = Tcl_DictObjFirst(interp, objv[3],
-	    &search, &keyObj, &valueObj, &done);
-    if (result != TCL_OK) {
-	goto doneFor;
-    }
-
+    result = TCL_OK;
     while (!done) {
 	/*
 	 * Stop the value from getting hit in any way by any traces on the key
@@ -2211,7 +2211,7 @@ DictForCmd(
 		    TclGetString(keyVarObj), "\"", NULL);
 	    TclDecrRefCount(valueObj);
 	    result = TCL_ERROR;
-	    goto doneFor;
+	    break;
 	}
 	TclDecrRefCount(valueObj);
 	if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
@@ -2219,7 +2219,7 @@ DictForCmd(
 	    Tcl_AppendResult(interp, "couldn't set value variable: \"",
 		    TclGetString(valueVarObj), "\"", NULL);
 	    result = TCL_ERROR;
-	    goto doneFor;
+	    break;
 	}
 
 	result = Tcl_EvalObjEx(interp, scriptObj, 0);
@@ -2230,7 +2230,8 @@ DictForCmd(
 		result = TCL_OK;
 	    } else if (result == TCL_ERROR) {
 		TclFormatToErrorInfo(interp,
-			"\n    (\"dict for\" body line %d)", interp->errorLine);
+			"\n    (\"dict for\" body line %d)",
+			interp->errorLine);
 	    }
 	    break;
 	}
@@ -2238,7 +2239,6 @@ DictForCmd(
 	Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
     }
 
- doneFor:
     /*
      * Stop holding a reference to these objects.
      */
@@ -2982,7 +2982,7 @@ Tcl_DictObjCmd(
     case DICT_VALUES:	return DictValuesCmd(interp, objc, objv);
     case DICT_WITH:	return DictWithCmd(interp, objc, objv);
     }
-    Tcl_Panic("unexpected fallthrough!");
+    Tcl_Panic("unexpected fallthrough");
 
     /*
      * Next line is NOT REACHED - stops compliler complaint though...

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.5.20.4 2005/06/02 04:17:52 dgp Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.5.20.5 2006/08/29 16:19:25 dgp Exp $
 '\" 
 .so man.macros
 .TH switch n 8.5 Tcl "Tcl Built-In Commands"
@@ -117,7 +117,7 @@ The \fBswitch\fR command can match against variables and not just
 literals, as shown here (the result is \fI2\fR):
 .CS
 set foo "abc"
-\fBswitch\fR abc a \- b {expr 1} $foo {expr 2} default {expr 3}
+\fBswitch\fR abc a \- b {expr {1}} $foo {expr {2}} default {expr {3}}
 .CE
 .PP
 Using glob matching and the fall-through body is an alternative to
@@ -126,9 +126,9 @@ writing regular expressions with alternations, as can be seen here
 .CS
 \fBswitch\fR \-glob aaab {
    a*b     \-
-   b       {expr 1}
-   a*      {expr 2}
-   default {expr 3}
+   b       {expr {1}}
+   a*      {expr {2}}
+   default {expr {3}}
 }
 .CE
 .PP
@@ -139,13 +139,13 @@ last) is taken.  This example has a result of \fI3\fR:
    a  \-
    b {
       # Correct Comment Placement
-      expr 1
+      expr {1}
    }
    c {
-      expr 2
+      expr {2}
    }
    default {
-      expr 3
+      expr {3}
    }
 }
 .CE

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AppInit.3,v 1.3.26.1 2004/09/21 23:10:24 dgp Exp $
+'\" RCS: @(#) $Id: AppInit.3,v 1.3.26.2 2006/08/29 16:19:24 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AppInit 3 7.0 Tcl "Tcl Library Procedures"
@@ -34,7 +34,7 @@ To create a new application you write a new version of
 \fBTcl_AppInit\fR to replace the default version provided by Tcl,
 then link your new \fBTcl_AppInit\fR with the Tcl library.
 .PP
-\fBTcl_AppInit\fR is invoked after by \fBTcl_Main\fR and \fBTk_Main\fR
+\fBTcl_AppInit\fR is invoked by \fBTcl_Main\fR and \fBTk_Main\fR
 after their own initialization and before entering the main loop
 to process commands.
 Here are some examples of things that \fBTcl_AppInit\fR might do:

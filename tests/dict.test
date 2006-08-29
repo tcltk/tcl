@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.9 2006/01/25 18:38:48 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.10 2006/08/29 16:19:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -559,6 +559,9 @@ test dict-14.18 {dict for command in compilation context} {
     }
     dicttest
 } 1
+test dict-14.19 {dict for and invalid dicts: bug 1531184} -body {
+    di[list]ct for {k v} x {}
+} -returnCodes 1 -result {missing value to go with key}
 # There's probably a lot more tests to add here. Really ought to use a
 # coverage tool for this job...
 

@@ -9,11 +9,15 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.7 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.8 2006/08/29 16:19:48 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
+#if defined(TCL_WIDE_CLICKS) && defined(MAC_OSX_TCL)
+#include <mach/mach_time.h>
+#endif
+
 #define TM_YEAR_BASE 1900
 #define IsLeapYear(x)	(((x)%4 == 0) && ((x)%100 != 0 || (x)%400 == 0))
 
@@ -129,6 +133,94 @@ TclpGetClicks(void)
 
     return now;
 }
+#ifdef TCL_WIDE_CLICKS
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclpGetWideClicks --
+ *
+ *	This procedure returns a WideInt value that represents the highest
+ *	resolution clock available on the system. There are no garantees on
+ *	what the resolution will be. In Tcl we will call this value a "click".
+ *	The start time is also system dependant.
+ *
+ * Results:
+ *	Number of WideInt clicks from some start time.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+TclpGetWideClicks(void)
+{
+    Tcl_WideInt now;
+
+    if (tclGetTimeProcPtr != NativeGetTime) {
+	Tcl_Time time;
+
+	(*tclGetTimeProcPtr) (&time, tclTimeClientData);
+	now = (Tcl_WideInt) (time.sec*1000000 + time.usec);
+    } else {
+#ifdef MAC_OSX_TCL
+	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
+#else
+#error Wide high-resolution clicks not implemented on this platform
+#endif
+    }
+
+    return now;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclpWideClicksToNanoseconds --
+ *
+ *	This procedure converts click values from the TclpGetWideClicks native
+ *	resolution to nanosecond resolution.
+ *
+ * Results:
+ *	Number of nanoseconds from some start time.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+TclpWideClicksToNanoseconds(Tcl_WideInt clicks)
+{
+    Tcl_WideInt nsec;
+
+    if (tclGetTimeProcPtr != NativeGetTime) {
+	nsec = clicks * 1000;
+    } else {
+#ifdef MAC_OSX_TCL
+	static mach_timebase_info_data_t tb;
+	static uint64_t maxClicksForUInt64;
+	
+	if (!tb.denom) {
+	    mach_timebase_info(&tb);
+	    maxClicksForUInt64 = UINT64_MAX / tb.numer;
+	}
+	if ((uint64_t) clicks < maxClicksForUInt64) {
+	    nsec = (Tcl_WideInt) ((uint64_t) clicks * tb.numer / tb.denom);
+	} else {
+	    nsec = (Tcl_WideInt) ((long double) clicks * tb.numer / tb.denom);
+	}
+#else
+#error Wide high-resolution clicks not implemented on this platform
+#endif
+    }
+
+    return nsec;
+}
+#endif /* TCL_WIDE_CLICKS */
 
 /*
  *----------------------------------------------------------------------

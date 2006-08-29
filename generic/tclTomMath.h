@@ -56,6 +56,17 @@ extern "C" {
       #define MP_64BIT
    #endif
 #endif
+#if defined(__APPLE__) && defined(__LP64__)
+/*
+ * At present, use of 128-bit arithmetic via __attribute__ ((mode(TI)))
+ * leads to link errors on Darwin x86_64__ and ppc64. rdar://4685527
+ */
+#   ifdef HAVE_LP64_MODE_TI
+#       define MP_64BIT
+#   else
+#       undef MP_64BIT
+#   endif
+#endif
 
 /* some default configurations.
  *
@@ -839,6 +850,6 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
-/* $Revision: 1.2.2.5 $ */
-/* $Date: 2006/01/25 18:38:33 $ */
+/* $Revision: 1.2.2.6 $ */
+/* $Date: 2006/08/29 16:19:30 $ */
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.15 2006/01/25 18:38:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.16 2006/08/29 16:19:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -466,7 +466,7 @@ TclCompileCatchCmd(
      */
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d\n",
+	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
 		CurrentOffset(envPtr) - jumpFixup.codeOffset);
     }
     TclEmitOpcode(INST_END_CATCH, envPtr);

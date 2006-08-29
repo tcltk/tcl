@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.10 2006/04/28 16:09:08 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.11 2006/08/29 16:19:25 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -108,10 +108,10 @@ Then the command on the left side of each of the lines below
 will produce the value on the right side of the line:
 .CS
 .ta 6c
-\fBexpr 3.1 + $a	6.1
-expr 2 + "$a.$b"	5.6
-expr 4*[llength "6 2"]	8
-expr {{word one} < "word $a"}	0\fR
+\fBexpr\fR 3.1 + $a	\fI6.1\fR
+\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
+\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+\fBexpr\fR {{word one} < "word $a"}	\fI0\fR
 .CE
 .SS OPERATORS
 .PP
@@ -199,7 +199,7 @@ of the \fBpow\fR function (after any type conversions.)
 All of the binary operators group left-to-right within the same
 precedence level.  For example, the command
 .CS
-\fBexpr 4*2 < 7\fR
+\fBexpr\fR {4*2 < 7}
 .CE
 returns 0.
 .PP
@@ -266,19 +266,19 @@ For arithmetic computations, integers are used until some
 floating-point number is introduced, after which floating-point is used.
 For example,
 .CS
-\fBexpr 5 / 4\fR
+\fBexpr\fR {5 / 4}
 .CE
 returns 1, while
 .CS
-\fBexpr 5 / 4.0\fR
-\fBexpr 5 / ( [string length "abcd"] + 0.0 )\fR
+\fBexpr\fR {5 / 4.0}
+\fBexpr\fR {5 / ( [string length "abcd"] + 0.0 )}
 .CE
 both return 1.25.
 Floating-point values are always returned with a ``\fB.\fR''
 or an \fBe\fR so that they will not look like integer values.  For
 example,
 .CS
-\fBexpr 20.0/5.0\fR
+\fBexpr\fR {20.0/5.0}
 .CE
 returns \fB4.0\fR, not \fB4\fR.
 .SS "STRING OPERATIONS"

@@ -13,6 +13,9 @@
 /* Is gettimeofday() actually declared in <sys/time.h>? */
 #undef GETTOD_NOT_DECLARED
 
+/* Define to 1 if you have the <AvailabilityMacros.h> header file. */
+#undef HAVE_AVAILABILITYMACROS_H
+
 /* Do we have BSDgettimeofday()? */
 #undef HAVE_BSDGETTIMEOFDAY
 
@@ -25,7 +28,7 @@
 /* Define to 1 if you have the <copyfile.h> header file. */
 #undef HAVE_COPYFILE_H
 
-/* Do we have access to Darwin CoreFoundation.framework ? */
+/* Do we have access to Darwin CoreFoundation.framework? */
 #undef HAVE_COREFOUNDATION
 
 /* Do we have fts functions? */
@@ -184,11 +187,17 @@
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
 
+/* Is weak import available? */
+#undef HAVE_WEAK_IMPORT
+
 /* Is this a Mac I see before me? */
 #undef MAC_OSX_TCL
 
 /* Linker support for module scope symbols */
 #undef MODULE_SCOPE
+
+/* Is Darwin CoreFoundation unavailable for 64-bit? */
+#undef NO_COREFOUNDATION_64
 
 /* Do we have <dirent.h>? */
 #undef NO_DIRENT_H
@@ -306,6 +315,9 @@
 
 /* Do we allow unloading of shared libraries? */
 #undef TCL_UNLOAD_DLLS
+
+/* Does this platform have wide high-resolution clicks? */
+#undef TCL_WIDE_CLICKS
 
 /* Are wide integers to be implemented with C 'long's? */
 #undef TCL_WIDE_INT_IS_LONG

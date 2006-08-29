@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.22 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.23 2006/08/29 16:19:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1600,6 +1600,7 @@ TclCompileExprWords(
 	if (TclCompileExpr(interp, script, numBytes, envPtr) == TCL_OK) {
 	    return;
 	}
+	Tcl_ResetResult(interp);
 	envPtr->numCommands = savedNumCmds;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
     }
@@ -1757,7 +1758,7 @@ TclInitByteCodeObj(
 #else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {
-	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
+	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d", (nextPtr - p), cmdLocBytes);
     }
 #endif
 
@@ -1967,7 +1968,7 @@ EnterCmdStartData(
     CmdLocation *cmdLocPtr;
 
     if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	Tcl_Panic("EnterCmdStartData: bad command index %d\n", cmdIndex);
+	Tcl_Panic("EnterCmdStartData: bad command index %d", cmdIndex);
     }
 
     if (cmdIndex >= envPtr->cmdMapEnd) {
@@ -2044,11 +2045,11 @@ EnterCmdExtentData(
     CmdLocation *cmdLocPtr;
 
     if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	Tcl_Panic("EnterCmdExtentData: bad command index %d\n", cmdIndex);
+	Tcl_Panic("EnterCmdExtentData: bad command index %d", cmdIndex);
     }
 
     if (cmdIndex > envPtr->cmdMapEnd) {
-	Tcl_Panic("EnterCmdExtentData: missing start data for command %d\n",
+	Tcl_Panic("EnterCmdExtentData: missing start data for command %d",
 		cmdIndex);
     }
 
@@ -2476,7 +2477,7 @@ TclFixupForwardJump(
 	    rangePtr->catchOffset += 3;
 	    break;
 	default:
-	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d\n",
+	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d",
 		    rangePtr->type);
 	}
     }
@@ -2925,13 +2926,13 @@ TclPrintByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout,
-	    "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
-	    codePtr->structureSize,
-	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
+	    "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
+	    (unsigned long) codePtr->structureSize,
+	    (unsigned long) (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
-	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (codePtr->numExceptRanges * sizeof(ExceptionRange)),
-	    (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (unsigned long) (codePtr->numExceptRanges * sizeof(ExceptionRange)),
+	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
@@ -2991,7 +2992,7 @@ TclPrintByteCodeObj(
 		fprintf(stdout,	"catch %d\n", rangePtr->catchOffset);
 		break;
 	    default:
-		Tcl_Panic("TclPrintByteCodeObj: bad ExceptionRange type %d\n",
+		Tcl_Panic("TclPrintByteCodeObj: bad ExceptionRange type %d",
 			rangePtr->type);
 	    }
 	}
@@ -3229,7 +3230,7 @@ TclPrintInstruction(
 	printLVTindex:
 	    if (localPtr != NULL) {
 		if (opnd >= localCt) {
-		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
+		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)",
 			    (unsigned int) opnd, localCt);
 		}
 		for (j = 0;  j < opnd;  j++) {

@@ -493,6 +493,15 @@ On output, produces a locale-dependent name of an era in the locale's
 alternative calendar.  On input, matches the name of the era or any
 unique prefix.
 .TP
+\fB%EE\fR
+On output, produces the string \fBB.C.E.\fR or \fBC.E.\fR, or a
+string of the same meaning in the locale, to indicate whether \fB%Y\fR refers
+to years before or after Year 1 of the Common Era.  On input, accepts
+the string \fBB.C.E.\fR, \fBB.C.\fR, \fBC.E.\fR, \fBA.D.\fR, or the
+abbreviation appropriate to the current locale, and uses it to fix
+whether \fB%Y\fR refers to years before or after Year 1 of the 
+Common Era.
+.TP
 \fB%Ex\fR
 On output, produces a locale-dependent representation of the date
 in the locale's alternative calendar.  On input, matches

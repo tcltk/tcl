@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.11 2006/07/05 21:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.12 2006/08/29 16:19:30 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -450,7 +450,7 @@ TclParseNumber(
 			 */
 
 			if ((octalSignificandWide != 0) 
-				&& ((shift >= CHAR_BIT*sizeof(Tcl_WideUInt)) 
+				&& (((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt)) 
 				|| (octalSignificandWide 
 				> (~(Tcl_WideUInt)0 >> shift)))) {
 			    octalSignificandOverflow = 1;
@@ -569,7 +569,7 @@ TclParseNumber(
 		     */
 
 		    if (significandWide != 0 &&
-			    (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
+			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
 			TclBNInitBignumFromWideUInt(&significandBig,
@@ -609,7 +609,7 @@ TclParseNumber(
 		     */
 
 		    if (significandWide != 0 &&
-			    (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
+			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
 			significandOverflow = 1;
 			TclBNInitBignumFromWideUInt(&significandBig,
@@ -930,7 +930,7 @@ TclParseNumber(
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
-		    (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
+		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
 		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
@@ -951,7 +951,7 @@ TclParseNumber(
 
 	    shift = 4 * numTrailZeros;
 	    if (!significandOverflow && significandWide !=0 &&
-		    (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
+		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
 		TclBNInitBignumFromWideUInt(&significandBig, significandWide);
@@ -972,7 +972,7 @@ TclParseNumber(
 
 	    shift = 3 * numTrailZeros;
 	    if (!octalSignificandOverflow && octalSignificandWide != 0 &&
-		    (shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
+		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
 		TclBNInitBignumFromWideUInt(&octalSignificandBig,
@@ -2199,7 +2199,7 @@ TclInitDoubleConversion(void)
     } else if ((bitwhack.iv & 0xffffffff) == 0x3ff00000) {
 	n770_fp = 1;
     } else {
-	Tcl_Panic("unknown floating point word order on this machine.");
+	Tcl_Panic("unknown floating point word order on this machine");
     }
 #endif
 }

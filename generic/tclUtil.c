@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.20 2005/11/03 17:52:09 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.21 2006/08/29 16:19:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2779,7 +2779,7 @@ TclGetProcessGlobalValue(
 	    (*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
 		    &pgvPtr->encoding);
 	    if (pgvPtr->value == NULL) {
-		Tcl_Panic("PGV Initializer did not initialize.");
+		Tcl_Panic("PGV Initializer did not initialize");
 	    }
 	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
 	}

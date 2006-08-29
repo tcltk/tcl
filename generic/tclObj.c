@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.30 2006/07/05 21:29:14 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.31 2006/08/29 16:19:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -158,7 +158,7 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.ptrAndLongRep.value == -1) { \
+    if ((objPtr)->internalRep.ptrAndLongRep.value == (unsigned long)(-1)) { \
 	(bignum) = *((mp_int *) ((objPtr)->internalRep.ptrAndLongRep.ptr)); \
     } else { \
 	(bignum).dp = (mp_digit*) (objPtr)->internalRep.ptrAndLongRep.ptr; \
@@ -1241,7 +1241,7 @@ Tcl_SetBooleanObj(
     register int boolValue)	/* Boolean used to set object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetBooleanObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
     TclSetBooleanObj(objPtr, boolValue);
@@ -1625,7 +1625,7 @@ Tcl_SetDoubleObj(
     register double dblValue)	/* Double used to set the object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetDoubleObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetDoubleObj");
     }
 
     TclSetDoubleObj(objPtr, dblValue);
@@ -1831,7 +1831,7 @@ Tcl_SetIntObj(
     register int intValue)	/* Integer used to set object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetIntObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetIntObj");
     }
 
     TclSetIntObj(objPtr, intValue);
@@ -2093,7 +2093,7 @@ Tcl_SetLongObj(
 				 * object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetLongObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetLongObj");
     }
 
     TclSetLongObj(objPtr, longValue);
@@ -2172,7 +2172,7 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if (big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
 		    / DIGIT_BIT) {
 		unsigned long value = 0, numBytes = sizeof(long);
 		long scratch;
@@ -2395,7 +2395,7 @@ Tcl_SetWideIntObj(
 				 * object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetWideIntObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetWideIntObj");
     }
 
     if ((wideValue >= (Tcl_WideInt) LONG_MIN)
@@ -2471,8 +2471,8 @@ Tcl_GetWideIntFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if (big.used <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1)
-		    / DIGIT_BIT) {
+	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(Tcl_WideInt)
+		     + DIGIT_BIT - 1) / DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
 		unsigned long numBytes = sizeof(Tcl_WideInt);
 		Tcl_WideInt scratch;
@@ -2525,7 +2525,7 @@ FreeBignum(
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if (objPtr->internalRep.ptrAndLongRep.value < 0) {
+    if ((long)(objPtr->internalRep.ptrAndLongRep.value) < 0) {
 	ckfree((char *)objPtr->internalRep.ptrAndLongRep.ptr);
     }
 }
@@ -2870,9 +2870,9 @@ Tcl_SetBignumObj(
     mp_int *bignumValue)	/* Value to store */
 {
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("Tcl_SetBignumObj called with shared object");
+	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
-    if (bignumValue->used
+    if ((size_t)(bignumValue->used)
 	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
 	long scratch;
@@ -2896,7 +2896,7 @@ Tcl_SetBignumObj(
     }
   tooLargeForLong:
 #ifndef NO_WIDE_TYPE
-    if (bignumValue->used
+    if ((size_t)(bignumValue->used)
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
 	unsigned long numBytes = sizeof(Tcl_WideInt);
@@ -3033,7 +3033,7 @@ Tcl_DbIncrRefCount(
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
-	Tcl_Panic("Trying to increment refCount of previously disposed object.");
+	Tcl_Panic("incrementing refCount of previously disposed object");
     }
 
 # ifdef TCL_THREADS
@@ -3098,7 +3098,7 @@ Tcl_DbDecrRefCount(
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
-	Tcl_Panic("Trying to decrement refCount of previously disposed object.");
+	Tcl_Panic("decrementing refCount of previously disposed object");
     }
 
 # ifdef TCL_THREADS
@@ -3169,7 +3169,7 @@ Tcl_DbIsShared(
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
-	Tcl_Panic("Trying to check whether previously disposed object is shared.");
+	Tcl_Panic("checking whether previously disposed object is shared");
     }
 
 # ifdef TCL_THREADS

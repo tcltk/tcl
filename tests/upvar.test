@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.7.26.5 2006/04/28 16:09:43 dgp Exp $
+# RCS: @(#) $Id: upvar.test,v 1.7.26.6 2006/08/29 16:19:35 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -414,6 +414,7 @@ catch {unset a}
 # assume that the behaviour of variables once the link is established has 
 # already been tested above.
 #
+#
 
 # Clear out any namespaces called test_ns_*
 catch {namespace delete {expand}[namespace children :: test_ns_*]}
@@ -422,34 +423,127 @@ namespace eval test_ns_0 {
     variable x test_ns_0
 }
 
-namespace eval test_ns_1 {
-    variable x test_ns_1
-}
-
-namespace eval test_ns_2 {}
-
 set x test_global
 
 test upvar-NS-1.1 {nsupvar links to correct variable} \
     -body {
-	namespace eval test_ns_2 {
+	namespace eval test_ns_1 {
 	    namespace upvar ::test_ns_0 x w
 	    set w
 	}
     } \
-    -result {test_ns_0}
+    -result {test_ns_0} \
+    -cleanup {namespace delete test_ns_1}
 
 test upvar-NS-1.2 {nsupvar links to correct variable} \
     -body {
-	namespace eval test_ns_2 {
+	namespace eval test_ns_1 {
 	    proc a {} {
 		namespace upvar ::test_ns_0 x w
 		set w
 	    }
-	    return [a][rename a {}]
+	    return [a]
 	}
     } \
-    -result {test_ns_0}
+    -result {test_ns_0} \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.3 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+    } \
+    -result {namespace "test_ns_0" does not exist} \
+    -returnCodes error \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.4 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    proc a {} {
+		namespace upvar test_ns_0 x w
+		set w
+	    }
+	    return [a]
+	}
+    } \
+    -result {namespace "test_ns_0" does not exist} \
+    -returnCodes error \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.5 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    namespace eval test_ns_0 {}
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+    } \
+    -result {can't read "w": no such variable} \
+    -returnCodes error \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.6 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    namespace eval test_ns_0 {}
+	    proc a {} {
+		namespace upvar test_ns_0 x w
+		set w
+	    }
+	    return [a]
+	}
+    } \
+    -result {can't read "w": no such variable} \
+    -returnCodes error \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.7 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    namespace eval test_ns_0 {
+		variable x test_ns_1::test_ns_0
+	    }
+	    namespace upvar test_ns_0 x w
+	    set w
+	}
+    } \
+    -result {test_ns_1::test_ns_0} \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.8 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    namespace eval test_ns_0 {
+		variable x test_ns_1::test_ns_0
+	    }
+	    proc a {} {
+		namespace upvar test_ns_0 x w
+		set w
+	    }
+	    return [a]
+	}
+    } \
+    -result {test_ns_1::test_ns_0} \
+    -cleanup {namespace delete test_ns_1}
+
+test upvar-NS-1.9 {nsupvar links to correct variable} \
+    -body {
+	namespace eval test_ns_1 {
+	    variable x test_ns_1
+	    proc a {} {
+		namespace upvar test_ns_0 x w
+		set w
+	    }
+	    return [a]
+	}
+    } \
+    -result {namespace "test_ns_0" does not exist} \
+    -returnCodes error \
+    -cleanup {namespace delete test_ns_1}
+
 
 # cleanup
 ::tcltest::cleanupTests
