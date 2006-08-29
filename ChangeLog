@@ -1,3 +1,11 @@
+2006-08-29  Colin McCormack  <coldstore@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:     Added test for NULL return 
+	* generic/tclPathObj.c: from Tcl_FSGetNormalizedPath
+	* unix/tclUnixFile.c:     which was causing segv's per
+	* win/tclWinFCmd.c:    Bug 1548263
+	* /win/tclWinFile.c:
+
 2006-08-28  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata/America/Havana:      Regenerated from Olson's
