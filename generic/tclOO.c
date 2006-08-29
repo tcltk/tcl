@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.28 2006/08/28 23:37:51 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.29 2006/08/29 09:06:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -284,7 +284,7 @@ ObjNameChangedTrace(
 
     Tcl_Preserve(oPtr);
     oPtr->flags |= OBJECT_DELETED;
-    if (contextPtr != NULL) {
+    if (contextPtr != NULL && !Tcl_InterpDeleted(interp)) {
 	int result;
 	Tcl_InterpState state;
 
