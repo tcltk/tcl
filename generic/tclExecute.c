@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.242 2006/08/28 08:47:05 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.243 2006/08/29 06:28:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -6266,13 +6266,13 @@ PrintByteCodeInfo(
 	    0.0);
 
 #ifdef TCL_COMPILE_STATS
-    fprintf(stdout, "  Code %ld = header %ld+inst %d+litObj %ld+exc %ld+aux %ld+cmdMap %d\n",
+    fprintf(stdout, "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
 	    (unsigned long) codePtr->structureSize,
-	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
+	    (unsigned long) (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
 	    codePtr->numCodeBytes,
-	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (codePtr->numExceptRanges * sizeof(ExceptionRange)),
-	    (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (unsigned long) (codePtr->numExceptRanges * sizeof(ExceptionRange)),
+	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
@@ -6818,11 +6818,11 @@ EvalStatsCmd(
 	    statsPtr->totalByteCodeBytes);
     fprintf(stdout, "    Literal bytes		%.6g\n",
 	    totalLiteralBytes);
-    fprintf(stdout, "      table %ld + bkts %ld + entries %ld + objects %ld + strings %.6g\n",
-	    sizeof(LiteralTable),
-	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
-	    statsPtr->numLiteralsCreated * sizeof(LiteralEntry),
-	    statsPtr->numLiteralsCreated * sizeof(Tcl_Obj),
+    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+	    (unsigned long) sizeof(LiteralTable),
+	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
+	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(LiteralEntry)),
+	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(Tcl_Obj)),
 	    statsPtr->totalLitStringBytes);
     fprintf(stdout, "  Mean code/compile		%.1f\n",
 	    totalCodeBytes / statsPtr->numCompilations);
@@ -6839,11 +6839,11 @@ EvalStatsCmd(
 	    statsPtr->currentByteCodeBytes);
     fprintf(stdout, "    Literal bytes		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %ld + bkts %ld + entries %ld + objects %ld + strings %.6g\n",
-	    sizeof(LiteralTable),
-	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
-	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),
-	    iPtr->literalTable.numEntries * sizeof(Tcl_Obj),
+    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+	    (unsigned long) sizeof(LiteralTable),
+	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
+	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
+	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
     fprintf(stdout, "  Mean code/source		%.1f\n",
 	    currentCodeBytes / statsPtr->currentSrcBytes);
@@ -6933,11 +6933,11 @@ EvalStatsCmd(
 	    (sharingBytesSaved * 100.0) / (objBytesIfUnshared + strBytesIfUnshared));
     fprintf(stdout, "    Bytes with sharing		%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %ld + bkts %ld + entries %ld + objects %ld + strings %.6g\n",
-	    sizeof(LiteralTable),
-	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
-	    iPtr->literalTable.numEntries * sizeof(LiteralEntry),
-	    iPtr->literalTable.numEntries * sizeof(Tcl_Obj),
+    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+	    (unsigned long) sizeof(LiteralTable),
+	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
+	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
+	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
     fprintf(stdout, "    Bytes if no sharing		%.6g = objects %.6g + strings %.6g\n",
 	    (objBytesIfUnshared + strBytesIfUnshared),
@@ -6948,10 +6948,10 @@ EvalStatsCmd(
     fprintf(stdout, "  Literal mgmt overhead	 	%ld (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    (literalMgmtBytes * 100.0) / currentLiteralBytes);
-    fprintf(stdout, "    table %ld + buckets %ld + entries %ld\n",
-	    sizeof(LiteralTable),
-	    iPtr->literalTable.numBuckets * sizeof(LiteralEntry *),
-	    iPtr->literalTable.numEntries * sizeof(LiteralEntry));
+    fprintf(stdout, "    table %lu + buckets %lu + entries %lu\n",
+	    (unsigned long) sizeof(LiteralTable),
+	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
+	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)));
 
     /*
      * Breakdown of current ByteCode space requirements.
