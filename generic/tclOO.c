@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.32 2006/08/29 15:21:25 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.33 2006/08/29 23:13:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1624,6 +1624,7 @@ ObjectEval(
 {
     Object *oPtr = contextPtr->oPtr;
     CallFrame *framePtr, **framePtrPtr;
+    Tcl_Obj *objnameObj;
     int result;
 
     if (objc-contextPtr->skip < 1) {
@@ -1646,6 +1647,14 @@ ObjectEval(
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
+
+    if (contextPtr->flags & PUBLIC_METHOD) {
+	TclNewObj(objnameObj);
+	Tcl_GetCommandFullName(interp, oPtr->command, objnameObj);
+    } else {
+	TclNewStringObj(objnameObj, "my", 2);
+    }
+    Tcl_IncrRefCount(objnameObj);
 
     if (objc == 3) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
@@ -1670,7 +1679,7 @@ ObjectEval(
 	// TODO: fix trace
 	TclFormatToErrorInfo(interp,
 		"\n    (in %s eval \"%.*s%s\" script line %d)",
-		TclGetString(objv[0]), (overflow ? limit : length),
+		TclGetString(objnameObj), (overflow ? limit : length),
 		oPtr->nsPtr->fullName, (overflow ? "..." : ""),
 		interp->errorLine);
     }
@@ -1680,6 +1689,7 @@ ObjectEval(
      */
 
     TclPopStackFrame(interp);
+    TclDecrRefCount(objnameObj);
     return result;
 }
 
@@ -1813,7 +1823,10 @@ NextObjCmd(
     index = contextPtr->index;
     skip = contextPtr->skip;
     if (index+1 >= contextPtr->numCallChain) {
-	Tcl_AppendResult(interp, "no superclass method implementation", NULL);
+	Tcl_AppendResult(interp, "no superclass ",
+		(contextPtr->flags & CONSTRUCTOR ? "constructor" :
+		(contextPtr->flags & DESTRUCTOR ? "destructor" : "method")),
+		" implementation", NULL);
 	return TCL_ERROR;
     }
 
@@ -1853,10 +1866,18 @@ NextObjCmd(
      */
 
     if (result == TCL_ERROR) {
-	// TODO: Better error info for forwards
-	TclFormatToErrorInfo(interp,
-		"\n    (superclass implementation of %s method)",
-		TclGetString(framePtr->objv[1]));
+	if (contextPtr->flags & CONSTRUCTOR) {
+	    TclFormatToErrorInfo(interp,
+		    "\n    (superclass implementation of constructor)");
+	} else if (contextPtr->flags & DESTRUCTOR) {
+	    TclFormatToErrorInfo(interp,
+		    "\n    (superclass implementation of destructor)");
+	} else {
+	    // TODO: Better error info from override
+	    TclFormatToErrorInfo(interp,
+		    "\n    (superclass implementation of %s method)",
+		    TclGetString(framePtr->objv[1]));
+	}
     }
 
     return result;
