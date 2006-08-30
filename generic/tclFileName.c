@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.74 2006/03/19 23:04:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.75 2006/08/30 17:56:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1828,6 +1828,7 @@ TclGlob(
     Tcl_IncrRefCount(savedResultObj);
     Tcl_ResetResult(interp);
     TclNewObj(filenamesObj);
+    Tcl_IncrRefCount(filenamesObj);
 
     /*
      * Now we do the actual globbing, adding filenames as we go to buffer in
@@ -2290,6 +2291,7 @@ DoGlob(
 
 	*p = '\0';
 	TclNewObj(subdirsPtr);
+	Tcl_IncrRefCount(subdirsPtr);
 	result = Tcl_FSMatchInDirectory(interp, subdirsPtr, pathPtr,
 		pattern, &dirOnly);
 	*p = save;
