@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.143.2.2 2006/07/11 10:00:47 dkf Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.143.2.3 2006/08/30 14:23:08 dkf Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -296,6 +296,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclObj.obj \
 	$(TMP_DIR)\tclOO.obj \
 	$(TMP_DIR)\tclOODefineCmds.obj \
+	$(TMP_DIR)\tclOOInfo.obj \
 	$(TMP_DIR)\tclPanic.obj \
 	$(TMP_DIR)\tclParse.obj \
 	$(TMP_DIR)\tclParseExpr.obj \
