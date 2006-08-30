@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.7.2.1 2004/09/10 20:01:03 andreas_kupries Exp $
+ * CVS: $Id: tclIOGT.c,v 1.7.2.2 2006/08/30 17:24:07 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -440,7 +440,7 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
      * message into current interpreter. Don't copy if in preservation mode.
      */
 
-    res = Tcl_GlobalEvalObj (dataPtr->interp, command);
+    res = Tcl_EvalObjEx(dataPtr->interp, command, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount (command);
     command = (Tcl_Obj*) NULL;
 
