@@ -1,3 +1,24 @@
+2006-08-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinChan.c: [Bug 819667] Improve logic for identifying COM
+	ports.
+
+	* win/tclWinFCmd.c:    [Bug 1548263] Added test for NULL return
+	* generic/tclIOUtil.c: from Tcl_FSGetNormalizedPath which was
+	causing segv's
+
+	* generic/tclFileName.c (TclDoGlob): match incr with existing decr.
+
+	* unix/Makefile.in: add valgrindshell target and update default
+	VALGRINDARGS.  User can override, or add to it with VALGRIND_OPTS
+	env var.
+
+	* generic/tclBasic.c (Tcl_CreateInterp): init iPtr->threadId
+
+	* generic/tclIOGT.c (ExecuteCallback): 
+	* generic/tclPkg.c (Tcl_PkgRequireEx): replace Tcl_GlobalEval(Obj)
+	with more efficient Tcl_Eval(Obj)Ex
+
 2006-08-22  Andreas Kupries <andreask@activestate.com>
 
 	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): Fixed broken if syntax
