@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.2.3 2006/04/05 01:20:53 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.2.4 2006/08/30 17:24:07 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -327,7 +327,7 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 	    pkgPtr->clientData = (ClientData) versionToProvide;
 	    Tcl_Preserve((ClientData) script);
 	    Tcl_Preserve((ClientData) versionToProvide);
-	    code = Tcl_GlobalEval(interp, script);
+	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
 	    Tcl_Release((ClientData) script);
 	    pkgPtr = FindPackage(interp, name);
 	    if (code == TCL_OK) {
@@ -390,7 +390,7 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 				pkgPtr->version, " provided instead", NULL);
 			Tcl_ListObjAppendElement(NULL, cmdPtr, msg);
 			Tcl_IncrRefCount(cmdPtr);
-			Tcl_GlobalEvalObj(interp, cmdPtr);
+			Tcl_EvalObjEx(interp, cmdPtr, TCL_EVAL_GLOBAL);
 			Tcl_DecrRefCount(cmdPtr);
 			Tcl_ResetResult(interp);
 		    }
@@ -450,7 +450,8 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 	    if (exact) {
 		Tcl_DStringAppend(&command, " -exact", 7);
 	    }
-	    code = Tcl_GlobalEval(interp, Tcl_DStringValue(&command));
+	    code = Tcl_EvalEx(interp, Tcl_DStringValue(&command),
+		    Tcl_DStringLength(&command), TCL_EVAL_GLOBAL);
 	    Tcl_DStringFree(&command);
 	    if ((code != TCL_OK) && (code != TCL_ERROR)) {
 		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
