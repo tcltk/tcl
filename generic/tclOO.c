@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.33 2006/08/29 23:13:34 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.34 2006/08/30 23:49:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -87,14 +87,23 @@ static int		PrivateObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 
+static int		SimpleInvoke(ClientData clientData,
+			    Tcl_Interp *interp, CallContext *oPtr,
+			    int objc, Tcl_Obj *const *objv);
+static int		SimpleClone(ClientData clientData,
+			    ClientData *newClientData);
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, CallContext *oPtr,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteProcedureMethod(ClientData clientData);
+static int		CloneProcedureMethod(ClientData clientData,
+			    ClientData *newClientData); // TODO: implement!
 static int		InvokeForwardMethod(ClientData clientData,
 			    Tcl_Interp *interp, CallContext *oPtr,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(ClientData clientData);
+static int		CloneForwardMethod(ClientData clientData,
+			    ClientData *newClientData);
 
 static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
@@ -113,6 +122,19 @@ static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
+
+static const Tcl_OOMethodType procMethodType = {
+    "procedural method",
+    InvokeProcedureMethod, DeleteProcedureMethod, CloneProcedureMethod
+};
+static const Tcl_OOMethodType fwdMethodType = {
+    "forward",
+    InvokeForwardMethod, DeleteForwardMethod, CloneForwardMethod
+};
+static const Tcl_OOMethodType coreMethodType = {
+    "core method",
+    SimpleInvoke, NULL, SimpleClone
+};
 
 int
 TclOOInit(
@@ -692,8 +714,28 @@ DeclareClassMethod(
     TclNewStringObj(namePtr, name, strlen(name));
     Tcl_IncrRefCount(namePtr);
     TclOONewClassMethod(interp, (Tcl_Class) clsPtr, namePtr, isPublic,
-	    callPtr, NULL, NULL);
+	    &coreMethodType, callPtr);
     TclDecrRefCount(namePtr);
+    return TCL_OK;
+}
+static int
+SimpleInvoke(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    CallContext *oPtr,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_OOMethodCallProc callPtr = clientData;
+
+    return callPtr(clientData, interp, oPtr, objc, objv);
+}
+static int
+SimpleClone(
+    ClientData clientData,
+    ClientData *newClientData)
+{
+    *newClientData = clientData;
     return TCL_OK;
 }
 
@@ -703,9 +745,8 @@ TclOONewMethod(
     Tcl_Object object,
     Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
     int isPublic,
-    Tcl_OOMethodCallProc callProc,
-    ClientData clientData,
-    Tcl_OOMethodDeleteProc deleteProc)
+    const Tcl_OOMethodType *typePtr,
+    ClientData clientData)
 {
     register Object *oPtr = (Object *) object;
     register Method *mPtr;
@@ -725,15 +766,14 @@ TclOONewMethod(
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
 	mPtr = Tcl_GetHashValue(hPtr);
-	if (mPtr->deletePtr != NULL) {
-	    mPtr->deletePtr(mPtr->clientData);
+	if (mPtr->typePtr != NULL && mPtr->typePtr->deletePtr != NULL) {
+	    mPtr->typePtr->deletePtr(mPtr->clientData);
 	}
     }
 
   populate:
-    mPtr->callPtr = callProc;
+    mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->deletePtr = deleteProc;
     mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
@@ -750,9 +790,8 @@ TclOONewClassMethod(
     Tcl_Class cls,
     Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
     int isPublic,
-    Tcl_OOMethodCallProc callProc,
-    ClientData clientData,
-    Tcl_OOMethodDeleteProc deleteProc)
+    const Tcl_OOMethodType *typePtr,
+    ClientData clientData)
 {
     register Class *clsPtr = (Class *) cls;
     register Method *mPtr;
@@ -772,15 +811,14 @@ TclOONewClassMethod(
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
 	mPtr = Tcl_GetHashValue(hPtr);
-	if (mPtr->deletePtr != NULL) {
-	    mPtr->deletePtr(mPtr->clientData);
+	if (mPtr->typePtr != NULL && mPtr->typePtr->deletePtr != NULL) {
+	    mPtr->typePtr->deletePtr(mPtr->clientData);
 	}
     }
 
   populate:
-    mPtr->callPtr = callProc;
+    mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->deletePtr = deleteProc;
     mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
@@ -817,7 +855,7 @@ TclNewProcMethod(
 	return NULL;
     }
     return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, nameObj,
-	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
+	    isPublic, &procMethodType, pmPtr);
 }
 
 Method *
@@ -856,7 +894,7 @@ TclNewProcClassMethod(
 	TclDecrRefCount(argsObj);
     }
     return (Method *) TclOONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
-	    isPublic, &InvokeProcedureMethod, pmPtr, &DeleteProcedureMethod);
+	    isPublic, &procMethodType, pmPtr);
 }
 
 static int
@@ -924,9 +962,23 @@ DeleteProcedureMethod(
 {
     register ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
 
-    //TclProcDeleteProc(pmPtr->procPtr);
-    TclProcCleanupProc(pmPtr->procPtr);
+    TclProcDeleteProc(pmPtr->procPtr);
     ckfree((char *) pmPtr);
+}
+
+static int
+CloneProcedureMethod(
+    ClientData clientData,
+    ClientData *newClientData)
+{
+    ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
+    ProcedureMethod *pm2Ptr = (ProcedureMethod *)
+	    ckalloc(sizeof(ProcedureMethod));
+
+    pm2Ptr->procPtr = pmPtr->procPtr;
+    pm2Ptr->procPtr->refCount++;
+    *newClientData = pm2Ptr;
+    return TCL_OK;
 }
 
 /* To be called from Tcl_EventuallyFree */
@@ -936,8 +988,8 @@ DeleteMethodStruct(
 {
     Method *mPtr = (Method *) buffer;
 
-    if (mPtr->deletePtr != NULL) {
-	mPtr->deletePtr(mPtr->clientData);
+    if (mPtr->typePtr != NULL && mPtr->typePtr->deletePtr != NULL) {
+	mPtr->typePtr->deletePtr(mPtr->clientData);
     }
     if (mPtr->namePtr != NULL) {
 	TclDecrRefCount(mPtr->namePtr);
@@ -979,7 +1031,7 @@ TclNewForwardMethod(
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, nameObj,
-	    isPublic, &InvokeForwardMethod, fmPtr, &DeleteForwardMethod);
+	    isPublic, &fwdMethodType, fmPtr);
 }
 
 Method *
@@ -1006,7 +1058,7 @@ TclNewForwardClassMethod(
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) TclOONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
-	    isPublic, &InvokeForwardMethod, fmPtr, &DeleteForwardMethod);
+	    isPublic, &fwdMethodType, fmPtr);
 }
 
 static int
@@ -1063,6 +1115,20 @@ DeleteForwardMethod(
 
     TclDecrRefCount(fmPtr->prefixObj);
     ckfree((char *) fmPtr);
+}
+
+static int
+CloneForwardMethod(
+    ClientData clientData,
+    ClientData *newClientData)
+{
+    ForwardMethod *fmPtr = (ForwardMethod *) clientData;
+    ForwardMethod *fm2Ptr = (ForwardMethod *) ckalloc(sizeof(ForwardMethod));
+
+    fm2Ptr->prefixObj = fmPtr->prefixObj;
+    Tcl_IncrRefCount(fm2Ptr->prefixObj);
+    *newClientData = fm2Ptr;
+    return TCL_OK;
 }
 
 static int
@@ -1162,7 +1228,8 @@ InvokeContext(
 	}
     }
 
-    result = mPtr->callPtr(mPtr->clientData, interp, contextPtr, objc, objv);
+    result = mPtr->typePtr->callPtr(mPtr->clientData, interp, contextPtr,
+	    objc, objv);
 
     // TODO: Better annotation of stack trace?
 
@@ -1476,7 +1543,7 @@ AddMethodToCallChain(
      * the call chain.
      */
 
-    if (mPtr == NULL || mPtr->callPtr == NULL) {
+    if (mPtr == NULL || mPtr->typePtr == NULL) {
 	return;
     }
 

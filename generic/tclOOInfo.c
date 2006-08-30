@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.3 2006/08/30 15:35:16 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.4 2006/08/30 23:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -265,7 +265,7 @@ InfoObjectMethodsCmd(
 	int len;
 	const char *str = Tcl_GetStringFromObj(objv[4], &len);
 
-	if (len < 2 || strncmp("-private", str, len)) {
+	if (len < 2 || strncmp("-private", str, (unsigned)len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
 		    "\": must be -private", NULL);
 	    return TCL_ERROR;
@@ -277,7 +277,7 @@ InfoObjectMethodsCmd(
 	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	if (mPtr->callPtr != NULL && (mPtr->flags & flag) == flag) {
+	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
     }
@@ -395,7 +395,7 @@ InfoClassMethodsCmd(
 	int len;
 	const char *str = Tcl_GetStringFromObj(objv[4], &len);
 
-	if (len < 2 || strncmp("-private", str, len)) {
+	if (len < 2 || strncmp("-private", str, (unsigned)len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
 		    "\": must be -private", NULL);
 	    return TCL_ERROR;
@@ -408,7 +408,7 @@ InfoClassMethodsCmd(
 		hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	if (mPtr->callPtr != NULL && (mPtr->flags & flag) == flag) {
+	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.14 2006/08/28 23:37:51 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.15 2006/08/30 23:49:56 dkf Exp $
  */
 
 /*
@@ -29,6 +29,15 @@ struct CallContext;
 typedef int (*Tcl_OOMethodCallProc)(ClientData clientData, Tcl_Interp *interp,
 	struct CallContext *contextPtr, int objc, Tcl_Obj *const *objv);
 typedef void (*Tcl_OOMethodDeleteProc)(ClientData clientData);
+typedef int (*Tcl_OOMethodCloneProc)(ClientData oldClientData,
+	ClientData *newClientData);
+
+typedef struct {
+    const char *name;
+    Tcl_OOMethodCallProc callPtr;
+    Tcl_OOMethodDeleteProc deletePtr;
+    Tcl_OOMethodCloneProc clonePtr;
+} Tcl_OOMethodType;
 
 /*
  * The data that needs to be stored per method. This record is used to collect
@@ -37,9 +46,8 @@ typedef void (*Tcl_OOMethodDeleteProc)(ClientData clientData);
  */
 
 typedef struct Method {
-    Tcl_OOMethodCallProc callPtr;
+    const Tcl_OOMethodType *typePtr;
     ClientData clientData;
-    Tcl_OOMethodDeleteProc deletePtr;
     Tcl_Obj *namePtr;
     struct Object *declaringObjectPtr;
     struct Class *declaringClassPtr;
@@ -224,14 +232,12 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE Tcl_Method	TclOONewMethod(Tcl_Interp *interp, Tcl_Object object,
 			    Tcl_Obj *nameObj, int isPublic,
-			    Tcl_OOMethodCallProc callProc,
-			    ClientData clientData,
-			    Tcl_OOMethodDeleteProc deleteProc);
+			    const Tcl_OOMethodType *typePtr,
+			    ClientData clientData);
 MODULE_SCOPE Tcl_Method	TclOONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
 			    Tcl_Obj *nameObj, int isPublic,
-			    Tcl_OOMethodCallProc callProc,
-			    ClientData clientData,
-			    Tcl_OOMethodDeleteProc deleteProc);
+			    const Tcl_OOMethodType *typePtr,
+			    ClientData clientData);
 MODULE_SCOPE Object *	TclOONewInstance(Tcl_Interp *interp, Class *clsPtr,
 			    char *name, int objc, Tcl_Obj *const *objv,
 			    int skip);
