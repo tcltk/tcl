@@ -1,3 +1,7 @@
+2006-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Dropped the old expr parser.
+
 2006-08-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): init iPtr->threadId
