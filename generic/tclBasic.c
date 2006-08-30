@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.21 2006/03/06 21:56:13 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.22 2006/08/30 17:24:25 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -363,6 +363,7 @@ Tcl_CreateInterp()
     iPtr->emptyObjPtr = Tcl_NewObj(); /* another empty object */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
     iPtr->resultSpace[0] = 0;
+    iPtr->threadId = Tcl_GetCurrentThread();
 
     iPtr->globalNsPtr = NULL;	/* force creation of global ns below */
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
