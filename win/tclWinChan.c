@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.2.4 2005/06/23 15:05:22 kennykb Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.2.5 2006/08/30 17:53:28 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -100,8 +100,8 @@ static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static void             FileThreadActionProc _ANSI_ARGS_ ((
 			   ClientData instanceData, int action));
+static DWORD		FileGetType _ANSI_ARGS_((HANDLE handle));
 
-			    
 /*
  * This structure describes the channel type structure for file based IO.
  */
@@ -784,9 +784,8 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 {
     Tcl_Channel channel = 0;
     int channelPermissions;
-    DWORD accessMode, createMode, shareMode, flags, consoleParams, type;
+    DWORD accessMode, createMode, shareMode, flags;
     CONST TCHAR *nativeName;
-    DCB dcb;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL;
@@ -885,29 +884,9 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
         return NULL;
     }
     
-    type = GetFileType(handle);
-
-    /*
-     * If the file is a character device, we need to try to figure out
-     * whether it is a serial port, a console, or something else.  We
-     * test for the console case first because this is more common.
-     */
-
-    if (type == FILE_TYPE_CHAR) {
-	if (GetConsoleMode(handle, &consoleParams)) {
-	    type = FILE_TYPE_CONSOLE;
-	} else {
-	    dcb.DCBlength = sizeof( DCB ) ;
-	    if (GetCommState(handle, &dcb)) {
-		type = FILE_TYPE_SERIAL;
-	    }
-		    
-	}
-    }
-
     channel = NULL;
 
-    switch (type) {
+    switch ( FileGetType(handle) ) {
     case FILE_TYPE_SERIAL:
 	/*
 	 * Reopen channel for OVERLAPPED operation
@@ -993,8 +972,6 @@ Tcl_MakeFileChannel(rawHandle, mode)
     Tcl_Channel channel = NULL;
     HANDLE handle = (HANDLE) rawHandle;
     HANDLE dupedHandle;
-    DCB dcb;
-    DWORD consoleParams, type;
     TclFile readFile = NULL;
     TclFile writeFile = NULL;
     BOOL result;
@@ -1003,30 +980,7 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	return NULL;
     }
 
-    /*
-     * GetFileType() returns FILE_TYPE_UNKNOWN for invalid handles.
-     */
-
-    type = GetFileType(handle);
-
-    /*
-     * If the file is a character device, we need to try to figure out
-     * whether it is a serial port, a console, or something else.  We
-     * test for the console case first because this is more common.
-     */
-
-    if (type == FILE_TYPE_CHAR) {
-	if (GetConsoleMode(handle, &consoleParams)) {
-	    type = FILE_TYPE_CONSOLE;
-	} else {
-	    dcb.DCBlength = sizeof( DCB ) ;
-	    if (GetCommState(handle, &dcb)) {
-		type = FILE_TYPE_SERIAL;
-	    }
-	}
-    }
-
-    switch (type)
+    switch (FileGetType(handle))
     {
     case FILE_TYPE_SERIAL:
 	channel = TclWinOpenSerialChannel(handle, channelName, mode);
@@ -1429,4 +1383,51 @@ FileThreadActionProc (instanceData, action)
 	    panic("file info ptr not on thread channel list");
 	}
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileGetType --
+ *
+ *	Given a file handle, return its type
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DWORD
+FileGetType(handle)
+    HANDLE handle; /* Opened file handle */
+{ 
+    DWORD type;
+    DWORD consoleParams;
+    DCB dcb;
+
+    type = GetFileType(handle);
+
+    /*
+     * If the file is a character device, we need to try to figure out
+     * whether it is a serial port, a console, or something else.  We
+     * test for the console case first because this is more common.
+     */
+    
+    if (type == FILE_TYPE_CHAR || (type == FILE_TYPE_UNKNOWN && !GetLastError())) {
+	    if (GetConsoleMode(handle, &consoleParams)) {
+	      type = FILE_TYPE_CONSOLE;
+      } else {
+	      dcb.DCBlength = sizeof( DCB ) ;
+	      if (GetCommState(handle, &dcb)) {
+		      type = FILE_TYPE_SERIAL;
+        }
+      }
+    }
+
+    return type;
 }
