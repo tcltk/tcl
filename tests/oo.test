@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.19 2006/08/29 15:21:26 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.20 2006/08/30 15:35:16 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -532,6 +532,43 @@ test oo-15.1 {OO: object cloning} {
     lappend result [info commands Binstance]
 } {::Ainstance->test ::Binstance->test ::Ainstance->test ::foo::Cinstance->test {}}
 # Anything involving methods or classes is not cloned correctly yet.
+
+test oo-16.1 {OO: object introspection} -body {
+    info object
+} -returnCodes 1 -result "wrong \# args: should be \"info object objName subcommand ?arg ...?\""
+test oo-16.2 {OO: object introspection} -body {
+    info object NOTANOBJECT gorp
+} -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
+test oo-16.3 {OO: object introspection} -body {
+    info object oo::object gorp
+} -returnCodes 1 -result {bad subcommand "gorp": must be args, body, class, default, filters, isa, methods, mixins, or vars}
+test oo-16.4 {OO: object introspection} {
+    list [info object oo::object class] [info object oo::class class]
+} {::oo::class ::oo::class}
+test oo-16.5 {OO: object introspection} {info object oo::object methods} {}
+test oo-16.6 {OO: object introspection} {
+    oo::object create foo
+    set result [list [info object foo methods]]
+    oo::define foo method bar {} {...}
+    lappend result [info object foo methods] [foo destroy]
+} {{} bar {}}
+
+test oo-17.1 {OO: class introspection} -body {
+    info class
+} -returnCodes 1 -result "wrong \# args: should be \"info class className subcommand ?arg ...?\""
+test oo-17.2 {OO: object introspection} -body {
+    info class NOTANOBJECT gorp
+} -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
+test oo-17.3 {OO: object introspection} -setup {
+    oo::object create foo
+} -body {
+    info class foo gorp
+} -returnCodes 1 -cleanup {
+    foo destroy
+} -result {"foo" is not a class}
+test oo-17.4 {OO: object introspection} -body {
+    info class oo::object gorp
+} -returnCodes 1 -result {bad subcommand "gorp": must be args, body, default, instances, methods, parameters, subclasses, or superclasses}
 
 cleanupTests
 return

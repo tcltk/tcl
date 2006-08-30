@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.2 2006/08/30 14:53:41 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.3 2006/08/30 15:35:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -255,17 +255,29 @@ InfoObjectMethodsCmd(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
+    int flag = PUBLIC_METHOD;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName methods");
+    if (objc != 4 && objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName methods ?-private?");
 	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	int len;
+	const char *str = Tcl_GetStringFromObj(objv[4], &len);
+
+	if (len < 2 || strncmp("-private", str, len)) {
+	    Tcl_AppendResult(interp, "unknown switch \"", str,
+		    "\": must be -private", NULL);
+	    return TCL_ERROR;
+	}
+	flag = 0;
     }
     hPtr = Tcl_FirstHashEntry(&oPtr->methods, &search);
     for (; hPtr != NULL ; hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	if (mPtr->callPtr != NULL) {
+	if (mPtr->callPtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
     }
@@ -373,10 +385,22 @@ InfoClassMethodsCmd(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
+    int flag = PUBLIC_METHOD;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className methods");
+    if (objc != 4 && objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className methods ?-private?");
 	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	int len;
+	const char *str = Tcl_GetStringFromObj(objv[4], &len);
+
+	if (len < 2 || strncmp("-private", str, len)) {
+	    Tcl_AppendResult(interp, "unknown switch \"", str,
+		    "\": must be -private", NULL);
+	    return TCL_ERROR;
+	}
+	flag = 0;
     }
     hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
     for (; hPtr != NULL ; hPtr = Tcl_NextHashEntry(&search)) {
@@ -384,7 +408,7 @@ InfoClassMethodsCmd(
 		hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	if (mPtr->callPtr != NULL) {
+	if (mPtr->callPtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
     }
