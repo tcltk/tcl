@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.5 2006/08/31 15:41:37 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.6 2006/08/31 15:43:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -210,7 +210,6 @@ InfoObjectBodyCmd(
 {
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
-    Tcl_Obj *bodyPtr;
 
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "objName body methodName");
@@ -238,7 +237,7 @@ InfoObjectBodyCmd(
     if (procPtr->bodyPtr->bytes == NULL) {
 	(void) Tcl_GetString(procPtr->bodyPtr);
     }
-    Tcl_SetObjResult(interp, TclNewStringObj(procPtr->bodyPtr->bytes,
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(procPtr->bodyPtr->bytes,
 	    procPtr->bodyPtr->length));
     return TCL_OK;
 }
@@ -490,7 +489,6 @@ InfoClassBodyCmd(
 {
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
-    Tcl_Obj *bodyPtr;
 
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
@@ -518,7 +516,7 @@ InfoClassBodyCmd(
     if (procPtr->bodyPtr->bytes == NULL) {
 	(void) Tcl_GetString(procPtr->bodyPtr);
     }
-    Tcl_SetObjResult(interp, TclNewStringObj(procPtr->bodyPtr->bytes,
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(procPtr->bodyPtr->bytes,
 	    procPtr->bodyPtr->length));
     return TCL_OK;
 }
