@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.34 2006/08/30 23:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.35 2006/08/31 15:41:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2083,6 +2083,18 @@ TclOOIsReachable(
 	}
     }
     return 0;
+}
+
+Proc *
+TclOOGetProcFromMethod(
+    Method *mPtr)
+{
+    if (mPtr->typePtr == &procMethodType) {
+	ProcedureMethod *pmPtr = mPtr->clientData;
+
+	return pmPtr->procPtr;
+    }
+    return NULL;
 }
 
 /*
