@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.35 2006/08/31 15:41:02 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.36 2006/08/31 23:27:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -184,6 +184,7 @@ TclOOInit(
 
     fPtr->definerCls = AllocClass(interp,
 	    AllocObject(interp, "::oo::definer"));
+    fPtr->definerCls->superclasses.list[0] = fPtr->classCls;
     fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
 
     /*

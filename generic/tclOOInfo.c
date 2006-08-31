@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.6 2006/08/31 15:43:52 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.7 2006/08/31 23:27:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -25,8 +25,8 @@ static int		InfoObjectDefaultCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectFiltersCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectIsACmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static int		InfoObjectIsACmd(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		InfoObjectMethodsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectMixinsCmd(Object *oPtr, Tcl_Interp *interp,
@@ -72,12 +72,15 @@ TclInfoObjectCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "objName subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    oPtr = TclGetObjectFromObj(interp, objv[2]);
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
     if (Tcl_GetIndexFromObj(interp, objv[3], subcommands, "subcommand", 0,
 	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (idx == IOIsA) {
+	return InfoObjectIsACmd(interp, objc, objv);
+    }
+    oPtr = TclGetObjectFromObj(interp, objv[2]);
+    if (oPtr == NULL) {
 	return TCL_ERROR;
     }
     switch ((enum IOSubCmds) idx) {
@@ -91,16 +94,15 @@ TclInfoObjectCmd(
 	return InfoObjectDefaultCmd(oPtr, interp, objc, objv);
     case IOFilters:
 	return InfoObjectFiltersCmd(oPtr, interp, objc, objv);
-    case IOIsA:
-	return InfoObjectIsACmd(oPtr, interp, objc, objv);
     case IOMethods:
 	return InfoObjectMethodsCmd(oPtr, interp, objc, objv);
     case IOMixins:
 	return InfoObjectMixinsCmd(oPtr, interp, objc, objv);
     case IOVars:
 	return InfoObjectVarsCmd(oPtr, interp, objc, objv);
+    case IOIsA:
+	Tcl_Panic("unexpected fallthrough");
     }
-    Tcl_Panic("unexpected fallthrough");
     return TCL_ERROR; /* NOTREACHED */
 }
 
@@ -359,12 +361,107 @@ InfoObjectFiltersCmd(
 
 static int
 InfoObjectIsACmd(
-    Object *oPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
+    static const char *categories[] = {
+	"class", "metaclass", "mixin", "object", "typeof", NULL
+    };
+    enum IsACats {
+	IsClass, IsMetaclass, IsMixin, IsObject, IsType
+    };
+    Object *oPtr, *o2Ptr;
+    int idx, i;
+
+    if (objc < 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName isa category ?arg ...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[4], categories, "category", 0,
+	    &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (idx == IsObject) {
+	int ok = (TclGetObjectFromObj(interp, objv[2]) != NULL);
+
+	if (!ok) {
+	    Tcl_ResetResult(interp);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(ok ? 1 : 0));
+	return TCL_OK;
+    }
+    oPtr = TclGetObjectFromObj(interp, objv[2]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    switch ((enum IsACats) idx) {
+    case IsClass:
+	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa class");
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(oPtr->classPtr ? 1 : 0));
+	return TCL_OK;
+    case IsMetaclass:
+	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa metaclass");
+	    return TCL_ERROR;
+	}
+	if (oPtr->classPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	} else {
+	    Foundation *fPtr = ((Interp *)interp)->ooFoundation;
+
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
+		    TclOOIsReachable(fPtr->classCls, oPtr->classPtr) ? 1 : 0));
+	}
+	return TCL_OK;
+    case IsMixin:
+	if (objc != 6) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa mixin className");
+	    return TCL_ERROR;
+	}
+	o2Ptr = TclGetObjectFromObj(interp, objv[5]);
+	if (o2Ptr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (o2Ptr->classPtr == NULL) {
+	    Tcl_AppendResult(interp, "non-classes cannot be mixins", NULL);
+	    return TCL_ERROR;
+	}
+	for (i=0 ; i<oPtr->mixins.num ; i++) {
+	    if (oPtr->mixins.list[i] == o2Ptr->classPtr) {
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		return TCL_OK;
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	return TCL_OK;
+    case IsType:
+	if (objc != 6) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa typeof className");
+	    return TCL_ERROR;
+	}
+	o2Ptr = TclGetObjectFromObj(interp, objv[5]);
+	if (o2Ptr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (o2Ptr->classPtr == NULL) {
+	    Tcl_AppendResult(interp, "non-classes cannot be types", NULL);
+	    return TCL_ERROR;
+	}
+	if (TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	}
+	return TCL_OK;
+    case IsObject:
+	Tcl_Panic("unexpected fallthrough");
+    }
     return TCL_ERROR;
 }
 

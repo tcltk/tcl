@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.21 2006/08/30 23:49:56 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.22 2006/08/31 23:27:37 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -558,14 +558,20 @@ test oo-16.1 {OO: object introspection} -body {
     info object
 } -returnCodes 1 -result "wrong \# args: should be \"info object objName subcommand ?arg ...?\""
 test oo-16.2 {OO: object introspection} -body {
-    info object NOTANOBJECT gorp
+    info object NOTANOBJECT class
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object oo::object gorp
 } -returnCodes 1 -result {bad subcommand "gorp": must be args, body, class, default, filters, isa, methods, mixins, or vars}
 test oo-16.4 {OO: object introspection} {
-    list [info object oo::object class] [info object oo::class class]
-} {::oo::class ::oo::class}
+    list [info object oo::object class] \
+	[info object oo::class class] \
+	[info object oo::object isa class] \
+	[info object oo::object isa metaclass] \
+	[info object oo::definer isa metaclass] \
+	[info object oo::object isa object] \
+	[info object oo::define isa object]
+} {::oo::class ::oo::class 1 0 1 1 0}
 test oo-16.5 {OO: object introspection} {info object oo::object methods} {}
 test oo-16.6 {OO: object introspection} {
     oo::object create foo
@@ -573,6 +579,35 @@ test oo-16.6 {OO: object introspection} {
     oo::define foo method bar {} {...}
     lappend result [info object foo methods] [foo destroy]
 } {{} bar {}}
+test oo-16.7 {OO: object introspection} {
+    oo::object create foo
+    oo::define foo method bar {a {b c} args} {the body}
+    set result [info object foo methods]
+    lappend result [info object foo args bar] \
+	[info object foo default bar b v] $v \
+	[info object foo body bar]
+    foo destroy
+    return $result
+} {bar {a b args} 1 c {the body}}
+test oo-16.8 {OO: object introspection} {
+    oo::object create foo
+    oo::class create bar
+    oo::define foo mixin bar
+    set result [list [info object foo mixins] \
+		    [info object foo isa mixin bar] \
+		    [info object foo isa mixin oo::definer]]
+    foo destroy
+    bar destroy
+    return $result
+} {::bar 1 0}
+test oo-16.9 {OO: object introspection} {
+    oo::class create Ac
+    oo::class create Bc; oo::define Bc superclass Ac
+    oo::class create Cc; oo::define Cc superclass Bc
+    Cc create D
+    list [info object D isa typeof oo::class] \
+		    [info object D isa typeof Ac] [Ac destroy]
+} {0 1 {}}
 
 test oo-17.1 {OO: class introspection} -body {
     info class
