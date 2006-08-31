@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.4 2006/08/30 23:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.5 2006/08/31 15:41:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -169,8 +169,36 @@ InfoObjectArgsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-    return TCL_ERROR;
+    Tcl_HashEntry *hPtr;
+    Proc *procPtr;
+    CompiledLocal *localPtr;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName args methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"argument list not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    Tcl_NewStringObj(localPtr->name, -1));
+	}
+    }
+    return TCL_OK;
 }
 
 static int
@@ -180,8 +208,39 @@ InfoObjectBodyCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-    return TCL_ERROR;
+    Tcl_HashEntry *hPtr;
+    Proc *procPtr;
+    Tcl_Obj *bodyPtr;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName body methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"body script not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * This is copied from the [info body] implementation. See the comments
+     * there for why this copy has to be done here.
+     */
+
+    if (procPtr->bodyPtr->bytes == NULL) {
+	(void) Tcl_GetString(procPtr->bodyPtr);
+    }
+    Tcl_SetObjResult(interp, TclNewStringObj(procPtr->bodyPtr->bytes,
+	    procPtr->bodyPtr->length));
+    return TCL_OK;
 }
 
 static int
@@ -199,8 +258,28 @@ InfoObjectClassCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "objName class ?className?");
 	return TCL_ERROR;
     } else {
-	Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-	return TCL_ERROR;
+	Object *o2Ptr;
+	int i;
+
+	o2Ptr = TclGetObjectFromObj(interp, objv[4]);
+	if (o2Ptr == NULL) {
+	    return TCL_ERROR;
+	}
+	if (o2Ptr->classPtr == NULL) {
+	    Tcl_AppendResult(interp, "object \"", TclGetString(objv[4]),
+		    "\" is not a class", NULL);
+	    return TCL_ERROR;
+	}
+
+	for (i=0 ; i<oPtr->mixins.num ; i++) {
+	    if (TclOOIsReachable(o2Ptr->classPtr, oPtr->mixins.list[i])) {
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		return TCL_OK;
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+		TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)));
+	return TCL_OK;
     }
 }
 
@@ -211,7 +290,51 @@ InfoObjectDefaultCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
+    Tcl_HashEntry *hPtr;
+    Proc *procPtr;
+    CompiledLocal *localPtr;
+
+    if (objc != 7) {
+	Tcl_WrongNumArgs(interp, 2, objv,
+		"objName args methodName varName defaultValueVar");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"argument list not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)
+		&& strcmp(TclGetString(objv[5]), localPtr->name) == 0) {
+	    if (localPtr->defValuePtr == NULL) {
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		return TCL_OK;
+	    }
+	    if (Tcl_ObjSetVar2(interp, objv[6], NULL, localPtr->defValuePtr,
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		TclFormatToErrorInfo(interp,
+			"\n    (while storing default value in variable)");
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+	    return TCL_OK;
+	}
+    }
+
+    Tcl_AppendResult(interp, "method \"", TclGetString(objv[4]),
+	    "\" doesn't have an argument \"", TclGetString(objv[5]), "\"",
+	    NULL);
     return TCL_ERROR;
 }
 
@@ -326,8 +449,36 @@ InfoClassArgsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-    return TCL_ERROR;
+    Tcl_HashEntry *hPtr;
+    Proc *procPtr;
+    CompiledLocal *localPtr;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&cPtr->classMethods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"argument list not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    Tcl_NewStringObj(localPtr->name, -1));
+	}
+    }
+    return TCL_OK;
 }
 
 static int
@@ -337,8 +488,39 @@ InfoClassBodyCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-    return TCL_ERROR;
+    Tcl_HashEntry *hPtr;
+    Proc *procPtr;
+    Tcl_Obj *bodyPtr;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&cPtr->classMethods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"body script not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * This is copied from the [info body] implementation. See the comments
+     * there for why this copy has to be done here.
+     */
+
+    if (procPtr->bodyPtr->bytes == NULL) {
+	(void) Tcl_GetString(procPtr->bodyPtr);
+    }
+    Tcl_SetObjResult(interp, TclNewStringObj(procPtr->bodyPtr->bytes,
+	    procPtr->bodyPtr->length));
+    return TCL_OK;
 }
 
 static int
@@ -348,7 +530,50 @@ InfoClassDefaultCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
+    Tcl_HashEntry *hPtr;
+    Proc *procPtr;
+    CompiledLocal *localPtr;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&cPtr->classMethods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"argument list not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)
+		&& strcmp(TclGetString(objv[5]), localPtr->name) == 0) {
+	    if (localPtr->defValuePtr == NULL) {
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		return TCL_OK;
+	    }
+	    if (Tcl_ObjSetVar2(interp, objv[6], NULL, localPtr->defValuePtr,
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		TclFormatToErrorInfo(interp,
+			"\n    (while storing default value in variable)");
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+	    return TCL_OK;
+	}
+    }
+
+    Tcl_AppendResult(interp, "method \"", TclGetString(objv[4]),
+	    "\" doesn't have an argument \"", TclGetString(objv[5]), "\"",
+	    NULL);
     return TCL_ERROR;
 }
 
