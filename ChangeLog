@@ -1,3 +1,10 @@
+2006-08-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/expr-old.test:	The remaining failing tests reported in
+	* tests/expr.test:	[Bug 1381715] are all new in Tcl 8.5, so
+	there's really no issue of compatibility with Tcl 8.4 result to
+	deal with.  Fixed by updating tests to expect 8.5 results.
+
 2006-08-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c:	Dropped the old expr parser.
