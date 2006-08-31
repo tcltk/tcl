@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.32 2006/08/10 12:15:31 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.33 2006/08/31 20:41:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -805,6 +805,7 @@ CompileMathFuncCall(
     Tcl_Token *tokenPtr, *afterSubexprPtr;
     int argCount;
     int code = TCL_OK;
+    int saveHasOperators = infoPtr->hasOperators;
 
     /*
      * Prepend "tcl::mathfunc::" to the function name, to produce the name of
@@ -846,6 +847,7 @@ CompileMathFuncCall(
     }
 
     *endPtrPtr = afterSubexprPtr;
+    infoPtr->hasOperators = saveHasOperators;
     return TCL_OK;
 }
 

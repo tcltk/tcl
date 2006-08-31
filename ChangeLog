@@ -1,5 +1,10 @@
 2006-08-31  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c:	Corrected flawed logic for
+	disabling the INST_TRY_CVT_TO_NUMERIC instruction at the end
+	of an expression when function arguments contain operators.
+	[Bug 1541274]
+
 	* tests/expr-old.test:	The remaining failing tests reported in
 	* tests/expr.test:	[Bug 1381715] are all new in Tcl 8.5, so
 	there's really no issue of compatibility with Tcl 8.4 result to
