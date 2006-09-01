@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.37 2006/09/01 10:40:22 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.38 2006/09/01 12:11:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -197,7 +197,13 @@ TclOOInit(
 		0 /* ==private */, NULL, NULL);
 
 	argsPtr = Tcl_NewStringObj("{configuration {}}", -1);
-	bodyPtr = Tcl_NewStringObj("define [self] $configuration", -1);
+	bodyPtr = Tcl_NewStringObj(
+		"if {[catch {define [self] $configuration} msg opt]} {\n"
+		"set eilist [split [dict get $opt -errorinfo] \\n]\n"
+		"dict set opt -errorinfo [join [lrange $eilist 0 end-2] \\n]\n"
+		"dict set opt -errorline 0xdeadbeef\n"
+		"}\n"
+		"return -options $opt $msg", -1);
 	fPtr->classCls->constructorPtr = TclNewProcClassMethod(interp,
 		fPtr->classCls, 0, NULL, argsPtr, bodyPtr);
     }
@@ -717,18 +723,21 @@ TclOONewInstance(
 		NULL, CONSTRUCTOR, NULL);
 	if (contextPtr != NULL) {
 	    int result;
+	    Tcl_InterpState state;
 
 	    Tcl_Preserve(oPtr);
+	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
 	    result = InvokeContext(interp, contextPtr, objc, objv);
 	    DeleteContext(contextPtr);
 	    Tcl_Release(oPtr);
 	    if (result != TCL_OK) {
+		Tcl_DiscardInterpState(state);
 		Tcl_DeleteCommandFromToken(interp, oPtr->command);
 		return NULL;
 	    }
-	    Tcl_ResetResult(interp);
+	    (void) Tcl_RestoreInterpState(interp, state);
 	}
     }
 
@@ -1264,8 +1273,6 @@ InvokeContext(
 
     result = mPtr->typePtr->callPtr(mPtr->clientData, interp, contextPtr,
 	    objc, objv);
-
-    // TODO: Better annotation of stack trace?
 
     if (isFirst) {
 	int i;
@@ -1977,7 +1984,7 @@ NextObjCmd(
 		classname = TclGetString(tmpObj);
 	    }
 	}
-	// TODO: Better error info from override
+
 	if (contextPtr->flags & CONSTRUCTOR) {
 	    TclFormatToErrorInfo(interp,
 		    "\n    (\"%s\" implementation of constructor)",

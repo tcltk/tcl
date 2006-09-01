@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.23 2006/09/01 10:40:23 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.24 2006/09/01 12:11:00 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -677,6 +677,28 @@ test oo-17.8 {OO: object introspection} -setup {
     superClass1 destroy
     superClass2 destroy
 } -result {{::superClass1 ::superClass2} {::superClass1 ::superClass2}}
+
+test oo-18.1 {OO: define command support} {
+    list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
+} {1 foo {foo
+    while executing
+"error foo"
+    (in definition script for object "oo::object" line 1)
+    invoked from within
+"oo::define oo::object {error foo}"}}
+test oo-18.2 {OO: define command support} {
+    list [catch {oo::define oo::object error foo} msg] $msg $errorInfo
+} {1 foo {foo
+    while executing
+"oo::define oo::object error foo"}}
+test oo-18.3 {OO: define command support} {
+    list [catch {oo::class create foo {error bar}} msg] $msg $errorInfo
+} {1 bar {bar
+    while executing
+"error bar"
+    (in definition script for object "::foo" line 1)
+    invoked from within
+"oo::class create foo {error bar}"}}
 
 cleanupTests
 return

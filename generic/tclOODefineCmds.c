@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.16 2006/08/31 15:41:02 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.17 2006/09/01 12:11:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -65,9 +65,8 @@ TclOODefineObjCmd(
 	    int limit = 200;
 	    int overflow = (length > limit);
 
-	    // TODO: fix trace
 	    TclFormatToErrorInfo(interp,
-		    "\n    (in ::oo::define \"%.*s%s\" script line %d)",
+		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
 		    (overflow ? "..." : ""), interp->errorLine);
 	}

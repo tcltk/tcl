@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.86.2.4 2006/09/01 10:40:22 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.86.2.5 2006/09/01 12:11:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1623,8 +1623,10 @@ ProcessProcResultCode(
     }
     if (isMethod & FRAME_IS_CONSTRUCTOR) {
 	// TODO: incorporate declaring class name
-	TclFormatToErrorInfo(interp, "\n    (constructor line %d)",
-		interp->errorLine);
+	if (interp->errorLine != 0xDEADBEEF) { /* hack! */
+	    TclFormatToErrorInfo(interp, "\n    (constructor line %d)",
+		    interp->errorLine);
+	}
     } else if (isMethod & FRAME_IS_DESTRUCTOR) {
 	// TODO: incorporate declaring class name
 	TclFormatToErrorInfo(interp, "\n    (destructor line %d)",
