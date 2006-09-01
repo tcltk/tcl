@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.16 2006/08/31 15:41:02 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.17 2006/09/01 10:40:22 dkf Exp $
  */
 
 /*
@@ -152,6 +152,7 @@ typedef struct Foundation {
     struct Class *structCls;	/* A metaclass that includes methods that make
 				 * it easier to build data-oriented
 				 * classes. */
+    Tcl_Namespace *ooNs;	/* Master ::oo namespace. */
     Tcl_Namespace *defineNs;	/* Namespace containing special commands for
 				 * manipulating objects and classes. The
 				 * "oo::define" command acts as a special kind
@@ -159,10 +160,13 @@ typedef struct Foundation {
     Tcl_Namespace *helpersNs;	/* Namespace containing the commands that are
 				 * only valid when executing inside a
 				 * procedural method. */
-    int epoch;
-    int nsCount;
+    int epoch;			/* Used to invalidate method chains when the
+				 * class structure changes. */
+    int nsCount;		/* Counter so we can allocate a unique
+				 * namespace to each object. */
     Tcl_Obj *unknownMethodNameObj;
-    //ObjectStack *objStack;	// should this be in stack frames?
+				/* Shared object containing the name of the
+				 * unknown method handler method. */
 } Foundation;
 
 /*

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.22 2006/08/31 23:27:37 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.23 2006/09/01 10:40:23 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -60,6 +60,22 @@ test oo-2.1 {basic test of OO functionality: constructor} -setup {
 } -cleanup {
     interp delete subinterp
 } -result {1 {oo::object create foo} 2 ::foo}
+test oo-2.2 {basic test of OO functionality: constructor} {
+    oo::class create testClass {
+	constructor {} {
+	    global result
+	    lappend result "[self]->construct"
+	}
+	method bar {} {
+	    global result
+	    lappend result "[self]->bar"
+	}
+    }
+    set result {}
+    [testClass create foo] bar
+    testClass destroy
+    return $result
+} {::foo->construct ::foo->bar}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -263,7 +279,7 @@ test oo-7.6 {OO: inheritance 101 - overridden methods should be oblivious} -setu
 } -result {x=10 x 1 returning:11 11 x=11} -cleanup {
     Aclass destroy
 }
-test oo-7.7 {OO: inheritance and errorInfo} -constraints knownBug -setup {
+test oo-7.7 {OO: inheritance and errorInfo} -setup {
     oo::class create A
     oo::class create B
     B create c
@@ -612,19 +628,55 @@ test oo-16.9 {OO: object introspection} {
 test oo-17.1 {OO: class introspection} -body {
     info class
 } -returnCodes 1 -result "wrong \# args: should be \"info class className subcommand ?arg ...?\""
-test oo-17.2 {OO: object introspection} -body {
+test oo-17.2 {OO: class introspection} -body {
     info class NOTANOBJECT gorp
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
-test oo-17.3 {OO: object introspection} -setup {
+test oo-17.3 {OO: class introspection} -setup {
     oo::object create foo
 } -body {
     info class foo gorp
 } -returnCodes 1 -cleanup {
     foo destroy
 } -result {"foo" is not a class}
-test oo-17.4 {OO: object introspection} -body {
+test oo-17.4 {OO: class introspection} -body {
     info class oo::object gorp
 } -returnCodes 1 -result {bad subcommand "gorp": must be args, body, default, instances, methods, parameters, subclasses, or superclasses}
+test oo-17.5 {OO: class introspection} -setup {
+    oo::class create testClass
+} -body {
+    testClass create foo
+    testClass create bar
+    testClass create spong
+    lsort [info class testClass instances]
+} -cleanup {
+    testClass destroy
+} -result {::bar ::foo ::spong}
+test oo-17.6 {OO: object introspection} {
+    oo::class create foo
+    oo::define foo method bar {a {b c} args} {the body}
+    set result [info class foo methods]
+    lappend result [info class foo args bar] \
+	[info class foo default bar b v] $v \
+	[info class foo body bar]
+    foo destroy
+    return $result
+} {bar {a b args} 1 c {the body}}
+test oo-17.7 {OO: object introspection} {
+    info class oo::class superclasses
+} ::oo::object
+test oo-17.8 {OO: object introspection} -setup {
+    oo::class create testClass
+    oo::class create superClass1
+    oo::class create superClass2
+} -body {
+    oo::define testClass superclass superClass1 superClass2
+    list [info class testClass superclasses] \
+	[lsort [info class oo::object subclass ::superClass?]]
+} -cleanup {
+    testClass destroy
+    superClass1 destroy
+    superClass2 destroy
+} -result {{::superClass1 ::superClass2} {::superClass1 ::superClass2}}
 
 cleanupTests
 return

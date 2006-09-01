@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.86.2.3 2006/08/20 12:20:20 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.86.2.4 2006/09/01 10:40:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1629,13 +1629,25 @@ ProcessProcResultCode(
 	// TODO: incorporate declaring class name
 	TclFormatToErrorInfo(interp, "\n    (destructor line %d)",
 		interp->errorLine);
+    } else if (isMethod & FRAME_IS_METHOD) {
+	int nameLen;
+	CallContext *contextPtr =
+		((Interp *) interp)->varFramePtr->ooContextPtr;
+	Tcl_Obj *methodNameObj =
+		contextPtr->callChain[contextPtr->index].mPtr->namePtr;
+	const char *methodName =
+		Tcl_GetStringFromObj(methodNameObj, &nameLen);
+
+	overflow = (nameLen > limit);
+	TclFormatToErrorInfo(interp, "\n    (method \"%.*s%s\" line %d)",
+		(overflow ? limit : nameLen), methodName,
+		(overflow ? "..." : ""), interp->errorLine);
     } else {
 	int nameLen;
 	const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
 	overflow = (nameLen > limit);
-	TclFormatToErrorInfo(interp, "\n    (%s \"%.*s%s\" line %d)",
-		(isMethod ? "method" : "procedure"),
+	TclFormatToErrorInfo(interp, "\n    (procedure \"%.*s%s\" line %d)",
 		(overflow ? limit : nameLen), procName,
 		(overflow ? "..." : ""), interp->errorLine);
     }

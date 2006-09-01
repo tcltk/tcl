@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.36 2006/08/31 23:27:37 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.37 2006/09/01 10:40:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -97,7 +97,7 @@ static int		InvokeProcedureMethod(ClientData clientData,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteProcedureMethod(ClientData clientData);
 static int		CloneProcedureMethod(ClientData clientData,
-			    ClientData *newClientData); // TODO: implement!
+			    ClientData *newClientData);
 static int		InvokeForwardMethod(ClientData clientData,
 			    Tcl_Interp *interp, CallContext *oPtr,
 			    int objc, Tcl_Obj *const *objv);
@@ -146,7 +146,8 @@ TclOOInit(
     Tcl_DString buffer;
 
     fPtr = iPtr->ooFoundation = (Foundation *) ckalloc(sizeof(Foundation));
-    Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
+    memset(fPtr, 0, sizeof(Foundation));
+    fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
     fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
@@ -174,6 +175,8 @@ TclOOInit(
     ckfree((char *) fPtr->objectCls->superclasses.list);
     fPtr->objectCls->superclasses.list = NULL;
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
+    TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
+    TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
 
     DeclareClassMethod(interp, fPtr->objectCls, "destroy", 1, ObjectDestroy);
     DeclareClassMethod(interp, fPtr->objectCls, "eval", 0, ObjectEval);
@@ -181,10 +184,29 @@ TclOOInit(
     DeclareClassMethod(interp, fPtr->objectCls, "variable", 0, ObjectLinkVar);
     DeclareClassMethod(interp, fPtr->classCls, "create", 1, ClassCreate);
     DeclareClassMethod(interp, fPtr->classCls, "new", 1, ClassNew);
+    {
+	Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
+
+	/*
+	 * Mark the 'new' method in oo::class as private; classes, unlike
+	 * general objects, must have explicit names.
+	 */
+
+	namePtr = Tcl_NewStringObj("new", -1);
+	TclOONewMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr, namePtr,
+		0 /* ==private */, NULL, NULL);
+
+	argsPtr = Tcl_NewStringObj("{configuration {}}", -1);
+	bodyPtr = Tcl_NewStringObj("define [self] $configuration", -1);
+	fPtr->classCls->constructorPtr = TclNewProcClassMethod(interp,
+		fPtr->classCls, 0, NULL, argsPtr, bodyPtr);
+    }
 
     fPtr->definerCls = AllocClass(interp,
 	    AllocObject(interp, "::oo::definer"));
     fPtr->definerCls->superclasses.list[0] = fPtr->classCls;
+    TclOORemoveFromSubclasses(fPtr->definerCls, fPtr->objectCls);
+    TclOOAddToSubclasses(fPtr->definerCls, fPtr->classCls);
     fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
 
     /*
@@ -603,6 +625,17 @@ AllocClass(
 	clsPtr->thisPtr = useThisObj;
     }
     clsPtr->thisPtr->selfCls = fPtr->classCls;
+    if (fPtr->classCls != NULL) {
+	TclOOAddToInstances(clsPtr->thisPtr, fPtr->classCls);
+	TclOOAddToSubclasses(clsPtr, fPtr->objectCls);
+    }
+    {
+	Tcl_Namespace *path[2];
+
+	path[0] = fPtr->helpersNs;
+	path[1] = fPtr->ooNs;
+	TclSetNsPath(clsPtr->thisPtr->nsPtr, 2, path);
+    }
     clsPtr->thisPtr->classPtr = clsPtr;
     clsPtr->flags = 0;
     clsPtr->superclasses.num = 1;
@@ -1922,31 +1955,54 @@ NextObjCmd(
     iPtr->varFramePtr = savedFramePtr;
 
     /*
+     * If an error happened, add information about this to the trace.
+     */
+
+    if (result == TCL_ERROR) {
+	Tcl_Obj *tmpObj = NULL;
+	const char *classname = "superclass";
+	struct MInvoke *miPtr = &contextPtr->callChain[index+1];
+
+	if (!Tcl_InterpDeleted(interp)) {
+	    if (miPtr->mPtr->declaringClassPtr != NULL) {
+		TclNewObj(tmpObj);
+		Tcl_GetCommandFullName(interp,
+			miPtr->mPtr->declaringClassPtr->thisPtr->command,
+			tmpObj);
+		classname = TclGetString(tmpObj);
+	    } else if (miPtr->mPtr->declaringObjectPtr != NULL) {
+		TclNewObj(tmpObj);
+		Tcl_GetCommandFullName(interp,
+			miPtr->mPtr->declaringObjectPtr->command, tmpObj);
+		classname = TclGetString(tmpObj);
+	    }
+	}
+	// TODO: Better error info from override
+	if (contextPtr->flags & CONSTRUCTOR) {
+	    TclFormatToErrorInfo(interp,
+		    "\n    (\"%s\" implementation of constructor)",
+		    classname);
+	} else if (contextPtr->flags & DESTRUCTOR) {
+	    TclFormatToErrorInfo(interp,
+		    "\n    (\"%s\" implementation of destructor)", classname);
+	} else {
+	    Tcl_Obj *methodNameObj = miPtr->mPtr->namePtr;
+	    TclFormatToErrorInfo(interp,
+		    "\n    (\"%s\" implementation of \"%s\" method)",
+		    classname, TclGetString(methodNameObj));
+	}
+	if (tmpObj != NULL) {
+	    TclDecrRefCount(tmpObj);
+	}
+    }
+
+    /*
      * Restore the call chain context index as we've finished the inner invoke
      * and want to operate in the outer context again.
      */
 
     contextPtr->index = index;
     contextPtr->skip = skip;
-
-    /*
-     * If an error happened, add information about this to the trace.
-     */
-
-    if (result == TCL_ERROR) {
-	if (contextPtr->flags & CONSTRUCTOR) {
-	    TclFormatToErrorInfo(interp,
-		    "\n    (superclass implementation of constructor)");
-	} else if (contextPtr->flags & DESTRUCTOR) {
-	    TclFormatToErrorInfo(interp,
-		    "\n    (superclass implementation of destructor)");
-	} else {
-	    // TODO: Better error info from override
-	    TclFormatToErrorInfo(interp,
-		    "\n    (superclass implementation of %s method)",
-		    TclGetString(framePtr->objv[1]));
-	}
-    }
 
     return result;
 }

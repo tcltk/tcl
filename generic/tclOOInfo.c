@@ -9,11 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.7 2006/08/31 23:27:37 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.8 2006/09/01 10:40:22 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
+
+#define FOREACH(var,ary) \
+	for(i=0 ; (i<(ary).num?((var=(ary).list[i]),1):0) ; i++)
 
 static int		InfoObjectArgsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -260,6 +263,7 @@ InfoObjectClassCmd(
 	return TCL_ERROR;
     } else {
 	Object *o2Ptr;
+	Class *mixinPtr;
 	int i;
 
 	o2Ptr = TclGetObjectFromObj(interp, objv[4]);
@@ -272,8 +276,8 @@ InfoObjectClassCmd(
 	    return TCL_ERROR;
 	}
 
-	for (i=0 ; i<oPtr->mixins.num ; i++) {
-	    if (TclOOIsReachable(o2Ptr->classPtr, oPtr->mixins.list[i])) {
+	FOREACH(mixinPtr, oPtr->mixins) {
+	    if (TclOOIsReachable(o2Ptr->classPtr, mixinPtr)) {
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 		return TCL_OK;
 	    }
@@ -347,14 +351,14 @@ InfoObjectFiltersCmd(
     Tcl_Obj *const objv[])
 {
     int i;
+    Tcl_Obj *filterObj;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "objName mixins");
 	return TCL_ERROR;
     }
-    for (i=0 ; i<oPtr->filters.num ; i++) {
-	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		oPtr->filters.list[i]);
+    FOREACH(filterObj, oPtr->filters) {
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), filterObj);
     }
     return TCL_OK;
 }
@@ -431,11 +435,14 @@ InfoObjectIsACmd(
 	if (o2Ptr->classPtr == NULL) {
 	    Tcl_AppendResult(interp, "non-classes cannot be mixins", NULL);
 	    return TCL_ERROR;
-	}
-	for (i=0 ; i<oPtr->mixins.num ; i++) {
-	    if (oPtr->mixins.list[i] == o2Ptr->classPtr) {
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-		return TCL_OK;
+	} else {
+	    Class *mixinPtr;
+
+	    FOREACH(mixinPtr, oPtr->mixins) {
+		if (mixinPtr == o2Ptr->classPtr) {
+		    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		    return TCL_OK;
+		}
 	    }
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
@@ -510,18 +517,18 @@ InfoObjectMixinsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Class *mixinPtr;
     int i;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "objName mixins");
 	return TCL_ERROR;
     }
-    for (i=0 ; i<oPtr->mixins.num ; i++) {
+    FOREACH(mixinPtr, oPtr->mixins) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
-	Tcl_GetCommandFullName(interp,
-		oPtr->mixins.list[i]->thisPtr->command, tmpObj);
+	Tcl_GetCommandFullName(interp, mixinPtr->thisPtr->command, tmpObj);
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
     }
     return TCL_OK;
@@ -629,8 +636,9 @@ InfoClassDefaultCmd(
     Proc *procPtr;
     CompiledLocal *localPtr;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
+    if (objc != 7) {
+	Tcl_WrongNumArgs(interp, 2, objv,
+		"className args methodName varName defaultValueVar");
 	return TCL_ERROR;
     }
 
@@ -679,18 +687,18 @@ InfoClassInstancesCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Object *oPtr;
     int i;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "className instances");
 	return TCL_ERROR;
     }
-    for (i=0 ; i<cPtr->instances.num ; i++) {
+    FOREACH(oPtr, cPtr->instances) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
-	Tcl_GetCommandFullName(interp, cPtr->instances.list[i]->command,
-		tmpObj);
+	Tcl_GetCommandFullName(interp, oPtr->command, tmpObj);
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
     }
     return TCL_OK;
@@ -753,6 +761,7 @@ InfoClassSubsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Class *subclassPtr;
     int i;
     const char *pattern = NULL;
 
@@ -763,12 +772,11 @@ InfoClassSubsCmd(
     if (objc == 5) {
 	pattern = TclGetString(objv[4]);
     }
-    for (i=0 ; i<cPtr->subclasses.num ; i++) {
+    FOREACH(subclassPtr, cPtr->subclasses) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
-	Tcl_GetCommandFullName(interp,
-		cPtr->subclasses.list[i]->thisPtr->command, tmpObj);
+	Tcl_GetCommandFullName(interp, subclassPtr->thisPtr->command, tmpObj);
 	if (pattern && !Tcl_StringMatch(TclGetString(tmpObj), pattern)) {
 	    TclDecrRefCount(tmpObj);
 	    continue;
@@ -785,18 +793,18 @@ InfoClassSupersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    Class *superPtr;
     int i;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "className superclasses");
 	return TCL_ERROR;
     }
-    for (i=0 ; i<cPtr->superclasses.num ; i++) {
+    FOREACH(superPtr, cPtr->superclasses) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
-	Tcl_GetCommandFullName(interp,
-		cPtr->superclasses.list[i]->thisPtr->command, tmpObj);
+	Tcl_GetCommandFullName(interp, superPtr->thisPtr->command, tmpObj);
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
     }
     return TCL_OK;
