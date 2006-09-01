@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.9 2006/09/01 13:11:45 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.10 2006/09/01 15:29:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -541,8 +541,34 @@ InfoObjectVarsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-    return TCL_ERROR;
+    const char *pattern = NULL;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+
+    if (objc != 4 && objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName vars ?pattern?");
+	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	pattern = TclGetString(objv[4]);
+    }
+
+    hPtr = Tcl_FirstHashEntry(&oPtr->nsPtr->varTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	const char *name = Tcl_GetHashKey(&oPtr->nsPtr->varTable, hPtr);
+	Var *varPtr = Tcl_GetHashValue(hPtr);
+
+	if (varPtr->flags & VAR_UNDEFINED) {
+	    continue;
+	}
+	if (pattern && !Tcl_StringMatch(name, pattern)) {
+	    continue;
+	}
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		Tcl_NewStringObj(name, -1));
+    }
+
+    return TCL_OK;
 }
 
 static int

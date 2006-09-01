@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.17 2006/09/01 10:40:22 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.18 2006/09/01 15:29:34 dkf Exp $
  */
 
 /*
@@ -20,7 +20,6 @@ struct Class;
 struct Object;
 struct Method;
 struct CallContext;
-//struct Foundation;
 
 /*
  * The types of callbacks used in method implementations.

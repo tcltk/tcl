@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.24 2006/09/01 12:11:00 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.25 2006/09/01 15:29:34 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -624,6 +624,15 @@ test oo-16.9 {OO: object introspection} {
     list [info object D isa typeof oo::class] \
 		    [info object D isa typeof Ac] [Ac destroy]
 } {0 1 {}}
+test oo-16.10 {OO: object introspection} -setup {
+    oo::object create foo
+} -body {
+    oo::define foo export eval
+    foo eval {variable c 3 a 1 b 2 ddd 4 e}
+    lsort [info object foo vars ?]
+} -cleanup {
+    foo destroy
+} -result {a b c}
 
 test oo-17.1 {OO: class introspection} -body {
     info class
@@ -699,6 +708,51 @@ test oo-18.3 {OO: define command support} {
     (in definition script for object "::foo" line 1)
     invoked from within
 "oo::class create foo {error bar}"}}
+test oo-18.4 {OO: more error traces from the guts} -setup {
+    oo::object create obj
+} -body {
+    oo::define obj method bar {} {my eval {error foo}}
+    list [catch {obj bar} msg] $msg $errorInfo
+} -cleanup {
+    obj destroy
+} -result {1 foo {foo
+    while executing
+"error foo"
+    (in "my eval" script line 1)
+    invoked from within
+"my eval {error foo}"
+    (method "bar" line 1)
+    invoked from within
+"obj bar"}}
+test oo-18.5 {OO: more error traces from the guts} -constraints knownBug -setup {
+    [oo::class create cls] create obj
+    set errorInfo {}
+} -body {
+    oo::define cls {
+	method eval script {next $script}
+	export eval
+    }
+    oo::define obj {
+	method bar {} {
+	    my eval {
+		puts stderr FOOBAR
+		error foo
+	    }
+	}
+    }
+    obj eval {error skfdgskjdhg}
+    list [catch {obj bar} msg] $msg $errorInfo
+} -cleanup {
+    cls destroy
+} -result {1 foo {foo
+    while executing
+"error foo"
+    (in "my eval" script line 1)
+    invoked from within
+"my eval {error foo}"
+    (method "bar" line 1)
+    invoked from within
+"obj bar"}}
 
 cleanupTests
 return

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.38 2006/09/01 12:11:00 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.39 2006/09/01 15:29:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -71,6 +71,8 @@ static CallContext *	GetCallContext(Foundation *fPtr, Object *oPtr,
 static int		InvokeContext(Tcl_Interp *interp,
 			    CallContext *contextPtr, int objc,
 			    Tcl_Obj *const *objv);
+static void		KillFoundation(ClientData clientData,
+			    Tcl_Interp *interp);
 static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int publicOnly,
 			    Tcl_HashTable *cachePtr);
@@ -225,12 +227,19 @@ TclOOInit(
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
     Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
 
-    /*
-     * TODO: arrange for iPtr->ooFoundation to be torn down when the
-     * interpreter is deleted.
-     */
-
+    Tcl_CallWhenDeleted(interp, KillFoundation, fPtr);
     return TCL_OK;
+}
+
+static void
+KillFoundation(
+    ClientData clientData,
+    Tcl_Interp *interp)
+{
+    Foundation *fPtr = clientData;
+
+    TclDecrRefCount(fPtr->unknownMethodNameObj);
+    ckfree((char *) fPtr);
 }
 
 /*
@@ -1404,6 +1413,18 @@ AddClassMethodNames(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetCallContext --
+ *
+ *	Responsible for constructing the call context, an ordered list of all
+ *	method implementations to be called as part of a method invokation.
+ *	This method is central to the whole operation of the OO system.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static CallContext *
 GetCallContext(
     Foundation *fPtr,
@@ -1780,16 +1801,10 @@ ObjectEval(
     }
 
     if (result == TCL_ERROR) {
-	int length = strlen(oPtr->nsPtr->fullName);
-	int limit = 200;
-	int overflow = (length > limit);
-
 	// TODO: fix trace
 	TclFormatToErrorInfo(interp,
-		"\n    (in %s eval \"%.*s%s\" script line %d)",
-		TclGetString(objnameObj), (overflow ? limit : length),
-		oPtr->nsPtr->fullName, (overflow ? "..." : ""),
-		interp->errorLine);
+		"\n    (in \"%s eval\" script line %d)",
+		TclGetString(objnameObj), interp->errorLine);
     }
 
     /*
