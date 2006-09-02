@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.25 2006/09/01 15:29:34 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.26 2006/09/02 21:04:09 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -568,7 +568,22 @@ test oo-15.2 {OO: object cloning} {
 } {::foo >1< fwd 2 ::bar ::foo >3< fwd 4 ::bar >5< fwd 6 {} ::bar >7< fwd 8 {}}
 catch {foo destroy}
 catch {bar destroy}
-# Anything involving classes is not cloned correctly yet.
+test oo-15.3 {OO: class cloning} {
+    oo::class create foo {
+	method testme {} {lappend ::result [self class]->[self object]}
+    }
+    set result {}
+    foo create baseline
+    baseline testme
+    oo::define foo copy bar
+    baseline testme
+    bar create tester
+    tester testme
+    foo destroy
+    tester testme
+    bar destroy
+    return $result
+} {::foo->::baseline ::foo->::baseline ::bar->::tester ::bar->::tester}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -724,7 +739,7 @@ test oo-18.4 {OO: more error traces from the guts} -setup {
     (method "bar" line 1)
     invoked from within
 "obj bar"}}
-test oo-18.5 {OO: more error traces from the guts} -constraints knownBug -setup {
+test oo-18.5 {OO: more error traces from the guts} -setup {
     [oo::class create cls] create obj
     set errorInfo {}
 } -body {
@@ -732,27 +747,67 @@ test oo-18.5 {OO: more error traces from the guts} -constraints knownBug -setup 
 	method eval script {next $script}
 	export eval
     }
-    oo::define obj {
-	method bar {} {
-	    my eval {
-		puts stderr FOOBAR
-		error foo
-	    }
-	}
-    }
-    obj eval {error skfdgskjdhg}
-    list [catch {obj bar} msg] $msg $errorInfo
+    oo::define obj method bar {} {my eval {error foo}}
+    set result {}
+    lappend result [catch {obj bar} msg] $msg $errorInfo
+    lappend result [catch {obj eval {error bar}} msg] $msg $errorInfo
 } -cleanup {
     cls destroy
 } -result {1 foo {foo
     while executing
 "error foo"
     (in "my eval" script line 1)
+    ("::oo::object" implementation of "eval" method)
+    invoked from within
+"next $script"
+    (method "eval" line 1)
     invoked from within
 "my eval {error foo}"
     (method "bar" line 1)
     invoked from within
-"obj bar"}}
+"obj bar"} 1 bar {bar
+    while executing
+"error bar"
+    (in "::obj eval" script line 1)
+    ("::oo::object" implementation of "eval" method)
+    invoked from within
+"next $script"
+    (method "eval" line 1)
+    invoked from within
+"obj eval {error bar}"}}
+
+test oo-19.1 {OO: definer metaclass} {
+    oo::definer create foo {
+	method Foo {} {
+	    lappend ::result "=Foo="
+	}
+    }
+    foo constructor {} {
+	lappend ::result "made a foo [self]"
+    }
+    foo destructor {
+	lappend ::result "killing a foo [self]"
+    }
+    foo export Foo
+    set result {}
+    foo create bar
+    bar Foo
+    bar destroy
+    foo destroy
+    return $result
+} {{made a foo ::bar} =Foo= {killing a foo ::bar}}
+# Note that this next method call actually uses _two_ forwarding rewrites.
+# First from the 'method' forwarded-method to the oo::define command.
+# Second from the oo::define command to the oo::define::method command.
+test oo-19.2 {OO: definer metaclass} -setup {
+    oo::definer create dclass
+} -body {
+    list [catch {dclass method badSyntax} msg] $msg $errorInfo
+} -cleanup {
+    dclass destroy
+} -result {1 {wrong # args: should be "dclass method name args body"} {wrong # args: should be "dclass method name args body"
+    while executing
+"dclass method badSyntax"}}
 
 cleanupTests
 return

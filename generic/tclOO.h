@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.18 2006/09/01 15:29:34 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.19 2006/09/02 21:04:09 dkf Exp $
  */
 
 /*
@@ -32,10 +32,16 @@ typedef int (*Tcl_OOMethodCloneProc)(ClientData oldClientData,
 	ClientData *newClientData);
 
 typedef struct {
-    const char *name;
+    const char *name;		/* Name of this type of method, mostly for
+				 * debugging purposes. */
     Tcl_OOMethodCallProc callPtr;
+				/* How to invoke this method. */
     Tcl_OOMethodDeleteProc deletePtr;
+				/* How to delete this method's type-specific
+				 * data. */
     Tcl_OOMethodCloneProc clonePtr;
+				/* How to copy this method's type-specific
+				 * data. */
 } Tcl_OOMethodType;
 
 /*
@@ -46,12 +52,22 @@ typedef struct {
 
 typedef struct Method {
     const Tcl_OOMethodType *typePtr;
-    ClientData clientData;
-    Tcl_Obj *namePtr;
+				/* The type of method.  If NULL, this is a
+				 * special flag record which is just used for
+				 * the setting of the flags field. */
+    ClientData clientData;	/* Type-specific data. */
+    Tcl_Obj *namePtr;		/* Name of the method. */
     struct Object *declaringObjectPtr;
+				/* The object that declares this method, or
+				 * NULL if it was declared by a class. */
     struct Class *declaringClassPtr;
-    int epoch;
-    int flags;
+				/* The class that declares this method, or
+				 * NULL if it was declared directly on an
+				 * object. */
+    int epoch;			/* The epoch that this method originates
+				 * in. */ // TODO: Check if needed!
+    int flags;			/* Assorted flags. Includes whether this
+				 * method is public/exported or not. */
 } Method;
 
 /*
@@ -83,11 +99,12 @@ typedef struct Object {
     struct Class *selfCls;	/* This object's class. */
     Tcl_HashTable methods;	/* Object-local Tcl_Obj (method name) to
 				 * Method* mapping. */
-    struct {			/* Classes mixed into this object. */
+    struct {			/* Classes mixed into this object; list length
+				 * = allocated space = num field. */
 	int num;
 	struct Class **list;
     } mixins;
-    struct {
+    struct {			/* List of filter names; length=space=num. */
 	int num;
 	Tcl_Obj **list;
     } filters;
@@ -104,6 +121,9 @@ typedef struct Object {
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
 				 * destroyed. */
+#define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
+				 * the class hierarchy and should be treated
+				 * specially during teardown. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -111,23 +131,28 @@ typedef struct Object {
  */
 
 typedef struct Class {
-    struct Object *thisPtr;
-    int flags;
+    Object *thisPtr;		/* Reference to the object associated with
+				 * this class. */
+    int flags;			/* Assorted flags. */
     struct {
 	int num;
 	struct Class **list;
-    } superclasses;
+    } superclasses;		/* List of superclasses; length=space=num. */
     struct {
 	int num, size;
 	struct Class **list;
-    } subclasses;
+    } subclasses;		/* List of subclasses; length=num,space=size */
     struct {
 	int num, size;
-	struct Object **list;
-    } instances;
-    Tcl_HashTable classMethods;
-    struct Method *constructorPtr;
-    struct Method *destructorPtr;
+	Object **list;
+    } instances;		/* List of instances; length=num,space=size */
+    Tcl_HashTable classMethods;	/* Hash table of all methods. Hash maps from
+				 * the (Tcl_Obj*) method name to the (Method*)
+				 * method record. */
+    Method *constructorPtr;	/* Method record of the class constructor (if
+				 * any). */
+    Method *destructorPtr;	/* Method record of the class destructor (if
+				 * any). */
 } Class;
 
 /*
@@ -136,11 +161,6 @@ typedef struct Class {
  * useful bits and pieces. Probably ought to eventually go in the Interp
  * structure itself.
  */
-
-//typedef struct ObjectStack {
-//    Object *oPtr;
-//    struct ObjectStack *nextPtr;
-//} ObjectStack;
 
 typedef struct Foundation {
     struct Class *objectCls;	/* The root of the object system. */
@@ -178,30 +198,37 @@ typedef struct Foundation {
 #define CALL_CHAIN_STATIC_SIZE 4
 
 struct MInvoke {
-    Method *mPtr;
-    int isFilter;
+    Method *mPtr;		/* Reference to the method implementation
+				 * record. */
+    int isFilter;		/* Whether this is a filter invokation. */
 };
 typedef struct CallContext {
-    Object *oPtr;
-    int globalEpoch;
-    int localEpoch;
-    int flags;
-    int index;
+    Object *oPtr;		/* The object associated with this call. */
+    int globalEpoch;		/* Global (class) epoch counter snapshot. */
+    int localEpoch;		/* Local (single object) epoch counter
+				 * snapshot. */
+    int flags;			/* Assorted flags, see below. */
+    int index;			/* Index into the call chain of the currently
+				 * executing method implementation. */
     int skip;
-    int numCallChain;
-    struct MInvoke *callChain;
+    int numCallChain;		/* Size of the call chain. */
+    struct MInvoke *callChain;	/* Array of call chain entries. May point to
+				 * staticCallChain if the number of entries is
+				 * small. */
     struct MInvoke staticCallChain[CALL_CHAIN_STATIC_SIZE];
-    int filterLength;
+    int filterLength;		/* Number of entries in the call chain that
+				 * are due to processing filters and not the
+				 * main call chain. */
 } CallContext;
 
 /*
  * Bits for the 'flags' field of the call context.
  */
 
-#define OO_UNKNOWN_METHOD	1
-#define PUBLIC_METHOD		2
-#define CONSTRUCTOR		4
-#define DESTRUCTOR		8
+#define OO_UNKNOWN_METHOD	1 /* This is an unknown method. */
+#define PUBLIC_METHOD		2 /* This is a public (exported) method. */
+#define CONSTRUCTOR		4 /* This is a constructor. */
+#define DESTRUCTOR		8 /* This is a destructor. */
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or

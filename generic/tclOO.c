@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.39 2006/09/01 15:29:34 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.40 2006/09/02 21:04:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -42,7 +42,10 @@ static const struct {
 };
 
 #define ALLOC_CHUNK 8
-#define ROOT_OBJECT 0x1000
+
+#define DEFINITE_PRIVATE 0x100000
+#define DEFINITE_PUBLIC  0x200000
+#define KNOWN_STATE	 (DEFINITE_PRIVATE | DEFINITE_PUBLIC)
 
 /*
  * Function declarations.
@@ -147,6 +150,12 @@ TclOOInit(
     int i;
     Tcl_DString buffer;
 
+    /*
+     * Construct the foundation of the object system. This is a structure
+     * holding references to the magical bits that need to be known about in
+     * other places.
+     */
+
     fPtr = iPtr->ooFoundation = (Foundation *) ckalloc(sizeof(Foundation));
     memset(fPtr, 0, sizeof(Foundation));
     fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
@@ -167,8 +176,18 @@ TclOOInit(
 		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
 	Tcl_DStringFree(&buffer);
     }
+    fPtr->epoch = 0;
+    fPtr->nsCount = 0;
+    fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
+    Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
 
-    //fPtr->objStack = NULL;
+    Tcl_CallWhenDeleted(interp, KillFoundation, fPtr);
+
+    /*
+     * Create the objects at the core of the object system. These need to be
+     * spliced manually.
+     */
+
     fPtr->objectCls = AllocClass(interp, AllocObject(interp, "::oo::object"));
     fPtr->classCls = AllocClass(interp, AllocObject(interp, "::oo::class"));
     fPtr->objectCls->thisPtr->selfCls = fPtr->classCls;
@@ -180,12 +199,21 @@ TclOOInit(
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
 
+    /*
+     * Basic method declarations for the core classes.
+     */
+
     DeclareClassMethod(interp, fPtr->objectCls, "destroy", 1, ObjectDestroy);
     DeclareClassMethod(interp, fPtr->objectCls, "eval", 0, ObjectEval);
     DeclareClassMethod(interp, fPtr->objectCls, "unknown", 0, ObjectUnknown);
     DeclareClassMethod(interp, fPtr->objectCls, "variable", 0, ObjectLinkVar);
     DeclareClassMethod(interp, fPtr->classCls, "create", 1, ClassCreate);
     DeclareClassMethod(interp, fPtr->classCls, "new", 1, ClassNew);
+
+    /*
+     * Finish setting up the class of classes.
+     */
+
     {
 	Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
 
@@ -210,24 +238,36 @@ TclOOInit(
 		fPtr->classCls, 0, NULL, argsPtr, bodyPtr);
     }
 
+    /*
+     * Build the definer metaclass, which is a kind of class with many
+     * convenience methods.
+     */
+
     fPtr->definerCls = AllocClass(interp,
 	    AllocObject(interp, "::oo::definer"));
     fPtr->definerCls->superclasses.list[0] = fPtr->classCls;
     TclOORemoveFromSubclasses(fPtr->definerCls, fPtr->objectCls);
     TclOOAddToSubclasses(fPtr->definerCls, fPtr->classCls);
-    fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
+    {
+	Tcl_Obj *argsPtr, *bodyPtr;
+
+	argsPtr = Tcl_NewStringObj("{configuration {}}", -1);
+	bodyPtr = Tcl_NewStringObj(
+		"set c [self];set d [namespace origin define];foreach cmd {"
+		"constructor destructor export forward "
+		"method parameter superclass unexport "
+		"} {define $c self.forward $cmd $d $c $cmd};"
+		"next $configuration", -1);
+	fPtr->definerCls->constructorPtr = TclNewProcClassMethod(interp,
+		fPtr->definerCls, 0, NULL, argsPtr, bodyPtr);
+    }
 
     /*
-     * TODO: set up 'definer' and 'struct' less magically by evaluating a Tcl
-     * script.
+     * TODO: set up 'struct' less magically by evaluating a Tcl script.
      */
 
-    fPtr->epoch = 0;
-    fPtr->nsCount = 0;
-    fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
-    Tcl_IncrRefCount(fPtr->unknownMethodNameObj);
+    fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
 
-    Tcl_CallWhenDeleted(interp, KillFoundation, fPtr);
     return TCL_OK;
 }
 
@@ -680,12 +720,15 @@ AllocClass(
 
 Object *
 TclOONewInstance(
-    Tcl_Interp *interp,
-    Class *clsPtr,
-    char *name,
-    int objc, // -ve means don't call constructor
-    Tcl_Obj *const *objv,
-    int skip)
+    Tcl_Interp *interp,		/* Interpreter context. */
+    Class *clsPtr,		/* Class to create an instance of. */
+    char *name,			/* Name of object to create, or NULL to ask
+				 * the code to pick its own unique name. */
+    int objc,			/* Number of arguments. Negative value means
+				 * do not call constructor. */
+    Tcl_Obj *const *objv,	/* Argument list. */
+    int skip)			/* Number of arguments to _not_ pass to the
+				 * constructor. */
 {
     Object *oPtr = AllocObject(interp, NULL);
     CallContext *contextPtr;
@@ -1511,17 +1554,21 @@ AddSimpleChainToCallContext(
 {
     int i;
 
-    if (flags & PUBLIC_METHOD) {
+    if (!(flags & (KNOWN_STATE | CONSTRUCTOR | DESTRUCTOR))) {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&oPtr->methods,
 		(char *) methodNameObj);
 
 	if (hPtr != NULL) {
 	    Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	    if (!(mPtr->flags & PUBLIC_METHOD)) {
-		return;
+	    if (flags & PUBLIC_METHOD) {
+		if (!(mPtr->flags & PUBLIC_METHOD)) {
+		    return;
+		} else {
+		    flags |= DEFINITE_PUBLIC;
+		}
 	    } else {
-		flags &= ~PUBLIC_METHOD;
+		flags |= DEFINITE_PRIVATE;
 	    }
 	}
     }
@@ -1567,8 +1614,20 @@ AddSimpleClassChainToCallContext(
 		(char *) methodNameObj);
 
 	if (hPtr != NULL) {
-	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr, isFilter,
-		    flags);
+	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+
+	    if (!(flags & KNOWN_STATE)) {
+		if (flags & PUBLIC_METHOD) {
+		    if (mPtr->flags & PUBLIC_METHOD) {
+			flags |= DEFINITE_PUBLIC;
+		    } else {
+			return;
+		    }
+		} else {
+		    flags |= DEFINITE_PRIVATE;
+		}
+	    }
+	    AddMethodToCallChain(mPtr, contextPtr, isFilter, flags);
 	}
     }
 
@@ -1606,14 +1665,6 @@ AddMethodToCallChain(
      */
 
     if (mPtr == NULL || mPtr->typePtr == NULL) {
-	return;
-    }
-
-    /*
-     * Ignore public calls of private methods.
-     */
-
-    if ((flags & PUBLIC_METHOD) && !(mPtr->flags & PUBLIC_METHOD)) {
 	return;
     }
 
@@ -1785,8 +1836,8 @@ ObjectEval(
     }
     Tcl_IncrRefCount(objnameObj);
 
-    if (objc == 3) {
-	result = Tcl_EvalObjEx(interp, objv[2], 0);
+    if (objc == contextPtr->skip+1) {
+	result = Tcl_EvalObjEx(interp, objv[contextPtr->skip], 0);
     } else {
 	Tcl_Obj *objPtr;
 
@@ -1796,12 +1847,11 @@ ObjectEval(
 	 * object when it decrements its refcount after eval'ing it.
 	 */
 
-	objPtr = Tcl_ConcatObj(objc-2, objv+2);
+	objPtr = Tcl_ConcatObj(objc-contextPtr->skip, objv+contextPtr->skip);
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
 
     if (result == TCL_ERROR) {
-	// TODO: fix trace
 	TclFormatToErrorInfo(interp,
 		"\n    (in \"%s eval\" script line %d)",
 		TclGetString(objnameObj), interp->errorLine);

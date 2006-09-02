@@ -9,12 +9,16 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.17 2006/09/01 12:11:00 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.18 2006/09/02 21:04:09 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
+static Method *		CloneClassMethod(Tcl_Interp *interp, Class *cPtr,
+			    Method *mPtr, Tcl_Obj *namePtr);
+static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
+			    Method *mPtr, Tcl_Obj *namePtr);
 static Object *		GetDefineCmdContext(Tcl_Interp *interp);
 
 int
@@ -281,17 +285,8 @@ TclOODefineCopyObjCmd(
     for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	Tcl_Obj *keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
-	ClientData newClientData;
 
-	if (mPtr->typePtr == NULL) {
-	    TclOONewMethod(interp, (Tcl_Object) o2Ptr, keyPtr,
-		    mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-	} else if (mPtr->typePtr->clonePtr &&
-		mPtr->typePtr->clonePtr(mPtr->clientData,
-		&newClientData) == TCL_OK) {
-	    TclOONewMethod(interp, (Tcl_Object) o2Ptr, keyPtr,
-		    mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
-	}
+	(void) CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr);
     }
     o2Ptr->mixins.num = oPtr->mixins.num;
     o2Ptr->mixins.list = (Class **) ckalloc(sizeof(Class*) * oPtr->mixins.num);
@@ -305,8 +300,50 @@ TclOODefineCopyObjCmd(
     for (i=0 ; i<o2Ptr->filters.num ; i++) {
 	Tcl_IncrRefCount(o2Ptr->filters.list[i]);
     }
+    o2Ptr->flags = oPtr->flags & ~ROOT_OBJECT;
 
-    //TODO: clone the class part (if present)
+    /*
+     * Copy the class, if present.
+     */
+
+    if (oPtr->classPtr) {
+	Class *cPtr = oPtr->classPtr;
+	Class *c2Ptr = o2Ptr->classPtr;
+
+	c2Ptr->flags = cPtr->flags;
+	for (i=0 ; i<c2Ptr->superclasses.num ; i++) {
+	    TclOORemoveFromSubclasses(c2Ptr, c2Ptr->superclasses.list[i]);
+	}
+	c2Ptr->superclasses.num = cPtr->superclasses.num;
+	if (c2Ptr->superclasses.num) {
+	    c2Ptr->superclasses.list = (Class **)
+		    ckrealloc((char *) c2Ptr->superclasses.list,
+		    sizeof(Class *) * c2Ptr->superclasses.num);
+	} else {
+	    c2Ptr->superclasses.list = (Class **)
+		    ckalloc(sizeof(Class *) * c2Ptr->superclasses.num);
+	}
+	for (i=0 ; i<c2Ptr->superclasses.num ; i++) {
+	    TclOOAddToSubclasses(c2Ptr, c2Ptr->superclasses.list[i]);
+	}
+
+	hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
+	for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
+	    Tcl_Obj *keyPtr = (Tcl_Obj *)
+		    Tcl_GetHashKey(&cPtr->classMethods, hPtr);
+	    Method *mPtr = Tcl_GetHashValue(hPtr);
+
+	    (void) CloneClassMethod(interp, c2Ptr, mPtr, keyPtr);
+	}
+	if (cPtr->constructorPtr) {
+	    c2Ptr->constructorPtr = CloneClassMethod(interp, c2Ptr,
+		    cPtr->constructorPtr, NULL);
+	}
+	if (cPtr->destructorPtr) {
+	    c2Ptr->destructorPtr = CloneClassMethod(interp, c2Ptr,
+		    cPtr->destructorPtr, NULL);
+	}
+    }
 
     /*
      * Return the name of the cloned object.
@@ -314,6 +351,48 @@ TclOODefineCopyObjCmd(
 
     Tcl_GetCommandFullName(interp, o2Ptr->command, Tcl_GetObjResult(interp));
     return TCL_OK;
+}
+
+static Method *
+CloneObjectMethod(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Method *mPtr,
+    Tcl_Obj *namePtr)
+{
+    ClientData newClientData;
+
+    if (mPtr->typePtr == NULL) {
+	return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
+    } else if (mPtr->typePtr->clonePtr &&
+	    mPtr->typePtr->clonePtr(mPtr->clientData,&newClientData)==TCL_OK) {
+	return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
+    } else {
+	return NULL;
+    }
+}
+
+static Method *
+CloneClassMethod(
+    Tcl_Interp *interp,
+    Class *cPtr,
+    Method *mPtr,
+    Tcl_Obj *namePtr)
+{
+    ClientData newClientData;
+
+    if (mPtr->typePtr == NULL) {
+	return (Method*) TclOONewClassMethod(interp, (Tcl_Class) cPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
+    } else if (mPtr->typePtr->clonePtr &&
+	    mPtr->typePtr->clonePtr(mPtr->clientData,&newClientData)==TCL_OK) {
+	return (Method*) TclOONewClassMethod(interp, (Tcl_Class) cPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
+    } else {
+	return NULL;
+    }
 }
 
 int
