@@ -1,3 +1,7 @@
+2006-09-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/package.n: correct package example
+
 2006-08-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Corrected flawed logic for
