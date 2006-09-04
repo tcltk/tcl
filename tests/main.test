@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.19 2006/05/05 18:09:47 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.20 2006/09/04 21:34:58 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -546,7 +546,7 @@ namespace eval ::tcl::test::main {
 		}
 	} rc]
     } -body {
-	exec [interpreter] << {puts "In script"} \
+	exec [interpreter] << {} \
 		-appinitprocsetrcfile $rc >& result
 	set f [open result]
 	read $f
@@ -555,7 +555,7 @@ namespace eval ::tcl::test::main {
 	file delete result
 	removeFile rc
     } -result "application-specific initialization failed:\
-	\nIn script\nExit MainLoop\nIn exit\neven 0\n"
+	\nExit MainLoop\nIn exit\neven 0\n"
 
     test Tcl_Main-4.5 {
         Tcl_Main: Bug 1481986
