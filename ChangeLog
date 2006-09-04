@@ -1,3 +1,8 @@
+2006-09-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/main.text (Tcl_Main-4.4):       Test corrected to not be
+        timing sensitive to the Bug 1481986 fix. [Bug 1550858]
+
 2006-09-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/package.n: correct package example
