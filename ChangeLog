@@ -1,3 +1,7 @@
+2006-09-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/package.n: correct package example
+
 2006-08-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinChan.c: [Bug 819667] Improve logic for identifying COM
