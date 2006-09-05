@@ -167,7 +167,7 @@ When a locale is specified by the user, a ``best match'' search is
 performed during string translation.  For example, if a user specifies
 en_GB_Funky, the locales ``en_GB_Funky'', ``en_GB'', and ``en'' are
 searched in order until a matching translation string is found.  If no
-translation string is available, then \fB::msgcat::unknown\fR is
+translation string is available, then \fB::msgcat::mcunknown\fR is
 called.
 .SH "NAMESPACES AND MESSAGE CATALOGS"
 .PP
