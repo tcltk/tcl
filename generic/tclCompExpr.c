@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.13 2006/08/29 16:19:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.14 2006/09/05 16:14:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -23,25 +23,6 @@
 #ifdef TCL_COMPILE_DEBUG
 static int traceExprComp = 0;
 #endif /* TCL_COMPILE_DEBUG */
-
-/*
- * The ExprInfo structure describes the state of compiling an expression.  A
- * pointer to an ExprInfo record is passed among the routines in this module.
- */
-
-typedef struct ExprInfo {
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Structure filled with information about the
-				 * parsed expression. */
-    CONST char *expr;		/* The expression that was originally passed
-				 * to TclCompileExpr. */
-    CONST char *lastChar;	/* Points just after last byte of expr. */
-    int hasOperators;		/* Set 1 if the expr has operators; 0 if expr
-				 * is only a primary. If 1 after compiling an
-				 * expr, a tryCvtToNumeric instruction is
-				 * emitted to convert the primary to a number
-				 * if possible. */
-} ExprInfo;
 
 /*
  * Definitions of numeric codes representing each expression operator.  The
@@ -136,19 +117,18 @@ static Tcl_HashTable opHashTable;
  * Declarations for local procedures to this file:
  */
 
-static int		CompileCondExpr(
-			    Tcl_Token *exprTokenPtr, ExprInfo *infoPtr,
-			    CompileEnv *envPtr, Tcl_Token **endPtrPtr);
-static int		CompileLandOrLorExpr(
+static void		CompileCondExpr(Tcl_Interp *interp,
+			    Tcl_Token *exprTokenPtr, int *convertPtr,
+			    CompileEnv *envPtr);
+static void		CompileLandOrLorExpr(Tcl_Interp *interp,
 			    Tcl_Token *exprTokenPtr, int opIndex,
-			    ExprInfo *infoPtr, CompileEnv *envPtr,
-			    Tcl_Token **endPtrPtr);
-static int		CompileMathFuncCall(Tcl_Token *exprTokenPtr,
-			    CONST char *funcName, ExprInfo *infoPtr,
-			    CompileEnv *envPtr, Tcl_Token **endPtrPtr);
-static int		CompileSubExpr(Tcl_Token *exprTokenPtr,
-			    ExprInfo *infoPtr, CompileEnv *envPtr);
-static void		LogSyntaxError(ExprInfo *infoPtr);
+			    CompileEnv *envPtr);
+static void		CompileMathFuncCall(Tcl_Interp *interp,
+			    Tcl_Token *exprTokenPtr, CONST char *funcName,
+			    CompileEnv *envPtr);
+static void		CompileSubExpr(Tcl_Interp *interp,
+			    Tcl_Token *exprTokenPtr, int *convertPtr,
+			    CompileEnv *envPtr);
 
 /*
  * Macro used to debug the execution of the expression compiler.
@@ -195,10 +175,8 @@ TclCompileExpr(
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    ExprInfo info;
     Tcl_Parse parse;
-    Tcl_HashEntry *hPtr;
-    int new, i, code;
+    int needsNumConversion = 1;
 
     /*
      * If this is the first time we've been called, initialize the table of
@@ -211,9 +189,11 @@ TclCompileExpr(
     if (!opTableInitialized) {
 	Tcl_MutexLock(&opMutex);
 	if (!opTableInitialized) {
+	    int i;
 	    Tcl_InitHashTable(&opHashTable, TCL_STRING_KEYS);
 	    for (i = 0;  operatorTable[i].name != NULL;  i++) {
-		hPtr = Tcl_CreateHashEntry(&opHashTable,
+		int new;
+		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&opHashTable,
 			operatorTable[i].name, &new);
 		if (new) {
 		    Tcl_SetHashValue(hPtr, (ClientData) i);
@@ -225,32 +205,16 @@ TclCompileExpr(
     }
 
     /*
-     * Initialize the structure containing information abvout this expression
-     * compilation.
-     */
-
-    info.interp = interp;
-    info.parsePtr = &parse;
-    info.expr = script;
-    info.lastChar = (script + numBytes);
-    info.hasOperators = 0;
-
-    /*
      * Parse the expression then compile it.
      */
 
-    code = TclParseExpr(interp, script, numBytes,
-	    /* useInternalTokens */ 1, &parse);
-    if (code != TCL_OK) {
-	goto done;
+    if (TCL_OK != TclParseExpr(interp, script, numBytes,
+	    /* useInternalTokens */ 1, &parse)) {
+	return TCL_ERROR;
     }
+    CompileSubExpr(interp, parse.tokenPtr, &needsNumConversion, envPtr);
 
-    code = CompileSubExpr(parse.tokenPtr, &info, envPtr);
-    if (code != TCL_OK) {
-	goto done;
-    }
-
-    if (!info.hasOperators) {
+    if (needsNumConversion) {
 	/*
 	 * Attempt to convert the primary's object to an int or double.  This
 	 * is done in order to support Tcl's policy of interpreting operands
@@ -259,10 +223,9 @@ TclCompileExpr(
 
 	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
     }
-
-    done:
     Tcl_FreeParse(&parse);
-    return code;
+
+    return TCL_OK;
 }
 
 /*
@@ -304,9 +267,7 @@ TclFinalizeCompilation(void)
  *	subexpression at runtime.
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure. If TCL_ERROR is returned, then the interpreter's result
- *	contains an error message.
+ *	None.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the subexpression.
@@ -314,70 +275,39 @@ TclFinalizeCompilation(void)
  *----------------------------------------------------------------------
  */
 
-static int
+static void
 CompileSubExpr(
+    Tcl_Interp *interp,		/* Interp in which to compile expression */
     Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token to
 				 * compile. */
-    ExprInfo *infoPtr,		/* Describes the compilation state for the
-				 * expression being compiled. */
+    int *convertPtr,		/* Writes 0 here if it is determined the
+				 * final INST_TRY_CVT_TO_NUMERIC is
+				 * not needed */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Interp *interp = infoPtr->interp;
-    Tcl_Token *tokenPtr, *endPtr = NULL; /* silence gcc 4 warning */
-    Tcl_Token *afterSubexprPtr;
-    OperatorDesc *opDescPtr;
-    Tcl_HashEntry *hPtr;
-    CONST char *operator;
-    Tcl_DString opBuf;
-    int objIndex, opIndex, length, code;
-    char buffer[TCL_UTF_MAX];
-
-    if (exprTokenPtr->type != TCL_TOKEN_SUB_EXPR) {
-	Tcl_Panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR",
-		exprTokenPtr->type);
-    }
-    code = TCL_OK;
-
-    /*
-     * Switch on the type of the first token after the subexpression token.
-     * After processing it, advance tokenPtr to point just after the
-     * subexpression's last token.
-     */
-
-    tokenPtr = exprTokenPtr+1;
+    /* Switch on the type of the first token after the subexpression token. */
+    Tcl_Token *tokenPtr = exprTokenPtr+1;
     TRACE(exprTokenPtr->start, exprTokenPtr->size,
 	    tokenPtr->start, tokenPtr->size);
     switch (tokenPtr->type) {
     case TCL_TOKEN_WORD:
 	TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents, envPtr);
-	tokenPtr += (tokenPtr->numComponents + 1);
 	break;
 
     case TCL_TOKEN_TEXT:
-	if (tokenPtr->size > 0) {
-	    objIndex = TclRegisterNewLiteral(envPtr, tokenPtr->start,
-		    tokenPtr->size);
-	} else {
-	    objIndex = TclRegisterNewLiteral(envPtr, "", 0);
-	}
-	TclEmitPush(objIndex, envPtr);
-	tokenPtr += 1;
+	TclEmitPush(TclRegisterNewLiteral(envPtr,
+		tokenPtr->start, tokenPtr->size), envPtr);
 	break;
- 
-    case TCL_TOKEN_BS:
-	length = Tcl_UtfBackslash(tokenPtr->start, NULL, buffer);
-	if (length > 0) {
-	    objIndex = TclRegisterNewLiteral(envPtr, buffer, length);
-	} else {
-	    objIndex = TclRegisterNewLiteral(envPtr, "", 0);
-	}
-	TclEmitPush(objIndex, envPtr);
-	tokenPtr += 1;
+
+    case TCL_TOKEN_BS: {
+	char buffer[TCL_UTF_MAX];
+	int length = Tcl_UtfBackslash(tokenPtr->start, NULL, buffer);
+	TclEmitPush(TclRegisterNewLiteral(envPtr, buffer, length), envPtr);
 	break;
+    }
 
     case TCL_TOKEN_COMMAND:
 	TclCompileScript(interp, tokenPtr->start+1, tokenPtr->size-2, envPtr);
-	tokenPtr += 1;
 	break;
 
     case TCL_TOKEN_SCRIPT_SUBST: {
@@ -389,33 +319,29 @@ CompileSubExpr(
 
     case TCL_TOKEN_VARIABLE:
 	TclCompileTokens(interp, tokenPtr, 1, envPtr);
-	tokenPtr += (tokenPtr->numComponents + 1);
 	break;
 
     case TCL_TOKEN_SUB_EXPR:
-	code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-	if (code != TCL_OK) {
-	    goto done;
-	}
-	tokenPtr += (tokenPtr->numComponents + 1);
+	CompileSubExpr(interp, tokenPtr, convertPtr, envPtr);
 	break;
 
-    case TCL_TOKEN_OPERATOR:
+    case TCL_TOKEN_OPERATOR: {
 	/*
 	 * Look up the operator.  If the operator isn't found, treat it as a
 	 * math function.
 	 */
+	OperatorDesc *opDescPtr;
+	Tcl_HashEntry *hPtr;
+	CONST char *operator;
+	Tcl_DString opBuf;
+	int opIndex;
+
 	Tcl_DStringInit(&opBuf);
 	operator = Tcl_DStringAppend(&opBuf, tokenPtr->start, tokenPtr->size);
 	hPtr = Tcl_FindHashEntry(&opHashTable, operator);
 	if (hPtr == NULL) {
-	    code = CompileMathFuncCall(exprTokenPtr, operator, infoPtr, envPtr,
-		    &endPtr);
+	    CompileMathFuncCall(interp, exprTokenPtr, operator, envPtr);
 	    Tcl_DStringFree(&opBuf);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
-	    tokenPtr = endPtr;
 	    break;
 	}
 	Tcl_DStringFree(&opBuf);
@@ -429,21 +355,14 @@ CompileSubExpr(
 
 	if (opDescPtr->numOperands > 0) {
 	    tokenPtr++;
-	    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
+	    CompileSubExpr(interp, tokenPtr, convertPtr, envPtr);
 	    tokenPtr += (tokenPtr->numComponents + 1);
 
 	    if (opDescPtr->numOperands == 2) {
-		code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-		if (code != TCL_OK) {
-		    goto done;
-		}
-		tokenPtr += (tokenPtr->numComponents + 1);
+		CompileSubExpr(interp, tokenPtr, convertPtr, envPtr);
 	    }
 	    TclEmitOpcode(opDescPtr->instruction, envPtr);
-	    infoPtr->hasOperators = 1;
+	    *convertPtr = 0;
 	    break;
 	}
 	    
@@ -453,20 +372,18 @@ CompileSubExpr(
 	 */
 
 	switch (opIndex) {
-        case OP_PLUS:
-        case OP_MINUS:
+	case OP_PLUS:
+	case OP_MINUS: {
+	    Tcl_Token *afterSubexprPtr = exprTokenPtr
+		    + exprTokenPtr->numComponents+1;
 	    tokenPtr++;
-	    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
+	    CompileSubExpr(interp, tokenPtr, convertPtr, envPtr);
 	    tokenPtr += (tokenPtr->numComponents + 1);
 
 	    /*
 	     * Check whether the "+" or "-" is unary.
 	     */
 
-	    afterSubexprPtr = exprTokenPtr + exprTokenPtr->numComponents+1;
 	    if (tokenPtr == afterSubexprPtr) {
 		TclEmitOpcode(((opIndex==OP_PLUS)?  INST_UPLUS : INST_UMINUS),
 			envPtr);
@@ -477,58 +394,33 @@ CompileSubExpr(
 	     * The "+" or "-" is binary.
 	     */
 
-	    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
-	    tokenPtr += (tokenPtr->numComponents + 1);
+	    CompileSubExpr(interp, tokenPtr, convertPtr, envPtr);
 	    TclEmitOpcode(((opIndex==OP_PLUS)? INST_ADD : INST_SUB), envPtr);
+	    *convertPtr = 0;
+	    break;
+	}
+
+	case OP_LAND:
+	case OP_LOR:
+	    CompileLandOrLorExpr(interp, exprTokenPtr, opIndex, envPtr);
+	    *convertPtr = 0;
 	    break;
 
-        case OP_LAND:
-        case OP_LOR:
-	    code = CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr,
-		    &endPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
-	    tokenPtr = endPtr;
-	    break;
-
-        case OP_QUESTY:
-	    code = CompileCondExpr(exprTokenPtr, infoPtr, envPtr, &endPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
-	    tokenPtr = endPtr;
+	case OP_QUESTY:
+	    CompileCondExpr(interp, exprTokenPtr, convertPtr, envPtr);
 	    break;
 
 	default:
-	    Tcl_Panic("CompileSubExpr: unexpected operator %d requiring special treatment",
-		    opIndex);
+	    Tcl_Panic("CompileSubExpr: unexpected operator %d "
+		    "requiring special treatment", opIndex);
 	} /* end switch on operator requiring special treatment */
-	infoPtr->hasOperators = 1;
 	break;
 
+    }
+
     default:
-	Tcl_Panic("CompileSubExpr: unexpected token type %d",
-		tokenPtr->type);
+	Tcl_Panic("CompileSubExpr: unexpected token type %d", tokenPtr->type);
     }
-
-    /*
-     * Verify that the subexpression token had the required number of
-     * subtokens: that we've advanced tokenPtr just beyond the subexpression's
-     * last token. For example, a "*" subexpression must contain the tokens
-     * for exactly two operands.
-     */
-
-    if (tokenPtr != (exprTokenPtr + exprTokenPtr->numComponents+1)) {
-	LogSyntaxError(infoPtr);
-	code = TCL_ERROR;
-    }
-
-  done:
-    return code;
 }
 
 /*
@@ -540,11 +432,7 @@ CompileSubExpr(
  *	subexpression.
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure. If TCL_OK is returned, a pointer to the token just after
- *	the last one in the subexpression is stored at the address in
- *	endPtrPtr. If TCL_ERROR is returned, then the interpreter's result
- *	contains an error message.
+ *	None.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
@@ -552,18 +440,14 @@ CompileSubExpr(
  *----------------------------------------------------------------------
  */
 
-static int
+static void
 CompileLandOrLorExpr(
+    Tcl_Interp *interp,		/* Interp in which compile takes place */
     Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the "&&" or "||" operator. */
     int opIndex,		/* A code describing the expression operator:
 				 * either OP_LAND or OP_LOR. */
-    ExprInfo *infoPtr,		/* Describes the compilation state for the
-				 * expression being compiled. */
-    CompileEnv *envPtr,		/* Holds resulting instructions. */
-    Tcl_Token **endPtrPtr)	/* If successful, a pointer to the token just
-				 * after the last token in the subexpression
-				 * is stored here. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     JumpFixup shortCircuitFixup;/* Used to fix up the short circuit jump after
 				 * the first subexpression. */
@@ -571,19 +455,15 @@ CompileLandOrLorExpr(
 				/* Used to fix up the second jump to the
 				 * short-circuit target. */
     JumpFixup endFixup;		/* Used to fix up jump to the end. */
-    Tcl_Token *tokenPtr;
-    int code;
+    int convert = 0;
     int savedStackDepth = envPtr->currStackDepth;
+    Tcl_Token *tokenPtr = exprTokenPtr+2;
 
     /*
      * Emit code for the first operand.
      */
 
-    tokenPtr = exprTokenPtr+2;
-    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-    if (code != TCL_OK) {
-	goto done;
-    }
+    CompileSubExpr(interp, tokenPtr, &convert, envPtr);
     tokenPtr += (tokenPtr->numComponents + 1);
 
     /*
@@ -598,11 +478,7 @@ CompileLandOrLorExpr(
      * Emit code for the second operand.
      */
 
-    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-    if (code != TCL_OK) {
-	goto done;
-    }
-    tokenPtr += (tokenPtr->numComponents + 1);
+    CompileSubExpr(interp, tokenPtr, &convert, envPtr);
 
     /*
      * The result is the boolean value of the second operand. We code this in
@@ -642,11 +518,7 @@ CompileLandOrLorExpr(
     }
 
     TclFixupForwardJumpToHere(envPtr, &endFixup, 127);
-    *endPtrPtr = tokenPtr;
-
-  done:
     envPtr->currStackDepth = savedStackDepth + 1;
-    return code;
 }
 
 /*
@@ -658,11 +530,7 @@ CompileLandOrLorExpr(
  *	condExpr ::= lorExpr ['?' condExpr ':' condExpr]
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure. If TCL_OK is returned, a pointer to the token just after
- *	the last one in the subexpression is stored at the address in
- *	endPtrPtr. If TCL_ERROR is returned, then the interpreter's result
- *	contains an error message.
+ *	None.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
@@ -670,34 +538,29 @@ CompileLandOrLorExpr(
  *----------------------------------------------------------------------
  */
 
-static int
+static void
 CompileCondExpr(
+    Tcl_Interp *interp,		/* Interp in which compile takes place */
     Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the "?" operator. */
-    ExprInfo *infoPtr,		/* Describes the compilation state for the
+    int *convertPtr,		/* Describes the compilation state for the
 				 * expression being compiled. */
-    CompileEnv *envPtr,		/* Holds resulting instructions. */
-    Tcl_Token **endPtrPtr)	/* If successful, a pointer to the token just
-				 * after the last token in the subexpression
-				 * is stored here. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     JumpFixup jumpAroundThenFixup, jumpAroundElseFixup;
 				/* Used to update or replace one-byte jumps
 				 * around the then and else expressions when
 				 * their target PCs are determined. */
-    Tcl_Token *tokenPtr;
-    int elseCodeOffset, dist, code;
+    Tcl_Token *tokenPtr = exprTokenPtr+2;
+    int elseCodeOffset, dist, convert = 0;
+    int convertThen = 1, convertElse = 1;
     int savedStackDepth = envPtr->currStackDepth;
 
     /*
      * Emit code for the test.
      */
 
-    tokenPtr = exprTokenPtr+2;
-    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-    if (code != TCL_OK) {
-	goto done;
-    }
+    CompileSubExpr(interp, tokenPtr, &convert, envPtr);
     tokenPtr += (tokenPtr->numComponents + 1);
 
     /*
@@ -713,15 +576,8 @@ CompileCondExpr(
      * integers, else floating-point numbers.
      */
 
-    infoPtr->hasOperators = 0;
-    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-    if (code != TCL_OK) {
-	goto done;
-    }
+    CompileSubExpr(interp, tokenPtr, &convertThen, envPtr);
     tokenPtr += (tokenPtr->numComponents + 1);
-    if (!infoPtr->hasOperators) {
-	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
-    }
 
     /*
      * Emit an unconditional jump around the "else" condExpr.
@@ -735,15 +591,7 @@ CompileCondExpr(
 
     envPtr->currStackDepth = savedStackDepth;
     elseCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-    infoPtr->hasOperators = 0;
-    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-    if (code != TCL_OK) {
-	goto done;
-    }
-    tokenPtr += (tokenPtr->numComponents + 1);
-    if (!infoPtr->hasOperators) {
-	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
-    }
+    CompileSubExpr(interp, tokenPtr, &convertElse, envPtr);
 
     /*
      * Fix up the second jump around the "else" expression.
@@ -766,11 +614,9 @@ CompileCondExpr(
 
     dist = (elseCodeOffset - jumpAroundThenFixup.codeOffset);
     TclFixupForwardJump(envPtr, &jumpAroundThenFixup, dist, 127);
-    *endPtrPtr = tokenPtr;
+    *convertPtr = convertThen || convertElse;
 
-  done:
     envPtr->currStackDepth = savedStackDepth + 1;
-    return code;
 }
 
 /*
@@ -782,11 +628,7 @@ CompileCondExpr(
  *	mathFuncCall ::= funcName '(' [condExpr {',' condExpr}] ')'
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure. If TCL_OK is returned, a pointer to the token just after
- *	the last one in the subexpression is stored at the address in
- *	endPtrPtr. If TCL_ERROR is returned, then the interpreter's result
- *	contains an error message.
+ *	None.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the math function at
@@ -795,23 +637,18 @@ CompileCondExpr(
  *----------------------------------------------------------------------
  */
 
-static int
+static void
 CompileMathFuncCall(
+    Tcl_Interp *interp,		/* Interp in which compile takes place */
     Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the math function call. */
     CONST char *funcName,	/* Name of the math function. */
-    ExprInfo *infoPtr,		/* Describes the compilation state for the
-				 * expression being compiled. */
-    CompileEnv *envPtr,		/* Holds resulting instructions. */
-    Tcl_Token **endPtrPtr)	/* If successful, a pointer to the token just
-				 * after the last token in the subexpression
-				 * is stored here. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_DString cmdName;
     int objIndex;
     Tcl_Token *tokenPtr, *afterSubexprPtr;
     int argCount;
-    int code = TCL_OK;
 
     /*
      * Prepend "tcl::mathfunc::" to the function name, to produce the name of
@@ -836,11 +673,9 @@ CompileMathFuncCall(
     tokenPtr = exprTokenPtr+2;
     afterSubexprPtr = exprTokenPtr + (exprTokenPtr->numComponents + 1);
     while (tokenPtr != afterSubexprPtr) {
+	int convert = 0;
 	++argCount;
-	code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
-	if (code != TCL_OK) {
-	    return code;
-	}
+	CompileSubExpr(interp, tokenPtr, &convert, envPtr);
 	tokenPtr += (tokenPtr->numComponents + 1);
     }
 
@@ -851,42 +686,6 @@ CompileMathFuncCall(
     } else {
 	TclEmitInstInt4(INST_INVOKE_STK4, argCount, envPtr);
     }
-
-    *endPtrPtr = afterSubexprPtr;
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * LogSyntaxError --
- *
- *	This procedure is invoked after an error occurs when compiling an
- *	expression. It sets the interpreter result to an error message
- *	describing the error.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Sets the interpreter result to an error message describing the
- *	expression that was being compiled when the error occurred.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-LogSyntaxError(
-    ExprInfo *infoPtr)		/* Describes the compilation state for the
-				 * expression being compiled. */
-{
-    Tcl_Obj *result =
-	    Tcl_NewStringObj("syntax error in expression \"", -1);
-
-    TclAppendLimitedToObj(result, infoPtr->expr,
-	    (int)(infoPtr->lastChar - infoPtr->expr), 60, "");
-    Tcl_AppendToObj(result, "\"", -1);
-    Tcl_SetObjResult(infoPtr->interp, result);
 }
 
 /*

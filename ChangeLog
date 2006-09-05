@@ -1,3 +1,56 @@
+2006-09-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Removed much complexity that is
+	no longer needed.
+
+	* tests/main.text (Tcl_Main-4.4):	Test corrected to not be
+	timing sensitive to the Bug 1481986 fix. [Bug 1550858]
+
+2006-09-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/package.n: correct package example
+
+2006-08-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Corrected flawed logic for
+	disabling the INST_TRY_CVT_TO_NUMERIC instruction at the end
+	of an expression when function arguments contain operators.
+	[Bug 1541274]
+
+	* tests/expr-old.test:	The remaining failing tests reported in
+	* tests/expr.test:	[Bug 1381715] are all new in Tcl 8.5, so
+	there's really no issue of compatibility with Tcl 8.4 result to
+	deal with.  Fixed by updating tests to expect 8.5 results.
+
+2006-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Dropped the old expr parser.
+
+2006-08-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_CreateInterp): init iPtr->threadId
+
+	* win/tclWinChan.c [Bug 819667] Improve logic for identifying COM
+	ports.
+
+	* generic/tclIOGT.c (ExecuteCallback): 
+	* generic/tclPkg.c (Tcl_PkgRequireEx): replace Tcl_GlobalEval(Obj)
+	with more efficient Tcl_Eval(Obj)Ex
+
+	* unix/Makefile.in (valgrindshell): add valgrindshell target and
+	update default VALGRINDARGS.  User can override, or add to it with
+	VALGRIND_OPTS env var.
+
+	* generic/tclFileName.c (DoGlob): match incrs with decrs.
+
+2006-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Use the "parent" field of
+	orphan ExprNodes to store the closure of left pointers.  This
+	lets us avoid repeated re-scanning leftward for the left
+	boundary of subexpressions, which in worst case led to near
+	O(N^2) runtime.
+
 2006-08-29  Joe Mistachkin  <joe@mistachkin.com>
 
 	* unix/tclUnixInit.c: Fixed the issue (typo) that was causing
@@ -6,11 +59,11 @@
 
 2006-08-29  Colin McCormack  <coldstore@users.sourceforge.net>
 
-	* generic/tclIOUtil.c:     Added test for NULL return 
+	* generic/tclIOUtil.c:  Added test for NULL return 
 	* generic/tclPathObj.c: from Tcl_FSGetNormalizedPath
-	* unix/tclUnixFile.c:     which was causing segv's per
-	* win/tclWinFCmd.c:    Bug 1548263
-	* /win/tclWinFile.c:
+	* unix/tclUnixFile.c:   which was causing segv's per
+	* win/tclWinFCmd.c:     Bug 1548263
+	* win/tclWinFile.c:
 
 2006-08-28  Kevin Kenny  <kennykb@acm.org>
 

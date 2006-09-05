@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.25 2006/04/28 16:10:42 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.26 2006/09/05 16:14:38 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -641,10 +641,17 @@ ddd: tclsh
 	$(DDD) -command=gdb.run ./tclsh
 	rm gdb.run
 
+VALGRINDARGS=--tool=memcheck --num-callers=8 --leak-resolution=high --leak-check=yes --show-reachable=yes -v
+
 valgrind: tclsh tcltest
 	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	valgrind --num-callers=8 --leak-resolution=high -v --leak-check=yes --show-reachable=yes $(VALGRINDARGS) ./tcltest $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
+	valgrind $(VALGRINDARGS) ./tcltest $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
+
+valgrindshell: tclsh
+	@LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	valgrind $(VALGRINDARGS) ./tclsh $(SCRIPT)
 
 # The following target outputs the name of the top-level source directory
 # for Tcl (it is used by Tk's configure script, for example).  The

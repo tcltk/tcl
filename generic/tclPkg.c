@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.4.5 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.4.6 2006/09/05 16:14:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -313,7 +313,7 @@ Tcl_PkgRequireEx(
 	    pkgPtr->clientData = (ClientData) versionToProvide;
 	    Tcl_Preserve((ClientData) script);
 	    Tcl_Preserve((ClientData) versionToProvide);
-	    code = Tcl_GlobalEval(interp, script);
+	    code = Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
 	    Tcl_Release((ClientData) script);
 
 	    pkgPtr = FindPackage(interp, name);
@@ -392,7 +392,8 @@ Tcl_PkgRequireEx(
 	    if (exact) {
 		Tcl_DStringAppend(&command, " -exact", 7);
 	    }
-	    code = Tcl_GlobalEval(interp, Tcl_DStringValue(&command));
+	    code = Tcl_EvalEx(interp, Tcl_DStringValue(&command),
+		    Tcl_DStringLength(&command), TCL_EVAL_GLOBAL);
 	    Tcl_DStringFree(&command);
 
 	    if ((code != TCL_OK) && (code != TCL_ERROR)) {

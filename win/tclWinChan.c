@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.12 2006/04/28 16:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.13 2006/09/05 16:14:38 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -96,6 +96,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 			    int action);
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
+static DWORD		FileGetType(HANDLE handle);
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -850,7 +851,7 @@ TclpOpenFileChannel(
 {
     Tcl_Channel channel = 0;
     int channelPermissions = 0;
-    DWORD accessMode = 0, createMode, shareMode, flags, consoleParams, type;
+    DWORD accessMode = 0, createMode, shareMode, flags;
     CONST TCHAR *nativeName;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -948,30 +949,9 @@ TclpOpenFileChannel(
 	return NULL;
     }
 
-    type = GetFileType(handle);
-
-    /*
-     * If the file is a character device, we need to try to figure out whether
-     * it is a serial port, a console, or something else. We test for the
-     * console case first because this is more common.
-     */
-
-    if (type == FILE_TYPE_CHAR) {
-	if (GetConsoleMode(handle, &consoleParams)) {
-	    type = FILE_TYPE_CONSOLE;
-	} else {
-	    DCB dcb;
-
-	    dcb.DCBlength = sizeof(DCB);
-	    if (GetCommState(handle, &dcb)) {
-		type = FILE_TYPE_SERIAL;
-	    }
-	}
-    }
-
     channel = NULL;
 
-    switch (type) {
+    switch (FileGetType(handle)) {
     case FILE_TYPE_SERIAL:
 	/*
 	 * Reopen channel for OVERLAPPED operation. Normally this shouldn't
@@ -1055,7 +1035,6 @@ Tcl_MakeFileChannel(
     Tcl_Channel channel = NULL;
     HANDLE handle = (HANDLE) rawHandle;
     HANDLE dupedHandle;
-    DWORD consoleParams, type;
     TclFile readFile = NULL, writeFile = NULL;
     BOOL result;
 
@@ -1063,32 +1042,7 @@ Tcl_MakeFileChannel(
 	return NULL;
     }
 
-    /*
-     * GetFileType() returns FILE_TYPE_UNKNOWN for invalid handles.
-     */
-
-    type = GetFileType(handle);
-
-    /*
-     * If the file is a character device, we need to try to figure out whether
-     * it is a serial port, a console, or something else. We test for the
-     * console case first because this is more common.
-     */
-
-    if (type == FILE_TYPE_CHAR) {
-	if (GetConsoleMode(handle, &consoleParams)) {
-	    type = FILE_TYPE_CONSOLE;
-	} else {
-	    DCB dcb;
-
-	    dcb.DCBlength = sizeof(DCB);
-	    if (GetCommState(handle, &dcb)) {
-		type = FILE_TYPE_SERIAL;
-	    }
-	}
-    }
-
-    switch (type) {
+    switch (FileGetType(handle)) {
     case FILE_TYPE_SERIAL:
 	channel = TclWinOpenSerialChannel(handle, channelName, mode);
 	break;
@@ -1487,6 +1441,53 @@ FileThreadActionProc(
 	    Tcl_Panic("file info ptr not on thread channel list");
 	}
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileGetType --
+ *
+ *	Given a file handle, return its type
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DWORD
+FileGetType(handle)
+    HANDLE handle; /* Opened file handle */
+{
+    DWORD type;
+
+    type = GetFileType(handle);
+
+    /*
+     * If the file is a character device, we need to try to figure out
+     * whether it is a serial port, a console, or something else.  We
+     * test for the console case first because this is more common.
+     */
+
+    if ((type == FILE_TYPE_CHAR)
+	    || ((type == FILE_TYPE_UNKNOWN) && !GetLastError())) {
+	DWORD consoleParams;
+	if (GetConsoleMode(handle, &consoleParams)) {
+	    type = FILE_TYPE_CONSOLE;
+	} else {
+	    DCB dcb;
+	    dcb.DCBlength = sizeof(DCB);
+	    if (GetCommState(handle, &dcb)) {
+		type = FILE_TYPE_SERIAL;
+	    }
+	}
+    }
+
+    return type;
 }
 
 /*
