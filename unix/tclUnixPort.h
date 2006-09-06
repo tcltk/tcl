@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.14 2006/08/21 05:37:26 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.15 2006/09/06 13:08:30 vasiljevic Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -684,6 +684,33 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+
+/*
+ * Compatibility calls 
+ */
+#include <pwd.h>
+#include <grp.h>
+EXTERN int
+TclpGetPwNam(const char *name, struct passwd *pwbuf, char *buf, size_t buflen, 
+             struct passwd **pwbufp);
+EXTERN int 
+TclpGetPwUid(uid_t uid, struct passwd *pwbuf, char  *buf, size_t buflen,
+             struct passwd **pwbufp);
+EXTERN int
+TclpGetGrNam(const char *name, struct group *gbuf, char *buf, size_t buflen, 
+             struct group **gbufp);
+EXTERN int
+TclpGetGrGid(gid_t gid, struct group *gbuf, char *buf, size_t buflen, 
+             struct group **gbufp);
+
+EXTERN struct hostent *
+TclpGetHostByName(const char *name, struct hostent *hbuf, char *buf,
+                  size_t buflen, int *h_errnop);
+
+EXTERN struct hostent *
+TclpGetHostByAddr(const char *addr, int length, int type, struct hostent *hbuf,
+                  char *buf, size_t buflen, int *h_errnop);
 
 #include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
