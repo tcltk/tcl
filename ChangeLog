@@ -1,3 +1,17 @@
+2006-09-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+        * unix/tclUnixChan.c: Added TCL_THREADS ifdef'ed  usage
+        * unix/tclUnixFCmd.c: of MT-safe calls like:
+        * unix/tclUnixSock.c: getpwuid, getpwnam, getgrgid, getgrnam,
+        * unix/tclUnixPort.h: gethostbyname and gethostbyaddr.
+        * unix/Makefile.in:   See Tcl Bug: 999544
+        * unix/configure.in:
+        * unix/tcl.m4:
+        * unix/configure: Regenerated.
+
+        * unix/tclUnixCompat.c: New file containing MT-safe implementation
+        of some library calls.
+
 2006-09-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/main.text (Tcl_Main-4.4):       Test corrected to not be

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.17 2006/08/30 17:24:45 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.18 2006/09/06 13:08:27 vasiljevic Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -140,7 +140,8 @@ GENERIC_FLAGS =
 #GENERIC_FLAGS = -DTCL_GENERIC_ONLY
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
-	tclUnixTime.o tclUnixInit.o tclUnixThrd.o 
+	tclUnixTime.o tclUnixInit.o tclUnixThrd.o \
+	tclUnixCompat.o
 #UNIX_OBJS =
 NOTIFY_OBJS = tclUnixNotfy.o
 #NOTIFY_OBJS =
@@ -433,7 +434,8 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixTest.c \
 	$(UNIX_DIR)/tclUnixThrd.c \
 	$(UNIX_DIR)/tclUnixTime.c \
-	$(UNIX_DIR)/tclUnixInit.c
+	$(UNIX_DIR)/tclUnixInit.c \
+	$(UNIX_DIR)/tclUnixCompat.c
 
 NOTIFY_SRCS = \
 	$(UNIX_DIR)/tclUnixNotfy.c
@@ -1082,6 +1084,9 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
+
+tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
 
 # The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
