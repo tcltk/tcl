@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.10 2006/07/20 06:21:46 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.11 2006/09/06 13:08:30 vasiljevic Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1259,7 +1259,13 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
+#ifdef TCL_THREADS
+	int buflen = 512;
+	char buf[512]; /* Should be really using sysconf() to get this size */
+	struct group gr, *groupPtr = NULL;
+#else
     struct group *groupPtr;
+#endif
     int result;
 
     result = TclpObjStat(fileName, &statBuf);
@@ -1271,8 +1277,14 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
 	return TCL_ERROR;
     }
 
-    groupPtr = getgrgid(statBuf.st_gid);		/* INTL: Native. */
-    if (groupPtr == NULL) {
+#ifdef TCL_THREADS
+	result = TclpGetGrGid(statBuf.st_gid, &gr, buf, buflen, &groupPtr);
+#else
+	groupPtr = getgrgid(statBuf.st_gid);
+	result = 0;
+#endif
+
+    if (result == -1 || groupPtr == NULL) {
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
     } else {
 	Tcl_DString ds;
@@ -1311,7 +1323,13 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
+#ifdef TCL_THREADS
+	int buflen = 512;
+	char buf[512]; /* Should be really using sysconf() to get this size */
+	struct passwd pw, *pwPtr = NULL;
+#else
     struct passwd *pwPtr;
+#endif
     int result;
 
     result = TclpObjStat(fileName, &statBuf);
@@ -1323,8 +1341,14 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
 	return TCL_ERROR;
     }
 
-    pwPtr = getpwuid(statBuf.st_uid);			/* INTL: Native. */
-    if (pwPtr == NULL) {
+#ifdef TCL_THREADS
+	result = TclpGetPwUid(statBuf.st_uid, &pw, buf, buflen, &pwPtr);
+#else
+	pwPtr = getpwuid(statBuf.st_uid);
+	result = 0;
+#endif
+
+    if (result == -1 || pwPtr == NULL) {
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
     } else {
 	Tcl_DString ds;
@@ -1411,17 +1435,27 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 
     if (Tcl_GetLongFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
-	struct group *groupPtr;
+#ifdef TCL_THREADS
+	int buflen = 512; /* Should be really using sysconf() to get this size */
+	char buf[512];
+	struct group gr, *groupPtr = NULL;
+#else
+	struct group *groupPtr = NULL;
+#endif
 	CONST char *string;
 	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
-
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
-	groupPtr = getgrnam(native);			/* INTL: Native. */
+#ifdef TCL_THREADS
+	result = TclpGetGrNam(native, &gr, buf, buflen, &groupPtr); /* INTL: Native. */
+#else
+	groupPtr = getgrnam(native); /* INTL: Native. */
+	result = 0;
+#endif
 	Tcl_DStringFree(&ds);
 
-	if (groupPtr == NULL) {
+	if (result == -1 || groupPtr == NULL) {
 	    endgrent();
 	    Tcl_AppendResult(interp, "could not set group for file \"",
 		    Tcl_GetString(fileName), "\": group \"", 
@@ -1474,17 +1508,28 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 
     if (Tcl_GetLongFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
-	struct passwd *pwPtr;
+#ifdef TCL_THREADS
+	int buflen = 512;
+	char buf[512]; /* Should be really using sysconf() to get this size */
+	struct passwd pw, *pwPtr = NULL;
+#else
+	struct passwd *pwPtr = NULL;
+#endif
 	CONST char *string;
 	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
-
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
-	pwPtr = getpwnam(native);			/* INTL: Native. */
+#ifdef TCL_THREADS
+	result = TclpGetPwNam(native, &pw, buf, buflen, &pwPtr); /* INTL: Native. */
+#else
+	pwPtr = getpwnam(native); /* INTL: Native. */
+	result = 0;
+#endif
 	Tcl_DStringFree(&ds);
 
-	if (pwPtr == NULL) {
+	if (result == -1 || pwPtr == NULL) {
+	    endpwent();
 	    Tcl_AppendResult(interp, "could not set owner for file \"",
 			     Tcl_GetString(fileName), "\": user \"", 
 			     string, "\" does not exist",
@@ -1496,7 +1541,8 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 
     native = Tcl_FSGetNativePath(fileName);
     result = chown(native, (uid_t) uid, (gid_t) -1);   /* INTL: Native. */
-
+    
+    endpwent();
     if (result != 0) {
 	Tcl_AppendResult(interp, "could not set owner for file \"", 
 			 Tcl_GetString(fileName), "\": ", 
@@ -1948,6 +1994,3 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 
     return nextCheckpoint;
 }
-
-
-
