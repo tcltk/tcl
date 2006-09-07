@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.16 2006/09/06 13:23:37 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.17 2006/09/07 09:17:33 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -43,11 +43,6 @@ InitializeHostName(
     Tcl_Encoding *encodingPtr)
 {
     CONST char *native = NULL;
-#ifdef TCL_THREADS
-    int buflen = 1024, herrno;
-    char buf[1024];
-    struct hostent he;
-#endif
 
 #ifndef NO_UNAME
     struct utsname u;
@@ -55,12 +50,7 @@ InitializeHostName(
 
     (void *) memset((void *) &u, (int) 0, sizeof(struct utsname));
     if (uname(&u) > -1) {				/* INTL: Native. */
-#ifdef TCL_THREADS
-        hp = TclpGetHostByName(				/* INTL: Native. */
-		u.nodename, &he, buf, buflen, &herrno);
-#else
-        hp = gethostbyname(u.nodename);			/* INTL: Native. */
-#endif
+        hp = TclpGetHostByName(u.nodename);			/* INTL: Native. */
 	if (hp == NULL) {
 	    /*
 	     * Sometimes the nodename is fully qualified, but gets truncated
@@ -75,11 +65,7 @@ InitializeHostName(
 
 		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
 		node[dot - u.nodename] = '\0';
-#ifdef TCL_THREADS
-		hp = TclpGetHostByName(node, &he, buf, buflen, &herrno);
-#else
-		hp = gethostbyname(node);
-#endif
+		hp = TclpGetHostByName(node);
 		ckfree(node);
 	    }
 	}
