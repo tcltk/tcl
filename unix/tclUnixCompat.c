@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.1 2006/09/06 13:24:32 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.2 2006/09/07 08:50:35 vasiljevic Exp $
  *
  */
 
@@ -16,6 +16,26 @@
 #include <grp.h>
 #include <errno.h>
 #include <string.h>
+
+/*
+ * Per-thread private storage used to store values
+ * returned from MT-unsafe library calls.
+ */
+
+typedef struct ThreadSpecificData {
+
+    struct passwd pwd;
+    char pbuf[2048];
+
+    struct group grp;
+    char gbuf[2048];
+
+    struct hostent hent;
+    char hbuf[2048];
+
+}  ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
 
 /*
  * Mutex to lock access to MT-unsafe calls. This is just to protect 
@@ -34,8 +54,8 @@ Tcl_Mutex compatLock;
  *
  * CopyArray --
  *
- *      Copies array of strings (or fixed values) to the 
- *      private buffer, honouring the size of the buffer.
+ *      Copies array of NULL-terminated or fixed-length strings
+ *      to the private buffer, honouring the size of the buffer.
  *
  * Results:
  *      Number of bytes copied on success or -1 on error (errno = ERANGE)
@@ -92,8 +112,8 @@ CopyArray(char **src, int elsize, char *buf, int buflen)
  *
  * CopyString --
  *
- *      Copies a string to the private buffer, honouring the 
- *      size of the buffer
+ *      Copies a NULL-terminated string to the private buffer,
+ *      honouring the size of the buffer
  *
  * Results:
  *      0 success or -1 on error (errno = ERANGE)
@@ -305,7 +325,7 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
  *      See "man getpwnam" for more details.
  *
  * Results:
- *      0 on success or -1 on error.
+ *      Pointer to struct passwd on success or NULL on error.
  *
  * Side effects:
  *      None.
@@ -313,33 +333,34 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
  *---------------------------------------------------------------------------
  */
 
-int
-TclpGetPwNam(const char *name, struct passwd *pwbuf, char *buf, size_t buflen, 
-             struct passwd **pwbufp)
+struct passwd *
+TclpGetPwNam(const char *name)
 {   
-    int result = 0;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETPWNAM_R_5)
-    result = getpwnam_r(name, pwbuf, buf, buflen, pwbufp);
+    struct group *pwPtr;
+    return (getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
+                       &pwPtr) == 0) ? &tsdPtr->pwd : NULL;
+
 #elif defined(HAVE_GETPWNAM_R_4)
-    *pwbufp = getpwnam_r(name, pwbuf, buf, buflen);
-    if (*pwbufp == NULL) {
-        result = -1;
-    }
+    return getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
+
 #else
-    struct passwd *pwPtr = NULL;
+    struct passwd *pwPtr;
     Tcl_MutexLock(&compatLock);
     pwPtr = getpwnam(name);
-    if (pwPtr == NULL) {
-        result = -1;
-    } else {
-        *pwbuf = *pwPtr;
-        *pwbufp = pwbuf;
-        result = CopyPwd(pwbuf, buf, buflen);
+    if (pwPtr != NULL) {
+        tsdPtr->pwd = *pwPtr;
+        pwPtr = &tsdPtr->pwd;
+        if (CopyPwd(&tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf)) == -1) {
+            pwPtr = NULL;
+        }
     }
     Tcl_MutexUnlock(&compatLock);
+    return pwPtr;
 #endif
-    return result;
+    return NULL; /* Not reached */
 }
 
 
@@ -352,7 +373,7 @@ TclpGetPwNam(const char *name, struct passwd *pwbuf, char *buf, size_t buflen,
  *      See "man getpwuid" for more details.
  *
  * Results:
- *      0 on success or -1 on error.
+ *      Pointer to struct passwd on success or NULL on error.
  *
  * Side effects:
  *      None.
@@ -360,33 +381,34 @@ TclpGetPwNam(const char *name, struct passwd *pwbuf, char *buf, size_t buflen,
  *---------------------------------------------------------------------------
  */
 
-int 
-TclpGetPwUid(uid_t uid, struct passwd *pwbuf, char  *buf, size_t buflen,
-             struct passwd **pwbufp)
+struct passwd *
+TclpGetPwUid(uid_t uid)
 {
-    int result = 0;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETPWUID_R_5)
-    result = getpwuid_r(uid, pwbuf, buf, buflen, pwbufp);
+    struct group *pwPtr;
+    return (getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
+                       &pwPtr) == 0) ? &tsdPtr->pwd : NULL;
+
 #elif defined(HAVE_GETPWUID_R_4)
-    *pwbufp = getpwuid_r(uid, pwbuf, buf, buflen);
-    if (*pwbufp == NULL) {
-        result = -1;
-    }
+    return getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
+
 #else
-    struct passwd *pwPtr = NULL;
+    struct passwd *pwPtr;
     Tcl_MutexLock(&compatLock);
     pwPtr = getpwuid(uid);
-    if (pwPtr == NULL) {
-        result = -1;
-    } else {
-        *pwbuf = *pwPtr;
-        *pwbufp = pwbuf;
-        result = CopyPwd(pwbuf, buf, buflen);
+    if (pwPtr != NULL) {
+        tsdPtr->pwd = *pwPtr;
+        pwPtr = &tsdPtr->pwd;
+        if (CopyPwd(&tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf)) == -1) {
+            pwPtr = NULL;
+        }
     }
     Tcl_MutexUnlock(&compatLock);
+    return pwPtr;
 #endif
-    return result;
+    return NULL; /* Not reached */
 }
 
 
@@ -399,7 +421,7 @@ TclpGetPwUid(uid_t uid, struct passwd *pwbuf, char  *buf, size_t buflen,
  *      See "man getgrnam" for more details.
  *
  * Results:
- *      0 on success or -1 on error.
+ *      Pointer to struct group on success or NULL on error.
  *
  * Side effects:
  *      None.
@@ -407,33 +429,34 @@ TclpGetPwUid(uid_t uid, struct passwd *pwbuf, char  *buf, size_t buflen,
  *---------------------------------------------------------------------------
  */
 
-int
-TclpGetGrNam(const char *name, struct group *gbuf, char *buf, size_t buflen, 
-             struct group **gbufp)
+struct group *
+TclpGetGrNam(const char *name)
 {
-    int result = 0;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETGRNAM_R_5)
-    result = getgrnam_r(name, gbuf, buf, buflen, gbufp);
+    struct group *grPtr;
+    return (getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf),
+                       &grPtr) == 0) ? &tsdPtr->grp : NULL;
+
 #elif defined(HAVE_GETGRNAM_R_4)
-    *gbufp = getgrgid_r(name, gbuf, buf, buflen);
-    if (*gbufp == NULL) {
-        result = -1;
-    }
+    return getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
+
 #else
-    struct group *grPtr = NULL;
+    struct group *grPtr;
     Tcl_MutexLock(&compatLock);
     grPtr = getgrnam(name);
-    if (grPtr == NULL) {
-        result = -1;
-    } else {
-        *gbuf = *grPtr;
-        *gbufp = gbuf;
-        result = CopyGrp(gbuf, buf, buflen);
+    if (grPtr != NULL) {
+        tsdPtr->grp = *grPtr;
+        grPtr = &tsdPtr->grp;
+        if (CopyGrp(&tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf)) == -1) {
+            grPtr = NULL;
+        }
     }
     Tcl_MutexUnlock(&compatLock);
+    return grPtr;
 #endif
-    return result;
+    return NULL; /* Not reached */
 }
 
 
@@ -446,7 +469,7 @@ TclpGetGrNam(const char *name, struct group *gbuf, char *buf, size_t buflen,
  *      See "man getgrgid" for more details.
  *
  * Results:
- *      0 on success or -1 on error.
+ *      Pointer to struct group on success or NULL on error.
  *
  * Side effects:
  *      None.
@@ -454,33 +477,34 @@ TclpGetGrNam(const char *name, struct group *gbuf, char *buf, size_t buflen,
  *---------------------------------------------------------------------------
  */
 
-int
-TclpGetGrGid(gid_t gid, struct group *gbuf, char *buf, size_t buflen, 
-             struct group **gbufp)
+struct group *
+TclpGetGrGid(gid_t gid)
 {
-    int result = 0;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETGRGID_R_5)
-    result = getgrgid_r(gid, gbuf, buf, buflen, gbufp);
+    struct group *grPtr;
+    return (getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf),
+                       &grPtr) == 0) ? &tsdPtr->grp : NULL;
+
 #elif defined(HAVE_GETGRGID_R_4)
-    *gbufp =  getgrgid_r(gid, gbuf, buf, buflen);
-    if (*gbufp == NULL) {
-        result = -1;
-    }
+    return getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
+
 #else
-    struct group *grPtr = NULL;
+    struct group *grPtr;
     Tcl_MutexLock(&compatLock);
     grPtr = getgrgid(gid);
-    if (grPtr == NULL) {
-        result = -1;
-    } else {
-        *gbuf = *grPtr;
-        *gbufp = gbuf;
-        result = CopyGrp(gbuf, buf, buflen);
+    if (grPtr != NULL) {
+        tsdPtr->grp = *grPtr;
+        grPtr = &tsdPtr->grp;
+        if (CopyGrp(&tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf)) == -1) {
+            grPtr = NULL;
+        }
     }
     Tcl_MutexUnlock(&compatLock);
+    return grPtr;
 #endif
-    return result;
+    return NULL; /* Not reached */
 }
 
 
@@ -502,33 +526,36 @@ TclpGetGrGid(gid_t gid, struct group *gbuf, char *buf, size_t buflen,
  */
 
 struct hostent *
-TclpGetHostByName(const char *name, struct hostent *hbuf, char *buf, 
-                  size_t buflen, int *h_errnop)
+TclpGetHostByName(const char *name)
 {
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
 #if defined(HAVE_GETHOSTBYNAME_R_5)
-    return gethostbyname_r(name, hbuf, buf, buflen, h_errnop);
+    int h_errno;
+    return gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
+                           sizeof(tsdPtr->hbuf), &h_errno);
+    
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr;
-    return (gethostbyname_r(name, hbuf, buf, buflen, &hePtr,
-                            h_errnop) == 0) ? hbuf : NULL;
+    int h_errno;
+    return (gethostbyname_r(name, &tsdPtr->buf.hent, tsdPtr->hbuf,
+                            sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ? 
+        &tsdPtr->hent : NULL;
+
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
     struct hostent_data data;
-    if (-1 == gethostbyname_r(host, hbuf, &data)) {
-        *h_errnop = h_errno;
-        return NULL;
-    } else {
-        return &hbuf;
-    }
+    return (gethostbyname_r(host, &tsdPtr->buf.hent, &data) == 0) ?
+        &tsdPtr->buf.hent : NULL;
 #else
-    struct hostent *hePtr = NULL;
+    struct hostent *hePtr;
     Tcl_MutexLock(&compatLock);
     hePtr = gethostbyname(name);
     if (hePtr != NULL) {
-        *hbuf = *hePtr;
-        if (-1 == CopyHostent(hbuf, buf, buflen)) {
+        tsdPtr->hent = *hePtr;
+        hePtr = &tsdPtr->hent;
+        if (CopyHostent(&tsdPtr->hent, tsdPtr->hbuf,
+                        sizeof(tsdPtr->hbuf)) == -1) {
             hePtr = NULL;
-        } else {
-            hePtr = hbuf;
         }
     }
     Tcl_MutexUnlock(&compatLock);
@@ -556,25 +583,31 @@ TclpGetHostByName(const char *name, struct hostent *hbuf, char *buf,
  */
 
 struct hostent *
-TclpGetHostByAddr(const char *addr, int length, int type, struct hostent *hbuf,
-                  char *buf, size_t buflen, int *h_errnop)
+TclpGetHostByAddr(const char *addr, int length, int type)
 {
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
 #if defined(HAVE_GETHOSTBYADDR_R_7)
-    return gethostbyaddr_r(addr, length, type, hbuf, buf, buflen, h_errnop);
+    int h_errno;
+    return gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
+                           sizeof(tsdPtr->hbuf), &h_errno);
+
 #elif defined(HAVE_GETHOSTBYADDR_R_8)
     struct hostent *hePtr;
-    return (gethostbyaddr_r(addr, length, type, hbuf, buf, buflen,
-                            &hePtr, h_errnop) == 0) ?  hbuf : NULL;
+    int h_errno;
+    return (gethostbyaddr_r(addr, length, type, &tsdPtr->buf.hent, tsdPtr->hbuf,
+                            sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ? 
+        &tsdPtr->hent : NULL;
 #else
-    struct hostent *hePtr = NULL;
+    struct hostent *hePtr;
     Tcl_MutexLock(&compatLock);
     hePtr = gethostbyaddr(addr, length, type);
     if (hePtr != NULL) {
-        *hbuf = *hePtr;
-        if (-1 == CopyHostent(hbuf, buf, buflen)) {
+        tsdPtr->hent = *hePtr;
+        hePtr = &tsdPtr->hent;
+        if (CopyHostent(&tsdPtr->hent, tsdPtr->hbuf, 
+                        sizeof(tsdPtr->hbuf)) == -1) {
             hePtr = NULL;
-        } else {
-            hePtr = hbuf;
         }
     }
     Tcl_MutexUnlock(&compatLock);
