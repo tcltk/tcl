@@ -1,3 +1,7 @@
+2006-09-07  Andreas Kupries <andreask@activestate.com>
+
+	* unix/configure: Regenerated using autoconf 2.13.
+
 2006-09-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* unix/tclUnixChan.c   Rewritten MT-safe wrappers to
