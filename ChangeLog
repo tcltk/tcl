@@ -1,5 +1,12 @@
 2006-09-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
+	* unix/tclUnixCompat.c: Added fallback to MT-unsafe
+	library calls if TCL_THREADS is not defined.
+	Fixed alignment of arrays copied by CopyArrayi() to be
+	on the sizeof(char *) boundary.
+
+2006-09-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
 	* unix/tclUnixChan.c   Rewritten MT-safe wrappers to
 	* unix/tclUnixCompat.c return ptrs to TSD storage
 	* unix/tclUnixFCmd.c   making them all look like their
