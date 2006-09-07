@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.12 2006/09/07 08:50:36 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.13 2006/09/07 18:49:28 vasiljevic Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1422,7 +1422,7 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
-	if (result == -1 || groupPtr == NULL) {
+	if (groupPtr == NULL) {
 	    endgrent();
 	    Tcl_AppendResult(interp, "could not set group for file \"",
 		    Tcl_GetString(fileName), "\": group \"", 
@@ -1484,7 +1484,7 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 	pwPtr = TclpGetPwNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
-	if (result == -1 || pwPtr == NULL) {
+	if (pwPtr == NULL) {
 	    endpwent();
 	    Tcl_AppendResult(interp, "could not set owner for file \"",
 			     Tcl_GetString(fileName), "\": user \"", 
