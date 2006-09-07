@@ -1,3 +1,13 @@
+2006-09-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+        * unix/tclUnixFCmd.c: Removed some false tests added
+        (and left by mistake) by fixing the Tcl Bug: 999544
+
+        * unix/tclUnixCompat.c: Added fallback to MT-unsafe
+        library calls if TCL_THREADS is not defined.
+        Fixed alignment of arrays copied by CopyArrayi() to be
+        on the sizeof(char *) boundary.
+
 2006-09-07  Andreas Kupries <andreask@activestate.com>
 
 	* unix/configure: Regenerated using autoconf 2.13.
