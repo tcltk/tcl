@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.3 2006/09/07 08:55:40 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.4 2006/09/07 09:08:12 vasiljevic Exp $
  *
  */
 
@@ -538,13 +538,13 @@ TclpGetHostByName(const char *name)
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr;
     int h_errno;
-    return (gethostbyname_r(name, &tsdPtr->buf.hent, tsdPtr->hbuf,
+    return (gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
                             sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ? 
         &tsdPtr->hent : NULL;
 
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
     struct hostent_data data;
-    return (gethostbyname_r(host, &tsdPtr->buf.hent, &data) == 0) ?
+    return (gethostbyname_r(host, &tsdPtr->hent, &data) == 0) ?
         &tsdPtr->buf.hent : NULL;
 #else
     struct hostent *hePtr;
@@ -595,7 +595,7 @@ TclpGetHostByAddr(const char *addr, int length, int type)
 #elif defined(HAVE_GETHOSTBYADDR_R_8)
     struct hostent *hePtr;
     int h_errno;
-    return (gethostbyaddr_r(addr, length, type, &tsdPtr->buf.hent, tsdPtr->hbuf,
+    return (gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
                             sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ? 
         &tsdPtr->hent : NULL;
 #else
