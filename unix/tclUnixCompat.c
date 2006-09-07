@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.4 2006/09/07 09:08:12 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.5 2006/09/07 18:49:29 vasiljevic Exp $
  *
  */
 
@@ -18,9 +18,21 @@
 #include <string.h>
 
 /*
+ * Used to pad structures at size'd boundaries
+ */
+
+#define PadBuffer(buffer, length, size)         \
+    if (((length) % (size))) {                  \
+        (buffer) += ((length) % (size));        \
+        (length) += ((length) % (size));        \
+    }
+
+/*
  * Per-thread private storage used to store values
  * returned from MT-unsafe library calls.
  */
+
+#ifdef TCL_THREADS
 
 typedef struct ThreadSpecificData {
 
@@ -45,8 +57,8 @@ static Tcl_ThreadDataKey dataKey;
 
 Tcl_Mutex compatLock;
 
-#if !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
-    !defined(HAVE_GETPWNAM_R)      || !defined(HAVE_GETGRNAM_R)
+#if (!defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R)) || \
+    (!defined(HAVE_GETPWUID_R)      && !defined(HAVE_GETGRGID_R))
 
 
 /*
@@ -140,10 +152,11 @@ CopyString(char *src, char *buf, int buflen)
 
     return len;
 }
+#endif /* !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R) && \
+    !defined(HAVE_GETPWUID_R) && !defined(HAVE_GETGRGID_R) */
 
-#endif /* !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || 
-          !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETGRNAM_R) */
 
+#if !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R)
 
 /*
  *---------------------------------------------------------------------------
@@ -162,7 +175,6 @@ CopyString(char *src, char *buf, int buflen)
  *---------------------------------------------------------------------------
  */
 
-#if !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)
 static int
 CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
 {
@@ -179,6 +191,7 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
     len += copied;
     p = buf + len;
 
+    PadBuffer(p, len, sizeof(char *));
     copied = CopyArray(tgtPtr->h_aliases, -1, p, buflen - len);
     if (copied == -1) {
         goto range;
@@ -187,6 +200,7 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
     len += copied;
     p += len;
 
+    PadBuffer(p, len, sizeof(char *));
     copied = CopyArray(tgtPtr->h_addr_list, tgtPtr->h_length, p, buflen - len);
     if (copied == -1) {
         goto range;
@@ -195,8 +209,9 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
    
     return 0;
 }
-#endif /* !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) */
+#endif /* !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R) */
 
+#if !defined(HAVE_GETPWUID_R)
 
 /*
  *---------------------------------------------------------------------------
@@ -216,7 +231,6 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
  *---------------------------------------------------------------------------
  */
 
-#if !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R)
 static int
 CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
 {
@@ -257,8 +271,9 @@ CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
 
     return 0;
 }
-#endif /* HAVE_GETPWNAM_R || HAVE_GETPWUID_R*/
+#endif /* !defined(HAVE_GETPWUID_R) */
 
+#if !defined(HAVE_GETGRGID_R)
 
 /*
  *---------------------------------------------------------------------------
@@ -277,7 +292,6 @@ CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
  *---------------------------------------------------------------------------
  */
 
-#if !defined(HAVE_GETGRNAM_R) || !defined(HAVE_GETGRGID_R)
 static int
 CopyGrp(struct group *tgtPtr, char *buf, int buflen)
 {
@@ -305,6 +319,7 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
     p = buf + len;
 
     /* Copy group members */
+    PadBuffer(p, len, sizeof(char *));
     copied = CopyArray((char **)tgtPtr->gr_mem, -1, p, buflen - len);
     if (copied == -1) {
         goto range;
@@ -313,7 +328,9 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
 
     return 0;
 }
-#endif /* HAVE_GETGRNAM_R || HAVE_GETGRGID_R*/
+#endif /* !defined(HAVE_GETGRGID_R) */
+
+#endif /* TCL_THREADS */
 
 
 /*
@@ -335,13 +352,16 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
 
 struct passwd *
 TclpGetPwNam(const char *name)
-{   
+{
+#if !defined(TCL_THREADS)
+    return getpwnam(name);
+#else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETPWNAM_R_5)
-    struct passwd *pwPtr;
-    return (getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
-                       &pwPtr) == 0) ? &tsdPtr->pwd : NULL;
+    struct passwd *pwPtr = NULL;
+    return (getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf), 
+                       &pwPtr) == 0 && pwPtr != NULL) ? &tsdPtr->pwd : NULL;
 
 #elif defined(HAVE_GETPWNAM_R_4)
     return getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
@@ -361,6 +381,7 @@ TclpGetPwNam(const char *name)
     return pwPtr;
 #endif
     return NULL; /* Not reached */
+#endif /* TCL_THREADS */
 }
 
 
@@ -384,12 +405,15 @@ TclpGetPwNam(const char *name)
 struct passwd *
 TclpGetPwUid(uid_t uid)
 {
+#if !defined(TCL_THREADS)
+    return getpwuid(uid);
+#else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETPWUID_R_5)
-    struct passwd *pwPtr;
+    struct passwd *pwPtr = NULL;
     return (getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
-                       &pwPtr) == 0) ? &tsdPtr->pwd : NULL;
+                       &pwPtr) == 0 && pwPtr != NULL) ? &tsdPtr->pwd : NULL;
 
 #elif defined(HAVE_GETPWUID_R_4)
     return getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
@@ -409,6 +433,7 @@ TclpGetPwUid(uid_t uid)
     return pwPtr;
 #endif
     return NULL; /* Not reached */
+#endif /* TCL_THREADS */
 }
 
 
@@ -432,12 +457,15 @@ TclpGetPwUid(uid_t uid)
 struct group *
 TclpGetGrNam(const char *name)
 {
+#if !defined(TCL_THREADS)
+    return getgrnam(name);
+#else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETGRNAM_R_5)
-    struct group *grPtr;
+    struct group *grPtr = NULL;
     return (getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf),
-                       &grPtr) == 0) ? &tsdPtr->grp : NULL;
+                       &grPtr) == 0 && grPtr != NULL) ? &tsdPtr->grp : NULL;
 
 #elif defined(HAVE_GETGRNAM_R_4)
     return getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
@@ -457,6 +485,7 @@ TclpGetGrNam(const char *name)
     return grPtr;
 #endif
     return NULL; /* Not reached */
+#endif /* TCL_THREADS */
 }
 
 
@@ -480,12 +509,15 @@ TclpGetGrNam(const char *name)
 struct group *
 TclpGetGrGid(gid_t gid)
 {
+#if !defined(TCL_THREADS)
+    return getgrgid(gid);
+#else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETGRGID_R_5)
-    struct group *grPtr;
+    struct group *grPtr = NULL;
     return (getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf),
-                       &grPtr) == 0) ? &tsdPtr->grp : NULL;
+                       &grPtr) == 0 && grPtr != NULL) ? &tsdPtr->grp : NULL;
 
 #elif defined(HAVE_GETGRGID_R_4)
     return getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
@@ -505,6 +537,7 @@ TclpGetGrGid(gid_t gid)
     return grPtr;
 #endif
     return NULL; /* Not reached */
+#endif /* TCL_THREADS */
 }
 
 
@@ -528,6 +561,9 @@ TclpGetGrGid(gid_t gid)
 struct hostent *
 TclpGetHostByName(const char *name)
 {
+#if !defined(TCL_THREADS)
+    return gethostbyname(name);
+#else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETHOSTBYNAME_R_5)
@@ -562,6 +598,7 @@ TclpGetHostByName(const char *name)
     return hePtr;
 #endif
     return NULL; /* Not reached */
+#endif /* TCL_THREADS */
 }
 
 
@@ -585,6 +622,9 @@ TclpGetHostByName(const char *name)
 struct hostent *
 TclpGetHostByAddr(const char *addr, int length, int type)
 {
+#if !defined(TCL_THREADS)
+    return gethostbyaddr(addr, length, type);
+#else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETHOSTBYADDR_R_7)
@@ -614,4 +654,5 @@ TclpGetHostByAddr(const char *addr, int length, int type)
     return hePtr;
 #endif
     return NULL; /* Not reached */
+#endif /* TCL_THREADS */
 }
