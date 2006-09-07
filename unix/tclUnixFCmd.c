@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.11 2006/09/06 13:08:30 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.12 2006/09/07 08:50:36 vasiljevic Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1259,13 +1259,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
-#ifdef TCL_THREADS
-	int buflen = 512;
-	char buf[512]; /* Should be really using sysconf() to get this size */
-	struct group gr, *groupPtr = NULL;
-#else
     struct group *groupPtr;
-#endif
     int result;
 
     result = TclpObjStat(fileName, &statBuf);
@@ -1277,12 +1271,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
 	return TCL_ERROR;
     }
 
-#ifdef TCL_THREADS
-	result = TclpGetGrGid(statBuf.st_gid, &gr, buf, buflen, &groupPtr);
-#else
-	groupPtr = getgrgid(statBuf.st_gid);
-	result = 0;
-#endif
+    groupPtr = TclpGetGrGid(statBuf.st_gid);
 
     if (result == -1 || groupPtr == NULL) {
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
@@ -1323,13 +1312,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
 {
     Tcl_StatBuf statBuf;
-#ifdef TCL_THREADS
-	int buflen = 512;
-	char buf[512]; /* Should be really using sysconf() to get this size */
-	struct passwd pw, *pwPtr = NULL;
-#else
     struct passwd *pwPtr;
-#endif
     int result;
 
     result = TclpObjStat(fileName, &statBuf);
@@ -1341,12 +1324,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
 	return TCL_ERROR;
     }
 
-#ifdef TCL_THREADS
-	result = TclpGetPwUid(statBuf.st_uid, &pw, buf, buflen, &pwPtr);
-#else
-	pwPtr = getpwuid(statBuf.st_uid);
-	result = 0;
-#endif
+    pwPtr = TclpGetPwUid(statBuf.st_uid);
 
     if (result == -1 || pwPtr == NULL) {
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
@@ -1435,24 +1413,13 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 
     if (Tcl_GetLongFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
-#ifdef TCL_THREADS
-	int buflen = 512; /* Should be really using sysconf() to get this size */
-	char buf[512];
-	struct group gr, *groupPtr = NULL;
-#else
-	struct group *groupPtr = NULL;
-#endif
+	struct group *groupPtr;
 	CONST char *string;
 	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
-#ifdef TCL_THREADS
-	result = TclpGetGrNam(native, &gr, buf, buflen, &groupPtr); /* INTL: Native. */
-#else
-	groupPtr = getgrnam(native); /* INTL: Native. */
-	result = 0;
-#endif
+	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
 	if (result == -1 || groupPtr == NULL) {
@@ -1508,24 +1475,13 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 
     if (Tcl_GetLongFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
-#ifdef TCL_THREADS
-	int buflen = 512;
-	char buf[512]; /* Should be really using sysconf() to get this size */
-	struct passwd pw, *pwPtr = NULL;
-#else
-	struct passwd *pwPtr = NULL;
-#endif
+	struct passwd *pwPtr;
 	CONST char *string;
 	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
-#ifdef TCL_THREADS
-	result = TclpGetPwNam(native, &pw, buf, buflen, &pwPtr); /* INTL: Native. */
-#else
-	pwPtr = getpwnam(native); /* INTL: Native. */
-	result = 0;
-#endif
+	pwPtr = TclpGetPwNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
 	if (result == -1 || pwPtr == NULL) {
