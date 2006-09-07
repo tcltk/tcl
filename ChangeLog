@@ -1,3 +1,11 @@
+2006-09-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* unix/tclUnixChan.c   Rewritten MT-safe wrappers to
+	* unix/tclUnixCompat.c return ptrs to TSD storage
+	* unix/tclUnixFCmd.c   making them all look like their
+	* unix/tclUnixPort.h   MT-unsafe pendants API-wise.
+	* unix/tclUnixSock.c   
+
 2006-09-06  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* unix/tclUnixChan.c: Added TCL_THREADS ifdef'ed  usage

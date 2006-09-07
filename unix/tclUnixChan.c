@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.71 2006/09/06 13:23:37 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.72 2006/09/07 09:17:33 vasiljevic Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2266,25 +2266,14 @@ TcpGetOptionProc(
 		    (strncmp(optionName, "-peername", len) == 0))) {
 	if (getpeername(statePtr->fd, (struct sockaddr *) &peername,
 		&size) >= 0) {
-#ifdef TCL_THREADS
-	    int buflen = 1024, herrno;
-	    char hbuf[1024];
-	    struct hostent he;
-#endif
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
 	    }
 	    Tcl_DStringAppendElement(dsPtr, inet_ntoa(peername.sin_addr));
-#ifdef TCL_THREADS
-	    hostEntPtr = TclpGetHostByAddr(		/* INTL: Native. */
-		    (char *) &peername.sin_addr, sizeof(peername.sin_addr),
-		    AF_INET, &he, hbuf, buflen, &herrno);
-#else
-	    hostEntPtr = gethostbyaddr(			/* INTL: Native. */
+	    hostEntPtr = TclpGetHostByAddr(			/* INTL: Native. */
 		    (char *) &peername.sin_addr,
 		    sizeof(peername.sin_addr), AF_INET);
-#endif
 	    if (hostEntPtr != NULL) {
 		Tcl_DString ds;
 
@@ -2324,25 +2313,14 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-sockname", len) == 0))) {
 	if (getsockname(statePtr->fd, (struct sockaddr *) &sockname,
 		&size) >= 0) {
-#ifdef TCL_THREADS
-	    int buflen = 1024, herrno;
-	    char hbuf[1024];
-	    struct hostent he;        
-#endif
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-sockname");
 		Tcl_DStringStartSublist(dsPtr);
 	    }
 	    Tcl_DStringAppendElement(dsPtr, inet_ntoa(sockname.sin_addr));
-#ifdef TCL_THREADS
-	    hostEntPtr = TclpGetHostByAddr(		/* INTL: Native. */
-		    (char *) &sockname.sin_addr, sizeof(sockname.sin_addr),
-		    AF_INET, &he, hbuf, buflen, &herrno);
-#else
-	    hostEntPtr = gethostbyaddr(			/* INTL: Native. */
+	    hostEntPtr = TclpGetHostByAddr(			/* INTL: Native. */
 		    (char *) &sockname.sin_addr,
 		    sizeof(sockname.sin_addr), AF_INET);
-#endif
 	    if (hostEntPtr != NULL) {
 		Tcl_DString ds;
 

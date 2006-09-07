@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.53 2006/09/06 16:12:14 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.54 2006/09/07 09:17:33 vasiljevic Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -652,31 +652,22 @@ EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
 #   endif /* HAVE_PTHREAD_ATTR_GET_NP */
 #endif /* TCL_THREADS */
 
-
 /*
- * Compatibility calls 
+ * Set of MT-safe implementations of some
+ * known-to-be-MT-unsafe library calls.
+ * Instead of returning pointers to the
+ * static storage, those return pointers
+ * to the TSD data. 
  */
+
 #include <pwd.h>
 #include <grp.h>
-MODULE_SCOPE int
-TclpGetPwNam(const char *name, struct passwd *pwbuf, char *buf, size_t buflen, 
-             struct passwd **pwbufp);
-MODULE_SCOPE int 
-TclpGetPwUid(uid_t uid, struct passwd *pwbuf, char  *buf, size_t buflen,
-             struct passwd **pwbufp);
-MODULE_SCOPE int
-TclpGetGrNam(const char *name, struct group *gbuf, char *buf, size_t buflen, 
-             struct group **gbufp);
-MODULE_SCOPE int
-TclpGetGrGid(gid_t gid, struct group *gbuf, char *buf, size_t buflen, 
-             struct group **gbufp);
 
-MODULE_SCOPE struct hostent *
-TclpGetHostByName(const char *name, struct hostent *hbuf, char *buf,
-                  size_t buflen, int *h_errnop);
-
-MODULE_SCOPE struct hostent *
-TclpGetHostByAddr(const char *addr, int length, int type, struct hostent *hbuf,
-                  char *buf, size_t buflen, int *h_errnop);
+MODULE_SCOPE struct passwd*  TclpGetPwNam(const char *name);
+MODULE_SCOPE struct group*   TclpGetGrNam(const char *name);
+MODULE_SCOPE struct passwd*  TclpGetPwUid(uid_t uid);
+MODULE_SCOPE struct group*   TclpGetGrGid(gid_t gid);
+MODULE_SCOPE struct hostent* TclpGetHostByName(const char *name);
+MODULE_SCOPE struct hostent* TclpGetHostByAddr(const char *addr, int length, int type);
 
 #endif /* _TCLUNIXPORT */
