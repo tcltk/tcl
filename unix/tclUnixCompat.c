@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.2 2006/09/07 08:50:35 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.3 2006/09/07 08:55:40 vasiljevic Exp $
  *
  */
 
@@ -339,7 +339,7 @@ TclpGetPwNam(const char *name)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETPWNAM_R_5)
-    struct group *pwPtr;
+    struct passwd *pwPtr;
     return (getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
                        &pwPtr) == 0) ? &tsdPtr->pwd : NULL;
 
@@ -387,7 +387,7 @@ TclpGetPwUid(uid_t uid)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETPWUID_R_5)
-    struct group *pwPtr;
+    struct passwd *pwPtr;
     return (getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
                        &pwPtr) == 0) ? &tsdPtr->pwd : NULL;
 
