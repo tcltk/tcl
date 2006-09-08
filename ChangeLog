@@ -1,3 +1,14 @@
+2006-09-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: Added fallback to gethostbyname()
+	and gethostbyaddr() if the implementation is known to be
+	MT-safe (currently for Darwin 6 or later only).
+
+	* unix/configure.in: Assume gethostbyname() and gethostbyaddr()
+	are MT-safe starting with Darwin 6 (Mac OSX 10.2).
+
+	* unix/configure: Regenerated with autoconf V2.13
+
 2006-09-07  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
         * unix/tclUnixFCmd.c: Removed some false tests added
