@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.4 2006/09/07 18:53:11 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.5 2006/09/08 19:24:32 andreas_kupries Exp $
  *
  */
 
@@ -57,8 +57,8 @@ static Tcl_ThreadDataKey dataKey;
 
 Tcl_Mutex compatLock;
 
-#if (!defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R)) || \
-    (!defined(HAVE_GETPWUID_R)      && !defined(HAVE_GETGRGID_R))
+#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) || \
+    (!defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R))
 
 
 /*
@@ -156,7 +156,7 @@ CopyString(char *src, char *buf, int buflen)
     !defined(HAVE_GETPWUID_R) && !defined(HAVE_GETGRGID_R) */
 
 
-#if !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R)
+#if !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)
 
 /*
  *---------------------------------------------------------------------------
@@ -580,8 +580,8 @@ TclpGetHostByName(const char *name)
 
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
     struct hostent_data data;
-    return (gethostbyname_r(host, &tsdPtr->hent, &data) == 0) ?
-        &tsdPtr->buf.hent : NULL;
+    return (gethostbyname_r(name, &tsdPtr->hent, &data) == 0) ?
+        &tsdPtr->hent : NULL;
 #else
     struct hostent *hePtr;
     Tcl_MutexLock(&compatLock);
