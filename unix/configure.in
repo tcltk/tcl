@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.29 2006/09/06 13:08:29 vasiljevic Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.30 2006/09/08 11:15:13 vasiljevic Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -151,8 +151,17 @@ if test "${TCL_THREADS}" = 1; then
     SC_TCL_GETPWNAM_R
     SC_TCL_GETGRGID_R
     SC_TCL_GETGRNAM_R
-    SC_TCL_GETHOSTBYNAME_R
-    SC_TCL_GETHOSTBYADDR_R
+    if test "`uname -s`" = "Darwin" && \
+	    test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
+	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX 
+	# are actually MT-safe as they always return pointers
+	# from the TSD instead of the static storage.
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME)
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR)
+    else
+	SC_TCL_GETHOSTBYNAME_R
+	SC_TCL_GETHOSTBYADDR_R
+    fi
 fi
 
 #---------------------------------------------------------------------------
