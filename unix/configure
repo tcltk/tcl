@@ -10778,7 +10778,21 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
 
-    echo "$as_me:$LINENO: checking for gethostbyname_r" >&5
+    if test "`uname -s`" = "Darwin" && \
+	    test "`uname -r | awk -F. '{print $1}'`" -gt 5; then
+	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
+	# are actually MT-safe as they always return pointers
+	# from the TSD instead of the static storage.
+	cat >>confdefs.h <<\_ACEOF
+#define HAVE_MTSAFE_GETHOSTBYNAME 1
+_ACEOF
+
+	cat >>confdefs.h <<\_ACEOF
+#define HAVE_MTSAFE_GETHOSTBYADDR 1
+_ACEOF
+
+    else
+	echo "$as_me:$LINENO: checking for gethostbyname_r" >&5
 echo $ECHO_N "checking for gethostbyname_r... $ECHO_C" >&6
 if test "${ac_cv_func_gethostbyname_r+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -11091,7 +11105,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
 
-    echo "$as_me:$LINENO: checking for gethostbyaddr_r" >&5
+	echo "$as_me:$LINENO: checking for gethostbyaddr_r" >&5
 echo $ECHO_N "checking for gethostbyaddr_r... $ECHO_C" >&6
 if test "${ac_cv_func_gethostbyaddr_r+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -11340,6 +11354,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
 
+    fi
 fi
 
 #---------------------------------------------------------------------------
