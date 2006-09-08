@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.5 2006/09/07 18:49:29 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.6 2006/09/08 11:15:14 vasiljevic Exp $
  *
  */
 
@@ -561,7 +561,7 @@ TclpGetGrGid(gid_t gid)
 struct hostent *
 TclpGetHostByName(const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYNAME)
     return gethostbyname(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -622,7 +622,7 @@ TclpGetHostByName(const char *name)
 struct hostent *
 TclpGetHostByAddr(const char *addr, int length, int type)
 {
-#if !defined(TCL_THREADS)
+#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYADDR)
     return gethostbyaddr(addr, length, type);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
