@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.5 2006/09/08 19:24:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.6 2006/09/08 20:57:19 vasiljevic Exp $
  *
  */
 
@@ -57,8 +57,9 @@ static Tcl_ThreadDataKey dataKey;
 
 Tcl_Mutex compatLock;
 
-#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) || \
-    (!defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R))
+#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
+     !defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R)) && \
+    (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))
 
 
 /*
@@ -152,11 +153,12 @@ CopyString(char *src, char *buf, int buflen)
 
     return len;
 }
-#endif /* !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R) && \
-    !defined(HAVE_GETPWUID_R) && !defined(HAVE_GETGRGID_R) */
+#endif /* (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
+           !defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R)) && \
+          (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
 
-
-#if !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)
+#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
+    (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))
 
 /*
  *---------------------------------------------------------------------------
@@ -209,7 +211,8 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
    
     return 0;
 }
-#endif /* !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R) */
+#endif /* (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
+          (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
 
 #if !defined(HAVE_GETPWUID_R)
 
@@ -561,7 +564,7 @@ TclpGetGrGid(gid_t gid)
 struct hostent *
 TclpGetHostByName(const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYNAME)
     return gethostbyname(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -622,7 +625,7 @@ TclpGetHostByName(const char *name)
 struct hostent *
 TclpGetHostByAddr(const char *addr, int length, int type)
 {
-#if !defined(TCL_THREADS)
+#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYADDR)
     return gethostbyaddr(addr, length, type);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
