@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.7 2006/09/08 19:25:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.8 2006/09/08 20:37:35 vasiljevic Exp $
  *
  */
 
@@ -57,8 +57,9 @@ static Tcl_ThreadDataKey dataKey;
 
 Tcl_Mutex compatLock;
 
-#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) || \
-    (!defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R))
+#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
+     !defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R)) && \
+    (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))
 
 
 /*
@@ -152,11 +153,12 @@ CopyString(char *src, char *buf, int buflen)
 
     return len;
 }
-#endif /* !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R) && \
-    !defined(HAVE_GETPWUID_R) && !defined(HAVE_GETGRGID_R) */
+#endif /* (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
+           !defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R)) && \
+          (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
 
-
-#if !defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)
+#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
+    (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))
 
 /*
  *---------------------------------------------------------------------------
@@ -209,7 +211,8 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
    
     return 0;
 }
-#endif /* !defined(HAVE_GETHOSTBYNAME_R) && !defined(HAVE_GETHOSTBYADDR_R) */
+#endif /* (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
+          (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
 
 #if !defined(HAVE_GETPWUID_R)
 
