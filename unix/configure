@@ -9904,6 +9904,10 @@ if test $ac_cv_func_getpwuid_r = yes; then
 
     echo "$as_me:$LINENO: checking for getpwuid_r with 5 args" >&5
 echo $ECHO_N "checking for getpwuid_r with 5 args... $ECHO_C" >&6
+if test "${tcl_cv_api_getpwuid_r_5+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -9911,19 +9915,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-        #include <sys/types.h>
-        #include <pwd.h>
+	#include <sys/types.h>
+	#include <pwd.h>
 
 int
 main ()
 {
 
-        uid_t uid;
-        struct passwd pw, *pwp;
-        char buf[512];
-        int buflen = 512;
+	uid_t uid;
+	struct passwd pw, *pwp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getpwuid_r(uid, &pw, buf, buflen, &pwp);
+	(void) getpwuid_r(uid, &pw, buf, buflen, &pwp);
 
   ;
   return 0;
@@ -9951,49 +9955,51 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getpwuid_r_5=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETPWUID_R 1
-_ACEOF
-
+tcl_cv_api_getpwuid_r_5=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getpwuid_r_5" >&5
+echo "${ECHO_T}$tcl_cv_api_getpwuid_r_5" >&6
+    tcl_ok=$tcl_cv_api_getpwuid_r_5
+    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETPWUID_R_5 1
 _ACEOF
 
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-        echo "$as_me:$LINENO: checking for getpwuid_r with 4 args" >&5
+    else
+	echo "$as_me:$LINENO: checking for getpwuid_r with 4 args" >&5
 echo $ECHO_N "checking for getpwuid_r with 4 args... $ECHO_C" >&6
-        cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_getpwuid_r_4+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <sys/types.h>
-            #include <pwd.h>
+	    #include <sys/types.h>
+	    #include <pwd.h>
 
 int
 main ()
 {
 
-            uid_t uid;
-            struct passwd pw;
-            char buf[512];
-            int buflen = 512;
+	    uid_t uid;
+	    struct passwd pw;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getpwnam_r(uid, &pw, buf, buflen);
+	    (void)getpwnam_r(uid, &pw, buf, buflen);
 
   ;
   return 0;
@@ -10021,36 +10027,35 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getpwuid_r_4=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETPWUID_R 1
-_ACEOF
-
+tcl_cv_api_getpwuid_r_4=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getpwuid_r_4" >&5
+echo "${ECHO_T}$tcl_cv_api_getpwuid_r_4" >&6
+	tcl_ok=$tcl_cv_api_getpwuid_r_4
+	if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETPWUID_R_4 1
 _ACEOF
 
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
 
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETPWUID_R 1
+_ACEOF
 
-
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+    fi
 
 fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-
 
     echo "$as_me:$LINENO: checking for getpwnam_r" >&5
 echo $ECHO_N "checking for getpwnam_r... $ECHO_C" >&6
@@ -10146,6 +10151,10 @@ if test $ac_cv_func_getpwnam_r = yes; then
 
     echo "$as_me:$LINENO: checking for getpwnam_r with 5 args" >&5
 echo $ECHO_N "checking for getpwnam_r with 5 args... $ECHO_C" >&6
+if test "${tcl_cv_api_getpwnam_r_5+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10153,19 +10162,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-        #include <sys/types.h>
-        #include <pwd.h>
+	#include <sys/types.h>
+	#include <pwd.h>
 
 int
 main ()
 {
 
-        char *name;
-        struct passwd pw, *pwp;
-        char buf[512];
-        int buflen = 512;
+	char *name;
+	struct passwd pw, *pwp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getpwnam_r(name, &pw, buf, buflen, &pwp);
+	(void) getpwnam_r(name, &pw, buf, buflen, &pwp);
 
   ;
   return 0;
@@ -10193,49 +10202,51 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getpwnam_r_5=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETPWNAM_R 1
-_ACEOF
-
+tcl_cv_api_getpwnam_r_5=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getpwnam_r_5" >&5
+echo "${ECHO_T}$tcl_cv_api_getpwnam_r_5" >&6
+    tcl_ok=$tcl_cv_api_getpwnam_r_5
+    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETPWNAM_R_5 1
 _ACEOF
 
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-        echo "$as_me:$LINENO: checking for getpwnam_r with 4 args" >&5
+    else
+	echo "$as_me:$LINENO: checking for getpwnam_r with 4 args" >&5
 echo $ECHO_N "checking for getpwnam_r with 4 args... $ECHO_C" >&6
-        cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_getpwnam_r_4+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <sys/types.h>
-            #include <pwd.h>
+	    #include <sys/types.h>
+	    #include <pwd.h>
 
 int
 main ()
 {
 
-            char *name;
-            struct passwd pw;
-            char buf[512];
-            int buflen = 512;
+	    char *name;
+	    struct passwd pw;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getpwnam_r(name, &pw, buf, buflen);
+	    (void)getpwnam_r(name, &pw, buf, buflen);
 
   ;
   return 0;
@@ -10263,36 +10274,35 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getpwnam_r_4=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETPWNAM_R 1
-_ACEOF
-
+tcl_cv_api_getpwnam_r_4=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getpwnam_r_4" >&5
+echo "${ECHO_T}$tcl_cv_api_getpwnam_r_4" >&6
+	tcl_ok=$tcl_cv_api_getpwnam_r_4
+	if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETPWNAM_R_4 1
 _ACEOF
 
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
 
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETPWNAM_R 1
+_ACEOF
 
-
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+    fi
 
 fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-
 
     echo "$as_me:$LINENO: checking for getgrgid_r" >&5
 echo $ECHO_N "checking for getgrgid_r... $ECHO_C" >&6
@@ -10388,6 +10398,10 @@ if test $ac_cv_func_getgrgid_r = yes; then
 
     echo "$as_me:$LINENO: checking for getgrgid_r with 5 args" >&5
 echo $ECHO_N "checking for getgrgid_r with 5 args... $ECHO_C" >&6
+if test "${tcl_cv_api_getgrgid_r_5+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10395,19 +10409,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-        #include <sys/types.h>
-        #include <grp.h>
+	#include <sys/types.h>
+	#include <grp.h>
 
 int
 main ()
 {
 
-        gid_t gid;
-        struct group gr, *grp;
-        char buf[512];
-        int buflen = 512;
+	gid_t gid;
+	struct group gr, *grp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getgrgid_r(gid, &gr, buf, buflen, &grp);
+	(void) getgrgid_r(gid, &gr, buf, buflen, &grp);
 
   ;
   return 0;
@@ -10435,49 +10449,51 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getgrgid_r_5=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETGRGID_R 1
-_ACEOF
-
+tcl_cv_api_getgrgid_r_5=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getgrgid_r_5" >&5
+echo "${ECHO_T}$tcl_cv_api_getgrgid_r_5" >&6
+    tcl_ok=$tcl_cv_api_getgrgid_r_5
+    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETGRGID_R_5 1
 _ACEOF
 
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-        echo "$as_me:$LINENO: checking for getgrgid_r with 4 args" >&5
+    else
+	echo "$as_me:$LINENO: checking for getgrgid_r with 4 args" >&5
 echo $ECHO_N "checking for getgrgid_r with 4 args... $ECHO_C" >&6
-        cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_getgrgid_r_4+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <sys/types.h>
-            #include <grp.h>
+	    #include <sys/types.h>
+	    #include <grp.h>
 
 int
 main ()
 {
 
-            gid_t gid;
-            struct group gr;
-            char buf[512];
-            int buflen = 512;
+	    gid_t gid;
+	    struct group gr;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getgrgid_r(gid, &gr, buf, buflen);
+	    (void)getgrgid_r(gid, &gr, buf, buflen);
 
   ;
   return 0;
@@ -10505,36 +10521,35 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getgrgid_r_4=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETGRGID_R 1
-_ACEOF
-
+tcl_cv_api_getgrgid_r_4=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getgrgid_r_4" >&5
+echo "${ECHO_T}$tcl_cv_api_getgrgid_r_4" >&6
+	tcl_ok=$tcl_cv_api_getgrgid_r_4
+	if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETGRGID_R_4 1
 _ACEOF
 
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
 
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETGRGID_R 1
+_ACEOF
 
-
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+    fi
 
 fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-
 
     echo "$as_me:$LINENO: checking for getgrnam_r" >&5
 echo $ECHO_N "checking for getgrnam_r... $ECHO_C" >&6
@@ -10630,6 +10645,10 @@ if test $ac_cv_func_getgrnam_r = yes; then
 
     echo "$as_me:$LINENO: checking for getgrnam_r with 5 args" >&5
 echo $ECHO_N "checking for getgrnam_r with 5 args... $ECHO_C" >&6
+if test "${tcl_cv_api_getgrnam_r_5+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10637,19 +10656,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-        #include <sys/types.h>
-        #include <grp.h>
+	#include <sys/types.h>
+	#include <grp.h>
 
 int
 main ()
 {
 
-        char *name;
-        struct group gr, *grp;
-        char buf[512];
-        int buflen = 512;
+	char *name;
+	struct group gr, *grp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getgrnam_r(name, &gr, buf, buflen, &grp);
+	(void) getgrnam_r(name, &gr, buf, buflen, &grp);
 
   ;
   return 0;
@@ -10677,49 +10696,51 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getgrnam_r_5=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETGRNAM_R 1
-_ACEOF
-
+tcl_cv_api_getgrnam_r_5=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getgrnam_r_5" >&5
+echo "${ECHO_T}$tcl_cv_api_getgrnam_r_5" >&6
+    tcl_ok=$tcl_cv_api_getgrnam_r_5
+    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETGRNAM_R_5 1
 _ACEOF
 
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-        echo "$as_me:$LINENO: checking for getgrnam_r with 4 args" >&5
+    else
+	echo "$as_me:$LINENO: checking for getgrnam_r with 4 args" >&5
 echo $ECHO_N "checking for getgrnam_r with 4 args... $ECHO_C" >&6
-        cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_getgrnam_r_4+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <sys/types.h>
-            #include <grp.h>
+	    #include <sys/types.h>
+	    #include <grp.h>
 
 int
 main ()
 {
 
-            char *name;
-            struct group gr;
-            char buf[512];
-            int buflen = 512;
+	    char *name;
+	    struct group gr;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getgrnam_r(name, &gr, buf, buflen);
+	    (void)getgrnam_r(name, &gr, buf, buflen);
 
   ;
   return 0;
@@ -10747,47 +10768,48 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_getgrnam_r_4=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETGRNAM_R 1
-_ACEOF
-
+tcl_cv_api_getgrnam_r_4=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_getgrnam_r_4" >&5
+echo "${ECHO_T}$tcl_cv_api_getgrnam_r_4" >&6
+	tcl_ok=$tcl_cv_api_getgrnam_r_4
+	if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETGRNAM_R_4 1
 _ACEOF
 
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
 
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETGRNAM_R 1
+_ACEOF
 
-
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+    fi
 
 fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-
 
     if test "`uname -s`" = "Darwin" && \
 	    test "`uname -r | awk -F. '{print $1}'`" -gt 5; then
 	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
 	# are actually MT-safe as they always return pointers
-	# from the TSD instead of the static storage.
-	cat >>confdefs.h <<\_ACEOF
+	# from TSD instead of static storage.
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_MTSAFE_GETHOSTBYNAME 1
 _ACEOF
 
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_MTSAFE_GETHOSTBYADDR 1
 _ACEOF
 
@@ -10886,6 +10908,10 @@ if test $ac_cv_func_gethostbyname_r = yes; then
 
     echo "$as_me:$LINENO: checking for gethostbyname_r with 6 args" >&5
 echo $ECHO_N "checking for gethostbyname_r with 6 args... $ECHO_C" >&6
+if test "${tcl_cv_api_gethostbyname_r_6+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -10893,19 +10919,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-        #include <netdb.h>
+	#include <netdb.h>
 
 int
 main ()
 {
 
-        char *name;
-        struct hostent *he, *res;
-        char buffer[2048];
-        int buflen = 2048;
-        int h_errnop;
+	char *name;
+	struct hostent *he, *res;
+	char buffer[2048];
+	int buflen = 2048;
+	int h_errnop;
 
-        (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
+	(void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
 
   ;
   return 0;
@@ -10933,49 +10959,51 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_gethostbyname_r_6=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETHOSTBYNAME_R 1
-_ACEOF
-
+tcl_cv_api_gethostbyname_r_6=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_gethostbyname_r_6" >&5
+echo "${ECHO_T}$tcl_cv_api_gethostbyname_r_6" >&6
+    tcl_ok=$tcl_cv_api_gethostbyname_r_6
+    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETHOSTBYNAME_R_6 1
 _ACEOF
 
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-        echo "$as_me:$LINENO: checking for gethostbyname_r with 5 args" >&5
+    else
+	echo "$as_me:$LINENO: checking for gethostbyname_r with 5 args" >&5
 echo $ECHO_N "checking for gethostbyname_r with 5 args... $ECHO_C" >&6
-        cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_gethostbyname_r_5+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <netdb.h>
+	    #include <netdb.h>
 
 int
 main ()
 {
 
-            char *name;
-            struct hostent *he;
-            char buffer[2048];
-            int buflen = 2048;
-            int h_errnop;
+	    char *name;
+	    struct hostent *he;
+	    char buffer[2048];
+	    int buflen = 2048;
+	    int h_errnop;
 
-            (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
+	    (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
 
   ;
   return 0;
@@ -11003,47 +11031,49 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_gethostbyname_r_5=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETHOSTBYNAME_R 1
-_ACEOF
-
+tcl_cv_api_gethostbyname_r_5=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_gethostbyname_r_5" >&5
+echo "${ECHO_T}$tcl_cv_api_gethostbyname_r_5" >&6
+	tcl_ok=$tcl_cv_api_gethostbyname_r_5
+	if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETHOSTBYNAME_R_5 1
 _ACEOF
 
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-            echo "$as_me:$LINENO: checking for gethostbyname_r with 3 args" >&5
+	else
+	    echo "$as_me:$LINENO: checking for gethostbyname_r with 3 args" >&5
 echo $ECHO_N "checking for gethostbyname_r with 3 args... $ECHO_C" >&6
-            cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_gethostbyname_r_3+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	    cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-                #include <netdb.h>
+		#include <netdb.h>
 
 int
 main ()
 {
 
-                char *name;
-                struct hostent *he;
-                struct hostent_data data;
+		char *name;
+		struct hostent *he;
+		struct hostent_data data;
 
-                (void) gethostbyname_r(name, he, &data);
+		(void) gethostbyname_r(name, he, &data);
 
   ;
   return 0;
@@ -11071,39 +11101,36 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_gethostbyname_r_3=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETHOSTBYNAME_R 1
-_ACEOF
-
+tcl_cv_api_gethostbyname_r_3=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_gethostbyname_r_3" >&5
+echo "${ECHO_T}$tcl_cv_api_gethostbyname_r_3" >&6
+	    tcl_ok=$tcl_cv_api_gethostbyname_r_3
+	    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETHOSTBYNAME_R_3 1
 _ACEOF
 
-                echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	    fi
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
 
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETHOSTBYNAME_R 1
+_ACEOF
 
-
-                echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+    fi
 
 fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-
 
 	echo "$as_me:$LINENO: checking for gethostbyaddr_r" >&5
 echo $ECHO_N "checking for gethostbyaddr_r... $ECHO_C" >&6
@@ -11199,6 +11226,10 @@ if test $ac_cv_func_gethostbyaddr_r = yes; then
 
     echo "$as_me:$LINENO: checking for gethostbyaddr_r with 7 args" >&5
 echo $ECHO_N "checking for gethostbyaddr_r with 7 args... $ECHO_C" >&6
+if test "${tcl_cv_api_gethostbyaddr_r_7+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -11206,22 +11237,22 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-        #include <netdb.h>
+	#include <netdb.h>
 
 int
 main ()
 {
 
-        char *addr;
-        int length;
-        int type;
-        struct hostent *result;
-        char buffer[2048];
-        int buflen = 2048;
-        int h_errnop;
+	char *addr;
+	int length;
+	int type;
+	struct hostent *result;
+	char buffer[2048];
+	int buflen = 2048;
+	int h_errnop;
 
-        (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
-                               &h_errnop);
+	(void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
+			       &h_errnop);
 
   ;
   return 0;
@@ -11249,52 +11280,54 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_gethostbyaddr_r_7=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETHOSTBYADDR_R 1
-_ACEOF
-
+tcl_cv_api_gethostbyaddr_r_7=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_gethostbyaddr_r_7" >&5
+echo "${ECHO_T}$tcl_cv_api_gethostbyaddr_r_7" >&6
+    tcl_ok=$tcl_cv_api_gethostbyaddr_r_7
+    if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETHOSTBYADDR_R_7 1
 _ACEOF
 
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-        echo "$as_me:$LINENO: checking for gethostbyaddr_r with 8 args" >&5
+    else
+	echo "$as_me:$LINENO: checking for gethostbyaddr_r with 8 args" >&5
 echo $ECHO_N "checking for gethostbyaddr_r with 8 args... $ECHO_C" >&6
-        cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_api_gethostbyaddr_r_8+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-            #include <netdb.h>
+	    #include <netdb.h>
 
 int
 main ()
 {
 
-            char *addr;
-            int length;
-            int type;
-            struct hostent *result, *resultp;
-            char buffer[2048];
-            int buflen = 2048;
-            int h_errnop;
+	    char *addr;
+	    int length;
+	    int type;
+	    struct hostent *result, *resultp;
+	    char buffer[2048];
+	    int buflen = 2048;
+	    int h_errnop;
 
-            (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
-                                   &resultp, &h_errnop);
+	    (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
+				   &resultp, &h_errnop);
 
   ;
   return 0;
@@ -11322,37 +11355,35 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
+  tcl_cv_api_gethostbyaddr_r_8=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
 
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETHOSTBYADDR_R 1
-_ACEOF
-
+tcl_cv_api_gethostbyaddr_r_8=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_api_gethostbyaddr_r_8" >&5
+echo "${ECHO_T}$tcl_cv_api_gethostbyaddr_r_8" >&6
+	tcl_ok=$tcl_cv_api_gethostbyaddr_r_8
+	if test "$tcl_ok" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_GETHOSTBYADDR_R_8 1
 _ACEOF
 
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
 
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GETHOSTBYADDR_R 1
+_ACEOF
 
-
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
+    fi
 
 fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-
 
     fi
 fi
