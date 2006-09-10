@@ -2816,55 +2816,49 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [AC_CHECK_FUNC(gethostbyaddr_r, [
-    AC_MSG_CHECKING([for gethostbyaddr_r with 7 args])
+    AC_CACHE_CHECK([for gethostbyaddr_r with 7 args], tcl_cv_api_gethostbyaddr_r_7, [
     AC_TRY_COMPILE([
-        #include <netdb.h>
+	#include <netdb.h>
     ], [
-        char *addr;
-        int length;
-        int type;
-        struct hostent *result;
-        char buffer[2048];
-        int buflen = 2048;
-        int h_errnop;
+	char *addr;
+	int length;
+	int type;
+	struct hostent *result;
+	char buffer[2048];
+	int buflen = 2048;
+	int h_errnop;
 
-        (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
-                               &h_errnop);
-    ], [
-        AC_DEFINE(HAVE_GETHOSTBYADDR_R, 1,
-            [Define to 1 if gethostbyaddr_r is available.])
-        AC_DEFINE(HAVE_GETHOSTBYADDR_R_7, 1,
-            [Define to 1 if gethostbyaddr_r takes 7 args.])
-        AC_MSG_RESULT(yes)
-    ], [
-        AC_MSG_RESULT(no)
-        AC_MSG_CHECKING([for gethostbyaddr_r with 8 args])
-        AC_TRY_COMPILE([
-            #include <netdb.h>
-        ], [
-            char *addr;
-            int length;
-            int type;
-            struct hostent *result, *resultp;
-            char buffer[2048];
-            int buflen = 2048;
-            int h_errnop;
+	(void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
+			       &h_errnop);
+    ], tcl_cv_api_gethostbyaddr_r_7=yes, tcl_cv_api_gethostbyaddr_r_7=no)])
+    tcl_ok=$tcl_cv_api_gethostbyaddr_r_7
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYADDR_R_7)
+    else
+	AC_CACHE_CHECK([for gethostbyaddr_r with 8 args], tcl_cv_api_gethostbyaddr_r_8, [
+	AC_TRY_COMPILE([
+	    #include <netdb.h>
+	], [
+	    char *addr;
+	    int length;
+	    int type;
+	    struct hostent *result, *resultp;
+	    char buffer[2048];
+	    int buflen = 2048;
+	    int h_errnop;
 
-            (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
-                                   &resultp, &h_errnop);
-        ], [
-            AC_DEFINE(HAVE_GETHOSTBYADDR_R, 1,
-                [Define to 1 if gethostbyaddr_r is available.])
-            AC_DEFINE(HAVE_GETHOSTBYADDR_R_8, 1,
-                [Define to 1 if gethostbyaddr_r takes 8 args.])
-            AC_MSG_RESULT(yes)
-        ], [
-            AC_MSG_RESULT(no)
-
-        ])
-    ])
-])
-])
+	    (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
+				   &resultp, &h_errnop);
+	], tcl_cv_api_gethostbyaddr_r_8=yes, tcl_cv_api_gethostbyaddr_r_8=no)])
+	tcl_ok=$tcl_cv_api_gethostbyaddr_r_8
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETHOSTBYADDR_R_8)
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYADDR_R)
+    fi
+])])
 
 #--------------------------------------------------------------------
 # SC_TCL_GETHOSTBYNAME_R
@@ -2887,66 +2881,58 @@ AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [AC_CHECK_FUNC(gethostbyaddr_r, [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [AC_CHECK_FUNC(gethostbyname_r, [
-    AC_MSG_CHECKING([for gethostbyname_r with 6 args])
+    AC_CACHE_CHECK([for gethostbyname_r with 6 args], tcl_cv_api_gethostbyname_r_6, [
     AC_TRY_COMPILE([
-        #include <netdb.h>
+	#include <netdb.h>
     ], [
-        char *name;
-        struct hostent *he, *res;
-        char buffer[2048];
-        int buflen = 2048;
-        int h_errnop;
+	char *name;
+	struct hostent *he, *res;
+	char buffer[2048];
+	int buflen = 2048;
+	int h_errnop;
 
-        (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
-    ], [
-        AC_DEFINE(HAVE_GETHOSTBYNAME_R, 1,
-            [Define to 1 if gethostbyname_r is available.])
-        AC_DEFINE(HAVE_GETHOSTBYNAME_R_6, 1,
-            [Define to 1 if gethostbyname_r takes 6 args.])
-        AC_MSG_RESULT(yes)
-    ], [
-        AC_MSG_RESULT(no)
-        AC_MSG_CHECKING([for gethostbyname_r with 5 args])
-        AC_TRY_COMPILE([
-            #include <netdb.h>
-        ], [
-            char *name;
-            struct hostent *he;
-            char buffer[2048];
-            int buflen = 2048;
-            int h_errnop;
+	(void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
+    ], tcl_cv_api_gethostbyname_r_6=yes, tcl_cv_api_gethostbyname_r_6=no)])
+    tcl_ok=$tcl_cv_api_gethostbyname_r_6
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYNAME_R_6)
+    else
+	AC_CACHE_CHECK([for gethostbyname_r with 5 args], tcl_cv_api_gethostbyname_r_5, [
+	AC_TRY_COMPILE([
+	    #include <netdb.h>
+	], [
+	    char *name;
+	    struct hostent *he;
+	    char buffer[2048];
+	    int buflen = 2048;
+	    int h_errnop;
 
-            (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
-        ], [
-            AC_DEFINE(HAVE_GETHOSTBYNAME_R, 1,
-                [Define to 1 if gethostbyname_r is available.])
-            AC_DEFINE(HAVE_GETHOSTBYNAME_R_5, 1,
-                [Define to 1 if gethostbyname_r takes 5 args.])
-            AC_MSG_RESULT(yes)
-        ], [
-            AC_MSG_RESULT(no)
-            AC_MSG_CHECKING([for gethostbyname_r with 3 args])
-            AC_TRY_COMPILE([
-                #include <netdb.h>
-            ], [
-                char *name;
-                struct hostent *he;
-                struct hostent_data data;
+	    (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
+	], tcl_cv_api_gethostbyname_r_5=yes, tcl_cv_api_gethostbyname_r_5=no)])
+	tcl_ok=$tcl_cv_api_gethostbyname_r_5
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETHOSTBYNAME_R_5)
+	else
+	    AC_CACHE_CHECK([for gethostbyname_r with 3 args], tcl_cv_api_gethostbyname_r_3, [
+	    AC_TRY_COMPILE([
+		#include <netdb.h>
+	    ], [
+		char *name;
+		struct hostent *he;
+		struct hostent_data data;
 
-                (void) gethostbyname_r(name, he, &data);
-            ], [
-                AC_DEFINE(HAVE_GETHOSTBYNAME_R, 1,
-                    [Define to 1 if gethostbyname_r is available.])
-                AC_DEFINE(HAVE_GETHOSTBYNAME_R_3, 1,
-                    [Define to 1 if gethostbyname_r takes 3 args.])
-                AC_MSG_RESULT(yes)
-            ], [
-                AC_MSG_RESULT(no)
-            ])
-        ])
-    ])
-])
-])
+		(void) gethostbyname_r(name, he, &data);
+	    ], tcl_cv_api_gethostbyname_r_3=yes, tcl_cv_api_gethostbyname_r_3=no)])
+	    tcl_ok=$tcl_cv_api_gethostbyname_r_3
+	    if test "$tcl_ok" = yes; then
+		AC_DEFINE(HAVE_GETHOSTBYNAME_R_3)
+	    fi
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYNAME_R)
+    fi
+])])
 
 #--------------------------------------------------------------------
 # SC_TCL_GETPWUID_R
@@ -2967,48 +2953,43 @@ AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [AC_CHECK_FUNC(gethostbyname_r, [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETPWUID_R], [AC_CHECK_FUNC(getpwuid_r, [
-    AC_MSG_CHECKING([for getpwuid_r with 5 args])
+    AC_CACHE_CHECK([for getpwuid_r with 5 args], tcl_cv_api_getpwuid_r_5, [
     AC_TRY_COMPILE([
-        #include <sys/types.h>
-        #include <pwd.h>
+	#include <sys/types.h>
+	#include <pwd.h>
     ], [
-        uid_t uid;
-        struct passwd pw, *pwp;
-        char buf[512];
-        int buflen = 512;
+	uid_t uid;
+	struct passwd pw, *pwp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getpwuid_r(uid, &pw, buf, buflen, &pwp);
-    ], [
-        AC_DEFINE(HAVE_GETPWUID_R, 1,
-            [Define to 1 if getpwuid_r is available.])
-        AC_DEFINE(HAVE_GETPWUID_R_5, 1,
-            [Define to 1 if getpwuid_r takes 5 args.])
-        AC_MSG_RESULT(yes)
-    ], [
-        AC_MSG_RESULT(no)
-        AC_MSG_CHECKING([for getpwuid_r with 4 args])
-        AC_TRY_COMPILE([
-            #include <sys/types.h>
-            #include <pwd.h>
-        ], [
-            uid_t uid;
-            struct passwd pw;
-            char buf[512];
-            int buflen = 512;
+	(void) getpwuid_r(uid, &pw, buf, buflen, &pwp);
+    ], tcl_cv_api_getpwuid_r_5=yes, tcl_cv_api_getpwuid_r_5=no)])
+    tcl_ok=$tcl_cv_api_getpwuid_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWUID_R_5)
+    else
+	AC_CACHE_CHECK([for getpwuid_r with 4 args], tcl_cv_api_getpwuid_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <pwd.h>
+	], [
+	    uid_t uid;
+	    struct passwd pw;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getpwnam_r(uid, &pw, buf, buflen);
-         ], [
-            AC_DEFINE(HAVE_GETPWUID_R, 1,
-                [Define to 1 if getpwuid_r is available.])
-            AC_DEFINE(HAVE_GETPWUID_R_4, 1,
-                [Define to 1 if getpwuid_r takes 4 args.])
-            AC_MSG_RESULT(yes)
-         ], [
-            AC_MSG_RESULT(no)
-         ])
-    ])
-])
-])
+	    (void)getpwnam_r(uid, &pw, buf, buflen);
+	], tcl_cv_api_getpwuid_r_4=yes, tcl_cv_api_getpwuid_r_4=no)])
+	tcl_ok=$tcl_cv_api_getpwuid_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETPWUID_R_4)
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWUID_R)
+    fi
+])])
 
 #--------------------------------------------------------------------
 # SC_TCL_GETPWNAM_R
@@ -3029,48 +3010,43 @@ AC_DEFUN([SC_TCL_GETPWUID_R], [AC_CHECK_FUNC(getpwuid_r, [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETPWNAM_R], [AC_CHECK_FUNC(getpwnam_r, [
-    AC_MSG_CHECKING([for getpwnam_r with 5 args])
+    AC_CACHE_CHECK([for getpwnam_r with 5 args], tcl_cv_api_getpwnam_r_5, [
     AC_TRY_COMPILE([
-        #include <sys/types.h>
-        #include <pwd.h>
+	#include <sys/types.h>
+	#include <pwd.h>
     ], [
-        char *name;
-        struct passwd pw, *pwp;
-        char buf[512];
-        int buflen = 512;
+	char *name;
+	struct passwd pw, *pwp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getpwnam_r(name, &pw, buf, buflen, &pwp);
-    ], [
-        AC_DEFINE(HAVE_GETPWNAM_R, 1,
-            [Define to 1 if getpwnam_r is available.])
-        AC_DEFINE(HAVE_GETPWNAM_R_5, 1,
-            [Define to 1 if getpwnam_r takes 5 args.])
-        AC_MSG_RESULT(yes)
-    ], [
-        AC_MSG_RESULT(no)
-        AC_MSG_CHECKING([for getpwnam_r with 4 args])
-        AC_TRY_COMPILE([
-            #include <sys/types.h>
-            #include <pwd.h>
-        ], [
-            char *name;
-            struct passwd pw;
-            char buf[512];
-            int buflen = 512;
+	(void) getpwnam_r(name, &pw, buf, buflen, &pwp);
+    ], tcl_cv_api_getpwnam_r_5=yes, tcl_cv_api_getpwnam_r_5=no)])
+    tcl_ok=$tcl_cv_api_getpwnam_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWNAM_R_5)
+    else
+	AC_CACHE_CHECK([for getpwnam_r with 4 args], tcl_cv_api_getpwnam_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <pwd.h>
+	], [
+	    char *name;
+	    struct passwd pw;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getpwnam_r(name, &pw, buf, buflen);
-         ], [
-            AC_DEFINE(HAVE_GETPWNAM_R, 1,
-                [Define to 1 if getpwnam_r is available.])
-            AC_DEFINE(HAVE_GETPWNAM_R_4, 1,
-                [Define to 1 if getpwnam_r takes 4 args.])
-            AC_MSG_RESULT(yes)
-         ], [
-            AC_MSG_RESULT(no)
-         ])
-    ])
-])
-])
+	    (void)getpwnam_r(name, &pw, buf, buflen);
+	], tcl_cv_api_getpwnam_r_4=yes, tcl_cv_api_getpwnam_r_4=no)])
+	tcl_ok=$tcl_cv_api_getpwnam_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETPWNAM_R_4)
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWNAM_R)
+    fi
+])])
 
 #--------------------------------------------------------------------
 # SC_TCL_GETGRGID_R
@@ -3091,48 +3067,43 @@ AC_DEFUN([SC_TCL_GETPWNAM_R], [AC_CHECK_FUNC(getpwnam_r, [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETGRGID_R], [AC_CHECK_FUNC(getgrgid_r, [
-    AC_MSG_CHECKING([for getgrgid_r with 5 args])
+    AC_CACHE_CHECK([for getgrgid_r with 5 args], tcl_cv_api_getgrgid_r_5, [
     AC_TRY_COMPILE([
-        #include <sys/types.h>
-        #include <grp.h>
+	#include <sys/types.h>
+	#include <grp.h>
     ], [
-        gid_t gid;
-        struct group gr, *grp;
-        char buf[512];
-        int buflen = 512;
+	gid_t gid;
+	struct group gr, *grp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getgrgid_r(gid, &gr, buf, buflen, &grp);
-    ], [
-        AC_DEFINE(HAVE_GETGRGID_R, 1,
-            [Define to 1 if getgrgid_r is available.])
-        AC_DEFINE(HAVE_GETGRGID_R_5, 1,
-            [Define to 1 if getgrgid_r takes 5 args.])
-        AC_MSG_RESULT(yes)
-    ], [
-        AC_MSG_RESULT(no)
-        AC_MSG_CHECKING([for getgrgid_r with 4 args])
-        AC_TRY_COMPILE([
-            #include <sys/types.h>
-            #include <grp.h>
-        ], [
-            gid_t gid;
-            struct group gr;
-            char buf[512];
-            int buflen = 512;
+	(void) getgrgid_r(gid, &gr, buf, buflen, &grp);
+    ], tcl_cv_api_getgrgid_r_5=yes, tcl_cv_api_getgrgid_r_5=no)])
+    tcl_ok=$tcl_cv_api_getgrgid_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRGID_R_5)
+    else
+	AC_CACHE_CHECK([for getgrgid_r with 4 args], tcl_cv_api_getgrgid_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <grp.h>
+	], [
+	    gid_t gid;
+	    struct group gr;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getgrgid_r(gid, &gr, buf, buflen);
-         ], [
-            AC_DEFINE(HAVE_GETGRGID_R, 1,
-                [Define to 1 if getgrgid_r is available.])
-            AC_DEFINE(HAVE_GETGRGID_R_4, 1,
-                [Define to 1 if getgrgid_r takes 4 args.])
-            AC_MSG_RESULT(yes)
-         ], [
-            AC_MSG_RESULT(no)
-         ])
-    ])
-])
-])
+	    (void)getgrgid_r(gid, &gr, buf, buflen);
+	], tcl_cv_api_getgrgid_r_4=yes, tcl_cv_api_getgrgid_r_4=no)])
+	tcl_ok=$tcl_cv_api_getgrgid_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETGRGID_R_4)
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRGID_R)
+    fi
+])])
 
 #--------------------------------------------------------------------
 # SC_TCL_GETGRNAM_R
@@ -3153,45 +3124,40 @@ AC_DEFUN([SC_TCL_GETGRGID_R], [AC_CHECK_FUNC(getgrgid_r, [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETGRNAM_R], [AC_CHECK_FUNC(getgrnam_r, [
-    AC_MSG_CHECKING([for getgrnam_r with 5 args])
+    AC_CACHE_CHECK([for getgrnam_r with 5 args], tcl_cv_api_getgrnam_r_5, [
     AC_TRY_COMPILE([
-        #include <sys/types.h>
-        #include <grp.h>
+	#include <sys/types.h>
+	#include <grp.h>
     ], [
-        char *name;
-        struct group gr, *grp;
-        char buf[512];
-        int buflen = 512;
+	char *name;
+	struct group gr, *grp;
+	char buf[512];
+	int buflen = 512;
 
-        (void) getgrnam_r(name, &gr, buf, buflen, &grp);
-    ], [
-        AC_DEFINE(HAVE_GETGRNAM_R, 1,
-            [Define to 1 if getgrnam_r is available.])
-        AC_DEFINE(HAVE_GETGRNAM_R_5, 1,
-            [Define to 1 if getgrnam_r takes 5 args.])
-        AC_MSG_RESULT(yes)
-    ], [
-        AC_MSG_RESULT(no)
-        AC_MSG_CHECKING([for getgrnam_r with 4 args])
-        AC_TRY_COMPILE([
-            #include <sys/types.h>
-            #include <grp.h>
-        ], [
-            char *name;
-            struct group gr;
-            char buf[512];
-            int buflen = 512;
+	(void) getgrnam_r(name, &gr, buf, buflen, &grp);
+    ], tcl_cv_api_getgrnam_r_5=yes, tcl_cv_api_getgrnam_r_5=no)])
+    tcl_ok=$tcl_cv_api_getgrnam_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRNAM_R_5)
+    else
+	AC_CACHE_CHECK([for getgrnam_r with 4 args], tcl_cv_api_getgrnam_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <grp.h>
+	], [
+	    char *name;
+	    struct group gr;
+	    char buf[512];
+	    int buflen = 512;
 
-            (void)getgrnam_r(name, &gr, buf, buflen);
-         ], [
-            AC_DEFINE(HAVE_GETGRNAM_R, 1,
-                [Define to 1 if getgrnam_r is available.])
-            AC_DEFINE(HAVE_GETGRNAM_R_4, 1,
-                [Define to 1 if getgrnam_r takes 4 args.])
-            AC_MSG_RESULT(yes)
-         ], [
-            AC_MSG_RESULT(no)
-         ])
-    ])
-])
-])
+	    (void)getgrnam_r(name, &gr, buf, buflen);
+	], tcl_cv_api_getgrnam_r_4=yes, tcl_cv_api_getgrnam_r_4=no)])
+	tcl_ok=$tcl_cv_api_getgrnam_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETGRNAM_R_4)
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRNAM_R)
+    fi
+])])
