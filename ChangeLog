@@ -1,3 +1,14 @@
+2006-09-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl (msgcat::Init): on Darwin, add fallback of
+	* tests/msgcat.test:                        default msgcat locale to
+	* unix/tclUnixInit.c (TclpSetVariables):    current CFLocale identifier
+	if available (via private ::tcl::mac::locale global, set at interp init
+	when on Mac OS X 10.3 or later with CoreFoundation).
+
+	* unix/tcl.m4: add caching to new SC_TCL_* macros for MT-safe wrappers.
+	* unix/configure: autoconf-2.13
+
 2006-09-08  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/tclUnixCompat.c: Fixed conditions for CopyArray/CopyString,
