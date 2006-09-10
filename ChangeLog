@@ -1,3 +1,8 @@
+2006-09-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Bump to version msgcat 1.3.4 to account
+	* library/msgcat/pkgIndex.tcl:	for modifications.
+
 2006-09-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* library/msgcat/msgcat.tcl (msgcat::Init): on Darwin, add fallback of
