@@ -1,3 +1,22 @@
+2006-09-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl (msgcat::Init): on Darwin, add fallback of
+	* tests/msgcat.test:                        default msgcat locale to
+	* unix/tclUnixInit.c (TclpSetVariables):    current CFLocale identifier
+	if available (via private ::tcl::mac::locale global, set at interp init
+	when on Mac OS X 10.3 or later with CoreFoundation).
+
+	* library/tcltest/tcltest.tcl: add 'line' verbose level: prints source
+	* doc/tcltest.n:               file line information of failing tests.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add new tclUnixCompat.c file;
+	revise tests target to use new tcltest 'line' verbose level.
+
+	* unix/configure.in: add descriptions to new AC_DEFINEs for MT-safe.
+	* unix/tcl.m4: add caching to new SC_TCL_* macros for MT-safe wrappers.
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
 2006-09-08  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* unix/tclUnixCompat.c: Added fallback to gethostbyname()
@@ -141,7 +160,7 @@
 	* tests/upvar.test: bugfix, docs clarification and new tests for
 	[namespace upvar] as follow up to [Bug 1546833], reported by Will
 	Duquette. 
-	
+
 2006-08-24  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata: Regenerated, including several new files,
@@ -151,7 +170,7 @@
 	loading 'registry' from the build tree rather than an installed
 	one.  This is a workaround for [Bug 15232730], which remains open
 	because it's a symptom of a deeper underlying problem.
-	
+
 2006-08-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c:	Minimal collection of new tests
@@ -161,8 +180,8 @@
 
 2006-08-21  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclIOUtil.c:  Revisions to complete the thread finalization
-        of the cwdPathPtr.  [Bug 1536142]
+	* generic/tclIOUtil.c:	Revisions to complete the thread finalization
+	of the cwdPathPtr.  [Bug 1536142]
 
 	* generic/tclParseExpr.c:	Revised mistaken call to
 	TclCheckBadOctal(), so both [expr 08] and [expr 08z] have same
