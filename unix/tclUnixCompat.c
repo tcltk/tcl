@@ -1,12 +1,12 @@
 /*
  * tclUnixCompat.c
  *
- * Written by: Zoran Vasiljevic (vasiljevic@users.sourceforge.net). 
+ * Written by: Zoran Vasiljevic (vasiljevic@users.sourceforge.net).
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.6 2006/09/08 20:57:19 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.7 2006/09/11 16:07:33 das Exp $
  *
  */
 
@@ -23,8 +23,8 @@
 
 #define PadBuffer(buffer, length, size)         \
     if (((length) % (size))) {                  \
-        (buffer) += ((length) % (size));        \
-        (length) += ((length) % (size));        \
+	(buffer) += ((length) % (size));        \
+	(length) += ((length) % (size));        \
     }
 
 /*
@@ -42,25 +42,27 @@ typedef struct ThreadSpecificData {
     struct group grp;
     char gbuf[2048];
 
+#if !defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)
     struct hostent hent;
     char hbuf[2048];
+#endif
 
 }  ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
 
+#if ((!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
+     (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))) || \
+      !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R) || \
+      !defined(HAVE_GETGRNAM_R) || !defined(HAVE_GETGRGID_R)
+
 /*
- * Mutex to lock access to MT-unsafe calls. This is just to protect 
+ * Mutex to lock access to MT-unsafe calls. This is just to protect
  * our own usage. It does not protect us from others calling the
- * same functions without (or using some different) lock. 
+ * same functions without (or using some different) lock.
  */
 
-Tcl_Mutex compatLock;
-
-#if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
-     !defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R)) && \
-    (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))
-
+static Tcl_Mutex compatLock;
 
 /*
  *---------------------------------------------------------------------------
@@ -79,40 +81,40 @@ Tcl_Mutex compatLock;
  *---------------------------------------------------------------------------
  */
 
-static int 
+static int
 CopyArray(char **src, int elsize, char *buf, int buflen)
 {
     int i, j, len = 0;
     char *p, **new;
 
     if (src == NULL) {
-        return 0;
+	return 0;
     }
     for (i = 0; src[i] != NULL; i++) {
-        /* Empty loop to count howmany */
+	/* Empty loop to count howmany */
     }
     if ((sizeof(char *)*(i + 1)) >  buflen) {
-        return -1;
+	return -1;
     }
     len = (sizeof(char *)*(i + 1)); /* Leave place for the array */
     new = (char **)buf;
     p = buf + (sizeof(char *)*(i + 1));
     for (j = 0; j < i; j++) {
-        if (elsize < 0) {
-            len += strlen(src[j]) + 1;
-        } else {
-            len += elsize;
-        }
-        if (len > buflen) {
-            return -1;
-        }
-        if (elsize < 0) {
-            strcpy(p, src[j]);
-        } else {
-            memcpy(p, src[j], elsize);
-        }
-        new[j] = p;
-        p = buf + len;
+	if (elsize < 0) {
+	    len += strlen(src[j]) + 1;
+	} else {
+	    len += elsize;
+	}
+	if (len > buflen) {
+	    return -1;
+	}
+	if (elsize < 0) {
+	    strcpy(p, src[j]);
+	} else {
+	    memcpy(p, src[j], elsize);
+	}
+	new[j] = p;
+	p = buf + len;
     }
     new[j] = NULL;
 
@@ -138,24 +140,25 @@ CopyArray(char **src, int elsize, char *buf, int buflen)
  */
 
 
-static int 
+static int
 CopyString(char *src, char *buf, int buflen)
 {
     int len = 0;
 
     if (src != NULL) {
-        len += strlen(src) + 1;
-        if (len > buflen) {
-            return -1;
-        }
-        strcpy(buf, src);
+	len += strlen(src) + 1;
+	if (len > buflen) {
+	    return -1;
+	}
+	strcpy(buf, src);
     }
 
     return len;
 }
-#endif /* (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R) || \
-           !defined(HAVE_GETPWUID_R)      || !defined(HAVE_GETGRGID_R)) && \
-          (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
+#endif /* ((!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
+	   (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))) || \
+	    !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R) || \
+	    !defined(HAVE_GETGRNAM_R) || !defined(HAVE_GETGRGID_R) */
 
 #if (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
     (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR))
@@ -165,7 +168,7 @@ CopyString(char *src, char *buf, int buflen)
  *
  * CopyHostnent --
  *
- *      Copies string fields of the hostnent structure to the 
+ *      Copies string fields of the hostnent structure to the
  *      private buffer, honouring the size of the buffer.
  *
  * Results:
@@ -186,8 +189,8 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
     copied = CopyString(tgtPtr->h_name, p, buflen - len);
     if (copied == -1) {
     range:
-        errno = ERANGE;
-        return -1;
+	errno = ERANGE;
+	return -1;
     }
     tgtPtr->h_name = (copied > 0) ? p : NULL;
     len += copied;
@@ -196,7 +199,7 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
     PadBuffer(p, len, sizeof(char *));
     copied = CopyArray(tgtPtr->h_aliases, -1, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->h_aliases = (copied > 0) ? (char **)p : NULL;
     len += copied;
@@ -205,23 +208,23 @@ CopyHostent(struct hostent *tgtPtr, char *buf, int buflen)
     PadBuffer(p, len, sizeof(char *));
     copied = CopyArray(tgtPtr->h_addr_list, tgtPtr->h_length, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->h_addr_list = (copied > 0) ? (char **)p : NULL;
-   
+
     return 0;
 }
 #endif /* (!defined(HAVE_GETHOSTBYNAME_R) || !defined(HAVE_GETHOSTBYADDR_R)) && \
-          (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
+	  (!defined(HAVE_MTSAFE_GETHOSTBYNAME) || !defined(HAVE_MTSAFE_GETHOSTBYADDR)) */
 
-#if !defined(HAVE_GETPWUID_R)
+#if !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R)
 
 /*
  *---------------------------------------------------------------------------
  *
  * CopyPwd --
  *
- *      Copies string fields of the passwd structure to the 
+ *      Copies string fields of the passwd structure to the
  *      private buffer, honouring the size of the buffer.
  *
  * Results:
@@ -243,8 +246,8 @@ CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
     copied = CopyString(tgtPtr->pw_name, p, buflen - len);
     if (copied == -1) {
     range:
-        errno = ERANGE;
-        return -1;
+	errno = ERANGE;
+	return -1;
     }
     tgtPtr->pw_name = (copied > 0) ? p : NULL;
     len += copied;
@@ -252,7 +255,7 @@ CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
 
     copied = CopyString(tgtPtr->pw_passwd, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->pw_passwd = (copied > 0) ? p : NULL;
     len += copied;
@@ -260,7 +263,7 @@ CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
 
     copied = CopyString(tgtPtr->pw_dir, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->pw_dir = (copied > 0) ? p : NULL;
     len += copied;
@@ -268,22 +271,22 @@ CopyPwd(struct passwd *tgtPtr, char *buf, int buflen)
 
     copied = CopyString(tgtPtr->pw_shell, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->pw_shell = (copied > 0) ? p : NULL;
 
     return 0;
 }
-#endif /* !defined(HAVE_GETPWUID_R) */
+#endif /* !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R) */
 
-#if !defined(HAVE_GETGRGID_R)
+#if !defined(HAVE_GETGRNAM_R) || !defined(HAVE_GETGRGID_R)
 
 /*
  *---------------------------------------------------------------------------
  *
  * CopyGrp --
  *
- *      Copies string fields of the group structure to the 
+ *      Copies string fields of the group structure to the
  *      private buffer, honouring the size of the buffer.
  *
  * Results:
@@ -305,8 +308,8 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
     copied = CopyString(tgtPtr->gr_name, p, buflen - len);
     if (copied == -1) {
     range:
-        errno = ERANGE;
-        return -1;
+	errno = ERANGE;
+	return -1;
     }
     tgtPtr->gr_name = (copied > 0) ? p : NULL;
     len += copied;
@@ -315,7 +318,7 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
     /* Copy password */
     copied = CopyString(tgtPtr->gr_passwd, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->gr_passwd = (copied > 0) ? p : NULL;
     len += copied;
@@ -325,13 +328,13 @@ CopyGrp(struct group *tgtPtr, char *buf, int buflen)
     PadBuffer(p, len, sizeof(char *));
     copied = CopyArray((char **)tgtPtr->gr_mem, -1, p, buflen - len);
     if (copied == -1) {
-        goto range;
+	goto range;
     }
     tgtPtr->gr_mem = (copied > 0) ? (char **)p : NULL;
 
     return 0;
 }
-#endif /* !defined(HAVE_GETGRGID_R) */
+#endif /* !defined(HAVE_GETGRNAM_R) || !defined(HAVE_GETGRGID_R) */
 
 #endif /* TCL_THREADS */
 
@@ -363,8 +366,8 @@ TclpGetPwNam(const char *name)
 
 #if defined(HAVE_GETPWNAM_R_5)
     struct passwd *pwPtr = NULL;
-    return (getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf), 
-                       &pwPtr) == 0 && pwPtr != NULL) ? &tsdPtr->pwd : NULL;
+    return (getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
+		       &pwPtr) == 0 && pwPtr != NULL) ? &tsdPtr->pwd : NULL;
 
 #elif defined(HAVE_GETPWNAM_R_4)
     return getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
@@ -374,11 +377,11 @@ TclpGetPwNam(const char *name)
     Tcl_MutexLock(&compatLock);
     pwPtr = getpwnam(name);
     if (pwPtr != NULL) {
-        tsdPtr->pwd = *pwPtr;
-        pwPtr = &tsdPtr->pwd;
-        if (CopyPwd(&tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf)) == -1) {
-            pwPtr = NULL;
-        }
+	tsdPtr->pwd = *pwPtr;
+	pwPtr = &tsdPtr->pwd;
+	if (CopyPwd(&tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf)) == -1) {
+	    pwPtr = NULL;
+	}
     }
     Tcl_MutexUnlock(&compatLock);
     return pwPtr;
@@ -416,7 +419,7 @@ TclpGetPwUid(uid_t uid)
 #if defined(HAVE_GETPWUID_R_5)
     struct passwd *pwPtr = NULL;
     return (getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf),
-                       &pwPtr) == 0 && pwPtr != NULL) ? &tsdPtr->pwd : NULL;
+		       &pwPtr) == 0 && pwPtr != NULL) ? &tsdPtr->pwd : NULL;
 
 #elif defined(HAVE_GETPWUID_R_4)
     return getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
@@ -426,11 +429,11 @@ TclpGetPwUid(uid_t uid)
     Tcl_MutexLock(&compatLock);
     pwPtr = getpwuid(uid);
     if (pwPtr != NULL) {
-        tsdPtr->pwd = *pwPtr;
-        pwPtr = &tsdPtr->pwd;
-        if (CopyPwd(&tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf)) == -1) {
-            pwPtr = NULL;
-        }
+	tsdPtr->pwd = *pwPtr;
+	pwPtr = &tsdPtr->pwd;
+	if (CopyPwd(&tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf)) == -1) {
+	    pwPtr = NULL;
+	}
     }
     Tcl_MutexUnlock(&compatLock);
     return pwPtr;
@@ -468,7 +471,7 @@ TclpGetGrNam(const char *name)
 #if defined(HAVE_GETGRNAM_R_5)
     struct group *grPtr = NULL;
     return (getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf),
-                       &grPtr) == 0 && grPtr != NULL) ? &tsdPtr->grp : NULL;
+		       &grPtr) == 0 && grPtr != NULL) ? &tsdPtr->grp : NULL;
 
 #elif defined(HAVE_GETGRNAM_R_4)
     return getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
@@ -478,11 +481,11 @@ TclpGetGrNam(const char *name)
     Tcl_MutexLock(&compatLock);
     grPtr = getgrnam(name);
     if (grPtr != NULL) {
-        tsdPtr->grp = *grPtr;
-        grPtr = &tsdPtr->grp;
-        if (CopyGrp(&tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf)) == -1) {
-            grPtr = NULL;
-        }
+	tsdPtr->grp = *grPtr;
+	grPtr = &tsdPtr->grp;
+	if (CopyGrp(&tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf)) == -1) {
+	    grPtr = NULL;
+	}
     }
     Tcl_MutexUnlock(&compatLock);
     return grPtr;
@@ -520,7 +523,7 @@ TclpGetGrGid(gid_t gid)
 #if defined(HAVE_GETGRGID_R_5)
     struct group *grPtr = NULL;
     return (getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf),
-                       &grPtr) == 0 && grPtr != NULL) ? &tsdPtr->grp : NULL;
+		       &grPtr) == 0 && grPtr != NULL) ? &tsdPtr->grp : NULL;
 
 #elif defined(HAVE_GETGRGID_R_4)
     return getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
@@ -530,11 +533,11 @@ TclpGetGrGid(gid_t gid)
     Tcl_MutexLock(&compatLock);
     grPtr = getgrgid(gid);
     if (grPtr != NULL) {
-        tsdPtr->grp = *grPtr;
-        grPtr = &tsdPtr->grp;
-        if (CopyGrp(&tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf)) == -1) {
-            grPtr = NULL;
-        }
+	tsdPtr->grp = *grPtr;
+	grPtr = &tsdPtr->grp;
+	if (CopyGrp(&tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf)) == -1) {
+	    grPtr = NULL;
+	}
     }
     Tcl_MutexUnlock(&compatLock);
     return grPtr;
@@ -572,30 +575,30 @@ TclpGetHostByName(const char *name)
 #if defined(HAVE_GETHOSTBYNAME_R_5)
     int h_errno;
     return gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-                           sizeof(tsdPtr->hbuf), &h_errno);
-    
+			   sizeof(tsdPtr->hbuf), &h_errno);
+
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr;
     int h_errno;
     return (gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-                            sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ? 
-        &tsdPtr->hent : NULL;
+			    sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ?
+	&tsdPtr->hent : NULL;
 
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
     struct hostent_data data;
     return (gethostbyname_r(name, &tsdPtr->hent, &data) == 0) ?
-        &tsdPtr->hent : NULL;
+	&tsdPtr->hent : NULL;
 #else
     struct hostent *hePtr;
     Tcl_MutexLock(&compatLock);
     hePtr = gethostbyname(name);
     if (hePtr != NULL) {
-        tsdPtr->hent = *hePtr;
-        hePtr = &tsdPtr->hent;
-        if (CopyHostent(&tsdPtr->hent, tsdPtr->hbuf,
-                        sizeof(tsdPtr->hbuf)) == -1) {
-            hePtr = NULL;
-        }
+	tsdPtr->hent = *hePtr;
+	hePtr = &tsdPtr->hent;
+	if (CopyHostent(&tsdPtr->hent, tsdPtr->hbuf,
+			sizeof(tsdPtr->hbuf)) == -1) {
+	    hePtr = NULL;
+	}
     }
     Tcl_MutexUnlock(&compatLock);
     return hePtr;
@@ -633,25 +636,25 @@ TclpGetHostByAddr(const char *addr, int length, int type)
 #if defined(HAVE_GETHOSTBYADDR_R_7)
     int h_errno;
     return gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
-                           sizeof(tsdPtr->hbuf), &h_errno);
+			   sizeof(tsdPtr->hbuf), &h_errno);
 
 #elif defined(HAVE_GETHOSTBYADDR_R_8)
     struct hostent *hePtr;
     int h_errno;
     return (gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
-                            sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ? 
-        &tsdPtr->hent : NULL;
+			    sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ?
+	&tsdPtr->hent : NULL;
 #else
     struct hostent *hePtr;
     Tcl_MutexLock(&compatLock);
     hePtr = gethostbyaddr(addr, length, type);
     if (hePtr != NULL) {
-        tsdPtr->hent = *hePtr;
-        hePtr = &tsdPtr->hent;
-        if (CopyHostent(&tsdPtr->hent, tsdPtr->hbuf, 
-                        sizeof(tsdPtr->hbuf)) == -1) {
-            hePtr = NULL;
-        }
+	tsdPtr->hent = *hePtr;
+	hePtr = &tsdPtr->hent;
+	if (CopyHostent(&tsdPtr->hent, tsdPtr->hbuf,
+			sizeof(tsdPtr->hbuf)) == -1) {
+	    hePtr = NULL;
+	}
     }
     Tcl_MutexUnlock(&compatLock);
     return hePtr;
