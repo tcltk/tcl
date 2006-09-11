@@ -1,3 +1,8 @@
+2006-09-11  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/msgcat.test: Bumped version in auxiliary files as well.
+	* doc/msgcat.n: 
+
 2006-09-11  Kevin Kenny  <kennykb@acm.org>
 
 	* unix/Makefile.in:	Bumped msgcat version to 1.4.2 to be
