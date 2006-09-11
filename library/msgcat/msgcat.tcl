@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.24 2006/09/10 19:00:15 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.25 2006/09/11 14:38:03 dgp Exp $
 
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
@@ -196,15 +196,14 @@ proc msgcat::mc {src args} {
 		if {[llength $args] == 0} {
 		    return [dict get $Msgs $loc $ns $src]
 		} else {
-		    return [uplevel 1 [list ::format \
-			    [dict get $Msgs $loc $ns $src] {expand}$args]]
+		    return [format [dict get $Msgs $loc $ns $src] {expand}$args]
 		}
 	    }
 	}
 	set ns [namespace parent $ns]
     }
     # we have not found the translation
-    return [uplevel 1 [list [::namespace origin mcunknown] \
+    return [uplevel 1 [list [namespace origin mcunknown] \
 	    $Locale $src {expand}$args]]
 }
 
@@ -383,7 +382,7 @@ proc msgcat::mcmset {locale pairs } {
 
 proc msgcat::mcunknown {locale src args} {
     if {[llength $args]} {
-	return [uplevel 1 [list ::format $src {expand}$args]]
+	return [format $src {expand}$args]
     } else {
 	return $src
     }
