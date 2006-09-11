@@ -1,5 +1,13 @@
 2006-09-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n:		Bump to version tcltest 2.3.0 to account
+	* library/tcltest/pkgIndex.tcl:	for new "-verbose line" feature.
+	* library/tcltest/tcltest.tcl:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.bc:
+	* win/makefile.vc:
+
 	* library/msgcat/msgcat.tcl:	Bump to version msgcat 1.4.2 to account
 	* library/msgcat/pkgIndex.tcl:	for modifications.
 
