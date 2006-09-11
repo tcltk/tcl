@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.145 2006/09/11 21:24:38 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.146 2006/09/11 22:10:30 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -552,10 +552,10 @@ test: setup $(TCLTEST) dlls $(CAT32)
 <<
 !else
 	@echo Please wait while the tests are collected...
-	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile << > tests.log
 		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
 		set ::reglib [file normalize $(TCLREGLIB:\=/)]
-<< > tests.log
+<<
 	type tests.log | more
 !endif
 
