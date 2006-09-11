@@ -1,3 +1,7 @@
+2006-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Removed some unneeded [uplevel]s.
+
 2006-09-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:		Corrected INST_EXPON flaw that treated
