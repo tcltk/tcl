@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.22 2005/11/03 00:17:31 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.23 2006/09/11 21:24:38 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -48,13 +48,14 @@ RMDIR	= rmdir /S /Q
 !if ![ver | find "4.0" > nul]
 CPY	= echo y | xcopy /i
 !else
-CPY	= xcopy /i /y
+CPY	= xcopy /i /y >NUL
 !endif
 !else
 CPY	= xcopy /i
 RMDIR	= deltree /Y
 !endif
-
+MKDIR   = mkdir
+COPY    = copy /y >NUL
 
 !message ===============================================================================
 
@@ -365,7 +366,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
 !if $(PROFILE)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
 !endif
-!if "$(MACHINE)" == "IA64"
+!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 

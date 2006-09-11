@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.144 2006/09/11 03:54:09 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.145 2006/09/11 21:24:38 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -748,7 +748,7 @@ tclConfig:
 	@echo Build tclsh first!
 !else
 	@echo Creating tclConfig.sh
-	set TCL_LIBRARY=$(ROOT)/library
+	@set TCL_LIBRARY=$(ROOT)/library
 	@$(TCLSH) <<
 	set debug $(DEBUG)
 	set thread $(TCL_THREADS)
@@ -965,65 +965,44 @@ $<
 
 install-binaries:
 	@echo Installing to '$(_INSTALLDIR)'
-	@echo installing $(TCLLIBNAME)
+	@echo Installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
 !if exist($(TCLSH))
-	@echo installing $(TCLSHNAME)
+	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
 !endif
 !if exist($(TCLPIPEDLL))
-	@echo installing $(TCLPIPEDLLNAME)
+	@echo Installing $(TCLPIPEDLLNAME)
 	@$(CPY) "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)\"
 !endif
-	@echo installing $(TCLSTUBLIBNAME)
+	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
+#" emacs fix
+
 install-libraries: tclConfig install-msgs install-tzdata
-	@echo installing tclConfig.sh
-	@$(CPY) "$(OUT_DIR)\tclConfig.sh" "$(LIB_INSTALL_DIR)\"
-	@echo installing http1.0
-	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http1.0\"
-	@echo installing http2.4
-	@$(CPY) "$(ROOT)\library\http\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http2.4\"
-	@echo installing opt0.4
-	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
-	@echo installing msgcat1.4
-	@$(CPY) "$(ROOT)\library\msgcat\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.4\"
-	@echo installing tcltest2.3 
-	@$(CPY) "$(ROOT)\library\tcltest\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\tcltest2.3\"
-	@echo installing $(TCLDDELIBNAME)
-!if $(STATIC_BUILD)
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
-!else
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-!endif
-	@echo installing $(TCLREGLIBNAME)
-!if $(STATIC_BUILD)
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
-!else
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-!endif
-	@echo installing encoding files
-	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
-		"$(SCRIPT_INSTALL_DIR)\encoding\"
-	@echo installing library files
+	@if not exist "$(SCRIPT_INSTALL_DIR)" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.2" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.2"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.3" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.3"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
+	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
+	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
@@ -1034,17 +1013,52 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\package.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\word.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
+	@echo Installing library http1.0 directory
+	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http1.0\"
+	@echo Installing package http 2.5.2 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\http\http.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\http-2.5.2.tm"
+	@echo Installing library opt0.4 directory
+	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@echo Installing package msgcat 1.4 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\msgcat-1.4.2.tm"
+	@echo Installing package tcltest 2.3.0 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.3\tcltest-2.3.0.tm"
+	@echo Installing $(TCLDDELIBNAME)
+!if $(STATIC_BUILD)
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
+!else
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+!endif
+	@echo Installing $(TCLREGLIBNAME)
+!if $(STATIC_BUILD)
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
+!else
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+!endif
+	@echo Installing encodings
+	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
+		"$(SCRIPT_INSTALL_DIR)\encoding\"
 
 install-tzdata:
-	@echo "Installing time zone data"
-	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	@echo Installing time zone data
+	@set TCL_LIBRARY=$(ROOT)/library
+	@$(TCLSH) "$(ROOT)/tools/installData.tcl" \
 	    "$(ROOT)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
 
 install-msgs:
-	@echo "Installing message catalogs"
-	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	@echo Installing message catalogs
+	@set TCL_LIBRARY=$(ROOT)/library
+	@$(TCLSH) "$(ROOT)/tools/installData.tcl" \
 	    "$(ROOT)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 #---------------------------------------------------------------------
