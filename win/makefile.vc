@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.143 2005/12/13 22:43:18 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.144 2006/09/11 03:54:09 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -996,9 +996,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@echo installing msgcat1.4
 	@$(CPY) "$(ROOT)\library\msgcat\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\msgcat1.4\"
-	@echo installing tcltest2.2 
+	@echo installing tcltest2.3 
 	@$(CPY) "$(ROOT)\library\tcltest\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\tcltest2.2\"
+	    "$(SCRIPT_INSTALL_DIR)\tcltest2.3\"
 	@echo installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
