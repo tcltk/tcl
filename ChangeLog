@@ -1,3 +1,9 @@
+2006-09-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c: make compatLock static and only declare it when
+	it will actually be used; #ifdef parts of TSD that are not always
+	needed; adjust #ifdefs to cover all possible cases; fix whitespace.
+
 2006-09-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/msgcat/msgcat.tcl:	Bump to version msgcat 1.3.4 to account
