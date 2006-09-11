@@ -1,3 +1,8 @@
+2006-09-11  Kevin Kenny  <kennykb@acm.org>
+
+	* unix/Makefile.in:	Bumped msgcat version to 1.4.2 to be
+	* win/Makefile.in:	consistent with dgp's commits of 2006-09-10.
+	
 2006-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/msgcat/msgcat.tcl:	Removed some unneeded [uplevel]s.
