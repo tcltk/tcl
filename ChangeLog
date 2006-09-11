@@ -1,5 +1,8 @@
 2006-09-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c:		Corrected INST_EXPON flaw that treated
+	* tests/expr.test:		$x**1 as $x**3.  [Bug 1555371]
+
 	* doc/tcltest.n:		Bump to version tcltest 2.3.0 to account
 	* library/tcltest/pkgIndex.tcl:	for new "-verbose line" feature.
 	* library/tcltest/tcltest.tcl:
