@@ -2,6 +2,7 @@
 
 	* win/rules.vc:    Updated to install http, tcltest and msgcat as
 	* win/makefile.vc: Tcl Modules (as per Makefile.in).
+	* win/makefile.vc: Added tommath_(super)class headers.
 
 2006-09-11  Andreas Kupries  <andreask@activestate.com>
 
