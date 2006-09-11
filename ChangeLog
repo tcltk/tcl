@@ -1,3 +1,7 @@
+2006-09-11  Andreas Kupries  <andreask@activestate.com>
+
+	* unix/Makefile.in (install-libraries): Fixed typo tcltest 2.3.9 -> 2.3.0.
+
 2006-09-11  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixCompat.c: make compatLock static and only declare it when
