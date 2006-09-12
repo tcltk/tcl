@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.9 2006/09/11 16:07:45 das Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.10 2006/09/12 22:05:03 andreas_kupries Exp $
  *
  */
 
@@ -19,12 +19,18 @@
 
 /*
  * Used to pad structures at size'd boundaries
+ *
+ * This macro assumes that the pointer 'buffer' was created from an
+ * aligned pointer by adding the 'length'. If this 'length' was not a
+ * multiple of the 'size' the result is unaligned and PadBuffer
+ * corrects both the pointer, _and_ the 'length'. The latter means
+ * that future increments of 'buffer' by 'length' stay aligned.
  */
 
-#define PadBuffer(buffer, length, size)         \
-    if (((length) % (size))) {                  \
-	(buffer) += ((length) % (size));        \
-	(length) += ((length) % (size));        \
+#define PadBuffer(buffer, length, size)             \
+    if (((length) % (size))) {                      \
+	(buffer) += ((size) - ((length) % (size))); \
+	(length) += ((size) - ((length) % (size))); \
     }
 
 /*
