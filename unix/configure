@@ -10813,6 +10813,23 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_MTSAFE_GETHOSTBYADDR 1
 _ACEOF
 
+
+    elif test "`uname -s`" = "HP-UX" && \
+	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+        # Starting with HPUX 11.00 (we believe), gethostbyX
+        # are actually MT-safe as they always return pointers
+	# from TSD instead of static storage.
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MTSAFE_GETHOSTBYNAME 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MTSAFE_GETHOSTBYADDR 1
+_ACEOF
+
+
     else
 	echo "$as_me:$LINENO: checking for gethostbyname_r" >&5
 echo $ECHO_N "checking for gethostbyname_r... $ECHO_C" >&6
