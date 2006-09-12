@@ -1,3 +1,9 @@
+2006-09-12  Andreas Kupries  <andreask@activestate.com>
+
+	* unix/tclUnixCompat.c (PadBuffer): Fixed bug in calculation of
+	  the increment needed to align the pointer, and added
+	  documentation explaining why the macro is implemented as it is.
+
 2006-09-11  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/msgcat.test: Bumped version in auxiliary files as well.
