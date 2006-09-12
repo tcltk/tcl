@@ -1,5 +1,10 @@
 2006-09-12  Andreas Kupries  <andreask@activestate.com>
 
+	* unix/configure.in (HAVE_MTSAFE_GETHOST*): Modified to recognize
+	  HP-UX 11.00 and beyond as having mt-safe implementations of the
+	  gethost functions.
+	* unix/configure: Regenerated, using autoconf 2.13
+
 	* unix/tclUnixCompat.c (PadBuffer): Fixed bug in calculation of
 	  the increment needed to align the pointer, and added
 	  documentation explaining why the macro is implemented as it is.
