@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.147 2006/09/10 17:04:07 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.148 2006/09/12 22:51:33 andreas_kupries Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -180,6 +180,17 @@ if test "${TCL_THREADS}" = 1; then
 		[Do we have MT-safe gethostbyname() ?])
 	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
 		[Do we have MT-safe gethostbyaddr() ?])
+
+    elif test "`uname -s`" = "HP-UX" && \
+	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+        # Starting with HPUX 11.00 (we believe), gethostbyX
+        # are actually MT-safe as they always return pointers
+	# from TSD instead of static storage.
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+		[Do we have MT-safe gethostbyname() ?])
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+		[Do we have MT-safe gethostbyaddr() ?])
+
     else
 	SC_TCL_GETHOSTBYNAME_R
 	SC_TCL_GETHOSTBYADDR_R
