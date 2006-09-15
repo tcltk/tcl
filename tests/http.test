@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.33.2.4 2005/11/18 15:20:47 dkf Exp $
+# RCS: @(#) $Id: http.test,v 1.33.2.5 2006/09/15 19:53:33 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -463,7 +463,7 @@ test http-4.15 {http::Event} {
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
-} {name1=value1&name2=value+two}
+} {name1=value1&name2=value%20two}
 # test http-5.2 obsoleted by 5.4 and 5.5 with http 2.5
 test http-5.3 {http::formatQuery} {
     http::formatQuery lines "line1\nline2\nline3"
