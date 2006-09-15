@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.43.2.11 2006/03/07 19:18:39 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.43.2.12 2006/09/15 19:53:33 hobbs Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -24,7 +24,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.2
+package provide http 2.5.3
 
 namespace eval http {
     variable http
@@ -50,7 +50,7 @@ namespace eval http {
 	    }
 	}
 	# These are handled specially
-	array set map { " " + \n %0d%0a }
+	set map(\n) %0d%0a
 	variable formMap [array get map]
     }
     init
