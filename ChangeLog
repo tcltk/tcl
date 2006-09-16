@@ -1,3 +1,9 @@
+2006-09-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/http/http.tcl:      Change " " -> "+" url encoding mapping
+	* library/http/pkgIndex.tcl:  to " " -> "%20" as per RFC 3986.
+	* tests/http.test (http-5.1): bump http to 2.5.3
+
 2006-09-12  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/configure.in (HAVE_MTSAFE_GETHOST*): Modified to recognize
