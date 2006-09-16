@@ -3,6 +3,8 @@
 	* library/http/http.tcl:      Change " " -> "+" url encoding mapping
 	* library/http/pkgIndex.tcl:  to " " -> "%20" as per RFC 3986.
 	* tests/http.test (http-5.1): bump http to 2.5.3
+	* unix/Makefile.in:
+	* win/Makefile.in:
 
 2006-09-12  Andreas Kupries  <andreask@activestate.com>
 
