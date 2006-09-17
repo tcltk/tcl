@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.40 2006/09/02 21:04:09 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.41 2006/09/17 22:08:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -39,6 +39,25 @@ static const struct {
     {"self.unexport", TclOODefineUnexportObjCmd, 1},
     {"self.class", TclOODefineSelfClassObjCmd, 1},
     {NULL, NULL, 0}
+};
+
+struct StructCmdInfo {
+    const char *cmdName;
+    int varIdx;
+    const char *extraPrefix;
+    const char *extraInsert;
+};
+static struct StructCmdInfo structCmds[] = {
+    {"append",	0, NULL,  NULL},
+    {"array",	1, NULL,  NULL},
+    {"exists",	0, "info",NULL},
+    {"incr",	0, NULL,  NULL},
+    {"lappend", 0, NULL,  NULL},
+    {"set",	0, NULL,  NULL},
+    {"trace",	1, NULL,  "variable"},
+    {"unset",  -1, NULL,  NULL},
+    {"vwait",	0, NULL,  NULL},
+    {NULL}
 };
 
 #define ALLOC_CHUNK 8
@@ -95,6 +114,9 @@ static int		PrivateObjectCmd(ClientData clientData,
 static int		SimpleInvoke(ClientData clientData,
 			    Tcl_Interp *interp, CallContext *oPtr,
 			    int objc, Tcl_Obj *const *objv);
+static int		StructInvoke(ClientData clientData,
+			    Tcl_Interp *interp, CallContext *oPtr,
+			    int objc, Tcl_Obj *const *objv);
 static int		SimpleClone(ClientData clientData,
 			    ClientData *newClientData);
 static int		InvokeProcedureMethod(ClientData clientData,
@@ -139,6 +161,10 @@ static const Tcl_OOMethodType fwdMethodType = {
 static const Tcl_OOMethodType coreMethodType = {
     "core method",
     SimpleInvoke, NULL, SimpleClone
+};
+static const Tcl_OOMethodType structMethodType = {
+    "core forward method",
+    StructInvoke, NULL, SimpleClone
 };
 
 int
@@ -263,10 +289,20 @@ TclOOInit(
     }
 
     /*
-     * TODO: set up 'struct' less magically by evaluating a Tcl script.
+     * Build the 'struct' class, which is useful for building "structures".
+     * Structures are objects that expose their internal state variables.
      */
 
     fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
+    for (i=0 ; structCmds[i].cmdName!=NULL ; i++) {
+	Tcl_Obj *namePtr = Tcl_NewStringObj(structCmds[i].cmdName, -1);
+
+	TclOONewClassMethod(interp, (Tcl_Class) fPtr->structCls, namePtr, 1,
+		&structMethodType, &structCmds[i]);
+    }
+    TclOONewClassMethod(interp, (Tcl_Class) fPtr->structCls,
+	    Tcl_NewStringObj("eval", 4), 1, NULL, NULL);
+    // TODO: set up the private 'var' subcommand
 
     return TCL_OK;
 }
@@ -813,17 +849,18 @@ DeclareClassMethod(
     TclDecrRefCount(namePtr);
     return TCL_OK;
 }
+
 static int
 SimpleInvoke(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *oPtr,
+    CallContext *ctxtPtr,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_OOMethodCallProc callPtr = clientData;
 
-    return callPtr(clientData, interp, oPtr, objc, objv);
+    return callPtr(clientData, interp, ctxtPtr, objc, objv);
 }
 static int
 SimpleClone(
@@ -832,6 +869,83 @@ SimpleClone(
 {
     *newClientData = clientData;
     return TCL_OK;
+}
+
+static int
+StructInvoke(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    CallContext *cPtr,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    struct StructCmdInfo *infoPtr = clientData;
+    Tcl_CallFrame *dummyFrame;
+    Var *dummyAryVar;
+    int i, result;
+    Tcl_Obj *workBuffer;
+
+    /*
+     * Set the object's namespace as current context.
+     */
+
+    TclPushStackFrame(interp, &dummyFrame,
+	    (Tcl_Namespace *) cPtr->oPtr->nsPtr, 0);
+
+    /*
+     * Ensure that the variables exist properly (even if in an undefined
+     * state) before we do the call to the underlying code. This is required
+     * if we are to enforce the specification that variables are to be always
+     * interpreted as variables in the namespace of the class.
+     */
+
+    if (infoPtr->varIdx < 0) {
+	for (i=cPtr->skip ; i<objc ; i++) {
+	    if (TclObjLookupVar(interp, objv[i], NULL,
+		    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "access", 1, 0,
+		    &dummyAryVar) == NULL) {
+		TclPopStackFrame(interp);
+		return TCL_ERROR;
+	    }
+	}
+    } else if (infoPtr->varIdx+cPtr->skip >= objc) {
+	TclPopStackFrame(interp);
+	// TODO: forward correctly since we're generating an error message
+	return Tcl_Eval(interp, infoPtr->cmdName);
+    } else if (TclObjLookupVar(interp, objv[infoPtr->varIdx+cPtr->skip], NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "access", 1, 0,
+	    &dummyAryVar) == NULL) {
+	TclPopStackFrame(interp);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Construct the forward to the namespace and invoke it.
+     */
+
+    TclNewObj(workBuffer);
+    if (infoPtr->extraPrefix) {
+	Tcl_ListObjAppendElement(NULL, workBuffer,
+		Tcl_NewStringObj(infoPtr->extraPrefix, -1));
+    }
+    Tcl_ListObjAppendElement(NULL, workBuffer,
+	    Tcl_NewStringObj(infoPtr->cmdName, -1));
+    Tcl_ListObjReplace(NULL, workBuffer, 2,0, objc-cPtr->skip,objv+cPtr->skip);
+    if (infoPtr->extraInsert) {
+	Tcl_Obj *tmp = Tcl_NewStringObj(infoPtr->extraInsert, -1);
+	Tcl_ListObjReplace(NULL, workBuffer, 2,0,1, &tmp);
+    }
+    Tcl_IncrRefCount(workBuffer);
+    // TODO: forward correctly
+    result = Tcl_EvalObj(interp, workBuffer);
+    TclDecrRefCount(workBuffer);
+
+    /*
+     * We're done now; drop the context namespace.
+     */
+
+    TclPopStackFrame(interp);
+    return result;
 }
 
 Tcl_Method
@@ -869,13 +983,13 @@ TclOONewMethod(
   populate:
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
     if (isPublic) {
 	mPtr->flags |= PUBLIC_METHOD;
     }
+    oPtr->epoch++;
     return (Tcl_Method) mPtr;
 }
 
@@ -912,9 +1026,9 @@ TclOONewClassMethod(
     }
 
   populate:
+    ((Interp *) interp)->ooFoundation->epoch++;
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->epoch = ++((Interp *) interp)->ooFoundation->epoch;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
