@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.96.2.5 2006/08/30 14:23:06 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.96.2.6 2006/09/17 22:03:58 dkf Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -387,6 +387,10 @@ all: binaries libraries doc
 tcltest: $(TCLTEST)
 
 binaries: @LIBRARIES@ $(TCLSH)
+
+# Special dependencies to make development easier
+tclOO.$(OBJEXT) tclOODefineCmds.$(OBJEXT) tclOOInfo.$(OBJEXT) tclProc.$(OBJEXT): \
+    $(GENERIC_DIR)/tclOO.h
 
 libraries:
 
