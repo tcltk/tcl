@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.41 2006/09/17 22:08:06 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.42 2006/09/18 23:02:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -46,17 +46,18 @@ struct StructCmdInfo {
     int varIdx;
     const char *extraPrefix;
     const char *extraInsert;
+    int flags;
 };
 static struct StructCmdInfo structCmds[] = {
-    {"append",	0, NULL,  NULL},
-    {"array",	1, NULL,  NULL},
-    {"exists",	0, "info",NULL},
-    {"incr",	0, NULL,  NULL},
-    {"lappend", 0, NULL,  NULL},
-    {"set",	0, NULL,  NULL},
-    {"trace",	1, NULL,  "variable"},
-    {"unset",  -1, NULL,  NULL},
-    {"vwait",	0, NULL,  NULL},
+    {"append",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
+    {"array",	1, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
+    {"exists",	0, "info",NULL,	      0},
+    {"incr",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
+    {"lappend", 0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
+    {"set",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
+    {"trace",	1, NULL,  "variable", TCL_LEAVE_ERR_MSG},
+    {"unset",  -1, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
+    {"vwait",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
     {NULL}
 };
 
@@ -131,6 +132,11 @@ static int		InvokeForwardMethod(ClientData clientData,
 static void		DeleteForwardMethod(ClientData clientData);
 static int		CloneForwardMethod(ClientData clientData,
 			    ClientData *newClientData);
+static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv, int toRewrite,
+			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
+			    int insertIndex, Tcl_Obj *insertObj,
+			    int *lengthPtr);
 
 static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
@@ -143,6 +149,8 @@ static int		ObjectEval(ClientData clientData, Tcl_Interp *interp,
 static int		ObjectLinkVar(ClientData clientData,Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
 static int		ObjectUnknown(ClientData clientData,Tcl_Interp *interp,
+			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+static int		StructVar(ClientData clientData, Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
 
 static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
@@ -185,6 +193,7 @@ TclOOInit(
     fPtr = iPtr->ooFoundation = (Foundation *) ckalloc(sizeof(Foundation));
     memset(fPtr, 0, sizeof(Foundation));
     fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
+    Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
     fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
     fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
 	    NULL);
@@ -302,7 +311,7 @@ TclOOInit(
     }
     TclOONewClassMethod(interp, (Tcl_Class) fPtr->structCls,
 	    Tcl_NewStringObj("eval", 4), 1, NULL, NULL);
-    // TODO: set up the private 'var' subcommand
+    DeclareClassMethod(interp, fPtr->structCls, "var", 0, StructVar);
 
     return TCL_OK;
 }
@@ -870,7 +879,7 @@ SimpleClone(
     *newClientData = clientData;
     return TCL_OK;
 }
-
+
 static int
 StructInvoke(
     ClientData clientData,
@@ -882,8 +891,8 @@ StructInvoke(
     struct StructCmdInfo *infoPtr = clientData;
     Tcl_CallFrame *dummyFrame;
     Var *dummyAryVar;
-    int i, result;
-    Tcl_Obj *workBuffer;
+    int result, len;
+    Tcl_Obj **argObjs;
 
     /*
      * Set the object's namespace as current context.
@@ -896,49 +905,68 @@ StructInvoke(
      * Ensure that the variables exist properly (even if in an undefined
      * state) before we do the call to the underlying code. This is required
      * if we are to enforce the specification that variables are to be always
-     * interpreted as variables in the namespace of the class.
+     * interpreted as variables in the namespace of the class. However, we
+     * only do this if we can fail; for the case where we can't - currently
+     * just targetting [info exists] - we skip this.
      */
 
+    if (!(infoPtr->flags & TCL_LEAVE_ERR_MSG)) {
+	goto doForwardEnsemble;
+    }
+
     if (infoPtr->varIdx < 0) {
+	int i;
+
 	for (i=cPtr->skip ; i<objc ; i++) {
 	    if (TclObjLookupVar(interp, objv[i], NULL,
-		    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "access", 1, 0,
-		    &dummyAryVar) == NULL) {
+		    TCL_NAMESPACE_ONLY|infoPtr->flags, "refer to", 1, 0,
+		    &dummyAryVar)==NULL) {
 		TclPopStackFrame(interp);
 		return TCL_ERROR;
 	    }
 	}
     } else if (infoPtr->varIdx+cPtr->skip >= objc) {
-	TclPopStackFrame(interp);
-	// TODO: forward correctly since we're generating an error message
-	return Tcl_Eval(interp, infoPtr->cmdName);
+	Tcl_Obj *prefixObj = Tcl_NewStringObj(infoPtr->cmdName, -1);
+
+	argObjs = InitEnsembleRewrite(interp, objc, objv, cPtr->skip, 1,
+		&prefixObj, 0, NULL, &len);
+	goto doInvoke;
     } else if (TclObjLookupVar(interp, objv[infoPtr->varIdx+cPtr->skip], NULL,
-	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "access", 1, 0,
+	    TCL_NAMESPACE_ONLY|infoPtr->flags, "refer to", 1, 0,
 	    &dummyAryVar) == NULL) {
 	TclPopStackFrame(interp);
 	return TCL_ERROR;
     }
 
     /*
-     * Construct the forward to the namespace and invoke it.
+     * Construct the forward to the command within the object's namespace.
      */
 
-    TclNewObj(workBuffer);
+  doForwardEnsemble:
     if (infoPtr->extraPrefix) {
-	Tcl_ListObjAppendElement(NULL, workBuffer,
-		Tcl_NewStringObj(infoPtr->extraPrefix, -1));
+	Tcl_Obj *prefix[2];
+
+	prefix[1] = Tcl_NewStringObj(infoPtr->cmdName, -1);
+	prefix[0] = Tcl_NewStringObj(infoPtr->extraPrefix, -1);
+	argObjs = InitEnsembleRewrite(interp, objc, objv, cPtr->skip, 2,
+		prefix, 0, NULL, &len);
+    } else {
+	Tcl_Obj *prefixObj = Tcl_NewStringObj(infoPtr->cmdName, -1);
+	Tcl_Obj *insertObj = (infoPtr->extraInsert ?
+		Tcl_NewStringObj(infoPtr->extraInsert, -1) : NULL);
+
+	argObjs = InitEnsembleRewrite(interp, objc, objv, cPtr->skip, 1,
+		&prefixObj, 2, insertObj, &len);
     }
-    Tcl_ListObjAppendElement(NULL, workBuffer,
-	    Tcl_NewStringObj(infoPtr->cmdName, -1));
-    Tcl_ListObjReplace(NULL, workBuffer, 2,0, objc-cPtr->skip,objv+cPtr->skip);
-    if (infoPtr->extraInsert) {
-	Tcl_Obj *tmp = Tcl_NewStringObj(infoPtr->extraInsert, -1);
-	Tcl_ListObjReplace(NULL, workBuffer, 2,0,1, &tmp);
-    }
-    Tcl_IncrRefCount(workBuffer);
-    // TODO: forward correctly
-    result = Tcl_EvalObj(interp, workBuffer);
-    TclDecrRefCount(workBuffer);
+
+    /*
+     * Now we have constructed the arguments to use, pass through to the
+     * command we are forwarding to.
+     */
+
+  doInvoke:
+    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    ckfree((char *) argObjs);
 
     /*
      * We're done now; drop the context namespace.
@@ -947,7 +975,7 @@ StructInvoke(
     TclPopStackFrame(interp);
     return result;
 }
-
+
 Tcl_Method
 TclOONewMethod(
     Tcl_Interp *interp,
@@ -1280,9 +1308,7 @@ InvokeForwardMethod(
 {
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, result, skip = contextPtr->skip;
-    Interp *iPtr = (Interp *) interp;
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+    int numPrefixes, result, len;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1292,26 +1318,10 @@ InvokeForwardMethod(
      */
 
     Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
-    argObjs = (Tcl_Obj**) ckalloc(sizeof(Tcl_Obj*) * (numPrefixes+objc-skip));
-    memcpy(argObjs, prefixObjs, numPrefixes * sizeof(Tcl_Obj *));
-    memcpy(argObjs + numPrefixes, objv+skip, (objc-skip) * sizeof(Tcl_Obj *));
+    argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip,
+	    numPrefixes, prefixObjs, -1, NULL, &len);
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = skip;
-	iPtr->ensembleRewrite.numInsertedObjs = numPrefixes;
-    } else {
-	int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	if (ni < skip) {
-	    iPtr->ensembleRewrite.numRemovedObjs += skip - ni;
-	    iPtr->ensembleRewrite.numInsertedObjs += numPrefixes - 1;
-	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs += numPrefixes - skip;
-	}
-    }
-
-    result = Tcl_EvalObjv(interp, numPrefixes + objc - skip, argObjs,
-	    TCL_EVAL_INVOKE);
+    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
     ckfree((char *) argObjs);
     return result;
 }
@@ -2026,6 +2036,7 @@ ObjectLinkVar(
     Object *oPtr = contextPtr->oPtr;
     int i;
 
+    // TODO: Test this!
     if (objc-contextPtr->skip < 1) {
 	Tcl_WrongNumArgs(interp, contextPtr->skip, objv,
 		"varName ?varName ...?");
@@ -2080,6 +2091,40 @@ ObjectLinkVar(
 	    return TCL_ERROR;
 	}
     }
+    return TCL_OK;
+}
+
+static int
+StructVar(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    CallContext *contextPtr,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_CallFrame *dummyFrame;
+    Var *varPtr, *aryVar;
+    Tcl_Obj *varNamePtr;
+
+    if (contextPtr->skip+1 != objc) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, "varName");
+	return TCL_ERROR;
+    }
+
+    TclPushStackFrame(interp, &dummyFrame,
+	    (Tcl_Namespace *) contextPtr->oPtr->nsPtr, 0);
+    varPtr = TclObjLookupVar(interp, objv[objc-1], NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1,
+	    &aryVar);
+    TclPopStackFrame(interp);
+
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    TclNewObj(varNamePtr);
+    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
+    Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
 }
 
@@ -2338,6 +2383,100 @@ TclOOGetProcFromMethod(
 	return pmPtr->procPtr;
     }
     return NULL;
+}
+
+static Tcl_Obj **
+InitEnsembleRewrite(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv,
+    int toRewrite,
+    int rewriteLength,
+    Tcl_Obj *const *rewriteObjs,
+    int insertIndex,
+    Tcl_Obj *insertObj,
+    int *lengthPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+    Tcl_Obj **argObjs;
+    unsigned len = rewriteLength + objc - toRewrite;
+    int stepRem = 0, stepIns = 0;
+
+    if (insertObj) {
+	len++;
+	stepRem = insertIndex - rewriteLength;
+	stepIns = stepRem + 1;
+    }
+
+    /*
+     * Picture of memory management so that I can see what is going on where
+     * so the copies of chunks of arrays will work. Note that 'transfer' is a
+     * derived value.
+     *
+     *               <-----------------objc----------------------->
+     * objv:        |=============|============|===================|
+     *               <-toRewrite-> <-transfer->         \
+     *                                    \              \
+     *               <-rewriteLength->     \              \
+     * rewriteObjs: |=================|     \              \
+     *                      |                |              |
+     *                      V                V              V
+     * argObjs:     |=================|============||===================|
+     *               <---------insertIndex-------->
+     *
+     * The insertIndex is ignored if insertObj is NULL; that case is much
+     * simpler and looks like this:
+     *
+     *               <-----------------objc---------------------->
+     * objv:        |=============|===============================|
+     *               <-toRewrite->           |
+     *                                        \
+     *               <-rewriteLength->         \
+     * rewriteObjs: |=================|         \
+     *                      |                    |
+     *                      V                    V
+     * argObjs:     |=================|===============================|
+     */
+
+    argObjs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * len);
+    memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
+    if (insertObj) {
+	int transfer = insertIndex - rewriteLength;
+
+	memcpy(argObjs + rewriteLength, objv + toRewrite,
+		sizeof(Tcl_Obj *) * transfer);
+	argObjs[insertIndex] = insertObj;
+	memcpy(argObjs + insertIndex + 1, objv + toRewrite + transfer,
+		sizeof(Tcl_Obj *) * (objc - toRewrite - transfer));
+    } else {
+	memcpy(argObjs + rewriteLength, objv + toRewrite,
+		sizeof(Tcl_Obj *) * (objc - toRewrite));
+    }
+
+    /*
+     * Now plumb this into the core ensemble logging system so that
+     * Tcl_WrongNumArgs() can rewrite its result appropriately.
+     */
+
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = objv;
+	iPtr->ensembleRewrite.numRemovedObjs = toRewrite + stepRem;
+	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength + stepIns;
+    } else {
+	int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	if (ni < toRewrite) {
+	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite + stepRem - ni;
+	    iPtr->ensembleRewrite.numInsertedObjs +=
+		    rewriteLength + stepIns - 1;
+	} else {
+	    iPtr->ensembleRewrite.numInsertedObjs +=
+		    rewriteLength + stepIns - toRewrite;
+	}
+    }
+
+    *lengthPtr = len;
+    return argObjs;
 }
 
 /*

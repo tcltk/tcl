@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.26 2006/09/02 21:04:09 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.27 2006/09/18 23:02:48 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -808,6 +808,88 @@ test oo-19.2 {OO: definer metaclass} -setup {
 } -result {1 {wrong # args: should be "dclass method name args body"} {wrong # args: should be "dclass method name args body"
     while executing
 "dclass method badSyntax"}}
+
+test oo-20.1 {OO: struct class} {
+    oo::struct create foo
+    foo destroy
+} {}
+test oo-20.2 {OO: struct class} {
+    oo::struct create foo
+    set x -
+    set result $x[foo set x a][foo set x][foo set x b][foo set x]$x[foo unset x]$x
+    foo destroy
+    return $result
+} -aabb--
+test oo-20.3 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance set
+} -returnCodes 1 -cleanup {
+    structInstance destroy
+} -result "wrong # args: should be \"structInstance set varName ?newValue?\""
+test oo-20.4 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance set x y z
+} -returnCodes 1 -cleanup {
+    structInstance destroy
+} -result "wrong # args: should be \"structInstance set varName ?newValue?\""
+# These next two cases are *very* tricky rewrites!
+test oo-20.5 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance trace add x
+} -returnCodes 1 -cleanup {
+    structInstance destroy
+} -result "wrong # args: should be \"structInstance trace add name opList command\""
+test oo-20.6 {OO: struct class} -setup {
+    oo::struct create structInstance
+    set result {}
+} -body {
+    structInstance trace add x write foo
+    set ns [structInstance eval namespace current]
+    proc foo args {
+	global ns result
+	set context [uplevel 1 namespace current]
+	lappend result $args [expr {
+	    $ns eq $context ? "ok" : [list $ns ne $context]
+	}]
+    }
+    lappend result [structInstance set x 0]
+} -cleanup {
+    structInstance destroy
+} -result {{x {} write} ok 0}
+test oo-20.7 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance ?
+} -returnCodes 1 -cleanup {
+    structInstance destroy
+} -result {unknown method "?": must be append, array, destroy, eval, exists, incr, lappend, set, trace, unset or vwait}
+test oo-20.8 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance eval my ?
+} -returnCodes 1 -cleanup {
+    structInstance destroy
+} -result {unknown method "?": must be append, array, destroy, eval, exists, incr, lappend, set, trace, unknown, unset, var, variable or vwait}
+test oo-20.9 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance array set x {a b c d}
+    structInstance append x(a) [structInstance set x(c)] \
+	[structInstance exists x] [structInstance exists x(e)]
+} -cleanup {
+    structInstance destroy
+} -result bd10
+test oo-20.10 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance exists x(a)
+    structInstance set x ok
+} -cleanup {
+    structInstance destroy
+} -result ok
 
 cleanupTests
 return
