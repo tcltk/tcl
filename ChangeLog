@@ -1,3 +1,11 @@
+2006-09-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (INST_EXPON):	Native type overflow detection
+	* tests/expr.test:	was completely broken.  Falling back on use of
+	bignums for all non-trivial ** calculations until
+	native-type-constrained special cases can be done carefully and
+	correctly.  [Bug 1561260].
+
 2006-09-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/http.tcl:      Change " " -> "+" url encoding mapping
