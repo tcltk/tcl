@@ -9,14 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.10 2006/09/01 15:29:34 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.11 2006/09/19 23:52:15 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
-
-#define FOREACH(var,ary) \
-	for(i=0 ; (i<(ary).num?((var=(ary).list[i]),1):0) ; i++)
 
 static int		InfoObjectArgsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);

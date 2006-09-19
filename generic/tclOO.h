@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.20 2006/09/17 22:08:06 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.21 2006/09/19 23:52:15 dkf Exp $
  */
 
 /*
@@ -270,6 +270,14 @@ MODULE_SCOPE Object *	TclOONewInstance(Tcl_Interp *interp, Class *clsPtr,
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *cPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
+
+/*
+ * A convenience macro for iterating through the lists used in the internal
+ * memory management of objects.
+ */
+
+#define FOREACH(var,ary) \
+	for(i=0 ; (i<(ary).num?((var=(ary).list[i]),1):0) ; i++)
 
 /*
  * Local Variables:
