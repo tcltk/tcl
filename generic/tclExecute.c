@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.244 2006/09/11 04:54:11 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.245 2006/09/19 16:31:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4694,7 +4694,7 @@ TclExecuteByteCode(
 
 	/* TODO: Attempts to re-use unshared operands on stack */
 	if (*pc == INST_EXPON) {
-	    long l2 = 0;
+	    long l1, l2 = 0;
 	    int oddExponent = 0, negativeExponent = 0;
 	    if (type2 == TCL_NUMBER_LONG) {
 		l2 = *((CONST long *)ptr2);
@@ -4735,7 +4735,7 @@ TclExecuteByteCode(
 
 	    if (negativeExponent) {
 		if (type1 == TCL_NUMBER_LONG) {
-		    long l1 = *((CONST long *)ptr1);
+		    l1 = *((CONST long *)ptr1);
 		    switch (l1) {
 		    case 0:
 			/* zero to a negative power is div by zero error */
@@ -4762,7 +4762,7 @@ TclExecuteByteCode(
 	    }
 
 	    if (type1 == TCL_NUMBER_LONG) {
-		long l1 = *((CONST long *)ptr1);
+		l1 = *((CONST long *)ptr1);
 		switch (l1) {
 		case 0:
 		    /* zero to a positive power is zero */
@@ -4781,13 +4781,8 @@ TclExecuteByteCode(
 		    NEXT_INST_F(1, 2, 1);
 		}
 	    }
-
-	    if (type2 != TCL_NUMBER_LONG) {
-		result = TCL_ERROR;
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("exponent too large", -1));
-		goto checkForCatch;
-	    }
+	    /* TODO: Perform those computations that fit in native types */
+	    goto overflow;
 	}
 
 	if ((*pc != INST_MULT)
@@ -4846,41 +4841,6 @@ TclExecuteByteCode(
 		    wResult -= 1;
 		}
 		break;
-	    case INST_EXPON: {
-		/* TODO: smarter overflow detection ? */
-		int wasNegative;
-		if (w2 & 1) {
-		    wResult = w1;
-		} else {
-		    wResult = Tcl_LongAsWide(1);
-		}
-		w1 *= w1;
-		w2 /= 2;
-		if (w2 == 0) {
-		    break;
-		}
-		for (; w2>Tcl_LongAsWide(1) ; w1*=w1,w2/=2) {
-		    wasNegative = (wResult < 0);
-		    if (w1 <= 0) {
-			goto overflow;
-		    }
-		    if (w2 & 1) {
-			wResult *= w1;
-			if (wasNegative != (wResult < 0)) {
-			    goto overflow;
-			}
-		    }
-		}
-		wasNegative = (wResult < 0);
-		if (w1 <= 0) {
-		    goto overflow;
-		}
-		wResult *=  w1;
-		if (wasNegative != (wResult < 0)) {
-		    goto overflow;
-		}
-		break;
-	    }
 	    default:
 		/* Unused, here to silence compiler warning. */
 		wResult = 0;
