@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.18 2006/09/02 21:04:09 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.19 2006/09/20 00:07:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -309,22 +309,25 @@ TclOODefineCopyObjCmd(
     if (oPtr->classPtr) {
 	Class *cPtr = oPtr->classPtr;
 	Class *c2Ptr = o2Ptr->classPtr;
+	Class *superPtr;
 
 	c2Ptr->flags = cPtr->flags;
-	for (i=0 ; i<c2Ptr->superclasses.num ; i++) {
-	    TclOORemoveFromSubclasses(c2Ptr, c2Ptr->superclasses.list[i]);
+	FOREACH(superPtr, c2Ptr->superclasses) {
+	    TclOORemoveFromSubclasses(c2Ptr, superPtr);
 	}
-	c2Ptr->superclasses.num = cPtr->superclasses.num;
 	if (c2Ptr->superclasses.num) {
 	    c2Ptr->superclasses.list = (Class **)
 		    ckrealloc((char *) c2Ptr->superclasses.list,
-		    sizeof(Class *) * c2Ptr->superclasses.num);
+		    sizeof(Class *) * cPtr->superclasses.num);
 	} else {
 	    c2Ptr->superclasses.list = (Class **)
-		    ckalloc(sizeof(Class *) * c2Ptr->superclasses.num);
+		    ckalloc(sizeof(Class *) * cPtr->superclasses.num);
 	}
-	for (i=0 ; i<c2Ptr->superclasses.num ; i++) {
-	    TclOOAddToSubclasses(c2Ptr, c2Ptr->superclasses.list[i]);
+	memcpy(c2Ptr->superclasses.list, cPtr->superclasses.list,
+		sizeof(Class *) * cPtr->superclasses.num);
+	c2Ptr->superclasses.num = cPtr->superclasses.num;
+	FOREACH(superPtr, c2Ptr->superclasses) {
+	    TclOOAddToSubclasses(c2Ptr, superPtr);
 	}
 
 	hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
@@ -531,8 +534,10 @@ TclOODefineFilterObjCmd(
     }
 
     if (oPtr->filters.num) {
-	for (i=0 ; i<oPtr->filters.num ; i++) {
-	    TclDecrRefCount(oPtr->filters.list[i]);
+	Tcl_Obj *filterObj;
+
+	FOREACH(filterObj, oPtr->filters) {
+	    TclDecrRefCount(filterObj);
 	}
     }
     if (objc == 1) {
@@ -678,7 +683,7 @@ TclOODefineMixinObjCmd(
 {
     int isSelfMixin = (clientData != NULL);
     Object *oPtr = GetDefineCmdContext(interp);
-    Class **mixins;
+    Class *mixinPtr;
     int i;
 
     if (oPtr == NULL) {
@@ -694,15 +699,15 @@ TclOODefineMixinObjCmd(
 
     if (objc == 1) {
 	if (oPtr->mixins.num != 0) {
-	    mixins = oPtr->mixins.list;
-	    for (i=0 ; i<oPtr->mixins.num ; i++) {
-		TclOORemoveFromInstances(oPtr, mixins[i]);
+	    FOREACH(mixinPtr, oPtr->mixins) {
+		TclOORemoveFromInstances(oPtr, mixinPtr);
 	    }
-	    ckfree((char *) mixins);
+	    ckfree((char *) oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
 	}
     } else {
-	mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+	Class **mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+
 	for (i=1 ; i<objc ; i++) {
 	    Object *o2Ptr;
 
@@ -720,15 +725,15 @@ TclOODefineMixinObjCmd(
 	    mixins[i-1] = o2Ptr->classPtr;
 	}
 	if (oPtr->mixins.num != 0) {
-	    for (i=0 ; i<oPtr->mixins.num ; i++) {
-		TclOORemoveFromInstances(oPtr, oPtr->mixins.list[i]);
+	    FOREACH(mixinPtr, oPtr->mixins) {
+		TclOORemoveFromInstances(oPtr, mixinPtr);
 	    }
 	    ckfree((char *) oPtr->mixins.list);
 	}
 	oPtr->mixins.num = objc-1;
 	oPtr->mixins.list = mixins;
-	for (i=0 ; i<objc-1 ; i++) {
-	    TclOOAddToInstances(oPtr, mixins[i]);
+	FOREACH(mixinPtr, oPtr->mixins) {
+	    TclOOAddToInstances(oPtr, mixinPtr);
 	}
     }
     oPtr->epoch++;
@@ -843,7 +848,7 @@ TclOODefineSuperclassObjCmd(
 {
     Object *oPtr, *o2Ptr;
     Foundation *fPtr = ((Interp *)interp)->ooFoundation;
-    Class **superclasses;
+    Class **superclasses, *superPtr;
     int i, j;
 
     if (objc < 2) {
@@ -914,17 +919,16 @@ TclOODefineSuperclassObjCmd(
      */
 
     if (oPtr->classPtr->superclasses.num != 0) {
-	for (i=0 ; i<oPtr->classPtr->superclasses.num ; i++) {
-	    TclOORemoveFromSubclasses(oPtr->classPtr,
-		    oPtr->classPtr->superclasses.list[i]);
+	FOREACH(superPtr, oPtr->classPtr->superclasses) {
+	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
 	}
 	ckfree((char *) oPtr->classPtr->superclasses.list);
     }
-    for (i=0 ; i<objc-1 ; i++) {
-	TclOOAddToSubclasses(oPtr->classPtr, superclasses[i]);
-    }
     oPtr->classPtr->superclasses.list = superclasses;
     oPtr->classPtr->superclasses.num = objc-1;
+    FOREACH(superPtr, oPtr->classPtr->superclasses) {
+	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
+    }
     fPtr->epoch++;
 
     return TCL_OK;
