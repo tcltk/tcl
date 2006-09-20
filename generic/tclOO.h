@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.21 2006/09/19 23:52:15 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.22 2006/09/20 14:25:06 dgp Exp $
  */
 
 /*
