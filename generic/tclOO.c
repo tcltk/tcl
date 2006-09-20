@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.42 2006/09/18 23:02:48 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.43 2006/09/20 00:12:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -57,7 +57,6 @@ static struct StructCmdInfo structCmds[] = {
     {"set",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
     {"trace",	1, NULL,  "variable", TCL_LEAVE_ERR_MSG},
     {"unset",  -1, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {"vwait",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
     {NULL}
 };
 
@@ -152,6 +151,11 @@ static int		ObjectUnknown(ClientData clientData,Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
 static int		StructVar(ClientData clientData, Tcl_Interp *interp,
 			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+static int		StructVwait(ClientData clientData, Tcl_Interp *interp,
+			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+static char *		StructVwaitVarProc(ClientData clientData,
+			    Tcl_Interp *interp, const char *name1,
+			    const char *name2, int flags);
 
 static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -312,6 +316,7 @@ TclOOInit(
     TclOONewClassMethod(interp, (Tcl_Class) fPtr->structCls,
 	    Tcl_NewStringObj("eval", 4), 1, NULL, NULL);
     DeclareClassMethod(interp, fPtr->structCls, "var", 0, StructVar);
+    DeclareClassMethod(interp, fPtr->structCls, "vwait", 1, StructVwait);
 
     return TCL_OK;
 }
@@ -583,11 +588,12 @@ ObjectNamespaceDeleted(
 
     cPtr = oPtr->classPtr;
     if (cPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
-	cPtr->flags |= OBJECT_DELETED;
+	Class *superPtr;
 
-	for (i=0 ; i<cPtr->superclasses.num ; i++) {
-	    if (!(cPtr->superclasses.list[i]->flags & OBJECT_DELETED)) {
-		TclOORemoveFromSubclasses(cPtr, cPtr->superclasses.list[i]);
+	cPtr->flags |= OBJECT_DELETED;
+	FOREACH(superPtr, cPtr->superclasses) {
+	    if (!(superPtr->flags & OBJECT_DELETED)) {
+		TclOORemoveFromSubclasses(cPtr, superPtr);
 	    }
 	}
 	cPtr->superclasses.num = 0;
@@ -671,8 +677,7 @@ TclOORemoveFromSubclasses(
 		superPtr->subclasses.list[i] =
 			superPtr->subclasses.list[superPtr->subclasses.num-1];
 	    }
-	    superPtr->subclasses.list[--superPtr->subclasses.num] =
-		    (Class *) NULL;
+	    superPtr->subclasses.list[--superPtr->subclasses.num] = NULL;
 	    break;
 	}
     }
@@ -1471,6 +1476,7 @@ GetSortedMethodList(
     Tcl_HashSearch hSearch;
     int isNew, i;
     const char **strings;
+    Class *mixinPtr;
 
     Tcl_InitObjHashTable(&names);
 
@@ -1488,8 +1494,8 @@ GetSortedMethodList(
     }
 
     AddClassMethodNames(oPtr->selfCls, publicOnly, &names);
-    for (i=0 ; i<oPtr->mixins.num ; i++) {
-	AddClassMethodNames(oPtr->mixins.list[i], publicOnly, &names);
+    FOREACH(mixinPtr, oPtr->mixins) {
+	AddClassMethodNames(mixinPtr, publicOnly, &names);
     }
 
     if (names.numEntries == 0) {
@@ -1571,11 +1577,11 @@ AddClassMethodNames(
 	clsPtr = clsPtr->superclasses.list[0];
     }
     if (clsPtr->superclasses.num != 0) {
+	Class *superPtr;
 	int i;
 
-	for (i=0 ; i<clsPtr->superclasses.num ; i++) {
-	    AddClassMethodNames(clsPtr->superclasses.list[i], publicOnly,
-		    namesPtr);
+	FOREACH(superPtr, clsPtr->superclasses) {
+	    AddClassMethodNames(superPtr, publicOnly, namesPtr);
 	}
     }
 }
@@ -1634,9 +1640,10 @@ GetCallContext(
     contextPtr->index = 0;
 
     if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
-	for (i=0 ; i<oPtr->filters.num ; i++) {
-	    AddSimpleChainToCallContext(oPtr, oPtr->filters.list[i],
-		    contextPtr, 1, 0);
+	Tcl_Obj *filterObj;
+
+	FOREACH(filterObj, oPtr->filters) {
+	    AddSimpleChainToCallContext(oPtr, filterObj, contextPtr, 1, 0);
 	}
     }
     count = contextPtr->filterLength = contextPtr->numCallChain;
@@ -1698,15 +1705,16 @@ AddSimpleChainToCallContext(
     }
     if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
 	Tcl_HashEntry *hPtr;
+	Class *mixinPtr;
 
 	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
 	if (hPtr != NULL) {
 	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr, isFilter,
 		    flags);
 	}
-	for (i=0 ; i<oPtr->mixins.num ; i++) {
-	    AddSimpleClassChainToCallContext(oPtr->mixins.list[i],
-		    methodNameObj, contextPtr, isFilter, flags);
+	FOREACH(mixinPtr, oPtr->mixins) {
+	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
+		    contextPtr, isFilter, flags);
 	}
     }
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, contextPtr,
@@ -1762,10 +1770,11 @@ AddSimpleClassChainToCallContext(
     default:
     {
 	int i;
+	Class *superPtr;
 
-	for (i=0 ; i<classPtr->superclasses.num ; i++) {
-	    AddSimpleClassChainToCallContext(classPtr->superclasses.list[i],
-		    methodNameObj, contextPtr, isFilter, flags);
+	FOREACH(superPtr, classPtr->superclasses) {
+	    AddSimpleClassChainToCallContext(superPtr, methodNameObj,
+		    contextPtr, isFilter, flags);
 	}
     }
     case 0:
@@ -2033,51 +2042,64 @@ ObjectLinkVar(
     int objc,
     Tcl_Obj *const *objv)
 {
+    Interp *iPtr = (Interp *) interp;
     Object *oPtr = contextPtr->oPtr;
+    Namespace *savedNsPtr;
     int i;
 
-    // TODO: Test this!
     if (objc-contextPtr->skip < 1) {
 	Tcl_WrongNumArgs(interp, contextPtr->skip, objv,
 		"varName ?varName ...?");
 	return TCL_ERROR;
     }
-    for (i=2 ; i<objc ; i++) {
-	Var *varPtr, *aryPtr;
-	Tcl_Obj *tmpObjPtr;
 
-	if (strstr("::", TclGetString(objv[i])) == NULL) {
+    /*
+     * Do nothing if we are not called from the body of a method. In this
+     * respect, we are like the [global] command.
+     */
+
+    if (iPtr->varFramePtr == NULL ||
+	    !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	return TCL_OK;
+    }
+
+    for (i=contextPtr->skip ; i<objc ; i++) {
+	Var *varPtr, *aryPtr;
+	const char *varName = TclGetString(objv[i]);
+
+	if (strstr(varName, "::") != NULL) {
 	    Tcl_AppendResult(interp, "variable name \"", TclGetString(objv[i]),
 		    "\" illegal: must not contain namespace separator", NULL);
 	    return TCL_ERROR;
 	}
 
 	/*
-	 * I know this is non-optimal. Improvements welcome!
+	 * Switch to the object's namespace for the duration of this call.
+	 * Like this, the variable is looked up in the namespace of the
+	 * object, and not in the namespace of the caller. Otherwise this
+	 * would only work if the caller was a method of the object itself,
+	 * which might not be true if the method was exported.
 	 */
-	TclNewStringObj(tmpObjPtr, oPtr->nsPtr->fullName,
-		strlen(oPtr->nsPtr->fullName));
-	Tcl_AppendToObj(tmpObjPtr, "::", 2);
-	Tcl_AppendObjToObj(tmpObjPtr, objv[i]);
-	Tcl_IncrRefCount(tmpObjPtr);
-	varPtr = TclObjLookupVar(interp, tmpObjPtr, NULL,
-		TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG, "access", 1, 0, &aryPtr);
-	TclDecrRefCount(tmpObjPtr);
-	if (varPtr == NULL) {
-	    Tcl_Panic("unexpected NULL from TclObjLookupVar");
-	}
-	if (aryPtr != NULL) {
+
+	savedNsPtr = iPtr->varFramePtr->nsPtr;
+	iPtr->varFramePtr->nsPtr = oPtr->nsPtr;
+	varPtr = TclObjLookupVar(interp, objv[i], NULL, TCL_NAMESPACE_ONLY,
+		"define", 1, 0, &aryPtr);
+	iPtr->varFramePtr->nsPtr = savedNsPtr;
+
+	if (varPtr == NULL || aryPtr != NULL) {
 	    /*
-	     * Variable cannot be an element in an array. If arrayPtr is
-	     * non-NULL, it is, so throw up an error and return.
+	     * Variable cannot be an element in an array. If aryPtr is not
+	     * NULL, it is an element, so throw up an error and return.
 	     */
 
-	    TclVarErrMsg(interp, TclGetString(objv[i]), NULL, "define",
+	    TclVarErrMsg(interp, varName, NULL, "define",
 		    "name refers to an element in an array");
 	    return TCL_ERROR;
 	}
 
 	/*
+	 * Arrange for the lifetime of the variable to be correctly managed.
 	 * This is out of Tcl_VariableObjCmd...
 	 */
 
@@ -2086,8 +2108,7 @@ ObjectLinkVar(
 	    varPtr->refCount++;
 	}
 
-	if (TclPtrMakeUpvar(interp, varPtr, TclGetString(objv[i]), 0,
-		-1) != TCL_OK) {
+	if (TclPtrMakeUpvar(interp, varPtr, varName, 0, -1) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
@@ -2126,6 +2147,102 @@ StructVar(
     Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
+}
+
+static int
+StructVwait(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    CallContext *contextPtr,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_CallFrame *dummyFrame;
+    int done, foundEvent;
+
+    if (contextPtr->skip+1 != objc) {
+	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, "varName");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Set up the trace. Note that, unlike the normal [vwait] implementation,
+     * this code locates the variable within the pushed namespace context. We
+     * only keep the namespace context on the Tcl stack for as short a time as
+     * possible.
+     */
+
+    TclPushStackFrame(interp, &dummyFrame,
+	    (Tcl_Namespace *) contextPtr->oPtr->nsPtr, 0);
+    if (Tcl_TraceVar(interp, TclGetString(objv[objc-1]),
+	    TCL_NAMESPACE_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    StructVwaitVarProc, &done) != TCL_OK) {
+	TclPopStackFrame(interp);
+	return TCL_ERROR;
+    }
+    TclPopStackFrame(interp);
+
+    /*
+     * Run an event loop until one of:
+     * 1) our trace is triggered by a write or unset of the variable,
+     * 2) there are no further event handlers (a blocking case), or
+     * 3) a limit has triggered.
+     */
+
+    done = 0;
+    foundEvent = 1;
+    while (!done && foundEvent) {
+	foundEvent = Tcl_DoOneEvent(TCL_ALL_EVENTS);
+	if (Tcl_LimitExceeded(interp)) {
+	    break;
+	}
+    }
+
+    /*
+     * Clear out the trace if the namespace isn't also going away; if the
+     * namespace is doomed, the trace will be cleaned out anyway and we're
+     * done.
+     */
+
+    if (!(contextPtr->oPtr->nsPtr->flags & (NS_DYING|NS_KILLED))) {
+	TclPushStackFrame(interp, &dummyFrame,
+		(Tcl_Namespace *) contextPtr->oPtr->nsPtr, 0);
+	Tcl_UntraceVar(interp, TclGetString(objv[objc-1]),
+		TCL_NAMESPACE_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+		StructVwaitVarProc, &done);
+	TclPopStackFrame(interp);
+    }
+
+    /*
+     * Now produce error messages (if any) and return.
+     */
+
+    Tcl_ResetResult(interp);
+    if (!foundEvent) {
+	Tcl_AppendResult(interp, "can't wait for variable \"",
+		TclGetString(objv[objc-1]), "\": would wait forever", NULL);
+	return TCL_ERROR;
+    }
+    if (!done) {
+	Tcl_AppendResult(interp, "limit exceeded", NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+	/* ARGSUSED */
+static char *
+StructVwaitVarProc(
+    ClientData clientData,	/* Pointer to integer to set to 1. */
+    Tcl_Interp *interp,		/* Interpreter containing variable. */
+    const char *name1,		/* Name of variable. */
+    const char *name2,		/* Second part of variable name. */
+    int flags)			/* Information about what happened. */
+{
+    int *donePtr = clientData;
+
+    *donePtr = 1;
+    return NULL;
 }
 
 static int
@@ -2356,6 +2473,7 @@ TclOOIsReachable(
     Class *startPtr)
 {
     int i;
+    Class *superPtr;
 
   tailRecurse:
     if (startPtr == targetPtr) {
@@ -2365,8 +2483,8 @@ TclOOIsReachable(
 	startPtr = startPtr->superclasses.list[0];
 	goto tailRecurse;
     }
-    for (i=0 ; i<startPtr->superclasses.num ; i++) {
-	if (TclOOIsReachable(targetPtr, startPtr->superclasses.list[i])) {
+    FOREACH(superPtr, startPtr->superclasses) {
+	if (TclOOIsReachable(targetPtr, superPtr)) {
 	    return 1;
 	}
     }

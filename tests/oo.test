@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.27 2006/09/18 23:02:48 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.28 2006/09/20 00:12:55 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -813,13 +813,13 @@ test oo-20.1 {OO: struct class} {
     oo::struct create foo
     foo destroy
 } {}
-test oo-20.2 {OO: struct class} {
+test oo-20.2 {OO: struct class} -body {
     oo::struct create foo
     set x -
     set result $x[foo set x a][foo set x][foo set x b][foo set x]$x[foo unset x]$x
+} -cleanup {
     foo destroy
-    return $result
-} -aabb--
+} -result -aabb--
 test oo-20.3 {OO: struct class} -setup {
     oo::struct create structInstance
 } -body {
@@ -853,12 +853,15 @@ test oo-20.6 {OO: struct class} -setup {
 	set context [uplevel 1 namespace current]
 	lappend result $args [expr {
 	    $ns eq $context ? "ok" : [list $ns ne $context]
+	}] [expr {
+	    "${ns}::x" eq [uplevel 1 my var x] ? "ok" : [list ${ns}::x ne [uplevel 1 my var x]]
 	}]
     }
     lappend result [structInstance set x 0]
 } -cleanup {
     structInstance destroy
-} -result {{x {} write} ok 0}
+    rename foo {}
+} -result {{x {} write} ok ok 0}
 test oo-20.7 {OO: struct class} -setup {
     oo::struct create structInstance
 } -body {
@@ -890,6 +893,119 @@ test oo-20.10 {OO: struct class} -setup {
 } -cleanup {
     structInstance destroy
 } -result ok
+test oo-20.11 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance set x 0
+    structInstance incr x
+    structInstance append x 3 4
+    structInstance incr x 2
+    structInstance lappend x foo bar
+} -cleanup {
+    structInstance destroy
+} -result {136 foo bar}
+test oo-20.12 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance set x 0
+    after 5 structInstance destroy
+    structInstance vwait x
+} -result {}
+test oo-20.13 {OO: struct class} -setup {
+    oo::struct create structInstance
+} -body {
+    structInstance set x badRef
+    set after0 [after 500 structInstance destroy]
+    set after1 [after 10 structInstance set x done]
+    set after2 [after 5 set x early]
+    structInstance vwait x
+    after cancel $after0
+    after cancel $after1
+    after cancel $after2
+    structInstance set x
+} -cleanup {
+    catch {structInstance destroy}
+} -result done
+
+test oo-21.1 {OO: variable method} -body {
+    oo::class create testClass {
+	constructor {} {
+	    my variable ok
+	    set ok {}
+	}
+    }
+    lsort [info object [testClass new] vars]
+} -cleanup {
+    catch {testClass destroy}
+} -result ok
+test oo-21.2 {OO: variable method} -body {
+    oo::class create testClass {
+	constructor {} {
+	    my variable a b c
+	    set a [set b [set c {}]]
+	}
+    }
+    lsort [info object [testClass new] vars]
+} -cleanup {
+    catch {testClass destroy}
+} -result {a b c}
+test oo-21.3 {OO: variable method} -body {
+    oo::class create testClass {
+	superclass oo::struct
+	method bar {} {
+	    my variable a(b)
+	}
+    }
+    testClass create foo
+    foo array set a {b c}
+    foo bar
+} -returnCodes 1 -cleanup {
+    catch {testClass destroy}
+} -result {can't define "a(b)": name refers to an element in an array}
+test oo-21.4 {OO: variable method} -body {
+    oo::class create testClass {
+	superclass oo::struct
+	method bar {} {
+	    my variable a(b)
+	}
+    }
+    testClass create foo
+    foo set a b
+    foo bar
+} -returnCodes 1 -cleanup {
+    catch {testClass destroy}
+} -result {can't define "a(b)": name refers to an element in an array}
+test oo-21.5 {OO: variable method} -body {
+    oo::class create testClass {
+	superclass oo::struct
+	method bar {} {
+	    my variable a::b
+	}
+    }
+    testClass create foo
+    foo bar
+} -returnCodes 1 -cleanup {
+    catch {testClass destroy}
+} -result {variable name "a::b" illegal: must not contain namespace separator}
+test oo-21.6 {OO: variable method} -setup {
+    oo::class create testClass {
+	superclass oo::struct
+	self.export eval
+    }
+} -body {
+    testClass eval variable a 0
+    oo::define [testClass create foo] method bar {other} {
+	$other variable a
+	set a 3
+    }
+    oo::define [testClass create boo] export variable
+    foo set a 1
+    boo set a 2
+    foo bar boo
+    list [testClass eval set a] [foo set a] [boo set a]
+} -cleanup {
+    testClass destroy
+} -result {0 1 3}
 
 cleanupTests
 return
