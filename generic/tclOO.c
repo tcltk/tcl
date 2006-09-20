@@ -8,12 +8,16 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.43 2006/09/20 00:12:54 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.44 2006/09/20 23:01:00 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 #include <assert.h>
+
+/*
+ * Commands in oo::define.
+ */
 
 static const struct {
     const char *name;
@@ -41,6 +45,10 @@ static const struct {
     {NULL, NULL, 0}
 };
 
+/*
+ * Forwarded methods in oo::struct.
+ */
+
 struct StructCmdInfo {
     const char *cmdName;
     int varIdx;
@@ -60,14 +68,22 @@ static struct StructCmdInfo structCmds[] = {
     {NULL}
 };
 
+/*
+ * What sort of size of things we like to allocate.
+ */
+
 #define ALLOC_CHUNK 8
+
+/*
+ * Extra flags used for call chain management.
+ */
 
 #define DEFINITE_PRIVATE 0x100000
 #define DEFINITE_PUBLIC  0x200000
 #define KNOWN_STATE	 (DEFINITE_PRIVATE | DEFINITE_PUBLIC)
 
 /*
- * Function declarations.
+ * Function declarations for things defined in this file.
  */
 
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
@@ -99,7 +115,7 @@ static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int publicOnly,
 			    Tcl_HashTable *cachePtr);
 static void		ObjectNamespaceDeleted(ClientData clientData);
-static void		ObjNameChangedTrace(ClientData clientData,
+static void		ObjectDeletedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp, Object *oPtr);
@@ -162,6 +178,10 @@ static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 static int		SelfObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 
+/*
+ * The types of methods defined by the core OO system.
+ */
+
 static const Tcl_OOMethodType procMethodType = {
     "procedural method",
     InvokeProcedureMethod, DeleteProcedureMethod, CloneProcedureMethod
@@ -179,6 +199,23 @@ static const Tcl_OOMethodType structMethodType = {
     StructInvoke, NULL, SimpleClone
 };
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOInit --
+ *
+ *	Called to initialise the OO system within an interpreter.
+ *
+ * Result:
+ *	TCL_OK if the setup succeeded. Currently assumed to always work.
+ *
+ * Side effects:
+ *	Creates namespaces, commands, several classes and a number of
+ *	callbacks. Upon return, the OO system is ready for use.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 int
 TclOOInit(
     Tcl_Interp *interp)
@@ -320,6 +357,17 @@ TclOOInit(
 
     return TCL_OK;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * KillFoundation --
+ *
+ *	Delete those parts of the OO core that are not deleted automatically
+ *	when the objects and classes themselves are destroyed.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 KillFoundation(
@@ -416,19 +464,32 @@ AllocObject(
     TclNewObj(cmdnameObj);
     Tcl_GetCommandFullName(interp, oPtr->command, cmdnameObj);
     Tcl_TraceCommand(interp, TclGetString(cmdnameObj),
-	    TCL_TRACE_DELETE, ObjNameChangedTrace, oPtr);
+	    TCL_TRACE_DELETE, ObjectDeletedTrace, oPtr);
     TclDecrRefCount(cmdnameObj);
 
     return oPtr;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectDeletedTrace --
+ *
+ *	This callback is triggered when the object is deleted by any
+ *	mechanism. It runs the destructors and arranges for the actual cleanup
+ *	of the object's namespace, which in turn triggers cleansing of the
+ *	object data structures.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
-ObjNameChangedTrace(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    const char *oldName,
-    const char *newName, /* always NULL */
-    int flags)
+ObjectDeletedTrace(
+    ClientData clientData,	/* The object being deleted. */
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    const char *oldName,	/* What the object was (last) called. */
+    const char *newName,	/* Always NULL. */
+    int flags)			/* Why was the object deleted? */
 {
     Interp *iPtr = (Interp *) interp;
     Object *oPtr = clientData;
@@ -470,6 +531,17 @@ ObjNameChangedTrace(
      * What else to do to delete an object?
      */
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ReleaseClassContents --
+ *
+ *	Tear down the special class data structure, including deleting all
+ *	dependent classes and objects.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 ReleaseClassContents(
@@ -519,6 +591,19 @@ ReleaseClassContents(
     }
     ckfree((char *) insts);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectNamespaceDeleted --
+ *
+ *	Callback when the object's namespace is deleted. Used to clean up the
+ *	data structures associated with the object. The complicated bit is
+ *	that this can sometimes happen before the object's command is deleted
+ *	(interpreter teardown is complex!)
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 ObjectNamespaceDeleted(
@@ -624,6 +709,17 @@ ObjectNamespaceDeleted(
 	Tcl_EventuallyFree(oPtr, TCL_DYNAMIC);
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOORemoveFromInstances --
+ *
+ *	Utility function to remove an object from the list of instances within
+ *	a class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 void
 TclOORemoveFromInstances(
@@ -644,6 +740,17 @@ TclOORemoveFromInstances(
 	}
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOAddToInstances --
+ *
+ *	Utility function to add an object to the list of instances within a
+ *	class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 void
 TclOOAddToInstances(
@@ -663,6 +770,17 @@ TclOOAddToInstances(
     }
     cPtr->instances.list[cPtr->instances.num++] = oPtr;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOORemoveFromSubclasses --
+ *
+ *	Utility function to remove a class from the list of subclasses within
+ *	another class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 void
 TclOORemoveFromSubclasses(
@@ -682,6 +800,17 @@ TclOORemoveFromSubclasses(
 	}
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOAddToSubclasses --
+ *
+ *	Utility function to add a class to the list of subclasses within
+ *	another class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 void
 TclOOAddToSubclasses(
@@ -846,6 +975,17 @@ TclOONewInstance(
     return oPtr;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeclareClassMethod --
+ *
+ *	Helper that makes it cleaner to create very simple methods during
+ *	initialization.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 DeclareClassMethod(
     Tcl_Interp *interp,
@@ -863,6 +1003,16 @@ DeclareClassMethod(
     TclDecrRefCount(namePtr);
     return TCL_OK;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SimpleInvoke, SimpleClone --
+ *
+ *	How to invoke and clone a simple method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 SimpleInvoke(
@@ -885,6 +1035,17 @@ SimpleClone(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * StructInvoke --
+ *
+ *	How to invoke the special sort of forwarded methods used by the
+ *	oo::struct class. In many ways, this is a complicated and nasty hack.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 StructInvoke(
     ClientData clientData,
@@ -981,14 +1142,31 @@ StructInvoke(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOONewMethod --
+ *
+ *	Attach a method to an object.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Tcl_Method
 TclOONewMethod(
-    Tcl_Interp *interp,
-    Tcl_Object object,
-    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
-    int isPublic,
+    Tcl_Interp *interp,		/* Unused? */
+    Tcl_Object object,		/* The object that has the method attached to
+				 * it. */
+    Tcl_Obj *nameObj,		/* The name of the method. May be NULL; if so,
+				 * up to caller to manage storage (e.g., when
+				 * it is a constructor or destructor). */
+    int isPublic,		/* Whether this is a public method. */
     const Tcl_OOMethodType *typePtr,
-    ClientData clientData)
+				/* The type of method this is, which defines
+				 * how to invoke, delete and clone the
+				 * method. */
+    ClientData clientData)	/* Some data associated with the particular
+				 * method to be created. */
 {
     register Object *oPtr = (Object *) object;
     register Method *mPtr;
@@ -1025,15 +1203,31 @@ TclOONewMethod(
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOONewClassMethod --
+ *
+ *	Attach a method to a class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 Tcl_Method
 TclOONewClassMethod(
-    Tcl_Interp *interp,
-    Tcl_Class cls,
-    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
-    int isPublic,
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Tcl_Class cls,		/* The class to attach the method to. */
+    Tcl_Obj *nameObj,		/* The name of the object. May be NULL (e.g.,
+				 * for constructors or destructors); if so, up
+				 * to caller to manage storage. */
+    int isPublic,		/* Whether this is a public method. */
     const Tcl_OOMethodType *typePtr,
-    ClientData clientData)
+				/* The type of method this is, which defines
+				 * how to invoke, delete and clone the
+				 * method. */
+    ClientData clientData)	/* Some data associated with the particular
+				 * method to be created. */
 {
     register Class *clsPtr = (Class *) cls;
     register Method *mPtr;
@@ -1072,14 +1266,27 @@ TclOONewClassMethod(
     return (Tcl_Method) mPtr;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclNewProcMethod --
+ *
+ *	Create a new procedure-like method for an object.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Method *
 TclNewProcMethod(
-    Tcl_Interp *interp,
-    Object *oPtr,
-    int isPublic,
-    Tcl_Obj *nameObj,		/* Must not be NULL. */
-    Tcl_Obj *argsObj,		/* Must not be NULL. */
-    Tcl_Obj *bodyObj)		/* Must not be NULL. */
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    Object *oPtr,		/* The object to modify. */
+    int isPublic,		/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which must not be
+				 * NULL. */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which must not be NULL. */
+    Tcl_Obj *bodyObj)		/* The body of the method, which must not be
+				 * NULL. */
 {
     int argsc;
     Tcl_Obj **argsv;
@@ -1099,15 +1306,31 @@ TclNewProcMethod(
     return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, nameObj,
 	    isPublic, &procMethodType, pmPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclNewProcClassMethod --
+ *
+ *	Create a new procedure-like method for a class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 Method *
 TclNewProcClassMethod(
-    Tcl_Interp *interp,
-    Class *cPtr,
-    int isPublic,
-    Tcl_Obj *nameObj, /* May be NULL; if so, up to caller to manage storage. */
-    Tcl_Obj *argsObj, /* May be NULL; if so, equiv to empty list. */
-    Tcl_Obj *bodyObj)
+    Tcl_Interp *interp,		/* The interpreter containing the class. */
+    Class *cPtr,		/* The class to modify. */
+    int isPublic,		/* Whether this is a public method. */
+    Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
+				 * if so, up to caller to manage storage
+				 * (e.g., because it is a constructor or
+				 * destructor). */
+    Tcl_Obj *argsObj,		/* The formal argument list for the method,
+				 * which may be NULL; if so, it is equivalent
+				 * to an empty list. */
+    Tcl_Obj *bodyObj)		/* The body of the method, which must not be
+				 * NULL. */
 {
     int argsLen;		/* -1 => delete argsObj before exit */
     register ProcedureMethod *pmPtr;
@@ -1138,6 +1361,16 @@ TclNewProcClassMethod(
     return (Method *) TclOONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &procMethodType, pmPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InvokeProcedureMethod --
+ *
+ *	How to invoke a procedure-like method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 InvokeProcedureMethod(
@@ -1171,6 +1404,7 @@ InvokeProcedureMethod(
 	nameObj = objv[contextPtr->skip-1];
 	namePtr = TclGetString(nameObj);
     }
+    // TODO: Can we skip this compile? Should we skip this?
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, oPtr->nsPtr, "body of method", namePtr);
     if (result != TCL_OK) {
@@ -1197,6 +1431,16 @@ InvokeProcedureMethod(
     }
     return result;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeleteProcedureMethod --
+ *
+ *	How to delete a procedure-like method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 DeleteProcedureMethod(
@@ -1207,6 +1451,16 @@ DeleteProcedureMethod(
     TclProcDeleteProc(pmPtr->procPtr);
     ckfree((char *) pmPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * CloneProcedureMethod --
+ *
+ *	How to clone a procedure-like method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 CloneProcedureMethod(
@@ -1223,7 +1477,17 @@ CloneProcedureMethod(
     return TCL_OK;
 }
 
-/* To be called from Tcl_EventuallyFree */
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeleteMethodStruct --
+ *
+ *	Function used when deleting a method. Always called indirectly via
+ *	Tcl_EventuallyFree().
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static void
 DeleteMethodStruct(
     char *buffer)
@@ -1239,6 +1503,16 @@ DeleteMethodStruct(
 
     ckfree(buffer);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclDeleteMethod --
+ *
+ *	How to delete a method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 void
 TclDeleteMethod(
@@ -1249,6 +1523,16 @@ TclDeleteMethod(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclNewForwardMethod --
+ *
+ *	Create a forwarded method for an object.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Method *
 TclNewForwardMethod(
     Tcl_Interp *interp,
@@ -1275,6 +1559,16 @@ TclNewForwardMethod(
     return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, nameObj,
 	    isPublic, &fwdMethodType, fmPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclNewForwardClassMethod --
+ *
+ *	Create a new forwarded method for a class.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 Method *
 TclNewForwardClassMethod(
@@ -1302,6 +1596,17 @@ TclNewForwardClassMethod(
     return (Method *) TclOONewClassMethod(interp, (Tcl_Class) cPtr, nameObj,
 	    isPublic, &fwdMethodType, fmPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InvokeForwardMethod --
+ *
+ *	How to invoke a forwarded method. Works by doing some ensemble-like
+ *	command rearranging and then invokes some other Tcl command.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 InvokeForwardMethod(
@@ -1330,6 +1635,16 @@ InvokeForwardMethod(
     ckfree((char *) argObjs);
     return result;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeleteForwardMethod --
+ *
+ *	How to delete a forwarded method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 DeleteForwardMethod(
@@ -1340,6 +1655,16 @@ DeleteForwardMethod(
     TclDecrRefCount(fmPtr->prefixObj);
     ckfree((char *) fmPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * CloneForwardMethod --
+ *
+ *	How to clone a forwarded method.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 CloneForwardMethod(
@@ -1354,6 +1679,18 @@ CloneForwardMethod(
     *newClientData = fm2Ptr;
     return TCL_OK;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * PublicObjectCmd, PrivateObjectCmd, ObjectCmd --
+ *
+ *	Main entry point for object invokations. The Public* and Private*
+ *	wrapper functions are just thin wrappers round the main ObjectCmd
+ *	function that does call chain creation, management and invokation.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 PublicObjectCmd(
@@ -1379,12 +1716,13 @@ PrivateObjectCmd(
 
 static int
 ObjectCmd(
-    Object *oPtr,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv,
-    int publicOnly,
-    Tcl_HashTable *cachePtr)
+    Object *oPtr,		/* The object being invoked. */
+    Tcl_Interp *interp,		/* The interpreter containing the object. */
+    int objc,			/* How many arguments are being passed in. */
+    Tcl_Obj *const *objv,	/* The array of arguments. */
+    int publicOnly,		/* Whether this is an invokation through the
+				 * public or the private command interface. */
+    Tcl_HashTable *cachePtr)	/* What call chain cache to use. */
 {
     Interp *iPtr = (Interp *) interp;
     CallContext *contextPtr;
@@ -1423,6 +1761,16 @@ ObjectCmd(
 
     return result;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeleteContext --
+ *
+ *	Destroys a method call-chain context, which should not be in use.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 DeleteContext(
@@ -1433,6 +1781,19 @@ DeleteContext(
     }
     ckfree((char *) contextPtr);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InvokeContext --
+ *
+ *	Invokes a single step along a method call-chain context. Note that the
+ *	invokation of a step along the chain can cause further steps along the
+ *	chain to be invoked. Note that this function is written to be as light
+ *	in stack usage as possible.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 InvokeContext(
@@ -1443,6 +1804,12 @@ InvokeContext(
 {
     Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
     int result, isFirst = (contextPtr->index == 0);
+
+    /*
+     * If this is the first step along the chain, we preserve the method
+     * entries in the chain so that they do not get deleted out from under our
+     * feet.
+     */
 
     if (isFirst) {
 	int i;
@@ -1465,6 +1832,16 @@ InvokeContext(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GetSortedMethodList --
+ *
+ *	Discovers the list of method names supported by an object.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 GetSortedMethodList(
     Object *oPtr,
@@ -1527,6 +1904,7 @@ GetSortedMethodList(
     return i;
 }
 
+/* Comparator for GetSortedMethodList */
 static int
 CmpStr(
     const void *ptr1,
@@ -1537,6 +1915,18 @@ CmpStr(
 
     return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1));
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddClassMethodNames --
+ *
+ *	Adds the method names defined by a class (or its superclasses) to the
+ *	collection being built. The collection is built in a hash table to
+ *	ensure that duplicates are excluded.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 AddClassMethodNames(
@@ -1674,6 +2064,19 @@ GetCallContext(
     }
     return contextPtr;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddSimpleChainToCallContext --
+ *
+ *	The core of the call-chain construction engine, this handles calling a
+ *	particular method on a particular object. Note that filters and
+ *	unknown handling are already handled by the logic that uses this
+ *	function.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 AddSimpleChainToCallContext(
@@ -1720,6 +2123,16 @@ AddSimpleChainToCallContext(
     AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, contextPtr,
 	    isFilter, flags);
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddSimpleClassChainToCallContext --
+ *
+ *	Construct a call-chain from a class hierarchy.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 AddSimpleClassChainToCallContext(
@@ -1781,6 +2194,17 @@ AddSimpleClassChainToCallContext(
 	return;
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddMethodToCallChain --
+ *
+ *	Utility method that manages the adding of a particular method
+ *	implementation to a call-chain.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 AddMethodToCallChain(
@@ -1846,6 +2270,16 @@ AddMethodToCallChain(
     contextPtr->numCallChain++;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassCreate --
+ *
+ *	Implementation for oo::class->create method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 ClassCreate(
     ClientData clientData,
@@ -1881,6 +2315,16 @@ ClassCreate(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassNew --
+ *
+ *	Implementation for oo::class->new method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 ClassNew(
     ClientData clientData,
@@ -1911,6 +2355,16 @@ ClassNew(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectDestroy --
+ *
+ *	Implementation for oo::object->destroy method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 ObjectDestroy(
     ClientData clientData,
@@ -1927,6 +2381,16 @@ ObjectDestroy(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectEval --
+ *
+ *	Implementation for oo::object->eval method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 ObjectEval(
     ClientData clientData,
@@ -1999,6 +2463,17 @@ ObjectEval(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectUnknown --
+ *
+ *	Default unknown method handler method (defined in oo::object). This
+ *	just creates a suitable error message.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 ObjectUnknown(
     ClientData clientData,
@@ -2034,6 +2509,16 @@ ObjectUnknown(
     return TCL_ERROR;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectLinkVar --
+ *
+ *	Implementation of oo::object->var method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 ObjectLinkVar(
     ClientData clientData,
@@ -2115,6 +2600,16 @@ ObjectLinkVar(
     return TCL_OK;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * StructVar --
+ *
+ *	Implementation of the oo::struct->variable method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 StructVar(
     ClientData clientData,
@@ -2148,6 +2643,16 @@ StructVar(
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * StructVwait --
+ *
+ *	Implementation of the oo::struct->vwait command.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static int
 StructVwait(
@@ -2245,6 +2750,17 @@ StructVwaitVarProc(
     return NULL;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * NextObjCmd --
+ *
+ *	Implementation of the [next] command. Note that this command is only
+ *	ever to be used inside the body of a procedure-like method.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 NextObjCmd(
     ClientData clientData,
@@ -2355,6 +2871,17 @@ NextObjCmd(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SelfObjCmd --
+ *
+ *	Implementation of the [self] command, which provides introspection of
+ *	the call context.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static int
 SelfObjCmd(
     ClientData clientData,
@@ -2452,6 +2979,16 @@ SelfObjCmd(
     }
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclGetObjectFromObj --
+ *
+ *	Utility function to get an object from a Tcl_Obj containing its name.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Object *
 TclGetObjectFromObj(
     Tcl_Interp *interp,
@@ -2467,6 +3004,17 @@ TclGetObjectFromObj(
     return cmdPtr->objClientData;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOIsReachable --
+ *
+ *	Utility function that tests whether a class is a subclass (whether
+ *	directly or indirectly) of another class.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 int
 TclOOIsReachable(
     Class *targetPtr,
@@ -2491,6 +3039,16 @@ TclOOIsReachable(
     return 0;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetProcFromMethod --
+ *
+ *	Utility function used for procedure-like method introspection.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Proc *
 TclOOGetProcFromMethod(
     Method *mPtr)
@@ -2503,6 +3061,20 @@ TclOOGetProcFromMethod(
     return NULL;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InitEnsembleRewrite --
+ *
+ *	Utility function that wraps up a lot of the complexity involved in
+ *	doing ensemble-like command forwarding. There are many baroque bits
+ *	attached to this function so that it can support much of the rewriting
+ *	used in the oo::struct implementation; perhaps it should be tidied up
+ *	some day instead.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,
