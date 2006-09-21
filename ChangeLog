@@ -1,3 +1,8 @@
+2006-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	Dropped ParseInteger() routine.
+	TclParseNumber covers the task just fine.
+
 2006-09-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclEvent.c (Tcl_VwaitObjCmd): Rewrite so that an exceeded
