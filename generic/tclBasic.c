@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.196 2006/08/30 19:33:11 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.197 2006/09/22 18:13:27 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -326,6 +326,12 @@ Tcl_CreateInterp(void)
 
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
+
+    /* TIP #268 */
+    iPtr->packagePrefer = (getenv ("TCL_PKG_PREFER_LATEST") == NULL ? 
+			   PKG_PREFER_STABLE   :
+			   PKG_PREFER_LATEST);
+
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&(iPtr->literalTable));
     iPtr->compileEpoch = 0;
@@ -562,9 +568,10 @@ Tcl_CreateInterp(void)
 
     /*
      * Register Tcl's version number.
+     * TIP #268: Full patchlevel instead of just major.minor
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, (ClientData) &tclStubs);
 
 #ifdef Tcl_InitStubs
 #undef Tcl_InitStubs

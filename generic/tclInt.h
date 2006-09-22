@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.275 2006/08/21 01:08:41 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.276 2006/09/22 18:13:28 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1260,6 +1260,15 @@ typedef struct ResolverScheme {
 typedef struct LimitHandler LimitHandler;
 
 /*
+ * TIP #268.
+ * Values for the selection mode, i.e the package require preferences.
+ */
+
+enum PkgPreferOptions {
+    PKG_PREFER_LATEST, PKG_PREFER_STABLE
+};
+
+/*
  *----------------------------------------------------------------
  * This structure defines an interpreter, which is a collection of commands
  * plus other state information related to interpreting commands, such as
@@ -1374,6 +1383,15 @@ typedef struct Interp {
 				 * commands for packages that aren't described
 				 * in packageTable. Ckalloc'ed, may be
 				 * NULL. */
+
+    /*
+     * TIP #268.
+     * The currently active selection mode,
+     * i.e the package require preferences.
+     */
+
+    int packagePrefer;          /* Current package selection mode.
+				 */
 
     /*
      * Miscellaneous information:
