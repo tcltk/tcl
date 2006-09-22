@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.2.5 2006/09/22 01:26:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.2.6 2006/09/22 18:31:54 andreas_kupries Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -80,6 +80,8 @@ static void		AddRequirementsToDString(Tcl_DString* dstring,
 						 int reqc, Tcl_Obj *CONST reqv[]);
 static Package *	FindPackage(Tcl_Interp *interp, CONST char *name);
 static Tcl_Obj*		ExactRequirement(CONST char* version);
+static void		VersionCleanupProc(ClientData clientData,
+			    Tcl_Interp *interp);
 #endif
 
 /*
@@ -344,7 +346,32 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 	return NULL;
     }
 
-    return Tcl_GetString (Tcl_GetObjResult (interp));
+    /* This function returns the version string explictly, and leaves the
+     * interpreter result empty. However "Tcl_PkgRequireProc" above returned
+     * the version through the interpreter result. Simply resetting the result
+     * now potentially deletes the string (obj), and the pointer to its string
+     * rep we have, as our result, may be dangling due to this. Our solution
+     * is to remember the object in interp associated data, with a proper
+     * reference count, and then reset the result. Now pointers will not
+     * dangle. It will be a leak however if nothing is done. So the next time
+     * we come through here we delete the object remembered by this call, as
+     * we can then be sure that there is no pointer to its string around
+     * anymore. Beyond that we have a deletion function which cleans up the last
+     * remembered object which was not cleaned up directly, here.
+     */
+
+    ov = (Tcl_Obj*) Tcl_GetAssocData (interp, "tcl/Tcl_PkgRequireEx", NULL);
+    if (ov != NULL) {
+	Tcl_DecrRefCount (ov);
+    }
+
+    ov = Tcl_GetObjResult (interp);
+    Tcl_IncrRefCount (ov);
+    Tcl_SetAssocData(interp, "tcl/Tcl_PkgRequireEx", VersionCleanupProc,
+		     (ClientData) ov);
+    Tcl_ResetResult (interp);
+
+    return Tcl_GetString (ov);
 }
 
 int
@@ -2329,6 +2356,36 @@ ExactRequirement(version)
 
     ckfree ((char*) lv);
     return o;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VersionCleanupProc --
+ *
+ *	This function is called to delete the last remember package version
+ *	string for an interpreter when the interpreter is deleted. It gets
+ *	invoked via the Tcl AssocData mechanism.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Storage for the version object for interp get deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+VersionCleanupProc (
+    ClientData clientData,	/* Pointer to remembered version string object
+				 * for interp. */
+    Tcl_Interp *interp)		/* Interpreter that is being deleted. */
+{
+    Tcl_Obj* ov = (Tcl_Obj*) clientData;
+    if (ov != NULL) {
+	Tcl_DecrRefCount (ov);
+    }
 }
 
 /*
