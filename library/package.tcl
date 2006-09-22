@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.23.2.3 2005/07/22 21:59:41 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.23.2.4 2006/09/22 01:26:24 andreas_kupries Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -471,7 +471,12 @@ proc tclPkgSetup {dir pkg version files} {
 # version -		Version of desired package.  Not used.
 # exact -		Either "-exact" or omitted.  Not used.
 
-proc tclPkgUnknown {name version {exact {}}} {
+
+proc tclPkgUnknown [expr {
+			  [info exists tcl_platform(tip,268)]
+			  ? "name args"
+			  : "name version {exact {}}"
+		      }] {
     global auto_path env
 
     if {![info exists auto_path]} {
@@ -564,43 +569,86 @@ proc tclPkgUnknown {name version {exact {}}} {
 # Arguments:
 # original -		original [package unknown] procedure
 # name -		Name of desired package.  Not used.
+#ifndef TCL_TIP268
 # version -		Version of desired package.  Not used.
 # exact -		Either "-exact" or omitted.  Not used.
+#else
+# args -		List of requirements. Not used.
+#endif
 
-proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
+if {[info exists tcl_platform(tip,268)]} {
+    proc tcl::MacOSXPkgUnknown {original name args} {
+	#  First do the cross-platform default search
+	uplevel 1 $original [linsert $args 0 $name]
 
-    #  First do the cross-platform default search
-    uplevel 1 $original [list $name $version $exact]
+	# Now do MacOSX specific searching
+	global auto_path
 
-    # Now do MacOSX specific searching
-    global auto_path
-
-    if {![info exists auto_path]} {
-	return
-    }
-    # Cache the auto_path, because it may change while we run through
-    # the first set of pkgIndex.tcl files
-    set old_path [set use_path $auto_path]
-    while {[llength $use_path]} {
-	set dir [lindex $use_path end]
-	# get the pkgIndex files out of the subdirectories
-	foreach file [glob -directory $dir -join -nocomplain \
-		* Resources Scripts pkgIndex.tcl] {
-	    set dir [file dirname $file]
-	    if {[file readable $file] && ![info exists procdDirs($dir)]} {
-		if {[catch {source $file} msg]} {
-		    tclLog "error reading package index file $file: $msg"
-		} else {
-		    set procdDirs($dir) 1
+	if {![info exists auto_path]} {
+	    return
+	}
+	# Cache the auto_path, because it may change while we run through
+	# the first set of pkgIndex.tcl files
+	set old_path [set use_path $auto_path]
+	while {[llength $use_path]} {
+	    set dir [lindex $use_path end]
+	    # get the pkgIndex files out of the subdirectories
+	    foreach file [glob -directory $dir -join -nocomplain \
+			      * Resources Scripts pkgIndex.tcl] {
+		set dir [file dirname $file]
+		if {[file readable $file] && ![info exists procdDirs($dir)]} {
+		    if {[catch {source $file} msg]} {
+			tclLog "error reading package index file $file: $msg"
+		    } else {
+			set procdDirs($dir) 1
+		    }
 		}
 	    }
-	}
-	set use_path [lrange $use_path 0 end-1]
-	if {$old_path ne $auto_path} {
-	    foreach dir $auto_path {
-		lappend use_path $dir
+	    set use_path [lrange $use_path 0 end-1]
+	    if {$old_path ne $auto_path} {
+		foreach dir $auto_path {
+		    lappend use_path $dir
+		}
+		set old_path $auto_path
 	    }
-	    set old_path $auto_path
+	}
+    }
+} else {
+    proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
+
+	#  First do the cross-platform default search
+	uplevel 1 $original [list $name $version $exact]
+
+	# Now do MacOSX specific searching
+	global auto_path
+
+	if {![info exists auto_path]} {
+	    return
+	}
+	# Cache the auto_path, because it may change while we run through
+	# the first set of pkgIndex.tcl files
+	set old_path [set use_path $auto_path]
+	while {[llength $use_path]} {
+	    set dir [lindex $use_path end]
+	    # get the pkgIndex files out of the subdirectories
+	    foreach file [glob -directory $dir -join -nocomplain \
+			      * Resources Scripts pkgIndex.tcl] {
+		set dir [file dirname $file]
+		if {[file readable $file] && ![info exists procdDirs($dir)]} {
+		    if {[catch {source $file} msg]} {
+			tclLog "error reading package index file $file: $msg"
+		    } else {
+			set procdDirs($dir) 1
+		    }
+		}
+	    }
+	    set use_path [lrange $use_path 0 end-1]
+	    if {$old_path ne $auto_path} {
+		foreach dir $auto_path {
+		    lappend use_path $dir
+		}
+		set old_path $auto_path
+	    }
 	}
     }
 }

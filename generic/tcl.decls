@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.94.2.3 2005/01/27 22:53:28 andreas_kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.94.2.4 2006/09/22 01:26:22 andreas_kupries Exp $
 
 library tcl
 
@@ -971,6 +971,10 @@ declare 273 generic {
     int Tcl_PkgProvide(Tcl_Interp *interp, CONST char *name, 
 	    CONST char *version)
 }
+
+# TIP #268: The internally used new Require function is in slot
+#           573. Assuming TCL_TIP268 was activated.
+
 declare 274 generic {
     CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp, CONST char *name, 
 	    CONST char *version, int exact)
@@ -1770,6 +1774,22 @@ declare 493 generic {
 # These slots are used by 8.5 as well.
 declare 554 generic {
     Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(Tcl_ChannelType *chanTypePtr)
+}
+
+# Slots 555 to 572 are taken already by 8.5
+# TIP #237: Arbitrary-prec Integers (555 ... 559)
+# TIP #208: 'chan' Command          (560 ... 561)
+# TIP #219: Channel Reflection      (562 ... 565)
+# TIP #237: Add. bignum support     (566)
+# TIP #181: 'namespace unknown' Cmd (567 ... 568)
+# TIP #258: Enhanced Encodings API  (569 ... 572)
+
+# TIP#268: Extended version numbers and requirements.
+#          The slot is present even if TCL_TIP268 is not activated.
+
+declare 573 generic {
+    int Tcl_PkgRequireProc(Tcl_Interp *interp, CONST char *name, 
+	    int objc, Tcl_Obj *CONST objv[], ClientData *clientDataPtr)
 }
 
 ##############################################################################
