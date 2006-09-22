@@ -1,3 +1,10 @@
+2006-09-22  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclPkg.c (Tcl_PkgRequireEx): Changes handling of the
+	  return information from 'Tcl_PkgRequireProc'. Keep the
+	  interpreter result empty. Backport of fix for problem found
+	  while testing #268 under 8.5. More details in the comments.
+
 2006-09-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclThreadTest.c (TclCreateThread): Use NULL instead of 0 as
