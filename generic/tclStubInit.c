@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.131 2006/06/21 03:10:39 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.132 2006/09/22 18:13:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1070,6 +1070,7 @@ TclStubs tclStubs = {
     Tcl_GetEncodingSearchPath, /* 570 */
     Tcl_SetEncodingSearchPath, /* 571 */
     Tcl_GetEncodingNameFromEnvironment, /* 572 */
+    Tcl_PkgRequireProc, /* 573 */
 };
 
 /* !END!: Do not edit above this line. */
