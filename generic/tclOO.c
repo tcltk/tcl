@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.44 2006/09/20 23:01:00 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.45 2006/09/22 00:18:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2961,22 +2961,115 @@ SelfObjCmd(
 
 	return TCL_OK;
     }
-    case SELF_METHOD: {
-	Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
-
+    case SELF_METHOD:
 	if (contextPtr->flags & CONSTRUCTOR) {
 	    Tcl_AppendResult(interp, "<constructor>", NULL);
 	} else if (contextPtr->flags & DESTRUCTOR) {
 	    Tcl_AppendResult(interp, "<destructor>", NULL);
 	} else {
+	    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+
 	    Tcl_SetObjResult(interp, mPtr->namePtr);
 	}
 	return TCL_OK;
-    }
-    default:
+    case SELF_FILTER:
+	if (contextPtr->index >= contextPtr->filterLength) {
+	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
+	    return TCL_ERROR;
+	} else {
+	    Method *mPtr =
+		    contextPtr->callChain[contextPtr->filterLength].mPtr;
+	    Tcl_Obj *cmdName;
+
+	    TclNewObj(cmdName);
+	    Tcl_GetCommandFullName(interp, contextPtr->oPtr->command, cmdName);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), cmdName);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    Tcl_NewStringObj("self.method", -1));
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    mPtr->namePtr);
+	    return TCL_OK;
+	}
+    case SELF_CALLER:
+	if ((framePtr->callerVarPtr != NULL) &&
+		(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    CallContext *callerPtr = framePtr->callerVarPtr->ooContextPtr;
+	    Method *mPtr = callerPtr->callChain[callerPtr->index].mPtr;
+	    Object *declarerPtr;
+	    Tcl_Obj *tmpObj;
+
+	    if (mPtr->declaringClassPtr != NULL) {
+		declarerPtr = mPtr->declaringClassPtr->thisPtr;
+	    } else if (mPtr->declaringObjectPtr != NULL) {
+		declarerPtr = mPtr->declaringObjectPtr;
+	    } else {
+		/*
+		 * This should be unreachable code.
+		 */
+
+		Tcl_AppendResult(interp, "method without declarer!", NULL);
+		return TCL_ERROR;
+	    }
+
+	    TclNewObj(tmpObj);
+	    Tcl_GetCommandFullName(interp, declarerPtr->command, tmpObj);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	    TclNewObj(tmpObj);
+	    Tcl_GetCommandFullName(interp, callerPtr->oPtr->command, tmpObj);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	    if (callerPtr->flags & CONSTRUCTOR) {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			Tcl_NewStringObj("<constructor>", -1));
+	    } else if (callerPtr->flags & DESTRUCTOR) {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			Tcl_NewStringObj("<destructor>", -1));
+	    } else {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			mPtr->namePtr);
+	    }
+	    return TCL_OK;
+	} else {
+	    Tcl_AppendResult(interp, "caller is not an object", NULL);
+	    return TCL_ERROR;
+	}
+    case SELF_NEXT:
+	if (contextPtr->index < contextPtr->numCallChain-1) {
+	    Method *mPtr = contextPtr->callChain[contextPtr->index+1].mPtr;
+	    Object *declarerPtr;
+	    Tcl_Obj *tmpObj;
+
+	    if (mPtr->declaringClassPtr != NULL) {
+		declarerPtr = mPtr->declaringClassPtr->thisPtr;
+	    } else if (mPtr->declaringObjectPtr != NULL) {
+		declarerPtr = mPtr->declaringObjectPtr;
+	    } else {
+		/*
+		 * This should be unreachable code.
+		 */
+
+		Tcl_AppendResult(interp, "method without declarer!", NULL);
+		return TCL_ERROR;
+	    }
+
+	    TclNewObj(tmpObj);
+	    Tcl_GetCommandFullName(interp, declarerPtr->command, tmpObj);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
+	    if (contextPtr->flags & CONSTRUCTOR) {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			Tcl_NewStringObj("<constructor>", -1));
+	    } else if (contextPtr->flags & DESTRUCTOR) {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			Tcl_NewStringObj("<destructor>", -1));
+	    } else {
+		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+			mPtr->namePtr);
+	    }
+	}
+	return TCL_OK;
+    case SELF_TARGET:
 	Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-	return TCL_ERROR;
     }
+    return TCL_ERROR;
 }
 
 /*
