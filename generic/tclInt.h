@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.23 2006/09/22 01:26:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.24 2006/09/22 22:31:34 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1295,15 +1295,6 @@ typedef struct Interp {
 				 * require" commands for packages that
 				 * aren't described in packageTable. 
 				 * Malloc'ed, may be NULL. */
-#ifdef TCL_TIP268
-    /*
-     * TIP #268.
-     * The currently active selection mode,
-     * i.e the package require preferences.
-     */
-
-    int packagePrefer;          /* Current package selection mode. */
-#endif
 
     /*
      * Miscellaneous information:
@@ -1372,6 +1363,15 @@ typedef struct Interp {
     int tracesForbiddingInline; /* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
 				 * compilation */
+#ifdef TCL_TIP268
+    /*
+     * TIP #268.
+     * The currently active selection mode,
+     * i.e the package require preferences.
+     */
+
+    int packagePrefer;          /* Current package selection mode. */
+#endif
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.

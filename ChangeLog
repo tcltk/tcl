@@ -1,3 +1,8 @@
+2006-09-22  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclInt.h: Moved TIP#268's field 'packagePrefer' to the
+	  end of the structure, for better backward compatibility.
+
 2006-09-22  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclPkg.c (Tcl_PkgRequireEx): Changes handling of the
