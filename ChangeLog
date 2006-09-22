@@ -1,3 +1,25 @@
+2006-09-22  Andreas Kupries  <andreask@activestate.com>
+
+	TIP#268 IMPLEMENTATION
+
+	* generic/tclDecls.h:    Regenerated from tcl.decls.
+	* generic/tclStubInit.c:
+
+	* doc/PkgRequire.3: Documentation of extended API,
+	* doc/package.n:    extended testsuite.
+	* tests/pkg.test:
+
+	* generic/tcl.decls: Implementation.
+	* generic/tclBasic.c:
+	* generic/tclConfig.c:
+	* generic/tclInt.h:
+	* generic/tclPkg.c:
+	* generic/tclTest.c:
+	* generic/tclTomMathInterface.c:
+	* library/init.tcl:
+	* library/package.tcl:
+	* library/tm.tcl:
+
 2006-09-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclThreadTest.c (TclCreateThread): Use NULL instead of 0 as
