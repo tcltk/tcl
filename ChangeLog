@@ -1,3 +1,19 @@
+2006-09-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tcl.decls:  Implemented TIP #268, conditionally.
+	* generic/tclBasic.c: Define TCL_TIP268 to activate the new
+	* generic/tclDecls.h: features.
+	* generic/tclInt.h:
+	* generic/tclPkg.c: 
+	* generic/tclStubInit.c:
+	* generic/tclTest.c:
+	* library/init.tcl
+	* library/package.tcl:
+	* tests/pkg.test:
+	* tests/platform.test:
+	* tests/safe.test:
+	* doc/PkgRequire.3:
+
 2006-09-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/http.tcl:      Change " " -> "+" url encoding mapping
