@@ -1,3 +1,9 @@
+2006-09-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclThreadTest.c (TclCreateThread): Use NULL instead of 0 as
+	end-of-strings marker to Tcl_AppendResult; the difference matters on
+	64-bit machines. [Bug 1562528]
+
 2006-09-21  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tcl.decls:  Implemented TIP #268, conditionally.

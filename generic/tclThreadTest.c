@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16.2.1 2004/10/26 20:14:29 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.2.2 2006/09/22 14:48:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -421,7 +421,7 @@ TclCreateThread(interp, script, joinable)
     if (Tcl_CreateThread(&id, NewTestThread, (ClientData) &ctrl,
 		 TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
-        Tcl_AppendResult(interp,"can't create a new thread",0);
+        Tcl_AppendResult(interp,"can't create a new thread",NULL);
 	ckfree((void*)ctrl.script);
 	return TCL_ERROR;
     }
