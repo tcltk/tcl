@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.276 2006/09/22 18:13:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.277 2006/09/22 22:32:07 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1383,16 +1383,6 @@ typedef struct Interp {
 				 * commands for packages that aren't described
 				 * in packageTable. Ckalloc'ed, may be
 				 * NULL. */
-
-    /*
-     * TIP #268.
-     * The currently active selection mode,
-     * i.e the package require preferences.
-     */
-
-    int packagePrefer;          /* Current package selection mode.
-				 */
-
     /*
      * Miscellaneous information:
      */
@@ -1534,6 +1524,14 @@ typedef struct Interp {
 				 * NULL), takes precedence over a posix error
 				 * code returned by a channel operation. */
 
+    /*
+     * TIP #268.
+     * The currently active selection mode,
+     * i.e the package require preferences.
+     */
+
+    int packagePrefer;          /* Current package selection mode.
+				 */
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
