@@ -1,5 +1,10 @@
 2006-09-22  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclInt.h: Moved TIP#268's field 'packagePrefer' to the
+	  end of the structure, for better backward compatibility.
+
+2006-09-22  Andreas Kupries  <andreask@activestate.com>
+
 	TIP#268 IMPLEMENTATION
 
 	* generic/tclDecls.h:    Regenerated from tcl.decls.
