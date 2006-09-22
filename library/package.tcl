@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.33 2005/07/23 04:12:49 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.34 2006/09/22 18:13:29 andreas_kupries Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -459,7 +459,7 @@ proc tclPkgSetup {dir pkg version files} {
 # version -		Version of desired package.  Not used.
 # exact -		Either "-exact" or omitted.  Not used.
 
-proc tclPkgUnknown {name version {exact {}}} {
+proc tclPkgUnknown {name args} {
     global auto_path env
 
     if {![info exists auto_path]} {
@@ -555,10 +555,10 @@ proc tclPkgUnknown {name version {exact {}}} {
 # version -		Version of desired package.  Not used.
 # exact -		Either "-exact" or omitted.  Not used.
 
-proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
+proc tcl::MacOSXPkgUnknown {original name args} {
 
     #  First do the cross-platform default search
-    uplevel 1 $original [list $name $version $exact]
+    uplevel 1 $original [linsert $args 0 $name]
 
     # Now do MacOSX specific searching
     global auto_path

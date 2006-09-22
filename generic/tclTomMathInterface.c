@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.6 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.7 2006/09/22 18:13:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -42,7 +42,9 @@ int
 TclTommath_Init(
     Tcl_Interp* interp		/* Tcl interpreter */
 ) {
-    if (Tcl_PkgProvideEx(interp, "tcl::tommath", TCL_VERSION,
+    /* TIP #268: Full patchlevel instead of just major.minor */
+
+    if (Tcl_PkgProvideEx(interp, "tcl::tommath", TCL_PATCH_LEVEL,
 			 (ClientData)&tclTomMathStubs) != TCL_OK) {
 	return TCL_ERROR;
     }
