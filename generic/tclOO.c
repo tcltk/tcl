@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.45 2006/09/22 00:18:34 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.46 2006/09/22 21:55:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1913,7 +1913,7 @@ CmpStr(
     const char **strPtr1 = (const char **) ptr1;
     const char **strPtr2 = (const char **) ptr2;
 
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1));
+    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1)+1);
 }
 
 /*
