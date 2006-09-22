@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.93.2.6 2005/01/27 22:53:30 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.93.2.7 2006/09/22 01:26:23 andreas_kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1627,6 +1627,29 @@ EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc _ANSI_ARGS_((
 /* 554 */
 EXTERN Tcl_DriverThreadActionProc * Tcl_ChannelThreadActionProc _ANSI_ARGS_((
 				Tcl_ChannelType * chanTypePtr));
+/* Slot 555 is reserved */
+/* Slot 556 is reserved */
+/* Slot 557 is reserved */
+/* Slot 558 is reserved */
+/* Slot 559 is reserved */
+/* Slot 560 is reserved */
+/* Slot 561 is reserved */
+/* Slot 562 is reserved */
+/* Slot 563 is reserved */
+/* Slot 564 is reserved */
+/* Slot 565 is reserved */
+/* Slot 566 is reserved */
+/* Slot 567 is reserved */
+/* Slot 568 is reserved */
+/* Slot 569 is reserved */
+/* Slot 570 is reserved */
+/* Slot 571 is reserved */
+/* Slot 572 is reserved */
+/* 573 */
+EXTERN int		Tcl_PkgRequireProc _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, int objc, 
+				Tcl_Obj *CONST objv[], 
+				ClientData * clientDataPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2241,6 +2264,25 @@ typedef struct TclStubs {
     void *reserved552;
     void *reserved553;
     Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 554 */
+    void *reserved555;
+    void *reserved556;
+    void *reserved557;
+    void *reserved558;
+    void *reserved559;
+    void *reserved560;
+    void *reserved561;
+    void *reserved562;
+    void *reserved563;
+    void *reserved564;
+    void *reserved565;
+    void *reserved566;
+    void *reserved567;
+    void *reserved568;
+    void *reserved569;
+    void *reserved570;
+    void *reserved571;
+    void *reserved572;
+    int (*tcl_PkgRequireProc) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, int objc, Tcl_Obj *CONST objv[], ClientData * clientDataPtr)); /* 573 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4320,6 +4362,28 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ChannelThreadActionProc
 #define Tcl_ChannelThreadActionProc \
 	(tclStubsPtr->tcl_ChannelThreadActionProc) /* 554 */
+#endif
+/* Slot 555 is reserved */
+/* Slot 556 is reserved */
+/* Slot 557 is reserved */
+/* Slot 558 is reserved */
+/* Slot 559 is reserved */
+/* Slot 560 is reserved */
+/* Slot 561 is reserved */
+/* Slot 562 is reserved */
+/* Slot 563 is reserved */
+/* Slot 564 is reserved */
+/* Slot 565 is reserved */
+/* Slot 566 is reserved */
+/* Slot 567 is reserved */
+/* Slot 568 is reserved */
+/* Slot 569 is reserved */
+/* Slot 570 is reserved */
+/* Slot 571 is reserved */
+/* Slot 572 is reserved */
+#ifndef Tcl_PkgRequireProc
+#define Tcl_PkgRequireProc \
+	(tclStubsPtr->tcl_PkgRequireProc) /* 573 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
