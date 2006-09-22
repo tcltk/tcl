@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.22 2006/03/10 14:09:02 vasiljevic Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.23 2006/09/22 01:26:23 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1161,6 +1161,17 @@ typedef struct ResolverScheme {
 				/* Pointer to next record in linked list. */
 } ResolverScheme;
 
+#ifdef TCL_TIP268
+/*
+ * TIP #268.
+ * Values for the selection mode, i.e the package require preferences.
+ */
+
+enum PkgPreferOptions {
+    PKG_PREFER_LATEST, PKG_PREFER_STABLE
+};
+#endif
+
 /*
  *----------------------------------------------------------------
  * This structure defines an interpreter, which is a collection of
@@ -1284,6 +1295,15 @@ typedef struct Interp {
 				 * require" commands for packages that
 				 * aren't described in packageTable. 
 				 * Malloc'ed, may be NULL. */
+#ifdef TCL_TIP268
+    /*
+     * TIP #268.
+     * The currently active selection mode,
+     * i.e the package require preferences.
+     */
+
+    int packagePrefer;          /* Current package selection mode. */
+#endif
 
     /*
      * Miscellaneous information:
