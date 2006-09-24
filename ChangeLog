@@ -1,3 +1,11 @@
+2006-09-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclParse.c (Tcl_ParseCommand): also return an error if 
+	start==NULL and numBytes<0. This is coverity's bug #20
+
+	* generic/tclStringObj.c (STRING_SIZE): fix allocation for
+	0-length strings. This is coverity's bugs #54-5
+	
 2006-09-22  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclInt.h: Moved TIP#268's field 'packagePrefer' to the
