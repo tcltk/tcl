@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.57 2006/08/28 16:05:32 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.58 2006/09/24 20:46:40 msofer Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -110,7 +110,9 @@ typedef struct String {
 #define STRING_UALLOC(numChars)	\
 	(numChars * sizeof(Tcl_UniChar))
 #define STRING_SIZE(ualloc) \
-	((unsigned) (sizeof(String) - sizeof(Tcl_UniChar) + ualloc))
+	((unsigned) ((ualloc) \
+                 ? sizeof(String) - sizeof(Tcl_UniChar) + (ualloc) \
+                 : sizeof(String)))
 #define GET_STRING(objPtr) \
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
