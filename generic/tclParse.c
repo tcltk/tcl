@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.46 2006/07/05 05:34:45 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.47 2006/09/24 19:13:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -269,7 +269,7 @@ Tcl_ParseCommand(
 				 * point to char after terminating one. */
     int scanned;
 
-    if ((start == NULL) && (numBytes>0)) {
+    if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetResult(interp, "can't parse a NULL pointer", TCL_STATIC);
 	}
