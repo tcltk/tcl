@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.21 2006/09/25 00:09:34 dkf Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.22 2006/09/25 13:35:10 dgp Exp $
  */
 
 #include "tclInt.h"
