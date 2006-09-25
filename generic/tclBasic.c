@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.23 2006/09/22 01:26:22 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.24 2006/09/25 17:27:31 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -578,16 +578,16 @@ Tcl_CreateInterp()
 
     /*
      * Register Tcl's version number.
-     * TIP #268: Full patchlevel instead of just major.minor
+     * TIP#268: Expose information about its status,
+     *          for runtime switches in the core library
+     *          and tests.
      */
 
-#ifndef TCL_TIP268
     Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) &tclStubs);
-#else
+
+#ifdef TCL_TIP268
     Tcl_SetVar2(interp, "tcl_platform", "tip,268", "1",
 	    TCL_GLOBAL_ONLY);
-
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, (ClientData) &tclStubs);
 #endif
 #ifdef Tcl_InitStubs
 #undef Tcl_InitStubs
