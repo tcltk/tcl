@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.21 2006/07/10 23:01:06 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.22 2006/09/25 21:55:06 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1323,7 +1323,7 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     statePtr    = (ChannelState *) tsdPtr->firstCSPtr;
     prevChanPtr = ((Channel *) prevChan)->state->topChanPtr;
 
-    while (statePtr->topChanPtr != prevChanPtr) {
+    while ((statePtr != NULL) && (statePtr->topChanPtr != prevChanPtr)) {
 	statePtr = statePtr->nextCSPtr;
     }
 
