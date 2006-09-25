@@ -1,3 +1,9 @@
+2006-09-25  Kevin B. Kenny   <kennykb@acm.org>
+
+	* generic/tclNotify.c (Tcl_DeleteEvents): Simplified the code in
+	hopes of making the invariants clearer and proving to Coverity
+	that the event queue memory is managed correctly.
+	
 2006-09-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclNotify.c (Tcl_DeleteEvents): Make it clear what happens

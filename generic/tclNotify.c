@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.22 2006/09/25 13:35:10 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.23 2006/09/25 14:58:03 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -522,33 +522,53 @@ Tcl_DeleteEvents(
     Tcl_EventDeleteProc *proc,	/* The function to call. */
     ClientData clientData)    	/* The type-specific data. */
 {
-    Tcl_Event *evPtr, *prevPtr, *hold;
+    Tcl_Event *evPtr;		/* Pointer to the event being examined */
+    Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL
+				 * if evPtr designates the first event in the
+				 * queue for the thread */
+    Tcl_Event* hold;
+
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (prevPtr=NULL, evPtr=tsdPtr->firstEventPtr; evPtr!=NULL; ) {
+
+    /* Walk the queue of events for the thread, applying 'proc' to each */
+
+    prevPtr = NULL;
+    evPtr = tsdPtr->firstEventPtr;
+    while (evPtr != NULL) {
 	if ((*proc) (evPtr, clientData) == 1) {
-	    if (tsdPtr->firstEventPtr == evPtr) {
+
+	    /* This event should be deleted. Unlink it. */
+
+	    if (prevPtr == NULL) {
 		tsdPtr->firstEventPtr = evPtr->nextPtr;
 	    } else {
-		if (prevPtr == NULL) {
-		    Tcl_Panic("badly connected event list");
-		} else {
-		    prevPtr->nextPtr = evPtr->nextPtr;
-		}
+		prevPtr->nextPtr = evPtr->nextPtr;
 	    }
+
+	    /* Update 'last' and 'marker' events if either has been deleted. */
+
 	    if (evPtr->nextPtr == NULL) {
 		tsdPtr->lastEventPtr = prevPtr;
 	    }
 	    if (tsdPtr->markerEventPtr == evPtr) {
 		tsdPtr->markerEventPtr = prevPtr;
 	    }
+
+	    /* Delete the event data structure. */
+
 	    hold = evPtr;
 	    evPtr = evPtr->nextPtr;
 	    ckfree((char *) hold);
+
 	} else {
+
+	    /* Event is to be retained. */
+
 	    prevPtr = evPtr;
 	    evPtr = evPtr->nextPtr;
+
 	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
