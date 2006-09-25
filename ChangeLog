@@ -1,3 +1,10 @@
+2006-09-25  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclBasic.c: Reverted exposure of patchlevel in
+	  registered core version when TIP#268 features are
+	  activated. Better compatibility with existing packages.
+	  Like Tk.
+
 2006-09-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclParse.c (Tcl_ParseCommand): also return an error if 
