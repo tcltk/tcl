@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.24 2006/09/25 14:59:43 kennykb Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.25 2006/09/25 15:02:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -523,23 +523,27 @@ Tcl_DeleteEvents(
     ClientData clientData)    	/* The type-specific data. */
 {
     Tcl_Event *evPtr;		/* Pointer to the event being examined */
-    Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL
-				 * if evPtr designates the first event in the
-				 * queue for the thread */
+    Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
+				 * evPtr designates the first event in the
+				 * queue for the thread. */
     Tcl_Event* hold;
 
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
 
-    /* Walk the queue of events for the thread, applying 'proc' to each */
+    /*
+     * Walk the queue of events for the thread, applying 'proc' to each to
+     * decide whether to eliminate the event.
+     */
 
     prevPtr = NULL;
     evPtr = tsdPtr->firstEventPtr;
     while (evPtr != NULL) {
-	if ((*proc) (evPtr, clientData) == 1) {
-
-	    /* This event should be deleted. Unlink it. */
+	if ((*proc)(evPtr, clientData) == 1) {
+	    /*
+	     * This event should be deleted. Unlink it.
+	     */
 
 	    if (prevPtr == NULL) {
 		tsdPtr->firstEventPtr = evPtr->nextPtr;
@@ -547,7 +551,9 @@ Tcl_DeleteEvents(
 		prevPtr->nextPtr = evPtr->nextPtr;
 	    }
 
-	    /* Update 'last' and 'marker' events if either has been deleted. */
+	    /*
+	     * Update 'last' and 'marker' events if either has been deleted.
+	     */
 
 	    if (evPtr->nextPtr == NULL) {
 		tsdPtr->lastEventPtr = prevPtr;
@@ -556,19 +562,20 @@ Tcl_DeleteEvents(
 		tsdPtr->markerEventPtr = prevPtr;
 	    }
 
-	    /* Delete the event data structure. */
+	    /*
+	     * Delete the event data structure.
+	     */
 
 	    hold = evPtr;
 	    evPtr = evPtr->nextPtr;
 	    ckfree((char *) hold);
-
 	} else {
-
-	    /* Event is to be retained. */
+	    /*
+	     * Event is to be retained.
+	     */
 
 	    prevPtr = evPtr;
 	    evPtr = evPtr->nextPtr;
-
 	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
