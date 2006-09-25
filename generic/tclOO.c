@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.47 2006/09/25 22:30:06 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.48 2006/09/25 22:46:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -35,8 +35,12 @@ static const struct {
     {"self.forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 0},
     {"self.method", TclOODefineMethodObjCmd, 1},
+#ifdef SUPPORT_OO_CLASS_MIXINS
     {"mixin", TclOODefineMixinObjCmd, 0},
     {"self.mixin", TclOODefineMixinObjCmd, 1},
+#else
+    {"mixin", TclOODefineMixinObjCmd, 1},
+#endif
 #ifdef SUPPORT_OO_PARAMETERS
     {"parameter", TclOODefineParameterObjCmd, 0},
 #endif
@@ -3096,8 +3100,6 @@ SelfObjCmd(
 	    Tcl_GetCommandFullName(interp, contextPtr->oPtr->command, cmdName);
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), cmdName);
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    Tcl_NewStringObj("self.method", -1));
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 		    mPtr->namePtr);
 	    return TCL_OK;
 	}
@@ -3178,7 +3180,34 @@ SelfObjCmd(
 	}
 	return TCL_OK;
     case SELF_TARGET:
-	Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
+	if (contextPtr->index >= contextPtr->filterLength) {
+	    Tcl_AppendResult(interp, "not inside a filtering context", NULL);
+	    return TCL_ERROR;
+	} else {
+	    Method *mPtr =
+		    contextPtr->callChain[contextPtr->filterLength].mPtr;
+	    Object *declarerPtr;
+	    Tcl_Obj *cmdName;
+
+	    if (mPtr->declaringClassPtr != NULL) {
+		declarerPtr = mPtr->declaringClassPtr->thisPtr;
+	    } else if (mPtr->declaringObjectPtr != NULL) {
+		declarerPtr = mPtr->declaringObjectPtr;
+	    } else {
+		/*
+		 * This should be unreachable code.
+		 */
+
+		Tcl_AppendResult(interp, "method without declarer!", NULL);
+		return TCL_ERROR;
+	    }
+	    TclNewObj(cmdName);
+	    Tcl_GetCommandFullName(interp, declarerPtr->command, cmdName);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), cmdName);
+	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+		    mPtr->namePtr);
+	    return TCL_OK;
+	}
     }
     return TCL_ERROR;
 }
