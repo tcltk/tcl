@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.19 2006/09/20 00:07:20 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.20 2006/09/25 22:30:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -330,6 +330,15 @@ TclOODefineCopyObjCmd(
 	    TclOOAddToSubclasses(c2Ptr, superPtr);
 	}
 
+	c2Ptr->filters.num = cPtr->filters.num;
+	c2Ptr->filters.list = (Tcl_Obj **)
+		ckalloc(sizeof(Tcl_Obj *) * cPtr->filters.num);
+	memcpy(c2Ptr->filters.list, cPtr->filters.list,
+		sizeof(Tcl_Obj *) * cPtr->filters.num);
+	for (i=0 ; i<c2Ptr->filters.num ; i++) {
+	    Tcl_IncrRefCount(c2Ptr->filters.list[i]);
+	}
+
 	hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
 	for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    Tcl_Obj *keyPtr = (Tcl_Obj *)
@@ -529,40 +538,71 @@ TclOODefineFilterObjCmd(
     isSelfFilter |= (oPtr->classPtr == NULL);
 
     if (!isSelfFilter) {
-	Tcl_AppendResult(interp, "class filters not implemented", NULL);
-	return TCL_ERROR;
-    }
+	if (oPtr->classPtr->filters.num) {
+	    Tcl_Obj *filterObj;
 
-    if (oPtr->filters.num) {
-	Tcl_Obj *filterObj;
-
-	FOREACH(filterObj, oPtr->filters) {
-	    TclDecrRefCount(filterObj);
+	    FOREACH(filterObj, oPtr->classPtr->filters) {
+		TclDecrRefCount(filterObj);
+	    }
 	}
-    }
-    if (objc == 1) {
-	// deleting filters
-	ckfree((char *) oPtr->filters.list);
-	oPtr->filters.list = NULL;
-	oPtr->filters.num = 0;
-    } else {
-	// creating filters
-	Tcl_Obj **filters;
 
-	if (oPtr->filters.num == 0) {
-	    filters = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (objc-1));
+	if (objc == 1) {
+	    // deleting filters
+	    ckfree((char *) oPtr->classPtr->filters.list);
+	    oPtr->classPtr->filters.list = NULL;
+	    oPtr->classPtr->filters.num = 0;
 	} else {
-	    filters = (Tcl_Obj **) ckrealloc((char *) oPtr->filters.list,
-		    sizeof(Tcl_Obj *) * (objc-1));
+	    // creating filters
+	    Tcl_Obj **filters;
+
+	    if (oPtr->classPtr->filters.num == 0) {
+		filters = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (objc-1));
+	    } else {
+		filters = (Tcl_Obj **) ckrealloc(
+			(char *) oPtr->classPtr->filters.list,
+			sizeof(Tcl_Obj *) * (objc-1));
+	    }
+	    for (i=1 ; i<objc ; i++) {
+		filters[i-1] = objv[i];
+		Tcl_IncrRefCount(objv[i]);
+	    }
+	    oPtr->classPtr->filters.list = filters;
+	    oPtr->classPtr->filters.num = objc-1;
 	}
-	for (i=1 ; i<objc ; i++) {
-	    filters[i-1] = objv[i];
-	    Tcl_IncrRefCount(objv[i]);
+	// may be many objects affected
+	((Interp *)interp)->ooFoundation->epoch++;
+    } else {
+	if (oPtr->filters.num) {
+	    Tcl_Obj *filterObj;
+
+	    FOREACH(filterObj, oPtr->filters) {
+		TclDecrRefCount(filterObj);
+	    }
 	}
-	oPtr->filters.list = filters;
-	oPtr->filters.num = objc-1;
+	if (objc == 1) {
+	    // deleting filters
+	    ckfree((char *) oPtr->filters.list);
+	    oPtr->filters.list = NULL;
+	    oPtr->filters.num = 0;
+	} else {
+	    // creating filters
+	    Tcl_Obj **filters;
+
+	    if (oPtr->filters.num == 0) {
+		filters = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * (objc-1));
+	    } else {
+		filters = (Tcl_Obj **) ckrealloc((char *) oPtr->filters.list,
+			sizeof(Tcl_Obj *) * (objc-1));
+	    }
+	    for (i=1 ; i<objc ; i++) {
+		filters[i-1] = objv[i];
+		Tcl_IncrRefCount(objv[i]);
+	    }
+	    oPtr->filters.list = filters;
+	    oPtr->filters.num = objc-1;
+	}
+	oPtr->epoch++; // per-object
     }
-    oPtr->epoch++; // always per-object
     return TCL_OK;
 }
 
@@ -740,6 +780,8 @@ TclOODefineMixinObjCmd(
     return TCL_OK;
 }
 
+#ifdef SUPPORT_OO_PARAMETERS
+// Commented out; not sure whether we want to retain this in the core oo system
 int
 TclOODefineParameterObjCmd(
     ClientData clientData,
@@ -760,6 +802,7 @@ TclOODefineParameterObjCmd(
     Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
     return TCL_ERROR;
 }
+#endif
 
 int
 TclOODefineSelfClassObjCmd(

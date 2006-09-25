@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.28 2006/09/20 00:12:55 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.29 2006/09/25 22:30:07 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -138,7 +138,7 @@ test oo-5.1 {OO: manipulation of classes as objects} -setup {
     $obj destroy
 } -result {1 {unknown method "foo": must be destroy} {in object}}
 
-test oo-6.1 {OO: filter} {
+test oo-6.1 {OO: forward} {
     oo::object create foo
     oo::define foo {
 	forward a lappend
@@ -484,6 +484,30 @@ test oo-12.2 {OO: filters} -setup {
 } -cleanup {
     Aclass destroy
 } -result {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 {calling ::Aobject->logFilter } result= 12345 {}}
+test oo-12.3 {OO: filters} -setup {
+    oo::class create Aclass
+    Aclass create Aobject
+} -body {
+    oo::define Aclass {
+	method concatenate args {
+	    global result
+	    lappend result {expand}$args
+	    join $args {}
+	}
+	method logFilter args {
+	    global result
+	    lappend result "calling [self object]->[self method] $args"
+	    set r [next {expand}$args]
+	    lappend result "result=$r"
+	    return $r
+	}
+	filter logFilter
+    }
+    set result {}
+    lappend result [Aobject concatenate 1 2 3 4 5] [Aobject destroy]
+} -cleanup {
+    Aclass destroy
+} -result {{calling ::Aobject->logFilter 1 2 3 4 5} 1 2 3 4 5 result=12345 {calling ::Aobject->logFilter } result= 12345 {}}
 
 test oo-13.1 {OO: changing an object's class} {
     oo::class create Aclass
@@ -662,9 +686,12 @@ test oo-17.3 {OO: class introspection} -setup {
 } -returnCodes 1 -cleanup {
     foo destroy
 } -result {"foo" is not a class}
-test oo-17.4 {OO: class introspection} -body {
+test oo-17.4.0 {OO: class introspection} -constraints redactedFeature -body {
     info class oo::object gorp
 } -returnCodes 1 -result {bad subcommand "gorp": must be args, body, default, instances, methods, parameters, subclasses, or superclasses}
+test oo-17.4.1 {OO: class introspection} -body {
+    info class oo::object gorp
+} -returnCodes 1 -result {bad subcommand "gorp": must be args, body, default, instances, methods, subclasses, or superclasses}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {

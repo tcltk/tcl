@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.11 2006/09/19 23:52:15 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.12 2006/09/25 22:30:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -43,8 +43,10 @@ static int		InfoClassInstancesCmd(Class *cPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoClassMethodsCmd(Class *cPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+#ifdef SUPPORT_OO_PARAMETERS
 static int		InfoClassParametersCmd(Class *cPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+#endif
 static int		InfoClassSubsCmd(Class *cPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoClassSupersCmd(Class *cPtr, Tcl_Interp *interp,
@@ -114,11 +116,17 @@ TclInfoClassCmd(
     Tcl_Obj *const *objv)
 {
     static const char *subcommands[] = {
-	"args", "body", "default", "instances", "methods", "parameters",
+	"args", "body", "default", "instances", "methods",
+#ifdef SUPPORT_OO_PARAMETERS
+	"parameters",
+#endif
 	"subclasses", "superclasses", NULL
     };
     enum ICSubCmds {
-	ICArgs, ICBody, ICDefault, ICInstances, ICMethods, ICParameters,
+	ICArgs, ICBody, ICDefault, ICInstances, ICMethods,
+#ifdef SUPPORT_OO_PARAMETERS
+	ICParameters,
+#endif
 	ICSubs, ICSupers
     };
     int idx;
@@ -153,8 +161,10 @@ TclInfoClassCmd(
 	return InfoClassInstancesCmd(oPtr->classPtr, interp, objc, objv);
     case ICMethods:
 	return InfoClassMethodsCmd(oPtr->classPtr, interp, objc, objv);
+#ifdef SUPPORT_OO_PARAMETERS
     case ICParameters:
 	return InfoClassParametersCmd(oPtr->classPtr, interp, objc, objv);
+#endif
     case ICSubs:
 	return InfoClassSubsCmd(oPtr->classPtr, interp, objc, objv);
     case ICSupers:
@@ -766,6 +776,7 @@ InfoClassMethodsCmd(
     return TCL_OK;
 }
 
+#ifdef SUPPORT_OO_PARAMETERS
 static int
 InfoClassParametersCmd(
     Class *cPtr,
@@ -776,6 +787,7 @@ InfoClassParametersCmd(
     Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
     return TCL_ERROR;
 }
+#endif
 
 static int
 InfoClassSubsCmd(

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.267.2.10 2006/08/30 14:23:01 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.267.2.11 2006/09/25 22:30:06 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2516,6 +2516,12 @@ MODULE_SCOPE int	Tcl_WhileObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
 
+/*
+ *----------------------------------------------------------------
+ * Commands relating to OO support.
+ *----------------------------------------------------------------
+ */
+
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE int	TclOODefineObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -2544,9 +2550,11 @@ MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineMixinObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+#ifdef SUPPORT_OO_PARAMETERS
 MODULE_SCOPE int	TclOODefineParameterObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+#endif
 MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
