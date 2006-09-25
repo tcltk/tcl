@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.20 2005/11/02 00:55:06 dkf Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.21 2006/09/25 00:09:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -531,7 +531,11 @@ Tcl_DeleteEvents(
 	    if (tsdPtr->firstEventPtr == evPtr) {
 		tsdPtr->firstEventPtr = evPtr->nextPtr;
 	    } else {
-		prevPtr->nextPtr = evPtr->nextPtr;
+		if (prevPtr == NULL) {
+		    Tcl_Panic("badly connected event list");
+		} else {
+		    prevPtr->nextPtr = evPtr->nextPtr;
+		}
 	    }
 	    if (evPtr->nextPtr == NULL) {
 		tsdPtr->lastEventPtr = prevPtr;
