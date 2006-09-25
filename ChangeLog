@@ -1,5 +1,11 @@
 2006-09-25  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclIO.c (Tcl_StackChannel): Fixed [SF Tcl Bug 1564642],
+	  aka coverity #51. Extended loop condition, added checking for
+	  NULL to prevent seg.fault.
+
+2006-09-25  Andreas Kupries  <andreask@activestate.com>
+
 	* doc/package.n: Fixed nits reported by Daniel Steffen in the
 	  TIP#268 changes.
 
