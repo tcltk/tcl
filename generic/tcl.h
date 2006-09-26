@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.26 2006/08/18 07:45:42 das Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.27 2006/09/26 14:06:57 dgp Exp $
  */
 
 #ifndef _TCL
@@ -315,9 +315,6 @@ typedef long LONG;
 /*
  * Miscellaneous declarations.
  */
-#ifndef NULL
-#   define NULL 0
-#endif
 
 #ifndef _CLIENTDATA
 #   ifndef NO_VOID
