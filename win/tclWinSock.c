@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.5 2006/03/10 14:27:41 vasiljevic Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.6 2006/09/26 21:40:37 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -2356,7 +2356,7 @@ SocketThread(LPVOID arg)
 
     SetEvent(tsdPtr->readyEvent);
 
-    return msg.wParam;
+    return (DWORD)msg.wParam;
 }
 
 
