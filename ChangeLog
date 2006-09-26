@@ -1,3 +1,10 @@
+2006-09-26  Kevin Kenny  <kennykb@acm.org>
+
+	* doc/Encoding.3:        Added covariant 'const' qualifier for the
+	* generic/tcl.decls:     Tcl_EncodingType argument to
+	* generic/tclEncoding.c: Tcl_CreateEncoding. [Further TIP#27 work.]
+	* generic/tclDecls.h:    Reran 'make genstubs'.
+	
 2006-09-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc:  Additional compiler flags and amd64 support.
