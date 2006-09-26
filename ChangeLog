@@ -1,3 +1,12 @@
+2006-09-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc:  Updated MSVC build to properly deal with
+	* win/nmakehlp.c:   MSVC8 and AMD64 target. Backport from 8.5
+	* win/rules.vc:
+	* generic/tcl.h:    Fixed stat definition for MSVC8 AMD64.
+	* win/tclWinSock.c: Casting type police.
+	* win/tclWinTime.c:
+
 2006-09-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	As 2006-09-22 commit from Donal K. Fellows

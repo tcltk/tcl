@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.27 2006/09/26 14:06:57 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.28 2006/09/26 21:40:36 patthoyts Exp $
  */
 
 #ifndef _TCL
@@ -383,7 +383,7 @@ typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #         define TCL_LL_MODIFIER_SIZE	1
 #      else /* __BORLANDC__ */
-#         if _MSC_VER < 1400
+#         if _MSC_VER < 1400 || !defined(_M_IX86)
 typedef struct _stati64	Tcl_StatBuf;
 #         else
 typedef struct _stat64 Tcl_StatBuf;
