@@ -1,7 +1,10 @@
 2006-09-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* generic/tclTimer.c: Tcl_Time structure members are longs.
+	* generic/tcl.h:        More fixing which struct stat to refer to.
 	* generic/tclGetDate.y: Some casts from time_t to int required.
+	* generic/tclTimer.c:   Tcl_Time structure members are longs.
+	* win/makefile.vc:      Support for varying compiler options
+	* win/rules.vc:         and build to platform-specific subdirs.
 
 2006-09-25  Andreas Kupries  <andreask@activestate.com>
 
