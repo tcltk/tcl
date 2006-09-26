@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.148 2006/09/21 14:56:15 vincentdarley Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.149 2006/09/26 00:05:03 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -416,12 +416,6 @@ WINDIR		= $(ROOT)\win
 # Compile flags
 #---------------------------------------------------------------------
 
-# MSVC 2005 changes:
-# -Op gone, use /fp:precise ?
-# /QI0f has been removed.
-# /YX  removed - use /Yc or /Yu or better nothing.
-# /GS and /GR are on by default
-
 !if !$(DEBUG)
 !if $(OPTIMIZING)
 ### This cranks the optimization level to maximize speed
@@ -433,25 +427,17 @@ cdebug	=
 ### Warnings are too many, can't support warnings into errors.
 cdebug	= -Z7 -Od $(DEBUGFLAGS)
 !else
-cdebug	= -Z7 -Od $(DEBUGFLAGS)
+cdebug	= -Z7 -WX $(DEBUGFLAGS)
 !endif
 
 ### Declarations common to all compiler options
-cflags = -nologo -c -Fp$(TMP_DIR)^\
+cwarn = -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
 
 !if $(FULLWARNINGS)
 cflags = $(cflags) -W4
 !else
 cflags = $(cflags) -W3
-!endif
-
-
-!if $(PENT_0F_ERRATA)
-cflags = $(cflags) -QI0f
-!endif
-
-!if $(ITAN_B_ERRATA)
-cflags = $(cflags) -QIA64_Bx
 !endif
 
 !if $(MSVCRT)
@@ -581,6 +567,7 @@ $**
 		$(baselibs) @<<
 $**
 <<
+	$(_VC_MANIFEST_EMBED_DLL)
 	-@del $*.exp
 !endif
 
@@ -589,13 +576,16 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
 	$(link32) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj $(baselibs)
+	$(_VC_MANIFEST_EMBED_DLL)
 
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
@@ -606,6 +596,7 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ \
 		$** $(baselibs)
+	$(_VC_MANIFEST_EMBED_DLL)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -619,6 +610,7 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ \
 		$** $(baselibs)
+	$(_VC_MANIFEST_EMBED_DLL)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -627,7 +619,7 @@ $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
 		$(baselibs)
-
+        $(_VC_MANIFEST_EMBED_EXE)
 
 #---------------------------------------------------------------------
 # Regenerate the stubs files.  [Development use only]
