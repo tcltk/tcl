@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.43 2006/08/09 18:12:25 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.44 2006/09/26 23:01:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -983,7 +983,7 @@ Tcl_SetSystemEncoding(
 
 Tcl_Encoding
 Tcl_CreateEncoding(
-    Tcl_EncodingType *typePtr)	/* The encoding type. */
+    const Tcl_EncodingType *typePtr)	/* The encoding type. */
 {
     Tcl_HashEntry *hPtr;
     int new;
