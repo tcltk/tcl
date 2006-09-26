@@ -1,3 +1,9 @@
+2006-09-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc:  Additional compiler flags and amd64 support.
+	* win/nmakehlp.c:
+	* win/rules.vc:
+
 2006-09-26  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tcl.h:        As 2006-09-22 commit from Donal K. Fellows

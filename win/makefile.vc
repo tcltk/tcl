@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.149 2006/09/26 00:05:03 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.150 2006/09/26 20:47:03 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -474,7 +474,7 @@ ldebug	= -release -opt:ref -opt:icf,3
 !endif
 
 ### Declarations common to all linker options
-lflags	= -nologo -machine:$(MACHINE) $(ldebug)
+lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(FULLWARNINGS)
 lflags = $(lflags) -warn:3
