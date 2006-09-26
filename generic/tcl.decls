@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.121 2006/09/22 18:13:27 andreas_kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.122 2006/09/26 23:01:10 kennykb Exp $
 
 library tcl
 
@@ -1036,7 +1036,7 @@ declare 286 generic {
     void Tcl_AppendObjToObj(Tcl_Obj *objPtr, Tcl_Obj *appendObjPtr)
 }
 declare 287 generic {
-    Tcl_Encoding Tcl_CreateEncoding(Tcl_EncodingType *typePtr)
+    Tcl_Encoding Tcl_CreateEncoding(const Tcl_EncodingType *typePtr)
 }
 declare 288 generic {
     void Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
