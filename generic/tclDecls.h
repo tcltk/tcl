@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.123 2006/09/22 18:13:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.124 2006/09/26 23:01:10 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1818,7 +1818,7 @@ EXTERN void		Tcl_AppendObjToObj _ANSI_ARGS_((Tcl_Obj * objPtr,
 #define Tcl_CreateEncoding_TCL_DECLARED
 /* 287 */
 EXTERN Tcl_Encoding	Tcl_CreateEncoding _ANSI_ARGS_((
-				Tcl_EncodingType * typePtr));
+				const Tcl_EncodingType * typePtr));
 #endif
 #ifndef Tcl_CreateThreadExitHandler_TCL_DECLARED
 #define Tcl_CreateThreadExitHandler_TCL_DECLARED
@@ -3907,7 +3907,7 @@ typedef struct TclStubs {
     void (*tcl_SetMainLoop) _ANSI_ARGS_((Tcl_MainLoopProc * proc)); /* 284 */
     void *reserved285;
     void (*tcl_AppendObjToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr)); /* 286 */
-    Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((Tcl_EncodingType * typePtr)); /* 287 */
+    Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((const Tcl_EncodingType * typePtr)); /* 287 */
     void (*tcl_CreateThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 288 */
     void (*tcl_DeleteThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 289 */
     void (*tcl_DiscardResult) _ANSI_ARGS_((Tcl_SavedResult * statePtr)); /* 290 */
