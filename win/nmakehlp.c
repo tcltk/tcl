@@ -10,15 +10,22 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.9 2005/11/04 00:06:49 dkf Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.10 2006/09/26 20:47:03 patthoyts Exp $
  * ----------------------------------------------------------------------------
  */
 
+#define _CRT_SECURE_NO_DEPRECATE
 #include <windows.h>
+#include <shlwapi.h>
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "kernel32.lib")
+#pragma comment (lib, "shlwapi.lib")
 #include <stdio.h>
 #include <math.h>
+#if defined(_M_IA64) || defined(_M_AMD64)
+#pragma comment(lib, "bufferoverflowU")
+#endif
+
 
 /* protos */
 
@@ -70,7 +77,8 @@ main(
 	switch (*(argv[1]+1)) {
 	case 'c':
 	    if (argc != 3) {
-		chars = wsprintf(msg, "usage: %s -c <compiler option>\n"
+		chars = wnsprintf(msg, sizeof(msg)-1,
+		        "usage: %s -c <compiler option>\n"
 			"Tests for whether cl.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -80,7 +88,8 @@ main(
 	    return CheckForCompilerFeature(argv[2]);
 	case 'l':
 	    if (argc != 3) {
-		chars = wsprintf(msg, "usage: %s -l <linker option>\n"
+		chars = wnsprintf(msg, sizeof(msg) - 1,
+	       		"usage: %s -l <linker option>\n"
 			"Tests for whether link.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -90,7 +99,8 @@ main(
 	    return CheckForLinkerFeature(argv[2]);
 	case 'f':
 	    if (argc == 2) {
-		chars = wsprintf(msg, "usage: %s -f <string> <substring>\n"
+		chars = wnsprintf(msg, sizeof(msg) - 1,
+			"usage: %s -f <string> <substring>\n"
 			"Find a substring within another\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -107,7 +117,8 @@ main(
 	    }
 	case 'g':
 	    if (argc == 2) {
-		chars = wsprintf(msg, "usage: %s -g <file> <string>\n"
+		chars = wnsprintf(msg, sizeof(msg) - 1,
+			"usage: %s -g <file> <string>\n"
 			"grep for a #define\n"
 			"exitcodes: integer of the found string (no decimals)\n",
 			argv[0]);
@@ -118,7 +129,8 @@ main(
 	    return GrepForDefine(argv[2], argv[3]);
 	}
     }
-    chars = wsprintf(msg, "usage: %s -c|-l|-f ...\n"
+    chars = wnsprintf(msg, sizeof(msg) - 1,
+	    "usage: %s -c|-l|-f ...\n"
 	    "This is a little helper app to equalize shell differences between WinNT and\n"
 	    "Win9x and get nmake.exe to accomplish its job.\n",
 	    argv[0]);
@@ -177,19 +189,19 @@ CheckForCompilerFeature(
      * Base command line.
      */
 
-    strcpy(cmdline, "cl.exe -nologo -c -TC -Zs -X ");
+    lstrcpy(cmdline, "cl.exe -nologo -c -TC -Zs -X ");
 
     /*
      * Append our option for testing
      */
 
-    strcat(cmdline, option);
+    lstrcat(cmdline, option);
 
     /*
      * Filename to compile, which exists, but is nothing and empty.
      */
 
-    strcat(cmdline, " .\\nul");
+    lstrcat(cmdline, " .\\nul");
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -211,7 +223,7 @@ CheckForCompilerFeature(
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPVOID)&msg[chars],
 		(300-chars), 0);
-	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, strlen(msg), &err,NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, lstrlen(msg), &err,NULL);
 	return 2;
     }
 
@@ -309,13 +321,13 @@ CheckForLinkerFeature(
      * Base command line.
      */
 
-    strcpy(cmdline, "link.exe -nologo ");
+    lstrcpy(cmdline, "link.exe -nologo ");
 
     /*
      * Append our option for testing.
      */
 
-    strcat(cmdline, option);
+    lstrcat(cmdline, option);
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -331,13 +343,13 @@ CheckForLinkerFeature(
 
     if (!ok) {
 	DWORD err = GetLastError();
-	int chars = wsprintf(msg,
+	int chars = wnsprintf(msg, sizeof(msg) - 1,
 		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPVOID)&msg[chars],
 		(300-chars), 0);
-	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, strlen(msg), &err,NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, lstrlen(msg), &err,NULL);
 	return 2;
     }
 
@@ -378,7 +390,9 @@ CheckForLinkerFeature(
      */
 
     return !(strstr(Out.buffer, "LNK1117") != NULL ||
-	    strstr(Err.buffer, "LNK1117") != NULL);
+             strstr(Err.buffer, "LNK1117") != NULL ||
+             strstr(Out.buffer, "LNK4044") != NULL ||
+             strstr(Err.buffer, "LNK4044") != NULL);
 }
 
 DWORD WINAPI
