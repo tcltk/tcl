@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.9 2006/06/14 15:21:15 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.10 2006/09/26 21:40:37 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -486,7 +486,7 @@ StopCalibration( ClientData unused )
 char *
 TclpGetTZName(int dst)
 {
-    int len;
+    size_t len;
     char *zone, *p;
     TIME_ZONE_INFORMATION tz;
     Tcl_Encoding encoding;
@@ -533,7 +533,7 @@ TclpGetTZName(int dst)
 		}
 	    }
 	}
-	Tcl_ExternalToUtf(NULL, NULL, zone, len, 0, NULL, name,
+	Tcl_ExternalToUtf(NULL, NULL, zone, (int)len, 0, NULL, name,
 		sizeof(tsdPtr->tzName), NULL, NULL, NULL);
     }
     if (name[0] == '\0') {
