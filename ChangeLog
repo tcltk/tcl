@@ -1,3 +1,10 @@
+2006-09-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	As 2006-09-22 commit from Donal K. Fellows
+	demonstrates, "#define NULL 0" is just wrong, and as a quotable chat
+	figure observed, "If NULL isn't defined, we're not using a C compiler."
+	Improper fallback definition of NULL removed.
+
 2006-09-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (Tcl_StackChannel): Fixed [SF Tcl Bug 1564642],
