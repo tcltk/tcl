@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.22 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.23 2006/09/26 00:05:03 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -860,8 +860,8 @@ Tcl_AfterObjCmd(
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
 	Tcl_GetTime(&wakeup);
-	wakeup.sec += (time_t)(ms / 1000);
-	wakeup.usec += ((int)(ms % 1000)) * 1000;
+	wakeup.sec += (long)(ms / 1000);
+	wakeup.usec += ((long)(ms % 1000)) * 1000;
 	if (wakeup.usec > 1000000) {
 	    wakeup.sec++;
 	    wakeup.usec -= 1000000;
@@ -1004,7 +1004,7 @@ AfterDelay(
     Tcl_WideInt diff;
 
     Tcl_GetTime(&endTime);
-    endTime.sec += (time_t)(ms/1000);
+    endTime.sec += (long)(ms/1000);
     endTime.usec += ((int)(ms%1000))*1000;
     if (endTime.usec >= 1000000) {
 	endTime.sec++;
