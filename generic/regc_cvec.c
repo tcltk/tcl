@@ -111,7 +111,7 @@ addrange(
     cv->nranges++;
 }
 
-#ifdef REGEXP_ADDMCCE_UNUSED
+#ifdef REGEXP_MCCE_ENABLED
 /*
  * This static function is currently called from a single spot in regcomp.c,
  * with two NULL pointers; in that case it does nothing, so that we define out
