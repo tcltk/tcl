@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.48 2006/09/25 22:46:37 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.49 2006/09/27 13:25:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -927,7 +927,7 @@ Object *
 TclOONewInstance(
     Tcl_Interp *interp,		/* Interpreter context. */
     Class *clsPtr,		/* Class to create an instance of. */
-    char *name,			/* Name of object to create, or NULL to ask
+    const char *name,		/* Name of object to create, or NULL to ask
 				 * the code to pick its own unique name. */
     int objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
@@ -2404,6 +2404,8 @@ ClassCreate(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = contextPtr->oPtr, *newObjPtr;
+    const char *objName;
+    int len;
 
     if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj;
@@ -2420,8 +2422,13 @@ ClassCreate(
 		"objectName ?arg ...?");
 	return TCL_ERROR;
     }
-    newObjPtr = TclOONewInstance(interp, oPtr->classPtr,
-	    TclGetString(objv[2]), objc, objv, contextPtr->skip+1);
+    objName = Tcl_GetStringFromObj(objv[2], &len);
+    if (len == 0) {
+	Tcl_AppendResult(interp, "object name must not be empty", NULL);
+	return TCL_ERROR;
+    }
+    newObjPtr = TclOONewInstance(interp, oPtr->classPtr, objName, objc, objv,
+	    contextPtr->skip+1);
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }

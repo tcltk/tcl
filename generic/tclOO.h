@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.23 2006/09/25 22:30:06 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.24 2006/09/27 13:25:50 dkf Exp $
  */
 
 /*
@@ -269,7 +269,7 @@ MODULE_SCOPE Tcl_Method	TclOONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
 			    const Tcl_OOMethodType *typePtr,
 			    ClientData clientData);
 MODULE_SCOPE Object *	TclOONewInstance(Tcl_Interp *interp, Class *clsPtr,
-			    char *name, int objc, Tcl_Obj *const *objv,
+			    const char *name, int objc, Tcl_Obj *const *objv,
 			    int skip);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *cPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
