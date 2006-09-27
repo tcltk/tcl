@@ -673,10 +673,11 @@ uncolorchain(
     if (aa == a) {			/* easy case */
 	cd->arcs = a->colorchain;
     } else {
-	for (; aa != NULL && aa->colorchain != a; aa = aa->colorchain) {
+	assert(aa != NULL);
+	for (; aa->colorchain != a; aa = aa->colorchain) {
+	    assert(aa->colorchain != NULL);
 	    continue;
 	}
-	assert(aa != NULL);
 	aa->colorchain = a->colorchain;
     }
     a->colorchain = NULL;		/* paranoia */
