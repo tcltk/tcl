@@ -11,6 +11,11 @@
 	REGEXP_MCCE_ENABLE. 
 	This silences coverity bugs 7, 16, 80 
 
+	* generic/regc_color.c (uncolorchain):
+	* generic/regc_nfa.c (freearc): changed tests and asserts to
+	equivalent formulation, designed to avoid an explicit comparison
+	to NULL and satisfy coverity that 6 and 9 are not bugs.
+
 2006-09-27  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/pkg.test: Added test for version comparison at the 32bit
