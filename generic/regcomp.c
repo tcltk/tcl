@@ -171,7 +171,9 @@ static struct cvec *newcvec(int, int, int);
 static struct cvec *clearcvec(struct cvec *);
 static VOID addchr(struct cvec *, pchr);
 static VOID addrange(struct cvec *, pchr, pchr);
+#ifdef REGEXP_ADDMCCE_UNUSED
 static VOID addmcce(struct cvec *, chr *, chr *);
+#endif
 static int haschr(struct cvec *, pchr);
 static struct cvec *getcvec(struct vars *, int, int, int);
 static VOID freecvec(struct cvec *);
@@ -364,7 +366,10 @@ compile(
 	CNOERR();
 	v->mcces = allmcces(v, v->mcces);
 	leaders(v, v->mcces);
+#ifdef REGEXP_ADDMCCE_UNUSED
+	/* Function does nothing with NULL pointers */
 	addmcce(v->mcces, (chr *)NULL, (chr *)NULL);	/* dummy */
+#endif
     }
     CNOERR();
 
