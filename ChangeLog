@@ -1,3 +1,16 @@
+2006-09-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/regc_color.c (singleton):
+	* generic/regc_cvec.c (addmcce):
+	* generic/regcomp.c (compile, dovec): the static function addmcce does
+	nothing when called with two NULL pointers; the only call is by
+	compile with two NULL pointers (regcomp.c #includes
+	regc_cvec.c). 
+	Large parts (all?) the code for mcce (multi character collating
+	element) that we do not use is ifdef'ed out with the macro
+	REGEXP_MCCE_ENABLE. 
+	This silences coverity bugs 7, 16, 80 
+
 2006-09-27  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/pkg.test: Added test for version comparison at the 32bit
