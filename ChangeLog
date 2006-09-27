@@ -1,3 +1,9 @@
+2006-09-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclFileName.c (TclGlob): added a panic for a call with
+	TCL_GLOBMODE_TAILS and pathPrefix==NULL. This would cause a
+	segfault, as found by coverity #26.
+
 2006-09-26  Kevin Kenny  <kennykb@acm.org>
 
 	* doc/Encoding.3:        Added covariant 'const' qualifier for the
