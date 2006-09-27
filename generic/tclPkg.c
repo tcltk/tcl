@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.16 2006/09/22 18:13:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.17 2006/09/27 20:22:40 andreas_kupries Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -58,13 +58,13 @@ typedef struct Package {
 static int		CheckVersionAndConvert(Tcl_Interp *interp, CONST char *string,
 				     char** internal, int* stable);
 
-static int		CompareVersions(CONST char *v1i, CONST char *v2i,
+static int		CompareVersions(char *v1i, char *v2i,
 					int *isMajorPtr);
 static int		CheckRequirement(Tcl_Interp *interp, CONST char *string);
 static int		CheckAllRequirements(Tcl_Interp* interp,
 					     int reqc, Tcl_Obj *CONST reqv[]);
-static int		RequirementSatisfied(CONST char *havei, CONST char *req);
-static int		AllRequirementsSatisfied(CONST char *havei,
+static int		RequirementSatisfied(char *havei, CONST char *req);
+static int		AllRequirementsSatisfied(char *havei,
 						 int reqc, Tcl_Obj *CONST reqv[]);
 static void		AddRequirementsToResult(Tcl_Interp* interp,
 						int reqc, Tcl_Obj *CONST reqv[]);
@@ -1302,14 +1302,15 @@ CheckVersionAndConvert(
 
 static int
 CompareVersions(
-    CONST char *v1,	/* Versions strings, of form 2.1.3 (any number */
-    CONST char *v2,	/* of version numbers). */
+    char *v1,	/* Versions strings, of form 2.1.3 (any number */
+    char *v2,	/* of version numbers). */
     int *isMajorPtr)   	/* If non-null, the word pointed to is filled
 		    	 * in with a 0/1 value. 1 means that the difference
 			 * occured in the first element. */
 {
-    int thisIsMajor, n1, n2;
+    int thisIsMajor;
     int res, flip;
+    char* s1, *e1, *s2, *e2, o1, o2;
 
     /*
      * Each iteration of the following loop processes one number from each
@@ -1325,55 +1326,105 @@ CompareVersions(
      * compare numerics, the separators, and also deal with the special case
      * of end-of-string compared to separators. The semi-list rep we get here
      * is much easier to handle, as it is still regular.
+     *
+     * Rewritten to not compute a numeric value for the extracted version
+     * number, but do string comparison. Skip any leading zeros for that to
+     * work. This change breaks through the 32bit-limit on version numbers.
      */
 
     thisIsMajor = 1;
+    s1 = v1;
+    s2 = v2;
+
     while (1) {
 	/*
 	 * Parse one decimal number from the front of each string.
+	 * Skip leading zeros. Terminate found number for upcoming
+	 * string-wise comparison, if needed.
 	 */
 
-	n1 = n2 = 0;
-	flip = 0;
-	while ((*v1 != 0) && (*v1 != ' ')) {
-	    if (*v1 == '-') {flip = 1 ; v1++ ; continue;}
-	    n1 = 10*n1 + (*v1 - '0');
-	    v1++;
-	}
-	if (flip) n1 = -n1;
-	flip = 0;
-	while ((*v2 != 0) && (*v2 != ' ')) {
-	    if (*v2 == '-') {flip = 1; v2++ ; continue;}
-	    n2 = 10*n2 + (*v2 - '0');
-	    v2++;
-	}
-	if (flip) n2 = -n2;
+	while ((*s1 != 0) && (*s1 == '0')) { s1 ++; }
+	while ((*s2 != 0) && (*s2 == '0')) { s2 ++; }
 
 	/*
-	 * Compare and go on to the next version number if the current numbers
-	 * match.
+	 * s1, s2 now point to the beginnings of the numbers to compare. Test
+	 * for their signs first, as shortcut to the result (different signs),
+	 * or determines if result has to be flipped (both negative). If there
+	 * is no shortcut we have to insert terminators later to limit the
+	 * strcmp.
 	 */
 
-	if (n1 != n2) {
+	if ((*s1 == '-') && (*s2 != '-')) {
+	    /* s1 < 0, s2 >= 0 => s1 < s2 */
+	    res = -1;
 	    break;
 	}
-	if (*v1 != 0) {
-	    v1++;
-	} else if (*v2 == 0) {
+	if ((*s1 != '-') && (*s2 == '-')) {
+	    /* s1 >= 0, s2 < 0 => s1 > s2 */
+	    res = 1;
 	    break;
 	}
-	if (*v2 != 0) {
-	    v2++;
+
+	if ((*s1 == '-') && (*s2 == '-')) {
+	    /* a < b => -a > -b, etc. */
+	    s1 ++;
+	    s2 ++;
+	    flip = 1;
+	} else {
+	    flip = 0;
+	}
+
+	/*
+	 * The string comparison is needed, so now we determine where the
+	 * numbers end.
+	 */
+
+	e1 = s1; while ((*e1 != 0) && (*e1 != ' ')) { e1 ++; }
+	e2 = s2; while ((*e2 != 0) && (*e2 != ' ')) { e2 ++; }
+
+	/*
+	 * s1 .. e1 and s2 .. e2 now bracket the numbers to compare.
+	 * Insert terminators, compare, and restore actual contents.
+	 */
+
+	o1 = *e1 ; *e1 = '\0';
+	o2 = *e2 ; *e2 = '\0';
+
+	res = strcmp (s1, s2);
+
+	*e1 = o1;
+	*e2 = o2;
+
+	/*
+	 * Stop comparing segments when a difference has been found. Here we
+	 * may have to flip the result to account for signs.
+	 */
+
+	if (res != 0) {
+	    if (flip) res = -res;
+	    break;
+	}
+
+	/*
+	 * Go on to the next version number if the current numbers match.
+	 * However stop processing if the end of both numbers has been
+	 * reached.
+	 */
+
+	s1 = e1;
+	s2 = e2;
+
+	if (*s1 != 0) {
+	    s1++;
+	} else if (*s2 == 0) {
+	    /* s1, s2 both at the end => identical */
+	    res = 0;
+	    break;
+	}
+	if (*s2 != 0) {
+	    s2++;
 	}
 	thisIsMajor = 0;
-    }
-
-    if (n1 > n2) {
-	res = 1;
-    } else if (n1 == n2) {
-	res = 0;
-    } else {
-	res = -1;
     }
 
     if (isMajorPtr != NULL) {
@@ -1564,7 +1615,7 @@ AddRequirementsToDString(
 
 static int
 AllRequirementsSatisfied(
-    CONST char* availVersionI,  /* Candidate version to check against the requirements */
+    char* availVersionI,  	/* Candidate version to check against the requirements */
     int reqc,                   /* Requirements constraining the desired version. */
     Tcl_Obj *CONST reqv[])      /* 0 means to use the latest version available. */
 {
@@ -1598,7 +1649,7 @@ AllRequirementsSatisfied(
 
 static int
 RequirementSatisfied(
-    CONST char *havei, /* Version string, of candidate package we have */
+    char *havei, /* Version string, of candidate package we have */
     CONST char *req)   /* Requirement string the candidate has to satisfy */
 {
     /* The have candidate is already in internal rep. */
