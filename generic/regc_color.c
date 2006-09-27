@@ -682,6 +682,7 @@ uncolorchain(
     a->colorchain = NULL;		/* paranoia */
 }
 
+#ifdef REGEXP_MCCE_ENABLED
 /*
  - singleton - is this character in its own color?
  ^ static int singleton(struct colormap *, pchr c);
@@ -699,6 +700,7 @@ singleton(
     }
     return 0;
 }
+#endif
 
 /*
  - rainbow - add arcs of all full colors (but one) between specified states
