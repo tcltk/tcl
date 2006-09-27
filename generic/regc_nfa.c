@@ -409,10 +409,10 @@ freearc(
     if (a == victim) {			/* simple case:  first in chain */
 	to->ins = victim->inchain;
     } else {
-	for (; a != NULL && a->inchain != victim; a = a->inchain) {
+	for (; a->inchain != victim; a = a->inchain) {
+	    assert(a->inchain != NULL);
 	    continue;
 	}
-	assert(a != NULL);
 	a->inchain = victim->inchain;
     }
     to->nins--;
