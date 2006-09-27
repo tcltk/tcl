@@ -1,3 +1,17 @@
+2006-09-27  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/pkg.test: Added test for version comparison at the 32bit
+	  boundary. [SF Tcl Bug 1563836].
+
+	* generic/tclPkg.c: [SF Tcl Bug 1563836]. Rewrote CompareVersion
+	  to perform string comparison instead of numeric. This breaks
+	  through the 32bit limit on version numbers. See code for details
+	  (handling of leading zeros, signs, etc.). un-CONSTed some
+	  arguments of CompareVersions, RequirementSatisfied, and
+	  AllRequirementsSatisfied. The new compare modifies the string
+	  (temporary string terminators). All callers use heap-allocated
+	  ver-intreps, so we are good with that.
+
 2006-09-27  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclFileName.c (TclGlob): added a panic for a call with
