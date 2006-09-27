@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.85 2005/12/13 22:43:18 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.85.2.1 2006/09/27 13:24:02 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -444,7 +444,7 @@ EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
 #define TclRenameCommand_TCL_DECLARED
 /* 96 */
 EXTERN int		TclRenameCommand _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * oldName, char * newName));
+				CONST char * oldName, CONST char * newName));
 #endif
 #ifndef TclResetShadowedCmdRefs_TCL_DECLARED
 #define TclResetShadowedCmdRefs_TCL_DECLARED
@@ -1173,7 +1173,7 @@ typedef struct TclIntStubs {
     void (*tclProcDeleteProc) _ANSI_ARGS_((ClientData clientData)); /* 93 */
     void *reserved94;
     void *reserved95;
-    int (*tclRenameCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * oldName, char * newName)); /* 96 */
+    int (*tclRenameCommand) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * oldName, CONST char * newName)); /* 96 */
     void (*tclResetShadowedCmdRefs) _ANSI_ARGS_((Tcl_Interp * interp, Command * newCmdPtr)); /* 97 */
     int (*tclServiceIdle) _ANSI_ARGS_((void)); /* 98 */
     void *reserved99;
