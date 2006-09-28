@@ -1,7 +1,15 @@
+2006-09-28  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclPkg.c (CompareVersions): Bugfix. Check string lengths
+	* tests/pkg.test: before comparison. The shorter string is the
+	  smaller number. Added testcases as well. Interestingly all
+	  existing test cases for vcompare compared numbers of the same
+	  length with each other. See [SF Tcl Bug 1563836].
+
 2006-09-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclIO.c (Tcl_GetsObj): added two test'n'panic guards for
-	possible NULL derefs, [Bug 1566382] and coverity #33.
+	  possible NULL derefs, [Bug 1566382] and coverity #33.
 
 2006-09-27  Don Porter  <dgp@users.sourceforge.net>
 
@@ -13,7 +21,7 @@
 	math::bigfloat package [Bug 1567222]
 
 	* generic/tclPkg.c (CompareVersion):	Flatten strcmp() results to
-	{-1, 0, 1} to match expectations of CompareVersion() callers.
+	  {-1, 0, 1} to match expectations of CompareVersion() callers.
 
 2006-09-27  Miguel Sofer  <msofer@users.sf.net>
 
