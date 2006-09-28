@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.18 2006/09/27 20:22:40 andreas_kupries Exp $
+# RCS: @(#) $Id: pkg.test,v 1.19 2006/09/28 20:54:46 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -946,6 +946,9 @@ foreach {r p vs vc} {
     8.5.0    8.6a0    1          -1
     8.5.0    8.6b0    1          -1
     8.5.0    8.6.0    1          -1
+    10       8        0          1
+    8        10       0          -1
+    0.0.1.2  0.1.2    1          -1
 } {
     test package-vsatisfies-1.$n {package vsatisfies} {
 	package vsatisfies $p $r
@@ -961,7 +964,6 @@ foreach {r p vs vc} {
 test package-vcompare-2.0 {package vcompare at 32bit boundary} {
     package vcompare [expr {1<<31}] [expr {(1<<31)-1}]
 } 1
-
 
 set n 0
 foreach {required provided satisfied} {
