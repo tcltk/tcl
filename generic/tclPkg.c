@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.18 2006/09/28 15:10:25 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.19 2006/09/28 20:54:45 andreas_kupries Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -1383,18 +1383,26 @@ CompareVersions(
 	e2 = s2; while ((*e2 != 0) && (*e2 != ' ')) { e2 ++; }
 
 	/*
-	 * s1 .. e1 and s2 .. e2 now bracket the numbers to compare.
-	 * Insert terminators, compare, and restore actual contents.
+	 * s1 .. e1 and s2 .. e2 now bracket the numbers to compare. Insert
+	 * terminators, compare, and restore actual contents.  First however
+	 * another shortcut. Compare lengths. Shorter string is smaller
+	 * number! Thus we strcmp only strings of identical length.
 	 */
 
-	o1 = *e1 ; *e1 = '\0';
-	o2 = *e2 ; *e2 = '\0';
+	if ((e1-s1) < (e2-s2)) {
+	    res = -1;
+	} else if ((e2-s2) < (e1-s1)) {
+	    res = 1;
+	} else {
+	    o1 = *e1 ; *e1 = '\0';
+	    o2 = *e2 ; *e2 = '\0';
 
-	res = strcmp (s1, s2);
-	res = (res < 0) ? -1 : (res ? 1 : 0);
+	    res = strcmp (s1, s2);
+	    res = (res < 0) ? -1 : (res ? 1 : 0);
 
-	*e1 = o1;
-	*e2 = o2;
+	    *e1 = o1;
+	    *e2 = o2;
+	}
 
 	/*
 	 * Stop comparing segments when a difference has been found. Here we
