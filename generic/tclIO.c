@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.108 2006/09/25 21:55:27 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.109 2006/09/28 19:24:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3995,6 +3995,9 @@ Tcl_GetsObj(
 
   gotEOL:
     bufPtr = gs.bufPtr;
+    if (bufPtr == NULL) {
+	Tcl_Panic("Tcl_GetsObj: gotEOL reached with bufPtr==NULL");
+    }
     statePtr->inputEncodingState = gs.state;
     Tcl_ExternalToUtf(NULL, gs.encoding, bufPtr->buf + bufPtr->nextRemoved,
 	    gs.rawRead, statePtr->inputEncodingFlags,
@@ -4021,6 +4024,9 @@ Tcl_GetsObj(
 
   restore:
     bufPtr = statePtr->inQueueHead;
+    if (bufPtr == NULL) {
+	Tcl_Panic("Tcl_GetsObj: restore reached with bufPtr==NULL");
+    }
     bufPtr->nextRemoved = oldRemoved;
 
     for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
