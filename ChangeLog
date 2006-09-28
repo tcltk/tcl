@@ -5,6 +5,13 @@
 
 2006-09-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c:	Corrected error in INST_LSHIFT in the
+	* tests/expr.test:	calculation done to determine whether a
+	shift in the (long int) type is possible.  The calculation had
+	literal value "1" where it needed a value "1L" to compute the
+	correct result.  Error detected via testing with the
+	math::bigfloat package [Bug 1567222]
+
 	* generic/tclPkg.c (CompareVersion):	Flatten strcmp() results to
 	{-1, 0, 1} to match expectations of CompareVersion() callers.
 
