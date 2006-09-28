@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.245 2006/09/19 16:31:56 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.246 2006/09/28 20:06:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3942,7 +3942,7 @@ TclExecuteByteCode(
 	    if ((type1 == TCL_NUMBER_LONG) && ((size_t)shift < CHAR_BIT*sizeof(long))
 		    && (l1 = *((CONST long *)ptr1))
 		    && !(((l1>0) ? l1 : ~l1)
-			    & -(1<<(CHAR_BIT*sizeof(long)-1-shift)))) {
+			    & -(1L<<(CHAR_BIT*sizeof(long)-1-shift)))) {
 		TclNewLongObj(objResultPtr, (l1<<shift));
 		TRACE(("%s\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 2, 1);
