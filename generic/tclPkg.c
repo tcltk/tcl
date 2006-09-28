@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.17 2006/09/27 20:22:40 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.18 2006/09/28 15:10:25 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -1391,6 +1391,7 @@ CompareVersions(
 	o2 = *e2 ; *e2 = '\0';
 
 	res = strcmp (s1, s2);
+	res = (res < 0) ? -1 : (res ? 1 : 0);
 
 	*e1 = o1;
 	*e2 = o2;

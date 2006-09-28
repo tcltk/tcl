@@ -1,3 +1,8 @@
+2006-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPkg.c (CompareVersion):	Flatten strcmp() results to
+	{-1, 0, 1} to match expectations of CompareVersion() callers.
+
 2006-09-27  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/regc_color.c (singleton):
