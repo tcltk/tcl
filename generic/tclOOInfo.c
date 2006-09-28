@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.12 2006/09/25 22:30:06 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.13 2006/09/28 00:29:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -33,24 +33,29 @@ static int		InfoObjectMixinsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectVarsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassArgsCmd(Class *cPtr, Tcl_Interp *interp,
+static int		InfoClassArgsCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassBodyCmd(Class *cPtr, Tcl_Interp *interp,
+static int		InfoClassBodyCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassDefaultCmd(Class *cPtr, Tcl_Interp *interp,
+static int		InfoClassDefaultCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassInstancesCmd(Class *cPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassMethodsCmd(Class *cPtr, Tcl_Interp *interp,
+static int		InfoClassInstancesCmd(Class *clsPtr,
+			    Tcl_Interp*interp, int objc, Tcl_Obj*const objv[]);
+static int		InfoClassMethodsCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 #ifdef SUPPORT_OO_PARAMETERS
-static int		InfoClassParametersCmd(Class *cPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static int		InfoClassParametersCmd(Class *clsPtr,
+			    Tcl_Interp*interp, int objc, Tcl_Obj*const objv[]);
 #endif
-static int		InfoClassSubsCmd(Class *cPtr, Tcl_Interp *interp,
+static int		InfoClassSubsCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassSupersCmd(Class *cPtr, Tcl_Interp *interp,
+static int		InfoClassSupersCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+
+#define FOREACH_HASH(tablePtr) \
+    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search);hPtr!=NULL;\
+            hPtr=Tcl_NextHashEntry(&search))
+
 
 int
 TclInfoObjectCmd(
@@ -505,8 +510,7 @@ InfoObjectMethodsCmd(
 	}
 	flag = 0;
     }
-    hPtr = Tcl_FirstHashEntry(&oPtr->methods, &search);
-    for (; hPtr != NULL ; hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH(&oPtr->methods) {
 	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
 
@@ -560,8 +564,7 @@ InfoObjectVarsCmd(
 	pattern = TclGetString(objv[4]);
     }
 
-    hPtr = Tcl_FirstHashEntry(&oPtr->nsPtr->varTable, &search);
-    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+    FOREACH_HASH(&oPtr->nsPtr->varTable) {
 	const char *name = Tcl_GetHashKey(&oPtr->nsPtr->varTable, hPtr);
 	Var *varPtr = Tcl_GetHashValue(hPtr);
 
@@ -580,7 +583,7 @@ InfoObjectVarsCmd(
 
 static int
 InfoClassArgsCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -594,7 +597,7 @@ InfoClassArgsCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&cPtr->classMethods, (char *) objv[4]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
 		"\"", NULL);
@@ -619,7 +622,7 @@ InfoClassArgsCmd(
 
 static int
 InfoClassBodyCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -632,7 +635,7 @@ InfoClassBodyCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&cPtr->classMethods, (char *) objv[4]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
 		"\"", NULL);
@@ -660,7 +663,7 @@ InfoClassBodyCmd(
 
 static int
 InfoClassDefaultCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -675,7 +678,7 @@ InfoClassDefaultCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&cPtr->classMethods, (char *) objv[4]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
 		"\"", NULL);
@@ -715,7 +718,7 @@ InfoClassDefaultCmd(
 
 static int
 InfoClassInstancesCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -727,7 +730,7 @@ InfoClassInstancesCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "className instances");
 	return TCL_ERROR;
     }
-    FOREACH(oPtr, cPtr->instances) {
+    FOREACH(oPtr, clsPtr->instances) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
@@ -739,7 +742,7 @@ InfoClassInstancesCmd(
 
 static int
 InfoClassMethodsCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -763,9 +766,8 @@ InfoClassMethodsCmd(
 	}
 	flag = 0;
     }
-    hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
-    for (; hPtr != NULL ; hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&cPtr->classMethods,
+    FOREACH_HASH(&clsPtr->classMethods) {
+	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&clsPtr->classMethods,
 		hPtr);
 	Method *mPtr = Tcl_GetHashValue(hPtr);
 
@@ -779,7 +781,7 @@ InfoClassMethodsCmd(
 #ifdef SUPPORT_OO_PARAMETERS
 static int
 InfoClassParametersCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -791,7 +793,7 @@ InfoClassParametersCmd(
 
 static int
 InfoClassSubsCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -807,7 +809,7 @@ InfoClassSubsCmd(
     if (objc == 5) {
 	pattern = TclGetString(objv[4]);
     }
-    FOREACH(subclassPtr, cPtr->subclasses) {
+    FOREACH(subclassPtr, clsPtr->subclasses) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
@@ -823,7 +825,7 @@ InfoClassSubsCmd(
 
 static int
 InfoClassSupersCmd(
-    Class *cPtr,
+    Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -835,7 +837,7 @@ InfoClassSupersCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "className superclasses");
 	return TCL_ERROR;
     }
-    FOREACH(superPtr, cPtr->superclasses) {
+    FOREACH(superPtr, clsPtr->superclasses) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);

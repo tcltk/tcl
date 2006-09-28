@@ -9,13 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.20 2006/09/25 22:30:06 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.21 2006/09/28 00:29:33 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
-static Method *		CloneClassMethod(Tcl_Interp *interp, Class *cPtr,
+static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
@@ -307,53 +307,53 @@ TclOODefineCopyObjCmd(
      */
 
     if (oPtr->classPtr) {
-	Class *cPtr = oPtr->classPtr;
-	Class *c2Ptr = o2Ptr->classPtr;
+	Class *clsPtr = oPtr->classPtr;
+	Class *cls2Ptr = o2Ptr->classPtr;
 	Class *superPtr;
 
-	c2Ptr->flags = cPtr->flags;
-	FOREACH(superPtr, c2Ptr->superclasses) {
-	    TclOORemoveFromSubclasses(c2Ptr, superPtr);
+	cls2Ptr->flags = clsPtr->flags;
+	FOREACH(superPtr, cls2Ptr->superclasses) {
+	    TclOORemoveFromSubclasses(cls2Ptr, superPtr);
 	}
-	if (c2Ptr->superclasses.num) {
-	    c2Ptr->superclasses.list = (Class **)
-		    ckrealloc((char *) c2Ptr->superclasses.list,
-		    sizeof(Class *) * cPtr->superclasses.num);
+	if (cls2Ptr->superclasses.num) {
+	    cls2Ptr->superclasses.list = (Class **)
+		    ckrealloc((char *) cls2Ptr->superclasses.list,
+		    sizeof(Class *) * clsPtr->superclasses.num);
 	} else {
-	    c2Ptr->superclasses.list = (Class **)
-		    ckalloc(sizeof(Class *) * cPtr->superclasses.num);
+	    cls2Ptr->superclasses.list = (Class **)
+		    ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
 	}
-	memcpy(c2Ptr->superclasses.list, cPtr->superclasses.list,
-		sizeof(Class *) * cPtr->superclasses.num);
-	c2Ptr->superclasses.num = cPtr->superclasses.num;
-	FOREACH(superPtr, c2Ptr->superclasses) {
-	    TclOOAddToSubclasses(c2Ptr, superPtr);
-	}
-
-	c2Ptr->filters.num = cPtr->filters.num;
-	c2Ptr->filters.list = (Tcl_Obj **)
-		ckalloc(sizeof(Tcl_Obj *) * cPtr->filters.num);
-	memcpy(c2Ptr->filters.list, cPtr->filters.list,
-		sizeof(Tcl_Obj *) * cPtr->filters.num);
-	for (i=0 ; i<c2Ptr->filters.num ; i++) {
-	    Tcl_IncrRefCount(c2Ptr->filters.list[i]);
+	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
+		sizeof(Class *) * clsPtr->superclasses.num);
+	cls2Ptr->superclasses.num = clsPtr->superclasses.num;
+	FOREACH(superPtr, cls2Ptr->superclasses) {
+	    TclOOAddToSubclasses(cls2Ptr, superPtr);
 	}
 
-	hPtr = Tcl_FirstHashEntry(&cPtr->classMethods, &search);
+	cls2Ptr->filters.num = clsPtr->filters.num;
+	cls2Ptr->filters.list = (Tcl_Obj **)
+		ckalloc(sizeof(Tcl_Obj *) * clsPtr->filters.num);
+	memcpy(cls2Ptr->filters.list, clsPtr->filters.list,
+		sizeof(Tcl_Obj *) * clsPtr->filters.num);
+	for (i=0 ; i<cls2Ptr->filters.num ; i++) {
+	    Tcl_IncrRefCount(cls2Ptr->filters.list[i]);
+	}
+
+	hPtr = Tcl_FirstHashEntry(&clsPtr->classMethods, &search);
 	for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
 	    Tcl_Obj *keyPtr = (Tcl_Obj *)
-		    Tcl_GetHashKey(&cPtr->classMethods, hPtr);
+		    Tcl_GetHashKey(&clsPtr->classMethods, hPtr);
 	    Method *mPtr = Tcl_GetHashValue(hPtr);
 
-	    (void) CloneClassMethod(interp, c2Ptr, mPtr, keyPtr);
+	    (void) CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr);
 	}
-	if (cPtr->constructorPtr) {
-	    c2Ptr->constructorPtr = CloneClassMethod(interp, c2Ptr,
-		    cPtr->constructorPtr, NULL);
+	if (clsPtr->constructorPtr) {
+	    cls2Ptr->constructorPtr = CloneClassMethod(interp, cls2Ptr,
+		    clsPtr->constructorPtr, NULL);
 	}
-	if (cPtr->destructorPtr) {
-	    c2Ptr->destructorPtr = CloneClassMethod(interp, c2Ptr,
-		    cPtr->destructorPtr, NULL);
+	if (clsPtr->destructorPtr) {
+	    cls2Ptr->destructorPtr = CloneClassMethod(interp, cls2Ptr,
+		    clsPtr->destructorPtr, NULL);
 	}
     }
 
@@ -389,19 +389,20 @@ CloneObjectMethod(
 static Method *
 CloneClassMethod(
     Tcl_Interp *interp,
-    Class *cPtr,
+    Class *clsPtr,
     Method *mPtr,
     Tcl_Obj *namePtr)
 {
     ClientData newClientData;
 
     if (mPtr->typePtr == NULL) {
-	return (Method*) TclOONewClassMethod(interp, (Tcl_Class) cPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
+	return (Method *) TclOONewClassMethod(interp, (Tcl_Class) clsPtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->clonePtr &&
 	    mPtr->typePtr->clonePtr(mPtr->clientData,&newClientData)==TCL_OK) {
-	return (Method*) TclOONewClassMethod(interp, (Tcl_Class) cPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
+	return (Method *) TclOONewClassMethod(interp, (Tcl_Class) clsPtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
+		newClientData);
     } else {
 	return NULL;
     }
@@ -479,7 +480,7 @@ TclOODefineExportObjCmd(
     Object *oPtr;
     Method *mPtr;
     Tcl_HashEntry *hPtr;
-    Class *cPtr;
+    Class *clsPtr;
     int i, isNew;
 
     if (objc < 2) {
@@ -491,15 +492,15 @@ TclOODefineExportObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    cPtr = oPtr->classPtr;
-    isSelfExport |= (cPtr == NULL);
+    clsPtr = oPtr->classPtr;
+    isSelfExport |= (clsPtr == NULL);
 
     for (i=1 ; i<objc ; i++) {
 	if (isSelfExport) {
 	    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&cPtr->classMethods, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *) objv[i],
 		    &isNew);
 	}
 
@@ -988,7 +989,7 @@ TclOODefineUnexportObjCmd(
     Object *oPtr;
     Method *mPtr;
     Tcl_HashEntry *hPtr;
-    Class *cPtr;
+    Class *clsPtr;
     int i, isNew;
 
     if (objc < 2) {
@@ -1000,7 +1001,7 @@ TclOODefineUnexportObjCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    cPtr = oPtr->classPtr;
+    clsPtr = oPtr->classPtr;
     isSelfUnexport |= (oPtr->classPtr == NULL);
 
     for (i=1 ; i<objc ; i++) {
@@ -1008,7 +1009,7 @@ TclOODefineUnexportObjCmd(
 	    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&cPtr->classMethods, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *) objv[i],
 		    &isNew);
 	}
 

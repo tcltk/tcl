@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.24 2006/09/27 13:25:50 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.25 2006/09/28 00:29:33 dkf Exp $
  */
 
 /*
@@ -245,18 +245,18 @@ MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
 MODULE_SCOPE Method *	TclNewForwardMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
-MODULE_SCOPE Method *	TclNewProcClassMethod(Tcl_Interp *interp, Class *cPtr,
-			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
-			    Tcl_Obj *bodyObj);
+MODULE_SCOPE Method *	TclNewProcClassMethod(Tcl_Interp *interp,
+			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
+			    Tcl_Obj *argsObj, Tcl_Obj *bodyObj);
 MODULE_SCOPE Method *	TclNewForwardClassMethod(Tcl_Interp *interp,
-			    Class *cPtr, int isPublic, Tcl_Obj *nameObj,
+			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
 MODULE_SCOPE void	TclDeleteMethod(Method *method);
 MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *procNameObj,
 			    int skip);
 // Expose this one?
-MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *cPtr);
+MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
@@ -271,7 +271,7 @@ MODULE_SCOPE Tcl_Method	TclOONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
 MODULE_SCOPE Object *	TclOONewInstance(Tcl_Interp *interp, Class *clsPtr,
 			    const char *name, int objc, Tcl_Obj *const *objv,
 			    int skip);
-MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *cPtr);
+MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 
