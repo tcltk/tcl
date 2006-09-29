@@ -8,13 +8,27 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.50 2006/09/28 00:29:33 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.51 2006/09/29 15:46:59 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 #include <assert.h>
 
+Tcl_Method Tcl_OOContextMethod(Tcl_ObjectContext context);
+int Tcl_OOContextIsFiltering(Tcl_ObjectContext context);
+Tcl_Object Tcl_OOContextObject(Tcl_ObjectContext context);
+int Tcl_OOContextSkippedArgs(Tcl_ObjectContext context);
+Tcl_Object Tcl_OOMethodDeclarerObject(Tcl_Method method);
+Tcl_Class Tcl_OOMethodDeclarerClass(Tcl_Method method);
+Tcl_Obj * Tcl_OOMethodName(Tcl_Method method);
+int Tcl_OOMethodIsType(Tcl_Method method, const Tcl_OOMethodType *typePtr, ClientData *clientDataPtr);
+int Tcl_OOMethodIsPublic(Tcl_Method method);
+Tcl_Namespace * Tcl_OOGetObjectNamespace(Tcl_Object object);
+Tcl_Command Tcl_OOGetObjectCommand(Tcl_Object object);
+Tcl_Class Tcl_OOGetObjectAsClass(Tcl_Object object);
+int Tcl_OOObjectDeleted(Tcl_Object object);
+Tcl_Object Tcl_OOGetClassAsObject(Tcl_Class clazz);
 /*
  * Commands in oo::define.
  */
@@ -138,21 +152,21 @@ static int		PrivateObjectCmd(ClientData clientData,
 			    Tcl_Obj *const *objv);
 
 static int		SimpleInvoke(ClientData clientData,
-			    Tcl_Interp *interp, CallContext *oPtr,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static int		StructInvoke(ClientData clientData,
-			    Tcl_Interp *interp, CallContext *oPtr,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static int		SimpleClone(ClientData clientData,
 			    ClientData *newClientData);
 static int		InvokeProcedureMethod(ClientData clientData,
-			    Tcl_Interp *interp, CallContext *oPtr,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteProcedureMethod(ClientData clientData);
 static int		CloneProcedureMethod(ClientData clientData,
 			    ClientData *newClientData);
 static int		InvokeForwardMethod(ClientData clientData,
-			    Tcl_Interp *interp, CallContext *oPtr,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(ClientData clientData);
 static int		CloneForwardMethod(ClientData clientData,
@@ -164,21 +178,29 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 			    int *lengthPtr);
 
 static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		ClassNew(ClientData clientData, Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		ObjectDestroy(ClientData clientData,Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		ObjectEval(ClientData clientData, Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		ObjectLinkVar(ClientData clientData,Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		ObjectUnknown(ClientData clientData,Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		StructVar(ClientData clientData, Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static int		StructVwait(ClientData clientData, Tcl_Interp *interp,
-			    CallContext *oPtr, int objc, Tcl_Obj *const *objv);
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv);
 static char *		StructVwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
@@ -1045,13 +1067,13 @@ static int
 SimpleInvoke(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *ctxtPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_OOMethodCallProc callPtr = clientData;
 
-    return callPtr(clientData, interp, ctxtPtr, objc, objv);
+    return (*callPtr)(NULL, interp, context, objc, objv);
 }
 static int
 SimpleClone(
@@ -1077,10 +1099,11 @@ static int
 StructInvoke(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *clsPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     struct StructCmdInfo *infoPtr = clientData;
     Tcl_CallFrame *dummyFrame;
     Var *dummyAryVar;
@@ -1092,7 +1115,7 @@ StructInvoke(
      */
 
     TclPushStackFrame(interp, &dummyFrame,
-	    (Tcl_Namespace *) clsPtr->oPtr->nsPtr, 0);
+	    (Tcl_Namespace *) contextPtr->oPtr->nsPtr, 0);
 
     /*
      * Ensure that the variables exist properly (even if in an undefined
@@ -1110,7 +1133,7 @@ StructInvoke(
     if (infoPtr->varIdx < 0) {
 	int i;
 
-	for (i=clsPtr->skip ; i<objc ; i++) {
+	for (i=contextPtr->skip ; i<objc ; i++) {
 	    if (TclObjLookupVar(interp, objv[i], NULL,
 		    TCL_NAMESPACE_ONLY|infoPtr->flags, "refer to", 1, 0,
 		    &dummyAryVar)==NULL) {
@@ -1118,13 +1141,13 @@ StructInvoke(
 		return TCL_ERROR;
 	    }
 	}
-    } else if (infoPtr->varIdx+clsPtr->skip >= objc) {
+    } else if (infoPtr->varIdx+contextPtr->skip >= objc) {
 	Tcl_Obj *prefixObj = Tcl_NewStringObj(infoPtr->cmdName, -1);
 
-	argObjs = InitEnsembleRewrite(interp, objc, objv, clsPtr->skip, 1,
+	argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip, 1,
 		&prefixObj, 0, NULL, &len);
 	goto doInvoke;
-    } else if (TclObjLookupVar(interp, objv[infoPtr->varIdx+clsPtr->skip],
+    } else if (TclObjLookupVar(interp, objv[infoPtr->varIdx+contextPtr->skip],
 	    NULL, TCL_NAMESPACE_ONLY|infoPtr->flags, "refer to", 1, 0,
 	    &dummyAryVar) == NULL) {
 	TclPopStackFrame(interp);
@@ -1141,14 +1164,14 @@ StructInvoke(
 
 	prefix[1] = Tcl_NewStringObj(infoPtr->cmdName, -1);
 	prefix[0] = Tcl_NewStringObj(infoPtr->extraPrefix, -1);
-	argObjs = InitEnsembleRewrite(interp, objc, objv, clsPtr->skip, 2,
+	argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip, 2,
 		prefix, 0, NULL, &len);
     } else {
 	Tcl_Obj *prefixObj = Tcl_NewStringObj(infoPtr->cmdName, -1);
 	Tcl_Obj *insertObj = (infoPtr->extraInsert ?
 		Tcl_NewStringObj(infoPtr->extraInsert, -1) : NULL);
 
-	argObjs = InitEnsembleRewrite(interp, objc, objv, clsPtr->skip, 1,
+	argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip, 1,
 		&prefixObj, 2, insertObj, &len);
     }
 
@@ -1403,10 +1426,11 @@ static int
 InvokeProcedureMethod(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     ProcedureMethod *pmPtr = (ProcedureMethod *) clientData;
     int result, flags = FRAME_IS_METHOD;
     CallFrame *framePtr, **framePtrPtr;
@@ -1639,10 +1663,11 @@ static int
 InvokeForwardMethod(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = (ForwardMethod *) clientData;
     Tcl_Obj **argObjs, **prefixObjs;
     int numPrefixes, result, len;
@@ -1846,8 +1871,8 @@ InvokeContext(
 	}
     }
 
-    result = mPtr->typePtr->callPtr(mPtr->clientData, interp, contextPtr,
-	    objc, objv);
+    result = mPtr->typePtr->callPtr(mPtr->clientData, interp,
+	    (Tcl_ObjectContext) contextPtr, objc, objv);
 
     if (isFirst) {
 	int i;
@@ -2400,11 +2425,11 @@ static int
 ClassCreate(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = contextPtr->oPtr, *newObjPtr;
+    Object *oPtr = (Object *) Tcl_OOContextObject(context), *newObjPtr;
     const char *objName;
     int len;
 
@@ -2418,8 +2443,8 @@ ClassCreate(
 	TclDecrRefCount(cmdnameObj);
 	return TCL_ERROR;
     }
-    if (objc-contextPtr->skip < 1) {
-	Tcl_WrongNumArgs(interp, contextPtr->skip, objv,
+    if (objc - Tcl_OOContextSkippedArgs(context) < 1) {
+	Tcl_WrongNumArgs(interp, Tcl_OOContextSkippedArgs(context), objv,
 		"objectName ?arg ...?");
 	return TCL_ERROR;
     }
@@ -2429,7 +2454,7 @@ ClassCreate(
 	return TCL_ERROR;
     }
     newObjPtr = TclOONewInstance(interp, oPtr->classPtr, objName, objc, objv,
-	    contextPtr->skip+1);
+	    Tcl_OOContextSkippedArgs(context)+1);
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2452,11 +2477,11 @@ static int
 ClassNew(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr = contextPtr->oPtr, *newObjPtr;
+    Object *oPtr = (Object *) Tcl_OOContextObject(context), *newObjPtr;
 
     if (oPtr->classPtr == NULL) {
 	Tcl_Obj *cmdnameObj;
@@ -2469,7 +2494,7 @@ ClassNew(
 	return TCL_ERROR;
     }
     newObjPtr = TclOONewInstance(interp, oPtr->classPtr, NULL, objc, objv,
-	    contextPtr->skip);
+	    Tcl_OOContextSkippedArgs(context));
     if (newObjPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2492,15 +2517,17 @@ static int
 ObjectDestroy(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
-    if (objc-contextPtr->skip != 0) {
-	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, NULL);
+    if (objc != Tcl_OOContextSkippedArgs(context)) {
+	Tcl_WrongNumArgs(interp, Tcl_OOContextSkippedArgs(context), objv,
+		NULL);
 	return TCL_ERROR;
     }
-    Tcl_DeleteCommandFromToken(interp, contextPtr->oPtr->command);
+    Tcl_DeleteCommandFromToken(interp,
+	    Tcl_OOGetObjectCommand(Tcl_OOContextObject(context)));
     return TCL_OK;
 }
 
@@ -2518,17 +2545,19 @@ static int
 ObjectEval(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     Object *oPtr = contextPtr->oPtr;
     CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objnameObj;
     int result;
 
-    if (objc-contextPtr->skip < 1) {
-	Tcl_WrongNumArgs(interp, contextPtr->skip, objv, "arg ?arg ...?");
+    if (objc-Tcl_OOContextSkippedArgs(context) < 1) {
+	Tcl_WrongNumArgs(interp, Tcl_OOContextSkippedArgs(context), objv,
+		"arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -2556,8 +2585,9 @@ ObjectEval(
     }
     Tcl_IncrRefCount(objnameObj);
 
-    if (objc == contextPtr->skip+1) {
-	result = Tcl_EvalObjEx(interp, objv[contextPtr->skip], 0);
+    if (objc == Tcl_OOContextSkippedArgs(context)+1) {
+	result = Tcl_EvalObjEx(interp,
+		objv[Tcl_OOContextSkippedArgs(context)], 0);
     } else {
 	Tcl_Obj *objPtr;
 
@@ -2567,7 +2597,8 @@ ObjectEval(
 	 * object when it decrements its refcount after eval'ing it.
 	 */
 
-	objPtr = Tcl_ConcatObj(objc-contextPtr->skip, objv+contextPtr->skip);
+	objPtr = Tcl_ConcatObj(objc-Tcl_OOContextSkippedArgs(context),
+		objv+Tcl_OOContextSkippedArgs(context));
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
 
@@ -2601,10 +2632,11 @@ static int
 ObjectUnknown(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     Object *oPtr = contextPtr->oPtr;
     const char **methodNames;
     int numMethodNames, i;
@@ -2612,8 +2644,12 @@ ObjectUnknown(
     numMethodNames = GetSortedMethodList(oPtr,
 	    contextPtr->flags & PUBLIC_METHOD, &methodNames);
     if (numMethodNames == 0) {
-	Tcl_AppendResult(interp, "object \"", TclGetString(objv[0]),
+	Tcl_Obj *tmpBuf;
+
+	Tcl_GetCommandFullName(interp, oPtr->command, tmpBuf);
+	Tcl_AppendResult(interp, "object \"", TclGetString(tmpBuf),
 		"\" has no visible methods", NULL);
+	Tcl_DecrRefCount(tmpBuf);
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[1]),
@@ -2646,10 +2682,11 @@ static int
 ObjectLinkVar(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     Interp *iPtr = (Interp *) interp;
     Object *oPtr = contextPtr->oPtr;
     Namespace *savedNsPtr;
@@ -2737,10 +2774,11 @@ static int
 StructVar(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     Tcl_CallFrame *dummyFrame;
     Var *varPtr, *aryVar;
     Tcl_Obj *varNamePtr;
@@ -2781,10 +2819,11 @@ static int
 StructVwait(
     ClientData clientData,
     Tcl_Interp *interp,
-    CallContext *contextPtr,
+    Tcl_ObjectContext context,
     int objc,
     Tcl_Obj *const *objv)
 {
+    CallContext *contextPtr = (CallContext *) context;
     Tcl_CallFrame *dummyFrame;
     int done, foundEvent;
 
@@ -3408,6 +3447,116 @@ InitEnsembleRewrite(
 
     *lengthPtr = len;
     return argObjs;
+}
+
+Tcl_Method
+Tcl_OOContextMethod(
+    Tcl_ObjectContext context)
+{
+    CallContext *contextPtr = (CallContext *) context;
+    return (Tcl_Method) contextPtr->callChain[contextPtr->index].mPtr;
+}
+
+int
+Tcl_OOContextIsFiltering(
+    Tcl_ObjectContext context)
+{
+    CallContext *contextPtr = (CallContext *) context;
+    return contextPtr->callChain[contextPtr->index].isFilter;
+}
+
+Tcl_Object
+Tcl_OOContextObject(
+    Tcl_ObjectContext context)
+{
+    return (Tcl_Object) ((CallContext *)context)->oPtr;
+}
+
+int
+Tcl_OOContextSkippedArgs(
+    Tcl_ObjectContext context)
+{
+    return ((CallContext *)context)->skip;
+}
+
+Tcl_Object
+Tcl_OOMethodDeclarerObject(
+    Tcl_Method method)
+{
+    return (Tcl_Object) ((Method *) method)->declaringObjectPtr;
+}
+
+Tcl_Class
+Tcl_OOMethodDeclarerClass(
+    Tcl_Method method)
+{
+    return (Tcl_Class) ((Method *) method)->declaringClassPtr;
+}
+
+Tcl_Obj *
+Tcl_OOMethodName(
+    Tcl_Method method)
+{
+    return ((Method *) method)->namePtr;
+}
+
+int
+Tcl_OOMethodIsType(
+    Tcl_Method method,
+    const Tcl_OOMethodType *typePtr,
+    ClientData *clientDataPtr)
+{
+    Method *mPtr = (Method *) method;
+
+    if (mPtr->typePtr == typePtr) {
+	if (clientDataPtr != NULL) {
+	    *clientDataPtr = mPtr->clientData;
+	}
+	return 1;
+    }
+    return 0;
+}
+
+int
+Tcl_OOMethodIsPublic(
+    Tcl_Method method)
+{
+    return (((Method *)method)->flags & PUBLIC_METHOD) ? 1 : 0;
+}
+
+Tcl_Namespace *
+Tcl_OOGetObjectNamespace(
+    Tcl_Object object)
+{
+    return (Tcl_Namespace *) ((Object *)object)->nsPtr;
+}
+
+Tcl_Command
+Tcl_OOGetObjectCommand(
+    Tcl_Object object)
+{
+    return ((Object *)object)->command;
+}
+
+Tcl_Class
+Tcl_OOGetObjectAsClass(
+    Tcl_Object object)
+{
+    return (Tcl_Class) ((Object *)object)->classPtr;
+}
+
+int
+Tcl_OOObjectDeleted(
+    Tcl_Object object)
+{
+    return (((Object *)object)->flags & OBJECT_DELETED) ? 1 : 0;
+}
+
+Tcl_Object
+Tcl_OOGetClassAsObject(
+    Tcl_Class clazz)
+{
+    return (Tcl_Object) ((Class *)clazz)->thisPtr;
 }
 
 /*

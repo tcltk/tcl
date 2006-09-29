@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.25 2006/09/28 00:29:33 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.26 2006/09/29 15:47:00 dkf Exp $
  */
 
 /*
@@ -26,7 +26,7 @@ struct CallContext;
  */
 
 typedef int (*Tcl_OOMethodCallProc)(ClientData clientData, Tcl_Interp *interp,
-	struct CallContext *contextPtr, int objc, Tcl_Obj *const *objv);
+	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
 typedef void (*Tcl_OOMethodDeleteProc)(ClientData clientData);
 typedef int (*Tcl_OOMethodCloneProc)(ClientData oldClientData,
 	ClientData *newClientData);
@@ -69,7 +69,9 @@ typedef struct Method {
 } Method;
 
 /*
- * Procedure-like methods have the following extra information.
+ * Procedure-like methods have the following extra information. It is a
+ * single-field structure because this allows for future expansion without
+ * changing vast amounts of code.
  */
 
 typedef struct ProcedureMethod {
@@ -77,7 +79,9 @@ typedef struct ProcedureMethod {
 } ProcedureMethod;
 
 /*
- * Forwarded methods have the following extra information.
+ * Forwarded methods have the following extra information. It is a
+ * single-field structure because this allows for future expansion without
+ * changing vast amounts of code.
  */
 
 typedef struct ForwardMethod {
