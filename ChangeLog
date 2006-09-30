@@ -1,5 +1,13 @@
 2006-09-30  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclObj.c:
+	* generic/tclStubInit.c: added an internal function
+	TclObjBeingDeleted to provide info as to the reason for the loss
+	of an internal rep. [FR 1512138]
+
 	* generic/tclCompile.c:
 	* generic/tclHistory.c:
 	* generic/tclInt.h: 
