@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.70 2006/09/21 21:11:50 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.71 2006/09/30 19:15:21 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -427,15 +427,26 @@ Tcl_SplitList(
      * the list.
      */
 
-    for (size = 1, l = list; *l != 0; l++) {
+    for (size = 2, l = list; *l != 0; l++) {
 	if (isspace(UCHAR(*l))) { /* INTL: ISO space. */
 	    size++;
+	    /* Consecutive space can only count as a single list delimiter */
+	    while (1) {
+		char next = *(l + 1);
+		if (next == '\0') {
+		    break;
+		}
+		++l;
+		if (isspace(UCHAR(next))) {
+		    continue;
+		}
+		break;
+	    }
 	}
     }
-    size++;			/* Leave space for final NULL pointer. */
+    length = l - list;
     argv = (CONST char **) ckalloc((unsigned)
-	    ((size * sizeof(char *)) + (l - list) + 1));
-    length = strlen(list);
+	    ((size * sizeof(char *)) + length + 1));
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	CONST char *prevList = list;
