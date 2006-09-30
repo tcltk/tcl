@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.277 2006/09/22 22:32:07 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.278 2006/09/30 17:56:47 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2554,6 +2554,8 @@ MODULE_SCOPE int	TclCompileLlengthCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileLsetCmd(Tcl_Interp* interp,
 			    Tcl_Parse* parsePtr, struct CompileEnv* envPtr);
+MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp, Tcl_Parse *parsePtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileRegexpCmd(Tcl_Interp* interp,
 			    Tcl_Parse* parsePtr, struct CompileEnv* envPtr);
 MODULE_SCOPE int	TclCompileReturnCmd(Tcl_Interp *interp,
