@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.97 2006/06/21 03:10:39 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.98 2006/09/30 19:00:12 msofer Exp $
 
 library tcl
 
@@ -888,6 +888,10 @@ declare 224 generic {
 declare 225 generic {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
 	    int keyc, Tcl_Obj *CONST keyv[], int flags)
+}
+
+declare 226 generic {
+    int TclObjBeingDeleted(Tcl_Obj *objPtr)
 }
 
 ##############################################################################
