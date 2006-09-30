@@ -1,3 +1,13 @@
+2006-09-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclHistory.c:
+	* generic/tclInt.h: 
+	* generic/tclProc.c: made Tcl_RecordAndEvalObj not call "history" 
+	if it has been redefined to an empty proc, in order to reduce the
+	noise when debugging [FR 1190441]. Moved TclCompileNoOp from
+	tclProc.c to tclCompile.c 
+
 2006-09-28  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclPkg.c (CompareVersions): Bugfix. Check string lengths
