@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.86.2.5 2006/09/01 12:11:00 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.86.2.6 2006/09/30 22:41:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1622,33 +1622,106 @@ ProcessProcResultCode(
 		"\" outside of a loop", NULL);
     }
     if (isMethod & FRAME_IS_CONSTRUCTOR) {
-	// TODO: incorporate declaring class name
 	if (interp->errorLine != 0xDEADBEEF) { /* hack! */
-	    TclFormatToErrorInfo(interp, "\n    (constructor line %d)",
-		    interp->errorLine);
+	    CallContext *contextPtr =
+		    ((Interp *) interp)->varFramePtr->ooContextPtr;
+	    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	    Tcl_Command declarer;
+	    Tcl_Obj *objectNameObj;
+	    const char *objectName, *kindName;
+	    int objectNameLen;
+
+	    if (mPtr->declaringObjectPtr != NULL) {
+		declarer = mPtr->declaringObjectPtr->command;
+		kindName = "object";
+	    } else {
+		if (mPtr->declaringClassPtr == NULL) {
+		    Tcl_Panic("method not declared in class or object");
+		}
+		declarer = mPtr->declaringClassPtr->thisPtr->command;
+		kindName = "class";
+	    }
+	    TclNewObj(objectNameObj);
+	    Tcl_GetCommandFullName(interp, declarer, objectNameObj);
+	    objectName = Tcl_GetStringFromObj(objectNameObj, &objectNameLen);
+	    overflow = (objectNameLen > limit);
+
+	    TclFormatToErrorInfo(interp,
+		    "\n    (%s \"%.*s%s\" constructor line %d)",
+		    kindName, (overflow ? limit : objectNameLen), objectName,
+		    (overflow ? "..." : ""), interp->errorLine);
+
+	    TclDecrRefCount(objectNameObj);
 	}
     } else if (isMethod & FRAME_IS_DESTRUCTOR) {
-	// TODO: incorporate declaring class name
-	TclFormatToErrorInfo(interp, "\n    (destructor line %d)",
-		interp->errorLine);
-    } else if (isMethod & FRAME_IS_METHOD) {
-	int nameLen;
 	CallContext *contextPtr =
 		((Interp *) interp)->varFramePtr->ooContextPtr;
-	Tcl_Obj *methodNameObj =
-		contextPtr->callChain[contextPtr->index].mPtr->namePtr;
-	const char *methodName =
-		Tcl_GetStringFromObj(methodNameObj, &nameLen);
+	Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	Tcl_Command declarer;
+	Tcl_Obj *objectNameObj;
+	const char *objectName, *kindName;
+	int objectNameLen;
 
-	overflow = (nameLen > limit);
-	TclFormatToErrorInfo(interp, "\n    (method \"%.*s%s\" line %d)",
-		(overflow ? limit : nameLen), methodName,
+	if (mPtr->declaringObjectPtr != NULL) {
+	    declarer = mPtr->declaringObjectPtr->command;
+	    kindName = "object";
+	} else {
+	    if (mPtr->declaringClassPtr == NULL) {
+		Tcl_Panic("method not declared in class or object");
+	    }
+	    declarer = mPtr->declaringClassPtr->thisPtr->command;
+	    kindName = "class";
+	}
+	TclNewObj(objectNameObj);
+	Tcl_GetCommandFullName(interp, declarer, objectNameObj);
+	objectName = Tcl_GetStringFromObj(objectNameObj, &objectNameLen);
+	overflow = (objectNameLen > limit);
+
+	TclFormatToErrorInfo(interp,
+		"\n    (%s \"%.*s%s\" destructor line %d)",
+		kindName, (overflow ? limit : objectNameLen), objectName,
 		(overflow ? "..." : ""), interp->errorLine);
+
+	TclDecrRefCount(objectNameObj);
+    } else if (isMethod & FRAME_IS_METHOD) {
+	int nameLen, objectNameLen, objNameOverflow;
+	CallContext *contextPtr =
+		((Interp *) interp)->varFramePtr->ooContextPtr;
+	Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
+	Tcl_Obj *objectNameObj;
+	const char *objectName, *kindName, *methodName =
+		Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
+	Tcl_Command declarer;
+
+	if (mPtr->declaringObjectPtr != NULL) {
+	    declarer = mPtr->declaringObjectPtr->command;
+	    kindName = "object";
+	} else {
+	    if (mPtr->declaringClassPtr == NULL) {
+		Tcl_Panic("method not declared in class or object");
+	    }
+	    declarer = mPtr->declaringClassPtr->thisPtr->command;
+	    kindName = "class";
+	}
+	TclNewObj(objectNameObj);
+	Tcl_GetCommandFullName(interp, declarer, objectNameObj);
+	objectName = Tcl_GetStringFromObj(objectNameObj, &objectNameLen);
+	overflow = (nameLen > limit);
+	objNameOverflow = (objectNameLen > limit);
+
+	TclFormatToErrorInfo(interp,
+		"\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)", kindName,
+		(objNameOverflow ? limit : objectNameLen), objectName,
+		(objNameOverflow ? "..." : ""), (overflow ? limit : nameLen),
+		methodName, (overflow ? "..." : ""), interp->errorLine);
+
+	TclDecrRefCount(objectNameObj);
     } else {
 	int nameLen;
 	const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
 	overflow = (nameLen > limit);
+
 	TclFormatToErrorInfo(interp, "\n    (procedure \"%.*s%s\" line %d)",
 		(overflow ? limit : nameLen), procName,
 		(overflow ? "..." : ""), interp->errorLine);

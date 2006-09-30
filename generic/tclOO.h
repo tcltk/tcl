@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.26 2006/09/29 15:47:00 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.27 2006/09/30 22:41:03 dkf Exp $
  */
 
 /*
@@ -93,7 +93,7 @@ typedef struct ForwardMethod {
  */
 
 typedef struct Object {
-    Namespace *nsPtr;		/* This object's tame namespace. */
+    Tcl_Namespace *namespacePtr;/* This object's tame namespace. */
     Tcl_Command command;	/* Reference to this object's public
 				 * command. */
     Tcl_Command myCommand;	/* Reference to this object's internal
@@ -281,11 +281,32 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 
 /*
  * A convenience macro for iterating through the lists used in the internal
- * memory management of objects.
+ * memory management of objects. This is a bit gnarly because we want to do
+ * the assignment of the picked-out value only when the body test succeeds,
+ * but we cannot rely on the assigned value being useful, forcing us to do
+ * some nasty stuff with the comma operator. The compiler's optimizer should
+ * be able to sort it all out!
  */
 
 #define FOREACH(var,ary) \
 	for(i=0 ; (i<(ary).num?((var=(ary).list[i]),1):0) ; i++)
+
+/*
+ * Convenience macros for iterating through hash tables. FOREACH_HASH_DECLS
+ * sets up the declarations needed for the main macro, FOREACH_HASH, which
+ * does the actual iteration. FOREACH_HASH_VALUE is a restricted version that
+ * only iterates over values.
+ */
+
+#define FOREACH_HASH_DECLS \
+    Tcl_HashEntry *hPtr;Tcl_HashSearch search
+#define FOREACH_HASH(key,val,tablePtr) \
+    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
+	    ((key)=(void *)Tcl_GetHashKey((tablePtr),hPtr),\
+	    (val)=Tcl_GetHashValue(hPtr),1):0; hPtr=Tcl_NextHashEntry(&search))
+#define FOREACH_HASH_VALUE(val,tablePtr) \
+    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
+	    ((val)=Tcl_GetHashValue(hPtr),1):0;hPtr=Tcl_NextHashEntry(&search))
 
 /*
  * Local Variables:

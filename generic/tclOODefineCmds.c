@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.21 2006/09/28 00:29:33 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.22 2006/09/30 22:41:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -224,8 +224,9 @@ TclOODefineCopyObjCmd(
     Tcl_Obj *const *objv)
 {
     Object *oPtr, *o2Ptr;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
+    FOREACH_HASH_DECLS;
+    Method *mPtr;
+    Tcl_Obj *keyPtr;
     int i;
 
     if (objc > 2) {
@@ -281,11 +282,7 @@ TclOODefineCopyObjCmd(
      * Copy the methods, mixins and filters.
      */
 
-    hPtr = Tcl_FirstHashEntry(&oPtr->methods, &search);
-    for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
-	Method *mPtr = Tcl_GetHashValue(hPtr);
-
+    FOREACH_HASH(keyPtr, mPtr, &oPtr->methods) {
 	(void) CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr);
     }
     o2Ptr->mixins.num = oPtr->mixins.num;
@@ -339,12 +336,7 @@ TclOODefineCopyObjCmd(
 	    Tcl_IncrRefCount(cls2Ptr->filters.list[i]);
 	}
 
-	hPtr = Tcl_FirstHashEntry(&clsPtr->classMethods, &search);
-	for (;hPtr; hPtr = Tcl_NextHashEntry(&search)) {
-	    Tcl_Obj *keyPtr = (Tcl_Obj *)
-		    Tcl_GetHashKey(&clsPtr->classMethods, hPtr);
-	    Method *mPtr = Tcl_GetHashValue(hPtr);
-
+	FOREACH_HASH(keyPtr, mPtr, &clsPtr->classMethods) {
 	    (void) CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr);
 	}
 	if (clsPtr->constructorPtr) {

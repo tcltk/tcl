@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.30 2006/09/27 13:25:50 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.31 2006/09/30 22:41:03 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -47,6 +47,17 @@ test oo-1.3 {basic test of OO functionality: no classes} {
 test oo-1.4 {basic test of OO functionality} -body {
     oo::object create {}
 } -returnCodes 1 -result {object name must not be empty}
+test oo-1.5 {basic test of OO functionality} -body {
+    oo::object doesnotexist
+} -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
+test oo-1.6 {basic test of OO functionality} -setup {
+    oo::object create aninstance
+} -body {
+    oo::define aninstance unexport destroy
+    aninstance doesnotexist
+} -cleanup {
+    rename aninstance {}
+} -returnCodes 1 -result {object "::aninstance" has no visible methods}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -302,15 +313,13 @@ test oo-7.7 {OO: inheritance and errorInfo} -setup {
 } -result {{unknown method "?": must be destroy or foo} foo! {foo!
     while executing
 "error foo!"
-    (method "foo" line 1)
-    ("::A" implementation of "foo" method)
+    (class "::A" method "foo" line 1)
     invoked from within
 "next "
-    (method "foo" line 1)
-    ("::B" implementation of "foo" method)
+    (class "::B" method "foo" line 1)
     invoked from within
 "next "
-    (method "foo" line 1)
+    (object "::c" method "foo" line 1)
     invoked from within
 "c foo"}}
 
@@ -766,7 +775,7 @@ test oo-18.4 {OO: more error traces from the guts} -setup {
     (in "my eval" script line 1)
     invoked from within
 "my eval {error foo}"
-    (method "bar" line 1)
+    (object "::obj" method "bar" line 1)
     invoked from within
 "obj bar"}}
 test oo-18.5 {OO: more error traces from the guts} -setup {
@@ -787,22 +796,20 @@ test oo-18.5 {OO: more error traces from the guts} -setup {
     while executing
 "error foo"
     (in "my eval" script line 1)
-    ("::oo::object" implementation of "eval" method)
     invoked from within
 "next $script"
-    (method "eval" line 1)
+    (class "::cls" method "eval" line 1)
     invoked from within
 "my eval {error foo}"
-    (method "bar" line 1)
+    (object "::obj" method "bar" line 1)
     invoked from within
 "obj bar"} 1 bar {bar
     while executing
 "error bar"
     (in "::obj eval" script line 1)
-    ("::oo::object" implementation of "eval" method)
     invoked from within
 "next $script"
-    (method "eval" line 1)
+    (class "::cls" method "eval" line 1)
     invoked from within
 "obj eval {error bar}"}}
 
@@ -838,6 +845,51 @@ test oo-19.2 {OO: definer metaclass} -setup {
 } -result {1 {wrong # args: should be "dclass method name args body"} {wrong # args: should be "dclass method name args body"
     while executing
 "dclass method badSyntax"}}
+test oo-19.3 {OO: definer metaclass} -body {
+    oo::definer dog {
+	constructor {} {
+	    variable barks 0
+	    global result
+	    lappend result puppy
+	}
+	method bark {} {
+	    variable barks
+	    global result
+	    lappend result woof\#[incr barks]
+	}
+	destructor {
+	    global result
+	    lappend result put-down
+	}
+    }
+    set result {}
+    dog create fido
+    fido bark
+    fido bark
+    fido bark
+    fido destroy
+    return $result
+} -cleanup {
+    catch {dog destroy}
+} -result "puppy woof\#1 woof\#2 woof\#3 put-down"
+test oo-19.4 {OO: definer metaclass} {
+    catch {oo::definer dog {error woof}}
+    return $::errorInfo
+} {woof
+    while executing
+"error woof"
+    (in definition script for object "::dog" line 1)
+    invoked from within
+"next $definitionScript"
+    (class "::oo::definer" constructor line 2)
+    invoked from within
+"::oo::definer create dog {error woof}"
+    ("uplevel" body line 1)
+    invoked from within
+"uplevel 1 [list [self] create $className $definitionScript]"
+    (object "::oo::definer" method "unknown" line 1)
+    invoked from within
+"oo::definer dog {error woof}"}
 
 test oo-20.1 {OO: struct class} {
     oo::struct create foo

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.13 2006/09/28 00:29:33 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.14 2006/09/30 22:41:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -51,11 +51,6 @@ static int		InfoClassSubsCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoClassSupersCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-
-#define FOREACH_HASH(tablePtr) \
-    for(hPtr=Tcl_FirstHashEntry((tablePtr),&search);hPtr!=NULL;\
-            hPtr=Tcl_NextHashEntry(&search))
-
 
 int
 TclInfoObjectCmd(
@@ -491,9 +486,10 @@ InfoObjectMethodsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     int flag = PUBLIC_METHOD;
+    FOREACH_HASH_DECLS;
+    Tcl_Obj *namePtr;
+    Method *mPtr;
 
     if (objc != 4 && objc != 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "objName methods ?-private?");
@@ -510,10 +506,7 @@ InfoObjectMethodsCmd(
 	}
 	flag = 0;
     }
-    FOREACH_HASH(&oPtr->methods) {
-	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&oPtr->methods, hPtr);
-	Method *mPtr = Tcl_GetHashValue(hPtr);
-
+    FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
 	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
@@ -552,9 +545,9 @@ InfoObjectVarsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    const char *pattern = NULL;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
+    const char *pattern = NULL, *name;
+    FOREACH_HASH_DECLS;
+    Var *varPtr;
 
     if (objc != 4 && objc != 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "objName vars ?pattern?");
@@ -564,14 +557,11 @@ InfoObjectVarsCmd(
 	pattern = TclGetString(objv[4]);
     }
 
-    FOREACH_HASH(&oPtr->nsPtr->varTable) {
-	const char *name = Tcl_GetHashKey(&oPtr->nsPtr->varTable, hPtr);
-	Var *varPtr = Tcl_GetHashValue(hPtr);
-
+    FOREACH_HASH(name, varPtr, &((Namespace *) oPtr->namespacePtr)->varTable) {
 	if (varPtr->flags & VAR_UNDEFINED) {
 	    continue;
 	}
-	if (pattern && !Tcl_StringMatch(name, pattern)) {
+	if (pattern != NULL && !Tcl_StringMatch(name, pattern)) {
 	    continue;
 	}
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
@@ -747,9 +737,10 @@ InfoClassMethodsCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
     int flag = PUBLIC_METHOD;
+    FOREACH_HASH_DECLS;
+    Tcl_Obj *namePtr;
+    Method *mPtr;
 
     if (objc != 4 && objc != 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "className methods ?-private?");
@@ -766,11 +757,7 @@ InfoClassMethodsCmd(
 	}
 	flag = 0;
     }
-    FOREACH_HASH(&clsPtr->classMethods) {
-	Tcl_Obj *namePtr = (Tcl_Obj *) Tcl_GetHashKey(&clsPtr->classMethods,
-		hPtr);
-	Method *mPtr = Tcl_GetHashValue(hPtr);
-
+    FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
 	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
