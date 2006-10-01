@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.22 2006/09/30 22:41:03 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.23 2006/10/01 21:27:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -38,7 +38,7 @@ TclOODefineObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = TclGetObjectFromObj(interp, objv[1]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -269,7 +269,8 @@ TclOODefineCopyObjCmd(
 		name = Tcl_DStringValue(&buffer);
 	    }
 	}
-	o2Ptr = TclOONewInstance(interp, oPtr->selfCls, name, -1, NULL, -1);
+	o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
+		(Tcl_Class) oPtr->selfCls, name, -1, NULL, -1);
 	if (name != NULL) {
 	    Tcl_DStringFree(&buffer);
 	}
@@ -364,17 +365,21 @@ CloneObjectMethod(
     Method *mPtr,
     Tcl_Obj *namePtr)
 {
-    ClientData newClientData;
-
     if (mPtr->typePtr == NULL) {
-	return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, namePtr,
+	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-    } else if (mPtr->typePtr->clonePtr &&
-	    mPtr->typePtr->clonePtr(mPtr->clientData,&newClientData)==TCL_OK) {
-	return (Method *) TclOONewMethod(interp, (Tcl_Object) oPtr, namePtr,
+    } else if (mPtr->typePtr->cloneProc) {
+	ClientData newClientData;
+
+	if (mPtr->typePtr->cloneProc(mPtr->clientData,
+		&newClientData) != TCL_OK) {
+	    return NULL;
+	}
+	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
     } else {
-	return NULL;
+	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
     }
 }
 
@@ -385,18 +390,23 @@ CloneClassMethod(
     Method *mPtr,
     Tcl_Obj *namePtr)
 {
-    ClientData newClientData;
-
     if (mPtr->typePtr == NULL) {
-	return (Method *) TclOONewClassMethod(interp, (Tcl_Class) clsPtr,
+	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-    } else if (mPtr->typePtr->clonePtr &&
-	    mPtr->typePtr->clonePtr(mPtr->clientData,&newClientData)==TCL_OK) {
-	return (Method *) TclOONewClassMethod(interp, (Tcl_Class) clsPtr,
+    } else if (mPtr->typePtr->cloneProc) {
+	ClientData newClientData;
+
+	if (mPtr->typePtr->cloneProc(mPtr->clientData,
+		&newClientData) != TCL_OK) {
+	    return NULL;
+	}
+	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		newClientData);
     } else {
-	return NULL;
+	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
+		mPtr->clientData);
     }
 }
 
@@ -744,7 +754,7 @@ TclOODefineMixinObjCmd(
 	for (i=1 ; i<objc ; i++) {
 	    Object *o2Ptr;
 
-	    o2Ptr = TclGetObjectFromObj(interp, objv[i]);
+	    o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
 	    if (o2Ptr == NULL) {
 	    freeAndError:
 		ckfree((char *) mixins);
@@ -834,7 +844,7 @@ TclOODefineSelfClassObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
 	return TCL_ERROR;
     }
-    o2Ptr = TclGetObjectFromObj(interp, objv[1]);
+    o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
     if (o2Ptr == NULL) {
 	return TCL_ERROR;
     }
@@ -922,7 +932,7 @@ TclOODefineSuperclassObjCmd(
      */
 
     for (i=0 ; i<objc-1 ; i++) {
-	o2Ptr = TclGetObjectFromObj(interp, objv[i+1]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i+1]);
 	if (o2Ptr == NULL) {
 	    goto failedAfterAlloc;
 	}

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.210.2.4 2006/09/29 15:46:59 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.210.2.5 2006/10/01 21:27:24 dkf Exp $
  */
 
 #ifndef _TCL
@@ -2347,6 +2347,43 @@ typedef struct mp_int mp_int;
 typedef unsigned long mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+
+/*
+ * Public datatypes for callbacks and structures used in the TIP#257 (OO)
+ * implementation. These are all used to implement custom types of method
+ * calls.
+ */
+
+typedef int (*Tcl_MethodCallProc)_ANSI_ARGS_((ClientData clientData,
+	Tcl_Interp *interp, Tcl_ObjectContext objectContext, int objc,
+	Tcl_Obj *const *objv));
+typedef void (*Tcl_MethodDeleteProc)_ANSI_ARGS_((ClientData clientData));
+typedef int (*Tcl_MethodCloneProc)_ANSI_ARGS_((ClientData oldClientData,
+	ClientData *newClientData));
+
+typedef struct {
+    int version;		/* Structure version field. Always to be equal
+				 * to TCL_OO_METHOD_VERSION_CURRENT.*/
+    const char *name;		/* Name of this type of method, mostly for
+				 * debugging purposes. */
+    Tcl_MethodCallProc callProc;/* How to invoke this method. */
+    Tcl_MethodDeleteProc deleteProc;
+				/* How to delete this method's type-specific
+				 * data, or NULL if the type-specific data
+				 * does not need deleting. */
+    Tcl_MethodCloneProc cloneProc;
+				/* How to copy this method's type-specific
+				 * data, or NULL if the type-specific data can
+				 * be copied directly. */
+} Tcl_MethodType;
+
+/*
+ * The correct value for the version field of the Tcl_MethodType structure.
+ * This allows new versions of the structure to be introduced without breaking
+ * binary compatability.
+ */
+
+#define TCL_OO_METHOD_VERSION_CURRENT 1
 
 #ifndef TCL_NO_DEPRECATED
     /*

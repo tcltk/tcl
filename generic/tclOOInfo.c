@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.14 2006/09/30 22:41:03 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.15 2006/10/01 21:27:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -81,7 +81,7 @@ TclInfoObjectCmd(
     if (idx == IOIsA) {
 	return InfoObjectIsACmd(interp, objc, objv);
     }
-    oPtr = TclGetObjectFromObj(interp, objv[2]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -136,7 +136,7 @@ TclInfoClassCmd(
 	Tcl_WrongNumArgs(interp, 2, objv, "className subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    oPtr = TclGetObjectFromObj(interp, objv[2]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -273,7 +273,7 @@ InfoObjectClassCmd(
 	Class *mixinPtr;
 	int i;
 
-	o2Ptr = TclGetObjectFromObj(interp, objv[4]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[4]);
 	if (o2Ptr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -395,7 +395,7 @@ InfoObjectIsACmd(
     }
 
     if (idx == IsObject) {
-	int ok = (TclGetObjectFromObj(interp, objv[2]) != NULL);
+	int ok = (Tcl_GetObjectFromObj(interp, objv[2]) != NULL);
 
 	if (!ok) {
 	    Tcl_ResetResult(interp);
@@ -403,7 +403,7 @@ InfoObjectIsACmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(ok ? 1 : 0));
 	return TCL_OK;
     }
-    oPtr = TclGetObjectFromObj(interp, objv[2]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -435,7 +435,7 @@ InfoObjectIsACmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa mixin className");
 	    return TCL_ERROR;
 	}
-	o2Ptr = TclGetObjectFromObj(interp, objv[5]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[5]);
 	if (o2Ptr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -459,7 +459,7 @@ InfoObjectIsACmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa typeof className");
 	    return TCL_ERROR;
 	}
-	o2Ptr = TclGetObjectFromObj(interp, objv[5]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[5]);
 	if (o2Ptr == NULL) {
 	    return TCL_ERROR;
 	}

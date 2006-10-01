@@ -9,8 +9,42 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.27 2006/09/30 22:41:03 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.28 2006/10/01 21:27:24 dkf Exp $
  */
+
+// vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
+Tcl_Object		Tcl_GetClassAsObject(Tcl_Class clazz);
+Tcl_Class		Tcl_GetObjectAsClass(Tcl_Object object);
+Tcl_Command		Tcl_GetObjectCommand(Tcl_Object object);
+Tcl_Object		Tcl_GetObjectFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+Tcl_Namespace *		Tcl_GetObjectNamespace(Tcl_Object object);
+Tcl_Class		Tcl_MethodDeclarerClass(Tcl_Method method);
+Tcl_Object		Tcl_MethodDeclarerObject(Tcl_Method method);
+int			Tcl_MethodIsPublic(Tcl_Method method);
+int			Tcl_MethodIsType(Tcl_Method method,
+			    const Tcl_MethodType *typePtr,
+			    ClientData *clientDataPtr);
+Tcl_Obj *		Tcl_MethodName(Tcl_Method method);
+Tcl_Method		Tcl_NewMethod(Tcl_Interp *interp, Tcl_Object object,
+			    Tcl_Obj *nameObj, int isPublic,
+			    const Tcl_MethodType *typePtr,
+			    ClientData clientData);
+Tcl_Method		Tcl_NewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
+			    Tcl_Obj *nameObj, int isPublic,
+			    const Tcl_MethodType *typePtr,
+			    ClientData clientData);
+Tcl_Object		Tcl_NewObjectInstance(Tcl_Interp *interp,
+			    Tcl_Class cls, const char *name, int objc,
+			    Tcl_Obj *const *objv, int skip);
+int			Tcl_ObjectDeleted(Tcl_Object object);
+int			Tcl_ObjectContextIsFiltering(
+			    Tcl_ObjectContext context);
+Tcl_Method		Tcl_ObjectContextMethod(Tcl_ObjectContext context);
+Tcl_Object		Tcl_ObjectContextObject(Tcl_ObjectContext context);
+int			Tcl_ObjectContextSkippedArgs(
+			    Tcl_ObjectContext context);
+// ^^^^^^^^^^^^^^^^^^^^^^ MOVE TO TCL.DECLS ^^^^^^^^^^^^^^^^^^^^^^
 
 /*
  * Forward declarations.
@@ -22,36 +56,13 @@ struct Method;
 struct CallContext;
 
 /*
- * The types of callbacks used in method implementations.
- */
-
-typedef int (*Tcl_OOMethodCallProc)(ClientData clientData, Tcl_Interp *interp,
-	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
-typedef void (*Tcl_OOMethodDeleteProc)(ClientData clientData);
-typedef int (*Tcl_OOMethodCloneProc)(ClientData oldClientData,
-	ClientData *newClientData);
-
-typedef struct {
-    const char *name;		/* Name of this type of method, mostly for
-				 * debugging purposes. */
-    Tcl_OOMethodCallProc callPtr;
-				/* How to invoke this method. */
-    Tcl_OOMethodDeleteProc deletePtr;
-				/* How to delete this method's type-specific
-				 * data. */
-    Tcl_OOMethodCloneProc clonePtr;
-				/* How to copy this method's type-specific
-				 * data. */
-} Tcl_OOMethodType;
-
-/*
  * The data that needs to be stored per method. This record is used to collect
  * information about all sorts of methods, including forwards, constructors
  * and destructors.
  */
 
 typedef struct Method {
-    const Tcl_OOMethodType *typePtr;
+    const Tcl_MethodType *typePtr;
 				/* The type of method. If NULL, this is a
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
@@ -241,8 +252,6 @@ typedef struct CallContext {
  * maybe just put in the internal stubs table.
  */
 
-MODULE_SCOPE Object *	TclGetObjectFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 			    Tcl_Obj *bodyObj);
@@ -264,17 +273,6 @@ MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
-MODULE_SCOPE Tcl_Method	TclOONewMethod(Tcl_Interp *interp, Tcl_Object object,
-			    Tcl_Obj *nameObj, int isPublic,
-			    const Tcl_OOMethodType *typePtr,
-			    ClientData clientData);
-MODULE_SCOPE Tcl_Method	TclOONewClassMethod(Tcl_Interp *interp, Tcl_Class cls,
-			    Tcl_Obj *nameObj, int isPublic,
-			    const Tcl_OOMethodType *typePtr,
-			    ClientData clientData);
-MODULE_SCOPE Object *	TclOONewInstance(Tcl_Interp *interp, Class *clsPtr,
-			    const char *name, int objc, Tcl_Obj *const *objv,
-			    int skip);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);

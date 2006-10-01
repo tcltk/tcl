@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.31 2006/09/30 22:41:03 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.32 2006/10/01 21:27:24 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -890,6 +890,16 @@ test oo-19.4 {OO: definer metaclass} {
     (object "::oo::definer" method "unknown" line 1)
     invoked from within
 "oo::definer dog {error woof}"}
+test oo-19.5 {OO: definer metaclass} -body {
+    oo::definer dog {
+	method bark {} {
+	    return "\"woof woof\" says [self]"
+	}
+    }
+    [dog fido] bark
+} -cleanup {
+    catch {dog destroy}
+} -result {"woof woof" says ::fido}
 
 test oo-20.1 {OO: struct class} {
     oo::struct create foo
@@ -1088,6 +1098,212 @@ test oo-21.6 {OO: variable method} -setup {
 } -cleanup {
     testClass destroy
 } -result {0 1 3}
+test oo-21.7 {OO: variable method} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	method a {} {
+	    my variable {b c} d
+	    lappend c $d
+	}
+	method e {} {
+	    my variable b d
+	    return [list $b $d]
+	}
+	method f {x y} {
+	    my variable b d
+	    set b $x
+	    set d $y
+	}
+    }
+    cls create obj
+    obj f p q
+    obj a
+    obj a
+    obj e
+} -cleanup {
+    cls destroy
+} -result {{p q q} q}
+test oo-21.8 {OO: variable method} -setup {
+    oo::class create cls
+} -body {
+    oo::define cls {
+	constructor {} {
+	    namespace eval foo {
+		variable bar 1
+	    }
+	}
+	method ns {} {self namespace}
+	method a {} {
+	    my variable {foo::bar c} d
+	    lappend c $d
+	}
+	method e {} {
+	    my variable {foo::bar b} d
+	    return [list $b $d]
+	}
+	method f {x} {
+	    my variable d
+	    set d $x
+	}
+    }
+    cls create obj
+    obj f p
+    obj a
+    obj a
+    list [obj e] [set [obj ns]::foo::bar]
+} -cleanup {
+    cls destroy
+} -result {{{1 p p} p} {1 p p}}
+test oo-21.9 {OO: variable method} -setup {
+    oo::object create obj
+} -body {
+    oo::define obj {
+	method a {} {
+	    my variable {a ::b}
+	}
+    }
+    obj a
+} -cleanup {
+    obj destroy
+} -returnCodes 1 -result {variable name "::b" illegal: must not contain namespace separator}
+
+test oo-22.1 {OO: inheritance ordering} -setup {
+    oo::class create A
+} -body {
+    oo::define A method m {} {lappend ::result A}
+    oo::class create B {
+	superclass A
+	method m {} {lappend ::result B;next}
+    }
+    oo::class create C {
+	superclass A
+	method m {} {lappend ::result C;next}
+    }
+    oo::class create D {
+	superclass B C
+	method m {} {lappend ::result D;next}
+    }
+    D create o
+    oo::define o method m {} {lappend ::result o;next}
+    set result {}
+    o m
+    return $result
+} -cleanup {
+    A destroy
+} -result {o D B C A}
+test oo-22.2 {OO: inheritance ordering} -setup {
+    oo::class create A
+} -body {
+    oo::define A method m {} {lappend ::result A}
+    oo::class create B {
+	superclass A
+	method m {} {lappend ::result B;next}
+    }
+    oo::class create C {
+	superclass A
+	method m {} {lappend ::result C;next}
+    }
+    oo::class create D {
+	superclass B C
+	method m {} {lappend ::result D;next}
+    }
+    oo::class create Emix {
+	superclass C
+	method m {} {lappend ::result Emix;next}
+    }
+    oo::class create Fmix {
+	superclass Emix
+	method m {} {lappend ::result Fmix;next}
+    }
+    D create o
+    oo::define o method m {} {lappend ::result o;next}
+    oo::define o mixin Fmix
+    set result {}
+    o m
+    return $result
+} -cleanup {
+    A destroy
+} -result {o Fmix Emix D B C A}
+test oo-22.3 {OO: inheritance ordering} -setup {
+    oo::class create A
+} -body {
+    oo::define A method m {} {lappend ::result A}
+    oo::class create B {
+	superclass A
+	method m {} {lappend ::result B;next}
+	method f {} {lappend ::result B-filt;next}
+    }
+    oo::class create C {
+	superclass A
+	method m {} {lappend ::result C;next}
+    }
+    oo::class create D {
+	superclass B C
+	method m {} {lappend ::result D;next}
+    }
+    oo::class create Emix {
+	superclass C
+	method m {} {lappend ::result Emix;next}
+	method f {} {lappend ::result Emix-filt;next}
+    }
+    oo::class create Fmix {
+	superclass Emix
+	method m {} {lappend ::result Fmix;next}
+    }
+    D create o
+    oo::define o {
+	method m {} {lappend ::result o;next}
+	mixin Fmix
+	filter f
+    }
+    set result {}
+    o m
+    return $result
+} -cleanup {
+    A destroy
+} -result {Emix-filt B-filt o Fmix Emix D B C A}
+test oo-22.4 {OO: inheritance ordering} -constraints knownBug -setup {
+    oo::class create A
+} -body {
+    oo::define A method m {} {lappend ::result A}
+    oo::class create B {
+	superclass A
+	method m {} {lappend ::result B;next}
+	method f {} {lappend ::result B-filt;next}
+	method g {} {lappend ::result B-cfilt;next}
+    }
+    oo::class create C {
+	superclass A
+	method m {} {lappend ::result C;next}
+    }
+    oo::class create D {
+	superclass B C
+	method m {} {lappend ::result D;next}
+	method g {} {lappend ::result D-cfilt;next}
+	filter g
+    }
+    oo::class create Emix {
+	superclass C
+	method m {} {lappend ::result Emix;next}
+	method f {} {lappend ::result Emix-filt;next}
+    }
+    oo::class create Fmix {
+	superclass Emix
+	method m {} {lappend ::result Fmix;next}
+    }
+    D create o
+    oo::define o {
+	method m {} {lappend ::result o;next}
+	mixin Fmix
+	filter f
+    }
+    set result {}
+    o m
+    return $result
+} -cleanup {
+    A destroy
+} -result {Emix-filt B-filt o Fmix Emix D-cfilt B-cfilt D B C A}
 
 cleanupTests
 return
