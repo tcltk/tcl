@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.15 2006/03/19 22:47:30 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.16 2006/10/01 13:17:34 patthoyts Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2635,10 +2635,21 @@ TclpUtime(
 {
     int res = 0;
     HANDLE fileHandle;
+    CONST TCHAR *native;
+    DWORD attr = 0;
+    DWORD flags = FILE_ATTRIBUTE_NORMAL;
     FILETIME lastAccessTime, lastModTime;
 
     FromCTime(tval->actime, &lastAccessTime);
     FromCTime(tval->modtime, &lastModTime);
+
+    native = (CONST TCHAR *)Tcl_FSGetNativePath(pathPtr);
+
+    attr = (*tclWinProcs->getFileAttributesProc)(native);
+
+    if (attr != INVALID_FILE_ATTRIBUTES && attr & FILE_ATTRIBUTE_DIRECTORY) {
+	flags = FILE_FLAG_BACKUP_SEMANTICS;
+    }
 
     /*
      * We use the native APIs (not 'utime') because there are some daylight
@@ -2646,9 +2657,8 @@ TclpUtime(
      */
 
     fileHandle = (tclWinProcs->createFileProc) (
-	    (CONST TCHAR *) Tcl_FSGetNativePath(pathPtr),
-	    FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
-	    FILE_ATTRIBUTE_NORMAL, NULL);
+	    native, FILE_WRITE_ATTRIBUTES, 0, NULL,
+	    OPEN_EXISTING, flags, NULL);
 
     if (fileHandle == INVALID_HANDLE_VALUE ||
 	    !SetFileTime(fileHandle, NULL, &lastAccessTime, &lastModTime)) {
