@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.67 2006/08/24 21:47:50 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.68 2006/10/01 20:59:01 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -223,6 +223,7 @@ namespace eval ::testClock {
 	[dict create \
 	     HKEY_CURRENT_USER\\Control\ Panel\\International \
 	     [dict create \
+		  locale 0409 \
 		  sShortDate dd-MMM-yyyy \
 		  sLongDate "'the' dd''' day of' MMMM yyyy" \
 		  sTimeFormat "h:mm:ss tt"] \
@@ -35954,7 +35955,7 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
     } \
     -body {
 	list [::tcl::clock::GuessWindowsTimeZone] \
-	    [clock format 0 -locale system -format "%X %Z"] \
+	    [clock format 0 -locale system -format "%H:%M:%S %Z"] \
 	    [clock format -86400 -format "%Y"]
     } \
     -cleanup {
@@ -35975,7 +35976,7 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	    :America/New_York
 	::tcl::clock::ClearCaches
     } \
-    -result {<-0500>+05:00:00<-0400>+04:00:00,M4.1.0/02:00:00,M10.5.0/02:00:00 { 7:00:00 PM -0500} 1969}
+    -result {<-0500>+05:00:00<-0400>+04:00:00,M4.1.0/02:00:00,M10.5.0/02:00:00 {19:00:00 -0500} 1969}
 
 test clock-50.1 {format / scan -1 as a local time} {
     if {[catch {
