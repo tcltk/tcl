@@ -1,4 +1,9 @@
-2006-10-01 Miguel Sofer  <msofer@users.sf.net>
+2006-10-01  Kevin Kenny  <kennykb@acm.org>
+
+	* tests/clock.test (clock-49.2): Removed a locale dependency
+	that caused a spurious failure in the German locale. [Bug 1567956]
+	
+2006-10-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/Eval.3 (TclEvalObjv): added note on refCount management for
 	the elements of objv, [Bug #730244].
