@@ -1,5 +1,8 @@
 2006-10-01  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* win/tclWinFile.c (TclpUtime): bug #1420432 - file mtime fails
+	* tests/cmdAH.test:	        for directories on windows
+
 	* tests/winFile.test: Handle Msys environment a little differently
 	in getuser function. Fix for bug 1567956.
 
