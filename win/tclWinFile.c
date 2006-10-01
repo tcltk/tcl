@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.87 2006/10/01 13:03:56 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.88 2006/10/01 21:30:04 patthoyts Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -88,6 +88,9 @@
     CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #  define FSCTL_DELETE_REPARSE_POINT \
     CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_SPECIAL_ACCESS)
+#endif
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #endif
 
 /*
@@ -2116,7 +2119,7 @@ NativeStat(
 	     */
 
 	    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
-	    if (attr == 0xffffffff) {
+	    if (attr == INVALID_FILE_ATTRIBUTES) {
 		Tcl_SetErrno(ENOENT);
 		return -1;
 	    }
@@ -2659,7 +2662,7 @@ TclpObjNormalizePath(
 		 */
 
 		if (isDrive) {
-		    if (GetFileAttributesA(nativePath) == 0xffffffff) {
+		    if (GetFileAttributesA(nativePath) == INVALID_FILE_ATTRIBUTES) {
 			/*
 			 * File doesn't exist.
 			 */
@@ -2726,7 +2729,7 @@ TclpObjNormalizePath(
 
 			handle = FindFirstFileA(nativePath, &fData);
 			if (handle == INVALID_HANDLE_VALUE) {
-			    if (GetFileAttributesA(nativePath) == 0xffffffff) {
+			    if (GetFileAttributesA(nativePath) == INVALID_FILE_ATTRIBUTES) {
 				/*
 				 * File doesn't exist.
 				 */
