@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.53 2006/10/01 21:27:24 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.54 2006/10/02 22:28:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -143,8 +143,6 @@ static int		SimpleInvoke(ClientData clientData,
 static int		StructInvoke(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		SimpleClone(ClientData clientData,
-			    ClientData *newClientData);
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -181,9 +179,9 @@ static int		ObjectLinkVar(ClientData clientData,
 static int		ObjectUnknown(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		StructVar(ClientData clientData, Tcl_Interp *interp,
-			    Tcl_ObjectContext context, int objc,
-			    Tcl_Obj *const *objv);
+static int		StructVarName(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
 static int		StructVwait(ClientData clientData, Tcl_Interp *interp,
 			    Tcl_ObjectContext context, int objc,
 			    Tcl_Obj *const *objv);
@@ -210,11 +208,11 @@ static const Tcl_MethodType fwdMethodType = {
 };
 static const Tcl_MethodType coreMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "core method",
-    SimpleInvoke, NULL, SimpleClone
+    SimpleInvoke, NULL, NULL
 };
 static const Tcl_MethodType structMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "core forward method",
-    StructInvoke, NULL, SimpleClone
+    StructInvoke, NULL, NULL
 };
 
 /*
@@ -240,6 +238,7 @@ TclOOInit(
 {
     Interp *iPtr = (Interp *) interp;
     Foundation *fPtr;
+    Class *definerCls, *structCls;
     int i;
     Tcl_DString buffer;
 
@@ -337,11 +336,10 @@ TclOOInit(
      * convenience methods.
      */
 
-    fPtr->definerCls = AllocClass(interp,
-	    AllocObject(interp, "::oo::definer"));
-    fPtr->definerCls->superclasses.list[0] = fPtr->classCls;
-    TclOORemoveFromSubclasses(fPtr->definerCls, fPtr->objectCls);
-    TclOOAddToSubclasses(fPtr->definerCls, fPtr->classCls);
+    definerCls = AllocClass(interp, AllocObject(interp, "::oo::definer"));
+    definerCls->superclasses.list[0] = fPtr->classCls;
+    TclOORemoveFromSubclasses(definerCls, fPtr->objectCls);
+    TclOOAddToSubclasses(definerCls, fPtr->classCls);
     {
 	Tcl_Obj *argsPtr, *bodyPtr;
 
@@ -352,14 +350,14 @@ TclOOInit(
 		"method parameter superclass unexport "
 		"} {define $c self.forward $cmd $d $c $cmd}\n"
 		"next $definitionScript", -1);
-	fPtr->definerCls->constructorPtr = TclNewProcClassMethod(interp,
-		fPtr->definerCls, 0, NULL, argsPtr, bodyPtr);
+	definerCls->constructorPtr = TclNewProcClassMethod(interp, definerCls,
+		0, NULL, argsPtr, bodyPtr);
 	argsPtr = Tcl_NewStringObj("className {definitionScript {}}", -1);
 	bodyPtr = Tcl_NewStringObj("uplevel 1 [list "
 		"[self] create $className $definitionScript]", -1);
-	TclNewProcMethod(interp, fPtr->definerCls->thisPtr, 0,
+	TclNewProcMethod(interp, definerCls->thisPtr, 0,
 		fPtr->unknownMethodNameObj, argsPtr, bodyPtr);
-	TclNewProcClassMethod(interp, fPtr->definerCls, 0,
+	TclNewProcClassMethod(interp, definerCls, 0,
 		fPtr->unknownMethodNameObj, argsPtr, bodyPtr);
     }
 
@@ -368,17 +366,17 @@ TclOOInit(
      * Structures are objects that expose their internal state variables.
      */
 
-    fPtr->structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
+    structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
     for (i=0 ; structCmds[i].cmdName!=NULL ; i++) {
 	Tcl_Obj *namePtr = Tcl_NewStringObj(structCmds[i].cmdName, -1);
 
-	Tcl_NewClassMethod(interp, (Tcl_Class) fPtr->structCls, namePtr, 1,
+	Tcl_NewClassMethod(interp, (Tcl_Class) structCls, namePtr, 1,
 		&structMethodType, &structCmds[i]);
     }
-    Tcl_NewClassMethod(interp, (Tcl_Class) fPtr->structCls,
+    Tcl_NewClassMethod(interp, (Tcl_Class) structCls,
 	    Tcl_NewStringObj("eval", 4), 1, NULL, NULL);
-    DeclareClassMethod(interp, fPtr->structCls, "var", 0, StructVar);
-    DeclareClassMethod(interp, fPtr->structCls, "vwait", 1, StructVwait);
+    DeclareClassMethod(interp, structCls, "var", 0, StructVarName);
+    DeclareClassMethod(interp, structCls, "vwait", 1, StructVwait);
 
     return TCL_OK;
 }
@@ -1234,9 +1232,9 @@ DeclareClassMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * SimpleInvoke, SimpleClone --
+ * SimpleInvoke --
  *
- *	How to invoke and clone a simple method.
+ *	How to invoke a simple method.
  *
  * ----------------------------------------------------------------------
  */
@@ -1253,16 +1251,6 @@ SimpleInvoke(
     Tcl_MethodCallProc callPtr = clientData;
 
     return (*callPtr)(NULL, interp, context, objc, objv);
-}
-
-static int
-SimpleClone(
-    ClientData clientData,	/* Pointer to function that implements the
-				 * method. */
-    ClientData *newClientData)	/* Place to copy the pointer to. */
-{
-    *newClientData = clientData;
-    return TCL_OK;
 }
 
 /*
@@ -2746,7 +2734,7 @@ ObjectUnknown(
  *
  * ObjectLinkVar --
  *
- *	Implementation of oo::object->var method.
+ *	Implementation of oo::object->variable method.
  *
  * ----------------------------------------------------------------------
  */
@@ -2866,15 +2854,15 @@ ObjectLinkVar(
 /*
  * ----------------------------------------------------------------------
  *
- * StructVar --
+ * StructVarName --
  *
- *	Implementation of the oo::struct->variable method.
+ *	Implementation of the oo::struct->var method.
  *
  * ----------------------------------------------------------------------
  */
 
 static int
-StructVar(
+StructVarName(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.29 2006/10/02 03:18:56 dgp Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.30 2006/10/02 22:28:00 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -182,12 +182,6 @@ typedef struct Class {
 typedef struct Foundation {
     struct Class *objectCls;	/* The root of the object system. */
     struct Class *classCls;	/* The class of all classes. */
-    struct Class *definerCls;	/* A metaclass that includes methods that make
-				 * classes more convenient to work with at a
-				 * cost of bloat. */
-    struct Class *structCls;	/* A metaclass that includes methods that make
-				 * it easier to build data-oriented
-				 * classes. */
     Tcl_Namespace *ooNs;	/* Master ::oo namespace. */
     Tcl_Namespace *defineNs;	/* Namespace containing special commands for
 				 * manipulating objects and classes. The
