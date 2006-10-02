@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.32 2006/10/01 21:27:24 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.33 2006/10/02 22:52:37 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -630,15 +630,19 @@ test oo-16.2 {OO: object introspection} -body {
 test oo-16.3 {OO: object introspection} -body {
     info object oo::object gorp
 } -returnCodes 1 -result {bad subcommand "gorp": must be args, body, class, default, filters, isa, methods, mixins, or vars}
-test oo-16.4 {OO: object introspection} {
+test oo-16.4 {OO: object introspection} -setup {
+    oo::class create meta { superclass oo::class }
+} -body {
     list [info object oo::object class] \
 	[info object oo::class class] \
 	[info object oo::object isa class] \
 	[info object oo::object isa metaclass] \
-	[info object oo::definer isa metaclass] \
+	[info object meta isa metaclass] \
 	[info object oo::object isa object] \
 	[info object oo::define isa object]
-} {::oo::class ::oo::class 1 0 1 1 0}
+} -cleanup {
+    meta destroy
+} -result {::oo::class ::oo::class 1 0 1 1 0}
 test oo-16.5 {OO: object introspection} {info object oo::object methods} {}
 test oo-16.6 {OO: object introspection} {
     oo::object create foo
@@ -662,7 +666,7 @@ test oo-16.8 {OO: object introspection} {
     oo::define foo mixin bar
     set result [list [info object foo mixins] \
 		    [info object foo isa mixin bar] \
-		    [info object foo isa mixin oo::definer]]
+		    [info object foo isa mixin oo::class]]
     foo destroy
     bar destroy
     return $result
@@ -813,213 +817,29 @@ test oo-18.5 {OO: more error traces from the guts} -setup {
     invoked from within
 "obj eval {error bar}"}}
 
-test oo-19.1 {OO: definer metaclass} {
-    oo::definer create foo {
-	method Foo {} {
-	    lappend ::result "=Foo="
-	}
-    }
-    foo constructor {} {
-	lappend ::result "made a foo [self]"
-    }
-    foo destructor {
-	lappend ::result "killing a foo [self]"
-    }
-    foo export Foo
-    set result {}
-    foo create bar
-    bar Foo
-    bar destroy
-    foo destroy
-    return $result
-} {{made a foo ::bar} =Foo= {killing a foo ::bar}}
-# Note that this next method call actually uses _two_ forwarding rewrites.
-# First from the 'method' forwarded-method to the oo::define command.
-# Second from the oo::define command to the oo::define::method command.
-test oo-19.2 {OO: definer metaclass} -setup {
-    oo::definer create dclass
-} -body {
-    list [catch {dclass method badSyntax} msg] $msg $errorInfo
-} -cleanup {
-    dclass destroy
-} -result {1 {wrong # args: should be "dclass method name args body"} {wrong # args: should be "dclass method name args body"
-    while executing
-"dclass method badSyntax"}}
-test oo-19.3 {OO: definer metaclass} -body {
-    oo::definer dog {
-	constructor {} {
-	    variable barks 0
-	    global result
-	    lappend result puppy
-	}
-	method bark {} {
-	    variable barks
-	    global result
-	    lappend result woof\#[incr barks]
-	}
-	destructor {
-	    global result
-	    lappend result put-down
-	}
-    }
-    set result {}
-    dog create fido
-    fido bark
-    fido bark
-    fido bark
-    fido destroy
-    return $result
-} -cleanup {
-    catch {dog destroy}
-} -result "puppy woof\#1 woof\#2 woof\#3 put-down"
-test oo-19.4 {OO: definer metaclass} {
-    catch {oo::definer dog {error woof}}
-    return $::errorInfo
-} {woof
-    while executing
-"error woof"
-    (in definition script for object "::dog" line 1)
-    invoked from within
-"next $definitionScript"
-    (class "::oo::definer" constructor line 2)
-    invoked from within
-"::oo::definer create dog {error woof}"
-    ("uplevel" body line 1)
-    invoked from within
-"uplevel 1 [list [self] create $className $definitionScript]"
-    (object "::oo::definer" method "unknown" line 1)
-    invoked from within
-"oo::definer dog {error woof}"}
-test oo-19.5 {OO: definer metaclass} -body {
-    oo::definer dog {
-	method bark {} {
-	    return "\"woof woof\" says [self]"
-	}
-    }
-    [dog fido] bark
-} -cleanup {
-    catch {dog destroy}
-} -result {"woof woof" says ::fido}
-
-test oo-20.1 {OO: struct class} {
-    oo::struct create foo
-    foo destroy
-} {}
-test oo-20.2 {OO: struct class} -body {
-    oo::struct create foo
-    set x -
-    set result $x[foo set x a][foo set x][foo set x b][foo set x]$x[foo unset x]$x
-} -cleanup {
-    foo destroy
-} -result -aabb--
-test oo-20.3 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance set
-} -returnCodes 1 -cleanup {
-    structInstance destroy
-} -result "wrong # args: should be \"structInstance set varName ?newValue?\""
-test oo-20.4 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance set x y z
-} -returnCodes 1 -cleanup {
-    structInstance destroy
-} -result "wrong # args: should be \"structInstance set varName ?newValue?\""
-# These next two cases are *very* tricky rewrites!
-test oo-20.5 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance trace add x
-} -returnCodes 1 -cleanup {
-    structInstance destroy
-} -result "wrong # args: should be \"structInstance trace add name opList command\""
-test oo-20.6 {OO: struct class} -setup {
-    oo::struct create structInstance
+test oo-19.1 {OO: varname method} -setup {
+    oo::object create inst
+    oo::define inst export eval
     set result {}
 } -body {
-    structInstance trace add x write foo
-    set ns [structInstance eval namespace current]
+    inst eval {trace add variable x write foo}
+    set ns [inst eval namespace current]
     proc foo args {
 	global ns result
 	set context [uplevel 1 namespace current]
 	lappend result $args [expr {
 	    $ns eq $context ? "ok" : [list $ns ne $context]
 	}] [expr {
-	    "${ns}::x" eq [uplevel 1 my var x] ? "ok" : [list ${ns}::x ne [uplevel 1 my var x]]
+	    "${ns}::x" eq [uplevel 1 my varname x] ? "ok" : [list ${ns}::x ne [uplevel 1 my varname x]]
 	}]
     }
-    lappend result [structInstance set x 0]
+    lappend result [inst eval set x 0]
 } -cleanup {
-    structInstance destroy
+    inst destroy
     rename foo {}
 } -result {{x {} write} ok ok 0}
-test oo-20.7 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance ?
-} -returnCodes 1 -cleanup {
-    structInstance destroy
-} -result {unknown method "?": must be append, array, destroy, eval, exists, incr, lappend, set, trace, unset or vwait}
-test oo-20.8 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance eval my ?
-} -returnCodes 1 -cleanup {
-    structInstance destroy
-} -result {unknown method "?": must be append, array, destroy, eval, exists, incr, lappend, set, trace, unknown, unset, var, variable or vwait}
-test oo-20.9 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance array set x {a b c d}
-    structInstance append x(a) [structInstance set x(c)] \
-	[structInstance exists x] [structInstance exists x(e)]
-} -cleanup {
-    structInstance destroy
-} -result bd10
-test oo-20.10 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance exists x(a)
-    structInstance set x ok
-} -cleanup {
-    structInstance destroy
-} -result ok
-test oo-20.11 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance set x 0
-    structInstance incr x
-    structInstance append x 3 4
-    structInstance incr x 2
-    structInstance lappend x foo bar
-} -cleanup {
-    structInstance destroy
-} -result {136 foo bar}
-test oo-20.12 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance set x 0
-    after 5 structInstance destroy
-    structInstance vwait x
-} -result {}
-test oo-20.13 {OO: struct class} -setup {
-    oo::struct create structInstance
-} -body {
-    structInstance set x badRef
-    set after0 [after 500 structInstance destroy]
-    set after1 [after 10 structInstance set x done]
-    set after2 [after 5 set x early]
-    structInstance vwait x
-    after cancel $after0
-    after cancel $after1
-    after cancel $after2
-    structInstance set x
-} -cleanup {
-    catch {structInstance destroy}
-} -result done
 
-test oo-21.1 {OO: variable method} -body {
+test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
 	constructor {} {
 	    my variable ok
@@ -1030,7 +850,7 @@ test oo-21.1 {OO: variable method} -body {
 } -cleanup {
     catch {testClass destroy}
 } -result ok
-test oo-21.2 {OO: variable method} -body {
+test oo-20.2 {OO: variable method} -body {
     oo::class create testClass {
 	constructor {} {
 	    my variable a b c
@@ -1041,35 +861,34 @@ test oo-21.2 {OO: variable method} -body {
 } -cleanup {
     catch {testClass destroy}
 } -result {a b c}
-test oo-21.3 {OO: variable method} -body {
+test oo-20.3 {OO: variable method} -body {
     oo::class create testClass {
-	superclass oo::struct
+	export varname
 	method bar {} {
 	    my variable a(b)
 	}
     }
     testClass create foo
-    foo array set a {b c}
+    array set [foo varname a] {b c}
     foo bar
 } -returnCodes 1 -cleanup {
     catch {testClass destroy}
 } -result {can't define "a(b)": name refers to an element in an array}
-test oo-21.4 {OO: variable method} -body {
+test oo-20.4 {OO: variable method} -body {
     oo::class create testClass {
-	superclass oo::struct
+	export varname
 	method bar {} {
 	    my variable a(b)
 	}
     }
     testClass create foo
-    foo set a b
+    set [foo varname a] b
     foo bar
 } -returnCodes 1 -cleanup {
     catch {testClass destroy}
 } -result {can't define "a(b)": name refers to an element in an array}
-test oo-21.5 {OO: variable method} -body {
+test oo-20.5 {OO: variable method} -body {
     oo::class create testClass {
-	superclass oo::struct
 	method bar {} {
 	    my variable a::b
 	}
@@ -1079,10 +898,10 @@ test oo-21.5 {OO: variable method} -body {
 } -returnCodes 1 -cleanup {
     catch {testClass destroy}
 } -result {variable name "a::b" illegal: must not contain namespace separator}
-test oo-21.6 {OO: variable method} -setup {
+test oo-20.6 {OO: variable method} -setup {
     oo::class create testClass {
-	superclass oo::struct
 	self.export eval
+	export varname
     }
 } -body {
     testClass eval variable a 0
@@ -1091,14 +910,14 @@ test oo-21.6 {OO: variable method} -setup {
 	set a 3
     }
     oo::define [testClass create boo] export variable
-    foo set a 1
-    boo set a 2
+    set [foo varname a] 1
+    set [boo varname a] 2
     foo bar boo
-    list [testClass eval set a] [foo set a] [boo set a]
+    list [testClass eval set a] [set [foo varname a]] [set [boo varname a]]
 } -cleanup {
     testClass destroy
 } -result {0 1 3}
-test oo-21.7 {OO: variable method} -setup {
+test oo-20.7 {OO: variable method} -setup {
     oo::class create cls
 } -body {
     oo::define cls {
@@ -1124,7 +943,7 @@ test oo-21.7 {OO: variable method} -setup {
 } -cleanup {
     cls destroy
 } -result {{p q q} q}
-test oo-21.8 {OO: variable method} -setup {
+test oo-20.8 {OO: variable method} -setup {
     oo::class create cls
 } -body {
     oo::define cls {
@@ -1155,7 +974,7 @@ test oo-21.8 {OO: variable method} -setup {
 } -cleanup {
     cls destroy
 } -result {{{1 p p} p} {1 p p}}
-test oo-21.9 {OO: variable method} -setup {
+test oo-20.9 {OO: variable method} -setup {
     oo::object create obj
 } -body {
     oo::define obj {
@@ -1168,7 +987,7 @@ test oo-21.9 {OO: variable method} -setup {
     obj destroy
 } -returnCodes 1 -result {variable name "::b" illegal: must not contain namespace separator}
 
-test oo-22.1 {OO: inheritance ordering} -setup {
+test oo-21.1 {OO: inheritance ordering} -setup {
     oo::class create A
 } -body {
     oo::define A method m {} {lappend ::result A}
@@ -1192,7 +1011,7 @@ test oo-22.1 {OO: inheritance ordering} -setup {
 } -cleanup {
     A destroy
 } -result {o D B C A}
-test oo-22.2 {OO: inheritance ordering} -setup {
+test oo-21.2 {OO: inheritance ordering} -setup {
     oo::class create A
 } -body {
     oo::define A method m {} {lappend ::result A}
@@ -1225,7 +1044,7 @@ test oo-22.2 {OO: inheritance ordering} -setup {
 } -cleanup {
     A destroy
 } -result {o Fmix Emix D B C A}
-test oo-22.3 {OO: inheritance ordering} -setup {
+test oo-21.3 {OO: inheritance ordering} -setup {
     oo::class create A
 } -body {
     oo::define A method m {} {lappend ::result A}
@@ -1263,7 +1082,7 @@ test oo-22.3 {OO: inheritance ordering} -setup {
 } -cleanup {
     A destroy
 } -result {Emix-filt B-filt o Fmix Emix D B C A}
-test oo-22.4 {OO: inheritance ordering} -constraints knownBug -setup {
+test oo-21.4 {OO: inheritance ordering} -constraints knownBug -setup {
     oo::class create A
 } -body {
     oo::define A method m {} {lappend ::result A}

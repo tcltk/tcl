@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.54 2006/10/02 22:28:00 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.55 2006/10/02 22:52:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -49,29 +49,6 @@ static const struct {
     {"self.unexport", TclOODefineUnexportObjCmd, 1},
     {"self.class", TclOODefineSelfClassObjCmd, 1},
     {NULL, NULL, 0}
-};
-
-/*
- * Forwarded methods in oo::struct.
- */
-
-struct StructCmdInfo {
-    const char *cmdName;
-    int varIdx;
-    const char *extraPrefix;
-    const char *extraInsert;
-    int flags;
-};
-static struct StructCmdInfo structCmds[] = {
-    {"append",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {"array",	1, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {"exists",	0, "info",NULL,	      0},
-    {"incr",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {"lappend", 0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {"set",	0, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {"trace",	1, NULL,  "variable", TCL_LEAVE_ERR_MSG},
-    {"unset",  -1, NULL,  NULL,	      TCL_LEAVE_ERR_MSG},
-    {NULL}
 };
 
 /*
@@ -140,9 +117,6 @@ static int		PrivateObjectCmd(ClientData clientData,
 static int		SimpleInvoke(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		StructInvoke(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -179,15 +153,9 @@ static int		ObjectLinkVar(ClientData clientData,
 static int		ObjectUnknown(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		StructVarName(ClientData clientData,
+static int		ObjectVarName(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
-static int		StructVwait(ClientData clientData, Tcl_Interp *interp,
-			    Tcl_ObjectContext context, int objc,
-			    Tcl_Obj *const *objv);
-static char *		StructVwaitVarProc(ClientData clientData,
-			    Tcl_Interp *interp, const char *name1,
-			    const char *name2, int flags);
 
 static int		NextObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -209,10 +177,6 @@ static const Tcl_MethodType fwdMethodType = {
 static const Tcl_MethodType coreMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "core method",
     SimpleInvoke, NULL, NULL
-};
-static const Tcl_MethodType structMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "core forward method",
-    StructInvoke, NULL, NULL
 };
 
 /*
@@ -238,7 +202,6 @@ TclOOInit(
 {
     Interp *iPtr = (Interp *) interp;
     Foundation *fPtr;
-    Class *definerCls, *structCls;
     int i;
     Tcl_DString buffer;
 
@@ -300,6 +263,7 @@ TclOOInit(
     DeclareClassMethod(interp, fPtr->objectCls, "eval", 0, ObjectEval);
     DeclareClassMethod(interp, fPtr->objectCls, "unknown", 0, ObjectUnknown);
     DeclareClassMethod(interp, fPtr->objectCls, "variable", 0, ObjectLinkVar);
+    DeclareClassMethod(interp, fPtr->objectCls, "varname", 0, ObjectVarName);
     DeclareClassMethod(interp, fPtr->classCls, "create", 1, ClassCreate);
     DeclareClassMethod(interp, fPtr->classCls, "new", 1, ClassNew);
 
@@ -330,53 +294,6 @@ TclOOInit(
 	fPtr->classCls->constructorPtr = TclNewProcClassMethod(interp,
 		fPtr->classCls, 0, NULL, argsPtr, bodyPtr);
     }
-
-    /*
-     * Build the definer metaclass, which is a kind of class with many
-     * convenience methods.
-     */
-
-    definerCls = AllocClass(interp, AllocObject(interp, "::oo::definer"));
-    definerCls->superclasses.list[0] = fPtr->classCls;
-    TclOORemoveFromSubclasses(definerCls, fPtr->objectCls);
-    TclOOAddToSubclasses(definerCls, fPtr->classCls);
-    {
-	Tcl_Obj *argsPtr, *bodyPtr;
-
-	argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
-	bodyPtr = Tcl_NewStringObj(
-		"set c [self];set d [namespace origin define];foreach cmd {"
-		"constructor destructor export forward "
-		"method parameter superclass unexport "
-		"} {define $c self.forward $cmd $d $c $cmd}\n"
-		"next $definitionScript", -1);
-	definerCls->constructorPtr = TclNewProcClassMethod(interp, definerCls,
-		0, NULL, argsPtr, bodyPtr);
-	argsPtr = Tcl_NewStringObj("className {definitionScript {}}", -1);
-	bodyPtr = Tcl_NewStringObj("uplevel 1 [list "
-		"[self] create $className $definitionScript]", -1);
-	TclNewProcMethod(interp, definerCls->thisPtr, 0,
-		fPtr->unknownMethodNameObj, argsPtr, bodyPtr);
-	TclNewProcClassMethod(interp, definerCls, 0,
-		fPtr->unknownMethodNameObj, argsPtr, bodyPtr);
-    }
-
-    /*
-     * Build the 'struct' class, which is useful for building "structures".
-     * Structures are objects that expose their internal state variables.
-     */
-
-    structCls = AllocClass(interp, AllocObject(interp, "::oo::struct"));
-    for (i=0 ; structCmds[i].cmdName!=NULL ; i++) {
-	Tcl_Obj *namePtr = Tcl_NewStringObj(structCmds[i].cmdName, -1);
-
-	Tcl_NewClassMethod(interp, (Tcl_Class) structCls, namePtr, 1,
-		&structMethodType, &structCmds[i]);
-    }
-    Tcl_NewClassMethod(interp, (Tcl_Class) structCls,
-	    Tcl_NewStringObj("eval", 4), 1, NULL, NULL);
-    DeclareClassMethod(interp, structCls, "var", 0, StructVarName);
-    DeclareClassMethod(interp, structCls, "vwait", 1, StructVwait);
 
     return TCL_OK;
 }
@@ -1251,113 +1168,6 @@ SimpleInvoke(
     Tcl_MethodCallProc callPtr = clientData;
 
     return (*callPtr)(NULL, interp, context, objc, objv);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * StructInvoke --
- *
- *	How to invoke the special sort of forwarded methods used by the
- *	oo::struct class. In many ways, this is a complicated and nasty hack.
- *
- * ----------------------------------------------------------------------
- */
-
-static int
-StructInvoke(
-    ClientData clientData,	/* Pointer to some per-method context. */
-    Tcl_Interp *interp,
-    Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* Arguments as actually seen. */
-{
-    CallContext *contextPtr = (CallContext *) context;
-    struct StructCmdInfo *infoPtr = clientData;
-    Tcl_CallFrame *dummyFrame;
-    Var *dummyAryVar;
-    int result, len;
-    Tcl_Obj **argObjs;
-
-    /*
-     * Set the object's namespace as current context.
-     */
-
-    TclPushStackFrame(interp, &dummyFrame, contextPtr->oPtr->namespacePtr, 0);
-
-    /*
-     * Ensure that the variables exist properly (even if in an undefined
-     * state) before we do the call to the underlying code. This is required
-     * if we are to enforce the specification that variables are to be always
-     * interpreted as variables in the namespace of the class. However, we
-     * only do this if we can fail; for the case where we can't - currently
-     * just targetting [info exists] - we skip this.
-     */
-
-    if (!(infoPtr->flags & TCL_LEAVE_ERR_MSG)) {
-	goto doForwardEnsemble;
-    }
-
-    if (infoPtr->varIdx < 0) {
-	int i;
-
-	for (i=contextPtr->skip ; i<objc ; i++) {
-	    if (TclObjLookupVar(interp, objv[i], NULL,
-		    TCL_NAMESPACE_ONLY|infoPtr->flags, "refer to", 1, 0,
-		    &dummyAryVar)==NULL) {
-		TclPopStackFrame(interp);
-		return TCL_ERROR;
-	    }
-	}
-    } else if (infoPtr->varIdx+contextPtr->skip >= objc) {
-	Tcl_Obj *prefixObj = Tcl_NewStringObj(infoPtr->cmdName, -1);
-
-	argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip, 1,
-		&prefixObj, 0, NULL, &len);
-	goto doInvoke;
-    } else if (TclObjLookupVar(interp, objv[infoPtr->varIdx+contextPtr->skip],
-	    NULL, TCL_NAMESPACE_ONLY|infoPtr->flags, "refer to", 1, 0,
-	    &dummyAryVar) == NULL) {
-	TclPopStackFrame(interp);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Construct the forward to the command within the object's namespace.
-     */
-
-  doForwardEnsemble:
-    if (infoPtr->extraPrefix) {
-	Tcl_Obj *prefix[2];
-
-	prefix[1] = Tcl_NewStringObj(infoPtr->cmdName, -1);
-	prefix[0] = Tcl_NewStringObj(infoPtr->extraPrefix, -1);
-	argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip, 2,
-		prefix, 0, NULL, &len);
-    } else {
-	Tcl_Obj *prefixObj = Tcl_NewStringObj(infoPtr->cmdName, -1);
-	Tcl_Obj *insertObj = (infoPtr->extraInsert ?
-		Tcl_NewStringObj(infoPtr->extraInsert, -1) : NULL);
-
-	argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip, 1,
-		&prefixObj, 2, insertObj, &len);
-    }
-
-    /*
-     * Now we have constructed the arguments to use, pass through to the
-     * command we are forwarding to.
-     */
-
-  doInvoke:
-    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
-    ckfree((char *) argObjs);
-
-    /*
-     * We're done now; drop the context namespace.
-     */
-
-    TclPopStackFrame(interp);
-    return result;
 }
 
 /*
@@ -2854,15 +2664,15 @@ ObjectLinkVar(
 /*
  * ----------------------------------------------------------------------
  *
- * StructVarName --
+ * ObjectVarName --
  *
- *	Implementation of the oo::struct->var method.
+ *	Implementation of the oo::object->varname method.
  *
  * ----------------------------------------------------------------------
  */
 
 static int
-StructVarName(
+ObjectVarName(
     ClientData clientData,	/* Ignored. */
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
@@ -2918,115 +2728,6 @@ StructVarName(
     Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * StructVwait --
- *
- *	Implementation of the oo::struct->vwait command.
- *
- * ----------------------------------------------------------------------
- */
-
-static int
-StructVwait(
-    ClientData clientData,	/* Ignored. */
-    Tcl_Interp *interp,		/* Interpreter in which to create the object;
-				 * also used for error reporting. */
-    Tcl_ObjectContext context,	/* The object/call context. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* The actual arguments. */
-{
-    Tcl_CallFrame *dummyFrame;
-    int done, foundEvent;
-    Tcl_Namespace *objectNsPtr;
-
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"varName");
-	return TCL_ERROR;
-    }
-    objectNsPtr = Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
-
-    /*
-     * Set up the trace. Note that, unlike the normal [vwait] implementation,
-     * this code locates the variable within the pushed namespace context. We
-     * only keep the namespace context on the Tcl stack for as short a time as
-     * possible. (Modifying the calling context like this is a horrible hack,
-     * but fast. We only push a context if we are in the global scope.)
-     */
-
-    TclPushStackFrame(interp, &dummyFrame, objectNsPtr, 0);
-    if (Tcl_TraceVar(interp, TclGetString(objv[objc-1]),
-	    TCL_NAMESPACE_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-	    StructVwaitVarProc, &done) != TCL_OK) {
-	TclPopStackFrame(interp);
-	return TCL_ERROR;
-    }
-    TclPopStackFrame(interp);
-
-    /*
-     * Run an event loop until one of:
-     * 1) our trace is triggered by a write or unset of the variable,
-     * 2) there are no further event handlers (a blocking case), or
-     * 3) a limit has triggered.
-     */
-
-    done = 0;
-    foundEvent = 1;
-    while (!done && foundEvent) {
-	foundEvent = Tcl_DoOneEvent(TCL_ALL_EVENTS);
-	if (Tcl_LimitExceeded(interp)) {
-	    break;
-	}
-    }
-
-    /*
-     * Clear out the trace if the namespace isn't also going away; if the
-     * namespace is doomed, things are going to be complicated to unpick if we
-     * try to do it here, the trace will be cleaned out anyway and we're done.
-     */
-
-    if (!(((Namespace *) objectNsPtr)->flags & (NS_DYING|NS_KILLED))) {
-	TclPushStackFrame(interp, &dummyFrame, objectNsPtr, 0);
-	Tcl_UntraceVar(interp, TclGetString(objv[objc-1]),
-		TCL_NAMESPACE_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-		StructVwaitVarProc, &done);
-	TclPopStackFrame(interp);
-    }
-
-    /*
-     * Now produce error messages (if any) and return.
-     */
-
-    Tcl_ResetResult(interp);
-    if (!foundEvent) {
-	Tcl_AppendResult(interp, "can't wait for variable \"",
-		TclGetString(objv[objc-1]), "\": would wait forever", NULL);
-	return TCL_ERROR;
-    }
-    if (!done) {
-	Tcl_AppendResult(interp, "limit exceeded", NULL);
-	return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-	/* ARGSUSED */
-static char *
-StructVwaitVarProc(
-    ClientData clientData,	/* Pointer to integer to set to 1. */
-    Tcl_Interp *interp,		/* Interpreter containing variable. */
-    const char *name1,		/* Name of variable. */
-    const char *name2,		/* Second part of variable name. */
-    int flags)			/* Information about what happened. */
-{
-    int *donePtr = clientData;
-
-    *donePtr = 1;
-    return NULL;
 }
 
 /*
