@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.13 2006/08/30 17:35:24 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.14 2006/10/02 18:30:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2130,6 +2130,10 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	     */
 	    if (globFlags & TCL_GLOBMODE_DIR) {
 		Tcl_DStringAppend(&buffer,separators,1);
+		/* Try to borrow that separator from the tail */
+		if (*tail == *separators) {
+		    tail++;
+		}
 	    }
 	    prefixLen++;
 	}
