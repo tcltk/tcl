@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.55 2006/10/02 22:52:37 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.56 2006/10/03 23:32:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1579,7 +1579,8 @@ ObjectCmd(
     }
 
     contextPtr = GetCallContext(iPtr->ooFoundation, oPtr, objv[1],
-	    (publicOnly ? PUBLIC_METHOD : 0), cachePtr);
+	    (publicOnly ? PUBLIC_METHOD :0) | (oPtr->flags & FILTER_HANDLING),
+	    cachePtr);
     if (contextPtr == NULL) {
 	Tcl_AppendResult(interp, "impossible to invoke method \"",
 		TclGetString(objv[1]),
@@ -1652,6 +1653,8 @@ InvokeContext(
 {
     Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
     int result, isFirst = (contextPtr->index == 0);
+    int isFilter = contextPtr->callChain[contextPtr->index].isFilter;
+    int wasFilter;
 
     /*
      * If this is the first step along the chain, we preserve the method
@@ -1667,9 +1670,34 @@ InvokeContext(
 	}
     }
 
+    /*
+     * Save whether we were in a filter and set up whether we are now.
+     */
+
+    wasFilter = contextPtr->oPtr->flags & FILTER_HANDLING;
+    if (isFilter || contextPtr->flags & FILTER_HANDLING) {
+	contextPtr->oPtr->flags |= FILTER_HANDLING;
+    } else {
+	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
+    }
+
+    /*
+     * Run the method implementation.
+     */
+
     result = mPtr->typePtr->callProc(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 
+    /*
+     * Restore the old filter-ness, release any locks on method
+     * implementations, and return the result code.
+     */
+
+    if (wasFilter) {
+	contextPtr->oPtr->flags |= FILTER_HANDLING;
+    } else {
+	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
+    }
     if (isFirst) {
 	int i;
 
@@ -1850,13 +1878,15 @@ GetCallContext(
 				 * constructors and destructors. */
 {
     CallContext *contextPtr;
-    int i, count, doFilters = 0;
+    int i, count, doFilters;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
-    if (flags & (CONSTRUCTOR | DESTRUCTOR)) {
+    if (flags & (CONSTRUCTOR|DESTRUCTOR|FILTER_HANDLING) || (oPtr->flags & FILTER_HANDLING)) {
 	hPtr = NULL;
+	doFilters = 0;
     } else {
+	doFilters = 1;
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    contextPtr = Tcl_GetHashValue(hPtr);
@@ -1876,9 +1906,9 @@ GetCallContext(
     contextPtr->localEpoch = oPtr->epoch;
     contextPtr->flags = 0;
     contextPtr->skip = 2;
-    if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR)) {
+    if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING)) {
 	contextPtr->flags |=
-		flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR);
+		flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING);
     }
     contextPtr->oPtr = oPtr;
     contextPtr->index = 0;
@@ -1887,7 +1917,7 @@ GetCallContext(
      * Add object filters if any are defined.
      */
 
-    if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
+    if (doFilters) {
 	Tcl_Obj *filterObj;
 	Class *mixinPtr;
 
@@ -1945,7 +1975,7 @@ GetCallContext(
 	    DeleteContext(contextPtr);
 	    return NULL;
 	}
-    } else if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
+    } else if (doFilters) {
 	if (hPtr == NULL) {
 	    hPtr = Tcl_CreateHashEntry(cachePtr, (char *) methodNameObj, &i);
 	}

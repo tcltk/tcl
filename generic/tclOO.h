@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.31 2006/10/03 00:21:09 dgp Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.32 2006/10/03 23:32:07 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -137,6 +137,10 @@ typedef struct Object {
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
+#define FILTER_HANDLING 0x2000	/* Flag set when the object is processing a
+				 * filter; when set, filters are *not*
+				 * processed on the object, preventing nasty
+				 * recursive filtering problems. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
