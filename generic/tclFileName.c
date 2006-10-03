@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.14 2006/10/02 18:30:40 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.15 2006/10/03 18:20:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2351,7 +2351,11 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	    break;
 	}
 	if (tclPlatform != TCL_PLATFORM_MAC) {
-	    Tcl_DStringAppend(headPtr, tail, 1);
+	    if (*tail == '\\') {
+		Tcl_DStringAppend(headPtr, separators, 1);
+	    } else {
+		Tcl_DStringAppend(headPtr, tail, 1);
+	    }
 	}
 	count++;
     }
