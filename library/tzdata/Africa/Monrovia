@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Africa/Monrovia) {
     {-9223372036854775808 -2588 0 LMT}
