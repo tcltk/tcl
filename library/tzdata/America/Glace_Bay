@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:America/Glace_Bay) {
     {-9223372036854775808 -14388 0 LMT}

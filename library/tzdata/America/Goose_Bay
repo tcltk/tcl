@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:America/Goose_Bay) {
     {-9223372036854775808 -14500 0 LMT}

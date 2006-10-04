@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:America/Los_Angeles) {
     {-9223372036854775808 -28378 0 LMT}

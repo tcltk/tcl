@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Pacific/Midway) {
     {-9223372036854775808 -42568 0 LMT}
