@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.56 2006/10/03 23:32:07 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.57 2006/10/04 14:05:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1882,7 +1882,8 @@ GetCallContext(
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
-    if (flags & (CONSTRUCTOR|DESTRUCTOR|FILTER_HANDLING) || (oPtr->flags & FILTER_HANDLING)) {
+    if (flags & (CONSTRUCTOR|DESTRUCTOR|FILTER_HANDLING)
+	    || (oPtr->flags & FILTER_HANDLING)) {
 	hPtr = NULL;
 	doFilters = 0;
     } else {
@@ -1907,8 +1908,8 @@ GetCallContext(
     contextPtr->flags = 0;
     contextPtr->skip = 2;
     if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING)) {
-	contextPtr->flags |=
-		flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING);
+	contextPtr->flags |= flags &
+		(PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING);
     }
     contextPtr->oPtr = oPtr;
     contextPtr->index = 0;
