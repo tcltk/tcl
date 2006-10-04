@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:America/Noronha) {
     {-9223372036854775808 -7780 0 LMT}

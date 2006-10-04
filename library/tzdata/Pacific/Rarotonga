@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Pacific/Rarotonga) {
     {-9223372036854775808 -38344 0 LMT}

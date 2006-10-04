@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Africa/Cairo) {
     {-9223372036854775808 7500 0 LMT}
@@ -114,7 +114,7 @@ set TZData(:Africa/Cairo) {
     {1114725600 10800 1 EEST}
     {1128027600 7200 0 EET}
     {1146175200 10800 1 EEST}
-    {1159477200 7200 0 EET}
+    {1158872400 7200 0 EET}
     {1177624800 10800 1 EEST}
     {1190926800 7200 0 EET}
     {1209074400 10800 1 EEST}

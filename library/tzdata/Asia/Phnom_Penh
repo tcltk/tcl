@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Asia/Phnom_Penh) {
     {-9223372036854775808 25180 0 LMT}

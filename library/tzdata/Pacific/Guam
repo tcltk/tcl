@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Pacific/Guam) {
     {-9223372036854775808 -51660 0 LMT}
