@@ -9,21 +9,19 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.15 2006/10/01 21:27:24 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.16 2006/10/04 22:17:59 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
-static int		InfoObjectArgsCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectBodyCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectClassCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectDefaultCmd(Object *oPtr, Tcl_Interp *interp,
+static int		InfoObjectDefnCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectFiltersCmd(Object *oPtr, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		InfoObjectForwardCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectIsACmd(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -33,11 +31,15 @@ static int		InfoObjectMixinsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoObjectVarsCmd(Object *oPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassArgsCmd(Class *clsPtr, Tcl_Interp *interp,
+static int		InfoClassConstrCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassBodyCmd(Class *clsPtr, Tcl_Interp *interp,
+static int		InfoClassDefnCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassDefaultCmd(Class *clsPtr, Tcl_Interp *interp,
+static int		InfoClassDestrCmd(Class *clsPtr, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		InfoClassFiltersCmd(Class *clsPtr, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		InfoClassForwardCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoClassInstancesCmd(Class *clsPtr,
 			    Tcl_Interp*interp, int objc, Tcl_Obj*const objv[]);
@@ -60,11 +62,11 @@ TclInfoObjectCmd(
     Tcl_Obj *const *objv)
 {
     static const char *subcommands[] = {
-	"args", "body", "class", "default", "filters", "isa", "methods",
+	"class", "definition", "filters", "forward", "isa", "methods",
 	"mixins", "vars", NULL
     };
     enum IOSubCmds {
-	IOArgs, IOBody, IOClass, IODefault, IOFilters, IOIsA, IOMethods,
+	IOClass, IODefinition, IOFilters, IOForward, IOIsA, IOMethods,
 	IOMixins, IOVars
     };
     int idx;
@@ -86,16 +88,14 @@ TclInfoObjectCmd(
 	return TCL_ERROR;
     }
     switch ((enum IOSubCmds) idx) {
-    case IOArgs:
-	return InfoObjectArgsCmd(oPtr, interp, objc, objv);
-    case IOBody:
-	return InfoObjectBodyCmd(oPtr, interp, objc, objv);
     case IOClass:
 	return InfoObjectClassCmd(oPtr, interp, objc, objv);
-    case IODefault:
-	return InfoObjectDefaultCmd(oPtr, interp, objc, objv);
+    case IODefinition:
+	return InfoObjectDefnCmd(oPtr, interp, objc, objv);
     case IOFilters:
 	return InfoObjectFiltersCmd(oPtr, interp, objc, objv);
+    case IOForward:
+	return InfoObjectForwardCmd(oPtr, interp, objc, objv);
     case IOMethods:
 	return InfoObjectMethodsCmd(oPtr, interp, objc, objv);
     case IOMixins:
@@ -116,14 +116,16 @@ TclInfoClassCmd(
     Tcl_Obj *const *objv)
 {
     static const char *subcommands[] = {
-	"args", "body", "default", "instances", "methods",
+	"constructor", "definition", "destructor", "filters", "forward",
+	"instances", "methods",
 #ifdef SUPPORT_OO_PARAMETERS
 	"parameters",
 #endif
 	"subclasses", "superclasses", NULL
     };
     enum ICSubCmds {
-	ICArgs, ICBody, ICDefault, ICInstances, ICMethods,
+	ICConstructor, ICDefinition, ICDestructor, ICFilters, ICForward,
+	ICInstances, ICMethods,
 #ifdef SUPPORT_OO_PARAMETERS
 	ICParameters,
 #endif
@@ -151,12 +153,16 @@ TclInfoClassCmd(
     }
 
     switch((enum ICSubCmds) idx) {
-    case ICArgs:
-	return InfoClassArgsCmd(oPtr->classPtr, interp, objc, objv);
-    case ICBody:
-	return InfoClassBodyCmd(oPtr->classPtr, interp, objc, objv);
-    case ICDefault:
-	return InfoClassDefaultCmd(oPtr->classPtr, interp, objc, objv);
+    case ICConstructor:
+	return InfoClassConstrCmd(oPtr->classPtr, interp, objc, objv);
+    case ICDefinition:
+	return InfoClassDefnCmd(oPtr->classPtr, interp, objc, objv);
+    case ICDestructor:
+	return InfoClassDestrCmd(oPtr->classPtr, interp, objc, objv);
+    case ICFilters:
+	return InfoClassFiltersCmd(oPtr->classPtr, interp, objc, objv);
+    case ICForward:
+	return InfoClassForwardCmd(oPtr->classPtr, interp, objc, objv);
     case ICInstances:
 	return InfoClassInstancesCmd(oPtr->classPtr, interp, objc, objv);
     case ICMethods:
@@ -172,86 +178,6 @@ TclInfoClassCmd(
     }
     Tcl_Panic("unexpected fallthrough");
     return TCL_ERROR; /* NOTREACHED */
-}
-
-static int
-InfoObjectArgsCmd(
-    Object *oPtr,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_HashEntry *hPtr;
-    Proc *procPtr;
-    CompiledLocal *localPtr;
-
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName args methodName");
-	return TCL_ERROR;
-    }
-
-    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
-		"\"", NULL);
-	return TCL_ERROR;
-    }
-    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
-    if (procPtr == NULL) {
-	Tcl_AppendResult(interp,
-		"argument list not available for this kind of method", NULL);
-	return TCL_ERROR;
-    }
-
-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
-	    localPtr=localPtr->nextPtr) {
-	if (TclIsVarArgument(localPtr)) {
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    Tcl_NewStringObj(localPtr->name, -1));
-	}
-    }
-    return TCL_OK;
-}
-
-static int
-InfoObjectBodyCmd(
-    Object *oPtr,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_HashEntry *hPtr;
-    Proc *procPtr;
-
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName body methodName");
-	return TCL_ERROR;
-    }
-
-    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
-		"\"", NULL);
-	return TCL_ERROR;
-    }
-    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
-    if (procPtr == NULL) {
-	Tcl_AppendResult(interp,
-		"body script not available for this kind of method", NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * This is copied from the [info body] implementation. See the comments
-     * there for why this copy has to be done here.
-     */
-
-    if (procPtr->bodyPtr->bytes == NULL) {
-	(void) Tcl_GetString(procPtr->bodyPtr);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(procPtr->bodyPtr->bytes,
-	    procPtr->bodyPtr->length));
-    return TCL_OK;
 }
 
 static int
@@ -296,7 +222,7 @@ InfoObjectClassCmd(
 }
 
 static int
-InfoObjectDefaultCmd(
+InfoObjectDefnCmd(
     Object *oPtr,
     Tcl_Interp *interp,
     int objc,
@@ -305,10 +231,10 @@ InfoObjectDefaultCmd(
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
     CompiledLocal *localPtr;
+    Tcl_Obj *argsObj;
 
-    if (objc != 7) {
-	Tcl_WrongNumArgs(interp, 2, objv,
-		"objName args methodName varName defaultValueVar");
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName definition methodName");
 	return TCL_ERROR;
     }
 
@@ -321,33 +247,39 @@ InfoObjectDefaultCmd(
     procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
-		"argument list not available for this kind of method", NULL);
+		"definition not available for this kind of method", NULL);
 	return TCL_ERROR;
     }
 
+    TclNewObj(argsObj);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
-	if (TclIsVarArgument(localPtr)
-		&& strcmp(TclGetString(objv[5]), localPtr->name) == 0) {
-	    if (localPtr->defValuePtr == NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-		return TCL_OK;
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_Obj *argObj;
+
+	    TclNewObj(argObj);
+	    Tcl_ListObjAppendElement(NULL, argObj,
+		    Tcl_NewStringObj(localPtr->name, -1));
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
-	    if (Tcl_ObjSetVar2(interp, objv[6], NULL, localPtr->defValuePtr,
-		    TCL_LEAVE_ERR_MSG) == NULL) {
-		TclFormatToErrorInfo(interp,
-			"\n    (while storing default value in variable)");
-		return TCL_ERROR;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-	    return TCL_OK;
+	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
 	}
     }
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), argsObj);
 
-    Tcl_AppendResult(interp, "method \"", TclGetString(objv[4]),
-	    "\" doesn't have an argument \"", TclGetString(objv[5]), "\"",
-	    NULL);
-    return TCL_ERROR;
+    /*
+     * This is copied from the [info body] implementation. See the comments
+     * there for why this copy has to be done here.
+     */
+
+    if (procPtr->bodyPtr->bytes == NULL) {
+	(void) Tcl_GetString(procPtr->bodyPtr);
+    }
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
+	    procPtr->bodyPtr->length));
+    return TCL_OK;
 }
 
 static int
@@ -361,12 +293,45 @@ InfoObjectFiltersCmd(
     Tcl_Obj *filterObj;
 
     if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName mixins");
+	Tcl_WrongNumArgs(interp, 2, objv, "objName filters");
 	return TCL_ERROR;
     }
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), filterObj);
     }
+    return TCL_OK;
+}
+
+static int
+InfoObjectForwardCmd(
+    Object *oPtr,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_Obj *prefixObj;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "objName forward methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    prefixObj = TclOOGetFwdFromMethod(Tcl_GetHashValue(hPtr));
+    if (prefixObj == NULL) {
+	Tcl_AppendResult(interp,
+		"prefix argument list not available for this kind of method",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, prefixObj);
     return TCL_OK;
 }
 
@@ -572,87 +537,58 @@ InfoObjectVarsCmd(
 }
 
 static int
-InfoClassArgsCmd(
+InfoClassConstrCmd(
     Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_HashEntry *hPtr;
     Proc *procPtr;
     CompiledLocal *localPtr;
+    Tcl_Obj *argsObj;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className constructor");
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
-		"\"", NULL);
-	return TCL_ERROR;
+    if (clsPtr->constructorPtr == NULL) {
+	return TCL_OK;
     }
-    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
+    procPtr = TclOOGetProcFromMethod(clsPtr->constructorPtr);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
-		"argument list not available for this kind of method", NULL);
+		"definition not available for this kind of method", NULL);
 	return TCL_ERROR;
     }
 
+    TclNewObj(argsObj);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+	    Tcl_Obj *argObj;
+
+	    TclNewObj(argObj);
+	    Tcl_ListObjAppendElement(NULL, argObj,
 		    Tcl_NewStringObj(localPtr->name, -1));
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+	    }
+	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
 	}
     }
-    return TCL_OK;
-}
-
-static int
-InfoClassBodyCmd(
-    Class *clsPtr,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_HashEntry *hPtr;
-    Proc *procPtr;
-
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className args methodName");
-	return TCL_ERROR;
-    }
-
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
-		"\"", NULL);
-	return TCL_ERROR;
-    }
-    procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
-    if (procPtr == NULL) {
-	Tcl_AppendResult(interp,
-		"body script not available for this kind of method", NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * This is copied from the [info body] implementation. See the comments
-     * there for why this copy has to be done here.
-     */
-
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), argsObj);
     if (procPtr->bodyPtr->bytes == NULL) {
 	(void) Tcl_GetString(procPtr->bodyPtr);
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(procPtr->bodyPtr->bytes,
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
 	    procPtr->bodyPtr->length));
     return TCL_OK;
 }
 
 static int
-InfoClassDefaultCmd(
+InfoClassDefnCmd(
     Class *clsPtr,
     Tcl_Interp *interp,
     int objc,
@@ -661,10 +597,10 @@ InfoClassDefaultCmd(
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
     CompiledLocal *localPtr;
+    Tcl_Obj *argsObj;
 
-    if (objc != 7) {
-	Tcl_WrongNumArgs(interp, 2, objv,
-		"className args methodName varName defaultValueVar");
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className definition methodName");
 	return TCL_ERROR;
     }
 
@@ -677,33 +613,119 @@ InfoClassDefaultCmd(
     procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp,
-		"argument list not available for this kind of method", NULL);
+		"definition not available for this kind of method", NULL);
 	return TCL_ERROR;
     }
 
+    TclNewObj(argsObj);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
-	if (TclIsVarArgument(localPtr)
-		&& strcmp(TclGetString(objv[5]), localPtr->name) == 0) {
-	    if (localPtr->defValuePtr == NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-		return TCL_OK;
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_Obj *argObj;
+
+	    TclNewObj(argObj);
+	    Tcl_ListObjAppendElement(NULL, argObj,
+		    Tcl_NewStringObj(localPtr->name, -1));
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
 	    }
-	    if (Tcl_ObjSetVar2(interp, objv[6], NULL, localPtr->defValuePtr,
-		    TCL_LEAVE_ERR_MSG) == NULL) {
-		TclFormatToErrorInfo(interp,
-			"\n    (while storing default value in variable)");
-		return TCL_ERROR;
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-	    return TCL_OK;
+	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
 	}
     }
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), argsObj);
+    if (procPtr->bodyPtr->bytes == NULL) {
+	(void) Tcl_GetString(procPtr->bodyPtr);
+    }
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
+	    procPtr->bodyPtr->length));
+    return TCL_OK;
+}
+
+static int
+InfoClassDestrCmd(
+    Class *clsPtr,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Proc *procPtr;
 
-    Tcl_AppendResult(interp, "method \"", TclGetString(objv[4]),
-	    "\" doesn't have an argument \"", TclGetString(objv[5]), "\"",
-	    NULL);
-    return TCL_ERROR;
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className destructor");
+	return TCL_ERROR;
+    }
+
+    if (clsPtr->destructorPtr == NULL) {
+	return TCL_OK;
+    }
+    procPtr = TclOOGetProcFromMethod(clsPtr->destructorPtr);
+    if (procPtr == NULL) {
+	Tcl_AppendResult(interp,
+		"definition not available for this kind of method", NULL);
+	return TCL_ERROR;
+    }
+
+    if (procPtr->bodyPtr->bytes == NULL) {
+	(void) Tcl_GetString(procPtr->bodyPtr);
+    }
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
+	    procPtr->bodyPtr->length));
+    return TCL_OK;
+}
+
+static int
+InfoClassFiltersCmd(
+    Class *clsPtr,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int i;
+    Tcl_Obj *filterObj;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className filters");
+	return TCL_ERROR;
+    }
+    FOREACH(filterObj, clsPtr->filters) {
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), filterObj);
+    }
+    return TCL_OK;
+}
+
+static int
+InfoClassForwardCmd(
+    Class *clsPtr,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_Obj *prefixObj;
+
+    if (objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className forward methodName");
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+		"\"", NULL);
+	return TCL_ERROR;
+    }
+    prefixObj = TclOOGetFwdFromMethod(Tcl_GetHashValue(hPtr));
+    if (prefixObj == NULL) {
+	Tcl_AppendResult(interp,
+		"prefix argument list not available for this kind of method",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, prefixObj);
+    return TCL_OK;
 }
 
 static int
@@ -715,16 +737,24 @@ InfoClassInstancesCmd(
 {
     Object *oPtr;
     int i;
+    const char *pattern = NULL;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className instances");
+    if (objc != 4 && objc != 5) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className instances ?pattern?");
 	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	pattern = TclGetString(objv[4]);
     }
     FOREACH(oPtr, clsPtr->instances) {
 	Tcl_Obj *tmpObj;
 
 	TclNewObj(tmpObj);
 	Tcl_GetCommandFullName(interp, oPtr->command, tmpObj);
+	if (pattern && !Tcl_StringMatch(TclGetString(tmpObj), pattern)) {
+	    TclDecrRefCount(tmpObj);
+	    continue;
+	}
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
     }
     return TCL_OK;
@@ -750,7 +780,7 @@ InfoClassMethodsCmd(
 	int len;
 	const char *str = Tcl_GetStringFromObj(objv[4], &len);
 
-	if (len < 2 || strncmp("-private", str, (unsigned)len)) {
+	if (len < 2 || strncmp("-private", str, (unsigned) len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
 		    "\": must be -private", NULL);
 	    return TCL_ERROR;

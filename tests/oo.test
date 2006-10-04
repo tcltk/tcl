@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.35 2006/10/04 14:12:49 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.36 2006/10/04 22:17:59 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -731,7 +731,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object oo::object gorp
-} -returnCodes 1 -result {bad subcommand "gorp": must be args, body, class, default, filters, isa, methods, mixins, or vars}
+} -returnCodes 1 -result {bad subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
 } -body {
@@ -752,16 +752,15 @@ test oo-16.6 {OO: object introspection} {
     oo::define foo method bar {} {...}
     lappend result [info object foo methods] [foo destroy]
 } {{} bar {}}
-test oo-16.7 {OO: object introspection} {
+test oo-16.7 {OO: object introspection} -setup {
     oo::object create foo
+} -body {
     oo::define foo method bar {a {b c} args} {the body}
     set result [info object foo methods]
-    lappend result [info object foo args bar] \
-	[info object foo default bar b v] $v \
-	[info object foo body bar]
+    lappend result [info object foo definition bar]
+} -cleanup {
     foo destroy
-    return $result
-} {bar {a b args} 1 c {the body}}
+} -result {bar {{a {b c} args} {the body}}}
 test oo-16.8 {OO: object introspection} {
     oo::object create foo
     oo::class create bar
@@ -806,10 +805,10 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4.0 {OO: class introspection} -constraints redactedFeature -body {
     info class oo::object gorp
-} -returnCodes 1 -result {bad subcommand "gorp": must be args, body, default, instances, methods, parameters, subclasses, or superclasses}
+} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, parameters, subclasses, or superclasses}
 test oo-17.4.1 {OO: class introspection} -body {
     info class oo::object gorp
-} -returnCodes 1 -result {bad subcommand "gorp": must be args, body, default, instances, methods, subclasses, or superclasses}
+} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, subclasses, or superclasses}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -820,16 +819,15 @@ test oo-17.5 {OO: class introspection} -setup {
 } -cleanup {
     testClass destroy
 } -result {::bar ::foo ::spong}
-test oo-17.6 {OO: object introspection} {
+test oo-17.6 {OO: object introspection} -setup {
     oo::class create foo
+} -body {
     oo::define foo method bar {a {b c} args} {the body}
     set result [info class foo methods]
-    lappend result [info class foo args bar] \
-	[info class foo default bar b v] $v \
-	[info class foo body bar]
+    lappend result [info class foo definition bar]
+} -cleanup {
     foo destroy
-    return $result
-} {bar {a b args} 1 c {the body}}
+} -result {bar {{a {b c} args} {the body}}}
 test oo-17.7 {OO: object introspection} {
     info class oo::class superclasses
 } ::oo::object

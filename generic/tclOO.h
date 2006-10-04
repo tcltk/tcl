@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.32 2006/10/03 23:32:07 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.33 2006/10/04 22:17:59 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -52,8 +52,6 @@ int			Tcl_ObjectContextSkippedArgs(
 
 struct Class;
 struct Object;
-struct Method;
-struct CallContext;
 
 /*
  * The data that needs to be stored per method. This record is used to collect
@@ -100,6 +98,23 @@ typedef struct ForwardMethod {
 } ForwardMethod;
 
 /*
+ * Helper definitions that declare a "list" array. The two varieties are
+ * either optimized for simplicity (in the case that the whole array is
+ * typically assigned at once) or efficiency (in the case that the array is
+ * expected to be expanded over time). These lists are designed to be iterated
+ * over with the help of the FOREACH macro (see later in this file).
+ *
+ * The "num" field always counts the number of listType_t elements used in the
+ * "list" field. When a "size" field exists, it describes how many elements
+ * are present in the list; when absent, exactly "num" elements are present.
+ */
+
+#define LIST_STATIC(listType_t) \
+    struct { int num; listType_t *list; }
+#define LIST_DYNAMIC(listType_t) \
+    struct { int num, size; listType_t *list; }
+
+/*
  * Now, the definition of what an object actually is.
  */
 
@@ -112,15 +127,10 @@ typedef struct Object {
     struct Class *selfCls;	/* This object's class. */
     Tcl_HashTable methods;	/* Object-local Tcl_Obj (method name) to
 				 * Method* mapping. */
-    struct {			/* Classes mixed into this object; list length
-				 * = allocated space = num field. */
-	int num;
-	struct Class **list;
-    } mixins;
-    struct {			/* List of filter names; length=space=num. */
-	int num;
-	Tcl_Obj **list;
-    } filters;
+    LIST_STATIC(struct Class *) mixins;
+				/* Classes mixed into this object. */
+    LIST_STATIC(Tcl_Obj *) filters;
+				/* List of filter names. */
     struct Class *classPtr;	/* All classes have this non-NULL; it points
 				 * to the class structure. Everything else has
 				 * this NULL. */
@@ -151,22 +161,14 @@ typedef struct Class {
     Object *thisPtr;		/* Reference to the object associated with
 				 * this class. */
     int flags;			/* Assorted flags. */
-    struct {			/* List of superclasses; length=space=num. */
-	int num;
-	struct Class **list;
-    } superclasses;
-    struct {			/* List of subclasses; length=num,space=size */
-	int num, size;
-	struct Class **list;
-    } subclasses;
-    struct {			/* List of instances; length=num,space=size */
-	int num, size;
-	Object **list;
-    } instances;
-    struct {			/* List of filter names; length=space=num. */
-	int num;
-	Tcl_Obj **list;
-    } filters;
+    LIST_STATIC(struct Class *) superclasses;
+				/* List of superclasses; length=space=num. */
+    LIST_DYNAMIC(struct Class *) subclasses;
+				/* List of subclasses; length=num,space=size */
+    LIST_DYNAMIC(Object *) instances;
+				/* List of instances; length=num,space=size */
+    LIST_STATIC(Tcl_Obj *) filters;
+				/* List of filter names; length=space=num. */
     Tcl_HashTable classMethods;	/* Hash table of all methods. Hash maps from
 				 * the (Tcl_Obj*) method name to the (Method*)
 				 * method record. */
@@ -184,8 +186,8 @@ typedef struct Class {
  */
 
 typedef struct Foundation {
-    struct Class *objectCls;	/* The root of the object system. */
-    struct Class *classCls;	/* The class of all classes. */
+    Class *objectCls;		/* The root of the object system. */
+    Class *classCls;		/* The class of all classes. */
     Tcl_Namespace *ooNs;	/* Master ::oo namespace. */
     Tcl_Namespace *defineNs;	/* Namespace containing special commands for
 				 * manipulating objects and classes. The
@@ -217,6 +219,7 @@ struct MInvoke {
 				 * record. */
     int isFilter;		/* Whether this is a filter invokation. */
 };
+
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
     int globalEpoch;		/* Global (class) epoch counter snapshot. */
@@ -266,10 +269,10 @@ MODULE_SCOPE void	TclDeleteMethod(Method *method);
 MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *procNameObj,
 			    int skip);
-// Expose this one?
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
@@ -282,6 +285,8 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
  * but we cannot rely on the assigned value being useful, forcing us to do
  * some nasty stuff with the comma operator. The compiler's optimizer should
  * be able to sort it all out!
+ *
+ * REQUIRES DECLARATION: int i;
  */
 
 #define FOREACH(var,ary) \

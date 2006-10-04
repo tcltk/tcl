@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.57 2006/10/04 14:05:57 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.58 2006/10/04 22:17:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3141,9 +3141,10 @@ TclOOIsReachable(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOOGetProcFromMethod --
+ * TclOOGetProcFromMethod, TclOOGetFwdFromMethod --
  *
- *	Utility function used for procedure-like method introspection.
+ *	Utility functions used for procedure-like and forwarding method
+ *	introspection.
  *
  * ----------------------------------------------------------------------
  */
@@ -3156,6 +3157,18 @@ TclOOGetProcFromMethod(
 	ProcedureMethod *pmPtr = mPtr->clientData;
 
 	return pmPtr->procPtr;
+    }
+    return NULL;
+}
+
+Tcl_Obj *
+TclOOGetFwdFromMethod(
+    Method *mPtr)
+{
+    if (mPtr->typePtr == &fwdMethodType) {
+	ForwardMethod *fwPtr = mPtr->clientData;
+
+	return fwPtr->prefixObj;
     }
     return NULL;
 }
