@@ -7,12 +7,14 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.34 2006/10/03 23:32:07 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.35 2006/10/04 14:12:49 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+testConstraint memory [llength [info commands memory]]
 
 test oo-0.1 {basic test of OO's ability to clean up its initial state} {
     interp create t
@@ -21,6 +23,40 @@ test oo-0.1 {basic test of OO's ability to clean up its initial state} {
 test oo-0.2 {basic test of OO's ability to clean up its initial state} {
     interp eval [interp create] { namespace delete :: }
 } {}
+test oo-0.3 {basic test of OO's ability to clean up its initial state} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	[oo::object new] destroy
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+} -result 0
+test oo-0.4 {basic test of OO's ability to clean up its initial state} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	oo::class create foo
+	foo new
+	foo destroy
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+} -result 0
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}
