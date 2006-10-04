@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Pacific/Kosrae) {
     {-9223372036854775808 39116 0 LMT}

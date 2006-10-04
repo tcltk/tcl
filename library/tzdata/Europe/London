@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Europe/London) {
     {-9223372036854775808 -75 0 LMT}

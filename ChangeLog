@@ -1,3 +1,7 @@
+2006-10-04  Kevin Kenny  <kennykb@acm.org>
+
+	* tzdata/: Olson's tzdata2006m.
+	
 2006-10-01  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/clock.test (clock-49.2): Removed a locale dependency
