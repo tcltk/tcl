@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.2.9 2006/01/09 18:34:18 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.2.10 2006/10/04 17:59:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1123,7 +1123,7 @@ test namespace-29.5 {NamespaceInscopeCmd, has lappend semantics} {
     list [namespace inscope test_ns_1 cmd x y z] \
          [namespace eval test_ns_1 [concat cmd [list x y z]]]
 } {{::test_ns_1::cmd: v=747, args=x y z} {::test_ns_1::cmd: v=747, args=x y z}}
-test namespace-29.6 {NamespaceInscopeCmd, 1400572} {
+test namespace-29.6 {NamespaceInscopeCmd, 1400572} knownBug {
     namespace inscope test_ns_1 {info level 0}
 } {namespace inscope test_ns_1 {info level 0}}
 
