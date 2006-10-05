@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.28 2006/09/26 21:40:36 patthoyts Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.29 2006/10/05 21:24:56 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -2238,7 +2238,11 @@ typedef struct Tcl_Parse {
     /*
      * unsigned int isn't 100% accurate as it should be a strict 4-byte
      * value (perhaps wchar_t).  64-bit systems may have troubles.  The
-     * size of this value must be reflected correctly in regcustom.h.
+     * size of this value must be reflected correctly in regcustom.h and
+     * in tclEncoding.c.
+     * XXX: Tcl is currently UCS-2 and planning UTF-16 for the Unicode
+     * XXX: string rep that Tcl_UniChar represents.  Changing the size
+     * XXX: of Tcl_UniChar is /not/ supported.
      */
 typedef unsigned int Tcl_UniChar;
 #else
