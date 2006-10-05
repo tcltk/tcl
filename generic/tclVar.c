@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.121 2006/08/10 12:15:31 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.122 2006/10/05 11:38:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2365,7 +2365,12 @@ Tcl_LappendObjCmd(
 	    if (newValuePtr == NULL) {
 		return TCL_ERROR;
 	    }
-	}
+	} else {
+	    result = Tcl_ListObjLength(interp, newValuePtr, &numElems);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}	    
     } else {
 	/*
 	 * We have arguments to append. We used to call Tcl_SetVar2 to append
