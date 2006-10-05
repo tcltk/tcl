@@ -1,3 +1,10 @@
+2006-10-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.h: note limitation on changing Tcl_UniChar size
+	* generic/tclEncoding.c (UtfToUnicodeProc, UnicodeToUtfProc): 
+	* tests/encoding.test (encoding-16.1): fix alignment issues in
+	unicode <> utf conversion procs. [Bug 1122671]
+
 2006-10-05  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (Tcl_LappendObjCmd):
