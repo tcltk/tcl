@@ -1,3 +1,9 @@
+2006-10-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (Tcl_LappendObjCmd):
+	* tests/append.test(4.21-22): fix for longstanding [Bug 1570718],
+	lappending nothing to non-list. Reported by lvirden
+
 2006-10-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c (TclGlob):	Prevent doubling of directory
