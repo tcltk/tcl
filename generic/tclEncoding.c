@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.11 2006/08/09 18:12:42 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.12 2006/10/05 21:24:56 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2147,10 +2147,11 @@ UnicodeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    CONST Tcl_UniChar *wSrc, *wSrcStart, *wSrcEnd;
+    CONST char *srcStart, *srcEnd;
     char *dstEnd, *dstStart;
     int result, numChars;
-    
+    Tcl_UniChar ch;
+
     result = TCL_OK;
     if ((srcLen % sizeof(Tcl_UniChar)) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
@@ -2158,31 +2159,31 @@ UnicodeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcLen *= sizeof(Tcl_UniChar);
     }
 
-    wSrc = (Tcl_UniChar *) src;
-
-    wSrcStart = (Tcl_UniChar *) src;
-    wSrcEnd = (Tcl_UniChar *) (src + srcLen);
+    srcStart = src;
+    srcEnd = src + srcLen;
 
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    for (numChars = 0; wSrc < wSrcEnd; numChars++) {
+    for (numChars = 0; src < srcEnd; numChars++) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
 	/*
-	 * Special case for 1-byte utf chars for speed.
+	 * Special case for 1-byte utf chars for speed.  Make sure we
+	 * work with Tcl_UniChar-size data.
 	 */
-	if (*wSrc && *wSrc < 0x80) {
-	    *dst++ = (char) *wSrc;
+	ch = *(Tcl_UniChar *)src;
+	if (ch && ch < 0x80) {
+	    *dst++ = *src;
 	} else {
-	    dst += Tcl_UniCharToUtf(*wSrc, dst);
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
-	wSrc++;
+	src += sizeof(Tcl_UniChar);
     }
 
-    *srcReadPtr = (char *) wSrc - (char *) wSrcStart;
+    *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
     return result;
@@ -2232,10 +2233,10 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    CONST char *srcStart, *srcEnd, *srcClose;
-    Tcl_UniChar *wDst, *wDstStart, *wDstEnd;
+    CONST char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    
+    Tcl_UniChar ch;
+
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2243,9 +2244,8 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcClose -= TCL_UTF_MAX;
     }
 
-    wDst = (Tcl_UniChar *) dst;
-    wDstStart = (Tcl_UniChar *) dst;
-    wDstEnd = (Tcl_UniChar *) (dst + dstLen - sizeof(Tcl_UniChar));
+    dstStart = dst;
+    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
@@ -2258,15 +2258,26 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    result = TCL_CONVERT_MULTIBYTE;
 	    break;
 	}
-	if (wDst > wDstEnd) {
+	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
         }
-	src += TclUtfToUniChar(src, wDst);
-	wDst++;
+	src += TclUtfToUniChar(src, &ch);
+	/*
+	 * Need to handle this in a way that won't cause misalignment
+	 * by casting dst to a Tcl_UniChar. [Bug 1122671]
+	 * XXX: This hard-codes the assumed size of Tcl_UniChar as 2.
+	 */
+#ifdef WORDS_BIGENDIAN
+	*dst++ = (ch >> 8);
+	*dst++ = (ch & 0xFF);
+#else
+	*dst++ = (ch & 0xFF);
+	*dst++ = (ch >> 8);
+#endif
     }
     *srcReadPtr = src - srcStart;
-    *dstWrotePtr = (char *) wDst - (char *) wDstStart;
+    *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
     return result;
 }
