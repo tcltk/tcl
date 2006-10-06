@@ -1,5 +1,9 @@
 2006-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* win/rules.vc: bug #1571954: avoid /RTCc flag with MSVC8
+
+2006-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
 	* doc/binary.n:        TIP #275: Support unsigned values in
 	* generic/tclBinary.c: binary command. Tests and documentation
 	* tests/binary.test:   updated.
