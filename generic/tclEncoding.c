@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.12 2006/10/05 21:24:56 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.13 2006/10/06 04:55:07 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2176,7 +2176,7 @@ UnicodeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	 */
 	ch = *(Tcl_UniChar *)src;
 	if (ch && ch < 0x80) {
-	    *dst++ = *src;
+	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
