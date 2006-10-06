@@ -1,3 +1,7 @@
+2006-10-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/http.test: update tests to handle strictness change.
+
 2006-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/rules.vc: bug #1571954: avoid /RTCc flag with MSVC8
