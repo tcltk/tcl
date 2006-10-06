@@ -53,7 +53,7 @@ namespace eval ::tcl::tm {
 
     # The regex pattern a file name has to match to make it a Tcl Module.
 
-    set pkgpattern {^([[:alpha:]][:[:alnum:]]*)-([[:digit:]].*)[.]tm$}
+    set pkgpattern {^([_[:alpha:]][:_[:alnum:]]*)-([[:digit:]].*)[.]tm$}
 
     # Export the public API
 
