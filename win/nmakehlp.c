@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1.4.2 2006/09/26 21:40:37 patthoyts Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.1.4.3 2006/10/06 14:04:49 patthoyts Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -407,7 +407,7 @@ ReadFromPipe(
   again:
     if (lastBuf - pi->buffer + CHUNK > STATICBUFFERSIZE) {
 	CloseHandle(pi->pipe);
-	return -1;
+	return (DWORD)-1;
     }
     ok = ReadFile(pi->pipe, lastBuf, CHUNK, &dwRead, 0L);
     if (!ok || dwRead == 0) {
