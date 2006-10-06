@@ -1,3 +1,9 @@
+2006-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* doc/binary.n:        TIP #275: Support unsigned values in
+	* generic/tclBinary.c: binary command. Tests and documentation
+	* tests/binary.test:   updated.
+
 2006-10-05  Andreas Kupries  <andreask@activestate.com>
 
 	* library/tm.tcl: Fixed bug in TIP #189 implementation, now
