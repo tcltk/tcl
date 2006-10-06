@@ -2,7 +2,7 @@
 
 	* library/http/http.tcl (http::geturl): only do geturl url rfc
 	3986 validity checking if $::http::strict is true (default false
-	for 8.5).  [Bug 1560506]
+	for 8.4).  [Bug 1560506]
 
 	* generic/tcl.h: note limitation on changing Tcl_UniChar size
 	* generic/tclEncoding.c (UtfToUnicodeProc, UnicodeToUtfProc): 
