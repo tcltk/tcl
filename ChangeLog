@@ -1,3 +1,7 @@
+2006-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/rules.vc: bug #1571954: avoid /RTCc flag with MSVC8
+
 2006-10-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/http.tcl (http::geturl): only do geturl url rfc
