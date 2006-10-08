@@ -235,6 +235,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclNotify.obj \
 	$(TMPDIR)\tclObj.obj \
 	$(TMPDIR)\tclOO.obj \
+	$(TMPDIR)\tclOOCall.obj \
 	$(TMPDIR)\tclOODefineCmds.obj \
 	$(TMPDIR)\tclOOInfo.obj \
 	$(TMPDIR)\tclPanic.obj \
