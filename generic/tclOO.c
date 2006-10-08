@@ -8,12 +8,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.58 2006/10/04 22:17:59 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.59 2006/10/08 15:39:58 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
-#include <assert.h>
 
 /*
  * Commands in oo::define.
@@ -35,12 +34,8 @@ static const struct {
     {"self.forward", TclOODefineForwardObjCmd, 1},
     {"method", TclOODefineMethodObjCmd, 0},
     {"self.method", TclOODefineMethodObjCmd, 1},
-#ifdef SUPPORT_OO_CLASS_MIXINS
     {"mixin", TclOODefineMixinObjCmd, 0},
     {"self.mixin", TclOODefineMixinObjCmd, 1},
-#else
-    {"mixin", TclOODefineMixinObjCmd, 1},
-#endif
 #ifdef SUPPORT_OO_PARAMETERS
     {"parameter", TclOODefineParameterObjCmd, 0},
 #endif
@@ -58,14 +53,6 @@ static const struct {
 #define ALLOC_CHUNK 8
 
 /*
- * Extra flags used for call chain management.
- */
-
-#define DEFINITE_PRIVATE 0x100000
-#define DEFINITE_PUBLIC  0x200000
-#define KNOWN_STATE	 (DEFINITE_PRIVATE | DEFINITE_PUBLIC)
-
-/*
  * Function declarations for things defined in this file.
  */
 
@@ -74,28 +61,6 @@ static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr);
 static void		DeclareClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const char *name, int isPublic,
 			    Tcl_MethodCallProc callProc);
-static void		AddClassFiltersToCallContext(Object *oPtr,
-			    Class *clsPtr, CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters);
-static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
-			    Tcl_HashTable *namesPtr);
-static void		AddMethodToCallChain(Method *mPtr,
-			    CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters);
-static void		AddSimpleChainToCallContext(Object *oPtr,
-			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters, int isPublic);
-static void		AddSimpleClassChainToCallContext(Class *classPtr,
-			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters, int isPublic);
-static int		CmpStr(const void *ptr1, const void *ptr2);
-static void		DeleteContext(CallContext *contextPtr);
-static CallContext *	GetCallContext(Foundation *fPtr, Object *oPtr,
-			    Tcl_Obj *methodNameObj, int flags,
-			    Tcl_HashTable *cachePtr);
-static int		InvokeContext(Tcl_Interp *interp,
-			    CallContext *contextPtr, int objc,
-			    Tcl_Obj *const *objv);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
 static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
@@ -132,7 +97,6 @@ static int		CloneForwardMethod(ClientData clientData,
 static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv, int toRewrite,
 			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
-			    int insertIndex, Tcl_Obj *insertObj,
 			    int *lengthPtr);
 
 static int		ClassCreate(ClientData clientData, Tcl_Interp *interp,
@@ -291,7 +255,7 @@ TclOOInit(
 		"dict set opt -errorline 0xdeadbeef\n"
 		"}\n"
 		"return -options $opt $msg", -1);
-	fPtr->classCls->constructorPtr = TclNewProcClassMethod(interp,
+	fPtr->classCls->constructorPtr = TclOONewProcClassMethod(interp,
 		fPtr->classCls, 0, NULL, argsPtr, bodyPtr);
     }
 
@@ -441,8 +405,8 @@ ObjectDeletedTrace(
     Tcl_Preserve(oPtr);
     oPtr->flags |= OBJECT_DELETED;
     if (!Tcl_InterpDeleted(interp)) {
-	CallContext *contextPtr = GetCallContext(iPtr->ooFoundation, oPtr,
-		NULL, DESTRUCTOR, NULL);
+	CallContext *contextPtr = TclOOGetCallContext(iPtr->ooFoundation,
+		oPtr, NULL, DESTRUCTOR, NULL);
 
 	if (contextPtr != NULL) {
 	    int result;
@@ -451,12 +415,12 @@ ObjectDeletedTrace(
 	    contextPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = InvokeContext(interp, contextPtr, 0, NULL);
+	    result = TclOOInvokeContext(interp, contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundError(interp);
 	    }
 	    (void) Tcl_RestoreInterpState(interp, state);
-	    DeleteContext(contextPtr);
+	    TclOODeleteContext(contextPtr);
 	}
     }
 
@@ -493,32 +457,52 @@ ReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     int i, n;
-    Class *clsPtr, **subs;
+    Class *clsPtr, **list;
     Object **insts;
 
     clsPtr = oPtr->classPtr;
     Tcl_Preserve(clsPtr);
 
     /*
-     * Must empty list now so that things happen in the correct order.
+     * Must empty list before processing the members of the list so that
+     * things happen in the correct order even if something tries to play
+     * fast-and-loose.
      */
 
-    subs = clsPtr->subclasses.list;
+    list = clsPtr->mixinSubs.list;
+    n = clsPtr->mixinSubs.num;
+    clsPtr->mixinSubs.list = NULL;
+    clsPtr->mixinSubs.num = 0;
+    clsPtr->mixinSubs.size = 0;
+    for (i=0 ; i<n ; i++) {
+	Tcl_Preserve(list[i]);
+    }
+    for (i=0 ; i<n ; i++) {
+	if (!(list[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
+	}
+	Tcl_Release(list[i]);
+    }
+    if (list != NULL) {
+	ckfree((char *) list);
+    }
+
+    list = clsPtr->subclasses.list;
     n = clsPtr->subclasses.num;
     clsPtr->subclasses.list = NULL;
     clsPtr->subclasses.num = 0;
     clsPtr->subclasses.size = 0;
     for (i=0 ; i<n ; i++) {
-	Tcl_Preserve(subs[i]);
+	Tcl_Preserve(list[i]);
     }
     for (i=0 ; i<n ; i++) {
-	if (!(subs[i]->flags & OBJECT_DELETED) && interp != NULL) {
-	    Tcl_DeleteCommandFromToken(interp, subs[i]->thisPtr->command);
+	if (!(list[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
-	Tcl_Release(subs[i]);
+	Tcl_Release(list[i]);
     }
-    if (subs != NULL) {
-	ckfree((char *) subs);
+    if (list != NULL) {
+	ckfree((char *) list);
     }
 
     insts = clsPtr->instances.list;
@@ -609,45 +593,68 @@ ObjectNamespaceDeleted(
 	ckfree((char *)oPtr->filters.list);
     }
     FOREACH_HASH_VALUE(mPtr, &oPtr->methods) {
-	TclDeleteMethod(mPtr);
+	TclOODeleteMethod(mPtr);
     }
     Tcl_DeleteHashTable(&oPtr->methods);
     FOREACH_HASH_VALUE(contextPtr, &oPtr->publicContextCache) {
 	if (contextPtr) {
-	    DeleteContext(contextPtr);
+	    TclOODeleteContext(contextPtr);
 	}
     }
     Tcl_DeleteHashTable(&oPtr->publicContextCache);
     FOREACH_HASH_VALUE(contextPtr, &oPtr->privateContextCache) {
 	if (contextPtr) {
-	    DeleteContext(contextPtr);
+	    TclOODeleteContext(contextPtr);
 	}
     }
     Tcl_DeleteHashTable(&oPtr->privateContextCache);
 
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
-	Class *superPtr;
+	Class *superPtr, *mixinPtr;
 
 	clsPtr->flags |= OBJECT_DELETED;
+	FOREACH(mixinPtr, clsPtr->mixins) {
+	    if (!(mixinPtr->flags & OBJECT_DELETED)) {
+		TclOORemoveFromSubclasses(clsPtr, mixinPtr);
+	    }
+	}
+	if (i) {
+	    ckfree((char *) clsPtr->mixins.list);
+	    clsPtr->mixins.num = 0;
+	}
 	FOREACH(superPtr, clsPtr->superclasses) {
 	    if (!(superPtr->flags & OBJECT_DELETED)) {
 		TclOORemoveFromSubclasses(clsPtr, superPtr);
 	    }
 	}
-	clsPtr->superclasses.num = 0;
-	ckfree((char *) clsPtr->superclasses.list);
-	clsPtr->subclasses.num = 0;
-	ckfree((char *) clsPtr->subclasses.list);
-	clsPtr->instances.num = 0;
-	ckfree((char *) clsPtr->instances.list);
+	if (i) {
+	    ckfree((char *) clsPtr->superclasses.list);
+	    clsPtr->superclasses.num = 0;
+	}
+	if (clsPtr->subclasses.list) {
+	    ckfree((char *) clsPtr->subclasses.list);
+	    clsPtr->subclasses.num = 0;
+	}
+	if (clsPtr->instances.list) {
+	    ckfree((char *) clsPtr->instances.list);
+	    clsPtr->instances.num = 0;
+	}
+	if (clsPtr->mixinSubs.list) {
+	    ckfree((char *) clsPtr->mixinSubs.list);
+	    clsPtr->mixinSubs.num = 0;
+	}
+	if (clsPtr->classHierarchy.list) {
+	    ckfree((char *) clsPtr->classHierarchy.list);
+	    clsPtr->classHierarchy.num = 0;
+	}
 
 	FOREACH_HASH_VALUE(mPtr, &clsPtr->classMethods) {
-	    TclDeleteMethod(mPtr);
+	    TclOODeleteMethod(mPtr);
 	}
 	Tcl_DeleteHashTable(&clsPtr->classMethods);
-	TclDeleteMethod(clsPtr->constructorPtr);
-	TclDeleteMethod(clsPtr->destructorPtr);
+	TclOODeleteMethod(clsPtr->constructorPtr);
+	TclOODeleteMethod(clsPtr->destructorPtr);
 	Tcl_EventuallyFree(clsPtr, TCL_DYNAMIC);
     }
 
@@ -802,6 +809,74 @@ TclOOAddToSubclasses(
 /*
  * ----------------------------------------------------------------------
  *
+ * TclOORemoveFromMixinSubs --
+ *
+ *	Utility function to remove a class from the list of mixinSubs within
+ *	another class.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+void
+TclOORemoveFromMixinSubs(
+    Class *subPtr,		/* The subclass to remove. */
+    Class *superPtr)		/* The superclass to (possibly) remove the
+				 * subclass reference from. */
+{
+    int i;
+    Class *subclsPtr;
+
+    FOREACH(subclsPtr, superPtr->mixinSubs) {
+	if (subPtr == subclsPtr) {
+	    goto removeSubclass;
+	}
+    }
+    return;
+
+  removeSubclass:
+    superPtr->mixinSubs.num--;
+    if (i < superPtr->mixinSubs.num) {
+	superPtr->mixinSubs.list[i] =
+	    superPtr->mixinSubs.list[superPtr->mixinSubs.num];
+    }
+    superPtr->mixinSubs.list[superPtr->mixinSubs.num] = NULL;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOAddToMixinSubs --
+ *
+ *	Utility function to add a class to the list of mixinSubs within
+ *	another class.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+void
+TclOOAddToMixinSubs(
+    Class *subPtr,		/* The subclass to add. */
+    Class *superPtr)		/* The superclass to add the subclass to. It
+				 * is assumed that the class is not already
+				 * present as a subclass in the superclass. */
+{
+    if (superPtr->mixinSubs.num >= superPtr->mixinSubs.size) {
+	superPtr->mixinSubs.size += ALLOC_CHUNK;
+	if (superPtr->mixinSubs.size == ALLOC_CHUNK) {
+	    superPtr->mixinSubs.list = (Class **)
+		    ckalloc(sizeof(Class *) * ALLOC_CHUNK);
+	} else {
+	    superPtr->mixinSubs.list = (Class **)
+		    ckrealloc((char *) superPtr->mixinSubs.list,
+		    sizeof(Class *) * superPtr->mixinSubs.size);
+	}
+    }
+    superPtr->mixinSubs.list[superPtr->mixinSubs.num++] = subPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * AllocClass --
  *
  *	Allocate a basic class. Does not splice the class object into its
@@ -853,6 +928,14 @@ AllocClass(
     clsPtr->instances.size = 0;
     clsPtr->filters.list = NULL;
     clsPtr->filters.num = 0;
+    clsPtr->mixins.list = NULL;
+    clsPtr->mixins.num = 0;
+    clsPtr->mixinSubs.list = NULL;
+    clsPtr->mixinSubs.num = 0;
+    clsPtr->mixinSubs.size = 0;
+    clsPtr->classHierarchy.list = NULL;
+    clsPtr->classHierarchy.num = 0;
+    clsPtr->classHierarchyEpoch = fPtr->epoch-1;
     Tcl_InitObjHashTable(&clsPtr->classMethods);
     clsPtr->constructorPtr = NULL;
     clsPtr->destructorPtr = NULL;
@@ -922,8 +1005,8 @@ Tcl_NewObjectInstance(
     }
 
     if (objc >= 0) {
-	contextPtr = GetCallContext(((Interp *)interp)->ooFoundation, oPtr,
-		NULL, CONSTRUCTOR, NULL);
+	contextPtr = TclOOGetCallContext(((Interp *)interp)->ooFoundation,
+		oPtr, NULL, CONSTRUCTOR, NULL);
 	if (contextPtr != NULL) {
 	    int result;
 	    Tcl_InterpState state;
@@ -932,8 +1015,8 @@ Tcl_NewObjectInstance(
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
-	    result = InvokeContext(interp, contextPtr, objc, objv);
-	    DeleteContext(contextPtr);
+	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+	    TclOODeleteContext(contextPtr);
 	    Tcl_Release(oPtr);
 	    if (result != TCL_OK) {
 		Tcl_DiscardInterpState(state);
@@ -1101,7 +1184,7 @@ DeleteMethodStruct(
 /*
  * ----------------------------------------------------------------------
  *
- * TclDeleteMethod --
+ * TclOODeleteMethod --
  *
  *	How to delete a method.
  *
@@ -1109,7 +1192,7 @@ DeleteMethodStruct(
  */
 
 void
-TclDeleteMethod(
+TclOODeleteMethod(
     Method *mPtr)
 {
     if (mPtr != NULL) {
@@ -1173,7 +1256,7 @@ SimpleInvoke(
 /*
  * ----------------------------------------------------------------------
  *
- * TclNewProcMethod --
+ * TclOONewProcMethod --
  *
  *	Create a new procedure-like method for an object.
  *
@@ -1181,7 +1264,7 @@ SimpleInvoke(
  */
 
 Method *
-TclNewProcMethod(
+TclOONewProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     Object *oPtr,		/* The object to modify. */
     int isPublic,		/* Whether this is a public method. */
@@ -1214,7 +1297,7 @@ TclNewProcMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * TclNewProcClassMethod --
+ * TclOONewProcClassMethod --
  *
  *	Create a new procedure-like method for a class.
  *
@@ -1222,7 +1305,7 @@ TclNewProcMethod(
  */
 
 Method *
-TclNewProcClassMethod(
+TclOONewProcClassMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Class *clsPtr,		/* The class to modify. */
     int isPublic,		/* Whether this is a public method. */
@@ -1378,7 +1461,7 @@ CloneProcedureMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * TclNewForwardMethod --
+ * TclOONewForwardMethod --
  *
  *	Create a forwarded method for an object.
  *
@@ -1386,7 +1469,7 @@ CloneProcedureMethod(
  */
 
 Method *
-TclNewForwardMethod(
+TclOONewForwardMethod(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Object *oPtr,		/* The object to attach the method to. */
     int isPublic,		/* Whether the method is public or not. */
@@ -1416,7 +1499,7 @@ TclNewForwardMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * TclNewForwardClassMethod --
+ * TclOONewForwardClassMethod --
  *
  *	Create a new forwarded method for a class.
  *
@@ -1424,7 +1507,7 @@ TclNewForwardMethod(
  */
 
 Method *
-TclNewForwardClassMethod(
+TclOONewForwardClassMethod(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Class *clsPtr,		/* The class to attach the method to. */
     int isPublic,		/* Whether the method is public or not. */
@@ -1484,7 +1567,7 @@ InvokeForwardMethod(
 
     Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip,
-	    numPrefixes, prefixObjs, -1, NULL, &len);
+	    numPrefixes, prefixObjs, &len);
 
     result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
     ckfree((char *) argObjs);
@@ -1578,7 +1661,7 @@ ObjectCmd(
 	return TCL_ERROR;
     }
 
-    contextPtr = GetCallContext(iPtr->ooFoundation, oPtr, objv[1],
+    contextPtr = TclOOGetCallContext(iPtr->ooFoundation, oPtr, objv[1],
 	    (publicOnly ? PUBLIC_METHOD :0) | (oPtr->flags & FILTER_HANDLING),
 	    cachePtr);
     if (contextPtr == NULL) {
@@ -1589,7 +1672,7 @@ ObjectCmd(
     }
 
     Tcl_Preserve(oPtr);
-    result = InvokeContext(interp, contextPtr, objc, objv);
+    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
     if (!(contextPtr->flags & OO_UNKNOWN_METHOD)
 	    && !(oPtr->flags & OBJECT_DELETED)) {
 	Tcl_HashEntry *hPtr;
@@ -1598,673 +1681,14 @@ ObjectCmd(
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) == NULL) {
 	    Tcl_SetHashValue(hPtr, contextPtr);
 	} else {
-	    DeleteContext(contextPtr);
+	    TclOODeleteContext(contextPtr);
 	}
     } else {
-	DeleteContext(contextPtr);
+	TclOODeleteContext(contextPtr);
     }
     Tcl_Release(oPtr);
 
     return result;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * DeleteContext --
- *
- *	Destroys a method call-chain context, which should not be in use.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-DeleteContext(
-    CallContext *contextPtr)
-{
-    if (contextPtr->callChain != contextPtr->staticCallChain) {
-	ckfree((char *) contextPtr->callChain);
-    }
-    ckfree((char *) contextPtr);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * InvokeContext --
- *
- *	Invokes a single step along a method call-chain context. Note that the
- *	invokation of a step along the chain can cause further steps along the
- *	chain to be invoked. Note that this function is written to be as light
- *	in stack usage as possible.
- *
- * ----------------------------------------------------------------------
- */
-
-static int
-InvokeContext(
-    Tcl_Interp *interp,		/* Interpreter for error reporting, and many
-				 * other sorts of context handling (e.g.,
-				 * commands, variables) depending on method
-				 * implementation. */
-    CallContext *contextPtr,	/* The method call context. */
-    int objc,			/* The number of arguments. */
-    Tcl_Obj *const *objv)	/* The arguments as actually seen. */
-{
-    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
-    int result, isFirst = (contextPtr->index == 0);
-    int isFilter = contextPtr->callChain[contextPtr->index].isFilter;
-    int wasFilter;
-
-    /*
-     * If this is the first step along the chain, we preserve the method
-     * entries in the chain so that they do not get deleted out from under our
-     * feet.
-     */
-
-    if (isFirst) {
-	int i;
-
-	for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	    Tcl_Preserve(contextPtr->callChain[i].mPtr);
-	}
-    }
-
-    /*
-     * Save whether we were in a filter and set up whether we are now.
-     */
-
-    wasFilter = contextPtr->oPtr->flags & FILTER_HANDLING;
-    if (isFilter || contextPtr->flags & FILTER_HANDLING) {
-	contextPtr->oPtr->flags |= FILTER_HANDLING;
-    } else {
-	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
-    }
-
-    /*
-     * Run the method implementation.
-     */
-
-    result = mPtr->typePtr->callProc(mPtr->clientData, interp,
-	    (Tcl_ObjectContext) contextPtr, objc, objv);
-
-    /*
-     * Restore the old filter-ness, release any locks on method
-     * implementations, and return the result code.
-     */
-
-    if (wasFilter) {
-	contextPtr->oPtr->flags |= FILTER_HANDLING;
-    } else {
-	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
-    }
-    if (isFirst) {
-	int i;
-
-	for (i=0 ; i<contextPtr->numCallChain ; i++) {
-	    Tcl_Release(contextPtr->callChain[i].mPtr);
-	}
-    }
-    return result;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * GetSortedMethodList --
- *
- *	Discovers the list of method names supported by an object.
- *
- * ----------------------------------------------------------------------
- */
-
-static int
-GetSortedMethodList(
-    Object *oPtr,		/* The object to get the method names for. */
-    int publicOnly,		/* Whether we just want the public method
-				 * names. */
-    const char ***stringsPtr)	/* Where to write a pointer to the array of
-				 * strings to. */
-{
-    Tcl_HashTable names;
-    FOREACH_HASH_DECLS;
-    int i;
-    const char **strings;
-    Class *mixinPtr;
-    Tcl_Obj *namePtr;
-    Method *mPtr;
-    void *isWanted;
-
-    Tcl_InitObjHashTable(&names);
-
-    FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
-	int isNew;
-
-	hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
-	if (isNew) {
-	    isWanted = (void *) (!publicOnly || mPtr->flags & PUBLIC_METHOD);
-	    Tcl_SetHashValue(hPtr, isWanted);
-	}
-    }
-
-    AddClassMethodNames(oPtr->selfCls, publicOnly, &names);
-    FOREACH(mixinPtr, oPtr->mixins) {
-	AddClassMethodNames(mixinPtr, publicOnly, &names);
-    }
-
-    if (names.numEntries == 0) {
-	Tcl_DeleteHashTable(&names);
-	return 0;
-    }
-
-    strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
-    i = 0;
-    FOREACH_HASH(namePtr, isWanted, &names) {
-	if (!publicOnly || isWanted) {
-	    strings[i++] = TclGetString(namePtr);
-	}
-    }
-
-    /*
-     * Note that 'i' may well be less than names.numEntries when we are
-     * dealing with public method names.
-     */
-
-    qsort(strings, (unsigned) i, sizeof(char *), CmpStr);
-
-    Tcl_DeleteHashTable(&names);
-    *stringsPtr = strings;
-    return i;
-}
-
-/* Comparator for GetSortedMethodList */
-static int
-CmpStr(
-    const void *ptr1,
-    const void *ptr2)
-{
-    const char **strPtr1 = (const char **) ptr1;
-    const char **strPtr2 = (const char **) ptr2;
-
-    return TclpUtfNcmp2(*strPtr1, *strPtr2, strlen(*strPtr1)+1);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddClassMethodNames --
- *
- *	Adds the method names defined by a class (or its superclasses) to the
- *	collection being built. The collection is built in a hash table to
- *	ensure that duplicates are excluded. Helper for GetSortedMethodList().
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddClassMethodNames(
-    Class *clsPtr,		/* Class to get method names from. */
-    const int publicOnly,	/* Whether we are interested in just the
-				 * public method names. */
-    Tcl_HashTable *const namesPtr)
-				/* Reference to the hash table to put the
-				 * information in. The hash table maps the
-				 * Tcl_Obj * method name to an integral value
-				 * describing whether the method is wanted.
-				 * This ensures that public/private override
-				 * semantics are handled correctly.*/
-{
-    /*
-     * Scope these declarations so that the compiler can stand a good chance
-     * of making the recursive step highly efficient. We also hand-implement
-     * the tail-recursive case using a while loop; C compilers typically
-     * cannot do tail-recursion optimization usefully.
-     */
-
-    while (1) {
-	FOREACH_HASH_DECLS;
-	Tcl_Obj *namePtr;
-	Method *mPtr;
-
-	FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
-	    int isNew;
-
-	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
-	    if (isNew) {
-		int isWanted = (!publicOnly || mPtr->flags & PUBLIC_METHOD);
-
-		Tcl_SetHashValue(hPtr, (void *) isWanted);
-	    }
-	}
-
-	if (clsPtr->superclasses.num != 1) {
-	    break;
-	}
-	clsPtr = clsPtr->superclasses.list[0];
-    }
-    if (clsPtr->superclasses.num != 0) {
-	Class *superPtr;
-	int i;
-
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    AddClassMethodNames(superPtr, publicOnly, namesPtr);
-	}
-    }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * GetCallContext --
- *
- *	Responsible for constructing the call context, an ordered list of all
- *	method implementations to be called as part of a method invokation.
- *	This method is central to the whole operation of the OO system.
- *
- * ----------------------------------------------------------------------
- */
-
-static CallContext *
-GetCallContext(
-    Foundation *fPtr,		/* The foundation of the object system. */
-    Object *oPtr,		/* The object to get the context for. */
-    Tcl_Obj *methodNameObj,	/* The name of the method to get the context
-				 * for. NULL when getting a constructor or
-				 * destructor chain. */
-    int flags,			/* What sort of context are we looking for.
-				 * Only the bits OO_PUBLIC_METHOD, CONSTRUCTOR
-				 * and DESTRUCTOR are useful. */
-    Tcl_HashTable *cachePtr)	/* Where to cache the chain. Ignored for both
-				 * constructors and destructors. */
-{
-    CallContext *contextPtr;
-    int i, count, doFilters;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashTable doneFilters;
-
-    if (flags & (CONSTRUCTOR|DESTRUCTOR|FILTER_HANDLING)
-	    || (oPtr->flags & FILTER_HANDLING)) {
-	hPtr = NULL;
-	doFilters = 0;
-    } else {
-	doFilters = 1;
-	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
-	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
-	    contextPtr = Tcl_GetHashValue(hPtr);
-	    Tcl_SetHashValue(hPtr, NULL);
-	    if ((contextPtr->globalEpoch == fPtr->epoch)
-		    && (contextPtr->localEpoch == oPtr->epoch)) {
-		return contextPtr;
-	    }
-	    DeleteContext(contextPtr);
-	}
-    }
-    contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
-    contextPtr->numCallChain = 0;
-    contextPtr->callChain = contextPtr->staticCallChain;
-    contextPtr->filterLength = 0;
-    contextPtr->globalEpoch = fPtr->epoch;
-    contextPtr->localEpoch = oPtr->epoch;
-    contextPtr->flags = 0;
-    contextPtr->skip = 2;
-    if (flags & (PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING)) {
-	contextPtr->flags |= flags &
-		(PUBLIC_METHOD | CONSTRUCTOR | DESTRUCTOR | FILTER_HANDLING);
-    }
-    contextPtr->oPtr = oPtr;
-    contextPtr->index = 0;
-
-    /*
-     * Add object filters if any are defined.
-     */
-
-    if (doFilters) {
-	Tcl_Obj *filterObj;
-	Class *mixinPtr;
-
-	doFilters = 1;
-	Tcl_InitObjHashTable(&doneFilters);
-	FOREACH(filterObj, oPtr->filters) {
-	    AddSimpleChainToCallContext(oPtr, filterObj, contextPtr,
-		    &doneFilters, 0);
-	}
-	FOREACH(mixinPtr, oPtr->mixins) {
-	    AddClassFiltersToCallContext(oPtr, mixinPtr, contextPtr,
-		    &doneFilters);
-	}
-    }
-    if (doFilters) {
-	// TODO: Move later in this function. Doing this requires other code
-	// to be reorganized though (especially for distinguishing between a
-	// filtering and a non-filtering context) so it is trickier than it
-	// looks.
-	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, contextPtr,
-		&doneFilters);
-	Tcl_DeleteHashTable(&doneFilters);
-    }
-    count = contextPtr->filterLength = contextPtr->numCallChain;
-
-    /*
-     * Add the actual method implementation.
-     */
-
-    // Class filter handling has to go in here, between the object/mixin
-    // method processing and the class method processing. What a mess. :-(
-    AddSimpleChainToCallContext(oPtr, methodNameObj, contextPtr, NULL, flags);
-
-    /*
-     * Check to see if the method has no implementation. If so, we probably
-     * need to add in a call to the unknown method. Otherwise, set up the
-     * cacheing of the method implementation (if relevant).
-     */
-
-    if (count == contextPtr->numCallChain) {
-	/*
-	 * Method does not actually exist. If we're dealing with constructors
-	 * or destructors, this isn't a problem.
-	 */
-
-	if (flags & (CONSTRUCTOR | DESTRUCTOR)) {
-	    DeleteContext(contextPtr);
-	    return NULL;
-	}
-	AddSimpleChainToCallContext(oPtr, fPtr->unknownMethodNameObj,
-		contextPtr, NULL, 0);
-	contextPtr->flags |= OO_UNKNOWN_METHOD;
-	contextPtr->globalEpoch = -1;
-	if (count == contextPtr->numCallChain) {
-	    DeleteContext(contextPtr);
-	    return NULL;
-	}
-    } else if (doFilters) {
-	if (hPtr == NULL) {
-	    hPtr = Tcl_CreateHashEntry(cachePtr, (char *) methodNameObj, &i);
-	}
-	Tcl_SetHashValue(hPtr, NULL);
-    }
-    return contextPtr;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddClassFiltersToCallContext --
- *
- *	Logic to make extracting all the filters from the class context much
- *	easier.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddClassFiltersToCallContext(
-    Object *const oPtr,		/* Object that the filters operate on. */
-    Class *clsPtr,		/* Class to get the filters from. */
-    CallContext *const contextPtr,
-				/* Context to fill with call chain entries. */
-    Tcl_HashTable *const doneFilters)
-				/* Where to record what filters have been
-				 * processed. Keys are objects, values are
-				 * ignored. */
-{
-    int i;
-    Class *superPtr;
-    Tcl_Obj *filterObj;
-
-  tailRecurse:
-    if (clsPtr == NULL) {
-	return;
-    }
-
-    /*
-     * Add all the class filters from the current class. Note that the filters
-     * are added starting at the object root, as this allows the object to
-     * override how filters work to extend their behaviour.
-     */
-
-    FOREACH(filterObj, clsPtr->filters) {
-	int isNew;
-
-	(void) Tcl_CreateHashEntry(doneFilters, (char *) filterObj, &isNew);
-	if (isNew) {
-	    AddSimpleChainToCallContext(oPtr, filterObj, contextPtr,
-		    doneFilters, 0);
-	}
-    }
-
-    /*
-     * Now process the recursive case. Notice the tail-call optimization.
-     */
-
-    switch (clsPtr->superclasses.num) {
-    case 1:
-	clsPtr = clsPtr->superclasses.list[0];
-	goto tailRecurse;
-    default:
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    AddClassFiltersToCallContext(oPtr, superPtr, contextPtr,
-		    doneFilters);
-	}
-    case 0:
-	return;
-    }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddSimpleChainToCallContext --
- *
- *	The core of the call-chain construction engine, this handles calling a
- *	particular method on a particular object. Note that filters and
- *	unknown handling are already handled by the logic that uses this
- *	function.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddSimpleChainToCallContext(
-    Object *oPtr,		/* Object to add call chain entries for. */
-    Tcl_Obj *methodNameObj,	/* Name of method to add the call chain
-				 * entries for. */
-    CallContext *contextPtr,	/* Where to add the call chain entries. */
-    Tcl_HashTable *doneFilters,	/* Where to record what call chain entries
-				 * have been processed. */
-    int flags)			/* What sort of call chain are we building. */
-{
-    int i;
-
-    if (!(flags & (KNOWN_STATE | CONSTRUCTOR | DESTRUCTOR))) {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&oPtr->methods,
-		(char *) methodNameObj);
-
-	if (hPtr != NULL) {
-	    Method *mPtr = Tcl_GetHashValue(hPtr);
-
-	    if (flags & PUBLIC_METHOD) {
-		if (!(mPtr->flags & PUBLIC_METHOD)) {
-		    return;
-		} else {
-		    flags |= DEFINITE_PUBLIC;
-		}
-	    } else {
-		flags |= DEFINITE_PRIVATE;
-	    }
-	}
-    }
-    if (!(flags & (CONSTRUCTOR | DESTRUCTOR))) {
-	Tcl_HashEntry *hPtr;
-	Class *mixinPtr;
-
-	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
-	if (hPtr != NULL) {
-	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr,
-		    doneFilters);
-	}
-	FOREACH(mixinPtr, oPtr->mixins) {
-	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
-		    contextPtr, doneFilters, flags);
-	}
-    }
-    AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, contextPtr,
-	    doneFilters, flags);
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddSimpleClassChainToCallContext --
- *
- *	Construct a call-chain from a class hierarchy.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddSimpleClassChainToCallContext(
-    Class *classPtr,		/* Class to add the call chain entries for. */
-    Tcl_Obj *const methodNameObj,
-				/* Name of method to add the call chain
-				 * entries for. */
-    CallContext *const contextPtr,
-				/* Where to add the call chain entries. */
-    Tcl_HashTable *const doneFilters,
-				/* Where to record what call chain entries
-				 * have been processed. */
-    int flags)			/* What sort of call chain are we building. */
-{
-    /*
-     * We hard-code the tail-recursive form. It's by far the most common case
-     * *and* it is much more gentle on the stack.
-     */
-
-  tailRecurse:
-    if (flags & CONSTRUCTOR) {
-	AddMethodToCallChain(classPtr->constructorPtr, contextPtr,
-		doneFilters);
-    } else if (flags & DESTRUCTOR) {
-	AddMethodToCallChain(classPtr->destructorPtr, contextPtr,
-		doneFilters);
-    } else {
-	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
-		(char *) methodNameObj);
-
-	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
-
-	    if (!(flags & KNOWN_STATE)) {
-		if (flags & PUBLIC_METHOD) {
-		    if (mPtr->flags & PUBLIC_METHOD) {
-			flags |= DEFINITE_PUBLIC;
-		    } else {
-			return;
-		    }
-		} else {
-		    flags |= DEFINITE_PRIVATE;
-		}
-	    }
-	    AddMethodToCallChain(mPtr, contextPtr, doneFilters);
-	}
-    }
-
-    switch (classPtr->superclasses.num) {
-    case 1:
-	classPtr = classPtr->superclasses.list[0];
-	goto tailRecurse;
-    default:
-    {
-	int i;
-	Class *superPtr;
-
-	FOREACH(superPtr, classPtr->superclasses) {
-	    AddSimpleClassChainToCallContext(superPtr, methodNameObj,
-		    contextPtr, doneFilters, flags);
-	}
-    }
-    case 0:
-	return;
-    }
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * AddMethodToCallChain --
- *
- *	Utility method that manages the adding of a particular method
- *	implementation to a call-chain.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-AddMethodToCallChain(
-    Method *mPtr,		/* Actual method implementation to add to call
-				 * chain (or NULL, a no-op). */
-    CallContext *contextPtr,	/* The call chain to add the method
-				 * implementation to. */
-    Tcl_HashTable *doneFilters)	/* Where to record what filters have been
-				 * processed. If NULL, not processing filters.
-				 * Note that this function does not update
-				 * this hashtable. */
-{
-    int i;
-
-    /*
-     * Return if this is just an entry used to record whether this is a public
-     * method. If so, there's nothing real to call and so nothing to add to
-     * the call chain.
-     */
-
-    if (mPtr == NULL || mPtr->typePtr == NULL) {
-	return;
-    }
-
-    /*
-     * First test whether the method is already in the call chain. Skip over
-     * any leading filters.
-     */
-
-    for (i=contextPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
-	if (contextPtr->callChain[i].mPtr == mPtr
-		&& contextPtr->callChain[i].isFilter == (doneFilters!=NULL)) {
-	    /*
-	     * Call chain semantics states that methods come as *late* in the
-	     * call chain as possible. This is done by copying down the
-	     * following methods. Note that this does not change the number of
-	     * method invokations in the call chain; it just rearranges them.
-	     */
-
-	    for (; i+1<contextPtr->numCallChain ; i++) {
-		contextPtr->callChain[i] = contextPtr->callChain[i+1];
-	    }
-	    contextPtr->callChain[i].mPtr = mPtr;
-	    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
-	    return;
-	}
-    }
-
-    /*
-     * Need to really add the method. This is made a bit more complex by the
-     * fact that we are using some "static" space initially, and only start
-     * realloc-ing if the chain gets long.
-     */
-
-    if (contextPtr->numCallChain == CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke)*(contextPtr->numCallChain+1));
-	memcpy(contextPtr->callChain, contextPtr->staticCallChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
-    } else if (contextPtr->numCallChain > CALL_CHAIN_STATIC_SIZE) {
-	contextPtr->callChain = (struct MInvoke *)
-		ckrealloc((char *) contextPtr->callChain,
-		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
-    }
-    contextPtr->callChain[contextPtr->numCallChain].mPtr = mPtr;
-    contextPtr->callChain[contextPtr->numCallChain].isFilter =
-	    (doneFilters != NULL);
-    contextPtr->numCallChain++;
 }
 
 /*
@@ -2535,7 +1959,7 @@ ObjectUnknown(
      * Get the list of methods that we want to know about.
      */
 
-    numMethodNames = GetSortedMethodList(oPtr,
+    numMethodNames = TclOOGetSortedMethodList(oPtr,
 	    contextPtr->flags & PUBLIC_METHOD, &methodNames);
 
     /*
@@ -2826,7 +2250,7 @@ NextObjCmd(
 
     savedFramePtr = iPtr->varFramePtr;
     iPtr->varFramePtr = savedFramePtr->callerVarPtr;
-    result = InvokeContext(interp, contextPtr, objc, objv);
+    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
     iPtr->varFramePtr = savedFramePtr;
 
     /*
@@ -3179,10 +2603,19 @@ TclOOGetFwdFromMethod(
  * InitEnsembleRewrite --
  *
  *	Utility function that wraps up a lot of the complexity involved in
- *	doing ensemble-like command forwarding. There are many baroque bits
- *	attached to this function so that it can support much of the rewriting
- *	used in the oo::struct implementation; perhaps it should be tidied up
- *	some day instead.
+ *	doing ensemble-like command forwarding. Here is a picture of memory
+ *	management plan:
+ *
+ *                    <-----------------objc---------------------->
+ *      objv:        |=============|===============================|
+ *                    <-toRewrite->           |
+ *                                             \
+ *                    <-rewriteLength->         \
+ *      rewriteObjs: |=================|         \
+ *                           |                    |
+ *                           V                    V
+ *      argObjs:     |=================|===============================|
+ *                    <------------------*lengthPtr------------------->
  *
  * ----------------------------------------------------------------------
  */
@@ -3195,9 +2628,6 @@ InitEnsembleRewrite(
     int toRewrite,		/* Number of real arguments to replace. */
     int rewriteLength,		/* Number of arguments to insert instead. */
     Tcl_Obj *const *rewriteObjs,/* Arguments to insert instead. */
-    int insertIndex,		/* Where to insert a magical "extra" arg. */
-    Tcl_Obj *insertObj,		/* Extra arg to insert, or NULL to not do
-				 * it. */
     int *lengthPtr)		/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
@@ -3205,79 +2635,34 @@ InitEnsembleRewrite(
     int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     Tcl_Obj **argObjs;
     unsigned len = rewriteLength + objc - toRewrite;
-    int stepRem = 0, stepIns = 0;
-
-    if (insertObj) {
-	len++;
-	stepRem = insertIndex - rewriteLength;
-	stepIns = stepRem + 1;
-    }
-
-    /*
-     * Picture of memory management so that I can see what is going on where
-     * so the copies of chunks of arrays will work. Note that 'transfer' is a
-     * derived value.
-     *
-     *               <-----------------objc----------------------->
-     * objv:        |=============|============|===================|
-     *               <-toRewrite-> <-transfer->         \
-     *                                    \              \
-     *               <-rewriteLength->     \              \
-     * rewriteObjs: |=================|     \              \
-     *                      |                |              |
-     *                      V                V              V
-     * argObjs:     |=================|============||===================|
-     *               <---------insertIndex-------->
-     *               <-------------------*lengthPtr-------------------->
-     *
-     * The insertIndex is ignored if insertObj is NULL; that case is much
-     * simpler and looks like this:
-     *
-     *               <-----------------objc---------------------->
-     * objv:        |=============|===============================|
-     *               <-toRewrite->           |
-     *                                        \
-     *               <-rewriteLength->         \
-     * rewriteObjs: |=================|         \
-     *                      |                    |
-     *                      V                    V
-     * argObjs:     |=================|===============================|
-     *               <------------------*lengthPtr------------------->
-     */
 
     argObjs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
-    if (insertObj) {
-	int transfer = insertIndex - rewriteLength;
-
-	memcpy(argObjs + rewriteLength, objv + toRewrite,
-		sizeof(Tcl_Obj *) * transfer);
-	argObjs[insertIndex] = insertObj;
-	memcpy(argObjs + insertIndex + 1, objv + toRewrite + transfer,
-		sizeof(Tcl_Obj *) * (objc - toRewrite - transfer));
-    } else {
-	memcpy(argObjs + rewriteLength, objv + toRewrite,
-		sizeof(Tcl_Obj *) * (objc - toRewrite));
-    }
+    memcpy(argObjs + rewriteLength, objv + toRewrite,
+	    sizeof(Tcl_Obj *) * (objc - toRewrite));
 
     /*
-     * Now plumb this into the core ensemble logging system so that
-     * Tcl_WrongNumArgs() can rewrite its result appropriately.
+     * Now plumb this into the core ensemble rewrite logging system so that
+     * Tcl_WrongNumArgs() can rewrite its result appropriately. The rules for
+     * how to store the rewrite rules get complex solely because of the case
+     * where an ensemble rewrites itself out of the picture; when that
+     * happens, the quality of the error message rewrite falls drastically
+     * (and unavoidably).
      */
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = toRewrite + stepRem;
-	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength + stepIns;
+	iPtr->ensembleRewrite.numRemovedObjs = toRewrite;
+	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength;
     } else {
-	int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	if (ni < toRewrite) {
-	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite + stepRem - ni;
-	    iPtr->ensembleRewrite.numInsertedObjs +=
-		    rewriteLength + stepIns - 1;
+	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
+
+	if (numIns < toRewrite) {
+	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite - numIns;
+	    iPtr->ensembleRewrite.numInsertedObjs += rewriteLength - 1;
 	} else {
 	    iPtr->ensembleRewrite.numInsertedObjs +=
-		    rewriteLength + stepIns - toRewrite;
+		    rewriteLength - toRewrite;
 	}
     }
 

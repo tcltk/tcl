@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.16 2006/10/04 22:17:59 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.17 2006/10/08 15:39:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -44,6 +44,8 @@ static int		InfoClassForwardCmd(Class *clsPtr, Tcl_Interp *interp,
 static int		InfoClassInstancesCmd(Class *clsPtr,
 			    Tcl_Interp*interp, int objc, Tcl_Obj*const objv[]);
 static int		InfoClassMethodsCmd(Class *clsPtr, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		InfoClassMixinsCmd(Class *clsPtr, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 #ifdef SUPPORT_OO_PARAMETERS
 static int		InfoClassParametersCmd(Class *clsPtr,
@@ -117,7 +119,7 @@ TclInfoClassCmd(
 {
     static const char *subcommands[] = {
 	"constructor", "definition", "destructor", "filters", "forward",
-	"instances", "methods",
+	"instances", "methods", "mixins",
 #ifdef SUPPORT_OO_PARAMETERS
 	"parameters",
 #endif
@@ -125,7 +127,7 @@ TclInfoClassCmd(
     };
     enum ICSubCmds {
 	ICConstructor, ICDefinition, ICDestructor, ICFilters, ICForward,
-	ICInstances, ICMethods,
+	ICInstances, ICMethods, ICMixins,
 #ifdef SUPPORT_OO_PARAMETERS
 	ICParameters,
 #endif
@@ -167,6 +169,8 @@ TclInfoClassCmd(
 	return InfoClassInstancesCmd(oPtr->classPtr, interp, objc, objv);
     case ICMethods:
 	return InfoClassMethodsCmd(oPtr->classPtr, interp, objc, objv);
+    case ICMixins:
+	return InfoClassMixinsCmd(oPtr->classPtr, interp, objc, objv);
 #ifdef SUPPORT_OO_PARAMETERS
     case ICParameters:
 	return InfoClassParametersCmd(oPtr->classPtr, interp, objc, objv);
@@ -791,6 +795,30 @@ InfoClassMethodsCmd(
 	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
 	}
+    }
+    return TCL_OK;
+}
+
+static int
+InfoClassMixinsCmd(
+    Class *clsPtr,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Class *mixinPtr;
+    int i;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "className mixins");
+	return TCL_ERROR;
+    }
+    FOREACH(mixinPtr, clsPtr->mixins) {
+	Tcl_Obj *tmpObj;
+
+	TclNewObj(tmpObj);
+	Tcl_GetCommandFullName(interp, mixinPtr->thisPtr->command, tmpObj);
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), tmpObj);
     }
     return TCL_OK;
 }

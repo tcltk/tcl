@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.33 2006/10/04 22:17:59 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.34 2006/10/08 15:39:59 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -162,13 +162,35 @@ typedef struct Class {
 				 * this class. */
     int flags;			/* Assorted flags. */
     LIST_STATIC(struct Class *) superclasses;
-				/* List of superclasses; length=space=num. */
+				/* List of superclasses, used for generation
+				 * of method call chains. */
     LIST_DYNAMIC(struct Class *) subclasses;
-				/* List of subclasses; length=num,space=size */
+				/* List of subclasses, used to ensure deletion
+				 * of dependent entities happens properly when
+				 * the class itself is deleted. */
     LIST_DYNAMIC(Object *) instances;
-				/* List of instances; length=num,space=size */
+				/* List of instances, used to ensure deletion
+				 * of dependent entities happens properly when
+				 * the class itself is deleted. */
     LIST_STATIC(Tcl_Obj *) filters;
-				/* List of filter names; length=space=num. */
+				/* List of filter names, used for generation
+				 * of method call chains. */
+    LIST_STATIC(struct Class *) mixins;
+				/* List of mixin classes, used for generation
+				 * of method call chains. */
+    LIST_DYNAMIC(struct Class *) mixinSubs;
+				/* List of classes that this class is mixed
+				 * into, used to ensure deletion of dependent
+				 * entities happens properly when the class
+				 * itself is deleted. */
+    LIST_STATIC(struct Class *) classHierarchy;
+				/* List of classes that comprise the basic
+				 * class hierarchy for this class's
+				 * superclasses. If NULL (and this isn't the
+				 * root object class) then this needs
+				 * recomputing. */
+    int classHierarchyEpoch;	/* Differs from the global epoch when it is
+				 * time to recompute the class hierarchy. */
     Tcl_HashTable classMethods;	/* Hash table of all methods. Hash maps from
 				 * the (Tcl_Obj*) method name to the (Method*)
 				 * method record. */
@@ -253,30 +275,42 @@ typedef struct CallContext {
  * maybe just put in the internal stubs table.
  */
 
-MODULE_SCOPE Method *	TclNewProcMethod(Tcl_Interp *interp, Object *oPtr,
+MODULE_SCOPE Method *	TclOONewProcMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 			    Tcl_Obj *bodyObj);
-MODULE_SCOPE Method *	TclNewForwardMethod(Tcl_Interp *interp, Object *oPtr,
+MODULE_SCOPE Method *	TclOONewForwardMethod(Tcl_Interp *interp, Object *oPtr,
 			    int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
-MODULE_SCOPE Method *	TclNewProcClassMethod(Tcl_Interp *interp,
+MODULE_SCOPE Method *	TclOONewProcClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *argsObj, Tcl_Obj *bodyObj);
-MODULE_SCOPE Method *	TclNewForwardClassMethod(Tcl_Interp *interp,
+MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
-MODULE_SCOPE void	TclDeleteMethod(Method *method);
+MODULE_SCOPE void	TclOODeleteMethod(Method *method);
 MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *procNameObj,
 			    int skip);
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
+MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE int	TclOOIsReachable(Class *targetPtr, Class *startPtr);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
+MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
+			    Class *mixinPtr);
+MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
+MODULE_SCOPE CallContext *TclOOGetCallContext(Foundation *fPtr, Object *oPtr,
+			    Tcl_Obj *methodNameObj, int flags,
+			    Tcl_HashTable *cachePtr);
+MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
+			    CallContext *contextPtr, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
+			    int publicOnly, const char ***stringsPtr);
 
 /*
  * A convenience macro for iterating through the lists used in the internal

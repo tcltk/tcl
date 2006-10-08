@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.23 2006/10/01 21:27:24 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.24 2006/10/08 15:39:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -189,7 +189,7 @@ TclOODefineConstructorObjCmd(
 
 	Method *mPtr;
 
-	mPtr = TclNewProcClassMethod(interp, clsPtr, 1, NULL, objv[1],
+	mPtr = TclOONewProcClassMethod(interp, clsPtr, 1, NULL, objv[1],
 		objv[2]);
 	if (mPtr == NULL) {
 	    return TCL_ERROR;
@@ -201,7 +201,7 @@ TclOODefineConstructorObjCmd(
 	 * during execution of the constructor itself.
 	 */
 
-	TclDeleteMethod(clsPtr->constructorPtr);
+	TclOODeleteMethod(clsPtr->constructorPtr);
 	clsPtr->constructorPtr = mPtr;
     } else {
 	/*
@@ -209,7 +209,7 @@ TclOODefineConstructorObjCmd(
 	 * record to NULL.
 	 */
 
-	TclDeleteMethod(clsPtr->constructorPtr);
+	TclOODeleteMethod(clsPtr->constructorPtr);
 	clsPtr->constructorPtr = NULL;
     }
 
@@ -445,7 +445,8 @@ TclOODefineDestructorObjCmd(
 
 	Method *mPtr;
 
-	mPtr = TclNewProcClassMethod(interp, clsPtr, 1, NULL, NULL, objv[1]);
+	mPtr = TclOONewProcClassMethod(interp, clsPtr, 1, NULL, NULL,
+		objv[1]);
 	if (mPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -456,7 +457,7 @@ TclOODefineDestructorObjCmd(
 	 * during execution of the destructor itself.
 	 */
 
-	TclDeleteMethod(clsPtr->destructorPtr);
+	TclOODeleteMethod(clsPtr->destructorPtr);
 	clsPtr->destructorPtr = mPtr;
     } else {
 	/*
@@ -464,7 +465,7 @@ TclOODefineDestructorObjCmd(
 	 * record to NULL.
 	 */
 
-	TclDeleteMethod(clsPtr->destructorPtr);
+	TclOODeleteMethod(clsPtr->destructorPtr);
 	clsPtr->destructorPtr = NULL;
     }
 
@@ -502,7 +503,7 @@ TclOODefineExportObjCmd(
 	    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char*) objv[i],
 		    &isNew);
 	}
 
@@ -640,9 +641,10 @@ TclOODefineForwardObjCmd(
 
     prefixObj = Tcl_NewListObj(objc-2, objv+2);
     if (isSelfForward) {
-	mPtr = TclNewForwardMethod(interp, oPtr, isPublic, objv[1], prefixObj);
+	mPtr = TclOONewForwardMethod(interp, oPtr, isPublic, objv[1],
+		prefixObj);
     } else {
-	mPtr = TclNewForwardClassMethod(interp, oPtr->classPtr, isPublic,
+	mPtr = TclOONewForwardClassMethod(interp, oPtr->classPtr, isPublic,
 		objv[1], prefixObj);
     }
     if (mPtr == NULL) {
@@ -684,10 +686,10 @@ TclOODefineMethodObjCmd(
 	int isPublic = Tcl_StringMatch(TclGetString(objv[1]), "[a-z]*");
 
 	if (isSelfMethod) {
-	    mPtr = TclNewProcMethod(interp, oPtr, isPublic, objv[1], objv[2],
-		    objv[3]);
+	    mPtr = TclOONewProcMethod(interp, oPtr, isPublic, objv[1],
+		    objv[2], objv[3]);
 	} else {
-	    mPtr = TclNewProcClassMethod(interp, oPtr->classPtr, isPublic,
+	    mPtr = TclOONewProcClassMethod(interp, oPtr->classPtr, isPublic,
 		    objv[1], objv[2], objv[3]);
 	}
 	if (mPtr == NULL) {
@@ -710,7 +712,7 @@ TclOODefineMethodObjCmd(
 	    Method *mPtr = (Method *) Tcl_GetHashValue(hPtr);
 
 	    Tcl_DeleteHashEntry(hPtr);
-	    TclDeleteMethod(mPtr);
+	    TclOODeleteMethod(mPtr);
 	}
     }
 
@@ -734,57 +736,97 @@ TclOODefineMixinObjCmd(
     }
     isSelfMixin |= (oPtr->classPtr == NULL);
 
-    if (!isSelfMixin) {
-	Tcl_AppendResult(interp,
-		"setting class-wide mixins not yet supported", NULL);
-	return TCL_ERROR;
-    }
-
-    if (objc == 1) {
-	if (oPtr->mixins.num != 0) {
-	    FOREACH(mixinPtr, oPtr->mixins) {
-		TclOORemoveFromInstances(oPtr, mixinPtr);
+    if (isSelfMixin) {
+	if (objc == 1) {
+	    if (oPtr->mixins.num != 0) {
+		FOREACH(mixinPtr, oPtr->mixins) {
+		    TclOORemoveFromInstances(oPtr, mixinPtr);
+		}
+		ckfree((char *) oPtr->mixins.list);
+		oPtr->mixins.num = 0;
 	    }
-	    ckfree((char *) oPtr->mixins.list);
-	    oPtr->mixins.num = 0;
+	} else {
+	    Class **mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+
+	    for (i=1 ; i<objc ; i++) {
+		Object *o2Ptr;
+
+		o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
+		if (o2Ptr == NULL) {
+		freeAndErrorSelf:
+		    ckfree((char *) mixins);
+		    return TCL_ERROR;
+		}
+		if (o2Ptr->classPtr == NULL) {
+		    Tcl_AppendResult(interp, "may only mix in classes; \"",
+			    TclGetString(objv[i]), "\" is not a class", NULL);
+		    goto freeAndErrorSelf;
+		}
+		mixins[i-1] = o2Ptr->classPtr;
+	    }
+	    if (oPtr->mixins.num != 0) {
+		FOREACH(mixinPtr, oPtr->mixins) {
+		    TclOORemoveFromInstances(oPtr, mixinPtr);
+		}
+		ckfree((char *) oPtr->mixins.list);
+	    }
+	    oPtr->mixins.num = objc-1;
+	    oPtr->mixins.list = mixins;
+	    FOREACH(mixinPtr, oPtr->mixins) {
+		TclOOAddToInstances(oPtr, mixinPtr);
+	    }
 	}
+	oPtr->epoch++;
     } else {
-	Class **mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
+	register Class *clsPtr = oPtr->classPtr;
 
-	for (i=1 ; i<objc ; i++) {
-	    Object *o2Ptr;
+	if (objc == 1) {
+	    if (clsPtr->mixins.num != 0) {
+		FOREACH(mixinPtr, clsPtr->mixins) {
+		    TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
+		}
+		ckfree((char *) clsPtr->mixins.list);
+		clsPtr->mixins.num = 0;
+	    }
+	} else {
+	    Class **mixins = (Class **) ckalloc(sizeof(Class *) * (objc-1));
 
-	    o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
-	    if (o2Ptr == NULL) {
-	    freeAndError:
-		ckfree((char *) mixins);
-		return TCL_ERROR;
+	    for (i=1 ; i<objc ; i++) {
+		Object *o2Ptr;
+
+		o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
+		if (o2Ptr == NULL) {
+		freeAndErrorClass:
+		    ckfree((char *) mixins);
+		    return TCL_ERROR;
+		}
+		if (o2Ptr->classPtr == NULL) {
+		    Tcl_AppendResult(interp, "may only mix in classes; \"",
+			    TclGetString(objv[i]), "\" is not a class", NULL);
+		    goto freeAndErrorClass;
+		}
+		mixins[i-1] = o2Ptr->classPtr;
 	    }
-	    if (o2Ptr->classPtr == NULL) {
-		Tcl_AppendResult(interp, "may only mix in classes; \"",
-			TclGetString(objv[i]), "\" is not a class", NULL);
-		goto freeAndError;
+	    if (clsPtr->mixins.num != 0) {
+		FOREACH(mixinPtr, clsPtr->mixins) {
+		    TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
+		}
+		ckfree((char *) clsPtr->mixins.list);
 	    }
-	    mixins[i-1] = o2Ptr->classPtr;
-	}
-	if (oPtr->mixins.num != 0) {
-	    FOREACH(mixinPtr, oPtr->mixins) {
-		TclOORemoveFromInstances(oPtr, mixinPtr);
+	    clsPtr->mixins.num = objc-1;
+	    clsPtr->mixins.list = mixins;
+	    FOREACH(mixinPtr, clsPtr->mixins) {
+		TclOOAddToMixinSubs(clsPtr, mixinPtr);
 	    }
-	    ckfree((char *) oPtr->mixins.list);
 	}
-	oPtr->mixins.num = objc-1;
-	oPtr->mixins.list = mixins;
-	FOREACH(mixinPtr, oPtr->mixins) {
-	    TclOOAddToInstances(oPtr, mixinPtr);
-	}
+	((Interp *)interp)->ooFoundation->epoch++;
     }
-    oPtr->epoch++;
     return TCL_OK;
 }
 
 #ifdef SUPPORT_OO_PARAMETERS
-// Commented out; not sure whether we want to retain this in the core oo system
+// Not sure whether we want to retain this in the core oo system since it is
+// easy to add "after market".
 int
 TclOODefineParameterObjCmd(
     ClientData clientData,
@@ -937,13 +979,13 @@ TclOODefineSuperclassObjCmd(
 	    goto failedAfterAlloc;
 	}
 	if (o2Ptr->classPtr == NULL) {
-	    Tcl_AppendResult(interp, "only a class can be a superclass", NULL);
+	    Tcl_AppendResult(interp, "only a class can be a superclass",NULL);
 	    goto failedAfterAlloc;
 	}
 	for (j=0 ; j<i ; j++) {
 	    if (superclasses[j] == o2Ptr->classPtr) {
 		Tcl_AppendResult(interp,
-			"class should only be a direct superclass once", NULL);
+			"class should only be a direct superclass once",NULL);
 		goto failedAfterAlloc;
 	    }
 	}
@@ -1011,7 +1053,7 @@ TclOODefineUnexportObjCmd(
 	    hPtr = Tcl_CreateHashEntry(&oPtr->methods, (char *) objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char*) objv[i],
 		    &isNew);
 	}
 
