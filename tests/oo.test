@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.36 2006/10/04 22:17:59 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.37 2006/10/08 17:13:56 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -666,6 +666,20 @@ test oo-14.1 {OO: mixins} {
     oo::define fooTest2 mixin
     lappend result [Bclass destroy] [info command fooTest*] [Aclass destroy]
 } {1 {unknown method "?": must be bar, boo or destroy} {::fooTest in bar} {::fooTest in boo} {::fooTest2 in bar} {::fooTest2 in boo} {} fooTest2 {}}
+test oo-14.2 {OO: mixins} {
+    oo::class create Aclass {
+	method bar {} {return "[self object] in bar"}
+    }
+    oo::class create Bclass {
+	method boo {} {return "[self object] in boo"}
+    }
+    oo::define Aclass mixin Bclass
+    Aclass create fooTest
+    set result [list [catch {fooTest ?} msg] $msg]
+    lappend result [catch {fooTest bar} msg] $msg
+    lappend result [catch {fooTest boo} msg] $msg
+    lappend result [Bclass destroy] [info commands Aclass]
+} {1 {unknown method "?": must be bar, boo or destroy} 0 {::fooTest in bar} 0 {::fooTest in boo} {} {}}
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass
@@ -805,10 +819,10 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4.0 {OO: class introspection} -constraints redactedFeature -body {
     info class oo::object gorp
-} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, parameters, subclasses, or superclasses}
+} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, parameters, subclasses, or superclasses}
 test oo-17.4.1 {OO: class introspection} -body {
     info class oo::object gorp
-} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, subclasses, or superclasses}
+} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, or superclasses}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -1143,7 +1157,7 @@ test oo-21.2 {OO: inheritance ordering} -setup {
     return $result
 } -cleanup {
     A destroy
-} -result {o Fmix Emix D B C A}
+} -result {Fmix Emix o D B C A}
 test oo-21.3 {OO: inheritance ordering} -setup {
     oo::class create A
 } -body {
@@ -1181,8 +1195,8 @@ test oo-21.3 {OO: inheritance ordering} -setup {
     return $result
 } -cleanup {
     A destroy
-} -result {Emix-filt B-filt o Fmix Emix D B C A}
-test oo-21.4 {OO: inheritance ordering} -constraints knownBug -setup {
+} -result {Emix-filt B-filt Fmix Emix o D B C A}
+test oo-21.4 {OO: inheritance ordering} -setup {
     oo::class create A
 } -body {
     oo::define A method m {} {lappend ::result A}
@@ -1222,7 +1236,7 @@ test oo-21.4 {OO: inheritance ordering} -constraints knownBug -setup {
     return $result
 } -cleanup {
     A destroy
-} -result {Emix-filt B-filt o Fmix Emix D-cfilt B-cfilt D B C A}
+} -result {Emix-filt B-filt D-cfilt B-cfilt Fmix Emix o D B C A}
 
 cleanupTests
 return
