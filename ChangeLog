@@ -1,5 +1,8 @@
 2006-10-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/var.test (var-3.4,7.5,7.8): refer to global vars explicitly (not
+	what was being tested). Missed in the big patch.
+	
 	* tests/parse.test: fixing some incomplete references to global
 	variables - missed in the big *.test patch.
 	
