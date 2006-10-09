@@ -1,5 +1,12 @@
 2006-10-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* doc/UpVar.3: brough the docs in accordance to the code. Ever
+	since 8.0, Tcl_UpVar(2)? accepts TCL_NAMESPACE_ONLY as a flag
+	value, and var-3.4 tests for proper behaviour. The docs only
+	allowed 0 and TCL_GLOBAL_ONLY.
+	
+2006-10-09  Miguel Sofer  <msofer@users.sf.net>
+
 	* tests/*.test: updated all tests to refer explicitly to the
 	global variables ::errorInfo, ::errorCode, ::env and
 	::tcl_platform: many were relying on the alternative lookup in the
