@@ -1,3 +1,26 @@
+==
+== updated to tag tip-278-20061009
+==
+	
+2006-10-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/*.test: updated all tests to refer explicitly to the
+	global variables ::errorInfo, ::errorCode, ::env and
+	::tcl_platform: many were relying on the alternative lookup in the
+	global namespace, that feature is tested specifically in namespace
+	and variable tests.
+	The modified testfiles are: apply.test, basic.test, case.test,
+	cmdIL.test, cmdMZ.test, compExpr-old.test, error.test, eval.test,
+	event.test, expr.test, fileSystem.test, for.test, http.test,
+	if.test, incr-old.test, incr.test, interp.test, io.test,
+	ioCmd.test, load.test, misc.test, namespace.test, parse.test,
+	parseOld.test, pkg.test, proc-old.test, set.test, switch.test,
+	tcltest.test, thread.test, var.test, while-old.test, while.test.
+
+==	
+== BRANCH from tag tip-278-branch-root	
+=====================================================================
+	
 2006-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/rules.vc: bug #1571954: avoid /RTCc flag with MSVC8

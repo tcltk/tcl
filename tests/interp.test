@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.48 2006/01/18 19:48:11 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.48.4.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2065,7 +2065,7 @@ test interp-26.7 {errorInfo transmission: regular interps} {
 	MyError "some secret"
     }
     interp alias $interp test {} MyTestAlias $interp;
-    set res [interp eval $interp {catch test;set errorInfo}]
+    set res [interp eval $interp {catch test;set ::errorInfo}]
     interp delete $interp;
     set res
 } {msg
@@ -2088,7 +2088,7 @@ test interp-26.8 {errorInfo transmission: safe interps--bug 1637} {knownBug} {
 	MyError "some secret"
     }
     interp alias $interp test {} MyTestAlias $interp;
-    set res [interp eval $interp {catch test;set errorInfo}]
+    set res [interp eval $interp {catch test;set ::errorInfo}]
     interp delete $interp;
     set res
 } {msg

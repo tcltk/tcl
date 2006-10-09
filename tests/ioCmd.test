@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.28 2006/03/16 18:23:00 andreas_kupries Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.28.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -117,7 +117,7 @@ test iocmd-4.4 {read command} {
    list [catch {read -nonewline} msg] $msg
 } {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
 test iocmd-4.5 {read command} {
-   list [catch {read -nonew file4} msg] $msg $errorCode
+   list [catch {read -nonew file4} msg] $msg $::errorCode
 } {1 {can not find channel named "-nonew"} NONE}
 test iocmd-4.6 {read command} {
    list [catch {read stdout} msg] $msg
@@ -132,29 +132,29 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
     puts $f "and this one"
     close $f
     set f [open $path(test1)]
-    set x [list [catch {read -nonewline $f 20 z} msg] $msg $errorCode]
+    set x [list [catch {read -nonewline $f 20 z} msg] $msg $::errorCode]
     close $f
     set x
 } {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} NONE}
 test iocmd-4.9 {read command} {
-    list [catch {read stdin foo} msg] $msg $errorCode
+    list [catch {read stdin foo} msg] $msg $::errorCode
 } {1 {bad argument "foo": should be "nonewline"} NONE}
 test iocmd-4.10 {read command} {
-    list [catch {read file107} msg] $msg $errorCode
+    list [catch {read file107} msg] $msg $::errorCode
 } {1 {can not find channel named "file107"} NONE}
 
 set path(test3) [makeFile {} test3]
 
 test iocmd-4.11 {read command} {
     set f [open $path(test3) w]
-    set x [list [catch {read $f} msg] $msg $errorCode]
+    set x [list [catch {read $f} msg] $msg $::errorCode]
     close $f
     string compare [string tolower $x] \
 	[list 1 [format "channel \"%s\" wasn't opened for reading" $f] none]
 } 0
 test iocmd-4.12 {read command} {
     set f [open $path(test1)]
-    set x [list [catch {read $f 12z} msg] $msg $errorCode]
+    set x [list [catch {read $f 12z} msg] $msg $::errorCode]
     close $f
     set x
 } {1 {expected integer but got "12z"} NONE}
@@ -343,14 +343,14 @@ test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable
 # open channel to work with).
 
 test iocmd-9.1 {eof command} {
-    list [catch {eof} msg] $msg $errorCode
+    list [catch {eof} msg] $msg $::errorCode
 } {1 {wrong # args: should be "eof channelId"} NONE}
 test iocmd-9.2 {eof command} {
-    list [catch {eof a b} msg] $msg $errorCode
+    list [catch {eof a b} msg] $msg $::errorCode
 } {1 {wrong # args: should be "eof channelId"} NONE}
 test iocmd-9.3 {eof command} {
     catch {close file100}
-    list [catch {eof file100} msg] $msg $errorCode
+    list [catch {eof file100} msg] $msg $::errorCode
 } {1 {can not find channel named "file100"} NONE}
 
 # The tests for Tcl_ExecObjCmd are in exec.test
@@ -378,13 +378,13 @@ file delete $path(test5)
 test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
     set f [open $path(test4) w]
     close $f
-    list [catch {open "| cat < $path(test4) > $path(test5)" w} msg] $msg $errorCode
+    list [catch {open "| cat < $path(test4) > $path(test5)" w} msg] $msg $::errorCode
 } {1 {can't write input to command: standard input was redirected} NONE}
 test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
-    list [catch {open "| echo > $path(test5)" r} msg] $msg $errorCode
+    list [catch {open "| echo > $path(test5)" r} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
-    list [catch {open "| echo > $path(test5)" r+} msg] $msg $errorCode
+    list [catch {open "| echo > $path(test5)" r+} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 
 test iocmd-12.1 {POSIX open access modes: RDONLY} {
@@ -434,7 +434,7 @@ test iocmd-12.5 {POSIX open access modes: RDWR} -match regexp -body {
     open $path(test3) RDWR
 } -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
 test iocmd-12.6 {POSIX open access modes: errors} {
-    concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$errorInfo
+    concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$::errorInfo
 } "1 unmatched open brace in list
 unmatched open brace in list
     while processing open access modes \"FOO {BAR BAZ\"
@@ -489,7 +489,7 @@ test iocmd-13.5 {errors in open command} {
     list [catch {open $path(test1) r+1} msg] $msg
 } {1 {illegal access mode "r+1"}}
 test iocmd-13.6 {errors in open command} {
-    set msg [list [catch {open _non_existent_} msg] $msg $errorCode]
+    set msg [list [catch {open _non_existent_} msg] $msg $::errorCode]
     regsub [file join {} _non_existent_] $msg "_non_existent_" msg
     string tolower $msg
 } {1 {couldn't open "_non_existent_": no such file or directory} {posix enoent {no such file or directory}}}
@@ -536,7 +536,7 @@ test iocmd-13.10.2 {open for append, O_APPEND} -setup {
 } -result {0 1 2 3 4 5 6 7 8 9}
 
 test iocmd-14.1 {file id parsing errors} {
-    list [catch {eof gorp} msg] $msg $errorCode
+    list [catch {eof gorp} msg] $msg $::errorCode
 } {1 {can not find channel named "gorp"} NONE}
 test iocmd-14.2 {file id parsing errors} {
     list [catch {eof filex} msg] $msg

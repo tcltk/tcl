@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr-old.test,v 1.20 2006/08/22 04:03:23 dgp Exp $
+# RCS: @(#) $Id: compExpr-old.test,v 1.20.2.1 2006/10/09 19:31:06 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -535,7 +535,7 @@ test compExpr-old-14.22 {CompilePrimaryExpr: subcommand primary} {
 } 123
 test compExpr-old-14.23 {CompilePrimaryExpr: error in subcommand primary} -body {
     catch {expr {[set]}} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -556,7 +556,7 @@ test compExpr-old-14.28 {CompilePrimaryExpr: subexpression primary} {
 } 14
 test compExpr-old-14.29 {CompilePrimaryExpr: error in subexpression primary} -body {
     catch {expr 2+(3*[set])} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -576,25 +576,25 @@ test compExpr-old-15.1 {CompileMathFuncCall: missing parenthesis} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-15.2 {CompileMathFuncCall: unknown math function} -body {
     catch {expr whazzathuh(1)} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {* "*whazzathuh"
     while *ing
 "expr whazzathuh(1)"}
 test compExpr-old-15.3 {CompileMathFuncCall: too many arguments} -body {
     catch {expr sin(1,2,3)} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {too many arguments for math function*
     while *ing
 "expr sin(1,2,3)"}
 test compExpr-old-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {too few arguments for math function*
     while *ing
 "expr sin()"}
 test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
     catch {expr pow(1)} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {too few arguments for math function*
     while *ing
 "expr pow(1)"}

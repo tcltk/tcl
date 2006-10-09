@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set.test,v 1.10 2006/02/09 17:34:42 dgp Exp $
+# RCS: @(#) $Id: set.test,v 1.10.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -234,7 +234,7 @@ test set-1.26 {TclCompileSetCmd: various array constructs} {
 
 test set-2.1 {set command: runtime error, bad variable name} {
     unset -nocomplain {"foo}
-    list [catch {set {"foo}} msg] $msg $errorInfo
+    list [catch {set {"foo}} msg] $msg $::errorInfo
 } {1 {can't read ""foo": no such variable} {can't read ""foo": no such variable
     while executing
 "set {"foo}"}}
@@ -252,7 +252,7 @@ test set-2.4 {set command: runtime error, readonly variable} -body {
     proc readonly args {error "variable is read-only"}
     set x 123
     trace var x w readonly
-    list [catch {set x 1} msg] $msg $errorInfo
+    list [catch {set x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *
@@ -479,7 +479,7 @@ test set-3.24 {uncompiled set command: too many arguments} {
 test set-4.1 {uncompiled set command: runtime error, bad variable name} {
     unset -nocomplain {"foo}
     set z set
-    list [catch {$z {"foo}} msg] $msg $errorInfo
+    list [catch {$z {"foo}} msg] $msg $::errorInfo
 } {1 {can't read ""foo": no such variable} {can't read ""foo": no such variable
     while executing
 "$z {"foo}"}}
@@ -500,7 +500,7 @@ test set-4.4 {uncompiled set command: runtime error, readonly variable} -body {
     proc readonly args {error "variable is read-only"}
     $z x 123
     trace var x w readonly
-    list [catch {$z x 1} msg] $msg $errorInfo
+    list [catch {$z x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *

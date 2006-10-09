@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.42 2006/09/16 00:19:42 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.42.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -280,7 +280,7 @@ test http-3.12 {http::geturl querychannel with aborted request} {nonPortable} {
 	http::wait $t
 	upvar #0 $t state
     } err]} {
-	puts $errorInfo
+	puts $::errorInfo
 	error $err
     }
 

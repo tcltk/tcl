@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.24 2006/03/21 11:12:29 dkf Exp $
+# RCS: @(#) $Id: parse.test,v 1.24.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -90,7 +90,7 @@ test parse-3.6 {Tcl_ParseCommand procedure, words in braces} testparser {
     testparser {foo {a $b [concat foo]} {c d}} 0
 } {- {foo {a $b [concat foo]} {c d}} 3 simple foo 1 text foo 0 simple {{a $b [concat foo]}} 1 text {a $b [concat foo]} 0 simple {{c d}} 1 text {c d} 0 {}}
 test parse-3.7 {Tcl_ParseCommand procedure, error in unquoted word} testparser {
-    list [catch {testparser "foo \$\{abc" 0} msg] $msg $errorInfo
+    list [catch {testparser "foo \$\{abc" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\$\\\{abc\"\ 0\"}
 
 test parse-4.1 {Tcl_ParseCommand procedure, simple words} testparser {
@@ -129,7 +129,7 @@ test parse-5.5 {Tcl_ParseCommand procedure, word terminator is end of string} te
     testparser "\"foo\" bar" 5
 } {- {"foo"} 1 simple {"foo"} 1 text foo 0 { bar}}
 test parse-5.6 {Tcl_ParseCommand procedure, junk after close quote} testparser {
-    list [catch {testparser {foo "bar"x} 0} msg] $msg $errorInfo
+    list [catch {testparser {foo "bar"x} 0} msg] $msg $::errorInfo
 } {1 {extra characters after close-quote} {extra characters after close-quote
     (remainder of script: "x")
     invoked from within
@@ -138,7 +138,7 @@ test parse-5.7 {Tcl_ParseCommand procedure, backslash-newline after close quote}
     testparser "foo \"bar\"\\\nx" 0
 } {- foo\ \"bar\"\\\nx 3 simple foo 1 text foo 0 simple {"bar"} 1 text bar 0 simple x 1 text x 0 {}}
 test parse-5.8 {Tcl_ParseCommand procedure, junk after close brace} testparser {
-    list [catch {testparser {foo {bar}x} 0} msg] $msg $errorInfo
+    list [catch {testparser {foo {bar}x} 0} msg] $msg $::errorInfo
 } {1 {extra characters after close-brace} {extra characters after close-brace
     (remainder of script: "x")
     invoked from within
@@ -148,7 +148,7 @@ test parse-5.9 {Tcl_ParseCommand procedure, backslash-newline after close brace}
 } {- foo\ \{bar\}\\\nx 3 simple foo 1 text foo 0 simple {{bar}} 1 text bar 0 simple x 1 text x 0 {}}
 test parse-5.10 {Tcl_ParseCommand procedure, multiple deletion of non-static buffer} testparser {
     # This test is designed to catch bug 1681.
-    list [catch {testparser "a \"\\1\\2\\3\\4\\5\\6\\7\\8\\9\\1\\2\\3\\4\\5\\6\\7\\8" 0} msg] $msg $errorInfo
+    list [catch {testparser "a \"\\1\\2\\3\\4\\5\\6\\7\\8\\9\\1\\2\\3\\4\\5\\6\\7\\8" 0} msg] $msg $::errorInfo
 } "1 {missing \"} {missing \"
     (remainder of script: \"\"\\1\\2\\3\\4\\5\\6\\7\\8\\9\\1\\2\\3\\4\\5\\6\\7\\8\")
     invoked from within
@@ -243,7 +243,7 @@ test parse-6.6 {ParseTokens procedure, command substitution} testparser {
     testparser {[foo \] [a b]]} 0
 } {- {[foo \] [a b]]} 1 word {[foo \] [a b]]} 1 command {[foo \] [a b]]} 0 {}}
 test parse-6.7 {ParseTokens procedure, error in command substitution} testparser {
-    list [catch {testparser {a [b {}c d] e} 0} msg] $msg $errorInfo
+    list [catch {testparser {a [b {}c d] e} 0} msg] $msg $::errorInfo
 } {1 {extra characters after close-brace} {extra characters after close-brace
     (remainder of script: "c d] e")
     invoked from within
@@ -263,13 +263,13 @@ test parse-6.11 {ParseTokens procedure, memory allocation for big nested command
     testparser {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 0
 } {- {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 1 word {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 1 command {[$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b)]} 0 {}}
 test parse-6.12 {ParseTokens procedure, missing close bracket} testparser {
-    list [catch {testparser {[foo $x bar} 0} msg] $msg $errorInfo
+    list [catch {testparser {[foo $x bar} 0} msg] $msg $::errorInfo
 } {1 {missing close-bracket} {missing close-bracket
     (remainder of script: "[foo $x bar")
     invoked from within
 "testparser {[foo $x bar} 0"}}
 test parse-6.13 {ParseTokens procedure, backslash-newline without continuation line} testparser {
-    list [catch {testparser "\"a b\\\n" 0} msg] $msg $errorInfo
+    list [catch {testparser "\"a b\\\n" 0} msg] $msg $::errorInfo
 } {1 {missing "} missing\ \"\n\ \ \ \ (remainder\ of\ script:\ \"\"a\ b\\\n\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\\\"a\ b\\\\\\n\"\ 0\"}
 test parse-6.14 {ParseTokens procedure, backslash-newline} testparser {
     testparser "b\\\nc" 0
@@ -425,7 +425,7 @@ test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
 
 	# asdf
 	set x
-    }}}] $errorInfo
+    }}}] $::errorInfo
 } {1 {can't read "x": no such variable
     while executing
 "set x"
@@ -445,7 +445,7 @@ test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
 	set x
     }}"}}
 test parse-9.2 {Tcl_LogCommandInfo, truncating long commands} {
-    list [catch {set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd eeeeeeeee fffffffff ggggggggg}] $errorInfo
+    list [catch {set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd eeeeeeeee fffffffff ggggggggg}] $::errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"
     while executing
 "set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd ee..."}}
@@ -580,7 +580,7 @@ test parse-12.7 {Tcl_ParseVarName procedure, braced variable name} testparser {
     testparser "\$\{\{\} " 0
 } {- \$\{\{\}\  1 word \$\{\{\} 2 variable \$\{\{\} 1 text \{ 0 {}}
 test parse-12.8 {Tcl_ParseVarName procedure, missing close brace} testparser {
-    list [catch {testparser "$\{abc" 0} msg] $msg $errorInfo
+    list [catch {testparser "$\{abc" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\$\\\{abc\"\ 0\"}
 test parse-12.9 {Tcl_ParseVarName procedure, missing close brace} testparsevarname {
     list [catch {testparsevarname {${bcd}} 4 0} msg] $msg
@@ -625,13 +625,13 @@ test parse-12.22 {Tcl_ParseVarName procedure, array reference} testparser {
     testparser {$x([cmd arg]zz)} 0
 } {- {$x([cmd arg]zz)} 1 word {$x([cmd arg]zz)} 4 variable {$x([cmd arg]zz)} 3 text x 0 command {[cmd arg]} 0 text zz 0 {}}
 test parse-12.23 {Tcl_ParseVarName procedure, missing close paren in array reference} testparser {
-    list [catch {testparser {$x(poiu} 0} msg] $msg $errorInfo
+    list [catch {testparser {$x(poiu} 0} msg] $msg $::errorInfo
 } {1 {missing )} {missing )
     (remainder of script: "(poiu")
     invoked from within
 "testparser {$x(poiu} 0"}}
 test parse-12.24 {Tcl_ParseVarName procedure, missing close paren in array reference} testparsevarname {
-    list [catch {testparsevarname {$ab(cd)} 6 0} msg] $msg $errorInfo
+    list [catch {testparsevarname {$ab(cd)} 6 0} msg] $msg $::errorInfo
 } {1 {missing )} {missing )
     (remainder of script: "(cd)")
     invoked from within
@@ -678,7 +678,7 @@ test parse-14.6 {Tcl_ParseBraces procedure, backslashes in words in braces} test
     testparser "foo {a \\n\\\{}" 0
 } {- {foo {a \n\{}} 2 simple foo 1 text foo 0 simple {{a \n\{}} 1 text {a \n\{} 0 {}}
 test parse-14.7 {Tcl_ParseBraces procedure, missing continuation line in braces} testparser {
-    list [catch {testparser "\{abc\\\n" 0} msg] $msg $errorInfo
+    list [catch {testparser "\{abc\\\n" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\\\n\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\\\{abc\\\\\\n\"\ 0\"}
 test parse-14.8 {Tcl_ParseBraces procedure, backslash-newline in braces} testparser {
     testparser "foo {\\\nx}" 0
@@ -693,7 +693,7 @@ test parse-14.11 {Tcl_ParseBraces procedure, empty braced string} testparser {
     testparser {foo {}} 0
 } {- {foo {}} 2 simple foo 1 text foo 0 simple {{}} 1 text {} 0 {}}
 test parse-14.12 {Tcl_ParseBraces procedure, missing close brace} testparser {
-    list [catch {testparser "foo \{xy\\\nz" 0} msg] $msg $errorInfo
+    list [catch {testparser "foo \{xy\\\nz" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{xy\\\nz\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\{xy\\\\\\nz\"\ 0\"}
 
 test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} testparser {
@@ -706,7 +706,7 @@ test parse-15.3 {Tcl_ParseQuotedString procedure, word is quoted string} testpar
     testparser {foo "a b c" d "efg";} 0
 } {- {foo "a b c" d "efg";} 4 simple foo 1 text foo 0 simple {"a b c"} 1 text {a b c} 0 simple d 1 text d 0 simple {"efg"} 1 text efg 0 {}}
 test parse-15.4 {Tcl_ParseQuotedString procedure, garbage after quoted string} testparser {
-    list [catch {testparser {foo "a b c"d} 0} msg] $msg $errorInfo
+    list [catch {testparser {foo "a b c"d} 0} msg] $msg $::errorInfo
 } {1 {extra characters after close-quote} {extra characters after close-quote
     (remainder of script: "d")
     invoked from within

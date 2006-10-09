@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.15 2006/01/18 19:48:11 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.15.4.1 2006/10/09 19:31:06 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -44,7 +44,7 @@ test error-1.2 {simple errors from commands} {
 
 test error-1.3 {simple errors from commands} {
     catch {format [string index]} b
-    set errorInfo
+    set ::errorInfo
     # this used to return '... while executing ...', but
     # string index is fully compiled as of 8.4a3
 } {wrong # args: should be "string index string charIndex"
@@ -98,7 +98,7 @@ test error-2.2 {errors in nested procedures} {
 
 test error-2.3 {errors in nested procedures} {
     catch foo b
-    set errorInfo
+    set ::errorInfo
 } {Human-generated
     while executing
 "error {Human-generated}"
@@ -117,7 +117,7 @@ test error-2.5 {errors in nested procedures} {
 
 test error-2.6 {errors in nested procedures} {
     catch foo2 b
-    set errorInfo
+    set ::errorInfo
 } {glorp2
     while executing
 "error glorp2"
@@ -143,27 +143,27 @@ catch {unset a}
 # More tests related to errorInfo and errorCode
 
 test error-4.1 {errorInfo and errorCode variables} {
-    list [catch {error msg1 msg2 msg3} msg] $msg $errorInfo $errorCode
+    list [catch {error msg1 msg2 msg3} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 msg2 msg3}
 test error-4.2 {errorInfo and errorCode variables} {
-    list [catch {error msg1 {} msg3} msg] $msg $errorInfo $errorCode
+    list [catch {error msg1 {} msg3} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 {msg1
     while executing
 "error msg1 {} msg3"} msg3}
 test error-4.3 {errorInfo and errorCode variables} {
-    list [catch {error msg1 {}} msg] $msg $errorInfo $errorCode
+    list [catch {error msg1 {}} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 {msg1
     while executing
 "error msg1 {}"} NONE}
 test error-4.4 {errorInfo and errorCode variables} {
-    set errorCode bogus
-    list [catch {error msg1} msg] $msg $errorInfo $errorCode
+    set ::errorCode bogus
+    list [catch {error msg1} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 {msg1
     while executing
 "error msg1"} NONE}
 test error-4.5 {errorInfo and errorCode variables} {
-    set errorCode bogus
-    list [catch {error msg1 msg2 {}} msg] $msg $errorInfo $errorCode
+    set ::errorCode bogus
+    list [catch {error msg1 msg2 {}} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 msg2 {}}
 
 # Errors in error command itself
@@ -179,46 +179,46 @@ test error-5.2 {errors in error command} {
 
 test error-6.1 {catch must reset error state} {
     catch {error outer [catch {error inner inner.errorInfo inner.errorCode}]}
-    list $errorCode $errorInfo
+    list $::errorCode $::errorInfo
 } {NONE 1}
 test error-6.2 {catch must reset error state} {
     catch {error outer [catch {return -level 0 -code error -errorcode BUG}]}
-    list $errorCode $errorInfo
+    list $::errorCode $::errorInfo
 } {NONE 1}
 test error-6.3 {catch must reset error state} {
-    set errorCode BUG
+    set ::errorCode BUG
     catch {error outer [catch set]}
-    list $errorCode $errorInfo
+    list $::errorCode $::errorInfo
 } {NONE 1}
 test error-6.4 {catch must reset error state} {
     catch {error [catch {error foo bar baz}] 1}
-    list $errorCode $errorInfo
+    list $::errorCode $::errorInfo
 } {NONE 1}
 test error-6.5 {catch must reset error state} {
     catch {error [catch {return -level 0 -code error -errorcode BUG}] 1}
-    list $errorCode $errorInfo
+    list $::errorCode $::errorInfo
 } {NONE 1}
 test error-6.6 {catch must reset error state} {
     catch {return -level 0 -code error -errorinfo [catch {error foo bar baz}]}
-    list $errorCode $errorInfo
+    list $::errorCode $::errorInfo
 } {NONE 1}
 test error-6.7 {catch must reset error state} {
     proc foo {} {
 	return -code error -errorinfo [catch {error foo bar baz}]
     }
     catch foo
-    list $errorCode
+    list $::errorCode
 } {NONE}
 test error-6.8 {catch must reset error state} {
     catch {return -level 0 -code error [catch {error foo bar baz}]}
-    list $errorCode
+    list $::errorCode
 } {NONE}
 test error-6.9 {catch must reset error state} {
     proc foo {} {
 	return -code error [catch {error foo bar baz}]
     }
     catch foo
-    list $errorCode
+    list $::errorCode
 } {NONE}
 
     test error-7.0 {Bug 1397843} -body {

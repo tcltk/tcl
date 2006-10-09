@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.53 2006/03/18 18:15:13 vincentdarley Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.53.2.1 2006/10/09 19:31:07 msofer Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -439,7 +439,7 @@ test tcltest-6.7 {tcltest::outputChannel - retrieval} {
     }
     -result {stdout}
     -cleanup {
-	set tcltest::outputChannel $of
+	set ::tcltest::outputChannel $of
     }
 }
 
@@ -551,7 +551,7 @@ set notWriteableDir [file join [temporaryDirectory] notwriteable]
 makeDirectory notreadable
 makeDirectory notwriteable
 
-switch -- $tcl_platform(platform) {
+switch -- $::tcl_platform(platform) {
     "unix" {
 	file attributes $notReadableDir -permissions 00333
 	file attributes $notWriteableDir -permissions 00555
@@ -684,7 +684,7 @@ test tcltest-8.60 {::workingDirectory}  {
 
 # clean up from directory testing
 
-switch $tcl_platform(platform) {
+switch $::tcl_platform(platform) {
     "unix" {
 	file attributes $notReadableDir -permissions 777
 	file attributes $notWriteableDir -permissions 777
@@ -1759,7 +1759,7 @@ test tcltest-25.3 {
 test tcltest-26.1 {Bug/RFE 1017151} -setup {
     makeFile {
 	package require tcltest
-	set errorInfo "Should never see this"
+	set ::errorInfo "Should never see this"
 	tcltest::test tcltest-26.1.0 {
 	    no errorInfo when only return code mismatch
 	} -body {
@@ -1779,7 +1779,7 @@ test tcltest-26.1 {Bug/RFE 1017151} -setup {
 test tcltest-26.2 {Bug/RFE 1017151} -setup {
     makeFile {
 	package require tcltest
-	set errorInfo "Should never see this"
+	set ::errorInfo "Should never see this"
 	tcltest::test tcltest-26.2.0 {do not mask body errorInfo} -body {
 	    error "body error"
 	} -cleanup {

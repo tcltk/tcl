@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: while.test,v 1.12 2006/08/22 18:10:44 dgp Exp $
+# RCS: @(#) $Id: while.test,v 1.12.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -29,7 +29,7 @@ test while-1.1 {TclCompileWhileCmd: missing test expression} {
 test while-1.2 {TclCompileWhileCmd: error in test expression} -body {
     set i 0
     catch {while {$i<} break} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {*"while {$i<} break"}
 test while-1.3 {TclCompileWhileCmd: error in test expression} {
     set err [catch {while {"a"+"b"} {error "loop aborted"}} msg]
@@ -66,7 +66,7 @@ test while-1.7 {TclCompileWhileCmd: missing command body} {
 test while-1.8 {TclCompileWhileCmd: error compiling command body} -body {
     set i 0
     catch {while {$i < 5} {set}} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -303,7 +303,7 @@ test while-4.3 {while (not compiled): error in test expression} -body {
     set i 0
     set z while
     catch {$z {$i<} {set x 1}} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {*"$z {$i<} {set x 1}"}
 test while-4.4 {while (not compiled): error in test expression} {
     set z while
@@ -346,7 +346,7 @@ test while-4.9 {while (not compiled): error compiling command body} -body {
     set i 0
     set z while
     catch {$z {$i < 5} {set}} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"

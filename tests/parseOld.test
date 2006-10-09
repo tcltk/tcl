@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseOld.test,v 1.13 2006/03/21 11:12:29 dkf Exp $
+# RCS: @(#) $Id: parseOld.test,v 1.13.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -352,7 +352,7 @@ test parseOld-10.13 {syntax errors} {
 # since MetroWerks may some day fix this.
 
 test parseOld-10.14 {syntax errors} {
-    list [catch {eval \$x[format "%01000d" 0](} msg] $msg $errorInfo
+    list [catch {eval \$x[format "%01000d" 0](} msg] $msg $::errorInfo
 } {1 {missing )} {missing )
     while executing
 "$x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000..."

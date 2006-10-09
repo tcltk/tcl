@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.20 2006/10/04 18:05:23 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.20.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -151,7 +151,7 @@ test pkg-2.9 {Tcl_PkgRequire procedure, can't find suitable version} {
 test pkg-2.10 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test"}
-    list [catch {package require t 2.1} msg] $msg $errorInfo
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
 } -match glob -result {1 {ifneeded test} {ifneeded test
     while executing
 "error "ifneeded test""
@@ -219,7 +219,7 @@ test pkg-2.16 {Tcl_PkgRequire procedure, "package unknown" error} {
     }
     package forget t 
     package unknown pkgUnknown
-    set result [list [catch {package require t} msg] $msg $errorInfo]
+    set result [list [catch {package require t} msg] $msg $::errorInfo]
     package unknown {}
     set result
 } {1 {testing package unknown} {testing package unknown
@@ -284,7 +284,7 @@ test pkg-2.24 {Tcl_PkgRequire procedure, version checks} {
 test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test" EI}
-    list [catch {package require t 2.1} msg] $msg $errorInfo
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
 } -match glob -result {1 {ifneeded test} {EI
     ("package ifneeded*" script)
     invoked from within
@@ -292,7 +292,7 @@ test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
 test pkg-2.26 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; foreach x 1 {error "ifneeded test" EI}}
-    list [catch {package require t 2.1} msg] $msg $errorInfo
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
 } -match glob -result {1 {ifneeded test} {EI
     ("foreach" body line 1)
     invoked from within

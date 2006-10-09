@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: load.test,v 1.15 2006/03/21 11:12:29 dkf Exp $
+# RCS: @(#) $Id: load.test,v 1.15.2.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -81,7 +81,7 @@ test load-2.4 {loading with no _SafeInit procedure} [list $dll $loaded] {
 test load-3.1 {error in _Init procedure, same interpreter} \
 	[list $dll $loaded] {
     list [catch {load [file join $testDir pkge$ext] pkge} msg] \
-	    $msg $errorInfo $errorCode
+	    $msg $::errorInfo $::errorCode
 } {1 {couldn't open "non_existent": no such file or directory} {couldn't open "non_existent": no such file or directory
     while executing
 "open non_existent"
@@ -93,10 +93,10 @@ test load-3.2 {error in _Init procedure, slave interpreter} \
 	[list $dll $loaded] {
     catch {interp delete x}
     interp create x
-    set errorCode foo
-    set errorInfo bar
+    set ::errorCode foo
+    set ::errorInfo bar
     set result [list [catch {load [file join $testDir pkge$ext] pkge x} msg] \
-	    $msg $errorInfo $errorCode]
+	    $msg $::errorInfo $::errorCode]
     interp delete x
     set result
 } {1 {couldn't open "non_existent": no such file or directory} {couldn't open "non_existent": no such file or directory

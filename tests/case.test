@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: case.test,v 1.6 2004/05/19 10:52:35 dkf Exp $
+# RCS: @(#) $Id: case.test,v 1.6.8.1 2006/10/09 19:31:06 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -42,7 +42,7 @@ test case-1.7 {list of patterns} {
 
 test case-2.1 {error in executed command} {
     list [catch {case a in a {error "Just a test"} default {format 1}} msg] \
-	    $msg $errorInfo
+	    $msg $::errorInfo
 } {1 {Just a test} {Just a test
     while executing
 "error "Just a test""
@@ -60,7 +60,7 @@ test case-2.4 {error: pattern with no body} {
 } {1 {extra case pattern with no body}}
 test case-2.5 {error in default command} {
     list [catch {case foo in a {error case1} default {error case2} \
-	    b {error case 3}} msg] $msg $errorInfo
+	    b {error case 3}} msg] $msg $::errorInfo
 } {1 case2 {case2
     while executing
 "error case2"

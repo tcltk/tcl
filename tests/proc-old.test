@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc-old.test,v 1.14 2006/02/01 19:26:02 dgp Exp $
+# RCS: @(#) $Id: proc-old.test,v 1.14.4.1 2006/10/09 19:31:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -316,7 +316,7 @@ test proc-old-5.13 {error conditions} {
 	return
     }
     catch tproc msg
-    set errorInfo
+    set ::errorInfo
 } {error in procedure
     while executing
 "error "error in procedure""
@@ -330,7 +330,7 @@ test proc-old-5.14 {error conditions} {
 	return
     }
     catch tproc msg
-    set errorInfo
+    set ::errorInfo
 } {invoked "break" outside of a loop
     (procedure "tproc" line 1)
     invoked from within
@@ -342,7 +342,7 @@ test proc-old-5.15 {error conditions} {
 	return
     }
     catch tproc msg
-    set errorInfo
+    set ::errorInfo
 } {invoked "continue" outside of a loop
     (procedure "tproc" line 1)
     invoked from within
@@ -360,7 +360,7 @@ test proc-old-5.16 {error conditions} {
 	}
     }
     set fooMsg "foo not called"
-    list [catch tproc msg] $msg $errorInfo $fooMsg
+    list [catch tproc msg] $msg $::errorInfo $fooMsg
 } {1 {Nested error} {Nested error
     while executing
 "error "Nested error""
@@ -395,7 +395,7 @@ test proc-old-7.1 {return with special completion code} {
     list [catch {tproc ok} msg] $msg
 } {0 abc}
 test proc-old-7.2 {return with special completion code} {
-    list [catch {tproc error} msg] $msg $errorInfo $errorCode
+    list [catch {tproc error} msg] $msg $::errorInfo $::errorCode
 } {1 abc {abc
     while executing
 "tproc error"} NONE}
@@ -435,7 +435,7 @@ test proc-old-7.11 {return with special completion code} {
 	catch {open _bad_file_name r} msg
 	return -code error -errorinfo $errorInfo -errorcode $errorCode $msg
     }
-    set msg [list [catch tproc2 msg] $msg $errorInfo $errorCode]
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
     regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
     normalizeMsg $msg
 } {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
@@ -449,7 +449,7 @@ test proc-old-7.12 {return with special completion code} {
 	catch {open _bad_file_name r} msg
 	return -code error -errorcode $errorCode $msg
     }
-    set msg [list [catch tproc2 msg] $msg $errorInfo $errorCode]
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
     regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
     normalizeMsg $msg
 } {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
@@ -461,7 +461,7 @@ test proc-old-7.13 {return with special completion code} {
 	catch {open _bad_file_name r} msg
 	return -code error -errorinfo $errorInfo $msg
     }
-    set msg [list [catch tproc2 msg] $msg $errorInfo $errorCode]
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
     regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
     normalizeMsg $msg
 } {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
@@ -475,7 +475,7 @@ test proc-old-7.14 {return with special completion code} {
 	catch {open _bad_file_name r} msg
 	return -code error $msg
     }
-    set msg [list [catch tproc2 msg] $msg $errorInfo $errorCode]
+    set msg [list [catch tproc2 msg] $msg $::errorInfo $::errorCode]
     regsub -all [file join {} _bad_file_name] $msg "_bad_file_name" msg
     normalizeMsg $msg
 } {1 {couldn't open "_bad_file_name": no such file or directory} {couldn't open "_bad_file_name": no such file or directory
