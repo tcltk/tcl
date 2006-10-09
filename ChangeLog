@@ -1,5 +1,8 @@
 2006-10-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/parse.test: fixing some incomplete references to global
+	variables - missed in the big *.test patch.
+	
 	* generic/tclVar.c: minimal change, provides behaviour of TIP 278
 	but without any optimisation yet. Failures in namespace-old.test,
 	namespace.test, parse.test and var.test: testfiles not yet updated.    
