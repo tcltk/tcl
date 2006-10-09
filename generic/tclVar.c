@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.122 2006/10/05 11:38:50 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.122.2.1 2006/10/09 19:35:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -758,12 +758,8 @@ TclLookupSimpleVar(
 	    flags = (flags | TCL_GLOBAL_ONLY) &
 		    ~(TCL_NAMESPACE_ONLY | LOOKUP_FOR_UPVAR);
 	} else {
-	    if (flags & LOOKUP_FOR_UPVAR) {
-		flags = (flags | TCL_NAMESPACE_ONLY) & ~LOOKUP_FOR_UPVAR;
-	    }
-	    if (flags & TCL_NAMESPACE_ONLY) {
-		*indexPtr = -2;
-	    }
+	    flags = (flags | TCL_NAMESPACE_ONLY) & ~LOOKUP_FOR_UPVAR;
+	    *indexPtr = -2;
 	}
 
 	/*

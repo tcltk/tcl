@@ -1,3 +1,9 @@
+2006-10-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: minimal change, provides behaviour of TIP 278
+	but without any optimisation yet. Failures in namespace-old.test,
+	namespace.test, parse.test and var.test: testfiles not yet updated.    
+	
 ==
 == updated to tag tip-278-20061009
 ==
