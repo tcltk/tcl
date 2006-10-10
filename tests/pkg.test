@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.9.12.5 2006/09/22 01:26:24 andreas_kupries Exp $
+# RCS: @(#) $Id: pkg.test,v 1.9.12.6 2006/10/10 18:16:59 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1278,7 +1278,7 @@ test package-prefer-3.3 {set latest, keep} tip268 {
     prefer  latest latest
 } {stable latest latest}
 
-test package-prefer-3.3 {set stable, rejected} tip268 {
+test package-prefer-3.4 {set stable, rejected} tip268 {
     prefer latest stable
 } {stable latest latest}
 
