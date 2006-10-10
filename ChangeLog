@@ -1,3 +1,10 @@
+2006-10-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamespace.c (TclTeardownNamespace):  After the
+	commandPathSourceList of a namespace is cleared, set the
+	commandPathSourceList to NULL so we don't try to walk the list
+	a second time, possibly after it is freed.  [Bug 1566526]
+
 2006-10-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/UpVar.3: brough the docs in accordance to the code. Ever

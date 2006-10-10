@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.100 2006/08/28 13:13:57 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.101 2006/10/10 16:45:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1112,6 +1112,7 @@ TclTeardownNamespace(
 	    nsPathPtr->nsPtr = NULL;
 	    nsPathPtr = nsPathPtr->nextPtr;
 	} while (nsPathPtr != NULL);
+	nsPtr->commandPathSourceList = NULL;
     }
 
     /*
