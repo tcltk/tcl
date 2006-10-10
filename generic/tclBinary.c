@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.30 2006/10/06 13:37:21 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.31 2006/10/10 16:15:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1879,7 +1879,7 @@ ScanNumber(
 	 */
 
 	if ((flags & BINARY_UNSIGNED)) {
-	    return Tcl_NewWideIntObj((unsigned long)value);
+	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
 	} else {
 	    if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
 		value -= (((unsigned int)1)<<31);
