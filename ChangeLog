@@ -1,10 +1,28 @@
 2006-10-09  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/var.test (var-3.4,7.5,7.8): refer to global vars explicitly (not
-	what was being tested). Missed in the big patch.
+	* generic/tclNamesp.c (Tcl_FindNamespaceVar): second change
+	needed, new test failure in namespace-34.7 (added below so that
+	the list is complete): [namespace which -variable] does not find
+	global variables.
 	
-	* tests/parse.test: fixing some incomplete references to global
-	variables - missed in the big *.test patch.
+	. Tk and Itcl tests show no difference to HEAD; XOTcl testsuite
+	  errors out and does not finish 
+
+2006-10-09  Miguel Sofer  <msofer@users.sf.net>
+
+	All remaining test failures are actually testing the behaviour
+	that the TIP disables:
+	. namespace-old: 5.4 6.12 6.14-15
+	. namespace: 14.3 14.5 14.12 17.7 17.10 34.7
+
+	* tests/namespace.test (namespace-2.2): refer to global vars
+	explicitly (not what was being tested). Missed in the big patch. 
+
+	* tests/var.test (var-3.4,7.5,7.8): refer to global vars
+	explicitly (not what was being tested). Missed in the big patch. 
+	
+	* tests/parse.test: refer to global vars explicitly (not what was
+	being tested). Missed in the big patch. 
 	
 	* generic/tclVar.c: minimal change, provides behaviour of TIP 278
 	but without any optimisation yet. Failures in namespace-old.test,

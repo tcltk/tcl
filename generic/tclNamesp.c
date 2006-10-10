@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.100 2006/08/28 13:13:57 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.100.2.1 2006/10/10 18:07:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2598,6 +2598,10 @@ Tcl_FindNamespaceVar(
      * Find the namespace(s) that contain the variable.
      */
 
+    if (!(flags&TCL_GLOBAL_ONLY)) {
+	flags |= TCL_NAMESPACE_ONLY;
+    }
+    
     TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
 	    flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
 

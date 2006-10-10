@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.56.2.1 2006/10/09 19:31:07 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.56.2.2 2006/10/10 18:07:31 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -39,9 +39,9 @@ test namespace-2.2 {Tcl_GetCurrentNamespace} {
     set l {}
     lappend l [namespace current]
     namespace eval test_ns_1 {
-        lappend l [namespace current]
+        lappend ::l [namespace current]
         namespace eval foo {
-            lappend l [namespace current]
+            lappend ::l [namespace current]
         }
     }
     lappend l [namespace current]
