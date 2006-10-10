@@ -1,3 +1,9 @@
+2006-10-10  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.4.14 TAGGED FOR RELEASE ***
+
+	* changes:		changes updated for 8.4.14 release.
+
 2006-10-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/http.test: update tests to handle strictness change.
