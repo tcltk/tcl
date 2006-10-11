@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.183.2.6 2006/10/08 17:14:33 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.183.2.7 2006/10/11 01:59:27 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -406,6 +406,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclNotify.c \
 	$(GENERIC_DIR)/tclObj.c \
 	$(GENERIC_DIR)/tclOO.c \
+	$(GENERIC_DIR)/tclOOCall.c \
 	$(GENERIC_DIR)/tclOODefineCmds.c \
 	$(GENERIC_DIR)/tclOOInfo.c \
         $(GENERIC_DIR)/tclParse.c \
@@ -1069,6 +1070,9 @@ tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
 
 tclOO.o: $(GENERIC_DIR)/tclOO.c $(OOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
+
+tclOOCall.o: $(GENERIC_DIR)/tclOOCall.c $(OOHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOCall.c
 
 tclOODefineCmds.o: $(GENERIC_DIR)/tclOODefineCmds.c $(OOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOODefineCmds.c
