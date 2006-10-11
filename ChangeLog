@@ -1,3 +1,9 @@
+2006-10-11  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclPkg.c (Tcl_PkgRequireEx): Corrected crash when
+	  argument version==NULL passed in. Backport of the fix for the
+	  same problem in 8.5.
+
 2006-10-10  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.14 TAGGED FOR RELEASE ***
