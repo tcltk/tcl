@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.2.6 2006/09/22 18:31:54 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.2.7 2006/10/11 21:32:13 andreas_kupries Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -332,15 +332,19 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 #ifdef TCL_TIP268
     /* Translate between old and new API, and defer to the new function. */
 
-    if (exact) {
-	ov = ExactRequirement (version);
+    if (version == NULL) {
+	res = Tcl_PkgRequireProc(interp, name, 0, NULL, clientDataPtr);
     } else {
-	ov = Tcl_NewStringObj (version,-1);
-    }
+	if (exact) {
+	    ov = ExactRequirement (version);
+	} else {
+	    ov = Tcl_NewStringObj (version,-1);
+	}
 
-    Tcl_IncrRefCount (ov);
-    res = Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr);
-    Tcl_DecrRefCount (ov);
+	Tcl_IncrRefCount (ov);
+	res = Tcl_PkgRequireProc(interp, name, 1, &ov, clientDataPtr);
+	Tcl_DecrRefCount (ov);
+    }
 
     if (res != TCL_OK) {
 	return NULL;
