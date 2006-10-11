@@ -1,5 +1,9 @@
 2006-10-10  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5a5 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.5a5 release.
+
 	* generic/tclNamespace.c (TclTeardownNamespace):  After the
 	commandPathSourceList of a namespace is cleared, set the
 	commandPathSourceList to NULL so we don't try to walk the list
@@ -183,7 +187,7 @@
 
 2006-09-26  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tcl.h:        As 2006-09-22 commit from Donal K. Fellows
+	* generic/tcl.h:        As 2006-09-22 commit from Donal K. Fellows
         demonstrates, "#define NULL 0" is just wrong, and as a quotable chat
         figure observed, "If NULL isn't defined, we're not using a C compiler."
         Improper fallback definition of NULL removed.
@@ -645,7 +649,7 @@
 
 2006-08-09  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclEncoding.c:        Replace buffer copy in for loop
+	* generic/tclEncoding.c:        Replace buffer copy in for loop
         with call to memcpy().  Thanks to afredd. [Patch 1530262]
 
 2006-08-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
