@@ -10,21 +10,25 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.11 2006/10/06 14:14:29 patthoyts Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.12 2006/10/12 07:18:32 davygrvy Exp $
  * ----------------------------------------------------------------------------
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
 #include <windows.h>
-#include <shlwapi.h>
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "kernel32.lib")
-#pragma comment (lib, "shlwapi.lib")
 #include <stdio.h>
 #include <math.h>
 #if defined(_M_IA64) || defined(_M_AMD64)
 #pragma comment(lib, "bufferoverflowU")
 #endif
+
+/* ISO hack for dumb VC++ */
+#ifdef _MSC_VER
+#define   snprintf	_snprintf
+#endif
+
 
 
 /* protos */
@@ -77,7 +81,7 @@ main(
 	switch (*(argv[1]+1)) {
 	case 'c':
 	    if (argc != 3) {
-		chars = wnsprintf(msg, sizeof(msg)-1,
+		chars = snprintf(msg, sizeof(msg) - 1,
 		        "usage: %s -c <compiler option>\n"
 			"Tests for whether cl.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
@@ -88,7 +92,7 @@ main(
 	    return CheckForCompilerFeature(argv[2]);
 	case 'l':
 	    if (argc != 3) {
-		chars = wnsprintf(msg, sizeof(msg) - 1,
+		chars = snprintf(msg, sizeof(msg) - 1,
 	       		"usage: %s -l <linker option>\n"
 			"Tests for whether link.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
@@ -99,7 +103,7 @@ main(
 	    return CheckForLinkerFeature(argv[2]);
 	case 'f':
 	    if (argc == 2) {
-		chars = wnsprintf(msg, sizeof(msg) - 1,
+		chars = snprintf(msg, sizeof(msg) - 1,
 			"usage: %s -f <string> <substring>\n"
 			"Find a substring within another\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
@@ -117,7 +121,7 @@ main(
 	    }
 	case 'g':
 	    if (argc == 2) {
-		chars = wnsprintf(msg, sizeof(msg) - 1,
+		chars = snprintf(msg, sizeof(msg) - 1,
 			"usage: %s -g <file> <string>\n"
 			"grep for a #define\n"
 			"exitcodes: integer of the found string (no decimals)\n",
@@ -129,7 +133,7 @@ main(
 	    return GrepForDefine(argv[2], argv[3]);
 	}
     }
-    chars = wnsprintf(msg, sizeof(msg) - 1,
+    chars = snprintf(msg, sizeof(msg) - 1,
 	    "usage: %s -c|-l|-f ...\n"
 	    "This is a little helper app to equalize shell differences between WinNT and\n"
 	    "Win9x and get nmake.exe to accomplish its job.\n",
@@ -217,7 +221,7 @@ CheckForCompilerFeature(
 
     if (!ok) {
 	DWORD err = GetLastError();
-	int chars = wsprintf(msg,
+	int chars = snprintf(msg, sizeof(msg) - 1,
 		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
@@ -343,7 +347,7 @@ CheckForLinkerFeature(
 
     if (!ok) {
 	DWORD err = GetLastError();
-	int chars = wnsprintf(msg, sizeof(msg) - 1,
+	int chars = snprintf(msg, sizeof(msg) - 1,
 		"Tried to launch: \"%s\", but got error [%u]: ", cmdline, err);
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
