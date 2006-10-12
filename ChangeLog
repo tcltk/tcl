@@ -1,3 +1,10 @@
+2006-10-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInterp.c (ApplyObjCmd):
+	* tests/interp.test (interp-14.5-10): made [interp alias] use the
+	ensemble rewrite machinery to produce better error messages 
+	[Bug 1576006]
+	
 2006-10-12  David Gravereaux <davygrvy@pobox.com>
 
 	* win/nmakehlp.c: Replaced all wnsprintf() calls with snprintf().
