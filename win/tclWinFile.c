@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.89 2006/10/13 04:53:51 coldstore Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.90 2006/10/13 12:57:21 coldstore Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -2489,13 +2489,13 @@ TclpObjLink(
 	int res;
 	TCHAR *LinkTarget;
 	TCHAR *LinkSource = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
-	toPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
-	if (toPtr == NULL) {
+	if (normalizedToPtr == NULL) {
 	    return NULL;
 	}
 
-	LinkTarget = (TCHAR *) Tcl_FSGetNativePath(toPtr);
+	LinkTarget = (TCHAR *) Tcl_FSGetNativePath(normalizedToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
