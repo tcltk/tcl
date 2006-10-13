@@ -233,6 +233,8 @@ TclpThreadGetStackSize(void)
     }
     pthread_attr_destroy(&threadAttr);
     return (int) stackSize;
+#elif defined(HAVE_PTHREAD_GET_STACKSIZE_NP)
+    return (int) pthread_get_stacksize_np(pthread_self());
 #else
     /*
      * Cannot determine the real stack size of this thread. The caller might
