@@ -2,6 +2,7 @@
 	* win/tclWinFile.c: corrected erroneous attempt to protect
 	against NULL return from Tcl_FSGetNormalizedPath
 	per Bug 1548263 causing Bug 1575837.
+	* win/tclWinFile.c: alfredd supplied patch to fix Bug 1575837
 
 2006-10-13  Daniel Steffen  <das@users.sourceforge.net>
 
