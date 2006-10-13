@@ -154,6 +154,9 @@
 /* Do we want a Linux-like thread-attribute interface? */
 #undef HAVE_PTHREAD_GETATTR_NP
 
+/* Define to 1 if you have the `pthread_get_stacksize_np' function. */
+#undef HAVE_PTHREAD_GET_STACKSIZE_NP
+
 /* Does putenv() copy strings or incorporate them by reference? */
 #undef HAVE_PUTENV_THAT_COPIES
 

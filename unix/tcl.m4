@@ -707,6 +707,10 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 		fi
 	    fi
 	fi
+	if test $tcl_ok = no; then
+	    # Darwin thread stacksize API
+	    AC_CHECK_FUNCS(pthread_get_stacksize_np)
+	fi
 	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
