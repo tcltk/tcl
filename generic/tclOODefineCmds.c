@@ -2,23 +2,19 @@
  * tclOODefineCmds.c --
  *
  *	This file contains the implementation of the ::oo::define command,
- *	part of the object-system core (NB: not Tcl_Obj, but ::oo)
+ *	part of the object-system core (NB: not Tcl_Obj, but ::oo).
  *
  * Copyright (c) 2006 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.25 2006/10/11 02:01:16 dgp Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.26 2006/10/15 23:14:29 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
-static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
-			    Method *mPtr, Tcl_Obj *namePtr);
-static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
-			    Method *mPtr, Tcl_Obj *namePtr);
 static Object *		GetDefineCmdContext(Tcl_Interp *interp);
 
 int
@@ -142,8 +138,8 @@ GetDefineCmdContext(
 
     if ((iPtr->framePtr == NULL)
 	    || (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
-	Tcl_AppendResult(interp, "this command may only be called from within "
-		"the context of the ::oo::define command", NULL);
+	Tcl_AppendResult(interp, "this command may only be called from within"
+		" the context of the ::oo::define command", NULL);
 	return NULL;
     }
     return (Object *) iPtr->framePtr->ooContextPtr;
@@ -223,191 +219,61 @@ TclOODefineCopyObjCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Object *oPtr, *o2Ptr;
-    FOREACH_HASH_DECLS;
-    Method *mPtr;
-    Tcl_Obj *keyPtr;
-    int i;
+    Tcl_Object oPtr, o2Ptr;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?targetName?");
 	return TCL_ERROR;
     }
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Tcl_Object) GetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
 
     /*
-     * Create a new object of the correct class. Note that constructors are
+     * Create a cloned object of the correct class. Note that constructors are
      * not called. Also note that we must resolve the object name ourselves
      * because we do not want to create the object in the current namespace,
      * but rather in the context of the namespace of the caller of the overall
      * [oo::define] command.
      */
 
-    {
+    if (objc == 1) {
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL);
+    } else {
 	char *name;
 	Tcl_DString buffer;
 
-	if (objc == 1) {
-	    name = NULL;
-	} else {
-	    name = TclGetString(objv[1]);
-	    Tcl_DStringInit(&buffer);
-	    if (name[0]!=':' || name[1]!=':') {
-		Interp *iPtr = (Interp *) interp;
-		CallFrame *callerFramePtr = iPtr->varFramePtr->callerVarPtr;
+	name = TclGetString(objv[1]);
+	Tcl_DStringInit(&buffer);
+	if (name[0]!=':' || name[1]!=':') {
+	    Interp *iPtr = (Interp *) interp;
+	    CallFrame *callerFramePtr = iPtr->varFramePtr->callerVarPtr;
 
-		if (callerFramePtr != NULL) {
-		    Tcl_DStringAppend(&buffer,
-			    callerFramePtr->nsPtr->fullName, -1);
-		}
-		Tcl_DStringAppend(&buffer, "::", 2);
-		Tcl_DStringAppend(&buffer, name, -1);
-		name = Tcl_DStringValue(&buffer);
+	    if (callerFramePtr != NULL) {
+		Tcl_DStringAppend(&buffer,
+			callerFramePtr->nsPtr->fullName, -1);
 	    }
+	    Tcl_DStringAppend(&buffer, "::", 2);
+	    Tcl_DStringAppend(&buffer, name, -1);
+	    name = Tcl_DStringValue(&buffer);
 	}
-	o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
-		(Tcl_Class) oPtr->selfCls, name, -1, NULL, -1);
-	if (name != NULL) {
-	    Tcl_DStringFree(&buffer);
-	}
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name);
+	Tcl_DStringFree(&buffer);
     }
+
     if (o2Ptr == NULL) {
 	return TCL_ERROR;
-    }
-
-    /*
-     * Copy the methods, mixins and filters.
-     */
-
-    FOREACH_HASH(keyPtr, mPtr, &oPtr->methods) {
-	(void) CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr);
-    }
-    o2Ptr->mixins.num = oPtr->mixins.num;
-    o2Ptr->mixins.list = (Class **) ckalloc(sizeof(Class*) * oPtr->mixins.num);
-    memcpy(o2Ptr->mixins.list, oPtr->mixins.list,
-	    sizeof(Class *) * oPtr->mixins.num);
-    o2Ptr->filters.num = oPtr->filters.num;
-    o2Ptr->filters.list = (Tcl_Obj **)
-	    ckalloc(sizeof(Tcl_Obj *) * oPtr->filters.num);
-    memcpy(o2Ptr->filters.list, oPtr->filters.list,
-	    sizeof(Tcl_Obj *) * oPtr->filters.num);
-    for (i=0 ; i<o2Ptr->filters.num ; i++) {
-	Tcl_IncrRefCount(o2Ptr->filters.list[i]);
-    }
-    o2Ptr->flags = oPtr->flags & ~ROOT_OBJECT;
-
-    /*
-     * Copy the class, if present.
-     */
-
-    if (oPtr->classPtr) {
-	Class *clsPtr = oPtr->classPtr;
-	Class *cls2Ptr = o2Ptr->classPtr;
-	Class *superPtr;
-
-	cls2Ptr->flags = clsPtr->flags;
-	FOREACH(superPtr, cls2Ptr->superclasses) {
-	    TclOORemoveFromSubclasses(cls2Ptr, superPtr);
-	}
-	if (cls2Ptr->superclasses.num) {
-	    cls2Ptr->superclasses.list = (Class **)
-		    ckrealloc((char *) cls2Ptr->superclasses.list,
-		    sizeof(Class *) * clsPtr->superclasses.num);
-	} else {
-	    cls2Ptr->superclasses.list = (Class **)
-		    ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
-	}
-	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
-		sizeof(Class *) * clsPtr->superclasses.num);
-	cls2Ptr->superclasses.num = clsPtr->superclasses.num;
-	FOREACH(superPtr, cls2Ptr->superclasses) {
-	    TclOOAddToSubclasses(cls2Ptr, superPtr);
-	}
-
-	cls2Ptr->filters.num = clsPtr->filters.num;
-	cls2Ptr->filters.list = (Tcl_Obj **)
-		ckalloc(sizeof(Tcl_Obj *) * clsPtr->filters.num);
-	memcpy(cls2Ptr->filters.list, clsPtr->filters.list,
-		sizeof(Tcl_Obj *) * clsPtr->filters.num);
-	for (i=0 ; i<cls2Ptr->filters.num ; i++) {
-	    Tcl_IncrRefCount(cls2Ptr->filters.list[i]);
-	}
-
-	FOREACH_HASH(keyPtr, mPtr, &clsPtr->classMethods) {
-	    (void) CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr);
-	}
-	if (clsPtr->constructorPtr) {
-	    cls2Ptr->constructorPtr = CloneClassMethod(interp, cls2Ptr,
-		    clsPtr->constructorPtr, NULL);
-	}
-	if (clsPtr->destructorPtr) {
-	    cls2Ptr->destructorPtr = CloneClassMethod(interp, cls2Ptr,
-		    clsPtr->destructorPtr, NULL);
-	}
     }
 
     /*
      * Return the name of the cloned object.
      */
 
-    Tcl_GetCommandFullName(interp, o2Ptr->command, Tcl_GetObjResult(interp));
+    Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(o2Ptr),
+	    Tcl_GetObjResult(interp));
     return TCL_OK;
-}
-
-static Method *
-CloneObjectMethod(
-    Tcl_Interp *interp,
-    Object *oPtr,
-    Method *mPtr,
-    Tcl_Obj *namePtr)
-{
-    if (mPtr->typePtr == NULL) {
-	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-    } else if (mPtr->typePtr->cloneProc) {
-	ClientData newClientData;
-
-	if (mPtr->typePtr->cloneProc(mPtr->clientData,
-		&newClientData) != TCL_OK) {
-	    return NULL;
-	}
-	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
-    } else {
-	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
-		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
-    }
-}
-
-static Method *
-CloneClassMethod(
-    Tcl_Interp *interp,
-    Class *clsPtr,
-    Method *mPtr,
-    Tcl_Obj *namePtr)
-{
-    if (mPtr->typePtr == NULL) {
-	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
-		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
-    } else if (mPtr->typePtr->cloneProc) {
-	ClientData newClientData;
-
-	if (mPtr->typePtr->cloneProc(mPtr->clientData,
-		&newClientData) != TCL_OK) {
-	    return NULL;
-	}
-	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
-		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
-		newClientData);
-    } else {
-	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
-		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
-		mPtr->clientData);
-    }
 }
 
 int
@@ -753,27 +619,31 @@ TclOODefineMixinObjCmd(
 
 		o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
 		if (o2Ptr == NULL) {
-		freeAndErrorSelf:
-		    ckfree((char *) mixins);
-		    return TCL_ERROR;
+		    goto freeAndErrorSelf;
 		}
 		if (o2Ptr->classPtr == NULL) {
 		    Tcl_AppendResult(interp, "may only mix in classes; \"",
 			    TclGetString(objv[i]), "\" is not a class", NULL);
-		    goto freeAndErrorSelf;
+		freeAndErrorSelf:
+		    ckfree((char *) mixins);
+		    return TCL_ERROR;
 		}
 		mixins[i-1] = o2Ptr->classPtr;
 	    }
 	    if (oPtr->mixins.num != 0) {
 		FOREACH(mixinPtr, oPtr->mixins) {
-		    TclOORemoveFromInstances(oPtr, mixinPtr);
+		    if (mixinPtr != oPtr->selfCls) {
+			TclOORemoveFromInstances(oPtr, mixinPtr);
+		    }
 		}
 		ckfree((char *) oPtr->mixins.list);
 	    }
 	    oPtr->mixins.num = objc-1;
 	    oPtr->mixins.list = mixins;
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		TclOOAddToInstances(oPtr, mixinPtr);
+		if (mixinPtr != oPtr->selfCls) {
+		    TclOOAddToInstances(oPtr, mixinPtr);
+		}
 	    }
 	}
 	oPtr->epoch++;
@@ -796,14 +666,14 @@ TclOODefineMixinObjCmd(
 
 		o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[i]);
 		if (o2Ptr == NULL) {
-		freeAndErrorClass:
-		    ckfree((char *) mixins);
-		    return TCL_ERROR;
+		    goto freeAndErrorClass;
 		}
 		if (o2Ptr->classPtr == NULL) {
 		    Tcl_AppendResult(interp, "may only mix in classes; \"",
 			    TclGetString(objv[i]), "\" is not a class", NULL);
-		    goto freeAndErrorClass;
+		freeAndErrorClass:
+		    ckfree((char *) mixins);
+		    return TCL_ERROR;
 		}
 		mixins[i-1] = o2Ptr->classPtr;
 	    }

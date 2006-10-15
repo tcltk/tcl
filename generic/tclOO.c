@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.60 2006/10/11 02:01:16 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.61 2006/10/15 23:14:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -58,6 +58,10 @@ static const struct {
 
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr);
+static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
+			    Method *mPtr, Tcl_Obj *namePtr);
+static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
+			    Method *mPtr, Tcl_Obj *namePtr);
 static void		DeclareClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const char *name, int isPublic,
 			    Tcl_MethodCallProc callProc);
@@ -1028,6 +1032,247 @@ Tcl_NewObjectInstance(
     }
 
     return (Tcl_Object) oPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Tcl_CopyObjectInstance --
+ *
+ *	Creates a copy of an object. Does not copy the backing namespace,
+ *	since the correct way to do that (e.g., shallow/deep) depends on the
+ *	object/class's own policies.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_Object
+Tcl_CopyObjectInstance(
+    Tcl_Interp *interp,
+    Tcl_Object sourceObject,
+    const char *targetName)
+{
+    Object *oPtr = (Object *) sourceObject, *o2Ptr;
+    Interp *iPtr = (Interp *) interp;
+    FOREACH_HASH_DECLS;
+    Method *mPtr;
+    Class *mixinPtr;
+    Tcl_Obj *keyPtr, *filterObj;
+    int i;
+
+    /*
+     * Sanity checks.
+     */
+
+    if (targetName == NULL && oPtr->classPtr != NULL) {
+	Tcl_AppendResult(interp, "must supply a name when copying a class",
+		NULL);
+	return NULL;
+    }
+    if (oPtr->classPtr == iPtr->ooFoundation->classCls) {
+	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
+	return NULL;
+    }
+
+    /*
+     * Build the instance. Note that this does not run any constructors.
+     */
+
+    o2Ptr = (Object *) Tcl_NewObjectInstance(interp,
+	    (Tcl_Class) oPtr->selfCls, targetName, -1, NULL, -1);
+    if (o2Ptr == NULL) {
+	return NULL;
+    }
+
+    /*
+     * Copy the object-local methods to the new object.
+     */
+
+    FOREACH_HASH(keyPtr, mPtr, &oPtr->methods) {
+	(void) CloneObjectMethod(interp, o2Ptr, mPtr, keyPtr);
+    }
+
+    /*
+     * Copy the object's mixin references to the new object.
+     */
+
+    FOREACH(mixinPtr, o2Ptr->mixins) {
+	if (mixinPtr != o2Ptr->selfCls) {
+	    TclOORemoveFromInstances(o2Ptr, mixinPtr);
+	}
+    }
+    DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
+    FOREACH(mixinPtr, o2Ptr->mixins) {
+	if (mixinPtr != o2Ptr->selfCls) {
+	    TclOOAddToInstances(o2Ptr, mixinPtr);
+	}
+    }
+
+    /*
+     * Copy the object's filter list to the new object.
+     */
+
+    DUPLICATE(o2Ptr->filters, oPtr->filters, Tcl_Obj *);
+    FOREACH(filterObj, o2Ptr->filters) {
+	Tcl_IncrRefCount(filterObj);
+    }
+
+    /*
+     * Copy the object's flags to the new object, clearing those that must be
+     * kept object-local. The duplicate is never deleted at this point, nor is
+     * it the root of the object system or in the midst of processing a filter
+     * call.
+     */
+
+    o2Ptr->flags = oPtr->flags & ~(
+	    OBJECT_DELETED | ROOT_OBJECT | FILTER_HANDLING);
+
+    /*
+     * Copy the class, if present. Note that if there is a class present in
+     * the source object, there must also be one in the copy.
+     */
+
+    if (oPtr->classPtr != NULL) {
+	Class *clsPtr = oPtr->classPtr;
+	Class *cls2Ptr = o2Ptr->classPtr;
+	Class *superPtr;
+
+	/*
+	 * Copy the class flags across.
+	 */
+
+	cls2Ptr->flags = clsPtr->flags;
+
+	/*
+	 * Ensure that the new class's superclass structure is the same as the
+	 * old class's.
+	 */
+
+	FOREACH(superPtr, cls2Ptr->superclasses) {
+	    TclOORemoveFromSubclasses(cls2Ptr, superPtr);
+	}
+	if (cls2Ptr->superclasses.num) {
+	    cls2Ptr->superclasses.list = (Class **)
+		    ckrealloc((char *) cls2Ptr->superclasses.list,
+		    sizeof(Class *) * clsPtr->superclasses.num);
+	} else {
+	    cls2Ptr->superclasses.list = (Class **)
+		    ckalloc(sizeof(Class *) * clsPtr->superclasses.num);
+	}
+	memcpy(cls2Ptr->superclasses.list, clsPtr->superclasses.list,
+		sizeof(Class *) * clsPtr->superclasses.num);
+	cls2Ptr->superclasses.num = clsPtr->superclasses.num;
+	FOREACH(superPtr, cls2Ptr->superclasses) {
+	    TclOOAddToSubclasses(cls2Ptr, superPtr);
+	}
+
+	/*
+	 * Duplicate the source class's filters.
+	 */
+
+	DUPLICATE(cls2Ptr->filters, clsPtr->filters, Tcl_Obj *);
+	FOREACH(filterObj, cls2Ptr->filters) {
+	    Tcl_IncrRefCount(filterObj);
+	}
+
+	/*
+	 * Duplicate the source class's mixins (which cannot be circular
+	 * references to the duplicate).
+	 */
+
+	FOREACH(mixinPtr, cls2Ptr->mixins) {
+	    TclOORemoveFromMixinSubs(cls2Ptr, mixinPtr);
+	}
+	if (cls2Ptr->mixins.num != 0) {
+	    ckfree((char *) clsPtr->mixins.list);
+	}
+	DUPLICATE(cls2Ptr->mixins, clsPtr->mixins, Class *);
+	FOREACH(mixinPtr, cls2Ptr->mixins) {
+	    TclOOAddToMixinSubs(cls2Ptr, mixinPtr);
+	}
+
+	/*
+	 * Duplicate the source class's methods, constructor and destructor.
+	 */
+
+	FOREACH_HASH(keyPtr, mPtr, &clsPtr->classMethods) {
+	    (void) CloneClassMethod(interp, cls2Ptr, mPtr, keyPtr);
+	}
+	if (clsPtr->constructorPtr) {
+	    cls2Ptr->constructorPtr = CloneClassMethod(interp, cls2Ptr,
+		    clsPtr->constructorPtr, NULL);
+	}
+	if (clsPtr->destructorPtr) {
+	    cls2Ptr->destructorPtr = CloneClassMethod(interp, cls2Ptr,
+		    clsPtr->destructorPtr, NULL);
+	}
+    }
+
+    return (Tcl_Object) o2Ptr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * CloneObjectMethod, CloneClassMethod --
+ *
+ *	Helper functions used for cloning methods. They work identically to
+ *	each other, except for the difference between them in how they
+ *	register the cloned method on a successful clone.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static Method *
+CloneObjectMethod(
+    Tcl_Interp *interp,
+    Object *oPtr,
+    Method *mPtr,
+    Tcl_Obj *namePtr)
+{
+    if (mPtr->typePtr == NULL) {
+	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
+    } else if (mPtr->typePtr->cloneProc) {
+	ClientData newClientData;
+
+	if (mPtr->typePtr->cloneProc(mPtr->clientData,
+		&newClientData) != TCL_OK) {
+	    return NULL;
+	}
+	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
+    } else {
+	return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, namePtr,
+		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
+    }
+}
+
+static Method *
+CloneClassMethod(
+    Tcl_Interp *interp,
+    Class *clsPtr,
+    Method *mPtr,
+    Tcl_Obj *namePtr)
+{
+    if (mPtr->typePtr == NULL) {
+	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
+    } else if (mPtr->typePtr->cloneProc) {
+	ClientData newClientData;
+
+	if (mPtr->typePtr->cloneProc(mPtr->clientData,
+		&newClientData) != TCL_OK) {
+	    return NULL;
+	}
+	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
+		newClientData);
+    } else {
+	return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr,
+		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
+		mPtr->clientData);
+    }
 }
 
 /*

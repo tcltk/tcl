@@ -9,10 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.35 2006/10/11 02:01:16 dgp Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.36 2006/10/15 23:14:29 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
+Tcl_Object		Tcl_CopyObjectInstance(Tcl_Interp *interp,
+			    Tcl_Object sourceObject, const char *targetName);
 Tcl_Object		Tcl_GetClassAsObject(Tcl_Class clazz);
 Tcl_Class		Tcl_GetObjectAsClass(Tcl_Object object);
 Tcl_Command		Tcl_GetObjectCommand(Tcl_Object object);
@@ -269,7 +271,7 @@ typedef struct CallContext {
 #define PUBLIC_METHOD		2 /* This is a public (exported) method. */
 #define CONSTRUCTOR		4 /* This is a constructor. */
 #define DESTRUCTOR		8 /* This is a destructor. */
-
+
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or
  * maybe just put in the internal stubs table.
@@ -311,7 +313,7 @@ MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 			    int publicOnly, const char ***stringsPtr);
-
+
 /*
  * A convenience macro for iterating through the lists used in the internal
  * memory management of objects. This is a bit gnarly because we want to do
@@ -342,6 +344,21 @@ MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 #define FOREACH_HASH_VALUE(val,tablePtr) \
     for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
 	    ((val)=Tcl_GetHashValue(hPtr),1):0;hPtr=Tcl_NextHashEntry(&search))
+
+/*
+ * Convenience macro for duplicating a list. Needs no external declaration,
+ * but all arguments are used multiple times and so must have no side effects.
+ */
+
+#define DUPLICATE(target,source,type) \
+    do { \
+	register unsigned len = sizeof(type) * ((target).num=(source).num);\
+	if (len != 0) { \
+	    memcpy(((target).list=(type*)ckalloc(len)), (source).list, len); \
+	} else { \
+	    (target).list = NULL; \
+	} \
+    } while(0)
 
 /*
  * Local Variables:
