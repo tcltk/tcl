@@ -10,6 +10,10 @@
 
 2006-10-16  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclPkg.c (ExactRequirement):	Plugged memory leak.  Also
+	changed Tcl_Alloc()/Tcl_Free() calls to ckalloc()/ckfree() for easier
+	memory debugging in the future.  [Bug 1568373]
+
 	* library/tcltest/tcltest.tcl:	Revise tcltest bump to 2.3a1.
 	* library/tcltest/pkgIndex.tcl:	This permits more features to be
 	* unix/Makefile.in:	added to tcltest before we reach version 2.3.0,
