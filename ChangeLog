@@ -1,3 +1,9 @@
+2006-10-16  Daniel Steffen  <das@users.sourceforge.net>
+
+	*** 8.4.14 TAGGED FOR RELEASE ***
+
+	* changes: updates for 8.4.14 release.
+
 2006-10-11  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclPkg.c (Tcl_PkgRequireEx): Corrected crash when
@@ -5,8 +11,6 @@
 	  same problem in 8.5.
 
 2006-10-10  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.14 TAGGED FOR RELEASE ***
 
 	* changes:		changes updated for 8.4.14 release.
 
