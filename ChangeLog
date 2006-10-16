@@ -1,12 +1,17 @@
 2006-10-16  Andreas Kupries  <andreask@activestate.com>
 
+	*** 8.5a5 TAGGED FOR RELEASE ***
+
 	* generic/tclBasic.c: Moved TIP#219 cleanup to DeleteInterpProc.
 
 2006-10-16  Daniel Steffen  <das@users.sourceforge.net>
 
-	*** 8.5a5 TAGGED FOR RELEASE ***
-
 	* changes: updates for 8.5a5 release.
+
+	* unix/tclUnixThrd.c (TclpThreadGetStackSize): Darwin: fix for main
+	thread, where pthread_get_stacksize_np() returns incorrect info.
+
+	* macosx/GNUmakefile: don't redo prebinding of non-prebound binaires.
 
 2006-10-16  Don Porter  <dgp@users.sourceforge.net>
 
