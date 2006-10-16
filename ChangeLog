@@ -1,3 +1,9 @@
+2006-10-16  Daniel Steffen  <das@users.sourceforge.net>
+
+	*** 8.5a5 TAGGED FOR RELEASE ***
+
+	* changes: updates for 8.5a5 release.
+
 2006-10-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Revise tcltest bump to 2.3a1.
@@ -38,8 +44,6 @@
 	when argument version=NULL passed in.
 
 2006-10-10  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5a5 TAGGED FOR RELEASE ***
 
 	* changes:	Updates for 8.5a5 release.
 
