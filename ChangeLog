@@ -1,4 +1,13 @@
+2006-10-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Revise tcltest bump to 2.3a1.
+	* library/tcltest/pkgIndex.tcl:	This permits more features to be
+	* unix/Makefile.in:	added to tcltest before we reach version 2.3.0,
+	* win/Makefile.in:	best timed to match the release of Tcl 8.5.0.
+	* win/makefile.vc:	This also serves as a demo of TIP 268 features.
+
 2006-10-13  Colin McCormack <coldstore@users.sf.net>
+
 	* win/tclWinFile.c: corrected erroneous attempt to protect
 	against NULL return from Tcl_FSGetNormalizedPath
 	per Bug 1548263 causing Bug 1575837.
