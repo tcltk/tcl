@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.92 2006/09/30 17:56:47 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.93 2006/10/16 20:36:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2036,7 +2036,11 @@ SetLambdaFromAny(
 		Tcl_GetString(objPtr), NULL);
 	return TCL_ERROR;
     }
-    procPtr->refCount++;
+
+    /* CAREFUL: TclCreateProc returns refCount==1! [Bug 1578454]
+     * procPtr->refCount = 1;
+     */
+    
     procPtr->cmdPtr = NULL;
 
     /*

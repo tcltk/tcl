@@ -1,3 +1,9 @@
+2006-10-16  Miguel Sofer  <msofer@users.sf.net>
+
+	* tclProc.c (SetLambdaFromAny):
+	* tests/apply.test (9.1-9.2): plugged intrep leak [Bug 1578454],
+	found by mjanssen.
+
 2006-10-16  Andreas Kupries  <andreask@activestate.com>
 
 	*** 8.5a5 TAGGED FOR RELEASE ***
