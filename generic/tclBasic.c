@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.197 2006/09/22 18:13:27 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.198 2006/10/16 16:52:01 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -919,15 +919,6 @@ Tcl_DeleteInterp(
     iPtr->compileEpoch++;
 
     /*
-     * TIP #219, Tcl Channel Reflection API. Discard a leftover state.
-     */
-
-    if (iPtr->chanMsg != NULL) {
-        Tcl_DecrRefCount (iPtr->chanMsg);
-	iPtr->chanMsg = NULL;
-    }
-
-    /*
      * Ensure that the interpreter is eventually deleted.
      */
 
@@ -980,6 +971,15 @@ DeleteInterpProc(
 
     if (!(iPtr->flags & DELETED)) {
 	Tcl_Panic("DeleteInterpProc called on interpreter not marked deleted");
+    }
+
+    /*
+     * TIP #219, Tcl Channel Reflection API. Discard a leftover state.
+     */
+
+    if (iPtr->chanMsg != NULL) {
+        Tcl_DecrRefCount (iPtr->chanMsg);
+	iPtr->chanMsg = NULL;
     }
 
     /*
