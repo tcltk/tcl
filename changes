@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.108 2006/10/16 15:22:05 dgp Exp $
+RCS: @(#) $Id: changes,v 1.109 2006/10/16 15:33:42 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6779,6 +6779,8 @@ For any code relying on exact error messages.
 
 2006-08-10 (bug fix)[1538262,1530474] code cleanup; optimizations (afredd)
 
+2006-08-18 (bug fix) intermittent failures in TclUnixWaitForFile() (steffen)
+
 2006-08-18 (platform support) Darwin x86_64 (steffen)
 
 2006-08-21 (bug fix)[1457797] Darwin 64-bit notifier hang (steffen)
@@ -6832,5 +6834,9 @@ URL validity checking against RFC 2986 (hobbs)
 2006-10-06 (new feature)[1565751][TIP 275] [binary scan] unsigned (thoyts)
 
 2006-10-10 (bug fix)[1566526] crash cleaning up [namespace path] data (porter)
+
+2006-10-12 (bug fix)[1576006] better error messages from [interp alias] (sofer)
+
+2006-10-13 (platform support) get stack size on Darwin (steffen)
 
 --- Released 8.5a5, June XX, 2006 --- See ChangeLog for details ---
