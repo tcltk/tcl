@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.47 2006/10/16 15:34:08 das Exp $
+RCS: @(#) $Id: changes,v 1.79.2.48 2006/10/16 18:52:29 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6419,4 +6419,4 @@ naked-fork safe on Tiger (steffen)
 URL validity checking against RFC 2986 (hobbs)
 => http 2.5.3
 
---- Released 8.4.14, October XX, 2006 --- See ChangeLog for details ---
+--- Released 8.4.14, October 19, 2006 --- See ChangeLog for details ---
