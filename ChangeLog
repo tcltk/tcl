@@ -1,3 +1,7 @@
+2006-10-16  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: Moved TIP#219 cleanup to DeleteInterpProc.
+
 2006-10-16  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.5a5 TAGGED FOR RELEASE ***
