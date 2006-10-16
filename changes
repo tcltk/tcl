@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.107 2006/10/11 03:47:14 dgp Exp $
+RCS: @(#) $Id: changes,v 1.108 2006/10/16 15:22:05 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6801,7 +6801,7 @@ For any code relying on exact error messages.
 => msgcat 1.4.2
 
 2006-09-10 (new feature) tcltest option: -verbose line (steffen)
-=> tcltest 2.3.0
+=> tcltest 2.3a1
 
 2006-09-19 (bug fix)[1555271,1561260] Several ** operator bugs (porter)
 
