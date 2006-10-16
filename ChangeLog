@@ -4,6 +4,8 @@
 
 	* changes: updates for 8.4.14 release.
 
+	* macosx/Makefile: don't redo prebinding of non-prebound binaires.
+
 2006-10-11  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclPkg.c (Tcl_PkgRequireEx): Corrected crash when
