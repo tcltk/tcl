@@ -4,7 +4,7 @@
 #	uses the standard unix build system in tcl/unix (which can be used directly instead of this
 #	if you are not using the tk/macosx projects).
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.15 2006/04/12 00:58:05 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.16 2006/10/16 17:34:42 das Exp $
 #
 ########################################################################################################
 
@@ -154,14 +154,17 @@ ifeq (${EMBEDDED_BUILD},1)
 	@rm -f "${INSTALL_ROOT}${BINDIR}/${TCLSH}" && \
 	rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&- || true
 else
-# redo prebinding
-	@cd ${INSTALL_ROOT}/ && \
+# redo prebinding (when not building for Mac OS X 10.4 or later only)
+	@if [ "`echo "$${MACOSX_DEPLOYMENT_TARGET}" | \
+	awk -F '10\\.' '{print int($$2)}'`" -lt 4 -a "`echo "$${CFLAGS}" | \
+	awk -F '-mmacosx-version-min=10\\.' '{print int($$2)}'`" -lt 4 ]; \
+	then cd ${INSTALL_ROOT}/; \
 	if [ ! -d usr/lib ]; then mkdir -p usr && ln -fs /usr/lib usr/ && RM_USRLIB=1; fi; \
 	if [ ! -d System ]; then ln -fs /System . && RM_SYSTEM=1; fi; \
 	redo_prebinding -r . "./${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}/${PRODUCT_NAME}"; \
 	redo_prebinding -r . "./${BINDIR}/${TCLSH}"; \
 	if [ -n "$${RM_USRLIB:-}" ]; then rm -f usr/lib; rmdir -p usr 2>&-; fi; \
-	if [ -n "$${RM_SYSTEM:-}" ]; then rm -f System; fi
+	if [ -n "$${RM_SYSTEM:-}" ]; then rm -f System; fi; fi
 # install tclsh symbolic link
 	@ln -fs ${TCLSH} ${INSTALL_ROOT}${BINDIR}/tclsh
 endif
