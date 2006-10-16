@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.46 2006/10/10 19:10:37 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.47 2006/10/16 15:34:08 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6390,6 +6390,8 @@ naked-fork safe on Tiger (steffen)
 2006-07-20 (platform support) Mac OS X weak linking (steffen)
 
 2006-07-20 (bug fix) Darwin: execve() works iff event loop not yet run (steffen)
+
+2006-08-18 (bug fix) intermittent failures in TclUnixWaitForFile() (steffen)
 
 2006-08-18 (platform support) Darwin x86_64 (steffen)
 
