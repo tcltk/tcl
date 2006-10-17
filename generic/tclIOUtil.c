@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.31 2006/08/30 17:48:48 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.32 2006/10/17 04:36:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -86,13 +86,13 @@ extern int theFilesystemEpoch;
 /* 
  * Private functions for use in this file
  */
-Tcl_PathType     FSGetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
+static Tcl_PathType     FSGetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
 			    Tcl_Filesystem **filesystemPtrPtr, 
 			    int *driveNameLengthPtr));
-Tcl_PathType     GetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
+static Tcl_PathType     GetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
 			    Tcl_Filesystem **filesystemPtrPtr, 
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
-Tcl_FSPathInFilesystemProc NativePathInFilesystem;
+static Tcl_FSPathInFilesystemProc NativePathInFilesystem;
 static Tcl_Obj*  TclFSNormalizeAbsolutePath 
 			    _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj *pathPtr,
 					 ClientData *clientDataPtr));
@@ -373,7 +373,6 @@ TCL_DECLARE_MUTEX(obsoleteFsHookMutex)
  */
 static Tcl_FSFilesystemSeparatorProc NativeFilesystemSeparator;
 static Tcl_FSFreeInternalRepProc NativeFreeInternalRep;
-Tcl_FSDupInternalRepProc NativeDupInternalRep;
 static Tcl_FSCreateInternalRepProc NativeCreateNativeRep;
 static Tcl_FSFileAttrStringsProc NativeFileAttrStrings;
 static Tcl_FSFileAttrsGetProc NativeFileAttrsGet;
@@ -420,7 +419,7 @@ Tcl_Filesystem tclNativeFilesystem = {
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
     &NativePathInFilesystem,
-    &NativeDupInternalRep,
+    &TclNativeDupInternalRep,
     &NativeFreeInternalRep,
     &TclpNativeToNormalized,
     &NativeCreateNativeRep,
@@ -2966,7 +2965,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		} else {
 		    /* We need the native rep */
 		    tvdlPtr->divertedFileNativeRep = 
-		      NativeDupInternalRep(Tcl_FSGetInternalRep(copyToPtr, 
+		      TclNativeDupInternalRep(Tcl_FSGetInternalRep(copyToPtr, 
 								copyFsPtr));
 		    /* 
 		     * We don't need or want references to the copied
@@ -3437,7 +3436,7 @@ TclFSInternalToNormalized(fromFilesystem, clientData, fsRecPtrPtr)
  *----------------------------------------------------------------------
  */
 
-Tcl_PathType
+static Tcl_PathType
 GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
     Tcl_Obj *pathObjPtr;
     Tcl_Filesystem **filesystemPtrPtr;
@@ -4097,7 +4096,7 @@ TclpNativeToNormalized(clientData)
 /*
  *---------------------------------------------------------------------------
  *
- * NativeDupInternalRep --
+ * TclNativeDupInternalRep --
  *
  *      Duplicate the native representation.
  *
@@ -4111,7 +4110,7 @@ TclpNativeToNormalized(clientData)
  *---------------------------------------------------------------------------
  */
 ClientData 
-NativeDupInternalRep(clientData)
+TclNativeDupInternalRep(clientData)
     ClientData clientData;
 {
     ClientData copy;
@@ -4723,7 +4722,7 @@ Tcl_FSGetPathType(pathObjPtr)
  *----------------------------------------------------------------------
  */
 
-Tcl_PathType
+static Tcl_PathType
 FSGetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr)
     Tcl_Obj *pathObjPtr;
     Tcl_Filesystem **filesystemPtrPtr;
@@ -6419,7 +6418,7 @@ UpdateStringOfFsPath(objPtr)
  *
  *---------------------------------------------------------------------------
  */
-int 
+static int 
 NativePathInFilesystem(pathPtr, clientDataPtr)
     Tcl_Obj *pathPtr;
     ClientData *clientDataPtr;
