@@ -1,3 +1,10 @@
+2006-10-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:	Cleaned up some code flagged by a
+	* generic/tclInt.h:	`make checkexports` test.
+	* win/tclWin32Dll.c:
+	* win/tclWinFile.c:
+	
 2006-10-16  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.14 TAGGED FOR RELEASE ***
