@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.63 2006/10/12 16:24:13 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.64 2006/10/17 15:39:24 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1742,7 +1742,6 @@ AliasObjCmd(
 	Tcl_Preserve((ClientData) targetInterp);
 	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
 	TclTransferResult(targetInterp, result, interp);
-	Tcl_Release((ClientData) targetInterp);
     } else {
 	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
     }
@@ -1753,6 +1752,10 @@ AliasObjCmd(
 	tPtr->ensembleRewrite.numInsertedObjs = 0;
     }
     
+    if (targetInterp != interp) {
+	Tcl_Release((ClientData) targetInterp);
+    }
+
     for (i=0; i<cmdc; i++) {
 	Tcl_DecrRefCount(cmdv[i]);
     }
