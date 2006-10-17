@@ -1,3 +1,8 @@
+2006-10-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInterp.c (ApplyObjCmd): fixed bad error in 2006-10-12
+	commit: interp released too early. Spotted by mistachkin.
+
 2006-10-16  Miguel Sofer  <msofer@users.sf.net>
 
 	* tclProc.c (SetLambdaFromAny):
