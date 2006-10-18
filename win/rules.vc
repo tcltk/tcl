@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.11.2.4 2006/10/06 14:04:49 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.11.2.5 2006/10/18 08:49:33 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -31,7 +31,11 @@ _INSTALLDIR	= $(INSTALLDIR:/=\)
 !endif
 
 !ifndef MACHINE
+!if "$(CPU)" == ""
 MACHINE		= IX86
+!else
+MACHINE         = $(CPU)
+!endif
 !endif
 
 !ifndef CFG_ENCODING
