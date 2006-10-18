@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.109 2006/10/16 15:33:42 das Exp $
+RCS: @(#) $Id: changes,v 1.110 2006/10/18 19:03:20 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6839,4 +6839,4 @@ URL validity checking against RFC 2986 (hobbs)
 
 2006-10-13 (platform support) get stack size on Darwin (steffen)
 
---- Released 8.5a5, June XX, 2006 --- See ChangeLog for details ---
+--- Released 8.5a5, October 20, 2006 --- See ChangeLog for details ---
