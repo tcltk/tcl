@@ -2,6 +2,12 @@
 
 	*** 8.5a5 TAGGED FOR RELEASE ***
 
+	* doc/Encoding.3:	Missing doc updates (mostly Table of
+	* doc/Ensemble.3:	Contents) exposed by `make checkdoc`
+	* doc/FileSystem.3:
+	* doc/GetTime.3:
+	* doc/PkgRequire.3:
+
 2006-10-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInterp.c (ApplyObjCmd): fixed bad error in 2006-10-12

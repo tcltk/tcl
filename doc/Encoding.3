@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.24 2006/09/26 23:01:10 kennykb Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.25 2006/10/18 18:46:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_WinTCharToUtf, Tcl_WinUtfToTChar, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_WinTCharToUtf, Tcl_WinUtfToTChar, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
