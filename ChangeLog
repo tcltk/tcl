@@ -1,3 +1,8 @@
+2006-10-18  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/nmakehlp.c: Ensure builds with VC6 without Platform SDK.
+	* win/rules.vc:   Pickup MACHINE from environment.
+
 2006-10-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:	Cleaned up some code flagged by a
