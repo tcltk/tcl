@@ -2,6 +2,8 @@
 
 	*** 8.5a5 TAGGED FOR RELEASE ***
 
+	* changes: 		8.5a5 release date set
+
 	* doc/Encoding.3:	Missing doc updates (mostly Table of
 	* doc/Ensemble.3:	Contents) exposed by `make checkdoc`
 	* doc/FileSystem.3:
