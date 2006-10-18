@@ -1,3 +1,7 @@
+2006-10-18  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5a5 TAGGED FOR RELEASE ***
+
 2006-10-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInterp.c (ApplyObjCmd): fixed bad error in 2006-10-12
@@ -10,8 +14,6 @@
 	found by mjanssen.
 
 2006-10-16  Andreas Kupries  <andreask@activestate.com>
-
-	*** 8.5a5 TAGGED FOR RELEASE ***
 
 	* generic/tclBasic.c: Moved TIP#219 cleanup to DeleteInterpProc.
 
