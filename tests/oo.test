@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.37 2006/10/08 17:13:56 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.38 2006/10/19 21:04:00 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -817,10 +817,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -returnCodes 1 -cleanup {
     foo destroy
 } -result {"foo" is not a class}
-test oo-17.4.0 {OO: class introspection} -constraints redactedFeature -body {
-    info class oo::object gorp
-} -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, parameters, subclasses, or superclasses}
-test oo-17.4.1 {OO: class introspection} -body {
+test oo-17.4 {OO: class introspection} -body {
     info class oo::object gorp
 } -returnCodes 1 -result {bad subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, or superclasses}
 test oo-17.5 {OO: class introspection} -setup {
