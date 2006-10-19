@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.37 2006/10/19 21:06:25 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.38 2006/10/19 21:09:47 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -50,12 +50,12 @@ ClientData		Tcl_ClassGetMetadata(Tcl_Class clazz,
 			    const Tcl_ObjectMetadataType *typePtr);
 void			Tcl_ClassSetMetadata(Tcl_Class clazz,
 			    const Tcl_ObjectMetadataType *typePtr,
-			    ClientData clientData);
+			    ClientData metadata);
 ClientData		Tcl_ObjectGetMetadata(Tcl_Object object,
 			    const Tcl_ObjectMetadataType *typePtr);
 void			Tcl_ObjectSetMetadata(Tcl_Object object,
 			    const Tcl_ObjectMetadataType *typePtr,
-			    ClientData clientData);
+			    ClientData metadata);
 // ^^^^^^^^^^^^^^^^^^^^^^ MOVE TO TCL.DECLS ^^^^^^^^^^^^^^^^^^^^^^
 
 /*
