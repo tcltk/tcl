@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.61 2006/10/15 23:14:29 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.62 2006/10/19 21:06:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -345,6 +345,7 @@ AllocObject(
     oPtr->mixins.list = NULL;
     oPtr->classPtr = NULL;
     oPtr->flags = 0;
+    oPtr->metadataPtr = NULL;
 
     /*
      * Initialize the traces.
@@ -536,6 +537,19 @@ ReleaseClassContents(
 	ckfree((char *) clsPtr->filters.list);
 	clsPtr->filters.num = 0;
     }
+
+    if (clsPtr->metadataPtr != NULL) {
+	FOREACH_HASH_DECLS;
+	Tcl_ObjectMetadataType *metadataTypePtr;
+	ClientData value;
+
+	FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
+	    metadataTypePtr->deleteProc(value);
+	}
+	Tcl_DeleteHashTable(clsPtr->metadataPtr);
+	ckfree((char *) clsPtr->metadataPtr);
+	clsPtr->metadataPtr = NULL;
+    }
 }
 
 /*
@@ -612,6 +626,19 @@ ObjectNamespaceDeleted(
 	}
     }
     Tcl_DeleteHashTable(&oPtr->privateContextCache);
+
+    if (oPtr->metadataPtr != NULL) {
+	FOREACH_HASH_DECLS;
+	Tcl_ObjectMetadataType *metadataTypePtr;
+	ClientData value;
+
+	FOREACH_HASH(metadataTypePtr, value, oPtr->metadataPtr) {
+	    metadataTypePtr->deleteProc(value);
+	}
+	Tcl_DeleteHashTable(oPtr->metadataPtr);
+	ckfree((char *) oPtr->metadataPtr);
+	oPtr->metadataPtr = NULL;
+    }
 
     clsPtr = oPtr->classPtr;
     if (clsPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
@@ -943,6 +970,7 @@ AllocClass(
     Tcl_InitObjHashTable(&clsPtr->classMethods);
     clsPtr->constructorPtr = NULL;
     clsPtr->destructorPtr = NULL;
+    clsPtr->metadataPtr = NULL;
     return clsPtr;
 }
 
@@ -1128,6 +1156,26 @@ Tcl_CopyObjectInstance(
 	    OBJECT_DELETED | ROOT_OBJECT | FILTER_HANDLING);
 
     /*
+     * Copy the object's metadata.
+     */
+
+    if (oPtr->metadataPtr != NULL) {
+	Tcl_ObjectMetadataType *metadataTypePtr;
+	ClientData value, duplicate;
+
+	FOREACH_HASH(metadataTypePtr, value, oPtr->metadataPtr) {
+	    if (metadataTypePtr->cloneProc == NULL) {
+		continue;
+	    }
+	    duplicate = metadataTypePtr->cloneProc(value);
+	    if (duplicate != NULL) {
+		Tcl_ObjectSetMetadata((Tcl_Object) o2Ptr, metadataTypePtr,
+			duplicate);
+	    }
+	}
+    }
+
+    /*
      * Copy the class, if present. Note that if there is a class present in
      * the source object, there must also be one in the copy.
      */
@@ -1205,6 +1253,26 @@ Tcl_CopyObjectInstance(
 	if (clsPtr->destructorPtr) {
 	    cls2Ptr->destructorPtr = CloneClassMethod(interp, cls2Ptr,
 		    clsPtr->destructorPtr, NULL);
+	}
+
+	/*
+	 * Duplicate the class's metadata.
+	 */
+
+	if (clsPtr->metadataPtr != NULL) {
+	    Tcl_ObjectMetadataType *metadataTypePtr;
+	    ClientData value, duplicate;
+
+	    FOREACH_HASH(metadataTypePtr, value, clsPtr->metadataPtr) {
+		if (metadataTypePtr->cloneProc == NULL) {
+		    continue;
+		}
+		duplicate = metadataTypePtr->cloneProc(value);
+		if (duplicate != NULL) {
+		    Tcl_ClassSetMetadata((Tcl_Class) cls2Ptr, metadataTypePtr,
+			    duplicate);
+		}
+	    }
 	}
     }
 
@@ -1851,6 +1919,192 @@ CloneForwardMethod(
     Tcl_IncrRefCount(fm2Ptr->prefixObj);
     *newClientData = fm2Ptr;
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Tcl_ClassGetMetadata, Tcl_ClassSetMetadata, Tcl_ObjectGetMetadata,
+ * Tcl_ObjectSetMetadata --
+ *
+ *	Metadata management API. The metadata system allows code in extensions
+ *	to attach arbitrary non-NULL pointers to objects and classes without
+ *	the different things that might be interested being able to interfere
+ *	with each other. Apart from non-NULL-ness, these routines attach no
+ *	interpretation to the meaning of the metadata pointers.
+ *
+ *	The Tcl_*GetMetadata routines get the metadata pointer attached that
+ *	has been related with a particular type, or NULL if no metadata
+ *	associated with the given type has been attached.
+ *
+ *	The Tcl_*SetMetadata routines set or delete the metadata pointer that
+ *	is related to a particular type. The value associated with the type is
+ *	deleted (if present; no-op otherwise) if the value is NULL, and
+ *	attached (replacing the previous value, which is deleted if present)
+ *	otherwise. This means it is impossible to attach a NULL value for any
+ *	metadata type.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+ClientData
+Tcl_ClassGetMetadata(
+    Tcl_Class clazz,
+    const Tcl_ObjectMetadataType *typePtr)
+{
+    Class *clsPtr = (Class *) clazz;
+    Tcl_HashEntry *hPtr;
+
+    /*
+     * If there's no metadata store attached, the type in question has
+     * definitely not been attached either!
+     */
+
+    if (clsPtr->metadataPtr == NULL) {
+	return NULL;
+    }
+
+    /*
+     * There is a metadata store, so look in it for the given type.
+     */
+
+    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+
+    /*
+     * Return the metadata value if we found it, otherwise NULL.
+     */
+
+    if (hPtr == NULL) {
+	return NULL;
+    } else {
+	return Tcl_GetHashValue(hPtr);
+    }
+}
+
+void
+Tcl_ClassSetMetadata(
+    Tcl_Class clazz,
+    const Tcl_ObjectMetadataType *typePtr,
+    ClientData metadata)
+{
+    Class *clsPtr = (Class *) clazz;
+    Tcl_HashEntry *hPtr;
+    int isNew;
+
+    /*
+     * Attach the metadata store if not done already.
+     */
+
+    if (clsPtr->metadataPtr == NULL) {
+	if (metadata == NULL) {
+	    return;
+	}
+	clsPtr->metadataPtr = (Tcl_HashTable*) ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitHashTable(clsPtr->metadataPtr, TCL_ONE_WORD_KEYS);
+    }
+
+    /*
+     * If the metadata is NULL, we're deleting the metadata for the type.
+     */
+
+    if (metadata == NULL) {
+	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+	if (hPtr != NULL) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	return;
+    }
+
+    /*
+     * Otherwise we're attaching the metadata. Note that if there was already
+     * some metadata attached of this type, we delete that first.
+     */
+
+    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, (char *) typePtr, &isNew);
+    if (!isNew) {
+	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
+    }
+    Tcl_SetHashValue(hPtr, metadata);
+}
+
+ClientData
+Tcl_ObjectGetMetadata(
+    Tcl_Object object,
+    const Tcl_ObjectMetadataType *typePtr)
+{
+    Object *oPtr = (Object *) object;
+    Tcl_HashEntry *hPtr;
+
+    /*
+     * If there's no metadata store attached, the type in question has
+     * definitely not been attached either!
+     */
+
+    if (oPtr->metadataPtr == NULL) {
+	return NULL;
+    }
+
+    /*
+     * There is a metadata store, so look in it for the given type.
+     */
+
+    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+
+    /*
+     * Return the metadata value if we found it, otherwise NULL.
+     */
+
+    if (hPtr == NULL) {
+	return NULL;
+    } else {
+	return Tcl_GetHashValue(hPtr);
+    }
+}
+
+void
+Tcl_ObjectSetMetadata(
+    Tcl_Object object,
+    const Tcl_ObjectMetadataType *typePtr,
+    ClientData metadata)
+{
+    Object *oPtr = (Object *) object;
+    Tcl_HashEntry *hPtr;
+    int isNew;
+
+    /*
+     * Attach the metadata store if not done already.
+     */
+
+    if (oPtr->metadataPtr == NULL) {
+	if (metadata == NULL) {
+	    return;
+	}
+	oPtr->metadataPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitHashTable(oPtr->metadataPtr, TCL_ONE_WORD_KEYS);
+    }
+
+    /*
+     * If the metadata is NULL, we're deleting the metadata for the type.
+     */
+
+    if (metadata == NULL) {
+	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+	if (hPtr != NULL) {
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+	return;
+    }
+
+    /*
+     * Otherwise we're attaching the metadata. Note that if there was already
+     * some metadata attached of this type, we delete that first.
+     */
+
+    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, (char *) typePtr, &isNew);
+    if (!isNew) {
+	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
+    }
+    Tcl_SetHashValue(hPtr, metadata);
 }
 
 /*

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.210.2.5 2006/10/01 21:27:24 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.210.2.6 2006/10/19 21:06:25 dkf Exp $
  */
 
 #ifndef _TCL
@@ -2350,8 +2350,8 @@ typedef unsigned long mp_digit;
 
 /*
  * Public datatypes for callbacks and structures used in the TIP#257 (OO)
- * implementation. These are all used to implement custom types of method
- * calls.
+ * implementation. These are used to implement custom types of method calls
+ * and to allow the attachment of arbitrary data to objects and classes.
  */
 
 typedef int (*Tcl_MethodCallProc)_ANSI_ARGS_((ClientData clientData,
@@ -2360,10 +2360,21 @@ typedef int (*Tcl_MethodCallProc)_ANSI_ARGS_((ClientData clientData,
 typedef void (*Tcl_MethodDeleteProc)_ANSI_ARGS_((ClientData clientData));
 typedef int (*Tcl_MethodCloneProc)_ANSI_ARGS_((ClientData oldClientData,
 	ClientData *newClientData));
+typedef void (*Tcl_ObjectMetadataDeleteProc)_ANSI_ARGS_((
+	ClientData clientData));
+typedef ClientData (*Tcl_ObjectMetadataCloneProc)_ANSI_ARGS_((
+	ClientData clientData));
+
+/*
+ * The type of a method implementation. This describes how to call the method
+ * implementation, how to delete it (when the object or class is deleted) and
+ * how to create a clone of it (when the object or class is copied).
+ */
 
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_CURRENT.*/
+				 * to TCL_OO_METHOD_VERSION_CURRENT in
+				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
     Tcl_MethodCallProc callProc;/* How to invoke this method. */
@@ -2381,6 +2392,33 @@ typedef struct {
  * The correct value for the version field of the Tcl_MethodType structure.
  * This allows new versions of the structure to be introduced without breaking
  * binary compatability.
+ */
+
+#define TCL_OO_METHOD_VERSION_CURRENT 1
+
+/*
+ * The type of some object (or class) metadata. This describes how to delete
+ * the metadata (when the object or class is deleted) and how to create a
+ * clone of it (when the object or class is copied).
+ */
+
+typedef struct {
+    int version;		/* Structure version field. Always to be equal
+				 * to TCL_OO_METADATA_VERSION_CURRENT in
+				 * declarations. */
+    const char *name;
+    Tcl_ObjectMetadataDeleteProc deleteProc;
+				/* How to delete the metadata. This must not
+				 * be NULL. */
+    Tcl_ObjectMetadataCloneProc cloneProc;
+				/* How to clone the metadata. If NULL, the
+				 * metadata will not be copied. */
+} Tcl_ObjectMetadataType;
+
+/*
+ * The correct value for the version field of the Tcl_ObjectMetadataType
+ * structure. This allows new versions of the structure to be introduced
+ * without breaking binary compatability.
  */
 
 #define TCL_OO_METHOD_VERSION_CURRENT 1

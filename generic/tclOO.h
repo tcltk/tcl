@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.36 2006/10/15 23:14:29 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.37 2006/10/19 21:06:25 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -46,6 +46,16 @@ Tcl_Method		Tcl_ObjectContextMethod(Tcl_ObjectContext context);
 Tcl_Object		Tcl_ObjectContextObject(Tcl_ObjectContext context);
 int			Tcl_ObjectContextSkippedArgs(
 			    Tcl_ObjectContext context);
+ClientData		Tcl_ClassGetMetadata(Tcl_Class clazz,
+			    const Tcl_ObjectMetadataType *typePtr);
+void			Tcl_ClassSetMetadata(Tcl_Class clazz,
+			    const Tcl_ObjectMetadataType *typePtr,
+			    ClientData clientData);
+ClientData		Tcl_ObjectGetMetadata(Tcl_Object object,
+			    const Tcl_ObjectMetadataType *typePtr);
+void			Tcl_ObjectSetMetadata(Tcl_Object object,
+			    const Tcl_ObjectMetadataType *typePtr,
+			    ClientData clientData);
 // ^^^^^^^^^^^^^^^^^^^^^^ MOVE TO TCL.DECLS ^^^^^^^^^^^^^^^^^^^^^^
 
 /*
@@ -140,6 +150,11 @@ typedef struct Object {
     int epoch;			/* Per-object epoch, incremented when the way
 				 * an object should resolve call chains is
 				 * changed. */
+    Tcl_HashTable *metadataPtr;	/* Mapping from pointers to metadata type to
+				 * the ClientData values that are the values
+				 * of each piece of attached metadata. This
+				 * field starts out as NULL and is only
+				 * allocated if metadata is attached. */
     Tcl_HashTable publicContextCache;	/* Place to keep unused contexts. */
     Tcl_HashTable privateContextCache;	/* Place to keep unused contexts. */
 } Object;
@@ -200,6 +215,11 @@ typedef struct Class {
 				 * any). */
     Method *destructorPtr;	/* Method record of the class destructor (if
 				 * any). */
+    Tcl_HashTable *metadataPtr;	/* Mapping from pointers to metadata type to
+				 * the ClientData values that are the values
+				 * of each piece of attached metadata. This
+				 * field starts out as NULL and is only
+				 * allocated if metadata is attached. */
 } Class;
 
 /*
