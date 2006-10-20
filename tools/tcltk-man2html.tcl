@@ -82,7 +82,7 @@ proc parse_command_line {} {
     set build_tcl 0
     set build_tk 0
     # Default search version is a glob pattern
-    set useversion {{,[8-9].[0-9]{,.[0-9]{,[0-9]}}}}
+    set useversion {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}
 
     # Handle arguments a la GNU:
     #   --version
