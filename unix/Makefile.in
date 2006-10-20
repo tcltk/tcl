@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.194 2006/10/19 22:36:51 rmax Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.193 2006/10/16 15:22:06 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -258,10 +258,6 @@ CC			= @CC@
 # Flags to be passed to installManPage to control how the manpages
 # should be installed (symlinks, compression, package name suffix).
 MAN_FLAGS               = @MAN_FLAGS@
-
-# If non-empty, install the timezone files that are included with Tcl,
-# otherwise use the ones that ship with the OS.
-INSTALL_TZDATA		= @INSTALL_TZDATA@
 
 #----------------------------------------------------------------
 # The information below is usually usable as is.  The configure
@@ -754,7 +750,7 @@ install-binaries: binaries
 	fi
 	@EXTRA_INSTALL_BINARIES@
 
-install-libraries: libraries $(INSTALL_TZDATA) install-msgs
+install-libraries: libraries install-tzdata install-msgs
 	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
 	    do \
 	    if [ ! -d $$i ] ; then \

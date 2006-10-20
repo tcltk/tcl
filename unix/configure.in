@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.149 2006/10/19 22:36:52 rmax Exp $
+# RCS: @(#) $Id: configure.in,v 1.148 2006/09/12 22:51:33 andreas_kupries Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -535,52 +535,6 @@ if test $tcl_ok = yes; then
     AC_DEFINE(TCL_UNLOAD_DLLS, 1, [Do we allow unloading of shared libraries?])
 fi
 AC_MSG_RESULT([$tcl_ok])
-
-#------------------------------------------------------------------------
-#	Check whether the timezone data is supplied by the OS or has
-#	to be installed by Tcl. The default is autodetection, but can
-#	be overriden on the configure command line either way.
-#------------------------------------------------------------------------
-AC_MSG_CHECKING([for timezone data])
-AC_ARG_WITH(tzdata,
-	AC_HELP_STRING([--with-tzdata],
-		[install timezone data (default: autodetect)]),
-	[tcl_ok=$withval], [tcl_ok=auto])
-#
-# Any directories that get added here must also be added to the
-# search path in ::tcl::clock::Initialize (library/clock.tcl).
-#
-case $tcl_ok in 
-	no)
-		AC_MSG_RESULT([supplied by OS vendor])
-	;;
-	yes)
-		# nothing to do here
-	;;
-	auto*)
-		tcl_ok=yes
-		for dir in /usr/share/zoneinfo \
-			/usr/share/lib/zoneinfo \
-			/usr/lib/zoneinfo
-		do
-			if test -f $dir/UTC -o -f $dir/GMT
-			then
-				tcl_ok=no
-				AC_MSG_RESULT([$dir])
-				break
-			fi
-		done
-	;;
-	*)
-		AC_MSG_ERROR([invalid argument: $tcl_ok])	
-	;;
-esac
-if test $tcl_ok = yes
-then
-	AC_MSG_RESULT([supplied by Tcl])
-	INSTALL_TZDATA=install-tzdata
-fi
-AC_SUBST(INSTALL_TZDATA)
 
 #--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
