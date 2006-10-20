@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.279 2006/09/30 19:00:12 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.279.4.1 2006/10/20 15:10:12 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -111,6 +111,8 @@ typedef int ptrdiff_t;
 #ifdef TCL_WIDE_INT_IS_LONG
 #define NO_WIDE_TYPE
 #endif
+
+struct Foundation; // Forward decl for OO support
 
 /*
  * The following procedures allow namespaces to be customized to support
@@ -890,9 +892,15 @@ typedef struct CallFrame {
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
+    void *ooContextPtr;		/* TODO: Docme */
 } CallFrame;
 
 #define FRAME_IS_PROC 0x1
+#define FRAME_IS_METHOD	0x2	/* TODO: Docme */
+#define FRAME_IS_FILTER	0x4	/* TODO: Docme */
+#define FRAME_IS_OO_DEFINE 0x8	/* TODO: Docme */
+#define FRAME_IS_CONSTRUCTOR 0x10
+#define FRAME_IS_DESTRUCTOR 0x20
 
 /*
  *----------------------------------------------------------------
@@ -1514,6 +1522,8 @@ typedef struct Interp {
 				 * inserted by an ensemble. */
     } ensembleRewrite;
 
+    struct Foundation *ooFoundation; // OO support
+
     /*
      * TIP #219 ... Global info for the I/O system ...
      */
@@ -2109,7 +2119,7 @@ MODULE_SCOPE void	TclInitLimitSupport(Tcl_Interp *interp);
 MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
-MODULE_SCOPE void	TclInitSubsystems ();
+MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(CONST char *src, int len);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int* result);
@@ -2377,6 +2387,12 @@ MODULE_SCOPE int	Tcl_IncrObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_InfoObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int	TclInfoClassCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int	TclInfoObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_InterpObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc,
 			    Tcl_Obj *CONST objv[]);
@@ -2515,6 +2531,55 @@ MODULE_SCOPE int	Tcl_VwaitObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_WhileObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
+
+/*
+ *----------------------------------------------------------------
+ * Commands relating to OO support.
+ *----------------------------------------------------------------
+ */
+
+MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclOODefineObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineCopyObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineDestructorObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineExportObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineFilterObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineForwardObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineMixinObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+#ifdef SUPPORT_OO_PARAMETERS
+MODULE_SCOPE int	TclOODefineParameterObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+#endif
+MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineSelfClassObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 
 /*
  *----------------------------------------------------------------
@@ -3053,6 +3118,10 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int* bignum,
 #define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
 #define TclIsNaN(d)		((d) != (d))
 #endif
+
+// MOVE ME TO tclInt.decls
+void			TclSetNsPath(Namespace *nsPtr, int pathLength,
+			    Tcl_Namespace *pathAry[]);
 
 #include "tclPort.h"
 #include "tclIntDecls.h"

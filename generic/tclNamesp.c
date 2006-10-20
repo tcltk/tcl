@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.101 2006/10/10 16:45:04 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.101.2.1 2006/10/20 15:10:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -117,8 +117,8 @@ typedef struct EnsembleConfig {
 				 * all lists, and cannot be found by scanning
 				 * the list from the namespace's ensemble
 				 * field. */
-    int flags;			/* ORed combo of ENS_DEAD and
-				 * TCL_ENSEMBLE_PREFIX. */
+    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX and
+				 * ENS_DEAD. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
 
@@ -251,8 +251,6 @@ static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		UnlinkNsPath(Namespace *nsPtr);
-static void		SetNsPath(Namespace *nsPtr, int pathLength,
-			    Tcl_Namespace *pathAry[]);
 
 /*
  * This structure defines a Tcl object type that contains a namespace
@@ -4110,7 +4108,7 @@ NamespacePathCmd(
      * Now we have the list of valid namespaces, install it as the path.
      */
 
-    SetNsPath(nsPtr, nsObjc, namespaceList);
+    TclSetNsPath(nsPtr, nsObjc, namespaceList);
 
     result = TCL_OK;
   badNamespace:
@@ -4123,7 +4121,7 @@ NamespacePathCmd(
 /*
  *----------------------------------------------------------------------
  *
- * SetNsPath --
+ * TclSetNsPath --
  *
  *	Sets the namespace command name resolution path to the given list of
  *	namespaces. If the list is empty (of zero length) the path is set to
@@ -4141,8 +4139,8 @@ NamespacePathCmd(
  */
 
 /* EXPOSE ME? */
-static void
-SetNsPath(
+void
+TclSetNsPath(
     Namespace *nsPtr,		/* Namespace whose path is to be set. */
     int pathLength,		/* Length of pathAry */
     Tcl_Namespace *pathAry[])	/* Array of namespaces that are the path. */
