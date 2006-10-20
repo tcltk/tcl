@@ -1,3 +1,10 @@
+2006-10-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	*** 8.5a5 TAGGED FOR RELEASE ***
+
+	* tools/tcltk-man2html.tcl: add support for alpha & beta versions to
+	useversion glob pattern. [Bug 1579941]
+
 2006-10-20  Reinhard Max  <max@tclers.tk>
 
 	* unix/configure.in: Added autodetection for OS-supplied timezone
@@ -5,8 +12,6 @@
 	* unix/configure:    detected default.
 	
 2006-10-18  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5a5 TAGGED FOR RELEASE ***
 
 	* changes: 		8.5a5 release date set
 
