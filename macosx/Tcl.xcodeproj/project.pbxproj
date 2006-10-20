@@ -2395,8 +2395,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-verbose bet";
-				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "${TCL_SRCROOT}/library";
+				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = Debug;
@@ -2405,8 +2406,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-verbose bet";
-				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "${TCL_SRCROOT}/library";
+				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = Release;
@@ -2426,8 +2428,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-verbose bet";
-				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "${TCL_SRCROOT}/library";
+				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = ReleaseUniversal;
