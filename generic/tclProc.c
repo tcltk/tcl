@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.93.2.1 2006/10/20 15:10:17 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.93.2.2 2006/10/20 16:48:37 das Exp $
  */
 
 #include "tclInt.h"
@@ -1733,7 +1733,7 @@ ProcessProcResultCode(
 		"\" outside of a loop", NULL);
     }
     if (isMethod & FRAME_IS_CONSTRUCTOR) {
-	if (interp->errorLine != 0xDEADBEEF) { /* hack! */
+	if ((unsigned int)(interp->errorLine) != 0xDEADBEEF) { /* hack! */
 	    CallContext *contextPtr =
 		    ((Interp *) interp)->varFramePtr->ooContextPtr;
 	    Method *mPtr = contextPtr->callChain[contextPtr->index].mPtr;
