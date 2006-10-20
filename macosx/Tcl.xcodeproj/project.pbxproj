@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		F90509300913A72400327603 /* tclAppInit.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D445508F272B9004A47F5 /* tclAppInit.c */; settings = {COMPILER_FLAGS = "-DTCL_TEST -DTCL_BUILDTIME_LIBRARY=\\\"${TCL_SRCROOT}/library\\\""; }; };
+		F905C37D0AA7124B007FD2BF /* tclOOInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = F905C37C0AA7124B007FD2BF /* tclOOInfo.c */; };
+		F90B16400A9C9E8A0086F671 /* tclOO.c in Sources */ = {isa = PBXBuildFile; fileRef = F90B163D0A9C9E8A0086F671 /* tclOO.c */; };
+		F90B16410A9C9E8A0086F671 /* tclOODefineCmds.c in Sources */ = {isa = PBXBuildFile; fileRef = F90B163F0A9C9E8A0086F671 /* tclOODefineCmds.c */; };
+		F937A1350ADF39E400B6AEB5 /* tclOOCall.c in Sources */ = {isa = PBXBuildFile; fileRef = F937A1340ADF39E400B6AEB5 /* tclOOCall.c */; };
 		F966C07508F2820D005CB29B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F966C07408F2820D005CB29B /* CoreFoundation.framework */; };
 		F96D456F08F272BB004A47F5 /* regcomp.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3ED008F272A7004A47F5 /* regcomp.c */; };
 		F96D457208F272BB004A47F5 /* regerror.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3ED308F272A7004A47F5 /* regerror.c */; };
@@ -176,6 +180,12 @@
 
 /* Begin PBXFileReference section */
 		8DD76FB20486AB0100D96B5E /* tcltest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tcltest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F905C37C0AA7124B007FD2BF /* tclOOInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOInfo.c; sourceTree = "<group>"; };
+		F90B163D0A9C9E8A0086F671 /* tclOO.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOO.c; sourceTree = "<group>"; };
+		F90B163E0A9C9E8A0086F671 /* tclOO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclOO.h; sourceTree = "<group>"; };
+		F90B163F0A9C9E8A0086F671 /* tclOODefineCmds.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOODefineCmds.c; sourceTree = "<group>"; };
+		F90B16510A9CA8FB0086F671 /* oo.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = oo.test; sourceTree = "<group>"; };
+		F937A1340ADF39E400B6AEB5 /* tclOOCall.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOCall.c; sourceTree = "<group>"; };
 		F966C07408F2820D005CB29B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
 		F96D3DFA08F272A4004A47F5 /* ChangeLog */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = ChangeLog; sourceTree = "<group>"; };
 		F96D3DFB08F272A4004A47F5 /* changes */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = changes; sourceTree = "<group>"; };
@@ -1247,6 +1257,11 @@
 				F96D3F0A08F272A7004A47F5 /* tclMain.c */,
 				F96D3F0B08F272A7004A47F5 /* tclNamesp.c */,
 				F96D3F0C08F272A7004A47F5 /* tclNotify.c */,
+				F90B163D0A9C9E8A0086F671 /* tclOO.c */,
+				F90B163E0A9C9E8A0086F671 /* tclOO.h */,
+				F937A1340ADF39E400B6AEB5 /* tclOOCall.c */,
+				F90B163F0A9C9E8A0086F671 /* tclOODefineCmds.c */,
+				F905C37C0AA7124B007FD2BF /* tclOOInfo.c */,
 				F96D3F0D08F272A7004A47F5 /* tclObj.c */,
 				F96D3F0E08F272A7004A47F5 /* tclPanic.c */,
 				F96D3F0F08F272A7004A47F5 /* tclParse.c */,
@@ -1606,6 +1621,7 @@
 				F96D439208F272B7004A47F5 /* namespace.test */,
 				F96D439308F272B7004A47F5 /* notify.test */,
 				F96D439408F272B7004A47F5 /* obj.test */,
+				F90B16510A9CA8FB0086F671 /* oo.test */,
 				F96D439508F272B7004A47F5 /* opt.test */,
 				F96D439608F272B7004A47F5 /* package.test */,
 				F96D439708F272B7004A47F5 /* parse.test */,
@@ -1966,6 +1982,10 @@
 				F96D45A908F272BC004A47F5 /* tclMain.c in Sources */,
 				F96D45AA08F272BC004A47F5 /* tclNamesp.c in Sources */,
 				F96D45AB08F272BC004A47F5 /* tclNotify.c in Sources */,
+				F90B16400A9C9E8A0086F671 /* tclOO.c in Sources */,
+				F937A1350ADF39E400B6AEB5 /* tclOOCall.c in Sources */,
+				F90B16410A9C9E8A0086F671 /* tclOODefineCmds.c in Sources */,
+				F905C37D0AA7124B007FD2BF /* tclOOInfo.c in Sources */,
 				F96D45AC08F272BC004A47F5 /* tclObj.c in Sources */,
 				F96D45AD08F272BC004A47F5 /* tclPanic.c in Sources */,
 				F96D45AE08F272BC004A47F5 /* tclParse.c in Sources */,
@@ -2395,8 +2415,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-verbose bet";
-				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "${TCL_SRCROOT}/library";
+				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = Debug;
@@ -2405,8 +2426,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-verbose bet";
-				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "${TCL_SRCROOT}/library";
+				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = Release;
@@ -2426,8 +2448,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "-verbose bet";
-				TCL_LIBRARY = "${SRCROOT}/../../tcl/library";
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "${TCL_SRCROOT}/library";
+				TCL_SRCROOT = "${SRCROOT}/../../tcl";
 				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
 			};
 			name = ReleaseUniversal;
