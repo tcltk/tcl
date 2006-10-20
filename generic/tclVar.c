@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.123 2006/10/20 14:04:01 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.124 2006/10/20 15:16:47 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -37,14 +37,6 @@ static CONST char *badNamespace =	"parent namespace doesn't exist";
 static CONST char *missingName =	"missing variable name";
 static CONST char *isArrayElement =
 	"name refers to an element in an array";
-
-/*
- * A test to see if we are in a call frame that has local variables. This is
- * true if we are inside a procedure body or an object method body.
- */
-
-#define IsLocal(framePtr) \
-	((framePtr)->isProcCallFrame & (FRAME_IS_PROC | FRAME_IS_METHOD))
 
 /*
  * Forward references to functions defined later in this file:
@@ -407,7 +399,7 @@ TclObjLookupVar(
 	int localIndex = (int) part1Ptr->internalRep.longValue;
 
 	if ((varFramePtr != NULL)
-		&& IsLocal(varFramePtr)
+		&& (varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {
 	    /*
@@ -431,12 +423,13 @@ TclObjLookupVar(
 		(flags & TCL_GLOBAL_ONLY) ||
 		(*part1==':' && *(part1+1)==':') ||
 		(varFramePtr == NULL) ||
-		(!IsLocal(varFramePtr) && (nsPtr == iPtr->globalNsPtr)));
+		(!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+			&& (nsPtr == iPtr->globalNsPtr)));
 
 	useReference = useGlobal || ((cachedNsPtr == nsPtr) && (
 		(flags & TCL_NAMESPACE_ONLY) ||
 		(varFramePtr &&
-		!IsLocal(varFramePtr) &&
+		!(varFramePtr->isProcCallFrame & FRAME_IS_PROC) &&
 		!(flags & TCL_GLOBAL_ONLY) &&
 		/*
 		 * Careful: an undefined ns variable could be hiding a valid
@@ -752,7 +745,7 @@ TclLookupSimpleVar(
 
     if (((flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY)) != 0)
 	    || (varFramePtr == NULL)
-	    || !IsLocal(varFramePtr)
+	    || !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 	    || (strstr(varName, "::") != NULL)) {
 	CONST char *tail;
 	int lookGlobal;
@@ -3246,7 +3239,7 @@ ObjMakeUpvar(
 	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
 		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 			|| (varFramePtr == NULL)
-			|| !IsLocal(varFramePtr)
+			|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 			|| (strstr(myName, "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
 		    myName, "\": upvar won't create namespace variable that ",
@@ -3297,7 +3290,7 @@ TclPtrMakeUpvar(
     CONST char *p;    
     
     if (index >= 0) {
-	if (!IsLocal(varFramePtr)) {
+	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
@@ -3560,7 +3553,8 @@ Tcl_GlobalObjCmd(
      * If we are not executing inside a Tcl procedure, just return.
      */
 
-    if ((iPtr->varFramePtr == NULL) || !IsLocal(iPtr->varFramePtr)) {
+    if ((iPtr->varFramePtr == NULL)
+	    || !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	return TCL_OK;
     }
 
@@ -3711,7 +3705,8 @@ Tcl_VariableObjCmd(
 	 * linked to the new namespace variable "varName".
 	 */
 
-	if ((iPtr->varFramePtr != NULL) && IsLocal(iPtr->varFramePtr)) {
+	if ((iPtr->varFramePtr != NULL)
+		&& (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    /*
 	     * varName might have a scope qualifier, but the name for the
 	     * local "link" variable must be the simple name at the tail.
