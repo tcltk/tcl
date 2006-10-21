@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.62 2006/10/19 21:06:25 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.63 2006/10/21 01:11:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,6 @@ static const struct {
     int flag;
 } defineCmds[] = {
     {"constructor", TclOODefineConstructorObjCmd, 0},
-    {"copy", TclOODefineCopyObjCmd, 0},
     {"destructor", TclOODefineDestructorObjCmd, 0},
     {"export", TclOODefineExportObjCmd, 0},
     {"self.export", TclOODefineExportObjCmd, 1},
@@ -76,6 +75,9 @@ static void		ObjectDeletedTrace(ClientData clientData,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
 
+static int		CopyObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -192,6 +194,7 @@ TclOOInit(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand(interp, "::oo::copy", CopyObjectCmd, NULL, NULL);
     Tcl_DStringInit(&buffer);
     for (i=0 ; defineCmds[i].name ; i++) {
 	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
@@ -1029,11 +1032,12 @@ Tcl_NewObjectInstance(
 	/*
 	 * Is a class, so attach a class structure. Note that the AllocClass
 	 * function splices the structure into the object, so we don't have
-	 * to.
+	 * to. Once that's done, we need to repatch the object to have the
+	 * right class since AllocClass interferes with that.
 	 */
 
 	AllocClass(interp, oPtr);
-	oPtr->selfCls = (Class *) cls; // Repatch
+	oPtr->selfCls = (Class *) cls;
     }
 
     if (objc >= 0) {
@@ -2872,13 +2876,13 @@ SelfObjCmd(
 		    contextPtr->callChain[contextPtr->filterLength].mPtr;
 	    Tcl_Obj *cmdName;
 
-	    // TODO: should indicate who has the filter registration, not the
-	    // first non-filter after the filter!
+	    /* TODO: should indicate who has the filter registration, not the
+	     * first non-filter after the filter! */
 	    TclNewObj(cmdName);
 	    Tcl_GetCommandFullName(interp, contextPtr->oPtr->command,
 		    cmdName);
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), cmdName);
-	    // TODO: Add what type of filter this is
+	    /* TODO: Add what type of filter this is */
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 		    mPtr->namePtr);
 	    return TCL_OK;
@@ -2999,6 +3003,81 @@ SelfObjCmd(
 	}
     }
     return TCL_ERROR;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * CopyObjectCmd --
+ *
+ *	Implementation of the [oo::copy] command, which clones an object (but
+ *	not its namespace). Note that no constructors are called during this
+ *	process.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+CopyObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Object oPtr, o2Ptr;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "sourceName ?targetName?");
+	return TCL_ERROR;
+    }
+
+    oPtr = Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Create a cloned object of the correct class. Note that constructors are
+     * not called. Also note that we must resolve the object name ourselves
+     * because we do not want to create the object in the current namespace,
+     * but rather in the context of the namespace of the caller of the overall
+     * [oo::define] command.
+     */
+
+    if (objc == 2) {
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL);
+    } else {
+	char *name;
+	Tcl_DString buffer;
+
+	name = TclGetString(objv[2]);
+	Tcl_DStringInit(&buffer);
+	if (name[0]!=':' || name[1]!=':') {
+	    Interp *iPtr = (Interp *) interp;
+
+	    if (iPtr->varFramePtr != NULL) {
+		Tcl_DStringAppend(&buffer,
+			iPtr->varFramePtr->nsPtr->fullName, -1);
+	    }
+	    Tcl_DStringAppend(&buffer, "::", 2);
+	    Tcl_DStringAppend(&buffer, name, -1);
+	    name = Tcl_DStringValue(&buffer);
+	}
+	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name);
+	Tcl_DStringFree(&buffer);
+    }
+
+    if (o2Ptr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Return the name of the cloned object.
+     */
+
+    Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(o2Ptr),
+	    Tcl_GetObjResult(interp));
+    return TCL_OK;
 }
 
 /*

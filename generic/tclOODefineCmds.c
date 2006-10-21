@@ -9,13 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.26 2006/10/15 23:14:29 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.1.2.27 2006/10/21 01:11:52 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
-
-static Object *		GetDefineCmdContext(Tcl_Interp *interp);
 
 int
 TclOODefineObjCmd(
@@ -130,8 +128,8 @@ TclOODefineObjCmd(
     return result;
 }
 
-static Object *
-GetDefineCmdContext(
+Tcl_Object
+TclOOGetDefineCmdContext(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
@@ -142,7 +140,7 @@ GetDefineCmdContext(
 		" the context of the ::oo::define command", NULL);
 	return NULL;
     }
-    return (Object *) iPtr->framePtr->ooContextPtr;
+    return (Tcl_Object) iPtr->framePtr->ooContextPtr;
 }
 
 int
@@ -166,7 +164,7 @@ TclOODefineConstructorObjCmd(
      * modify.
      */
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -213,70 +211,6 @@ TclOODefineConstructorObjCmd(
 }
 
 int
-TclOODefineCopyObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Tcl_Object oPtr, o2Ptr;
-
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?targetName?");
-	return TCL_ERROR;
-    }
-
-    oPtr = (Tcl_Object) GetDefineCmdContext(interp);
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Create a cloned object of the correct class. Note that constructors are
-     * not called. Also note that we must resolve the object name ourselves
-     * because we do not want to create the object in the current namespace,
-     * but rather in the context of the namespace of the caller of the overall
-     * [oo::define] command.
-     */
-
-    if (objc == 1) {
-	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL);
-    } else {
-	char *name;
-	Tcl_DString buffer;
-
-	name = TclGetString(objv[1]);
-	Tcl_DStringInit(&buffer);
-	if (name[0]!=':' || name[1]!=':') {
-	    Interp *iPtr = (Interp *) interp;
-	    CallFrame *callerFramePtr = iPtr->varFramePtr->callerVarPtr;
-
-	    if (callerFramePtr != NULL) {
-		Tcl_DStringAppend(&buffer,
-			callerFramePtr->nsPtr->fullName, -1);
-	    }
-	    Tcl_DStringAppend(&buffer, "::", 2);
-	    Tcl_DStringAppend(&buffer, name, -1);
-	    name = Tcl_DStringValue(&buffer);
-	}
-	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, name);
-	Tcl_DStringFree(&buffer);
-    }
-
-    if (o2Ptr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Return the name of the cloned object.
-     */
-
-    Tcl_GetCommandFullName(interp, Tcl_GetObjectCommand(o2Ptr),
-	    Tcl_GetObjResult(interp));
-    return TCL_OK;
-}
-
-int
 TclOODefineDestructorObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
@@ -292,7 +226,7 @@ TclOODefineDestructorObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -357,7 +291,7 @@ TclOODefineExportObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -401,7 +335,7 @@ TclOODefineFilterObjCmd(
     Object *oPtr;
     int i;
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -417,12 +351,18 @@ TclOODefineFilterObjCmd(
 	}
 
 	if (objc == 1) {
-	    // deleting filters
+	    /*
+	     * No list of filters was supplied, so we're deleting filters.
+	     */
+
 	    ckfree((char *) oPtr->classPtr->filters.list);
 	    oPtr->classPtr->filters.list = NULL;
 	    oPtr->classPtr->filters.num = 0;
 	} else {
-	    // creating filters
+	    /*
+	     * We've got a list of filters, so we're creating filters.
+	     */
+
 	    Tcl_Obj **filters;
 
 	    if (oPtr->classPtr->filters.num == 0) {
@@ -439,7 +379,11 @@ TclOODefineFilterObjCmd(
 	    oPtr->classPtr->filters.list = filters;
 	    oPtr->classPtr->filters.num = objc-1;
 	}
-	// may be many objects affected
+
+	/*
+	 * There may be many objects affected, so bump the global epoch.
+	 */
+
 	((Interp *)interp)->ooFoundation->epoch++;
     } else {
 	if (oPtr->filters.num) {
@@ -450,12 +394,18 @@ TclOODefineFilterObjCmd(
 	    }
 	}
 	if (objc == 1) {
-	    // deleting filters
+	    /*
+	     * No list of filters was supplied, so we're deleting filters.
+	     */
+
 	    ckfree((char *) oPtr->filters.list);
 	    oPtr->filters.list = NULL;
 	    oPtr->filters.num = 0;
 	} else {
-	    // creating filters
+	    /*
+	     * We've got a list of filters, so we're creating filters.
+	     */
+
 	    Tcl_Obj **filters;
 
 	    if (oPtr->filters.num == 0) {
@@ -471,7 +421,7 @@ TclOODefineFilterObjCmd(
 	    oPtr->filters.list = filters;
 	    oPtr->filters.num = objc-1;
 	}
-	oPtr->epoch++; // per-object
+	oPtr->epoch++;		/* Only this object can be affected. */
     }
     return TCL_OK;
 }
@@ -494,7 +444,7 @@ TclOODefineForwardObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -536,7 +486,7 @@ TclOODefineMethodObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -593,7 +543,7 @@ TclOODefineMixinObjCmd(
     Tcl_Obj *const *objv)
 {
     int isSelfMixin = (clientData != NULL);
-    Object *oPtr = GetDefineCmdContext(interp);
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Class *mixinPtr;
     int i;
 
@@ -694,31 +644,6 @@ TclOODefineMixinObjCmd(
     return TCL_OK;
 }
 
-#ifdef SUPPORT_OO_PARAMETERS
-// Not sure whether we want to retain this in the core oo system since it is
-// easy to add "after market".
-int
-TclOODefineParameterObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Object *oPtr = GetDefineCmdContext(interp);
-
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Must nail down the semantics of this!
-     */
-
-    Tcl_AppendResult(interp, "TODO: not yet finished", NULL);
-    return TCL_ERROR;
-}
-#endif
-
 int
 TclOODefineSelfClassObjCmd(
     ClientData clientData,
@@ -733,7 +658,7 @@ TclOODefineSelfClassObjCmd(
      * Parse the context to get the object to operate on.
      */
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -818,7 +743,7 @@ TclOODefineSuperclassObjCmd(
      * Get the class to operate on.
      */
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -911,7 +836,7 @@ TclOODefineUnexportObjCmd(
 	return TCL_ERROR;
     }
 
-    oPtr = GetDefineCmdContext(interp);
+    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }

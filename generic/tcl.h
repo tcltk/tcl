@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.210.2.6 2006/10/19 21:06:25 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.210.2.7 2006/10/21 01:11:51 dkf Exp $
  */
 
 #ifndef _TCL
@@ -2421,7 +2421,7 @@ typedef struct {
  * without breaking binary compatability.
  */
 
-#define TCL_OO_METHOD_VERSION_CURRENT 1
+#define TCL_OO_METADATA_VERSION_CURRENT 1
 
 #ifndef TCL_NO_DEPRECATED
     /*

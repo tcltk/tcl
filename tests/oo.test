@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.1.2.38 2006/10/19 21:04:00 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.1.2.39 2006/10/21 01:11:52 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -687,12 +687,12 @@ test oo-15.1 {OO: object cloning} {
     Aclass create Ainstance
     set result {}
     Ainstance test
-    oo::define Ainstance copy Binstance
+    oo::copy Ainstance Binstance
     Binstance test
     Ainstance test
     Ainstance destroy
     namespace eval foo {
-	oo::define Binstance copy Cinstance
+	oo::copy Binstance Cinstance
 	Cinstance test
     }
     Aclass destroy
@@ -708,7 +708,7 @@ test oo-15.2 {OO: object cloning} {
     set result {}
     foo m 1
     foo f 2
-    lappend result [oo::define foo copy bar]
+    lappend result [oo::copy foo bar]
     foo m 3
     foo f 4
     bar m 5
@@ -727,7 +727,7 @@ test oo-15.3 {OO: class cloning} {
     set result {}
     foo create baseline
     baseline testme
-    oo::define foo copy bar
+    oo::copy foo bar
     baseline testme
     bar create tester
     tester testme

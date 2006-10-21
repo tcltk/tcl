@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.1.2.2 2006/10/11 02:01:16 dgp Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.1.2.3 2006/10/21 01:11:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -331,7 +331,7 @@ AddClassMethodNames(
 	Class *mixinPtr;
 	int i;
 
-	// TODO: Beware of infinite loops!
+	/* TODO: Beware of infinite loops! */
 	FOREACH(mixinPtr, clsPtr->mixins) {
 	    AddClassMethodNames(mixinPtr, publicOnly, namesPtr);
 	}
@@ -621,7 +621,7 @@ AddSimpleChainToCallContext(
 		    contextPtr, doneFilters, flags);
 	}
 	FOREACH(superPtr, oPtr->selfCls->classHierarchy) {
-	    int j=i;// HACK: save index so we can nest FOREACHes
+	    int j=i;		/* HACK: save index so can nest FOREACHes. */
 	    FOREACH(mixinPtr, superPtr->mixins) {
 		AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
 			contextPtr, doneFilters, flags);
