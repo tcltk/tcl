@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.1.2.4 2006/10/22 00:26:31 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.1.2.5 2006/10/22 23:01:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -31,10 +31,10 @@ struct ChainBuilder {
  * Extra flags used for call chain management.
  */
 
-#define DEFINITE_PRIVATE 0x100000
-#define DEFINITE_PUBLIC  0x200000
-#define KNOWN_STATE	 (DEFINITE_PRIVATE | DEFINITE_PUBLIC)
-#define SPECIAL		 (CONSTRUCTOR | DESTRUCTOR)
+#define DEFINITE_PROTECTED 0x100000
+#define DEFINITE_PUBLIC    0x200000
+#define KNOWN_STATE	   (DEFINITE_PROTECTED | DEFINITE_PUBLIC)
+#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR)
 
 /*
  * Function declarations for things defined in this file.
@@ -43,7 +43,7 @@ struct ChainBuilder {
 static void		AddClassFiltersToCallContext(Object *oPtr,
 			    Class *clsPtr, struct ChainBuilder *cbPtr,
 			    Tcl_HashTable *doneFilters);
-static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
+static void		AddClassMethodNames(Class *clsPtr, int flags,
 			    Tcl_HashTable *namesPtr);
 static void		AddMethodToCallChain(Method *mPtr,
 			    struct ChainBuilder *cbPtr,
@@ -159,6 +159,16 @@ TclOOInvokeContext(
     return result;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InitClassHierarchy --
+ *
+ *	Builds the basic class hierarchy cache. This does not include mixins.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static void
 InitClassHierarchy(
     Foundation *fPtr,
@@ -241,15 +251,15 @@ InitClassHierarchy(
 int
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
-    int publicOnly,		/* Whether we just want the public method
+    int flags,			/* Whether we just want the public method
 				 * names. */
     const char ***stringsPtr)	/* Where to write a pointer to the array of
 				 * strings to. */
 {
-    Tcl_HashTable names;
+    Tcl_HashTable names;	/* Tcl_Obj* method name to "wanted in list"
+				 * mapping. */
     FOREACH_HASH_DECLS;
     int i;
-    const char **strings;
     Class *mixinPtr;
     Tcl_Obj *namePtr;
     Method *mPtr;
@@ -257,43 +267,84 @@ TclOOGetSortedMethodList(
 
     Tcl_InitObjHashTable(&names);
 
+    /*
+     * Process method names due to the object.
+     */
+
     FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
 	int isNew;
 
+	if ((mPtr->flags & PRIVATE_METHOD) && !(flags & PRIVATE_METHOD)) {
+	    continue;
+	}
 	hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
 	if (isNew) {
-	    isWanted = (void *) (!publicOnly || mPtr->flags & PUBLIC_METHOD);
+	    isWanted = (void *) (!(flags & PUBLIC_METHOD)
+		    || mPtr->flags & PUBLIC_METHOD);
 	    Tcl_SetHashValue(hPtr, isWanted);
 	}
     }
 
-    AddClassMethodNames(oPtr->selfCls, publicOnly, &names);
-    FOREACH(mixinPtr, oPtr->mixins) {
-	AddClassMethodNames(mixinPtr, publicOnly, &names);
-    }
+    /*
+     * Process method names due to private methods on the object's class.
+     */
 
-    if (names.numEntries == 0) {
-	Tcl_DeleteHashTable(&names);
-	return 0;
-    }
+    if (flags & PRIVATE_METHOD) {
+	FOREACH_HASH(namePtr, mPtr, &oPtr->selfCls->classMethods) {
+	    if (mPtr->flags & PRIVATE_METHOD) {
+		int isNew;
 
-    strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
-    i = 0;
-    FOREACH_HASH(namePtr, isWanted, &names) {
-	if (!publicOnly || isWanted) {
-	    strings[i++] = TclGetString(namePtr);
+		hPtr = Tcl_CreateHashEntry(&names, (char *) namePtr, &isNew);
+		if (isNew) {
+		    isWanted = (void *) 1;
+		    Tcl_SetHashValue(hPtr, isWanted);
+		}
+	    }
 	}
     }
 
     /*
-     * Note that 'i' may well be less than names.numEntries when we are
-     * dealing with public method names.
+     * Process (normal) method names from the class hierarchy and the mixin
+     * hierarchy.
      */
 
-    qsort(strings, (unsigned) i, sizeof(char *), CmpStr);
+    AddClassMethodNames(oPtr->selfCls, flags, &names);
+    FOREACH(mixinPtr, oPtr->mixins) {
+	AddClassMethodNames(mixinPtr, flags, &names);
+    }
+
+    /*
+     * See how many (visible) method names there are. If none, we do not (and
+     * should not) try to sort the list of them.
+     */
+
+    i = 0;
+    if (names.numEntries != 0) {
+	const char **strings;
+
+	/*
+	 * We need to build the list of methods to sort. We will be using
+	 * qsort() for this, because it is very unlikely that the list will be
+	 * heavily sorted when it is long enough to matter.
+	 */
+
+	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
+	FOREACH_HASH(namePtr, isWanted, &names) {
+	    if (!(flags & PUBLIC_METHOD) || isWanted) {
+		strings[i++] = TclGetString(namePtr);
+	    }
+	}
+
+	/*
+	 * Note that 'i' may well be less than names.numEntries when we are
+	 * dealing with public method names.
+	 */
+
+	qsort(strings, (unsigned) i, sizeof(char *), CmpStr);
+	*stringsPtr = strings;
+    }
 
     Tcl_DeleteHashTable(&names);
-    *stringsPtr = strings;
     return i;
 }
 
@@ -324,7 +375,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    const int publicOnly,	/* Whether we are interested in just the
+    const int flags,		/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr)
 				/* Reference to the hash table to put the
@@ -347,7 +398,7 @@ AddClassMethodNames(
 
 	/* TODO: Beware of infinite loops! */
 	FOREACH(mixinPtr, clsPtr->mixins) {
-	    AddClassMethodNames(mixinPtr, publicOnly, namesPtr);
+	    AddClassMethodNames(mixinPtr, flags, namesPtr);
 	}
     }
 
@@ -361,7 +412,8 @@ AddClassMethodNames(
 
 	    hPtr = Tcl_CreateHashEntry(namesPtr, (char *) namePtr, &isNew);
 	    if (isNew) {
-		int isWanted = (!publicOnly || mPtr->flags & PUBLIC_METHOD);
+		int isWanted = (!(flags & PUBLIC_METHOD)
+			|| (mPtr->flags & PUBLIC_METHOD));
 
 		Tcl_SetHashValue(hPtr, (void *) isWanted);
 	    }
@@ -377,7 +429,7 @@ AddClassMethodNames(
 	int i;
 
 	FOREACH(superPtr, clsPtr->superclasses) {
-	    AddClassMethodNames(superPtr, publicOnly, namesPtr);
+	    AddClassMethodNames(superPtr, flags, namesPtr);
 	}
     }
 }
@@ -402,9 +454,9 @@ TclOOGetCallContext(
 				 * for. NULL when getting a constructor or
 				 * destructor chain. */
     int flags,			/* What sort of context are we looking for.
-				 * Only the bits OO_PUBLIC_METHOD,
-				 * CONSTRUCTOR, DESTRUCTOR and FILTER_HANDLING
-				 * are useful. */
+				 * Only the bits PUBLIC_METHOD, CONSTRUCTOR,
+				 * PRIVATE_METHOD, DESTRUCTOR and
+				 * FILTER_HANDLING are useful. */
     Tcl_HashTable *cachePtr)	/* Where to cache the chain. Ignored for both
 				 * constructors and destructors. */
 {
@@ -437,9 +489,9 @@ TclOOGetCallContext(
     cb.contextPtr->localEpoch = oPtr->epoch;
     cb.contextPtr->flags = 0;
     cb.contextPtr->skip = 2;
-    if (flags & (PUBLIC_METHOD | SPECIAL | FILTER_HANDLING)) {
+    if (flags & (PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING)) {
 	cb.contextPtr->flags |=
-		flags & (PUBLIC_METHOD|SPECIAL|FILTER_HANDLING);
+		flags&(PUBLIC_METHOD|PRIVATE_METHOD|SPECIAL|FILTER_HANDLING);
     }
     cb.contextPtr->oPtr = oPtr;
     cb.contextPtr->index = 0;
@@ -619,7 +671,7 @@ AddSimpleChainToCallContext(
 		    flags |= DEFINITE_PUBLIC;
 		}
 	    } else {
-		flags |= DEFINITE_PRIVATE;
+		flags |= DEFINITE_PROTECTED;
 	    }
 	}
     }
@@ -706,7 +758,7 @@ AddSimpleClassChainToCallContext(
 			return;
 		    }
 		} else {
-		    flags |= DEFINITE_PRIVATE;
+		    flags |= DEFINITE_PROTECTED;
 		}
 	    }
 	    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl);
@@ -767,6 +819,25 @@ AddMethodToCallChain(
      */
 
     if (mPtr == NULL || mPtr->typePtr == NULL) {
+	return;
+    }
+
+    /*
+     * Enforce real private method handling here. We will skip adding this
+     * method IF
+     *  1) we are not allowing private methods, AND
+     *  2) this is a private method, AND
+     *  3) this is a class method, AND
+     *  4) this method was not declared by the class of the current object.
+     *
+     * This does mean that only classes really handle private methods. This
+     * should be sufficient for [incr Tcl] support though.
+     */
+
+    if (!(contextPtr->flags & PRIVATE_METHOD)
+	    && (mPtr->flags & PRIVATE_METHOD)
+	    && (mPtr->declaringClassPtr != NULL)
+	    && (mPtr->declaringClassPtr != contextPtr->oPtr->selfCls)) {
 	return;
     }
 

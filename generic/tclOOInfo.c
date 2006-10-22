@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.19 2006/10/22 00:26:31 dkf Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.20 2006/10/22 23:01:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -503,12 +503,15 @@ InfoObjectMethodsCmd(
 	int len;
 	const char *str = Tcl_GetStringFromObj(objv[2], &len);
 
-	if (len < 2 || strncmp("-private", str, (unsigned)len)) {
+	if (len == 13 && !strcmp("-localprivate", str)) {
+	    flag = PRIVATE_METHOD;
+	} else if (len < 2 || strncmp("-private", str, (unsigned)len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
 		    "\": must be -private", NULL);
 	    return TCL_ERROR;
+	} else {
+	    flag = 0;
 	}
-	flag = 0;
     }
 
     FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
@@ -916,12 +919,15 @@ InfoClassMethodsCmd(
 	int len;
 	const char *str = Tcl_GetStringFromObj(objv[2], &len);
 
-	if (len < 2 || strncmp("-private", str, (unsigned) len)) {
+	if (len == 13 && !strcmp("-localprivate", str)) {
+	    flag = PRIVATE_METHOD;
+	} else if (len < 2 || strncmp("-private", str, (unsigned)len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
 		    "\": must be -private", NULL);
 	    return TCL_ERROR;
+	} else {
+	    flag = 0;
 	}
-	flag = 0;
     }
 
     FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {

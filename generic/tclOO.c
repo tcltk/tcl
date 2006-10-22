@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.64 2006/10/22 00:26:30 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.65 2006/10/22 23:01:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1367,7 +1367,7 @@ Tcl_NewMethod(
     Tcl_Obj *nameObj,		/* The name of the method. May be NULL; if so,
 				 * up to caller to manage storage (e.g., when
 				 * it is a constructor or destructor). */
-    int isPublic,		/* Whether this is a public method. */
+    int flags,			/* Whether this is a public method. */
     const Tcl_MethodType *typePtr,
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
@@ -1404,8 +1404,8 @@ Tcl_NewMethod(
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
-    if (isPublic) {
-	mPtr->flags |= PUBLIC_METHOD;
+    if (flags) {
+	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
     }
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
@@ -1428,7 +1428,7 @@ Tcl_NewClassMethod(
     Tcl_Obj *nameObj,		/* The name of the object. May be NULL (e.g.,
 				 * for constructors or destructors); if so, up
 				 * to caller to manage storage. */
-    int isPublic,		/* Whether this is a public method. */
+    int flags,			/* Whether this is a public method. */
     const Tcl_MethodType *typePtr,
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
@@ -1466,8 +1466,8 @@ Tcl_NewClassMethod(
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
-    if (isPublic) {
-	mPtr->flags |= PUBLIC_METHOD;
+    if (flags) {
+	mPtr->flags |= flags & (PUBLIC_METHOD | PRIVATE_METHOD);
     }
 
     return (Tcl_Method) mPtr;
@@ -1543,8 +1543,8 @@ DeclareClassMethod(
 
     TclNewStringObj(namePtr, name, strlen(name));
     Tcl_IncrRefCount(namePtr);
-    Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, namePtr, isPublic,
-	    &coreMethodType, callPtr);
+    Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, namePtr,
+	    (isPublic ? PUBLIC_METHOD : 0), &coreMethodType, callPtr);
     TclDecrRefCount(namePtr);
 }
 
@@ -1586,7 +1586,7 @@ Method *
 TclOONewProcMethod(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     Object *oPtr,		/* The object to modify. */
-    int isPublic,		/* Whether this is a public method. */
+    int flags,			/* Whether this is a public method. */
     Tcl_Obj *nameObj,		/* The name of the method, which must not be
 				 * NULL. */
     Tcl_Obj *argsObj,		/* The formal argument list for the method,
@@ -1610,7 +1610,7 @@ TclOONewProcMethod(
 	return NULL;
     }
     return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, nameObj,
-	    isPublic, &procMethodType, pmPtr);
+	    flags, &procMethodType, pmPtr);
 }
 
 /*
@@ -1627,7 +1627,7 @@ Method *
 TclOONewProcClassMethod(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Class *clsPtr,		/* The class to modify. */
-    int isPublic,		/* Whether this is a public method. */
+    int flags,			/* Whether this is a public method. */
     Tcl_Obj *nameObj,		/* The name of the method, which may be NULL;
 				 * if so, up to caller to manage storage
 				 * (e.g., because it is a constructor or
@@ -1665,7 +1665,7 @@ TclOONewProcClassMethod(
 	TclDecrRefCount(argsObj);
     }
     return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, nameObj,
-	    isPublic, &procMethodType, pmPtr);
+	    flags, &procMethodType, pmPtr);
 }
 
 /*
@@ -1791,7 +1791,7 @@ Method *
 TclOONewForwardMethod(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Object *oPtr,		/* The object to attach the method to. */
-    int isPublic,		/* Whether the method is public or not. */
+    int flags,			/* Whether the method is public or not. */
     Tcl_Obj *nameObj,		/* The name of the method. */
     Tcl_Obj *prefixObj)		/* List of arguments that form the command
 				 * prefix to forward to. */
@@ -1812,7 +1812,7 @@ TclOONewForwardMethod(
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewMethod(interp, (Tcl_Object) oPtr, nameObj,
-	    isPublic, &fwdMethodType, fmPtr);
+	    flags, &fwdMethodType, fmPtr);
 }
 
 /*
@@ -1829,7 +1829,7 @@ Method *
 TclOONewForwardClassMethod(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Class *clsPtr,		/* The class to attach the method to. */
-    int isPublic,		/* Whether the method is public or not. */
+    int flags,			/* Whether the method is public or not. */
     Tcl_Obj *nameObj,		/* The name of the method. */
     Tcl_Obj *prefixObj)		/* List of arguments that form the command
 				 * prefix to forward to. */
@@ -1850,7 +1850,7 @@ TclOONewForwardClassMethod(
     fmPtr->prefixObj = prefixObj;
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, nameObj,
-	    isPublic, &fwdMethodType, fmPtr);
+	    flags, &fwdMethodType, fmPtr);
 }
 
 /*
@@ -2132,7 +2132,7 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return ObjectCmd(clientData, interp, objc, objv, 1,
+    return ObjectCmd(clientData, interp, objc, objv, PUBLIC_METHOD,
 	    &((Object *)clientData)->publicContextCache);
 }
 
@@ -2153,7 +2153,7 @@ ObjectCmd(
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     int objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
-    int publicOnly,		/* Whether this is an invokation through the
+    int flags,			/* Whether this is an invokation through the
 				 * public or the private command interface. */
     Tcl_HashTable *cachePtr)	/* What call chain cache to use. */
 {
@@ -2167,8 +2167,7 @@ ObjectCmd(
     }
 
     contextPtr = TclOOGetCallContext(iPtr->ooFoundation, oPtr, objv[1],
-	    (publicOnly ? PUBLIC_METHOD :0) | (oPtr->flags & FILTER_HANDLING),
-	    cachePtr);
+	    flags | (oPtr->flags & FILTER_HANDLING), cachePtr);
     if (contextPtr == NULL) {
 	Tcl_AppendResult(interp, "impossible to invoke method \"",
 		TclGetString(objv[1]),

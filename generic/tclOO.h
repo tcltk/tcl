@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.39 2006/10/22 00:26:31 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.40 2006/10/22 23:01:37 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -286,10 +286,12 @@ typedef struct CallContext {
  * Bits for the 'flags' field of the call context.
  */
 
-#define OO_UNKNOWN_METHOD	1 /* This is an unknown method. */
-#define PUBLIC_METHOD		2 /* This is a public (exported) method. */
-#define CONSTRUCTOR		4 /* This is a constructor. */
-#define DESTRUCTOR		8 /* This is a destructor. */
+#define PUBLIC_METHOD     0x01	/* This is a public (exported) method. */
+#define PRIVATE_METHOD    0x02	/* This is a private (class's direct instances
+				 * only) method. */
+#define OO_UNKNOWN_METHOD 0x04	/* This is an unknown method. */
+#define CONSTRUCTOR	  0x08	/* This is a constructor. */
+#define DESTRUCTOR	  0x10	/* This is a destructor. */
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or
@@ -309,6 +311,7 @@ MODULE_SCOPE Method *	TclOONewForwardClassMethod(Tcl_Interp *interp,
 			    Class *clsPtr, int isPublic, Tcl_Obj *nameObj,
 			    Tcl_Obj *prefixObj);
 MODULE_SCOPE void	TclOODeleteMethod(Method *method);
+MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
 MODULE_SCOPE int	TclObjInterpProcCore(register Tcl_Interp *interp,
 			    CallFrame *framePtr, Tcl_Obj *procNameObj,
 			    int skip);
@@ -330,8 +333,8 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Foundation *fPtr, Object *oPtr,
 MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *interp,
 			    CallContext *contextPtr, int objc,
 			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
-			    int publicOnly, const char ***stringsPtr);
+MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
+			    const char ***stringsPtr);
 
 /*
  * A convenience macro for iterating through the lists used in the internal
