@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.h,v 1.1.2.38 2006/10/19 21:09:47 dkf Exp $
+ * RCS: @(#) $Id: tclOO.h,v 1.1.2.39 2006/10/22 00:26:31 dkf Exp $
  */
 
 // vvvvvvvvvvvvvvvvvvvvvv MOVE TO TCL.DECLS vvvvvvvvvvvvvvvvvvvvvv
@@ -262,6 +262,8 @@ struct MInvoke {
     Method *mPtr;		/* Reference to the method implementation
 				 * record. */
     int isFilter;		/* Whether this is a filter invokation. */
+    Class *filterDeclarer;	/* What class decided to add the filter; if
+				 * NULL, it was added by the object. */
 };
 
 typedef struct CallContext {
@@ -278,9 +280,6 @@ typedef struct CallContext {
 				 * staticCallChain if the number of entries is
 				 * small. */
     struct MInvoke staticCallChain[CALL_CHAIN_STATIC_SIZE];
-    int filterLength;		/* Number of entries in the call chain that
-				 * are due to processing filters and not the
-				 * main call chain. */
 } CallContext;
 
 /*

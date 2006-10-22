@@ -9,53 +9,99 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.18 2006/10/11 02:01:16 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.1.2.19 2006/10/22 00:26:31 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
 
-static int		InfoObjectClassCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectDefnCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectFiltersCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectForwardCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectIsACmd(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		InfoObjectMethodsCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectMixinsCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoObjectVarsCmd(Object *oPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassConstrCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassDefnCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassDestrCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassFiltersCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassForwardCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassInstancesCmd(Class *clsPtr,
-			    Tcl_Interp*interp, int objc, Tcl_Obj*const objv[]);
-static int		InfoClassMethodsCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassMixinsCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-#ifdef SUPPORT_OO_PARAMETERS
-static int		InfoClassParametersCmd(Class *clsPtr,
-			    Tcl_Interp*interp, int objc, Tcl_Obj*const objv[]);
-#endif
-static int		InfoClassSubsCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		InfoClassSupersCmd(Class *clsPtr, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc InfoObjectClassCmd;
+static Tcl_ObjCmdProc InfoObjectDefnCmd;
+static Tcl_ObjCmdProc InfoObjectFiltersCmd;
+static Tcl_ObjCmdProc InfoObjectForwardCmd;
+static Tcl_ObjCmdProc InfoObjectIsACmd;
+static Tcl_ObjCmdProc InfoObjectMethodsCmd;
+static Tcl_ObjCmdProc InfoObjectMixinsCmd;
+static Tcl_ObjCmdProc InfoObjectVarsCmd;
+static Tcl_ObjCmdProc InfoClassConstrCmd;
+static Tcl_ObjCmdProc InfoClassDefnCmd;
+static Tcl_ObjCmdProc InfoClassDestrCmd;
+static Tcl_ObjCmdProc InfoClassFiltersCmd;
+static Tcl_ObjCmdProc InfoClassForwardCmd;
+static Tcl_ObjCmdProc InfoClassInstancesCmd;
+static Tcl_ObjCmdProc InfoClassMethodsCmd;
+static Tcl_ObjCmdProc InfoClassMixinsCmd;
+static Tcl_ObjCmdProc InfoClassSubsCmd;
+static Tcl_ObjCmdProc InfoClassSupersCmd;
+
+struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
+
+/*
+ * List of commands that are used to implement the [info object] subcommands.
+ */
+
+static const struct NameProcMap infoObjectCmds[] = {
+    {"::oo::InfoObject::class",	     InfoObjectClassCmd},
+    {"::oo::InfoObject::definition", InfoObjectDefnCmd},
+    {"::oo::InfoObject::filters",    InfoObjectFiltersCmd},
+    {"::oo::InfoObject::forward",    InfoObjectForwardCmd},
+    {"::oo::InfoObject::isa",	     InfoObjectIsACmd},
+    {"::oo::InfoObject::methods",    InfoObjectMethodsCmd},
+    {"::oo::InfoObject::mixins",     InfoObjectMixinsCmd},
+    {"::oo::InfoObject::vars",	     InfoObjectVarsCmd},
+    {NULL, NULL}
+};
+
+/*
+ * List of commands that are used to implement the [info class] subcommands.
+ */
+
+static const struct NameProcMap infoClassCmds[] = {
+    {"::oo::InfoClass::constructor",  InfoClassConstrCmd},
+    {"::oo::InfoClass::definition",   InfoClassDefnCmd},
+    {"::oo::InfoClass::destructor",   InfoClassDestrCmd},
+    {"::oo::InfoClass::filters",      InfoClassFiltersCmd},
+    {"::oo::InfoClass::forward",      InfoClassForwardCmd},
+    {"::oo::InfoClass::instances",    InfoClassInstancesCmd},
+    {"::oo::InfoClass::methods",      InfoClassMethodsCmd},
+    {"::oo::InfoClass::mixins",	      InfoClassMixinsCmd},
+    {"::oo::InfoClass::subclasses",   InfoClassSubsCmd},
+    {"::oo::InfoClass::superclasses", InfoClassSupersCmd},
+    {NULL, NULL}
+};
 
+void
+TclOOInitInfo(
+    Tcl_Interp *interp)
+{
+    Tcl_Namespace *nsPtr;
+    int i;
+
+    /*
+     * Build the ensemble used to implement [info object].
+     */
+
+    nsPtr = Tcl_CreateNamespace(interp, "::oo::InfoObject", NULL, NULL);
+    Tcl_CreateEnsemble(interp, nsPtr->fullName, nsPtr, TCL_ENSEMBLE_PREFIX);
+    Tcl_Export(interp, nsPtr, "[a-z]*", 1);
+    for (i=0 ; infoObjectCmds[i].name!=NULL ; i++) {
+	Tcl_CreateObjCommand(interp, infoObjectCmds[i].name,
+		infoObjectCmds[i].proc, NULL, NULL);
+    }
+
+    /*
+     * Build the ensemble used to implement [info class].
+     */
+
+    nsPtr = Tcl_CreateNamespace(interp, "::oo::InfoClass", NULL, NULL);
+    Tcl_CreateEnsemble(interp, nsPtr->fullName, nsPtr, TCL_ENSEMBLE_PREFIX);
+    Tcl_Export(interp, nsPtr, "[a-z]*", 1);
+    for (i=0 ; infoClassCmds[i].name!=NULL ; i++) {
+	Tcl_CreateObjCommand(interp, infoClassCmds[i].name,
+		infoClassCmds[i].proc, NULL, NULL);
+    }
+}
+
 int
 TclInfoObjectCmd(
     ClientData clientData,
@@ -63,51 +109,39 @@ TclInfoObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    static const char *subcommands[] = {
-	"class", "definition", "filters", "forward", "isa", "methods",
-	"mixins", "vars", NULL
-    };
-    enum IOSubCmds {
-	IOClass, IODefinition, IOFilters, IOForward, IOIsA, IOMethods,
-	IOMixins, IOVars
-    };
-    int idx;
-    Object *oPtr;
+    Interp *iPtr = (Interp *) interp;
+    int result;
+    Tcl_Obj **newobjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc-1);
+    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
 
-    if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName subcommand ?arg ...?");
-	return TCL_ERROR;
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = objv;
+	iPtr->ensembleRewrite.numRemovedObjs = 2;
+	iPtr->ensembleRewrite.numInsertedObjs = 1;
+    } else {
+	int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	if (ni < 2) {
+	    iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
+	} else {
+	    iPtr->ensembleRewrite.numInsertedObjs--;
+	}
     }
-    if (Tcl_GetIndexFromObj(interp, objv[3], subcommands, "subcommand", 0,
-	    &idx) != TCL_OK) {
-	return TCL_ERROR;
+
+    TclNewStringObj(newobjv[0], "::oo::InfoObject",
+	    strlen("::oo::InfoObject"));
+    Tcl_IncrRefCount(newobjv[0]);
+    if (objc > 2) {
+	memcpy(newobjv+1, objv+2, sizeof(Tcl_Obj *) * (objc-2));
     }
-    if (idx == IOIsA) {
-	return InfoObjectIsACmd(interp, objc, objv);
+    result = Tcl_EvalObjv(interp, objc-1, newobjv, TCL_EVAL_INVOKE);
+    TclDecrRefCount(newobjv[0]);
+    ckfree((char *) newobjv);
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = NULL;
+	iPtr->ensembleRewrite.numRemovedObjs = 0;
+	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
-    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    switch ((enum IOSubCmds) idx) {
-    case IOClass:
-	return InfoObjectClassCmd(oPtr, interp, objc, objv);
-    case IODefinition:
-	return InfoObjectDefnCmd(oPtr, interp, objc, objv);
-    case IOFilters:
-	return InfoObjectFiltersCmd(oPtr, interp, objc, objv);
-    case IOForward:
-	return InfoObjectForwardCmd(oPtr, interp, objc, objv);
-    case IOMethods:
-	return InfoObjectMethodsCmd(oPtr, interp, objc, objv);
-    case IOMixins:
-	return InfoObjectMixinsCmd(oPtr, interp, objc, objv);
-    case IOVars:
-	return InfoObjectVarsCmd(oPtr, interp, objc, objv);
-    case IOIsA:
-	Tcl_Panic("unexpected fallthrough");
-    }
-    return TCL_ERROR; /* NOTREACHED */
+    return result;
 }
 
 int
@@ -117,98 +151,74 @@ TclInfoClassCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    static const char *subcommands[] = {
-	"constructor", "definition", "destructor", "filters", "forward",
-	"instances", "methods", "mixins",
-#ifdef SUPPORT_OO_PARAMETERS
-	"parameters",
-#endif
-	"subclasses", "superclasses", NULL
-    };
-    enum ICSubCmds {
-	ICConstructor, ICDefinition, ICDestructor, ICFilters, ICForward,
-	ICInstances, ICMethods, ICMixins,
-#ifdef SUPPORT_OO_PARAMETERS
-	ICParameters,
-#endif
-	ICSubs, ICSupers
-    };
-    int idx;
-    Object *oPtr;
+    Interp *iPtr = (Interp *) interp;
+    int result;
+    Tcl_Obj **newobjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * objc-1);
+    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
 
-    if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className subcommand ?arg ...?");
-	return TCL_ERROR;
-    }
-    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (oPtr->classPtr == NULL) {
-	Tcl_AppendResult(interp, "\"", TclGetString(objv[2]),
-		"\" is not a class", NULL);
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[3], subcommands, "subcommand", 0,
-	    &idx) != TCL_OK) {
-	return TCL_ERROR;
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = objv;
+	iPtr->ensembleRewrite.numRemovedObjs = 2;
+	iPtr->ensembleRewrite.numInsertedObjs = 1;
+    } else {
+	int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	if (ni < 2) {
+	    iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
+	} else {
+	    iPtr->ensembleRewrite.numInsertedObjs--;
+	}
     }
 
-    switch((enum ICSubCmds) idx) {
-    case ICConstructor:
-	return InfoClassConstrCmd(oPtr->classPtr, interp, objc, objv);
-    case ICDefinition:
-	return InfoClassDefnCmd(oPtr->classPtr, interp, objc, objv);
-    case ICDestructor:
-	return InfoClassDestrCmd(oPtr->classPtr, interp, objc, objv);
-    case ICFilters:
-	return InfoClassFiltersCmd(oPtr->classPtr, interp, objc, objv);
-    case ICForward:
-	return InfoClassForwardCmd(oPtr->classPtr, interp, objc, objv);
-    case ICInstances:
-	return InfoClassInstancesCmd(oPtr->classPtr, interp, objc, objv);
-    case ICMethods:
-	return InfoClassMethodsCmd(oPtr->classPtr, interp, objc, objv);
-    case ICMixins:
-	return InfoClassMixinsCmd(oPtr->classPtr, interp, objc, objv);
-#ifdef SUPPORT_OO_PARAMETERS
-    case ICParameters:
-	return InfoClassParametersCmd(oPtr->classPtr, interp, objc, objv);
-#endif
-    case ICSubs:
-	return InfoClassSubsCmd(oPtr->classPtr, interp, objc, objv);
-    case ICSupers:
-	return InfoClassSupersCmd(oPtr->classPtr, interp, objc, objv);
+    TclNewStringObj(newobjv[0], "::oo::InfoClass", strlen("::oo::InfoClass"));
+    Tcl_IncrRefCount(newobjv[0]);
+    if (objc > 2) {
+	memcpy(newobjv+1, objv+2, sizeof(Tcl_Obj *) * (objc-2));
     }
-    Tcl_Panic("unexpected fallthrough");
-    return TCL_ERROR; /* NOTREACHED */
+    result = Tcl_EvalObjv(interp, objc-1, newobjv, TCL_EVAL_INVOKE);
+    TclDecrRefCount(newobjv[0]);
+    ckfree((char *) newobjv);
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = NULL;
+	iPtr->ensembleRewrite.numRemovedObjs = 0;
+	iPtr->ensembleRewrite.numInsertedObjs = 0;
+    }
+    return result;
 }
 
 static int
 InfoObjectClassCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    if (objc == 4) {
+    Object *oPtr;
+
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?className?");
+	return TCL_ERROR;
+    }
+
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (objc == 2) {
 	Tcl_GetCommandFullName(interp, oPtr->selfCls->thisPtr->command,
 		Tcl_GetObjResult(interp));
 	return TCL_OK;
-    } else if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName class ?className?");
-	return TCL_ERROR;
     } else {
 	Object *o2Ptr;
 	Class *mixinPtr;
 	int i;
 
-	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[4]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
 	if (o2Ptr == NULL) {
 	    return TCL_ERROR;
 	}
 	if (o2Ptr->classPtr == NULL) {
-	    Tcl_AppendResult(interp, "object \"", TclGetString(objv[4]),
+	    Tcl_AppendResult(interp, "object \"", TclGetString(objv[2]),
 		    "\" is not a class", NULL);
 	    return TCL_ERROR;
 	}
@@ -227,24 +237,30 @@ InfoObjectClassCmd(
 
 static int
 InfoObjectDefnCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
+    Object *oPtr;
     Tcl_HashEntry *hPtr;
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *argsObj;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName definition methodName");
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 3, objv, "objName methodName");
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[2]);
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
 	return TCL_ERROR;
     }
@@ -288,18 +304,25 @@ InfoObjectDefnCmd(
 
 static int
 InfoObjectFiltersCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     int i;
     Tcl_Obj *filterObj;
+    Object *oPtr;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName filters");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName");
 	return TCL_ERROR;
     }
+
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), filterObj);
     }
@@ -308,22 +331,28 @@ InfoObjectFiltersCmd(
 
 static int
 InfoObjectForwardCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
+    Object *oPtr;
     Tcl_HashEntry *hPtr;
     Tcl_Obj *prefixObj;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName forward methodName");
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName methodName");
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[4]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) objv[2]);
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
 	return TCL_ERROR;
     }
@@ -341,6 +370,7 @@ InfoObjectForwardCmd(
 
 static int
 InfoObjectIsACmd(
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -354,11 +384,11 @@ InfoObjectIsACmd(
     Object *oPtr, *o2Ptr;
     int idx, i;
 
-    if (objc < 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName isa category ?arg ...?");
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[4], categories, "category", 0,
+    if (Tcl_GetIndexFromObj(interp, objv[1], categories, "category", 0,
 	    &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -379,15 +409,15 @@ InfoObjectIsACmd(
 
     switch ((enum IsACats) idx) {
     case IsClass:
-	if (objc != 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa class");
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(oPtr->classPtr ? 1 : 0));
 	return TCL_OK;
     case IsMetaclass:
-	if (objc != 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa metaclass");
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
 	    return TCL_ERROR;
 	}
 	if (oPtr->classPtr == NULL) {
@@ -400,11 +430,11 @@ InfoObjectIsACmd(
 	}
 	return TCL_OK;
     case IsMixin:
-	if (objc != 6) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa mixin className");
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName className");
 	    return TCL_ERROR;
 	}
-	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[5]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[3]);
 	if (o2Ptr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -424,11 +454,11 @@ InfoObjectIsACmd(
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 	return TCL_OK;
     case IsType:
-	if (objc != 6) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName isa typeof className");
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName className");
 	    return TCL_ERROR;
 	}
-	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[5]);
+	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[3]);
 	if (o2Ptr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -450,23 +480,28 @@ InfoObjectIsACmd(
 
 static int
 InfoObjectMethodsCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
+    Object *oPtr;
     int flag = PUBLIC_METHOD;
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     Method *mPtr;
 
-    if (objc != 4 && objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName methods ?-private?");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
 	return TCL_ERROR;
     }
-    if (objc == 5) {
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (objc == 3) {
 	int len;
-	const char *str = Tcl_GetStringFromObj(objv[4], &len);
+	const char *str = Tcl_GetStringFromObj(objv[2], &len);
 
 	if (len < 2 || strncmp("-private", str, (unsigned)len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
@@ -475,6 +510,7 @@ InfoObjectMethodsCmd(
 	}
 	flag = 0;
     }
+
     FOREACH_HASH(namePtr, mPtr, &oPtr->methods) {
 	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
@@ -485,18 +521,24 @@ InfoObjectMethodsCmd(
 
 static int
 InfoObjectMixinsCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Class *mixinPtr;
+    Object *oPtr;
     int i;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName mixins");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 3, objv, "objName");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
     FOREACH(mixinPtr, oPtr->mixins) {
 	Tcl_Obj *tmpObj;
 
@@ -509,21 +551,26 @@ InfoObjectMixinsCmd(
 
 static int
 InfoObjectVarsCmd(
-    Object *oPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
+    Object *oPtr;
     const char *pattern = NULL, *name;
     FOREACH_HASH_DECLS;
     Var *varPtr;
 
-    if (objc != 4 && objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "objName vars ?pattern?");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?pattern?");
 	return TCL_ERROR;
     }
-    if (objc == 5) {
-	pattern = TclGetString(objv[4]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (objc == 3) {
+	pattern = TclGetString(objv[2]);
     }
 
     FOREACH_HASH(name, varPtr, &((Namespace *) oPtr->namespacePtr)->varTable) {
@@ -542,7 +589,7 @@ InfoObjectVarsCmd(
 
 static int
 InfoClassConstrCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -550,11 +597,23 @@ InfoClassConstrCmd(
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *argsObj;
+    Object *oPtr;
+    Class *clsPtr;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className constructor");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
 
     if (clsPtr->constructorPtr == NULL) {
 	return TCL_OK;
@@ -593,7 +652,7 @@ InfoClassConstrCmd(
 
 static int
 InfoClassDefnCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -602,15 +661,27 @@ InfoClassDefnCmd(
     Proc *procPtr;
     CompiledLocal *localPtr;
     Tcl_Obj *argsObj;
+    Object *oPtr;
+    Class *clsPtr;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className definition methodName");
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
 
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
 	return TCL_ERROR;
     }
@@ -648,17 +719,29 @@ InfoClassDefnCmd(
 
 static int
 InfoClassDestrCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Proc *procPtr;
+    Object *oPtr;
+    Class *clsPtr;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className destructor");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
 
     if (clsPtr->destructorPtr == NULL) {
 	return TCL_OK;
@@ -681,18 +764,31 @@ InfoClassDestrCmd(
 
 static int
 InfoClassFiltersCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     int i;
     Tcl_Obj *filterObj;
+    Object *oPtr;
+    Class *clsPtr;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className filters");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+
     FOREACH(filterObj, clsPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), filterObj);
     }
@@ -701,22 +797,34 @@ InfoClassFiltersCmd(
 
 static int
 InfoClassForwardCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_HashEntry *hPtr;
     Tcl_Obj *prefixObj;
+    Object *oPtr;
+    Class *clsPtr;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className forward methodName");
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className methodName");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
 
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[4]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[4]),
+	Tcl_AppendResult(interp, "unknown method \"", TclGetString(objv[2]),
 		"\"", NULL);
 	return TCL_ERROR;
     }
@@ -734,22 +842,34 @@ InfoClassForwardCmd(
 
 static int
 InfoClassInstancesCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Object *oPtr;
+    Class *clsPtr;
     int i;
     const char *pattern = NULL;
 
-    if (objc != 4 && objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className instances ?pattern?");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?pattern?");
 	return TCL_ERROR;
     }
-    if (objc == 5) {
-	pattern = TclGetString(objv[4]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
     }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+    if (objc == 3) {
+	pattern = TclGetString(objv[2]);
+    }
+
     FOREACH(oPtr, clsPtr->instances) {
 	Tcl_Obj *tmpObj;
 
@@ -766,7 +886,7 @@ InfoClassInstancesCmd(
 
 static int
 InfoClassMethodsCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -775,14 +895,26 @@ InfoClassMethodsCmd(
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr;
     Method *mPtr;
+    Object *oPtr;
+    Class *clsPtr;
 
-    if (objc != 4 && objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className methods ?-private?");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");
 	return TCL_ERROR;
     }
-    if (objc == 5) {
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+    if (objc == 3) {
 	int len;
-	const char *str = Tcl_GetStringFromObj(objv[4], &len);
+	const char *str = Tcl_GetStringFromObj(objv[2], &len);
 
 	if (len < 2 || strncmp("-private", str, (unsigned) len)) {
 	    Tcl_AppendResult(interp, "unknown switch \"", str,
@@ -791,6 +923,7 @@ InfoClassMethodsCmd(
 	}
 	flag = 0;
     }
+
     FOREACH_HASH(namePtr, mPtr, &clsPtr->classMethods) {
 	if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
 	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), namePtr);
@@ -801,18 +934,30 @@ InfoClassMethodsCmd(
 
 static int
 InfoClassMixinsCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    Class *mixinPtr;
+    Object *oPtr;
+    Class *clsPtr, *mixinPtr;
     int i;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className mixins");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+
     FOREACH(mixinPtr, clsPtr->mixins) {
 	Tcl_Obj *tmpObj;
 
@@ -823,37 +968,36 @@ InfoClassMixinsCmd(
     return TCL_OK;
 }
 
-#ifdef SUPPORT_OO_PARAMETERS
-static int
-InfoClassParametersCmd(
-    Class *clsPtr,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "TODO: not yet implemented", NULL);
-    return TCL_ERROR;
-}
-#endif
-
 static int
 InfoClassSubsCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    Class *subclassPtr;
+    Object *oPtr;
+    Class *clsPtr, *subclassPtr;
     int i;
     const char *pattern = NULL;
 
-    if (objc != 4 && objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className subclasses ?pattern?");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?pattern?");
 	return TCL_ERROR;
     }
-    if (objc == 5) {
-	pattern = TclGetString(objv[4]);
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
     }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+    if (objc == 3) {
+	pattern = TclGetString(objv[2]);
+    }
+
     FOREACH(subclassPtr, clsPtr->subclasses) {
 	Tcl_Obj *tmpObj;
 
@@ -870,18 +1014,30 @@ InfoClassSubsCmd(
 
 static int
 InfoClassSupersCmd(
-    Class *clsPtr,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
-    Class *superPtr;
+    Object *oPtr;
+    Class *clsPtr, *superPtr;
     int i;
 
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 2, objv, "className superclasses");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
 	return TCL_ERROR;
     }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+
     FOREACH(superPtr, clsPtr->superclasses) {
 	Tcl_Obj *tmpObj;
 

@@ -9,11 +9,23 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.1.2.3 2006/10/21 01:11:51 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.1.2.4 2006/10/22 00:26:31 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclOO.h"
+
+/*
+ * Structure containing a CallContext and any other values needed only during
+ * the construction of the CallContext.
+ */
+
+struct ChainBuilder {
+    CallContext *contextPtr;	/* The call context being built. */
+    int filterLength;		/* Number of entries in the call chain that
+				 * are due to processing filters and not the
+				 * main call chain. */
+};
 
 /*
  * Extra flags used for call chain management.
@@ -29,19 +41,21 @@
  */
 
 static void		AddClassFiltersToCallContext(Object *oPtr,
-			    Class *clsPtr, CallContext *contextPtr,
+			    Class *clsPtr, struct ChainBuilder *cbPtr,
 			    Tcl_HashTable *doneFilters);
 static void		AddClassMethodNames(Class *clsPtr, int publicOnly,
 			    Tcl_HashTable *namesPtr);
 static void		AddMethodToCallChain(Method *mPtr,
-			    CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters);
+			    struct ChainBuilder *cbPtr,
+			    Tcl_HashTable *doneFilters, Class *filterDecl);
 static void		AddSimpleChainToCallContext(Object *oPtr,
-			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters, int isPublic);
+			    Tcl_Obj *methodNameObj, struct ChainBuilder *cbPtr,
+			    Tcl_HashTable *doneFilters, int isPublic,
+			    Class *filterDecl);
 static void		AddSimpleClassChainToCallContext(Class *classPtr,
-			    Tcl_Obj *methodNameObj, CallContext *contextPtr,
-			    Tcl_HashTable *doneFilters, int isPublic);
+			    Tcl_Obj *methodNameObj, struct ChainBuilder *cbPtr,
+			    Tcl_HashTable *doneFilters, int isPublic,
+			    Class *filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		InitClassHierarchy(Foundation *fPtr, Class *classPtr);
 
@@ -394,7 +408,7 @@ TclOOGetCallContext(
     Tcl_HashTable *cachePtr)	/* Where to cache the chain. Ignored for both
 				 * constructors and destructors. */
 {
-    CallContext *contextPtr;
+    struct ChainBuilder cb;
     int i, count, doFilters;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
@@ -406,28 +420,29 @@ TclOOGetCallContext(
 	doFilters = 1;
 	hPtr = Tcl_FindHashEntry(cachePtr, (char *) methodNameObj);
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
-	    contextPtr = Tcl_GetHashValue(hPtr);
+	    cb.contextPtr = Tcl_GetHashValue(hPtr);
 	    Tcl_SetHashValue(hPtr, NULL);
-	    if ((contextPtr->globalEpoch == fPtr->epoch)
-		    && (contextPtr->localEpoch == oPtr->epoch)) {
-		return contextPtr;
+	    if ((cb.contextPtr->globalEpoch == fPtr->epoch)
+		    && (cb.contextPtr->localEpoch == oPtr->epoch)) {
+		return cb.contextPtr;
 	    }
-	    TclOODeleteContext(contextPtr);
+	    TclOODeleteContext(cb.contextPtr);
 	}
     }
-    contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
-    contextPtr->numCallChain = 0;
-    contextPtr->callChain = contextPtr->staticCallChain;
-    contextPtr->filterLength = 0;
-    contextPtr->globalEpoch = fPtr->epoch;
-    contextPtr->localEpoch = oPtr->epoch;
-    contextPtr->flags = 0;
-    contextPtr->skip = 2;
+    cb.contextPtr = (CallContext *) ckalloc(sizeof(CallContext));
+    cb.contextPtr->numCallChain = 0;
+    cb.contextPtr->callChain = cb.contextPtr->staticCallChain;
+    cb.filterLength = 0;
+    cb.contextPtr->globalEpoch = fPtr->epoch;
+    cb.contextPtr->localEpoch = oPtr->epoch;
+    cb.contextPtr->flags = 0;
+    cb.contextPtr->skip = 2;
     if (flags & (PUBLIC_METHOD | SPECIAL | FILTER_HANDLING)) {
-	contextPtr->flags |= flags & (PUBLIC_METHOD|SPECIAL|FILTER_HANDLING);
+	cb.contextPtr->flags |=
+		flags & (PUBLIC_METHOD|SPECIAL|FILTER_HANDLING);
     }
-    contextPtr->oPtr = oPtr;
-    contextPtr->index = 0;
+    cb.contextPtr->oPtr = oPtr;
+    cb.contextPtr->index = 0;
 
     /*
      * Ensure that the class hierarchy is trivially iterable.
@@ -448,24 +463,22 @@ TclOOGetCallContext(
 	doFilters = 1;
 	Tcl_InitObjHashTable(&doneFilters);
 	FOREACH(mixinPtr, oPtr->mixins) {
-	    AddClassFiltersToCallContext(oPtr, mixinPtr, contextPtr,
-		    &doneFilters);
+	    AddClassFiltersToCallContext(oPtr, mixinPtr, &cb, &doneFilters);
 	}
 	FOREACH(filterObj, oPtr->filters) {
-	    AddSimpleChainToCallContext(oPtr, filterObj, contextPtr,
-		    &doneFilters, 0);
+	    AddSimpleChainToCallContext(oPtr, filterObj, &cb, &doneFilters, 0,
+		    NULL);
 	}
-	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, contextPtr,
-		&doneFilters);
+	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters);
 	Tcl_DeleteHashTable(&doneFilters);
     }
-    count = contextPtr->filterLength = contextPtr->numCallChain;
+    count = cb.filterLength = cb.contextPtr->numCallChain;
 
     /*
      * Add the actual method implementations.
      */
 
-    AddSimpleChainToCallContext(oPtr, methodNameObj, contextPtr, NULL, flags);
+    AddSimpleChainToCallContext(oPtr, methodNameObj, &cb, NULL, flags, NULL);
 
     /*
      * Check to see if the method has no implementation. If so, we probably
@@ -473,22 +486,22 @@ TclOOGetCallContext(
      * cacheing of the method implementation (if relevant).
      */
 
-    if (count == contextPtr->numCallChain) {
+    if (count == cb.contextPtr->numCallChain) {
 	/*
 	 * Method does not actually exist. If we're dealing with constructors
 	 * or destructors, this isn't a problem.
 	 */
 
 	if (flags & SPECIAL) {
-	    TclOODeleteContext(contextPtr);
+	    TclOODeleteContext(cb.contextPtr);
 	    return NULL;
 	}
-	AddSimpleChainToCallContext(oPtr, fPtr->unknownMethodNameObj,
-		contextPtr, NULL, 0);
-	contextPtr->flags |= OO_UNKNOWN_METHOD;
-	contextPtr->globalEpoch = -1;
-	if (count == contextPtr->numCallChain) {
-	    TclOODeleteContext(contextPtr);
+	AddSimpleChainToCallContext(oPtr, fPtr->unknownMethodNameObj, &cb,
+		NULL, 0, NULL);
+	cb.contextPtr->flags |= OO_UNKNOWN_METHOD;
+	cb.contextPtr->globalEpoch = -1;
+	if (count == cb.contextPtr->numCallChain) {
+	    TclOODeleteContext(cb.contextPtr);
 	    return NULL;
 	}
     } else if (doFilters) {
@@ -497,7 +510,7 @@ TclOOGetCallContext(
 	}
 	Tcl_SetHashValue(hPtr, NULL);
     }
-    return contextPtr;
+    return cb.contextPtr;
 }
 
 /*
@@ -515,7 +528,7 @@ static void
 AddClassFiltersToCallContext(
     Object *const oPtr,		/* Object that the filters operate on. */
     Class *clsPtr,		/* Class to get the filters from. */
-    CallContext *const contextPtr,
+    struct ChainBuilder *const cbPtr,
 				/* Context to fill with call chain entries. */
     Tcl_HashTable *const doneFilters)
 				/* Where to record what filters have been
@@ -542,8 +555,8 @@ AddClassFiltersToCallContext(
 
 	(void) Tcl_CreateHashEntry(doneFilters, (char *) filterObj, &isNew);
 	if (isNew) {
-	    AddSimpleChainToCallContext(oPtr, filterObj, contextPtr,
-		    doneFilters, 0);
+	    AddSimpleChainToCallContext(oPtr, filterObj, cbPtr, doneFilters,
+		    0, clsPtr);
 	}
     }
 
@@ -557,8 +570,7 @@ AddClassFiltersToCallContext(
 	goto tailRecurse;
     default:
 	FOREACH(superPtr, clsPtr->superclasses) {
-	    AddClassFiltersToCallContext(oPtr, superPtr, contextPtr,
-		    doneFilters);
+	    AddClassFiltersToCallContext(oPtr, superPtr, cbPtr, doneFilters);
 	}
     case 0:
 	return;
@@ -583,10 +595,13 @@ AddSimpleChainToCallContext(
     Object *oPtr,		/* Object to add call chain entries for. */
     Tcl_Obj *methodNameObj,	/* Name of method to add the call chain
 				 * entries for. */
-    CallContext *contextPtr,	/* Where to add the call chain entries. */
+    struct ChainBuilder *cbPtr,	/* Where to add the call chain entries. */
     Tcl_HashTable *doneFilters,	/* Where to record what call chain entries
 				 * have been processed. */
-    int flags)			/* What sort of call chain are we building. */
+    int flags,			/* What sort of call chain are we building. */
+    Class *filterDecl)		/* The class that declared the filter. If
+				 * NULL, either the filter was declared by the
+				 * object or this isn't a filter. */
 {
     int i;
 
@@ -613,29 +628,29 @@ AddSimpleChainToCallContext(
 	Class *mixinPtr, *superPtr;
 
 	FOREACH(mixinPtr, oPtr->mixins) {
-	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
-		    contextPtr, doneFilters, flags);
+	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
+		    doneFilters, flags, filterDecl);
 	}
 	FOREACH(mixinPtr, oPtr->selfCls->mixins) {
-	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
-		    contextPtr, doneFilters, flags);
+	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
+		    doneFilters, flags, filterDecl);
 	}
 	FOREACH(superPtr, oPtr->selfCls->classHierarchy) {
 	    int j=i;		/* HACK: save index so can nest FOREACHes. */
 	    FOREACH(mixinPtr, superPtr->mixins) {
 		AddSimpleClassChainToCallContext(mixinPtr, methodNameObj,
-			contextPtr, doneFilters, flags);
+			cbPtr, doneFilters, flags, filterDecl);
 	    }
 	    i=j;
 	}
 	hPtr = Tcl_FindHashEntry(&oPtr->methods, (char *) methodNameObj);
 	if (hPtr != NULL) {
-	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), contextPtr,
-		    doneFilters);
+	    AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr, doneFilters,
+		    filterDecl);
 	}
     }
-    AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, contextPtr,
-	    doneFilters, flags);
+    AddSimpleClassChainToCallContext(oPtr->selfCls, methodNameObj, cbPtr,
+	    doneFilters, flags, filterDecl);
 }
 
 /*
@@ -654,12 +669,15 @@ AddSimpleClassChainToCallContext(
     Tcl_Obj *const methodNameObj,
 				/* Name of method to add the call chain
 				 * entries for. */
-    CallContext *const contextPtr,
+    struct ChainBuilder *const cbPtr,
 				/* Where to add the call chain entries. */
     Tcl_HashTable *const doneFilters,
 				/* Where to record what call chain entries
 				 * have been processed. */
-    int flags)			/* What sort of call chain are we building. */
+    int flags,			/* What sort of call chain are we building. */
+    Class *filterDecl)		/* The class that declared the filter. If
+				 * NULL, either the filter was declared by the
+				 * object or this isn't a filter. */
 {
     /*
      * We hard-code the tail-recursive form. It's by far the most common case
@@ -668,11 +686,11 @@ AddSimpleClassChainToCallContext(
 
   tailRecurse:
     if (flags & CONSTRUCTOR) {
-	AddMethodToCallChain(classPtr->constructorPtr, contextPtr,
-		doneFilters);
+	AddMethodToCallChain(classPtr->constructorPtr, cbPtr, doneFilters,
+		filterDecl);
     } else if (flags & DESTRUCTOR) {
-	AddMethodToCallChain(classPtr->destructorPtr, contextPtr,
-		doneFilters);
+	AddMethodToCallChain(classPtr->destructorPtr, cbPtr, doneFilters,
+		filterDecl);
     } else {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
 		(char *) methodNameObj);
@@ -691,7 +709,7 @@ AddSimpleClassChainToCallContext(
 		    flags |= DEFINITE_PRIVATE;
 		}
 	    }
-	    AddMethodToCallChain(mPtr, contextPtr, doneFilters);
+	    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl);
 	}
     }
 
@@ -705,8 +723,8 @@ AddSimpleClassChainToCallContext(
 	Class *superPtr;
 
 	FOREACH(superPtr, classPtr->superclasses) {
-	    AddSimpleClassChainToCallContext(superPtr, methodNameObj,
-		    contextPtr, doneFilters, flags);
+	    AddSimpleClassChainToCallContext(superPtr, methodNameObj, cbPtr,
+		    doneFilters, flags, filterDecl);
 	}
     }
     case 0:
@@ -729,13 +747,17 @@ static void
 AddMethodToCallChain(
     Method *mPtr,		/* Actual method implementation to add to call
 				 * chain (or NULL, a no-op). */
-    CallContext *contextPtr,	/* The call chain to add the method
+    struct ChainBuilder *cbPtr,	/* The call chain to add the method
 				 * implementation to. */
-    Tcl_HashTable *doneFilters)	/* Where to record what filters have been
+    Tcl_HashTable *doneFilters,	/* Where to record what filters have been
 				 * processed. If NULL, not processing filters.
 				 * Note that this function does not update
 				 * this hashtable. */
+    Class *filterDecl)		/* The class that declared the filter. If
+				 * NULL, either the filter was declared by the
+				 * object or this isn't a filter. */
 {
+    register CallContext *contextPtr = cbPtr->contextPtr;
     int i;
 
     /*
@@ -753,7 +775,7 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=contextPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
+    for (i=cbPtr->filterLength ; i<contextPtr->numCallChain ; i++) {
 	if (contextPtr->callChain[i].mPtr == mPtr
 		&& contextPtr->callChain[i].isFilter == (doneFilters!=NULL)) {
 	    /*
@@ -763,11 +785,14 @@ AddMethodToCallChain(
 	     * method invokations in the call chain; it just rearranges them.
 	     */
 
+	    Class *declCls = contextPtr->callChain[i].filterDeclarer;
+
 	    for (; i+1<contextPtr->numCallChain ; i++) {
 		contextPtr->callChain[i] = contextPtr->callChain[i+1];
 	    }
 	    contextPtr->callChain[i].mPtr = mPtr;
 	    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
+	    contextPtr->callChain[i].filterDeclarer = declCls;
 	    return;
 	}
     }
@@ -788,9 +813,9 @@ AddMethodToCallChain(
 		ckrealloc((char *) contextPtr->callChain,
 		sizeof(struct MInvoke) * (contextPtr->numCallChain + 1));
     }
-    contextPtr->callChain[contextPtr->numCallChain].mPtr = mPtr;
-    contextPtr->callChain[contextPtr->numCallChain].isFilter =
-	    (doneFilters != NULL);
+    contextPtr->callChain[i].mPtr = mPtr;
+    contextPtr->callChain[i].isFilter = (doneFilters != NULL);
+    contextPtr->callChain[i].filterDeclarer = filterDecl;
     contextPtr->numCallChain++;
 }
 
