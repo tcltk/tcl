@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.219 2006/10/20 15:16:47 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.220 2006/10/22 00:13:29 msofer Exp $
  */
 
 #ifndef _TCL
@@ -1394,7 +1394,9 @@ typedef struct Tcl_HashSearch {
  * Macro to use new extended version of Tcl_InitHashTable.
  */
 #   define Tcl_InitHashTable(tablePtr, keyType) \
-	Tcl_InitHashTableEx(tablePtr, keyType, NULL)
+	Tcl_InitHashTableEx((tablePtr), (keyType), NULL)
+#   define Tcl_FindHashEntry(tablePtr, key) \
+        Tcl_CreateHashEntry((tablePtr), (key), NULL)
 #endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
 
 /*
