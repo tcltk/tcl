@@ -2,6 +2,7 @@
 
 	* README:		Bump version number to 8.5a6
 	* generic/tcl.h:
+	* library init.tcl:
 	* tools/tcl.wse.in:
 	* unix/configure.in:
 	* unix/tcl.spec:
