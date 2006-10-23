@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.10.2.6 2006/04/28 16:09:43 dgp Exp $
+# RCS: @(#) $Id: winFile.test,v 1.10.2.7 2006/10/23 21:01:53 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -95,23 +95,32 @@ proc cacls {fname args} {
 
 # dir/q output:
 # 2003-11-03  20:36                  598 OCTAVIAN\benny         filename.txt
+# Modified to cope with Msys environment and use ls -l.
 proc getuser {fname} {
+    global env
     set tryname $fname
     if {[file isdirectory $fname]} {
 	set tryname [file dirname $fname]
     }
-    set tail [file tail $tryname]
-    set dirtext [exec cmd /c dir /q [file nativename $fname]]
     set owner ""
-    foreach line [split $dirtext "\n"] {
-	if {[string match -nocase "* $tail" $line]} {
-	    set attrs [string range $line \
-	      0 end-[string length $tail]]
-	    regexp { [^ \\]+\\.*$} $attrs owner
-	    set owner [string trim $owner]
-	}
+    set tail [file tail $tryname]
+    if {[info exists env(OSTYPE)] && [string equal $env(OSTYPE) "msys"]} {
+        set dirtext [exec ls -l $fname]
+        foreach line [split $dirtext "\n"] {
+            set owner [lindex $line 2]
+        }
+    } else {
+        set dirtext [exec cmd /c dir /q [file nativename $fname]]
+        foreach line [split $dirtext "\n"] {
+            if {[string match -nocase "* $tail" $line]} {
+                set attrs [string range $line \
+                               0 end-[string length $tail]]
+                regexp { [^ \\]+\\.*$} $attrs owner
+                set owner [string trim $owner]
+            }
+        }
     }
-    if {"" == "$owner"} {
+    if {[string length $owner] == 0} {
 	error "getuser: Owner not found in output of dir/q"
     }
     return $owner

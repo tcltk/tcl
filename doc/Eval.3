@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.14.2.6 2005/09/15 20:29:59 dgp Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.14.2.7 2006/10/23 21:01:23 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -110,6 +110,9 @@ script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values
 of the words for the Tcl command, one word in each object in
 \fIobjv\fR.  \fBTcl_EvalObjv\fR evaluates the command and returns
 a completion code and result just like \fBTcl_EvalObjEx\fR.
+The caller of \fBTcl_EvalObjv\fR has to manage the reference count of the
+elements of \fIobjv\fR, insuring that the objects are valid until
+\fBTcl_EvalObjv\fR returns.  
 .PP
 \fBTcl_Eval\fR is similar to \fBTcl_EvalObjEx\fR except that the script to
 be executed is supplied as a string instead of an object and no compilation

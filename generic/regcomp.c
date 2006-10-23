@@ -56,7 +56,9 @@ static chr *scanplain(struct vars *);
 static VOID leaders(struct vars *, struct cvec *);
 static VOID onechr(struct vars *, pchr, struct state *, struct state *);
 static VOID dovec(struct vars *, struct cvec *, struct state *, struct state *);
+#ifdef REGEXP_MCCE_ENABLED
 static celt nextleader(struct vars *, pchr, pchr);
+#endif
 static VOID wordchrs(struct vars *);
 static struct subre *subre(struct vars *, int, int, struct state *, struct state *);
 static VOID freesubre(struct vars *, struct subre *);
@@ -105,7 +107,9 @@ static VOID subblock(struct vars *, pchr, struct state *, struct state *);
 static VOID okcolors(struct nfa *, struct colormap *);
 static VOID colorchain(struct colormap *, struct arc *);
 static VOID uncolorchain(struct colormap *, struct arc *);
+#ifdef REGEXP_MCCE_ENABLED
 static int singleton(struct colormap *, pchr c);
+#endif
 static VOID rainbow(struct nfa *, struct colormap *, int, pcolor, struct state *, struct state *);
 static VOID colorcomplement(struct nfa *, struct colormap *, int, struct state *, struct state *, struct state *);
 #ifdef REG_DEBUG
@@ -171,7 +175,9 @@ static struct cvec *newcvec(int, int, int);
 static struct cvec *clearcvec(struct cvec *);
 static VOID addchr(struct cvec *, pchr);
 static VOID addrange(struct cvec *, pchr, pchr);
+#ifdef REGEXP_MCCE_ENABLED
 static VOID addmcce(struct cvec *, chr *, chr *);
+#endif
 static int haschr(struct cvec *, pchr);
 static struct cvec *getcvec(struct vars *, int, int, int);
 static VOID freecvec(struct cvec *);
@@ -364,7 +370,10 @@ compile(
 	CNOERR();
 	v->mcces = allmcces(v, v->mcces);
 	leaders(v, v->mcces);
+#ifdef REGEXP_MCCE_ENABLED
+	/* Function does nothing with NULL pointers */
 	addmcce(v->mcces, (chr *)NULL, (chr *)NULL);	/* dummy */
+#endif
     }
     CNOERR();
 
@@ -1749,6 +1758,33 @@ onechr(
  ^ static VOID dovec(struct vars *, struct cvec *, struct state *,
  ^ 	struct state *);
  */
+#ifndef REGEXP_MCCE_ENABLED
+static void
+dovec(
+    struct vars *v,
+    struct cvec *cv,
+    struct state *lp,
+    struct state *rp)
+{
+    chr ch, from, to;
+    chr *p;
+    int i;
+    
+    for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--) {
+	ch = *p;
+	newarc(v->nfa, PLAIN, subcolor(v->cm, ch), lp, rp);
+    }
+
+    for (p = cv->ranges, i = cv->nranges; i > 0; p += 2, i--) {
+	from = *p;
+	to = *(p+1);
+	if (from <= to) {
+	    subrange(v, from, to, lp, rp);
+	}
+    }
+
+}
+#else /* REGEXP_MCCE_ENABLED */
 static void
 dovec(
     struct vars *v,
@@ -1760,8 +1796,8 @@ dovec(
     celt ce;
     chr *p;
     int i;
-    color co;
     struct cvec *leads;
+    color co;
     struct arc *a;
     struct arc *pa;		/* arc in prototype */
     struct state *s;
@@ -1786,7 +1822,7 @@ dovec(
     } else {
 	leads = NULL;
     }
-
+    
     /*
      * First, get the ordinary characters out of the way.
      */
@@ -1827,7 +1863,15 @@ dovec(
 	}
     }
 
-    if ((leads == NULL || leads->nchrs == 0) && cv->nmcces == 0) {
+    /* *** WARNING ***
+     *
+     * This was buggy, check before enabling: the original version would cause
+     * a segfault at the loopinit below if (leads==NULL && cv->nmcces!=0)
+     * Possibly just a problem with parens? The original condition was
+     * ((leads == NULL || leads->nchrs == 0) && cv->nmcces == 0)
+     */
+    
+    if (leads == NULL || (leads->nchrs == 0 && cv->nmcces == 0)) {
 	return;
     }
 
@@ -1917,6 +1961,7 @@ nextleader(
     }
     return it;
 }
+#endif
 
 /*
  - wordchrs - set up word-chr list for word-boundary stuff, if needed

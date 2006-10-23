@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.7 2005/11/03 17:52:08 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.8 2006/10/23 21:01:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -522,27 +522,58 @@ Tcl_DeleteEvents(
     Tcl_EventDeleteProc *proc,	/* The function to call. */
     ClientData clientData)    	/* The type-specific data. */
 {
-    Tcl_Event *evPtr, *prevPtr, *hold;
+    Tcl_Event *evPtr;		/* Pointer to the event being examined */
+    Tcl_Event *prevPtr;		/* Pointer to evPtr's predecessor, or NULL if
+				 * evPtr designates the first event in the
+				 * queue for the thread. */
+    Tcl_Event* hold;
+
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    for (prevPtr=NULL, evPtr=tsdPtr->firstEventPtr; evPtr!=NULL; ) {
-	if ((*proc) (evPtr, clientData) == 1) {
-	    if (tsdPtr->firstEventPtr == evPtr) {
+
+    /*
+     * Walk the queue of events for the thread, applying 'proc' to each to
+     * decide whether to eliminate the event.
+     */
+
+    prevPtr = NULL;
+    evPtr = tsdPtr->firstEventPtr;
+    while (evPtr != NULL) {
+	if ((*proc)(evPtr, clientData) == 1) {
+	    /*
+	     * This event should be deleted. Unlink it.
+	     */
+
+	    if (prevPtr == NULL) {
 		tsdPtr->firstEventPtr = evPtr->nextPtr;
 	    } else {
 		prevPtr->nextPtr = evPtr->nextPtr;
 	    }
+
+	    /*
+	     * Update 'last' and 'marker' events if either has been deleted.
+	     */
+
 	    if (evPtr->nextPtr == NULL) {
 		tsdPtr->lastEventPtr = prevPtr;
 	    }
 	    if (tsdPtr->markerEventPtr == evPtr) {
 		tsdPtr->markerEventPtr = prevPtr;
 	    }
+
+	    /*
+	     * Delete the event data structure.
+	     */
+
 	    hold = evPtr;
 	    evPtr = evPtr->nextPtr;
 	    ckfree((char *) hold);
 	} else {
+	    /*
+	     * Event is to be retained.
+	     */
+
 	    prevPtr = evPtr;
 	    evPtr = evPtr->nextPtr;
 	}

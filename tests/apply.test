@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: apply.test,v 1.4.2.3 2006/04/28 16:09:40 dgp Exp $
+# RCS: @(#) $Id: apply.test,v 1.4.2.4 2006/10/23 21:01:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -22,6 +22,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 if {[info commands ::apply] eq {}} {
     return
 }
+
+testConstraint memory     [llength [info commands memory]]
 
 # Tests for wrong number of arguments
 
@@ -128,7 +130,7 @@ test apply-4.2 {error in arguments to lambda expression} {
 test apply-5.1 {runtime error in lambda expression} {
     set lambda [list {} {error foo}]
     set res [catch {apply $lambda}]
-    list $res $errorInfo
+    list $res $::errorInfo
 } {1 {foo
     while executing
 "error foo"
@@ -260,6 +262,43 @@ test apply-8.9 {default values} {
 test apply-8.10 {default values} {
     apply [list {x {y 2} args} $applyBody] 1 3
 } {{x 1} {y 3} {args {}}}
+
+# Tests for leaks
+
+test apply-9.1 {leaking internal rep} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+    set lam [list {} {set a 1}]
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	::apply [lrange $lam 0 end]
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+    unset lam
+} -result 0
+test apply-9.2 {leaking internal rep} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	::apply [list {} {set a 1}]
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+} -result 0
 
 # Tests for the avoidance of recompilation
 

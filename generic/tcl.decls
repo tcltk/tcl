@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.18 2006/02/09 22:41:26 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.19 2006/10/23 21:01:23 dgp Exp $
 
 library tcl
 
@@ -971,6 +971,7 @@ declare 273 generic {
     int Tcl_PkgProvide(Tcl_Interp *interp, CONST char *name, 
 	    CONST char *version)
 }
+# TIP #268: The internally used new Require function is in slot 573.
 declare 274 generic {
     CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp, CONST char *name, 
 	    CONST char *version, int exact)
@@ -1035,7 +1036,7 @@ declare 286 generic {
     void Tcl_AppendObjToObj(Tcl_Obj *objPtr, Tcl_Obj *appendObjPtr)
 }
 declare 287 generic {
-    Tcl_Encoding Tcl_CreateEncoding(Tcl_EncodingType *typePtr)
+    Tcl_Encoding Tcl_CreateEncoding(const Tcl_EncodingType *typePtr)
 }
 declare 288 generic {
     void Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
@@ -1989,7 +1990,7 @@ declare 554 generic {
     Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(Tcl_ChannelType *chanTypePtr)
 }
 
-# TIP #237:
+# TIP#237 (Arbitrary-precision Integers) kevin kenny
 
 declare 555 generic {
     Tcl_Obj* Tcl_NewBignumObj( mp_int* value )
@@ -2007,7 +2008,7 @@ declare 559 generic {
     int Tcl_GetBignumAndClearObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
 
-# TIP #208:
+# TIP #208 ('chan' Command) jeffh
 declare 560 generic {
     int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
 }
@@ -2031,14 +2032,14 @@ declare 565 generic {
     void Tcl_GetChannelError (Tcl_Channel chan, Tcl_Obj** msg)
 }
 
-# Additional conversion functions for bignum support
+# TIP #237 (Additional conversion functions for bignum support)
 
 declare 566 generic {
     int Tcl_InitBignumFromDouble(Tcl_Interp* interp, double initval, 
 		mp_int *toInit)
 }
 
-# TIP 181
+# TIP#181 (namespace unknown Command)
 declare 567 generic {
     Tcl_Obj *Tcl_GetNamespaceUnknownHandler(Tcl_Interp *interp,
         Tcl_Namespace *nsPtr)
@@ -2049,7 +2050,7 @@ declare 568 generic {
         Tcl_Obj *handlerPtr)
 }
 
-# TIP#258 Enhanced Interface for Encodings
+# TIP#258 (Enhanced Interface for Encodings)
 
 declare 569 generic {
     int Tcl_GetEncodingFromObj(Tcl_Interp* interp, Tcl_Obj* objPtr,
@@ -2063,6 +2064,12 @@ declare 571 generic {
 }
 declare 572 generic {
     CONST char *Tcl_GetEncodingNameFromEnvironment(Tcl_DString* bufPtr)
+}
+
+# TIP#268: Extended version numbers and requirements
+declare 573 generic {
+    int Tcl_PkgRequireProc(Tcl_Interp *interp, CONST char *name, 
+	    int objc, Tcl_Obj *CONST objv[], ClientData *clientDataPtr)
 }
 
 ##############################################################################

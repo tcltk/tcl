@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.22 2006/06/06 17:10:14 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.23 2006/10/23 21:01:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,8 +35,6 @@ static void		ProcBodyFree(Tcl_Obj *objPtr);
 static int		ProcessProcResultCode(Tcl_Interp *interp,
 			    char *procName, int nameLen, int returnCode);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static int		TclCompileNoOp(Tcl_Interp *interp, Tcl_Parse *parsePtr,
-			    struct CompileEnv *envPtr);
 static int		ProcCompileProc (Tcl_Interp *interp, Proc *procPtr,
 			    Tcl_Obj *bodyPtr, Namespace *nsPtr, 
 			    CONST char *description, CONST char *procName,
@@ -1962,49 +1960,6 @@ ProcBodyFree(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclCompileNoOp --
- *
- *	Function called to compile no-op's
- *
- * Results:
- *	The return value is TCL_OK, indicating successful compilation.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute a no-op at runtime.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TclCompileNoOp(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-    Tcl_Token *tokenPtr;
-    int i;
-    int savedStackDepth = envPtr->currStackDepth;
-
-    tokenPtr = parsePtr->tokenPtr;
-    for(i = 1; i < parsePtr->numWords; i++) {
-	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
-	envPtr->currStackDepth = savedStackDepth;
-
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
-		    envPtr);
-	    TclEmitOpcode(INST_POP, envPtr);
-	}
-    }
-    envPtr->currStackDepth = savedStackDepth;
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
-    return TCL_OK;
-}
-
-/*
  * LAMBDA and APPLY implementation. [TIP#194]
  */
 
@@ -2081,7 +2036,11 @@ SetLambdaFromAny(
 		Tcl_GetString(objPtr), NULL);
 	return TCL_ERROR;
     }
-    procPtr->refCount++;
+
+    /* CAREFUL: TclCreateProc returns refCount==1! [Bug 1578454]
+     * procPtr->refCount = 1;
+     */
+    
     procPtr->cmdPtr = NULL;
 
     /*

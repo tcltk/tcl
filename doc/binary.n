@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.9 2006/01/25 18:38:26 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.10 2006/10/23 21:01:23 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -35,7 +35,8 @@ the additional arguments.  The resulting binary value is returned.
 .PP
 The \fIformatString\fR consists of a sequence of zero or more field
 specifiers separated by zero or more spaces.  Each field specifier is
-a single type character followed by an optional numeric \fIcount\fR.
+a single type character followed by an optional flag character followed
+by an optional numeric \fIcount\fR.
 Most field specifiers consume one argument to obtain the value to be
 formatted.  The type character specifies how the value is to be
 formatted.  The \fIcount\fR typically indicates how many items of the
@@ -43,7 +44,8 @@ specified type are taken from the value.  If present, the \fIcount\fR
 is a non-negative decimal integer or \fB*\fR, which normally indicates
 that all of the items in the value are to be used.  If the number of
 arguments does not match the number of fields in the format string
-that consume arguments, then an error is generated.
+that consume arguments, then an error is generated. The flag character
+is ignored for for \fBbinary format\fR.
 .PP
 Here is a small example to clarify the relation between the field
 specifiers and the arguments:
@@ -380,7 +382,8 @@ variable.
 As with \fBbinary format\fR, the \fIformatString\fR consists of a
 sequence of zero or more field specifiers separated by zero or more
 spaces.  Each field specifier is a single type character followed by
-an optional numeric \fIcount\fR.  Most field specifiers consume one
+an optional flag character followed by an optional numeric \fIcount\fR.
+Most field specifiers consume one
 argument to obtain the variable into which the scanned values should
 be placed.  The type character specifies how the binary data is to be
 interpreted.  The \fIcount\fR typically indicates how many items of
@@ -392,7 +395,9 @@ position to satisfy the current field specifier, then the
 corresponding variable is left untouched and \fBbinary scan\fR returns
 immediately with the number of variables that were set.  If there are
 not enough arguments for all of the fields in the format string that
-consume arguments, then an error is generated.
+consume arguments, then an error is generated. The flag character 'u'
+may be given to cause some types to be read as unsigned values. The flag
+is accepted for all field types but is ignored for non-integer fields.
 .PP
 A similar example as with \fBbinary format\fR should explain the
 relation between field specifiers and arguments in case of the binary
@@ -429,11 +434,11 @@ will be sign extended.  Thus the following will occur:
 set signShort [\fBbinary format\fR s1 0x8000]
 \fBbinary scan\fR $signShort s1 val; \fI# val == 0xFFFF8000\fR
 .CE
-If you want to produce an unsigned value, then you can mask the return 
-value to the desired size.  For example, to produce an unsigned short 
-value:
+If you require unsigned values you can include the 'u' flag character following
+the field type. For example, to read an unsigned short value:
 .CS
-set val [expr { $val & 0xFFFF }]; \fI# val == 0x8000\fR
+set signShort [\fBbinary format\fR s1 0x8000]
+\fBbinary scan\fR $signShort su1 val; \fI# val == 0x00008000\fR
 .CE
 .PP
 Each type-count pair moves an imaginary cursor through the binary data,

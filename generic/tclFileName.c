@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.19 2006/09/05 16:14:37 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.20 2006/10/23 21:01:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1894,12 +1894,17 @@ TclGlob(
 	int objc, i;
 	Tcl_Obj **objv;
 	int prefixLen;
+	CONST char *pre;
 
 	/*
 	 * If this length has never been set, set it here.
 	 */
 
-	CONST char *pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
+	if (pathPrefix == NULL) {
+	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
+	}
+	
+	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
 	    /*

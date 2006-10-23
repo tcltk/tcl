@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.21 2006/02/09 22:41:27 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.22 2006/10/23 21:01:24 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1818,7 +1818,7 @@ EXTERN void		Tcl_AppendObjToObj _ANSI_ARGS_((Tcl_Obj * objPtr,
 #define Tcl_CreateEncoding_TCL_DECLARED
 /* 287 */
 EXTERN Tcl_Encoding	Tcl_CreateEncoding _ANSI_ARGS_((
-				Tcl_EncodingType * typePtr));
+				const Tcl_EncodingType * typePtr));
 #endif
 #ifndef Tcl_CreateThreadExitHandler_TCL_DECLARED
 #define Tcl_CreateThreadExitHandler_TCL_DECLARED
@@ -3571,6 +3571,14 @@ EXTERN int		Tcl_SetEncodingSearchPath _ANSI_ARGS_((
 EXTERN CONST char *	Tcl_GetEncodingNameFromEnvironment _ANSI_ARGS_((
 				Tcl_DString* bufPtr));
 #endif
+#ifndef Tcl_PkgRequireProc_TCL_DECLARED
+#define Tcl_PkgRequireProc_TCL_DECLARED
+/* 573 */
+EXTERN int		Tcl_PkgRequireProc _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, int objc, 
+				Tcl_Obj *CONST objv[], 
+				ClientData * clientDataPtr));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3899,7 +3907,7 @@ typedef struct TclStubs {
     void (*tcl_SetMainLoop) _ANSI_ARGS_((Tcl_MainLoopProc * proc)); /* 284 */
     void *reserved285;
     void (*tcl_AppendObjToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr)); /* 286 */
-    Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((Tcl_EncodingType * typePtr)); /* 287 */
+    Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((const Tcl_EncodingType * typePtr)); /* 287 */
     void (*tcl_CreateThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 288 */
     void (*tcl_DeleteThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 289 */
     void (*tcl_DiscardResult) _ANSI_ARGS_((Tcl_SavedResult * statePtr)); /* 290 */
@@ -4185,6 +4193,7 @@ typedef struct TclStubs {
     Tcl_Obj* (*tcl_GetEncodingSearchPath) _ANSI_ARGS_((void)); /* 570 */
     int (*tcl_SetEncodingSearchPath) _ANSI_ARGS_((Tcl_Obj* searchPath)); /* 571 */
     CONST char * (*tcl_GetEncodingNameFromEnvironment) _ANSI_ARGS_((Tcl_DString* bufPtr)); /* 572 */
+    int (*tcl_PkgRequireProc) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, int objc, Tcl_Obj *CONST objv[], ClientData * clientDataPtr)); /* 573 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6516,6 +6525,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetEncodingNameFromEnvironment
 #define Tcl_GetEncodingNameFromEnvironment \
 	(tclStubsPtr->tcl_GetEncodingNameFromEnvironment) /* 572 */
+#endif
+#ifndef Tcl_PkgRequireProc
+#define Tcl_PkgRequireProc \
+	(tclStubsPtr->tcl_PkgRequireProc) /* 573 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

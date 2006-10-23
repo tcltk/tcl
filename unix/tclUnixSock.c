@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.7 2006/04/28 16:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.8 2006/10/23 21:02:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,7 @@ InitializeHostName(
 
     (void *) memset((void *) &u, (int) 0, sizeof(struct utsname));
     if (uname(&u) > -1) {				/* INTL: Native. */
-        hp = gethostbyname(u.nodename);			/* INTL: Native. */
+        hp = TclpGetHostByName(u.nodename);			/* INTL: Native. */
 	if (hp == NULL) {
 	    /*
 	     * Sometimes the nodename is fully qualified, but gets truncated
@@ -65,7 +65,7 @@ InitializeHostName(
 
 		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
 		node[dot - u.nodename] = '\0';
-		hp = gethostbyname(node);
+		hp = TclpGetHostByName(node);
 		ckfree(node);
 	    }
 	}

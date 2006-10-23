@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.14 2006/01/25 18:38:48 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.15 2006/10/23 21:01:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -501,6 +501,93 @@ test interp-14.4 {testing interp alias - alias over master} {
     interp create a
     list [catch {interp alias "" a a eval} msg] $msg [info commands a]
 } {1 {cannot define or rename alias "a": interpreter deleted} {}}
+test interp-14.5 {testing interp-alias: wrong # args} -body {
+    proc setx x {set x}
+    interp alias {} a {} setx
+    catch {a 1 2}
+    set ::errorInfo
+} -cleanup {
+    rename setx {}
+    rename a {}
+} -result {wrong # args: should be "a x"
+    while executing
+"a 1 2"}
+test interp-14.6 {testing interp-alias: wrong # args} -setup {
+    proc setx x {set x}
+    catch {interp delete a}
+    interp create a
+} -body {
+    interp alias a a {} setx
+    catch {a eval a 1 2}
+    set ::errorInfo
+} -cleanup {
+    rename setx {}
+    interp delete a
+} -result {wrong # args: should be "a x"
+    invoked from within
+"a 1 2"
+    invoked from within
+"a eval a 1 2"}
+test interp-14.7 {testing interp-alias: wrong # args} -setup {
+    proc setx x {set x}
+    catch {interp delete a}
+    interp create a
+} -body {
+    interp alias a a {} setx
+    a eval {
+	catch {a 1 2}
+	set ::errorInfo
+    }
+} -cleanup {
+    rename setx {}
+    interp delete a
+} -result {wrong # args: should be "a x"
+    invoked from within
+"a 1 2"}
+test interp-14.8 {testing interp-alias: error messages} -body {
+    proc setx x {return -code error x}
+    interp alias {} a {} setx
+    catch {a 1}
+    set ::errorInfo
+} -cleanup {
+    rename setx {}
+    rename a {}
+} -result {x
+    while executing
+"a 1"}
+test interp-14.9 {testing interp-alias: error messages} -setup {
+    proc setx x {return -code error x}
+    catch {interp delete a}
+    interp create a
+} -body {
+    interp alias a a {} setx
+    catch {a eval a 1}
+    set ::errorInfo
+} -cleanup {
+    rename setx {}
+    interp delete a
+} -result {x
+    invoked from within
+"a 1"
+    invoked from within
+"a eval a 1"}
+test interp-14.10 {testing interp-alias: error messages} -setup {
+    proc setx x {return -code error x}
+    catch {interp delete a}
+    interp create a
+} -body {
+    interp alias a a {} setx
+    a eval {
+	catch {a 1}
+	set ::errorInfo
+    }
+} -cleanup {
+    rename setx {}
+    interp delete a
+} -result {x
+    invoked from within
+"a 1"}
+
 
 # part 15: testing file sharing
 test interp-15.1 {testing file sharing} {
@@ -2065,7 +2152,7 @@ test interp-26.7 {errorInfo transmission: regular interps} {
 	MyError "some secret"
     }
     interp alias $interp test {} MyTestAlias $interp;
-    set res [interp eval $interp {catch test;set errorInfo}]
+    set res [interp eval $interp {catch test;set ::errorInfo}]
     interp delete $interp;
     set res
 } {msg
@@ -2088,7 +2175,7 @@ test interp-26.8 {errorInfo transmission: safe interps--bug 1637} {knownBug} {
 	MyError "some secret"
     }
     interp alias $interp test {} MyTestAlias $interp;
-    set res [interp eval $interp {catch test;set errorInfo}]
+    set res [interp eval $interp {catch test;set ::errorInfo}]
     interp delete $interp;
     set res
 } {msg

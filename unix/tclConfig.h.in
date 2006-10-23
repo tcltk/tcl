@@ -40,6 +40,63 @@
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
 
+/* Define to 1 if getgrgid_r is available. */
+#undef HAVE_GETGRGID_R
+
+/* Define to 1 if getgrgid_r takes 4 args. */
+#undef HAVE_GETGRGID_R_4
+
+/* Define to 1 if getgrgid_r takes 5 args. */
+#undef HAVE_GETGRGID_R_5
+
+/* Define to 1 if getgrnam_r is available. */
+#undef HAVE_GETGRNAM_R
+
+/* Define to 1 if getgrnam_r takes 4 args. */
+#undef HAVE_GETGRNAM_R_4
+
+/* Define to 1 if getgrnam_r takes 5 args. */
+#undef HAVE_GETGRNAM_R_5
+
+/* Define to 1 if gethostbyaddr_r is available. */
+#undef HAVE_GETHOSTBYADDR_R
+
+/* Define to 1 if gethostbyaddr_r takes 7 args. */
+#undef HAVE_GETHOSTBYADDR_R_7
+
+/* Define to 1 if gethostbyaddr_r takes 8 args. */
+#undef HAVE_GETHOSTBYADDR_R_8
+
+/* Define to 1 if gethostbyname_r is available. */
+#undef HAVE_GETHOSTBYNAME_R
+
+/* Define to 1 if gethostbyname_r takes 3 args. */
+#undef HAVE_GETHOSTBYNAME_R_3
+
+/* Define to 1 if gethostbyname_r takes 5 args. */
+#undef HAVE_GETHOSTBYNAME_R_5
+
+/* Define to 1 if gethostbyname_r takes 6 args. */
+#undef HAVE_GETHOSTBYNAME_R_6
+
+/* Define to 1 if getpwnam_r is available. */
+#undef HAVE_GETPWNAM_R
+
+/* Define to 1 if getpwnam_r takes 4 args. */
+#undef HAVE_GETPWNAM_R_4
+
+/* Define to 1 if getpwnam_r takes 5 args. */
+#undef HAVE_GETPWNAM_R_5
+
+/* Define to 1 if getpwuid_r is available. */
+#undef HAVE_GETPWUID_R
+
+/* Define to 1 if getpwuid_r takes 4 args. */
+#undef HAVE_GETPWUID_R_4
+
+/* Define to 1 if getpwuid_r takes 5 args. */
+#undef HAVE_GETPWUID_R_5
+
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
@@ -67,6 +124,12 @@
 /* Define to 1 if you have the `mktime' function. */
 #undef HAVE_MKTIME
 
+/* Do we have MT-safe gethostbyaddr() ? */
+#undef HAVE_MTSAFE_GETHOSTBYADDR
+
+/* Do we have MT-safe gethostbyname() ? */
+#undef HAVE_MTSAFE_GETHOSTBYNAME
+
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
 
@@ -90,6 +153,9 @@
 
 /* Do we want a Linux-like thread-attribute interface? */
 #undef HAVE_PTHREAD_GETATTR_NP
+
+/* Define to 1 if you have the `pthread_get_stacksize_np' function. */
+#undef HAVE_PTHREAD_GET_STACKSIZE_NP
 
 /* Does putenv() copy strings or incorporate them by reference? */
 #undef HAVE_PUTENV_THAT_COPIES

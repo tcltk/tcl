@@ -673,15 +673,17 @@ uncolorchain(
     if (aa == a) {			/* easy case */
 	cd->arcs = a->colorchain;
     } else {
-	for (; aa != NULL && aa->colorchain != a; aa = aa->colorchain) {
+	assert(aa != NULL);
+	for (; aa->colorchain != a; aa = aa->colorchain) {
+	    assert(aa->colorchain != NULL);
 	    continue;
 	}
-	assert(aa != NULL);
 	aa->colorchain = a->colorchain;
     }
     a->colorchain = NULL;		/* paranoia */
 }
 
+#ifdef REGEXP_MCCE_ENABLED
 /*
  - singleton - is this character in its own color?
  ^ static int singleton(struct colormap *, pchr c);
@@ -699,6 +701,7 @@ singleton(
     }
     return 0;
 }
+#endif
 
 /*
  - rainbow - add arcs of all full colors (but one) between specified states

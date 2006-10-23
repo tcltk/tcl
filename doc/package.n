@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.6.4.4 2006/09/05 16:14:36 dgp Exp $
+'\" RCS: @(#) $Id: package.n,v 1.6.4.5 2006/10/23 21:01:23 dgp Exp $
 '\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
@@ -19,11 +19,12 @@ package \- Facilities for package loading and version control
 \fBpackage names\fR
 \fBpackage present \fR?\fB\-exact\fR? \fIpackage \fR?\fIversion\fR?
 \fBpackage provide \fIpackage \fR?\fIversion\fR?
-\fBpackage require \fR?\fB\-exact\fR? \fIpackage \fR?\fIversion\fR?
+\fBpackage require \fR?\fB\-exact\fR? \fIpackage \fR?\fIrequirement...\fR?
 \fBpackage unknown \fR?\fIcommand\fR?
 \fBpackage vcompare \fIversion1 version2\fR
 \fBpackage versions \fIpackage\fR
-\fBpackage vsatisfies \fIversion1 version2\fR
+\fBpackage vsatisfies \fIversion requirement...\fR
+\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
 .fi
 .BE
 
@@ -92,25 +93,45 @@ returns the version number that is currently provided, or an
 empty string if no \fBpackage provide\fR command has been
 invoked for \fIpackage\fR in this interpreter.  
 .TP
-\fBpackage require \fR?\fB\-exact\fR? \fIpackage \fR?\fIversion\fR?
+\fBpackage require \fR\fB\-exact\fR \fIpackage \fR\fIversion\fR
+This form of the command is translated to the form below using the
+bounded requirement "version-(version+1)", making only the given
+\fIversion\fR acceptable, within the specified level of detail. Deeper
+levels are allowed to vary. Examples:
+.CS
+	-exact 8      => 8-9
+	-exact 8.4    => 8.4-8.5
+	-exact 8.4.14 => 8.4.14-8.4.15
+.CE
+.RS
+For more explanations see below.
+.RE
+.TP
+\fBpackage require \fR\fIpackage \fR?\fIrequirement...\fR?
 This command is typically invoked by Tcl code that wishes to use
 a particular version of a particular package.  The arguments
 indicate which package is wanted, and the command ensures that
 a suitable version of the package is loaded into the interpreter.
 If the command succeeds, it returns the version number that is
 loaded;  otherwise it generates an error.
-If both the \fB\-exact\fR
-switch and the \fIversion\fR argument are specified then only the
-given version is acceptable.  If \fB\-exact\fR is omitted but
-\fIversion\fR is specified, then versions later than \fIversion\fR
-are also acceptable as long as they have the same major version
-number as \fIversion\fR.
-If both \fB\-exact\fR and \fIversion\fR are omitted then any
-version whatsoever is acceptable.
+.RS
+.PP
+A suitable version of the package is any version which satisfies at
+least one of the requirements, per the rules of \fBpackage
+vsatisfies\fR. If multiple versions are suitable the implementation
+with the highest version is chosen. This last part is additionally
+influenced by the selection mode set with \fBpackage prefer\fR.
+.PP
+In the "stable" selection mode the command will select the highest
+stable version satisfying the requirements, if any. If no stable
+version satisfies the requirements, the highest unstable version
+satisfying the requirements will be selected.  In the "latest"
+selection mode the command will accept the highest version satisfying
+all the requirements, regardless of its stableness.
+.PP
 If a version of \fIpackage\fR has already been provided (by invoking
 the \fBpackage provide\fR command), then its version number must
-satisfy the criteria given by \fB\-exact\fR and \fIversion\fR and
-the command returns immediately.
+satisfy the \fIrequirement\fRs and the command returns immediately.
 Otherwise, the command searches the database of information provided by
 previous \fBpackage ifneeded\fR commands to see if an acceptable
 version of the package is available.
@@ -126,6 +147,7 @@ it completes, Tcl checks again to see if the package is now provided
 or if there is a \fBpackage ifneeded\fR script for it.
 If all of these steps fail to provide an acceptable version of the
 package, then the command returns an error.
+.RE
 .TP
 \fBpackage unknown \fR?\fIcommand\fR?
 This command supplies a ``last resort'' command to invoke during
@@ -133,13 +155,13 @@ This command supplies a ``last resort'' command to invoke during
 in the \fBpackage ifneeded\fR database.
 If the \fIcommand\fR argument is supplied, it contains the first part
 of a command;  when the command is invoked during a \fBpackage require\fR
-command, Tcl appends two additional arguments giving the desired package
-name and version.
+command, Tcl appends one or more additional arguments giving the desired
+package name and requirements.
 For example, if \fIcommand\fR is \fBfoo bar\fR and later the command
 \fBpackage require test 2.4\fR is invoked, then Tcl will execute
 the command \fBfoo bar test 2.4\fR to load the package.
-If no version number is supplied to the \fBpackage require\fR command,
-then the version argument for the invoked command will be an empty string.
+If no requirements are supplied to the \fBpackage require\fR command,
+then only the name will be added to invoked command.
 If the \fBpackage unknown\fR command is invoked without a \fIcommand\fR
 argument, then the current \fBpackage unknown\fR script is returned,
 or an empty string if there is none.
@@ -156,11 +178,77 @@ Returns a list of all the version numbers of \fIpackage\fR
 for which information has been provided by \fBpackage ifneeded\fR
 commands.
 .TP
-\fBpackage vsatisfies \fIversion1 version2\fR
-Returns 1 if scripts written for \fIversion2\fR will work unchanged
-with \fIversion1\fR (i.e. \fIversion1\fR is equal to or greater
-than \fIversion2\fR and they both have the same major version
-number), 0 otherwise.
+\fBpackage vsatisfies \fIversion requirement...\fR
+Returns 1 if the \fIversion\fR satisfies at least one of the given
+requirements, and 0 otherwise. Each \fIrequirement\fR is allowed to
+have any of the forms:
+.RS
+.TP
+min
+This form is called "min-bounded".
+.TP
+min-
+This form is called "min-unbound".
+.TP
+min-max
+This form is called "bounded".
+.RE
+.RS
+.PP
+where "min" and "max" are valid version numbers. The legacy syntax is
+a special case of the extended syntax, keeping backward
+compatibility. Regarding satisfaction the rules are:
+.RE
+.RS
+.IP [1]
+The \fIversion\fR has to pass at least one of the listed
+\fIrequirement\fRs to be satisfactory.
+.IP [2]
+A version satisfies a "bounded" requirement when
+.RS
+.IP [a]
+For \fImin\fR equal to the \fImax\fR if, and only if the \fIversion\fR
+is equal to the \fImin\fR.
+.IP [b]
+Otherwise if, and only if the \fIversion\fR is greater than or equal
+to the \fImin\fR, and less than the \fImax\fR, where both \fImin\fR
+and \fImax\fR have been padded internally with 'a0'. Note that while
+the comparison to \fImin\fR is inclusive, the comparison to
+\fImax\fR is exclusive.
+.RE
+.IP [3]
+A "min-bounded" requirement is a "bounded" requirement in disguise,
+with the \fImax\fR part implicitly specified as the next higher major
+version number of the \fImin\fR part. A version satisfies it per the
+rules above.
+.IP [4]
+A \fIversion\fR satisfies a "min-unbound" requirement if, and only if
+it is greater than or equal to the \fImin\fR, where the \fImin\fR has
+been padded internally with 'a0'. There is no constraint to a maximum.
+.RE
+.TP
+\fBpackage prefer \fR?\fBlatest\fR|\fBstable\fR?
+With no arguments, the commands returns either "latest" or "stable",
+whichever describes the current mode of selection logic used by
+\fBpackage require\fR.
+.RS
+.PP
+When passed the argument "latest", it sets the selection logic mode to
+"latest".
+.PP
+When passed the argument "stable", if the mode is already "stable",
+that value is kept.  If the mode is already "latest", then the attempt
+to set it back to "stable" is ineffective and the mode value remains
+"latest".
+.PP
+When passed any other value as an argument, raise an invalid argument
+error.
+.PP
+When an interpreter is created, its initial selection mode value is set to
+"stable" unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR
+is set.  If that environment variable is defined (with any value) then
+the initial (and permanent) selection mode value is set to "latest".
+.RE
 .SH "VERSION NUMBERS"
 .PP
 Version numbers consist of one or more decimal numbers separated
@@ -172,6 +260,16 @@ For example, version 2.1 is later than 1.3 and version
 3.4.6 is later than 3.3.5.
 Missing fields are equivalent to zeroes:  version 1.3 is the
 same as version 1.3.0 and 1.3.0.0, so it is earlier than 1.3.1 or 1.3.0.2.
+In addition, the letters 'a' (alpha) and/or 'b' (beta) may appear
+exactly once to replace a dot for separation. These letters
+semantically add a negative specifier into the version, where 'a' is
+-2, and 'b' is -1. Each may be specified only once, and 'a' or 'b' are
+mutually exclusive in a specifier. Thus 1.3a1 becomes (semantically)
+1.3.-2.1, 1.3b1 is 1.3.-1.1. Negative numbers are not directly allowed
+in version specifiers.
+A version number not containing the letters 'a' or 'b' as specified
+above is called a \fBstable\fR version, whereas presence of the letters
+causes the version to be called is \fBunstable\fR.
 A later version number is assumed to be upwards compatible with
 an earlier version number as long as both versions have the same
 major version number.

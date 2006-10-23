@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.13 2006/04/28 16:09:41 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.14 2006/10/23 21:01:51 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2539,11 +2539,11 @@ test io-29.27 {Tcl_Flush on closed pipeline} {stdio openpipe} {
     # you disable the debugger's signal interception.
     #
     if {[catch {flush $f} msg]} {
-	set x [list 1 $msg $errorCode]
+	set x [list 1 $msg $::errorCode]
 	catch {close $f}
     } else {
 	if {[catch {close $f} msg]} {
-	    set x [list 1 $msg $errorCode]
+	    set x [list 1 $msg $::errorCode]
 	} else {
 	    set x {this was supposed to fail and did not}
 	}
@@ -5278,15 +5278,15 @@ test io-40.15 {POSIX open access modes: RDWR} {
 test io-40.16 {tilde substitution in open} -constraints makeFileInHome -setup {
     makeFile {Some text} _test_ ~
 } -body {
-    file exists [file join $env(HOME) _test_]
+    file exists [file join $::env(HOME) _test_]
 } -cleanup {
     removeFile _test_ ~
 } -result 1
 test io-40.17 {tilde substitution in open} {
-    set home $env(HOME)
-    unset env(HOME)
+    set home $::env(HOME)
+    unset ::env(HOME)
     set x [list [catch {open ~/foo} msg] $msg]
-    set env(HOME) $home
+    set ::env(HOME) $home
     set x
 } {1 {couldn't find HOME environment variable to expand path}}
 

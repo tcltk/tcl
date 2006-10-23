@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.13 2006/04/28 16:09:41 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.14 2006/10/23 21:01:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1233,7 +1233,6 @@ rename waitForEvenSecondForFAT {}
 
 test cmdAH-24.12 {Tcl_FileObjCmd: mtime and daylight savings} {
     set name [file join [temporaryDirectory] clockchange]
-
     file delete -force $name
     close [open $name w]
     set time [clock scan "21:00:00 October 30 2004 GMT"]
@@ -1242,6 +1241,21 @@ test cmdAH-24.12 {Tcl_FileObjCmd: mtime and daylight savings} {
     file delete $name
     expr {$newmtime == $time ? 1 : "$newmtime != $time"}
 } {1}
+
+# bug 1420432: setting mtime fails for directories on windows.
+test cmdAH-24.13 {Tcl_FileObjCmd: directory mtime} {
+    set dirname [file join [temporaryDirectory] tmp[pid]]
+    file delete -force $dirname
+    file mkdir $dirname
+    set res [catch {
+        set old [file mtime $dirname]
+        file mtime $dirname 0
+        set new [file mtime $dirname]
+        list $new [expr {$old != $new}]
+    } err]
+    file delete -force $dirname
+    list $res $err
+} {0 {0 1}}
 
 # owned
 

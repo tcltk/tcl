@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.3.2.6 2005/11/03 17:52:07 dgp Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.3.2.7 2006/10/23 21:01:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -68,13 +68,17 @@ Tcl_RegisterConfig(
     CONST char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {
-    Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
-    Tcl_Obj *pDB = GetConfigDict(interp);
-    Tcl_Obj *pkg = Tcl_NewStringObj(pkgName, -1);
+    Tcl_Encoding venc;
+    Tcl_Obj *pDB;
+    Tcl_Obj *pkg;
     Tcl_Obj *pkgDict;
     Tcl_DString cmdName;
     Tcl_Config *cfg;
     int res;
+
+    venc = Tcl_GetEncoding(NULL, valEncoding);
+    pDB  = GetConfigDict(interp);
+    pkg  = Tcl_NewStringObj(pkgName, -1);
 
     /*
      * Phase I: Adding the provided information to the internal database of

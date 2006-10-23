@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Africa/Mogadishu) {
     {-9223372036854775808 10888 0 LMT}

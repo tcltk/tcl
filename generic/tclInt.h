@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.40 2006/08/29 16:19:28 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.41 2006/10/23 21:01:26 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1260,6 +1260,15 @@ typedef struct ResolverScheme {
 typedef struct LimitHandler LimitHandler;
 
 /*
+ * TIP #268.
+ * Values for the selection mode, i.e the package require preferences.
+ */
+
+enum PkgPreferOptions {
+    PKG_PREFER_LATEST, PKG_PREFER_STABLE
+};
+
+/*
  *----------------------------------------------------------------
  * This structure defines an interpreter, which is a collection of commands
  * plus other state information related to interpreting commands, such as
@@ -1374,7 +1383,6 @@ typedef struct Interp {
 				 * commands for packages that aren't described
 				 * in packageTable. Ckalloc'ed, may be
 				 * NULL. */
-
     /*
      * Miscellaneous information:
      */
@@ -1516,6 +1524,14 @@ typedef struct Interp {
 				 * NULL), takes precedence over a posix error
 				 * code returned by a channel operation. */
 
+    /*
+     * TIP #268.
+     * The currently active selection mode,
+     * i.e the package require preferences.
+     */
+
+    int packagePrefer;          /* Current package selection mode.
+				 */
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
@@ -2630,6 +2646,8 @@ MODULE_SCOPE int	TclCompileLlengthCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileLsetCmd(Tcl_Interp* interp,
 			    Tcl_Parse* parsePtr, struct CompileEnv* envPtr);
+MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp, Tcl_Parse *parsePtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileRegexpCmd(Tcl_Interp* interp,
 			    Tcl_Parse* parsePtr, struct CompileEnv* envPtr);
 MODULE_SCOPE int	TclCompileReturnCmd(Tcl_Interp *interp,
@@ -2720,15 +2738,20 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL
 
+/* Invalidate the string rep first so we can use the bytes value \
+ * for our pointer chain, and signal an obj deletion (as opposed \
+ * to shimmering) with 'length == -1' */ \
+
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
 	if ((objPtr)->typePtr && (objPtr)->typePtr->freeIntRepProc) { \
 	    TclFreeObj(objPtr); \
 	} else { \
-	    if ((objPtr)->bytes \
-		    && ((objPtr)->bytes != tclEmptyStringRep)) { \
-		ckfree((char *) (objPtr)->bytes); \
+  	    if ((objPtr)->bytes \
+	            && ((objPtr)->bytes != tclEmptyStringRep)) { \
+	        ckfree((char *) (objPtr)->bytes); \
 	    } \
+            (objPtr)->length = -1; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} \

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.22 2006/09/05 16:14:38 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.23 2006/10/23 21:01:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -618,7 +618,7 @@ test expr-14.22 {CompilePrimaryExpr: subcommand primary} {
 } 123
 test expr-14.23 {CompilePrimaryExpr: error in subcommand primary} -body {
     catch {expr {[set]}} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -639,7 +639,7 @@ test expr-14.28 {CompilePrimaryExpr: subexpression primary} {
 } 14
 test expr-14.29 {CompilePrimaryExpr: error in subexpression primary} -body {
     catch {expr 2+(3*[set])} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -659,25 +659,25 @@ test expr-15.1 {CompileMathFuncCall: missing parenthesis} -body {
 } -returnCodes error -match glob -result *
 test expr-15.2 {CompileMathFuncCall: unknown math function} -body {
     catch {expr whazzathuh(1)} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {* "*whazzathuh"
     while *ing
 "expr whazzathuh(1)"}
 test expr-15.3 {CompileMathFuncCall: too many arguments} -body {
     catch {expr sin(1,2,3)} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {too many arguments for math function*
     while *ing
 "expr sin(1,2,3)"}
 test expr-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {too few arguments for math function*
     while *ing
 "expr sin()"}
 test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
     catch {expr pow(1)} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {too few arguments for math function*
     while *ing
 "expr pow(1)"}
@@ -970,9 +970,16 @@ test expr-23.39 {INST_EXPON: big integer} {
 } 1[string repeat 0 60]
 test expr-23.40 {INST_EXPON: overflow to big integer} {expr {(-10)**3}} -1000
 test expr-23.41 {INST_EXPON: overflow to big integer} {expr 2**64} [expr 1<<64]
-test expr-23.41 {INST_EXPON: overflow to big integer} {expr 4**32} [expr 1<<64]
-test expr-23.41 {INST_EXPON: overflow to big integer} {expr 16**16} [expr 1<<64]
-test expr-23.41 {INST_EXPON: overflow to big integer} {expr 256**8} [expr 1<<64]
+test expr-23.42 {INST_EXPON: overflow to big integer} {expr 4**32} [expr 1<<64]
+test expr-23.43 {INST_EXPON: overflow to big integer} {expr 16**16} [expr 1<<64]
+test expr-23.44 {INST_EXPON: overflow to big integer} {expr 256**8} [expr 1<<64]
+test expr-23.45 {INST_EXPON: Bug 1555371} {expr 2**1} 2
+test expr-23.46 {INST_EXPON: Bug 1561260} -body {
+    expr 5**28
+} -match glob -result *5
+test expr-23.47 {INST_EXPON: Bug 1561260} {
+    expr 2**32*5**32
+} 1[string repeat 0 32]
 
 # Some compilers get this wrong; ensure that we work around it correctly
 test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
@@ -984,6 +991,8 @@ test expr-24.6 {expr edge cases; shifting} longIs32bit {expr int(5<<63)} 0
 test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<32} 21474836480
 test expr-24.8 {expr edge cases; shifting} {expr wide(10<<63)} 0
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
+
+test expr-24.10 {INST_LSHIFT: Bug 1567222} {expr 500000000000000<<28} 134217728000000000000000
 
 # List membership tests
 test expr-25.1 {'in' operator} {expr {"a" in "a b c"}} 1

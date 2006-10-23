@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.17 2006/02/28 16:34:55 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.18 2006/10/23 21:01:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1008,7 +1008,7 @@ test namespace-25.5 {NamespaceEvalCmd, multiple args} {
     namespace eval test_ns_1 "set" "v"
 } {314159}
 test namespace-25.6 {NamespaceEvalCmd, error in eval'd script} {
-    list [catch {namespace eval test_ns_1 {xxxx}} msg] $msg $errorInfo
+    list [catch {namespace eval test_ns_1 {xxxx}} msg] $msg $::errorInfo
 } {1 {invalid command name "xxxx"} {invalid command name "xxxx"
     while executing
 "xxxx"
@@ -1016,13 +1016,13 @@ test namespace-25.6 {NamespaceEvalCmd, error in eval'd script} {
     invoked from within
 "namespace eval test_ns_1 {xxxx}"}}
 test namespace-25.7 {NamespaceEvalCmd, error in eval'd script} {
-    list [catch {namespace eval test_ns_1 {error foo bar baz}} msg] $msg $errorInfo
+    list [catch {namespace eval test_ns_1 {error foo bar baz}} msg] $msg $::errorInfo
 } {1 foo {bar
     (in namespace eval "::test_ns_1" script line 1)
     invoked from within
 "namespace eval test_ns_1 {error foo bar baz}"}}
 test namespace-25.8 {NamespaceEvalCmd, error in eval'd script} {
-    list [catch {namespace eval test_ns_1 error foo bar baz} msg] $msg $errorInfo
+    list [catch {namespace eval test_ns_1 error foo bar baz} msg] $msg $::errorInfo
 } {1 foo {bar
     (in namespace eval "::test_ns_1" script line 1)
     invoked from within
@@ -1824,7 +1824,7 @@ test namespace-47.2 {ensemble: unknown handler} {
 	}
 	namespace ensemble create -unknown ::ns::Magic
     }
-    list [catch {ns spong} msg] $msg $errorInfo [namespace delete ns]
+    list [catch {ns spong} msg] $msg $::errorInfo [namespace delete ns]
 } {1 foobar {foobar
     while executing
 "error foobar"
@@ -1857,7 +1857,7 @@ test namespace-47.4 {ensemble: unknown handler} {
 	}
 	namespace ensemble create -unknown ::ns::Magic
     }
-    list [catch {ns spong} msg] $msg $errorInfo [namespace delete ns]
+    list [catch {ns spong} msg] $msg $::errorInfo [namespace delete ns]
 } {1 {unknown subcommand handler returned bad code: break} {unknown subcommand handler returned bad code: break
     result of ensemble unknown subcommand handler: ::ns::Magic ::ns spong
     invoked from within
@@ -1882,7 +1882,7 @@ test namespace-47.6 {ensemble: unknown handler} {
     proc bar {args} {
 	return "\{"
     }
-    set result [list [catch {foo bar} msg] $msg $errorInfo]
+    set result [list [catch {foo bar} msg] $msg $::errorInfo]
     rename foo {}
     set result
 } {1 {unmatched open brace in list} {unmatched open brace in list
@@ -2402,6 +2402,11 @@ test namespace-51.15 {namespace resolution path control} -body {
     namespace delete ::test_ns_1
     namespace delete ::test_ns_2
 }
+test namespace-51.16 {Bug 1566526} {
+    interp create slave
+    slave eval namespace eval demo namespace path ::
+    interp delete slave
+} {}
 
 # TIP 181 - namespace unknown tests
 test namespace-52.1 {unknown: default handler ::unknown} {

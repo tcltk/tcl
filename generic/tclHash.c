@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.12 2006/08/29 16:19:28 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.13 2006/10/23 21:01:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -263,75 +263,10 @@ Tcl_FindHashEntry(
     Tcl_HashTable *tablePtr,	/* Table in which to lookup entry. */
     CONST char *key)		/* Key to use to find matching entry. */
 {
-    register Tcl_HashEntry *hPtr;
-    Tcl_HashKeyType *typePtr;
-    unsigned int hash;
-    int index;
 
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-    if (tablePtr->keyType == TCL_STRING_KEYS) {
-	typePtr = &tclStringHashKeyType;
-    } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
-	typePtr = &tclOneWordHashKeyType;
-    } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
-	typePtr = tablePtr->typePtr;
-    } else {
-	typePtr = &tclArrayHashKeyType;
-    }
-#else
-    typePtr = tablePtr->typePtr;
-    if (typePtr == NULL) {
-	Tcl_Panic("called %s on deleted table", "Tcl_FindHashEntry");
-	return NULL;
-    }
-#endif
-
-    if (typePtr->hashKeyProc) {
-	hash = typePtr->hashKeyProc (tablePtr, (VOID *) key);
-	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	    index = RANDOM_INDEX (tablePtr, hash);
-	} else {
-	    index = hash & tablePtr->mask;
-	}
-    } else {
-	hash = (unsigned int) key;
-	index = RANDOM_INDEX (tablePtr, hash);
-    }
-
-    /*
-     * Search all of the entries in the appropriate bucket.
-     */
-
-    if (typePtr->compareKeysProc) {
-	Tcl_CompareHashKeysProc *compareKeysProc = typePtr->compareKeysProc;
-	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
-		hPtr = hPtr->nextPtr) {
-#if TCL_HASH_KEY_STORE_HASH
-	    if (hash != (unsigned int) hPtr->hash) {
-		continue;
-	    }
-#endif
-	    if (compareKeysProc ((VOID *) key, hPtr)) {
-		return hPtr;
-	    }
-	}
-    } else {
-	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
-		hPtr = hPtr->nextPtr) {
-#if TCL_HASH_KEY_STORE_HASH
-	    if (hash != (unsigned int) hPtr->hash) {
-		continue;
-	    }
-#endif
-	    if (key == hPtr->key.oneWordValue) {
-		return hPtr;
-	    }
-	}
-    }
-
-    return NULL;
+    return Tcl_CreateHashEntry(tablePtr, key, NULL);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -412,7 +347,8 @@ Tcl_CreateHashEntry(
 	    }
 #endif
 	    if (compareKeysProc ((VOID *) key, hPtr)) {
-		*newPtr = 0;
+		if (newPtr)
+		    *newPtr = 0;
 		return hPtr;
 	    }
 	}
@@ -425,11 +361,16 @@ Tcl_CreateHashEntry(
 	    }
 #endif
 	    if (key == hPtr->key.oneWordValue) {
-		*newPtr = 0;
+		if (newPtr)
+		    *newPtr = 0;
 		return hPtr;
 	    }
 	}
     }
+
+    if (!newPtr)
+	return NULL;
+
 
     /*
      * Entry not found. Add a new one to the bucket.

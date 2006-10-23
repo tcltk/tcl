@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.12 2006/04/28 16:09:40 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.13 2006/10/23 21:01:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -905,6 +905,30 @@ test binary-26.10 {Tcl_BinaryObjCmd: scan} {
     set arg2 bar
     list [binary scan \x70\x87\x05 c2c* arg1 arg2] $arg1 $arg2
 } {2 {112 -121} 5}
+test binary-26.11 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1}
+    list [binary scan \x52\xa3 cu* arg1] $arg1
+} {1 {82 163}}
+test binary-26.12 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1}
+    list [binary scan \x52\xa3 cu arg1] $arg1
+} {1 82}
+test binary-26.13 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1}
+    list [binary scan \xff cu arg1] $arg1
+} {1 255}
+test binary-26.14 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x80 cuc arg1 arg2] $arg1 $arg2
+} {2 128 -128}
+test binary-26.15 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x80 ccu arg1 arg2] $arg1 $arg2
+} {2 -128 128}
 
 test binary-27.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc s} msg] $msg
@@ -945,6 +969,22 @@ test binary-27.9 {Tcl_BinaryObjCmd: scan} {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x05 s2c* arg1 arg2] $arg1 $arg2
 } {2 {-23726 21587} 5}
+test binary-27.10 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1}
+    list [binary scan \x52\xa3\x53\x54 su* arg1] $arg1
+} {1 {41810 21587}}
+test binary-27.11 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \xff\xff\xff\xff sus arg1 arg2] $arg1 $arg2
+} {2 65535 -1}
+test binary-27.12 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \xff\xff\xff\xff ssu arg1 arg2] $arg1 $arg2
+} {2 -1 65535}
 
 test binary-28.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc S} msg] $msg
@@ -985,6 +1025,14 @@ test binary-28.9 {Tcl_BinaryObjCmd: scan} {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x05 S2c* arg1 arg2] $arg1 $arg2
 } {2 {21155 21332} 5}
+test binary-28.10 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1}
+    list [binary scan \x52\xa3\x53\x54 Su* arg1] $arg1
+} {1 {21155 21332}}
+test binary-28.11 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1}
+    list [binary scan \xa3\x52\x54\x53 Su* arg1] $arg1
+} {1 {41810 21587}}
 
 test binary-29.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc i} msg] $msg
@@ -1025,6 +1073,18 @@ test binary-29.9 {Tcl_BinaryObjCmd: scan} {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 i2c* arg1 arg2] $arg1 $arg2
 } {2 {1414767442 67305985} 5}
+test binary-29.10 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff iui arg1 arg2] $arg1 $arg2
+} {2 4294967295 -1}
+test binary-29.11 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff iiu arg1 arg2] $arg1 $arg2
+} {2 -1 4294967295}
+test binary-29.12 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    list [binary scan \x80\x00\x00\x00\x00\x00\x00\x80 iuiu arg1 arg2] $arg1 $arg2
+} {2 128 2147483648}
 
 test binary-30.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc I} msg] $msg
@@ -1065,6 +1125,18 @@ test binary-30.9 {Tcl_BinaryObjCmd: scan} {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 I2c* arg1 arg2] $arg1 $arg2
 } {2 {1386435412 16909060} 5}
+test binary-30.10 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff IuI arg1 arg2] $arg1 $arg2
+} {2 4294967295 -1}
+test binary-30.11 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff IIu arg1 arg2] $arg1 $arg2
+} {2 -1 4294967295}
+test binary-30.12 {Tcl_BinaryObjCmd: scan} {
+    catch {unset arg1 arg2}
+    list [binary scan \x80\x00\x00\x00\x00\x00\x00\x80 IuIu arg1 arg2] $arg1 $arg2
+} {2 2147483648 128}
 
 test binary-31.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc f} msg] $msg
@@ -1384,6 +1456,26 @@ test binary-39.5 {ScanNumber: sign extension} {
     catch {unset arg1}
     list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 I5 arg1] $arg1
 } {1 {16843010 -2130640639 25297153 16876033 16843137}}
+test binary-39.6 {ScanNumber: no sign extension} {
+    catch {unset arg1}
+    list [binary scan \x52\xa3 cu2 arg1] $arg1
+} {1 {82 163}}
+test binary-39.7 {ScanNumber: no sign extension} {
+    catch {unset arg1}
+    list [binary scan \x01\x02\x01\x81\x82\x01\x81\x82 su4 arg1] $arg1
+} {1 {513 33025 386 33409}}
+test binary-39.8 {ScanNumber: no sign extension} {
+    catch {unset arg1}
+    list [binary scan \x01\x02\x01\x81\x82\x01\x81\x82 Su4 arg1] $arg1
+} {1 {258 385 33281 33154}}
+test binary-39.9 {ScanNumber: no sign extension} {
+    catch {unset arg1}
+    list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 iu5 arg1] $arg1
+} {1 {33620225 16843137 16876033 25297153 2164326657}}
+test binary-39.10 {ScanNumber: no sign extension} {
+    catch {unset arg1}
+    list [binary scan \x01\x01\x01\x02\x81\x01\x01\x01\x01\x82\x01\x01\x01\x01\x82\x01\x01\x01\x01\x81 Iu5 arg1] $arg1
+} {1 {16843010 2164326657 25297153 16876033 16843137}}
 
 test binary-40.3 {ScanNumber: NaN} \
     -body {
@@ -1463,6 +1555,26 @@ test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
     binary scan [binary format W [expr {wide(3) << 31}]] W x
     set x
 } 6442450944
+test binary-43.5 {Tcl_BinaryObjCmd: scan wide int} {} {
+    catch {unset arg1}
+    list [binary scan \x80[string repeat \x00 7] W arg1] $arg1
+} {1 -9223372036854775808}
+test binary-43.6 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    catch {unset arg1}
+    list [binary scan \x80[string repeat \x00 7] Wu arg1] $arg1
+} {1 9223372036854775808}
+test binary-43.7 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    catch {unset arg1}
+    list [binary scan [string repeat \x00 7]\x80 wu arg1] $arg1
+} {1 9223372036854775808}
+test binary-43.8 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    catch {unset arg1 arg2}
+    list [binary scan \x80[string repeat \x00 7]\x80[string repeat \x00 7] WuW arg1 arg2] $arg1 $arg2
+} {2 9223372036854775808 -9223372036854775808}
+test binary-43.9 {Tcl_BinaryObjCmd: scan unsigned wide int} {} {
+    catch {unset arg1 arg2}
+    list [binary scan [string repeat \x00 7]\x80[string repeat \x00 7]\x80 wuw arg1 arg2] $arg1 $arg2
+} {2 9223372036854775808 -9223372036854775808}
 
 test binary-45.1 {Tcl_BinaryObjCmd: combined wide int handling} {
     binary scan [binary format sws 16450 -1 19521] c* x
@@ -1800,6 +1912,18 @@ test binary-54.9 {Tcl_BinaryObjCmd: scan} littleEndian {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
 } {2 {-23726 21587} 5}
+test binary-55.10 {Tcl_BinaryObjCmd: scan} littleEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x80\x00\x80 tut arg1 arg2] $arg1 $arg2
+} {2 32768 -32768}
+test binary-55.11 {Tcl_BinaryObjCmd: scan} littleEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x80\x00\x80 ttu arg1 arg2] $arg1 $arg2
+} {2 -32768 32768}
 
 # scan t (b)
 test binary-55.1 {Tcl_BinaryObjCmd: scan} {
@@ -1841,6 +1965,18 @@ test binary-55.9 {Tcl_BinaryObjCmd: scan} bigEndian  {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x05 t2c* arg1 arg2] $arg1 $arg2
 } {2 {21155 21332} 5}
+test binary-55.10 {Tcl_BinaryObjCmd: scan} bigEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x80\x00 tut arg1 arg2] $arg1 $arg2
+} {2 32768 -32768}
+test binary-55.11 {Tcl_BinaryObjCmd: scan} bigEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x80\x00 ttu arg1 arg2] $arg1 $arg2
+} {2 -32768 32768}
 
 # scan n (s)
 test binary-56.1 {Tcl_BinaryObjCmd: scan} {
@@ -1882,6 +2018,18 @@ test binary-56.9 {Tcl_BinaryObjCmd: scan} littleEndian  {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
 } {2 {1414767442 67305985} 5}
+test binary-57.10 {Tcl_BinaryObjCmd: scan} littleEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x00\x00\x80\x00\x00\x00 nun arg1 arg2] $arg1 $arg2
+} {2 128 128}
+test binary-57.11 {Tcl_BinaryObjCmd: scan} littleEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x00\x00\x80\x00\x00\x00\x80 nun arg1 arg2] $arg1 $arg2
+} {2 2147483648 -2147483648}
 
 # scan n (b)
 test binary-57.1 {Tcl_BinaryObjCmd: scan} {
@@ -1923,6 +2071,18 @@ test binary-57.9 {Tcl_BinaryObjCmd: scan} bigEndian  {
     set arg2 bar
     list [binary scan \x52\xa3\x53\x54\x01\x02\x03\x04\x05 n2c* arg1 arg2] $arg1 $arg2
 } {2 {1386435412 16909060} 5}
+test binary-57.10 {Tcl_BinaryObjCmd: scan} bigEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x80\x00\x00\x00\x80\x00\x00\x00 nun arg1 arg2] $arg1 $arg2
+} {2 2147483648 -2147483648}
+test binary-57.11 {Tcl_BinaryObjCmd: scan} bigEndian  {
+    catch {unset arg1 arg2}
+    set arg1 foo
+    set arg2 bar
+    list [binary scan \x00\x00\x00\x80\x00\x00\x00\x80 nun arg1 arg2] $arg1 $arg2
+} {2 128 128}
 
 # scan Q/q
 test binary-58.1 {Tcl_BinaryObjCmd: scan} {

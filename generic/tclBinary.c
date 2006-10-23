@@ -10,10 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.12 2006/08/29 16:19:26 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.13 2006/10/23 21:01:24 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tclTomMath.h"
 
 #include <math.h>
 
@@ -24,6 +25,13 @@
 
 #define BINARY_ALL -1		/* Use all elements in the argument. */
 #define BINARY_NOCOUNT -2	/* No count was specified in format. */
+
+/*
+ * The following flags may be ORed together and returned by GetFormatSpec
+ */
+
+#define BINARY_SIGNED 0		/* Field to be read as signed data */
+#define BINARY_UNSIGNED 1	/* Field to be read as unsigned data */
 
 /*
  * The following defines the maximum number of different (integer) numbers
@@ -54,9 +62,9 @@ static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(char **formatPtr, char *cmdPtr,
-			    int *countPtr);
+			    int *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
-			    Tcl_HashTable **numberCachePtr);
+			    int flags, Tcl_HashTable **numberCachePtr);
 static int		SetByteArrayFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
@@ -563,6 +571,7 @@ Tcl_BinaryObjCmd(
     char cmd;			/* Current format character. */
     int count;			/* Count associated with current format
 				 * character. */
+    int flags;			/* Format field flags */
     char *format;		/* Pointer to current position in format
 				 * string. */
     Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
@@ -608,7 +617,8 @@ Tcl_BinaryObjCmd(
 	length = 0;
 	while (*format != '\0') {
 	    str = format;
-	    if (!GetFormatSpec(&format, &cmd, &count)) {
+	    flags = 0;
+	    if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
 		break;
 	    }
 	    switch (cmd) {
@@ -770,7 +780,8 @@ Tcl_BinaryObjCmd(
 	cursor = buffer;
 	maxPos = cursor;
 	while (*format != 0) {
-	    if (!GetFormatSpec(&format, &cmd, &count)) {
+	    flags = 0;
+	    if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
 		break;
 	    }
 	    if ((count == 0) && (cmd != '@')) {
@@ -1028,7 +1039,8 @@ Tcl_BinaryObjCmd(
 	offset = 0;
 	while (*format != '\0') {
 	    str = format;
-	    if (!GetFormatSpec(&format, &cmd, &count)) {
+	    flags = 0;
+	    if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
 		goto done;
 	    }
 	    switch (cmd) {
@@ -1240,7 +1252,7 @@ Tcl_BinaryObjCmd(
 		    if ((length - offset) < size) {
 			goto done;
 		    }
-		    valuePtr = ScanNumber(buffer+offset, cmd, &numberCachePtr);
+		    valuePtr = ScanNumber(buffer+offset, cmd, flags, &numberCachePtr);
 		    offset += size;
 		} else {
 		    if (count == BINARY_ALL) {
@@ -1252,7 +1264,7 @@ Tcl_BinaryObjCmd(
 		    valuePtr = Tcl_NewObj();
 		    src = buffer+offset;
 		    for (i = 0; i < count; i++) {
-			elementPtr = ScanNumber(src, cmd, &numberCachePtr);
+			elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
 			src += size;
 			Tcl_ListObjAppendElement(NULL, valuePtr, elementPtr);
 		    }
@@ -1373,7 +1385,8 @@ static int
 GetFormatSpec(
     char **formatPtr,		/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
-    int *countPtr)		/* Pointer to repeat count value. */
+    int *countPtr,		/* Pointer to repeat count value. */
+    int *flagsPtr)		/* Pointer to field flags */
 {
     /*
      * Skip any leading blanks.
@@ -1397,6 +1410,10 @@ GetFormatSpec(
 
     *cmdPtr = **formatPtr;
     (*formatPtr)++;
+    if (**formatPtr == 'u') {
+	(*formatPtr)++;
+	(*flagsPtr) |= BINARY_UNSIGNED;
+    }
     if (**formatPtr == '*') {
 	(*formatPtr)++;
 	(*countPtr) = BINARY_ALL;
@@ -1778,6 +1795,7 @@ static Tcl_Obj *
 ScanNumber(
     unsigned char *buffer,	/* Buffer to scan number from. */
     int type,			/* Format character from "binary scan" */
+    int flags,			/* Format field flags */
     Tcl_HashTable **numberCachePtrPtr)
 				/* Place to look for cache of scanned
 				 * value objects, or NULL if too many
@@ -1794,6 +1812,7 @@ ScanNumber(
      * the exact size of the integer types. So, we have to handle sign
      * extension explicitly by checking the high bit and padding with 1's as
      * needed.
+     * This practice is disabled if the BINARY_UNSIGNED flag is set.
      */
 
     switch (type) {
@@ -1806,8 +1825,10 @@ ScanNumber(
 	 */
 
 	value = buffer[0];
-	if (value & 0x80) {
-	    value |= -0x100;
+	if (!(flags & BINARY_UNSIGNED)) {
+	    if (value & 0x80) {
+		value |= -0x100;
+	    }
 	}
 	goto returnNumericObject;
 
@@ -1824,8 +1845,10 @@ ScanNumber(
 	} else {
 	    value = (long) (buffer[1] + (buffer[0] << 8));
 	}
-	if (value & 0x8000) {
-	    value |= -0x10000;
+	if (!(flags & BINARY_UNSIGNED)) {
+	    if (value & 0x8000) {
+		value |= -0x10000;
+	    }
 	}
 	goto returnNumericObject;
 
@@ -1840,22 +1863,28 @@ ScanNumber(
 	    value = (long) (buffer[0]
 		    + (buffer[1] << 8)
 		    + (buffer[2] << 16)
-		    + (buffer[3] << 24));
+		    + (((long)buffer[3]) << 24));
 	} else {
 	    value = (long) (buffer[3]
 		    + (buffer[2] << 8)
 		    + (buffer[1] << 16)
-		    + (buffer[0] << 24));
+		    + (((long)buffer[0]) << 24));
 	}
 
 	/*
 	 * Check to see if the value was sign extended properly on systems
 	 * where an int is more than 32-bits.
+	 * We avoid caching unsigned integers as we cannot distinguish between
+	 * 32bit signed and unsigned in the hash (short and char are ok).
 	 */
 
-	if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
-	    value -= (((unsigned int)1)<<31);
-	    value -= (((unsigned int)1)<<31);
+	if ((flags & BINARY_UNSIGNED)) {
+	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
+	} else {
+	    if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
+		value -= (((unsigned int)1)<<31);
+		value -= (((unsigned int)1)<<31);
+	    }
 	}
 
     returnNumericObject:
@@ -1920,7 +1949,16 @@ ScanNumber(
 		    | (((Tcl_WideUInt) buffer[1]) << 48)
 		    | (((Tcl_WideUInt) buffer[0]) << 56);
 	}
-	return Tcl_NewWideIntObj((Tcl_WideInt) uwvalue);
+	if (flags & BINARY_UNSIGNED) {
+	    Tcl_Obj *bigObj = NULL;
+	    mp_int big;
+
+	    TclBNInitBignumFromWideUInt(&big, uwvalue);
+	    bigObj = Tcl_NewBignumObj(&big);
+	    return bigObj;
+	} else {
+	    return Tcl_NewWideIntObj((Tcl_WideInt) uwvalue);
+	}
 
 	/*
 	 * Do not cache double values; they are already too large to use as

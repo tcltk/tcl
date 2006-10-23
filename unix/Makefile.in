@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.26 2006/09/05 16:14:38 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.27 2006/10/23 21:02:07 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -132,7 +132,8 @@ GENERIC_FLAGS =
 #GENERIC_FLAGS = -DTCL_GENERIC_ONLY
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
-	tclUnixTime.o tclUnixInit.o tclUnixThrd.o 
+	tclUnixTime.o tclUnixInit.o tclUnixThrd.o \
+	tclUnixCompat.o 
 #UNIX_OBJS =
 NOTIFY_OBJS = tclUnixNotfy.o
 #NOTIFY_OBJS =
@@ -257,6 +258,10 @@ CC			= @CC@
 # Flags to be passed to installManPage to control how the manpages
 # should be installed (symlinks, compression, package name suffix).
 MAN_FLAGS               = @MAN_FLAGS@
+
+# If non-empty, install the timezone files that are included with Tcl,
+# otherwise use the ones that ship with the OS.
+INSTALL_TZDATA		= @INSTALL_TZDATA@
 
 #----------------------------------------------------------------
 # The information below is usually usable as is.  The configure
@@ -514,7 +519,8 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixTest.c \
 	$(UNIX_DIR)/tclUnixThrd.c \
 	$(UNIX_DIR)/tclUnixTime.c \
-	$(UNIX_DIR)/tclUnixInit.c
+	$(UNIX_DIR)/tclUnixInit.c \
+	$(UNIX_DIR)/tclUnixCompat.c
 
 NOTIFY_SRCS = \
 	$(UNIX_DIR)/tclUnixNotfy.c
@@ -748,7 +754,7 @@ install-binaries: binaries
 	fi
 	@EXTRA_INSTALL_BINARIES@
 
-install-libraries: libraries install-tzdata install-msgs
+install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
 	    do \
 	    if [ ! -d $$i ] ; then \
@@ -788,17 +794,17 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http1.0; \
 	    done;
-	@echo "Installing package http 2.5.2 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/http-2.5.2.tm;
+	@echo "Installing package http 2.5.3 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/http-2.5.3.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/opt0.4; \
 	    done;
-	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
-	@echo "Installing package tcltest 2.2.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.8.tm;
+	@echo "Installing package msgcat 1.4.2 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.2.tm;
+	@echo "Installing package tcltest 2.3a1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3a1.tm;
 	@echo "Installing library encoding directory";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
@@ -1437,6 +1443,9 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
+
+tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
 
 # The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c

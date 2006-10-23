@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr.test,v 1.9.2.5 2006/04/28 16:09:41 dgp Exp $
+# RCS: @(#) $Id: incr.test,v 1.9.2.6 2006/10/23 21:01:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -176,7 +176,7 @@ test incr-1.18 {TclCompileIncrCmd: increment given, simple int} {
 test incr-1.19 {TclCompileIncrCmd: increment given, but erroneous} -body {
     set i 5
     catch {incr i [set]} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -214,7 +214,7 @@ test incr-1.26 {TclCompileIncrCmd: runtime error, bad variable name} {
     incr {"foo}
 } 1
 test incr-1.27 {TclCompileIncrCmd: runtime error, bad variable name} -body {
-    list [catch {incr [set]} msg] $msg $errorInfo
+    list [catch {incr [set]} msg] $msg $::errorInfo
 } -match glob -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}}
@@ -222,7 +222,7 @@ test incr-1.28 {TclCompileIncrCmd: runtime error, readonly variable} -body {
     proc readonly args {error "variable is read-only"}
     set x 123
     trace var x w readonly
-    list [catch {incr x 1} msg] $msg $errorInfo
+    list [catch {incr x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *
@@ -423,7 +423,7 @@ test incr-2.19 {incr command (not compiled): increment given, but erroneous} -bo
     set z incr
     set i 5
     catch {$z i [set]} msg
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -469,7 +469,7 @@ test incr-2.26 {incr command (not compiled): runtime error, bad variable name} {
 } 1
 test incr-2.27 {incr command (not compiled): runtime error, bad variable name} -body {
     set z incr
-    list [catch {$z [set]} msg] $msg $errorInfo
+    list [catch {$z [set]} msg] $msg $::errorInfo
 } -match glob -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}}
@@ -478,7 +478,7 @@ test incr-2.28 {incr command (not compiled): runtime error, readonly variable} -
     proc readonly args {error "variable is read-only"}
     set x 123
     trace var x w readonly
-    list [catch {$z x 1} msg] $msg $errorInfo
+    list [catch {$z x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *
@@ -492,13 +492,13 @@ test incr-2.29 {incr command (not compiled): runtime error, bad variable value} 
 test incr-2.30 {incr command (not compiled): bad increment} {
     set z incr
     set x 0
-    list [catch {$z x 1a} msg] $msg $errorInfo
+    list [catch {$z x 1a} msg] $msg $::errorInfo
 } {1 {expected integer but got "1a"} {expected integer but got "1a"
     (reading increment)
     invoked from within
 "$z x 1a"}}
 test incr-2.31 {incr command (compiled): bad increment} {
-    list [catch {incr x 1a} msg] $msg $errorInfo
+    list [catch {incr x 1a} msg] $msg $::errorInfo
 } {1 {expected integer but got "1a"} {expected integer but got "1a"
     (reading increment)
     invoked from within

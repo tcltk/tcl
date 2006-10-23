@@ -215,10 +215,10 @@ TclpThreadExit(
 int
 TclpThreadGetStackSize(void)
 {
+    size_t stackSize = 0;
 #if defined(HAVE_PTHREAD_ATTR_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
     pthread_attr_t threadAttr;	/* This will hold the thread attributes for
 				 * the current thread. */
-    size_t stackSize;
 
     if (pthread_attr_init(&threadAttr) != 0) {
 	return -1;
@@ -232,15 +232,22 @@ TclpThreadGetStackSize(void)
 	return -1;
     }
     pthread_attr_destroy(&threadAttr);
-    return (int) stackSize;
+#elif defined(HAVE_PTHREAD_GET_STACKSIZE_NP)
+#ifdef __APPLE__
+    /*
+     * On Darwin, the API below does not return the correct stack size for the
+     * main thread (which is not a real pthread), so fallback to getrlimit().
+     */  
+    if (!pthread_main_np())
+#endif
+    stackSize = pthread_get_stacksize_np(pthread_self());
 #else
     /*
      * Cannot determine the real stack size of this thread. The caller might
      * want to try looking at the process accounting limits instead.
      */
-
-    return 0;
 #endif
+    return (int) stackSize;
 }
 #endif /* TCL_THREADS */
 

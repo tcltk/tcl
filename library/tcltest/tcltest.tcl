@@ -16,15 +16,16 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.6 2005/02/24 19:53:34 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.7 2006/10/23 21:01:36 dgp Exp $
 
+package require Tcl 8.5		;# To provide an alpha version
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
 
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.2.8
+    variable Version 2.3a1
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -609,15 +610,15 @@ namespace eval tcltest {
     proc AcceptVerbose { level } {
 	set level [AcceptList $level]
 	if {[llength $level] == 1} {
-	    if {![regexp {^(pass|body|skip|start|error)$} $level]} {
+	    if {![regexp {^(pass|body|skip|start|error|line)$} $level]} {
 		# translate single characters abbreviations to expanded list
-		set level [string map {p pass b body s skip t start e error} \
+		set level [string map {p pass b body s skip t start e error l line} \
 			[split $level {}]]
 	    }
 	}
 	set valid [list]
 	foreach v $level {
-	    if {[regexp {^(pass|body|skip|start|error)$} $v]} {
+	    if {[regexp {^(pass|body|skip|start|error|line)$} $v]} {
 		lappend valid $v
 	    }
 	}
@@ -631,11 +632,12 @@ namespace eval tcltest {
 
     # Default verbosity is to show bodies of failed tests
     Option -verbose {body error} {
-	Takes any combination of the values 'p', 's', 'b', 't' and 'e'.
+	Takes any combination of the values 'p', 's', 'b', 't', 'e' and 'l'.
 	Test suite will display all passed tests if 'p' is specified, all
 	skipped tests if 's' is specified, the bodies of failed tests if
 	'b' is specified, and when tests start if 't' is specified.
-	ErrorInfo is displayed if 'e' is specified.
+	ErrorInfo is displayed if 'e' is specified. Source file line
+	information of failed tests is displayed if 'l' is specified. 
     } AcceptVerbose verbose
 
     # Match and skip patterns default to the empty list, except for
@@ -2087,7 +2089,19 @@ proc tcltest::test {name description args} {
     if {![IsVerbose body]} {
 	set body ""
     }	
-    puts [outputChannel] "\n==== $name\
+    puts [outputChannel] "\n"
+    if {[IsVerbose line]} {
+	set testFile [file normalize [uplevel 1 {info script}]]
+	if {[file readable $testFile]} {
+	    set testFd [open $testFile r]
+	    set lineNo [expr {[lsearch -regexp [split [read $testFd] "\n"] \
+		    "^\[ \t\]*test [string map {. \\.} $name] "]+1}]
+	    close $testFd
+	    puts [outputChannel] "$testFile:$lineNo: test failed:\
+		    $name [string trim $description]"
+	}
+    }	
+    puts [outputChannel] "==== $name\
 	    [string trim $description] FAILED"
     if {[string length $body]} {
 	puts [outputChannel] "==== Contents of test case:"

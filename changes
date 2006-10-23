@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.9 2006/08/29 16:19:24 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.10 2006/10/23 21:01:22 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6755,9 +6755,31 @@ bytecode while references still on the stack (porter,ryazanov)
 2006-05-27 (bug fix)[923072] Darwin: made unthreaded CoreFoundation notifier
 naked-fork safe on Tiger (steffen)
 
+2006-06-20 (internal change) Dropped the internal routines used to hook into
+filesystem operations back in the pre-Tcl_Filesystem days. (porter)
+***POTENTIAL INCOMPATIBILITY***
+For extensions and programs that have never migrated to the supported Tcl 8.4 
+interface for virtual filesystems
+
+2006-07-05 (enhancement) Expression parser rewrite avoids stack overflow,
+reduces from O(N^2) to O(N) complexity, and greatly improves syntas error
+messages (porter)
+***POTENTIAL INCOMPATIBILITY***
+For any code relying on exact error messages.
+
 2006-07-20 (platform support) Mac OS X weak linking (steffen)
 
 2006-07-20 (bug fix) Darwin: execve() works iff event loop not yet run (steffen)
+
+2006-07-24 (bug fix)[1518166] Uninitialized Tcl_DString (afredd)
+
+2006-07-30 (bug fix)[1426279,1505383,1494664,1531530] [clock] fixes (kenny)
+
+2006-08-09 (bug fix)[1531184] [dict for {file stat} x {}] crash (fellows)
+
+2006-08-10 (bug fix)[1538262,1530474] code cleanup; optimizations (afredd)
+
+2006-08-18 (bug fix) intermittent failures in TclUnixWaitForFile() (steffen)
 
 2006-08-18 (platform support) Darwin x86_64 (steffen)
 
@@ -6767,4 +6789,54 @@ naked-fork safe on Tiger (steffen)
 
 2006-08-21 (enhancement) Darwin: nanosec resolution clicks and [time] (steffen)
 
---- Released 8.5a5, June XX, 2006 --- See ChangeLog for details ---
+2006-08-28 (bug fix)[1547681] TclFormatObj count arguments (mistachkin,porter)
+
+2006-08-28 (bug fix) stack.test failure on FreeBSD (mistachkin)
+
+2006-08-30 (bug fix)[1548263] filesystem segfaults (hobbs,mccormack)
+
+2006-08-31 (bug fix)[1541274] [expr {sqrt(-1)}] => -NaN (suchenwirth,porter)
+
+2006-09-06 (bug fix)[999544] use of MT-safe system calls (vasiljevic)
+
+2006-09-10 (platform support) Darwin: msgcat use CFLocale (steffen)
+=> msgcat 1.4.2
+
+2006-09-10 (new feature) tcltest option: -verbose line (steffen)
+=> tcltest 2.3a1
+
+2006-09-19 (bug fix)[1555271,1561260] Several ** operator bugs (porter)
+
+2006-09-22 (bug fix)[1562528] NULL terminates variadic calls (fellows,ryazanov)
+
+2006-09-22 (new feature)[1520767][TIP 268] [package] alpha/beta version;
+[package require] ranges, [package prefer] selection mode (kupries)
+
+2006-09-26 (platform support) MSVC8 AMD64 support (thoyts)
+
+2006-09-27 (bug fix)[1567222] bignum << errors (porter)
+
+2006-09-30 (enhancement)[1190441] quiet no-op [history] (sofer)
+
+2006-10-04 clock tzdata updated to Olson's tzdata2006m (kenny)
+
+2006-10-05 (bug fix)[1570718] make [lappend $nonList] complain (sofer,virden)
+
+2006-10-05 (bug fix)[1122671] alignment fixes in unicode encoding routines
+(hobbs,staplin)
+
+2006-10-05 (enhancement) Allow "_" in Tcl Module filenames (kupries)
+
+2006-10-05 (new feature) [set ::http::strict 0] (default value is 1) to disable
+URL validity checking against RFC 2986 (hobbs)
+=> http 2.5.3
+
+2006-10-06 (new feature)[1565751][TIP 275] [binary scan] unsigned (thoyts)
+
+2006-10-10 (bug fix)[1566526] crash cleaning up [namespace path] data (porter)
+
+2006-10-12 (bug fix)[1576006] better error messages from [interp alias] (sofer)
+
+2006-10-13 (platform support) get stack size on Darwin (steffen)
+
+--- Released 8.5a5, October 20, 2006 --- See ChangeLog for details ---

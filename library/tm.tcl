@@ -53,7 +53,7 @@ namespace eval ::tcl::tm {
 
     # The regex pattern a file name has to match to make it a Tcl Module.
 
-    set pkgpattern {^([[:alpha:]][:[:alnum:]]*)-([[:digit:]].*)[.]tm$}
+    set pkgpattern {^([_[:alpha:]][:_[:alnum:]]*)-([[:digit:]].*)[.]tm$}
 
     # Export the public API
 
@@ -189,7 +189,7 @@ proc ::tcl::tm::list {} {
 #	May populate the package ifneeded database with additional
 #	provide scripts.
 
-proc ::tcl::tm::UnknownHandler {original name version {exact {}}} {
+proc ::tcl::tm::UnknownHandler {original name args} {
     # Import the list of paths to search for packages in module form.
     # Import the pattern used to check package names in detail.  
 
@@ -263,10 +263,8 @@ proc ::tcl::tm::UnknownHandler {original name version {exact {}}} {
 		    # processing.
 
 		    if {
-			$pkgname eq $name && (
-			($exact eq "-exact" && ![package vcompare $pkgversion $version]) ||
-			($version ne "" && [package vsatisfies $pkgversion $version]) ||
-			($version eq ""))
+			($pkgname eq $name) &&
+			[package vsatisfies $pkgversion {expand}$args]
 		    } then {
 			set satisfied 1
 			# We do not abort the loop, and keep adding
@@ -287,7 +285,7 @@ proc ::tcl::tm::UnknownHandler {original name version {exact {}}} {
     # about ::list...
 
     if {[llength $original]} {
-	uplevel 1 $original [::list $name $version $exact]
+	uplevel 1 $original [::linsert $args 0 $name]
     }
 }
 

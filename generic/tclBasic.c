@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.45 2006/09/05 16:14:36 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.46 2006/10/23 21:01:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -326,6 +326,12 @@ Tcl_CreateInterp(void)
 
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
+
+    /* TIP #268 */
+    iPtr->packagePrefer = (getenv ("TCL_PKG_PREFER_LATEST") == NULL ? 
+			   PKG_PREFER_STABLE   :
+			   PKG_PREFER_LATEST);
+
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&(iPtr->literalTable));
     iPtr->compileEpoch = 0;
@@ -562,9 +568,10 @@ Tcl_CreateInterp(void)
 
     /*
      * Register Tcl's version number.
+     * TIP #268: Full patchlevel instead of just major.minor
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, (ClientData) &tclStubs);
 
 #ifdef Tcl_InitStubs
 #undef Tcl_InitStubs
@@ -912,15 +919,6 @@ Tcl_DeleteInterp(
     iPtr->compileEpoch++;
 
     /*
-     * TIP #219, Tcl Channel Reflection API. Discard a leftover state.
-     */
-
-    if (iPtr->chanMsg != NULL) {
-        Tcl_DecrRefCount (iPtr->chanMsg);
-	iPtr->chanMsg = NULL;
-    }
-
-    /*
      * Ensure that the interpreter is eventually deleted.
      */
 
@@ -973,6 +971,15 @@ DeleteInterpProc(
 
     if (!(iPtr->flags & DELETED)) {
 	Tcl_Panic("DeleteInterpProc called on interpreter not marked deleted");
+    }
+
+    /*
+     * TIP #219, Tcl Channel Reflection API. Discard a leftover state.
+     */
+
+    if (iPtr->chanMsg != NULL) {
+        Tcl_DecrRefCount (iPtr->chanMsg);
+	iPtr->chanMsg = NULL;
     }
 
     /*

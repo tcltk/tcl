@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.23 2006/08/29 16:19:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.24 2006/10/23 21:01:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1627,6 +1627,51 @@ TclCompileExprWords(
 	TclEmitInstInt1(INST_CONCAT1, concatItems, envPtr);
     }
     TclEmitOpcode(INST_EXPR_STK, envPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileNoOp --
+ *
+ *	Function called to compile no-op's
+ *
+ * Results:
+ *	The return value is TCL_OK, indicating successful compilation.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute a no-op at runtime. No
+ *      result is pushed onto the stack: the compiler has to take care of this
+ *      itself if the last compiled command is a NoOp. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileNoOp(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int i;
+    int savedStackDepth = envPtr->currStackDepth;
+
+    tokenPtr = parsePtr->tokenPtr;
+    for(i = 1; i < parsePtr->numWords; i++) {
+	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
+	envPtr->currStackDepth = savedStackDepth;
+
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
+		    envPtr);
+	    TclEmitOpcode(INST_POP, envPtr);
+	}
+    }
+    envPtr->currStackDepth = savedStackDepth;
+    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);    
+    return TCL_OK;
 }
 
 /*

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.31 2006/08/29 16:19:26 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.32 2006/10/23 21:01:23 dgp Exp $
  */
 
 #ifndef _TCL
@@ -39,7 +39,7 @@ extern "C" {
  * When version numbers change here, must also go into the following files and
  * update the version numbers:
  *
- * library/init.tcl	(only if Major.minor changes, not patchlevel) 1 LOC
+ * library/init.tcl	(1 LOC patch)
  * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
@@ -63,10 +63,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   5
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  5
+#define TCL_RELEASE_SERIAL  6
 
 #define TCL_VERSION	    "8.5"
-#define TCL_PATCH_LEVEL	    "8.5a5"
+#define TCL_PATCH_LEVEL	    "8.5a6"
 
 /*
  * The following definitions set up the proper options for Windows compilers.
@@ -321,10 +321,6 @@ typedef long LONG;
  * Miscellaneous declarations.
  */
 
-#ifndef NULL
-#   define NULL 0
-#endif
-
 #ifndef _CLIENTDATA
 #   ifndef NO_VOID
 	typedef void *ClientData;
@@ -394,10 +390,10 @@ typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
 #         define TCL_LL_MODIFIER_SIZE	1
 #      else /* __BORLANDC__ */
-#         if _MSC_VER < 1400
+#         if _MSC_VER < 1400 || !defined(_M_IX86)
 typedef struct _stati64	Tcl_StatBuf;
 #         else
-typedef struct __stat64	Tcl_StatBuf;
+typedef struct _stat64	Tcl_StatBuf;
 #         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
 #         define TCL_LL_MODIFIER_SIZE	3
@@ -1398,7 +1394,9 @@ typedef struct Tcl_HashSearch {
  * Macro to use new extended version of Tcl_InitHashTable.
  */
 #   define Tcl_InitHashTable(tablePtr, keyType) \
-	Tcl_InitHashTableEx(tablePtr, keyType, NULL)
+	Tcl_InitHashTableEx((tablePtr), (keyType), NULL)
+#   define Tcl_FindHashEntry(tablePtr, key) \
+        Tcl_CreateHashEntry((tablePtr), (key), NULL)
 #endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
 
 /*
@@ -2306,7 +2304,11 @@ typedef struct Tcl_Parse {
     /*
      * unsigned int isn't 100% accurate as it should be a strict 4-byte value
      * (perhaps wchar_t). 64-bit systems may have troubles. The size of this
-     * value must be reflected correctly in regcustom.h.
+     * value must be reflected correctly in regcustom.h and
+     * in tclEncoding.c.
+     * XXX: Tcl is currently UCS-2 and planning UTF-16 for the Unicode
+     * XXX: string rep that Tcl_UniChar represents.  Changing the size
+     * XXX: of Tcl_UniChar is /not/ supported.
      */
 typedef unsigned int Tcl_UniChar;
 #else

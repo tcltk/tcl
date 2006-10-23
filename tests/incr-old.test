@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr-old.test,v 1.7.2.2 2006/02/09 22:41:30 dgp Exp $
+# RCS: @(#) $Id: incr-old.test,v 1.7.2.3 2006/10/23 21:01:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -51,13 +51,13 @@ test incr-old-2.3 {incr errors} {
 } 1
 test incr-old-2.4 {incr errors} {
     set x abc
-    list [catch {incr x} msg] $msg $errorInfo
+    list [catch {incr x} msg] $msg $::errorInfo
 } {1 {expected integer but got "abc"} {expected integer but got "abc"
     while executing
 "incr x"}}
 test incr-old-2.5 {incr errors} {
     set x 123
-    list [catch {incr x 1a} msg] $msg $errorInfo
+    list [catch {incr x 1a} msg] $msg $::errorInfo
 } {1 {expected integer but got "1a"} {expected integer but got "1a"
     (reading increment)
     invoked from within
@@ -66,7 +66,7 @@ test incr-old-2.6 {incr errors} -body {
     proc readonly args {error "variable is read-only"}
     set x 123
     trace var x w readonly
-    list [catch {incr x 1} msg] $msg $errorInfo
+    list [catch {incr x 1} msg] $msg $::errorInfo
 } -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
     while executing
 *

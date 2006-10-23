@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.31 2006/07/05 21:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.32 2006/10/23 21:01:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -317,6 +317,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 223 */
     TclGetPlatform, /* 224 */
     TclTraceDictPath, /* 225 */
+    TclObjBeingDeleted, /* 226 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -1070,6 +1071,7 @@ TclStubs tclStubs = {
     Tcl_GetEncodingSearchPath, /* 570 */
     Tcl_SetEncodingSearchPath, /* 571 */
     Tcl_GetEncodingNameFromEnvironment, /* 572 */
+    Tcl_PkgRequireProc, /* 573 */
 };
 
 /* !END!: Do not edit above this line. */

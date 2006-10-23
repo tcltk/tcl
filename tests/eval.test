@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: eval.test,v 1.5.26.3 2006/01/25 18:38:48 dgp Exp $
+# RCS: @(#) $Id: eval.test,v 1.5.26.4 2006/10/23 21:01:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -47,7 +47,7 @@ test eval-2.5 {error in eval'ed command: setting errorInfo} {
 	set a 1
 	error "test error"
     }} msg
-    set errorInfo
+    set ::errorInfo
 } "test error
     while executing
 \"error \"test error\"\"

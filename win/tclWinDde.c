@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.11 2006/04/28 16:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.12 2006/10/23 21:02:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -378,7 +378,7 @@ DdeSetServerName(
 	    }
 	}
 	Tcl_DStringSetLength(&dString,
-		offset + strlen(Tcl_DStringValue(&dString)+offset));
+		offset + (int)strlen(Tcl_DStringValue(&dString)+offset));
     }
 
     /*

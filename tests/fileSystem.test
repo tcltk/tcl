@@ -584,7 +584,7 @@ test filesystem-5.1 {cache and ~} {
     -constraints testfilesystem
     -match regexp
     -body {
-	set orig $env(HOME)
+	set orig $::env(HOME)
 	set ::env(HOME) /foo/bar/blah
 	set testdir ~
 	set res1 "Parent of ~ (/foo/bar/blah) is [file dirname $testdir]"

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.31 2006/08/29 16:19:30 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.32 2006/10/23 21:01:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -111,13 +111,8 @@ typedef struct PendingObjData {
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
 #define PushObjToDelete(contextPtr,objPtr) \
-    /* Invalidate the string rep first so we can use the bytes value \
-     * for our pointer chain. */ \
-    if (((objPtr)->bytes != NULL) \
-	    && ((objPtr)->bytes != tclEmptyStringRep)) { \
-	ckfree((char *) (objPtr)->bytes); \
-    } \
-    /* Now push onto the head of the stack. */ \
+    /* The string rep is already invalidated so we can use the bytes value \
+     * for our pointer chain: push onto the head of the stack. */ \
     (objPtr)->bytes = (char *) ((contextPtr)->deletionStack); \
     (contextPtr)->deletionStack = (objPtr)
 #define PopObjToDelete(contextPtr,objPtrVar) \
@@ -850,6 +845,13 @@ TclFreeObj(
 	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
 
+    /* Invalidate the string rep first so we can use the bytes value 
+     * for our pointer chain, and signal an obj deletion (as opposed
+     * to shimmering) with 'length == -1' */ 
+    
+    TclInvalidateStringRep(objPtr);
+    objPtr->length = -1;
+
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
     } else {
@@ -858,7 +860,6 @@ TclFreeObj(
 	    typePtr->freeIntRepProc(objPtr);
 	    ObjDeletionUnlock(context);
 	}
-	TclInvalidateStringRep(objPtr);
 
 	Tcl_MutexLock(&tclObjMutex);
 	ckfree((char *) objPtr);
@@ -889,15 +890,19 @@ void
 TclFreeObj(
     register Tcl_Obj *objPtr)	/* The object to be freed. */
 {
+    /* Invalidate the string rep first so we can use the bytes value 
+     * for our pointer chain, and signal an obj deletion (as opposed
+     * to shimmering) with 'length == -1' */ 
+
+    TclInvalidateStringRep(objPtr);
+    objPtr->length = -1;
+    
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
 	 * objPtr can be freed safely, as it will not attempt to free any
 	 * other objects: it will not cause recursive calls to this function.
 	 */
 
-	if (objPtr->bytes && (objPtr->bytes != tclEmptyStringRep)) {
-	    ckfree((char *) objPtr->bytes);
-	}
 	TclFreeObjStorage(objPtr);
 	TclIncrObjsFreed();
     } else {
@@ -924,9 +929,6 @@ TclFreeObj(
 	    objPtr->typePtr->freeIntRepProc(objPtr);
 	    ObjDeletionUnlock(context);
 
-	    if (objPtr->bytes && (objPtr->bytes != tclEmptyStringRep)) {
-		ckfree((char *) objPtr->bytes);
-	    }
 	    TclFreeObjStorage(objPtr);
 	    TclIncrObjsFreed();
 	    ObjDeletionLock(context);
@@ -945,6 +947,31 @@ TclFreeObj(
     }
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjBeingDeleted --
+ *
+ *	This function returns 1 when the Tcl_Obj is being deleted. It is
+ *	provided for the rare cases where the reason for the loss of an
+ *	internal rep might be relevant [FR 1512138]
+ *
+ * Results:
+ *	1 if being deleted, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclObjBeingDeleted(Tcl_Obj *objPtr)
+{
+    return (objPtr->length == -1);
+}
+
 
 /*
  *----------------------------------------------------------------------

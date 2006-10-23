@@ -8,9 +8,10 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 2001-2003 David Gravereaux.
+# Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.7 2005/11/03 17:52:34 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.8 2006/10/23 21:02:10 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -25,7 +26,7 @@ rc32		= $(RC)   # built-in default.
 ### Assume the normal default.
 _INSTALLDIR	= C:\Program Files\Tcl
 !else
-### Fix the path seperators.
+### Fix the path separators.
 _INSTALLDIR	= $(INSTALLDIR:/=\)
 !endif
 
@@ -48,13 +49,14 @@ RMDIR	= rmdir /S /Q
 !if ![ver | find "4.0" > nul]
 CPY	= echo y | xcopy /i
 !else
-CPY	= xcopy /i /y
+CPY	= xcopy /i /y >NUL
 !endif
 !else
 CPY	= xcopy /i
 RMDIR	= deltree /Y
 !endif
-
+MKDIR   = mkdir
+COPY    = copy /y >NUL
 
 !message ===============================================================================
 
@@ -73,7 +75,7 @@ RMDIR	= deltree /Y
 #----------------------------------------------------------
 
 ### test for optimizations
-!if [nmakehlp -c -Oti]
+!if [nmakehlp -c -Ot]
 !message *** Compiler has 'Optimizations'
 OPTIMIZING	= 1
 !else
@@ -81,7 +83,15 @@ OPTIMIZING	= 1
 OPTIMIZING	= 0
 !endif
 
-OPTIMIZATIONS  =
+OPTIMIZATIONS   =
+
+!if [nmakehlp -c -Ot]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -Ot
+!endif
+
+!if [nmakehlp -c -Oi]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -Oi
+!endif
 
 !if [nmakehlp -c -Op]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -Op
@@ -99,6 +109,10 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -Gs
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -GS
 !endif
 
+!if [nmakehlp -c -GL]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -GL
+!endif
+
 DEBUGFLAGS     =
 
 !if [nmakehlp -c -RTC1]
@@ -107,15 +121,33 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -RTC1
 DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 !endif
 
+COMPILERFLAGS  =-W3
+
+!if [nmakehlp -c -YX]
+OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
+!endif
+
 !if "$(MACHINE)" == "IX86"
 ### test for pentium errata
 !if [nmakehlp -c -QI0f]
 !message *** Compiler has 'Pentium 0x0f fix'
-PENT_0F_ERRATA	= 1
+COMPILERFLAGS  = $(COMPILERFLAGSS) -QI0f
 !else
 !message *** Compiler doesn't have 'Pentium 0x0f fix'
-PENT_0F_ERRATA	= 0
 !endif
+!endif
+
+!if "$(MACHINE)" == "IA64"
+### test for Itanium errata
+!if [nmakehlp -c -QIA64_Bx]
+!message *** Compiler has 'B-stepping errata workarounds'
+COMPILERFLAGS   = $(COMPILERFLAGS) -QIA64_Bx
+!else
+!message *** Compiler does not have 'B-stepping errata workarounds'
+!endif
+!endif
+
+!if "$(MACHINE)" == "IX86"
 ### test for -align:4096, when align:512 will do.
 !if [nmakehlp -l -opt:nowin98]
 !message *** Linker has 'Win98 alignment problem'
@@ -125,21 +157,32 @@ ALIGN98_HACK	= 1
 ALIGN98_HACK	= 0
 !endif
 !else
-PENT_0F_ERRATA	= 0
 ALIGN98_HACK	= 0
 !endif
 
-!if "$(MACHINE)" == "IA64"
-### test for Itanium errata
-!if [nmakehlp -c -QIA64_Bx]
-!message *** Compiler has 'B-stepping errata workarounds'
-ITAN_B_ERRATA	= 1
-!else
-!message *** Compiler doesn't have 'B-stepping errata workarounds'
-ITAN_B_ERRATA	= 0
+LINKERFLAGS     =
+
+!if [nmakehlp -l -ltcg]
+LINKERFLAGS     =-ltcg
 !endif
+
+#----------------------------------------------------------
+# MSVC8 (ships with Visual Studio 2005) generates a manifest
+# file that we should link into the binaries. This is how.
+#----------------------------------------------------------
+
+_VC_MANIFEST_EMBED_EXE=
+_VC_MANIFEST_EMBED_DLL=
+!if ![cl /Zs /Tc NUL 2>&1 | find "Version 12" > NUL]
+VCVER=6
+!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 13" > NUL]
+VCVER=7
+!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 14" > NUL]
+VCVER=8
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !else
-ITAN_B_ERRATA	= 0
+VCVER=0
 !endif
 
 #----------------------------------------------------------
@@ -244,6 +287,13 @@ SUFX	    = tsgx
 BUILDDIRTOP = Debug
 !else
 BUILDDIRTOP = Release
+!endif
+
+!if "$(MACHINE)" != "IX86"
+BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
+!endif
+!if $(VCVER) > 6
+BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
 !endif
 
 !if !$(DEBUG) || $(DEBUG) && $(UNCHECKED)
@@ -365,7 +415,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
 !if $(PROFILE)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
 !endif
-!if "$(MACHINE)" == "IA64"
+!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 
@@ -383,7 +433,7 @@ TCLINSTALL	= 1
 _TCLDIR		= $(_INSTALLDIR)
 !else
 MSG=^
-Don't know where tcl.h is.  Set the TCLDIR macro.
+Failed to find tcl.h.  Set the TCLDIR macro.
 !error $(MSG)
 !endif
 !else
@@ -396,7 +446,7 @@ TCLH		= "$(_TCLDIR)\generic\tcl.h"
 TCLINSTALL	= 0
 !else
 MSG =^
-Don't know where tcl.h is.  The TCLDIR macro doesn't appear correct.
+Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 !error $(MSG)
 !endif
 !endif
@@ -469,5 +519,8 @@ TCLTOOLSDIR	= $(_TCLDIR)\tools
 !message *** Output directory will be '$(OUT_DIR)'
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
+!message *** Compiler version $(VCVER)
+!message *** Compiler options '$(OPTIMIZATIONS) $(DEBUGFLAGS)'
+!message *** Link options '$(LINKERFLAGS)'
 
 !endif

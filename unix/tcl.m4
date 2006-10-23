@@ -707,6 +707,10 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 		fi
 	    fi
 	fi
+	if test $tcl_ok = no; then
+	    # Darwin thread stacksize API
+	    AC_CHECK_FUNCS(pthread_get_stacksize_np)
+	fi
 	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
@@ -2785,6 +2789,388 @@ AC_DEFUN([SC_TCL_CHECK_BROKEN_FUNC],[
     fi
 ])
 
+#--------------------------------------------------------------------
+# SC_TCL_GETHOSTBYADDR_R
+#
+#	Check if we have MT-safe variant of gethostbyaddr().
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_GETHOSTBYADDR_R
+#		HAVE_GETHOSTBYADDR_R_7
+#		HAVE_GETHOSTBYADDR_R_8
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETHOSTBYADDR_R], [AC_CHECK_FUNC(gethostbyaddr_r, [
+    AC_CACHE_CHECK([for gethostbyaddr_r with 7 args], tcl_cv_api_gethostbyaddr_r_7, [
+    AC_TRY_COMPILE([
+	#include <netdb.h>
+    ], [
+	char *addr;
+	int length;
+	int type;
+	struct hostent *result;
+	char buffer[2048];
+	int buflen = 2048;
+	int h_errnop;
+
+	(void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
+			       &h_errnop);
+    ], tcl_cv_api_gethostbyaddr_r_7=yes, tcl_cv_api_gethostbyaddr_r_7=no)])
+    tcl_ok=$tcl_cv_api_gethostbyaddr_r_7
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYADDR_R_7, 1,
+	    [Define to 1 if gethostbyaddr_r takes 7 args.])
+    else
+	AC_CACHE_CHECK([for gethostbyaddr_r with 8 args], tcl_cv_api_gethostbyaddr_r_8, [
+	AC_TRY_COMPILE([
+	    #include <netdb.h>
+	], [
+	    char *addr;
+	    int length;
+	    int type;
+	    struct hostent *result, *resultp;
+	    char buffer[2048];
+	    int buflen = 2048;
+	    int h_errnop;
+
+	    (void) gethostbyaddr_r(addr, length, type, result, buffer, buflen,
+				   &resultp, &h_errnop);
+	], tcl_cv_api_gethostbyaddr_r_8=yes, tcl_cv_api_gethostbyaddr_r_8=no)])
+	tcl_ok=$tcl_cv_api_gethostbyaddr_r_8
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETHOSTBYADDR_R_8, 1,
+		[Define to 1 if gethostbyaddr_r takes 8 args.])
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYADDR_R, 1,
+	    [Define to 1 if gethostbyaddr_r is available.])
+    fi
+])])
+
+#--------------------------------------------------------------------
+# SC_TCL_GETHOSTBYNAME_R
+#
+#	Check to see what variant of gethostbyname_r() we have.
+#	Based on David Arnold's example from the comp.programming.threads
+#	FAQ Q213
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_GETHOSTBYADDR_R
+#		HAVE_GETHOSTBYADDR_R_3
+#		HAVE_GETHOSTBYADDR_R_5
+#		HAVE_GETHOSTBYADDR_R_6
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [AC_CHECK_FUNC(gethostbyname_r, [
+    AC_CACHE_CHECK([for gethostbyname_r with 6 args], tcl_cv_api_gethostbyname_r_6, [
+    AC_TRY_COMPILE([
+	#include <netdb.h>
+    ], [
+	char *name;
+	struct hostent *he, *res;
+	char buffer[2048];
+	int buflen = 2048;
+	int h_errnop;
+
+	(void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop);
+    ], tcl_cv_api_gethostbyname_r_6=yes, tcl_cv_api_gethostbyname_r_6=no)])
+    tcl_ok=$tcl_cv_api_gethostbyname_r_6
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYNAME_R_6, 1,
+	    [Define to 1 if gethostbyname_r takes 6 args.])
+    else
+	AC_CACHE_CHECK([for gethostbyname_r with 5 args], tcl_cv_api_gethostbyname_r_5, [
+	AC_TRY_COMPILE([
+	    #include <netdb.h>
+	], [
+	    char *name;
+	    struct hostent *he;
+	    char buffer[2048];
+	    int buflen = 2048;
+	    int h_errnop;
+
+	    (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop);
+	], tcl_cv_api_gethostbyname_r_5=yes, tcl_cv_api_gethostbyname_r_5=no)])
+	tcl_ok=$tcl_cv_api_gethostbyname_r_5
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETHOSTBYNAME_R_5, 1,
+		[Define to 1 if gethostbyname_r takes 5 args.])
+	else
+	    AC_CACHE_CHECK([for gethostbyname_r with 3 args], tcl_cv_api_gethostbyname_r_3, [
+	    AC_TRY_COMPILE([
+		#include <netdb.h>
+	    ], [
+		char *name;
+		struct hostent *he;
+		struct hostent_data data;
+
+		(void) gethostbyname_r(name, he, &data);
+	    ], tcl_cv_api_gethostbyname_r_3=yes, tcl_cv_api_gethostbyname_r_3=no)])
+	    tcl_ok=$tcl_cv_api_gethostbyname_r_3
+	    if test "$tcl_ok" = yes; then
+		AC_DEFINE(HAVE_GETHOSTBYNAME_R_3, 1,
+		    [Define to 1 if gethostbyname_r takes 3 args.])
+	    fi
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETHOSTBYNAME_R, 1,
+	    [Define to 1 if gethostbyname_r is available.])
+    fi
+])])
+
+#--------------------------------------------------------------------
+# SC_TCL_GETPWUID_R
+#
+#	Check if we have MT-safe variant of getpwuid() and if yes,
+#	which one exactly.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_GETPWUID_R
+#		HAVE_GETPWUID_R_4
+#		HAVE_GETPWUID_R_5
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETPWUID_R], [AC_CHECK_FUNC(getpwuid_r, [
+    AC_CACHE_CHECK([for getpwuid_r with 5 args], tcl_cv_api_getpwuid_r_5, [
+    AC_TRY_COMPILE([
+	#include <sys/types.h>
+	#include <pwd.h>
+    ], [
+	uid_t uid;
+	struct passwd pw, *pwp;
+	char buf[512];
+	int buflen = 512;
+
+	(void) getpwuid_r(uid, &pw, buf, buflen, &pwp);
+    ], tcl_cv_api_getpwuid_r_5=yes, tcl_cv_api_getpwuid_r_5=no)])
+    tcl_ok=$tcl_cv_api_getpwuid_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWUID_R_5, 1,
+	    [Define to 1 if getpwuid_r takes 5 args.])
+    else
+	AC_CACHE_CHECK([for getpwuid_r with 4 args], tcl_cv_api_getpwuid_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <pwd.h>
+	], [
+	    uid_t uid;
+	    struct passwd pw;
+	    char buf[512];
+	    int buflen = 512;
+
+	    (void)getpwnam_r(uid, &pw, buf, buflen);
+	], tcl_cv_api_getpwuid_r_4=yes, tcl_cv_api_getpwuid_r_4=no)])
+	tcl_ok=$tcl_cv_api_getpwuid_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETPWUID_R_4, 1,
+		[Define to 1 if getpwuid_r takes 4 args.])
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWUID_R, 1,
+	    [Define to 1 if getpwuid_r is available.])
+    fi
+])])
+
+#--------------------------------------------------------------------
+# SC_TCL_GETPWNAM_R
+#
+#	Check if we have MT-safe variant of getpwnam() and if yes,
+#	which one exactly.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_GETPWNAM_R
+#		HAVE_GETPWNAM_R_4
+#		HAVE_GETPWNAM_R_5
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETPWNAM_R], [AC_CHECK_FUNC(getpwnam_r, [
+    AC_CACHE_CHECK([for getpwnam_r with 5 args], tcl_cv_api_getpwnam_r_5, [
+    AC_TRY_COMPILE([
+	#include <sys/types.h>
+	#include <pwd.h>
+    ], [
+	char *name;
+	struct passwd pw, *pwp;
+	char buf[512];
+	int buflen = 512;
+
+	(void) getpwnam_r(name, &pw, buf, buflen, &pwp);
+    ], tcl_cv_api_getpwnam_r_5=yes, tcl_cv_api_getpwnam_r_5=no)])
+    tcl_ok=$tcl_cv_api_getpwnam_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWNAM_R_5, 1,
+	    [Define to 1 if getpwnam_r takes 5 args.])
+    else
+	AC_CACHE_CHECK([for getpwnam_r with 4 args], tcl_cv_api_getpwnam_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <pwd.h>
+	], [
+	    char *name;
+	    struct passwd pw;
+	    char buf[512];
+	    int buflen = 512;
+
+	    (void)getpwnam_r(name, &pw, buf, buflen);
+	], tcl_cv_api_getpwnam_r_4=yes, tcl_cv_api_getpwnam_r_4=no)])
+	tcl_ok=$tcl_cv_api_getpwnam_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETPWNAM_R_4, 1,
+		[Define to 1 if getpwnam_r takes 4 args.])
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETPWNAM_R, 1,
+	    [Define to 1 if getpwnam_r is available.])
+    fi
+])])
+
+#--------------------------------------------------------------------
+# SC_TCL_GETGRGID_R
+#
+#	Check if we have MT-safe variant of getgrgid() and if yes,
+#	which one exactly.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_GETGRGID_R
+#		HAVE_GETGRGID_R_4
+#		HAVE_GETGRGID_R_5
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETGRGID_R], [AC_CHECK_FUNC(getgrgid_r, [
+    AC_CACHE_CHECK([for getgrgid_r with 5 args], tcl_cv_api_getgrgid_r_5, [
+    AC_TRY_COMPILE([
+	#include <sys/types.h>
+	#include <grp.h>
+    ], [
+	gid_t gid;
+	struct group gr, *grp;
+	char buf[512];
+	int buflen = 512;
+
+	(void) getgrgid_r(gid, &gr, buf, buflen, &grp);
+    ], tcl_cv_api_getgrgid_r_5=yes, tcl_cv_api_getgrgid_r_5=no)])
+    tcl_ok=$tcl_cv_api_getgrgid_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRGID_R_5, 1,
+	    [Define to 1 if getgrgid_r takes 5 args.])
+    else
+	AC_CACHE_CHECK([for getgrgid_r with 4 args], tcl_cv_api_getgrgid_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <grp.h>
+	], [
+	    gid_t gid;
+	    struct group gr;
+	    char buf[512];
+	    int buflen = 512;
+
+	    (void)getgrgid_r(gid, &gr, buf, buflen);
+	], tcl_cv_api_getgrgid_r_4=yes, tcl_cv_api_getgrgid_r_4=no)])
+	tcl_ok=$tcl_cv_api_getgrgid_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETGRGID_R_4, 1,
+		[Define to 1 if getgrgid_r takes 4 args.])
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRGID_R, 1,
+	    [Define to 1 if getgrgid_r is available.])
+    fi
+])])
+
+#--------------------------------------------------------------------
+# SC_TCL_GETGRNAM_R
+#
+#	Check if we have MT-safe variant of getgrnam() and if yes,
+#	which one exactly.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_GETGRNAM_R
+#		HAVE_GETGRNAM_R_4
+#		HAVE_GETGRNAM_R_5
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETGRNAM_R], [AC_CHECK_FUNC(getgrnam_r, [
+    AC_CACHE_CHECK([for getgrnam_r with 5 args], tcl_cv_api_getgrnam_r_5, [
+    AC_TRY_COMPILE([
+	#include <sys/types.h>
+	#include <grp.h>
+    ], [
+	char *name;
+	struct group gr, *grp;
+	char buf[512];
+	int buflen = 512;
+
+	(void) getgrnam_r(name, &gr, buf, buflen, &grp);
+    ], tcl_cv_api_getgrnam_r_5=yes, tcl_cv_api_getgrnam_r_5=no)])
+    tcl_ok=$tcl_cv_api_getgrnam_r_5
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRNAM_R_5, 1,
+	    [Define to 1 if getgrnam_r takes 5 args.])
+    else
+	AC_CACHE_CHECK([for getgrnam_r with 4 args], tcl_cv_api_getgrnam_r_4, [
+	AC_TRY_COMPILE([
+	    #include <sys/types.h>
+	    #include <grp.h>
+	], [
+	    char *name;
+	    struct group gr;
+	    char buf[512];
+	    int buflen = 512;
+
+	    (void)getgrnam_r(name, &gr, buf, buflen);
+	], tcl_cv_api_getgrnam_r_4=yes, tcl_cv_api_getgrnam_r_4=no)])
+	tcl_ok=$tcl_cv_api_getgrnam_r_4
+	if test "$tcl_ok" = yes; then
+	    AC_DEFINE(HAVE_GETGRNAM_R_4, 1,
+		[Define to 1 if getgrnam_r takes 4 args.])
+	fi
+    fi
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETGRNAM_R, 1,
+	    [Define to 1 if getgrnam_r is available.])
+    fi
+])])
 
 # Local Variables:
 # mode: autoconf

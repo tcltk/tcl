@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.18.2.5 2006/02/09 22:41:30 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.18.2.6 2006/10/23 21:01:50 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -307,8 +307,9 @@ test encoding-15.3 {UtfToUtfProc null character input} {
 } {1 2 c080}
 
 test encoding-16.1 {UnicodeToUtfProc} {
-    encoding convertfrom unicode NN
-} "\u4e4e"
+    set val [encoding convertfrom unicode NN]
+    list $val [format %x [scan $val %c]]
+} "\u4e4e 4e4e"
 
 test encoding-17.1 {UtfToUnicodeProc} {
 } {}

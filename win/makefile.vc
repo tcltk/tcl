@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.18 2006/01/25 18:39:58 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.19 2006/10/23 21:02:10 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -193,7 +193,7 @@ VERSION = $(DOTVERSION:.=)
 DDEDOTVERSION = 1.3
 DDEVERSION = $(DDEDOTVERSION:.=)
 
-REGDOTVERSION = 1.1
+REGDOTVERSION = 1.2
 REGVERSION = $(REGDOTVERSION:.=)
 
 BINROOT		= .
@@ -416,12 +416,6 @@ WINDIR		= $(ROOT)\win
 # Compile flags
 #---------------------------------------------------------------------
 
-# MSVC 2005 changes:
-# -Op gone, use /fp:precise ?
-# /QI0f has been removed.
-# /YX  removed - use /Yc or /Yu or better nothing.
-# /GS and /GR are on by default
-
 !if !$(DEBUG)
 !if $(OPTIMIZING)
 ### This cranks the optimization level to maximize speed
@@ -433,25 +427,17 @@ cdebug	=
 ### Warnings are too many, can't support warnings into errors.
 cdebug	= -Z7 -Od $(DEBUGFLAGS)
 !else
-cdebug	= -Z7 -Od $(DEBUGFLAGS)
+cdebug	= -Z7 -WX $(DEBUGFLAGS)
 !endif
 
 ### Declarations common to all compiler options
-cflags = -nologo -c -Fp$(TMP_DIR)^\
+cwarn = -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
 
 !if $(FULLWARNINGS)
 cflags = $(cflags) -W4
 !else
 cflags = $(cflags) -W3
-!endif
-
-
-!if $(PENT_0F_ERRATA)
-cflags = $(cflags) -QI0f
-!endif
-
-!if $(ITAN_B_ERRATA)
-cflags = $(cflags) -QIA64_Bx
 !endif
 
 !if $(MSVCRT)
@@ -488,7 +474,7 @@ ldebug	= -release -opt:ref -opt:icf,3
 !endif
 
 ### Declarations common to all linker options
-lflags	= -nologo -machine:$(MACHINE) $(ldebug)
+lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(FULLWARNINGS)
 lflags = $(lflags) -warn:3
@@ -552,10 +538,10 @@ test: setup $(TCLTEST) dlls $(CAT32)
 <<
 !else
 	@echo Please wait while the tests are collected...
-	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile << > tests.log
 		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
 		set ::reglib [file normalize $(TCLREGLIB:\=/)]
-<< > tests.log
+<<
 	type tests.log | more
 !endif
 
@@ -581,6 +567,7 @@ $**
 		$(baselibs) @<<
 $**
 <<
+	$(_VC_MANIFEST_EMBED_DLL)
 	-@del $*.exp
 !endif
 
@@ -589,13 +576,16 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(_VC_MANIFEST_EMBED_EXE)
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
 	$(link32) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj $(baselibs)
+	$(_VC_MANIFEST_EMBED_DLL)
 
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
@@ -606,6 +596,7 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ \
 		$** $(baselibs)
+	$(_VC_MANIFEST_EMBED_DLL)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -619,6 +610,7 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ \
 		$** $(baselibs)
+	$(_VC_MANIFEST_EMBED_DLL)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -627,7 +619,7 @@ $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
 		$(baselibs)
-
+        $(_VC_MANIFEST_EMBED_EXE)
 
 #---------------------------------------------------------------------
 # Regenerate the stubs files.  [Development use only]
@@ -748,7 +740,7 @@ tclConfig:
 	@echo Build tclsh first!
 !else
 	@echo Creating tclConfig.sh
-	set TCL_LIBRARY=$(ROOT)/library
+	@set TCL_LIBRARY=$(ROOT)/library
 	@$(TCLSH) <<
 	set debug $(DEBUG)
 	set thread $(TCL_THREADS)
@@ -965,65 +957,46 @@ $<
 
 install-binaries:
 	@echo Installing to '$(_INSTALLDIR)'
-	@echo installing $(TCLLIBNAME)
+	@echo Installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@$(CPY) "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
 !if exist($(TCLSH))
-	@echo installing $(TCLSHNAME)
+	@echo Installing $(TCLSHNAME)
 	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
 !endif
 !if exist($(TCLPIPEDLL))
-	@echo installing $(TCLPIPEDLLNAME)
+	@echo Installing $(TCLPIPEDLLNAME)
 	@$(CPY) "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)\"
 !endif
-	@echo installing $(TCLSTUBLIBNAME)
+	@echo Installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
+#" emacs fix
+
 install-libraries: tclConfig install-msgs install-tzdata
-	@echo installing tclConfig.sh
-	@$(CPY) "$(OUT_DIR)\tclConfig.sh" "$(LIB_INSTALL_DIR)\"
-	@echo installing http1.0
-	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http1.0\"
-	@echo installing http2.4
-	@$(CPY) "$(ROOT)\library\http\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http2.4\"
-	@echo installing opt0.4
-	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
-	@echo installing msgcat1.4
-	@$(CPY) "$(ROOT)\library\msgcat\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.4\"
-	@echo installing tcltest2.2 
-	@$(CPY) "$(ROOT)\library\tcltest\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\tcltest2.2\"
-	@echo installing $(TCLDDELIBNAME)
-!if $(STATIC_BUILD)
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
-!else
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-!endif
-	@echo installing $(TCLREGLIBNAME)
-!if $(STATIC_BUILD)
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
-!else
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-!endif
-	@echo installing encoding files
-	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
-		"$(SCRIPT_INSTALL_DIR)\encoding\"
-	@echo installing library files
+	@if not exist "$(SCRIPT_INSTALL_DIR)" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.2" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.2"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.3" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.3"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
+	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
+        @$(CPY) "$(TOMMATHDIR)\tommath_class.h"   "$(INCLUDE_INSTALL_DIR)\"
+        @$(CPY) "$(TOMMATHDIR)\tommath_superclass.h" "$(INCLUDE_INSTALL_DIR)\"
+	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
@@ -1034,17 +1007,52 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\package.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\word.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
+	@echo Installing library http1.0 directory
+	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http1.0\"
+	@echo Installing package http 2.5.2 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\http\http.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\http-2.5.2.tm"
+	@echo Installing library opt0.4 directory
+	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@echo Installing package msgcat 1.4 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\msgcat-1.4.2.tm"
+	@echo Installing package tcltest 2.3a1 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-2.3a1.tm"
+	@echo Installing $(TCLDDELIBNAME)
+!if $(STATIC_BUILD)
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
+!else
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+!endif
+	@echo Installing $(TCLREGLIBNAME)
+!if $(STATIC_BUILD)
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
+!else
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+!endif
+	@echo Installing encodings
+	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
+		"$(SCRIPT_INSTALL_DIR)\encoding\"
 
 install-tzdata:
-	@echo "Installing time zone data"
-	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	@echo Installing time zone data
+	@set TCL_LIBRARY=$(ROOT)/library
+	@$(TCLSH) "$(ROOT)/tools/installData.tcl" \
 	    "$(ROOT)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
 
 install-msgs:
-	@echo "Installing message catalogs"
-	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	@echo Installing message catalogs
+	@set TCL_LIBRARY=$(ROOT)/library
+	@$(TCLSH) "$(ROOT)/tools/installData.tcl" \
 	    "$(ROOT)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 #---------------------------------------------------------------------

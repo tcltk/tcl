@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.6 2005/12/02 18:42:36 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.7 2006/10/23 21:01:36 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -24,7 +24,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.2
+package provide http 2.5.3
 
 namespace eval http {
     variable http
@@ -50,7 +50,7 @@ namespace eval http {
 	    }
 	}
 	# These are handled specially
-	array set map { " " + \n %0d%0a }
+	set map(\n) %0d%0a
 	variable formMap [array get map]
     }
     init
@@ -63,6 +63,9 @@ namespace eval http {
     variable encodings [string tolower [encoding names]]
     # This can be changed, but iso8859-1 is the RFC standard.
     variable defaultCharset "iso8859-1"
+
+    # Force RFC 3986 strictness in geturl url verification?
+    variable strict 1
 
     namespace export geturl config reset wait formatQuery register unregister
     # Useful, but not exported: data size status code
@@ -223,6 +226,7 @@ proc http::geturl { url args } {
     variable http
     variable urlTypes
     variable defaultCharset
+    variable strict
 
     # Initialize the state variable, an array. We'll return the name of this
     # array as the token for the transaction.
@@ -330,6 +334,7 @@ proc http::geturl { url args } {
     #
     # From a validation perspective, we need to ensure that the parts of the
     # URL that are going to the server are correctly encoded.
+    # This is only done if $::http::strict is true (default 0 for compat).
 
     set URLmatcher {(?x)		# this is _expanded_ syntax
 	^
@@ -375,7 +380,7 @@ proc http::geturl { url args } {
 	    (?: [-\w.~!$&'()*+,;=:] | %[0-9a-f][0-9a-f] )+
 	    $
 	}
-	if {![regexp -- $validityRE $user]} {
+	if {$strict && ![regexp -- $validityRE $user]} {
 	    unset $token
 	    # Provide a better error message in this error case
 	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f]).?.?} $user bad]} {
@@ -395,7 +400,7 @@ proc http::geturl { url args } {
 	    (?: \? (?: [-\w.~!$&'()*+,;=:@/?] | %[0-9a-f][0-9a-f] )* )?
 	    $
 	}
-	if {![regexp -- $validityRE $srvurl]} {
+	if {$strict && ![regexp -- $validityRE $srvurl]} {
 	    unset $token
 	    # Provide a better error message in this error case
 	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f])..} $srvurl bad]} {
@@ -409,7 +414,6 @@ proc http::geturl { url args } {
     }
     if {[string length $proto] == 0} {
 	set proto http
-	set url ${proto}:$url
     }
     if {![info exists urlTypes($proto)]} {
 	unset $token

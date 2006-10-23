@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.7.6.3 2006/08/29 16:19:35 dgp Exp $
+# RCS: @(#) $Id: if.test,v 1.7.6.4 2006/10/23 21:01:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -27,7 +27,7 @@ test if-1.2 {TclCompileIfCmd: error in if/elseif test} {
     list [catch {if {[error "error in condition"]} foo} msg] $msg
 } {1 {error in condition}}
 test if-1.3 {TclCompileIfCmd: error in if/elseif test} -body {
-    list [catch {if {1+}} msg] $msg $errorInfo
+    list [catch {if {1+}} msg] $msg $::errorInfo
 } -match glob -result {1 * {*"if {1+}"}}
 test if-1.4 {TclCompileIfCmd: if/elseif test in braces} {
     set a {}
@@ -62,7 +62,7 @@ test if-1.9 {TclCompileIfCmd: missing "then" body} {
 } {wrong # args: no script following "then" argument}
 test if-1.10 {TclCompileIfCmd: error in "then" body} -body {
     set a {}
-    list [catch {if {$a!="xxx"} then {set}} msg] $msg $errorInfo
+    list [catch {if {$a!="xxx"} then {set}} msg] $msg $::errorInfo
 } -match glob -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}}
@@ -173,7 +173,7 @@ test if-2.3 {TclCompileIfCmd: missing expression after "elseif"} {
 } {wrong # args: no expression after "elseif" argument}
 test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} -body {
     set a {}
-    list [catch {if 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
+    list [catch {if 3>4 {set a 1} elseif {1>}} msg] $msg $::errorInfo
 } -match glob -result {1 * {*"if 3>4 {set a 1} elseif {1>}"}}
 test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long "elseif" body} {
     catch {unset i}
@@ -298,7 +298,7 @@ test if-3.3 {TclCompileIfCmd: missing body after "else"} {
 test if-3.4 {TclCompileIfCmd: error compiling body after "else"} -body {
     set a {}
     catch {if 2<1 {set a 1} else {set}} msg 
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
@@ -499,7 +499,7 @@ test if-5.2 {if cmd with computed command names: error in if/elseif test} {
 } {1 {error in condition}}
 test if-5.3 {if cmd with computed command names: error in if/elseif test} -body {
     set z if
-    list [catch {$z {1+}} msg] $msg $errorInfo
+    list [catch {$z {1+}} msg] $msg $::errorInfo
 } -match glob -result {1 * {*"$z {1+}"}}
 test if-5.4 {if cmd with computed command names: if/elseif test in braces} {
     set z if
@@ -541,7 +541,7 @@ test if-5.9 {if cmd with computed command names: missing "then" body} {
 test if-5.10 {if cmd with computed command names: error in "then" body} -body {
     set z if
     set a {}
-    list [catch {$z {$a!="xxx"} then {set}} msg] $msg $errorInfo
+    list [catch {$z {$a!="xxx"} then {set}} msg] $msg $::errorInfo
 } -match glob -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"
@@ -665,7 +665,7 @@ test if-6.3 {if cmd with computed command names: missing expression after "elsei
 test if-6.4 {if cmd with computed command names: error in expression after "elseif"} -body {
     set z if
     set a {}
-    list [catch {$z 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
+    list [catch {$z 3>4 {set a 1} elseif {1>}} msg] $msg $::errorInfo
 } -match glob -result {1 * {*"$z 3>4 {set a 1} elseif {1>}"}}
 test if-6.5 {if cmd with computed command names: test jumpFalse instruction replacement after long "elseif" body} {
     set z if
@@ -795,7 +795,7 @@ test if-7.4 {if cmd with computed command names: error compiling body after "els
     set z if
     set a {}
     catch {$z 2<1 {set a 1} else {set}} msg 
-    set errorInfo
+    set ::errorInfo
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"

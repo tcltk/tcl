@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.4.6.4 2005/10/18 20:46:18 dgp Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.4.6.5 2006/10/23 21:01:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -112,29 +112,44 @@ Tcl_RecordAndEvalObj(
 				 * in global variable context instead of the
 				 * current procedure. */
 {
-    int result;
+    int result, call = 1;
     Tcl_Obj *list[3];
     register Tcl_Obj *objPtr;
+    Tcl_CmdInfo info;
 
     /*
-     * Do recording by eval'ing a tcl history command: history add $cmd.
+     * Do not call [history] if it has been replaced by an empty proc
      */
 
-    list[0] = Tcl_NewStringObj("history", -1);
-    list[1] = Tcl_NewStringObj("add", -1);
-    list[2] = cmdPtr;
+    result = Tcl_GetCommandInfo(interp, "history", &info);
 
-    objPtr = Tcl_NewListObj(3, list);
-    Tcl_IncrRefCount(objPtr);
-    (void) Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
-    Tcl_DecrRefCount(objPtr);
+    if (result && (info.objProc == TclObjInterpProc)) {
+	Proc *procPtr = (Proc *)(info.objClientData);
+	call = (procPtr->cmdPtr->compileProc != TclCompileNoOp);
+    }
 
-    /*
-     * One possible failure mode above: exceeding a resource limit.
-     */
+    if (call) {
 
-    if (Tcl_LimitExceeded(interp)) {
-	return TCL_ERROR;
+	/*
+	 * Do recording by eval'ing a tcl history command: history add $cmd. 
+	 */
+
+	list[0] = Tcl_NewStringObj("history", -1);
+	list[1] = Tcl_NewStringObj("add", -1);
+	list[2] = cmdPtr;
+	
+	objPtr = Tcl_NewListObj(3, list);
+	Tcl_IncrRefCount(objPtr);
+	(void) Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+	Tcl_DecrRefCount(objPtr);
+	
+	/*
+	 * One possible failure mode above: exceeding a resource limit.
+	 */
+	
+	if (Tcl_LimitExceeded(interp)) {
+	    return TCL_ERROR;
+	}
     }
 
     /*

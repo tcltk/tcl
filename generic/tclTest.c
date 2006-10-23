@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.21 2006/07/05 21:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.22 2006/10/23 21:01:27 dgp Exp $
  */
 
 #define TCL_TEST
@@ -560,7 +560,9 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_PkgProvide(interp, "Tcltest", TCL_VERSION) == TCL_ERROR) {
+    /* TIP #268: Full patchlevel instead of just major.minor */
+
+    if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
         return TCL_ERROR;
     }
 

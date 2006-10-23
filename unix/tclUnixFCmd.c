@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.19 2006/08/29 16:19:47 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.20 2006/10/23 21:02:09 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -1304,7 +1304,8 @@ GetGroupAttribute(
 	return TCL_ERROR;
     }
 
-    groupPtr = getgrgid(statBuf.st_gid);		/* INTL: Native. */
+    groupPtr = TclpGetGrGid(statBuf.st_gid);
+
     if (groupPtr == NULL) {
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
     } else {
@@ -1358,7 +1359,8 @@ GetOwnerAttribute(
 	return TCL_ERROR;
     }
 
-    pwPtr = getpwuid(statBuf.st_uid);			/* INTL: Native. */
+    pwPtr = TclpGetPwUid(statBuf.st_uid);
+
     if (pwPtr == NULL) {
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
     } else {
@@ -1447,14 +1449,14 @@ SetGroupAttribute(
 
     if (Tcl_GetLongFromObj(NULL, attributePtr, &gid) != TCL_OK) {
 	Tcl_DString ds;
-	struct group *groupPtr;
+	struct group *groupPtr = NULL;
 	CONST char *string;
 	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
-	groupPtr = getgrnam(native);			/* INTL: Native. */
+	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
 	if (groupPtr == NULL) {
@@ -1513,14 +1515,14 @@ SetOwnerAttribute(
 
     if (Tcl_GetLongFromObj(NULL, attributePtr, &uid) != TCL_OK) {
 	Tcl_DString ds;
-	struct passwd *pwPtr;
+	struct passwd *pwPtr = NULL;
 	CONST char *string;
 	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
-	pwPtr = getpwnam(native);			/* INTL: Native. */
+	pwPtr = TclpGetPwNam(native); /* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
 	if (pwPtr == NULL) {

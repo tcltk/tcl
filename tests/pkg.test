@@ -1,3 +1,4 @@
+# -*- tcl -*-
 # Commands covered:  pkg
 #
 # This file contains a collection of tests for one or more of the Tcl
@@ -10,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.9.14.5 2005/12/02 18:42:53 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.9.14.6 2006/10/23 21:01:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -55,6 +56,23 @@ test pkg-1.5 {Tcl_PkgProvide procedure} {
     package provide t 2.3
     package provide t 2.3
 } {}
+
+test pkg-1.6 {Tcl_PkgProvide procedure} {
+    package forget t
+    package provide t 2.3a1
+} {}
+
+set n 0
+foreach v {
+    2.3k1 2a3a2 2ab3 2.a4 2.b4 2b.4 2a.4 2ba4 2a4b1
+    2b4a1 2b3b2
+} {
+    test pkg-1.7.$n {Tcl_PkgProvide procedure} {
+	package forget t
+	list [catch {package provide t $v} msg] $msg
+    } [list 1 "expected version number but got \"$v\""]
+    incr n
+}
 
 test pkg-2.1 {Tcl_PkgRequire procedure, picking best version} {
     package forget t
@@ -124,7 +142,7 @@ test pkg-2.8 {Tcl_PkgRequire procedure, can't find suitable version} {
 	package ifneeded t $i "set x $i"
     }
     list [catch {package require -exact t 1.3} msg] $msg
-} {1 {can't find package t 1.3}}
+} {1 {can't find package t 1.3-1.4}}
 test pkg-2.9 {Tcl_PkgRequire procedure, can't find suitable version} {
     package forget t
     package unknown {}
@@ -133,7 +151,7 @@ test pkg-2.9 {Tcl_PkgRequire procedure, can't find suitable version} {
 test pkg-2.10 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test"}
-    list [catch {package require t 2.1} msg] $msg $errorInfo
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
 } -match glob -result {1 {ifneeded test} {ifneeded test
     while executing
 "error "ifneeded test""
@@ -155,9 +173,11 @@ test pkg-2.12 {Tcl_PkgRequire procedure, self-deleting script} {
 } {1.2}
 test pkg-2.13 {Tcl_PkgRequire procedure, "package unknown" support} {
     proc pkgUnknown args {
+	# args = name requirement
+	# requirement = v-v (for exact version)
 	global x
 	set x $args
-	package provide [lindex $args 0] [lindex $args 1]
+	package provide [lindex $args 0] [lindex [split [lindex $args 1] -] 0]
     }
     package forget t
     foreach i {1.4 3.4 2.3 2.4 2.2} {
@@ -168,7 +188,7 @@ test pkg-2.13 {Tcl_PkgRequire procedure, "package unknown" support} {
     package require -exact t 1.5
     package unknown {}
     set x
-} {t 1.5 -exact}
+} {t 1.5-1.6}
 test pkg-2.14 {Tcl_PkgRequire procedure, "package unknown" support} {
     proc pkgUnknown args {
 	package ifneeded t 1.2 "set x loaded; package provide t 1.2"
@@ -192,14 +212,14 @@ test pkg-2.15 {Tcl_PkgRequire procedure, "package unknown" support} {
     package require {a b}
     package unknown {}
     set x
-} {{a b} {}}
+} {{a b}}
 test pkg-2.16 {Tcl_PkgRequire procedure, "package unknown" error} {
     proc pkgUnknown args {
 	error "testing package unknown"
     }
     package forget t 
     package unknown pkgUnknown
-    set result [list [catch {package require t} msg] $msg $errorInfo]
+    set result [list [catch {package require t} msg] $msg $::errorInfo]
     package unknown {}
     set result
 } {1 {testing package unknown} {testing package unknown
@@ -207,7 +227,7 @@ test pkg-2.16 {Tcl_PkgRequire procedure, "package unknown" error} {
 "error "testing package unknown""
     (procedure "pkgUnknown" line 2)
     invoked from within
-"pkgUnknown t {}"
+"pkgUnknown t"
     ("package unknown" script)
     invoked from within
 "package require t"}}
@@ -225,7 +245,7 @@ test pkg-2.17 {Tcl_PkgRequire procedure, "package unknown" doesn't load package}
     set result [list [catch {package require -exact t 1.5} msg] $msg $x]
     package unknown {}
     set result
-} {1 {can't find package t 1.5} {t 1.5 -exact}}
+} {1 {can't find package t 1.5-1.6} {t 1.5-1.6}}
 test pkg-2.18 {Tcl_PkgRequire procedure, version checks} {
     package forget t
     package provide t 2.3
@@ -260,11 +280,11 @@ test pkg-2.24 {Tcl_PkgRequire procedure, version checks} {
     package forget t
     package provide t 2.3
     list [catch {package require -exact t 2.2} msg] $msg
-} {1 {version conflict for package "t": have 2.3, need 2.2}}
+} {1 {version conflict for package "t": have 2.3, need 2.2-2.3}}
 test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test" EI}
-    list [catch {package require t 2.1} msg] $msg $errorInfo
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
 } -match glob -result {1 {ifneeded test} {EI
     ("package ifneeded*" script)
     invoked from within
@@ -272,7 +292,7 @@ test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
 test pkg-2.26 {Tcl_PkgRequire procedure, error in ifneeded script} -body {
     package forget t
     package ifneeded t 2.1 {package provide t 2.1; foreach x 1 {error "ifneeded test" EI}}
-    list [catch {package require t 2.1} msg] $msg $errorInfo
+    list [catch {package require t 2.1} msg] $msg $::errorInfo
 } -match glob -result {1 {ifneeded test} {EI
     ("foreach" body line 1)
     invoked from within
@@ -463,6 +483,40 @@ test pkg-2.43 {Tcl_PkgRequire: consistent return values (1162286)} -setup {
     package unknown $saveUnknown
 } -returnCodes error -match glob -result {bad return code:*}
 
+
+
+test pkg-2.50 {Tcl_PkgRequire procedure, picking best stable version} {
+    package forget t
+    foreach i {1.4 3.4 4.0a1 2.3 2.4 2.2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    set x xxx
+    package require t
+    set x
+} {3.4}
+
+test pkg-2.51 {Tcl_PkgRequire procedure, picking best stable version} {
+    package forget t
+    foreach i {1.2b1 1.2 1.3a2 1.3} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    set x xxx
+    package require t
+    set x
+} {1.3}
+
+test pkg-2.52 {Tcl_PkgRequire procedure, picking best stable version} {
+    package forget t
+    foreach i {1.2b1 1.2 1.3 1.3a2} {
+	package ifneeded t $i "set x $i; package provide t $i"
+    }
+    set x xxx
+    package require t
+    set x
+} {1.3}
+
+
+
 test pkg-3.1 {Tcl_PackageCmd procedure} {
     list [catch {package} msg] $msg
 } {1 {wrong # args: should be "package option ?arg arg ...?"}}
@@ -588,16 +642,14 @@ test pkg-3.21 {Tcl_PackageCmd procedure, "provide" option} {
 } {1 {expected version number but got "a.b"}}
 test pkg-3.22 {Tcl_PackageCmd procedure, "require" option} {
     list [catch {package require} msg] $msg
-} {1 {wrong # args: should be "package require ?-exact? package ?version?"}}
-test pkg-3.23 {Tcl_PackageCmd procedure, "require" option} {
-    list [catch {package require a b c} msg] $msg
-} {1 {wrong # args: should be "package require ?-exact? package ?version?"}}
+} {1 {wrong # args: should be "package require ?-exact? package ?requirement...?"}}
+
 test pkg-3.24 {Tcl_PackageCmd procedure, "require" option} {
     list [catch {package require -exact a b c} msg] $msg
-} {1 {wrong # args: should be "package require ?-exact? package ?version?"}}
-test pkg-3.25 {Tcl_PackageCmd procedure, "require" option} {
-    list [catch {package require -bs a b} msg] $msg
-} {1 {wrong # args: should be "package require ?-exact? package ?version?"}}
+    # Exact syntax: -exact name version
+    #              name ?requirement...?
+} {1 {wrong # args: should be "package require ?-exact? package ?requirement...?"}}
+
 test pkg-3.26 {Tcl_PackageCmd procedure, "require" option} {
     list [catch {package require x a.b} msg] $msg
 } {1 {expected version number but got "a.b"}}
@@ -606,10 +658,10 @@ test pkg-3.27 {Tcl_PackageCmd procedure, "require" option} {
 } {1 {expected version number but got "a.b"}}
 test pkg-3.28 {Tcl_PackageCmd procedure, "require" option} {
     list [catch {package require -exact x} msg] $msg
-} {1 {wrong # args: should be "package require ?-exact? package ?version?"}}
+} {1 {wrong # args: should be "package require ?-exact? package ?requirement...?"}}
 test pkg-3.29 {Tcl_PackageCmd procedure, "require" option} {
     list [catch {package require -exact} msg] $msg
-} {1 {wrong # args: should be "package require ?-exact? package ?version?"}}
+} {1 {wrong # args: should be "package require ?-exact? package ?requirement...?"}}
 test pkg-3.30 {Tcl_PackageCmd procedure, "require" option} {
     package forget t
     package provide t 2.3
@@ -677,10 +729,8 @@ test pkg-3.46 {Tcl_PackageCmd procedure, "versions" option} {
 } {2.3 2.4}
 test pkg-3.47 {Tcl_PackageCmd procedure, "vsatisfies" option} {
     list [catch {package vsatisfies a} msg] $msg
-} {1 {wrong # args: should be "package vsatisfies version1 version2"}}
-test pkg-3.48 {Tcl_PackageCmd procedure, "vsatisfies" option} {
-    list [catch {package vsatisfies a b c} msg] $msg
-} {1 {wrong # args: should be "package vsatisfies version1 version2"}}
+} {1 {wrong # args: should be "package vsatisfies version requirement requirement..."}}
+
 test pkg-3.49 {Tcl_PackageCmd procedure, "vsatisfies" option} {
     list [catch {package vsatisfies x.y 3.4} msg] $msg
 } {1 {expected version number but got "x.y"}}
@@ -695,7 +745,20 @@ test pkg-3.52 {Tcl_PackageCmd procedure, "vsatisfies" option} {
 } {0}
 test pkg-3.53 {Tcl_PackageCmd procedure, "versions" option} {
     list [catch {package foo} msg] $msg
-} {1 {bad option "foo": must be forget, ifneeded, names, present, provide, require, unknown, vcompare, versions, or vsatisfies}}
+} {1 {bad option "foo": must be forget, ifneeded, names, prefer, present, provide, require, unknown, vcompare, versions, or vsatisfies}}
+
+test pkg-3.54 {Tcl_PackageCmd procedure, "vsatisfies" option} {
+    list [catch {package vsatisfies 2.1 2.1-3.2-4.5} msg] $msg
+} {1 {expected versionMin-versionMax but got "2.1-3.2-4.5"}}
+
+test pkg-3.55 {Tcl_PackageCmd procedure, "vsatisfies" option} {
+    list [catch {package vsatisfies 2.1 3.2-x.y} msg] $msg
+} {1 {expected version number but got "x.y"}}
+
+test pkg-3.56 {Tcl_PackageCmd procedure, "vsatisfies" option} {
+    list [catch {package vsatisfies 2.1 x.y-3.2} msg] $msg
+} {1 {expected version number but got "x.y"}}
+
 
 # No tests for FindPackage;  can't think up anything detectable
 # errors.
@@ -841,6 +904,288 @@ test pkg-7.17 {Tcl_PackageCmd procedure, "present" option} {
 test pkg-7.18 {Tcl_PackageCmd procedure, "present" option} {
     list [catch {package present -exact} msg] $msg
 } {1 {wrong # args: should be "package present ?-exact? package ?version?"}}
+
+
+
+
+set n 0
+foreach {r p vs vc} {
+    8.5a0    8.5a5    1          -1
+    8.5a0    8.5b1    1          -1
+    8.5a0    8.5.1    1          -1
+    8.5a0    8.6a0    1          -1
+    8.5a0    8.6b0    1          -1
+    8.5a0    8.6.0    1          -1
+    8.5a6    8.5a5    0          1
+    8.5a6    8.5b1    1          -1
+    8.5a6    8.5.1    1          -1
+    8.5a6    8.6a0    1          -1
+    8.5a6    8.6b0    1          -1
+    8.5a6    8.6.0    1          -1
+    8.5b0    8.5a5    0          1
+    8.5b0    8.5b1    1          -1
+    8.5b0    8.5.1    1          -1
+    8.5b0    8.6a0    1          -1
+    8.5b0    8.6b0    1          -1
+    8.5b0    8.6.0    1          -1
+    8.5b2    8.5a5    0          1
+    8.5b2    8.5b1    0          1
+    8.5b2    8.5.1    1          -1
+    8.5b2    8.6a0    1          -1
+    8.5b2    8.6b0    1          -1
+    8.5b2    8.6.0    1          -1
+    8.5      8.5a5    1          1
+    8.5      8.5b1    1          1
+    8.5      8.5.1    1          -1
+    8.5      8.6a0    1          -1
+    8.5      8.6b0    1          -1
+    8.5      8.6.0    1          -1
+    8.5.0    8.5a5    0          1
+    8.5.0    8.5b1    0          1
+    8.5.0    8.5.1    1          -1
+    8.5.0    8.6a0    1          -1
+    8.5.0    8.6b0    1          -1
+    8.5.0    8.6.0    1          -1
+    10       8        0          1
+    8        10       0          -1
+    0.0.1.2  0.1.2    1          -1
+} {
+    test package-vsatisfies-1.$n {package vsatisfies} {
+	package vsatisfies $p $r
+    } $vs
+
+    test package-vcompare-1.$n {package vcompare} {
+	package vcompare $r $p
+    } $vc
+
+    incr n
+}
+
+test package-vcompare-2.0 {package vcompare at 32bit boundary} {
+    package vcompare [expr {1<<31}] [expr {(1<<31)-1}]
+} 1
+
+set n 0
+foreach {required provided satisfied} {
+    8.5a0-   8.5a5    1
+    8.5a0-   8.5b1    1
+    8.5a0-   8.5.1    1
+    8.5a0-   8.6a0    1
+    8.5a0-   8.6b0    1
+    8.5a0-   8.6.0    1
+    8.5a6-   8.5a5    0
+    8.5a6-   8.5b1    1
+    8.5a6-   8.5.1    1
+    8.5a6-   8.6a0    1
+    8.5a6-   8.6b0    1
+    8.5a6-   8.6.0    1
+    8.5b0-   8.5a5    0
+    8.5b0-   8.5b1    1
+    8.5b0-   8.5.1    1
+    8.5b0-   8.6a0    1
+    8.5b0-   8.6b0    1
+    8.5b0-   8.6.0    1
+    8.5b2-   8.5a5    0
+    8.5b2-   8.5b1    0
+    8.5b2-   8.5.1    1
+    8.5b2-   8.6a0    1
+    8.5b2-   8.6b0    1
+    8.5b2-   8.6.0    1
+    8.5-     8.5a5    1
+    8.5-     8.5b1    1
+    8.5-     8.5.1    1
+    8.5-     8.6a0    1
+    8.5-     8.6b0    1
+    8.5-     8.6.0    1
+    8.5.0-   8.5a5    0
+    8.5.0-   8.5b1    0
+    8.5.0-   8.5.1    1
+    8.5.0-   8.6a0    1
+    8.5.0-   8.6b0    1
+    8.5.0-   8.6.0    1
+    8.5a0-7  8.5a5    0
+    8.5a0-7  8.5b1    0
+    8.5a0-7  8.5.1    0
+    8.5a0-7  8.6a0    0
+    8.5a0-7  8.6b0    0
+    8.5a0-7  8.6.0    0
+    8.5a6-7  8.5a5    0
+    8.5a6-7  8.5b1    0
+    8.5a6-7  8.5.1    0
+    8.5a6-7  8.6a0    0
+    8.5a6-7  8.6b0    0
+    8.5a6-7  8.6.0    0
+    8.5b0-7  8.5a5    0
+    8.5b0-7  8.5b1    0
+    8.5b0-7  8.5.1    0
+    8.5b0-7  8.6a0    0
+    8.5b0-7  8.6b0    0
+    8.5b0-7  8.6.0    0
+    8.5b2-7  8.5a5    0
+    8.5b2-7  8.5b1    0
+    8.5b2-7  8.5.1    0
+    8.5b2-7  8.6a0    0
+    8.5b2-7  8.6b0    0
+    8.5b2-7  8.6.0    0
+    8.5-7    8.5a5    0
+    8.5-7    8.5b1    0
+    8.5-7    8.5.1    0
+    8.5-7    8.6a0    0
+    8.5-7    8.6b0    0
+    8.5-7    8.6.0    0
+    8.5.0-7  8.5a5    0
+    8.5.0-7  8.5b1    0
+    8.5.0-7  8.5.1    0
+    8.5.0-7  8.6a0    0
+    8.5.0-7  8.6b0    0
+    8.5.0-7  8.6.0    0
+    8.5a0-8.6.1 8.5a5    1
+    8.5a0-8.6.1 8.5b1    1
+    8.5a0-8.6.1 8.5.1    1
+    8.5a0-8.6.1 8.6a0    1
+    8.5a0-8.6.1 8.6b0    1
+    8.5a0-8.6.1 8.6.0    1
+    8.5a6-8.6.1 8.5a5    0
+    8.5a6-8.6.1 8.5b1    1
+    8.5a6-8.6.1 8.5.1    1
+    8.5a6-8.6.1 8.6a0    1
+    8.5a6-8.6.1 8.6b0    1
+    8.5a6-8.6.1 8.6.0    1
+    8.5b0-8.6.1 8.5a5    0
+    8.5b0-8.6.1 8.5b1    1
+    8.5b0-8.6.1 8.5.1    1
+    8.5b0-8.6.1 8.6a0    1
+    8.5b0-8.6.1 8.6b0    1
+    8.5b0-8.6.1 8.6.0    1
+    8.5b2-8.6.1 8.5a5    0
+    8.5b2-8.6.1 8.5b1    0
+    8.5b2-8.6.1 8.5.1    1
+    8.5b2-8.6.1 8.6a0    1
+    8.5b2-8.6.1 8.6b0    1
+    8.5b2-8.6.1 8.6.0    1
+    8.5-8.6.1 8.5a5    1
+    8.5-8.6.1 8.5b1    1
+    8.5-8.6.1 8.5.1    1
+    8.5-8.6.1 8.6a0    1
+    8.5-8.6.1 8.6b0    1
+    8.5-8.6.1 8.6.0    1
+    8.5.0-8.6.1 8.5a5    0
+    8.5.0-8.6.1 8.5b1    0
+    8.5.0-8.6.1 8.5.1    1
+    8.5.0-8.6.1 8.6a0    1
+    8.5.0-8.6.1 8.6b0    1
+    8.5.0-8.6.1 8.6.0    1
+    8.5a0-8.5a0 8.5a0    1
+    8.5a0-8.5a0 8.5b1    0
+    8.5a0-8.5a0 8.4      0
+    8.5b0-8.5b0 8.5a5    0
+    8.5b0-8.5b0 8.5b0    1
+    8.5b0-8.5b0 8.5.1    0
+    8.5-8.5  8.5a5    0
+    8.5-8.5  8.5b1    0
+    8.5-8.5  8.5      1
+    8.5-8.5  8.5.1    0
+    8.5.0-8.5.0 8.5a5    0
+    8.5.0-8.5.0 8.5b1    0
+    8.5.0-8.5.0 8.5.0    1
+    8.5.0-8.5.0 8.5.1    0
+    8.5.0-8.5.0 8.6a0    0
+    8.5.0-8.5.0 8.6b0    0
+    8.5.0-8.5.0 8.6.0    0
+    8.2      9        0
+    8.2-     9        1
+    8.2-8.5  9        0
+    8.2-9.1  9        1
+
+    8.5-8.5     8.5b1 0
+    8.5a0-8.5   8.5b1 0
+    8.5a0-8.5.1 8.5b1 1
+
+    8.5-8.5     8.5 1
+    8.5.0-8.5.0 8.5 1
+    8.5a0-8.5.0 8.5 0
+
+} {
+    test package-vsatisfies-2.$n "package vsatisfies $provided $required" {
+	package vsatisfies $provided $required
+    } $satisfied
+    incr n
+}
+
+test package-vsatisfies-3.0 "package vsatisfies multiple" {
+    #                      yes no
+    package vsatisfies 8.4 8.4 7.3
+} 1
+
+test package-vsatisfies-3.1 "package vsatisfies multiple" {
+    #                      no  yes
+    package vsatisfies 8.4 7.3 8.4
+} 1
+
+test package-vsatisfies-3.2 "package vsatisfies multiple" {
+    #                        yes  yes
+    package vsatisfies 8.4.2 8.4  8.4.1
+} 1
+
+test package-vsatisfies-3.3 "package vsatisfies multiple" {
+    #                      no  no
+    package vsatisfies 8.4 7.3 6.1
+} 0
+
+
+proc prefer {args} {
+    set ip [interp create]
+    lappend res [$ip eval {package prefer}]
+    foreach mode $args {
+	lappend res [$ip eval [list package prefer $mode]]
+    }
+    interp delete $ip
+    return $res
+}
+
+test package-prefer-1.0 {default} {
+    prefer
+} stable
+
+test package-prefer-1.1 {default} {
+    set   ::env(TCL_PKG_PREFER_LATEST) stable ; # value not relevant!
+    set res [prefer]
+    unset ::env(TCL_PKG_PREFER_LATEST)
+    set res
+} latest
+
+test package-prefer-2.0 {wrong\#args} {
+    catch {package prefer foo bar} msg
+    set msg
+} {wrong # args: should be "package prefer ?latest|stable?"}
+
+test package-prefer-2.1 {bogus argument} {
+    catch {package prefer foo} msg
+    set msg
+} {bad preference "foo": must be latest or stable}
+
+test package-prefer-3.0 {set, keep} {
+    package prefer stable
+} stable
+
+test package-prefer-3.1 {set stable, keep} {
+    prefer stable
+} {stable stable}
+
+test package-prefer-3.2 {set latest, change} {
+    prefer latest
+} {stable latest}
+
+test package-prefer-3.3 {set latest, keep} {
+    prefer  latest latest
+} {stable latest latest}
+
+test package-prefer-3.4 {set stable, rejected} {
+    prefer latest stable
+} {stable latest latest}
+
+rename prefer {}
+
 
 set auto_path $oldPath
 package unknown $oldPkgUnknown

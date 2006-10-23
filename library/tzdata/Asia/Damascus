@@ -1,4 +1,4 @@
-# created by ../tools/tclZIC.tcl - do not edit
+# created by tools/tclZIC.tcl - do not edit
 
 set TZData(:Asia/Damascus) {
     {-9223372036854775808 8712 0 LMT}
@@ -90,7 +90,7 @@ set TZData(:Asia/Damascus) {
     {1112306400 10800 1 EEST}
     {1128114000 7200 0 EET}
     {1143842400 10800 1 EEST}
-    {1159650000 7200 0 EET}
+    {1158872400 7200 0 EET}
     {1175378400 10800 1 EEST}
     {1191186000 7200 0 EET}
     {1207000800 10800 1 EEST}

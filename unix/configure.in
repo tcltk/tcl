@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.19 2006/08/29 16:19:46 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.20 2006/10/23 21:02:09 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -27,7 +27,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL="a5"
+TCL_PATCH_LEVEL="a6"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -161,6 +161,41 @@ if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
     ac_cv_func_realpath=no
 fi
 AC_CHECK_FUNC(realpath, , [AC_DEFINE(NO_REALPATH, 1, [Do we have realpath()])])
+
+#-------------------------------------------------------------------- 
+#	Look for thread-safe variants of some library functions.
+#--------------------------------------------------------------------
+
+if test "${TCL_THREADS}" = 1; then
+    SC_TCL_GETPWUID_R
+    SC_TCL_GETPWNAM_R
+    SC_TCL_GETGRGID_R
+    SC_TCL_GETGRNAM_R
+    if test "`uname -s`" = "Darwin" && \
+	    test "`uname -r | awk -F. '{print [$]1}'`" -gt 5; then
+	# Starting with Darwin 6 (Mac OSX 10.2), gethostbyX
+	# are actually MT-safe as they always return pointers
+	# from TSD instead of static storage.
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+		[Do we have MT-safe gethostbyname() ?])
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+		[Do we have MT-safe gethostbyaddr() ?])
+
+    elif test "`uname -s`" = "HP-UX" && \
+	      test "`uname -r|sed -e 's|B\.||' -e 's|\..*$||'`" -gt 10; then
+        # Starting with HPUX 11.00 (we believe), gethostbyX
+        # are actually MT-safe as they always return pointers
+	# from TSD instead of static storage.
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYNAME, 1,
+		[Do we have MT-safe gethostbyname() ?])
+	AC_DEFINE(HAVE_MTSAFE_GETHOSTBYADDR, 1,
+		[Do we have MT-safe gethostbyaddr() ?])
+
+    else
+	SC_TCL_GETHOSTBYNAME_R
+	SC_TCL_GETHOSTBYADDR_R
+    fi
+fi
 
 #---------------------------------------------------------------------------
 #	Determine which interface to use to talk to the serial port.
@@ -500,6 +535,52 @@ if test $tcl_ok = yes; then
     AC_DEFINE(TCL_UNLOAD_DLLS, 1, [Do we allow unloading of shared libraries?])
 fi
 AC_MSG_RESULT([$tcl_ok])
+
+#------------------------------------------------------------------------
+#	Check whether the timezone data is supplied by the OS or has
+#	to be installed by Tcl. The default is autodetection, but can
+#	be overriden on the configure command line either way.
+#------------------------------------------------------------------------
+AC_MSG_CHECKING([for timezone data])
+AC_ARG_WITH(tzdata,
+	AC_HELP_STRING([--with-tzdata],
+		[install timezone data (default: autodetect)]),
+	[tcl_ok=$withval], [tcl_ok=auto])
+#
+# Any directories that get added here must also be added to the
+# search path in ::tcl::clock::Initialize (library/clock.tcl).
+#
+case $tcl_ok in 
+	no)
+		AC_MSG_RESULT([supplied by OS vendor])
+	;;
+	yes)
+		# nothing to do here
+	;;
+	auto*)
+		tcl_ok=yes
+		for dir in /usr/share/zoneinfo \
+			/usr/share/lib/zoneinfo \
+			/usr/lib/zoneinfo
+		do
+			if test -f $dir/UTC -o -f $dir/GMT
+			then
+				tcl_ok=no
+				AC_MSG_RESULT([$dir])
+				break
+			fi
+		done
+	;;
+	*)
+		AC_MSG_ERROR([invalid argument: $tcl_ok])	
+	;;
+esac
+if test $tcl_ok = yes
+then
+	AC_MSG_RESULT([supplied by Tcl])
+	INSTALL_TZDATA=install-tzdata
+fi
+AC_SUBST(INSTALL_TZDATA)
 
 #--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to

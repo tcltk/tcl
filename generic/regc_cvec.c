@@ -111,10 +111,18 @@ addrange(
     cv->nranges++;
 }
 
+#ifdef REGEXP_MCCE_ENABLED
+/*
+ * This static function is currently called from a single spot in regcomp.c,
+ * with two NULL pointers; in that case it does nothing, so that we define out
+ * both the call and the code.
+ */
+
 /*
  - addmcce - add an MCCE to a cvec
  ^ static VOID addmcce(struct cvec *, chr *, chr *);
  */
+
 static void
 addmcce(
     struct cvec *cv,		/* character vector */
@@ -142,6 +150,7 @@ addmcce(
     assert(d == &cv->chrs[cv->chrspace - cv->nmccechrs]);
     cv->nmccechrs += len + 1;
 }
+#endif
 
 /*
  - haschr - does a cvec contain this chr?

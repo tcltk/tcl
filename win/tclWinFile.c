@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.20 2006/08/29 16:19:48 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.21 2006/10/23 21:02:10 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -88,6 +88,9 @@
     CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #  define FSCTL_DELETE_REPARSE_POINT \
     CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_SPECIAL_ACCESS)
+#endif
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #endif
 
 /*
@@ -2116,7 +2119,7 @@ NativeStat(
 	     */
 
 	    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
-	    if (attr == 0xffffffff) {
+	    if (attr == INVALID_FILE_ATTRIBUTES) {
 		Tcl_SetErrno(ENOENT);
 		return -1;
 	    }
@@ -2483,12 +2486,16 @@ TclpObjLink(
     int linkAction)
 {
     if (toPtr != NULL) {
-	toPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
-    }
-    if (toPtr != NULL) {
 	int res;
-	TCHAR *LinkTarget = (TCHAR *) Tcl_FSGetNativePath(toPtr);
+	TCHAR *LinkTarget;
 	TCHAR *LinkSource = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
+
+	if (normalizedToPtr == NULL) {
+	    return NULL;
+	}
+
+	LinkTarget = (TCHAR *) Tcl_FSGetNativePath(normalizedToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
@@ -2659,7 +2666,7 @@ TclpObjNormalizePath(
 		 */
 
 		if (isDrive) {
-		    if (GetFileAttributesA(nativePath) == 0xffffffff) {
+		    if (GetFileAttributesA(nativePath) == INVALID_FILE_ATTRIBUTES) {
 			/*
 			 * File doesn't exist.
 			 */
@@ -2726,7 +2733,7 @@ TclpObjNormalizePath(
 
 			handle = FindFirstFileA(nativePath, &fData);
 			if (handle == INVALID_HANDLE_VALUE) {
-			    if (GetFileAttributesA(nativePath) == 0xffffffff) {
+			    if (GetFileAttributesA(nativePath) == INVALID_FILE_ATTRIBUTES) {
 				/*
 				 * File doesn't exist.
 				 */
@@ -3355,10 +3362,21 @@ TclpUtime(
 {
     int res = 0;
     HANDLE fileHandle;
+    CONST TCHAR *native;
+    DWORD attr = 0;
+    DWORD flags = FILE_ATTRIBUTE_NORMAL;
     FILETIME lastAccessTime, lastModTime;
 
     FromCTime(tval->actime, &lastAccessTime);
     FromCTime(tval->modtime, &lastModTime);
+    
+    native = (CONST TCHAR *)Tcl_FSGetNativePath(pathPtr);
+
+    attr = (*tclWinProcs->getFileAttributesProc)(native);
+
+    if (attr != INVALID_FILE_ATTRIBUTES && attr & FILE_ATTRIBUTE_DIRECTORY) {
+	flags = FILE_FLAG_BACKUP_SEMANTICS;
+    }
 
     /*
      * We use the native APIs (not 'utime') because there are some daylight
@@ -3366,9 +3384,8 @@ TclpUtime(
      */
 
     fileHandle = (tclWinProcs->createFileProc) (
-	    (CONST TCHAR *) Tcl_FSGetNativePath(pathPtr),
-	    FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
-	    FILE_ATTRIBUTE_NORMAL, NULL);
+	    native, FILE_WRITE_ATTRIBUTES, 0, NULL,
+	    OPEN_EXISTING, flags, NULL);
 
     if (fileHandle == INVALID_HANDLE_VALUE ||
 	    !SetFileTime(fileHandle, NULL, &lastAccessTime, &lastModTime)) {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: append.test,v 1.7 2001/07/03 23:39:24 hobbs Exp $
+# RCS: @(#) $Id: append.test,v 1.7.14.1 2006/10/23 21:01:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -143,6 +143,15 @@ test append-4.20 {lappend command} {
     catch {unset x}
     lappend x(0) abc
 } {abc}
+unset x
+test append-4.21 {lappend command} {
+    set x \"
+    list [catch {lappend x} msg] $msg
+} {1 {unmatched open quote in list}}
+test append-4.22 {lappend command} {
+    set x \"
+    list [catch {lappend x abc} msg] $msg
+} {1 {unmatched open quote in list}}
 
 proc check {var size} {
     set l [llength $var]

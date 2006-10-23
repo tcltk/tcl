@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.11 2006/01/25 18:38:47 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.12 2006/10/23 21:01:49 dgp Exp $
 #
 
 package require tcltest 2
@@ -550,7 +550,7 @@ test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {stdio} {
 	fconfigure $f -buffering line
 	puts $f {fconfigure stdout -buffering line}
 	puts $f continue
-	puts $f {puts $errorInfo}
+	puts $f {puts $::errorInfo}
 	puts $f {puts DONE}
 	set newMsg {}
 	set msg {}

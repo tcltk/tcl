@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.21 2006/08/29 16:19:30 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.22 2006/10/23 21:01:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -69,7 +69,6 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
-static int		ParseInteger(CONST char *bytes, int numBytes);
 static int		SetEndOffsetFromAny(Tcl_Interp* interp,
 			    Tcl_Obj* objPtr);
 static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
@@ -428,15 +427,26 @@ Tcl_SplitList(
      * the list.
      */
 
-    for (size = 1, l = list; *l != 0; l++) {
+    for (size = 2, l = list; *l != 0; l++) {
 	if (isspace(UCHAR(*l))) { /* INTL: ISO space. */
 	    size++;
+	    /* Consecutive space can only count as a single list delimiter */
+	    while (1) {
+		char next = *(l + 1);
+		if (next == '\0') {
+		    break;
+		}
+		++l;
+		if (isspace(UCHAR(next))) {
+		    continue;
+		}
+		break;
+	    }
 	}
     }
-    size++;			/* Leave space for final NULL pointer. */
+    length = l - list;
     argv = (CONST char **) ckalloc((unsigned)
-	    ((size * sizeof(char *)) + (l - list) + 1));
-    length = strlen(list);
+	    ((size * sizeof(char *)) + length + 1));
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
 	CONST char *prevList = list;
@@ -2159,66 +2169,6 @@ TclNeedSpace(
 /*
  *----------------------------------------------------------------------
  *
- * ParseInteger --
- *
- *	Scans up to numBytes bytes starting at bytes, and checks whether the
- *	leading bytes look like an integer's string representation.
- *
- * Results:
- *	Returns 0 if the leading bytes do not look like an integer.
- *	Otherwise, returns the number of bytes examined that look like an
- *	integer. This may be less than numBytes if the integer is only the
- *	leading part of the string.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ParseInteger(
-    CONST char *bytes,		/* The string to examine. */
-    int numBytes)		/* Max number of bytes to scan. */
-{
-    register CONST char *p = bytes;
-
-    /*
-     * Take care of introductory "0x".
-     */
-
-    if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
-	int scanned;
-	Tcl_UniChar ch;
-
-	p += 2;
-	numBytes -= 2;
-	scanned = TclParseHex(p, numBytes, &ch);
-	if (scanned) {
-	    return scanned+2;
-	}
-
-	/*
-	 * Recognize the 0 as valid integer, but x is left behind.
-	 */
-
-	return 1;
-    }
-    while (numBytes && isdigit(UCHAR(*p))) {            /* INTL: digit */
-	numBytes--; p++;
-    }
-    if (numBytes == 0) {
-	return (p - bytes);
-    }
-    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
-	return (p - bytes);
-    }
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclGetIntForIndex --
  *
  *	This function returns an integer corresponding to the list index held
@@ -2265,36 +2215,32 @@ TclGetIntForIndex(
 	*indexPtr = endValue + objPtr->internalRep.longValue;
 
     } else {
-	int opIdx, length;
-	char *bytes = Tcl_GetStringFromObj(objPtr, &length);
-	char *p = bytes;
+	int length;
+	char *opPtr, *bytes = Tcl_GetStringFromObj(objPtr, &length);
 
-	while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	    length--; p++;
+	/* Leading whitespace is acceptable in an index */
+	while (length && isspace(UCHAR(*bytes))) { /* INTL: ISO space. */
+	    bytes++; length--;
 	}
-	if (length == 0) {
-	    goto parseError;
-	}
-	if ((*p == '+') || (*p == '-')) {
-	    p++; length--;
-	}
-	opIdx = ParseInteger(p, length) + (int) (p-bytes);
-	if (opIdx) {
+
+	if (TCL_OK == TclParseNumber(NULL, NULL, NULL,
+		bytes, length, (CONST char **)&opPtr,
+		TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_WHITESPACE)) {
 	    int code, first, second;
-	    char savedOp = bytes[opIdx];
+	    char savedOp = *opPtr;
 	    if ((savedOp != '+') && (savedOp != '-')) {
 		goto parseError;
 	    }
-	    if (isspace(UCHAR(bytes[opIdx+1]))) {
+	    if (isspace(UCHAR(opPtr[1]))) {
 		goto parseError;
 	    }
-	    bytes[opIdx] = '\0';
+	    *opPtr = '\0';
 	    code = Tcl_GetInt(interp, bytes, &first);
-	    bytes[opIdx] = savedOp;
+	    *opPtr = savedOp;
 	    if (code == TCL_ERROR) {
 		goto parseError;
 	    }
-	    if (TCL_ERROR == Tcl_GetInt(interp, bytes+opIdx+1, &second)) {
+	    if (TCL_ERROR == Tcl_GetInt(interp, opPtr+1, &second)) {
 		goto parseError;
 	    }
 	    if (savedOp == '+') {
