@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.89 2006/10/20 15:16:47 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.90 2006/10/23 21:36:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1278,22 +1278,18 @@ InfoLevelCmd(dummy, interp, objc, objv)
 {
     Interp *iPtr = (Interp *) interp;
     int level;
-    CallFrame *framePtr;
+    CallFrame *framePtr, *rootFramePtr = iPtr->rootFramePtr;
     Tcl_Obj *listPtr;
 
     if (objc == 2) {		/* just "info level" */
-	if (iPtr->varFramePtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
-	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
 	return TCL_OK;
     } else if (objc == 3) {
 	if (Tcl_GetIntFromObj(interp, objv[2], &level) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (level <= 0) {
-	    if (iPtr->varFramePtr == NULL) {
+	    if (iPtr->varFramePtr == rootFramePtr) {
 		levelError:
 		Tcl_AppendResult(interp, "bad level \"",
 			TclGetString(objv[2]), "\"", (char *) NULL);
@@ -1301,13 +1297,13 @@ InfoLevelCmd(dummy, interp, objc, objv)
 	    }
 	    level += iPtr->varFramePtr->level;
 	}
-	for (framePtr = iPtr->varFramePtr;  framePtr != NULL;
+	for (framePtr = iPtr->varFramePtr;  framePtr != rootFramePtr;
 		framePtr = framePtr->callerVarPtr) {
 	    if (framePtr->level == level) {
 		break;
 	    }
 	}
-	if (framePtr == NULL) {
+	if (framePtr == rootFramePtr) {
 	    goto levelError;
 	}
 
@@ -1451,8 +1447,7 @@ InfoLocalsCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    if (iPtr->varFramePtr == NULL ||
-	    !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC )) {
+    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC )) {
 	return TCL_OK;
     }
 
@@ -2054,8 +2049,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 
-    if ((iPtr->varFramePtr == NULL)
-	    || !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 	    || specificNsInPattern) {
 	/*
 	 * There is no frame pointer, the frame pointer was pushed only to
