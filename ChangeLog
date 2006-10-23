@@ -1,3 +1,17 @@
+2006-10-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tcl.h:           Modified the Tcl call stack so 
+	* generic/tclBasic.c:      there is always a valid CallFrame, even 
+	* generic/tclCmdIL.c:      at level 0 [Patch 1577278]. Most of the 
+	* generic/tclInt.h:        changes involve removing tests for
+	* generic/tclNamesp.c:     iPtr->(var)framePtr==NULL. There is now a
+	* generic/tclObj.c:        CallFrame pushed at interp creation
+	* generic/tclProc.c:       with a pointer to it stored in 
+	* generic/tclTrace.c:      iPtr->rootFramePtr. A second unused
+	* generic/tclVar.c:        field in Interp is hijacked to enable
+	further functionality, currently unused (but with several FRQs
+	depending on it).
+
 2006-10-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.5a6

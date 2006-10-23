@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.33 2006/04/11 14:37:54 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.34 2006/10/23 21:36:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1417,7 +1417,7 @@ TclCheckExecutionTraces(
 	return traceCode;
     }
 
-    curLevel = ((iPtr->varFramePtr == NULL) ? 0 : iPtr->varFramePtr->level);
+    curLevel = iPtr->varFramePtr->level;
 
     active.nextPtr = iPtr->activeCmdTracePtr;
     iPtr->activeCmdTracePtr = &active;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.113 2006/09/30 19:00:13 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.114 2006/10/23 21:36:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3485,7 +3485,7 @@ Tcl_GetCommandFromObj(
     savedFramePtr = iPtr->varFramePtr;
     name = Tcl_GetString(objPtr);
     if ((*name++ == ':') && (*name == ':')) {
-	iPtr->varFramePtr = NULL;
+	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
 
     /*
@@ -3507,11 +3507,7 @@ Tcl_GetCommandFromObj(
      * Get the current namespace.
      */
 
-    if (iPtr->varFramePtr != NULL) {
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	currNsPtr = iPtr->globalNsPtr;
-    }
+    currNsPtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * Check the context namespace and the namespace epoch of the resolved
@@ -3599,18 +3595,14 @@ TclSetCmdNameObj(
     savedFramePtr = iPtr->varFramePtr;
     name = Tcl_GetString(objPtr);
     if ((*name++ == ':') && (*name == ':')) {
-	iPtr->varFramePtr = NULL;
+	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
 
     /*
      * Get the current namespace.
      */
 
-    if (iPtr->varFramePtr != NULL) {
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	currNsPtr = iPtr->globalNsPtr;
-    }
+    currNsPtr = iPtr->varFramePtr->nsPtr;
 
     cmdPtr->refCount++;
     resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
@@ -3772,11 +3764,7 @@ SetCmdNameFromAny(
 	 * Get the current namespace.
 	 */
 
-	if (iPtr->varFramePtr != NULL) {
-	    currNsPtr = iPtr->varFramePtr->nsPtr;
-	} else {
-	    currNsPtr = iPtr->globalNsPtr;
-	}
+	currNsPtr = iPtr->varFramePtr->nsPtr;
 
 	cmdPtr->refCount++;
 	resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
