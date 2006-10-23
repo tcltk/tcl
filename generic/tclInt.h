@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.282 2006/10/23 21:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.283 2006/10/23 22:49:25 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1529,8 +1529,16 @@ typedef struct Interp {
      * i.e the package require preferences.
      */
 
-    int packagePrefer;          /* Current package selection mode.
-				 */
+    int packagePrefer;          /* Current package selection mode. */
+
+    /*
+     * Let [info level] know about ensemble rewriting
+     */
+
+    int callObjc;
+    Tcl_Obj *CONST *callObjv;
+    
+    
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.

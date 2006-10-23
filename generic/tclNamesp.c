@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.104 2006/10/23 21:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.105 2006/10/23 22:49:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -425,8 +425,8 @@ Tcl_PushCallFrame(
     nsPtr->activationCount++;
     framePtr->nsPtr = nsPtr;
     framePtr->isProcCallFrame = isProcCallFrame;
-    framePtr->objc = 0;
-    framePtr->objv = NULL;
+    framePtr->objc = iPtr->callObjc;
+    framePtr->objv = iPtr->callObjv;
     framePtr->callerPtr = iPtr->framePtr;
     framePtr->callerVarPtr = iPtr->varFramePtr;
     if (iPtr->varFramePtr != NULL) {
@@ -3433,9 +3433,6 @@ NamespaceEvalCmd(
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
-    framePtr->objc = objc;
-    framePtr->objv = objv;	/* Reference counts do not need to be
-				 * incremented here. */
 
     if (objc == 4) {
 	result = Tcl_EvalObjEx(interp, objv[3], 0);
@@ -3834,8 +3831,6 @@ NamespaceInscopeCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    framePtr->objc = objc;
-    framePtr->objv = objv;
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
@@ -6281,7 +6276,7 @@ NsEnsembleImplementationCmd(
 	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
 	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
 	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
-		TCL_EVAL_INVOKE);
+		TCL_EVAL_INVOKE|TCL_EVAL_NOREWRITE);
 	Tcl_DecrRefCount(prefixObj);
 	ckfree((char *) tempObjv);
 	if (isRootEnsemble) {
@@ -6301,10 +6296,11 @@ NsEnsembleImplementationCmd(
      */
 
     if (ensemblePtr->unknownHandler != NULL && reparseCount++ < 1) {
+	Interp *iPtr = (Interp *) interp;
 	int paramc, i;
 	Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
-	unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
+	unknownCmd = Tcl_NewListObj(1, &ensemblePtr->unknownHandler);
 	TclNewObj(ensObj);
 	Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
 	Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
@@ -6345,6 +6341,14 @@ NsEnsembleImplementationCmd(
 		goto runResultingSubcommand;
 	    }
 
+	    /*
+	     * Restore the interp's call data, which may have been wiped out
+	     * while processing the unknown handler. 
+	     */
+
+	    iPtr->callObjc = objc;
+	    iPtr->callObjv = objv;
+	    
 	    /*
 	     * Namespace alive & empty result => reparse.
 	     */
