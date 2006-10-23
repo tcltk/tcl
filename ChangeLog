@@ -12,6 +12,11 @@
 	further functionality, currently unused (but with several FRQs
 	depending on it).
 
+	***POTENTIAL INCOMPATIBILITY*** 
+	Any user that includes tclInt.h and needs to determine if it is
+	running at level 0 should change (iPtr->varFramePtr==NULL) to 
+	(iPtr->varFramePtr==iPtr->rootFramePtr). 
+
 2006-10-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.5a6
