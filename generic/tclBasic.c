@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.200 2006/10/20 15:16:47 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.201 2006/10/23 21:36:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -272,7 +272,9 @@ Tcl_CreateInterp(void)
     ByteCodeStats *statsPtr;
 #endif /* TCL_COMPILE_STATS */
     char mathFuncName[32];
-
+    CallFrame *framePtr;
+    int result;
+    
     TclInitSubsystems();
 
     /*
@@ -306,8 +308,8 @@ Tcl_CreateInterp(void)
 
     iPtr->numLevels = 0;
     iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
-    iPtr->framePtr = NULL;
-    iPtr->varFramePtr = NULL;
+    iPtr->framePtr = NULL;    /* initialise as soon as :: is available */
+    iPtr->varFramePtr = NULL; /* initialise as soon as :: is available */
     iPtr->activeVarTracePtr = NULL;
 
     iPtr->returnOpts = NULL;
@@ -319,6 +321,9 @@ Tcl_CreateInterp(void)
     Tcl_IncrRefCount(iPtr->ecVar);
     iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
+
+    iPtr->rootFramePtr = NULL; /* initialise as soon as :: is available */
+    iPtr->lookupNsPtr = NULL;
 
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
@@ -357,6 +362,24 @@ Tcl_CreateInterp(void)
     if (iPtr->globalNsPtr == NULL) {
 	Tcl_Panic("Tcl_CreateInterp: can't create global namespace");
     }
+
+    /*
+     * Initialise the rootCallframe. It cannot be allocated on the stack, as
+     * it has to be in place before TclCreateExecEnv tries to use a variable. 
+     */
+
+    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+    framePtr = (CallFrame *) ckalloc(sizeof(CallFrame));
+    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
+	    (Tcl_Namespace *) iPtr->globalNsPtr, /*isProcCallFrame*/ 0);
+    if (result != TCL_OK) {
+	Tcl_Panic("Tcl_CreateInterp: faile to push the root stack frame");
+    }
+    framePtr->objc = 0;
+
+    iPtr->framePtr = framePtr; 
+    iPtr->varFramePtr = framePtr;
+    iPtr->rootFramePtr = framePtr;
 
     /*
      * Initialize support for code compilation and execution. We call
@@ -1054,6 +1077,12 @@ DeleteInterpProc(
      */
 
     Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
+    if (iPtr->framePtr != iPtr->rootFramePtr) {
+	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
+    }
+    Tcl_PopCallFrame(interp);
+    ckfree((char *)iPtr->rootFramePtr);
+    iPtr->rootFramePtr = NULL;
 
     /*
      * Free up the result *after* deleting variables, since variable deletion
@@ -3240,10 +3269,10 @@ TclEvalObjvInternal(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **newObjv;
     int i;
-    CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
-				 * TCL_EVAL_GLOBAL was set. */
+    CallFrame *savedVarFramePtr = NULL;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
     int code = TCL_OK;
-    int traceCode = TCL_OK;
+    int traceCode = TCL_OK; 
     int checkTraces = 1;
     int cmdEpoch;
     Namespace *savedNsPtr = NULL;
@@ -3257,12 +3286,19 @@ TclEvalObjvInternal(
     }
 
     /* Configure evaluation context to match the requested flags */
-    savedVarFramePtr = iPtr->varFramePtr;
-    if (flags & TCL_EVAL_GLOBAL) {
-	iPtr->varFramePtr = NULL;
-    } else if ((flags & TCL_EVAL_INVOKE) && iPtr->varFramePtr) {
-	savedNsPtr = iPtr->varFramePtr->nsPtr;
-	iPtr->varFramePtr->nsPtr = iPtr->globalNsPtr;
+
+    if ((flags & TCL_EVAL_GLOBAL)
+	    && (varFramePtr != iPtr->rootFramePtr)) {
+	varFramePtr = iPtr->rootFramePtr;
+	savedVarFramePtr = iPtr->varFramePtr;
+	iPtr->varFramePtr = varFramePtr; 
+    } else if (flags & TCL_EVAL_INVOKE) {
+	savedNsPtr = varFramePtr->nsPtr;
+	if (iPtr->lookupNsPtr) {
+	    varFramePtr->nsPtr = iPtr->lookupNsPtr;
+	} else {
+	    varFramePtr->nsPtr = iPtr->globalNsPtr;
+	}
     }
 
     /*
@@ -3286,14 +3322,12 @@ TclEvalObjvInternal(
         int newObjc, handlerObjc;
         Tcl_Obj **handlerObjv;
 
-	if (iPtr->varFramePtr != NULL) {
-	    currNsPtr = iPtr->varFramePtr->nsPtr;
-	}
+	currNsPtr = varFramePtr->nsPtr;
 	if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
 	    currNsPtr = iPtr->globalNsPtr;
-	}
-	if (currNsPtr == NULL) {
-	    Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
+	    if (currNsPtr == NULL) {
+		Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
+	    }
 	}
         if (currNsPtr->unknownHandlerPtr == NULL) {
             /* Global namespace has lost unknown handler, reset. */
@@ -3330,14 +3364,16 @@ TclEvalObjvInternal(
         }
 	ckfree((char *) newObjv);
 	if (savedNsPtr) {
-	    iPtr->varFramePtr->nsPtr = savedNsPtr;
+	    varFramePtr->nsPtr = savedNsPtr;
+	    iPtr->lookupNsPtr = NULL;
 	}
 	goto done;
     }
     if (savedNsPtr) {
-	iPtr->varFramePtr->nsPtr = savedNsPtr;
+	varFramePtr->nsPtr = savedNsPtr;
+	iPtr->lookupNsPtr = NULL;
     }
-
+    
     /*
      * Call trace functions if needed.
      */
@@ -3427,7 +3463,9 @@ TclEvalObjvInternal(
     }
 
     done:
-    iPtr->varFramePtr = savedVarFramePtr;
+    if (savedVarFramePtr) {
+	iPtr->varFramePtr = savedVarFramePtr;
+    }
     return code;
 }
 
@@ -3674,7 +3712,7 @@ Tcl_EvalEx(
 
     savedVarFramePtr = iPtr->varFramePtr;
     if (flags & TCL_EVAL_GLOBAL) {
-	iPtr->varFramePtr = NULL;
+	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
 
     /*
@@ -4054,7 +4092,7 @@ Tcl_EvalObjEx(
 
 	savedVarFramePtr = iPtr->varFramePtr;
 	if (flags & TCL_EVAL_GLOBAL) {
-	    iPtr->varFramePtr = NULL;
+	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
 
 	result = TclCompEvalObj(interp, objPtr);
@@ -4794,7 +4832,7 @@ Tcl_GlobalEval(
     CallFrame *savedVarFramePtr;
 
     savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = NULL;
+    iPtr->varFramePtr = iPtr->rootFramePtr;
     result = Tcl_Eval(interp, command);
     iPtr->varFramePtr = savedVarFramePtr;
     return result;

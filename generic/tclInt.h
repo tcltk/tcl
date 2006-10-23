@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.281 2006/10/20 15:16:47 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.282 2006/10/23 21:36:55 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1344,19 +1344,18 @@ typedef struct Interp {
 				 * assumes that infinite recursion has
 				 * occurred and it generates an error. */
     CallFrame *framePtr;	/* Points to top-most in stack of all nested
-				 * procedure invocations. NULL means there are
-				 * no active procedures. */
+				 * procedure invocations. */
     CallFrame *varFramePtr;	/* Points to the call frame whose variables
 				 * are currently in use (same as framePtr
-				 * unless an "uplevel" command is executing).
-				 * NULL means no procedure is active or
-				 * "uplevel 0" is executing. */
+				 * unless an "uplevel" command is
+				 * executing). */ 
     ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
     int returnCode;		/* [return -code] parameter */
-    char *unused3;		/* No longer used (was errorInfo) */
-    char *unused4;		/* No longer used (was errorCode) */
+    CallFrame *rootFramePtr;    /* Global frame pointer for this interpreter */
+    Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
+                                * TCL_EVAL_INVOKE call to Tcl_EvalObjv */
 
     /*
      * Information used by Tcl_AppendResult to keep track of partial results.
