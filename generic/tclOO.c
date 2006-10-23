@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.65 2006/10/22 23:01:37 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.66 2006/10/23 13:20:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1884,7 +1884,7 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
-    Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
+    TclListObjGetElements(fmPtr->prefixObj, numPrefixes, prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, contextPtr->skip,
 	    numPrefixes, prefixObjs, &len);
 
