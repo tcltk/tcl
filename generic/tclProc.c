@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.96 2006/10/23 21:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.97 2006/10/23 22:49:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1198,9 +1198,6 @@ ObjInterpProcEx(
 	return result;
     }
 
-
-    framePtr->objc = objc;
-    framePtr->objv = objv;	/* ref counts for args are incremented below */
     framePtr->procPtr = procPtr;
 
     /*

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.68 2006/10/01 20:59:01 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.69 2006/10/23 22:49:25 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -252,7 +252,7 @@ proc ::testClock::registry { cmd path key } {
 
 test clock-1.0 "clock format - wrong # args" {
     list [catch {clock format} msg] $msg $::errorCode
-} {1 {wrong # args: should be "::tcl::clock::format clockval ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
+} {1 {wrong # args: should be "clock format clockval ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"} {CLOCK wrongNumArgs}}
 
 test clock-1.1 "clock format - bad time" {
     list [catch {clock format foo} msg] $msg
@@ -35523,7 +35523,7 @@ test clock-33.11a {clock test, millis align with micros} {
 # clock scan
 test clock-34.1 {clock scan tests} {
     list [catch {clock scan} msg] $msg
-} {1 {wrong # args: should be "::tcl::clock::scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"}}
+} {1 {wrong # args: should be "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"}}
 test clock-34.2 {clock scan tests} {
     list [catch {clock scan "bad-string"} msg] $msg
 } {1 {unable to convert date-time string "bad-string"}}

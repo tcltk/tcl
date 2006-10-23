@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.58 2006/10/10 18:23:03 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.59 2006/10/23 22:49:26 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1529,7 +1529,7 @@ test namespace-42.7 {ensembles: nested} {
     set result [list [ns x0 z] [ns x1] [ns x2] [ns x3]]
     namespace delete ns
     set result
-} {{1 ::ns::x0::z} 1 2 3}
+} {{1 {ns x0 z}} 1 2 3}
 
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
@@ -1815,7 +1815,7 @@ test namespace-47.1 {ensemble: unknown handler} {
     lappend result [catch {ns c d e} msg] $msg
     lappend result [catch {ns Magic foo bar spong wibble} msg] $msg
     list $result [lsort [info commands ::ns::*]] $log [namespace delete ns]
-} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running ::ns::a b c} {running ::ns::a b c} {making b} {running ::ns::b c d} {making c} {running ::ns::c d e} {unknown Magic - args = foo bar spong wibble}} {}}
+} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running ns a b c} {running ns a b c} {making b} {running ns b c d} {making c} {running ns c d e} {unknown Magic - args = foo bar spong wibble}} {}}
 test namespace-47.2 {ensemble: unknown handler} {
     namespace eval ns {
 	namespace export {[a-z]*}

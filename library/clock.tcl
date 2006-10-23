@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.35 2006/08/24 21:47:49 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.36 2006/10/23 22:49:25 msofer Exp $
 #
 #----------------------------------------------------------------------
 
@@ -653,10 +653,11 @@ proc ::tcl::clock::format { args } {
     # Check the count of args
 
     if { [llength $args] < 1 || [llength $args] % 2 != 1 } {
+	set cmdName [lrange [info level 0] 0 end-[llength $args]]
 	return -code error \
 	    -errorcode [list CLOCK wrongNumArgs] \
 	    "wrong \# args: should be\
-             \"[lindex [info level 0] 0] clockval\
+             \"$cmdName clockval\
              ?-format string? ?-gmt boolean?\
              ?-locale LOCALE? ?-timezone ZONE?\""
     }
@@ -1243,10 +1244,11 @@ proc ::tcl::clock::scan { args } {
     # Check the count of args
 
     if { [llength $args] < 1 || [llength $args] % 2 != 1 } {
+	set cmdName [lrange [info level 0] 0 end-[llength $args]]
 	return -code error \
 	    -errorcode [list CLOCK wrongNumArgs] \
 	    "wrong \# args: should be\
-             \"[lindex [info level 0] 0] string\
+             \"$cmdName string\
              ?-base seconds?\
              ?-format string? ?-gmt boolean?\
              ?-locale LOCALE? ?-timezone ZONE?\""
