@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.202 2006/10/23 22:49:24 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.203 2006/10/23 23:04:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3424,8 +3424,7 @@ TclEvalObjvInternal(
     iPtr->cmdCount++;
     if (code == TCL_OK && traceCode == TCL_OK && !Tcl_LimitExceeded(interp)) {
 	if (!(flags & TCL_EVAL_INVOKE) &&
-		(iPtr->ensembleRewrite.sourceObjs != NULL) &&
-		!Tcl_IsEnsemble((Tcl_Command) cmdPtr)) {
+		(iPtr->ensembleRewrite.sourceObjs != NULL)) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	}
 	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
