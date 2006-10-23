@@ -1,5 +1,8 @@
 2006-10-23  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c (TclEvalObjvInternal): removed redundant
+	check for ensembles [Bug 1577628].
+	
 	* library/clock.tcl (format, scan): corrected wrong # args
 	* tests/clock.test (3.1, 34.1):     messages to make use of the
 	new rewrite capabilities of [info level]
