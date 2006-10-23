@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.66 2006/10/23 13:20:59 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.67 2006/10/23 21:20:47 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -43,6 +43,16 @@ static const struct {
 };
 
 /*
+ * Structure containing definition information about class methods.
+ */
+
+typedef struct DeclaredClassMethod {
+    const char *name;		/* Name of the method in question. */
+    int isPublic;		/* Whether the method is public by default. */
+    Tcl_MethodCallProc callProc;/* How to call the method. */
+} DeclaredClassMethod;
+
+/*
  * What sort of size of things we like to allocate.
  */
 
@@ -59,8 +69,7 @@ static Method *		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 static Method *		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
 static void		DeclareClassMethod(Tcl_Interp *interp, Class *clsPtr,
-			    const char *name, int isPublic,
-			    Tcl_MethodCallProc callProc);
+			    const DeclaredClassMethod *dcm);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
 static int		ObjectCmd(Object *oPtr, Tcl_Interp *interp, int objc,
@@ -82,7 +91,7 @@ static int		PrivateObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 
-static int		SimpleInvoke(ClientData clientData,
+static int		DeclaredClassMethodInvoke(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
 static int		InvokeProcedureMethod(ClientData clientData,
@@ -143,7 +152,30 @@ static const Tcl_MethodType fwdMethodType = {
 };
 static const Tcl_MethodType coreMethodType = {
     TCL_OO_METHOD_VERSION_CURRENT, "core method",
-    SimpleInvoke, NULL, NULL
+    DeclaredClassMethodInvoke, NULL, NULL
+};
+
+/*
+ * Methods in the oo::object class.
+ */
+
+static const DeclaredClassMethod objMethods[] = {
+    {"destroy", 1, ObjectDestroy},
+    {"eval", 0, ObjectEval},
+    {"unknown", 0, ObjectUnknown},
+    {"variable", 0, ObjectLinkVar},
+    {"varname", 0, ObjectVarName},
+    {NULL, 0, NULL}
+};
+
+/*
+ * Additional methods in the oo::class class.
+ */
+
+static const DeclaredClassMethod clsMethods[] = {
+    {"create", 1, ClassCreate},
+    {"new", 1, ClassNew},
+    {NULL, 0, NULL}
 };
 
 /*
@@ -227,13 +259,12 @@ TclOOInit(
      * Basic method declarations for the core classes.
      */
 
-    DeclareClassMethod(interp, fPtr->objectCls, "destroy", 1, ObjectDestroy);
-    DeclareClassMethod(interp, fPtr->objectCls, "eval", 0, ObjectEval);
-    DeclareClassMethod(interp, fPtr->objectCls, "unknown", 0, ObjectUnknown);
-    DeclareClassMethod(interp, fPtr->objectCls, "variable", 0, ObjectLinkVar);
-    DeclareClassMethod(interp, fPtr->objectCls, "varname", 0, ObjectVarName);
-    DeclareClassMethod(interp, fPtr->classCls, "create", 1, ClassCreate);
-    DeclareClassMethod(interp, fPtr->classCls, "new", 1, ClassNew);
+    for (i=0 ; objMethods[i].name ; i++) {
+	DeclareClassMethod(interp, fPtr->objectCls, &objMethods[i]);
+    }
+    for (i=0 ; clsMethods[i].name ; i++) {
+	DeclareClassMethod(interp, fPtr->classCls, &clsMethods[i]);
+    }
 
     /*
      * Finish setting up the class of classes.
@@ -1534,24 +1565,24 @@ static void
 DeclareClassMethod(
     Tcl_Interp *interp,
     Class *clsPtr,		/* Class to attach the method to. */
-    const char *name,		/* Name of the method. */
-    int isPublic,		/* Whether the method is public. */
-    Tcl_MethodCallProc callPtr)
-				/* Method implementation function. */
+    const DeclaredClassMethod *dcm)
+				/* Name of the method, whether it is public,
+				 * and the function to implement it. */
 {
     Tcl_Obj *namePtr;
 
-    TclNewStringObj(namePtr, name, strlen(name));
+    TclNewStringObj(namePtr, dcm->name, strlen(dcm->name));
     Tcl_IncrRefCount(namePtr);
     Tcl_NewClassMethod(interp, (Tcl_Class) clsPtr, namePtr,
-	    (isPublic ? PUBLIC_METHOD : 0), &coreMethodType, callPtr);
+	    (dcm->isPublic ? PUBLIC_METHOD : 0), &coreMethodType,
+	    (ClientData) dcm);
     TclDecrRefCount(namePtr);
 }
 
 /*
  * ----------------------------------------------------------------------
  *
- * SimpleInvoke --
+ * DeclaredClassMethodInvoke --
  *
  *	How to invoke a simple method.
  *
@@ -1559,7 +1590,7 @@ DeclareClassMethod(
  */
 
 static int
-SimpleInvoke(
+DeclaredClassMethodInvoke(
     ClientData clientData,	/* Pointer to function that implements the
 				 * method. */
     Tcl_Interp *interp,
@@ -1567,9 +1598,9 @@ SimpleInvoke(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
-    Tcl_MethodCallProc callPtr = clientData;
+    const DeclaredClassMethod *dcm = clientData;
 
-    return (*callPtr)(NULL, interp, context, objc, objv);
+    return (dcm->callProc)(NULL, interp, context, objc, objv);
 }
 
 /*
