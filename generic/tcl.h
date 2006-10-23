@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.222 2006/10/23 20:26:11 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.223 2006/10/23 21:36:54 msofer Exp $
  */
 
 #ifndef _TCL
@@ -1062,7 +1062,7 @@ typedef struct Tcl_DString {
  *	TCL_EVAL_GLOBAL:	Execute script in global namespace
  *	TCL_EVAL_DIRECT:	Do not compile this script
  *	TCL_EVAL_INVOKE:	Magical Tcl_EvalObjv mode for aliases/ensembles
- *				o Run in global namespace
+ *				o Run in iPtr->lookupNsPtr or global namespace
  *				o Cut out of error traces
  *				o Don't reset the flags controlling ensemble
  *				  error message rewriting.
