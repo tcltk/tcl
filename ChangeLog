@@ -1,5 +1,10 @@
 2006-10-23  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclProc.c (ApplyObjCmd): fix wrong#args for apply by
+	using the ensemble rewrite engine, [Bug 1574835].
+	* generic/tclInterp.c (AliasObjCmd): previous commit missed usage
+	of TCL_EVAL_NOREWRITE for aliases.
+
 	* generic/tclBasic.c (TclEvalObjvInternal): removed redundant
 	check for ensembles [Bug 1577628].
 	
