@@ -1,3 +1,9 @@
+2006-10-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (ObjInterpProcEx): disable itcl hacks for
+	calls from ApplyObjCmd (islambda==1), as they mess apply's error
+	messages [Bug 1583266]
+
 2006-10-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c (ApplyObjCmd): fix wrong#args for apply by
