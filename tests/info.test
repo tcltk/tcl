@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.37 2006/10/20 15:16:47 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.38 2006/10/24 23:13:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -357,6 +357,25 @@ test info-9.10 {info level option, namespaces} {
     namespace delete t
     set msg
 } {namespace eval t {info level 0}}
+test info-9.11 {info level option, aliases} -setup {
+    proc w {x y z} {info level 0}
+    interp alias {} a {} w a b
+} -body {
+    a c
+} -cleanup {
+    rename a {}
+    rename w {}
+} -result {a c}
+test info-9.12 {info level option, ensembles} -setup {
+    proc w {x y z} {info level 0}
+    namespace ensemble create -command a -map {foo ::w}
+} -body {
+    a foo 1 2 3
+} -cleanup {
+    rename a {}
+    rename w {}
+} -result {a foo 1 2 3}
+
 
 set savedLibrary $tcl_library
 test info-10.1 {info library option} {
