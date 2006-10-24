@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: apply.test,v 1.7 2006/10/16 20:36:19 msofer Exp $
+# RCS: @(#) $Id: apply.test,v 1.8 2006/10/24 23:13:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -123,9 +123,43 @@ test apply-4.1 {error in arguments to lambda expression} {
 
 test apply-4.2 {error in arguments to lambda expression} {
     set lambda [list x {set x 1}]
-    set res [catch {apply $lambda x y} msg]
+    set res [catch {apply $lambda a b} msg]
     list $res $msg
 } {1 {wrong # args: should be "apply {x {set x 1}} x"}}
+
+test apply-4.3 {error in arguments to lambda expression} {
+    set lambda [list x {set x 1}]
+    interp alias {} foo {} ::apply $lambda
+    set res [catch {foo a b} msg]
+    list $res $msg [rename foo {}]
+} {1 {wrong # args: should be "foo x"} {}}
+
+test apply-4.4 {error in arguments to lambda expression} {
+    set lambda [list x {set x 1}]
+    interp alias {} foo {} ::apply $lambda a
+    set res [catch {foo b} msg]
+    list $res $msg [rename foo {}]
+} {1 {wrong # args: should be "foo"} {}}
+
+test apply-4.5 {error in arguments to lambda expression} {
+    set lambda [list x {set x 1}]
+    namespace eval a {
+	namespace ensemble create -command ::bar -map {id {::a::const foo}}
+	proc const val { return $val }
+	proc alias {object slot = command args} {
+	    set map [namespace ensemble configure $object -map]
+	    dict set map $slot [linsert $args 0 $command]
+	    namespace ensemble configure $object -map $map
+	}
+	proc method {object name params body} {
+	    set params [linsert $params 0 self]
+	    alias $object $name = ::apply [list $params $body] $object
+	}
+	method ::bar boo x {return "[expr {$x*$x}] - $self"}
+    }
+    set res [catch {bar boo} msg]
+    list $res $msg [namespace delete ::a]
+} {1 {wrong # args: should be "bar boo x"} {}}
 
 test apply-5.1 {runtime error in lambda expression} {
     set lambda [list {} {error foo}]
