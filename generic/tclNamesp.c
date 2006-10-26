@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.105 2006/10/23 22:49:25 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.106 2006/10/26 17:22:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6272,13 +6272,13 @@ NsEnsembleImplementationCmd(
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 2;
 	    }
 	}
-	tempObjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
+	tempObjv = (Tcl_Obj **) TclStackAlloc(interp, sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
 	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
 	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
 	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
 		TCL_EVAL_INVOKE|TCL_EVAL_NOREWRITE);
 	Tcl_DecrRefCount(prefixObj);
-	ckfree((char *) tempObjv);
+	TclStackFree(interp);
 	if (isRootEnsemble) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	    iPtr->ensembleRewrite.numRemovedObjs = 0;
