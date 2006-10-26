@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.65 2006/10/24 00:29:30 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.66 2006/10/26 17:22:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1710,7 +1710,8 @@ AliasObjCmd(
     if (cmdc <= ALIAS_CMDV_PREALLOC) {
 	cmdv = cmdArr;
     } else {
-	cmdv = (Tcl_Obj **) ckalloc((unsigned) (cmdc * sizeof(Tcl_Obj *)));
+	cmdv = (Tcl_Obj **) TclStackAlloc(interp,
+		(unsigned) (cmdc * sizeof(Tcl_Obj *)));
     }
 
     prefv = &aliasPtr->objPtr;
@@ -1763,7 +1764,7 @@ AliasObjCmd(
     }
 
     if (cmdv != cmdArr) {
-	ckfree((char *) cmdv);
+	TclStackFree(interp);
     }
     return result;
 #undef ALIAS_CMDV_PREALLOC
