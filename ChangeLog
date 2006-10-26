@@ -1,3 +1,9 @@
+2006-10-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInterp.c (ApplyObjCmd):a
+	* generic/tclNamesp.c (EnsembleImplementationCmd): replaced
+	ckalloc (heap) with TclStackAlloc (execution stack).
+
 2006-10-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/info.test (info-9.11-12): tests for [Bug 1577492]
