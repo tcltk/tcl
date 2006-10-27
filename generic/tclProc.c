@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.99 2006/10/24 22:31:09 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.100 2006/10/27 00:39:57 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2027,7 +2027,7 @@ SetLambdaFromAny(
 	    bodyPtr, &procPtr) != TCL_OK) {
 	TclFormatToErrorInfo(interp,
 		"\n    (parsing lambda expression \"%s\")",
-		Tcl_GetString(objPtr), NULL);
+		name, NULL);
 	return TCL_ERROR;
     }
 
