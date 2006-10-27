@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.100 2006/10/20 15:16:47 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.101 2006/10/27 12:33:18 dkf Exp $
 
 library tcl
 
@@ -390,7 +390,8 @@ declare 93 generic {
 #    int TclpStat(CONST char *path, Tcl_StatBuf *buf)
 #}
 declare 96 generic {
-    int TclRenameCommand(Tcl_Interp *interp, char *oldName, char *newName)
+    int TclRenameCommand(Tcl_Interp *interp, CONST char *oldName,
+            CONST char *newName)
 }
 declare 97 generic {
     void TclResetShadowedCmdRefs(Tcl_Interp *interp, Command *newCmdPtr)
