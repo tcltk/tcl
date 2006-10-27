@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.125 2006/10/23 21:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.126 2006/10/27 13:20:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -37,6 +37,13 @@ static CONST char *badNamespace =	"parent namespace doesn't exist";
 static CONST char *missingName =	"missing variable name";
 static CONST char *isArrayElement =
 	"name refers to an element in an array";
+ 
+/*
+ * A test to see if we are in a call frame that has local variables. This is
+ * true if we are inside a procedure body.
+ */
+
+#define HasLocalVars(framePtr) ((framePtr)->isProcCallFrame & FRAME_IS_PROC)
 
 /*
  * Forward references to functions defined later in this file:
@@ -382,8 +389,8 @@ TclObjLookupVar(
 		}
 		return NULL;
 	    }
-	    part2 = (char *) part1Ptr->internalRep.twoPtrValue.ptr2;
-	    part1Ptr = (Tcl_Obj *) part1Ptr->internalRep.twoPtrValue.ptr1;
+	    part2 = part1Ptr->internalRep.twoPtrValue.ptr2;
+	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    typePtr = part1Ptr->typePtr;
 	}
 	parsed = 1;
@@ -398,7 +405,7 @@ TclObjLookupVar(
     if (typePtr == &localVarNameType) {
 	int localIndex = (int) part1Ptr->internalRep.longValue;
 
-	if ((varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {
 	    /*
@@ -414,25 +421,22 @@ TclObjLookupVar(
 #if ENABLE_NS_VARNAME_CACHING
     } else if (typePtr == &tclNsVarNameType) {
 	int useGlobal, useReference;
-	Namespace *cachedNsPtr = (Namespace *)
-		part1Ptr->internalRep.twoPtrValue.ptr1;
-	varPtr = (Var *) part1Ptr->internalRep.twoPtrValue.ptr2;
+	Namespace *cachedNsPtr = part1Ptr->internalRep.twoPtrValue.ptr1;
+	varPtr = part1Ptr->internalRep.twoPtrValue.ptr2;
 
 	useGlobal = (cachedNsPtr == iPtr->globalNsPtr) && (
 		(flags & TCL_GLOBAL_ONLY) ||
-		(*part1==':' && *(part1+1)==':') ||
-		(!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
-			&& (nsPtr == iPtr->globalNsPtr)));
+		(part1[0]==':' && part1[1]==':') ||
+		(!HasLocalVars(varFramePtr) && (nsPtr==iPtr->globalNsPtr)));
 
 	useReference = useGlobal || ((cachedNsPtr == nsPtr) && (
 		(flags & TCL_NAMESPACE_ONLY) ||
-		(!(varFramePtr->isProcCallFrame & FRAME_IS_PROC) &&
-			!(flags & TCL_GLOBAL_ONLY) &&
+		(!HasLocalVars(varFramePtr) && !(flags & TCL_GLOBAL_ONLY) &&
 		/*
 		 * Careful: an undefined ns variable could be hiding a valid
 		 * global reference.
 		 */
-			!TclIsVarUndefined(varPtr))));
+		!TclIsVarUndefined(varPtr))));
 
 	if (useReference && (varPtr->hPtr != NULL)) {
 	    /*
@@ -505,7 +509,7 @@ TclObjLookupVar(
 		TclNewStringObj(part1Ptr, part1, len1);
 		Tcl_IncrRefCount(part1Ptr);
 
-		objPtr->internalRep.twoPtrValue.ptr1 = (void *) part1Ptr;
+		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
 		objPtr->internalRep.twoPtrValue.ptr2 = (void *) part2;
 
 		typePtr = part1Ptr->typePtr;
@@ -552,11 +556,11 @@ TclObjLookupVar(
 
 	Namespace *nsPtr;
 
-	nsPtr = ((index == -1)? iPtr->globalNsPtr : varFramePtr->nsPtr);
+	nsPtr = ((index == -1) ? iPtr->globalNsPtr : varFramePtr->nsPtr);
 	varPtr->refCount++;
 	part1Ptr->typePtr = &tclNsVarNameType;
-	part1Ptr->internalRep.twoPtrValue.ptr1 = (void *) nsPtr;
-	part1Ptr->internalRep.twoPtrValue.ptr2 = (void *) varPtr;
+	part1Ptr->internalRep.twoPtrValue.ptr1 = nsPtr;
+	part1Ptr->internalRep.twoPtrValue.ptr2 = varPtr;
 #endif
     } else {
 	/*
@@ -741,7 +745,7 @@ TclLookupSimpleVar(
      */
 
     if (((flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY)) != 0)
-	    || !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+	    || !HasLocalVars(varFramePtr)
 	    || (strstr(varName, "::") != NULL)) {
 	CONST char *tail;
 	int lookGlobal;
@@ -3239,7 +3243,7 @@ ObjMakeUpvar(
 	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
 		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 			|| (varFramePtr == NULL)
-			|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
+			|| !HasLocalVars(varFramePtr)
 			|| (strstr(myName, "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
 		    myName, "\": upvar won't create namespace variable that ",
@@ -3290,7 +3294,7 @@ TclPtrMakeUpvar(
     CONST char *p;    
     
     if (index >= 0) {
-	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
+	if (!HasLocalVars(varFramePtr)) {
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
@@ -3553,7 +3557,7 @@ Tcl_GlobalObjCmd(
      * If we are not executing inside a Tcl procedure, just return.
      */
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
+    if (!HasLocalVars(iPtr->varFramePtr)) {
 	return TCL_OK;
     }
 
@@ -3704,7 +3708,7 @@ Tcl_VariableObjCmd(
 	 * linked to the new namespace variable "varName".
 	 */
 
-	if (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC) {
+	if (HasLocalVars(iPtr->varFramePtr)) {
 	    /*
 	     * varName might have a scope qualifier, but the name for the
 	     * local "link" variable must be the simple name at the tail.
@@ -3956,7 +3960,8 @@ ParseSearchId(
     }
 
     /*
-     * Cast is safe, since always came from an int in the first place.
+     * Cast is safe, since always came from an int in the first place. Do NOT
+     * optimize this address arithmetic!
      */
 
     id = (int)(((char*)handleObj->internalRep.twoPtrValue.ptr1) -
@@ -4578,7 +4583,7 @@ static void
 FreeNsVarName(
     Tcl_Obj *objPtr)
 {
-    register Var *varPtr = (Var *) objPtr->internalRep.twoPtrValue.ptr2;
+    register Var *varPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
     varPtr->refCount--;
     if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)) {
@@ -4591,11 +4596,11 @@ DupNsVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    Namespace *nsPtr = (Namespace *) srcPtr->internalRep.twoPtrValue.ptr1;
-    register Var *varPtr = (Var *) srcPtr->internalRep.twoPtrValue.ptr2;
+    Namespace *nsPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    register Var *varPtr = srcPtr->internalRep.twoPtrValue.ptr2;
 
-    dupPtr->internalRep.twoPtrValue.ptr1 = (void *) nsPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = (void *) varPtr;
+    dupPtr->internalRep.twoPtrValue.ptr1 = nsPtr;
+    dupPtr->internalRep.twoPtrValue.ptr2 = varPtr;
     varPtr->refCount++;
     dupPtr->typePtr = &tclNsVarNameType;
 }
@@ -4614,9 +4619,8 @@ static void
 FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
-    register Tcl_Obj *arrayPtr = (Tcl_Obj *)
-	    objPtr->internalRep.twoPtrValue.ptr1;
-    register char *elem = (char *) objPtr->internalRep.twoPtrValue.ptr2;
+    register Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    register char *elem = objPtr->internalRep.twoPtrValue.ptr2;
 
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
@@ -4629,9 +4633,8 @@ DupParsedVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    register Tcl_Obj *arrayPtr = (Tcl_Obj *)
-	    srcPtr->internalRep.twoPtrValue.ptr1;
-    register char *elem = (char *) srcPtr->internalRep.twoPtrValue.ptr2;
+    register Tcl_Obj *arrayPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    register char *elem = srcPtr->internalRep.twoPtrValue.ptr2;
     char *elemCopy;
     unsigned int elemLen;
 
@@ -4644,8 +4647,8 @@ DupParsedVarName(
 	elem = elemCopy;
     }
 
-    dupPtr->internalRep.twoPtrValue.ptr1 = (void *) arrayPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = (void *) elem;
+    dupPtr->internalRep.twoPtrValue.ptr1 = arrayPtr;
+    dupPtr->internalRep.twoPtrValue.ptr2 = elem;
     dupPtr->typePtr = &tclParsedVarNameType;
 }
 
@@ -4653,8 +4656,8 @@ static void
 UpdateParsedVarName(
     Tcl_Obj *objPtr)
 {
-    Tcl_Obj *arrayPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
-    char *part2 = (char *) objPtr->internalRep.twoPtrValue.ptr2;
+    Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    char *part2 = objPtr->internalRep.twoPtrValue.ptr2;
     char *part1, *p;
     int len1, len2, totalLen;
 
