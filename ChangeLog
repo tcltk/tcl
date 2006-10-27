@@ -1,5 +1,8 @@
 2006-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclNamesp.c (TclSetNsPath): Expose SetNsPath through
+	internal stubs table with semi-external name.
+
 	* generic/tclInt.h (CallFrame): Add a field for handling context data
 	for extensions (like object systems) that should be tied to a call
 	frame (and not a command or interpreter).
