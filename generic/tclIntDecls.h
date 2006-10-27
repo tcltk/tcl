@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.91 2006/10/27 12:33:51 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.92 2006/10/27 12:54:26 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1025,6 +1025,12 @@ EXTERN Tcl_Obj *	TclTraceDictPath _ANSI_ARGS_((Tcl_Interp * interp,
 /* 226 */
 EXTERN int		TclObjBeingDeleted _ANSI_ARGS_((Tcl_Obj * objPtr));
 #endif
+#ifndef TclSetNsPath_TCL_DECLARED
+#define TclSetNsPath_TCL_DECLARED
+/* 227 */
+EXTERN void		TclSetNsPath _ANSI_ARGS_((Namespace * nsPtr, 
+				int pathLength, Tcl_Namespace * pathAry[]));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1272,6 +1278,7 @@ typedef struct TclIntStubs {
     TclPlatformType * (*tclGetPlatform) _ANSI_ARGS_((void)); /* 224 */
     Tcl_Obj * (*tclTraceDictPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * rootPtr, int keyc, Tcl_Obj *CONST keyv[], int flags)); /* 225 */
     int (*tclObjBeingDeleted) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 226 */
+    void (*tclSetNsPath) _ANSI_ARGS_((Namespace * nsPtr, int pathLength, Tcl_Namespace * pathAry[])); /* 227 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1964,6 +1971,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclObjBeingDeleted
 #define TclObjBeingDeleted \
 	(tclIntStubsPtr->tclObjBeingDeleted) /* 226 */
+#endif
+#ifndef TclSetNsPath
+#define TclSetNsPath \
+	(tclIntStubsPtr->tclSetNsPath) /* 227 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
