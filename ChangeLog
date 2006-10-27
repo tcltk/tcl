@@ -1,6 +1,9 @@
 2006-10-26  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclInterp.c (ApplyObjCmd):a
+	* generic/tclProc.c (SetLambdaFromAny): minor change, eliminate
+	redundant call to Tcl_GetString (thanks aku).
+	
+	* generic/tclInterp.c (ApplyObjCmd):
 	* generic/tclNamesp.c (EnsembleImplementationCmd): replaced
 	ckalloc (heap) with TclStackAlloc (execution stack).
 
