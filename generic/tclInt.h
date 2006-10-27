@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.283 2006/10/23 22:49:25 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.284 2006/10/27 12:44:08 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -886,10 +886,19 @@ typedef struct CallFrame {
 				 * Initially NULL and created if needed. */
     int numCompiledLocals;	/* Count of local variables recognized by the
 				 * compiler including arguments. */
-    Var* compiledLocals;	/* Points to the array of local variables
+    Var *compiledLocals;	/* Points to the array of local variables
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
 				 * using an index into this array. */
+    ClientData clientData;	/* Pointer to some context that is used by
+				 * object systems. The meaning of the contents
+				 * of this field is defined by the code that
+				 * sets it, and it should only ever be set by
+				 * the code that is pushing the frame. In that
+				 * case, the code that sets it should also
+				 * have some means of discovering what the
+				 * meaning of the value is, which we do not
+				 * specify. */
 } CallFrame;
 
 #define FRAME_IS_PROC 0x1
