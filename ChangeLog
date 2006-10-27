@@ -1,6 +1,9 @@
 2006-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclNamesp.c (TclSetNsPath): Expose SetNsPath through
+	* generic/tclVar.c (HasLocalVars): New macro to make various bits and
+	pieces cleaner.
+
+	* generic/tclNamesp.c (TclSetNsPath): Expose SetNsPath() through
 	internal stubs table with semi-external name.
 
 	* generic/tclInt.h (CallFrame): Add a field for handling context data
