@@ -1,3 +1,9 @@
+2006-10-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (TclRenameCommand): Change to take CONST args;
+	they were only ever used in a constant way anyway, so this appears to
+	be a spot that was missed during TIP#27 work.
+
 2006-10-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c (SetLambdaFromAny): minor change, eliminate

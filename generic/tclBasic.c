@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.203 2006/10/23 23:04:12 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.204 2006/10/27 12:33:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1969,8 +1969,8 @@ TclInvokeObjectCommand(
 int
 TclRenameCommand(
     Tcl_Interp *interp,		/* Current interpreter. */
-    char *oldName,		/* Existing command name. */
-    char *newName)		/* New command name. */
+    const char *oldName,	/* Existing command name. */
+    const char *newName)	/* New command name. */
 {
     Interp *iPtr = (Interp *) interp;
     CONST char *newTail;
@@ -1987,8 +1987,7 @@ TclRenameCommand(
      * found.
      */
 
-    cmd = Tcl_FindCommand(interp, oldName, NULL,
-	    /*flags*/ 0);
+    cmd = Tcl_FindCommand(interp, oldName, NULL, /*flags*/ 0);
     cmdPtr = (Command *) cmd;
     if (cmdPtr == NULL) {
 	Tcl_AppendResult(interp, "can't ",
