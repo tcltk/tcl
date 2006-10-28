@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.92 2006/10/27 12:54:26 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.93 2006/10/28 22:49:30 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1031,6 +1031,15 @@ EXTERN int		TclObjBeingDeleted _ANSI_ARGS_((Tcl_Obj * objPtr));
 EXTERN void		TclSetNsPath _ANSI_ARGS_((Namespace * nsPtr, 
 				int pathLength, Tcl_Namespace * pathAry[]));
 #endif
+#ifndef TclObjInterpProcCore_TCL_DECLARED
+#define TclObjInterpProcCore_TCL_DECLARED
+/* 228 */
+EXTERN int		TclObjInterpProcCore _ANSI_ARGS_((
+				register Tcl_Interp * interp, 
+				CallFrame * framePtr, Tcl_Obj * procNameObj, 
+				int isLambda, int skip, 
+				ProcErrorProc errorProc));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1279,6 +1288,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclTraceDictPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * rootPtr, int keyc, Tcl_Obj *CONST keyv[], int flags)); /* 225 */
     int (*tclObjBeingDeleted) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 226 */
     void (*tclSetNsPath) _ANSI_ARGS_((Namespace * nsPtr, int pathLength, Tcl_Namespace * pathAry[])); /* 227 */
+    int (*tclObjInterpProcCore) _ANSI_ARGS_((register Tcl_Interp * interp, CallFrame * framePtr, Tcl_Obj * procNameObj, int isLambda, int skip, ProcErrorProc errorProc)); /* 228 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1975,6 +1985,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclSetNsPath
 #define TclSetNsPath \
 	(tclIntStubsPtr->tclSetNsPath) /* 227 */
+#endif
+#ifndef TclObjInterpProcCore
+#define TclObjInterpProcCore \
+	(tclIntStubsPtr->tclObjInterpProcCore) /* 228 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
