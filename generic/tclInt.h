@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.285 2006/10/27 13:31:38 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.286 2006/10/28 22:48:43 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -768,6 +768,13 @@ typedef struct Proc {
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
 } Proc;
+
+/*
+ * The type of functions called to process errors found during the execution
+ * of a procedure (or lambda term or ...).
+ */
+
+typedef void (*ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
 
 /*
  * The structure below defines a command trace. This is used to allow Tcl
