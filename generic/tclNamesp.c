@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.107 2006/10/27 12:53:44 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.108 2006/10/28 18:09:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -117,8 +117,8 @@ typedef struct EnsembleConfig {
 				 * all lists, and cannot be found by scanning
 				 * the list from the namespace's ensemble
 				 * field. */
-    int flags;			/* ORed combo of ENS_DEAD and
-				 * TCL_ENSEMBLE_PREFIX. */
+    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX and
+				 * ENS_DEAD. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
 
