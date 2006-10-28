@@ -46,12 +46,13 @@
 	* tests/clock.test (3.1, 34.1):     messages to make use of the
 	new rewrite capabilities of [info level]
 
-	* generic/tcl.h:           Lets TEOV update the iPtr->objc/objv
-	* generic/tclBasic.c:      fields, except when the (new) flag bit 
-	* generic/tclInt.h:        TCL_EVAL_NOREWRITE is present. This 
-	* generic/tclNamesp.c:     causes [info level] to know and use  
-	* generic/tclProc.c:       ensemble rewrites [Bug 1577492]
-	* tests/namespace.test:
+	* generic/tcl.h:           Lets TEOV update the iPtr->callObj[cv]
+	* generic/tclBasic.c:      new fields, except when the flag bit 
+	* generic/tclInt.h:        TCL_EVAL_NOREWRITE is present. These 
+	* generic/tclNamesp.c:     values are used by Tcl_PushCallFrame to
+	* generic/tclProc.c:       initialise the frame's obj[cv] fields,
+	* tests/namespace.test:    and allows [info level] to know and use
+	ensemble rewrites [Bug 1577492].
 
 	***POTENTIAL INCOMPATIBILITY*** 
 	The return value from [info level 0] on interp alias calls is
