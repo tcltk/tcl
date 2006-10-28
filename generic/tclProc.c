@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.100 2006/10/27 00:39:57 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.101 2006/10/28 22:48:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -29,14 +29,17 @@ static void		InitCompiledLocals(Tcl_Interp *interp,
 			    Var *varPtr, Namespace *nsPtr);
 static int		ObjInterpProcEx(ClientData clientData,
 			    register Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[], int isLambda);
+			    Tcl_Obj *CONST objv[], int isLambda,
+			    ProcErrorProc errorProc);
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		ProcBodyFree(Tcl_Obj *objPtr);
-static int		ProcessProcResultCode(Tcl_Interp *interp,
-			    char *procName, int nameLen, int returnCode);
+static void		MakeProcError(Tcl_Interp *interp,
+			    Tcl_Obj *procNameObj);
+static void		MakeLambdaError(Tcl_Interp *interp,
+			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		ProcCompileProc (Tcl_Interp *interp, Proc *procPtr,
-			    Tcl_Obj *bodyPtr, Namespace *nsPtr, 
+			    Tcl_Obj *bodyPtr, Namespace *nsPtr,
 			    CONST char *description, CONST char *procName,
 			    Proc **procPtrPtr);
 
@@ -1111,7 +1114,7 @@ TclInitCompiledLocals(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProc --
+ * TclObjInterpProc, ObjInterpProcEx --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this
  *	object-based routine gets invoked to interpret the procedure.
@@ -1135,10 +1138,10 @@ TclObjInterpProc(
 				 * procedure. */
     Tcl_Obj *CONST objv[])	/* Argument value objects. */
 {
-
-    return ObjInterpProcEx(clientData, interp, objc, objv, /*isLambda*/ 0);
+    return ObjInterpProcEx(clientData, interp, objc, objv, /*isLambda*/ 0,
+	    &MakeProcError);
 }
-	
+
 static int
 ObjInterpProcEx(
     ClientData clientData, 	/* Record describing procedure to be
@@ -1148,24 +1151,15 @@ ObjInterpProcEx(
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *CONST objv[],	/* Argument value objects. */
-    int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
-				 * needs special rules for error msg */ 
+    int isLambda,		/* 1 if this is a call by ApplyObjCmd: it
+				 * needs special rules for error msg */
+    ProcErrorProc errorProc)	/* How to convert results from the script into
+				 * results of the overall procedure. */
 {
     Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame *framePtr, **framePtrPtr;
-    register Var *varPtr;
-    register CompiledLocal *localPtr;
-    char *procName;
-    int nameLen, localCt, numArgs, argCt, i, imax, result;
-    Var *compiledLocals;
-    Tcl_Obj *CONST *argObjs;
-
-    /*
-     * Get the procedure's name.
-     */
-
-    procName = Tcl_GetStringFromObj(objv[0], &nameLen);
+    int result;
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -1175,12 +1169,11 @@ ObjInterpProcEx(
      */
 
     result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
-	    "body of proc", procName, &procPtr);
+	    "body of proc", TclGetString(objv[0]), &procPtr);
 
     if (result != TCL_OK) {
 	return result;
     }
-
 
     /*
      * Set up and push a new call frame for the new procedure invocation.
@@ -1198,7 +1191,52 @@ ObjInterpProcEx(
 	return result;
     }
 
+    framePtr->objc = objc;
+    framePtr->objv = objv;
     framePtr->procPtr = procPtr;
+
+    return TclObjInterpProcCore(interp, framePtr, objv[0], isLambda, 1,
+	    errorProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjInterpProcCore --
+ *
+ *	When a Tcl procedure, lambda term or anything else that works like a
+ *	procedure gets invoked during bytecode evaluation, this object-based
+ *	routine gets invoked to interpret the body.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	Nearly anything; depends on the commands in the procedure body.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclObjInterpProcCore(
+    register Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    CallFrame *framePtr,	/* The context to execute. The procPtr field
+				 * must be non-NULL. */
+    Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
+    int isLambda,		/* 1 if this is a call by ApplyObjCmd: it
+				 * needs special rules for error msg. */
+    int skip,			/* Number of initial arguments to be skipped,
+				 * i.e., words in the "command name". */
+    ProcErrorProc errorProc)	/* How to convert results from the script into
+				 * results of the overall procedure. */
+{
+    register Proc *procPtr = framePtr->procPtr;
+    register Var *varPtr;
+    register CompiledLocal *localPtr;
+    int localCt, numArgs, argCt, i, imax, result;
+    Var *compiledLocals;
+    Tcl_Obj *const *argObjs;
 
     /*
      * Create the "compiledLocals" array. Make sure it is large enough to hold
@@ -1207,7 +1245,7 @@ ObjInterpProcEx(
      */
 
     localCt = procPtr->numCompiledLocals;
-    compiledLocals = (Var *) TclStackAlloc(interp, (int)(localCt*sizeof(Var)));
+    compiledLocals = (Var*) TclStackAlloc(interp, (int)(localCt*sizeof(Var)));
     framePtr->numCompiledLocals = localCt;
     framePtr->compiledLocals = compiledLocals;
 
@@ -1219,8 +1257,9 @@ ObjInterpProcEx(
      */
 
     numArgs = procPtr->numArgs;
-    argCt = objc-1; /* set it to the number of args to the proc */
-    argObjs = &objv[1];
+    argCt = framePtr->objc - skip;	/* Set it to the number of args to the
+					 * procedure. */
+    argObjs = framePtr->objv + skip;
     varPtr = framePtr->compiledLocals;
     localPtr = procPtr->firstLocalPtr;
     if (numArgs == 0) {
@@ -1304,7 +1343,7 @@ ObjInterpProcEx(
 
     incorrectArgs:
 	codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;
-	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+	InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
 
 	/*
 	 * Build up desired argument list for Tcl_WrongNumArgs
@@ -1314,9 +1353,10 @@ ObjInterpProcEx(
 		ckalloc(sizeof(Tcl_Obj *) * (unsigned)(numArgs+1));
 
 #ifdef AVOID_HACKS_FOR_ITCL
-	desiredObjs[0] = objv[0];
+	desiredObjs[0] = framePtr->objv[0];
 #else
-	desiredObjs[0] = (isLambda? objv[0]: Tcl_NewListObj(1, objv));
+	desiredObjs[0] = (isLambda ? framePtr->objv[0] :
+		Tcl_NewListObj(1, framePtr->objv));
 #endif /* AVOID_HACKS_FOR_ITCL */
 
 	localPtr = procPtr->firstLocalPtr;
@@ -1370,24 +1410,35 @@ ObjInterpProcEx(
 	ByteCode *codePtr = (ByteCode *)
 		procPtr->bodyPtr->internalRep.otherValuePtr;
 
-	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+	InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
     }
 
     /*
-     * Invoke the commands in the procedure's body.
+     * Set the callframe's objc/objv to be what [info level] expects.
      */
 
-#ifdef TCL_COMPILE_DEBUG
+    framePtr->objc = ((Interp *) interp)->callObjc;
+    framePtr->objv = ((Interp *) interp)->callObjv;
+
+#if defined(TCL_COMPILE_DEBUG)
     if (tclTraceExec >= 1) {
-	fprintf(stdout, "Calling proc ");
-	for (i = 0; i < objc; i++) {
-	    TclPrintObject(stdout, objv[i], 15);
+	if (isLambda) {
+	    fprintf(stdout, "Calling lambda ");
+	} else {
+	    fprintf(stdout, "Calling proc ");
+	}
+	for (i = 0; i < framePtr->objc; i++) {
+	    TclPrintObject(stdout, framePtr->objv[i], 15);
 	    fprintf(stdout, " ");
 	}
 	fprintf(stdout, "\n");
 	fflush(stdout);
     }
 #endif /*TCL_COMPILE_DEBUG*/
+
+    /*
+     * Invoke the commands in the procedure's body.
+     */
 
     procPtr->refCount++;
     result = TclCompEvalObj(interp, procPtr->bodyPtr);
@@ -1397,26 +1448,46 @@ ObjInterpProcEx(
     }
 
     if (result != TCL_OK) {
-	if (isLambda) {
-	    /*
-	     * Use a 'procName' that contains the first skip elements of objv
-	     * for error reporting. This insures that we do not see just
-	     * 'apply', but also the lambda expression that caused the error.
-	     *
-	     * NASTY HACK: looks one object back in objv - it was skipped by
-	     * ApplyObjCmd. Temporary solution, the whole thing needs
-	     * refactoring. 
-	     */
-	     
-	    Tcl_Obj *namePtr;
+	/*
+	 * Non-standard results are processed by passing them through quickly.
+	 * This means they all work as exceptions, unwinding the stack quickly
+	 * and neatly. Who knows how well they are handled by third-party code
+	 * though...
+	 */
 
-	    namePtr = Tcl_NewListObj(2, objv-1);
-	    procName = Tcl_GetStringFromObj(namePtr, &nameLen);
-	    result = ProcessProcResultCode(interp, procName, nameLen, result);
-	    TclDecrRefCount(namePtr);
-	} else {
-	    result = ProcessProcResultCode(interp, procName, nameLen, result);	    
+	if ((result > TCL_CONTINUE) || (result < TCL_OK)) {
+	    goto procDone;
 	}
+
+	/*
+	 * If it is a 'return', do the TIP#90 processing now.
+	 */
+
+	if (result == TCL_RETURN) {
+	    result = TclUpdateReturnInfo((Interp *) interp);
+	    goto procDone;
+	}
+
+	/*
+	 * Must be an error, a 'break' or a 'continue'. It's an error to get
+	 * to this point from a 'break' or 'continue' though, so transform to
+	 * an error now.
+	 */
+
+	if (result != TCL_ERROR) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "invoked \"",
+		    ((result == TCL_BREAK) ? "break" : "continue"),
+		    "\" outside of a loop", NULL);
+	    result = TCL_ERROR;
+	}
+
+	/*
+	 * Now it _must_ be an error, so we need to log it as such. This means
+	 * filling out the error trace.
+	 */
+
+	(*errorProc)(interp, procNameObj);
     }
 
     /*
@@ -1437,7 +1508,6 @@ ObjInterpProcEx(
     TclStackFree(interp);	/* free compiledLocals */
     TclStackFree(interp);	/* free CallFrame */
     return result;
-#undef NUM_LOCALS
 }
 
 /*
@@ -1652,56 +1722,35 @@ ProcCompileProc(
 /*
  *----------------------------------------------------------------------
  *
- * ProcessProcResultCode --
+ * MakeProcError --
  *
- *	Function called by TclObjInterpProc to process a return code other
- *	than TCL_OK returned by a Tcl procedure.
+ *	Function called by TclObjInterpProc to create the stack information
+ *	upon an error from a procedure.
  *
  * Results:
- *	Depending on the argument return code, the result returned is another
- *	return code and the interpreter's result is set to a value to
- *	supplement that return code.
+ *	The interpreter's error info trace is set to a value that supplements
+ *	the error code.
  *
  * Side effects:
- *	If the result returned is TCL_ERROR, traceback information about the
- *	procedure just executed is appended to the interpreter's errorInfo
- *	field.
+ *	none.
  *
  *----------------------------------------------------------------------
  */
 
-static int
-ProcessProcResultCode(
+static void
+MakeProcError(
     Tcl_Interp *interp,		/* The interpreter in which the procedure was
-				 * called and returned returnCode. */
-    char *procName,		/* Name of the procedure. Used for error
+				 * called. */
+    Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
 				 * messages and trace information. */
-    int nameLen,		/* Number of bytes in procedure's name. */
-    int returnCode)		/* The unexpected result code. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int overflow, limit = 60;
+    int overflow, limit = 60, nameLen;
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
-    if (returnCode == TCL_OK) {
-	return TCL_OK;
-    }
-    if ((returnCode > TCL_CONTINUE) || (returnCode < TCL_OK)) {
-	return returnCode;
-    }
-    if (returnCode == TCL_RETURN) {
-	return TclUpdateReturnInfo(iPtr);
-    }
-    if (returnCode != TCL_ERROR) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "invoked \"",
-		((returnCode == TCL_BREAK) ? "break" : "continue"),
-		"\" outside of a loop", NULL);
-    }
     overflow = (nameLen > limit);
     TclFormatToErrorInfo(interp, "\n    (procedure \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), interp->errorLine);
-    return TCL_ERROR;
 }
 
 /*
@@ -1954,7 +2003,17 @@ ProcBodyFree(
 }
 
 /*
- * LAMBDA and APPLY implementation. [TIP#194]
+ *----------------------------------------------------------------------
+ *
+ * DupLambdaInternalRep, FreeLambdaInternalRep, SetLambdaFromAny --
+ *
+ *	How to manage the internal representations of lambda term objects.
+ *	Syntactically they look like a two- or three-element list, where the
+ *	first element is the formal arguments, the second is the the body, and
+ *	the (optional) third is the namespace to execute the lambda term
+ *	within (the global namespace is assumed if it is absent).
+ *
+ *----------------------------------------------------------------------
  */
 
 static void
@@ -1962,11 +2021,11 @@ DupLambdaInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     register Tcl_Obj *copyPtr)	/* Object with internal rep to set. */
 {
-    Proc *procPtr = (Proc *) srcPtr->internalRep.twoPtrValue.ptr1;
-    Tcl_Obj *nsObjPtr = (Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr2;
+    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_Obj *nsObjPtr = srcPtr->internalRep.twoPtrValue.ptr2;
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = (void *) procPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = (void *) nsObjPtr;
+    copyPtr->internalRep.twoPtrValue.ptr1 = procPtr;
+    copyPtr->internalRep.twoPtrValue.ptr2 = nsObjPtr;
 
     procPtr->refCount++;
     Tcl_IncrRefCount(nsObjPtr);
@@ -1978,8 +2037,8 @@ FreeLambdaInternalRep(
     register Tcl_Obj *objPtr)	/* CmdName object with internal representation
 				 * to free. */
 {
-    Proc *procPtr = (Proc *) objPtr->internalRep.twoPtrValue.ptr1;
-    Tcl_Obj *nsObjPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
+    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_Obj *nsObjPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
     procPtr->refCount--;
     if (procPtr->refCount == 0) {
@@ -2022,26 +2081,26 @@ SetLambdaFromAny(
      */
 
     name = TclGetString(objPtr);
-    
+
     if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr,
 	    bodyPtr, &procPtr) != TCL_OK) {
 	TclFormatToErrorInfo(interp,
-		"\n    (parsing lambda expression \"%s\")",
-		name, NULL);
+		"\n    (parsing lambda expression \"%s\")", name, NULL);
 	return TCL_ERROR;
     }
 
-    /* CAREFUL: TclCreateProc returns refCount==1! [Bug 1578454]
+    /*
+     * CAREFUL: TclCreateProc returns refCount==1! [Bug 1578454]
      * procPtr->refCount = 1;
      */
-    
+
     procPtr->cmdPtr = NULL;
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
      * global reference, or else global per default.
      */
-    
+
     if (objc == 2) {
 	nsObjPtr = Tcl_NewStringObj("::", 2);
     } else {
@@ -2064,11 +2123,28 @@ SetLambdaFromAny(
 
     objPtr->typePtr->freeIntRepProc(objPtr);
 
-    objPtr->internalRep.twoPtrValue.ptr1 = (void *) procPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = (void *) nsObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = nsObjPtr;
     objPtr->typePtr = &lambdaType;
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ApplyObjCmd --
+ *
+ *	This object-based function is invoked to process the "apply" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	Depends on the content of the lambda term (i.e., objv[1]).
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 Tcl_ApplyObjCmd(
@@ -2094,20 +2170,20 @@ Tcl_ApplyObjCmd(
      * Set lambdaPtr, convert it to lambdaType in the current interp if
      * necessary.
      */
- 
+
     lambdaPtr = objv[1];
     if (lambdaPtr->typePtr == &lambdaType) {
-	procPtr = (Proc *) lambdaPtr->internalRep.twoPtrValue.ptr1;
+	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
 
 #define JOE_EXTENSION 0
 #if JOE_EXTENSION
-    /*
-     * Joe English's suggestion to allow cmdNames to function as lambdas.
-     * Requires also making tclCmdNameType non-static in tclObj.c
-     */
-
     else {
+	/*
+	 * Joe English's suggestion to allow cmdNames to function as lambdas.
+	 * Also requires making tclCmdNameType non-static in tclObj.c
+	 */
+
 	Tcl_Obj *elemPtr;
 	int numElem;
 
@@ -2124,17 +2200,17 @@ Tcl_ApplyObjCmd(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	procPtr = (Proc *) lambdaPtr->internalRep.twoPtrValue.ptr1;
+	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
     procPtr->cmdPtr = &cmd;
-    
+
     /*
      * Find the namespace where this lambda should run, and push a call frame
      * for that namespace. Note that TclObjInterpProc() will pop it.
      */
-    
-    nsObjPtr = (Tcl_Obj *) lambdaPtr->internalRep.twoPtrValue.ptr2;
-    result  = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+
+    nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
+    result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2146,7 +2222,7 @@ Tcl_ApplyObjCmd(
 	Tcl_SetObjResult(interp, errPtr);
 	return TCL_ERROR;
     }
-    
+
     cmd.nsPtr = (Namespace *) nsPtr;
 
     isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
@@ -2158,14 +2234,49 @@ Tcl_ApplyObjCmd(
 	iPtr->ensembleRewrite.numInsertedObjs -= 1;
     }
 
-    result = ObjInterpProcEx((ClientData) procPtr, interp, objc-1, objv+1,1);
+    result = ObjInterpProcEx((ClientData) procPtr, interp, objc-1, objv+1, 1,
+	    &MakeLambdaError);
 
     if (isRootEnsemble) {
 	iPtr->ensembleRewrite.sourceObjs = NULL;
 	iPtr->ensembleRewrite.numRemovedObjs = 0;
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
-    return result;    
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakeLambdaError --
+ *
+ *	Function called by TclObjInterpProc to create the stack information
+ *	upon an error from a lambda term.
+ *
+ * Results:
+ *	The interpreter's error info trace is set to a value that supplements
+ *	the error code.
+ *
+ * Side effects:
+ *	none.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MakeLambdaError(
+    Tcl_Interp *interp,		/* The interpreter in which the procedure was
+				 * called. */
+    Tcl_Obj *procNameObj)	/* Name of the procedure. Used for error
+				 * messages and trace information. */
+{
+    int overflow, limit = 60, nameLen;
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
+
+    overflow = (nameLen > limit);
+    TclFormatToErrorInfo(interp, "\n    (lambda term \"%.*s%s\" line %d)",
+	    (overflow ? limit : nameLen), procName,
+	    (overflow ? "..." : ""), interp->errorLine);
 }
 
 /*

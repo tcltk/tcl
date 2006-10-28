@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.102 2006/10/27 12:53:43 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.103 2006/10/28 22:48:42 dkf Exp $
 
 library tcl
 
@@ -894,9 +894,15 @@ declare 225 generic {
 declare 226 generic {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)
 }
+
 declare 227 generic {
     void TclSetNsPath(Namespace *nsPtr, int pathLength,
             Tcl_Namespace *pathAry[])
+}
+declare 228 generic {
+    int TclObjInterpProcCore(register Tcl_Interp *interp, CallFrame *framePtr,
+            Tcl_Obj *procNameObj, int isLambda, int skip,
+            ProcErrorProc errorProc)
 }
 
 ##############################################################################
