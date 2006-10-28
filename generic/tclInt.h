@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.286 2006/10/28 22:48:43 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.287 2006/10/28 23:26:01 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1518,7 +1518,7 @@ typedef struct Interp {
      */
 
     struct {
-	Tcl_Obj * CONST *sourceObjs;
+	Tcl_Obj *CONST *sourceObjs;
 				/* What arguments were actually input into the
 				 * *root* ensemble command? (Nested ensembles
 				 * don't rewrite this.) NULL if we're not
@@ -1533,26 +1533,30 @@ typedef struct Interp {
      * TIP #219 ... Global info for the I/O system ...
      */
 
-    Tcl_Obj* chanMsg;		/* Error message set by channel drivers, for
+    Tcl_Obj *chanMsg;		/* Error message set by channel drivers, for
 				 * the propagation of arbitrary Tcl errors.
 				 * This information, if present (chanMsg not
-				 * NULL), takes precedence over a posix error
+				 * NULL), takes precedence over a POSIX error
 				 * code returned by a channel operation. */
 
     /*
-     * TIP #268.
-     * The currently active selection mode,
-     * i.e the package require preferences.
+     * TIP #268. The currently active selection mode, i.e. the package require
+     * preferences.
      */
 
     int packagePrefer;          /* Current package selection mode. */
 
     /*
-     * Let [info level] know about ensemble rewriting
+     * Let [info level] know about ensemble rewriting. Note that this is just
+     * a temporary storage location until such time as it can be written into
+     * the call frame; it has to go there because that makes reentrant calls
+     * through the command dispatcher work.
      */
 
-    int callObjc;
-    Tcl_Obj *CONST *callObjv;
+    int callObjc;		/* Number of arguments to report through [info
+				 * level]. */
+    Tcl_Obj *CONST *callObjv;	/* Array of arguments to report through [info
+				 * level]. */
     
     
     /*
