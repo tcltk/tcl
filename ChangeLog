@@ -9,6 +9,8 @@
 	be simpler, some of which goes to TclObjInterpProcCore, and the rest
 	of which is now in these far simpler routines which just do errorInfo
 	stack generation for different types of procedure-like entity.
+	* tests/apply.test (apply-5.1): Updated to expect the more informative
+	form of message.
 
 2006-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
