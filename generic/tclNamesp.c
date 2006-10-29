@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.108 2006/10/28 18:09:11 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.109 2006/10/29 21:40:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6297,7 +6297,7 @@ NsEnsembleImplementationCmd(
 	int paramc, i;
 	Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
-	unknownCmd = Tcl_NewListObj(1, &ensemblePtr->unknownHandler);
+	unknownCmd = Tcl_DuplicateObj(ensemblePtr->unknownHandler);
 	TclNewObj(ensObj);
 	Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
 	Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
