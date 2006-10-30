@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.110 2006/10/30 13:08:58 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.111 2006/10/30 14:27:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -436,6 +436,7 @@ Tcl_PushCallFrame(
     framePtr->varTablePtr = NULL;	/* and no local variables */
     framePtr->numCompiledLocals = 0;
     framePtr->compiledLocals = NULL;
+    framePtr->clientData = NULL;
 
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
@@ -444,7 +445,6 @@ Tcl_PushCallFrame(
 
     iPtr->framePtr = framePtr;
     iPtr->varFramePtr = framePtr;
-    iPtr->clientData = NULL;
     return TCL_OK;
 }
 
@@ -482,7 +482,7 @@ Tcl_PopCallFrame(
      */
 
     if (framePtr->callerPtr) {
-	iPtr->framePtr = framePtr->callerPtr;    
+	iPtr->framePtr = framePtr->callerPtr;
 	iPtr->varFramePtr = framePtr->callerVarPtr;
     } else {
 	/* Tcl_PopCallFrame: trying to pop rootCallFrame! */
@@ -3824,7 +3824,8 @@ NamespaceInscopeCmd(
      * Make the specified namespace the current namespace.
      */
 
-    framePtrPtr = &framePtr; /* This is needed to satisfy GCC's strict aliasing rules */
+    framePtrPtr = &framePtr;		/* This is needed to satisfy GCC's
+					 * strict aliasing rules. */
     result = TclPushStackFrame(interp, (Tcl_CallFrame **)framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
@@ -6270,7 +6271,8 @@ NsEnsembleImplementationCmd(
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 2;
 	    }
 	}
-	tempObjv = (Tcl_Obj **) TclStackAlloc(interp, sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
+	tempObjv = (Tcl_Obj **) TclStackAlloc(interp,
+		sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
 	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
 	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
 	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
@@ -6331,8 +6333,8 @@ NsEnsembleImplementationCmd(
 
 	    if (Tcl_ListObjLength(interp, prefixObj, &prefixObjc) != TCL_OK) {
 		Tcl_DecrRefCount(prefixObj);
-		Tcl_AddErrorInfo(interp,
-			"\n    while parsing result of ensemble unknown subcommand handler");
+		Tcl_AddErrorInfo(interp, "\n    while parsing result of "
+			"ensemble unknown subcommand handler");
 		return TCL_ERROR;
 	    }
 	    if (prefixObjc > 0) {
@@ -6341,12 +6343,12 @@ NsEnsembleImplementationCmd(
 
 	    /*
 	     * Restore the interp's call data, which may have been wiped out
-	     * while processing the unknown handler. 
+	     * while processing the unknown handler.
 	     */
 
 	    iPtr->callObjc = objc;
 	    iPtr->callObjv = objv;
-	    
+
 	    /*
 	     * Namespace alive & empty result => reparse.
 	     */
@@ -6377,12 +6379,12 @@ NsEnsembleImplementationCmd(
 		    Tcl_AppendResult(interp, buf, NULL);
 		}
 		}
-		Tcl_AddErrorInfo(interp,
-			"\n    result of ensemble unknown subcommand handler: ");
+		Tcl_AddErrorInfo(interp, "\n    result of "
+			"ensemble unknown subcommand handler: ");
 		Tcl_AddErrorInfo(interp, TclGetString(unknownCmd));
 	    } else {
-		Tcl_AddErrorInfo(interp,
-			"\n    (ensemble unknown subcommand handler)");
+		Tcl_AddErrorInfo(interp, "\n    (ensemble unknown "
+			"subcommand handler)");
 	    }
 	}
 	Tcl_DecrRefCount(unknownCmd);
