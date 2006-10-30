@@ -1,3 +1,9 @@
+2006-10-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (INST_MOD):	Corrected improper testing of
+	* tests/expr.test:	the sign of bignums when applying Tcl's
+	division rules.  Thanks to Peter Spjuth.  [Bug 1585704]
+
 2006-10-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (EnsembleImplementationCmd):
