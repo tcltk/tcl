@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.246 2006/09/28 20:06:42 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.247 2006/10/30 16:30:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3796,7 +3796,7 @@ TclExecuteByteCode(
 		    }
 
 		    /* TODO: internals intrusion */
-		    if ((l1 > 0) ^ big2.sign) {
+		    if ((l1 > 0) ^ (big2.sign == MP_ZPOS)) {
 			/* Arguments are opposite sign; remainder is sum */
 			mp_int big1;
 			TclBNInitBignumFromLong(&big1, l1);
@@ -3844,7 +3844,7 @@ TclExecuteByteCode(
 		    }
 
 		    /* TODO: internals intrusion */
-		    if ((w1 > ((Tcl_WideInt) 0)) ^ big2.sign) {
+		    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {
 			/* Arguments are opposite sign; remainder is sum */
 			mp_int big1;
 			TclBNInitBignumFromWideInt(&big1, w1);
