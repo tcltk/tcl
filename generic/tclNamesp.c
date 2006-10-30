@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.109 2006/10/29 21:40:43 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.110 2006/10/30 13:08:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -444,6 +444,7 @@ Tcl_PushCallFrame(
 
     iPtr->framePtr = framePtr;
     iPtr->varFramePtr = framePtr;
+    iPtr->clientData = NULL;
     return TCL_OK;
 }
 
