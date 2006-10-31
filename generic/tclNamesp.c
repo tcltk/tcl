@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.112 2006/10/31 13:46:32 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.113 2006/10/31 15:23:41 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6282,7 +6282,7 @@ NsEnsembleImplementationCmd(
 	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
 	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
 	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
-		TCL_EVAL_INVOKE|TCL_EVAL_NOREWRITE);
+		TCL_EVAL_INVOKE);
 	Tcl_DecrRefCount(prefixObj);
 	TclStackFree(interp);
 	if (isRootEnsemble) {

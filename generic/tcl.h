@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.225 2006/10/27 12:44:08 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.226 2006/10/31 15:23:40 msofer Exp $
  */
 
 #ifndef _TCL
@@ -1067,14 +1067,11 @@ typedef struct Tcl_DString {
  *				o Cut out of error traces
  *				o Don't reset the flags controlling ensemble
  *				  error message rewriting.
- *      TCL_EVAL_NOREWRITE      Do not update the interp's last call info;
- *                              used by the ensemble rewrite machinery 
  */
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
 #define TCL_EVAL_DIRECT		0x40000
 #define TCL_EVAL_INVOKE		0x80000
-#define TCL_EVAL_NOREWRITE	0x100000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
