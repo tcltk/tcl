@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.247 2006/10/30 16:30:35 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.248 2006/10/31 20:19:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6350,7 +6350,6 @@ IllegalExprOperandType(
     int type;
     unsigned char opcode = *pc;
     CONST char *description, *operator = operatorStrings[opcode - INST_LOR];
-    Tcl_Obj *msg = Tcl_NewObj();
 
     if (opcode == INST_EXPON) {
 	operator = "**";
@@ -6375,9 +6374,8 @@ IllegalExprOperandType(
 	description = "(big) integer";
     }
 
-    TclObjPrintf(NULL, msg, "can't use %s as operand of \"%s\"",
-	    description, operator);
-    Tcl_SetObjResult(interp, msg);
+    Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+	    "can't use %s as operand of \"%s\"", description, operator));
 }
 
 /*
@@ -6640,8 +6638,7 @@ TclExprFloatError(
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
 	}
     } else {
-	Tcl_Obj *objPtr = Tcl_NewObj();
-	TclObjPrintf(NULL, objPtr,
+	Tcl_Obj *objPtr = TclObjPrintf(NULL,
 		"unknown floating-point error, errno = %d", errno);
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
 		Tcl_GetString(objPtr), (char *) NULL);

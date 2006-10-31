@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.58 2006/09/24 20:46:40 msofer Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.59 2006/10/31 20:19:45 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -51,9 +51,9 @@ static void		AppendUtfToUnicodeRep(Tcl_Obj *objPtr,
 static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    CONST char *bytes, int numBytes);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
-static int		FormatObjVA(Tcl_Interp *interp, Tcl_Obj *objPtr,
+static int		AppendFormatToObjVA(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    CONST char *format, va_list argList);
-static int		ObjPrintfVA(Tcl_Interp *interp, Tcl_Obj *objPtr,
+static int		AppendPrintfToObjVA(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    CONST char *format, va_list argList);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
@@ -2293,7 +2293,7 @@ TclAppendFormattedObjs(
 /*
  *---------------------------------------------------------------------------
  *
- * FormatObjVA --
+ * AppendFormatToObjVA --
  *
  *	Populate the Unicode internal rep with the Unicode form of its string
  *	rep. The object must alread have a "String" internal rep.
@@ -2308,7 +2308,7 @@ TclAppendFormattedObjs(
  */
 
 static int
-FormatObjVA(
+AppendFormatToObjVA(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     CONST char *format,
@@ -2339,7 +2339,7 @@ FormatObjVA(
 /*
  *---------------------------------------------------------------------------
  *
- * TclFormatObj --
+ * TclAppendFormatToObj --
  *
  * Results:
  *	A standard Tcl result.
@@ -2351,7 +2351,7 @@ FormatObjVA(
  */
 
 int
-TclFormatObj(
+TclAppendFormatToObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     CONST char *format,
@@ -2361,7 +2361,7 @@ TclFormatObj(
     int result;
 
     va_start(argList, format);
-    result = FormatObjVA(interp, objPtr, format, argList);
+    result = AppendFormatToObjVA(interp, objPtr, format, argList);
     va_end(argList);
     return result;
 }
@@ -2369,7 +2369,41 @@ TclFormatObj(
 /*
  *---------------------------------------------------------------------------
  *
- * ObjPrintfVA --
+ * TclObjFormat--
+ *
+ * Results:
+ *	A refcount zero Tcl_Obj.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclObjFormat(
+    Tcl_Interp *interp,
+    CONST char *format,
+    ...)
+{
+    va_list argList;
+    int result;
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    va_start(argList, format);
+    result = AppendFormatToObjVA(interp, objPtr, format, argList);
+    va_end(argList);
+    if (result != TCL_OK) {
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
+    }
+    return objPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * AppendPrintfToObjVA --
  *
  * Results:
  *
@@ -2379,7 +2413,7 @@ TclFormatObj(
  */
 
 static int
-ObjPrintfVA(
+AppendPrintfToObjVA(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     CONST char *format,
@@ -2510,7 +2544,7 @@ ObjPrintfVA(
 /*
  *---------------------------------------------------------------------------
  *
- * TclObjPrintf --
+ * TclAppendPrintfToObj --
  *
  * Results:
  *	A standard Tcl result.
@@ -2522,7 +2556,7 @@ ObjPrintfVA(
  */
 
 int
-TclObjPrintf(
+TclAppendPrintfToObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     CONST char *format,
@@ -2532,42 +2566,43 @@ TclObjPrintf(
     int result;
 
     va_start(argList, format);
-    result = ObjPrintfVA(interp, objPtr, format, argList);
+    result = AppendPrintfToObjVA(interp, objPtr, format, argList);
     va_end(argList);
     return result;
 }
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
- * TclFormatToErrorInfo --
+ * TclObjPrintf --
  *
  * Results:
+ *	A refcount zero Tcl_Obj.
  *
  * Side effects:
+ * 	None.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
-int
-TclFormatToErrorInfo(
+Tcl_Obj *
+TclObjPrintf(
     Tcl_Interp *interp,
     CONST char *format,
     ...)
 {
-    int code;
     va_list argList;
+    int result;
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     va_start(argList, format);
-    code = ObjPrintfVA(interp, objPtr, format, argList);
+    result = AppendPrintfToObjVA(interp, objPtr, format, argList);
     va_end(argList);
-    if (code != TCL_OK) {
-        return code;
+    if (result != TCL_OK) {
+	Tcl_DecrRefCount(objPtr);
+	return NULL;
     }
-    TclAppendObjToErrorInfo(interp, objPtr);
-    Tcl_DecrRefCount(objPtr);
-    return TCL_OK;
+    return objPtr;
 }
 
 /*
