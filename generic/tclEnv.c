@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.20.2.2 2005/10/05 08:02:20 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.20.2.3 2006/10/31 22:25:08 das Exp $
  */
 
 #include "tclInt.h"
@@ -43,6 +43,7 @@ static int environSize = 0;	/* Non-zero means that the environ array was
  */
 #if defined(__APPLE__) && defined(__DYNAMIC__)
 #include <crt_externs.h>
+__private_extern__ char **environ;
 char **environ = NULL;
 #endif
 
