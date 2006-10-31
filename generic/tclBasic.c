@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.205 2006/10/31 00:09:25 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.206 2006/10/31 00:15:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3414,7 +3414,7 @@ TclEvalObjvInternal(
 	 * Restore the calling objc/objv, in case it was spoiled by traces 
 	 */
 	
-	if (!(checktraces && (flags & TCL_EVAL_NOREWRITE)) {
+	if (!(checkTraces && (flags & TCL_EVAL_NOREWRITE))) {
 	    iPtr->callObjc = objc;
 	    iPtr->callObjv = objv;
 	}
