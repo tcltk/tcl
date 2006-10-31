@@ -1,3 +1,11 @@
+2006-11-01  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixPort.h: ensure MODULE_SCOPE is defined before use, so
+	that tclPort.h can once again be included without tclInt.h.
+
+	* generic/tclEnv.c (Darwin): mark _environ symbol as unexported
+	even when MODULE_SCOPE != __private_extern__.
+
 2006-10-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Refactored and renamed the routines
