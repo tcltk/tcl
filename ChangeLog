@@ -1,3 +1,12 @@
+2006-10-31  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tcl.h:
+	* generic/tclInterp.c:
+	* generic/tclNamesp.c: removing the flag bit TCL_EVAL_NOREWRITE,
+	the last remnant of the callObjc/v fiasco. It is not needed, as it
+	is now always set and checked or'ed with TCL_EVAL_INVOKE.
+	
 2006-10-31  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/rules.vc: Fix for bug #1582769 - options conflict with VC2003.
