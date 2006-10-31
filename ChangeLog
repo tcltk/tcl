@@ -1,19 +1,35 @@
+2006-10-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c, generic/tclNamesp.c, generic/tclProc.c:
+	* generic/tclInt.h: Removed the callObjc and callObjv fields from the
+	Interp structure. They did not function correctly and made other parts
+	of the core amazingly complex, resulting in a substantive change to
+	[info level] behaviour. [Bug 1587618]
+	* library/clock.tcl: Removed use of [info level 0] for calculating the
+	command name as used by the user and replace with a literal. What's
+	there now is sucky, but at least appears to be right to most users.
+	* tests/namespace.test (namespace-42.7,namespace-47.1): Reverted
+	changes to these tests.
+	* tests/info.test (info-9.11,info-9.12): Added knownBug constraint
+	since these tests require a different behaviour of [info level] than
+	is possible because of other dependencies.
+
 2006-10-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* tools/tcltk-man2html.tcl (option-toc): handle any kind of
-	options defined toc section (needed for ttk docs)
+	* tools/tcltk-man2html.tcl (option-toc): handle any kind of options
+	defined toc section (needed for ttk docs)
 
 2006-10-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TEOVI): insured that the interp's callObjc/v
 	fields are restored after traces run, as they be spoiled. This was
-	causing a segfault in tcllib's profiler tests. 
+	causing a segfault in tcllib's profiler tests.
 	
 2006-10-30  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclExecute.c (INST_MOD):	Corrected improper testing of
-	* tests/expr.test:	the sign of bignums when applying Tcl's
-	division rules.  Thanks to Peter Spjuth.  [Bug 1585704]
+	* generic/tclExecute.c (INST_MOD): Corrected improper testing of the
+	* tests/expr.test:                 sign of bignums when applying Tcl's
+	division rules. Thanks to Peter Spjuth. [Bug 1585704]
 
 2006-10-29  Miguel Sofer  <msofer@users.sf.net>
 
