@@ -1,3 +1,7 @@
+2006-10-31  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/rules.vc: Fix for bug #1582769 - options conflict with VC2003.
+
 2006-10-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c, generic/tclNamesp.c, generic/tclProc.c:
