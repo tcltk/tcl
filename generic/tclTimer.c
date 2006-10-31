@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.24 2006/10/31 20:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.25 2006/10/31 22:41:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -781,7 +781,6 @@ Tcl_AfterObjCmd(
     static CONST char *afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
-    Tcl_Obj *objPtr;
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
