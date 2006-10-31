@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.68 2006/10/31 09:14:36 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.69 2006/10/31 09:20:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3419,7 +3419,7 @@ Tcl_GetClassAsObject(
  */
 
 Tcl_Class
-Tcl_OOGetObjectClass(
+Tcl_GetClassOfObjects(
     Tcl_Interp *interp)
 {
     Foundation *fPtr = ((Interp *) interp)->ooFoundation;
@@ -3427,7 +3427,7 @@ Tcl_OOGetObjectClass(
 }
 
 Tcl_Class
-Tcl_OOGetClassClass(
+Tcl_GetClassOfClasses(
     Tcl_Interp *interp)
 {
     Foundation *fPtr = ((Interp *) interp)->ooFoundation;
