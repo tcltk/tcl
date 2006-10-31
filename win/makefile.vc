@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.153 2006/10/20 15:16:48 dkf Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.154 2006/10/31 21:47:34 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -511,9 +511,9 @@ baselibs   = $(baselibs) bufferoverflowU.lib
 # TclTest flags
 #---------------------------------------------------------------------
 
-!IF "$(TESTPAT)" != ""
-TESTFLAGS = -file $(TESTPAT)
-!ENDIF
+!if "$(TESTPAT)" != ""
+TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
+!endif
 
 
 #---------------------------------------------------------------------
@@ -1011,9 +1011,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@echo Installing library http1.0 directory
 	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\http1.0\"
-	@echo Installing package http 2.5.2 as a Tcl Module
+	@echo Installing package http 2.5.3 as a Tcl Module
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\http-2.5.2.tm"
+		"$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\http-2.5.3.tm"
 	@echo Installing library opt0.4 directory
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
