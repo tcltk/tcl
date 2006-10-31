@@ -1,3 +1,25 @@
+2006-10-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Refactored and renamed the routines
+	* generic/tclCkalloc.c:	TclObjPrintf, TclFormatObj, and
+	* generic/tclCmdAH.c:	TclFormatToErrorInfo to a new set of
+	* generic/tclCmdIL.c:	routines TclAppendPrintfToObj,
+	* generic/tclCmdMZ.c:	TclAppendFormatToObj, TclObjPrintf, and
+	* generic/tclDictObj.c:	TclObjFormat, with the intent of making
+	* generic/tclExecute.c:	the latter list, plus TclAppendLimitedToObj
+	* generic/tclIORChan.c:	and TclAppendObjToErrorInfo, public via
+	* generic/tclIOUtil.c:	a revised TIP 270.
+	* generic/tclInt.h:
+	* generic/tclMain.c:
+	* generic/tclNamesp.c:
+	* generic/tclParseExpr.c:
+	* generic/tclPkg.c:
+	* generic/tclProc.c:
+	* generic/tclStringObj.c:
+	* generic/tclTimer.c:
+	* generic/tclUtil.c:
+	* unix/tclUnixFCmd.c:
+
 2006-10-31  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:

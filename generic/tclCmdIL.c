@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.90 2006/10/23 21:36:54 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.91 2006/10/31 20:19:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3362,8 +3362,8 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
 		    }
-		    TclFormatToErrorInfo(interp,
-			    "\n    (-index option item number %d)", j);
+		    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+			    "\n    (-index option item number %d)", j));
 		    return TCL_ERROR;
 		}
 	    }
@@ -4000,8 +4000,8 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
 		    }
-		    TclFormatToErrorInfo(interp,
-			    "\n    (-index option item number %d)", j);
+		    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+			    "\n    (-index option item number %d)", j));
 		    return TCL_ERROR;
 		}
 	    }

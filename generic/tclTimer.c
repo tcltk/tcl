@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.23 2006/09/26 00:05:03 patthoyts Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.24 2006/10/31 20:19:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -870,9 +870,7 @@ Tcl_AfterObjCmd(
 							(ClientData) afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
-	objPtr = Tcl_NewObj();
-	TclObjPrintf(NULL, objPtr, "after#%d", afterPtr->id);
-	Tcl_SetObjResult(interp, objPtr);
+	Tcl_SetObjResult(interp, TclObjPrintf(NULL, "after#%d", afterPtr->id));
 	return TCL_OK;
     }
     case AFTER_CANCEL: {
@@ -935,9 +933,7 @@ Tcl_AfterObjCmd(
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_DoWhenIdle(AfterProc, (ClientData) afterPtr);
-	objPtr = Tcl_NewObj();
-	TclObjPrintf(NULL, objPtr, "after#%d", afterPtr->id);
-	Tcl_SetObjResult(interp, objPtr);
+	Tcl_SetObjResult(interp, TclObjPrintf(NULL, "after#%d", afterPtr->id));
 	break;
     case AFTER_INFO: {
 	Tcl_Obj *resultListPtr;
