@@ -1,3 +1,8 @@
+2006-10-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/tcltk-man2html.tcl (option-toc): handle any kind of
+	options defined toc section (needed for ttk docs)
+
 2006-10-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TEOVI): insured that the interp's callObjc/v
