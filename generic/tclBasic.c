@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.206 2006/10/31 00:15:17 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.207 2006/10/31 13:46:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -362,8 +362,6 @@ Tcl_CreateInterp(void)
     if (iPtr->globalNsPtr == NULL) {
 	Tcl_Panic("Tcl_CreateInterp: can't create global namespace");
     }
-    iPtr->callObjc = 0;
-    iPtr->callObjv = NULL;
 
     /*
      * Initialise the rootCallframe. It cannot be allocated on the stack, as
@@ -3286,10 +3284,11 @@ TclEvalObjvInternal(
 	return TCL_OK;
     }
 
-    /* Configure evaluation context to match the requested flags */
+    /*
+     * Configure evaluation context to match the requested flags.
+     */
 
-    if ((flags & TCL_EVAL_GLOBAL)
-	    && (varFramePtr != iPtr->rootFramePtr)) {
+    if ((flags & TCL_EVAL_GLOBAL) && (varFramePtr != iPtr->rootFramePtr)) {
 	varFramePtr = iPtr->rootFramePtr;
 	savedVarFramePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = varFramePtr; 
@@ -3300,15 +3299,6 @@ TclEvalObjvInternal(
 	} else {
 	    varFramePtr->nsPtr = iPtr->globalNsPtr;
 	}
-    }
-
-    /*
-     * Record the calling objc/objv except if requested not to
-     */
-    
-    if (!(flags & TCL_EVAL_NOREWRITE)) {
-	iPtr->callObjc = objc;
-	iPtr->callObjv = objv;
     }
 
     /*
@@ -3389,7 +3379,7 @@ TclEvalObjvInternal(
      */
 
     cmdEpoch = cmdPtr->cmdEpoch;
-    if ((checkTraces) && (command != NULL)) {
+    if (checkTraces && (command != NULL)) {
 	cmdPtr->refCount++;
 
 	/*
@@ -3401,27 +3391,16 @@ TclEvalObjvInternal(
 	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	    checkTraces = 0;
 	}
 	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	    checkTraces = 0;
 	}
 	cmdPtr->refCount--;
-
-	/*
-	 * Restore the calling objc/objv, in case it was spoiled by traces 
-	 */
-	
-	if (!(checkTraces && (flags & TCL_EVAL_NOREWRITE))) {
-	    iPtr->callObjc = objc;
-	    iPtr->callObjv = objv;
-	}
-	
     }
     if (cmdEpoch != cmdPtr->cmdEpoch) {
 	/* The command has been modified in some way. */
+	checkTraces = 0;
 	goto reparseBecauseOfTraces;
     }
 
@@ -3432,7 +3411,7 @@ TclEvalObjvInternal(
     cmdPtr->refCount++;
     iPtr->cmdCount++;
     if (code == TCL_OK && traceCode == TCL_OK && !Tcl_LimitExceeded(interp)) {
-	if (!(flags & TCL_EVAL_INVOKE) &&
+	if (!(flags & (TCL_EVAL_INVOKE|TCL_EVAL_NOREWRITE)) &&
 		(iPtr->ensembleRewrite.sourceObjs != NULL)) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	}

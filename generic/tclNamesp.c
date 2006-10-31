@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.111 2006/10/30 14:27:59 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.112 2006/10/31 13:46:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -423,8 +423,8 @@ Tcl_PushCallFrame(
     nsPtr->activationCount++;
     framePtr->nsPtr = nsPtr;
     framePtr->isProcCallFrame = isProcCallFrame;
-    framePtr->objc = iPtr->callObjc;
-    framePtr->objv = iPtr->callObjv;
+    framePtr->objc = 0;
+    framePtr->objv = NULL;
     framePtr->callerPtr = iPtr->framePtr;
     framePtr->callerVarPtr = iPtr->varFramePtr;
     if (iPtr->varFramePtr != NULL) {
@@ -3433,6 +3433,9 @@ NamespaceEvalCmd(
 	return TCL_ERROR;
     }
 
+    framePtr->objc = objc;
+    framePtr->objv = objv;
+
     if (objc == 4) {
 	result = Tcl_EvalObjEx(interp, objv[3], 0);
     } else {
@@ -3831,6 +3834,9 @@ NamespaceInscopeCmd(
     if (result != TCL_OK) {
 	return result;
     }
+
+    framePtr->objc = objc;
+    framePtr->objv = objv;
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
@@ -6296,7 +6302,6 @@ NsEnsembleImplementationCmd(
      */
 
     if (ensemblePtr->unknownHandler != NULL && reparseCount++ < 1) {
-	Interp *iPtr = (Interp *) interp;
 	int paramc, i;
 	Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
@@ -6340,14 +6345,6 @@ NsEnsembleImplementationCmd(
 	    if (prefixObjc > 0) {
 		goto runResultingSubcommand;
 	    }
-
-	    /*
-	     * Restore the interp's call data, which may have been wiped out
-	     * while processing the unknown handler.
-	     */
-
-	    iPtr->callObjc = objc;
-	    iPtr->callObjv = objv;
 
 	    /*
 	     * Namespace alive & empty result => reparse.

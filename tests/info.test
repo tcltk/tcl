@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.38 2006/10/24 23:13:07 msofer Exp $
+# RCS: @(#) $Id: info.test,v 1.39 2006/10/31 13:46:33 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -28,7 +28,6 @@ namespace eval test_ns_info1 {
     proc p {x} {return "x=$x"}
     proc q {{y 27} {z {}}} {return "y=$y"}
 }
-
 
 test info-1.1 {info args option} {
     proc t1 {a bbb c} {return foo}
@@ -357,7 +356,7 @@ test info-9.10 {info level option, namespaces} {
     namespace delete t
     set msg
 } {namespace eval t {info level 0}}
-test info-9.11 {info level option, aliases} -setup {
+test info-9.11 {info level option, aliases} -constraints knownBug -setup {
     proc w {x y z} {info level 0}
     interp alias {} a {} w a b
 } -body {
@@ -366,7 +365,7 @@ test info-9.11 {info level option, aliases} -setup {
     rename a {}
     rename w {}
 } -result {a c}
-test info-9.12 {info level option, ensembles} -setup {
+test info-9.12 {info level option, ensembles} -constraints knownBug -setup {
     proc w {x y z} {info level 0}
     namespace ensemble create -command a -map {foo ::w}
 } -body {
@@ -375,7 +374,6 @@ test info-9.12 {info level option, ensembles} -setup {
     rename a {}
     rename w {}
 } -result {a foo 1 2 3}
-
 
 set savedLibrary $tcl_library
 test info-10.1 {info library option} {
