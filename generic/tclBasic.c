@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.204 2006/10/27 12:33:18 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.205 2006/10/31 00:09:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3302,7 +3302,6 @@ TclEvalObjvInternal(
 	}
     }
 
-
     /*
      * Record the calling objc/objv except if requested not to
      */
@@ -3402,16 +3401,27 @@ TclEvalObjvInternal(
 	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	    checkTraces = 0;
 	}
 	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	    checkTraces = 0;
 	}
 	cmdPtr->refCount--;
+
+	/*
+	 * Restore the calling objc/objv, in case it was spoiled by traces 
+	 */
+	
+	if (!(checktraces && (flags & TCL_EVAL_NOREWRITE)) {
+	    iPtr->callObjc = objc;
+	    iPtr->callObjv = objv;
+	}
+	
     }
     if (cmdEpoch != cmdPtr->cmdEpoch) {
 	/* The command has been modified in some way. */
-	checkTraces = 0;
 	goto reparseBecauseOfTraces;
     }
 
