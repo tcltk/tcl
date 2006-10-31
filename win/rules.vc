@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.11.2.5 2006/10/18 08:49:33 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.11.2.6 2006/10/31 15:17:20 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -31,7 +31,7 @@ _INSTALLDIR	= $(INSTALLDIR:/=\)
 !endif
 
 !ifndef MACHINE
-!if "$(CPU)" == ""
+!if "$(CPU)" == "" || "$(CPU)" == "i386"
 MACHINE		= IX86
 !else
 MACHINE         = $(CPU)
@@ -127,8 +127,11 @@ DEBUGFLAGS     = $(DEBUGFLAGS) -GZ
 
 COMPILERFLAGS  =-W3
 
+# In v13 -GL and -YX are incompatible.
 !if [nmakehlp -c -YX]
+!if ![nmakehlp -c -GL]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -YX
+!endif
 !endif
 
 !if "$(MACHINE)" == "IX86"
