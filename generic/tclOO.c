@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.1.2.67 2006/10/23 21:20:47 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.1.2.68 2006/10/31 09:14:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3285,6 +3285,19 @@ InitEnsembleRewrite(
     return argObjs;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Tcl_ObjectContextMethod, ... --
+ *
+ *	Simple introspector functions. People would read the structures
+ *	directly for this sort of information, except that we discourage that
+ *	sort of thing as it makes it harder to evolve the internal data
+ *	structures. None of these change anything.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 Tcl_Method
 Tcl_ObjectContextMethod(
     Tcl_ObjectContext context)
@@ -3393,6 +3406,32 @@ Tcl_GetClassAsObject(
     Tcl_Class clazz)
 {
     return (Tcl_Object) ((Class *)clazz)->thisPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Tcl_OOGetObjectClass, Tcl_OOGetClassClass --
+ *
+ *	Get the basic ::oo::object and ::oo::class classes.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_Class
+Tcl_OOGetObjectClass(
+    Tcl_Interp *interp)
+{
+    Foundation *fPtr = ((Interp *) interp)->ooFoundation;
+    return (Tcl_Class) fPtr->objectCls;
+}
+
+Tcl_Class
+Tcl_OOGetClassClass(
+    Tcl_Interp *interp)
+{
+    Foundation *fPtr = ((Interp *) interp)->ooFoundation;
+    return (Tcl_Class) fPtr->classCls;
 }
 
 /*
