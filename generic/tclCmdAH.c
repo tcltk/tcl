@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.75 2006/08/10 12:15:30 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.76 2006/10/31 20:19:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -188,8 +188,9 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	armPtr = caseObjv[body - 1];
 	result = Tcl_EvalObjEx(interp, caseObjv[body], 0);
 	if (result == TCL_ERROR) {
-	    TclFormatToErrorInfo(interp, "\n    (\"%.50s\" arm line %d)",
-		    TclGetString(armPtr), interp->errorLine);
+	    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+		    "\n    (\"%.50s\" arm line %d)",
+		    TclGetString(armPtr), interp->errorLine));
 	}
 	return result;
     }
@@ -250,8 +251,8 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
      */
 
     if (Tcl_LimitExceeded(interp)) {
-	TclFormatToErrorInfo(interp, "\n    (\"catch\" body line %d)",
-		interp->errorLine);
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+		"\n    (\"catch\" body line %d)", interp->errorLine));
 	return TCL_ERROR;
     }
 
@@ -659,8 +660,8 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-	TclFormatToErrorInfo(interp,"\n    (\"eval\" body line %d)",
-		interp->errorLine);
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+		"\n    (\"eval\" body line %d)", interp->errorLine));
     }
     return result;
 }
@@ -1611,8 +1612,8 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objv[4], 0);
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
-		TclFormatToErrorInfo(interp, "\n    (\"for\" body line %d)",
-			interp->errorLine);
+		TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+			"\n    (\"for\" body line %d)", interp->errorLine));
 	    }
 	    break;
 	}
@@ -1821,8 +1822,8 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 		result = TCL_OK;
 		break;
 	    } else if (result == TCL_ERROR) {
-		TclFormatToErrorInfo(interp,
-			"\n    (\"foreach\" body line %d)", interp->errorLine);
+		TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+			"\n    (\"foreach\" body line %d)", interp->errorLine));
 		break;
 	    } else {
 		break;
