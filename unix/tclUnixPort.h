@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.54 2006/09/07 09:17:33 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.55 2006/10/31 22:24:39 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -662,6 +662,10 @@ EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
 
 #include <pwd.h>
 #include <grp.h>
+
+#ifndef MODULE_SCOPE
+#define MODULE_SCOPE extern
+#endif
 
 MODULE_SCOPE struct passwd*  TclpGetPwNam(const char *name);
 MODULE_SCOPE struct group*   TclpGetGrNam(const char *name);
