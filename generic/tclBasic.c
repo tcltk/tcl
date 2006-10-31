@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.208 2006/10/31 15:23:41 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.209 2006/10/31 20:19:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3765,8 +3765,8 @@ Tcl_EvalEx(
 			 * Attempt to expand a non-list.
 			 */
 
-			TclFormatToErrorInfo(interp,
-				"\n    (expanding word %d)", objectsUsed);
+			TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+				"\n    (expanding word %d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			goto error;
 		    }
@@ -4156,10 +4156,8 @@ ProcessUnexpectedResult(
 	Tcl_AppendResult(interp,
 		"invoked \"continue\" outside of a loop", NULL);
     } else {
-	Tcl_Obj *objPtr = Tcl_NewObj();
-	TclObjPrintf(NULL, objPtr, "command returned bad code: %d",
-		returnCode);
-	Tcl_SetObjResult(interp, objPtr);
+	Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+		"command returned bad code: %d", returnCode));
     }
 }
 
@@ -5777,7 +5775,6 @@ MathFuncWrongNumArgs(
     int found,			/* Actual parameter count */
     Tcl_Obj *CONST *objv)	/* Actual parameter vector */
 {
-    Tcl_Obj *errorMessage;
     CONST char *name = Tcl_GetString(objv[0]);
     CONST char *tail = name + strlen(name);
 
@@ -5788,11 +5785,9 @@ MathFuncWrongNumArgs(
 	    break;
 	}
     }
-    TclNewObj(errorMessage);
-    TclObjPrintf(NULL, errorMessage,
+    Tcl_SetObjResult(interp, TclObjPrintf(NULL,
 	    "too %s arguments for math function \"%s\"",
-	    (found < expected ? "few" : "many"), name);
-    Tcl_SetObjResult(interp, errorMessage);
+	    (found < expected ? "few" : "many"), name));
 }
 
 /*

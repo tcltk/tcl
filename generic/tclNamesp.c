@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.113 2006/10/31 15:23:41 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.114 2006/10/31 20:19:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3454,10 +3454,10 @@ NamespaceEvalCmd(
 	int limit = 200;
 	int overflow = (length > limit);
 
-	TclFormatToErrorInfo(interp,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
 		"\n    (in namespace eval \"%.*s%s\" script line %d)",
 		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine);
+		(overflow ? "..." : ""), interp->errorLine));
     }
 
     /*
@@ -3872,10 +3872,10 @@ NamespaceInscopeCmd(
 	int limit = 200;
 	int overflow = (length > limit);
 
-	TclFormatToErrorInfo(interp,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
 		"\n    (in namespace inscope \"%.*s%s\" script line %d)",
 		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine);
+		(overflow ? "..." : ""), interp->errorLine));
     }
 
     /*
@@ -4602,12 +4602,8 @@ NamespaceUpvarCmd(
 	/*
 	 * The namespace does not exist, leave an error message.
 	 */
-
-	Tcl_Obj *resPtr;
-
-	TclNewObj(resPtr);
-	TclFormatObj(NULL, resPtr, "namespace \"%s\" does not exist", objv[2]);
-	Tcl_SetObjResult(interp, resPtr);
+	Tcl_SetObjResult(interp, TclObjFormat(NULL,
+		"namespace \"%s\" does not exist", objv[2]));
 	return TCL_ERROR;
     }
 
@@ -6997,10 +6993,10 @@ Tcl_LogCommandInfo(
     }
 
     overflow = (length > limit);
-    TclFormatToErrorInfo(interp, "\n    %s\n\"%.*s%s\"",
-	    ((iPtr->errorInfo == NULL)
+    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	    "\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
 	    ? "while executing" : "invoked from within"),
-	    (overflow ? limit : length), command, (overflow ? "..." : ""));
+	    (overflow ? limit : length), command, (overflow ? "..." : "")));
 
     varPtr = TclObjLookupVar(interp, iPtr->eiVar, NULL, TCL_GLOBAL_ONLY,
 	    NULL, 0, 0, &arrayPtr);

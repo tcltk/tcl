@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.44 2006/08/30 20:46:20 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.45 2006/10/31 20:19:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -225,14 +225,12 @@ Tcl_ParseExpr(
 	if ((NODE_TYPE & nodePtr->lexeme) == 0) {
 	    switch (nodePtr->lexeme) {
 	    case INVALID:
-		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg,
+		msg = TclObjPrintf(NULL,
 			"invalid character \"%.*s\"", scanned, start);
 		code = TCL_ERROR;
 		continue;
 	    case INCOMPLETE:
-		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg,
+		msg = TclObjPrintf(NULL,
 			"incomplete operator \"%.*s\"", scanned, start);
 		code = TCL_ERROR;
 		continue;
@@ -248,18 +246,18 @@ Tcl_ParseExpr(
 		    if (code == TCL_OK) {
 			nodePtr->lexeme = BOOLEAN;
 		    } else {
-			msg = Tcl_NewObj();
-			TclObjPrintf(NULL, msg, "invalid bareword \"%.*s%s\"",
+			msg = TclObjPrintf(NULL,
+				"invalid bareword \"%.*s%s\"",
 				(scanned < limit) ? scanned : limit - 3, start,
 				(scanned < limit) ? "" : "...");
-			post = Tcl_NewObj();
-			TclObjPrintf(NULL, post,
+			post = TclObjPrintf(NULL,
 				"should be \"$%.*s%s\" or \"{%.*s%s}\"",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
-			TclObjPrintf(NULL, post, " or \"%.*s%s(...)\" or ...",
+			TclAppendPrintfToObj(NULL, post,
+				" or \"%.*s%s(...)\" or ...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
 			continue;
@@ -286,8 +284,7 @@ Tcl_ParseExpr(
 		CONST char *operand =
 			scratch.tokenPtr[lastNodePtr->token].start;
 
-		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg, "missing operator at %s", mark);
+		msg = TclObjPrintf(NULL, "missing operator at %s", mark);
 		if (operand[0] == '0') {
 		    Tcl_Obj *copy = Tcl_NewStringObj(operand,
 			    start + scanned - operand);
@@ -421,8 +418,7 @@ Tcl_ParseExpr(
 
 	case UNARY:
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
-		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg, "missing operator at %s", mark);
+		msg = TclObjPrintf(NULL, "missing operator at %s", mark);
 		scanned = 0;
 		insertMark = 1;
 		code = TCL_ERROR;
@@ -468,8 +464,7 @@ Tcl_ParseExpr(
 		    break;
 
 		}
-		msg = Tcl_NewObj();
-		TclObjPrintf(NULL, msg, "empty subexpression at %s", mark);
+		msg = TclObjPrintf(NULL, "empty subexpression at %s", mark);
 		scanned = 0;
 		insertMark = 1;
 		code = TCL_ERROR;
@@ -482,8 +477,7 @@ Tcl_ParseExpr(
 		    if (lastNodePtr->lexeme == OPEN_PAREN) {
 			msg = Tcl_NewStringObj("unbalanced open paren", -1);
 		    } else if (lastNodePtr->lexeme == COMMA) {
-			msg = Tcl_NewObj();
-			TclObjPrintf(NULL, msg,
+			msg = TclObjPrintf(NULL, 
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
@@ -496,16 +490,14 @@ Tcl_ParseExpr(
 		    } else if ((nodePtr->lexeme == COMMA)
 			    && (lastNodePtr->lexeme == OPEN_PAREN)
 			    && (lastNodePtr[-1].lexeme == FUNCTION)) {
-			msg = Tcl_NewObj();
-			TclObjPrintf(NULL, msg,
+			msg = TclObjPrintf(NULL,
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
 		    }
 		}
 		if (msg == NULL) {
-		    msg = Tcl_NewObj();
-		    TclObjPrintf(NULL, msg, "missing operand at %s", mark);
+		    msg = TclObjPrintf(NULL, "missing operand at %s", mark);
 		    scanned = 0;
 		    insertMark = 1;
 		}
@@ -551,8 +543,7 @@ Tcl_ParseExpr(
 		}
 		if ((otherPtr->lexeme == QUESTION)
 			&& (lastOrphanPtr->lexeme != COLON)) {
-		    msg = Tcl_NewObj();
-		    TclObjPrintf(NULL, msg,
+		    msg = TclObjPrintf(NULL,
 			    "missing operator \":\" at %s", mark);
 		    scanned = 0;
 		    insertMark = 1;
@@ -657,7 +648,7 @@ Tcl_ParseExpr(
 	    if (msg == NULL) {
 		msg = Tcl_GetObjResult(interp);
 	    }
-	    TclObjPrintf(NULL, msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
+	    TclAppendPrintfToObj(NULL, msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		    ((start - limit) < scratch.string) ? "" : "...",
 		    ((start - limit) < scratch.string)
 		    ? (start - scratch.string) : limit - 3,
@@ -678,10 +669,10 @@ Tcl_ParseExpr(
 	    }
 	    Tcl_SetObjResult(interp, msg);
 	    numBytes = scratch.end - scratch.string;
-	    TclFormatToErrorInfo(interp,
+	    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
 		    "\n    (parsing expression \"%.*s%s\")",
 		    (numBytes < limit) ? numBytes : limit - 3,
-		    scratch.string, (numBytes < limit) ? "" : "...");
+		    scratch.string, (numBytes < limit) ? "" : "..."));
 	}
     }
 
