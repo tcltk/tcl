@@ -1,3 +1,9 @@
+2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclBasic.c, generic/tclInterp.c, generic/tclProc.c: Silence
+	warnings from gcc over signed/unsigned and TclStackAlloc().
+	* generic/tclCmdMZ.c: Update to more compact and clearer coding style.
+
 2006-11-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Further revised TclAppendPrintToObj() and
