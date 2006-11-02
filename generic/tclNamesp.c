@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.114 2006/10/31 20:19:45 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.115 2006/11/02 13:44:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -798,7 +798,7 @@ Tcl_CreateNamespace(
     nsPtr = (Namespace *) ckalloc(sizeof(Namespace));
     nsPtr->name = (char *) ckalloc((unsigned) (strlen(simpleName)+1));
     strcpy(nsPtr->name, simpleName);
-    nsPtr->fullName = NULL;			/* set below */
+    nsPtr->fullName = NULL;		/* Set below. */
     nsPtr->clientData = clientData;
     nsPtr->deleteProc = deleteProc;
     nsPtr->parentPtr = parentPtr;
@@ -2085,18 +2085,20 @@ TclGetNamespaceForQualName(
 	nsPtr = iPtr->varFramePtr->nsPtr;
     }
 
-    start = qualName;		/* Pts to start of qualifying namespace. */
+    start = qualName;			/* Points to start of qualifying
+					 * namespace. */
     if ((*qualName == ':') && (*(qualName+1) == ':')) {
-	start = qualName+2;	/* Skip over the initial :: */
+	start = qualName+2;		/* Skip over the initial :: */
 	while (*start == ':') {
-	    start++;		/* Skip over a subsequent : */
+	    start++;			/* Skip over a subsequent : */
 	}
 	nsPtr = globalNsPtr;
-	if (*start == '\0') {	/* qualName is just two or more ":"s. */
+	if (*start == '\0') {		/* qualName is just two or more
+					 * ":"s. */
 	    *nsPtrPtr = globalNsPtr;
 	    *altNsPtrPtr = NULL;
 	    *actualCxtPtrPtr = globalNsPtr;
-	    *simpleNamePtr = start; /* Points to empty string. */
+	    *simpleNamePtr = start;	/* Points to empty string. */
 	    return TCL_OK;
 	}
     }
@@ -2132,11 +2134,11 @@ TclGetNamespaceForQualName(
 	len = 0;
 	for (end = start;  *end != '\0';  end++) {
 	    if ((*end == ':') && (*(end+1) == ':')) {
-		end += 2;	/* Skip over the initial :: */
+		end += 2;		/* Skip over the initial :: */
 		while (*end == ':') {
-		    end++;	/* Skip over the subsequent : */
+		    end++;		/* Skip over the subsequent : */
 		}
-		break;		/* Exit for loop; end is after ::'s */
+		break;			/* Exit for loop; end is after ::'s */
 	    }
 	    len++;
 	}
@@ -2195,7 +2197,8 @@ TclGetNamespaceForQualName(
 		if (nsPtr == NULL) {
 		    Tcl_Panic("Could not create namespace '%s'", nsName);
 		}
-	    } else {		/* namespace not found and wasn't created */
+	    } else {			/* Namespace not found and was not
+					 * created. */
 		nsPtr = NULL;
 	    }
 	}
@@ -2234,9 +2237,10 @@ TclGetNamespaceForQualName(
      */
 
     if ((flags & TCL_FIND_ONLY_NS) || (end>start && *(end-1)!=':')) {
-	*simpleNamePtr = NULL;	/* Found namespace name. */
+	*simpleNamePtr = NULL;		/* Found namespace name. */
     } else {
-	*simpleNamePtr = end;	/* Found cmd/var: points to empty string. */
+	*simpleNamePtr = end;		/* Found cmd/var: points to empty
+					 * string. */
     }
 
     /*
@@ -2862,7 +2866,7 @@ TclGetNamespaceFromObj(
 	    nsPtr = NULL;
 	}
     }
-    if (nsPtr == NULL) {	/* try again */
+    if (nsPtr == NULL) {		/* Try again. */
 	result = tclNsNameType.setFromAnyProc(interp, objPtr);
 	if (result != TCL_OK) {
 	    goto done;
@@ -3855,7 +3859,7 @@ NamespaceInscopeCmd(
 	for (i = 4;  i < objc;  i++) {
 	    result = Tcl_ListObjAppendElement(interp, listPtr, objv[i]);
 	    if (result != TCL_OK) {
-		Tcl_DecrRefCount(listPtr); /* free unneeded obj */
+		Tcl_DecrRefCount(listPtr); /* Free unneeded obj */
 		return result;
 	    }
 	}
@@ -4301,9 +4305,9 @@ NamespaceQualifiersCmd(
     }
     while (--p >= name) {
 	if ((*p == ':') && (p > name) && (*(p-1) == ':')) {
-	    p -= 2;		/* Back up over the :: */
+	    p -= 2;			/* Back up over the :: */
 	    while ((p >= name) && (*p == ':')) {
-		p--;		/* Back up over the preceeding : */
+		p--;			/* Back up over the preceeding : */
 	    }
 	    break;
 	}
@@ -4542,7 +4546,7 @@ NamespaceTailCmd(
     }
     while (--p > name) {
 	if ((*p == ':') && (*(p-1) == ':')) {
-	    p++;		/* Just after the last "::" */
+	    p++;			/* Just after the last "::" */
 	    break;
 	}
     }
@@ -4696,7 +4700,7 @@ NamespaceWhichCmd(
 
     resultPtr = Tcl_NewObj();
     switch (lookupType) {
-    case 0: {			/* -command */
+    case 0: {				/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
 
 	if (cmd != (Tcl_Command) NULL) {
@@ -4704,7 +4708,7 @@ NamespaceWhichCmd(
 	}
 	break;
     }
-    case 1: {			/* -variable */
+    case 1: {				/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
 
