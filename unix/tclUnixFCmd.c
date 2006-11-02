@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.57 2006/10/31 20:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.58 2006/11/02 15:58:09 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -1413,7 +1413,7 @@ GetPermissionsAttribute(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = TclObjPrintf(NULL,
+    *attributePtrPtr = TclObjPrintf(
 	    "%0#5lo", (long) (statBuf.st_mode & 0x00007FFF));
     return TCL_OK;
 }

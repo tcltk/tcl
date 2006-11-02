@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.37 2006/10/31 20:19:45 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.38 2006/11/02 15:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -652,7 +652,7 @@ Tcl_Main(
 
 	    if (!Tcl_InterpDeleted(interp)) {
 		if (!Tcl_LimitExceeded(interp)) {
-		    Tcl_Obj *cmd = TclObjPrintf(NULL, "exit %d", exitCode);
+		    Tcl_Obj *cmd = TclObjPrintf("exit %d", exitCode);
 		    Tcl_IncrRefCount(cmd);
 		    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
 		    Tcl_DecrRefCount(cmd);

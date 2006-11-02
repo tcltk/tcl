@@ -1,3 +1,25 @@
+2006-11-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Further revised TclAppendPrintToObj() and
+	* generic/tclCkalloc.c:	TclObjPrintf() routines to panic when unable
+	* generic/tclCmdAH.c:	to complete their formatting operations, rather
+	* generic/tclCmdIL.c:	than report an error message.  This means an
+	* generic/tclCmdMZ.c:	interp argument for error message recording is
+	* generic/tclDictObj.c:	no longer needed, further simplifying the
+	* generic/tclExecute.c: interface for callers.
+	* generic/tclIORChan.c:
+	* generic/tclIOUtil.c:
+	* generic/tclInt.h:
+	* generic/tclMain.c:
+	* generic/tclNamesp.c:
+	* generic/tclParseExpr.c:
+	* generic/tclPkg.c:
+	* generic/tclProc.c:
+	* generic/tclStringObj.c:
+	* generic/tclTimer.c:
+	* generic/tclUtil.c:
+	* unix/tclUnixFCmd.c:
+
 2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdAH.c: Clean up uses of cast NULLs.

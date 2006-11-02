@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.248 2006/10/31 20:19:45 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.249 2006/11/02 15:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6374,7 +6374,7 @@ IllegalExprOperandType(
 	description = "(big) integer";
     }
 
-    Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+    Tcl_SetObjResult(interp, TclObjPrintf(
 	    "can't use %s as operand of \"%s\"", description, operator));
 }
 
@@ -6638,7 +6638,7 @@ TclExprFloatError(
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
 	}
     } else {
-	Tcl_Obj *objPtr = TclObjPrintf(NULL,
+	Tcl_Obj *objPtr = TclObjPrintf(
 		"unknown floating-point error, errno = %d", errno);
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
 		Tcl_GetString(objPtr), (char *) NULL);
