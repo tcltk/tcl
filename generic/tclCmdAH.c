@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.78 2006/11/02 15:58:04 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.79 2006/11/02 16:57:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1881,15 +1881,11 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    resultPtr = Tcl_NewObj();
-    Tcl_IncrRefCount(resultPtr);
-    if (TclAppendFormattedObjs(interp, resultPtr, TclGetString(objv[1]),
-	    objc-2, objv+2) != TCL_OK) {
-	Tcl_DecrRefCount(resultPtr);
+    resultPtr = TclFormat(interp, TclGetString(objv[1]), objc-2, objv+2);
+    if (resultPtr == NULL) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, resultPtr);
-    Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
 
