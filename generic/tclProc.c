@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.104 2006/11/02 15:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.105 2006/11/02 16:39:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1346,7 +1346,7 @@ TclObjInterpProcCore(
 	 */
 
 	desiredObjs = (Tcl_Obj **) TclStackAlloc(interp,
-		sizeof(Tcl_Obj *) * (unsigned)(numArgs+1));
+		(int) sizeof(Tcl_Obj *) * (numArgs+1));
 
 #ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = framePtr->objv[skip-1];
