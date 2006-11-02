@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.49 2006/11/02 15:43:51 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.50 2006/11/02 16:14:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -983,7 +983,8 @@ Tcl_SetSystemEncoding(
 
 Tcl_Encoding
 Tcl_CreateEncoding(
-    const Tcl_EncodingType *typePtr)	/* The encoding type. */
+    const Tcl_EncodingType *typePtr)
+				/* The encoding type. */
 {
     Tcl_HashEntry *hPtr;
     int new;
@@ -1805,8 +1806,9 @@ LoadTableEncoding(
 	 * Skip leading empty lines.
 	 */
 
-	while ((len = Tcl_Gets(chan, &lineString)) == 0)
-	    ;
+	while ((len = Tcl_Gets(chan, &lineString)) == 0) {
+	    /* empty body */
+	}
 
 	if (len < 0) {
 	    break;
@@ -1906,7 +1908,7 @@ LoadEscapeEncoding(
 	}
 	if (argc >= 2) {
 	    if (strcmp(argv[0], "name") == 0) {
-		;
+		/* do nothing */
 	    } else if (strcmp(argv[0], "init") == 0) {
 		strncpy(init, argv[1], sizeof(init));
 		init[sizeof(init) - 1] = '\0';
@@ -2224,10 +2226,10 @@ UtfToUtfProc(
 	    *dst++ = 0;
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
-	    /* Always check before using Tcl_UtfToUniChar. Not doing
-	     * can so cause it run beyond the endof the buffer!  If we
-	     * * happen such an incomplete char its byts are made to *
-	     * represent themselves.
+	    /*
+	     * Always check before using Tcl_UtfToUniChar. Not doing can so
+	     * cause it run beyond the endof the buffer! If we happen such an
+	     * incomplete char its byts are made to represent themselves.
 	     */
 
 	    ch = (Tcl_UniChar) *src;
