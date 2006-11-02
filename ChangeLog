@@ -1,5 +1,7 @@
 2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* generic/tclInterp.c (AliasObjCmd): Added more explanatory comments.
+
 	* generic/tclBasic.c (TclEvalObjvInternal): Rewrote so that comments
 	are relevant and informative once more. Also made the unknown handler
 	processing use the Tcl execution stack for working space, and not the

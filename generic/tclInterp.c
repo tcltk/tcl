@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.67 2006/10/31 15:23:41 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.68 2006/11/02 13:54:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1696,7 +1696,7 @@ AliasObjCmd(
     int result, prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
-    Interp *tPtr = (Interp *) targetInterp;	
+    Interp *tPtr = (Interp *) targetInterp;
     int isRootEnsemble = (tPtr->ensembleRewrite.sourceObjs == NULL);
 
     /*
@@ -1727,10 +1727,10 @@ AliasObjCmd(
     }
 
     /*
-     * Use the ensemble rewriting machinery to insure correct error messages:
-     * only the source command should show, not the full target prefix. 
+     * Use the ensemble rewriting machinery to ensure correct error messages:
+     * only the source command should show, not the full target prefix.
      */
-    
+
     if (isRootEnsemble) {
 	tPtr->ensembleRewrite.sourceObjs = objv;
 	tPtr->ensembleRewrite.numRemovedObjs = 1;
@@ -1738,29 +1738,47 @@ AliasObjCmd(
     } else {
 	tPtr->ensembleRewrite.numInsertedObjs += prefc - 1;
     }
-    
+
+    /*
+     * Protect the target interpreter if it isn't the same as the source
+     * interpreter so that we can continue to work with it after the target
+     * command completes.
+     */
+
     if (targetInterp != interp) {
 	Tcl_Preserve((ClientData) targetInterp);
-	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
-	TclTransferResult(targetInterp, result, interp);
-    } else {
-	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
     }
+
+    /*
+     * Execute the target command in the target interpreter.
+     */
+
+    result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
+
+    /*
+     * Clean up the ensemble rewrite info if we set it in the first place.
+     */
 
     if (isRootEnsemble) {
 	tPtr->ensembleRewrite.sourceObjs = NULL;
 	tPtr->ensembleRewrite.numRemovedObjs = 0;
 	tPtr->ensembleRewrite.numInsertedObjs = 0;
     }
-    
+
+    /*
+     * If it was a cross-interpreter alias, we need to transfer the result
+     * back to the source interpreter and release the lock we previously set
+     * on the target interpreter.
+     */
+
     if (targetInterp != interp) {
+	TclTransferResult(targetInterp, result, interp);
 	Tcl_Release((ClientData) targetInterp);
     }
 
     for (i=0; i<cmdc; i++) {
 	Tcl_DecrRefCount(cmdv[i]);
     }
-
     if (cmdv != cmdArr) {
 	TclStackFree(interp);
     }
