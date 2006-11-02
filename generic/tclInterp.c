@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.68 2006/11/02 13:54:46 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.69 2006/11/02 16:39:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1691,7 +1691,7 @@ AliasObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument vector. */
 {
 #define ALIAS_CMDV_PREALLOC 10
-    Alias *aliasPtr = (Alias *) clientData;
+    Alias *aliasPtr = clientData;
     Tcl_Interp *targetInterp = aliasPtr->targetInterp;
     int result, prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
@@ -1710,15 +1710,12 @@ AliasObjCmd(
     if (cmdc <= ALIAS_CMDV_PREALLOC) {
 	cmdv = cmdArr;
     } else {
-	cmdv = (Tcl_Obj **) TclStackAlloc(interp,
-		(unsigned) (cmdc * sizeof(Tcl_Obj *)));
+	cmdv = (Tcl_Obj **) TclStackAlloc(interp, cmdc*(int)sizeof(Tcl_Obj*));
     }
 
     prefv = &aliasPtr->objPtr;
-    memcpy((VOID *) cmdv, (VOID *) prefv,
-	    (size_t) (prefc * sizeof(Tcl_Obj *)));
-    memcpy((VOID *) (cmdv+prefc), (VOID *) (objv+1),
-	    (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
+    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
 
     Tcl_ResetResult(targetInterp);
 
