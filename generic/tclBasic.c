@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.211 2006/11/02 11:32:18 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.212 2006/11/02 13:24:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -308,8 +308,8 @@ Tcl_CreateInterp(void)
 
     iPtr->numLevels = 0;
     iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
-    iPtr->framePtr = NULL;    /* initialise as soon as :: is available */
-    iPtr->varFramePtr = NULL; /* initialise as soon as :: is available */
+    iPtr->framePtr = NULL;	/* initialise as soon as :: is available */
+    iPtr->varFramePtr = NULL;	/* initialise as soon as :: is available */
     iPtr->activeVarTracePtr = NULL;
 
     iPtr->returnOpts = NULL;
@@ -322,7 +322,7 @@ Tcl_CreateInterp(void)
     iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
 
-    iPtr->rootFramePtr = NULL; /* initialise as soon as :: is available */
+    iPtr->rootFramePtr = NULL;	/* initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
 
     iPtr->appendResult = NULL;
@@ -333,9 +333,11 @@ Tcl_CreateInterp(void)
     iPtr->packageUnknown = NULL;
 
     /* TIP #268 */
-    iPtr->packagePrefer = (getenv ("TCL_PKG_PREFER_LATEST") == NULL ? 
-			   PKG_PREFER_STABLE   :
-			   PKG_PREFER_LATEST);
+    if (getenv("TCL_PKG_PREFER_LATEST") == NULL) {
+	iPtr->packagePrefer = PKG_PREFER_STABLE;
+    } else {
+	iPtr->packagePrefer = PKG_PREFER_LATEST;
+    }
 
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&(iPtr->literalTable));
@@ -365,7 +367,7 @@ Tcl_CreateInterp(void)
 
     /*
      * Initialise the rootCallframe. It cannot be allocated on the stack, as
-     * it has to be in place before TclCreateExecEnv tries to use a variable. 
+     * it has to be in place before TclCreateExecEnv tries to use a variable.
      */
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
@@ -377,7 +379,7 @@ Tcl_CreateInterp(void)
     }
     framePtr->objc = 0;
 
-    iPtr->framePtr = framePtr; 
+    iPtr->framePtr = framePtr;
     iPtr->varFramePtr = framePtr;
     iPtr->rootFramePtr = framePtr;
 
@@ -2914,7 +2916,10 @@ OldMathFuncProc(
 	}
 #endif
 	if (result != TCL_OK) {
-	    /* Non-numeric argument */
+	    /*
+	     * We have a non-numeric argument.
+	     */
+
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value",-1));
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
@@ -4271,7 +4276,7 @@ Tcl_ExprDouble(
 	exprPtr = Tcl_NewStringObj(exprstring, -1);
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
-	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
+	Tcl_DecrRefCount(exprPtr);	/* Discard the expression object. */
 	if (result != TCL_OK) {
 	    (void) Tcl_GetStringResult(interp);
 	}
@@ -4377,7 +4382,7 @@ Tcl_ExprLongObj(
 	result = TCL_ERROR;
     }
 
-    Tcl_DecrRefCount(resultPtr);/* discard the result object */
+    Tcl_DecrRefCount(resultPtr);/* Discard the result object. */
     return result;
 }
 
@@ -4413,7 +4418,7 @@ Tcl_ExprDoubleObj(
 	    result = Tcl_GetDoubleFromObj(interp, resultPtr, ptr);
 	}
     }
-    Tcl_DecrRefCount(resultPtr);/* discard the result object */
+    Tcl_DecrRefCount(resultPtr);/* Discard the result object. */
     return result;
 }
 
@@ -4430,7 +4435,7 @@ Tcl_ExprBooleanObj(
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
     if (result == TCL_OK) {
 	result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
-	Tcl_DecrRefCount(resultPtr); /* discard the result object */
+	Tcl_DecrRefCount(resultPtr);	/* Discard the result object. */
     }
     return result;
 }
@@ -4728,7 +4733,7 @@ Tcl_AddObjErrorInfo(
      * the error message in the interpreter's result.
      */
 
-    if (iPtr->errorInfo == NULL) { /* just starting to log error */
+    if (iPtr->errorInfo == NULL) {
 	if (iPtr->result[0] != 0) {
 	    /*
 	     * The interp's string result is set, apparently by some extension
@@ -4843,7 +4848,7 @@ Tcl_VarEval(
 }
 
 /*
- *---------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * Tcl_GlobalEval --
  *
@@ -4858,7 +4863,7 @@ Tcl_VarEval(
  *	out in the variable context of global level (no functions active),
  *	just as if an "uplevel #0" command were being executed.
  *
- ---------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 int
