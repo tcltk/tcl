@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.210 2006/11/02 09:42:07 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.211 2006/11/02 11:32:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3584,8 +3584,7 @@ Tcl_EvalObjv(
 	if (code == TCL_RETURN) {
 	    code = TclUpdateReturnInfo(iPtr);
 	}
-	if ((code != TCL_OK) && (code != TCL_ERROR)
-	    && !allowExceptions) {
+	if ((code != TCL_OK) && (code != TCL_ERROR) && !allowExceptions) {
 	    ProcessUnexpectedResult(interp, code);
 	    code = TCL_ERROR;
 	}
