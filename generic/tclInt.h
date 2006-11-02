@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.291 2006/11/02 15:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.292 2006/11/02 16:57:54 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2035,11 +2035,9 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclAppendFormattedObjs(Tcl_Interp *interp,
-			    Tcl_Obj *appendObj, CONST char *format,
-			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	TclAppendFormatToObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, CONST char *format, ...);
+			    Tcl_Obj *appendObj, CONST char *format, int objc,
+			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void	TclAppendLimitedToObj(Tcl_Obj *objPtr,
 			    CONST char *bytes, int length, int limit,
 			    CONST char *ellipsis);
@@ -2092,6 +2090,8 @@ MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
+MODULE_SCOPE Tcl_Obj *	TclFormat(Tcl_Interp *interp, CONST char *format,
+			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
@@ -2147,8 +2147,6 @@ MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
 MODULE_SCOPE int	TclNokia770Doubles();
-MODULE_SCOPE Tcl_Obj *	TclObjFormat(Tcl_Interp *interp,
-			    CONST char *format, ...);
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
