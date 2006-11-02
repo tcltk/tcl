@@ -22,6 +22,9 @@
 
 2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* tests/winPipe.test (winpipe-4.[2345]): Made robust when run in
+	directory with spaces in its name.
+
 	* generic/tclCmdAH.c: Clean up uses of cast NULLs.
 
 	* generic/tclInterp.c (AliasObjCmd): Added more explanatory comments.
