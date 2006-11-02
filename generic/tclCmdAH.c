@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.76 2006/10/31 20:19:44 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.77 2006/11/02 14:04:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -23,8 +23,8 @@
 static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
 static int		EncodingDirsObjCmd(ClientData dummy,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *CONST objv[]);
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
 static char *		GetTypeFromMode(int mode);
@@ -557,7 +557,7 @@ EncodingDirsObjCmd(dummy, interp, objc, objv)
     }
     if (Tcl_SetEncodingSearchPath(objv[1]) == TCL_ERROR) {
 	Tcl_AppendResult(interp, "expected directory list but got \"",
-		Tcl_GetString(objv[1]), "\"", NULL);
+		TclGetString(objv[1]), "\"", NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, objv[1]);
@@ -809,7 +809,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	"rootname",	"separator",    "size",		"split",
 	"stat",		"system",
 	"tail",		"type",		"volumes",	"writable",
-	(char *) NULL
+	NULL
     };
     enum options {
 	FCMD_ATIME,	FCMD_ATTRIBUTES, FCMD_CHANNELS,	FCMD_COPY,
@@ -868,7 +868,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		Tcl_AppendResult(interp, "could not set ",
 			(index == FCMD_ATIME ? "access" : "modification"),
 			" time for file \"", TclGetString(objv[2]), "\": ",
-			Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 		return TCL_ERROR;
 	    }
 
@@ -1048,7 +1048,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		if (errno == EEXIST) {
 		    Tcl_AppendResult(interp, "could not create new link \"",
 			    TclGetString(objv[index]),
-			    "\": that path already exists", (char *) NULL);
+			    "\": that path already exists", NULL);
 		} else if (errno == ENOENT) {
 		    /*
 		     * There are two cases here: either the target doesn't
@@ -1068,21 +1068,20 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 			Tcl_AppendResult(interp,
 				"could not create new link \"",
 				TclGetString(objv[index]),
-				"\": no such file or directory",
-				(char *) NULL);
+				"\": no such file or directory", NULL);
 		    } else {
 			Tcl_AppendResult(interp,
 				"could not create new link \"",
 				TclGetString(objv[index]), "\": target \"",
 				TclGetString(objv[index+1]),
-				"\" doesn't exist", (char *) NULL);
+				"\" doesn't exist", NULL);
 		    }
 		} else {
 		    Tcl_AppendResult(interp,
 			    "could not create new link \"",
 			    TclGetString(objv[index]), "\" pointing to \"",
 			    TclGetString(objv[index+1]), "\": ",
-			    Tcl_PosixError(interp), (char *) NULL);
+			    Tcl_PosixError(interp), NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -1099,7 +1098,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (contents == NULL) {
 		Tcl_AppendResult(interp, "could not read link \"",
 			TclGetString(objv[index]), "\": ",
-			Tcl_PosixError(interp), (char *) NULL);
+			Tcl_PosixError(interp), NULL);
 		return TCL_ERROR;
 	    }
 	}
@@ -1228,7 +1227,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	if (contents == NULL) {
 	    Tcl_AppendResult(interp, "could not readlink \"",
 		    TclGetString(objv[2]), "\": ", Tcl_PosixError(interp),
-		    (char *) NULL);
+		    NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, contents);
@@ -1291,7 +1290,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "could not read \"",
 			TclGetString(objv[2]),
-			"\": no such file or directory", (char *) NULL);
+			"\": no such file or directory", NULL);
 	    }
 	    return TCL_ERROR;
 	} else {
@@ -1427,7 +1426,7 @@ GetStatBuf(interp, pathPtr, statProc, statPtr)
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
 		    TclGetString(pathPtr), "\": ",
-		    Tcl_PosixError(interp), (char *) NULL);
+		    Tcl_PosixError(interp), NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1729,9 +1728,9 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     for (i = 0;  i < numLists;  i++) {
 	index[i] = 0;
 	varcList[i] = 0;
-	varvList[i] = (Tcl_Obj **) NULL;
+	varvList[i] = NULL;
 	argcList[i] = 0;
-	argvList[i] = (Tcl_Obj **) NULL;
+	argvList[i] = NULL;
     }
 
     /*
@@ -1802,12 +1801,12 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 		} else {
 		    valuePtr = Tcl_NewObj(); /* empty string */
 		}
-		varValuePtr = Tcl_ObjSetVar2(interp, varvList[i][v],
-			NULL, valuePtr, 0);
+		varValuePtr = Tcl_ObjSetVar2(interp, varvList[i][v], NULL,
+			valuePtr, 0);
 		if (varValuePtr == NULL) {
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "couldn't set loop variable: \"",
-			    TclGetString(varvList[i][v]), "\"", (char *) NULL);
+			    TclGetString(varvList[i][v]), "\"", NULL);
 		    result = TCL_ERROR;
 		    goto done;
 		}
@@ -1823,7 +1822,8 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 		break;
 	    } else if (result == TCL_ERROR) {
 		TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
-			"\n    (\"foreach\" body line %d)", interp->errorLine));
+			"\n    (\"foreach\" body line %d)",
+			interp->errorLine));
 		break;
 	    } else {
 		break;
@@ -1884,7 +1884,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 
     resultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(resultPtr);
-    if (TclAppendFormattedObjs(interp, resultPtr, Tcl_GetString(objv[1]),
+    if (TclAppendFormattedObjs(interp, resultPtr, TclGetString(objv[1]),
 	    objc-2, objv+2) != TCL_OK) {
 	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
