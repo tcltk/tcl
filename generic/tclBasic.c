@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.209 2006/10/31 20:19:44 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.210 2006/11/02 09:42:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3271,9 +3271,8 @@ TclEvalObjvInternal(
     CallFrame *savedVarFramePtr = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     int code = TCL_OK;
-    int traceCode = TCL_OK; 
+    int traceCode = TCL_OK;
     int checkTraces = 1;
-    int cmdEpoch;
     Namespace *savedNsPtr = NULL;
 
     if (TclInterpReady(interp) == TCL_ERROR) {
@@ -3291,7 +3290,7 @@ TclEvalObjvInternal(
     if ((flags & TCL_EVAL_GLOBAL) && (varFramePtr != iPtr->rootFramePtr)) {
 	varFramePtr = iPtr->rootFramePtr;
 	savedVarFramePtr = iPtr->varFramePtr;
-	iPtr->varFramePtr = varFramePtr; 
+	iPtr->varFramePtr = varFramePtr;
     } else if (flags & TCL_EVAL_INVOKE) {
 	savedNsPtr = varFramePtr->nsPtr;
 	if (iPtr->lookupNsPtr) {
@@ -3329,25 +3328,49 @@ TclEvalObjvInternal(
 		Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
 	    }
 	}
+
+	/*
+	 * Check to see if the resolution namespace has lost its unknown
+	 * handler. If so, reset it to "::unknown".
+	 */
+
         if (currNsPtr->unknownHandlerPtr == NULL) {
-            /* Global namespace has lost unknown handler, reset. */
             currNsPtr->unknownHandlerPtr = Tcl_NewStringObj("::unknown", -1);
             Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
         }
+
+	/*
+	 * Get the list of words for the unknown handler and allocate enough
+	 * space to hold both the handler prefix and all words of the command
+	 * invokation itself.
+	 */
+
         Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 		&handlerObjc, &handlerObjv);
         newObjc = objc + handlerObjc;
-	newObjv = (Tcl_Obj **) ckalloc((unsigned)
-                (newObjc * sizeof(Tcl_Obj *)));
-        /* Copy command prefix from unknown handler. */
+	newObjv = (Tcl_Obj **) TclStackAlloc(interp,
+		sizeof(Tcl_Obj *) * (unsigned)newObjc);
+
+        /*
+	 * Copy command prefix from unknown handler and add on the real
+	 * command's full argument list. Note that we only use memcpy() once
+	 * because we have to increment the reference count of all the handler
+	 * arguments anyway.
+	 */
+
         for (i = 0; i < handlerObjc; ++i) {
             newObjv[i] = handlerObjv[i];
 	    Tcl_IncrRefCount(newObjv[i]);
         }
-        /* Add in command name and arguments. */
-        for (i = objc-1; i >= 0; --i) {
-            newObjv[i+handlerObjc] = objv[i];
-        }
+	memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * (unsigned)objc);
+
+	/*
+	 * Look up and invoke the handler (by recursive call to this
+	 * function). If there is no handler at all, instead of doing the
+	 * recursive call we just generate a generic error message; it would
+	 * be an infinite-recursion nightmare otherwise.
+	 */
+
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	if (cmdPtr == NULL) {
 	    Tcl_AppendResult(interp, "invalid command name \"",
@@ -3356,13 +3379,19 @@ TclEvalObjvInternal(
 	} else {
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, newObjc, newObjv, command,
-			    length, 0);
+		    length, 0);
 	    iPtr->numLevels--;
 	}
+
+	/*
+	 * Release any resources we locked and allocated during the handler
+	 * call.
+	 */
+
         for (i = 0; i < handlerObjc; ++i) {
 	    Tcl_DecrRefCount(newObjv[i]);
         }
-	ckfree((char *) newObjv);
+	TclStackFree(interp);
 	if (savedNsPtr) {
 	    varFramePtr->nsPtr = savedNsPtr;
 	    iPtr->lookupNsPtr = NULL;
@@ -3373,21 +3402,21 @@ TclEvalObjvInternal(
 	varFramePtr->nsPtr = savedNsPtr;
 	iPtr->lookupNsPtr = NULL;
     }
-    
+
     /*
      * Call trace functions if needed.
      */
 
-    cmdEpoch = cmdPtr->cmdEpoch;
     if (checkTraces && (command != NULL)) {
-	cmdPtr->refCount++;
+	int cmdEpoch = cmdPtr->cmdEpoch;
 
 	/*
-	 * If the first set of traces modifies/deletes the command or any
-	 * existing traces, then the set checkTraces to 0 and go through this
-	 * while loop one more time.
+	 * Execute any command or execution traces. Note that we bump up the
+	 * command's reference count for the duration of the calling of the
+	 * traces so that the structure doesn't go away underneath our feet.
 	 */
 
+	cmdPtr->refCount++;
 	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
@@ -3397,11 +3426,19 @@ TclEvalObjvInternal(
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
 	cmdPtr->refCount--;
-    }
-    if (cmdEpoch != cmdPtr->cmdEpoch) {
-	/* The command has been modified in some way. */
-	checkTraces = 0;
-	goto reparseBecauseOfTraces;
+
+	/*
+	 * If the traces modified/deleted the command or any existing traces,
+	 * they will update the command's epoch. When that happens, set
+	 * checkTraces is set to 0 to prevent the re-calling of traces (and
+	 * any possible infinite loop) and we go back to re-find the command
+	 * implementation.
+	 */
+
+	if (cmdEpoch != cmdPtr->cmdEpoch) {
+	    checkTraces = 0;
+	    goto reparseBecauseOfTraces;
+	}
     }
 
     /*
@@ -3438,6 +3475,12 @@ TclEvalObjvInternal(
 		    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
     }
+
+    /*
+     * Decrement the reference count of cmdPtr and deallocate it if it has
+     * dropped to zero.
+     */
+
     TclCleanupCommand(cmdPtr);
 
     /*
@@ -3461,7 +3504,7 @@ TclEvalObjvInternal(
 	(void) Tcl_GetObjResult(interp);
     }
 
-    done:
+  done:
     if (savedVarFramePtr) {
 	iPtr->varFramePtr = savedVarFramePtr;
     }

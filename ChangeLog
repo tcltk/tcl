@@ -1,22 +1,29 @@
+2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclBasic.c (TclEvalObjvInternal): Rewrote so that comments
+	are relevant and informative once more. Also made the unknown handler
+	processing use the Tcl execution stack for working space, and not the
+	general heap.
+
 2006-11-01  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixPort.h: ensure MODULE_SCOPE is defined before use, so
 	that tclPort.h can once again be included without tclInt.h.
 
-	* generic/tclEnv.c (Darwin): mark _environ symbol as unexported
-	even when MODULE_SCOPE != __private_extern__.
+	* generic/tclEnv.c (Darwin): mark _environ symbol as unexported even
+	when MODULE_SCOPE != __private_extern__.
 
 2006-10-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Refactored and renamed the routines
 	* generic/tclCkalloc.c:	TclObjPrintf, TclFormatObj, and
-	* generic/tclCmdAH.c:	TclFormatToErrorInfo to a new set of
-	* generic/tclCmdIL.c:	routines TclAppendPrintfToObj,
-	* generic/tclCmdMZ.c:	TclAppendFormatToObj, TclObjPrintf, and
-	* generic/tclDictObj.c:	TclObjFormat, with the intent of making
-	* generic/tclExecute.c:	the latter list, plus TclAppendLimitedToObj
-	* generic/tclIORChan.c:	and TclAppendObjToErrorInfo, public via
-	* generic/tclIOUtil.c:	a revised TIP 270.
+	* generic/tclCmdAH.c:	TclFormatToErrorInfo to a new set of routines
+	* generic/tclCmdIL.c:	TclAppendPrintfToObj, TclAppendFormatToObj,
+	* generic/tclCmdMZ.c:	TclObjPrintf, and TclObjFormat, with the
+	* generic/tclDictObj.c:	intent of making the latter list, plus
+	* generic/tclExecute.c: TclAppendLimitedToObj and
+	* generic/tclIORChan.c: TclAppendObjToErrorInfo, public via a revised
+	* generic/tclIOUtil.c:	TIP 270.
 	* generic/tclInt.h:
 	* generic/tclMain.c:
 	* generic/tclNamesp.c:
@@ -30,13 +37,11 @@
 
 2006-10-31  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:
-	* generic/tcl.h:
-	* generic/tclInterp.c:
-	* generic/tclNamesp.c: removing the flag bit TCL_EVAL_NOREWRITE,
-	the last remnant of the callObjc/v fiasco. It is not needed, as it
-	is now always set and checked or'ed with TCL_EVAL_INVOKE.
-	
+	* generic/tclBasic.c, generic/tcl.h, generic/tclInterp.c:
+	* generic/tclNamesp.c: removing the flag bit TCL_EVAL_NOREWRITE, the
+	last remnant of the callObjc/v fiasco. It is not needed, as it is now
+	always set and checked or'ed with TCL_EVAL_INVOKE.
+
 2006-10-31  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/rules.vc: Fix for bug #1582769 - options conflict with VC2003.
@@ -67,7 +72,7 @@
 	* generic/tclBasic.c (TEOVI): insured that the interp's callObjc/v
 	fields are restored after traces run, as they be spoiled. This was
 	causing a segfault in tcllib's profiler tests.
-	
+
 2006-10-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (INST_MOD): Corrected improper testing of the
@@ -177,7 +182,7 @@
 
 	* README:		Bump version number to 8.5a6
 	* generic/tcl.h:
-	* library init.tcl:
+	* library/init.tcl:
 	* tools/tcl.wse.in:
 	* unix/configure.in:
 	* unix/tcl.spec:
@@ -189,12 +194,11 @@
 
 2006-10-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tcl.h:
-	* generic/tclHash.c: Tcl_FindHashEntry now calls Tcl_CreateHashEntry
-	with a newPtr set to NULL: this would have caused a segfault
-	previously and eliminates duplicated code. A macro has been added to
-	tcl.h (only used when TCL_PRESERVE_BINARY_COMPATABALITY is not set -
-	ie, not by default).
+	* generic/tcl.h, generic/tclHash.c: Tcl_FindHashEntry now calls
+	Tcl_CreateHashEntry with a newPtr set to NULL: this would have caused
+	a segfault previously and eliminates duplicated code. A macro has been
+	added to tcl.h (only used when TCL_PRESERVE_BINARY_COMPATABALITY is
+	not set - i.e., not by default).
 
 2006-10-20  Reinhard Max  <max@tclers.tk>
 
