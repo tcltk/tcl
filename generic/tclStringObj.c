@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.60 2006/11/02 15:58:09 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.61 2006/11/02 16:57:54 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -51,8 +51,6 @@ static void		AppendUtfToUnicodeRep(Tcl_Obj *objPtr,
 static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    CONST char *bytes, int numBytes);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
-static int		AppendFormatToObjVA(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    CONST char *format, va_list argList);
 static void		AppendPrintfToObjVA(Tcl_Obj *objPtr,
 			    CONST char *format, va_list argList);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
@@ -1678,7 +1676,7 @@ Tcl_AppendStringsToObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendFormattedObjs --
+ * TclAppendFormatToObj --
  *
  *	This function appends a list of Tcl_Obj's to a Tcl_Obj according to
  *	the formatting instructions embedded in the format string. The
@@ -1696,7 +1694,7 @@ Tcl_AppendStringsToObj(
  */
 
 int
-TclAppendFormattedObjs(
+TclAppendFormatToObj(
     Tcl_Interp *interp,
     Tcl_Obj *appendObj,
     CONST char *format,
@@ -1717,7 +1715,7 @@ TclAppendFormattedObjs(
     };
 
     if (Tcl_IsShared(appendObj)) {
-	Tcl_Panic("%s called with shared object", "TclAppendFormattedObjs");
+	Tcl_Panic("%s called with shared object", "TclAppendFormatToObj");
     }
     Tcl_GetStringFromObj(appendObj, &originalLength);
 
@@ -2293,83 +2291,7 @@ TclAppendFormattedObjs(
 /*
  *---------------------------------------------------------------------------
  *
- * AppendFormatToObjVA --
- *
- *	Populate the Unicode internal rep with the Unicode form of its string
- *	rep. The object must alread have a "String" internal rep.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Reallocates the String internal rep.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-AppendFormatToObjVA(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    CONST char *format,
-    va_list argList)
-{
-    int code, objc;
-    Tcl_Obj **objv, *element, *list = Tcl_NewObj();
-    CONST char *p = format;
-
-    Tcl_IncrRefCount(list);
-    while (*p != '\0') {
-	if (*p++ != '%') {
-	    continue;
-	}
-	if (*p == '%') {
-	    continue;
-	}
-	p++;
-	element = va_arg(argList, Tcl_Obj *);
-	Tcl_ListObjAppendElement(NULL, list, element);
-    }
-    Tcl_ListObjGetElements(NULL, list, &objc, &objv);
-    code = TclAppendFormattedObjs(interp, objPtr, format, objc, objv);
-    Tcl_DecrRefCount(list);
-    return code;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclAppendFormatToObj --
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- * 	None.
- *
- *---------------------------------------------------------------------------
- */
-
-int
-TclAppendFormatToObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    CONST char *format,
-    ...)
-{
-    va_list argList;
-    int result;
-
-    va_start(argList, format);
-    result = AppendFormatToObjVA(interp, objPtr, format, argList);
-    va_end(argList);
-    return result;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclObjFormat--
+ * TclFormat--
  *
  * Results:
  *	A refcount zero Tcl_Obj.
@@ -2381,18 +2303,15 @@ TclAppendFormatToObj(
  */
 
 Tcl_Obj *
-TclObjFormat(
+TclFormat(
     Tcl_Interp *interp,
     CONST char *format,
-    ...)
+    int objc,
+    Tcl_Obj *CONST objv[])
 {
-    va_list argList;
     int result;
     Tcl_Obj *objPtr = Tcl_NewObj();
-
-    va_start(argList, format);
-    result = AppendFormatToObjVA(interp, objPtr, format, argList);
-    va_end(argList);
+    result = TclAppendFormatToObj(interp, objPtr, format, objc, objv);
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
 	return NULL;
@@ -2535,7 +2454,7 @@ AppendPrintfToObjVA(
 	} while (seekingConversion);
     }
     Tcl_ListObjGetElements(NULL, list, &objc, &objv);
-    code = TclAppendFormattedObjs(NULL, objPtr, format, objc, objv);
+    code = TclAppendFormatToObj(NULL, objPtr, format, objc, objv);
     if (code != TCL_OK) {
 	Tcl_Panic("Unable to format \"%s\" with supplied arguments: %s",
 		format, Tcl_GetString(list));
