@@ -1,6 +1,7 @@
 2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
-	* generic/tclCmdAH.c: Clean up uses of cast NULLs.
+	* generic/tclEncoding.c, generic/tclCmdAH.c: Clean up uses of cast
+	NULLs.
 
 	* generic/tclInterp.c (AliasObjCmd): Added more explanatory comments.
 
