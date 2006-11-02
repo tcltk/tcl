@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.213 2006/11/02 15:58:04 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.214 2006/11/02 16:39:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3354,7 +3354,7 @@ TclEvalObjvInternal(
 		&handlerObjc, &handlerObjv);
         newObjc = objc + handlerObjc;
 	newObjv = (Tcl_Obj **) TclStackAlloc(interp,
-		sizeof(Tcl_Obj *) * (unsigned)newObjc);
+		(int) sizeof(Tcl_Obj *) * newObjc);
 
         /*
 	 * Copy command prefix from unknown handler and add on the real
