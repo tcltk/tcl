@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.115 2006/11/02 13:44:15 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.116 2006/11/02 15:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3458,7 +3458,7 @@ NamespaceEvalCmd(
 	int limit = 200;
 	int overflow = (length > limit);
 
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		"\n    (in namespace eval \"%.*s%s\" script line %d)",
 		(overflow ? limit : length), namespacePtr->fullName,
 		(overflow ? "..." : ""), interp->errorLine));
@@ -3876,7 +3876,7 @@ NamespaceInscopeCmd(
 	int limit = 200;
 	int overflow = (length > limit);
 
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		"\n    (in namespace inscope \"%.*s%s\" script line %d)",
 		(overflow ? limit : length), namespacePtr->fullName,
 		(overflow ? "..." : ""), interp->errorLine));
@@ -6997,7 +6997,7 @@ Tcl_LogCommandInfo(
     }
 
     overflow = (length > limit);
-    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+    TclAppendObjToErrorInfo(interp, TclObjPrintf(
 	    "\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
 	    ? "while executing" : "invoked from within"),
 	    (overflow ? limit : length), command, (overflow ? "..." : "")));

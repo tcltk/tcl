@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.212 2006/11/02 13:24:19 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.213 2006/11/02 15:58:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3812,7 +3812,7 @@ Tcl_EvalEx(
 			 * Attempt to expand a non-list.
 			 */
 
-			TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+			TclAppendObjToErrorInfo(interp, TclObjPrintf(
 				"\n    (expanding word %d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			goto error;
@@ -4203,7 +4203,7 @@ ProcessUnexpectedResult(
 	Tcl_AppendResult(interp,
 		"invoked \"continue\" outside of a loop", NULL);
     } else {
-	Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+	Tcl_SetObjResult(interp, TclObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
 }
@@ -5832,7 +5832,7 @@ MathFuncWrongNumArgs(
 	    break;
 	}
     }
-    Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+    Tcl_SetObjResult(interp, TclObjPrintf(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
 }

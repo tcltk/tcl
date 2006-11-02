@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.290 2006/10/31 20:19:45 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.291 2006/11/02 15:58:08 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2043,8 +2043,8 @@ MODULE_SCOPE int	TclAppendFormatToObj(Tcl_Interp *interp,
 MODULE_SCOPE void	TclAppendLimitedToObj(Tcl_Obj *objPtr,
 			    CONST char *bytes, int length, int limit,
 			    CONST char *ellipsis);
-MODULE_SCOPE int	TclAppendPrintfToObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, CONST char *format, ...);
+MODULE_SCOPE void	TclAppendPrintfToObj(Tcl_Obj *objPtr,
+			    CONST char *format, ...);
 MODULE_SCOPE void	TclAppendObjToErrorInfo(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
@@ -2152,8 +2152,7 @@ MODULE_SCOPE Tcl_Obj *	TclObjFormat(Tcl_Interp *interp,
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
-MODULE_SCOPE Tcl_Obj *	TclObjPrintf(Tcl_Interp *interp,
-			    CONST char *format, ...);
+MODULE_SCOPE Tcl_Obj *	TclObjPrintf(CONST char *format, ...);
 MODULE_SCOPE int	TclPtrMakeUpvar (Tcl_Interp *interp,
 			    Var *otherP1Ptr, CONST char *myName,
 	                    int myFlags, int index);

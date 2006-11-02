@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.77 2006/11/02 14:04:41 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.78 2006/11/02 15:58:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -188,7 +188,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	armPtr = caseObjv[body - 1];
 	result = Tcl_EvalObjEx(interp, caseObjv[body], 0);
 	if (result == TCL_ERROR) {
-	    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	    TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		    "\n    (\"%.50s\" arm line %d)",
 		    TclGetString(armPtr), interp->errorLine));
 	}
@@ -251,7 +251,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
      */
 
     if (Tcl_LimitExceeded(interp)) {
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		"\n    (\"catch\" body line %d)", interp->errorLine));
 	return TCL_ERROR;
     }
@@ -660,7 +660,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		"\n    (\"eval\" body line %d)", interp->errorLine));
     }
     return result;
@@ -1611,7 +1611,7 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objv[4], 0);
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
-		TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+		TclAppendObjToErrorInfo(interp, TclObjPrintf(
 			"\n    (\"for\" body line %d)", interp->errorLine));
 	    }
 	    break;
@@ -1821,9 +1821,8 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 		result = TCL_OK;
 		break;
 	    } else if (result == TCL_ERROR) {
-		TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
-			"\n    (\"foreach\" body line %d)",
-			interp->errorLine));
+		TclAppendObjToErrorInfo(interp, TclObjPrintf(
+			"\n    (\"foreach\" body line %d)", interp->errorLine));
 		break;
 	    } else {
 		break;

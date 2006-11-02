@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.103 2006/10/31 20:19:45 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.104 2006/11/02 15:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -369,7 +369,7 @@ TclCreateProc(
 
     if (precompiled) {
 	if (numArgs > procPtr->numArgs) {
-	    Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+	    Tcl_SetObjResult(interp, TclObjPrintf(
 		    "procedure \"%s\": arg list contains %d entries, "
 		    "precompiled header expects %d", procName, numArgs,
 		    procPtr->numArgs));
@@ -458,7 +458,7 @@ TclCreateProc(
 			    != (VAR_SCALAR | VAR_ARGUMENT))
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
-		Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+		Tcl_SetObjResult(interp, TclObjPrintf(
 			"procedure \"%s\": formal parameter %d is "
 			"inconsistent with precompiled body", procName, i));
 		ckfree((char *) fieldValues);
@@ -475,7 +475,7 @@ TclCreateProc(
 			&tmpLength);
 		if ((valueLength != tmpLength) ||
 			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
-		    Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+		    Tcl_SetObjResult(interp, TclObjPrintf(
 			    "procedure \"%s\": formal parameter \"%s\" has "
 			    "default value inconsistent with precompiled body",
 			    procName, fieldValues[0]));
@@ -839,7 +839,7 @@ Tcl_UplevelObjCmd(
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		"\n    (\"uplevel\" body line %d)", interp->errorLine));
     }
 
@@ -1692,7 +1692,7 @@ ProcCompileProc(
 		int limit = 50;
 		int overflow = (length > limit);
 
-		TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+		TclAppendObjToErrorInfo(interp, TclObjPrintf(
 			"\n    (compiling %s \"%.*s%s\", line %d)",
 			description, (overflow ? limit : length), procName,
 			(overflow ? "..." : ""), interp->errorLine));
@@ -1739,7 +1739,7 @@ MakeProcError(
     const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
-    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+    TclAppendObjToErrorInfo(interp, TclObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), interp->errorLine));
@@ -2077,7 +2077,7 @@ SetLambdaFromAny(
 
     if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr,
 	    bodyPtr, &procPtr) != TCL_OK) {
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+	TclAppendObjToErrorInfo(interp, TclObjPrintf(
 		"\n    (parsing lambda expression \"%s\")", name));
 	return TCL_ERROR;
     }
@@ -2267,7 +2267,7 @@ MakeLambdaError(
     const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
-    TclAppendObjToErrorInfo(interp, TclObjPrintf(NULL,
+    TclAppendObjToErrorInfo(interp, TclObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), interp->errorLine));

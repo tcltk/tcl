@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.16 2006/10/31 20:19:45 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.17 2006/11/02 15:58:08 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1652,7 +1652,7 @@ ReflectGetOption(
 	 */
 
 	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, TclObjPrintf(NULL,
+	Tcl_SetObjResult(interp, TclObjPrintf(
 		"Expected list with even number of "
 		"elements, got %d element%s instead", listc,
 		(listc == 1 ? "" : "s")));
@@ -1909,7 +1909,7 @@ NextHandle(void)
     Tcl_Obj *resObj;
 
     Tcl_MutexLock(&rcCounterMutex);
-    resObj = TclObjPrintf(NULL, "rc%lu", rcCounter);
+    resObj = TclObjPrintf("rc%lu", rcCounter);
     rcCounter++;
     Tcl_MutexUnlock(&rcCounterMutex);
 
@@ -2043,13 +2043,13 @@ InvokeTclMethod(
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
-		Tcl_SetObjResult(rcPtr->interp, TclObjPrintf(NULL,
+		Tcl_SetObjResult(rcPtr->interp, TclObjPrintf(
 			"chan handler returned bad code: %d", result));
 		Tcl_LogCommandInfo(rcPtr->interp, cmdString, cmdString, cmdLen);
 		Tcl_DecrRefCount(cmd);
 		result = TCL_ERROR;
 	    }
-	    TclAppendObjToErrorInfo(rcPtr->interp, TclObjPrintf(NULL,
+	    TclAppendObjToErrorInfo(rcPtr->interp, TclObjPrintf(
 		    "\n    (chan handler subcommand \"%s\")", method));
 	    resObj = MarshallError(rcPtr->interp);
 	}
