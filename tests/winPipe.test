@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.31 2004/07/02 18:46:18 kennykb Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.32 2006/11/02 16:33:22 dkf Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -200,28 +200,28 @@ test winpipe-4.1 {Tcl_WaitPid} {win nt exec cat32} {
     list $result $x [contents $path(stderr)]
 } "{$big} 1 stderr32"
 test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec} {
-    set f [open "|[tcltest::interpreter]" w+]
+    set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "testexcept float_underflow"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
 } {1 1 SIGFPE}
 test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec} {
-    set f [open "|[tcltest::interpreter]" w+]
+    set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "testexcept access_violation"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
 } {1 1 SIGSEGV}
 test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec} {
-    set f [open "|[tcltest::interpreter]" w+]
+    set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "testexcept illegal_instruction"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
 } {1 1 SIGILL}
 test winpipe-4.5 {Tcl_WaitPid: return of exception codes, SIGINT} {win exec} {
-    set f [open "|[tcltest::interpreter]" w+]
+    set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "testexcept ctrl+c"
     set status [catch {close $f}]
@@ -327,13 +327,13 @@ test winpipe-7.2 {BuildCommandLine: null arguments} {win exec} {
     exec $env(COMSPEC) /c echo foo {} bar
 } {foo "" bar}
 test winpipe-7.3 {BuildCommandLine: dbl quote quoting #1} {win exec} {
-    exec $env(COMSPEC) /c echo foo {"} bar
+    exec $env(COMSPEC) /c echo foo "\"" bar
 } {foo \" bar}
 test winpipe-7.4 {BuildCommandLine: dbl quote quoting #2} {win exec} {
     exec $env(COMSPEC) /c echo foo {""} bar
 } {foo \"\" bar}
 test winpipe-7.5 {BuildCommandLine: dbl quote quoting #3} {win exec} {
-    exec $env(COMSPEC) /c echo foo {" } bar
+    exec $env(COMSPEC) /c echo foo "\" " bar
 } {foo "\" " bar}
 test winpipe-7.6 {BuildCommandLine: dbl quote quoting #4} {win exec} {
     exec $env(COMSPEC) /c echo foo {a="b"} bar
@@ -342,7 +342,7 @@ test winpipe-7.7 {BuildCommandLine: dbl quote quoting #5} {win exec} {
     exec $env(COMSPEC) /c echo foo {a = "b"} bar
 } {foo "a = \"b\"" bar}
 test winpipe-7.8 {BuildCommandLine: dbl quote quoting #6} {win exec} {
-    exec $env(COMSPEC) /c echo {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}
+    exec $env(COMSPEC) /c echo {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} "he \" llo"
 } {\"hello\" \"\"hello\"\" \"\"\"hello\"\"\" \"\\\"hello\\\"\" "he llo" "he \" llo"}
 test winpipe-7.9 {BuildCommandLine: N backslashes followed a quote rule #1} {win exec} {
     exec $env(COMSPEC) /c echo foo \\ bar
@@ -384,14 +384,14 @@ test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: null arguments} {win
     exec [interpreter] $path(echoArgs.tcl) foo {} bar
 } [list $path(echoArgs.tcl) [list foo {} bar]]
 test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #1} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo {"} bar
-} [list $path(echoArgs.tcl) [list foo {"} bar]]
+    exec [interpreter] $path(echoArgs.tcl) foo "\"" bar
+} [list $path(echoArgs.tcl) [list foo "\"" bar]]
 test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #2} {win exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {""} bar
 } [list $path(echoArgs.tcl) [list foo {""} bar]]
 test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #3} {win exec} {
-    exec [interpreter] $path(echoArgs.tcl) foo {" } bar
-} [list $path(echoArgs.tcl) [list foo {" } bar]]
+    exec [interpreter] $path(echoArgs.tcl) foo "\" " bar
+} [list $path(echoArgs.tcl) [list foo "\" " bar]]
 test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #4} {win exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {a="b"} bar
 } [list $path(echoArgs.tcl) [list foo {a="b"} bar]]
