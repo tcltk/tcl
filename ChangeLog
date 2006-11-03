@@ -1,3 +1,8 @@
+2006-11-02  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: check autoconf/autoheader exit
+	status and stop build if they fail.
+
 2006-11-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/ParseCmd.3, doc/Tcl.n, doc/eval.n, doc/exec.n:
