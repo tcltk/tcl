@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.29 2006/10/09 19:15:45 msofer Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.30 2006/11/03 11:45:34 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -273,7 +273,7 @@ test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096
 test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrPc} -setup {
-    set srv [socket -server iocmdSRV 0]
+    set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
     proc iocmdSRV {sock ip port} {close $sock}
     set cli [socket 127.0.0.1 $port]
@@ -286,7 +286,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     rename iocmdSRV {}
 } -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
-    set srv [socket -server iocmdSRV 0]
+    set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
     proc iocmdSRV {sock ip port} {close $sock}
     set cli [socket 127.0.0.1 $port]
@@ -299,7 +299,7 @@ test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     rename iocmdSRV {}
 } -result 1
 test iocmd-8.17 {fconfigure command / tcp channel} -constraints nonPortable -setup {
-    set srv [socket -server iocmdSRV 0]
+    set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
     proc iocmdSRV {sock ip port} {close $sock}
     set cli [socket 127.0.0.1 $port]
