@@ -1,3 +1,10 @@
+2006-11-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TEOVI):
+	* tests/trace.test (trace-21.11): fix for [Bug 1590232], execution
+	traces may cause a second command resolution in the wrong
+	namespace. 
+
 2006-11-03  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* tests/event.test (event-11.5):	Rewrote tests to stop Tcl from

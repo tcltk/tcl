@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.50 2006/11/03 00:34:53 hobbs Exp $
+# RCS: @(#) $Id: trace.test,v 1.51 2006/11/03 23:24:43 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1610,7 +1610,7 @@ test trace-21.9 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
     trace remove execution foo enter soom
     set ::info
 } {SUCCESS 1 SUCCESS 1}
-    
+
 test trace-21.10 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
     trace add execution foo leave soom
     proc ::soom args {lappend ::info SUCCESS [info level]}
@@ -1626,6 +1626,24 @@ test trace-21.10 {trace execution: TCL_EVAL_GLOBAL} testevalobjv {
     trace remove execution foo leave soom
     set ::info
 } {SUCCESS 1 SUCCESS 1}
+
+test trace-21.11 {trace execution and alias} -setup {
+    set res {}
+    proc ::x {} {return ::}
+    namespace eval a {}
+    proc ::a::x {} {return ::a}
+    interp alias {} y {} x
+} -body {
+    lappend res [namespace eval ::a y]
+    trace add execution ::x enter {
+      rename ::x {}
+	proc ::x {} {return ::}
+    #}
+    lappend res [namespace eval ::a y]
+} -cleanup {
+    namespace delete a
+    rename ::x {}
+} -result {:: ::}
 
 proc factorial {n} {
     if {$n != 1} { return [expr {$n * [factorial [expr {$n -1 }]]}] }
