@@ -1,3 +1,12 @@
+2006-11-03  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/event.test (event-11.5):	Rewrote tests to stop Tcl from
+	* tests/io.test (multiple tests):	opening sockets that are
+	* tests/ioCmd.test (iocmd-15.1,16,17):	reachable from outside hosts
+	* tests/iogt.test (__echo_srv__.tcl):	where not necessary. This is
+	* tests/socket.test (multiple tests):	noticably annoying on some
+	* tests/unixInit.test (unixInit-1.2):	systems (e.g., Windows).
+
 2006-11-02  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: check autoconf/autoheader exit
