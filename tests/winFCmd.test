@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.40 2006/03/20 11:39:03 dkf Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.41 2006/11/03 00:34:53 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -50,7 +50,7 @@ proc cleanup {args} {
 	    set x [glob -directory $p tf* td*]
 	}
 	if {$x != ""} {
-	    catch {file delete -force -- {expand}$x}
+	    catch {file delete -force -- {*}$x}
 	}
     }
 }

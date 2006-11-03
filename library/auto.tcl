@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.27 2005/07/23 04:12:48 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.28 2006/11/03 00:34:52 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -212,7 +212,7 @@ proc auto_mkindex {dir args} {
     }
 
     auto_mkindex_parser::init
-    foreach file [glob -- {expand}$args] {
+    foreach file [glob -- {*}$args] {
         if {[catch {auto_mkindex_parser::mkindex $file} msg opts] == 0} {
             append index $msg
         } else {
@@ -245,7 +245,7 @@ proc auto_mkindex_old {dir args} {
     if {[llength $args] == 0} {
 	set args *.tcl
     }
-    foreach file [glob -- {expand}$args] {
+    foreach file [glob -- {*}$args] {
 	set f ""
 	set error [catch {
 	    set f [open $file]
