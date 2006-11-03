@@ -1,10 +1,10 @@
-# 
+#
 # winPipe.test --
 #
 # This file contains a collection of tests for tclWinPipe.c
 #
-# Sourcing this file into Tcl runs the tests and generates output for 
-# errors.  No output means no errors were found.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output (except for one message) means no errors were found.
 #
 # Copyright (c) 1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
@@ -12,24 +12,20 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.32 2006/11/02 16:33:22 dkf Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.33 2006/11/03 15:31:26 dkf Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
 unset -nocomplain path
 
-testConstraint exec [llength [info commands exec]]
 
 set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
 
-testConstraint cat32 [file exists $cat32]
-
-if {[catch {puts console1 ""}]} {
-    testConstraint AllocConsole 1
-} else {
-    testConstraint .console 1
-}
+testConstraint exec         [llength [info commands exec]]
+testConstraint cat32        [file exists $cat32]
+testConstraint AllocConsole [catch {puts console1 ""}]
+testConstraint RealConsole  [expr {![testConstraint AllocConsole]}]
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
 append big $big
@@ -97,7 +93,7 @@ test winpipe-1.8 {32 bit comprehensive tests: from socket} {win cat32} {
     # doesn't work
 } {}
 test winpipe-1.9 {32 bit comprehensive tests: from nowhere} \
-	{win exec cat32 .console} {
+	{win exec cat32 RealConsole} {
     exec $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } {{} stderr32}
@@ -145,8 +141,8 @@ test winpipe-1.17 {32 bit comprehensive tests: to NUL} {win exec cat32} {
     set msg
 } stderr32
 test winpipe-1.18 {32 bit comprehensive tests: to nowhere} \
-	{win exec cat32 .console} {
-    exec $cat32 < $path(big) >&@stdout 
+	{win exec cat32 RealConsole} {
+    exec $cat32 < $path(big) >&@stdout
 } {}
 test winpipe-1.19 {32 bit comprehensive tests: to file handle} {win exec cat32} {
     set f1 [open $path(stdout) w]
