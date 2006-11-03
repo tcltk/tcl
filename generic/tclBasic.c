@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.214 2006/11/02 16:39:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.215 2006/11/03 23:24:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3279,6 +3279,7 @@ TclEvalObjvInternal(
     int traceCode = TCL_OK;
     int checkTraces = 1;
     Namespace *savedNsPtr = NULL;
+    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
 
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -3289,17 +3290,26 @@ TclEvalObjvInternal(
     }
 
     /*
+     * If any execution traces rename or delete the current command, we may
+     * need (at most) two passes here.
+     */
+
+  reparseBecauseOfTraces:
+
+    /*
      * Configure evaluation context to match the requested flags.
      */
 
-    if ((flags & TCL_EVAL_GLOBAL) && (varFramePtr != iPtr->rootFramePtr)) {
+    if ((flags & TCL_EVAL_GLOBAL) && (varFramePtr != iPtr->rootFramePtr)
+	    && !savedVarFramePtr) {
 	varFramePtr = iPtr->rootFramePtr;
 	savedVarFramePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = varFramePtr;
     } else if (flags & TCL_EVAL_INVOKE) {
 	savedNsPtr = varFramePtr->nsPtr;
-	if (iPtr->lookupNsPtr) {
-	    varFramePtr->nsPtr = iPtr->lookupNsPtr;
+	if (lookupNsPtr) {
+	    varFramePtr->nsPtr = lookupNsPtr;
+	    iPtr->lookupNsPtr = NULL;
 	} else {
 	    varFramePtr->nsPtr = iPtr->globalNsPtr;
 	}
@@ -3311,12 +3321,8 @@ TclEvalObjvInternal(
      * If so, create a new word array with the handler as the first words and
      * the original command words as arguments. Then call ourselves
      * recursively to execute it.
-     *
-     * If any execution traces rename or delete the current command, we may
-     * need (at most) two passes here.
      */
 
-  reparseBecauseOfTraces:
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
     if (cmdPtr == NULL) {
 	Namespace *currNsPtr = NULL;	/* Used to check for and invoke any
@@ -3399,13 +3405,11 @@ TclEvalObjvInternal(
 	TclStackFree(interp);
 	if (savedNsPtr) {
 	    varFramePtr->nsPtr = savedNsPtr;
-	    iPtr->lookupNsPtr = NULL;
 	}
 	goto done;
     }
     if (savedNsPtr) {
 	varFramePtr->nsPtr = savedNsPtr;
-	iPtr->lookupNsPtr = NULL;
     }
 
     /*
