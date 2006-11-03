@@ -1,3 +1,22 @@
+2006-11-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/ParseCmd.3, doc/Tcl.n, doc/eval.n, doc/exec.n:
+	* doc/fconfigure.n, doc/interp.n, doc/unknown.n:
+	* library/auto.tcl, library/init.tcl, library/package.tcl:
+	* library/safe.tcl, library/tm.tcl, library/msgcat/msgcat.tcl:
+	* tests/all.tcl, tests/basic.test, tests/cmdInfo.test:
+	* tests/compile.test, tests/encoding.test, tests/execute.test:
+	* tests/fCmd.test, tests/http.test, tests/init.test:
+	* tests/interp.test, tests/io.test, tests/ioUtil.test:
+	* tests/iogt.test, tests/namespace-old.test, tests/namespace.test:
+	* tests/parse.test, tests/pkg.test, tests/pkgMkIndex.test:
+	* tests/proc.test, tests/reg.test, tests/trace.test:
+	* tests/upvar.test, tests/winConsole.test, tests/winFCmd.test:
+	* tools/tclZIC.tcl:
+	* generic/tclParse.c (Tcl_ParseCommand): Replace {expand} with {*}
+	officially (TIP #293).  Leave -DALLOW_EXPAND=0|1 option to keep
+	{expand} syntax for transition users. [Bug 1589629]
+
 2006-11-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclBasic.c, generic/tclInterp.c, generic/tclProc.c: Silence
