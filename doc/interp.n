@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.24 2005/05/10 18:34:00 kennykb Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.25 2006/11/03 00:34:52 hobbs Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -769,7 +769,7 @@ set i [\fBinterp create\fR -safe]
 \fBinterp alias\fR $i lappend {} loggedLappend $i
 proc loggedLappend {i args} {
    puts "logged invokation of lappend $args"
-   \fBinterp invokehidden\fR $i lappend {expand}$args
+   \fBinterp invokehidden\fR $i lappend {*}$args
 }
 \fBinterp eval\fR $i $someUntrustedScript
 .CE
