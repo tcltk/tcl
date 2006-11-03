@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.43 2006/08/22 04:03:23 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.44 2006/11/03 00:34:52 hobbs Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -444,81 +444,81 @@ if $noComp {
 }
 
 test compile-16.1.$noComp {TclCompileScript: word expansion} $constraints {
-    run "list [string repeat {{expand}a } 255]"
+    run "list [string repeat {{*}a } 255]"
 } [lrepeat 255 a]
 
 test compile-16.2.$noComp {TclCompileScript: word expansion} $constraints {
-    run "list [string repeat {{expand}a } 256]"
+    run "list [string repeat {{*}a } 256]"
 } [lrepeat 256 a]
 
 test compile-16.3.$noComp {TclCompileScript: word expansion} $constraints {
-    run "list [string repeat {{expand}a } 257]"
+    run "list [string repeat {{*}a } 257]"
 } [lrepeat 257 a]
 
 test compile-16.4.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list}
+    run {{*}list}
 } {}
 
 test compile-16.5.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list {expand}{x y z}}
+    run {{*}list {*}{x y z}}
 } {x y z}
 
 test compile-16.6.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list {expand}[list x y z]}
+    run {{*}list {*}[list x y z]}
 } {x y z}
 
 test compile-16.7.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list {expand}[list x y z][list x y z]}
+    run {{*}list {*}[list x y z][list x y z]}
 } {x y zx y z}
 
 test compile-16.8.$noComp {TclCompileScript: word expansion} -body {
     set l {x y z}
-    run {{expand}list {expand}$l}
+    run {{*}list {*}$l}
 } -constraints $constraints -cleanup {
     unset l
 } -result {x y z}
 
 test compile-16.9.$noComp {TclCompileScript: word expansion} -body {
     set l {x y z}
-    run {{expand}list {expand}$l$l}
+    run {{*}list {*}$l$l}
 } -constraints $constraints -cleanup {
     unset l
 } -result {x y zx y z}
 
 test compile-16.10.$noComp {TclCompileScript: word expansion} -body {
-    run {{expand}\{}
+    run {{*}\{}
 } -constraints $constraints -returnCodes error \
 -result {unmatched open brace in list}
 
 test compile-16.11.$noComp {TclCompileScript: word expansion} -body {
     proc badList {} {return \{}
-    run {{expand}[badList]}
+    run {{*}[badList]}
 } -constraints $constraints -cleanup {
     rename badList {}
 } -returnCodes error  -result {unmatched open brace in list}
 
 test compile-16.12.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list x y z}
+    run {{*}list x y z}
 } {x y z}
 
 test compile-16.13.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list x y {expand}z}
+    run {{*}list x y {*}z}
 } {x y z}
 
 test compile-16.14.$noComp {TclCompileScript: word expansion} $constraints {
-    run {{expand}list x {expand}y z}
+    run {{*}list x {*}y z}
 } {x y z}
 
 test compile-16.15.$noComp {TclCompileScript: word expansion} $constraints {
-    run {list x y {expand}z}
+    run {list x y {*}z}
 } {x y z}
 
 test compile-16.16.$noComp {TclCompileScript: word expansion} $constraints {
-    run {list x {expand}y z}
+    run {list x {*}y z}
 } {x y z}
 
 test compile-16.17.$noComp {TclCompileScript: word expansion} $constraints {
-    run {list {expand}x y z}
+    run {list {*}x y z}
 } {x y z}
 
 # These tests note that expansion can in theory cause the number of
@@ -535,21 +535,21 @@ test compile-16.17.$noComp {TclCompileScript: word expansion} $constraints {
 #
 test compile-16.18.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<10}] x]}
-    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<10}]]"]
+    llength [run "list [string repeat {{*}[LongList] } [expr {1<<10}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
 } -returnCodes ok  -result [expr {1<<20}]
 
 test compile-16.19.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<11}] x]}
-    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<11}]]"]
+    llength [run "list [string repeat {{*}[LongList] } [expr {1<<11}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
 } -returnCodes ok  -result [expr {1<<22}]
 
 test compile-16.20.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<12}] x]}
-    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<12}]]"]
+    llength [run "list [string repeat {{*}[LongList] } [expr {1<<12}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
 } -returnCodes ok  -result [expr {1<<24}]
@@ -557,7 +557,7 @@ test compile-16.20.$noComp {TclCompileScript: word expansion} -body {
 # This is the one that should cause overflow
 test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
     proc LongList {} {return [lrepeat [expr {1<<16}] x]}
-    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<16}]]"]
+    llength [run "list [string repeat {{*}[LongList] } [expr {1<<16}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
 } -returnCodes ok  -result [expr {wide(1)<<32}]
