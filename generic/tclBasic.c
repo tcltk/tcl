@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.24 2006/09/25 17:27:31 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.25 2006/11/04 01:37:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3008,21 +3008,23 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	return TCL_OK;
     }
 
-    /* Configure evaluation context to match the requested flags */
-    savedVarFramePtr = iPtr->varFramePtr;
-    if (flags & TCL_EVAL_GLOBAL) {
-	iPtr->varFramePtr = NULL;
-    } else if ((flags & TCL_EVAL_INVOKE) && iPtr->varFramePtr) {
-	savedNsPtr = iPtr->varFramePtr->nsPtr;
-	iPtr->varFramePtr->nsPtr = iPtr->globalNsPtr;
-    }
 
     /*
      * If any execution traces rename or delete the current command,
      * we may need (at most) two passes here.
      */
+
+    savedVarFramePtr = iPtr->varFramePtr;
     while (1) {
     
+	/* Configure evaluation context to match the requested flags */
+	if (flags & TCL_EVAL_GLOBAL) {
+	    iPtr->varFramePtr = NULL;
+	} else if ((flags & TCL_EVAL_INVOKE) && iPtr->varFramePtr) {
+	    savedNsPtr = iPtr->varFramePtr->nsPtr;
+	    iPtr->varFramePtr->nsPtr = iPtr->globalNsPtr;
+	}
+	
         /*
          * Find the procedure to execute this command. If there isn't one,
          * then see if there is a command "unknown".  If so, create a new
@@ -3067,7 +3069,9 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
          */
         if ((checkTraces) && (command != NULL)) {
             int cmdEpoch = cmdPtr->cmdEpoch;
-            cmdPtr->refCount++;
+	    int newEpoch;
+	    
+	    cmdPtr->refCount++;
             /* 
              * If the first set of traces modifies/deletes the command or
              * any existing traces, then the set checkTraces to 0 and
@@ -3082,8 +3086,9 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
                 traceCode = TclCheckExecutionTraces(interp, command, length,
                                cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
             }
-            cmdPtr->refCount--;
-            if (cmdEpoch != cmdPtr->cmdEpoch) {
+	    newEpoch = cmdPtr->cmdEpoch;
+	    TclCleanupCommand(cmdPtr);
+            if (cmdEpoch != newEpoch) {
                 /* The command has been modified in some way */
                 checkTraces = 0;
                 continue;

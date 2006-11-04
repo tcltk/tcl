@@ -1,3 +1,13 @@
+2006-11-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TEOVI): fix por possible leak of a Command
+	in the presence of execution traces that delete it.
+
+	* generic/tclBasic.c (TEOVI):
+	* tests/trace.test (trace-21.11): fix for [Bug 1590232], execution
+	traces may cause a second command resolution in the wrong
+	namespace. 
+
 2006-11-01  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclEnv.c (Darwin): mark _environ symbol as unexported.
