@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.215 2006/11/03 23:24:43 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.216 2006/11/04 00:09:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3418,6 +3418,7 @@ TclEvalObjvInternal(
 
     if (checkTraces && (command != NULL)) {
 	int cmdEpoch = cmdPtr->cmdEpoch;
+	int newEpoch;
 
 	/*
 	 * Execute any command or execution traces. Note that we bump up the
@@ -3434,7 +3435,8 @@ TclEvalObjvInternal(
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
-	cmdPtr->refCount--;
+	newEpoch = cmdPtr->cmdEpoch;
+	TclCleanupCommand(cmdPtr);
 
 	/*
 	 * If the traces modified/deleted the command or any existing traces,
@@ -3444,7 +3446,7 @@ TclEvalObjvInternal(
 	 * implementation.
 	 */
 
-	if (cmdEpoch != cmdPtr->cmdEpoch) {
+	if (cmdEpoch != newEpoch) {
 	    checkTraces = 0;
 	    goto reparseBecauseOfTraces;
 	}
