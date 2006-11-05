@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.64 2006/10/30 16:30:36 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.65 2006/11/05 03:33:57 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -980,6 +980,9 @@ test expr-23.46 {INST_EXPON: Bug 1561260} -body {
 test expr-23.47 {INST_EXPON: Bug 1561260} {
     expr 2**32*5**32
 } 1[string repeat 0 32]
+test expr-23.48 {INST_EXPON: TIP 274: right assoc} {
+expr 2**3**4
+} 2417851639229258349412352
 
 # Some compilers get this wrong; ensure that we work around it correctly
 test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
