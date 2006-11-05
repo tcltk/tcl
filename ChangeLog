@@ -1,5 +1,9 @@
 2006-11-04  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Changed Tcl_ObjPrintf() response to
+	an invalid format specifier string.  No longer panics; now produces
+	an error message as output.
+
 	TIP#274 IMPLEMENTATION
 
 	* generic/tclParseExpr.c:	Exponentiation operator is now
