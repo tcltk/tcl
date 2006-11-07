@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.28 2006/11/02 15:58:04 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.29 2006/11/07 14:26:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -261,8 +261,8 @@ ValidateMemory(
     }
 
     if (nukeGuards) {
-	memset((char *) memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
-	memset((char *) hiPtr, 0, HIGH_GUARD_SIZE);
+	memset(memHeaderP->low_guard, 0, LOW_GUARD_SIZE);
+	memset(hiPtr, 0, HIGH_GUARD_SIZE);
     }
 
 }
@@ -397,10 +397,10 @@ Tcl_DbCkalloc(
      */
 
     if (init_malloced_bodies) {
-	memset((VOID *) result, GUARD_VALUE,
+	memset(result, GUARD_VALUE,
 		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     } else {
-	memset((char *) result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
+	memset(result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
 	memset(result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
     }
     if (!ckallocInit) {
@@ -487,10 +487,10 @@ Tcl_AttemptDbCkalloc(
      * allocated list.
      */
     if (init_malloced_bodies) {
-	memset((VOID *) result, GUARD_VALUE,
+	memset(result, GUARD_VALUE,
 		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
     } else {
-	memset((char *) result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
+	memset(result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
 	memset(result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
     }
     if (!ckallocInit) {
@@ -603,7 +603,7 @@ Tcl_DbCkfree(
     Tcl_MutexLock(ckallocMutexPtr);
     ValidateMemory(memp, file, line, TRUE);
     if (init_malloced_bodies) {
-	memset((VOID *) ptr, GUARD_VALUE, (size_t) memp->length);
+	memset(ptr, GUARD_VALUE, (size_t) memp->length);
     }
 
     total_frees++;
@@ -656,7 +656,7 @@ Tcl_DbCkrealloc(
     CONST char *file,
     int line)
 {
-    char *new;
+    char *newPtr;
     unsigned int copySize;
     struct mem_header *memp;
 
@@ -674,10 +674,10 @@ Tcl_DbCkrealloc(
     if (copySize > (unsigned int) memp->length) {
 	copySize = memp->length;
     }
-    new = Tcl_DbCkalloc(size, file, line);
-    memcpy((VOID *) new, (VOID *) ptr, (size_t) copySize);
+    newPtr = Tcl_DbCkalloc(size, file, line);
+    memcpy(newPtr, ptr, (size_t) copySize);
     Tcl_DbCkfree(ptr, file, line);
-    return new;
+    return newPtr;
 }
 
 char *
@@ -687,7 +687,7 @@ Tcl_AttemptDbCkrealloc(
     CONST char *file,
     int line)
 {
-    char *new;
+    char *newPtr;
     unsigned int copySize;
     struct mem_header *memp;
 
@@ -705,13 +705,13 @@ Tcl_AttemptDbCkrealloc(
     if (copySize > (unsigned int) memp->length) {
 	copySize = memp->length;
     }
-    new = Tcl_AttemptDbCkalloc(size, file, line);
-    if (new == NULL) {
+    newPtr = Tcl_AttemptDbCkalloc(size, file, line);
+    if (newPtr == NULL) {
 	return NULL;
     }
-    memcpy((VOID *) new, (VOID *) ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, (size_t) copySize);
     Tcl_DbCkfree(ptr, file, line);
-    return new;
+    return newPtr;
 }
 
 
