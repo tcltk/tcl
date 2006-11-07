@@ -1,3 +1,9 @@
+2006-11-07  Andreas Kupries  <andreask@activestate.com>
+
+	* unix/tclUnixFCmd.c (CopyFile): [SF Tcl Bug 1586470]. Added code
+	  to fall back to a hardwired default block size should the
+	  filesystem report a bogus value.
+
 2006-11-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TEOVI): fix por possible leak of a Command

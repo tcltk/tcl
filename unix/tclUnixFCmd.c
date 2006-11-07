@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.13 2006/09/07 18:49:28 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.14 2006/11/07 17:29:04 andreas_kupries Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -506,6 +506,16 @@ CopyFile(src, dst, statBufPtr)
 #endif
 #endif
 
+    /* [SF Tcl Bug 1586470] Even if we HAVE_ST_BLKSIZE, there are
+     * filesystems which report a bogus value for the blocksize.  An
+     * example is the Andrew Filesystem (afs), reporting a blocksize
+     * of 0. When detecting such a situation we now simply fall back
+     * to a hardwired default size.
+     */
+
+    if (blockSize <= 0) {
+        blockSize = 4096;
+    }
     buffer = ckalloc(blockSize);
     while (1) {
 	nread = read(srcFd, buffer, blockSize);
