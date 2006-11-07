@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.9 2005/11/27 02:33:49 das Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.10 2006/11/07 14:26:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -135,7 +135,7 @@ AllocThreadStorageEntry(
     Tcl_HashEntry *hPtr;
 
     hPtr = (Tcl_HashEntry *) TclpSysAlloc(sizeof(Tcl_HashEntry), 0);
-    hPtr->key.oneWordValue = (char *)keyPtr;
+    hPtr->key.oneWordValue = keyPtr;
 
     return hPtr;
 }
@@ -299,7 +299,7 @@ TclInitThreadStorage(void)
      * We also initialize the cache.
      */
 
-    memset((ThreadStorage *)&threadStorageCache, 0,
+    memset(&threadStorageCache, 0,
 	    sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
 
     /*
@@ -338,7 +338,7 @@ TclpThreadDataKeyGet(
     if (hPtr == NULL) {
 	return NULL;
     }
-    return (void *) Tcl_GetHashValue(hPtr);
+    return Tcl_GetHashValue(hPtr);
 }
 
 /*
@@ -529,7 +529,7 @@ TclFinalizeThreadStorage(void)
      * Clear out the thread storage cache as well.
      */
 
-    memset((ThreadStorage *)&threadStorageCache, 0,
+    memset(&threadStorageCache, 0,
 	    sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
 
     /*
