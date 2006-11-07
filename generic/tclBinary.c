@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.31 2006/10/10 16:15:48 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.32 2006/11/07 14:10:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -123,7 +123,7 @@ typedef struct ByteArray {
 				 * above. */
 } ByteArray;
 
-#define BYTEARRAY_SIZE(len)	\
+#define BYTEARRAY_SIZE(len) \
 		((unsigned) (sizeof(ByteArray) - 4 + (len)))
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
@@ -278,7 +278,7 @@ Tcl_SetByteArrayObj(
     byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    memcpy((VOID *) byteArrayPtr->bytes, (VOID *) bytes, (size_t) length);
+    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
 
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -360,8 +360,8 @@ Tcl_SetByteArrayLength(
 	newByteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
 	newByteArrayPtr->used = length;
 	newByteArrayPtr->allocated = length;
-	memcpy((VOID *) newByteArrayPtr->bytes,
-		(VOID *) byteArrayPtr->bytes, (size_t) byteArrayPtr->used);
+	memcpy(newByteArrayPtr->bytes, byteArrayPtr->bytes,
+		(size_t) byteArrayPtr->used);
 	ckfree((char *) byteArrayPtr);
 	byteArrayPtr = newByteArrayPtr;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -473,8 +473,7 @@ DupByteArrayInternalRep(
     copyArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy((VOID *) copyArrayPtr->bytes, (VOID *) srcArrayPtr->bytes,
-	    (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
     SET_BYTEARRAY(copyPtr, copyArrayPtr);
 
     copyPtr->typePtr = &tclByteArrayType;
@@ -532,7 +531,7 @@ UpdateStringOfByteArray(
     objPtr->length = size;
 
     if (size == length) {
-	memcpy((VOID *) dst, (VOID *) src, (size_t) size);
+	memcpy(dst, src, (size_t) size);
 	dst[size] = '\0';
     } else {
 	for (i = 0; i < length; i++) {
@@ -706,7 +705,7 @@ Tcl_BinaryObjCmd(
 		    } else if (count > listc) {
 			Tcl_AppendResult(interp,
 				"number of elements in list does not match count",
-				(char *) NULL);
+				NULL);
 			return TCL_ERROR;
 		    }
 		}
@@ -717,7 +716,7 @@ Tcl_BinaryObjCmd(
 		if (count == BINARY_ALL) {
 		    Tcl_AppendResult(interp,
 			    "cannot use \"*\" in format string with \"x\"",
-			    (char *) NULL);
+			    NULL);
 		    return TCL_ERROR;
 		} else if (count == BINARY_NOCOUNT) {
 		    count = 1;
@@ -767,7 +766,7 @@ Tcl_BinaryObjCmd(
 
 	resultPtr = Tcl_NewObj();
 	buffer = Tcl_SetByteArrayLength(resultPtr, length);
-	memset((VOID *) buffer, 0, (size_t) length);
+	memset(buffer, 0, (size_t) length);
 
 	/*
 	 * Pack the data into the result object. Note that we can skip the
@@ -802,11 +801,10 @@ Tcl_BinaryObjCmd(
 		    count = 1;
 		}
 		if (length >= count) {
-		    memcpy((VOID *) cursor, (VOID *) bytes, (size_t) count);
+		    memcpy(cursor, bytes, (size_t) count);
 		} else {
-		    memcpy((VOID *) cursor, (VOID *) bytes, (size_t) length);
-		    memset((VOID *) (cursor + length), pad,
-			    (size_t) (count - length));
+		    memcpy(cursor, bytes, (size_t) length);
+		    memset(cursor + length, pad, (size_t) (count - length));
 		}
 		cursor += count;
 		break;
@@ -1153,7 +1151,7 @@ Tcl_BinaryObjCmd(
 		    DeleteScanNumberCache(numberCachePtr);
 		    return TCL_ERROR;
 		}
-		offset += (count + 7 ) / 8;
+		offset += (count + 7) / 8;
 		break;
 	    }
 	    case 'h':
@@ -1252,7 +1250,8 @@ Tcl_BinaryObjCmd(
 		    if ((length - offset) < size) {
 			goto done;
 		    }
-		    valuePtr = ScanNumber(buffer+offset, cmd, flags, &numberCachePtr);
+		    valuePtr = ScanNumber(buffer+offset, cmd, flags,
+			    &numberCachePtr);
 		    offset += size;
 		} else {
 		    if (count == BINARY_ALL) {
@@ -1264,7 +1263,8 @@ Tcl_BinaryObjCmd(
 		    valuePtr = Tcl_NewObj();
 		    src = buffer+offset;
 		    for (i = 0; i < count; i++) {
-			elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
+			elementPtr = ScanNumber(src, cmd, flags,
+				&numberCachePtr);
 			src += size;
 			Tcl_ListObjAppendElement(NULL, valuePtr, elementPtr);
 		    }
@@ -1441,10 +1441,10 @@ GetFormatSpec(
  *	Windows) don't need to do anything.
  *
  * Results:
- * 	0	No re-ordering needed.
- * 	1	Reverse the bytes:	01234567 <-> 76543210 (little to big)
- * 	2	Apply this re-ordering: 01234567 <-> 45670123 (Nokia to little)
- * 	3	Apply this re-ordering: 01234567 <-> 32107654 (Nokia to big)
+ *	0	No re-ordering needed.
+ *	1	Reverse the bytes:	01234567 <-> 76543210 (little to big)
+ *	2	Apply this re-ordering: 01234567 <-> 45670123 (Nokia to little)
+ *	3	Apply this re-ordering: 01234567 <-> 32107654 (Nokia to big)
  *
  * Side effects:
  *	None
@@ -1498,10 +1498,11 @@ NeedReversing(
 
 #ifndef WORDS_BIGENDIAN
     /*
-     * The Q and q formats need special handling to account for the
-     * unusual byte ordering of 8-byte floats on Nokia 770 systems, which
-     * claim to be little-endian, but also reverse word order.
+     * The Q and q formats need special handling to account for the unusual
+     * byte ordering of 8-byte floats on Nokia 770 systems, which claim to be
+     * little-endian, but also reverse word order.
      */
+
     case 'Q':
 	if (TclNokia770Doubles()) {
 	    return 3;
@@ -1550,8 +1551,8 @@ CopyNumber(
 	memcpy(to, from, length);
 	break;
     case 1: {
-	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
-	unsigned char *toPtr = (unsigned char *) to;
+	CONST unsigned char *fromPtr = from;
+	unsigned char *toPtr = to;
 
 	switch (length) {
 	case 4:
@@ -1574,8 +1575,8 @@ CopyNumber(
 	break;
     }
     case 2: {
-	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
-	unsigned char *toPtr = (unsigned char *) to;
+	CONST unsigned char *fromPtr = from;
+	unsigned char *toPtr = to;
 
 	toPtr[0] = fromPtr[4];
 	toPtr[1] = fromPtr[5];
@@ -1588,8 +1589,8 @@ CopyNumber(
 	break;
     }
     case 3: {
-	CONST unsigned char *fromPtr = (CONST unsigned char *) from;
-	unsigned char *toPtr = (unsigned char *) to;
+	CONST unsigned char *fromPtr = from;
+	unsigned char *toPtr = to;
 
 	toPtr[0] = fromPtr[3];
 	toPtr[1] = fromPtr[2];
@@ -1645,7 +1646,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    if ( src->typePtr != &tclDoubleType ) {
+	    if (src->typePtr != &tclDoubleType) {
 		return TCL_ERROR;
 	    }
 	    dvalue = src->internalRep.doubleValue;
@@ -1664,7 +1665,7 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    if ( src->typePtr != &tclDoubleType ) {
+	    if (src->typePtr != &tclDoubleType) {
 		return TCL_ERROR;
 	    }
 	    dvalue = src->internalRep.doubleValue;
@@ -1811,8 +1812,7 @@ ScanNumber(
      * when we cast from smaller values to larger values because we don't know
      * the exact size of the integer types. So, we have to handle sign
      * extension explicitly by checking the high bit and padding with 1's as
-     * needed.
-     * This practice is disabled if the BINARY_UNSIGNED flag is set.
+     * needed. This practice is disabled if the BINARY_UNSIGNED flag is set.
      */
 
     switch (type) {
@@ -1878,17 +1878,15 @@ ScanNumber(
 	 * 32bit signed and unsigned in the hash (short and char are ok).
 	 */
 
-	if ((flags & BINARY_UNSIGNED)) {
+	if (flags & BINARY_UNSIGNED) {
 	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
-	} else {
-	    if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
-		value -= (((unsigned int)1)<<31);
-		value -= (((unsigned int)1)<<31);
-	    }
+	}
+	if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
+	    value -= (((unsigned int)1)<<31);
+	    value -= (((unsigned int)1)<<31);
 	}
 
     returnNumericObject:
-
 	if (*numberCachePtrPtr == NULL) {
 	    return Tcl_NewLongObj(value);
 	} else {
@@ -1900,26 +1898,26 @@ ScanNumber(
 	    if (!isNew) {
 		return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 	    }
-	    if (tablePtr->numEntries > BINARY_SCAN_MAX_CACHE) {
-		/*
-		 * We've overflowed the cache! Someone's parsing a LOT of
-		 * varied binary data in a single call! Bail out by switching
-		 * back to the old behaviour for the rest of the scan.
-		 *
-		 * Note that anyone just using the 'c' conversion (for bytes)
-		 * cannot trigger this.
-		 */
-
-		DeleteScanNumberCache(tablePtr);
-		*numberCachePtrPtr = NULL;
-		return Tcl_NewLongObj(value);
-	    } else {
+	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
 		register Tcl_Obj *objPtr = Tcl_NewLongObj(value);
 
 		Tcl_IncrRefCount(objPtr);
 		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
 		return objPtr;
 	    }
+
+	    /*
+	     * We've overflowed the cache! Someone's parsing a LOT of varied
+	     * binary data in a single call! Bail out by switching back to the
+	     * old behaviour for the rest of the scan.
+	     *
+	     * Note that anyone just using the 'c' conversion (for bytes)
+	     * cannot trigger this.
+	     */
+
+	    DeleteScanNumberCache(tablePtr);
+	    *numberCachePtrPtr = NULL;
+	    return Tcl_NewLongObj(value);
 	}
 
 	/*
@@ -1956,9 +1954,8 @@ ScanNumber(
 	    TclBNInitBignumFromWideUInt(&big, uwvalue);
 	    bigObj = Tcl_NewBignumObj(&big);
 	    return bigObj;
-	} else {
-	    return Tcl_NewWideIntObj((Tcl_WideInt) uwvalue);
 	}
+	return Tcl_NewWideIntObj((Tcl_WideInt) uwvalue);
 
 	/*
 	 * Do not cache double values; they are already too large to use as
@@ -2021,7 +2018,7 @@ DeleteScanNumberCache(
 
     hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
     while (hEntry != NULL) {
-	register Tcl_Obj *value = (Tcl_Obj *) Tcl_GetHashValue(hEntry);
+	register Tcl_Obj *value = Tcl_GetHashValue(hEntry);
 
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);
