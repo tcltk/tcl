@@ -1,29 +1,32 @@
+2006-11-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIO.c, generic/tclPkg.c: Style & clarity rewrites.
+
 2006-11-07  Andreas Kupries  <andreask@activestate.com>
 
-	* unix/tclUnixFCmd.c (CopyFile): [SF Tcl Bug 1586470]. Added code
-	  to fall back to a hardwired default block size should the
-	  filesystem report a bogus value.
+	* unix/tclUnixFCmd.c (CopyFile): Added code to fall back to a
+	hardwired default block size should the filesystem report a bogus
+	value. [Bug 1586470]
 
 2006-11-04  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c:	Changed Tcl_ObjPrintf() response to
-	an invalid format specifier string.  No longer panics; now produces
-	an error message as output.
+	* generic/tclStringObj.c:	Changed Tcl_ObjPrintf() response to an
+	invalid format specifier string. No longer panics; now produces an
+	error message as output.
 
 	TIP#274 IMPLEMENTATION
 
-	* generic/tclParseExpr.c:	Exponentiation operator is now
-	* tests/expr.test:		right associative.  [Patch 1556802]
+	* generic/tclParseExpr.c:	Exponentiation operator is now right
+	* tests/expr.test:		associative. [Patch 1556802]
 
 2006-11-03  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c (TEOVI): fix por possible leak of a Command
-	in the presence of execution traces that delete it.
+	* generic/tclBasic.c (TEOVI): fix por possible leak of a Command in
+	the presence of execution traces that delete it.
 
 	* generic/tclBasic.c (TEOVI):
 	* tests/trace.test (trace-21.11): fix for [Bug 1590232], execution
-	traces may cause a second command resolution in the wrong
-	namespace. 
+	traces may cause a second command resolution in the wrong namespace.
 
 2006-11-03  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
