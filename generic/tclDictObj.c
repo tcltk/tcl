@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.43 2006/11/02 15:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.44 2006/11/08 13:47:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -467,7 +467,7 @@ SetDictFromAny(
 
 	s = ckalloc((unsigned) elemSize + 1);
 	if (hasBrace) {
-	    memcpy((void *) s, (void *) elemStart, (size_t) elemSize);
+	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {
 	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);

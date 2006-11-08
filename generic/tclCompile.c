@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.98 2006/09/30 17:56:46 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.99 2006/11/08 13:47:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1775,7 +1775,7 @@ TclInitByteCodeObj(
 
     p += sizeof(ByteCode);
     codePtr->codeStart = p;
-    memcpy((void *) p, (void *) envPtr->codeStart, (size_t) codeBytes);
+    memcpy(p, envPtr->codeStart, (size_t) codeBytes);
 
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
@@ -1786,8 +1786,7 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
-	memcpy((void *) p, (void *) envPtr->exceptArrayPtr,
-		(size_t) exceptArrayBytes);
+	memcpy(p, envPtr->exceptArrayPtr, (size_t) exceptArrayBytes);
     } else {
 	codePtr->exceptArrayPtr = NULL;
     }
@@ -1795,8 +1794,7 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
     if (auxDataArrayBytes > 0) {
 	codePtr->auxDataArrayPtr = (AuxData *) p;
-	memcpy((void *) p, (void *) envPtr->auxDataArrayPtr,
-		(size_t) auxDataArrayBytes);
+	memcpy(p, envPtr->auxDataArrayPtr, (size_t) auxDataArrayBytes);
     } else {
 	codePtr->auxDataArrayPtr = NULL;
     }
@@ -1884,6 +1882,7 @@ TclFindCompiledLocal(
 
     if (name != NULL) {
 	int localCt = procPtr->numCompiledLocals;
+
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 0;  i < localCt;  i++) {
 	    if (!TclIsVarTemporary(localPtr)) {
@@ -1923,7 +1922,7 @@ TclFindCompiledLocal(
 	localPtr->resolveInfo = NULL;
 
 	if (name != NULL) {
-	    memcpy((void *) localPtr->name, (void *) name, (size_t) nameBytes);
+	    memcpy(localPtr->name, name, (size_t) nameBytes);
 	}
 	localPtr->name[nameBytes] = '\0';
 	procPtr->numCompiledLocals++;
@@ -1974,7 +1973,7 @@ TclExpandCodeArray(
      * mark new code array as malloced.
      */
 
-    memcpy((void *) newPtr, (void *) envPtr->codeStart, currBytes);
+    memcpy(newPtr, envPtr->codeStart, currBytes);
     if (envPtr->mallocedCodeArray) {
 	ckfree((char *) envPtr->codeStart);
     }
@@ -2038,7 +2037,7 @@ EnterCmdStartData(
 	 * location array if needed, and mark new array as malloced.
 	 */
 
-	memcpy((void *) newPtr, (void *) envPtr->cmdMapPtr, currBytes);
+	memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	if (envPtr->mallocedCmdMap) {
 	    ckfree((char *) envPtr->cmdMapPtr);
 	}
@@ -2155,7 +2154,7 @@ TclCreateExceptRange(
 	 * array if needed, and mark the new ExceptionRange array as malloced.
 	 */
 
-	memcpy((void *) newPtr, (void *) envPtr->exceptArrayPtr, currBytes);
+	memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
 	if (envPtr->mallocedExceptArray) {
 	    ckfree((char *) envPtr->exceptArrayPtr);
 	}
@@ -2230,7 +2229,7 @@ TclCreateAuxData(
 	 * needed, and mark the new AuxData array as malloced.
 	 */
 
-	memcpy((void *) newPtr, (void *) envPtr->auxDataArrayPtr, currBytes);
+	memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	if (envPtr->mallocedAuxDataArray) {
 	    ckfree((char *) envPtr->auxDataArrayPtr);
 	}
@@ -2317,11 +2316,11 @@ TclExpandJumpFixupArray(
      * the new array as malloced.
      */
 
-    memcpy((void *) newPtr, (void *) fixupArrayPtr->fixup, currBytes);
+    memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
     if (fixupArrayPtr->mallocedArray) {
 	ckfree((char *) fixupArrayPtr->fixup);
     }
-    fixupArrayPtr->fixup = (JumpFixup *) newPtr;
+    fixupArrayPtr->fixup = newPtr;
     fixupArrayPtr->end = newElems;
     fixupArrayPtr->mallocedArray = 1;
 }
