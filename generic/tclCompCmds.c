@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.84 2006/08/10 12:15:30 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.85 2006/11/08 13:47:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -127,8 +127,8 @@ static int		PushVarName(Tcl_Interp *interp,
  * Flags bits used by PushVarName.
  */
 
-#define TCL_CREATE_VAR     1 /* Create a compiled local if none is found */
-#define TCL_NO_LARGE_INDEX 2 /* Do not return localIndex value > 255 */
+#define TCL_CREATE_VAR     1	/* Create a compiled local if none is found */
+#define TCL_NO_LARGE_INDEX 2	/* Do not return localIndex value > 255 */
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -634,7 +634,7 @@ TclCompileDictCmd(
 	    intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
 	    code = Tcl_GetIntFromObj(NULL, intObj, &incrAmount);
-	    Tcl_DecrRefCount(intObj);
+	    TclDecrRefCount(intObj);
 	    if (code != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1391,12 +1391,13 @@ TclCompileForeachCmd(
 	for (j = 0;  j < numVars;  j++) {
 	    CONST char *varName = varvList[loopIndex][j];
 	    int nameChars = strlen(varName);
+
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
 		    nameChars, /*create*/ 1, VAR_SCALAR, procPtr);
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
-    infoIndex = TclCreateAuxData((ClientData) infoPtr, &tclForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
 
     /*
      * Create an exception record to handle [break] and [continue].
@@ -1545,7 +1546,7 @@ DupForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
-    register ForeachInfo *srcPtr = (ForeachInfo *) clientData;
+    register ForeachInfo *srcPtr = clientData;
     ForeachInfo *dupPtr;
     register ForeachVarList *srcListPtr, *dupListPtr;
     int numLists = srcPtr->numLists;
@@ -1568,7 +1569,7 @@ DupForeachInfo(
 	}
 	dupPtr->varLists[i] = dupListPtr;
     }
-    return (ClientData) dupPtr;
+    return dupPtr;
 }
 
 /*
@@ -1595,7 +1596,7 @@ FreeForeachInfo(
     ClientData clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
-    register ForeachInfo *infoPtr = (ForeachInfo *) clientData;
+    register ForeachInfo *infoPtr = clientData;
     register ForeachVarList *listPtr;
     int numLists = infoPtr->numLists;
     register int i;
@@ -1640,15 +1641,16 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpFalseDist;
-    int jumpIndex = 0;		/* avoid compiler warning. */
+    int jumpIndex = 0;		/* Avoid compiler warning. */
     int numWords, wordIdx, numBytes, j, code;
     CONST char *word;
     int savedStackDepth = envPtr->currStackDepth;
 				/* Saved stack depth at the start of the first
 				 * test; the envPtr current depth is restored
 				 * to this value at the start of each test. */
-    int realCond = 1;		/* set to 0 for static conditions: "if 0 {..}" */
-    int boolVal;		/* value of static condition */
+    int realCond = 1;		/* Set to 0 for static conditions:
+				 * "if 0 {..}" */
+    int boolVal;		/* Value of static condition */
     int compileScripts = 1;
 
     /*
@@ -1716,7 +1718,7 @@ TclCompileIfCmd(
 		    testTokenPtr[1].size);
 	    Tcl_IncrRefCount(boolObj);
 	    code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
-	    Tcl_DecrRefCount(boolObj);
+	    TclDecrRefCount(boolObj);
 	    if (code == TCL_OK) {
 		/*
 		 * A static condition
@@ -1971,7 +1973,7 @@ TclCompileIncrCmd(
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
 	    code = Tcl_GetIntFromObj(NULL, intObj, &immValue);
-	    Tcl_DecrRefCount(intObj);
+	    TclDecrRefCount(intObj);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
 		haveImmValue = 1;
 	    }
@@ -1981,7 +1983,7 @@ TclCompileIncrCmd(
 	} else {
 	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
-    } else {			/* no incr amount given so use 1 */
+    } else {			/* No incr amount given so use 1 */
 	haveImmValue = 1;
     }
 
@@ -2021,7 +2023,7 @@ TclCompileIncrCmd(
 		}
 	    }
 	}
-    } else {			/* non-simple variable name */
+    } else {			/* Non-simple variable name */
 	if (haveImmValue) {
 	    TclEmitInstInt1(INST_INCR_STK_IMM, immValue, envPtr);
 	} else {
@@ -2234,7 +2236,7 @@ TclCompileLassignCmd(
      * Generate code to leave the rest of the list on the stack.
      */
     TclEmitInstInt4(INST_LIST_RANGE_IMM, idx, envPtr);
-    TclEmitInt4(-2, envPtr); /* -2 == "end" */
+    TclEmitInt4(-2, envPtr);	/* -2 == "end" */
 
     return TCL_OK;
 }
@@ -2466,24 +2468,29 @@ TclCompileLlengthCmd(
 
 int
 TclCompileLsetCmd(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    Tcl_Parse* parsePtr,	/* Points to a parse structure for the
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command */
-    CompileEnv* envPtr)		/* Holds the resulting instructions */
+    CompileEnv *envPtr)		/* Holds the resulting instructions */
 {
     int tempDepth;		/* Depth used for emitting one part of the
 				 * code burst. */
-    Tcl_Token* varTokenPtr;	/* Pointer to the Tcl_Token representing the
+    Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the variable name */
     int localIndex;		/* Index of var in local var table */
     int simpleVarName;		/* Flag == 1 if var name is simple */
     int isScalar;		/* Flag == 1 if scalar, 0 if array */
     int i;
 
-    /* Check argument count */
+    /*
+     * Check argument count.
+     */
 
     if (parsePtr->numWords < 3) {
-	/* Fail at run time, not in compilation */
+	/*
+	 * Fail at run time, not in compilation.
+	 */
+
 	return TCL_ERROR;
     }
 
@@ -2615,10 +2622,10 @@ TclCompileLsetCmd(
 
 int
 TclCompileRegexpCmd(
-    Tcl_Interp* interp,		/* Tcl interpreter for error reporting */
-    Tcl_Parse* parsePtr,	/* Points to a parse structure for the
+    Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
 				 * command */
-    CompileEnv* envPtr)		/* Holds the resulting instructions */
+    CompileEnv *envPtr)		/* Holds the resulting instructions */
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string */
@@ -2648,7 +2655,10 @@ TclCompileRegexpCmd(
     for (i = 1; i < parsePtr->numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    /* Not a simple string - punt to runtime. */
+	    /*
+	     * Not a simple string - punt to runtime.
+	     */
+
 	    return TCL_ERROR;
 	}
 	str = (char *) varTokenPtr[1].start;
@@ -2659,13 +2669,19 @@ TclCompileRegexpCmd(
 	} else if ((len > 1) && (strncmp(str,"-nocase",(unsigned)len) == 0)) {
 	    nocase = 1;
 	} else {
-	    /* Not an option we recognize. */
+	    /*
+	     * Not an option we recognize.
+	     */
+
 	    return TCL_ERROR;
 	}
     }
 
     if ((parsePtr->numWords - i) != 2) {
-	/* We don't support capturing to variables */
+	/*
+	 * We don't support capturing to variables.
+	 */
+
 	return TCL_ERROR;
     }
 
@@ -2878,7 +2894,7 @@ TclCompileReturnCmd(
 	    &returnOpts, &code, &level);
   cleanup:
     while (--objc >= 0) {
-	Tcl_DecrRefCount(objv[objc]);
+	TclDecrRefCount(objv[objc]);
     }
     if (numOptionWords > NUM_STATIC_OBJS) {
 	ckfree((char *)objv);
@@ -2917,8 +2933,10 @@ TclCompileReturnCmd(
 	/*
 	 * We have default return options and we're in a proc ...
 	 */
+
 	int index = envPtr->exceptArrayNext - 1;
 	int enclosingCatch = 0;
+
 	while (index >= 0) {
 	    ExceptionRange range = envPtr->exceptArrayPtr[index];
 	    if ((range.type == CATCH_EXCEPTION_RANGE)
@@ -3013,7 +3031,7 @@ TclCompileSetCmd(
 	if (isScalar) {
 	    if (localIndex < 0) {
 		TclEmitOpcode((isAssignment?
-		        INST_STORE_SCALAR_STK : INST_LOAD_SCALAR_STK), envPtr);
+			INST_STORE_SCALAR_STK : INST_LOAD_SCALAR_STK), envPtr);
 	    } else if (localIndex <= 255) {
 		TclEmitInstInt1((isAssignment?
 			INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
@@ -3094,7 +3112,10 @@ TclCompileStringCmd(
     };
 
     if (parsePtr->numWords < 2) {
-	/* Fail at run time, not in compilation */
+	/*
+	 * Fail at run time, not in compilation.
+	 */
+
 	return TCL_ERROR;
     }
     opTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -3137,7 +3158,10 @@ TclCompileStringCmd(
 
     case STR_INDEX:
 	if (parsePtr->numWords != 4) {
-	    /* Fail at run time, not in compilation */
+	    /*
+	     * Fail at run time, not in compilation.
+	     */
+
 	    return TCL_ERROR;
 	}
 
@@ -3157,7 +3181,10 @@ TclCompileStringCmd(
 	CONST char *str;
 
 	if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
-	    /* Fail at run time, not in compilation */
+	    /*
+	     * Fail at run time, not in compilation.
+	     */
+
 	    return TCL_ERROR;
 	}
 
@@ -3171,7 +3198,10 @@ TclCompileStringCmd(
 		    strncmp(str, "-nocase", (size_t) length) == 0) {
 		nocase = 1;
 	    } else {
-		/* Fail at run time, not in compilation */
+		/*
+		 * Fail at run time, not in compilation.
+		 */
+
 		return TCL_ERROR;
 	    }
 	    varTokenPtr = TokenAfter(varTokenPtr);
@@ -3187,10 +3217,11 @@ TclCompileStringCmd(
 		     * -nocase was specified, we can't do this because
 		     * INST_STR_EQ has no support for nocase.
 		     */
+
 		    Tcl_Obj *copy = Tcl_NewStringObj(str, length);
 		    Tcl_IncrRefCount(copy);
 		    exactMatch = TclMatchIsTrivial(Tcl_GetString(copy));
-		    Tcl_DecrRefCount(copy);
+		    TclDecrRefCount(copy);
 		}
 		PushLiteral(envPtr, str, length);
 	    } else {
@@ -3208,7 +3239,10 @@ TclCompileStringCmd(
     }
     case STR_LENGTH:
 	if (parsePtr->numWords != 3) {
-	    /* Fail at run time, not in compilation */
+	    /*
+	     * Fail at run time, not in compilation.
+	     */
+
 	    return TCL_ERROR;
 	}
 
@@ -3217,9 +3251,11 @@ TclCompileStringCmd(
 	     * Here someone is asking for the length of a static string. Just
 	     * push the actual character (not byte) length.
 	     */
+
 	    char buf[TCL_INTEGER_SPACE];
 	    int len = Tcl_NumUtfChars(varTokenPtr[1].start,
 		    varTokenPtr[1].size);
+
 	    len = sprintf(buf, "%d", len);
 	    PushLiteral(envPtr, buf, len);
 	    return TCL_OK;
@@ -3579,8 +3615,7 @@ TclCompileSwitchCmd(
 
 	jtPtr = (JumptableInfo *) ckalloc(sizeof(JumptableInfo));
 	Tcl_InitHashTable(&jtPtr->hashTable, TCL_STRING_KEYS);
-	infoIndex = TclCreateAuxData((ClientData) jtPtr,
-		&tclJumptableInfoType, envPtr);
+	infoIndex = TclCreateAuxData(jtPtr, &tclJumptableInfoType, envPtr);
 	finalFixups = (int *) ckalloc(sizeof(int) * (numWords/2));
 	foundDefault = 0;
 	mustGenerate = 1;
@@ -3806,6 +3841,7 @@ TclCompileSwitchCmd(
 
 	if (contFixIndex != -1) {
 	    int j;
+
 	    for (j=0 ; j<contFixCount ; j++) {
 		fixupTargetArray[contFixIndex+j] = CurrentOffset(envPtr);
 	    }
@@ -3869,6 +3905,7 @@ TclCompileSwitchCmd(
 	if (TclFixupForwardJump(envPtr, &fixupArray[i],
 		fixupTargetArray[i] - fixupArray[i].codeOffset, 127)) {
 	    int j;
+
 	    for (j=i-1 ; j>=0 ; j--) {
 		if (fixupTargetArray[j] > fixupArray[i].codeOffset) {
 		    fixupTargetArray[j] += 3;
@@ -3906,7 +3943,7 @@ static ClientData
 DupJumptableInfo(
     ClientData clientData)
 {
-    JumptableInfo *jtPtr = (JumptableInfo *) clientData;
+    JumptableInfo *jtPtr = clientData;
     JumptableInfo *newJtPtr = (JumptableInfo *)
 	    ckalloc(sizeof(JumptableInfo));
     Tcl_HashEntry *hPtr, *newHPtr;
@@ -3920,14 +3957,14 @@ DupJumptableInfo(
 		Tcl_GetHashKey(&jtPtr->hashTable, hPtr), &isNew);
 	Tcl_SetHashValue(newHPtr, Tcl_GetHashValue(hPtr));
     }
-    return (ClientData) newJtPtr;
+    return newJtPtr;
 }
 
 static void
 FreeJumptableInfo(
     ClientData clientData)
 {
-    JumptableInfo *jtPtr = (JumptableInfo *) clientData;
+    JumptableInfo *jtPtr = clientData;
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
     ckfree((char *) jtPtr);
@@ -3942,10 +3979,10 @@ FreeJumptableInfo(
  *	command. The command itself is *not* compiled.
  *
  * Results:
- *      Always returns TCL_ERROR.
+ *	Always returns TCL_ERROR.
  *
  * Side effects:
- *      Indexed local variables are added to the environment.
+ *	Indexed local variables are added to the environment.
  *
  *----------------------------------------------------------------------
  */
@@ -4062,7 +4099,7 @@ TclCompileWhileCmd(
     boolObj = Tcl_NewStringObj(testTokenPtr[1].start, testTokenPtr[1].size);
     Tcl_IncrRefCount(boolObj);
     code = Tcl_GetBooleanFromObj(NULL, boolObj, &boolVal);
-    Tcl_DecrRefCount(boolObj);
+    TclDecrRefCount(boolObj);
     if (code == TCL_OK) {
 	if (boolVal) {
 	    /*
@@ -4104,7 +4141,7 @@ TclCompileWhileCmd(
 
     if (loopMayEnd) {
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
-	testCodeOffset = 0; /* avoid compiler warning */
+	testCodeOffset = 0;	/* Avoid compiler warning */
     } else {
 	testCodeOffset = CurrentOffset(envPtr);
     }
@@ -4195,9 +4232,9 @@ PushVarName(
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_CREATE_VAR or TCL_NO_LARGE_INDEX */
-    int *localIndexPtr,		/* must not be NULL */
-    int *simpleVarNamePtr,	/* must not be NULL */
-    int *isScalarPtr)		/* must not be NULL */
+    int *localIndexPtr,		/* Must not be NULL */
+    int *simpleVarNamePtr,	/* Must not be NULL */
+    int *isScalarPtr)		/* Must not be NULL */
 {
     register CONST char *p;
     CONST char *name, *elName;
@@ -4326,7 +4363,7 @@ PushVarName(
 		 * Copy the remaining tokens.
 		 */
 
-		memcpy((void *) (elemTokenPtr+1), (void *) (&varTokenPtr[2]),
+		memcpy(elemTokenPtr+1, varTokenPtr+2,
 			(n-1) * sizeof(Tcl_Token));
 	    } else {
 		/*
@@ -4364,7 +4401,10 @@ PushVarName(
 		    /*flags*/ ((elName==NULL)? VAR_SCALAR : VAR_ARRAY),
 		    envPtr->procPtr);
 	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
-		/* we'll push the name */
+		/*
+		 * We'll push the name.
+		 */
+
 		localIndex = -1;
 	    }
 	}
@@ -4395,7 +4435,7 @@ PushVarName(
 	++varTokenPtr[removedParen].size;
     }
     if (allocedTokens) {
-        ckfree((char *) elemTokenPtr);
+	ckfree((char *) elemTokenPtr);
     }
     *localIndexPtr = localIndex;
     *simpleVarNamePtr = simpleVarName;
