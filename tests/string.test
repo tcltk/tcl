@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.57 2006/01/23 12:15:52 msofer Exp $
+# RCS: @(#) $Id: string.test,v 1.58 2006/11/09 15:37:56 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -26,7 +26,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {bad option "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string option arg ?arg ...?"}}
@@ -1351,7 +1351,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {bad option "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1407,7 +1407,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {ambiguous option "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {ambiguous option "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -1450,7 +1450,6 @@ test string-23.0 {string is boolean, Bug 1187123} testindexobj {
     catch {testindexobj $x foo bar soom}
     string is boolean $x
 } 0
-
 test string-23.1 {string is command with empty string} {
     set s ""
     list \
@@ -1474,7 +1473,6 @@ test string-23.1 {string is command with empty string} {
         [string is xdigit $s] \
 
 } {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
-
 test string-23.2 {string is command with empty string} {
     set s ""
     list \
@@ -1498,6 +1496,16 @@ test string-23.2 {string is command with empty string} {
         [string is xdigit -strict $s] \
 
 } {0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}
+
+test string-24.1 {string reverse command} -body {
+    string reverse
+} -returnCodes error -result "wrong # args: should be \"string reverse string\""
+test string-24.2 {string reverse command} -body {
+    string reverse a b
+} -returnCodes error -result "wrong # args: should be \"string reverse string\""
+test string-24.3 {string reverse command} {
+    string reverse abcde
+} edcba
 
 # cleanup
 ::tcltest::cleanupTests

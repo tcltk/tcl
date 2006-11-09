@@ -1,5 +1,11 @@
 2006-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	TIP#272 IMPLEMENTATION
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd):    Implementation of the
+	* tests/string.test, tests/stringComp.test: [string reverse] command
+	* doc/string.n:				    from TIP#272.
+
 	* generic/tclCmdIL.c (Tcl_LreverseObjCmd): Implementation of the
 	* generic/tclBasic.c, generic/tclInt.h:	   [lreverse] command from
 	* tests/cmdIL.test (cmdIL-7.*):		   TIP#272.
