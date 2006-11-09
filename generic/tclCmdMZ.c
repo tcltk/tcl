@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.139 2006/11/09 15:37:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.140 2006/11/09 16:11:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2196,7 +2196,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	break;
     }
     case STR_REVERSE: {
-	Tcl_UniChar *ustring1, *ustring2;
+	Tcl_UniChar *ustring1;
 	int i, j;
 
 	if (objc != 3) {
@@ -2205,14 +2205,37 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	}
 
 	ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
-	ustring2 = (Tcl_UniChar *)
-		ckalloc(sizeof(Tcl_UniChar) * (unsigned)length1);
+	if (Tcl_IsShared(objv[2])) {
+	    Tcl_UniChar *ustring2 = (Tcl_UniChar *)
+		    ckalloc(sizeof(Tcl_UniChar) * (unsigned)length1);
 
-	for (i=0,j=length1-1 ; i<length1 ; i++,j--) {
-	    ustring2[j] = ustring1[i];
+	    for (i=0,j=length1-1 ; i<length1 ; i++,j--) {
+		ustring2[j] = ustring1[i];
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(ustring2, length1));
+	    ckfree((char *) ustring2);
+	} else {
+	    /*
+	     * The object is unshared, so we can do the swap in-place. This
+	     * avoids memory allocation, and so is faster.
+	     */
+
+	    for (i=0,j=length1-1 ; i<j ; i++,j--) {
+		Tcl_UniChar tmp = ustring1[i];
+		ustring1[i] = ustring1[j];
+		ustring1[j] = tmp;
+	    }
+
+	    /*
+	     * Tricky. Must invalidate the string (utf-8) representation to
+	     * ensure that it is regenerated from the "unicode" internal rep.
+	     */
+
+	    if (objv[2]->bytes != NULL) {
+		Tcl_InvalidateStringRep(objv[2]);
+	    }
+	    Tcl_SetObjResult(interp, objv[2]);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(ustring2, length1));
-	ckfree((char *) ustring2);
 	break;
     }
     case STR_TOLOWER:
