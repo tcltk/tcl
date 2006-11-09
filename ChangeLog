@@ -1,3 +1,13 @@
+2006-11-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c (removed):	Moved all the code of
+	* generic/tclCompExpr.c:	tclParseExpr.c into tclCompExpr.c.
+	* unix/Makefile.in:	This sets the stage for expr compiling to
+	* win/Makefile.in:	work directly with the full parse tree
+	* win/makefile.bc:	structures, and not have to pass through
+	* win/makefile.vc:	the information lossy format of an array
+	* win/tcl.dsp:		of Tcl_Tokens.
+
 2006-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	TIP#272 IMPLEMENTATION
