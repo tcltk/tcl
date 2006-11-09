@@ -1,3 +1,10 @@
+2006-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LreverseObjCmd): Implementation of the
+	* generic/tclBasic.c, generic/tclInt.h:	   [lreverse] command from
+	* tests/cmdIL.test (cmdIL-7.*):		   TIP#272.
+	* doc/lreverse.n:
+
 2006-11-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIO.c, generic/tclPkg.c: Style & clarity rewrites.
