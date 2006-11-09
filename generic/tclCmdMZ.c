@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.138 2006/11/02 16:39:06 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.139 2006/11/09 15:37:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1133,16 +1133,16 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	"bytelength",	"compare",	"equal",	"first",
 	"index",	"is",		"last",		"length",
 	"map",		"match",	"range",	"repeat",
-	"replace",	"tolower",	"toupper",	"totitle",
-	"trim",		"trimleft",	"trimright",
+	"replace",	"reverse",	"tolower",	"toupper",
+	"totitle",	"trim",		"trimleft",	"trimright",
 	"wordend",	"wordstart",	NULL
     };
     enum options {
 	STR_BYTELENGTH,	STR_COMPARE,	STR_EQUAL,	STR_FIRST,
 	STR_INDEX,	STR_IS,		STR_LAST,	STR_LENGTH,
 	STR_MAP,	STR_MATCH,	STR_RANGE,	STR_REPEAT,
-	STR_REPLACE,	STR_TOLOWER,	STR_TOUPPER,	STR_TOTITLE,
-	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
+	STR_REPLACE,	STR_REVERSE,	STR_TOLOWER,	STR_TOUPPER,
+	STR_TOTITLE,	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
 	STR_WORDEND,	STR_WORDSTART
     };
 
@@ -2193,6 +2193,26 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    Tcl_SetObjResult(interp, resultPtr);
 	}
+	break;
+    }
+    case STR_REVERSE: {
+	Tcl_UniChar *ustring1, *ustring2;
+	int i, j;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "string");
+	    return TCL_ERROR;
+	}
+
+	ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	ustring2 = (Tcl_UniChar *)
+		ckalloc(sizeof(Tcl_UniChar) * (unsigned)length1);
+
+	for (i=0,j=length1-1 ; i<length1 ; i++,j--) {
+	    ustring2[j] = ustring1[i];
+	}
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(ustring2, length1));
+	ckfree((char *) ustring2);
 	break;
     }
     case STR_TOLOWER:
