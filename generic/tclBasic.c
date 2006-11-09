@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.216 2006/11/04 00:09:33 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.217 2006/11/09 15:19:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -139,6 +139,7 @@ static CmdInfo builtInCmds[] = {
     {"lrange",		Tcl_LrangeObjCmd,	NULL,			1},
     {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			1},
     {"lreplace",	Tcl_LreplaceObjCmd,	NULL,			1},
+    {"lreverse",	Tcl_LreverseObjCmd,	NULL,			1},
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			1},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	1},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			1},
