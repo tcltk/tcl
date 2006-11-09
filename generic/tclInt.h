@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.292 2006/11/02 16:57:54 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.293 2006/11/09 15:19:03 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2424,6 +2424,9 @@ MODULE_SCOPE int	Tcl_LrepeatObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_LreplaceObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int	Tcl_LreverseObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_LsearchObjCmd(ClientData clientData,
