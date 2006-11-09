@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.93 2006/11/09 15:19:03 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.94 2006/11/09 16:11:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3164,9 +3164,8 @@ Tcl_LreverseObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument values. */
 {
-    Tcl_Obj *resultObj, **dataArray, **elemv;
+    Tcl_Obj **elemv;
     int elemc, i, j;
-    List *listPtr;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
@@ -3176,17 +3175,34 @@ Tcl_LreverseObjCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewListObj(elemc, NULL);
-    listPtr = (List *) resultObj->internalRep.twoPtrValue.ptr1;
-    listPtr->elemCount = elemc;
-    dataArray = &listPtr->elements;
+    if (Tcl_IsShared(objv[1])) {
+	Tcl_Obj *resultObj = Tcl_NewListObj(elemc, NULL);
+	Tcl_Obj **dataArray;
+	List *listPtr;
 
-    for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
-	dataArray[j] = elemv[i];
-	Tcl_IncrRefCount(elemv[i]);
+	listPtr = (List *) resultObj->internalRep.twoPtrValue.ptr1;
+	listPtr->elemCount = elemc;
+	dataArray = &listPtr->elements;
+
+	for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
+	    dataArray[j] = elemv[i];
+	    Tcl_IncrRefCount(elemv[i]);
+	}
+
+	Tcl_SetObjResult(interp, resultObj);
+    } else {
+	/*
+	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
+	 * returning a pointer to the live array of Tcl_Obj values.
+	 */
+
+	for (i=0,j=elemc-1 ; i<j ; i++,j--) {
+	    Tcl_Obj *tmp = elemv[i];
+	    elemv[i] = elemv[j];
+	    elemv[j] = tmp;
+	}
+	Tcl_SetObjResult(interp, objv[1]);
     }
-
-    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 
