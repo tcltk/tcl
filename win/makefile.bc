@@ -236,7 +236,6 @@ TCLOBJS	= \
 	$(TMPDIR)\tclObj.obj \
 	$(TMPDIR)\tclPanic.obj \
 	$(TMPDIR)\tclParse.obj \
-	$(TMPDIR)\tclParseExpr.obj \
 	$(TMPDIR)\tclPipe.obj \
 	$(TMPDIR)\tclPkg.obj \
 	$(TMPDIR)\tclPkgConfig.obj \
