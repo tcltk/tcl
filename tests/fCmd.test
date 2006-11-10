@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.56 2006/11/03 00:34:52 hobbs Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.57 2006/11/10 01:55:57 das Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -581,7 +581,7 @@ test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} \
     file attributes $td2name -permissions 0755
     file delete -force ~/td1
     set msg
-} "1 {error copying \"~/td1\" to \"td1\": \"[file join [file dirname ~] [file tail ~] td1 td2]\": permission denied}"
+} "1 {error copying \"~/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": permission denied}"
 test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} \
 	{unix notRoot xdev} {
     cleanup /tmp

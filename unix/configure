@@ -7608,6 +7608,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NO_COREFOUNDATION_64 1
 _ACEOF
 
+                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
 		    fi
 		fi
 	    fi
@@ -12927,6 +12928,7 @@ _ACEOF
 #	in struct stat.  But we might be able to use fstatfs instead.
 #--------------------------------------------------------------------
 
+
 echo "$as_me:$LINENO: checking for struct stat.st_blksize" >&5
 echo $ECHO_N "checking for struct stat.st_blksize... $ECHO_C" >&6
 if test "${ac_cv_member_struct_stat_st_blksize+set}" = set; then
@@ -13147,6 +13149,7 @@ fi
 #       Some system have no memcmp or it does not work with 8 bit
 #       data, this checks it and add memcmp.o to LIBOBJS if needed
 #--------------------------------------------------------------------
+
 echo "$as_me:$LINENO: checking for working memcmp" >&5
 echo $ECHO_N "checking for working memcmp... $ECHO_C" >&6
 if test "${ac_cv_func_memcmp_working+set}" = set; then
@@ -13234,6 +13237,7 @@ esac
 #       have no memmove (we assume they have bcopy instead).
 #       {The replacement define is in compat/string.h}
 #--------------------------------------------------------------------
+
 echo "$as_me:$LINENO: checking for memmove" >&5
 echo $ECHO_N "checking for memmove... $ECHO_C" >&6
 if test "${ac_cv_func_memmove+set}" = set; then

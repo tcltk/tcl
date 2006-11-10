@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.150 2006/10/23 19:42:19 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.151 2006/11/10 01:55:58 das Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -242,6 +242,7 @@ SC_TIME_HANDLER
 #	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field
 #	in struct stat.  But we might be able to use fstatfs instead.
 #--------------------------------------------------------------------
+
 AC_STRUCT_ST_BLKSIZE
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
@@ -249,6 +250,7 @@ AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 #       Some system have no memcmp or it does not work with 8 bit
 #       data, this checks it and add memcmp.o to LIBOBJS if needed
 #--------------------------------------------------------------------
+
 AC_FUNC_MEMCMP
 
 #--------------------------------------------------------------------
@@ -256,6 +258,7 @@ AC_FUNC_MEMCMP
 #       have no memmove (we assume they have bcopy instead).
 #       {The replacement define is in compat/string.h}
 #--------------------------------------------------------------------
+
 AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_MEMMOVE, 1, [Do we have memmove()?])
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
