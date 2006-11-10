@@ -2135,7 +2135,10 @@
 				INSTALL_PATH = "${BINDIR}";
 				LIBDIR = "${PREFIX}/lib";
 				MANDIR = "${PREFIX}/man";
-				OTHER_LDFLAGS = "-headerpad_max_install_names";
+				OTHER_LDFLAGS = (
+					"-headerpad_max_install_names",
+					"-Wl,-no_arch_warnings",
+				);
 				PER_ARCH_CFLAGS_ppc = "-mcpu=G3 -mtune=G4";
 				PER_ARCH_CFLAGS_ppc64 = "-mcpu=G5 -mpowerpc64";
 				PREBINDING = NO;
