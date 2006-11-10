@@ -55,7 +55,6 @@
 		F96D45AC08F272BC004A47F5 /* tclObj.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F0D08F272A7004A47F5 /* tclObj.c */; };
 		F96D45AD08F272BC004A47F5 /* tclPanic.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F0E08F272A7004A47F5 /* tclPanic.c */; };
 		F96D45AE08F272BC004A47F5 /* tclParse.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F0F08F272A7004A47F5 /* tclParse.c */; };
-		F96D45AF08F272BC004A47F5 /* tclParseExpr.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F1008F272A7004A47F5 /* tclParseExpr.c */; };
 		F96D45B008F272BC004A47F5 /* tclPathObj.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F1108F272A7004A47F5 /* tclPathObj.c */; };
 		F96D45B108F272BC004A47F5 /* tclPipe.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F1208F272A7004A47F5 /* tclPipe.c */; };
 		F96D45B208F272BC004A47F5 /* tclPkg.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3F1308F272A7004A47F5 /* tclPkg.c */; };
@@ -453,7 +452,6 @@
 		F96D3F0D08F272A7004A47F5 /* tclObj.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclObj.c; sourceTree = "<group>"; };
 		F96D3F0E08F272A7004A47F5 /* tclPanic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclPanic.c; sourceTree = "<group>"; };
 		F96D3F0F08F272A7004A47F5 /* tclParse.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclParse.c; sourceTree = "<group>"; };
-		F96D3F1008F272A7004A47F5 /* tclParseExpr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclParseExpr.c; sourceTree = "<group>"; };
 		F96D3F1108F272A7004A47F5 /* tclPathObj.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclPathObj.c; sourceTree = "<group>"; };
 		F96D3F1208F272A7004A47F5 /* tclPipe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclPipe.c; sourceTree = "<group>"; };
 		F96D3F1308F272A7004A47F5 /* tclPkg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclPkg.c; sourceTree = "<group>"; };
@@ -1250,7 +1248,6 @@
 				F96D3F0D08F272A7004A47F5 /* tclObj.c */,
 				F96D3F0E08F272A7004A47F5 /* tclPanic.c */,
 				F96D3F0F08F272A7004A47F5 /* tclParse.c */,
-				F96D3F1008F272A7004A47F5 /* tclParseExpr.c */,
 				F96D3F1108F272A7004A47F5 /* tclPathObj.c */,
 				F96D3F1208F272A7004A47F5 /* tclPipe.c */,
 				F96D3F1308F272A7004A47F5 /* tclPkg.c */,
@@ -1895,7 +1892,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ \"${ACTION:-build}\" == \"build\" ]; then\ncd \"${TARGET_TEMP_DIR}\"; rm -rf \"${DERIVED_FILE_DIR}\"; mkdir -p \"${DERIVED_FILE_DIR}\"\nprintf '%s%s%s%s%s' '\npackage require tcltest 2.2\nnamespace import tcltest::*\nconfigure -testdir [file normalize {' \"${TCL_SRCROOT}\" '/tests}]\nconfigure -tmpdir [file normalize {' \"${DERIVED_FILE_DIR}\" '}]\nconfigure -verbose [concat [configure -verbose] line]\nrunAllTests\n' | \"${TEST_RIG}\"; TEST_RIG_RESULT=$?\n[ ${TEST_RIG_RESULT} -ne 0 ] && echo \"tcltest:0: error: tcltest exited abnormally with code ${TEST_RIG_RESULT}.\"\nexit ${TEST_RIG_RESULT}\nfi";
+			shellScript = "if [ \"${ACTION:-build}\" == \"build\" ]; then\ncd \"${TARGET_TEMP_DIR}\"; rm -rf \"${DERIVED_FILE_DIR}\"; mkdir -p \"${DERIVED_FILE_DIR}\"\nprintf '%s%s%s%s%s' '\npackage require tcltest 2.2\nnamespace import tcltest::*\nconfigure -testdir [file normalize {' \"${TCL_SRCROOT}\" '/tests}]\nconfigure -tmpdir [file normalize {' \"${DERIVED_FILE_DIR}\" '}]\nconfigure -verbose [concat [configure -verbose] line]\n# following test only fails when testsuite is run from inside Xcode, so skip it\nconfigure -skip [concat [configure -verbose] stack-3.1]\nrunAllTests\n' | \"${TEST_RIG}\"; TEST_RIG_RESULT=$?\n[ ${TEST_RIG_RESULT} -ne 0 ] && echo \"tcltest:0: error: tcltest exited abnormally with code ${TEST_RIG_RESULT}.\"\nexit ${TEST_RIG_RESULT}\nfi";
 		};
 		F9A5C5F508F651A2008AE941 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1969,7 +1966,6 @@
 				F96D45AC08F272BC004A47F5 /* tclObj.c in Sources */,
 				F96D45AD08F272BC004A47F5 /* tclPanic.c in Sources */,
 				F96D45AE08F272BC004A47F5 /* tclParse.c in Sources */,
-				F96D45AF08F272BC004A47F5 /* tclParseExpr.c in Sources */,
 				F96D45B008F272BC004A47F5 /* tclPathObj.c in Sources */,
 				F96D45B108F272BC004A47F5 /* tclPipe.c in Sources */,
 				F96D45B208F272BC004A47F5 /* tclPkg.c in Sources */,
