@@ -1,3 +1,18 @@
+2006-11-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/fCmd.test (fCmd-6.26): fix failure when env(HOME) path contains
+	symlinks.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: remove tclParseExpr.c; when
+	running testsuite from inside Xcdoe, skip stack-3.1 (it only fails
+	under those circumstances).
+
+	* unix/tcl.m4 (Darwin): suppress linker arch warnings when building
+	universal for both 32 & 64 bit and no 64bit CoreFoundation is
+	available; sync with tk tcl.m4 change.
+	* unix/configure.in: whitespace.
+	* unix/configure: autoconf-2.59
+
 2006-11-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c (removed):	Moved all the code of
