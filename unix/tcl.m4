@@ -331,6 +331,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
 
     AC_SUBST(TCL_VERSION)
+    AC_SUBST(TCL_PATCH_LEVEL)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
 
@@ -1648,6 +1649,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    if test $tcl_cv_lib_corefoundation_64 = no; then
 			AC_DEFINE(NO_COREFOUNDATION_64, 1,
 			    [Is Darwin CoreFoundation unavailable for 64-bit?])
+                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
 		    fi
 		fi
 	    fi
