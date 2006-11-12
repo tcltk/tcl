@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.135 2006/10/28 22:49:30 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.136 2006/11/12 23:23:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -320,6 +320,8 @@ TclIntStubs tclIntStubs = {
     TclObjBeingDeleted, /* 226 */
     TclSetNsPath, /* 227 */
     TclObjInterpProcCore, /* 228 */
+    TclPtrMakeUpvar, /* 229 */
+    TclObjLookupVar, /* 230 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

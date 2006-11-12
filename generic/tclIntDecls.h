@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.93 2006/10/28 22:49:30 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.94 2006/11/12 23:23:20 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1040,6 +1040,22 @@ EXTERN int		TclObjInterpProcCore _ANSI_ARGS_((
 				int isLambda, int skip, 
 				ProcErrorProc errorProc));
 #endif
+#ifndef TclPtrMakeUpvar_TCL_DECLARED
+#define TclPtrMakeUpvar_TCL_DECLARED
+/* 229 */
+EXTERN int		TclPtrMakeUpvar _ANSI_ARGS_((Tcl_Interp * interp, 
+				Var * otherP1Ptr, CONST char * myName, 
+				int myFlags, int index));
+#endif
+#ifndef TclObjLookupVar_TCL_DECLARED
+#define TclObjLookupVar_TCL_DECLARED
+/* 230 */
+EXTERN Var *		TclObjLookupVar _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * part1Ptr, CONST char * part2, 
+				int flags, CONST char * msg, 
+				CONST int createPart1, CONST int createPart2, 
+				Var ** arrayPtrPtr));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1289,6 +1305,8 @@ typedef struct TclIntStubs {
     int (*tclObjBeingDeleted) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 226 */
     void (*tclSetNsPath) _ANSI_ARGS_((Namespace * nsPtr, int pathLength, Tcl_Namespace * pathAry[])); /* 227 */
     int (*tclObjInterpProcCore) _ANSI_ARGS_((register Tcl_Interp * interp, CallFrame * framePtr, Tcl_Obj * procNameObj, int isLambda, int skip, ProcErrorProc errorProc)); /* 228 */
+    int (*tclPtrMakeUpvar) _ANSI_ARGS_((Tcl_Interp * interp, Var * otherP1Ptr, CONST char * myName, int myFlags, int index)); /* 229 */
+    Var * (*tclObjLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, CONST char * part2, int flags, CONST char * msg, CONST int createPart1, CONST int createPart2, Var ** arrayPtrPtr)); /* 230 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1989,6 +2007,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclObjInterpProcCore
 #define TclObjInterpProcCore \
 	(tclIntStubsPtr->tclObjInterpProcCore) /* 228 */
+#endif
+#ifndef TclPtrMakeUpvar
+#define TclPtrMakeUpvar \
+	(tclIntStubsPtr->tclPtrMakeUpvar) /* 229 */
+#endif
+#ifndef TclObjLookupVar
+#define TclObjLookupVar \
+	(tclIntStubsPtr->tclObjLookupVar) /* 230 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
