@@ -1,7 +1,12 @@
+2006-11-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h, generic/tclInt.decls: Transfer TclPtrMakeUpvar and
+	TclObjLookupVar to the internal stubs table.
+
 2006-11-10  Daniel Steffen  <das@users.sourceforge.net>
 
-	* tests/fCmd.test (fCmd-6.26): fix failure when env(HOME) path contains
-	symlinks.
+	* tests/fCmd.test (fCmd-6.26): fix failure when env(HOME) path
+	contains symlinks.
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: remove tclParseExpr.c; when
 	running testsuite from inside Xcdoe, skip stack-3.1 (it only fails
