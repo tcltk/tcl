@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.293 2006/11/09 15:19:03 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.294 2006/11/12 23:15:41 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2151,9 +2151,6 @@ MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Namespace *nsPtr, int flags);
 MODULE_SCOPE Tcl_Obj *	TclObjPrintf(CONST char *format, ...);
-MODULE_SCOPE int	TclPtrMakeUpvar (Tcl_Interp *interp,
-			    Var *otherP1Ptr, CONST char *myName,
-	                    int myFlags, int index);
 MODULE_SCOPE int	TclParseBackslash(CONST char *src,
 			    int numBytes, int *readPtr, char *dst);
 MODULE_SCOPE int	TclParseHex(CONST char *src, int numBytes,
@@ -2596,10 +2593,6 @@ MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    CONST int flags, CONST char *msg,
 			    CONST int createPart1, CONST int createPart2,
 			    Var *arrayPtr);
-MODULE_SCOPE Var *	TclObjLookupVar(Tcl_Interp *interp,
-			    Tcl_Obj *part1Ptr, CONST char *part2, int flags,
-			    CONST char *msg, CONST int createPart1,
-			    CONST int createPart2, Var **arrayPtrPtr);
 MODULE_SCOPE Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, CONST char *part1,
 			    CONST char *part2, CONST int flags);

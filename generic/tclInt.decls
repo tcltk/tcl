@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.103 2006/10/28 22:48:42 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.104 2006/11/12 23:15:40 dkf Exp $
 
 library tcl
 
@@ -903,6 +903,15 @@ declare 228 generic {
     int TclObjInterpProcCore(register Tcl_Interp *interp, CallFrame *framePtr,
             Tcl_Obj *procNameObj, int isLambda, int skip,
             ProcErrorProc errorProc)
+}
+declare 229 generic {
+    int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
+	    CONST char *myName, int myFlags, int index)
+}
+declare 230 generic {
+    Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+	    CONST char *part2, int flags, CONST char *msg,
+	    CONST int createPart1, CONST int createPart2, Var **arrayPtrPtr)
 }
 
 ##############################################################################
