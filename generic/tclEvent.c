@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.68 2006/09/19 22:07:34 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.69 2006/11/13 08:23:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -721,7 +721,7 @@ Tcl_Exit(
 	 * returns, so critical is this dependcy.
 	 */
 
-	currentAppExitPtr((ClientData) status);
+	currentAppExitPtr((ClientData) INT2PTR(status));
 	Tcl_Panic("AppExitProc returned unexpectedly");
     } else {
 	/*

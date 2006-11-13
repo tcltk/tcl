@@ -191,7 +191,7 @@ void
 TclpThreadExit(
     int status)
 {
-    pthread_exit((VOID *)status);
+    pthread_exit(INT2PTR(status));
 }
 #endif /* TCL_THREADS */
 

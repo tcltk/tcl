@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.26 2006/11/02 15:58:09 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.27 2006/11/13 08:23:09 das Exp $
  */
 
 #include "tclInt.h"
@@ -293,7 +293,7 @@ TclCreateAbsoluteTimerHandler(
     timerHandlerPtr->proc = proc;
     timerHandlerPtr->clientData = clientData;
     tsdPtr->lastTimerId++;
-    timerHandlerPtr->token = (Tcl_TimerToken) tsdPtr->lastTimerId;
+    timerHandlerPtr->token = (Tcl_TimerToken) INT2PTR(tsdPtr->lastTimerId);
 
     /*
      * Add the event to the queue in the correct position
@@ -567,7 +567,7 @@ TimerHandlerEventProc(
 	 * Bail out if the next timer is of a newer generation.
 	 */
 
-	if ((currentTimerId - (int)timerHandlerPtr->token) < 0) {
+	if ((currentTimerId - PTR2INT(timerHandlerPtr->token)) < 0) {
 	    break;
 	}
 

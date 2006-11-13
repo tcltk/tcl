@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.249 2006/11/02 15:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.250 2006/11/13 08:23:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -659,7 +659,7 @@ TclStackAlloc(
 
     eePtr->tosPtr += numWords;
     *(eePtr->tosPtr-1) = (Tcl_Obj *) stackRefCountPtr;
-    *(eePtr->tosPtr)   = (Tcl_Obj *) numWords;
+    *(eePtr->tosPtr)   = (Tcl_Obj *) INT2PTR(numWords);
 
     return (char *) (tosPtr+1);
 }
@@ -673,7 +673,7 @@ TclStackFree(
     char **stackRefCountPtr;
 
     stackRefCountPtr = (char **) *(eePtr->tosPtr-1);
-    eePtr->tosPtr -= (int) *(eePtr->tosPtr);
+    eePtr->tosPtr -= PTR2INT(*(eePtr->tosPtr));
 
     --*stackRefCountPtr;
     if (*stackRefCountPtr == (char *) 0) {
@@ -2645,7 +2645,7 @@ TclExecuteByteCode(
 	TRACE(("%d => %.20s ", opnd, O2S(*tosPtr)));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, Tcl_GetString(*tosPtr));
 	if (hPtr != NULL) {
-	    int jumpOffset = (int) Tcl_GetHashValue(hPtr);
+	    int jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    TRACE_APPEND(("found in table, new pc %u\n",
 		    (unsigned int)(pc - codePtr->codeStart + jumpOffset)));
