@@ -1,3 +1,27 @@
+2006-11-13  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	fix gcc warnings about 'cast to/from
+	* generic/tclEncoding.c:	pointer from/to integer of different
+	* generic/tclEvent.c:		size' on 64-bit platforms by casting to
+	* generic/tclExecute.c:		intermediate types intptr_t/uintptr_t
+	* generic/tclHash.c:		via new PTR2INT(), INT2PTR(),
+	* generic/tclIO.c:		PTR2UINT() and UINT2PTR() macros.
+	* generic/tclInt.h:		[Patch 1592791]
+	* generic/tclProc.c:
+	* generic/tclTest.c:
+	* generic/tclThreadStorage.c:
+	* generic/tclTimer.c:
+	* generic/tclUtil.c:
+	* unix/configure.in:
+	* unix/tclUnixChan.c:
+	* unix/tclUnixPipe.c:
+	* unix/tclUnixPort.h:
+	* unix/tclUnixTest.c:
+	* unix/tclUnixThrd.c:
+
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
 2006-11-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInt.h, generic/tclInt.decls: Transfer TclPtrMakeUpvar and

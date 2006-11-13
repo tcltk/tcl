@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.151 2006/11/10 01:55:58 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.152 2006/11/13 08:23:11 das Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -315,7 +315,7 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
-AC_CACHE_CHECK([for socklen_t], ac_cv_type_socklen_t, [
+AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
     AC_EGREP_CPP(changequote(<<,>>)dnl
 <<(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]>>dnl
 changequote([,]),[
@@ -325,10 +325,42 @@ changequote([,]),[
     #include <stdlib.h>
     #include <stddef.h>
     #endif
-    ], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)])
-if test $ac_cv_type_socklen_t = no; then
+    ], tcl_cv_type_socklen_t=yes, tcl_cv_type_socklen_t=no)])
+if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, unsigned, [What is the type of socklen_t?])
 fi
+
+AC_CHECK_TYPE([intptr_t], [
+    AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
+    AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
+    for tcl_cv_intptr_t in "int" "long" "long long" none; do
+	if test "$tcl_cv_intptr_t" != none; then
+	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
+		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])], 
+		[tcl_ok=yes], [tcl_ok=no])
+	    test "$tcl_ok" = yes && break; fi
+    done])
+    if test "$tcl_cv_intptr_t" != none; then
+	AC_DEFINE_UNQUOTED([intptr_t], [$tcl_cv_intptr_t], [Signed integer
+	   type wide enough to hold a pointer.])
+    fi
+])
+AC_CHECK_TYPE([uintptr_t], [
+    AC_DEFINE([HAVE_UINTPTR_T], 1, [Do we have the uintptr_t type?])], [
+    AC_CACHE_CHECK([for pointer-size unsigned integer type], tcl_cv_uintptr_t, [
+    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
+	    none; do
+	if test "$tcl_cv_uintptr_t" != none; then
+	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
+		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])], 
+		[tcl_ok=yes], [tcl_ok=no])
+	    test "$tcl_ok" = yes && break; fi
+    done])
+    if test "$tcl_cv_uintptr_t" != none; then
+	AC_DEFINE_UNQUOTED([uintptr_t], [$tcl_cv_uintptr_t], [Unsigned integer
+	   type wide enough to hold a pointer.])
+    fi
+])
 
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)

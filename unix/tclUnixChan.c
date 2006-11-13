@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.72 2006/09/07 09:17:33 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.73 2006/11/13 08:23:11 das Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -729,7 +729,7 @@ FileGetHandleProc(
     FileState *fsPtr = (FileState *) instanceData;
 
     if (direction & fsPtr->validMask) {
-	*handlePtr = (ClientData) fsPtr->fd;
+	*handlePtr = (ClientData) INT2PTR(fsPtr->fd);
 	return TCL_OK;
     } else {
 	return TCL_ERROR;
@@ -1900,7 +1900,7 @@ Tcl_MakeFileChannel(
 {
     FileState *fsPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
-    int fd = (int) handle;
+    int fd = PTR2INT(handle);
     Tcl_ChannelType *channelTypePtr;
     struct sockaddr sockaddr;
     socklen_t sockaddrLen = sizeof(sockaddr);
@@ -1921,7 +1921,7 @@ Tcl_MakeFileChannel(
     if (getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0
 	    && sockaddrLen > 0
 	    && sockaddr.sa_family == AF_INET) {
-	return MakeTcpClientChannelMode((ClientData) fd, mode);
+	return MakeTcpClientChannelMode((ClientData) INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;
 	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
@@ -2423,7 +2423,7 @@ TcpGetHandleProc(
 {
     TcpState *statePtr = (TcpState *) instanceData;
 
-    *handlePtr = (ClientData)statePtr->fd;
+    *handlePtr = (ClientData) INT2PTR(statePtr->fd);
     return TCL_OK;
 }
 
@@ -2792,7 +2792,7 @@ MakeTcpClientChannelMode(
     char channelName[16 + TCL_INTEGER_SPACE];
 
     statePtr = (TcpState *) ckalloc((unsigned) sizeof(TcpState));
-    statePtr->fd = (int) sock;
+    statePtr->fd = PTR2INT(sock);
     statePtr->flags = 0;
     statePtr->acceptProc = NULL;
     statePtr->acceptProcData = NULL;
@@ -2998,7 +2998,7 @@ TclpGetDefaultStdChannel(
 #undef ZERO_OFFSET
 #undef ERROR_OFFSET
 
-    channel = Tcl_MakeFileChannel((ClientData) fd, mode);
+    channel = Tcl_MakeFileChannel((ClientData) INT2PTR(fd), mode);
     if (channel == NULL) {
 	return NULL;
     }
@@ -3088,7 +3088,7 @@ Tcl_GetOpenFile(
 	if (Tcl_GetChannelHandle(chan,
 		(forWriting ? TCL_WRITABLE : TCL_READABLE),
 		(ClientData*) &data) == TCL_OK) {
-	    fd = (int) data;
+	    fd = PTR2INT(data);
 
 	    /*
 	     * The call to fdopen below is probably dangerous, since it will
