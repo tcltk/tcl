@@ -1,3 +1,11 @@
+2006-11-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:	When [gets] on a binary channel needs to use
+	the "iso8859-1" encoding, save a copy of that encoding per-thread to
+	avoid repeated freeing and re-loading of it from the file system.
+	This replaces the cached copy of this encoding that the platform
+	initialization code used to keep in pre-8.5 releases.
+
 2006-11-13  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	fix gcc warnings about 'cast to/from
