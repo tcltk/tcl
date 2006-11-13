@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.110 2006/11/08 11:41:44 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.111 2006/11/13 08:23:08 das Exp $
  */
 
 #include "tclInt.h"
@@ -9414,7 +9414,7 @@ HaveVersion(
 {
     Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
 
-    return ((int)actualVersion) >= ((int)minimumVersion);
+    return (PTR2INT(actualVersion)) >= (PTR2INT(minimumVersion));
 }
 
 /*

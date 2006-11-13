@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.74 2006/11/02 15:58:09 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.75 2006/11/13 08:23:09 das Exp $
  */
 
 #include "tclInt.h"
@@ -2635,7 +2635,7 @@ TclSetProcessGlobalValue(
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
+    hPtr = Tcl_CreateHashEntry(cacheMap, (char *) INT2PTR(pgvPtr->epoch), &dummy);
     Tcl_SetHashValue(hPtr, (ClientData) newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -2697,7 +2697,7 @@ TclGetProcessGlobalValue(
 	}
     }
     cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, (char *)epoch);
+    hPtr = Tcl_FindHashEntry(cacheMap, (char *) INT2PTR(epoch));
     if (NULL == hPtr) {
 	int dummy;
 
@@ -2730,7 +2730,7 @@ TclGetProcessGlobalValue(
 	 */
 
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
-	hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
+	hPtr = Tcl_CreateHashEntry(cacheMap, (char *) INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, (ClientData) value);
 	Tcl_IncrRefCount(value);

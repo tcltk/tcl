@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.55 2006/10/31 22:24:39 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.56 2006/11/13 08:23:11 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -103,6 +103,12 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 #endif
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
+#endif
+#if HAVE_INTTYPES_H
+#   include <inttypes.h>
+#endif
+#if HAVE_STDINT_H
+#   include <stdint.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #   include <unistd.h>

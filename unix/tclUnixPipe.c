@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.35 2006/08/02 20:04:11 das Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.36 2006/11/13 08:23:11 das Exp $
  */
 
 #include "tclInt.h"
@@ -25,8 +25,8 @@
  * the same as NULL.
  */
 
-#define MakeFile(fd)	((TclFile)(((int)fd)+1))
-#define GetFd(file)	(((int)file)-1)
+#define MakeFile(fd)	((TclFile)INT2PTR(((int)(fd))+1))
+#define GetFd(file)	(PTR2INT(file)-1)
 
 /*
  * This structure describes per-instance state of a pipe based channel.
@@ -113,7 +113,7 @@ TclpMakeFile(
 
     if (Tcl_GetChannelHandle(channel, direction,
 	    (ClientData *) &data) == TCL_OK) {
-	return MakeFile((int) data);
+	return MakeFile(PTR2INT(data));
     } else {
 	return (TclFile) NULL;
     }
@@ -513,7 +513,7 @@ TclpCreateProcess(
     }
 
     TclpCloseFile(errPipeIn);
-    *pidPtr = (Tcl_Pid) pid;
+    *pidPtr = (Tcl_Pid) INT2PTR(pid);
     return TCL_OK;
 
   error:
@@ -525,7 +525,7 @@ TclpCreateProcess(
 	 * here, since this is the error case. [Bug: 6148]
 	 */
 
-	Tcl_WaitPid((Tcl_Pid) pid, &status, 0);
+	Tcl_WaitPid((Tcl_Pid) INT2PTR(pid), &status, 0);
     }
 
     if (errPipeIn) {
@@ -964,7 +964,7 @@ PipeCloseProc(
 
 	if (pipePtr->errorFile) {
 	    errChan = Tcl_MakeFileChannel(
-		(ClientData) GetFd(pipePtr->errorFile), TCL_READABLE);
+		(ClientData) INT2PTR(GetFd(pipePtr->errorFile)), TCL_READABLE);
 	} else {
 	    errChan = NULL;
 	}
@@ -1157,11 +1157,11 @@ PipeGetHandleProc(
     PipeState *psPtr = (PipeState *) instanceData;
 
     if (direction == TCL_READABLE && psPtr->inFile) {
-	*handlePtr = (ClientData) GetFd(psPtr->inFile);
+	*handlePtr = (ClientData) INT2PTR(GetFd(psPtr->inFile));
 	return TCL_OK;
     }
     if (direction == TCL_WRITABLE && psPtr->outFile) {
-	*handlePtr = (ClientData) GetFd(psPtr->outFile);
+	*handlePtr = (ClientData) INT2PTR(GetFd(psPtr->outFile));
 	return TCL_OK;
     }
     return TCL_ERROR;
@@ -1192,11 +1192,11 @@ Tcl_WaitPid(
     int result;
     pid_t real_pid;
 
-    real_pid = (pid_t) pid;
+    real_pid = (pid_t) PTR2INT(pid);
     while (1) {
 	result = (int) waitpid(real_pid, statPtr, options);
 	if ((result != -1) || (errno != EINTR)) {
-	    return (Tcl_Pid) result;
+	    return (Tcl_Pid) INT2PTR(result);
 	}
     }
 }
