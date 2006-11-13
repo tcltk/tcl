@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.11 2006/11/13 08:23:09 das Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.12 2006/11/13 22:39:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -299,7 +299,7 @@ TclInitThreadStorage(void)
      * We also initialize the cache.
      */
 
-    memset(&threadStorageCache, 0,
+    memset((void*) &threadStorageCache, 0,
 	    sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
 
     /*
@@ -529,7 +529,7 @@ TclFinalizeThreadStorage(void)
      * Clear out the thread storage cache as well.
      */
 
-    memset(&threadStorageCache, 0,
+    memset((void*) &threadStorageCache, 0,
 	    sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
 
     /*
