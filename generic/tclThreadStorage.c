@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.10 2006/11/07 14:26:26 dkf Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.11 2006/11/13 08:23:09 das Exp $
  */
 
 #include "tclInt.h"
@@ -189,7 +189,7 @@ static Tcl_HashTable *
 ThreadStorageGetHashTable(
     Tcl_ThreadId id)		/* Id of thread to get hash table for */
 {
-    int index = (unsigned) id % STORAGE_CACHE_SLOTS;
+    int index = PTR2UINT(id) % STORAGE_CACHE_SLOTS;
     Tcl_HashEntry *hPtr;
     int new;
 
@@ -397,7 +397,7 @@ TclpFinalizeThreadDataThread(void)
 {
     Tcl_ThreadId id = Tcl_GetCurrentThread();
 				/* Id of the thread to finalize. */
-    int index = (unsigned int)id % STORAGE_CACHE_SLOTS;
+    int index = PTR2UINT(id) % STORAGE_CACHE_SLOTS;
     Tcl_HashEntry *hPtr;	/* Hash entry for current thread in master
 				 * table. */
     Tcl_HashTable* hashTablePtr;/* Pointer to the hash table holding TSD

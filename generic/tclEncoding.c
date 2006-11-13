@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.50 2006/11/02 16:14:20 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.51 2006/11/13 08:23:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -2760,7 +2760,7 @@ EscapeToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    state = (int) *statePtr;
+    state = PTR2INT(*statePtr);
     if (flags & TCL_ENCODING_START) {
 	state = 0;
     }
@@ -2899,7 +2899,7 @@ EscapeToUtfProc(
 	numChars++;
     }
 
-    *statePtr = (Tcl_EncodingState) state;
+    *statePtr = (Tcl_EncodingState) INT2PTR(state);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2989,7 +2989,7 @@ EscapeFromUtfProc(
 	memcpy((VOID *)dst, (VOID *)dataPtr->init, (size_t)dataPtr->initLen);
 	dst += dataPtr->initLen;
     } else {
-	state = (int) *statePtr;
+	state = PTR2INT(*statePtr);
     }
 
     encodingPtr = GetTableEncoding(dataPtr, state);
@@ -3103,7 +3103,7 @@ EscapeFromUtfProc(
 	}
     }
 
-    *statePtr = (Tcl_EncodingState) state;
+    *statePtr = (Tcl_EncodingState) INT2PTR(state);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;

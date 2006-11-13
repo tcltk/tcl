@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.35 2006/11/09 16:52:30 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.36 2006/11/13 08:23:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -1246,7 +1246,7 @@ TclCompileExpr(
 		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&opHashTable,
 			operatorTable[i].name, &new);
 		if (new) {
-		    Tcl_SetHashValue(hPtr, (ClientData) i);
+		    Tcl_SetHashValue(hPtr, (ClientData) INT2PTR(i));
 		}
 	    }
 	    opTableInitialized = 1;
@@ -1387,7 +1387,7 @@ CompileSubExpr(
 	    break;
 	}
 	Tcl_DStringFree(&opBuf);
-	opIndex = (int) Tcl_GetHashValue(hPtr);
+	opIndex = PTR2INT(Tcl_GetHashValue(hPtr));
 	opDescPtr = &(operatorTable[opIndex]);
 
 	/*
