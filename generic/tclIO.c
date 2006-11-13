@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.111 2006/11/13 08:23:08 das Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.112 2006/11/13 17:51:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -48,6 +48,7 @@ typedef struct ThreadSpecificData {
     int stdoutInitialized;
     Tcl_Channel stderrChannel;	/* Static variable for the stderr channel. */
     int stderrInitialized;
+    Tcl_Encoding binaryEncoding;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -69,8 +70,7 @@ static void		CleanupChannelHandlers(Tcl_Interp *interp,
 			    Channel *chanPtr);
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
-static void		CommonGetsCleanup(Channel *chanPtr,
-			    Tcl_Encoding encoding);
+static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyAndTranslateBuffer(ChannelState *statePtr,
 			    char *result, int space);
 static int		CopyBuffer(Channel *chanPtr, char *result, int space);
@@ -95,6 +95,7 @@ static int		FilterInputBytes(Channel *chanPtr,
 			    GetsState *statePtr);
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
+static void		FreeBinaryEncoding(ClientData clientData);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
 static int		HaveVersion(Tcl_ChannelType *typePtr,
@@ -3813,7 +3814,15 @@ Tcl_GetsObj(
      */
 
     if (encoding == NULL) {
-	encoding = Tcl_GetEncoding(NULL, "iso8859-1");
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+	if (tsdPtr->binaryEncoding == NULL) {
+	    tsdPtr->binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
+	    Tcl_CreateThreadExitHandler(FreeBinaryEncoding, NULL);
+	}
+	encoding = tsdPtr->binaryEncoding;
+	if (encoding == NULL) {
+	    Tcl_Panic("attempted gets on binary channel where no iso8859-1 encoding available");
+	}
     }
 
     /*
@@ -3994,7 +4003,7 @@ Tcl_GetsObj(
 		 */
 
 		Tcl_SetObjLength(objPtr, oldLength);
-		CommonGetsCleanup(chanPtr, encoding);
+		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
 		goto done;
 	    }
@@ -4029,7 +4038,7 @@ Tcl_GetsObj(
      */
 
     Tcl_SetObjLength(objPtr, eol - objPtr->bytes);
-    CommonGetsCleanup(chanPtr, encoding);
+    CommonGetsCleanup(chanPtr);
     statePtr->flags &= ~CHANNEL_BLOCKED;
     copiedTotal = gs.totalChars + gs.charsWrote - skip;
     goto done;
@@ -4050,7 +4059,7 @@ Tcl_GetsObj(
     for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
 	bufPtr->nextRemoved = BUFFER_PADDING;
     }
-    CommonGetsCleanup(chanPtr, encoding);
+    CommonGetsCleanup(chanPtr);
 
     statePtr->inputEncodingState = oldState;
     statePtr->inputEncodingFlags = oldFlags;
@@ -4078,6 +4087,30 @@ Tcl_GetsObj(
   done:
     UpdateInterest(chanPtr);
     return copiedTotal;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * FreeBinaryEncoding --
+ *	Frees any "iso8859-1" Tcl_Encoding created by [gets] on a binary
+ *	channel in a thread as part of that thread's finalization.
+ *
+ * Results:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static void
+FreeBinaryEncoding(
+    ClientData dummy)	/* Not used */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (tsdPtr->binaryEncoding != NULL) {
+	Tcl_FreeEncoding(tsdPtr->binaryEncoding);
+	tsdPtr->binaryEncoding = NULL;
+    }
 }
 
 /*
@@ -4361,8 +4394,7 @@ PeekAhead(
 
 static void
 CommonGetsCleanup(
-    Channel *chanPtr,
-    Tcl_Encoding encoding)
+    Channel *chanPtr)
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
@@ -4403,9 +4435,6 @@ CommonGetsCleanup(
 	    }
 	    bufPtr = nextPtr;
 	}
-    }
-    if (statePtr->encoding == NULL) {
-	Tcl_FreeEncoding(encoding);
     }
 }
 
