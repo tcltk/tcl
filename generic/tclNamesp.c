@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.117 2006/11/02 16:57:54 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.118 2006/11/14 16:30:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3705,6 +3705,10 @@ NamespaceForgetCmd(
  *	treated as an error. But if the "-force" option is included, then
  *	existing commands are overwritten by the imported commands.
  *
+ *	If there are no pattern arguments and the "-force" flag isn't given,
+ *	this command returns the list of commands currently imported in
+ *	the current namespace.
+ *
  * Results:
  *	Returns TCL_OK if successful, and TCL_ERROR if anything goes wrong.
  *
@@ -3744,6 +3748,24 @@ NamespaceImportCmd(
 	    allowOverwrite = 1;
 	    firstArg++;
 	}
+    } else {
+	/* objc == 2;  Command is just [namespace import];
+	 * Introspection form to return list of imported commands. */
+	Tcl_HashEntry *hPtr;
+	Tcl_HashSearch search;
+	Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+	Tcl_Obj *listPtr = Tcl_NewObj();
+
+	for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+  	    Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	    if (cmdPtr->deleteProc == DeleteImportedCmd) {
+		Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(
+			Tcl_GetHashKey(&nsPtr->cmdTable, hPtr) ,-1));
+	    }
+	}
+	Tcl_SetObjResult(interp, listPtr);
+	return TCL_OK;
     }
 
     /*
