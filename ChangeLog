@@ -1,9 +1,15 @@
+2006-11-14  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP#261 IMPLEMENTATION
+
+	* generic/tclNamesp.c:	[namespace import] with 0 arguments introspects
+	the list of imported commands.
+
 2006-11-13  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclThreadStorage.c (Tcl_InitThreadStorage, 
 	Tcl_FinalizeThreadStorage): Silence a compiler warning about
 	                            presenting a volatile pointer to 'memset'.
-	
 	
 2006-11-13  Don Porter  <dgp@users.sourceforge.net>
 
