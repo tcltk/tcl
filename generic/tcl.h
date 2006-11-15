@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.226 2006/10/31 15:23:40 msofer Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.227 2006/11/15 14:58:26 dgp Exp $
  */
 
 #ifndef _TCL
@@ -130,20 +130,6 @@ extern "C" {
 #else
 #define TCL_DECLARE_MUTEX(name)
 #endif
-
-/*
- * Macros that eliminate the overhead of the thread synchronization functions
- * when compiling without thread support.
- */
-
-#ifndef TCL_THREADS
-#define Tcl_MutexLock(mutexPtr)
-#define Tcl_MutexUnlock(mutexPtr)
-#define Tcl_MutexFinalize(mutexPtr)
-#define Tcl_ConditionNotify(condPtr)
-#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-#define Tcl_ConditionFinalize(condPtr)
-#endif /* TCL_THREADS */
 
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
@@ -831,54 +817,6 @@ void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 
-#ifdef TCL_MEM_DEBUG
-#   define Tcl_IncrRefCount(objPtr) \
-	Tcl_DbIncrRefCount(objPtr, __FILE__, __LINE__)
-#   define Tcl_DecrRefCount(objPtr) \
-	Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
-#   define Tcl_IsShared(objPtr) \
-	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
-#else
-#   define Tcl_IncrRefCount(objPtr) \
-	++(objPtr)->refCount
-    /*
-     * Use empty if ; else to handle use in unbraced outer if/else conditions
-     */
-#   define Tcl_DecrRefCount(objPtr) \
-	if (--(objPtr)->refCount > 0) ; else TclFreeObj(objPtr)
-#   define Tcl_IsShared(objPtr) \
-	((objPtr)->refCount > 1)
-#endif
-
-/*
- * Macros and definitions that help to debug the use of Tcl objects. When
- * TCL_MEM_DEBUG is defined, the Tcl_New declarations are overridden to call
- * debugging versions of the object creation functions.
- */
-
-#ifdef TCL_MEM_DEBUG
-#  define Tcl_NewBignumObj(val) \
-     Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
-#  define Tcl_NewBooleanObj(val) \
-     Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
-#  define Tcl_NewByteArrayObj(bytes, len) \
-     Tcl_DbNewByteArrayObj(bytes, len, __FILE__, __LINE__)
-#  define Tcl_NewDoubleObj(val) \
-     Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
-#  define Tcl_NewIntObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
-#  define Tcl_NewListObj(objc, objv) \
-     Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
-#  define Tcl_NewLongObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
-#  define Tcl_NewObj() \
-     Tcl_DbNewObj(__FILE__, __LINE__)
-#  define Tcl_NewStringObj(bytes, len) \
-     Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
-#  define Tcl_NewWideIntObj(val) \
-     Tcl_DbNewWideIntObj(val, __FILE__, __LINE__)
-#endif /* TCL_MEM_DEBUG */
-
 /*
  * The following structure contains the state needed by Tcl_SaveResult. No-one
  * outside of Tcl should access any of these fields. This structure is
@@ -1362,45 +1300,6 @@ typedef struct Tcl_HashSearch {
 #endif
 
 /*
- * Macros for clients to use to access fields of hash entries:
- */
-
-#define Tcl_GetHashValue(h) ((h)->clientData)
-#define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define Tcl_GetHashKey(tablePtr, h) \
-	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
-		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
-		   ? (h)->key.oneWordValue \
-		   : (h)->key.string))
-#else
-#   define Tcl_GetHashKey(tablePtr, h) \
-	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS) \
-		   ? (h)->key.oneWordValue \
-		   : (h)->key.string))
-#endif
-
-/*
- * Macros to use for clients to use to invoke find and create functions for
- * hash tables:
- */
-
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define Tcl_FindHashEntry(tablePtr, key) \
-	(*((tablePtr)->findProc))(tablePtr, key)
-#   define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
-	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
-#else /* !TCL_PRESERVE_BINARY_COMPATABILITY */
-/*
- * Macro to use new extended version of Tcl_InitHashTable.
- */
-#   define Tcl_InitHashTable(tablePtr, keyType) \
-	Tcl_InitHashTableEx((tablePtr), (keyType), NULL)
-#   define Tcl_FindHashEntry(tablePtr, key) \
-        Tcl_CreateHashEntry((tablePtr), (key), NULL)
-#endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
-
-/*
  * Structure definition for information used to keep track of searches through
  * dictionaries. These fields should not be accessed by code outside
  * tclDictObj.c
@@ -1571,39 +1470,6 @@ typedef void	(Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
  */
 typedef int	(Tcl_DriverTruncateProc) _ANSI_ARGS_((
 		    ClientData instanceData, Tcl_WideInt length));
-
-/*
- * The following declarations either map ckalloc and ckfree to malloc and
- * free, or they map them to functions with all sorts of debugging hooks
- * defined in tclCkalloc.c.
- */
-
-#ifdef TCL_MEM_DEBUG
-
-#   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
-#   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
-#   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-#   define attemptckalloc(x) Tcl_AttemptDbCkalloc(x, __FILE__, __LINE__)
-#   define attemptckrealloc(x,y) Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__)
-
-#else /* !TCL_MEM_DEBUG */
-
-/*
- * If we are not using the debugging allocator, we should call the Tcl_Alloc,
- * et al. routines in order to guarantee that every module is using the same
- * memory allocator both inside and outside of the Tcl library.
- */
-
-#   define ckalloc(x) Tcl_Alloc(x)
-#   define ckfree(x) Tcl_Free(x)
-#   define ckrealloc(x,y) Tcl_Realloc(x,y)
-#   define attemptckalloc(x) Tcl_AttemptAlloc(x)
-#   define attemptckrealloc(x,y) Tcl_AttemptRealloc(x,y)
-#   define Tcl_InitMemory(x)
-#   define Tcl_DumpActiveMemory(x)
-#   define Tcl_ValidateAllMemory(x,y)
-
-#endif /* !TCL_MEM_DEBUG */
 
 /*
  * struct Tcl_ChannelType:
@@ -2354,30 +2220,6 @@ typedef unsigned long mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
 
-#ifndef TCL_NO_DEPRECATED
-    /*
-     * Deprecated Tcl functions:
-     */
-
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-
-    /*
-     * These function have been renamed. The old names are deprecated, but we
-     * define these macros for backwards compatibilty.
-     */
-
-#   define Tcl_Ckalloc		Tcl_Alloc
-#   define Tcl_Ckfree		Tcl_Free
-#   define Tcl_Ckrealloc	Tcl_Realloc
-#   define Tcl_Return		Tcl_SetResult
-#   define Tcl_TildeSubst	Tcl_TranslateFileName
-#   define panic		Tcl_Panic
-#   define panicVA		Tcl_PanicVA
-#endif
-
 /*
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables.
@@ -2436,6 +2278,189 @@ EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
  */
 
 #include "tclPlatDecls.h"
+
+/*
+ * The following declarations either map ckalloc and ckfree to malloc and
+ * free, or they map them to functions with all sorts of debugging hooks
+ * defined in tclCkalloc.c.
+ */
+
+#ifdef TCL_MEM_DEBUG
+
+#   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
+#   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
+#   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
+#   define attemptckalloc(x) Tcl_AttemptDbCkalloc(x, __FILE__, __LINE__)
+#   define attemptckrealloc(x,y) Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__)
+
+#else /* !TCL_MEM_DEBUG */
+
+/*
+ * If we are not using the debugging allocator, we should call the Tcl_Alloc,
+ * et al. routines in order to guarantee that every module is using the same
+ * memory allocator both inside and outside of the Tcl library.
+ */
+
+#   define ckalloc(x) Tcl_Alloc(x)
+#   define ckfree(x) Tcl_Free(x)
+#   define ckrealloc(x,y) Tcl_Realloc(x,y)
+#   define attemptckalloc(x) Tcl_AttemptAlloc(x)
+#   define attemptckrealloc(x,y) Tcl_AttemptRealloc(x,y)
+#   undef  Tcl_InitMemory
+#   define Tcl_InitMemory(x)
+#   undef  Tcl_DumpActiveMemory
+#   define Tcl_DumpActiveMemory(x)
+#   undef  Tcl_ValidateAllMemory
+#   define Tcl_ValidateAllMemory(x,y)
+
+#endif /* !TCL_MEM_DEBUG */
+
+#ifdef TCL_MEM_DEBUG
+#   define Tcl_IncrRefCount(objPtr) \
+	Tcl_DbIncrRefCount(objPtr, __FILE__, __LINE__)
+#   define Tcl_DecrRefCount(objPtr) \
+	Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
+#   define Tcl_IsShared(objPtr) \
+	Tcl_DbIsShared(objPtr, __FILE__, __LINE__)
+#else
+#   define Tcl_IncrRefCount(objPtr) \
+	++(objPtr)->refCount
+    /*
+     * Use empty if ; else to handle use in unbraced outer if/else conditions
+     */
+#   define Tcl_DecrRefCount(objPtr) \
+	if (--(objPtr)->refCount > 0) ; else TclFreeObj(objPtr)
+#   define Tcl_IsShared(objPtr) \
+	((objPtr)->refCount > 1)
+#endif
+
+/*
+ * Macros and definitions that help to debug the use of Tcl objects. When
+ * TCL_MEM_DEBUG is defined, the Tcl_New declarations are overridden to call
+ * debugging versions of the object creation functions.
+ */
+
+#ifdef TCL_MEM_DEBUG
+#  undef  Tcl_NewBignumObj
+#  define Tcl_NewBignumObj(val) \
+     Tcl_DbNewBignumObj(val, __FILE__, __LINE__)
+#  undef  Tcl_NewBooleanObj
+#  define Tcl_NewBooleanObj(val) \
+     Tcl_DbNewBooleanObj(val, __FILE__, __LINE__)
+#  undef  Tcl_NewByteArrayObj
+#  define Tcl_NewByteArrayObj(bytes, len) \
+     Tcl_DbNewByteArrayObj(bytes, len, __FILE__, __LINE__)
+#  undef  Tcl_NewDoubleObj
+#  define Tcl_NewDoubleObj(val) \
+     Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
+#  undef  Tcl_NewIntObj
+#  define Tcl_NewIntObj(val) \
+     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
+#  undef  Tcl_NewListObj
+#  define Tcl_NewListObj(objc, objv) \
+     Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
+#  undef  Tcl_NewLongObj
+#  define Tcl_NewLongObj(val) \
+     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
+#  undef  Tcl_NewObj
+#  define Tcl_NewObj() \
+     Tcl_DbNewObj(__FILE__, __LINE__)
+#  undef  Tcl_NewStringObj
+#  define Tcl_NewStringObj(bytes, len) \
+     Tcl_DbNewStringObj(bytes, len, __FILE__, __LINE__)
+#  undef  Tcl_NewWideIntObj
+#  define Tcl_NewWideIntObj(val) \
+     Tcl_DbNewWideIntObj(val, __FILE__, __LINE__)
+#endif /* TCL_MEM_DEBUG */
+
+/*
+ * Macros for clients to use to access fields of hash entries:
+ */
+
+#define Tcl_GetHashValue(h) ((h)->clientData)
+#define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
+#if TCL_PRESERVE_BINARY_COMPATABILITY
+#   define Tcl_GetHashKey(tablePtr, h) \
+	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
+		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
+		   ? (h)->key.oneWordValue \
+		   : (h)->key.string))
+#else
+#   define Tcl_GetHashKey(tablePtr, h) \
+	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS) \
+		   ? (h)->key.oneWordValue \
+		   : (h)->key.string))
+#endif
+
+/*
+ * Macros to use for clients to use to invoke find and create functions for
+ * hash tables:
+ */
+
+#if TCL_PRESERVE_BINARY_COMPATABILITY
+#   undef  Tcl_FindHashEntry
+#   define Tcl_FindHashEntry(tablePtr, key) \
+	(*((tablePtr)->findProc))(tablePtr, key)
+#   undef  Tcl_CreateHashEntry
+#   define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
+#else /* !TCL_PRESERVE_BINARY_COMPATABILITY */
+/*
+ * Macro to use new extended version of Tcl_InitHashTable.
+ */
+#   undef  Tcl_InitHashTable
+#   define Tcl_InitHashTable(tablePtr, keyType) \
+	Tcl_InitHashTableEx((tablePtr), (keyType), NULL)
+#   undef  Tcl_FindHashEntry
+#   define Tcl_FindHashEntry(tablePtr, key) \
+        Tcl_CreateHashEntry((tablePtr), (key), NULL)
+#endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
+
+/*
+ * Macros that eliminate the overhead of the thread synchronization functions
+ * when compiling without thread support.
+ */
+
+#ifndef TCL_THREADS
+#undef  Tcl_MutexLock
+#define Tcl_MutexLock(mutexPtr)
+#undef  Tcl_MutexUnlock
+#define Tcl_MutexUnlock(mutexPtr)
+#undef  Tcl_MutexFinalize
+#define Tcl_MutexFinalize(mutexPtr)
+#undef  Tcl_ConditionNotify
+#define Tcl_ConditionNotify(condPtr)
+#undef  Tcl_ConditionWait
+#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#undef  Tcl_ConditionFinalize
+#define Tcl_ConditionFinalize(condPtr)
+#endif /* TCL_THREADS */
+
+#ifndef TCL_NO_DEPRECATED
+    /*
+     * Deprecated Tcl functions:
+     */
+
+#   undef  Tcl_EvalObj
+#   define Tcl_EvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),0)
+#   undef  Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+
+    /*
+     * These function have been renamed. The old names are deprecated, but we
+     * define these macros for backwards compatibilty.
+     */
+
+#   define Tcl_Ckalloc		Tcl_Alloc
+#   define Tcl_Ckfree		Tcl_Free
+#   define Tcl_Ckrealloc	Tcl_Realloc
+#   define Tcl_Return		Tcl_SetResult
+#   define Tcl_TildeSubst	Tcl_TranslateFileName
+#   define panic		Tcl_Panic
+#   define panicVA		Tcl_PanicVA
+#endif
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility. This
