@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.75 2006/11/13 08:23:09 das Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.76 2006/11/15 20:08:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,7 +221,7 @@ TclFindElement(
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    Tcl_SetObjResult(interp, TclObjPrintf(
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "list element in braces followed by \"%.*s\" "
 			    "instead of space", (int) (p2-p), p));
 		}
@@ -280,7 +280,7 @@ TclFindElement(
 			    && (p2 < p+20)) {
 			p2++;
 		    }
-		    Tcl_SetObjResult(interp, TclObjPrintf(
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "list element in quotes followed by \"%.*s\" "
 			    "instead of space", (int) (p2-p), p));
 		}

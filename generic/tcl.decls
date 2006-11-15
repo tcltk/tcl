@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.122 2006/09/26 23:01:10 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.123 2006/11/15 20:08:42 dgp Exp $
 
 library tcl
 
@@ -2070,6 +2070,29 @@ declare 572 generic {
 declare 573 generic {
     int Tcl_PkgRequireProc(Tcl_Interp *interp, CONST char *name, 
 	    int objc, Tcl_Obj *CONST objv[], ClientData *clientDataPtr)
+}
+
+# TIP#270 Utility C Routines for String Formatting
+declare 574 generic {
+    void Tcl_AppendObjToErrorInfo(Tcl_Interp *interp, Tcl_Obj *objPtr)
+}
+declare 575 generic {
+    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, CONST char *bytes, int length,
+	    int limit, CONST char *ellipsis)
+}
+declare 576 generic {
+    Tcl_Obj * Tcl_Format(Tcl_Interp *interp, CONST char *format, int objc,
+	    Tcl_Obj * CONST objv[])
+}
+declare 577 generic {
+    int Tcl_AppendFormatToObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    CONST char *format, int objc, Tcl_Obj * CONST objv[])
+}
+declare 578 generic {
+    Tcl_Obj * Tcl_ObjPrintf(CONST char *format, ...)
+}
+declare 579 generic {
+    void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, CONST char *format, ...)
 }
 
 ##############################################################################
