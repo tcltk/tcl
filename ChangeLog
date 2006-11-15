@@ -1,3 +1,19 @@
+2006-11-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* tools/genStubs.tcl:	Updated script to no longer produce the
+	_ANSI_ARGS_ wrapper in generated declarations.  Also revised to
+	accept variadic prototypes with more than one fixed argument.
+	(This is possible since TCL_VARARGS and its limitations are no
+	longer in use).
+	* generic/tcl.h:	Some reordering so that macro definitions
+	do not interfere with the now _ANSI_ARGS_-less stub declarations.
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclTomMathDecls.h:
+
 2006-11-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/ChnlStack.3, doc/CrtObjCmd.3, doc/GetIndex.3, doc/OpenTcp.3:
