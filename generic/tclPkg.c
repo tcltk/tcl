@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.24 2006/11/08 11:41:44 dkf Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.25 2006/11/15 20:08:45 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -539,7 +539,7 @@ Tcl_PkgRequireProc(
 	    }
 
 	    if (code == TCL_ERROR) {
-		TclAppendObjToErrorInfo(interp, TclObjPrintf(
+		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"package ifneeded %s %s\" script)",
 			name, versionToProvide));
 	    }
