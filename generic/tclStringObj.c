@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.62 2006/11/05 04:16:07 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.63 2006/11/15 20:08:45 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1021,7 +1021,7 @@ Tcl_SetUnicodeObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendLimitedToObj --
+ * Tcl_AppendLimitedToObj --
  *
  *	This function appends a limited number of bytes from a sequence of
  *	bytes to an object, marking any limitation with an ellipsis.
@@ -1037,7 +1037,7 @@ Tcl_SetUnicodeObj(
  */
 
 void
-TclAppendLimitedToObj(
+Tcl_AppendLimitedToObj(
     register Tcl_Obj *objPtr,	/* Points to the object to append to. */
     CONST char *bytes,		/* Points to the bytes to append to the
 				 * object. */
@@ -1054,7 +1054,7 @@ TclAppendLimitedToObj(
     int toCopy = 0;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "TclAppendLimitedToObj");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendLimitedToObj");
     }
 
     SetStringFromAny(NULL, objPtr);
@@ -1126,7 +1126,7 @@ Tcl_AppendToObj(
 				 * If < 0, then append all bytes up to NUL
 				 * byte. */
 {
-    TclAppendLimitedToObj(objPtr, bytes, length, INT_MAX, NULL);
+    Tcl_AppendLimitedToObj(objPtr, bytes, length, INT_MAX, NULL);
 }
 
 /*
@@ -1676,7 +1676,7 @@ Tcl_AppendStringsToObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendFormatToObj --
+ * Tcl_AppendFormatToObj --
  *
  *	This function appends a list of Tcl_Obj's to a Tcl_Obj according to
  *	the formatting instructions embedded in the format string. The
@@ -1694,7 +1694,7 @@ Tcl_AppendStringsToObj(
  */
 
 int
-TclAppendFormatToObj(
+Tcl_AppendFormatToObj(
     Tcl_Interp *interp,
     Tcl_Obj *appendObj,
     CONST char *format,
@@ -1715,7 +1715,7 @@ TclAppendFormatToObj(
     };
 
     if (Tcl_IsShared(appendObj)) {
-	Tcl_Panic("%s called with shared object", "TclAppendFormatToObj");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendFormatToObj");
     }
     Tcl_GetStringFromObj(appendObj, &originalLength);
 
@@ -2291,7 +2291,7 @@ TclAppendFormatToObj(
 /*
  *---------------------------------------------------------------------------
  *
- * TclFormat--
+ * Tcl_Format--
  *
  * Results:
  *	A refcount zero Tcl_Obj.
@@ -2303,7 +2303,7 @@ TclAppendFormatToObj(
  */
 
 Tcl_Obj *
-TclFormat(
+Tcl_Format(
     Tcl_Interp *interp,
     CONST char *format,
     int objc,
@@ -2311,7 +2311,7 @@ TclFormat(
 {
     int result;
     Tcl_Obj *objPtr = Tcl_NewObj();
-    result = TclAppendFormatToObj(interp, objPtr, format, objc, objv);
+    result = Tcl_AppendFormatToObj(interp, objPtr, format, objc, objv);
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
 	return NULL;
@@ -2454,9 +2454,9 @@ AppendPrintfToObjVA(
 	} while (seekingConversion);
     }
     Tcl_ListObjGetElements(NULL, list, &objc, &objv);
-    code = TclAppendFormatToObj(NULL, objPtr, format, objc, objv);
+    code = Tcl_AppendFormatToObj(NULL, objPtr, format, objc, objv);
     if (code != TCL_OK) {
-	TclAppendPrintfToObj(objPtr,
+	Tcl_AppendPrintfToObj(objPtr,
 		"Unable to format \"%s\" with supplied arguments: %s",
 		format, Tcl_GetString(list));
     }
@@ -2466,7 +2466,7 @@ AppendPrintfToObjVA(
 /*
  *---------------------------------------------------------------------------
  *
- * TclAppendPrintfToObj --
+ * Tcl_AppendPrintfToObj --
  *
  * Results:
  *	A standard Tcl result.
@@ -2478,7 +2478,7 @@ AppendPrintfToObjVA(
  */
 
 void
-TclAppendPrintfToObj(
+Tcl_AppendPrintfToObj(
     Tcl_Obj *objPtr,
     CONST char *format,
     ...)
@@ -2493,7 +2493,7 @@ TclAppendPrintfToObj(
 /*
  *---------------------------------------------------------------------------
  *
- * TclObjPrintf --
+ * Tcl_ObjPrintf --
  *
  * Results:
  *	A refcount zero Tcl_Obj.
@@ -2505,7 +2505,7 @@ TclAppendPrintfToObj(
  */
 
 Tcl_Obj *
-TclObjPrintf(
+Tcl_ObjPrintf(
     CONST char *format,
     ...)
 {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.125 2006/11/15 14:58:26 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.126 2006/11/15 20:08:43 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3417,6 +3417,43 @@ EXTERN int		Tcl_PkgRequireProc (Tcl_Interp * interp,
 				Tcl_Obj *CONST objv[], 
 				ClientData * clientDataPtr);
 #endif
+#ifndef Tcl_AppendObjToErrorInfo_TCL_DECLARED
+#define Tcl_AppendObjToErrorInfo_TCL_DECLARED
+/* 574 */
+EXTERN void		Tcl_AppendObjToErrorInfo (Tcl_Interp * interp, 
+				Tcl_Obj * objPtr);
+#endif
+#ifndef Tcl_AppendLimitedToObj_TCL_DECLARED
+#define Tcl_AppendLimitedToObj_TCL_DECLARED
+/* 575 */
+EXTERN void		Tcl_AppendLimitedToObj (Tcl_Obj * objPtr, 
+				CONST char * bytes, int length, int limit, 
+				CONST char * ellipsis);
+#endif
+#ifndef Tcl_Format_TCL_DECLARED
+#define Tcl_Format_TCL_DECLARED
+/* 576 */
+EXTERN Tcl_Obj *	Tcl_Format (Tcl_Interp * interp, CONST char * format, 
+				int objc, Tcl_Obj * CONST objv[]);
+#endif
+#ifndef Tcl_AppendFormatToObj_TCL_DECLARED
+#define Tcl_AppendFormatToObj_TCL_DECLARED
+/* 577 */
+EXTERN int		Tcl_AppendFormatToObj (Tcl_Interp * interp, 
+				Tcl_Obj * objPtr, CONST char * format, 
+				int objc, Tcl_Obj * CONST objv[]);
+#endif
+#ifndef Tcl_ObjPrintf_TCL_DECLARED
+#define Tcl_ObjPrintf_TCL_DECLARED
+/* 578 */
+EXTERN Tcl_Obj *	Tcl_ObjPrintf (CONST char * format, ...);
+#endif
+#ifndef Tcl_AppendPrintfToObj_TCL_DECLARED
+#define Tcl_AppendPrintfToObj_TCL_DECLARED
+/* 579 */
+EXTERN void		Tcl_AppendPrintfToObj (Tcl_Obj * objPtr, 
+				CONST char * format, ...);
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4032,6 +4069,12 @@ typedef struct TclStubs {
     int (*tcl_SetEncodingSearchPath) (Tcl_Obj* searchPath); /* 571 */
     CONST char * (*tcl_GetEncodingNameFromEnvironment) (Tcl_DString* bufPtr); /* 572 */
     int (*tcl_PkgRequireProc) (Tcl_Interp * interp, CONST char * name, int objc, Tcl_Obj *CONST objv[], ClientData * clientDataPtr); /* 573 */
+    void (*tcl_AppendObjToErrorInfo) (Tcl_Interp * interp, Tcl_Obj * objPtr); /* 574 */
+    void (*tcl_AppendLimitedToObj) (Tcl_Obj * objPtr, CONST char * bytes, int length, int limit, CONST char * ellipsis); /* 575 */
+    Tcl_Obj * (*tcl_Format) (Tcl_Interp * interp, CONST char * format, int objc, Tcl_Obj * CONST objv[]); /* 576 */
+    int (*tcl_AppendFormatToObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, CONST char * format, int objc, Tcl_Obj * CONST objv[]); /* 577 */
+    Tcl_Obj * (*tcl_ObjPrintf) (CONST char * format, ...); /* 578 */
+    void (*tcl_AppendPrintfToObj) (Tcl_Obj * objPtr, CONST char * format, ...); /* 579 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6367,6 +6410,30 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_PkgRequireProc
 #define Tcl_PkgRequireProc \
 	(tclStubsPtr->tcl_PkgRequireProc) /* 573 */
+#endif
+#ifndef Tcl_AppendObjToErrorInfo
+#define Tcl_AppendObjToErrorInfo \
+	(tclStubsPtr->tcl_AppendObjToErrorInfo) /* 574 */
+#endif
+#ifndef Tcl_AppendLimitedToObj
+#define Tcl_AppendLimitedToObj \
+	(tclStubsPtr->tcl_AppendLimitedToObj) /* 575 */
+#endif
+#ifndef Tcl_Format
+#define Tcl_Format \
+	(tclStubsPtr->tcl_Format) /* 576 */
+#endif
+#ifndef Tcl_AppendFormatToObj
+#define Tcl_AppendFormatToObj \
+	(tclStubsPtr->tcl_AppendFormatToObj) /* 577 */
+#endif
+#ifndef Tcl_ObjPrintf
+#define Tcl_ObjPrintf \
+	(tclStubsPtr->tcl_ObjPrintf) /* 578 */
+#endif
+#ifndef Tcl_AppendPrintfToObj
+#define Tcl_AppendPrintfToObj \
+	(tclStubsPtr->tcl_AppendPrintfToObj) /* 579 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
