@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.27 2006/11/13 08:23:09 das Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.28 2006/11/15 20:08:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -869,7 +869,7 @@ Tcl_AfterObjCmd(
 							(ClientData) afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
-	Tcl_SetObjResult(interp, TclObjPrintf("after#%d", afterPtr->id));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	return TCL_OK;
     }
     case AFTER_CANCEL: {
@@ -932,7 +932,7 @@ Tcl_AfterObjCmd(
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
 	assocPtr->firstAfterPtr = afterPtr;
 	Tcl_DoWhenIdle(AfterProc, (ClientData) afterPtr);
-	Tcl_SetObjResult(interp, TclObjPrintf("after#%d", afterPtr->id));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("after#%d", afterPtr->id));
 	break;
     case AFTER_INFO: {
 	Tcl_Obj *resultListPtr;

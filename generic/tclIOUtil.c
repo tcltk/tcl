@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.136 2006/11/02 15:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.137 2006/11/15 20:08:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1830,7 +1830,7 @@ Tcl_FSEvalFileEx(
 	int limit = 150;
 	int overflow = (length > limit);
 
-	TclAppendObjToErrorInfo(interp, TclObjPrintf(
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (file \"%.*s%s\" line %d)",
 		(overflow ? limit : length), pathString,
 		(overflow ? "..." : ""), interp->errorLine));

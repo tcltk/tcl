@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.29 2006/11/07 14:26:26 dkf Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.30 2006/11/15 20:08:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -842,7 +842,7 @@ MemoryCmd(
 	return TCL_OK;
     }
     if (strcmp(argv[1],"info") == 0) {
-	Tcl_SetObjResult(interp, TclObjPrintf(
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10d\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,

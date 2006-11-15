@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.99 2006/11/08 13:47:07 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.100 2006/11/15 20:08:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1017,7 +1017,7 @@ TclCompileScript(
 	    Tcl_IncrRefCount(returnCmd);
 	    Tcl_IncrRefCount(errInfo);
 	    Tcl_AppendToObj(errInfo, "\n    while executing\n\"", -1);
-	    TclAppendLimitedToObj(errInfo, parse.commandStart,
+	    Tcl_AppendLimitedToObj(errInfo, parse.commandStart,
 		    /* Drop the command terminator (";","]") if appropriate */
 		    (parse.term == parse.commandStart + parse.commandSize - 1)?
 		    parse.commandSize - 1 : parse.commandSize, 153, NULL);

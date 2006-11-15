@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.114 2006/10/23 21:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.115 2006/11/15 20:08:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1404,7 +1404,7 @@ SetBooleanFromAny(
 	char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg =
 		Tcl_NewStringObj("expected boolean value but got \"", -1);
-	TclAppendLimitedToObj(msg, str, length, 50, "");
+	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
     }

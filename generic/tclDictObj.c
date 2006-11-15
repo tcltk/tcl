@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.44 2006/11/08 13:47:07 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.45 2006/11/15 20:08:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2229,7 +2229,7 @@ DictForCmd(
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
 	    } else if (result == TCL_ERROR) {
-		TclAppendObjToErrorInfo(interp, TclObjPrintf(
+		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"dict for\" body line %d)",
 			interp->errorLine));
 	    }
@@ -2575,7 +2575,7 @@ DictFilterCmd(
 		result = TCL_OK;
 		break;
 	    case TCL_ERROR:
-		TclAppendObjToErrorInfo(interp, TclObjPrintf(
+		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (\"dict filter\" script line %d)",
 			interp->errorLine));
 	    default:

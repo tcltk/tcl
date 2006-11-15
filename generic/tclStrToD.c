@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.25 2006/08/10 12:15:31 dkf Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.26 2006/11/15 20:08:45 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1128,7 +1128,7 @@ TclParseNumber(
 	    Tcl_Obj *msg = Tcl_NewStringObj("expected ", -1);
 	    Tcl_AppendToObj(msg, expected, -1);
 	    Tcl_AppendToObj(msg, " but got \"", -1);
-	    TclAppendLimitedToObj(msg, bytes, numBytes, 50, "");
+	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    if (state == BAD_OCTAL) {
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);

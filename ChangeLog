@@ -1,5 +1,37 @@
 2006-11-15  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP#270 IMPLEMENTATION
+
+	* generic/tcl.decls:		New public routines Tcl_ObjPrintf,
+	* generic/tclStringObj.c:	Tcl_AppendObjToErrorInfo, Tcl_Format,
+	* generic/tclInt.h:         	Tcl_AppendLimitedToObj,
+	Tcl_AppendFormatToObj and Tcl_AppendPrintfToObj.  Former internal
+	versions removed.
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclBasic.c:		Updated callers.
+	* generic/tclCkalloc.c:
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclIORChan.c:
+	* generic/tclIOUtil.c:
+	* generic/tclMain.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclPkg.c:
+	* generic/tclProc.c:
+	* generic/tclStrToD.c:
+	* generic/tclTimer.c:
+	* generic/tclUtil.c:
+	* unix/tclUnixFCmd.c:
+
 	* tools/genStubs.tcl:	Updated script to no longer produce the
 	_ANSI_ARGS_ wrapper in generated declarations.  Also revised to
 	accept variadic prototypes with more than one fixed argument.

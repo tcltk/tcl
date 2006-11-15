@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.36 2006/11/13 08:23:07 das Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.37 2006/11/15 20:08:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -224,12 +224,12 @@ Tcl_ParseExpr(
 	if ((NODE_TYPE & nodePtr->lexeme) == 0) {
 	    switch (nodePtr->lexeme) {
 	    case INVALID:
-		msg = TclObjPrintf(
+		msg = Tcl_ObjPrintf(
 			"invalid character \"%.*s\"", scanned, start);
 		code = TCL_ERROR;
 		continue;
 	    case INCOMPLETE:
-		msg = TclObjPrintf(
+		msg = Tcl_ObjPrintf(
 			"incomplete operator \"%.*s\"", scanned, start);
 		code = TCL_ERROR;
 		continue;
@@ -245,17 +245,17 @@ Tcl_ParseExpr(
 		    if (code == TCL_OK) {
 			nodePtr->lexeme = BOOLEAN;
 		    } else {
-			msg = TclObjPrintf(
+			msg = Tcl_ObjPrintf(
 				"invalid bareword \"%.*s%s\"",
 				(scanned < limit) ? scanned : limit - 3, start,
 				(scanned < limit) ? "" : "...");
-			post = TclObjPrintf(
+			post = Tcl_ObjPrintf(
 				"should be \"$%.*s%s\" or \"{%.*s%s}\"",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
-			TclAppendPrintfToObj(post,
+			Tcl_AppendPrintfToObj(post,
 				" or \"%.*s%s(...)\" or ...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
@@ -283,7 +283,7 @@ Tcl_ParseExpr(
 		CONST char *operand =
 			scratch.tokenPtr[lastNodePtr->token].start;
 
-		msg = TclObjPrintf("missing operator at %s", mark);
+		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		if (operand[0] == '0') {
 		    Tcl_Obj *copy = Tcl_NewStringObj(operand,
 			    start + scanned - operand);
@@ -417,7 +417,7 @@ Tcl_ParseExpr(
 
 	case UNARY:
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
-		msg = TclObjPrintf("missing operator at %s", mark);
+		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
 		insertMark = 1;
 		code = TCL_ERROR;
@@ -463,7 +463,7 @@ Tcl_ParseExpr(
 		    break;
 
 		}
-		msg = TclObjPrintf("empty subexpression at %s", mark);
+		msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
 		scanned = 0;
 		insertMark = 1;
 		code = TCL_ERROR;
@@ -476,7 +476,7 @@ Tcl_ParseExpr(
 		    if (lastNodePtr->lexeme == OPEN_PAREN) {
 			msg = Tcl_NewStringObj("unbalanced open paren", -1);
 		    } else if (lastNodePtr->lexeme == COMMA) {
-			msg = TclObjPrintf( 
+			msg = Tcl_ObjPrintf( 
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
@@ -489,14 +489,14 @@ Tcl_ParseExpr(
 		    } else if ((nodePtr->lexeme == COMMA)
 			    && (lastNodePtr->lexeme == OPEN_PAREN)
 			    && (lastNodePtr[-1].lexeme == FUNCTION)) {
-			msg = TclObjPrintf(
+			msg = Tcl_ObjPrintf(
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
 		    }
 		}
 		if (msg == NULL) {
-		    msg = TclObjPrintf("missing operand at %s", mark);
+		    msg = Tcl_ObjPrintf("missing operand at %s", mark);
 		    scanned = 0;
 		    insertMark = 1;
 		}
@@ -546,7 +546,7 @@ Tcl_ParseExpr(
 		}
 		if ((otherPtr->lexeme == QUESTION)
 			&& (lastOrphanPtr->lexeme != COLON)) {
-		    msg = TclObjPrintf(
+		    msg = Tcl_ObjPrintf(
 			    "missing operator \":\" at %s", mark);
 		    scanned = 0;
 		    insertMark = 1;
@@ -651,7 +651,7 @@ Tcl_ParseExpr(
 	    if (msg == NULL) {
 		msg = Tcl_GetObjResult(interp);
 	    }
-	    TclAppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
+	    Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		    ((start - limit) < scratch.string) ? "" : "...",
 		    ((start - limit) < scratch.string)
 		    ? (start - scratch.string) : limit - 3,
@@ -672,7 +672,7 @@ Tcl_ParseExpr(
 	    }
 	    Tcl_SetObjResult(interp, msg);
 	    numBytes = scratch.end - scratch.string;
-	    TclAppendObjToErrorInfo(interp, TclObjPrintf(
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (parsing expression \"%.*s%s\")",
 		    (numBytes < limit) ? numBytes : limit - 3,
 		    scratch.string, (numBytes < limit) ? "" : "..."));
