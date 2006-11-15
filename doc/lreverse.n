@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lreverse.n,v 1.1 2006/11/09 15:19:03 dkf Exp $
+'\" RCS: @(#) $Id: lreverse.n,v 1.2 2006/11/15 09:23:02 dkf Exp $
 '\" 
 .so man.macros
 .TH lreverse n 8.5 Tcl "Tcl Built-In Commands"
@@ -17,12 +17,12 @@ lreverse \- Reverse the order of a list
 .BE
 .SH DESCRIPTION
 .PP
-The \fBlreverse\fP command returns a list that has the same elements as its
-input list, \fIlist\fP, except with the elements in the reverse order.
+The \fBlreverse\fR command returns a list that has the same elements as its
+input list, \fIlist\fR, except with the elements in the reverse order.
 .SH EXAMPLES
 .CS
-\fBlreverse\fP {a a b c}        => c b a a
-\fBlreverse\fP {a b {c d} e f}  => f e {c d} b a
+\fBlreverse\fR {a a b c}        => c b a a
+\fBlreverse\fR {a b {c d} e f}  => f e {c d} b a
 .CE
 .SH "SEE ALSO"
 list(n), lsearch(n), lsort(n)

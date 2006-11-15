@@ -1,3 +1,11 @@
+2006-11-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/ChnlStack.3, doc/CrtObjCmd.3, doc/GetIndex.3, doc/OpenTcp.3:
+	* doc/chan.n, doc/fconfigure.n, doc/fcopy.n, doc/foreach.n:
+	* doc/history.n, doc/http.n, doc/library.n, doc/lindex.n:
+	* doc/lrepeat.n, doc/lreverse.n, doc/pkgMkIndex.n, doc/re_syntax.n:
+	Convert \fP to \fR so that man-page scrapers have an easier time.
+
 2006-11-14  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#261 IMPLEMENTATION
@@ -7,9 +15,9 @@
 
 2006-11-13  Kevin Kenny  <kennykb@users.sourceforge.net>
 
-	* generic/tclThreadStorage.c (Tcl_InitThreadStorage, 
-	Tcl_FinalizeThreadStorage): Silence a compiler warning about
-	                            presenting a volatile pointer to 'memset'.
+	* generic/tclThreadStorage.c (Tcl_InitThreadStorage):
+	(Tcl_FinalizeThreadStorage): Silence a compiler warning about
+	presenting a volatile pointer to 'memset'.
 	
 2006-11-13  Don Porter  <dgp@users.sourceforge.net>
 
@@ -21,7 +29,7 @@
 
 2006-11-13  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclCompExpr.c:	fix gcc warnings about 'cast to/from
+	* generic/tclCompExpr.c:	Fix gcc warnings about 'cast to/from
 	* generic/tclEncoding.c:	pointer from/to integer of different
 	* generic/tclEvent.c:		size' on 64-bit platforms by casting to
 	* generic/tclExecute.c:		intermediate types intptr_t/uintptr_t
@@ -67,11 +75,11 @@
 
 	* generic/tclParseExpr.c (removed):	Moved all the code of
 	* generic/tclCompExpr.c:	tclParseExpr.c into tclCompExpr.c.
-	* unix/Makefile.in:	This sets the stage for expr compiling to
-	* win/Makefile.in:	work directly with the full parse tree
-	* win/makefile.bc:	structures, and not have to pass through
-	* win/makefile.vc:	the information lossy format of an array
-	* win/tcl.dsp:		of Tcl_Tokens.
+	* unix/Makefile.in:	This sets the stage for expr compiling to work
+	* win/Makefile.in:	directly with the full parse tree structures,
+	* win/makefile.bc:	and not have to pass through the information
+	* win/makefile.vc:	lossy format of an array of Tcl_Tokens.
+	* win/tcl.dsp:
 
 2006-11-09  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
