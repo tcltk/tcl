@@ -1,3 +1,7 @@
+2006-11-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/apply.n, doc/chan.n: Added examples.
+
 2006-11-15  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP#270 IMPLEMENTATION
@@ -5,7 +9,7 @@
 	* generic/tcl.decls:		New public routines Tcl_ObjPrintf,
 	* generic/tclStringObj.c:	Tcl_AppendObjToErrorInfo, Tcl_Format,
 	* generic/tclInt.h:         	Tcl_AppendLimitedToObj,
-	Tcl_AppendFormatToObj and Tcl_AppendPrintfToObj.  Former internal
+	Tcl_AppendFormatToObj and Tcl_AppendPrintfToObj. Former internal
 	versions removed.
 
 	* generic/tclDecls.h:		make genstubs
@@ -33,12 +37,11 @@
 	* unix/tclUnixFCmd.c:
 
 	* tools/genStubs.tcl:	Updated script to no longer produce the
-	_ANSI_ARGS_ wrapper in generated declarations.  Also revised to
-	accept variadic prototypes with more than one fixed argument.
-	(This is possible since TCL_VARARGS and its limitations are no
-	longer in use).
-	* generic/tcl.h:	Some reordering so that macro definitions
-	do not interfere with the now _ANSI_ARGS_-less stub declarations.
+	_ANSI_ARGS_ wrapper in generated declarations. Also revised to accept
+	variadic prototypes with more than one fixed argument. (This is
+	possible since TCL_VARARGS and its limitations are no longer in use).
+	* generic/tcl.h:	Some reordering so that macro definitions do
+	not interfere with the now _ANSI_ARGS_-less stub declarations.
 
 	* generic/tclDecls.h:		make genstubs
 	* generic/tclIntDecls.h:
@@ -71,8 +74,8 @@
 
 	* generic/tclIO.c:	When [gets] on a binary channel needs to use
 	the "iso8859-1" encoding, save a copy of that encoding per-thread to
-	avoid repeated freeing and re-loading of it from the file system.
-	This replaces the cached copy of this encoding that the platform
+	avoid repeated freeing and re-loading of it from the file system. This
+	replaces the cached copy of this encoding that the platform
 	initialization code used to keep in pre-8.5 releases.
 
 2006-11-13  Daniel Steffen  <das@users.sourceforge.net>
