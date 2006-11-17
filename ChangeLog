@@ -1,3 +1,8 @@
+2006-11-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (INST_EXPON):	Corrected crash on
+	[expr 2**(1<<63)].  Was operating on cleared bignum Tcl_Obj.
+
 2006-11-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/apply.n, doc/chan.n: Added examples.
