@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.251 2006/11/15 20:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.252 2006/11/17 21:22:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4780,6 +4780,11 @@ TclExecuteByteCode(
 		    }
 		    NEXT_INST_F(1, 2, 1);
 		}
+	    }
+	    if (type2 == TCL_NUMBER_BIG) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("exponent too large", -1));
+		goto checkForCatch;
 	    }
 	    /* TODO: Perform those computations that fit in native types */
 	    goto overflow;
