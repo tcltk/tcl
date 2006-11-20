@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.218 2006/11/15 20:08:42 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.219 2006/11/20 14:28:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -83,7 +83,7 @@ static void	MathFuncWrongNumArgs (Tcl_Interp* interp, int expected,
 extern TclStubs tclStubs;
 
 /*
- * The following structure defines the commands in the Tcl core.
+ * The following structures define the commands in the Tcl core.
  */
 
 typedef struct {
@@ -94,12 +94,20 @@ typedef struct {
 				 * safe interpreter. Otherwise it will be
 				 * hidden. */
 } CmdInfo;
+typedef struct {
+    const char *name;		/* Name of object-based command. */
+    const char *name2;		/* Name of secondary object-based command. */
+    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
+    int isSafe;			/* If non-zero, command will be present in
+				 * safe interpreter. Otherwise it will be
+				 * hidden. */
+} CmdInfo2;
 
 /*
  * The built-in commands, and the functions that implement them:
  */
 
-static CmdInfo builtInCmds[] = {
+static const CmdInfo builtInCmds[] = {
     /*
      * Commands in the generic core.
      */
@@ -119,8 +127,6 @@ static CmdInfo builtInCmds[] = {
     {"eval",		Tcl_EvalObjCmd,		NULL,			1},
     {"exit",		Tcl_ExitObjCmd,		NULL,			0},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	1},
-    {"fcopy",		Tcl_FcopyObjCmd,	NULL,			1},
-    {"fileevent",	Tcl_FileEventObjCmd,	NULL,			1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	1},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	1},
     {"format",		Tcl_FormatObjCmd,	NULL,			1},
@@ -171,22 +177,12 @@ static CmdInfo builtInCmds[] = {
 #ifndef TCL_GENERIC_ONLY
     {"after",		Tcl_AfterObjCmd,	NULL,			1},
     {"cd",		Tcl_CdObjCmd,		NULL,			0},
-    {"close",		Tcl_CloseObjCmd,	NULL,			1},
-    {"eof",		Tcl_EofObjCmd,		NULL,			1},
-    {"fblocked",	Tcl_FblockedObjCmd,	NULL,			1},
-    {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			0},
     {"file",		Tcl_FileObjCmd,		NULL,			0},
-    {"flush",		Tcl_FlushObjCmd,	NULL,			1},
-    {"gets",		Tcl_GetsObjCmd,		NULL,			1},
     {"glob",		Tcl_GlobObjCmd,		NULL,			0},
     {"open",		Tcl_OpenObjCmd,		NULL,			0},
     {"pid",		Tcl_PidObjCmd,		NULL,			1},
-    {"puts",		Tcl_PutsObjCmd,		NULL,			1},
     {"pwd",		Tcl_PwdObjCmd,		NULL,			0},
-    {"read",		Tcl_ReadObjCmd,		NULL,			1},
-    {"seek",		Tcl_SeekObjCmd,		NULL,			1},
     {"socket",		Tcl_SocketObjCmd,	NULL,			0},
-    {"tell",		Tcl_TellObjCmd,		NULL,			1},
     {"time",		Tcl_TimeObjCmd,		NULL,			1},
     {"update",		Tcl_UpdateObjCmd,	NULL,			1},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
@@ -194,6 +190,24 @@ static CmdInfo builtInCmds[] = {
     {"source",		Tcl_SourceObjCmd,	NULL,			0},
 #endif /* TCL_GENERIC_ONLY */
     {NULL,		NULL,			NULL,			0}
+};
+
+static const CmdInfo2 builtInCmds2[] = {
+    {"fileevent",	"::tcl::chan::event",	  Tcl_FileEventObjCmd,	1},
+    {"fcopy",		"::tcl::chan::copy",	  Tcl_FcopyObjCmd,	1},
+#ifndef TCL_GENERIC_ONLY
+    {"close",		"::tcl::chan::close",	  Tcl_CloseObjCmd,	1},
+    {"eof",		"::tcl::chan::eof",	  Tcl_EofObjCmd,	1},
+    {"fblocked",	"::tcl::chan::blocked",	  Tcl_FblockedObjCmd,	1},
+    {"fconfigure",	"::tcl::chan::configure", Tcl_FconfigureObjCmd,	0},
+    {"flush",		"::tcl::chan::flush",	  Tcl_FlushObjCmd,	1},
+    {"gets",		"::tcl::chan::gets",	  Tcl_GetsObjCmd,	1},
+    {"puts",		"::tcl::chan::puts",	  Tcl_PutsObjCmd,	1},
+    {"read",		"::tcl::chan::read",	  Tcl_ReadObjCmd,	1},
+    {"seek",		"::tcl::chan::seek",	  Tcl_SeekObjCmd,	1},
+    {"tell",		"::tcl::chan::tell",	  Tcl_TellObjCmd,	1},
+#endif /* TCL_GENERIC_ONLY */
+    {NULL,		NULL,			0}
 };
 
 /*
@@ -206,7 +220,7 @@ typedef struct {
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
     ClientData clientData;	/* Client data for the function */
 } BuiltinFuncDef;
-static BuiltinFuncDef BuiltinFuncTable[] = {
+static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "abs",	ExprAbsFunc,	NULL 			},
     { "acos",	ExprUnaryFunc,	(ClientData) acos 	},
     { "asin",	ExprUnaryFunc,	(ClientData) asin 	},
@@ -262,8 +276,9 @@ Tcl_CreateInterp(void)
     Interp *iPtr;
     Tcl_Interp *interp;
     Command *cmdPtr;
-    BuiltinFuncDef *builtinFuncPtr;
+    const BuiltinFuncDef *builtinFuncPtr;
     const CmdInfo *cmdInfoPtr;
+    const CmdInfo2 *cmdInfo2Ptr;
     Tcl_Namespace *mathfuncNSPtr;
     union {
 	char c[sizeof(short)];
@@ -501,6 +516,12 @@ Tcl_CreateInterp(void)
 
     TclClockInit(interp);
 
+    for (cmdInfo2Ptr=builtInCmds2; cmdInfo2Ptr->name!=NULL; cmdInfo2Ptr++) {
+	Tcl_CreateObjCommand(interp, cmdInfo2Ptr->name, cmdInfo2Ptr->objProc,
+		NULL, NULL);
+	Tcl_CreateObjCommand(interp, cmdInfo2Ptr->name2, cmdInfo2Ptr->objProc,
+		NULL, NULL);
+    }
     /* TIP #208 */
     Tcl_CreateObjCommand(interp, "::tcl::chan::Truncate",
 	    TclChanTruncateObjCmd, (ClientData) NULL, NULL);
@@ -632,6 +653,7 @@ TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
     register const CmdInfo *cmdInfoPtr;
+    register const CmdInfo2 *cmdInfo2Ptr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -639,6 +661,12 @@ TclHideUnsafeCommands(
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
 	if (!cmdInfoPtr->isSafe) {
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
+	}
+    }
+    for (cmdInfo2Ptr=builtInCmds2; cmdInfo2Ptr->name!=NULL; cmdInfo2Ptr++) {
+	if (!cmdInfo2Ptr->isSafe) {
+	    Tcl_HideCommand(interp, cmdInfo2Ptr->name, cmdInfo2Ptr->name);
+	    Tcl_HideCommand(interp, cmdInfo2Ptr->name2, cmdInfo2Ptr->name2);
 	}
     }
     return TCL_OK;
