@@ -1,3 +1,10 @@
+2006-11-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Moved TCL_REG_BOSONLY #define from tcl.h to
+	* generic/tclInt.h:	tclInt.h.  Only know user is Expect, which
+	already #include's tclInt.h.  No need to continue greater exposure.
+	[Bug 926500]
+
 2006-11-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_CreateInterp, TclHideUnsafeCommands): 
