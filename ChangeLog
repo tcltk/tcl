@@ -1,3 +1,12 @@
+2006-11-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP#269 IMPLEMENTATION
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Implementation of the [string
+	* tests/string.test (string-25.*):	 is list] command, based on
+	* doc/string.n:				 work by Joe Mistachkin, with
+	enhancements by Donal Fellows for better failindex behaviour.
+
 2006-11-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* tools/genWinImage.tcl (removed):	Removed two files used in
