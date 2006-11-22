@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.227 2006/11/15 14:58:26 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.228 2006/11/22 19:43:19 dgp Exp $
  */
 
 #ifndef _TCL
@@ -557,15 +557,6 @@ typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #define	TCL_REG_NEWLINE		000300  /* newlines are line terminators */
 #define	TCL_REG_CANMATCH	001000  /* report details on partial/limited
 					 * matches */
-
-/*
- * The following flag is experimental and only intended for use by Expect. It
- * will probably go away in a later release.
- */
-
-#define TCL_REG_BOSONLY		002000	/* prepend \A to pattern so it only
-					 * matches at the beginning of the
-					 * string. */
 
 /*
  * Flags values passed to Tcl_RegExpExecObj.
