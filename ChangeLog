@@ -3,6 +3,7 @@
 	* tools/genWinImage.tcl (removed):	Removed two files used in
 	* win/README.binary (removed):	production of binary distributions
 	for Windows, a task we no longer perform.  [Bug 1476980].
+	* generic/tcl.h:	Remove mention of win/README.binary in comment.
 
 	* generic/tcl.h:	Moved TCL_REG_BOSONLY #define from tcl.h to
 	* generic/tclInt.h:	tclInt.h.  Only know user is Expect, which
