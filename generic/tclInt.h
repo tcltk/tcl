@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.296 2006/11/15 20:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.297 2006/11/22 19:43:19 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -947,7 +947,18 @@ typedef void **TclHandle;
 
 /*
  *----------------------------------------------------------------
- * Data structures related to expressions. These are used only in tclExpr.c.
+ * Experimental flag value passed to Tcl_GetRegExpFromObj.
+ * Intended for use only by Expect.
+ * It will probably go away in a later release.
+ *----------------------------------------------------------------
+ */
+#define TCL_REG_BOSONLY         002000  /* prepend \A to pattern so it only
+					 * matches at the beginning of the
+					 * string. */
+
+/*
+ *----------------------------------------------------------------
+ * Data structures related to expressions.
  *----------------------------------------------------------------
  */
 
