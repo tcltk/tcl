@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.141 2006/11/15 20:08:43 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.142 2006/11/22 23:22:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1421,18 +1421,19 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	Tcl_WideInt w;
 
 	static CONST char *isOptions[] = {
-	    "alnum",	   "alpha",	"ascii",	"control",
-	    "boolean",	   "digit",	"double",	"false",
-	    "graph",	   "integer",	"lower",	"print",
-	    "punct",	   "space",	"true",		"upper",
-	    "wideinteger", "wordchar",	"xdigit",	NULL
+	    "alnum",	"alpha",	"ascii",	"control",
+	    "boolean",	"digit",	"double",	"false",
+	    "graph",	"integer",	"list",		"lower",
+	    "print",	"punct",	"space",	"true",
+	    "upper",	"wideinteger",	"wordchar",	"xdigit",
+	    NULL
 	};
 	enum isOptions {
 	    STR_IS_ALNUM, STR_IS_ALPHA,	STR_IS_ASCII,  STR_IS_CONTROL,
 	    STR_IS_BOOL,  STR_IS_DIGIT,	STR_IS_DOUBLE, STR_IS_FALSE,
-	    STR_IS_GRAPH, STR_IS_INT,	STR_IS_LOWER,  STR_IS_PRINT,
-	    STR_IS_PUNCT, STR_IS_SPACE,	STR_IS_TRUE,   STR_IS_UPPER,
-	    STR_IS_WIDE,  STR_IS_WORD,	STR_IS_XDIGIT
+	    STR_IS_GRAPH, STR_IS_INT,	STR_IS_LIST,   STR_IS_LOWER,
+	    STR_IS_PRINT, STR_IS_PUNCT, STR_IS_SPACE,  STR_IS_TRUE,
+	    STR_IS_UPPER, STR_IS_WIDE,	STR_IS_WORD,   STR_IS_XDIGIT
 	};
 
 	if (objc < 4 || objc > 7) {
@@ -1475,7 +1476,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	objPtr = objv[objc-1];
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
-	if (length1 == 0) {
+	if (length1 == 0 && index != STR_IS_LIST) {
 	    if (strict) {
 		result = 0;
 	    }
@@ -1598,6 +1599,60 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    break;
 	}
+	case STR_IS_LIST:
+	    /*
+	     * We ignore the strictness here, since empty strings are always
+	     * well-formed lists.
+	     */
+
+	    if (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length2)) {
+		break;
+	    }
+
+	    if (failVarObj != NULL) {
+		/*
+		 * Need to figure out where the list parsing failed, which is
+		 * fairly expensive. This is adapted from the core of
+		 * SetListFromAny().
+		 */
+
+		const char *elemStart, *nextElem, *limit;
+		int lenRemain, elemSize, hasBrace;
+		register const char *p;
+
+		limit = string1 + length1;
+		failat = -1;
+		for (p=string1, lenRemain=length1; lenRemain > 0;
+			p = nextElem, lenRemain = (limit-nextElem)) {
+		    if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
+			    &elemStart, &nextElem, &elemSize, &hasBrace)) {
+			/*
+			 * This is the simplest way of getting the number of
+			 * characters parsed. Note that this is not the same
+			 * as the number of bytes when parsing strings with
+			 * non-ASCII characters in them.
+			 */
+
+			Tcl_Obj *tmpStr;
+
+			/*
+			 * Skip leading spaces first. This is only really an
+			 * issue if it is the first "element" that has the
+			 * failure.
+			 */
+
+			while (isspace(UCHAR(*p))) {		/* INTL: ? */
+			    p++;
+			}
+			tmpStr = Tcl_NewStringObj(string1, p-string1);
+			failat = Tcl_GetCharLength(tmpStr);
+			TclDecrRefCount(tmpStr);
+			break;
+		    }
+		}
+	    }
+	    result = 0;
+	    break;
 	case STR_IS_LOWER:
 	    chcomp = Tcl_UniCharIsLower;
 	    break;
