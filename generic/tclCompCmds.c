@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.88 2006/11/23 22:38:45 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.89 2006/11/23 23:48:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4770,6 +4770,11 @@ TclMinusOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value ?value ...?");
+	return TCL_ERROR;
+    }
+
     Tcl_AppendResult(interp, "not yet implemented", NULL);
     return TCL_ERROR;
 }
@@ -4807,6 +4812,11 @@ TclDivOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value ?value ...?");
+	return TCL_ERROR;
+    }
+
     Tcl_AppendResult(interp, "not yet implemented", NULL);
     return TCL_ERROR;
 }
@@ -4846,6 +4856,11 @@ TclLshiftOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value value");
+	return TCL_ERROR;
+    }
+
     Tcl_AppendResult(interp, "not yet implemented", NULL);
     return TCL_ERROR;
 }
@@ -4876,6 +4891,11 @@ TclRshiftOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value value");
+	return TCL_ERROR;
+    }
+
     Tcl_AppendResult(interp, "not yet implemented", NULL);
     return TCL_ERROR;
 }
@@ -4906,7 +4926,193 @@ TclModOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    Tcl_Obj *argObj;
+    ClientData ptr1, ptr2;
+    int type1, type2;
+    long l1, l2 = 0;
+    const char *description;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value value");
+	return TCL_ERROR;
+    }
+
+    if ((TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK)
+	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	argObj = objv[1];
+	goto badArg;
+    }
+    if ((TclGetNumberFromObj(NULL, objv[2], &ptr2, &type2) != TCL_OK)
+	    || (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
+	argObj = objv[2];
+	goto badArg;
+    }
+
+    if (type2 == TCL_NUMBER_LONG) {
+	l2 = *((CONST long *)ptr2);
+	if (l2 == 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
+	    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
+		    NULL);
+	    return TCL_ERROR;
+	}
+	if ((l2 == 1) || (l2 == -1)) {
+	    Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
+	    return TCL_OK;
+	}
+    }
+    if (type1 == TCL_NUMBER_LONG) {
+	l1 = *((CONST long *)ptr1);
+	if (l1 == 0) {
+	    Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
+	    return TCL_OK;
+	}
+	if (type2 == TCL_NUMBER_LONG) {
+	    /* Both operands are long; do native calculation */
+	    long lRemainder, lQuotient = l1 / l2;
+
+	    /* Force Tcl's integer division rules */
+	    /* TODO: examine for logic simplification */
+	    if (((lQuotient < 0) || ((lQuotient == 0) &&
+		    ((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
+		    ((lQuotient * l2) != l1)) {
+		lQuotient -= 1;
+	    }
+	    lRemainder = l1 - l2*lQuotient;
+	    Tcl_SetLongObj(Tcl_GetObjResult(interp), lRemainder);
+	    return TCL_OK;
+	}
+	/*
+	 * First operand fits in long; second does not, so the second has
+	 * greater magnitude than first. No need to divide to determine the
+	 * remainder.
+	 */
+#ifndef NO_WIDE_TYPE
+	if (type2 == TCL_NUMBER_WIDE) {
+	    Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
+
+	    if ((l1 > 0) ^ (w2 > (Tcl_WideInt)0)) {
+		/* Arguments are opposite sign; remainder is sum */
+		Tcl_SetObjResult(interp,
+			Tcl_NewWideIntObj(w2+(Tcl_WideInt)l1));
+		return TCL_OK;
+	    }
+	    /* Arguments are same sign; remainder is first operand */
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
+#endif
+	{
+	    mp_int big2;
+	    if (Tcl_IsShared(objv[2])) {
+		Tcl_GetBignumFromObj(NULL, objv[2], &big2);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, objv[2], &big2);
+	    }
+
+	    /* TODO: internals intrusion */
+	    if ((l1 > 0) ^ (big2.sign == MP_ZPOS)) {
+		/* Arguments are opposite sign; remainder is sum */
+		mp_int big1;
+		TclBNInitBignumFromLong(&big1, l1);
+		mp_add(&big2, &big1, &big2);
+		Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big2));
+	    } else {
+		/* Arguments are same sign; remainder is first operand */
+		Tcl_SetObjResult(interp, objv[1]);
+		/* TODO: free big2? */
+	    }
+	}
+	return TCL_OK;
+    }
+#ifndef NO_WIDE_TYPE
+    if (type1 == TCL_NUMBER_WIDE) {
+	Tcl_WideInt w1 = *((CONST Tcl_WideInt *)ptr1);
+	if (type2 != TCL_NUMBER_BIG) {
+	    Tcl_WideInt w2, wQuotient, wRemainder;
+
+	    Tcl_GetWideIntFromObj(NULL, objv[2], &w2);
+	    wQuotient = w1 / w2;
+
+	    /* Force Tcl's integer division rules */
+	    /* TODO: examine for logic simplification */
+	    if (((wQuotient < ((Tcl_WideInt) 0))
+		    || ((wQuotient == ((Tcl_WideInt) 0)) && (
+			(w1 < ((Tcl_WideInt) 0) && w2 > ((Tcl_WideInt) 0))
+		    || (w1 > ((Tcl_WideInt) 0) && w2 < ((Tcl_WideInt) 0)))
+		    )) && ((wQuotient * w2) != w1)) {
+		wQuotient -= (Tcl_WideInt) 1;
+	    }
+	    wRemainder = w1 - w2*wQuotient;
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wRemainder));
+	} else {
+	    mp_int big2;
+	    if (Tcl_IsShared(objv[2])) {
+		Tcl_GetBignumFromObj(NULL, objv[2], &big2);
+	    } else {
+		Tcl_GetBignumAndClearObj(NULL, objv[2], &big2);
+	    }
+
+	    /* TODO: internals intrusion */
+	    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {
+		/* Arguments are opposite sign; remainder is sum */
+		mp_int big1;
+		TclBNInitBignumFromWideInt(&big1, w1);
+		mp_add(&big2, &big1, &big2);
+		Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big2));
+	    } else {
+		/* Arguments are same sign; remainder is first operand */
+		Tcl_SetObjResult(interp, objv[1]);
+	    }
+	}
+	return TCL_OK;
+    }
+#endif
+    {
+	mp_int big1, big2, bigResult, bigRemainder;
+
+	Tcl_GetBignumFromObj(NULL, objv[1], &big1);
+	Tcl_GetBignumFromObj(NULL, objv[2], &big2);
+	mp_init(&bigResult);
+	mp_init(&bigRemainder);
+	mp_div(&big1, &big2, &bigResult, &bigRemainder);
+	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
+	    /* Convert to Tcl's integer division rules */
+	    mp_sub_d(&bigResult, 1, &bigResult);
+	    mp_add(&bigRemainder, &big2, &bigRemainder);
+	}
+	mp_copy(&bigRemainder, &bigResult);
+	mp_clear(&bigRemainder);
+	mp_clear(&big1);
+	mp_clear(&big2);
+	if (Tcl_IsShared(objv[1])) {
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&bigResult));
+	} else {
+	    Tcl_SetBignumObj(objv[1], &bigResult);
+	    Tcl_SetObjResult(interp, objv[1]);
+	}
+	return TCL_OK;
+    }
+
+  badArg:
+    if (TclGetNumberFromObj(NULL, argObj, &ptr1, &type1) != TCL_OK) {
+	int numBytes;
+	CONST char *bytes = Tcl_GetStringFromObj(argObj, &numBytes);
+	if (numBytes == 0) {
+	    description = "empty string";
+	} else if (TclCheckBadOctal(NULL, bytes)) {
+	    description = "invalid octal number";
+	} else {
+	    description = "non-numeric string";
+	}
+    } else if (type1 == TCL_NUMBER_NAN) {
+	description = "non-numeric floating-point value";
+    } else {
+	description = "floating-point value";
+    }
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "can't use %s as operand of \"%%\"", description));
     return TCL_ERROR;
 }
 
@@ -4938,6 +5144,7 @@ TclNeqOpCmd(
 {
     int result = 1, cmp, len1, len2;
     const char *str1, *str2;
+
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value value");
 	return TCL_ERROR;
