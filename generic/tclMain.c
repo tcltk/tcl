@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.39 2006/11/15 20:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.40 2006/11/23 03:18:01 das Exp $
  */
 
 #include "tclInt.h"
@@ -635,7 +635,7 @@ Tcl_Main(
 	 * If everything has gone OK so far, call the main loop proc, if it
 	 * exists. Packages (like Tk) can set it to start processing events at
 	 * this point.
-		 */
+	 */
 
 		(*mainLoopProc)();
 		mainLoopProc = NULL;
@@ -680,9 +680,9 @@ Tcl_Main(
 	    Tcl_Exit(exitCode);
 	}
 	
-	/*
-	 *---------------------------------------------------------------
-	 *
+/*
+ *---------------------------------------------------------------
+ *
  * Tcl_SetMainLoop --
  *
  *	Sets an alternative main loop function.
