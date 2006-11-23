@@ -1,3 +1,9 @@
+2006-11-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (Tcl*OpCmd, TclCompile*OpCmd):
+	* generic/tclBasic.c (Tcl_CreateInterp): Partial implementation of
+	TIP#174; the commands are compiled, but (mostly) not interpreted yet.
+
 2006-11-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP#269 IMPLEMENTATION
