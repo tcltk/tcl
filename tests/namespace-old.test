@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace-old.test,v 1.10 2006/11/03 00:34:53 hobbs Exp $
+# RCS: @(#) $Id: namespace-old.test,v 1.11 2006/11/23 15:35:31 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -684,12 +684,8 @@ test namespace-old-9.4 {check export status} {
 } {::test_ns_import::cmd1 ::test_ns_import::cmd2 ::test_ns_import::cmd3}
 
 test namespace-old-9.5 {empty import list in "namespace import" command} {
-    namespace import
-} {}
-
-test namespace-old-9.6 {empty import list for "namespace import" command} {
-    namespace import
-} {}
+    lsort [namespace import]
+} {bytestring cleanupTests configure customMatch debug errorChannel errorFile getMatchingFiles interpreter limitConstraints loadFile loadScript loadTestedCommands mainThread makeDirectory makeFile match matchDirectories matchFiles normalizeMsg normalizePath outputChannel outputFile preserveCore removeDirectory removeFile restoreState runAllTests saveState singleProcess skip skipDirectories skipFiles temporaryDirectory test testConstraint testsDirectory threadReap verbose viewFile workingDirectory}
 
 test namespace-old-9.7 {empty forget list for "namespace forget" command} {
     namespace forget
