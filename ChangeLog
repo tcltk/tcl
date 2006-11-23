@@ -7,7 +7,7 @@
 	* doc/string.n:				 work by Joe Mistachkin, with
 	enhancements by Donal Fellows for better failindex behaviour.
 
-2006-11-12  Don Porter  <dgp@users.sourceforge.net>
+2006-11-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* tools/genWinImage.tcl (removed):	Removed two files used in
 	* win/README.binary (removed):	production of binary distributions
