@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.86 2006/11/23 15:24:29 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.87 2006/11/23 16:34:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4961,8 +4961,22 @@ TclStrneqOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
+    const char *s1, *s2;
+    int s1len, s2len;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value value");
+	return TCL_ERROR;
+    }
+
+    s1 = Tcl_GetStringFromObj(objv[1], &s1len);
+    s2 = Tcl_GetStringFromObj(objv[2], &s2len);
+    if (s1len == s2len && !strcmp(s1, s2)) {
+	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 0);
+    } else {
+	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
+    }
+    return TCL_OK;
 }
 
 int
@@ -4991,8 +5005,28 @@ TclInOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
+    const char *s1, *s2;
+    int s1len, s2len, i, len;
+    Tcl_Obj **listObj;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value list");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_ListObjGetElements(interp, objv[2], &len, &listObj) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    s1 = Tcl_GetStringFromObj(objv[1], &s1len);
+    for (i=0 ; i<len ; i++) {
+	s2 = Tcl_GetStringFromObj(listObj[i], &s2len);
+	if (s1len == s2len && !strcmp(s1, s2)) {
+	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
+	    return TCL_OK;
+	}
+    }
+    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 0);
+    return TCL_OK;
 }
 
 int
@@ -5021,8 +5055,28 @@ TclNiOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
+    const char *s1, *s2;
+    int s1len, s2len, i, len;
+    Tcl_Obj **listObj;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value list");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_ListObjGetElements(interp, objv[2], &len, &listObj) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    s1 = Tcl_GetStringFromObj(objv[1], &s1len);
+    for (i=0 ; i<len ; i++) {
+	s2 = Tcl_GetStringFromObj(listObj[i], &s2len);
+	if (s1len == s2len && !strcmp(s1, s2)) {
+	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 0);
+	    return TCL_OK;
+	}
+    }
+    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
+    return TCL_OK;
 }
 
 int
