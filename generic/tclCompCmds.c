@@ -12,11 +12,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.85 2006/11/08 13:47:07 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.86 2006/11/23 15:24:29 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tommath.h"
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
@@ -4440,6 +4441,966 @@ PushVarName(
     *localIndexPtr = localIndex;
     *simpleVarNamePtr = simpleVarName;
     *isScalarPtr = (elName == NULL);
+    return TCL_OK;
+}
+
+int
+TclInvertOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    ClientData val;
+    int type;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "number");
+	return TCL_ERROR;
+    }
+    if (TclGetNumberFromObj(interp, objv[1], &val, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (type) {
+    case TCL_NUMBER_LONG: {
+	long l = *((const long *) val);
+
+	Tcl_SetLongObj(Tcl_GetObjResult(interp), ~l);
+	return TCL_OK;
+    }
+#ifndef NO_WIDE_TYPE
+    case TCL_NUMBER_WIDE: {
+	Tcl_WideInt w = *((const Tcl_WideInt *) val);
+
+	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), ~w);
+	return TCL_OK;
+    }
+#endif
+    default: {
+	mp_int big;
+
+	if (Tcl_IsShared(objv[1])) {
+	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
+	} else {
+	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
+	}
+	/* ~a = - a - 1 */
+	mp_neg(&big, &big);
+	mp_sub_d(&big, 1, &big);
+	if (Tcl_IsShared(objv[1])) {
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
+	} else {
+	    Tcl_SetBignumObj(objv[1], &big);
+	    Tcl_SetObjResult(interp, objv[1]);
+	}
+	return TCL_OK;
+    }
+    }
+}
+
+int
+TclCompileInvertOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_BITNOT, envPtr);
+    return TCL_OK;
+}
+
+int
+TclNotOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int b;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[1], &b) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), !b);
+    return TCL_OK;
+}
+
+int
+TclCompileNotOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_LNOT, envPtr);
+    return TCL_OK;
+}
+
+int
+TclAddOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileAddOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "0", 1);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_ADD, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclMulOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileMulOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "1", 1);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_MULT, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclAndOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileAndOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "-1", 2);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_BITAND, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclOrOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileOrOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "0", 1);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_BITOR, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclXorOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileXorOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "0", 1);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_BITXOR, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclPowOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompilePowOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, "1", 1);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+    }
+    for (; words>2 ; words--) {
+	TclEmitOpcode(INST_EXPON, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclMinusOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileMinusOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    if (parsePtr->numWords == 2) {
+	TclEmitOpcode(INST_UMINUS, envPtr);
+	return TCL_OK;
+    }
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_SUB, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclDivOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileDivOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	return TCL_ERROR;
+    } else if (parsePtr->numWords == 2) {
+	PushLiteral(envPtr, "1", 1);
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_DIV, envPtr);
+	return TCL_OK;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    for (words=2 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_DIV, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclLshiftOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileLshiftOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_LSHIFT, envPtr);
+    return TCL_OK;
+}
+
+int
+TclRshiftOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileRshiftOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_RSHIFT, envPtr);
+    return TCL_OK;
+}
+
+int
+TclModOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileModOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_MOD, envPtr);
+    return TCL_OK;
+}
+
+int
+TclNeqOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileNeqOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_NEQ, envPtr);
+    return TCL_OK;
+}
+
+int
+TclStrneqOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileStrneqOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_STR_NEQ, envPtr);
+    return TCL_OK;
+}
+
+int
+TclInOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileInOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_LIST_IN, envPtr);
+    return TCL_OK;
+}
+
+int
+TclNiOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileNiOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp);
+    TclEmitOpcode(INST_LIST_NOT_IN, envPtr);
+    return TCL_OK;
+}
+
+int
+TclLessOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileLessOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords < 3) {
+	PushLiteral(envPtr, "1", 1);
+    } else if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_LT, envPtr);
+    } else if (envPtr->procPtr == NULL) {
+	/*
+	 * No local variable space!
+	 */
+
+	return TCL_ERROR;
+    } else {
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
+		envPtr->procPtr);
+	int words;
+
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	TclEmitOpcode(INST_LT, envPtr);
+	for (words=3 ; words<parsePtr->numWords ;) {
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, tmpIndex, envPtr);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	    if (++words < parsePtr->numWords) {
+		TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_LT, envPtr);
+	}
+	for (; words>3 ; words--) {
+	    TclEmitOpcode(INST_BITAND, envPtr);
+	}
+    }
+    return TCL_OK;
+}
+
+int
+TclLeqOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileLeqOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords < 3) {
+	PushLiteral(envPtr, "1", 1);
+    } else if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_LE, envPtr);
+    } else if (envPtr->procPtr == NULL) {
+	/*
+	 * No local variable space!
+	 */
+
+	return TCL_ERROR;
+    } else {
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
+		envPtr->procPtr);
+	int words;
+
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	TclEmitOpcode(INST_LE, envPtr);
+	for (words=3 ; words<parsePtr->numWords ;) {
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, tmpIndex, envPtr);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	    if (++words < parsePtr->numWords) {
+		TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_LE, envPtr);
+	}
+	for (; words>3 ; words--) {
+	    TclEmitOpcode(INST_BITAND, envPtr);
+	}
+    }
+    return TCL_OK;
+}
+
+int
+TclGreaterOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileGreaterOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords < 3) {
+	PushLiteral(envPtr, "1", 1);
+    } else if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_GT, envPtr);
+    } else if (envPtr->procPtr == NULL) {
+	/*
+	 * No local variable space!
+	 */
+
+	return TCL_ERROR;
+    } else {
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
+		envPtr->procPtr);
+	int words;
+
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	TclEmitOpcode(INST_GT, envPtr);
+	for (words=3 ; words<parsePtr->numWords ;) {
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, tmpIndex, envPtr);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	    if (++words < parsePtr->numWords) {
+		TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_GT, envPtr);
+	}
+	for (; words>3 ; words--) {
+	    TclEmitOpcode(INST_BITAND, envPtr);
+	}
+    }
+    return TCL_OK;
+}
+
+int
+TclGeqOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileGeqOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords < 3) {
+	PushLiteral(envPtr, "1", 1);
+    } else if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_GE, envPtr);
+    } else if (envPtr->procPtr == NULL) {
+	/*
+	 * No local variable space!
+	 */
+
+	return TCL_ERROR;
+    } else {
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
+		envPtr->procPtr);
+	int words;
+
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	TclEmitOpcode(INST_GE, envPtr);
+	for (words=3 ; words<parsePtr->numWords ;) {
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, tmpIndex, envPtr);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	    if (++words < parsePtr->numWords) {
+		TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_GE, envPtr);
+	}
+	for (; words>3 ; words--) {
+	    TclEmitOpcode(INST_BITAND, envPtr);
+	}
+    }
+    return TCL_OK;
+}
+
+int
+TclEqOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileEqOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords < 3) {
+	PushLiteral(envPtr, "1", 1);
+    } else if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_EQ, envPtr);
+    } else if (envPtr->procPtr == NULL) {
+	/*
+	 * No local variable space!
+	 */
+
+	return TCL_ERROR;
+    } else {
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
+		envPtr->procPtr);
+	int words;
+
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	TclEmitOpcode(INST_EQ, envPtr);
+	for (words=3 ; words<parsePtr->numWords ;) {
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, tmpIndex, envPtr);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	    if (++words < parsePtr->numWords) {
+		TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_EQ, envPtr);
+	}
+	for (; words>3 ; words--) {
+	    TclEmitOpcode(INST_BITAND, envPtr);
+	}
+    }
+    return TCL_OK;
+}
+
+int
+TclStreqOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    return TCL_ERROR;
+}
+
+int
+TclCompileStreqOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords < 3) {
+	PushLiteral(envPtr, "1", 1);
+    } else if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_STR_EQ, envPtr);
+    } else if (envPtr->procPtr == NULL) {
+	/*
+	 * No local variable space!
+	 */
+
+	return TCL_ERROR;
+    } else {
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
+		envPtr->procPtr);
+	int words;
+
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp);
+	TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	TclEmitOpcode(INST_STR_EQ, envPtr);
+	for (words=3 ; words<parsePtr->numWords ;) {
+	    TclEmitInstInt4(INST_LOAD_SCALAR4, tmpIndex, envPtr);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp);
+	    if (++words < parsePtr->numWords) {
+		TclEmitInstInt4(INST_STORE_SCALAR4, tmpIndex, envPtr);
+	    }
+	    TclEmitOpcode(INST_STR_EQ, envPtr);
+	}
+	for (; words>3 ; words--) {
+	    TclEmitOpcode(INST_BITAND, envPtr);
+	}
+    }
     return TCL_OK;
 }
 
