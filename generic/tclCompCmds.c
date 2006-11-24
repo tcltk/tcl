@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.90 2006/11/24 15:06:25 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.91 2006/11/24 15:34:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4856,12 +4856,132 @@ TclLshiftOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    ClientData ptr1, ptr2;
+    int invalid, shift, type1, type2, idx;
+    const char *description;
+    long l1;
+
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value value");
 	return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    if ((TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK)
+	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	idx = 1;
+	goto illegalOperand;
+    }
+    if ((TclGetNumberFromObj(NULL, objv[2], &ptr2, &type2) != TCL_OK)
+	    || (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
+	idx = 2;
+	goto illegalOperand;
+    }
+
+    /* reject negative shift argument */
+    switch (type2) {
+    case TCL_NUMBER_LONG:
+	invalid = (*((const long *)ptr2) < (long)0);
+	break;
+#ifndef NO_WIDE_TYPE
+    case TCL_NUMBER_WIDE:
+	invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
+	break;
+#endif
+    case TCL_NUMBER_BIG:
+	/* TODO: const correctness ? */
+	invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
+	break;
+    default:
+	/* Unused, here to silence compiler warning */
+	invalid = 0;
+    }
+    if (invalid) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("negative shift argument", -1));
+	return TCL_ERROR;
+    }
+
+    /* Zero shifted any number of bits is still zero */
+    if ((type1 == TCL_NUMBER_LONG) && (*((const long *)ptr1) == (long)0)) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	return TCL_OK;
+    }
+
+    /* Large left shifts create integer overflow */
+    if (Tcl_GetIntFromObj(NULL, objv[2], &shift) != TCL_OK) {
+	/*
+	 * Technically, we could hold the value (1 << (INT_MAX+1)) in an
+	 * mp_int, but since we're using mp_mul_2d() to do the work, and it
+	 * takes only an int argument, that's a good place to draw the line.
+	 */
+
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"integer value too large to represent", -1));
+	return TCL_ERROR;
+    }
+
+    /* Handle shifts within the native long range */
+    if ((type1 == TCL_NUMBER_LONG) && ((size_t)shift < CHAR_BIT*sizeof(long))
+	    && (l1 = *((CONST long *)ptr1)) &&
+	    !(((l1>0) ? l1 : ~l1) & -(1L<<(CHAR_BIT*sizeof(long)-1-shift)))) {
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(l1<<shift));
+	return TCL_OK;
+    }
+
+    /* Handle shifts within the native wide range */
+    if ((type1 != TCL_NUMBER_BIG)
+	    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
+	Tcl_WideInt w;
+
+	Tcl_GetWideIntFromObj(NULL, objv[1], &w);
+	if (!(((w>0) ? w : ~w) & -(((Tcl_WideInt)1)
+		<< (CHAR_BIT*sizeof(Tcl_WideInt)-1-shift)))) {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w<<shift));
+	    return TCL_OK;
+	}
+    }
+
+    {
+	mp_int big, bigResult;
+
+	if (Tcl_IsShared(objv[1])) {
+	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
+	} else {
+	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
+	}
+
+	mp_init(&bigResult);
+	mp_mul_2d(&big, shift, &bigResult);
+	mp_clear(&big);
+
+	if (!Tcl_IsShared(objv[1])) {
+	    Tcl_SetBignumObj(objv[1], &bigResult);
+	    Tcl_SetObjResult(interp, objv[1]);
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&bigResult));
+	}
+    }
+    return TCL_OK;
+
+  illegalOperand:
+    if (TclGetNumberFromObj(NULL, objv[idx], &ptr1, &type1) != TCL_OK) {
+	int numBytes;
+	const char *bytes = Tcl_GetStringFromObj(objv[idx], &numBytes);
+	if (numBytes == 0) {
+	    description = "empty string";
+	} else if (TclCheckBadOctal(NULL, bytes)) {
+	    description = "invalid octal number";
+	} else {
+	    description = "non-numeric string";
+	}
+    } else if (type1 == TCL_NUMBER_NAN) {
+	description = "non-numeric floating-point value";
+    } else {
+	description = "floating-point value";
+    }
+
+    Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("can't use %s as operand of \"<<\"", description));
     return TCL_ERROR;
 }
 
@@ -4891,12 +5011,163 @@ TclRshiftOpCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    ClientData ptr1, ptr2;
+    int invalid, shift, type1, type2, idx;
+    const char *description;
+    long l1;
+
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value value");
 	return TCL_ERROR;
     }
 
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
+    if ((TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK)
+	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+	idx = 1;
+	goto illegalOperand;
+    }
+    if ((TclGetNumberFromObj(NULL, objv[2], &ptr2, &type2) != TCL_OK)
+	    || (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
+	idx = 2;
+	goto illegalOperand;
+    }
+
+    /* reject negative shift argument */
+    switch (type2) {
+    case TCL_NUMBER_LONG:
+	invalid = (*((const long *)ptr2) < (long)0);
+	break;
+#ifndef NO_WIDE_TYPE
+    case TCL_NUMBER_WIDE:
+	invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
+	break;
+#endif
+    case TCL_NUMBER_BIG:
+	/* TODO: const correctness ? */
+	invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
+	break;
+    default:
+	/* Unused, here to silence compiler warning */
+	invalid = 0;
+    }
+    if (invalid) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("negative shift argument", -1));
+	return TCL_ERROR;
+    }
+
+    /* Zero shifted any number of bits is still zero */
+    if ((type1 == TCL_NUMBER_LONG) && (*((const long *)ptr1) == (long)0)) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	return TCL_OK;
+    }
+
+    /* Quickly force large right shifts to 0 or -1 */
+    if ((type2 != TCL_NUMBER_LONG)
+	    || (*((const long *)ptr2) > INT_MAX)) {
+	/*
+	 * Again, technically, the value to be shifted could be an mp_int so
+	 * huge that a right shift by (INT_MAX+1) bits could not take us to
+	 * the result of 0 or -1, but since we're using mp_div_2d to do the
+	 * work, and it takes only an int argument, we draw the line there.
+	 */
+
+	int zero;
+
+	switch (type1) {
+	case TCL_NUMBER_LONG:
+	    zero = (*((const long *)ptr1) > (long)0);
+	    break;
+#ifndef NO_WIDE_TYPE
+	case TCL_NUMBER_WIDE:
+	    zero = (*((const Tcl_WideInt *)ptr1) > (Tcl_WideInt)0);
+	    break;
+#endif
+	case TCL_NUMBER_BIG:
+	    /* TODO: const correctness ? */
+	    zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
+	    break;
+	default:
+	    /* Unused, here to silence compiler warning. */
+	    zero = 0;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(zero ? 0 : -1));
+	return TCL_OK;
+    }
+
+    shift = (int)(*((const long *)ptr2));
+    /* Handle shifts within the native long range */
+    if (type1 == TCL_NUMBER_LONG) {
+	l1 = *((const long *)ptr1);
+	if ((size_t)shift >= CHAR_BIT*sizeof(long)) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(l1 >= (long)0 ? 0 : -1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(l1 >> shift));
+	}
+	return TCL_OK;
+    }
+
+#ifndef NO_WIDE_TYPE
+    /* Handle shifts within the native wide range */
+    if (type1 == TCL_NUMBER_WIDE) {
+	Tcl_WideInt w = *((const Tcl_WideInt *)ptr1);
+	if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewIntObj(w >= (Tcl_WideInt)0 ? 0 : -1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w >> shift));
+	}
+	return TCL_OK;
+    }
+#endif
+
+    {
+	mp_int big, bigResult, bigRemainder;
+
+	if (Tcl_IsShared(objv[1])) {
+	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
+	} else {
+	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
+	}
+
+	mp_init(&bigResult);
+	mp_init(&bigRemainder);
+	mp_div_2d(&big, shift, &bigResult, &bigRemainder);
+	if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
+	    /* Convert to Tcl's integer division rules */
+	    mp_sub_d(&bigResult, 1, &bigResult);
+	}
+	mp_clear(&bigRemainder);
+	mp_clear(&big);
+
+	if (!Tcl_IsShared(objv[1])) {
+	    Tcl_SetBignumObj(objv[1], &bigResult);
+	    Tcl_SetObjResult(interp, objv[1]);
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&bigResult));
+	}
+    }
+    return TCL_OK;
+
+  illegalOperand:
+    if (TclGetNumberFromObj(NULL, objv[idx], &ptr1, &type1) != TCL_OK) {
+	int numBytes;
+	const char *bytes = Tcl_GetStringFromObj(objv[idx], &numBytes);
+	if (numBytes == 0) {
+	    description = "empty string";
+	} else if (TclCheckBadOctal(NULL, bytes)) {
+	    description = "invalid octal number";
+	} else {
+	    description = "non-numeric string";
+	}
+    } else if (type1 == TCL_NUMBER_NAN) {
+	description = "non-numeric floating-point value";
+    } else {
+	description = "floating-point value";
+    }
+
+    Tcl_SetObjResult(interp,
+	    Tcl_ObjPrintf("can't use %s as operand of \">>\"", description));
     return TCL_ERROR;
 }
 
