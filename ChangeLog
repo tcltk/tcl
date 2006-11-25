@@ -1,3 +1,11 @@
+2006-11-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP#269 IMPLEMENTATION
+
+	* generic/tclMathOp.c (new file): Completed the implementation of the
+	interpreted versions of all the tcl::mathop commands. Moved to a new
+	file to make tclCompCmds.c more focussed in purpose.
+
 2006-11-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (Tcl*OpCmd, TclCompile*OpCmd):

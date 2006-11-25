@@ -1,26 +1,22 @@
 /*
  * tclCompCmds.c --
  *
- *	This file contains compilation procedures that compile various
- *	Tcl commands into a sequence of instructions ("bytecodes").
+ *	This file contains compilation procedures that compile various Tcl
+ *	commands into a sequence of instructions ("bytecodes").
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2004-2005 by Donal K. Fellows.
+ * Copyright (c) 2004-2006 by Donal K. Fellows.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.91 2006/11/24 15:34:23 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.92 2006/11/25 17:18:09 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-
-#include "tommath.h"
-#include <math.h>
-#include <float.h>
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
@@ -126,8 +122,6 @@ static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *simpleVarNamePtr, int *isScalarPtr);
-static int		CompareNumbers(Tcl_Interp *interp, Tcl_Obj *numObj1,
-			    Tcl_Obj *numObj2, int *resultPtr);
 
 /*
  * Flags bits used by PushVarName.
@@ -4449,59 +4443,23 @@ PushVarName(
     return TCL_OK;
 }
 
-int
-TclInvertOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    ClientData val;
-    int type;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "number");
-	return TCL_ERROR;
-    }
-    if (TclGetNumberFromObj(interp, objv[1], &val, &type) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    switch (type) {
-    case TCL_NUMBER_LONG: {
-	long l = *((const long *) val);
-
-	Tcl_SetLongObj(Tcl_GetObjResult(interp), ~l);
-	return TCL_OK;
-    }
-#ifndef NO_WIDE_TYPE
-    case TCL_NUMBER_WIDE: {
-	Tcl_WideInt w = *((const Tcl_WideInt *) val);
-
-	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), ~w);
-	return TCL_OK;
-    }
-#endif
-    default: {
-	mp_int big;
-
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
-	}
-	/* ~a = - a - 1 */
-	mp_neg(&big, &big);
-	mp_sub_d(&big, 1, &big);
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
-	} else {
-	    Tcl_SetBignumObj(objv[1], &big);
-	    Tcl_SetObjResult(interp, objv[1]);
-	}
-	return TCL_OK;
-    }
-    }
-}
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileInvertOpCmd --
+ *
+ *	Procedure called to compile the "::tcl::mathop::~" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "::tcl::mathop::~"
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclCompileInvertOpCmd(
@@ -4521,26 +4479,6 @@ TclCompileInvertOpCmd(
 }
 
 int
-TclNotOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int b;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[1], &b) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), !b);
-    return TCL_OK;
-}
-
-int
 TclCompileNotOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -4557,17 +4495,6 @@ TclCompileNotOpCmd(
     return TCL_OK;
 }
 
-int
-TclAddOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
 int
 TclCompileAddOpCmd(
     Tcl_Interp *interp,
@@ -4592,17 +4519,6 @@ TclCompileAddOpCmd(
 }
 
 int
-TclMulOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
-int
 TclCompileMulOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -4625,17 +4541,6 @@ TclCompileMulOpCmd(
     return TCL_OK;
 }
 
-int
-TclAndOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
 int
 TclCompileAndOpCmd(
     Tcl_Interp *interp,
@@ -4660,17 +4565,6 @@ TclCompileAndOpCmd(
 }
 
 int
-TclOrOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
-int
 TclCompileOrOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -4694,17 +4588,6 @@ TclCompileOrOpCmd(
 }
 
 int
-TclXorOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
-int
 TclCompileXorOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -4727,17 +4610,6 @@ TclCompileXorOpCmd(
     return TCL_OK;
 }
 
-int
-TclPowOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
 int
 TclCompilePowOpCmd(
     Tcl_Interp *interp,
@@ -4763,22 +4635,6 @@ TclCompilePowOpCmd(
     return TCL_OK;
 }
 
-int
-TclMinusOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value ?value ...?");
-	return TCL_ERROR;
-    }
-
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
 int
 TclCompileMinusOpCmd(
     Tcl_Interp *interp,
@@ -4806,22 +4662,6 @@ TclCompileMinusOpCmd(
 }
 
 int
-TclDivOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value ?value ...?");
-	return TCL_ERROR;
-    }
-
-    Tcl_AppendResult(interp, "not yet implemented", NULL);
-    return TCL_ERROR;
-}
-
-int
 TclCompileDivOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -4833,7 +4673,7 @@ TclCompileDivOpCmd(
     if (parsePtr->numWords == 1) {
 	return TCL_ERROR;
     } else if (parsePtr->numWords == 2) {
-	PushLiteral(envPtr, "1", 1);
+	PushLiteral(envPtr, "1.0", 3);
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp);
 	TclEmitOpcode(INST_DIV, envPtr);
@@ -4849,142 +4689,6 @@ TclCompileDivOpCmd(
     return TCL_OK;
 }
 
-int
-TclLshiftOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    ClientData ptr1, ptr2;
-    int invalid, shift, type1, type2, idx;
-    const char *description;
-    long l1;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value value");
-	return TCL_ERROR;
-    }
-
-    if ((TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK)
-	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
-	idx = 1;
-	goto illegalOperand;
-    }
-    if ((TclGetNumberFromObj(NULL, objv[2], &ptr2, &type2) != TCL_OK)
-	    || (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
-	idx = 2;
-	goto illegalOperand;
-    }
-
-    /* reject negative shift argument */
-    switch (type2) {
-    case TCL_NUMBER_LONG:
-	invalid = (*((const long *)ptr2) < (long)0);
-	break;
-#ifndef NO_WIDE_TYPE
-    case TCL_NUMBER_WIDE:
-	invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
-	break;
-#endif
-    case TCL_NUMBER_BIG:
-	/* TODO: const correctness ? */
-	invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
-	break;
-    default:
-	/* Unused, here to silence compiler warning */
-	invalid = 0;
-    }
-    if (invalid) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("negative shift argument", -1));
-	return TCL_ERROR;
-    }
-
-    /* Zero shifted any number of bits is still zero */
-    if ((type1 == TCL_NUMBER_LONG) && (*((const long *)ptr1) == (long)0)) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-	return TCL_OK;
-    }
-
-    /* Large left shifts create integer overflow */
-    if (Tcl_GetIntFromObj(NULL, objv[2], &shift) != TCL_OK) {
-	/*
-	 * Technically, we could hold the value (1 << (INT_MAX+1)) in an
-	 * mp_int, but since we're using mp_mul_2d() to do the work, and it
-	 * takes only an int argument, that's a good place to draw the line.
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"integer value too large to represent", -1));
-	return TCL_ERROR;
-    }
-
-    /* Handle shifts within the native long range */
-    if ((type1 == TCL_NUMBER_LONG) && ((size_t)shift < CHAR_BIT*sizeof(long))
-	    && (l1 = *((CONST long *)ptr1)) &&
-	    !(((l1>0) ? l1 : ~l1) & -(1L<<(CHAR_BIT*sizeof(long)-1-shift)))) {
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(l1<<shift));
-	return TCL_OK;
-    }
-
-    /* Handle shifts within the native wide range */
-    if ((type1 != TCL_NUMBER_BIG)
-	    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
-	Tcl_WideInt w;
-
-	Tcl_GetWideIntFromObj(NULL, objv[1], &w);
-	if (!(((w>0) ? w : ~w) & -(((Tcl_WideInt)1)
-		<< (CHAR_BIT*sizeof(Tcl_WideInt)-1-shift)))) {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w<<shift));
-	    return TCL_OK;
-	}
-    }
-
-    {
-	mp_int big, bigResult;
-
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
-	}
-
-	mp_init(&bigResult);
-	mp_mul_2d(&big, shift, &bigResult);
-	mp_clear(&big);
-
-	if (!Tcl_IsShared(objv[1])) {
-	    Tcl_SetBignumObj(objv[1], &bigResult);
-	    Tcl_SetObjResult(interp, objv[1]);
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&bigResult));
-	}
-    }
-    return TCL_OK;
-
-  illegalOperand:
-    if (TclGetNumberFromObj(NULL, objv[idx], &ptr1, &type1) != TCL_OK) {
-	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objv[idx], &numBytes);
-	if (numBytes == 0) {
-	    description = "empty string";
-	} else if (TclCheckBadOctal(NULL, bytes)) {
-	    description = "invalid octal number";
-	} else {
-	    description = "non-numeric string";
-	}
-    } else if (type1 == TCL_NUMBER_NAN) {
-	description = "non-numeric floating-point value";
-    } else {
-	description = "floating-point value";
-    }
-
-    Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("can't use %s as operand of \"<<\"", description));
-    return TCL_ERROR;
-}
-
 int
 TclCompileLshiftOpCmd(
     Tcl_Interp *interp,
@@ -5005,173 +4709,6 @@ TclCompileLshiftOpCmd(
 }
 
 int
-TclRshiftOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    ClientData ptr1, ptr2;
-    int invalid, shift, type1, type2, idx;
-    const char *description;
-    long l1;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value value");
-	return TCL_ERROR;
-    }
-
-    if ((TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK)
-	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
-	idx = 1;
-	goto illegalOperand;
-    }
-    if ((TclGetNumberFromObj(NULL, objv[2], &ptr2, &type2) != TCL_OK)
-	    || (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
-	idx = 2;
-	goto illegalOperand;
-    }
-
-    /* reject negative shift argument */
-    switch (type2) {
-    case TCL_NUMBER_LONG:
-	invalid = (*((const long *)ptr2) < (long)0);
-	break;
-#ifndef NO_WIDE_TYPE
-    case TCL_NUMBER_WIDE:
-	invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
-	break;
-#endif
-    case TCL_NUMBER_BIG:
-	/* TODO: const correctness ? */
-	invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
-	break;
-    default:
-	/* Unused, here to silence compiler warning */
-	invalid = 0;
-    }
-    if (invalid) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("negative shift argument", -1));
-	return TCL_ERROR;
-    }
-
-    /* Zero shifted any number of bits is still zero */
-    if ((type1 == TCL_NUMBER_LONG) && (*((const long *)ptr1) == (long)0)) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-	return TCL_OK;
-    }
-
-    /* Quickly force large right shifts to 0 or -1 */
-    if ((type2 != TCL_NUMBER_LONG)
-	    || (*((const long *)ptr2) > INT_MAX)) {
-	/*
-	 * Again, technically, the value to be shifted could be an mp_int so
-	 * huge that a right shift by (INT_MAX+1) bits could not take us to
-	 * the result of 0 or -1, but since we're using mp_div_2d to do the
-	 * work, and it takes only an int argument, we draw the line there.
-	 */
-
-	int zero;
-
-	switch (type1) {
-	case TCL_NUMBER_LONG:
-	    zero = (*((const long *)ptr1) > (long)0);
-	    break;
-#ifndef NO_WIDE_TYPE
-	case TCL_NUMBER_WIDE:
-	    zero = (*((const Tcl_WideInt *)ptr1) > (Tcl_WideInt)0);
-	    break;
-#endif
-	case TCL_NUMBER_BIG:
-	    /* TODO: const correctness ? */
-	    zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
-	    break;
-	default:
-	    /* Unused, here to silence compiler warning. */
-	    zero = 0;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(zero ? 0 : -1));
-	return TCL_OK;
-    }
-
-    shift = (int)(*((const long *)ptr2));
-    /* Handle shifts within the native long range */
-    if (type1 == TCL_NUMBER_LONG) {
-	l1 = *((const long *)ptr1);
-	if ((size_t)shift >= CHAR_BIT*sizeof(long)) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(l1 >= (long)0 ? 0 : -1));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(l1 >> shift));
-	}
-	return TCL_OK;
-    }
-
-#ifndef NO_WIDE_TYPE
-    /* Handle shifts within the native wide range */
-    if (type1 == TCL_NUMBER_WIDE) {
-	Tcl_WideInt w = *((const Tcl_WideInt *)ptr1);
-	if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewIntObj(w >= (Tcl_WideInt)0 ? 0 : -1));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w >> shift));
-	}
-	return TCL_OK;
-    }
-#endif
-
-    {
-	mp_int big, bigResult, bigRemainder;
-
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
-	}
-
-	mp_init(&bigResult);
-	mp_init(&bigRemainder);
-	mp_div_2d(&big, shift, &bigResult, &bigRemainder);
-	if (mp_cmp_d(&bigRemainder, 0) == MP_LT) {
-	    /* Convert to Tcl's integer division rules */
-	    mp_sub_d(&bigResult, 1, &bigResult);
-	}
-	mp_clear(&bigRemainder);
-	mp_clear(&big);
-
-	if (!Tcl_IsShared(objv[1])) {
-	    Tcl_SetBignumObj(objv[1], &bigResult);
-	    Tcl_SetObjResult(interp, objv[1]);
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&bigResult));
-	}
-    }
-    return TCL_OK;
-
-  illegalOperand:
-    if (TclGetNumberFromObj(NULL, objv[idx], &ptr1, &type1) != TCL_OK) {
-	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(objv[idx], &numBytes);
-	if (numBytes == 0) {
-	    description = "empty string";
-	} else if (TclCheckBadOctal(NULL, bytes)) {
-	    description = "invalid octal number";
-	} else {
-	    description = "non-numeric string";
-	}
-    } else if (type1 == TCL_NUMBER_NAN) {
-	description = "non-numeric floating-point value";
-    } else {
-	description = "floating-point value";
-    }
-
-    Tcl_SetObjResult(interp,
-	    Tcl_ObjPrintf("can't use %s as operand of \">>\"", description));
-    return TCL_ERROR;
-}
-
-int
 TclCompileRshiftOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -5190,203 +4727,6 @@ TclCompileRshiftOpCmd(
     return TCL_OK;
 }
 
-int
-TclModOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_Obj *argObj;
-    ClientData ptr1, ptr2;
-    int type1, type2;
-    long l1, l2 = 0;
-    const char *description;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value value");
-	return TCL_ERROR;
-    }
-
-    if ((TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK)
-	    || (type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
-	argObj = objv[1];
-	goto badArg;
-    }
-    if ((TclGetNumberFromObj(NULL, objv[2], &ptr2, &type2) != TCL_OK)
-	    || (type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
-	argObj = objv[2];
-	goto badArg;
-    }
-
-    if (type2 == TCL_NUMBER_LONG) {
-	l2 = *((CONST long *)ptr2);
-	if (l2 == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
-		    NULL);
-	    return TCL_ERROR;
-	}
-	if ((l2 == 1) || (l2 == -1)) {
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
-	    return TCL_OK;
-	}
-    }
-    if (type1 == TCL_NUMBER_LONG) {
-	l1 = *((CONST long *)ptr1);
-	if (l1 == 0) {
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
-	    return TCL_OK;
-	}
-	if (type2 == TCL_NUMBER_LONG) {
-	    /* Both operands are long; do native calculation */
-	    long lRemainder, lQuotient = l1 / l2;
-
-	    /* Force Tcl's integer division rules */
-	    /* TODO: examine for logic simplification */
-	    if (((lQuotient < 0) || ((lQuotient == 0) &&
-		    ((l1 < 0 && l2 > 0) || (l1 > 0 && l2 < 0)))) &&
-		    ((lQuotient * l2) != l1)) {
-		lQuotient -= 1;
-	    }
-	    lRemainder = l1 - l2*lQuotient;
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), lRemainder);
-	    return TCL_OK;
-	}
-	/*
-	 * First operand fits in long; second does not, so the second has
-	 * greater magnitude than first. No need to divide to determine the
-	 * remainder.
-	 */
-#ifndef NO_WIDE_TYPE
-	if (type2 == TCL_NUMBER_WIDE) {
-	    Tcl_WideInt w2 = *((CONST Tcl_WideInt *)ptr2);
-
-	    if ((l1 > 0) ^ (w2 > (Tcl_WideInt)0)) {
-		/* Arguments are opposite sign; remainder is sum */
-		Tcl_SetObjResult(interp,
-			Tcl_NewWideIntObj(w2+(Tcl_WideInt)l1));
-		return TCL_OK;
-	    }
-	    /* Arguments are same sign; remainder is first operand */
-	    Tcl_SetObjResult(interp, objv[1]);
-	    return TCL_OK;
-	}
-#endif
-	{
-	    mp_int big2;
-	    if (Tcl_IsShared(objv[2])) {
-		Tcl_GetBignumFromObj(NULL, objv[2], &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, objv[2], &big2);
-	    }
-
-	    /* TODO: internals intrusion */
-	    if ((l1 > 0) ^ (big2.sign == MP_ZPOS)) {
-		/* Arguments are opposite sign; remainder is sum */
-		mp_int big1;
-		TclBNInitBignumFromLong(&big1, l1);
-		mp_add(&big2, &big1, &big2);
-		Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big2));
-	    } else {
-		/* Arguments are same sign; remainder is first operand */
-		Tcl_SetObjResult(interp, objv[1]);
-		/* TODO: free big2? */
-	    }
-	}
-	return TCL_OK;
-    }
-#ifndef NO_WIDE_TYPE
-    if (type1 == TCL_NUMBER_WIDE) {
-	Tcl_WideInt w1 = *((CONST Tcl_WideInt *)ptr1);
-	if (type2 != TCL_NUMBER_BIG) {
-	    Tcl_WideInt w2, wQuotient, wRemainder;
-
-	    Tcl_GetWideIntFromObj(NULL, objv[2], &w2);
-	    wQuotient = w1 / w2;
-
-	    /* Force Tcl's integer division rules */
-	    /* TODO: examine for logic simplification */
-	    if (((wQuotient < ((Tcl_WideInt) 0))
-		    || ((wQuotient == ((Tcl_WideInt) 0)) && (
-			(w1 < ((Tcl_WideInt) 0) && w2 > ((Tcl_WideInt) 0))
-		    || (w1 > ((Tcl_WideInt) 0) && w2 < ((Tcl_WideInt) 0)))
-		    )) && ((wQuotient * w2) != w1)) {
-		wQuotient -= (Tcl_WideInt) 1;
-	    }
-	    wRemainder = w1 - w2*wQuotient;
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wRemainder));
-	} else {
-	    mp_int big2;
-	    if (Tcl_IsShared(objv[2])) {
-		Tcl_GetBignumFromObj(NULL, objv[2], &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, objv[2], &big2);
-	    }
-
-	    /* TODO: internals intrusion */
-	    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {
-		/* Arguments are opposite sign; remainder is sum */
-		mp_int big1;
-		TclBNInitBignumFromWideInt(&big1, w1);
-		mp_add(&big2, &big1, &big2);
-		Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big2));
-	    } else {
-		/* Arguments are same sign; remainder is first operand */
-		Tcl_SetObjResult(interp, objv[1]);
-	    }
-	}
-	return TCL_OK;
-    }
-#endif
-    {
-	mp_int big1, big2, bigResult, bigRemainder;
-
-	Tcl_GetBignumFromObj(NULL, objv[1], &big1);
-	Tcl_GetBignumFromObj(NULL, objv[2], &big2);
-	mp_init(&bigResult);
-	mp_init(&bigRemainder);
-	mp_div(&big1, &big2, &bigResult, &bigRemainder);
-	if (!mp_iszero(&bigRemainder) && (bigRemainder.sign != big2.sign)) {
-	    /* Convert to Tcl's integer division rules */
-	    mp_sub_d(&bigResult, 1, &bigResult);
-	    mp_add(&bigRemainder, &big2, &bigRemainder);
-	}
-	mp_copy(&bigRemainder, &bigResult);
-	mp_clear(&bigRemainder);
-	mp_clear(&big1);
-	mp_clear(&big2);
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&bigResult));
-	} else {
-	    Tcl_SetBignumObj(objv[1], &bigResult);
-	    Tcl_SetObjResult(interp, objv[1]);
-	}
-	return TCL_OK;
-    }
-
-  badArg:
-    if (TclGetNumberFromObj(NULL, argObj, &ptr1, &type1) != TCL_OK) {
-	int numBytes;
-	CONST char *bytes = Tcl_GetStringFromObj(argObj, &numBytes);
-	if (numBytes == 0) {
-	    description = "empty string";
-	} else if (TclCheckBadOctal(NULL, bytes)) {
-	    description = "invalid octal number";
-	} else {
-	    description = "non-numeric string";
-	}
-    } else if (type1 == TCL_NUMBER_NAN) {
-	description = "non-numeric floating-point value";
-    } else {
-	description = "floating-point value";
-    }
-
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't use %s as operand of \"%%\"", description));
-    return TCL_ERROR;
-}
-
 int
 TclCompileModOpCmd(
     Tcl_Interp *interp,
@@ -5407,45 +4747,6 @@ TclCompileModOpCmd(
 }
 
 int
-TclNeqOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1, cmp, len1, len2;
-    const char *str1, *str2;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value value");
-	return TCL_ERROR;
-    }
-
-    switch (CompareNumbers(NULL, objv[1], objv[2], &cmp)) {
-    case TCL_ERROR:
-	/*
-	 * Got a string
-	 */
-	str1 = Tcl_GetStringFromObj(objv[1], &len1);
-	str2 = Tcl_GetStringFromObj(objv[2], &len2);
-	if (len1 == len2 && !strcmp(str1, str2)) {
-	    result = 0;
-	}
-    case TCL_BREAK:			/* Deliberate fallthrough */
-	break;
-    case TCL_OK:
-	/*
-	 * Got proper numbers
-	 */
-	if (cmp != MP_EQ) {
-	    result = 0;
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
-int
 TclCompileNeqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -5464,31 +4765,6 @@ TclCompileNeqOpCmd(
     return TCL_OK;
 }
 
-int
-TclStrneqOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    const char *s1, *s2;
-    int s1len, s2len;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value value");
-	return TCL_ERROR;
-    }
-
-    s1 = Tcl_GetStringFromObj(objv[1], &s1len);
-    s2 = Tcl_GetStringFromObj(objv[2], &s2len);
-    if (s1len == s2len && !strcmp(s1, s2)) {
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 0);
-    } else {
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
-    }
-    return TCL_OK;
-}
-
 int
 TclCompileStrneqOpCmd(
     Tcl_Interp *interp,
@@ -5509,37 +4785,6 @@ TclCompileStrneqOpCmd(
 }
 
 int
-TclInOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    const char *s1, *s2;
-    int s1len, s2len, i, len;
-    Tcl_Obj **listObj;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value list");
-	return TCL_ERROR;
-    }
-
-    if (Tcl_ListObjGetElements(interp, objv[2], &len, &listObj) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    s1 = Tcl_GetStringFromObj(objv[1], &s1len);
-    for (i=0 ; i<len ; i++) {
-	s2 = Tcl_GetStringFromObj(listObj[i], &s2len);
-	if (s1len == s2len && !strcmp(s1, s2)) {
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
-	    return TCL_OK;
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 0);
-    return TCL_OK;
-}
-
-int
 TclCompileInOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -5559,37 +4804,6 @@ TclCompileInOpCmd(
 }
 
 int
-TclNiOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    const char *s1, *s2;
-    int s1len, s2len, i, len;
-    Tcl_Obj **listObj;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value list");
-	return TCL_ERROR;
-    }
-
-    if (Tcl_ListObjGetElements(interp, objv[2], &len, &listObj) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    s1 = Tcl_GetStringFromObj(objv[1], &s1len);
-    for (i=0 ; i<len ; i++) {
-	s2 = Tcl_GetStringFromObj(listObj[i], &s2len);
-	if (s1len == s2len && !strcmp(s1, s2)) {
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 0);
-	    return TCL_OK;
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), 1);
-    return TCL_OK;
-}
-
-int
 TclCompileNiOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -5608,57 +4822,6 @@ TclCompileNiOpCmd(
     return TCL_OK;
 }
 
-int
-TclLessOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1;
-
-    if (objc > 2) {
-	int i, cmp, len1, len2;
-	const char *str1, *str2;
-
-	for (i=1 ; i<objc-1 ; i++) {
-	    switch (CompareNumbers(NULL, objv[i], objv[i+1], &cmp)) {
-	    case TCL_ERROR:
-		/*
-		 * Got a string
-		 */
-		str1 = Tcl_GetStringFromObj(objv[i], &len1);
-		str2 = Tcl_GetStringFromObj(objv[i+1], &len2);
-		if (TclpUtfNcmp2(str1, str2,
-			(size_t) ((len1 < len2) ? len1 : len2)) >= 0) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_OK:
-		/*
-		 * Got proper numbers
-		 */
-		if (cmp != MP_LT) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_BREAK:
-		/*
-		 * Got a NaN (which is different from everything, including
-		 * itself)
-		 */
-		result = 0;
-		i = objc;
-		continue;
-	    }
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
 int
 TclCompileLessOpCmd(
     Tcl_Interp *interp,
@@ -5709,57 +4872,6 @@ TclCompileLessOpCmd(
 }
 
 int
-TclLeqOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1;
-
-    if (objc > 2) {
-	int i, cmp, len1, len2;
-	const char *str1, *str2;
-
-	for (i=1 ; i<objc-1 ; i++) {
-	    switch (CompareNumbers(NULL, objv[i], objv[i+1], &cmp)) {
-	    case TCL_ERROR:
-		/*
-		 * Got a string
-		 */
-		str1 = Tcl_GetStringFromObj(objv[i], &len1);
-		str2 = Tcl_GetStringFromObj(objv[i+1], &len2);
-		if (TclpUtfNcmp2(str1, str2,
-			(size_t) ((len1 < len2) ? len1 : len2)) > 0) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_OK:
-		/*
-		 * Got proper numbers
-		 */
-		if (cmp == MP_GT) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_BREAK:
-		/*
-		 * Got a NaN (which is different from everything, including
-		 * itself)
-		 */
-		result = 0;
-		i = objc;
-		continue;
-	    }
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
-int
 TclCompileLeqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -5808,57 +4920,6 @@ TclCompileLeqOpCmd(
     return TCL_OK;
 }
 
-int
-TclGreaterOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1;
-
-    if (objc > 2) {
-	int i, cmp, len1, len2;
-	const char *str1, *str2;
-
-	for (i=1 ; i<objc-1 ; i++) {
-	    switch (CompareNumbers(NULL, objv[i], objv[i+1], &cmp)) {
-	    case TCL_ERROR:
-		/*
-		 * Got a string
-		 */
-		str1 = Tcl_GetStringFromObj(objv[i], &len1);
-		str2 = Tcl_GetStringFromObj(objv[i+1], &len2);
-		if (TclpUtfNcmp2(str1, str2,
-			(size_t) ((len1 < len2) ? len1 : len2)) <= 0) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_OK:
-		/*
-		 * Got proper numbers
-		 */
-		if (cmp != MP_GT) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_BREAK:
-		/*
-		 * Got a NaN (which is different from everything, including
-		 * itself)
-		 */
-		result = 0;
-		i = objc;
-		continue;
-	    }
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
 int
 TclCompileGreaterOpCmd(
     Tcl_Interp *interp,
@@ -5909,57 +4970,6 @@ TclCompileGreaterOpCmd(
 }
 
 int
-TclGeqOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1;
-
-    if (objc > 2) {
-	int i, cmp, len1, len2;
-	const char *str1, *str2;
-
-	for (i=1 ; i<objc-1 ; i++) {
-	    switch (CompareNumbers(NULL, objv[i], objv[i+1], &cmp)) {
-	    case TCL_ERROR:
-		/*
-		 * Got a string
-		 */
-		str1 = Tcl_GetStringFromObj(objv[i], &len1);
-		str2 = Tcl_GetStringFromObj(objv[i+1], &len2);
-		if (TclpUtfNcmp2(str1, str2,
-			(size_t) ((len1 < len2) ? len1 : len2)) < 0) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_OK:
-		/*
-		 * Got proper numbers
-		 */
-		if (cmp == MP_LT) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_BREAK:
-		/*
-		 * Got a NaN (which is different from everything, including
-		 * itself)
-		 */
-		result = 0;
-		i = objc;
-		continue;
-	    }
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
-int
 TclCompileGeqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -6008,56 +5018,6 @@ TclCompileGeqOpCmd(
     return TCL_OK;
 }
 
-int
-TclEqOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1;
-
-    if (objc > 2) {
-	int i, cmp, len1, len2;
-	const char *str1, *str2;
-
-	for (i=1 ; i<objc-1 ; i++) {
-	    switch (CompareNumbers(NULL, objv[i], objv[i+1], &cmp)) {
-	    case TCL_ERROR:
-		/*
-		 * Got a string
-		 */
-		str1 = Tcl_GetStringFromObj(objv[i], &len1);
-		str2 = Tcl_GetStringFromObj(objv[i+1], &len2);
-		if (len1 != len2 || strcmp(str1, str2)) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_OK:
-		/*
-		 * Got proper numbers
-		 */
-		if (cmp != MP_EQ) {
-		    result = 0;
-		    i = objc;
-		}
-		continue;
-	    case TCL_BREAK:
-		/*
-		 * Got a NaN (which is different from everything, including
-		 * itself)
-		 */
-		result = 0;
-		i = objc;
-		continue;
-	    }
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
 int
 TclCompileEqOpCmd(
     Tcl_Interp *interp,
@@ -6108,32 +5068,6 @@ TclCompileEqOpCmd(
 }
 
 int
-TclStreqOpCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    int result = 1;
-
-    if (objc > 2) {
-	int i, len1, len2;
-	const char *str1, *str2;
-
-	for (i=1 ; i<objc-1 ; i++) {
-	    str1 = Tcl_GetStringFromObj(objv[i], &len1);
-	    str2 = Tcl_GetStringFromObj(objv[i+1], &len2);
-	    if (len1 != len2 || strcmp(str1, str2)) {
-		result = 0;
-		break;
-	    }
-	}
-    }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
-    return TCL_OK;
-}
-
-int
 TclCompileStreqOpCmd(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -6179,308 +5113,6 @@ TclCompileStreqOpCmd(
 	    TclEmitOpcode(INST_BITAND, envPtr);
 	}
     }
-    return TCL_OK;
-}
-
-static int
-CompareNumbers(
-    Tcl_Interp *interp,		/* Where to write error messages if any. */
-    Tcl_Obj *numObj1,		/* First number to compare. */
-    Tcl_Obj *numObj2,		/* Second number to compare. */
-    int *resultPtr)		/* Pointer to a variable to write the outcome
-				 * of the comparison into. Must not be
-				 * NULL. */
-{
-    ClientData ptr1, ptr2;
-    int type1, type2;
-    double d1, d2, tmp;
-    long l1, l2;
-    mp_int big1, big2;
-#ifndef NO_WIDE_TYPE
-    Tcl_WideInt w1, w2;
-#endif
-
-    if (TclGetNumberFromObj(interp, numObj1, &ptr1, &type1) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (TclGetNumberFromObj(interp, numObj2, &ptr2, &type2) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Selected special cases. NaNs are not equal to *everything*, otherwise
-     * objects are equal to themselves.
-     */
-
-    if (type1 == TCL_NUMBER_NAN) {
-	/* NaN first arg: NaN != to everything, other compares are false */
-	return TCL_BREAK;
-    }
-    if (numObj1 == numObj2) {
-	*resultPtr = MP_EQ;
-	return TCL_OK;
-    }
-    if (type2 == TCL_NUMBER_NAN) {
-	/* NaN 2nd arg: NaN != to everything, other compares are false */
-	return TCL_BREAK;
-    }
-
-    /*
-     * Big switch to pick apart the type rules and choose how to compare the
-     * two numbers. Also handles a few special cases along the way.
-     */
-
-    switch (type1) {
-    case TCL_NUMBER_LONG:
-	l1 = *((CONST long *)ptr1);
-	switch (type2) {
-	case TCL_NUMBER_LONG:
-	    l2 = *((CONST long *)ptr2);
-	    goto longCompare;
-#ifndef NO_WIDE_TYPE
-	case TCL_NUMBER_WIDE:
-	    w2 = *((CONST Tcl_WideInt *)ptr2);
-	    w1 = (Tcl_WideInt)l1;
-	    goto wideCompare;
-#endif
-	case TCL_NUMBER_DOUBLE:
-	    d2 = *((CONST double *)ptr2);
-	    d1 = (double) l1;
-
-	    /*
-	     * If the double has a fractional part, or if the long can be
-	     * converted to double without loss of precision, then compare as
-	     * doubles.
-	     */
-
-	    if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
-		    || (l1 == (long) d1) || (modf(d2, &tmp) != 0.0)) {
-		goto doubleCompare;
-	    }
-
-	    /*
-	     * Otherwise, to make comparision based on full precision, need to
-	     * convert the double to a suitably sized integer.
-	     *
-	     * Need this to get comparsions like
-	     *	    expr 20000000000000003 < 20000000000000004.0
-	     * right. Converting the first argument to double will yield two
-	     * double values that are equivalent within double precision.
-	     * Converting the double to an integer gets done exactly, then
-	     * integer comparison can tell the difference.
-	     */
-
-	    if (d2 < (double)LONG_MIN) {
-		*resultPtr = MP_GT;
-		return TCL_OK;
-	    }
-	    if (d2 > (double)LONG_MAX) {
-		*resultPtr = MP_LT;
-		return TCL_OK;
-	    }
-	    l2 = (long) d2;
-	    goto longCompare;
-	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
-		*resultPtr = MP_GT;
-	    } else {
-		*resultPtr = MP_LT;
-	    }
-	    mp_clear(&big2);
-	}
-	return TCL_OK;
-
-#ifndef NO_WIDE_TYPE
-    case TCL_NUMBER_WIDE:
-	w1 = *((CONST Tcl_WideInt *)ptr1);
-	switch (type2) {
-	case TCL_NUMBER_WIDE:
-	    w2 = *((CONST Tcl_WideInt *)ptr2);
-	    goto wideCompare;
-	case TCL_NUMBER_LONG:
-	    l2 = *((CONST long *)ptr2);
-	    w2 = (Tcl_WideInt)l2;
-	    goto wideCompare;
-	case TCL_NUMBER_DOUBLE:
-	    d2 = *((CONST double *)ptr2);
-	    d1 = (double) w1;
-	    if ((DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt))
-		    || (w1 == (Tcl_WideInt) d1) || (modf(d2, &tmp) != 0.0)) {
-		goto doubleCompare;
-	    }
-	    if (d2 < (double)LLONG_MIN) {
-		*resultPtr = MP_GT;
-		return TCL_OK;
-	    }
-	    if (d2 > (double)LLONG_MAX) {
-		*resultPtr = MP_LT;
-		return TCL_OK;
-	    }
-	    w2 = (Tcl_WideInt) d2;
-	    goto wideCompare;
-	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
-	    if (mp_cmp_d(&big2, 0) == MP_LT) {
-		*resultPtr = MP_GT;
-	    } else {
-		*resultPtr = MP_LT;
-	    }
-	    mp_clear(&big2);
-	}
-	return TCL_OK;
-#endif
-
-    case TCL_NUMBER_DOUBLE:
-	d1 = *((CONST double *)ptr1);
-	switch (type2) {
-	case TCL_NUMBER_DOUBLE:
-	    d2 = *((CONST double *)ptr2);
-	    goto doubleCompare;
-	case TCL_NUMBER_LONG:
-	    l2 = *((CONST long *)ptr2);
-	    d2 = (double) l2;
-
-	    if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
-		    || (l2 == (long) d2) || (modf(d1, &tmp) != 0.0)) {
-		goto doubleCompare;
-	    }
-	    if (d1 < (double)LONG_MIN) {
-		*resultPtr = MP_LT;
-		return TCL_OK;
-	    }
-	    if (d1 > (double)LONG_MAX) {
-		*resultPtr = MP_GT;
-		return TCL_OK;
-	    }
-	    l1 = (long) d1;
-	    goto longCompare;
-#ifndef NO_WIDE_TYPE
-	case TCL_NUMBER_WIDE:
-	    w2 = *((CONST Tcl_WideInt *)ptr2);
-	    d2 = (double) w2;
-	    if ((DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt))
-		    || (w2 == (Tcl_WideInt) d2) || (modf(d1, &tmp) != 0.0)) {
-		goto doubleCompare;
-	    }
-	    if (d1 < (double)LLONG_MIN) {
-		*resultPtr = MP_LT;
-		return TCL_OK;
-	    }
-	    if (d1 > (double)LLONG_MAX) {
-		*resultPtr = MP_GT;
-		return TCL_OK;
-	    }
-	    w1 = (Tcl_WideInt) d1;
-	    goto wideCompare;
-#endif
-	case TCL_NUMBER_BIG:
-	    if (TclIsInfinite(d1)) {
-		*resultPtr = (d1 > 0.0) ? MP_GT : MP_LT;
-		return TCL_OK;
-	    }
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
-	    if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
-		if (mp_cmp_d(&big2, 0) == MP_LT) {
-		    *resultPtr = MP_GT;
-		} else {
-		    *resultPtr = MP_LT;
-		}
-		mp_clear(&big2);
-		return TCL_OK;
-	    }
-	    if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
-		    && (modf(d1, &tmp) != 0.0)) {
-		d2 = TclBignumToDouble(&big2);
-		mp_clear(&big2);
-		goto doubleCompare;
-	    }
-	    Tcl_InitBignumFromDouble(NULL, d1, &big1);
-	    goto bigCompare;
-	}
-	return TCL_OK;
-
-    case TCL_NUMBER_BIG:
-	if (Tcl_IsShared(numObj1)) {
-	    Tcl_GetBignumFromObj(NULL, numObj1, &big1);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, numObj1, &big1);
-	}
-	switch (type2) {
-#ifndef NO_WIDE_TYPE
-	case TCL_NUMBER_WIDE:
-#endif
-	case TCL_NUMBER_LONG:
-	    *resultPtr = mp_cmp_d(&big1, 0);
-	    mp_clear(&big1);
-	    return TCL_OK;
-	case TCL_NUMBER_DOUBLE:
-	    d2 = *((CONST double *)ptr2);
-	    if (TclIsInfinite(d2)) {
-		*resultPtr = (d2 > 0.0) ? MP_LT : MP_GT;
-		mp_clear(&big1);
-		return TCL_OK;
-	    }
-	    if ((d2 < (double)LONG_MAX) && (d2 > (double)LONG_MIN)) {
-		*resultPtr = mp_cmp_d(&big1, 0);
-		mp_clear(&big1);
-		return TCL_OK;
-	    }
-	    if ((DBL_MANT_DIG > CHAR_BIT*sizeof(long))
-		    && (modf(d2, &tmp) != 0.0)) {
-		d1 = TclBignumToDouble(&big1);
-		mp_clear(&big1);
-		goto doubleCompare;
-	    }
-	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
-	    goto bigCompare;
-	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
-	    goto bigCompare;
-	}
-    }
-
-    /*
-     * Should really be impossible to get here
-     */
-
-    return TCL_OK;
-
-    /*
-     * The real core comparison rules.
-     */
-
-  longCompare:
-    *resultPtr = (l1 < l2) ? MP_LT : ((l1 > l2) ? MP_GT : MP_EQ);
-    return TCL_OK;
-#ifndef NO_WIDE_TYPE
-  wideCompare:
-    *resultPtr = (w1 < w2) ? MP_LT : ((w1 > w2) ? MP_GT : MP_EQ);
-    return TCL_OK;
-#endif
-  doubleCompare:
-    *resultPtr = (d1 < d2) ? MP_LT : ((d1 > d2) ? MP_GT : MP_EQ);
-    return TCL_OK;
-  bigCompare:
-    *resultPtr = mp_cmp(&big1, &big2);
-    mp_clear(&big1);
-    mp_clear(&big2);
     return TCL_OK;
 }
 
