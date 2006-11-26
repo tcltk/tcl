@@ -1,0 +1,184 @@
+# Commands covered: ::tcl::mathop::...
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 2006 Donal K. Fellows
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: mathop.test,v 1.1 2006/11/26 12:52:55 dkf Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2.1
+    namespace import -force ::tcltest::*
+}
+
+# start of tests
+
+namespace eval ::testmathop {
+    namespace path ::tcl::mathop
+
+    test mathop-1.1 {compiled +} { + } 0
+    test mathop-1.2 {compiled +} { + 1 } 1
+    test mathop-1.3 {compiled +} { + 1 2 } 3
+    test mathop-1.4 {compiled +} { + 1 2 3 } 6
+    test mathop-1.5 {compiled +} { + 1.0 2 3 } 6.0
+    test mathop-1.6 {compiled +} { + 1 2 3.0 } 6.0
+    test mathop-1.7 {compiled +} { + 100000000000 2 3 } 100000000005
+    test mathop-1.8 {compiled +} { + 1 2 300000000000 } 300000000003
+    test mathop-1.9 {compiled +} { + 1000000000000000000000 2 3 } 1000000000000000000005
+    test mathop-1.10 {compiled +} { + 1 2 3000000000000000000000 } 3000000000000000000003
+    test mathop-1.11 {compiled +: errors} -returnCodes error -body {
+	+ x 0
+    } -result {can't use non-numeric string as operand of "+"}
+    test mathop-1.12 {compiled +: errors} -returnCodes error -body {
+	+ nan 0
+    } -result {can't use non-numeric floating-point value as operand of "+"}
+    test mathop-1.13 {compiled +: errors} -returnCodes error -body {
+	+ 0 x
+    } -result {can't use non-numeric string as operand of "+"}
+    test mathop-1.14 {compiled +: errors} -returnCodes error -body {
+	+ 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "+"}
+    test mathop-1.15 {compiled +: errors} -returnCodes error -body {
+	+ 08 0
+    } -result {can't use invalid octal number as operand of "+"}
+    test mathop-1.16 {compiled +: errors} -returnCodes error -body {
+	+ 0 08
+    } -result {can't use invalid octal number as operand of "+"}
+    test mathop-1.17 {compiled +: errors} -returnCodes error -body {
+	+ 0 [error expectedError]
+    } -result expectedError
+    test mathop-1.18 {compiled +: argument processing order} -body {
+	# Bytecode compilation known buggy for 3+ arguments
+	list [catch {
+	    + [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2} -constraints knownBug
+    set op +
+    test mathop-1.19 {interpreted +} { $op } 0
+    test mathop-1.20 {interpreted +} { $op 1 } 1
+    test mathop-1.21 {interpreted +} { $op 1 2 } 3
+    test mathop-1.22 {interpreted +} { $op 1 2 3 } 6
+    test mathop-1.23 {interpreted +} { $op 1.0 2 3 } 6.0
+    test mathop-1.24 {interpreted +} { $op 1 2 3.0 } 6.0
+    test mathop-1.25 {interpreted +} { $op 100000000000 2 3 } 100000000005
+    test mathop-1.26 {interpreted +} { $op 1 2 300000000000 } 300000000003
+    test mathop-1.27 {interpreted +} { $op 1000000000000000000000 2 3 } 1000000000000000000005
+    test mathop-1.28 {interpreted +} { $op 1 2 3000000000000000000000 } 3000000000000000000003
+    test mathop-1.29 {interpreted +: errors} -returnCodes error -body {
+	$op x 0
+    } -result {can't use non-numeric string as operand of "+"}
+    test mathop-1.30 {interpreted +: errors} -returnCodes error -body {
+	$op nan 0
+    } -result {can't use non-numeric floating-point value as operand of "+"}
+    test mathop-1.31 {interpreted +: errors} -returnCodes error -body {
+	$op 0 x
+    } -result {can't use non-numeric string as operand of "+"}
+    test mathop-1.32 {interpreted +: errors} -returnCodes error -body {
+	$op 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "+"}
+    test mathop-1.33 {interpreted +: errors} -returnCodes error -body {
+	$op 08 0
+    } -result {can't use invalid octal number as operand of "+"}
+    test mathop-1.34 {interpreted +: errors} -returnCodes error -body {
+	$op 0 08
+    } -result {can't use invalid octal number as operand of "+"}
+    test mathop-1.35 {interpreted +: errors} -returnCodes error -body {
+	$op 0 [error expectedError]
+    } -result expectedError
+    test mathop-1.36 {interpreted +: argument processing order} -body {
+	list [catch {
+	    $op [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+
+    test mathop-2.1 {compiled *} { * } 1
+    test mathop-2.2 {compiled *} { * 2 } 2
+    test mathop-2.3 {compiled *} { * 2 3 } 6
+    test mathop-2.4 {compiled *} { * 2 3 4 } 24
+    test mathop-2.5 {compiled *} { * 1.0 2 3 } 6.0
+    test mathop-2.6 {compiled *} { * 1 2 3.0 } 6.0
+    test mathop-2.7 {compiled *} { * 100000000000 2 3 } 600000000000
+    test mathop-2.8 {compiled *} { * 1 2 300000000000 } 600000000000
+    test mathop-2.9 {compiled *} { * 1000000000000000000000 2 3 } 6000000000000000000000
+    test mathop-2.10 {compiled *} { * 1 2 3000000000000000000000 } 6000000000000000000000
+    test mathop-2.11 {compiled *: errors} -returnCodes error -body {
+	* x 0
+    } -result {can't use non-numeric string as operand of "*"}
+    test mathop-2.12 {compiled *: errors} -returnCodes error -body {
+	* nan 0
+    } -result {can't use non-numeric floating-point value as operand of "*"}
+    test mathop-2.13 {compiled *: errors} -returnCodes error -body {
+	* 0 x
+    } -result {can't use non-numeric string as operand of "*"}
+    test mathop-2.14 {compiled *: errors} -returnCodes error -body {
+	* 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "*"}
+    test mathop-2.15 {compiled *: errors} -returnCodes error -body {
+	* 08 0
+    } -result {can't use invalid octal number as operand of "*"}
+    test mathop-2.16 {compiled *: errors} -returnCodes error -body {
+	* 0 08
+    } -result {can't use invalid octal number as operand of "*"}
+    test mathop-2.17 {compiled *: errors} -returnCodes error -body {
+	* 0 [error expectedError]
+    } -result expectedError
+    test mathop-2.18 {compiled *: argument processing order} -body {
+	# Bytecode compilation known buggy for 3+ arguments
+	list [catch {
+	    * [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2} -constraints knownBug
+    set op *
+    test mathop-2.19 {interpreted *} { $op } 1
+    test mathop-2.20 {interpreted *} { $op 2 } 2
+    test mathop-2.21 {interpreted *} { $op 2 3 } 6
+    test mathop-2.22 {interpreted *} { $op 2 3 4 } 24
+    test mathop-2.23 {interpreted *} { $op 1.0 2 3 } 6.0
+    test mathop-2.24 {interpreted *} { $op 1 2 3.0 } 6.0
+    test mathop-2.25 {interpreted *} { $op 100000000000 2 3 } 600000000000
+    test mathop-2.26 {interpreted *} { $op 1 2 300000000000 } 600000000000
+    test mathop-2.27 {interpreted *} { $op 1000000000000000000000 2 3 } 6000000000000000000000
+    test mathop-2.28 {interpreted *} { $op 1 2 3000000000000000000000 } 6000000000000000000000
+    test mathop-2.29 {interpreted *: errors} -returnCodes error -body {
+	$op x 0
+    } -result {can't use non-numeric string as operand of "*"}
+    test mathop-2.30 {interpreted *: errors} -returnCodes error -body {
+	$op nan 0
+    } -result {can't use non-numeric floating-point value as operand of "*"}
+    test mathop-2.31 {interpreted *: errors} -returnCodes error -body {
+	$op 0 x
+    } -result {can't use non-numeric string as operand of "*"}
+    test mathop-2.32 {interpreted *: errors} -returnCodes error -body {
+	$op 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "*"}
+    test mathop-2.33 {interpreted *: errors} -returnCodes error -body {
+	$op 08 0
+    } -result {can't use invalid octal number as operand of "*"}
+    test mathop-2.34 {interpreted *: errors} -returnCodes error -body {
+	$op 0 08
+    } -result {can't use invalid octal number as operand of "*"}
+    test mathop-2.35 {interpreted *: errors} -returnCodes error -body {
+	$op 0 [error expectedError]
+    } -result expectedError
+    test mathop-2.36 {interpreted *: argument processing order} -body {
+	list [catch {
+	    $op [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+
+    # TODO: ! ~  & | ^  % ** << >>  - /  == != < <= > >=  eq ne  in ni
+}
+
+# cleanup
+namespace delete ::testmathop
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
