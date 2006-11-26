@@ -311,6 +311,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
 
     AC_SUBST(TCL_VERSION)
+    AC_SUBST(TCL_PATCH_LEVEL)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
 
@@ -1340,7 +1341,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
 	    if test "$have_dl" = yes; then
-		SHLIB_LD="${CC} -shared"
+		SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS="-ldl"
 		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -1356,6 +1357,17 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    fi
 	    if test "`uname -m`" = "alpha" ; then
 		CFLAGS="$CFLAGS -mieee"
+	    fi
+	    if test $do64bit = yes; then
+		AC_CACHE_CHECK([if compiler accepts -m64 flag], tcl_cv_cc_m64, [
+		    hold_cflags=$CFLAGS
+		    CFLAGS="$CFLAGS -m64"
+		    AC_TRY_LINK(,, tcl_cv_cc_m64=yes, tcl_cv_cc_m64=no)
+		    CFLAGS=$hold_cflags])
+		if test $tcl_cv_cc_m64 = yes; then
+		    CFLAGS="$CFLAGS -m64"
+		    do64bit_ok=yes
+		fi
 	    fi
 
 	    # The combo of gcc + glibc has a bug related
