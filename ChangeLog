@@ -1,8 +1,13 @@
+2006-11-26  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tcl.m4 (Linux): --enable-64bit support. [Patch 1597389], [Bug 1230558]
+	* configure: autoconf-2.13
+
 2006-11-07  Andreas Kupries  <andreask@activestate.com>
 
-	* unix/tclUnixFCmd.c (CopyFile): [SF Tcl Bug 1586470]. Added code
-	  to fall back to a hardwired default block size should the
-	  filesystem report a bogus value.
+	* unix/tclUnixFCmd.c (CopyFile): Added code to fall back to a
+	hardwired default block size should the filesystem report a bogus
+	value. [Bug 1586470]
 
 2006-11-03  Miguel Sofer  <msofer@users.sf.net>
 
