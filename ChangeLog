@@ -1,3 +1,11 @@
+2006-11-27  Kevin Kenny  <kennykb@acm.org>
+
+	* unix/tclUnixChan.c (TclUnixWaitForFile):
+	* tests/event.test (event-14.*): Corrected a bug where
+	TclUnixWaitForFile would present select() with the wrong mask
+	on an LP64 machine if a fd number exceeds 32.  Thanks to
+	Jean-Luc Fontaine for reporting and diagnosing [Bug 1602208].
+	
 2006-11-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclIncrObj):	Correct failure to detect
