@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.252 2006/11/17 21:22:18 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.253 2006/11/27 15:10:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1080,7 +1080,7 @@ TclIncrObj(
 	/* Produce error message (reparse?!) */
 	return Tcl_GetIntFromObj(interp, valuePtr, &type1);
     }
-    if ((type1 == TCL_NUMBER_DOUBLE) || (type1 == TCL_NUMBER_NAN)) {
+    if ((type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
 	/* Produce error message (reparse?!) */
 	Tcl_GetIntFromObj(interp, incrPtr, &type1);
 	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
