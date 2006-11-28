@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.5 2006/05/15 16:07:04 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.6 2006/11/28 22:20:02 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -152,6 +152,65 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     
     procPtr->cmdPtr = (Command *) cmd;
 
+#ifdef TCL_TIP280
+    /* TIP #280 Remember the line the procedure body is starting on. In a
+     * Byte code context we ask the engine to provide us with the necessary
+     * information. This is for the initialization of the byte code compiler
+     * when the body is used for the first time.
+     */
+
+    if (iPtr->cmdFramePtr) {
+        CmdFrame context = *iPtr->cmdFramePtr;
+
+	if (context.type == TCL_LOCATION_BC) {
+	    TclGetSrcInfoForPc (&context);
+	    /* May get path in context */
+	} else if (context.type == TCL_LOCATION_SOURCE) {
+	    /* context now holds another reference */
+	    Tcl_IncrRefCount (context.data.eval.path);
+	}
+
+	/* type == TCL_LOCATION_PREBC implies that 'line' is NULL here!  We
+	 * cannot assume that 'line' is valid here, we have to check. If the
+	 * outer context is an eval (bc, prebc, eval) we do not save any
+	 * information. Counting relative to the beginning of the proc body is
+	 * more sensible than counting relative to the outer eval block.
+	 */
+
+	if ((context.type == TCL_LOCATION_SOURCE) &&
+	    context.line &&
+	    (context.nline >= 4) &&
+	    (context.line [3] >= 0)) {
+	    int       new;
+	    CmdFrame* cfPtr = (CmdFrame*) ckalloc (sizeof (CmdFrame));
+
+	    cfPtr->level    = -1;
+	    cfPtr->type     = context.type;
+	    cfPtr->line     = (int*) ckalloc (sizeof (int));
+	    cfPtr->line [0] = context.line [3];
+	    cfPtr->nline    = 1;
+	    cfPtr->framePtr = NULL;
+	    cfPtr->nextPtr  = NULL;
+
+	    if (context.type == TCL_LOCATION_SOURCE) {
+	        cfPtr->data.eval.path = context.data.eval.path;
+		/* Transfer of reference. The reference going away (release of
+		 * the context) is replaced by the reference in the
+		 * constructed cmdframe */
+	    } else {
+	        cfPtr->type = TCL_LOCATION_EVAL;
+		cfPtr->data.eval.path = NULL;
+	    }
+
+	    cfPtr->cmd.str.cmd = NULL;
+	    cfPtr->cmd.str.len = 0;
+
+	    Tcl_SetHashValue (Tcl_CreateHashEntry (iPtr->linePBodyPtr,
+						   (char*) procPtr, &new),
+			      cfPtr);
+	}
+    }
+#endif
 
     /*
      * Optimize for noop procs: if the body is not precompiled (like a TclPro
@@ -1101,7 +1160,15 @@ TclObjInterpProc(clientData, interp, objc, objv)
 
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
+#ifndef TCL_TIP280
     result = TclCompEvalObj(interp, procPtr->bodyPtr);
+#else
+    /* TIP #280: No need to set the invoking context here. The body has
+     * already been compiled, so the part of CompEvalObj using it is bypassed.
+     */
+
+    result = TclCompEvalObj(interp, procPtr->bodyPtr, NULL, 0);
+#endif
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1313,7 +1380,24 @@ ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
 		(Tcl_Namespace*)nsPtr, /* isProcCallFrame */ 0);
  
  	if (result == TCL_OK) {
+#ifdef TCL_TIP280
+	    /* TIP #280. We get the invoking context from the cmdFrame
+	     * which was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
+	     */
+
+	    Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->linePBodyPtr, (char *) procPtr);
+
+	    /* Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
+	     */
+	    iPtr->invokeWord        = 0;
+	    iPtr->invokeCmdFramePtr = (hePtr
+				       ? (CmdFrame*) Tcl_GetHashValue (hePtr)
+				       : NULL);
+#endif
 	    result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
+#ifdef TCL_TIP280
+	    iPtr->invokeCmdFramePtr = NULL;
+#endif
 	    Tcl_PopCallFrame(interp);
 	}
  
@@ -1492,6 +1576,11 @@ TclProcCleanupProc(procPtr)
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
     Tcl_Obj *defPtr;
     Tcl_ResolvedVarInfo *resVarInfo;
+#ifdef TCL_TIP280
+    Tcl_HashEntry* hePtr = NULL;
+    CmdFrame*      cfPtr = NULL;
+    Interp*        iPtr  = procPtr->iPtr;
+#endif
 
     if (bodyPtr != NULL) {
 	Tcl_DecrRefCount(bodyPtr);
@@ -1516,6 +1605,28 @@ TclProcCleanupProc(procPtr)
 	localPtr = nextPtr;
     }
     ckfree((char *) procPtr);
+
+#ifdef TCL_TIP280
+    /* TIP #280. Release the location data associated with this Proc
+     * structure, if any. The interpreter may not exist (For example for
+     * procbody structurues created by tbcload.
+     */
+
+    if (!iPtr) return;
+
+    hePtr = Tcl_FindHashEntry (iPtr->linePBodyPtr, (char *) procPtr);
+    if (!hePtr) return;
+
+    cfPtr = (CmdFrame*) Tcl_GetHashValue (hePtr);
+
+    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+        Tcl_DecrRefCount (cfPtr->data.eval.path);
+	cfPtr->data.eval.path = NULL;
+    }
+    ckfree ((char*) cfPtr->line); cfPtr->line = NULL;
+    ckfree ((char*) cfPtr);
+    Tcl_DeleteHashEntry (hePtr);
+#endif
 }
 
 /*
@@ -1821,6 +1932,12 @@ TclCompileNoOp(interp, parsePtr, envPtr)
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
     return TCL_OK;
 }
-
-
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
 
