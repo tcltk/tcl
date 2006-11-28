@@ -1,3 +1,11 @@
+2006-11-27  Kevin Kenny  <kennykb@acm.org>
+ 
+ 	* unix/tclUnixChan.c (TclUnixWaitForFile):
+ 	* tests/event.test (event-14.*): Corrected a bug where
+ 	TclUnixWaitForFile would present select() with the wrong mask
+ 	on an LP64 machine if a fd number exceeds 32.  Thanks to
+ 	Jean-Luc Fontaine for reporting and diagnosing [Bug 1602208].
+ 	
 2006-11-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tcl.m4 (Linux): --enable-64bit support. [Patch 1597389], [Bug 1230558]
