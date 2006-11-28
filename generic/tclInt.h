@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.25 2006/10/17 04:36:44 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.26 2006/11/28 22:20:01 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -804,6 +804,113 @@ typedef struct CallFrame {
 				 * using an index into this array. */
 } CallFrame;
 
+#ifdef TCL_TIP280
+/*
+ * TIP #280
+ * The structure below defines a command frame. A command frame
+ * provides location information for all commands executing a tcl
+ * script (source, eval, uplevel, procedure bodies, ...). The runtime
+ * structure essentially contains the stack trace as it would be if
+ * the currently executing command were to throw an error.
+ *
+ * For commands where it makes sense it refers to the associated
+ * CallFrame as well.
+ *
+ * The structures are chained in a single list, with the top of the
+ * stack anchored in the Interp structure.
+ *
+ * Instances can be allocated on the C stack, or the heap, the former
+ * making cleanup a bit simpler.
+ */
+
+typedef struct CmdFrame {
+  /* General data. Always available. */
+
+  int              type;     /* Values see below */
+  int              level;    /* #Frames in stack, prevent O(n) scan of list */
+  int*             line;     /* Lines the words of the command start on */
+  int              nline;
+
+  CallFrame*       framePtr; /* Procedure activation record, may be NULL */
+  struct CmdFrame* nextPtr;  /* Link to calling frame */
+
+  /* Data needed for Eval vs TEBC
+   *
+   * EXECUTION CONTEXTS and usage of CmdFrame
+   *
+   * Field      TEBC            EvalEx          EvalObjEx
+   * =======    ====            ======          =========
+   * level      yes             yes             yes
+   * type       BC/PREBC        SRC/EVAL        EVAL_LIST
+   * line0      yes             yes             yes
+   * framePtr   yes             yes             yes
+   * =======    ====            ======          =========
+   *
+   * =======    ====            ======          ========= union data
+   * line1      -               yes             -
+   * line3      -               yes             -
+   * path       -               yes             -
+   * -------    ----            ------          ---------
+   * codePtr    yes             -               -
+   * pc         yes             -               -
+   * =======    ====            ======          =========
+   *
+   * =======    ====            ======          ========= | union cmd
+   * listPtr    -               -               yes       |
+   * -------    ----            ------          --------- |
+   * cmd        yes             yes             -         |
+   * cmdlen     yes             yes             -         |
+   * -------    ----            ------          --------- |
+   */
+
+  union {
+    struct {
+      Tcl_Obj*     path;     /* Path of the sourced file the command
+			      * is in. */
+    } eval;
+    struct {
+      CONST void*  codePtr;  /* Byte code currently executed */
+      CONST char*  pc;       /* and instruction pointer.     */
+    } tebc;
+  } data;
+
+  union {
+    struct {
+      CONST char*  cmd;      /* The executed command, if possible */
+      int          len;      /* And its length */
+    } str;
+    Tcl_Obj*       listPtr;  /* Tcl_EvalObjEx, cmd list */
+  } cmd;
+
+} CmdFrame;
+
+/* The following macros define the allowed values for the type field
+ * of the CmdFrame structure above. Some of the values occur only in
+ * the extended location data referenced via the 'baseLocPtr'.
+ *
+ * TCL_LOCATION_EVAL      : Frame is for a script evaluated by EvalEx.
+ * TCL_LOCATION_EVAL_LIST : Frame is for a script evaluated by the list
+ *                          optimization path of EvalObjEx.
+ * TCL_LOCATION_BC        : Frame is for bytecode. 
+ * TCL_LOCATION_PREBC     : Frame is for precompiled bytecode.
+ * TCL_LOCATION_SOURCE    : Frame is for a script evaluated by EvalEx,
+ *                          from a sourced file.
+ * TCL_LOCATION_PROC      : Frame is for bytecode of a procedure.
+ *
+ * A TCL_LOCATION_BC type in a frame can be overridden by _SOURCE and
+ * _PROC types, per the context of the byte code in execution.
+ */
+
+#define TCL_LOCATION_EVAL      (0) /* Location in a dynamic eval script */
+#define TCL_LOCATION_EVAL_LIST (1) /* Location in a dynamic eval script, list-path */
+#define TCL_LOCATION_BC        (2) /* Location in byte code */
+#define TCL_LOCATION_PREBC     (3) /* Location in precompiled byte code, no location */
+#define TCL_LOCATION_SOURCE    (4) /* Location in a file */
+#define TCL_LOCATION_PROC      (5) /* Location in a dynamic proc */
+
+#define TCL_LOCATION_LAST      (6) /* Number of values in the enum */
+#endif
+
 /*
  *----------------------------------------------------------------
  * Data structures and procedures related to TclHandles, which
@@ -1363,6 +1470,32 @@ typedef struct Interp {
     int tracesForbiddingInline; /* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
 				 * compilation */
+#ifdef TCL_TIP280
+    /* TIP #280 */
+    CmdFrame* cmdFramePtr;      /* Points to the command frame containing
+				 * the location information for the current
+				 * command. */
+    CONST CmdFrame* invokeCmdFramePtr; /* Points to the command frame which is the
+				  * invoking context of the bytecode compiler.
+				  * NULL when the byte code compiler is not
+				  * active */
+    int invokeWord;             /* Index of the word in the command which
+				 * is getting compiled. */
+    Tcl_HashTable* linePBodyPtr;
+                                /* This table remembers for each
+				 * statically defined procedure the
+				 * location information for its
+				 * body. It is keyed by the address of
+				 * the Proc structure for a procedure.
+				 */
+    Tcl_HashTable* lineBCPtr;
+                                /* This table remembers for each
+				 * ByteCode object the location
+				 * information for its body. It is
+				 * keyed by the address of the Proc
+				 * structure for a procedure.
+				 */
+#endif
 #ifdef TCL_TIP268
     /*
      * TIP #268.
@@ -1395,6 +1528,10 @@ typedef struct Interp {
 
 #define TCL_BRACKET_TERM	  1
 #define TCL_ALLOW_EXCEPTIONS	  4
+#ifdef TCL_TIP280
+#define TCL_EVAL_FILE             2
+#define TCL_EVAL_CTX              8
+#endif
 
 /*
  * Flag bits for Interp structures:
@@ -1671,11 +1808,24 @@ extern char		tclEmptyString;
  *----------------------------------------------------------------
  */
 
+#ifdef TCL_TIP280
+EXTERN void             TclAdvanceLines _ANSI_ARGS_((int* line, CONST char* start,
+						     CONST char* end));
+#endif
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 EXTERN void		TclDeleteNamespaceVars _ANSI_ARGS_((Namespace *nsPtr));
+
+#ifdef TCL_TIP280
+EXTERN int              TclEvalObjEx _ANSI_ARGS_((Tcl_Interp *interp,
+						  register Tcl_Obj *objPtr,
+						  int flags,
+						  CONST CmdFrame* invoker,
+						  int word));
+#endif
+
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1707,6 +1857,9 @@ EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
 EXTERN int		TclGetEncodingFromObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr));
+#ifdef TCL_TIP280
+EXTERN void             TclGetSrcInfoForPc _ANSI_ARGS_((CmdFrame* cfPtr));
+#endif
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
@@ -1749,6 +1902,9 @@ EXTERN int		TclParseInteger _ANSI_ARGS_((CONST char *string,
 			    int numBytes));
 EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
 			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
+#ifdef TCL_TIP280
+EXTERN int              TclWordKnownAtCompileTime _ANSI_ARGS_((Tcl_Token* token));
+#endif
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -2160,7 +2316,12 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL
 
-#define TclDecrRefCount(objPtr) \
+
+#ifdef TCL_MEM_DEBUG
+#   define TclDecrRefCount(objPtr) \
+	Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
+#else
+#   define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
@@ -2173,6 +2334,7 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
         TclFreeObjStorage(objPtr); \
 	TclIncrObjsFreed(); \
     }
+#endif
 
 #ifdef TCL_MEM_DEBUG
 #  define TclAllocObjStorage(objPtr) \
