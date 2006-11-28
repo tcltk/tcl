@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.45 2006/11/15 20:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.46 2006/11/28 22:20:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2159,6 +2159,7 @@ DictForCmd(
     int objc,
     Tcl_Obj *CONST *objv)
 {
+    Interp* iPtr = (Interp*) interp;
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch search;
@@ -2178,9 +2179,9 @@ DictForCmd(
 		"must have exactly two variable names", -1));
 	return TCL_ERROR;
     }
-    keyVarObj = varv[0];
-    valueVarObj = varv[1];
-    scriptObj = objv[4];
+    keyVarObj    = varv[0];
+    valueVarObj  = varv[1];
+    scriptObj   = objv[4];
 
     if (Tcl_DictObjFirst(interp, objv[3], &search, &keyObj, &valueObj,
 	    &done) != TCL_OK) {
@@ -2222,7 +2223,8 @@ DictForCmd(
 	    break;
 	}
 
-	result = Tcl_EvalObjEx(interp, scriptObj, 0);
+	/* TIP #280. Make invoking context available to loop body */
+	result = TclEvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 4);
 	if (result == TCL_CONTINUE) {
 	    result = TCL_OK;
 	} else if (result != TCL_OK) {
@@ -2395,6 +2397,7 @@ DictFilterCmd(
     int objc,
     Tcl_Obj *CONST *objv)
 {
+    Interp* iPtr = (Interp*) interp;
     static CONST char *filters[] = {
 	"key", "script", "value", NULL
     };
@@ -2545,7 +2548,8 @@ DictFilterCmd(
 		goto abnormalResult;
 	    }
 
-	    result = Tcl_EvalObjEx(interp, scriptObj, 0);
+	    /* TIP #280. Make invoking context available to loop body */
+	    result = TclEvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 5);
 	    switch (result) {
 	    case TCL_OK:
 		boolObj = Tcl_GetObjResult(interp);
@@ -2761,6 +2765,7 @@ DictWithCmd(
     int objc,
     Tcl_Obj *CONST *objv)
 {
+    Interp* iPtr = (Interp*) interp;
     Tcl_Obj *dictPtr, *keysPtr, *keyPtr, *valPtr, **keyv, *leafPtr;
     Tcl_DictSearch s;
     Tcl_InterpState state;
@@ -2816,7 +2821,8 @@ DictWithCmd(
      * Execute the body.
      */
 
-    result = Tcl_EvalObjEx(interp, objv[objc-1], 0);
+    /* TIP #280. Make invoking context available to loop body */
+    result = TclEvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");
     }

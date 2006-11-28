@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.76 2006/11/15 20:08:45 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.77 2006/11/28 22:20:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -480,6 +480,89 @@ Tcl_SplitList(
     argv[i] = NULL;
     *argvPtr = argv;
     *argcPtr = i;
+    return TCL_OK;
+}
+
+int
+TclMarkList(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
+				 * NULL, no error message is left. */
+    CONST char *list,		/* Pointer to string with list structure. */
+    CONST char* end,            /* Pointer to first char after the list. */
+    int *argcPtr,		/* Pointer to location to fill in with the
+				 * number of elements in the list. */
+    CONST int** argszPtr,       /* Pointer to place to store length of list
+				 * elements. */
+    CONST char ***argvPtr)	/* Pointer to place to store pointer to array
+				 * of pointers to list elements. */
+{
+    CONST char **argv;
+    int*         argn;
+    CONST char *l;
+    int length, size, i, result, elSize, brace;
+    CONST char *element;
+
+    /*
+     * Figure out how much space to allocate. There must be enough space for
+     * the array of pointers and lengths. To estimate the number of pointers
+     * needed, count the number of whitespace characters in the list.
+     */
+
+    for (size = 2, l = list; l != end; l++) {
+	if (isspace(UCHAR(*l))) { /* INTL: ISO space. */
+	    size++;
+	    /* Consecutive space can only count as a single list delimiter */
+	    while (1) {
+		char next = *(l + 1);
+		if ((l+1) == end) {
+		    break;
+		}
+		++l;
+		if (isspace(UCHAR(next))) {
+		    continue;
+		}
+		break;
+	    }
+	}
+    }
+    length = l - list;
+    argv = (CONST char **) ckalloc((unsigned)
+	    ((size * sizeof(char *))));
+    argn = (int*) ckalloc((unsigned)
+	    ((size * sizeof(int *))));
+
+    for (i = 0; list != end;  i++) {
+	CONST char *prevList = list;
+
+	result = TclFindElement(interp, list, length, &element,
+				&list, &elSize, &brace);
+	length -= (list - prevList);
+	if (result != TCL_OK) {
+	    ckfree((char *) argv);
+	    ckfree((char *) argn);
+	    return result;
+	}
+	if (*element == 0) {
+	    break;
+	}
+	if (i >= size) {
+	    ckfree((char *) argv);
+	    ckfree((char *) argn);
+	    if (interp != NULL) {
+		Tcl_SetResult(interp, "internal error in Tcl_SplitList",
+			TCL_STATIC);
+	    }
+	    return TCL_ERROR;
+	}
+	argv[i] = element;
+	argn[i] = elSize;
+    }
+
+    argv[i]   = NULL;
+    argn[i]   = 0;
+    *argvPtr  = argv;
+    *argszPtr = argn;
+    *argcPtr  = i;
     return TCL_OK;
 }
 

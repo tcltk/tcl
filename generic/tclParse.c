@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.48 2006/11/03 00:34:52 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.49 2006/11/28 22:20:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1460,7 +1460,7 @@ Tcl_ParseVar(
 	return "$";
     }
 
-    code = TclSubstTokens(interp, parse.tokenPtr, parse.numTokens, NULL);
+    code = TclSubstTokens(interp, parse.tokenPtr, parse.numTokens, NULL, 1);
     if (code != TCL_OK) {
 	return NULL;
     }
@@ -1973,7 +1973,7 @@ Tcl_SubstObj(
     endTokenPtr = parse.tokenPtr + parse.numTokens;
     tokensLeft = parse.numTokens;
     code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-	    &tokensLeft);
+	    &tokensLeft, 1);
     if (code == TCL_OK) {
 	Tcl_FreeParse(&parse);
 	if (errMsg != NULL) {
@@ -2015,7 +2015,7 @@ Tcl_SubstObj(
 	}
 
 	code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-		&tokensLeft);
+		&tokensLeft, 1);
     }
 }
 
@@ -2050,9 +2050,10 @@ TclSubstTokens(
 				 * evaluate and concatenate. */
     int count,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
-    int *tokensLeftPtr)		/* If not NULL, points to memory where an
+    int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
+    int line)                   /* The line the script starts on. */
 {
     Tcl_Obj *result;
     int code = TCL_OK;
@@ -2092,8 +2093,9 @@ TclSubstTokens(
 	    iPtr->numLevels++;
 	    code = TclInterpReady(interp);
 	    if (code == TCL_OK) {
-		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			0);
+		/* TIP #280: Transfer line information to nested command */
+		code = TclEvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
+			0, line);
 	    }
 	    iPtr->numLevels--;
 	    appendObj = Tcl_GetObjResult(interp);
@@ -2110,7 +2112,7 @@ TclSubstTokens(
 		 */
 
 		code = TclSubstTokens(interp, tokenPtr+2,
-			tokenPtr->numComponents - 1, NULL);
+			tokenPtr->numComponents - 1, NULL, line);
 		arrayIndex = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(arrayIndex);
 	    }
@@ -2360,6 +2362,51 @@ TclIsLocalScalar(
     }
 
     return 1;
+}
+
+
+
+
+
+
+	#define TCL_TOKEN_WORD		1
+#define TCL_TOKEN_SIMPLE_WORD	2
+#define TCL_TOKEN_TEXT		4
+#define TCL_TOKEN_BS		8
+#define TCL_TOKEN_COMMAND	16
+#define TCL_TOKEN_VARIABLE	32
+#define TCL_TOKEN_SUB_EXPR	64
+#define TCL_TOKEN_OPERATOR	128
+#define TCL_TOKEN_EXPAND_WORD	256
+
+static void
+TclPrintToken (Tcl_Token* token, int idx, int level)
+{
+    int i;
+    for (i=0;i<level;i++) fprintf(stdout," ");
+    level++;
+
+    fprintf(stdout,"[%3d] @%p/%4d",
+	    idx,
+	    token->start,
+	    token->size);
+    if (token->numComponents == 0) {
+	fprintf(stdout," <%.*s>\n", token->size, token->start);
+    } else {
+	fprintf(stdout,"\n");
+    }
+    fflush (stdout);
+    if (token->numComponents > 0) {
+	TclPrintTokens (token+1,token->numComponents, level);
+    }
+}
+void
+TclPrintTokens (Tcl_Token* token, int words, int level)
+{
+    int k;
+    for (k=0; k < words; k++, token += (1+token->numComponents)) {
+	TclPrintToken (token, k, level);
+    }
 }
 
 /*
