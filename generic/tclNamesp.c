@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.119 2006/11/15 20:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.120 2006/11/28 22:20:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -3441,7 +3441,9 @@ NamespaceEvalCmd(
     framePtr->objv = objv;
 
     if (objc == 4) {
-	result = Tcl_EvalObjEx(interp, objv[3], 0);
+        /* TIP #280 : Make invoker available to eval'd script */
+        Interp* iPtr = (Interp*) interp;
+        result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr,3);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3450,7 +3452,8 @@ NamespaceEvalCmd(
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-3, objv+3);
-	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+	/* TIP #280. Make invoking context available to eval'd script */
+	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
     }
 
     if (result == TCL_ERROR) {

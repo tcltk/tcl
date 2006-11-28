@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.95 2006/11/15 14:58:27 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.96 2006/11/28 22:20:29 andreas_kupries Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -867,7 +867,8 @@ EXTERN struct tm *	TclpGmtime (CONST time_t * clock);
 #define TclCompEvalObj_TCL_DECLARED
 /* 197 */
 EXTERN int		TclCompEvalObj (Tcl_Interp * interp, 
-				Tcl_Obj * objPtr);
+				Tcl_Obj * objPtr, CONST CmdFrame* invoker, 
+				int word);
 #endif
 #ifndef TclObjGetFrame_TCL_DECLARED
 #define TclObjGetFrame_TCL_DECLARED
@@ -1237,7 +1238,7 @@ typedef struct TclIntStubs {
     void *reserved194;
     void *reserved195;
     void *reserved196;
-    int (*tclCompEvalObj) (Tcl_Interp * interp, Tcl_Obj * objPtr); /* 197 */
+    int (*tclCompEvalObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, CONST CmdFrame* invoker, int word); /* 197 */
     int (*tclObjGetFrame) (Tcl_Interp * interp, Tcl_Obj * objPtr, CallFrame ** framePtrPtr); /* 198 */
     void *reserved199;
     int (*tclpObjRemoveDirectory) (Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr); /* 200 */
