@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.253 2006/11/27 15:10:45 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.254 2006/11/28 22:20:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -784,7 +784,8 @@ Tcl_ExprObj(
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
-	TclInitCompileEnv(interp, &compEnv, string, length);
+	/* TIP #280 : No invoker (yet) - Expression compilation */
+	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
 	result = TclCompileExpr(interp, string, length, &compEnv);
 
 	/*
@@ -914,7 +915,9 @@ Tcl_ExprObj(
 int
 TclCompEvalObj(
     Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
+    Tcl_Obj *objPtr,
+    CONST CmdFrame* invoker,
+    int             word)
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
@@ -946,7 +949,17 @@ TclCompEvalObj(
     if (objPtr->typePtr != &tclByteCodeType) {
     recompileObj:
 	iPtr->errorLine = 1;
+
+	/* TIP #280. Remember the invoker for a moment in the interpreter
+	 * structures so that the byte code compiler can pick it up when
+	 * initializing the compilation environment, i.e. the extended
+	 * location information.
+	 */
+
+	iPtr->invokeCmdFramePtr = invoker;
+	iPtr->invokeWord        = word;
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
+	iPtr->invokeCmdFramePtr = NULL;
 	if (result != TCL_OK) {
 	    iPtr->numLevels--;
 	    return result;
@@ -1180,6 +1193,9 @@ TclExecuteByteCode(
 
     int result = TCL_OK;	/* Return code returned after execution. */
 
+    /* TIP #280 : Structures for tracking lines */
+    CmdFrame bcFrame;
+
     /*
      * Locals - variables that are used within opcodes or bounded sections of
      * the file (jumps between opcodes within a family).
@@ -1211,6 +1227,24 @@ TclExecuteByteCode(
 	tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
     }
     initStackTop = tosPtr - eePtr->stackPtr;
+
+    /* TIP #280 : Initialize the frame. Do not push it yet. */
+
+    bcFrame.type      = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
+			 ? TCL_LOCATION_PREBC
+			 : TCL_LOCATION_BC);
+    bcFrame.level     = (iPtr->cmdFramePtr == NULL ?
+			 1 :
+			 iPtr->cmdFramePtr->level + 1);
+    bcFrame.framePtr  = iPtr->framePtr;
+    bcFrame.nextPtr   = iPtr->cmdFramePtr;
+    bcFrame.nline     = 0;
+    bcFrame.line      = NULL;
+
+    bcFrame.data.tebc.codePtr  = codePtr;
+    bcFrame.data.tebc.pc       = NULL;
+    bcFrame.cmd.str.cmd        = NULL;
+    bcFrame.cmd.str.len        = 0;
 
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
@@ -1788,12 +1822,18 @@ TclExecuteByteCode(
 
 	    /*
 	     * Finally, let TclEvalObjvInternal handle the command.
+	     *
+	     * TIP #280 : Record the last piece of info needed by
+	     * 'TclGetSrcInfoForPc', and push the frame.
 	     */
 
+	    bcFrame.data.tebc.pc = pc;
+	    iPtr->cmdFramePtr = &bcFrame;
 	    DECACHE_STACK_INFO();
 	    /*Tcl_ResetResult(interp);*/
 	    result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 	    CACHE_STACK_INFO();
+	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
 	    /*
 	     * If the old stack is going to be released, it is safe to do so
@@ -1853,7 +1893,13 @@ TclExecuteByteCode(
 
 	objPtr = *tosPtr;
 	DECACHE_STACK_INFO();
-	result = TclCompEvalObj(interp, objPtr);
+
+	/* TIP #280: The invoking context is left NULL for a dynamically
+	 * constructed command. We cannot match its lines to the outer
+	 * context.
+	 */
+
+	result = TclCompEvalObj(interp, objPtr, NULL,0);
 	CACHE_STACK_INFO();
 	if (result == TCL_OK) {
 	    /*
@@ -6386,7 +6432,7 @@ IllegalExprOperandType(
 /*
  *----------------------------------------------------------------------
  *
- * GetSrcInfoForPc --
+ * TclGetSrcInfoForPc, GetSrcInfoForPc --
  *
  *	Given a program counter value, finds the closest command in the
  *	bytecode code unit's CmdLocation array and returns information about
@@ -6406,6 +6452,61 @@ IllegalExprOperandType(
  *
  *----------------------------------------------------------------------
  */
+
+void
+TclGetSrcInfoForPc (cfPtr)
+     CmdFrame* cfPtr;
+{
+    ByteCode* codePtr = (ByteCode*) cfPtr->data.tebc.codePtr;
+
+    if (cfPtr->cmd.str.cmd == NULL) {
+        cfPtr->cmd.str.cmd = GetSrcInfoForPc((char*) cfPtr->data.tebc.pc,
+					     codePtr,
+					     &cfPtr->cmd.str.len);
+    }
+
+    if (cfPtr->cmd.str.cmd != NULL) {
+        /* We now have the command. We can get the srcOffset back and
+	 * from there find the list of word locations for this command
+	 */
+
+	ExtCmdLoc*     eclPtr;
+	ECL*           locPtr = NULL;
+	int            srcOffset;
+
+        Interp*        iPtr  = (Interp*) *codePtr->interpHandle;
+	Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+
+	if (!hePtr) return;
+
+	srcOffset = cfPtr->cmd.str.cmd - codePtr->source;
+	eclPtr    = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
+
+	{
+	    int i;
+	    for (i=0; i < eclPtr->nuloc; i++) {
+		if (eclPtr->loc [i].srcOffset == srcOffset) {
+		    locPtr = &(eclPtr->loc [i]);
+		    break;
+		}
+	    }
+	}
+
+	if (locPtr == NULL) {Tcl_Panic ("LocSearch failure");}
+
+	cfPtr->line           = locPtr->line;
+	cfPtr->nline          = locPtr->nline;
+	cfPtr->type           = eclPtr->type;
+
+	if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	    cfPtr->data.eval.path = eclPtr->path;
+	    Tcl_IncrRefCount (cfPtr->data.eval.path);
+	}
+	/* Do not set cfPtr->data.eval.path NULL for non-SOURCE
+	 * Needed for cfPtr->data.tebc.codePtr.
+	 */
+    }
+}
 
 static char *
 GetSrcInfoForPc(

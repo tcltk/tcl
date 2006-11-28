@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.98 2006/10/16 15:22:06 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.99 2006/11/28 22:20:29 andreas_kupries Exp $
 
 package require Tcl 8.5		;# To provide an alpha version
 package require Tcl 8.3		;# uses [glob -directory]
@@ -1615,8 +1615,7 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
 	set outData {}
 	set errData {}
 	rename ::puts [namespace current]::Replace::Puts
-	namespace eval :: \
-		[list namespace import [namespace origin Replace::puts]]
+	namespace eval :: [list namespace import [namespace origin Replace::puts]]
 	namespace import Replace::puts
     }
     set result [uplevel 1 $script]
